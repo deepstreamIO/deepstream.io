@@ -1,0 +1,22 @@
+{
+  "name": "deepstream.io",
+  "version": "0.0.0",
+  "description": "a scalable server for realtime webapps",
+  "main": "src/deepstream.io.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hoxton-one/deepstream.io.git"
+  },
+  "author": "Wolfram Hempel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hoxton-one/deepstream.io/issues"
+  },
+  "homepage": "https://github.com/hoxton-one/deepstream.io"
+}
