@@ -1,0 +1,28 @@
+*{
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+	background: #f6f6f6;
+}
+
+#wrapper{
+	width: 600px;
+	margin: 20px auto;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+}
+
+input.msg{
+	display: block;
+	padding: 5px;
+	border: 1px solid #ccc;
+	background: #fff;
+	width: 570px;
+	margin: 10px;
+	border-radius: 3px;
+}
+
+input.msg:focus{
+	outline: orange;
+}

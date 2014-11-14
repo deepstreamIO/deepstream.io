@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<title>Deepstream Test Client</title>
+	<script src="js/engine-io-client.js"></script>
+	<script src="js/knockout.js"></script>
+	<script src="js/test-client.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/test-client.css" />
+</head>
+<body>
+	<div id="wrapper">
+		<input type="text" class="msg" data-bind="value:inputValue" />
+		<ul data-bind="foreach:messages">
+			<li data-bind="css:{inbound:direction() === 'inbound', outbound:direction() === 'outbound'}">
+				<span data-bind="text:message.content"></span>
+			</li>
+		</ul>
+	</div>
+</body>
+</html>

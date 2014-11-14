@@ -1,6 +1,6 @@
 exports.parse = function( message ) {
 	var parsedMessages = [],
-		rawMessages = message.split( '♦' ),
+		rawMessages = message.split( messageSeperator ),
 		i;
 
 	for( i = 0; i < rawMessages.length; i++ ) {
@@ -10,27 +10,33 @@ exports.parse = function( message ) {
 	return parsedMessages;
 };
 
-var actions = {
-	'C': 'create',
-	'R': 'read',
-	'U': 'update',
-	'D': 'delete',
-	'S': 'subscribe',
-	'US': 'unsubscribe',
-	'I': 'invoke',
-	'L': 'listen',
-	'P': 'provide',
-	'UP': 'unprovide',
-	'CR': 'createOrRead',
-	'RPC': 'rpc',
-	'EVT': 'event'
-};
+var messageSeperator = String.fromCharCode( 30 ), // ASCII Record Seperator 1E
+	messagePartSeperator = String.fromCharCode( 31 ), // ASCII Unit Separator 1F
+	actions = {
+		'C': 'create',
+		'R': 'read',
+		'U': 'update',
+		'D': 'delete',
+		'S': 'subscribe',
+		'US': 'unsubscribe',
+		'I': 'invoke',
+		'L': 'listen',
+		'P': 'provide',
+		'UP': 'unprovide',
+		'CR': 'createOrRead',
+		'RPC': 'rpc',
+		'EVT': 'event'
+	};
 
 var parseMessage = function( message ) {
-	var parts = message.split( '‡' ),
+	var parts = message.split( messagePartSeperator ), 
 		messageObject = {};
 
 	if( parts.length < 3 ) {
+		return null;
+	}
+
+	if( actions[ parts[ 1 ] ] === undefined ) {
 		return null;
 	}
 
