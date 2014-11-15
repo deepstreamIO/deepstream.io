@@ -7,14 +7,18 @@
     "test": "test"
   },
   "scripts": {
-    "test": "jasmine-node . --watch"
+    "test": "node node_modules/jasmine-node/lib/jasmine-node/cli.js test --autotest --watch ./src"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/hoxton-one/deepstream.io.git"
   },
   "dependencies": {
+    "colors": "1.0.3",
     "engine.io": "1.4.2"
+  },
+  "devDependencies": {
+    "jasmine-node": "1.14.5"
   },
   "author": "Wolfram Hempel",
   "license": "MIT",

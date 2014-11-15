@@ -25,7 +25,9 @@ var messageSeperator = String.fromCharCode( 30 ), // ASCII Record Seperator 1E
 		'UP': 'unprovide',
 		'CR': 'createOrRead',
 		'RPC': 'rpc',
-		'EVT': 'event'
+		'EVT': 'event',
+		'E': 'error',
+		'REQ': 'request'
 	};
 
 var parseMessage = function( message ) {

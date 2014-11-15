@@ -13,23 +13,13 @@ ViewModel.prototype.processInput = function() {
 	this.inputValue( '' );
 };
 
+SEPERATOR = String.fromCharCode( 31 );
+
 window.onload = function() {
-	console.log('♦‡');
-	console.log( '  ', '  '.length );
-	if( '  '.length !== 2 ) {
-		var msg = 'INVALID ENCODING\n' +
-			'Please set the encoding of your page\n' +
-			'(or at least of the deepstream client) to UTF-8.\n' +
-			'You can do so by either adding <meta charset="UTF-8"> to your <head>\n' +
-			'or charset="UTF-8" to the <script> tag that includes the client.';
-		throw new Error( msg );
-	}
-	return;
+
 	connection = eio( 'http://localhost:6020' );
 	connection.on( 'open', function( socket ){
-		debugger;
-		connection.send( 'testtext:♦‡' );
-		//connection.send( 'AUTH{"firstname":"Wolfram"}' );
+		connection.send( 'AUTH' + SEPERATOR + 'REQ' + SEPERATOR + '{"firstname":"Wolfram"}' );
 	});
 
 	connection.on( 'message', function( msg ){
