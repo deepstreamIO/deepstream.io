@@ -17,3 +17,21 @@ exports.EVENT.AUTH_SUCCESSFUL = 'AUTH_SUCCESSFUL';
 
 exports.TOPIC = {};
 exports.TOPIC.AUTH = 'AUTH';
+
+exports.ACTIONS = {};
+exports.ACTIONS.ACK = 'A';
+exports.ACTIONS.CREATE = 'C';
+exports.ACTIONS.READ = 'R';
+exports.ACTIONS.UPDATE = 'U';
+exports.ACTIONS.DELETE = 'D';
+exports.ACTIONS.SUBSCRIBE = 'S';
+exports.ACTIONS.UNSUBSCRIBE = 'US';
+exports.ACTIONS.INVOKE = 'I';
+exports.ACTIONS.LISTEN = 'L';
+exports.ACTIONS.PROVIDE = 'P';
+exports.ACTIONS.UNPROVIDE = 'UP';
+exports.ACTIONS.CREATEORREAD = 'CR';
+exports.ACTIONS.RPC = 'RPC';
+exports.ACTIONS.EVENT = 'EVT';
+exports.ACTIONS.ERROR = 'E';
+exports.ACTIONS.REQUEST = 'REQ';

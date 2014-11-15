@@ -1,3 +1,5 @@
+var C = require( '../constants/constants' );
+
 exports.parse = function( message ) {
 	var parsedMessages = [],
 		rawMessages = message.split( messageSeperator ),
@@ -12,23 +14,12 @@ exports.parse = function( message ) {
 
 var messageSeperator = String.fromCharCode( 30 ), // ASCII Record Seperator 1E
 	messagePartSeperator = String.fromCharCode( 31 ), // ASCII Unit Separator 1F
-	actions = {
-		'C': 'create',
-		'R': 'read',
-		'U': 'update',
-		'D': 'delete',
-		'S': 'subscribe',
-		'US': 'unsubscribe',
-		'I': 'invoke',
-		'L': 'listen',
-		'P': 'provide',
-		'UP': 'unprovide',
-		'CR': 'createOrRead',
-		'RPC': 'rpc',
-		'EVT': 'event',
-		'E': 'error',
-		'REQ': 'request'
-	};
+	actions = {},
+	key;
+
+for( key in C.ACTIONS ) {
+	actions[ C.ACTIONS[ key ] ] = key;
+}
 
 var parseMessage = function( message ) {
 	var parts = message.split( messagePartSeperator ), 
@@ -44,7 +35,7 @@ var parseMessage = function( message ) {
 
 	messageObject.raw = message;
 	messageObject.topic = parts[ 0 ];
-	messageObject.action = actions[ parts[ 1 ] ];
+	messageObject.action = parts[ 1 ];
 	messageObject.data = parts.splice( 2 );
 
 	return messageObject;

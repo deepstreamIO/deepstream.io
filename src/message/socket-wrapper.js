@@ -21,6 +21,10 @@ SocketWrapper.prototype.sendError = function( topic, type, msg ) {
 	this.socket.send( messageBuilder.getErrorMsg( topic, type, msg ) );
 };
 
+SocketWrapper.prototype.sendMessage = function( topic, type, data ) {
+	this.socket.send( messageBuilder.getMsg( topic, type, data ) );
+};
+
 SocketWrapper.prototype.destroy = function() {
 	this.socket.disconnect( true );
 	this.socket.removeAllListeners();

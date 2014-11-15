@@ -9,42 +9,42 @@ describe( 'message parser processes raw messages correctly', function(){
 		expect( messageParser.parse( 'record'+y+'C'+y+'user/someId' ) ).toEqual([{
 			topic: 'record',
 			raw: 'record'+y+'C'+y+'user/someId',
-			action: 'create',
+			action: 'C',
 			data: ['user/someId']
 		}]);
 
 		expect( messageParser.parse( 'record'+y+'C'+y+'user/someId'+y+'{"firstname":"Wolfram"}' ) ).toEqual([{
 			topic: 'record',
 			raw: 'record'+y+'C'+y+'user/someId'+y+'{"firstname":"Wolfram"}',
-			action: 'create',
+			action: 'C',
 			data: [ 'user/someId', '{"firstname":"Wolfram"}' ]
 		}]);
 
 		expect( messageParser.parse( 'record'+y+'R'+y+'user/someId' ) ).toEqual([{
 			topic: 'record',
 			raw: 'record'+y+'R'+y+'user/someId',
-			action: 'read',
+			action: 'R',
 			data: [ 'user/someId' ]
 		}]);
 
 		expect( messageParser.parse( 'record'+y+'U'+y+'user/someId'+y+'{"firstname":"Wolfram"}' ) ).toEqual([{
 			topic: 'record',
 			raw: 'record'+y+'U'+y+'user/someId'+y+'{"firstname":"Wolfram"}',
-			action: 'update',
+			action: 'U',
 			data: [ 'user/someId', '{"firstname":"Wolfram"}' ]
 		}]);
 
 		expect( messageParser.parse( 'record'+y+'D'+y+'user/someId' ) ).toEqual([{
 			topic: 'record',
 			raw: 'record'+y+'D'+y+'user/someId',
-			action: 'delete',
+			action: 'D',
 			data: [ 'user/someId' ]
 		}]);
 
 		expect( messageParser.parse( 'record'+y+'US'+y+'user/someId' ) ).toEqual([{
 			topic: 'record',
 			raw: 'record'+y+'US'+y+'user/someId',
-			action: 'unsubscribe',
+			action: 'US',
 			data: [ 'user/someId' ]
 		}]);
 	});
@@ -53,14 +53,14 @@ describe( 'message parser processes raw messages correctly', function(){
 		expect( messageParser.parse( 'listen'+y+'S'+y+'user/someId' ) ).toEqual([{
 			topic: 'listen',
 			raw: 'listen'+y+'S'+y+'user/someId',
-			action: 'subscribe',
+			action: 'S',
 			data: [ 'user/someId']
 		}]);
 
 		expect( messageParser.parse( 'listen'+y+'US'+y+'user/someId' ) ).toEqual([{
 			topic: 'listen',
 			raw: 'listen'+y+'US'+y+'user/someId',
-			action: 'unsubscribe',
+			action: 'US',
 			data: [ 'user/someId']
 		}]);
 	});
@@ -69,21 +69,21 @@ describe( 'message parser processes raw messages correctly', function(){
 		expect( messageParser.parse( 'rpc'+y+'I'+y+'addValues'+y+'{"val1":1,"val2":2}' ) ).toEqual([{
 			topic: 'rpc',
 			raw: 'rpc'+y+'I'+y+'addValues'+y+'{"val1":1,"val2":2}',
-			action: 'invoke',
+			action: 'I',
 			data: [ 'addValues', '{"val1":1,"val2":2}' ]
 		}]);
 
 		expect( messageParser.parse( 'rpc'+y+'P'+y+'addValues' ) ).toEqual([{
 			topic: 'rpc',
 			raw: 'rpc'+y+'P'+y+'addValues',
-			action: 'provide',
+			action: 'P',
 			data: [ 'addValues' ]
 		}]);
 
 		expect( messageParser.parse( 'rpc'+y+'UP'+y+'addValues' ) ).toEqual([{
 			topic: 'rpc',
 			raw: 'rpc'+y+'UP'+y+'addValues',
-			action: 'unprovide',
+			action: 'UP',
 			data: [ 'addValues' ]
 		}]);
 	});
@@ -92,14 +92,14 @@ describe( 'message parser processes raw messages correctly', function(){
 		expect( messageParser.parse( 'event'+y+'S'+y+'someEvent' ) ).toEqual([{
 			topic: 'event',
 			raw: 'event'+y+'S'+y+'someEvent',
-			action: 'subscribe',
+			action: 'S',
 			data: [ 'someEvent' ]
 		}]);
 
 		expect( messageParser.parse( 'event'+y+'US'+y+'someEvent' ) ).toEqual([{
 			topic: 'event',
 			raw: 'event'+y+'US'+y+'someEvent',
-			action: 'unsubscribe',
+			action: 'US',
 			data: [ 'someEvent' ]
 		}]);		
 	});
@@ -110,17 +110,17 @@ describe( 'message parser processes raw messages correctly', function(){
 		expect( messageParser.parse( blockMsg ) ).toEqual([{
 			topic: 'record',
 			raw: 'record'+y+'C'+y+'user/someId'+y+'{"firstname":"Wolfram"}',
-			action: 'create',
+			action: 'C',
 			data: [ 'user/someId', '{"firstname":"Wolfram"}' ]
 		},{
 			topic: 'rpc',
 			raw: 'rpc'+y+'P'+y+'addValues',
-			action: 'provide',
+			action: 'P',
 			data: [ 'addValues' ]
 		},{
 			topic: 'event',
 			raw: 'event'+y+'S'+y+'someEvent',
-			action: 'subscribe',
+			action: 'S',
 			data: [ 'someEvent' ]
 		}]);
 	});

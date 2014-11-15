@@ -29,7 +29,7 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 		authData,
 		errorMsg;
 
-	if( !msg || msg.topic !== C.TOPIC.AUTH || msg.action !== 'request' || msg.data.length !== 1 ) {
+	if( !msg || msg.topic !== C.TOPIC.AUTH || msg.action !== C.ACTIONS.REQUEST || msg.data.length !== 1 ) {
 		errorMsg = this._options.logInvalidAuthData === true ? authMsg : '';
 		this._sendInvalidAuthMsg( socketWrapper, errorMsg );
 		return;
@@ -43,7 +43,7 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 		if( this._options.logInvalidAuthData === true ) {
 		 	errorMsg += ' "' + authMsg + '": ' + e.toString();
 		}
-		
+
 		this._sendInvalidAuthMsg( socketWrapper, errorMsg );
 		return;
 	}
@@ -69,6 +69,7 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 	socketWrapper.socket.removeListener( 'message', socketWrapper.authCallBack );
 	socketWrapper.socket.on( 'message', this._onMessage.bind( this, socketWrapper ) );
 	socketWrapper.user = userData;
+	socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
 	this._authenticatedSockets.push( socketWrapper );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, userData );
 };
