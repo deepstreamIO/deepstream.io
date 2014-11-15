@@ -17,9 +17,9 @@ options = {
 
 connectionEndpoint = new ConnectionEndpoint( engineIoMock, options );
 
-connectionEndpoint.on( 'message', function( socket, message ){
+connectionEndpoint.onMessage = function( socket, message ){
 	lastAuthenticatedMessage = message;
-});
+};
 
 describe( 'the connection endpoint handles invalid auth messages', function(){
 

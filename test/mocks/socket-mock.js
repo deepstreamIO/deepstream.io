@@ -13,4 +13,4 @@ SocketMock.prototype.disconnect = function() {
 	this.isDisconnected = true;
 };
 
-exports.SocketMock = SocketMock;
+module.exports = SocketMock;

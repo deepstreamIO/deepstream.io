@@ -1,4 +1,4 @@
-var SocketMock = require( './socket-mock' ).SocketMock;
+var SocketMock = require( './socket-mock' );
 
 var EngineIoMock = function(){};
 

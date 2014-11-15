@@ -1,19 +1,14 @@
 var C = require( '../constants/constants' ),
 	messageBuilder = require( './message-builder' ),
 	messageParser = require( './message-parser' ),
-	SocketWrapper = require( './socket-wrapper' ),
-	utils = require( 'util' ),
-	EventEmitter = require( 'events' ).EventEmitter;
+	SocketWrapper = require( './socket-wrapper' );
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
  * connection and authentication requests, authenticates sockets and
  * forwards messages it receives from authenticated sockets.
  *
- * @emits message
- *
  * @constructor
- * @extends {EventEmitter}
  * 
  * @param {engine.io} engineIo
  * @param {Object} options the extended default options
@@ -27,7 +22,20 @@ var ConnectionEndpoint = function( engineIo, options ) {
 	this._authenticatedSockets = [];
 };
 
-utils.inherits( ConnectionEndpoint, EventEmitter );
+/**
+ * Called for every message that's received
+ * from an authenticated socket
+ *
+ * @override
+ *
+ * @param   {SocketWrapper} socketWrapper
+ * @param   {String} message the raw message as sent by the client
+ *
+ * @public
+ * 
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
 
 /**
  * Callback for engine.io's 'connection' event. Receives
@@ -117,21 +125,6 @@ ConnectionEndpoint.prototype._sendInvalidAuthMsg = function( socketWrapper, msg 
 };
 
 /**
- * Emits a message event for messages that are received
- * from an authenticated socket
- *
- * @param   {SocketWrapper} socketWrapper
- * @param   {String} message the raw message as sent by the client
- *
- * @private
- * 
- * @returns {void}
- */
-ConnectionEndpoint.prototype._onMessage = function( socketWrapper, message ) {
-	this.emit( 'message', socketWrapper, message );
-};
-
-/**
  * Callback for succesfully validated sockets. Removes
  * all authentication specific logic and registeres the
  * socket with the authenticated sockets
@@ -145,7 +138,7 @@ ConnectionEndpoint.prototype._onMessage = function( socketWrapper, message ) {
  */
 ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, username ) {
 	socketWrapper.socket.removeListener( 'message', socketWrapper.authCallBack );
-	socketWrapper.socket.on( 'message', this._onMessage.bind( this, socketWrapper ) );
+	socketWrapper.socket.on( 'message', function( msg ){ this.onMessage( socketWrapper, msg ); }.bind( this ));
 	socketWrapper.user = username;
 	socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
 	this._authenticatedSockets.push( socketWrapper );
