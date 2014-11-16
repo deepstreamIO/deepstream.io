@@ -5,10 +5,11 @@ var MessageDistributor = function() {
 };
 
 MessageDistributor.prototype.distribute = function( socketWrapper, message ) {
-	console.log( 'made it to distribute', message );
 	if( this._callbacks[ message.topic ] === undefined ) {
 		socketWrapper.sendError( C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic );
 	}
+
+	this._callbacks[ message.topic ]( socketWrapper, message );
 };
 
 MessageDistributor.prototype.registerForTopic = function( topic, callback ) {

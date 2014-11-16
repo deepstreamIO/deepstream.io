@@ -25,6 +25,10 @@ SocketWrapper.prototype.sendMessage = function( topic, type, data ) {
 	this.socket.send( messageBuilder.getMsg( topic, type, data ) );
 };
 
+SocketWrapper.prototype.send = function( msg ) {
+	this.socket.send( msg );
+};
+
 SocketWrapper.prototype.destroy = function() {
 	this.socket.disconnect( true );
 	this.socket.removeAllListeners();
