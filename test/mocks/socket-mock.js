@@ -9,7 +9,7 @@ SocketMock.prototype.send = function( message ) {
 	this.lastSendMessage = message;
 };
 
-SocketMock.prototype.disconnect = function() {
+SocketMock.prototype.close = function() {
 	this.isDisconnected = true;
 };
 

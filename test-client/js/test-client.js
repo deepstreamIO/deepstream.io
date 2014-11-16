@@ -1,32 +1,33 @@
-ViewModel = function() {
-	this.inputValue = ko.observable();
-	this.inputValue.subscribe( this.processInput.bind( this ) );
-	this.messages = ko.observableArray();
-};
-
-ViewModel.prototype.processInput = function() {
-	if( !this.inputValue() ) {
-		return;
-	}
-
-	var msg = this.inputValue();
-	this.inputValue( '' );
-};
-
-SEPERATOR = String.fromCharCode( 31 );
-
 window.onload = function() {
 
 	connection = eio( 'http://localhost:6020' );
+
+	var viewModel = new ViewModel( connection );
+
 	connection.on( 'open', function( socket ){
-		connection.send( 'AUTH' + SEPERATOR + 'REQ' + SEPERATOR + '{"firstname":"Wolfram"}' );
+		viewModel.addMsg( 'system', 'connection opened' );
 	});
 
 	connection.on( 'message', function( msg ){
-		console.log( 'received', msg );
+		viewModel.addMsg( 'incoming', msg );
 	});
-	//document.cookie = '';
-	//connection.on( 'error', function(){ console.log( 'error', arguments ); });
-	//connection.on( 'connect_error', function(){ console.log( 'connect_error', arguments ); });
-	//ko.applyBindings( new ViewModel() );
+
+	connection.on( 'error', function( err ){
+		viewModel.addMsg( 'error', err );
+	});
+	
+	connection.on( 'connect_error', function( err ){ 
+		viewModel.addMsg( 'error', 'connection error ' + err );
+	});
+
+	connection.on( 'close', function(){ 
+		viewModel.addMsg( 'error', 'connection closed' );
+	});
+
+	viewModel.addMessageSuggestion( 'AUTH|REQ|{"firstname":"Wolfram"}' );
+	viewModel.addMessageSuggestion( 'EVENT|S|someEvent' );
+	viewModel.addMessageSuggestion( 'EVENT|US|someEvent' );
+	viewModel.addMessageSuggestion( 'EVENT|EVT|someEvent|someData' );
+
+	ko.applyBindings( viewModel );
 };

@@ -2,6 +2,12 @@
 	margin: 0;
 	padding: 0;
 	list-style-type: none;
+
+	font: 12px/16px Arial, sans-serif;
+	color: #333;
+}
+
+#body{
 	background: #f6f6f6;
 }
 
@@ -21,8 +27,57 @@ input.msg{
 	width: 570px;
 	margin: 10px;
 	border-radius: 3px;
+	box-shadow: inset 2px 2px rgba( 0,0,0,0.1);
 }
 
 input.msg:focus{
 	outline: orange;
+}
+
+.buttons{
+	margin: 10px;
+}
+
+.btn{
+	width: 100px;
+	padding: 10px;
+}
+ul{
+	margin: 10px;
+}
+
+li{
+	padding: 10px;
+	margin-bottom: 5px;
+}
+
+li.incoming{
+	color: #5bc0de;
+	border-left: 4px solid #5bc0de;
+}
+
+li.outgoing{
+	color: #f0ad4e;
+	border-left: 4px solid #f0ad4e;
+}
+
+li.error{
+	color: #d9534f;
+	border-left: 4px solid #d9534f;
+}
+
+li.system{
+	color: #888;
+	border-left: 4px solid #888;
+}
+
+.suggestions li,
+.btn{
+	cursor: pointer;
+	border: 1px solid #eee;
+}
+
+.suggestions li:hover,
+.btn:hover{
+	background: #eee;
 }

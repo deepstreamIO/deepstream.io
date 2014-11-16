@@ -30,7 +30,7 @@ SocketWrapper.prototype.send = function( msg ) {
 };
 
 SocketWrapper.prototype.destroy = function() {
-	this.socket.disconnect( true );
+	this.socket.close( true );
 	this.socket.removeAllListeners();
 	this.authCallBack = null;
 };

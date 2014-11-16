@@ -3,18 +3,24 @@
 <head>
 
 	<title>Deepstream Test Client</title>
-	<script src="js/engine-io-client.js"></script>
-	<script src="js/knockout.js"></script>
+	<script src="lib/engine-io-client.js"></script>
+	<script src="lib/knockout.js"></script>
+	<script src="js/view-model.js"></script>
 	<script src="js/test-client.js"></script>
 	<link rel="stylesheet" type="text/css" href="css/test-client.css" />
 </head>
 <body>
 	<div id="wrapper">
+		<ul  class="suggestions" data-bind="foreach:messageSuggestions">
+			<li data-bind="click: $parent.send.bind( $parent, $data ), text:$data"></li>
+		</ul>
 		<input type="text" class="msg" data-bind="value:inputValue" />
+		<div class="buttons">
+			<div class="btn" data-bind="click:openConnection">reopen connection</div>
+		</div>
+		
 		<ul data-bind="foreach:messages">
-			<li data-bind="css:{inbound:direction() === 'inbound', outbound:direction() === 'outbound'}">
-				<span data-bind="text:message.content"></span>
-			</li>
+			<li data-bind="css:type, text:msg"></li>
 		</ul>
 	</div>
 </body>
