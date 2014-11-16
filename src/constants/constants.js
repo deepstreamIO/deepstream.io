@@ -1,6 +1,8 @@
 exports.MESSAGE_SEPERATOR = String.fromCharCode( 30 ); // ASCII Record Seperator 1E
 exports.MESSAGE_PART_SEPERATOR = String.fromCharCode( 31 ); // ASCII Unit Separator 1F
 
+exports.SOURCE_MESSAGE_CONNECTOR = 'SOURCE_MESSAGE_CONNECTOR';
+
 exports.LOG_LEVEL = {};
 exports.LOG_LEVEL.DEBUG = 0;
 exports.LOG_LEVEL.INFO = 1;
@@ -9,6 +11,8 @@ exports.LOG_LEVEL.ERROR = 3;
 exports.LOG_LEVEL.OFF = 4;
 
 exports.EVENT = {};
+exports.EVENT.TRIGGER_EVENT = 'TRIGGER_EVENT';
+exports.EVENT.INFO = 'INFO';
 exports.EVENT.INVALID_AUTH_MSG = 'INVALID_AUTH_MSG';
 exports.EVENT.INVALID_AUTH_DATA = 'INVALID_AUTH_DATA';
 exports.EVENT.AUTH_ATTEMPT = 'AUTH_ATTEMPT';

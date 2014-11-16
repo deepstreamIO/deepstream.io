@@ -54,6 +54,17 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'A'+SEP+'US'+SEP+'someName' );
 	});
 
+	it( 'handles unsubscribes for non existant topics', function(){
+		subscriptionRegistry.unsubscribe( 'giberish', socketWrapperB );
+		expect( socketWrapperB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'E'+SEP+'NOT_SUBSCRIBED'+SEP+'giberish' );
+	});
+
+	it( 'handles unsubscribes for non existant subscriptions', function(){
+		var newSocketWrapper = new SocketWrapper( new SocketMock() );
+		subscriptionRegistry.unsubscribe( 'someName', newSocketWrapper );
+		expect( newSocketWrapper.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'E'+SEP+'NOT_SUBSCRIBED'+SEP+'someName' );
+	});
+
 	it( 'routes the events', function(){
 		subscriptionRegistry.subscribe( 'someOtherName', socketWrapperA );
 		subscriptionRegistry.sendToSubscribers( 'someOtherName', 'msg6' );

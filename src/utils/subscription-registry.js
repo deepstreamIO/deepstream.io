@@ -72,17 +72,17 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
  * @returns {void}
  */
 SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
-	var msg,
-		index = this._subscriptions[ name ].indexOf( socketWrapper );
+	var msg;
 
-	if( index === -1 ) {
+	if( this._subscriptions[ name ] === undefined || 
+		this._subscriptions[ name ].indexOf( socketWrapper ) === -1 ) {
 		msg = socketWrapper.user + ' is not subscribed to ' + name;
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.NOT_SUBSCRIBED, msg );
 		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.NOT_SUBSCRIBED, name );
 		return;
 	}
 
-	this._subscriptions[ name ].splice( index, 1 );
+	this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
 	socketWrapper.sendMessage( C.TOPIC.EVENT, C.ACTIONS.ACK, [ C.ACTIONS.UNSUBSCRIBE, name ] );
 };
 

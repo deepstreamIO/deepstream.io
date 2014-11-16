@@ -1,7 +1,8 @@
 var C = require( '../constants/constants' );
 
-var MessageDistributor = function() {
+var MessageDistributor = function( options ) {
 	this._callbacks = {};
+	this._options = options;
 };
 
 MessageDistributor.prototype.distribute = function( socketWrapper, message ) {
@@ -18,6 +19,9 @@ MessageDistributor.prototype.registerForTopic = function( topic, callback ) {
 	}
 
 	this._callbacks[ topic ] = callback;
+	this._options.messageConnector.subscribe( topic, function( msg ){ 
+		callback( C.SOURCE_MESSAGE_CONNECTOR, msg ); 
+	});
 };
 
 module.exports = MessageDistributor;

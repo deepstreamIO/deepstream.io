@@ -4,6 +4,7 @@ var C = require( '../constants/constants' ),
 
 var EventHandler = function( connectionEndpoint, options ) {
 	this._connectionEndpoint = connectionEndpoint;
+	this._options = options;
 	this._subscriptionRegistry = new SubscriptionRegistry( options );
 };
 
@@ -35,10 +36,17 @@ EventHandler.prototype._removeSubscriber = function( socketWrapper, message ) {
 
 EventHandler.prototype._triggerEvent = function( socketWrapper, message ) {
 	if( typeof message.data[ 0 ] !== 'string' ) {
-		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+			socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		}
+		
 		return;
 	}
+	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.TRIGGER_EVENT, message.raw );
 
+	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+		this._options.messageConnector.publish( C.TOPIC.EVENT, message );
+	}
 	var outboundMessage = messageBuilder.getMsg( C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data );
 	this._subscriptionRegistry.sendToSubscribers( message.data[ 0 ], outboundMessage, socketWrapper );
 };

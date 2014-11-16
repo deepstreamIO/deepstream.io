@@ -1,6 +1,8 @@
 window.onload = function() {
 
-	connection = eio( 'http://localhost:6020' );
+	var port = window.location.search ? parseInt( window.location.search.substr( 1 ), 10 ) : 6020;
+
+	connection = eio( 'http://localhost:' + port );
 
 	var viewModel = new ViewModel( connection );
 
