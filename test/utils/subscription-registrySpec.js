@@ -2,6 +2,7 @@ var SubscriptionRegistry = require( '../../src/utils/subscription-registry' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	lastLogEvent = null,
+	SEP = require( '../../src/constants/constants' ).MESSAGE_PART_SEPERATOR,
 	options = { logger: { log: function( level, event, message ){ lastLogEvent = event; } } },
 	subscriptionRegistry = new SubscriptionRegistry( options );
 
@@ -14,14 +15,15 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( null );
 
 		subscriptionRegistry.subscribe( 'someName', socketWrapperA );
+		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'A'+SEP+'S'+SEP+'someName' );
 		subscriptionRegistry.sendToSubscribers( 'someName', 'someMessage' );
-
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'someMessage' );
 	});
 
 	it( 'doesn\'t subscribe twice to the same name', function(){
 		expect( lastLogEvent ).toBe( null );
 		subscriptionRegistry.subscribe( 'someName', socketWrapperA );
+		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'E'+SEP+'MULTIPLE_SUBSCRIPTIONS'+SEP+'someName' );
 		expect( lastLogEvent ).toBe( 'MULTIPLE_SUBSCRIPTIONS' );
 	});
 
@@ -46,9 +48,10 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperB.socket.lastSendMessage ).toBe( 'msg4' );
 
 		subscriptionRegistry.unsubscribe( 'someName', socketWrapperB );
+		expect( socketWrapperB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'A'+SEP+'US'+SEP+'someName' );
 		subscriptionRegistry.sendToSubscribers( 'someName', 'msg5' );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'msg5' );
-		expect( socketWrapperB.socket.lastSendMessage ).toBe( 'msg4' );
+		expect( socketWrapperB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'A'+SEP+'US'+SEP+'someName' );
 	});
 
 	it( 'routes the events', function(){
@@ -60,8 +63,9 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'msg7' );
 
 		subscriptionRegistry.unsubscribe( 'someName', socketWrapperA );
+		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'A'+SEP+'US'+SEP+'someName' );
 		subscriptionRegistry.sendToSubscribers( 'someName', 'msg8' );
-		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'msg7' );
+		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'A'+SEP+'US'+SEP+'someName' );
 
 		subscriptionRegistry.sendToSubscribers( 'someOtherName', 'msg9' );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'msg9' );

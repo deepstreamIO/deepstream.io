@@ -53,11 +53,13 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	if( this._subscriptions[ name ].indexOf( socketWrapper ) !== -1 ) {
 		var msg = 'repeat supscription to "' + name + '" by ' + socketWrapper.user; 
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MULTIPLE_SUBSCRIPTIONS, msg );
+		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.MULTIPLE_SUBSCRIPTIONS, name );
 		return;
 	}
 
 	socketWrapper.socket.once( 'close', this.unsubscribeAll.bind( this, socketWrapper ) );
 	this._subscriptions[ name ].push( socketWrapper );
+	socketWrapper.sendMessage( C.TOPIC.EVENT, C.ACTIONS.ACK, [ C.ACTIONS.SUBSCRIBE, name ] );
 };
 
 /**
@@ -76,9 +78,12 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 	if( index === -1 ) {
 		msg = socketWrapper.user + ' is not subscribed to ' + name;
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.NOT_SUBSCRIBED, msg );
+		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.NOT_SUBSCRIBED, name );
+		return;
 	}
 
 	this._subscriptions[ name ].splice( index, 1 );
+	socketWrapper.sendMessage( C.TOPIC.EVENT, C.ACTIONS.ACK, [ C.ACTIONS.UNSUBSCRIBE, name ] );
 };
 
 /**
