@@ -11,7 +11,7 @@ exports.getMsg = function( topic, action, data ) {
 
 	if( data ) {
 		for( i = 0; i < data.length; i++ ) {
-			if( typeof data === 'object' ) {
+			if( typeof data[ i ] === 'object' ) {
 				sendData.push( JSON.stringify( data[ i ] ) );
 			} else {
 				sendData.push( data[ i ] );
