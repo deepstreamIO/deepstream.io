@@ -13,11 +13,11 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 		this._addSubscriber( socketWrapper, message );
 	}
 
-	if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
+	else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
 		this._removeSubscriber( socketWrapper, message );
 	}
 
-	if( message.action === C.ACTIONS.EVENT ) {
+	else if( message.action === C.ACTIONS.EVENT ) {
 		this._triggerEvent( socketWrapper, message );
 	}
 };
