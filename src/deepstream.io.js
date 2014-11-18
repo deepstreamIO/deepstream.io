@@ -35,7 +35,7 @@ Deepstream.prototype._init = function() {
 	this._messageDistributor = new MessageDistributor( this._options );
 	this._connectionEndpoint.onMessage = this._messageProcessor.process.bind( this._messageProcessor );
 
-	this._eventHandler = new EventHandler( this._connectionEndpoint, this._options );
+	this._eventHandler = new EventHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.EVENT, this._eventHandler.handle.bind( this._eventHandler ) );
 
 	this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind( this._messageDistributor );

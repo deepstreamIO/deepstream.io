@@ -5,13 +5,11 @@ var C = require( '../constants/constants' ),
 /**
  * Handles incoming and outgoing messages for the EVENT topic.
  * 
- * @param {ConnectionEndpoint} connectionEndpoint
  * @param {Object} options deepstream options
  * 
  * @constructor
  */
-var EventHandler = function( connectionEndpoint, options ) {
-	this._connectionEndpoint = connectionEndpoint;
+var EventHandler = function( options ) {
 	this._options = options;
 	this._subscriptionRegistry = new SubscriptionRegistry( options );
 };
@@ -112,7 +110,7 @@ EventHandler.prototype._triggerEvent = function( messageSource, message ) {
  * @returns {Boolean} is valid subscription message
  */
 EventHandler.prototype._validateSubscriptionMessage = function( socketWrapper, message ) {
-	if( message.data.length === 1 && typeof message.data[ 0 ] === 'string' ) {
+	if( message.data && message.data.length === 1 && typeof message.data[ 0 ] === 'string' ) {
 		return true;
 	} else {
 		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
