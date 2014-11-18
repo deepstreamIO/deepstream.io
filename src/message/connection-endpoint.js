@@ -1,5 +1,4 @@
 var C = require( '../constants/constants' ),
-	messageBuilder = require( './message-builder' ),
 	messageParser = require( './message-parser' ),
 	SocketWrapper = require( './socket-wrapper' );
 
