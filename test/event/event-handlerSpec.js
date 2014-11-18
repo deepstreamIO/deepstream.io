@@ -68,6 +68,8 @@ var EventHandler = require( '../../src/event/event-handler' ),
            eventHandler.handle( socketA, eventMessage );
            expect( socketA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.ACK+SEP + C.ACTIONS.SUBSCRIBE + SEP +'someEvent' );
            expect( socketB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent' );
+           expect( messageConnectorMock.lastPublishedTopic ).toBe( 'EVENT' );
+           expect( messageConnectorMock.lastPublishedMessage ).toEqual( eventMessage );
            
            //Raise event from socketB - socket A should be notified
            eventHandler.handle( socketB, eventMessage );
@@ -79,6 +81,8 @@ var EventHandler = require( '../../src/event/event-handler' ),
            eventHandler.handle( socketB, eventMessage );
            expect( socketA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent'+ SEP + 'eventData' );
            expect( socketB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent' );
+           expect( messageConnectorMock.lastPublishedTopic ).toBe( 'EVENT' );
+           expect( messageConnectorMock.lastPublishedMessage ).toEqual( eventMessage );
            
            //Add another socket
            var socketC = new SocketWrapper( new SocketMock() );
@@ -119,6 +123,8 @@ var EventHandler = require( '../../src/event/event-handler' ),
             expect( socketA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.ACK+SEP + C.ACTIONS.SUBSCRIBE + SEP +'someEvent' );
             expect( socketB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.ACK+SEP + C.ACTIONS.UNSUBSCRIBE + SEP +'someEvent' );
             expect( socketC.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent'+ SEP + 'otherData' );
+            expect( messageConnectorMock.lastPublishedTopic ).toBe( 'EVENT' );
+            expect( messageConnectorMock.lastPublishedMessage ).toEqual( eventMessage );
        });
     });
     
