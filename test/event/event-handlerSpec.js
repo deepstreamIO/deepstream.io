@@ -102,9 +102,23 @@ var EventHandler = require( '../../src/event/event-handler' ),
             eventHandler.handle( socketC, subscriptionsMessage );
             
             eventHandler.handle( socketA, eventMessage );
-            expect( socketA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent'+ SEP + 'eventData' );
+            expect( socketA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.ACK+SEP + C.ACTIONS.SUBSCRIBE + SEP +'someEvent' );
             expect( socketB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent'+ SEP + 'eventData' );
             expect( socketC.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent'+ SEP + 'eventData' );
+            
+            subscriptionsMessage.action = C.ACTIONS.UNSUBSCRIBE;
+            eventHandler.handle( socketB, subscriptionsMessage );
+            
+            expect( socketA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.ACK+SEP + C.ACTIONS.SUBSCRIBE + SEP +'someEvent' );
+            expect( socketB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.ACK+SEP + C.ACTIONS.UNSUBSCRIBE + SEP +'someEvent' );
+            expect( socketC.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent'+ SEP + 'eventData' );
+            
+            eventMessage.data[ 1 ] = 'otherData';
+            eventHandler.handle( socketA, eventMessage );
+            
+            expect( socketA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.ACK+SEP + C.ACTIONS.SUBSCRIBE + SEP +'someEvent' );
+            expect( socketB.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.ACK+SEP + C.ACTIONS.UNSUBSCRIBE + SEP +'someEvent' );
+            expect( socketC.socket.lastSendMessage ).toBe( 'EVENT'+SEP+C.ACTIONS.EVENT + SEP +'someEvent'+ SEP + 'otherData' );
        });
     });
     
