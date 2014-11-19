@@ -5,14 +5,14 @@ var C = require( '../constants/constants' );
  * deepstream being both Pub-Sub and anonymous whereas an RPC is direct
  * between to parties.
  *
- * Every deepstream server has two internal topic:
+ * Every deepstream server has two internal topics:
  *
  * C.TOPIC.RPC_QUERY is used to send out rpc-query-requests,
  * asking which other nodes would be able to provide a specific RPC.
  * rpc-query-requests are structured like this
  *
  * {
- * 		topic: C.TOPIC.RPC_QUERY,
+ * 		topic: C.TOPIC.RPC_CTRL,
  * 		action: C.ACTIONS.QUERY,
  * 		data: [{
  * 			rpcName: <rpcName>
@@ -22,8 +22,8 @@ var C = require( '../constants/constants' );
  * Every deepstream server that can provide this rpc replies with
  *
  * {
- * 		topic: TOPIC.RPC_QUERY,
- * 		action: C.ACTIONS.QUERY_RESPONE,
+ * 		topic: TOPIC.RPC_CTRL,
+ * 		action: C.ACTIONS.PROVIDER_UPDATE,
  * 		data:[{
  * 			rpcName: <rpcName>,
  * 			serverName: <serverName>

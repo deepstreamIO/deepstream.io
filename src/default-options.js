@@ -12,7 +12,14 @@ module.exports = {
 	 * Security
 	 */
 	maxAuthAttempts: 3,
-	logInvalidAuthData: true
+	logInvalidAuthData: true,
+	
+	/*
+	 * Timeouts
+	 */
+	rpcProviderCacheTime: 60000,
+	rpcAckTimeout: 100,
+	rpcTimeout: 5000
 };
 
 
