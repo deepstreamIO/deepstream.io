@@ -24,6 +24,7 @@ var MessageDistributor = function( options ) {
 MessageDistributor.prototype.distribute = function( socketWrapper, message ) {
 	if( this._callbacks[ message.topic ] === undefined ) {
 		socketWrapper.sendError( C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic );
+		return;
 	}
 
 	this._callbacks[ message.topic ]( socketWrapper, message );
