@@ -36,6 +36,10 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 	else if( message.action === C.ACTIONS.EVENT ) {
 		this._triggerEvent( socketWrapper, message );
 	}
+
+	else {
+		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
+	}
 };
 
 /**

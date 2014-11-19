@@ -46,6 +46,19 @@ var EventHandler = require( '../../src/event/event-handler' ),
            eventHandler.handle( socketWrapper, invalidMessage );
            expect( socketWrapper.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'E'+SEP+'INVALID_MESSAGE_DATA'+SEP+'rawMessageString' );
        });
+
+       it( 'sends an error for subscription messages with an invalid action', function(){
+           var socketWrapper = new SocketWrapper( new SocketMock() ),
+            invalidMessage = { 
+               topic: C.TOPIC.EVENT, 
+               action: 'giberrish',
+               raw: 'rawMessageString',
+               data: []
+           };
+           
+           eventHandler.handle( socketWrapper, invalidMessage );
+           expect( socketWrapper.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'E'+SEP+'UNKNOWN_ACTION'+SEP+'unknown action giberrish' );
+       });
        
        it( 'subscribes to events', function(){
            var socketWrapper = new SocketWrapper( new SocketMock() );
