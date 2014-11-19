@@ -2,16 +2,18 @@ var C = require( '../constants/constants' );
 
 /**
  * A generic mechanism to handle subscriptions from sockets to topics.
- * A bit like an event-hub, only that it registers socket wrapper rather
+ * A bit like an event-hub, only that it registers SocketWrappers rather
  * than functions
  *
  * @constructor
  *
  * @param {Object} options deepstream options
+ * @param {String} topic one of C.TOPIC
  */
-var SubscriptionRegistry = function( options ) {
+var SubscriptionRegistry = function( options, topic ) {
 	this._subscriptions = {};
 	this._options = options;
+	this._topic = topic;
 };
 
 /**
@@ -53,13 +55,13 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	if( this._subscriptions[ name ].indexOf( socketWrapper ) !== -1 ) {
 		var msg = 'repeat supscription to "' + name + '" by ' + socketWrapper.user; 
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MULTIPLE_SUBSCRIPTIONS, msg );
-		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.MULTIPLE_SUBSCRIPTIONS, name );
+		socketWrapper.sendError( this._topic, C.EVENT.MULTIPLE_SUBSCRIPTIONS, name );
 		return;
 	}
 
 	socketWrapper.socket.once( 'close', this.unsubscribeAll.bind( this, socketWrapper ) );
 	this._subscriptions[ name ].push( socketWrapper );
-	socketWrapper.sendMessage( C.TOPIC.EVENT, C.ACTIONS.ACK, [ C.ACTIONS.SUBSCRIBE, name ] );
+	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ C.ACTIONS.SUBSCRIBE, name ] );
 };
 
 /**
@@ -78,12 +80,12 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 		this._subscriptions[ name ].indexOf( socketWrapper ) === -1 ) {
 		msg = socketWrapper.user + ' is not subscribed to ' + name;
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.NOT_SUBSCRIBED, msg );
-		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.NOT_SUBSCRIBED, name );
+		socketWrapper.sendError( this._topic, C.EVENT.NOT_SUBSCRIBED, name );
 		return;
 	}
 
 	this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
-	socketWrapper.sendMessage( C.TOPIC.EVENT, C.ACTIONS.ACK, [ C.ACTIONS.UNSUBSCRIBE, name ] );
+	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ C.ACTIONS.UNSUBSCRIBE, name ] );
 };
 
 /**
@@ -105,6 +107,14 @@ SubscriptionRegistry.prototype.unsubscribeAll = function( socketWrapper ) {
 		if( index !== -1 ) {
 			this._subscriptions[ name ].splice( index, 1 );
 		}
+	}
+};
+
+SubscriptionRegistry.prototype.getSocketWrappersForSubscription = function( name ) {
+	if( this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0 ) {
+		return this._subscriptions[ name ];
+	} else {
+		return null;
 	}
 };
 

@@ -11,7 +11,7 @@ var C = require( '../constants/constants' ),
  */
 var EventHandler = function( options ) {
 	this._options = options;
-	this._subscriptionRegistry = new SubscriptionRegistry( options );
+	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.EVENT );
 };
 
 /**

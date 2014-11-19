@@ -1,9 +1,10 @@
-var C = require( '../constants/constants' );
+var C = require( '../constants/constants' ),
+	SubscriptionRegistry = require( '../utils/subscription-registry' );
 
 /**
  * The RPC protocol is a bit trickier - due to the messaging behind
- * deepstream being both Pub-Sub and anonymous whereas an RPC is direct
- * between to parties.
+ * deepstream being anonymous pub-sub whereas a remote procedure call requires direct
+ * communication between two parties.
  *
  * Every deepstream server has two internal topics:
  *
@@ -86,8 +87,9 @@ var C = require( '../constants/constants' );
  * If the ack is received, but the response is not returned within <options.rpcTimeout> an
  * error will be sent to the client.
  */
-RpcHandler = function( options ) {
+var RpcHandler = function( options ) {
 	this._options = options;
+	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RPC );
 };
 
 RpcHandler.prototype.handle = function( socketWrapper, message ) {
@@ -109,13 +111,48 @@ RpcHandler.prototype.handle = function( socketWrapper, message ) {
 };
 
 RpcHandler.prototype._registerProvider = function( socketWrapper, message ) {
-
+	if( this._isValidMessage( socketWrapper, message ) ) {
+		this._subscriptionRegistry.subscribe( message.data[ 0 ], socketWrapper );
+	}
 };
 
 RpcHandler.prototype._unregisterProvider = function( socketWrapper, message ) {
-
+	if( this._isValidMessage( socketWrapper, message ) ) {
+		this._subscriptionRegistry.unsubscribe( message.data[ 0 ], socketWrapper );
+	}
 };
 
 RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
+	if( !this._isValidMessage( socketWrapper, message ) ) {
+		return;
+	}
+	
+	var rpcName = message.data[ 0 ],
+		localProviders = this._subscriptionRegistry.getSocketWrappersForSubscription( rpcName ),
+		params = message.data[ 1 ] || null,
+		randomIndex;
+		
+	if( localProviders ) {
+		randomIndex = Math.floor( Math.random() * localProviders.length );
+		this._makeLocalRpc( socketWrapper, localProviders[ randomIndex ], rpcName, params );
+	} else {
+		this._makeRemoteRpc( socketWrapper, rpcName, params );
+	}
+};
 
+RpcHandler.prototype._makeLocalRpc = function( requestor, provider, rpcName, params ) {
+	
+};
+
+RpcHandler.prototype._makeLocalRpc = function( requestor, rpcName, params ) {
+	
+};
+
+RpcHandler.prototype._isValidMessage = function( socketWrapper, message ) {
+	if( message.data && typeof message.data[ 0 ] === 'string' ) {
+		return true;
+	}
+	
+	socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+	return false;
 };

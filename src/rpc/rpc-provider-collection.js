@@ -5,10 +5,10 @@ var RpcProviderCollection = function( options ) {
 
 /**
  * {
- * 			rpcName: <rpcName>,
- * 			serverName: <serverName>
- * 			numberOfProviders: <numberOfProviders>
- * 		}
+ * 		rpcName: <rpcName>,
+ * 		serverName: <serverName>
+ * 		numberOfProviders: <numberOfProviders>
+ * 	}
  */
 RpcProviderCollection.prototype.addProvider = function( providerData ) {
 	this._provider[ providerData.serverName ] = {

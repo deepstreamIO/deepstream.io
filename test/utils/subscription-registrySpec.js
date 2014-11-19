@@ -4,7 +4,7 @@ var SubscriptionRegistry = require( '../../src/utils/subscription-registry' ),
 	lastLogEvent = null,
 	SEP = require( '../../src/constants/constants' ).MESSAGE_PART_SEPERATOR,
 	options = { logger: { log: function( level, event, message ){ lastLogEvent = event; } } },
-	subscriptionRegistry = new SubscriptionRegistry( options );
+	subscriptionRegistry = new SubscriptionRegistry( options, 'EVENT' );
 
 describe( 'subscription-registry manages subscriptions', function(){
 
