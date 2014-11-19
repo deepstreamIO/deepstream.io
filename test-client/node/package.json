@@ -1,0 +1,15 @@
+{
+  "name": "deepstream-testclient-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Wolfram Hempel",
+  "license": "ISC",
+  "private": true,
+  "dependencies": {
+    "engine.io-client": "1.4.2"
+  }
+}
