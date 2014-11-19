@@ -14,8 +14,9 @@ describe( 'message connector distributes messages to callbacks', function(){
 
 	it( 'routes topics to subscribers', function(){
 		expect( testCallback ).not.toHaveBeenCalled();
+		expect( messageConnectorMock.lastSubscribedTopic ).toBe( null );
 		messageDistributor.registerForTopic( 'someTopic', testCallback );
-
+		expect( messageConnectorMock.lastSubscribedTopic ).toBe( 'someTopic' );
 		var socketWrapper = new SocketWrapper( new SocketMock() ),
 			msg = { 'topic': 'someTopic' };
 
