@@ -38,9 +38,15 @@ exports.getMsg = function( topic, action, data ) {
  * @param   {String} type    One of CONSTANTS.EVENT
  * @param   {String} message A generic error message
  *
- * @returns {String} deepstream error message string
+ * @returns {String | Array } deepstream error message string
  */
 exports.getErrorMsg = function( topic, type, message ) {
-	return topic + SEP + 'E' + SEP + type + SEP + message;
+	if( typeof message === 'string' ) {
+		return topic + SEP + 'E' + SEP + type + SEP + message;
+	}
+	
+	if( message instanceof Array ) {
+		return topic + SEP + 'E' + SEP + type + SEP + message.join( SEP );
+	}
 };
 

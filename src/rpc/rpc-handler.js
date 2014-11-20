@@ -21,7 +21,7 @@ RpcHandler.prototype.handle = function( socketWrapper, message ) {
 		this._makeRpc( socketWrapper, message );
 	}
 	
-	else if( message.action !== C.ACTIONS.RESPONSE ) {
+	else if( message.action !== C.ACTIONS.RESPONSE && message.action !== C.ACTIONS.ACK ) {
 		socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 	}
 };
@@ -39,20 +39,20 @@ RpcHandler.prototype._unregisterProvider = function( socketWrapper, message ) {
 };
 
 RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
+	
 	if( !this._isValidMessage( socketWrapper, message ) ) {
 		return;
 	}
 	
 	var rpcName = message.data[ 0 ],
 		localProviders = this._subscriptionRegistry.getSocketWrappersForSubscription( rpcName ),
-		rpcData = message.data[ 1 ] || null,
 		randomIndex;
 		
 	if( localProviders ) {
 		randomIndex = Math.floor( Math.random() * localProviders.length );
-		new LocalRpc( socketWrapper, localProviders[ randomIndex ], rpcName, rpcData );
+		new LocalRpc( socketWrapper, localProviders[ randomIndex ], this._options, message );
 	} else {
-		new RemoteRpc( socketWrapper, rpcName, rpcData );
+		new RemoteRpc( socketWrapper, this._options, message );
 	}
 };
 
