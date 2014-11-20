@@ -1,4 +1,6 @@
-var messageBuilder = require( './message-builder' );
+var messageBuilder = require( './message-builder' ),
+	EventEmitter = require( 'events' ).EventEmitter,
+	utils = require( 'util' ); 
 
 /**
  * This class wraps around an engine.io socket
@@ -6,6 +8,7 @@ var messageBuilder = require( './message-builder' );
  * with deepstreams message structure
  * 
  * @param {engine.io Socket} socket
+ * @extends EventEmitter
  * 
  * @constructor
  */
@@ -15,6 +18,8 @@ var SocketWrapper = function( socket ) {
 	this.authCallBack = null;
 	this.authAttempts = 0;
 };
+
+utils.inherits( SocketWrapper, EventEmitter );
 
 /**
  * Returns a map of parameters that were collected

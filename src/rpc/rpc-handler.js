@@ -9,19 +9,19 @@ var RpcHandler = function( options ) {
 };
 
 RpcHandler.prototype.handle = function( socketWrapper, message ) {
-	if( message.action === C.ACTIONS.PROVIDE ) {
+	if( message.action === C.ACTIONS.SUBSCRIBE ) {
 		this._registerProvider( socketWrapper, message );
 	}
 
-	else if( message.action === C.ACTIONS.UNPROVIDE ) {
+	else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
 		this._unregisterProvider( socketWrapper, message );
 	}
 
-	else if( message.action === C.ACTIONS.RPC ) {
+	else if( message.action === C.ACTIONS.REQUEST ) {
 		this._makeRpc( socketWrapper, message );
 	}
-
-	else {
+	
+	else if( message.action !== C.ACTIONS.RESPONSE ) {
 		socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 	}
 };
@@ -64,3 +64,5 @@ RpcHandler.prototype._isValidMessage = function( socketWrapper, message ) {
 	socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 	return false;
 };
+
+module.exports = RpcHandler;

@@ -1,4 +1,5 @@
-C = require( '../constants/constants' );
+var C = require( '../constants/constants' ),
+	utils = require( '../utils/utils' );
 
 /**
  * Makes a remote procedure call to provider and returns
@@ -12,16 +13,24 @@ C = require( '../constants/constants' );
  * @param {Object} rpcData
  */
 var LocalRpc = function( requestor, provider, rpcName, rpcData ) {
+	this.correlationId = rpcData.correlationId;
+	console.log( arguments );
 	this._requestor = requestor;
 	this._provider = provider;
 	this._rpcName = rpcName;
 	this._rpcData = rpcData;
+	this._onProviderResponseFn = this._processProviderMessage.bind( this );
 
-	this._provider.sendMessage( C.TOPIC.RPC, ACTIONS.RPC, [ rpcName, rpcData ] );
+	this._ackTimeout = setTimeout(function() {}, 10);
+	this._provider.on( C.TOPIC.RPC, this._onProviderResponseFn );
+	this._provider.sendMessage( C.TOPIC.RPC, C.ACTIONS.RPC, [ rpcName, rpcData ] );
+	
 };
 
-LocalRpc.prototype._onProviderResponse = function() {
-
+LocalRpc.prototype._onProviderResponse = function( message ) {
+	if( message.action === C.ACTIONS.ACK && message.data[ 0 ] === this.correlationId ) {
+		
+	}
 };
 
 module.exports = LocalRpc;

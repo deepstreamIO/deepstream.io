@@ -32,6 +32,7 @@ exports.TOPIC.AUTH = 'AUTH';
 exports.TOPIC.ERROR = 'ERROR';
 exports.TOPIC.EVENT = 'EVENT';
 exports.TOPIC.RECORD = 'RECORD';
+exports.TOPIC.RPC = 'RPC';
 exports.TOPIC.RPC_CTRL = 'RPC_CTRL';
 
 exports.ACTIONS = {};
@@ -51,3 +52,4 @@ exports.ACTIONS.RPC = 'RPC';
 exports.ACTIONS.EVENT = 'EVT';
 exports.ACTIONS.ERROR = 'E';
 exports.ACTIONS.REQUEST = 'REQ';
+exports.ACTIONS.RESPONSE = 'RES';

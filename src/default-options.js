@@ -1,7 +1,8 @@
-var argv = require( 'minimist' )( process.argv.slice(2) );
+var argv = require( 'minimist' )( process.argv.slice(2) ),
+	utils = require( './utils/utils' );
 
 module.exports = {
-	serverName: ( Math.random() * 10000000000000000000 ).toString( 36 ),
+	serverName: utils.getUid(),
 	port: argv.port || 6020,
 	host: argv.host || '0.0.0.0',
 	permissionHandler: require( './default-plugins/open-permission-handler' ),

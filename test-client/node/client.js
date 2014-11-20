@@ -9,13 +9,20 @@ var eio = require( 'engine.io-client' ),
 
 console.log( 'Connecting to ' + url + ' ...' );
 
+var send = function( msg ) {
+    console.log( 'OUTGOING', msg );
+    connection.send( msg.replace( /\|/g, String.fromCharCode( 31 ) ) );
+};
+
 connection.on( 'open', function( socket ){
 	console.log( 'connection opened' );
+	send( 'AUTH|REQ|{"user":"wolfram"}' );
 });
 
 connection.on( 'message', function( msg ){
     var regExp = new RegExp( String.fromCharCode(31), 'g');
-    console.log( 'INCOMING', msg.replace( regExp, '|' ) );
+    msg = msg.replace( regExp, '|' );
+    console.log( 'INCOMING', msg );
 });
 
 connection.on( 'error', function( err ){
@@ -36,6 +43,6 @@ rl.on( 'line', function ( cmd ) {
         return;
     }
     
-    var msg = cmd.replace( /\|/g, String.fromCharCode( 31 ) );
-    connection.send( msg );
+    send( cmd );
+    
 });
