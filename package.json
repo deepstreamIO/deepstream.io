@@ -19,7 +19,8 @@
     "minimist": "1.1.0"
   },
   "devDependencies": {
-    "jasmine-node": "1.14.5"
+    "jasmine-node": "1.14.5",
+    "excel": "0.1.1"
   },
   "author": "Wolfram Hempel",
   "license": "MIT",
