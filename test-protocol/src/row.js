@@ -1,51 +1,61 @@
 var EventEmitter = require( 'events' ).EventEmitter,
-	utils = require( 'util' ),
-	colors = require( 'colors' );
+	utils = require( 'util' );
+	
+	require( 'colors' );
 
-var Row = function( row, clients ) {
+var Row = function( data, clients ) {
 	
-	this.results = [];
-	
-	this._data = row;
-	this._pendingTasks = row.length;
+	this._results = [];
+	this._data = data;
 	
 	/**
 	 * Just a comment, move on
 	 */
-	if( row[ 0 ].trim()[ 0 ] === '#' ) {
-		this._done( true );
+	if( data[ 0 ].trim()[ 0 ] === '#' ) {
+		this._done( 0, true );
 	}
-	
-	for( var i = 0; i < row.length; i++ ) {
-		this._processEntry( row[ i ], clients[ i ] );
+
+	for( var i = 0; i < data.length; i++ ) {
+		this._processEntry( i, data[ i ], clients[ i ] );
 	}
 };
 
 utils.inherits( Row, EventEmitter );
 
-Row.prototype._processEntry = function( entry, client ) {
+Row.prototype.isValid = function() {
+	for( var i = 0; i < this._results.length; i++ ) {
+		if( this._results[ i ] !== true ) {
+			return false;
+		}
+	}
 	
+	return true;
+};
+
+Row.prototype._processEntry = function( index, entry, client ) {
 	entry = entry.trim();
 	
 	/**
 	 * Empty String - nothing to do here
 	 */
 	if( entry.length === 0 ) {
-		this._done( true );
-		return;
+		this._done( index, true );
 	}
 	
 	/**
 	 * Outgoing message - send it
 	 */
-	if( entry[ 0 ] === '>' ) {
+	else if( entry[ 0 ] === '>' ) {
 		client.send( this._parseMsg( entry ) );
-		this._done( true );
+		this._done( index, true );
 		return;
 	}
 	
-	if( entry[ 0 ] === '<' ) {
-		client.once( 'message', this._check.bind( this, this._parseMsg( entry ) ) );
+	/**
+	 * Incoming message - subscribe to it
+	 */
+	else if( entry[ 0 ] === '<' ) {
+		client.once( 'message', this._check.bind( this, index, this._parseMsg( entry ) ) );
 	}
 };
 
@@ -53,34 +63,47 @@ Row.prototype._parseMsg = function( entry ) {
 	return entry.substr( 1 ).trim().replace( /\|/g, String.fromCharCode( 31 ) );	
 };
 
-Row.prototype._done = function( result ) {
-	this.results.push( result );
+Row.prototype._done = function( index, result ) {
+	this._results[ index ] = result; 
 
-	if( this.results.length === this._data.length ) {
-		this._log();
-		process.nextTick( this.emit.bind( this, 'done' ) );
+	for( var i = 0; i < this._data.length; i++ ) {
+		if( this._results[ i ] === undefined ) {
+			return;
+		}
+	}
+	
+	process.nextTick( this.emit.bind( this, 'done' ) );
+};
+
+Row.prototype._check = function( index, expected, actual ) {
+	if( expected === actual ) {
+		this._done( index, true );
+	} else {
+		this._done( index, actual );
 	}
 };
 
-Row.prototype._check = function( expected, actual ) {
-	this._done( expected === actual ? true : actual );
-};
-
-Row.prototype._log = function() {
+Row.prototype.log = function( maxEntrySizes ) {
 	var msg = [],
 		part,
-		i;
+		i, j;
 	
 	for( i = 0; i < this._data.length; i++ ) {
-		if( this.results[ i ] === true ) {
-			msg.push( this._data[ i ].green );
+		if( this._results[ i ] === true ) {
+			part = this._data[ i ].green;
 		} else {
-			part = this._data[ i ] + ' (' + this.results[ i ] + ')';
-			msg.push( part.red );
+			part = this._data[ i ] + ' (' + this._results[ i ] + ')';
+			part = part.red;
 		}
 		
-		console.log( msg.join( '  |  ' ) );
+		for( j = part.length; j < maxEntrySizes[ i ]; j++ ) {
+			part += ' ';
+		}
+		
+		msg.push( part );
 	}
+	
+	console.log( msg.join( '|  ' ) );
 };
 
 module.exports = Row;

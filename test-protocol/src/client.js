@@ -27,7 +27,6 @@ Client.prototype._onOpen = function() {
 };
 
 Client.prototype._onMessage = function( msg ) {
-	console.log( msg );
 	this.lastMessage = msg;
 	this.emit( 'message', msg );
 };

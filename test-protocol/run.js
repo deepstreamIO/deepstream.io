@@ -13,7 +13,7 @@ var Runner = function() {
   this._portA = 6014;
   this._portB = 6015;
   
-  console.log( 'starting server...' );
+  this._maxEntrySizes = [];
   
   this._serverA = new Server( this._portA );
   this._serverA.on( 'ready', this._checkReady.bind( this ) );
@@ -24,8 +24,24 @@ var Runner = function() {
   parseXlsx('Protocoll.xlsx', this._onSpec.bind( this ) );
 };
 
+Runner.prototype._calculateMaxEntrySizes = function() {
+  var i, j;
+  
+  for( i = 0; i < this._parsedSpec.length; i++ ) {
+    for( j = 0; j < this._parsedSpec[ i ].length; j++ ) {
+      if( this._maxEntrySizes[ j ] === undefined ) {
+        this._maxEntrySizes[ j ] = 0;
+      }
+      if( this._parsedSpec[ i ][ j ].length > this._maxEntrySizes[ j ] ) {
+        this._maxEntrySizes[ j ] = this._parsedSpec[ i ][ j ].length;
+      }
+    }
+  }
+};
+
+
 Runner.prototype._run = function() {
-  if( this._currentRowIndex === this._parsedSpec.length ) {
+  if( this._currentRowIndex >= this._parsedSpec.length ) {
     this._done();
     return;
   }
@@ -38,28 +54,27 @@ Runner.prototype._run = function() {
 };
 
 Runner.prototype._processResult = function() {
-  var isSuccess = true;
+  this._currentRow.log( this._maxEntrySizes );
   
-  for( var i = 0; i < this._currentRow.results.length; i++ ) {
-    if( this._currentRow.results[ i ] !== true ) {
-      isSuccess = false;
-    }
-  }
-  
-  if( isSuccess ) {
+  if( this._currentRow.isValid() ) {
     this._currentRowIndex++;
     this._clientA1.reset();
     this._clientA2.reset();
     this._clientB1.reset();
     this._run();
   } else {
-    console.log( 'test error' );
-    process.exit();
+    this._failed();
   }
 };
 
+Runner.prototype._failed = function() {
+  console.log( '------ TESTS FAILED ------'.red );
+  process.exit();
+};
+
 Runner.prototype._done = function() {
-  console.log( 'ALL DONE' );
+  console.log( '------ TEST SUCCESFUL ------'.green );
+  process.exit();
 };
 
 Runner.prototype._checkReady = function() {
@@ -79,6 +94,8 @@ Runner.prototype._checkReady = function() {
     this._clientB1.isReady &&
     this._parsedSpec
   ) {
+    this._calculateMaxEntrySizes();
+    console.log( 'INIT' );
     this._run();
   }
 };
@@ -99,7 +116,15 @@ Runner.prototype._onSpec = function( error, data ) {
     throw error;
   }
   
-  this._parsedSpec = data;
+  var validRows = [];
+  
+  for( var i = 0; i < data.length; i++ ) {
+    if( data[ i ].join( '' ).trim().length > 0 ) {
+      validRows.push( data[ i ] );
+    }
+  }
+  
+  this._parsedSpec = validRows;
 };
 
 new Runner();
