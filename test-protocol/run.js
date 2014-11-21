@@ -2,11 +2,11 @@ var parseXlsx = require('excel'),
     Server = require( './src/server' ),
     Client = require( './src/client' ),
     Row = require( './src/row' );
-
+    
 var Runner = function() {
   this._serverReady = false;
   this._parsedSpec = null;
-  
+  this._isRunning = false;
   this._currentRow = null;
   this._currentRowIndex = 0;
   
@@ -92,10 +92,11 @@ Runner.prototype._checkReady = function() {
     this._clientA1.isReady &&
     this._clientA2.isReady &&
     this._clientB1.isReady &&
-    this._parsedSpec
+    this._parsedSpec &&
+    this._isRunning === false
   ) {
+    this._isRunning = true;
     this._calculateMaxEntrySizes();
-    console.log( 'INIT' );
     this._run();
   }
 };

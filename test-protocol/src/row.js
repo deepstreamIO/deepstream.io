@@ -7,11 +7,13 @@ var Row = function( data, clients ) {
 	
 	this._results = [];
 	this._data = data;
+	this._comment = false;
 	
 	/**
 	 * Just a comment, move on
 	 */
 	if( data[ 0 ].trim()[ 0 ] === '#' ) {
+		this._comment = this._parseMsg( data[ 0 ] );
 		this._done( 0, true );
 	}
 
@@ -87,6 +89,12 @@ Row.prototype.log = function( maxEntrySizes ) {
 	var msg = [],
 		part,
 		i, j;
+		
+	if( this._comment ) {
+		console.log( '' );
+		console.log( this._comment );
+		return;
+	}
 	
 	for( i = 0; i < this._data.length; i++ ) {
 		if( this._results[ i ] === true ) {
@@ -96,6 +104,7 @@ Row.prototype.log = function( maxEntrySizes ) {
 			part = part.red;
 		}
 		
+
 		for( j = part.length; j < maxEntrySizes[ i ]; j++ ) {
 			part += ' ';
 		}
