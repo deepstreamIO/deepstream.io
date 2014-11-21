@@ -20,7 +20,8 @@
   },
   "devDependencies": {
     "jasmine-node": "1.14.5",
-    "excel": "0.1.1"
+    "excel": "0.1.1",
+    "engine.io-client": "1.4.2"
   },
   "author": "Wolfram Hempel",
   "license": "MIT",
