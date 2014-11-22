@@ -121,7 +121,7 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
  * @returns {Boolean} isValid
  */
 RpcHandler.prototype._isValidMessage = function( dataLength, socketWrapper, message ) {
-	if( message.data && message.data.length === dataLength && typeof message.data[ 0 ] === 'string' ) {
+	if( message.data && message.data.length >= dataLength && typeof message.data[ 0 ] === 'string' ) {
 		return true;
 	}
 	

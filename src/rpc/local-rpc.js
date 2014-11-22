@@ -19,6 +19,7 @@ var LocalRpc = function( requestor, provider, options, message ) {
 	this._requestor = requestor;
 	this._provider = provider;
 	this._options = options;
+	this._isAcknowledged = false;
 
 	this._onProviderResponseFn = this._processProviderMessage.bind( this );
 
@@ -65,15 +66,49 @@ LocalRpc.prototype._processProviderMessage = function( message ) {
 	}
 	
 	if( message.action === C.ACTIONS.ACK ) {
-		clearTimeout( this._ackTimeout );
-		this._requestor.send( message.raw );
+		this._handleAck( message );
+	} 
+
+	else if ( message.action === C.ACTIONS.RESPONSE ) {
+		this._handleResponse( message );
 	}
-	
-	else if( message.action === C.ACTIONS.RESPONSE ) {
-		clearTimeout( this._responseTimeout );
-		this._requestor.send( message.raw );
-		this.destroy();
+};
+
+/**
+ * Handles rpc acknowledgement messages from the provider.
+ * If more than one Ack is received an error will be returned
+ * to the provider
+ *
+ * @param   {Object} message parsed and validated deepstream message
+ *
+ * @private
+ * @returns {void}
+ */
+LocalRpc.prototype._handleAck = function( message ) {
+	if( this._isAcknowledged === true ) {
+		this._provider.sendError( C.TOPIC.RPC, C.EVENT.MULTIPLE_ACK, [ this._rpcName, this._correlationId ] );
+		return;
 	}
+
+	clearTimeout( this._ackTimeout );
+	this._isAcknowledged = true;
+	this._requestor.send( message.raw );
+};
+
+/**
+ * Forwards response messages from the provider. If the provider
+ * sends more than one response subsequent messages will just
+ * be ignored
+ *
+ * @param   {Object} message parsed and validated deepstream message
+ *
+ * @private
+ * @returns {void}
+ */
+LocalRpc.prototype._handleResponse = function( message ) {
+	clearTimeout( this._responseTimeout );
+	this._requestor.send( message.raw );
+	this.destroy();
 };
 
 /**
