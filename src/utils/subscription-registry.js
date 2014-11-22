@@ -86,7 +86,12 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 		return;
 	}
 
-	this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
+	if( this._subscriptions[ name ].length === 1 ) {
+		delete this._subscriptions[ name ];
+	} else {
+		this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
+	}
+
 	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
 	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.UNSUBSCRIBE, logMsg );
 	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ C.ACTIONS.UNSUBSCRIBE, name ] );
@@ -114,12 +119,54 @@ SubscriptionRegistry.prototype.unsubscribeAll = function( socketWrapper ) {
 	}
 };
 
-SubscriptionRegistry.prototype.getSocketWrappersForSubscription = function( name ) {
-	if( this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0 ) {
+/**
+ * Returns an array of SocketWrappers that are subscribed
+ * to <name> or null if there are no subscribers
+ *
+ * @param   {String} name
+ *
+ * @public
+ * @returns {Array} SocketWrapper[]
+ */
+SubscriptionRegistry.prototype.getSubscribers = function( name ) {
+	if( this.hasSubscribers( name ) ) {
 		return this._subscriptions[ name ];
 	} else {
 		return null;
 	}
+};
+
+/**
+ * Returns a random SocketWrapper out of the array
+ * of SocketWrappers that are subscribed to <name>
+ *
+ * @param   {String} name
+ *
+ * @public
+ * @returns {SocketWrapper}
+ */
+SubscriptionRegistry.prototype.getRandomSubscriber = function( name ) {
+	var subscribers = this.getSubscribers( name );
+
+	if( subscribers ) {
+		return subscribers[ Math.floor( Math.random() * subscribers.length ) ];
+	} else {
+		return null;
+	}
+};
+
+/**
+ * Returns true if there are SocketWrappers that 
+ * are subscribed to <name> or false if there
+ * aren't any subscribers
+ *
+ * @param   {String}  name
+ *
+ * @public
+ * @returns {Boolean} hasSubscribers
+ */
+SubscriptionRegistry.prototype.hasSubscribers = function( name ) {
+	return !!this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0;
 };
 
 module.exports = SubscriptionRegistry;

@@ -98,11 +98,10 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
 	}
 	
 	var rpcName = message.data[ 0 ],
-		localProviders = this._subscriptionRegistry.getSocketWrappersForSubscription( rpcName ),
 		randomLocalProvider;
 		
-	if( localProviders ) {
-		randomLocalProvider = localProviders[ Math.floor( Math.random() * localProviders.length ) ];
+	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
+		randomLocalProvider = this._subscriptionRegistry.getRandomSubscriber( rpcName );
 		new LocalRpc( socketWrapper, randomLocalProvider, this._options, message );
 	} else {
 		new RemoteRpc( socketWrapper, this._options, message );

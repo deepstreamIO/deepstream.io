@@ -27,11 +27,38 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( lastLogEvent ).toBe( 'MULTIPLE_SUBSCRIPTIONS' );
 	});
 
+	it( 'returns the subscribed socket', function(){
+		expect( subscriptionRegistry.getSubscribers( 'someName' ) ).toEqual([ socketWrapperA ]);
+	});
+
+	it( 'determines if it has subscriptions', function(){
+		expect( subscriptionRegistry.hasSubscribers( 'someName' ) ).toBe( true );
+		expect( subscriptionRegistry.hasSubscribers( 'someOtherName' ) ).toBe( false );
+	});
+
 	it( 'distributes messages to multiple subscribers', function(){
 		subscriptionRegistry.subscribe( 'someName', socketWrapperB );
 		subscriptionRegistry.sendToSubscribers( 'someName', 'msg2' );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'msg2' );
 		expect( socketWrapperB.socket.lastSendMessage ).toBe( 'msg2' );
+	});
+
+	it( 'returns a random subscribed socket', function(){
+		expect( subscriptionRegistry.getSubscribers( 'someName' ) ).toEqual([ socketWrapperA, socketWrapperB ]);
+		
+		var returnedA = false,
+			returnedB = false,
+			randomSubscriber,
+			i;
+
+		for( i = 0; i < 100; i++ ) {
+			randomSubscriber = subscriptionRegistry.getRandomSubscriber( 'someName' );
+			if( randomSubscriber === socketWrapperA ) returnedA = true;
+			if( randomSubscriber === socketWrapperB ) returnedB = true;
+		}
+
+		expect( returnedA ).toBe( true );
+		expect( returnedB ).toBe( true );
 	});
 
 	it( 'doesn\'t send message to sender', function(){
