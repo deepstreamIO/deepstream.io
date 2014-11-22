@@ -1,19 +1,21 @@
 var C = require( '../constants/constants' );
 
 /**
- * Makes a remote procedure call to a provider that's connected to this
- * deepstream instance and returns the result to the requestor.
+ * Relays a remote procedure call from a requestor to a provider and routes
+ * the providers response to the requestor. Provider might either be a locally
+ * connected SocketWrapper or a RpcProviderProxy that forwards messages
+ * from a remote provider within the network
  *
  * @param {String|SocketWrapper} requestor SocketWrapper if requested locally, 
  *                                         C.SOURCE_MESSAGE_CONNECTOR if requested
  *                                         by the message connector
- * @param {SocketWrapper} provider  A local socket, able to provide the rpc
+ * @param {SocketWrapper|RpcProviderProxy} provider  A SocketWrapper like class, able to provide the rpc
  * @param {Object} options
  * @param {Object} message
  *
  * @constructor
  */
-var LocalRpc = function( requestor, provider, options, message ) {
+var Rpc = function( requestor, provider, options, message ) {
 	this._rpcName = message.data[ 0 ];
 	this._correlationId = message.data[ 1 ];
 	this._requestor = requestor;
@@ -30,13 +32,13 @@ var LocalRpc = function( requestor, provider, options, message ) {
 };
 
 /**
- * Destryes this LocalRpc, either because its completed
+ * Destroyes this Rpc, either because its completed
  * or because a timeout has occured
  *
  * @public
  * @returns {void}
  */
-LocalRpc.prototype.destroy = function() {
+Rpc.prototype.destroy = function() {
 	this._provider.removeListener( C.TOPIC.RPC, this._onProviderResponseFn );
 	clearTimeout( this._ackTimeout );
 	clearTimeout( this._responseTimeout );
@@ -60,7 +62,7 @@ LocalRpc.prototype.destroy = function() {
  * @private
  * @returns {void}
  */
-LocalRpc.prototype._processProviderMessage = function( message ) {
+Rpc.prototype._processProviderMessage = function( message ) {
 	if( message.data[ 1 ] !== this._correlationId ) {
 		return;
 	}
@@ -84,7 +86,7 @@ LocalRpc.prototype._processProviderMessage = function( message ) {
  * @private
  * @returns {void}
  */
-LocalRpc.prototype._handleAck = function( message ) {
+Rpc.prototype._handleAck = function( message ) {
 	if( this._isAcknowledged === true ) {
 		this._provider.sendError( C.TOPIC.RPC, C.EVENT.MULTIPLE_ACK, [ this._rpcName, this._correlationId ] );
 		return;
@@ -105,7 +107,7 @@ LocalRpc.prototype._handleAck = function( message ) {
  * @private
  * @returns {void}
  */
-LocalRpc.prototype._handleResponse = function( message ) {
+Rpc.prototype._handleResponse = function( message ) {
 	clearTimeout( this._responseTimeout );
 	this._requestor.send( message.raw );
 	this.destroy();
@@ -118,7 +120,7 @@ LocalRpc.prototype._handleResponse = function( message ) {
  * @private
  * @returns {void}
  */
-LocalRpc.prototype._onAckTimeout = function() {
+Rpc.prototype._onAckTimeout = function() {
 	this._requestor.sendError( C.TOPIC.RPC, C.EVENT.ACK_TIMEOUT, [ this._rpcName, this._correlationId ] );
 	this.destroy();
 };
@@ -130,9 +132,9 @@ LocalRpc.prototype._onAckTimeout = function() {
  * @private
  * @returns {void}
  */
-LocalRpc.prototype._onResponseTimeout = function() {
+Rpc.prototype._onResponseTimeout = function() {
 	this._requestor.sendError( C.TOPIC.RPC, C.EVENT.RESPONSE_TIMEOUT, [ this._rpcName, this._correlationId ] );
 	this.destroy();
 };
 
-module.exports = LocalRpc;
+module.exports = Rpc;

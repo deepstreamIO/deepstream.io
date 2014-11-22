@@ -1,5 +1,5 @@
 var C = require( '../../src/constants/constants' ),
-	LocalRpc = require( '../../src/rpc/local-rpc' ),
+	Rpc = require( '../../src/rpc/rpc' ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	SocketMock = require( '../mocks/socket-mock' ),
@@ -28,7 +28,7 @@ var C = require( '../../src/constants/constants' ),
 	makeRpc = function( msg ) {
 		var provider = new SocketWrapper( new SocketMock() ),
 			requestor = new SocketWrapper( new SocketMock() ),
-			localRpc = new LocalRpc( requestor, provider, options, msg );
+			localRpc = new Rpc( requestor, provider, options, msg );
 
 		return {
 			provider: provider,

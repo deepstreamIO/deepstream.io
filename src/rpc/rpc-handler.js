@@ -1,6 +1,6 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	LocalRpc = require( './local-rpc' ),
+	Rpc = require( './rpc' ),
 	RemoteRpc = require( './remote-rpc' );
 
 /**
@@ -98,14 +98,15 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
 	}
 	
 	var rpcName = message.data[ 0 ],
-		randomLocalProvider;
+		provider;
 		
 	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
-		randomLocalProvider = this._subscriptionRegistry.getRandomSubscriber( rpcName );
-		new LocalRpc( socketWrapper, randomLocalProvider, this._options, message );
+		provider = this._subscriptionRegistry.getRandomSubscriber( rpcName );
 	} else {
-		new RemoteRpc( socketWrapper, this._options, message );
+		provider = this._remoteProviderRegistry.getProviderProxy( rpcName );
 	}
+
+	new Rpc( socketWrapper, provider, this._options, message );
 };
 
 /**
