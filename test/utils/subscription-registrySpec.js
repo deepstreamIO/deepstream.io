@@ -21,7 +21,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 	});
 
 	it( 'doesn\'t subscribe twice to the same name', function(){
-		expect( lastLogEvent ).toBe( null );
+		expect( lastLogEvent ).toBe( 'SUBSCRIBE' );
 		subscriptionRegistry.subscribe( 'someName', socketWrapperA );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'E'+SEP+'MULTIPLE_SUBSCRIPTIONS'+SEP+'someName' );
 		expect( lastLogEvent ).toBe( 'MULTIPLE_SUBSCRIPTIONS' );

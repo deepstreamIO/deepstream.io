@@ -61,6 +61,8 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 
 	socketWrapper.socket.once( 'close', this.unsubscribeAll.bind( this, socketWrapper ) );
 	this._subscriptions[ name ].push( socketWrapper );
+	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
+	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.SUBSCRIBE, logMsg );
 	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ C.ACTIONS.SUBSCRIBE, name ] );
 };
 
@@ -85,6 +87,8 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 	}
 
 	this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
+	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
+	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.UNSUBSCRIBE, logMsg );
 	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ C.ACTIONS.UNSUBSCRIBE, name ] );
 };
 
