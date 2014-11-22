@@ -1,7 +1,6 @@
 var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	C = require( '../../src/constants/constants' ),
-	SEP = C.MESSAGE_PART_SEPERATOR,
 	_msg = require( '../test-helper/test-helper' ).msg,
 	SocketMock = require( '../mocks/socket-mock' ),
 	messageConnectorMock = require( '../mocks/message-connector-mock' ),
@@ -23,19 +22,19 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	ackMessage = { 
 		topic: C.TOPIC.RPC, 
 		action: C.ACTIONS.ACK,
-		raw: [ 'RPC', 'A', 'addTwo', '1234' ].join( SEP ),
+		raw: _msg( 'RPC|A|addTwo|1234' ),
 		data: [ 'addTwo', '1234' ]
 	},
 	responseMessage = { 
 		topic: C.TOPIC.RPC, 
 		action: C.ACTIONS.RESPONSE,
-		raw: [ 'RPC', 'RES', 'addTwo', '1234', '12' ].join( SEP ),
+		raw: _msg( 'RPC|RES|addTwo|1234|12' ),
 		data: [ 'addTwo', '1234', '12' ]
 	},
 	additionalResponseMessage = { 
 		topic: C.TOPIC.RPC, 
 		action: C.ACTIONS.RESPONSE,
-		raw: [ 'RPC', 'RES', 'addTwo', '1234', '14' ].join( SEP ),
+		raw: _msg( 'RPC|RES|addTwo|1234|14' ),
 		data: [ 'addTwo', '1234', '14' ]
 	};
 
@@ -50,7 +49,7 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 			};
 
 		rpcHandler.handle( socketWrapper, invalidMessage );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( 'RPC'+SEP+'E'+SEP+'INVALID_MESSAGE_DATA'+SEP+'rawMessageString1' );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'RPC|E|INVALID_MESSAGE_DATA|rawMessageString1' ) );
 	});
 
 	it( 'sends an error for invalid subscription messages ', function(){
@@ -63,7 +62,7 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 			};
 
 		rpcHandler.handle( socketWrapper, invalidMessage );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( 'RPC'+SEP+'E'+SEP+'INVALID_MESSAGE_DATA'+SEP+'rawMessageString2' );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'RPC|E|INVALID_MESSAGE_DATA|rawMessageString2' ) );
 	});
 
 	it( 'sends an error for unknown actions', function(){
