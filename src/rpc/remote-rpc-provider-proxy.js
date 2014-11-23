@@ -1,3 +1,6 @@
+var events = require( 'events' ),
+	utils = require( 'util' );
+
 /**
  * This class exposes an interface that mimicks the behaviour
  * of a SocketWrapper, connected to a local rpc provider, but
@@ -8,5 +11,7 @@
 var RemoteRpcProviderProxy = function() {
 
 };
+
+utils.inherits( RemoteRpcProviderProxy, events.EventEmitter );
 
 module.exports = RemoteRpcProviderProxy;

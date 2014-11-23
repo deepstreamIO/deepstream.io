@@ -7,7 +7,7 @@ var RpcProviderCache = function( options ) {
     this._providerCollections = {};
 };
 
-RpcProviderCache.prototype.getProviderTopic = function( rpcName, callback ) {
+RpcProviderCache.prototype.getProviderProxy = function( rpcName, callback ) {
     if( this._hasProviderForRpcName( rpcName ) ) {
         callback( null, this._getRandomProvider( rpcName ) );
     } else {

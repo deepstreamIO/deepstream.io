@@ -1,7 +1,7 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	Rpc = require( './rpc' ),
-	RemoteRpc = require( './remote-rpc' );
+	RemoteRpcProviderRegistry = require( './remote-rpc-provider-registry' ),
+	Rpc = require( './rpc' );
 
 /**
  * Handles incoming messages for the RPC Topic.
@@ -11,6 +11,7 @@ var C = require( '../constants/constants' ),
 var RpcHandler = function( options ) {
 	this._options = options;
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RPC );
+	this._remoteProviderRegistry = new RemoteRpcProviderRegistry( options );
 };
 
 /**
@@ -102,11 +103,10 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
 		
 	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
 		provider = this._subscriptionRegistry.getRandomSubscriber( rpcName );
+		new Rpc( socketWrapper, provider, this._options, message );
 	} else {
-		provider = this._remoteProviderRegistry.getProviderProxy( rpcName );
+		provider = this._remoteProviderRegistry.getProviderProxy( rpcName, this._makeRemoteRpc.bind( this ) );
 	}
-
-	new Rpc( socketWrapper, provider, this._options, message );
 };
 
 /**
