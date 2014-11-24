@@ -48,7 +48,7 @@ RpcHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 	
 	/*
-	 * Response, Query, Provider update and Ack messages from the provider are processed
+	 * RESPONSE-, QUERY-, PROVIDER_UPDATE and ACK messages from the provider are processed
 	 * by the Rpc class directly
 	 */
 	else if( this._supportedSubActions.indexOf( message.action ) === -1 ) {
@@ -125,6 +125,23 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
 	}
 };
 
+/**
+ * Callback to remoteProviderRegistry.getProviderProxy()
+ *
+ * If a remote provider is available this method will route the rpc to it.
+ * 
+ * If no remote provider could be found this class will return a
+ * NO_RPC_PROVIDER error to the requestor. The RPC won't continue from
+ * thereon
+ *
+ * @param   {SocketWrapper} requestor
+ * @param   {Object} message   RPC Request message
+ * @param   {String} error     null if remote providers are availabe, otherwise one of C.EVENT
+ * @param   {ProviderProxy} provider
+ *
+ * @private
+ * @returns {void}
+ */
 RpcHandler.prototype._makeRemoteRpc = function( requestor, message, error, provider ) {
 
 	if( error !== null ) {
@@ -140,16 +157,52 @@ RpcHandler.prototype._makeRemoteRpc = function( requestor, message, error, provi
 	//new Rpc( requestor, provider, this._options, message );
 };
 
+/**
+ * Callback for messages received from the message connector. Only
+ * provider-queries are processed by this class
+ *
+ * @param   {Object} msg
+ *
+ * @private
+ * @returns {void}
+ */
 RpcHandler.prototype._onMessageConnectorMessage = function( msg ) {
 	if( msg.action === C.ACTIONS.QUERY ) {
 		this._respondToProviderQuery( msg );
 	}
 };
 
+/**
+ * Callback for messages that are send directly to
+ * this deepstream instance.
+ *
+ * Please note: Private messages are generic, so the RPC
+ * specific ones need to be filtered out.
+ *
+ * @param   {Object} msg
+ *
+ * @private
+ * @returns {void}
+ */
 RpcHandler.prototype._onPrivateMessage = function( msg ) {
 	// TODO
 };
 
+/**
+ * Invoked once a provider query message is received.
+ *
+ * Returns a PROVIDER_UPDATE message containing information
+ * about the providers the number of clients connected to this
+ * deepstream instance that can provide <rpcName>
+ *
+ * If none of the connected clients can provide <rpcName> this
+ * method will return.
+ *
+ * @param   {Object} msg provider query message
+ *
+ * @private
+ * @returns {void}
+ */
 RpcHandler.prototype._respondToProviderQuery = function( msg ) {
     var rpcName = msg.data[ 0 ],
     	providers = this._subscriptionRegistry.getSubscribers( rpcName ),
