@@ -32,6 +32,7 @@ exports.EVENT.ACK_TIMEOUT = 'ACK_TIMEOUT';
 exports.EVENT.RESPONSE_TIMEOUT = 'RESPONSE_TIMEOUT';
 exports.EVENT.MULTIPLE_ACK = 'MULTIPLE_ACK';
 exports.EVENT.MULTIPLE_RESPONSE = 'MULTIPLE_RESPONSE';
+exports.EVENT.NO_RPC_PROVIDER = 'NO_RPC_PROVIDER';
 
 exports.TOPIC = {};
 exports.TOPIC.AUTH = 'AUTH';
@@ -39,7 +40,7 @@ exports.TOPIC.ERROR = 'ERROR';
 exports.TOPIC.EVENT = 'EVENT';
 exports.TOPIC.RECORD = 'RECORD';
 exports.TOPIC.RPC = 'RPC';
-exports.TOPIC.RPC_CTRL = 'RPC_CTRL';
+exports.TOPIC.PRIVATE = 'PRIVATE/';
 
 exports.ACTIONS = {};
 exports.ACTIONS.ACK = 'A';
@@ -51,8 +52,8 @@ exports.ACTIONS.SUBSCRIBE = 'S';
 exports.ACTIONS.UNSUBSCRIBE = 'US';
 exports.ACTIONS.INVOKE = 'I';
 exports.ACTIONS.LISTEN = 'L';
-exports.ACTIONS.PROVIDE = 'P';
-exports.ACTIONS.UNPROVIDE = 'UP';
+exports.ACTIONS.PROVIDER_UPDATE = 'PU';
+exports.ACTIONS.QUERY = 'Q';
 exports.ACTIONS.CREATEORREAD = 'CR';
 exports.ACTIONS.RPC = 'RPC';
 exports.ACTIONS.EVENT = 'EVT';

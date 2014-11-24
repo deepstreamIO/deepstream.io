@@ -6,12 +6,12 @@ var RpcProviderCollection = function( options ) {
 /**
  * {
  * 		rpcName: <rpcName>,
- * 		serverName: <serverName>
+ * 		privateTopic: <privateTopic>
  * 		numberOfProviders: <numberOfProviders>
  * 	}
  */
 RpcProviderCollection.prototype.addProvider = function( providerData ) {
-	this._provider[ providerData.serverName ] = {
+	this._provider[ providerData.privateTopic ] = {
 		numberOfProviders: providerData.numberOfProviders,
 		timestamp: Date.now()
 	};
@@ -21,11 +21,11 @@ RpcProviderCollection.prototype.isUpToDate = function() {
 	var cacheTime = this._options.rpcProviderCacheTime,
 		now = Date.now(),
 		result = false,
-		serverName;
+		privateTopic;
 		
-	for( serverName in this._provider ) {
-		if( ( this._provider[ serverName ].timestamp + cacheTime ) < now ) {
-			delete this._provider[ serverName ];
+	for( privateTopic in this._provider ) {
+		if( ( this._provider[ privateTopic ].timestamp + cacheTime ) < now ) {
+			delete this._provider[ privateTopic ];
 		} else {
 			result = true;
 		}
@@ -35,7 +35,8 @@ RpcProviderCollection.prototype.isUpToDate = function() {
 };
 
 RpcProviderCollection.prototype.getRandomProvider = function() {
-	
+	var privateTopics = Object.keys( this._provider );
+	return privateTopics[ Math.floor( Math.random() * privateTopics.length ) ];
 };
 
 module.exports = RpcProviderCollection;

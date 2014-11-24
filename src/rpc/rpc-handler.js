@@ -10,8 +10,17 @@ var C = require( '../constants/constants' ),
  */
 var RpcHandler = function( options ) {
 	this._options = options;
+	this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName;
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RPC );
 	this._remoteProviderRegistry = new RemoteRpcProviderRegistry( options );
+	this._options.messageConnector.subscribe( C.TOPIC.RPC, this._onMessageConnectorMessage.bind( this ) );
+	this._options.messageConnector.subscribe( this._privateTopic, this._onPrivateMessage.bind( this ) );
+	this._supportedSubActions = [ 
+		C.ACTIONS.RESPONSE, 
+		C.ACTIONS.ACK, 
+		C.ACTIONS.PROVIDER_UPDATE, 
+		C.ACTIONS.QUERY 
+	];
 };
 
 /**
@@ -25,6 +34,7 @@ var RpcHandler = function( options ) {
  * @returns {void}
  */
 RpcHandler.prototype.handle = function( socketWrapper, message ) {
+
 	if( message.action === C.ACTIONS.SUBSCRIBE ) {
 		this._registerProvider( socketWrapper, message );
 	}
@@ -38,11 +48,15 @@ RpcHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 	
 	/*
-	 * Response and Ack messages from the provider are processed
-	 * by the LocalRpc class directly
+	 * Response, Query, Provider update and Ack messages from the provider are processed
+	 * by the Rpc class directly
 	 */
-	else if( message.action !== C.ACTIONS.RESPONSE && message.action !== C.ACTIONS.ACK ) {
-		socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
+	else if( this._supportedSubActions.indexOf( message.action ) === -1 ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
+		
+		if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+			socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
+		}
 	}
 };
 
@@ -99,14 +113,63 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
 	}
 	
 	var rpcName = message.data[ 0 ],
+		makeRemoteRpcFn,
 		provider;
 		
 	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
 		provider = this._subscriptionRegistry.getRandomSubscriber( rpcName );
 		new Rpc( socketWrapper, provider, this._options, message );
 	} else {
-		provider = this._remoteProviderRegistry.getProviderProxy( rpcName, this._makeRemoteRpc.bind( this ) );
+		makeRemoteRpcFn = this._makeRemoteRpc.bind( this, socketWrapper, message );
+		provider = this._remoteProviderRegistry.getProviderProxy( rpcName, makeRemoteRpcFn );
 	}
+};
+
+RpcHandler.prototype._makeRemoteRpc = function( requestor, message, error, provider ) {
+
+	if( error !== null ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.NO_RPC_PROVIDER, message.rpcName );
+
+		if( requestor !== C.SOURCE_MESSAGE_CONNECTOR ) {
+			requestor.sendError( C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, message.rpcName );
+		}
+
+		return;
+	}
+
+	//new Rpc( requestor, provider, this._options, message );
+};
+
+RpcHandler.prototype._onMessageConnectorMessage = function( msg ) {
+	if( msg.action === C.ACTIONS.QUERY ) {
+		this._respondToProviderQuery( msg );
+	}
+};
+
+RpcHandler.prototype._onPrivateMessage = function( msg ) {
+	// TODO
+};
+
+RpcHandler.prototype._respondToProviderQuery = function( msg ) {
+    var rpcName = msg.data[ 0 ],
+    	providers = this._subscriptionRegistry.getSubscribers( rpcName ),
+    	queryResponse;
+    
+    if( !providers ) {
+    	return;
+    }
+
+    queryResponse = {
+		topic: C.TOPIC.RPC,
+		action: C.ACTIONS.PROVIDER_UPDATE,
+		data:[{
+			numberOfProviders: providers.length,
+			privateTopic: C.TOPIC.PRIVATE + this._options.serverName,
+			rpcName: rpcName
+		}]
+	};
+
+    this._options.messageConnector.publish( C.TOPIC.RPC, queryResponse );
 };
 
 /**

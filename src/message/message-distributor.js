@@ -23,6 +23,7 @@ var MessageDistributor = function( options ) {
  */
 MessageDistributor.prototype.distribute = function( socketWrapper, message ) {
 	if( this._callbacks[ message.topic ] === undefined ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_TOPIC, message.topic );
 		socketWrapper.sendError( C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic );
 		return;
 	}
@@ -36,7 +37,7 @@ MessageDistributor.prototype.distribute = function( socketWrapper, message ) {
  * to both messages passed to the distribute method as well as messages received
  * from the messageConnector
  *
- * @param   {String}   topic    One of CONSTANTS.TOPIC
+ * @param   {String}   topic    One of C.TOPIC
  * @param   {Function} callback The method that should be called for every message
  *                              on the specified topic. Will be called with socketWrapper
  *                              and message
@@ -50,9 +51,11 @@ MessageDistributor.prototype.registerForTopic = function( topic, callback ) {
 	}
 
 	this._callbacks[ topic ] = callback;
-	this._options.messageConnector.subscribe( topic, function( msg ){ 
-		callback( C.SOURCE_MESSAGE_CONNECTOR, msg ); 
-	});
+	this._options.messageConnector.subscribe( topic, this._forwardMessageConnectorMessage.bind( this, callback ) );
+};
+
+MessageDistributor.prototype._forwardMessageConnectorMessage = function( callback, message ) {
+	callback( C.SOURCE_MESSAGE_CONNECTOR, message );
 };
 
 module.exports = MessageDistributor;

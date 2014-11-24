@@ -1,4 +1,5 @@
-var events = require( 'events' ),
+var C = require( '../constants/constants' ),
+	events = require( 'events' ),
 	utils = require( 'util' );
 
 /**
@@ -8,8 +9,9 @@ var events = require( 'events' ),
  *
  * @constructor
  */
-var RemoteRpcProviderProxy = function() {
-
+var RemoteRpcProviderProxy = function( options, privateTopic ) {
+	this._options = options;
+	this._privateTopic = privateTopic;
 };
 
 utils.inherits( RemoteRpcProviderProxy, events.EventEmitter );

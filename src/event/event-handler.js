@@ -25,6 +25,7 @@ var EventHandler = function( options ) {
  * @returns {void}
  */
 EventHandler.prototype.handle = function( socketWrapper, message ) {
+
 	if( message.action === C.ACTIONS.SUBSCRIBE ) {
 		this._addSubscriber( socketWrapper, message );
 	}
@@ -38,7 +39,11 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	else {
-		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
+
+		if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+			socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
+		}
 	}
 };
 
