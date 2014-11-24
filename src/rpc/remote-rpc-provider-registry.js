@@ -4,6 +4,15 @@ var C = require( '../constants/constants' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	utils = require( 'util' );
 
+/**
+ * This class keeps track of rpc providers that are connected to
+ * OTHER deepstream instances.
+ *
+ * @param {Object} options deepstream options
+ *
+ * @extends EventEmitter
+ * @constructor
+ */
 var RemoteRpcProviderRegistry = function( options ) {
 	this._options = options;
 	this._options.messageConnector.subscribe( C.TOPIC.RPC, this._processRpcMessage.bind( this ) );
@@ -14,6 +23,27 @@ var RemoteRpcProviderRegistry = function( options ) {
 
 utils.inherits( RemoteRpcProviderRegistry, EventEmitter );
 
+/**
+ * The class' only public method. Recieves an rpcName and a callback
+ * that will either be invoked immediatly when the requested remote
+ * rpc provider is already available or after a delay once a query for
+ * providers for <rpcName> has returned the first sucessful result.
+ *
+ * The callback will be invoked with two arguments: error and an instance
+ * of remote-rpc-provider-proxy if error === null
+ *
+ * Please note: Rather than passing the callback around, it will be registered as
+ * a one time listener for the _providerAvailableEvent<rpcName> event. This event will
+ * be invoked either when a remote provider becomes available (e.g. when a PROVIDER_UPDATE message
+ * is received from the messageConnector) or when the query times out without having received
+ * any PROVIDER_UPDATE messages - in this case with a NO_RPC_PROVIDER error.
+ *
+ * @param   {String}   rpcName  
+ * @param   {Function} callback will be invoked with <error> and <rpc-provider-proxy>
+ *
+ * @public
+ * @returns {void}
+ */
 RemoteRpcProviderRegistry.prototype.getProviderProxy = function( rpcName, callback ) {
 	if( this._hasProviderForRpcName( rpcName ) ) {
 		callback( null, this._getProxy( rpcName ) );
@@ -23,23 +53,74 @@ RemoteRpcProviderRegistry.prototype.getProviderProxy = function( rpcName, callba
 	}
 };
 
+/**
+ * Returns a new ProviderProxy instance for an rpc that connects to a randomly
+ * selected deepstream instance
+ *
+ * @param   {String} rpcName
+ *
+ * @private
+ * @returns {ProviderProxy} providerProxy
+ */
 RemoteRpcProviderRegistry.prototype._getProxy = function( rpcName ) {
 	var privateTopic = this._providerCollections[ rpcName ].getRandomProvider();
 	return new ProviderProxy( this._options, privateTopic );
 };
 
+/**
+ * Gate for incoming rpc messages. The only action
+ * that's processed by this class is PROVIDER_UPDATE, all
+ * other messages will be handled by other classes
+ *
+ * @param   {Object} msg message from messageConnector
+ *
+ * @private
+ * @returns {void}
+ */
 RemoteRpcProviderRegistry.prototype._processRpcMessage = function( msg ) {
 	if( msg.action === C.ACTIONS.PROVIDER_UPDATE ) {
 		this._onProviderUpdate( msg.data );
 	}
 };
 
-RemoteRpcProviderRegistry.prototype._onProviderUpdate = function( providerData ) {
-	for( var i = 0; i < providerData.length; i++ ) {
-		this._addProvider( providerData[ i ].rpcName, providerData[ i ] );
+/**
+ * Receives an array with one or more provider registrations
+ * and add them to the registry.
+ *
+ * This method will be called in response to a provider query message,
+ * but can also be called randomly when other deepstream instances decide
+ * to send out an update of their rpc providers
+ *
+ * @param   {Array} providerDataList A list of providerData maps. See _addProvider below 
+ *
+ * @private
+ * @returns {void}
+ */
+RemoteRpcProviderRegistry.prototype._onProviderUpdate = function( providerDataList ) {
+	for( var i = 0; i < providerDataList.length; i++ ) {
+		this._addProvider( providerDataList[ i ].rpcName, providerDataList[ i ] );
 	}
 };
 
+/*
+ * Adds an individual provider to this registry as a result of a PROVIDER_UPDATE
+ * message from the message connector. 
+ * 
+ * Providers for a specific RPC are stored in a RpcProviderCollection.
+ * If no RpcProviderCollection exists yet for the rpcName, a new one will be created.
+ * 
+ * This method also clears any pending query timeouts for <rpcName>
+ *
+ * @param	{String} rpcName
+ * @param   {Object} providerData {
+ *                                	numberOfProviders: <Number>
+									privateTopic: <String>
+									rpcName: <String>
+ *                                }
+ *
+ * @private
+ * @returns {void}
+ */
 RemoteRpcProviderRegistry.prototype._addProvider = function( rpcName, providerData ) {
 	if( !this._providerCollections[ rpcName ] ) {
 		this._providerCollections[ rpcName ] = new RpcProviderCollection( this._options );
@@ -55,11 +136,32 @@ RemoteRpcProviderRegistry.prototype._addProvider = function( rpcName, providerDa
 	this.emit( this._providerAvailableEvent + rpcName, null, this._getProxy( rpcName ) );
 };
 
+/**
+ * Checks if there are already registered remote providers for <rpcName> and if
+ * their registration hasn't expired.
+ *
+ * @param   {String}  rpcName
+ *
+ * @private
+ * @returns {Boolean} has providers
+ */
 RemoteRpcProviderRegistry.prototype._hasProviderForRpcName = function( rpcName ) {
 	return this._providerCollections[ rpcName ] && this._providerCollections[ rpcName ].isUpToDate();
 };
 
-RemoteRpcProviderRegistry.prototype._queryProviders = function( rpcName, callback ) {
+/**
+ * Sends a provider query message to all listening deepstream instances. Clears down any
+ * provider registrations for <rpcName> and starts a timeout after which the query will
+ * fail if no PROVIDER_UPDATES had been received 
+ *
+ * If there's already a provider query in flight, this method won't do anything.
+ *
+ * @param   {String}   rpcName
+ *
+ * @private
+ * @returns {void}
+ */
+RemoteRpcProviderRegistry.prototype._queryProviders = function( rpcName ) {
 	
 	/*
 	 * Query for rpcName is already in flight
@@ -68,6 +170,7 @@ RemoteRpcProviderRegistry.prototype._queryProviders = function( rpcName, callbac
 		return;
 	}
 
+	//@TODO - make sure that the provider collection doesn't need to be destroyed before setting it to null
 	this._providerCollections[ rpcName ] = null;
 	
 	var queryMessage = {
@@ -84,7 +187,22 @@ RemoteRpcProviderRegistry.prototype._queryProviders = function( rpcName, callbac
 	);
 };
 
+/**
+ * Callback that will be invoked if a provider query hadn't received
+ * any results within a configured timeframe. At this point we'll
+ * assume that no provider, whether local or remote, can provide
+ * the rpc the client requested.
+ *
+ * Will invoke tha callback with an error which in turn will notify
+ * all clients waiting for <rpcName> that no provider is available.
+ *
+ * @param   {String} rpcName
+ *
+ * @private
+ * @returns {void}
+ */
 RemoteRpcProviderRegistry.prototype._onProviderQueryTimeout = function( rpcName ) {
+	delete this._queryTimeouts[ rpcName ];
 	this.emit( this._providerAvailableEvent + rpcName, C.EVENT.NO_RPC_PROVIDER );
 };
 
