@@ -1,6 +1,5 @@
 var C = require( '../constants/constants' ),
 	RpcProviderCollection = require( './remote-rpc-provider-collection' ),
-	ProviderProxy = require( './remote-rpc-provider-proxy' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	utils = require( 'util' );
 
@@ -44,27 +43,13 @@ utils.inherits( RemoteRpcProviderRegistry, EventEmitter );
  * @public
  * @returns {void}
  */
-RemoteRpcProviderRegistry.prototype.getProviderProxy = function( rpcName, callback ) {
+RemoteRpcProviderRegistry.prototype.getProviderTopic = function( rpcName, callback ) {
 	if( this._hasProviderForRpcName( rpcName ) ) {
-		callback( null, this._getProxy( rpcName ) );
+		callback( null, this._providerCollections[ rpcName ].getRandomProvider() );
 	} else {
 		this.once( this._providerAvailableEvent + rpcName, callback );
 		this._queryProviders( rpcName );
 	}
-};
-
-/**
- * Returns a new ProviderProxy instance for an rpc that connects to a randomly
- * selected deepstream instance
- *
- * @param   {String} rpcName
- *
- * @private
- * @returns {ProviderProxy} providerProxy
- */
-RemoteRpcProviderRegistry.prototype._getProxy = function( rpcName ) {
-	var privateTopic = this._providerCollections[ rpcName ].getRandomProvider();
-	return new ProviderProxy( this._options, privateTopic );
 };
 
 /**
@@ -133,7 +118,11 @@ RemoteRpcProviderRegistry.prototype._addProvider = function( rpcName, providerDa
 		delete this._queryTimeouts[ rpcName ];
 	}
 
-	this.emit( this._providerAvailableEvent + rpcName, null, this._getProxy( rpcName ) );
+	var event = this._providerAvailableEvent + rpcName,
+		error = null,
+		remoteUrl = this._providerCollections[ rpcName ].getRandomProvider();
+
+	this.emit( event, error, remoteUrl );
 };
 
 /**
@@ -170,7 +159,9 @@ RemoteRpcProviderRegistry.prototype._queryProviders = function( rpcName ) {
 		return;
 	}
 
-	//@TODO - make sure that the provider collection doesn't need to be destroyed before setting it to null
+	/*
+	 * Delete existing provider collection
+	 */
 	this._providerCollections[ rpcName ] = null;
 	
 	var queryMessage = {

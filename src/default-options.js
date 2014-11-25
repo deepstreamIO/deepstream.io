@@ -20,8 +20,6 @@ module.exports = {
 	 */
 	rpcProviderQueryTimeout: 1000,
 	rpcProviderCacheTime: 60000,
-	rpcAckTimeout: 10000, //100
+	rpcAckTimeout: 15000, //100
 	rpcTimeout: 20000 //5000
 };
-
-

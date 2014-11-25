@@ -27,9 +27,12 @@ MessageDistributor.prototype.distribute = function( socketWrapper, message ) {
 		socketWrapper.sendError( C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic );
 		return;
 	}
-	
+
 	socketWrapper.emit( message.topic, message );
-	this._callbacks[ message.topic ]( socketWrapper, message );
+	
+	if( message.isCompleted !== true ) {
+		this._callbacks[ message.topic ]( socketWrapper, message );
+	}
 };
 
 /**

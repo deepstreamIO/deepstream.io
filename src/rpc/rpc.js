@@ -1,4 +1,5 @@
-var C = require( '../constants/constants' );
+var C = require( '../constants/constants' ),
+	RpcProxy = require( './rpc-proxy' );
 
 /**
  * Relays a remote procedure call from a requestor to a provider and routes
@@ -28,7 +29,7 @@ var Rpc = function( requestor, provider, options, message ) {
 	this._ackTimeout = setTimeout( this._onAckTimeout.bind( this ), this._options.rpcAckTimeout );
 	this._responseTimeout = setTimeout( this._onResponseTimeout.bind( this ), this._options.rpcTimeout );
 	this._provider.on( C.TOPIC.RPC, this._onProviderResponseFn );
-	this._provider.send( message.raw );
+	this._provider.send( this._provider instanceof RpcProxy ? message : message.raw );
 };
 
 /**
@@ -40,6 +41,15 @@ var Rpc = function( requestor, provider, options, message ) {
  */
 Rpc.prototype.destroy = function() {
 	this._provider.removeListener( C.TOPIC.RPC, this._onProviderResponseFn );
+	
+	if( this._provider instanceof RpcProxy ) {
+		this._provider.destroy();
+	}
+
+	if( this._requestor instanceof RpcProxy ) {
+		this._requestor.destroy();
+	}
+
 	clearTimeout( this._ackTimeout );
 	clearTimeout( this._responseTimeout );
 };
@@ -94,7 +104,7 @@ Rpc.prototype._handleAck = function( message ) {
 
 	clearTimeout( this._ackTimeout );
 	this._isAcknowledged = true;
-	this._requestor.send( message.raw );
+	this._requestor.send( this._requestor instanceof RpcProxy ? message: message.raw );
 };
 
 /**
@@ -109,7 +119,7 @@ Rpc.prototype._handleAck = function( message ) {
  */
 Rpc.prototype._handleResponse = function( message ) {
 	clearTimeout( this._responseTimeout );
-	this._requestor.send( message.raw );
+	this._requestor.send( this._requestor instanceof RpcProxy ? message: message.raw );
 	this.destroy();
 };
 
