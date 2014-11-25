@@ -66,24 +66,24 @@ describe( 'message parser processes raw messages correctly', function(){
 	});
 
 	it( 'parses rpc messages correctly', function(){
-		expect( messageParser.parse( 'rpc'+y+'I'+y+'addValues'+y+'{"val1":1,"val2":2}' ) ).toEqual([{
-			topic: 'rpc',
-			raw: 'rpc'+y+'I'+y+'addValues'+y+'{"val1":1,"val2":2}',
-			action: 'I',
+		expect( messageParser.parse( 'RPC'+y+'REQ'+y+'addValues'+y+'{"val1":1,"val2":2}' ) ).toEqual([{
+			topic: 'RPC',
+			raw: 'RPC'+y+'REQ'+y+'addValues'+y+'{"val1":1,"val2":2}',
+			action: 'REQ',
 			data: [ 'addValues', '{"val1":1,"val2":2}' ]
 		}]);
 
-		expect( messageParser.parse( 'rpc'+y+'P'+y+'addValues' ) ).toEqual([{
-			topic: 'rpc',
-			raw: 'rpc'+y+'P'+y+'addValues',
-			action: 'P',
+		expect( messageParser.parse( 'RPC'+y+'S'+y+'addValues' ) ).toEqual([{
+			topic: 'RPC',
+			raw: 'RPC'+y+'S'+y+'addValues',
+			action: 'S',
 			data: [ 'addValues' ]
 		}]);
 
-		expect( messageParser.parse( 'rpc'+y+'UP'+y+'addValues' ) ).toEqual([{
-			topic: 'rpc',
-			raw: 'rpc'+y+'UP'+y+'addValues',
-			action: 'UP',
+		expect( messageParser.parse( 'RPC'+y+'US'+y+'addValues' ) ).toEqual([{
+			topic: 'RPC',
+			raw: 'RPC'+y+'US'+y+'addValues',
+			action: 'US',
 			data: [ 'addValues' ]
 		}]);
 	});
@@ -105,7 +105,7 @@ describe( 'message parser processes raw messages correctly', function(){
 	});
 
 	it( 'parses message blocks correctly', function(){
-		var blockMsg = 'record'+y+'C'+y+'user/someId'+y+'{"firstname":"Wolfram"}'+x+'rpc'+y+'P'+y+'addValues'+x+'event'+y+'S'+y+'someEvent';
+		var blockMsg = 'record'+y+'C'+y+'user/someId'+y+'{"firstname":"Wolfram"}'+x+'RPC'+y+'S'+y+'addValues'+x+'event'+y+'S'+y+'someEvent';
 		
 		expect( messageParser.parse( blockMsg ) ).toEqual([{
 			topic: 'record',
@@ -113,9 +113,9 @@ describe( 'message parser processes raw messages correctly', function(){
 			action: 'C',
 			data: [ 'user/someId', '{"firstname":"Wolfram"}' ]
 		},{
-			topic: 'rpc',
-			raw: 'rpc'+y+'P'+y+'addValues',
-			action: 'P',
+			topic: 'RPC',
+			raw: 'RPC'+y+'S'+y+'addValues',
+			action: 'S',
 			data: [ 'addValues' ]
 		},{
 			topic: 'event',

@@ -1,15 +1,23 @@
 var SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
+	loggerMock = require( '../mocks/logger-mock' ),
 	messageConnectorMock = require( '../mocks/message-connector-mock' ),
 	MessageDistributor = require( '../../src/message/message-distributor' ),
 	SEP = require( '../../src/constants/constants' ).MESSAGE_PART_SEPERATOR;
 
+	
+	
 describe( 'message connector distributes messages to callbacks', function(){
 	var messageDistributor,
 		testCallback = jasmine.createSpy( 'testCallback' );
 
 	it( 'creates the message distributor', function(){
-		messageDistributor = new MessageDistributor({ messageConnector: messageConnectorMock });
+		messageConnectorMock.reset();
+		
+		messageDistributor = new MessageDistributor({ 
+			messageConnector: messageConnectorMock,
+			logger: loggerMock
+		});
 	});
 
 	it( 'routes topics to subscribers', function(){

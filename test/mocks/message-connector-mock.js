@@ -4,6 +4,12 @@ var MessageConnectorMock = function() {
     this.lastSubscribedTopic = null;
 };
 
+MessageConnectorMock.prototype.reset = function() {
+    this.lastPublishedTopic = null;
+    this.lastPublishedMessage = null;
+    this.lastSubscribedTopic = null;
+};
+
 MessageConnectorMock.prototype.subscribe = function( topic, callback ) {
 	this.lastSubscribedTopic = topic;
 };
