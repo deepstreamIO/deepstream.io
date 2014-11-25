@@ -39,7 +39,6 @@ RpcProxy.prototype.sendError = function() {
 };
 
 RpcProxy.prototype._processIncomingMessage = function( message ) {
-	console.log( 'PROXY RECEIVE'.yellow, message );
 	if( message.originalTopic !== C.TOPIC.RPC ) {
 		return;
 	}

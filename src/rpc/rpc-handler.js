@@ -15,7 +15,6 @@ var RpcHandler = function( options ) {
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RPC );
 	this._remoteProviderRegistry = new RemoteRpcProviderRegistry( options );
 	this._options.messageConnector.subscribe( C.TOPIC.RPC, this._onMessageConnectorMessage.bind( this ) );
-	console.log( 'SUBSCRIBE TO PRIVATE TOPIC'.yellow, this._privateTopic );
 	this._options.messageConnector.subscribe( this._privateTopic, this._onPrivateMessage.bind( this ) );
 	this._supportedSubActions = [ 
 		C.ACTIONS.RESPONSE, 
@@ -46,7 +45,6 @@ RpcHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	else if( message.action === C.ACTIONS.REQUEST ) {
-		console.log( 'from handle'.yellow );
 		this._makeRpc( socketWrapper, message );
 	}
 	
@@ -110,7 +108,6 @@ RpcHandler.prototype._unregisterProvider = function( socketWrapper, message ) {
  * @returns {void}
  */
 RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
-	console.log( '_makeRpc'.yellow, message );
 	if( !this._isValidMessage( 2, socketWrapper, message ) ) {
 		return;
 	}
