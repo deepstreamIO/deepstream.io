@@ -19,4 +19,4 @@ MessageConnectorMock.prototype.publish = function( topic, message ) {
     this.lastPublishedMessage = message;
 };
 
-module.exports = new MessageConnectorMock();
+module.exports = MessageConnectorMock;
