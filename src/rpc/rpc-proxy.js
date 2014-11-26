@@ -106,6 +106,14 @@ RpcProxy.prototype._processIncomingMessage = function( message ) {
 		return;
 	}
 	
+	/**
+	 * @TODO remove
+	 * this should never happen
+	 */
+	if( !message.originalTopic ) {
+		console.log( message );
+		throw new Error( 'no original topic' );
+	}
 	message.topic = message.originalTopic;
 	
 	this.emit( C.TOPIC.RPC, message );
