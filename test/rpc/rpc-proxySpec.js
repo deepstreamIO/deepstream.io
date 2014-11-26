@@ -29,7 +29,86 @@ describe( 'rpcProxy proxies calls from and to the remote receiver', function(){
 			data: [ 'a', 'b' ],
 			remotePrivateTopic: 'PRIVATE/serverNameA'
 		});
+	});
+	
+	it( 'adds a isCompleted flag after sending the message', function(){
+		var msg = {
+			topic: C.TOPIC.RPC,
+			action: C.ACTIONS.ACK,
+			data: [ 'a', 'b' ]
+		};
 		
+		rpcProxy.send( msg );
+		expect( msg.isCompleted ).toBe( true );
+	});
+	
+	it( 'only processes messages that were meant for it', function() {
+		var cb = jasmine.createSpy( 'cb' );
+	   rpcProxy.on( C.TOPIC.RPC, cb );
+	   
+	   messageConnector.simulateIncomingMessage({
+	   		topic: 'PRIVATE/serverNameA',
+	   		originalTopic: 'notRpc'
+	   });
+	   
+	   expect( cb ).not.toHaveBeenCalled();
+	   
+	    messageConnector.simulateIncomingMessage({
+	   		topic: 'PRIVATE/serverNameA',
+	   		originalTopic: C.TOPIC.RPC,
+	   		data: []
+	   });
+	   
+	    expect( cb ).not.toHaveBeenCalled();
+	    
+	    messageConnector.simulateIncomingMessage({
+	   		topic: 'PRIVATE/serverNameA',
+	   		originalTopic: C.TOPIC.RPC,
+	   		data: [ 'rpcA', 'c' ]
+	   });
+	   
+	    expect( cb ).not.toHaveBeenCalled();
+	    
+	   messageConnector.simulateIncomingMessage({
+	   		topic: 'PRIVATE/serverNameA',
+	   		originalTopic: C.TOPIC.RPC,
+	   		data: [ 'b', 'corIdA' ]
+	   });
+	   
+	    expect( cb ).not.toHaveBeenCalled();
+	    
+	    messageConnector.simulateIncomingMessage({
+	   		topic: 'PRIVATE/serverNameA',
+	   		originalTopic: C.TOPIC.RPC,
+	   		data: [ 'rpcA', 'corIdA' ]
+	   });
+	   
+	    expect( cb ).toHaveBeenCalled();
+	   
+	});
+	
+	it( 'destroys the proxy', function() {
 		
+		var cb = jasmine.createSpy( 'aaa' );
+		
+		rpcProxy.on( C.TOPIC.RPC, cb );
+		
+		messageConnector.simulateIncomingMessage({
+	   		topic: 'PRIVATE/serverNameA',
+	   		originalTopic: C.TOPIC.RPC,
+	   		data: [ 'rpcA', 'corIdA' ]
+	   });
+	   
+	    expect( cb.calls.length ).toBe( 1 );
+	    
+	    rpcProxy.destroy();
+	    
+	   messageConnector.simulateIncomingMessage({
+	   		topic: 'PRIVATE/serverNameA',
+	   		originalTopic: C.TOPIC.RPC,
+	   		data: [ 'rpcA', 'corIdA' ]
+	   });
+	   
+	   expect( cb.calls.length ).toBe( 1 );
 	});
 });

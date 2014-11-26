@@ -26,6 +26,10 @@ MessageConnectorMock.prototype.publish = function( topic, message ) {
     this.lastPublishedMessage = JSON.parse( JSON.stringify( message ) );
 };
 
+MessageConnectorMock.prototype.unsubscribe = function( topic, callback ) {
+    this._eventEmitter.removeListener( topic, callback );
+};
+
 MessageConnectorMock.prototype.simulateIncomingMessage = function( msg ) {
     this._eventEmitter.emit( msg.topic, msg );
 };
