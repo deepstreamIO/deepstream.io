@@ -7,8 +7,14 @@ var deepStream = new Deepstream();
 
 var AmqpConnector = require( 'deepstream.io-msg-amqp' );
 deepStream.set( 'messageConnector', new AmqpConnector({
-	host: 'localhost',
-	port: 5672
+	// Remote
+	login: 'nwixdpxf',
+	vhost: 'nwixdpxf',
+	password: 'JTLFB247N7tTiP6KMGGmGxtMcK0j4TJm',
+	host: 'bunny.cloudamqp.com'
+	// Local
+	// host: 'localhost',
+	// port: 5672
 }));
 
 

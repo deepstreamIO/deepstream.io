@@ -21,7 +21,10 @@ connection.on( 'open', function( socket ){
 
 connection.on( 'message', function( msg ){
     var regExp = new RegExp( String.fromCharCode(31), 'g');
-    msg = msg.replace( regExp, '|' );
+    if( msg ) {
+        msg = msg.replace( regExp, '|' );
+    }
+    
     console.log( 'INCOMING', msg );
 });
 

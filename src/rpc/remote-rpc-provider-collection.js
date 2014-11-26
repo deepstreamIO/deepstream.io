@@ -61,7 +61,7 @@ RpcProviderCollection.prototype.isUpToDate = function() {
 		}
 	}
     
-    return true;
+    return result;
 };
 
 /**
@@ -77,6 +77,11 @@ RpcProviderCollection.prototype.isUpToDate = function() {
  */
 RpcProviderCollection.prototype.getRandomProvider = function() {
 	var privateTopics = Object.keys( this._provider );
+	
+	if( privateTopics.length === 0 ) {
+		return null;
+	}
+	
 	return privateTopics[ Math.floor( Math.random() * privateTopics.length ) ];
 };
 
