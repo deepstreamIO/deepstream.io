@@ -7,6 +7,11 @@ var C = require( '../constants/constants' ),
  * of a SocketWrapper, connected to a local rpc provider, but
  * infact relays calls from and to the message connector - sneaky bugger.
  *
+ * @param {Object} options
+ * @param {String} receiverPrivateTopic
+ * @param {String} rpcName
+ * @param {String} correlationId
+ * 
  * @extends {EventEmitter}
  * @constructor
  */

@@ -19,8 +19,11 @@ MessageConnectorMock.prototype.subscribe = function( topic, callback ) {
 };
 
 MessageConnectorMock.prototype.publish = function( topic, message ) {
+    if( typeof topic !== 'string' ) {
+        throw new Error( 'No topic provided' );
+    }
     this.lastPublishedTopic = topic;
-    this.lastPublishedMessage = message;
+    this.lastPublishedMessage = JSON.parse( JSON.stringify( message ) );
 };
 
 MessageConnectorMock.prototype.simulateIncomingMessage = function( msg ) {
