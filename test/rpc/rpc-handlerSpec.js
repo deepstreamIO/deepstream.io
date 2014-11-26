@@ -5,7 +5,11 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	MessageConnectorMock = require( '../mocks/message-connector-mock' ),
 	loggerMock = require( '../mocks/logger-mock' ),
-	options = { messageConnector: new MessageConnectorMock, logger: loggerMock },
+	options = { 
+		messageConnector: new MessageConnectorMock(), 
+		logger: loggerMock,
+		serverName: 'thisServer'
+	},
 	rpcHandler = new RpcHandler( options ),
 	subscriptionMessage = { 
 		topic: C.TOPIC.RPC, 
@@ -36,6 +40,48 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 		action: C.ACTIONS.RESPONSE,
 		raw: _msg( 'RPC|RES|addTwo|1234|14' ),
 		data: [ 'addTwo', '1234', '14' ]
+	},
+	remoteRequestMessage = { 
+		topic: C.TOPIC.RPC, 
+		action: C.ACTIONS.REQUEST,
+		raw: _msg( 'RPC|REQ|substract|44|{"numA":8, "numB":3}' ),
+		data: [ 'substract', '4', '{"numA":8, "numB":3}' ]
+	},
+	privateRemoteRequestMessage = {
+		topic: 'PRIVATE/remoteTopic',
+		action: C.ACTIONS.REQUEST,
+		originalTopic: C.TOPIC.RPC,
+		remotePrivateTopic: C.TOPIC.PRIVATE + options.serverName,
+		raw: _msg( 'RPC|REQ|substract|44|{"numA":8, "numB":3}' ),
+		data: [ 'substract', '4', '{"numA":8, "numB":3}' ]
+	},
+	providerQueryMessage = {
+		topic: C.TOPIC.RPC,
+		action: C.ACTIONS.QUERY,
+		data: [ 'substract' ]
+	},
+	providerUpdateMessage = {
+		topic: C.TOPIC.RPC,
+		action: C.ACTIONS.PROVIDER_UPDATE,
+		data:[{
+			rpcName: 'substract',
+			numberOfProviders: 2,
+			privateTopic: 'PRIVATE/remoteTopic'
+		}]
+	},
+	privateRemoteAckMessage = {
+		topic: C.TOPIC.PRIVATE + options.serverName,
+		action: C.ACTIONS.ACK,
+		raw: _msg( 'RPC|A|substract|4'),
+		originalTopic: C.TOPIC.RPC,
+		data: [ 'substract', '4' ]
+	},
+	privateRemoteResponseMessage = {
+		topic: C.TOPIC.PRIVATE + options.serverName,
+		action: C.ACTIONS.RESPONSE,
+		raw: _msg( 'RPC|RES|substract|4|5' ),
+		originalTopic: C.TOPIC.RPC,
+		data: [ 'substract', '4', '5' ]
 	};
 
 describe( 'the rpc handler routes remote procedure call related messages', function(){
@@ -124,3 +170,45 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 		expect( provider.socket.lastSendMessage ).toBe( null );
 	});
 });
+
+describe( 'rpc handler routes requests to remote providers', function(){
+	var requestor;
+
+	it( 'executes remote rpcs', function(){
+		options.messageConnector.reset();
+
+		requestor = new SocketWrapper( new SocketMock() );
+		expect( options.messageConnector.lastPublishedMessage ).toBe( null );
+
+		// There are no local providers for the substract rpc
+		rpcHandler.handle( requestor, remoteRequestMessage );
+		expect( options.messageConnector.lastPublishedMessage ).toEqual( providerQueryMessage );
+	});
+
+	it( 'forwards rpc to remote providers', function(){
+		expect( requestor.socket.lastSendMessage ).toBe( null );
+
+		options.messageConnector.simulateIncomingMessage( providerUpdateMessage );
+		expect( requestor.socket.lastSendMessage ).toBe( null );
+		expect( options.messageConnector.lastPublishedMessage ).toEqual( privateRemoteRequestMessage );
+	});
+
+	it( 'forwards ack from remote provider to requestor', function(){
+		expect( requestor.socket.lastSendMessage ).toBe( null );
+
+		options.messageConnector.simulateIncomingMessage( privateRemoteAckMessage );
+		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'RPC|A|substract|4') );
+	});
+
+	it( 'forwards response from remote provider to requestor', function(){
+		options.messageConnector.simulateIncomingMessage( privateRemoteResponseMessage );
+		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'RPC|RES|substract|4|5' ) );
+	});
+
+	it( 'ignores subsequent responses', function(){
+		requestor.socket.lastSendMessage = null;
+		options.messageConnector.simulateIncomingMessage( privateRemoteResponseMessage );
+		expect( requestor.socket.lastSendMessage ).toBe( null );
+	});
+});
+
