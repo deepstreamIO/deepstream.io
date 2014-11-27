@@ -3,6 +3,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	MessageDistributor = require( './message/message-distributor' ),
 	EventHandler = require( './event/event-handler' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
+	RecordHandler = require( './record/record-handler' ),
 	C = require( './constants/constants' ),
 	engine = require('engine.io');
 
@@ -16,6 +17,7 @@ var Deepstream = function() {
 	this._messageDistributor = null;
 	this._eventHandler = null;
 	this._rpcHandler = null;
+	this._recordHandler = null;
 };
 
 Deepstream.prototype.set = function( key, value ) {
@@ -43,6 +45,9 @@ Deepstream.prototype._init = function() {
 	this._rpcHandler = new RpcHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RPC, this._rpcHandler.handle.bind( this._rpcHandler ) );
 	
+	this._recordHandler = new RecordHandler( this._options );
+	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );
+
 	this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind( this._messageDistributor );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'DeepStream started on ' + this._options.host + ':' + this._options.port );
 };
