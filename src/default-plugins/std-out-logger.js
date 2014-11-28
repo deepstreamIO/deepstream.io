@@ -1,4 +1,6 @@
 var StdOutLogger = function() {
+	this.isReady = true;
+	
 	this._logLevelColors = [
 		'white',
 		'green',

@@ -8,6 +8,7 @@ module.exports = {
 	permissionHandler: require( './default-plugins/open-permission-handler' ),
 	logger: require( './default-plugins/std-out-logger' ),
 	messageConnector: require( './default-plugins/noop-message-connector' ),
+	cache: require( './default-plugins/local-cache' ),
 
 	/*
 	 * Security

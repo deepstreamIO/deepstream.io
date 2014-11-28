@@ -68,9 +68,9 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 	var recordName = message.data[ 0 ],
 		onComplete = function( record ) {
 			if( record ) {
-				this._read( record, socketWrapper, message );
+				this._read( record, socketWrapper );
 			} else {
-				this._create( socketWrapper, message );
+				this._create( recordName, socketWrapper );
 			}
 		};
 	
@@ -86,7 +86,7 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._create = function( socketWrapper, message ) {
+RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 
 };
 

@@ -1,12 +1,10 @@
+var Deepstream = require( './src/deepstream.io' ),
+	AmqpConnector = require( 'deepstream.io-msg-amqp' ),
+	RedisConnector = require( 'deepstream.io-redis' );
 
+var deepstream = new Deepstream();
 
-
-var Deepstream = require( './src/deepstream.io' ).Deepstream;
-
-var deepStream = new Deepstream();
-
-var AmqpConnector = require( 'deepstream.io-msg-amqp' );
-deepStream.set( 'messageConnector', new AmqpConnector({
+deepstream.set( 'messageConnector', new AmqpConnector({
 	// Remote
 	login: 'nwixdpxf',
 	vhost: 'nwixdpxf',
@@ -17,6 +15,10 @@ deepStream.set( 'messageConnector', new AmqpConnector({
 	// port: 5672
 }));
 
+deepstream.set( 'cache', new RedisConnector({
+	port: 15010,
+	host: 'pub-redis-15010.us-east-1-4.4.ec2.garantiadata.com',
+	password: 'Arbiter'
+}));
 
-
-( new Deepstream() ).start();
+deepstream.start();

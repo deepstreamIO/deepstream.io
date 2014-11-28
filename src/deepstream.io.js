@@ -4,6 +4,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	EventHandler = require( './event/event-handler' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
+	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	C = require( './constants/constants' ),
 	engine = require('engine.io');
 
@@ -18,6 +19,11 @@ var Deepstream = function() {
 	this._eventHandler = null;
 	this._rpcHandler = null;
 	this._recordHandler = null;
+	this._plugins = [ 
+		'messageConnector',
+		'cache',
+		'logger'
+	];
 };
 
 Deepstream.prototype.set = function( key, value ) {
@@ -29,7 +35,13 @@ Deepstream.prototype.set = function( key, value ) {
 };
 
 Deepstream.prototype.start = function() {
-	this._checkReady();
+	var i,
+		initialiser;
+
+	for( i = 0; i < this._plugins.length; i++ ) {
+		initialiser = new DependencyInitialiser( this._options, this._plugins[ i ] );
+		initialiser.once( 'ready', this._checkReady.bind( this ));
+	}
 };
 
 Deepstream.prototype._init = function() {
@@ -53,13 +65,13 @@ Deepstream.prototype._init = function() {
 };
 
 Deepstream.prototype._checkReady = function() {
-	if( this._options.messageConnector.isReady !== true ) {
-		this._options.messageConnector.once( 'ready', this._checkReady.bind( this ) );
-		return;
+	for( var i = 0; i < this._plugins.length; i++ ) {
+		if( this._options[ this._plugins[ i ] ].isReady !== true ) {
+			return;
+		}
 	}
-
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'messageConnector ready' );
+	
 	this._init();
 };
 
-exports.Deepstream = Deepstream;
+module.exports = Deepstream;
