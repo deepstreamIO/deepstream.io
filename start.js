@@ -10,15 +10,21 @@ deepstream.set( 'messageConnector', new AmqpConnector({
 	vhost: 'nwixdpxf',
 	password: 'JTLFB247N7tTiP6KMGGmGxtMcK0j4TJm',
 	host: 'bunny.cloudamqp.com'
+	
 	// Local
 	// host: 'localhost',
 	// port: 5672
 }));
 
 deepstream.set( 'cache', new RedisConnector({
+	// Remote
 	port: 15010,
 	host: 'pub-redis-15010.us-east-1-4.4.ec2.garantiadata.com',
 	password: 'Arbiter'
+	
+	//Local
+	// port: 6379,
+	// host: 'localhost'
 }));
 
 deepstream.start();

@@ -1,10 +1,12 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	RecordRequest = require( './record-request' );
+	RecordRequest = require( './record-request' ),
+	RecordStateManager = require( './record-state-manager' );
 
 var RecordHandler = function( options ) {
 	this._options = options;
-	this._subscriptionRegistry = new SubscriptionRegistry( C.TOPIC.RECORD, options );
+	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
+	this._recordStateManager = new RecordStateManager( options );
 };
 
 /**
@@ -68,13 +70,13 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 	var recordName = message.data[ 0 ],
 		onComplete = function( record ) {
 			if( record ) {
-				this._read( record, socketWrapper );
+				this._read( recordName, record, socketWrapper );
 			} else {
 				this._create( recordName, socketWrapper );
 			}
 		};
-	
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete );
+
+	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ) );
 };
 
 /**
@@ -87,33 +89,57 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._create = function( recordName, socketWrapper ) {
-
+	var record = {
+		_v: 0,
+		_d: {}
+	};
+	
+	this._options.cache.set( recordName, record, function( error ){
+		if( error ) {
+			this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName );
+			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName );
+		} 
+		else {
+			this._read( recordName, record, socketWrapper );
+		}
+	}.bind( this ));
 };
 
 /**
  * [_createOrRead description]
  *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
+ * @param {String} recordName
+ * @param {Object} record
+ * @param {SocketWrapper} socketWrapper the socket that send the request
  *
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._read = function( record, socketWrapper, message ) {
-
+RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
+	this._subscriptionRegistry.subscribe( recordName, socketWrapper );
+	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ record ] );
 };
 
 /**
  * [_createOrRead description]
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
+ * @param   {Object} message data: [ <record name>, <revision number>, <minified json patch> ]
  *
  * @private
  * @returns {void}
  */
 RecordHandler.prototype._update = function( socketWrapper, message ) {
-
+	if( message.data.length !== 3 ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		return;
+	}
+	
+	var recordName = message.data[ 0 ],
+		revisionNumber = parseInt( message.data[ 1 ], 10 ),
+		minifiedPatch = message.data[ 2 ];
+	
+	this._recordStateManager.update( recordName, revisionNumber, minifiedPatch, socketWrapper );
 };
 
 /**
@@ -129,18 +155,6 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 
 };
 
-/**
- * [_createOrRead description]
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._subscribe = function( socketWrapper, message ) {
-
-};
 
 /**
  * [_createOrRead description]

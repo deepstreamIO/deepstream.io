@@ -9,6 +9,7 @@ module.exports = {
 	logger: require( './default-plugins/std-out-logger' ),
 	messageConnector: require( './default-plugins/noop-message-connector' ),
 	cache: require( './default-plugins/local-cache' ),
+	storage: require( './default-plugins/noop-storage' ),
 
 	/*
 	 * Security

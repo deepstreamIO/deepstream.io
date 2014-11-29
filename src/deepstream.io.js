@@ -21,6 +21,7 @@ var Deepstream = function() {
 	this._recordHandler = null;
 	this._plugins = [ 
 		'messageConnector',
+		'storage',
 		'cache',
 		'logger'
 	];
