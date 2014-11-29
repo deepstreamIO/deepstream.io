@@ -24,7 +24,7 @@ var RecordHandler = function( options ) {
 RecordHandler.prototype.handle = function( socketWrapper, message ) {
 
 	if( !message.data || message.data.length < 1 ) {
-		socket.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 		return;
 	}
 
