@@ -2,9 +2,20 @@ var argv = require( 'minimist' )( process.argv.slice(2) ),
 	utils = require( './utils/utils' );
 
 module.exports = {
+	/*
+	 * General
+	 */
 	serverName: utils.getUid(),
+
+	/*
+	 * Connectivity
+	 */
 	port: argv.port || 6020,
 	host: argv.host || '0.0.0.0',
+
+	/*
+	 * Default Plugins
+	 */
 	permissionHandler: require( './default-plugins/open-permission-handler' ),
 	logger: require( './default-plugins/std-out-logger' ),
 	messageConnector: require( './default-plugins/noop-message-connector' ),

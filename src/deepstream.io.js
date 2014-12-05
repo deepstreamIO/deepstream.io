@@ -36,6 +36,8 @@ Deepstream.prototype.set = function( key, value ) {
 };
 
 Deepstream.prototype.start = function() {
+	this._showStartLogo();
+
 	var i,
 		initialiser;
 
@@ -43,6 +45,18 @@ Deepstream.prototype.start = function() {
 		initialiser = new DependencyInitialiser( this._options, this._plugins[ i ] );
 		initialiser.once( 'ready', this._checkReady.bind( this ));
 	}
+};
+
+Deepstream.prototype._showStartLogo = function() {
+	console.log( ' _____________________________________________________________________________'.yellow );
+	console.log( '                                                                              '.yellow );
+	console.log( '         /                                                             ,      '.yellow );
+	console.log( ' ----__-/----__----__------__---__--_/_---)__----__----__---_--_-----------__-'.yellow );
+	console.log( '   /   /   /___) /___)   /   ) (_ ` /    /   ) /___) /   ) / /  )    /   /   )'.yellow );
+	console.log( ' _(___/___(___ _(___ ___/___/_(__)_(_ __/_____(___ _(___(_/_/__/__o_/___(___/_'.yellow );
+	console.log( '                       /                                                      '.yellow );
+	console.log( '                      /                                                       '.yellow );
+	console.log( '=============================== STARTING... =================================='.yellow );
 };
 
 Deepstream.prototype._init = function() {

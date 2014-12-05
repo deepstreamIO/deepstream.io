@@ -16,6 +16,21 @@ deepstream.set( 'messageConnector', new AmqpConnector({
 	// port: 5672
 }));
 
+deepstream.set( 'permissionHandler', {
+	isValidUser: function( handshakeData, authData, callback ) {
+		if( authData.username === 'Wolfram' ) {
+			callback( null, authData.username );
+		} else {
+			callback( 'Invalid user' );
+		}
+		
+	},
+
+	canPerformAction: function( username, message, callback ) {
+		callback( null, true );
+	}
+});
+
 deepstream.set( 'cache', new RedisConnector({
 	// Remote
 	port: 15010,
