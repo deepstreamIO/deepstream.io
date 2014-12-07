@@ -19,6 +19,7 @@ var Deepstream = function() {
 	this._eventHandler = null;
 	this._rpcHandler = null;
 	this._recordHandler = null;
+	this._initialised = false;
 	this._plugins = [ 
 		'messageConnector',
 		'storage',
@@ -61,6 +62,8 @@ Deepstream.prototype._showStartLogo = function() {
 
 Deepstream.prototype._init = function() {
 	this._engineIo = engine.listen( this._options.port, this._options.host );
+	this._engineIo.on( 'error', this._onEndpointError.bind( this ) );
+
 	this._connectionEndpoint = new ConnectionEndpoint( this._engineIo, this._options );
 	this._messageProcessor = new MessageProcessor( this._options );
 	this._messageDistributor = new MessageDistributor( this._options );
@@ -77,6 +80,8 @@ Deepstream.prototype._init = function() {
 
 	this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind( this._messageDistributor );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'DeepStream started on ' + this._options.host + ':' + this._options.port );
+
+	this._initialised = true;
 };
 
 Deepstream.prototype._checkReady = function() {
@@ -86,7 +91,13 @@ Deepstream.prototype._checkReady = function() {
 		}
 	}
 	
-	this._init();
+	if( this._initialised === false ) {
+		this._init();
+	}
+};
+
+Deepstream.prototype._onEndpointError = function() {
+	console.log( 'endpoint error', arguments );
 };
 
 module.exports = Deepstream;
