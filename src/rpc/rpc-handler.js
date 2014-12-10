@@ -143,21 +143,21 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
  * @returns {void}
  */
 RpcHandler.prototype._makeRemoteRpc = function( requestor, message, error, providerTopic ) {
+	var rpcName = message.data[ 0 ],
+		correlationId = message.data[ 1 ],
+		providerProxy;
 
 	if( error !== null ) {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.NO_RPC_PROVIDER, message.rpcName );
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.NO_RPC_PROVIDER, rpcName );
 
 		if( requestor !== C.SOURCE_MESSAGE_CONNECTOR ) {
-			requestor.sendError( C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, message.rpcName );
+			requestor.sendError( C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ rpcName, correlationId ] );
 		}
 
 		return;
 	}
-
-	var rpcName = message.data[ 0 ],
-		correlationId = message.data[ 1 ],
-		providerProxy = new RpcProxy( this._options, providerTopic, rpcName, correlationId );
-
+	
+	providerProxy = new RpcProxy( this._options, providerTopic, rpcName, correlationId );
 	new Rpc( requestor, providerProxy, this._options, message );
 };
 

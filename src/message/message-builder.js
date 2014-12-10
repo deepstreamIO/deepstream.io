@@ -41,12 +41,12 @@ exports.getMsg = function( topic, action, data ) {
  * @returns {String | Array } deepstream error message string
  */
 exports.getErrorMsg = function( topic, type, message ) {
-	if( typeof message === 'string' ) {
-		return topic + SEP + 'E' + SEP + type + SEP + message;
-	}
-	
 	if( message instanceof Array ) {
 		return topic + SEP + 'E' + SEP + type + SEP + message.join( SEP );
+	}
+	
+	else {
+		return topic + SEP + 'E' + SEP + type + SEP + message;
 	}
 };
 
