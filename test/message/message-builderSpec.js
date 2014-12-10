@@ -24,4 +24,9 @@ describe( 'messageBuilder composes valid deepstream messages', function(){
 		var msg = messageBuilder.getErrorMsg( C.TOPIC.ERROR, C.EVENT.INVALID_MESSAGE_DATA, 'someError' );
 		expect( msg ).toBe( 'ERROR' + SEP + 'E' + SEP + 'INVALID_MESSAGE_DATA' + SEP + 'someError' );
 	});
+
+	it( 'sends messages with missing error message strings', function(){
+		var msg = messageBuilder.getErrorMsg( C.TOPIC.ERROR, C.EVENT.NO_RPC_PROVIDER );
+		expect( msg ).toBe( 'ERROR' + SEP + 'E' + SEP + 'NO_RPC_PROVIDER' + SEP + 'undefined' );
+	});
 });
