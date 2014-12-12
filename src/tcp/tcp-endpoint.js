@@ -18,7 +18,7 @@ var net = require( 'net' ),
 var TcpEndpoint = function( options ) {
 	this._options = options;
 	this._server = net.createServer( {allowHalfOpen: false}, this._onIncomingConnection.bind( this ) );
-	this._server.listen( this._options.host, this._options.port );
+	this._server.listen( this._options.tcpHost, this._options.tcpPort, this._onListen.bind( this ) );
 	this._server.on( 'error', this._onError.bind( this ) );
 };
 
@@ -52,6 +52,10 @@ TcpEndpoint.prototype._onIncomingConnection = function( socket ) {
  */
 TcpEndpoint.prototype._onError = function( error ) {
 	this.emit( 'error', error.toString() );
+};
+
+TcpEndpoint.prototype._onListen = function() {
+	console.log( 'TCP SERVER LISTENING' );//TODO
 };
 
 module.exports = TcpEndpoint;

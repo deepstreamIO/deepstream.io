@@ -12,6 +12,8 @@ module.exports = {
 	 */
 	port: argv.port || 6020,
 	host: argv.host || '0.0.0.0',
+	tcpPort: argv.tcpPort || 6021,
+	tcpHost: argv.tcpHost || '0.0.0.0',
 
 	/*
 	 * Default Plugins
