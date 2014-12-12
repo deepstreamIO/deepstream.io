@@ -44,7 +44,7 @@ MessageProcessor.prototype.onAuthenticatedMessage = function( socketWrapper, mes
 MessageProcessor.prototype.process = function( socketWrapper, message ) {
 	var parsedMessages = messageParser.parse( message ),
 		i;
-
+		console.log( 'RECV', Date.now(), message );
 	for( i = 0; i < parsedMessages.length; i++ ) {
 		
 		if( parsedMessages[ i ] === null ) {

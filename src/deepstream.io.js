@@ -5,8 +5,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
-	C = require( './constants/constants' ),
-	engine = require('engine.io');
+	C = require( './constants/constants' );
 
 	require( 'colors' );
 
@@ -61,10 +60,7 @@ Deepstream.prototype._showStartLogo = function() {
 };
 
 Deepstream.prototype._init = function() {
-	this._engineIo = engine.listen( this._options.port, this._options.host );
-	this._engineIo.on( 'error', this._onEndpointError.bind( this ) );
-
-	this._connectionEndpoint = new ConnectionEndpoint( this._engineIo, this._options );
+	this._connectionEndpoint = new ConnectionEndpoint( this._options );
 	this._messageProcessor = new MessageProcessor( this._options );
 	this._messageDistributor = new MessageDistributor( this._options );
 	this._connectionEndpoint.onMessage = this._messageProcessor.process.bind( this._messageProcessor );
@@ -94,10 +90,6 @@ Deepstream.prototype._checkReady = function() {
 	if( this._initialised === false ) {
 		this._init();
 	}
-};
-
-Deepstream.prototype._onEndpointError = function() {
-	console.log( 'endpoint error', arguments );
 };
 
 module.exports = Deepstream;

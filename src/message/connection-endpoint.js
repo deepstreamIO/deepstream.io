@@ -1,6 +1,8 @@
 var C = require( '../constants/constants' ),
 	messageParser = require( './message-parser' ),
-	SocketWrapper = require( './socket-wrapper' );
+	SocketWrapper = require( './socket-wrapper' ),
+	engine = require('engine.io'),
+	TcpEndpoint = require( '../tcp/tcp-endpoint' );
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -9,13 +11,19 @@ var C = require( '../constants/constants' ),
  *
  * @constructor
  * 
- * @param {engine.io} engineIo
  * @param {Object} options the extended default options
  */
-var ConnectionEndpoint = function( engineIo, options ) {
+var ConnectionEndpoint = function( options ) {
 	this._options = options;
-	this._endPoint = engineIo;
-	this._endPoint.on( 'connection', this._onConnection.bind( this ) );
+
+	this._engineIo = engine.listen( this._options.port, this._options.host );
+	this._engineIo.on( 'error', this._onError.bind( this ) );
+	this._engineIo.on( 'connection', this._onConnection.bind( this ) );
+
+	this._tcpEndpoint = new TcpEndpoint( options );
+	this._tcpEndpoint.on( 'error', this._onError.bind( this ) );
+	this._tcpEndpoint.on( 'connection', this._onConnection.bind( this ) );
+
 	this._timeout = null;
 	this._msgNum = 0;
 	this._authenticatedSockets = [];
@@ -193,6 +201,10 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
 	} else {
 		this._processInvalidAuth( authError, authData, socketWrapper );
 	}
+};
+
+ConnectionEndpoint.prototype._onError = function( error ) {
+	console.log( 'connection error', error ); //TODO
 };
 
 module.exports = ConnectionEndpoint;

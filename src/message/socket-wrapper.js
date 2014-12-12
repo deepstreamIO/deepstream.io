@@ -76,7 +76,7 @@ SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.send = function( msg ) {
+SocketWrapper.prototype.send = function( msg ) {console.log( 'SEND', Date.now(), msg );
 	this.socket.send( msg );
 };
 
