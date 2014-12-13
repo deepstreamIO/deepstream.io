@@ -19,6 +19,7 @@ var TcpSocket = function( options, socket ) {
 	this._socket.setEncoding( 'utf8' );
 	this._socket.setNoDelay( true );
 	this._socket.setKeepAlive( true, 5000 );
+	this._socket.on( 'error', this._onError.bind( this ) );
 	this._socket.on( 'end', this._onDisconnect.bind( this ) );
 	this._socket.on( 'data', this._onData.bind( this ) );
 
@@ -51,7 +52,7 @@ TcpSocket.prototype.send = function( message ) {
 		this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.CLOSED_SOCKET_INTERACTION, errorMsg );
 	}
 	else {
-		this.socket.write( message, 'utf8' );
+		this._socket.write( message, 'utf8' );
 	}
 };
 
@@ -94,7 +95,7 @@ TcpSocket.prototype._onData = function( message ) {
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.CLOSED_SOCKET_INTERACTION, errorMsg );
 		return;
 	}
-
+	
 	this.emit( 'message', message );
 };
 
@@ -110,6 +111,10 @@ TcpSocket.prototype._onData = function( message ) {
 TcpSocket.prototype._onDisconnect = function() {
 	this.emit( 'close' );
 	this._isClosed = true;
+};
+
+TcpSocket.prototype._onError = function( error ) {
+	console.log( 'socket error ', error.toString() ); //TODO
 };
 
 module.exports = TcpSocket;

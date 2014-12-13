@@ -18,7 +18,7 @@ var net = require( 'net' ),
 var TcpEndpoint = function( options ) {
 	this._options = options;
 	this._server = net.createServer( {allowHalfOpen: false}, this._onIncomingConnection.bind( this ) );
-	this._server.listen( this._options.tcpHost, this._options.tcpPort, this._onListen.bind( this ) );
+	this._server.listen( this._options.tcpPort, this._options.tcpHost, this._onListen.bind( this ) );
 	this._server.on( 'error', this._onError.bind( this ) );
 };
 
