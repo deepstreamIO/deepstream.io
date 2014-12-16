@@ -10,4 +10,8 @@ EngineIoMock.prototype.simulateConnection = function() {
 	return socketMock;
 };
 
+EngineIoMock.prototype.listen = function(){
+	return this;
+};
+
 module.exports = new EngineIoMock();

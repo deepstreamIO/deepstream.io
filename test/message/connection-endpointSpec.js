@@ -1,5 +1,6 @@
-var ConnectionEndpoint = require( '../../src/message/connection-endpoint' ),
+var proxyquire = require( 'proxyquire' ).noCallThru(),
 	engineIoMock = require( '../mocks/engine-io-mock' ),
+	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', { 'engine.io': engineIoMock } ),
 	SEP = require( '../../src/constants/constants' ).MESSAGE_PART_SEPERATOR,
 	permissionHandlerMock = require( '../mocks/permission-handler-mock' ),
 	lastAuthenticatedMessage = null,
@@ -15,7 +16,7 @@ options = {
 	logInvalidAuthData: true
 };
 
-connectionEndpoint = new ConnectionEndpoint( engineIoMock, options );
+connectionEndpoint = new ConnectionEndpoint( options );
 
 connectionEndpoint.onMessage = function( socket, message ){
 	lastAuthenticatedMessage = message;
@@ -79,7 +80,7 @@ describe( 'the connection endpoint routes valid auth messages to the permissionH
 		expect( permissionHandlerMock.lastUserValidationQueryArgs.length ).toBe( 3 );
 		expect( permissionHandlerMock.lastUserValidationQueryArgs[ 1 ].user ).toBe( 'wolfram' );
 		expect( lastLoggedMessage.indexOf( 'wolfram' ) ).not.toBe( -1 );
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'invalid authentication data: Invalid User' );
+		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'Invalid User' );
 		expect( socketMock.isDisconnected ).toBe( false );
 	});
 });
@@ -95,11 +96,11 @@ describe( 'disconnects if the number of invalid authentication attempts is excee
 		options.maxAuthAttempts = 3;
 
 		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'invalid authentication data: Invalid User' );
+		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'Invalid User' );
 		expect( socketMock.isDisconnected ).toBe( false );
 
 		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'invalid authentication data: Invalid User' );
+		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'Invalid User' );
 		expect( socketMock.isDisconnected ).toBe( false );
 
 		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );

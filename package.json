@@ -21,7 +21,8 @@
   "devDependencies": {
     "jasmine-node": "1.14.5",
     "excel": "0.1.1",
-    "engine.io-client": "1.4.2"
+    "engine.io-client": "1.4.2",
+    "proxyquire": "1.3.0"
   },
   "author": "Wolfram Hempel",
   "license": "MIT",
