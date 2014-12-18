@@ -1,4 +1,5 @@
-var messageBuilder = require( './message-builder' ),
+var C = require( '../constants/constants' ),
+	messageBuilder = require( './message-builder' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	utils = require( 'util' ); 
 
@@ -12,8 +13,10 @@ var messageBuilder = require( './message-builder' ),
  * 
  * @constructor
  */
-var SocketWrapper = function( socket ) {
+var SocketWrapper = function( socket, options ) {
 	this.socket = socket;
+	this.socket.on( 'close', this._onSocketClose.bind( this ) );
+	this._options = options;
 	this.user = null;
 	this.authCallBack = null;
 	this.authAttempts = 0;
@@ -91,6 +94,16 @@ SocketWrapper.prototype.destroy = function() {
 	this.socket.close( true );
 	this.socket.removeAllListeners();
 	this.authCallBack = null;
+};
+
+/**
+ * Callback for closed sockets
+ *
+ * @private
+ * @returns {void}
+ */
+SocketWrapper.prototype._onSocketClose = function() {
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user );
 };
 
 module.exports = SocketWrapper;

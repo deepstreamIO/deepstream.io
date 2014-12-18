@@ -109,12 +109,17 @@ TcpSocket.prototype._onData = function( message ) {
  * @returns {void}
  */
 TcpSocket.prototype._onDisconnect = function() {
+	if( this._isDisconnected === true ) {
+		return;
+	}
+	
 	this.emit( 'close' );
 	this._isClosed = true;
+	this._isDisconnected = true;
 };
 
 TcpSocket.prototype._onError = function( error ) {
-	console.log( 'socket error ', error.toString() ); //TODO
+	this._onDisconnect();
 };
 
 module.exports = TcpSocket;

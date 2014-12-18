@@ -55,7 +55,7 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
  * @returns {void}
  */
 ConnectionEndpoint.prototype._onConnection = function( socket ) {
-	var socketWrapper = new SocketWrapper( socket );
+	var socketWrapper = new SocketWrapper( socket, this._options );
 	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper );
 	socket.on( 'message', socketWrapper.authCallBack );
 };
