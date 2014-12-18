@@ -27,6 +27,8 @@ var Deepstream = function() {
 	];
 };
 
+process.title = 'deepstream server';
+
 Deepstream.prototype.set = function( key, value ) {
 	if( this._options[ key ] === undefined ) {
 		throw new Error( 'Unknown option "' + key + '"' );
