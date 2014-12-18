@@ -2,14 +2,15 @@ var SubscriptionRegistry = require( '../../src/utils/subscription-registry' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	lastLogEvent = null,
+	socketWrapperOptions = {logger:{ log: function(){}}},
 	SEP = require( '../../src/constants/constants' ).MESSAGE_PART_SEPERATOR,
 	options = { logger: { log: function( level, event, message ){ lastLogEvent = event; } } },
 	subscriptionRegistry = new SubscriptionRegistry( options, 'EVENT' );
 
 describe( 'subscription-registry manages subscriptions', function(){
 
-	var socketWrapperA = new SocketWrapper( new SocketMock() ),
-		socketWrapperB = new SocketWrapper( new SocketMock() );
+	var socketWrapperA = new SocketWrapper( new SocketMock(), socketWrapperOptions ),
+		socketWrapperB = new SocketWrapper( new SocketMock(), socketWrapperOptions );
 
 	it( 'subscribes to names', function(){
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( null );
@@ -87,7 +88,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 	});
 
 	it( 'handles unsubscribes for non existant subscriptions', function(){
-		var newSocketWrapper = new SocketWrapper( new SocketMock() );
+		var newSocketWrapper = new SocketWrapper( new SocketMock(), socketWrapperOptions );
 		subscriptionRegistry.unsubscribe( 'someName', newSocketWrapper );
 		expect( newSocketWrapper.socket.lastSendMessage ).toBe( 'EVENT'+SEP+'E'+SEP+'NOT_SUBSCRIBED'+SEP+'someName' );
 	});
