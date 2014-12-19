@@ -1,5 +1,5 @@
-var constants = require( '../constants/constants' ),
-	SEP = constants.MESSAGE_PART_SEPERATOR;
+var C = require( '../constants/constants' ),
+	SEP = C.MESSAGE_PART_SEPERATOR;
 
 /**
  * Creates a deepstream message string, based on the 
@@ -25,7 +25,7 @@ exports.getMsg = function( topic, action, data ) {
 		}
 	}
 
-	return sendData.join( SEP );
+	return sendData.join( SEP ) + C.MESSAGE_SEPERATOR;
 };
 
 /**
@@ -42,11 +42,11 @@ exports.getMsg = function( topic, action, data ) {
  */
 exports.getErrorMsg = function( topic, type, message ) {
 	if( message instanceof Array ) {
-		return topic + SEP + 'E' + SEP + type + SEP + message.join( SEP );
+		return topic + SEP + 'E' + SEP + type + SEP + message.join( SEP ) + C.MESSAGE_SEPERATOR;
 	}
 	
 	else {
-		return topic + SEP + 'E' + SEP + type + SEP + message;
+		return topic + SEP + 'E' + SEP + type + SEP + message + C.MESSAGE_SEPERATOR;
 	}
 };
 

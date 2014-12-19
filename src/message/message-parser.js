@@ -35,7 +35,9 @@ MessageParser.prototype.parse = function( message ) {
 		i;
 
 	for( i = 0; i < rawMessages.length; i++ ) {
-		parsedMessages.push( this._parseMessage( rawMessages[ i ] ) );
+		if( rawMessages[ i ].length > 2 ) {
+			parsedMessages.push( this._parseMessage( rawMessages[ i ] ) );
+		}
 	}
 
 	return parsedMessages;
