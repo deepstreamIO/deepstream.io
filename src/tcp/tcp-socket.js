@@ -22,6 +22,7 @@ var TcpSocket = function( options, socket ) {
 	this._socket.on( 'error', this._onError.bind( this ) );
 	this._socket.on( 'end', this._onDisconnect.bind( this ) );
 	this._socket.on( 'data', this._onData.bind( this ) );
+	this._messageBuffer = '';
 
 	this.headers = null;
 	this.url = socket.remoteAddress + ':' + socket.remotePort;
@@ -73,29 +74,40 @@ TcpSocket.prototype.close = function() {
 /**
  * Callback for incoming data on the socket
  *
- * @param   {String} message
+ * @param   {String} packet
  *
  * @emits 	{String} message
  *
  * @private
  * @returns {void}
  */
-TcpSocket.prototype._onData = function( message ) {
-	var errorMsg;
+TcpSocket.prototype._onData = function( packet ) {
+	var errorMsg, message;
 
 	if( this._isClosed === true ) {
-		errorMsg = 'Received data on a half closed socket: ' + message;
+		errorMsg = 'Received data on a half closed socket: ' + packet;
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.CLOSED_SOCKET_INTERACTION, errorMsg );
 		return;
 	}
 
-	if( typeof message !== 'string' ) {
+	if( typeof packet !== 'string' ) {
 		errorMsg = 'Received non-string message from socket';
-		//TODO use different event
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.CLOSED_SOCKET_INTERACTION, errorMsg );
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, errorMsg );
+		return;
+	}
+
+	if( packet.charAt( packet.length - 1 ) !== C.MESSAGE_SEPERATOR ) {
+		this._messageBuffer += packet;
 		return;
 	}
 	
+	if( this._messageBuffer.length !== 0 ) {
+		message = this._messageBuffer + packet;
+		this._messageBuffer = '';
+	} else {
+		message = packet;
+	}
+
 	this.emit( 'message', message );
 };
 

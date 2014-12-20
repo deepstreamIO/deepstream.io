@@ -53,7 +53,7 @@ SocketWrapper.prototype.getHandshakeData = function() {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.sendError = function( topic, type, msg ) {console.log( type, Date.now()  );
+SocketWrapper.prototype.sendError = function( topic, type, msg ) {
 	this.socket.send( messageBuilder.getErrorMsg( topic, type, msg ) );
 };
 
@@ -68,7 +68,8 @@ SocketWrapper.prototype.sendError = function( topic, type, msg ) {console.log( t
  * @returns {void}
  */
 SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
-	this.socket.send( messageBuilder.getMsg( topic, action, data ) );
+	var msg = messageBuilder.getMsg( topic, action, data );
+	this.socket.send( msg );
 };
 
 /**
