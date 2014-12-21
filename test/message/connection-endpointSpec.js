@@ -1,7 +1,7 @@
 var proxyquire = require( 'proxyquire' ).noCallThru(),
 	engineIoMock = require( '../mocks/engine-io-mock' ),
 	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', { 'engine.io': engineIoMock } ),
-	SEP = require( '../../src/constants/constants' ).MESSAGE_PART_SEPERATOR,
+	_msg = require( '../test-helper/test-helper' ).msg,
 	permissionHandlerMock = require( '../mocks/permission-handler-mock' ),
 	lastAuthenticatedMessage = null,
 	lastLoggedMessage = null,
@@ -34,7 +34,7 @@ describe( 'the connection endpoint handles invalid auth messages', function(){
 
 		socketMock.emit( 'message', 'gibberish' );
 
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_MSG'+SEP+'invalid authentication message' );
+		expect( socketMock.lastSendMessage ).toBe( _msg( 'AUTH|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
 		expect( socketMock.isDisconnected ).toBe( true );
 	});
 
@@ -55,9 +55,9 @@ describe( 'the connection endpoint handles invalid json', function(){
 		expect( socketMock.lastSendMessage ).toBe( null );
 		expect( socketMock.isDisconnected ).toBe( false );
 
-		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + '{"a":"b}' );
+		socketMock.emit( 'message', _msg( 'AUTH|REQ|{"a":"b}+' ) );
 
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_MSG'+SEP+'invalid authentication message' );
+		expect( socketMock.lastSendMessage ).toBe( _msg( 'AUTH|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
 		expect( socketMock.isDisconnected ).toBe( true );
 	});
 });
@@ -75,12 +75,12 @@ describe( 'the connection endpoint routes valid auth messages to the permissionH
 
 		permissionHandlerMock.nextUserValidationResult = false;
 
-		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );
+		socketMock.emit( 'message', _msg( 'AUTH|REQ|{"user":"wolfram"}+' ) );
 
 		expect( permissionHandlerMock.lastUserValidationQueryArgs.length ).toBe( 3 );
 		expect( permissionHandlerMock.lastUserValidationQueryArgs[ 1 ].user ).toBe( 'wolfram' );
 		expect( lastLoggedMessage.indexOf( 'wolfram' ) ).not.toBe( -1 );
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'Invalid User' );
+		expect( socketMock.lastSendMessage ).toBe( _msg('AUTH|E|INVALID_AUTH_DATA|Invalid User+') );
 		expect( socketMock.isDisconnected ).toBe( false );
 	});
 });
@@ -95,16 +95,16 @@ describe( 'disconnects if the number of invalid authentication attempts is excee
 		permissionHandlerMock.nextUserValidationResult = false;
 		options.maxAuthAttempts = 3;
 
-		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'Invalid User' );
+		socketMock.emit( 'message', _msg( 'AUTH|REQ|{"user":"wolfram"}+' ) );
+		expect( socketMock.lastSendMessage ).toBe( _msg( 'AUTH|E|INVALID_AUTH_DATA|Invalid User+' ) );
 		expect( socketMock.isDisconnected ).toBe( false );
 
-		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'INVALID_AUTH_DATA'+SEP+'Invalid User' );
+		socketMock.emit( 'message', _msg( 'AUTH|REQ|{"user":"wolfram"}+' ) );
+		expect( socketMock.lastSendMessage ).toBe( _msg( 'AUTH|E|INVALID_AUTH_DATA|Invalid User+' ) );
 		expect( socketMock.isDisconnected ).toBe( false );
 
-		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH'+SEP+'E'+SEP+'TOO_MANY_AUTH_ATTEMPTS'+SEP+'too many authentication attempts' );
+		socketMock.emit( 'message', _msg( 'AUTH|REQ|{"user":"wolfram"}+' ) );
+		expect( socketMock.lastSendMessage ).toBe( _msg( 'AUTH|E|TOO_MANY_AUTH_ATTEMPTS|too many authentication attempts+' ) );
 		expect( socketMock.isDisconnected ).toBe( true );
 	});
 });
@@ -117,7 +117,7 @@ describe( 'doesn\'t log credentials if logInvalidAuthData is set to false', func
 
 	it( 'handles valid auth messages', function(){
 		permissionHandlerMock.nextUserValidationResult = false;
-		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );
+		socketMock.emit( 'message', _msg( 'AUTH|REQ|{"user":"wolfram"}+' ) );
 		expect( lastLoggedMessage.indexOf( 'wolfram' ) ).toBe( -1 );
 	});
 });
@@ -134,9 +134,9 @@ describe( 'the connection endpoint routes valid auth messages to the permissionH
 
 		permissionHandlerMock.nextUserValidationResult = true;
 
-		socketMock.emit( 'message', 'AUTH' + SEP + 'REQ' + SEP + '{"user":"wolfram"}' );
+		socketMock.emit( 'message', _msg( 'AUTH|REQ|{"user":"wolfram"}+' ) );
 
-		expect( socketMock.lastSendMessage ).toBe( 'AUTH' + SEP + 'A' );
+		expect( socketMock.lastSendMessage ).toBe( _msg( 'AUTH|A+' ) );
 		expect( socketMock.isDisconnected ).toBe( false );
 	});
 

@@ -68,8 +68,7 @@ SocketWrapper.prototype.sendError = function( topic, type, msg ) {
  * @returns {void}
  */
 SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
-	var msg = messageBuilder.getMsg( topic, action, data );
-	this.socket.send( msg );
+	this.socket.send( messageBuilder.getMsg( topic, action, data ) );
 };
 
 /**
@@ -81,7 +80,11 @@ SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
  * @returns {void}
  */
 SocketWrapper.prototype.send = function( msg ) {
-	this.socket.send( msg + C.MESSAGE_SEPERATOR );
+	if( msg.charAt( msg.length - 1 ) !== C.MESSAGE_SEPERATOR ) {
+		msg += C.MESSAGE_SEPERATOR;
+	}
+	
+	this.socket.send( msg );
 };
 
 /**

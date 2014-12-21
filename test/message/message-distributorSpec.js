@@ -3,7 +3,7 @@ var SocketMock = require( '../mocks/socket-mock' ),
 	loggerMock = require( '../mocks/logger-mock' ),
 	messageConnectorMock = new (require( '../mocks/message-connector-mock' ))(),
 	MessageDistributor = require( '../../src/message/message-distributor' ),
-	SEP = require( '../../src/constants/constants' ).MESSAGE_PART_SEPERATOR;
+	_msg = require( '../test-helper/test-helper' ).msg;
 
 	
 	
@@ -57,6 +57,6 @@ describe( 'message connector distributes messages to callbacks', function(){
 			msg = { 'topic': 'gibberish' };
 		expect( socketWrapper.socket.lastSendMessage ).toBe( null );
 		messageDistributor.distribute( socketWrapper, msg );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( 'ERROR'+SEP+'E'+SEP+'UNKNOWN_TOPIC'+SEP+'gibberish' );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'ERROR|E|UNKNOWN_TOPIC|gibberish+' ) );
 	});
 });
