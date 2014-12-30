@@ -1,5 +1,6 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
+	messageParser = require( '../message/message-parser' ),
 	RecordRequest = require( './record-request' ),
 	RecordStateManager = require( './record-state-manager' );
 
@@ -117,14 +118,14 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
  */
 RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
 	this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ record ] );
+	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d ] );
 };
 
 /**
  * [_createOrRead description]
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message data: [ <record name>, <revision number>, <minified json patch> ]
+ * @param   {Object} message data: [ <record name>, <revision number>, <record data> ]
  *
  * @private
  * @returns {void}
@@ -137,9 +138,32 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	
 	var recordName = message.data[ 0 ],
 		revisionNumber = parseInt( message.data[ 1 ], 10 ),
-		minifiedPatch = message.data[ 2 ];
+		recordData = JSON.parse( message.data[ 2 ] );
 	
-	this._recordStateManager.update( recordName, revisionNumber, minifiedPatch, socketWrapper );
+	this._recordStateManager.update( recordName, revisionNumber, recordData, socketWrapper );
+};
+
+/**
+ * [_createOrRead description]
+ *
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message data: [ <record name>, <revision number>, <minified json patch> ]
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._patch = function( socketWrapper, message ) {
+	if( message.data.length !== 4 ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		return;
+	}
+	
+	var recordName = message.data[ 0 ],
+		revisionNumber = parseInt( message.data[ 1 ], 10 ),
+		path = message.data[ 2 ],
+		data = messageParser.convertTyped( message.data[ 3 ] );
+	
+	this._recordStateManager.patch( recordName, revisionNumber, path, data, socketWrapper );
 };
 
 /**

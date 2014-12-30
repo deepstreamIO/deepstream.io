@@ -44,6 +44,51 @@ MessageParser.prototype.parse = function( message ) {
 };
 
 /**
+ * Deserializes values created by MessageBuilder.typed to
+ * their original format
+ * 
+ * @param {String} value
+ *
+ * @public
+ * @returns {Mixed} original value
+ */
+MessageParser.prototype.convertTyped = function( value ) {
+	var type = value.charAt( 0 );
+	
+	if( type === C.TYPES.STRING ) {
+		return value.substr( 1 );
+	}
+	
+	if( type === C.TYPES.OBJECT ) {
+		try{
+			return JSON.parse( value.substr( 1 ) );
+		} catch( e ) {
+			client._$onError( C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, e.toString() + '(' + value + ')' );
+		}
+	}
+	
+	if( type === C.TYPES.NUMBER ) {
+		return parseFloat( value.substr( 1 ) );
+	}
+	
+	if( type === C.TYPES.NULL ) {
+		return null;
+	}
+	
+	if( type === C.TYPES.TRUE ) {
+		return true;
+	}
+	
+	if( type === C.TYPES.FALSE ) {
+		return false;
+	}
+	
+	if( type === C.TYPES.UNDEFINED ) {
+		return undefined;
+	}
+};
+
+/**
  * Turns the ACTION:SHORTCODE constants map
  * around to facilitate shortcode lookup
  *
