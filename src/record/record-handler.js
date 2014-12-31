@@ -2,12 +2,12 @@ var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
 	messageParser = require( '../message/message-parser' ),
 	RecordRequest = require( './record-request' ),
-	RecordStateManager = require( './record-state-manager' );
+	RecordTransition = require( './record-transition' );
 
 var RecordHandler = function( options ) {
 	this._options = options;
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
-	this._recordStateManager = new RecordStateManager( options );
+	this._transitions = [];
 };
 
 /**
@@ -33,7 +33,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 		this._createOrRead( socketWrapper, message );
 	}
 
-	else if( message.action === C.ACTIONS.UPDATE ) {
+	else if( message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH ) {
 		this._update( socketWrapper, message );
 	}
 
@@ -121,49 +121,38 @@ RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
 	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d ] );
 };
 
-/**
- * [_createOrRead description]
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message data: [ <record name>, <revision number>, <record data> ]
- *
- * @private
- * @returns {void}
- */
 RecordHandler.prototype._update = function( socketWrapper, message ) {
-	if( message.data.length !== 3 ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+	if( message.data.length < 3 ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[ 0 ] );
 		return;
 	}
-	
+
 	var recordName = message.data[ 0 ],
-		revisionNumber = parseInt( message.data[ 1 ], 10 ),
-		recordData = JSON.parse( message.data[ 2 ] );
-	
-	this._recordStateManager.update( recordName, revisionNumber, recordData, socketWrapper );
+		version = parseInt( message.data[ 1 ], 10 );
+
+	if( isNaN( version ) ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, version );
+		return;
+	}
+
+	if( this._transitions[ recordName ] && this._transitions[ recordName ].hasVersion( version ) ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, version );
+		return;
+	}
+
+	if( !this._transitions[ recordName ] ) {
+		this._transitions[ recordName ] = new RecordTransition( recordName, this._options, this );
+	}
+
+	this._transitions[ recordName ].add( socketWrapper, version, message );
 };
 
-/**
- * [_createOrRead description]
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message data: [ <record name>, <revision number>, <minified json patch> ]
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._patch = function( socketWrapper, message ) {
-	if( message.data.length !== 4 ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
-		return;
-	}
-	
-	var recordName = message.data[ 0 ],
-		revisionNumber = parseInt( message.data[ 1 ], 10 ),
-		path = message.data[ 2 ],
-		data = messageParser.convertTyped( message.data[ 3 ] );
-	
-	this._recordStateManager.patch( recordName, revisionNumber, path, data, socketWrapper );
+RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSender ) {
+	this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
+};
+
+RecordHandler.prototype._$transitionComplete = function( recordName ) {
+	delete this._transitions[ recordName ];
 };
 
 /**
