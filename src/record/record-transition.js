@@ -111,7 +111,7 @@ RecordTransition.prototype._onCacheResponse = function( error ) {
 		console.log( error );
 		//TODO
 	} else {
-		this._recordHandler._$broadcastUpdate( this._name, this._currentStep.message, this._currentStep.socketWrapper );
+		this._recordHandler._$broadcastUpdate( this._name, this._currentStep.message, this._currentStep.sender );
 		this._next();
 	}
 };
