@@ -12,4 +12,9 @@ LocalCache.prototype.get = function( key, callback ) {
 	callback( null, this._data[ key ] || null );
 };
 
+LocalCache.prototype.delete = function( key, callback ) {
+	delete this._data[ key ];
+	callback( null );
+};
+
 module.exports = new LocalCache();

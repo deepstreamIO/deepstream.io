@@ -1,6 +1,7 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
 	messageParser = require( '../message/message-parser' ),
+	messageBuilder = require( '../message/message-builder' ),
 	RecordRequest = require( './record-request' ),
 	RecordTransition = require( './record-transition' );
 
@@ -220,7 +221,8 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
 };
 
 /**
- * [_createOrRead description]
+ * Deletes a record. If a transition is in progress it will be stopped. Once the
+ * deletion is complete, an Ack is returned.
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
@@ -229,7 +231,32 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
  * @returns {void}
  */
 RecordHandler.prototype._delete = function( socketWrapper, message ) {
+	var recordName = message.data[ 0 ],
+		done = 0,
+		checkDone = function( error ) {
+			if( error ) {
+				socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_DELETE_ERROR, error );
+				this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_DELETE_ERROR, error );
+				return;
+			}
 
+			done++;
+
+			if( done === 2 ) {
+				this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.RECORD_DELETION, recordName );
+				var msg = messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.ACK, [ C.ACTIONS.DELETE, recordName ] );
+				socketWrapper.send( msg );
+				this._subscriptionRegistry.sendToSubscribers( recordName, msg, socketWrapper );
+			}
+		}.bind( this );
+
+	if( this._transitions[ recordName ] ) {
+		this._transitions[ recordName ].destroy();
+		delete this._transitions[ recordName ];
+	}
+
+	this._options.cache.delete( recordName, checkDone );
+	this._options.storage.delete( recordName, checkDone );
 };
 
 /**

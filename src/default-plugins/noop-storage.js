@@ -3,4 +3,5 @@ exports.get = function( key, callback ) {
 };
 
 exports.set = function(){};
+exports.delete = function( key, callback ){ callback( null ); };
 exports.isReady = true;
