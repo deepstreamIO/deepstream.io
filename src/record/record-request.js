@@ -1,5 +1,20 @@
 var C = require( '../constants/constants' );
 
+/**
+ * This class retrieves a single record from the cache or - if it isn't in the
+ * cache - from storage. If it isn't there either it will notify its initiator
+ * by passing null to onComplete (but not call onError).
+ *
+ * It also handles all the timeout and destruction steps around this operation
+ *
+ * @param {String} recordName 			the unique name of the record
+ * @param {Object} options 				deepstream options
+ * @param {SocketWrapper} socketWrapper the sender whos message initiated the recordRequest
+ * @param {Function} onComplete    		callback for successful requests (even if the record wasn't found)
+ * @param {[Function]} onError       		callback for errors
+ *
+ * @constructor
+ */
 var RecordRequest = function( recordName, options, socketWrapper, onComplete, onError ) {
 	this._recordName = recordName;
 	this._options = options;
@@ -16,7 +31,15 @@ var RecordRequest = function( recordName, options, socketWrapper, onComplete, on
 	this._options.cache.get( this._recordName, this._onCacheResponse.bind( this ) );
 };
 
-
+/**
+ * Callback for responses returned by the cache connector
+ *
+ * @param   {String} error  null if no error has occured
+ * @param   {Object} record the record data structure, e.g. { _v: 33, _d: { some: 'data' } }
+ *
+ * @private
+ * @returns {void}
+ */
 RecordRequest.prototype._onCacheResponse = function( error, record ) {
 	clearTimeout( this._cacheRetrievalTimeout );
 
@@ -36,6 +59,16 @@ RecordRequest.prototype._onCacheResponse = function( error, record ) {
 	}
 };
 
+/**
+ * Callback for responses returned by the storage connector. The request will complete or error
+ * here, if the record couldn't be found in storage no further attempts to retrieve it will be made
+ *
+ * @param   {String} error  null if no error has occured
+ * @param   {Object} record the record data structure, e.g. { _v: 33, _d: { some: 'data' } }
+ *
+ * @private
+ * @returns {void}
+ */
 RecordRequest.prototype._onStorageResponse = function( error, record ) {
 	clearTimeout( this._storageRetrievalTimeout );
 
@@ -47,6 +80,16 @@ RecordRequest.prototype._onStorageResponse = function( error, record ) {
 	}
 };
 
+/**
+ * Sends an error to the socketWrapper that requested the
+ * record
+ *
+ * @param   {String} event   		Error event
+ * @param   {String} message 		Error message
+ *
+ * @private
+ * @returns {void}
+ */
 RecordRequest.prototype._sendError = function( event, message ) {
 	this._options.logger.log( C.LOG_LEVEL.ERROR, event, message );
 	this._socketWrapper.sendError( C.TOPIC.RECORD, event, message );
@@ -56,6 +99,13 @@ RecordRequest.prototype._sendError = function( event, message ) {
 	this._destroy();
 };
 
+/**
+ * Destroys the record request. Clears down all references and stops
+ * all pending timeouts
+ *
+ * @private
+ * @returns {void}
+ */
 RecordRequest.prototype._destroy = function() {
 	clearTimeout( this._cacheRetrievalTimeout );
 	clearTimeout( this._storageRetrievalTimeout );
