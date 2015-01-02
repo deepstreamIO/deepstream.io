@@ -43,6 +43,7 @@ var RecordTransition = function( name, options, recordHandler ) {
 	this._record = null;
 	this._currentStep = null;
 	this._recordRequest = null;
+	this.isDestroyed = false;
 };
 
 /**
@@ -120,6 +121,27 @@ RecordTransition.prototype.add = function( socketWrapper, version, message ) {
 };
 
 /**
+ * Destroys the instance
+ *
+ * @private
+ * @returns {void}
+ */
+RecordTransition.prototype.destroy = function() {
+	if( this.isDestroyed ) {
+		return;
+	}
+	this._recordHandler._$transitionComplete( this._name );
+	this.isDestroyed = true;
+	this._name = null;
+	this._options = null;
+	this._recordHandler = null;
+	this._steps = null;
+	this._record = null;
+	this._currentStep = null;
+	this._recordRequest = null;
+};
+
+/**
  * Callback for successfully retrieved records
  *
  * @param   {Object} record
@@ -143,8 +165,12 @@ RecordTransition.prototype._onRecord = function( record ) {
  * @returns {void}
  */
 RecordTransition.prototype._next = function() {
+	if( this.isDestroyed === true ) {
+		return;
+	}
+
 	if( this._steps.length === 0 ) {
-		this._destroy();
+		this.destroy();
 		return;
 	}
 
@@ -181,7 +207,7 @@ RecordTransition.prototype._next = function() {
 RecordTransition.prototype._onCacheResponse = function( error ) {
 	if( error ) {
 		this._onFatalError( error );
-	} else {
+	} else if( this.isDestroyed === false ) {
 		this._recordHandler._$broadcastUpdate( this._name, this._currentStep.message, this._currentStep.sender );
 		this._next();
 	}
@@ -196,7 +222,7 @@ RecordTransition.prototype._onCacheResponse = function( error ) {
  * @returns {void}
  */
 RecordTransition.prototype._onStorageResponse = function( error ) {
-	if( error ) {
+	if( error && this.isDestroyed === false ) {
 		this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
 	}
 };
@@ -211,30 +237,17 @@ RecordTransition.prototype._onStorageResponse = function( error ) {
  * @returns {void}
  */
 RecordTransition.prototype._onFatalError = function( errorMessage ) {
+	if( this.isDestroyed === true ) {
+		return;
+	}
+
 	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, errorMessage );
 
 	for( var i = 0; i < this._steps.length; i++ ) {
-		this._steps[ i ].sendError( C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, this._steps[ i ].version );
+		this._steps[ i ].sender.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, this._steps[ i ].version );
 	}
 
-	this._destroy();
-};
-
-/**
- * Destroys the instance
- *
- * @private
- * @returns {void}
- */
-RecordTransition.prototype._destroy = function() {
-	this._recordHandler._$transitionComplete( this._name );
-	this._name = null;
-	this._options = null;
-	this._recordHandler = null;
-	this._steps = null;
-	this._record = null;
-	this._currentStep = null;
-	this._recordRequest = null;
+	this.destroy();
 };
 
 module.exports = RecordTransition;

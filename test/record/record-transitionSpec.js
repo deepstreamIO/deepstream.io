@@ -3,6 +3,7 @@ var proxyquire = require( 'proxyquire' ),
 	RecordTransition = proxyquire( '../../src/record/record-transition', { './record-request': RecordRequestMock } ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	SocketMock = require( '../mocks/socket-mock' ),
+	msg = require( '../test-helper/test-helper' ).msg,
 	StorageMock = require( '../mocks/storage-mock' );
 
 describe( 'record transition happy path', function(){
@@ -122,5 +123,70 @@ describe( 'record transition multiple steps', function(){
 				done();
 			}
 		}, 1 );
+	});
+});
+
+describe( 'destroys the transition', function(){
+	var recordTransition,
+		socketWrapper = new SocketWrapper( new SocketMock() ),
+		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
+		recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
+		options = { cache: new StorageMock(), storage: new StorageMock() };
+
+	options.cache.nextOperationWillBeSynchronous = false;
+
+	it( 'creates the transition', function(){
+		recordTransition = new RecordTransition( 'someRecord', options, recordHandlerMock );
+		expect( recordTransition.hasVersion ).toBeDefined();
+		expect( recordTransition.hasVersion( 2 ) ).toBe( false );
+	});
+
+	it( 'adds a patch to the queue', function(){
+		expect( recordTransition._recordRequest ).toBe( null );
+		recordTransition.add( socketWrapper, 1, patchMessage );
+		expect( recordTransition._recordRequest ).toBeDefined();
+		expect( recordTransition._recordRequest.recordName ).toBe( 'someRecord' );
+	});
+
+	it( 'destroys the transition', function( done ){
+		recordTransition.destroy();
+		expect( recordTransition.isDestroyed ).toBe( true );
+		expect( recordTransition._steps ).toBe( null );
+		setTimeout(function(){
+			//just leave this here to make sure no error is thrown when the
+			//record request returns after 30ms
+			done();
+		}, 50 );
+	});
+});
+
+describe( 'recordRequest returns an error', function(){
+	var recordTransition,
+		socketWrapper = new SocketWrapper( new SocketMock() ),
+		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
+		recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
+		logSpy = jasmine.createSpy( 'log' ),
+		options = { cache: new StorageMock(), storage: new StorageMock(), logger: {log: logSpy } };
+
+	options.cache.nextOperationWillBeSynchronous = false;
+
+	it( 'creates the transition', function(){
+		recordTransition = new RecordTransition( 'someRecord', options, recordHandlerMock );
+		expect( recordTransition.hasVersion ).toBeDefined();
+		expect( recordTransition.hasVersion( 2 ) ).toBe( false );
+	});
+
+	it( 'adds a patch to the queue', function(){
+		expect( recordTransition._recordRequest ).toBe( null );
+		recordTransition.add( socketWrapper, 1, patchMessage );
+		expect( recordTransition._recordRequest ).toBeDefined();
+		expect( recordTransition._recordRequest.recordName ).toBe( 'someRecord' );
+	});
+
+	it( 'receives an error', function(){
+		expect( socketWrapper.socket.lastSendMessage ).toBe( null );
+		recordTransition._recordRequest.onError( 'errorMsg' );
+		expect( logSpy ).toHaveBeenCalledWith( 3, 'RECORD_UPDATE_ERROR', 'errorMsg' );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'RECORD|E|RECORD_UPDATE_ERROR|1+' ) );
 	});
 });
