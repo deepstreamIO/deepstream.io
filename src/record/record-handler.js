@@ -231,6 +231,7 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
  * @returns {void}
  */
 RecordHandler.prototype._delete = function( socketWrapper, message ) {
+	console.log( message );
 	var recordName = message.data[ 0 ],
 		done = 0,
 		checkDone = function( error ) {
