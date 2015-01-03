@@ -67,7 +67,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	 * using read()
 	 */
 	else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
-		this._subscriptionRegistry.unsubscribe( socketWrapper, message.data[ 0 ] );
+		this._subscriptionRegistry.unsubscribe( message.data[ 0 ], socketWrapper );
 	}
 
 	/*
@@ -231,7 +231,7 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
  * @returns {void}
  */
 RecordHandler.prototype._delete = function( socketWrapper, message ) {
-	console.log( message );
+
 	var recordName = message.data[ 0 ],
 		done = 0,
 		checkDone = function( error ) {

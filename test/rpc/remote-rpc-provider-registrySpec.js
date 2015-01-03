@@ -116,18 +116,19 @@ describe( 'keeps track of which remote deepstream instance can provide which rpc
 		});
 		
 		var hadTopicC = false,
-			hadTopicA = false;
-			
-		for( var i = 0; i < 200; i++ ) {
-			registry.getProviderTopic( 'rpcA', function( error, topic ){
+			hadTopicA = false,
+			callback = function( error, topic ){
 				if( topic === 'privateTopicA' ) {
 					hadTopicA = true;
 				}
 				
-				if( topic === 'privateTopicA' ) {
+				if( topic === 'privateTopicC' ) {
 					hadTopicC = true;
 				}
-			});
+			};
+			
+		for( var i = 0; i < 20; i++ ) {
+			registry.getProviderTopic( 'rpcA', callback );
 		}
 		
 		expect( hadTopicA ).toBe( true );

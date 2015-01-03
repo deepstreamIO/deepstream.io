@@ -5,6 +5,15 @@ var StorageMock = function() {
 	this.completedSetOperations = 0;
 };
 
+StorageMock.prototype.delete = function( key, callback ) {
+	delete this.values[ key ];
+	callback( null );
+};
+
+StorageMock.prototype.get = function( key, callback ) {
+	callback( null, this.values[ key ] );
+};
+
 StorageMock.prototype.set = function( key, value, callback ) {
 	if( this.nextOperationWillBeSuccessful ) {
 		this.values[ key ] = value;

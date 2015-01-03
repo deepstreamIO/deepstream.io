@@ -10,4 +10,4 @@ LoggerMock.prototype.log = function( level, event, message ) {
     this.lastLogMessage = message;
 };
 
-module.exports = new LoggerMock();
+module.exports = LoggerMock;

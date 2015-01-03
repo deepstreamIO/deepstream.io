@@ -4,10 +4,10 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	SocketMock = require( '../mocks/socket-mock' ),
 	MessageConnectorMock = require( '../mocks/message-connector-mock' ),
-	loggerMock = require( '../mocks/logger-mock' ),
+	LoggerMock = require( '../mocks/logger-mock' ),
 	options = { 
 		messageConnector: new MessageConnectorMock(), 
-		logger: loggerMock,
+		logger: new LoggerMock(),
 		serverName: 'thisServer'
 	},
 	rpcHandler = new RpcHandler( options ),
