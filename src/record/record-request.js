@@ -76,6 +76,14 @@ RecordRequest.prototype._onStorageResponse = function( error, record ) {
 		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from storage' );
 	} else {
 		this._onComplete( record || null );
+
+		if( record ) {
+			/*
+			 * Load record from storage into cache
+			 */
+			this._options.cache.set( this._recordName, record, function(){});
+		}
+
 		this._destroy();
 	}
 };

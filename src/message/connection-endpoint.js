@@ -204,7 +204,7 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
 };
 
 ConnectionEndpoint.prototype._onError = function( error ) {
-	console.log( 'connection error', error ); //TODO
+	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error );
 };
 
 module.exports = ConnectionEndpoint;

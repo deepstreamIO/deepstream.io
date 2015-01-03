@@ -1,12 +1,31 @@
 var SPLIT_REG_EXP = /[\.\[\]]/g,
 	ASTERISK = '*';
 
+/**
+ * This class allows to set or get specific
+ * values within a json data structure using
+ * string-based paths
+ *
+ * @param {String} path A path, e.g. users[2].firstname
+ *
+ * @constructor
+ */
 var JsonPath = function( path ) {
 	this._path = path;
 	this._tokens = [];
 	this._tokenize();
 };
 
+/**
+ * Sets the value of the path. If the path (or parts
+ * of it) doesn't exist yet, it will be created
+ *
+ * @param {Object} node
+ * @param {Mixed} value
+ *
+ * @public
+ * @returns {void}
+ */
 JsonPath.prototype.setValue = function( node, value ) {
 	for( var i = 0; i < this._tokens.length - 1; i++ ) {
 		if( node[ this._tokens[ i ] ] !== undefined ) {
@@ -23,6 +42,13 @@ JsonPath.prototype.setValue = function( node, value ) {
 	node[ this._tokens[ i ] ] = value;
 };
 
+/**
+ * Parses the path. Splits it into
+ * keys for objects and indices for arrays.
+ *
+ * @private
+ * @returns {void}
+ */
 JsonPath.prototype._tokenize = function() {
 	var parts = this._path.split( SPLIT_REG_EXP ),
 		part,
