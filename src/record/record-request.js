@@ -22,6 +22,7 @@ var RecordRequest = function( recordName, options, socketWrapper, onComplete, on
 	this._storageRetrievalTimeout = null;
 	this._onComplete = onComplete;
 	this._onError = onError;
+	this._isDestroyed = false;
 
 	this._cacheRetrievalTimeout = setTimeout( 
 		this._sendError.bind( this, C.EVENT.CACHE_RETRIEVAL_TIMEOUT, this._recordName ), 
@@ -42,9 +43,13 @@ var RecordRequest = function( recordName, options, socketWrapper, onComplete, on
  */
 RecordRequest.prototype._onCacheResponse = function( error, record ) {
 	clearTimeout( this._cacheRetrievalTimeout );
+	
+	if( this._isDestroyed === true ) {
+		return;
+	}
 
 	if( error ) {
-		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from cache' );
+		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from cache:' + error );
 	}
 	else if( record ) {
 		this._onComplete( record );
@@ -71,6 +76,10 @@ RecordRequest.prototype._onCacheResponse = function( error, record ) {
  */
 RecordRequest.prototype._onStorageResponse = function( error, record ) {
 	clearTimeout( this._storageRetrievalTimeout );
+
+	if( this._isDestroyed === true ) {
+		return;
+	}
 
 	if( error ) {
 		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from storage' );
@@ -123,6 +132,7 @@ RecordRequest.prototype._destroy = function() {
 	this._storageRetrievalTimeout = null;
 	this._onComplete = null;
 	this._onError = null;
+	this._isDestroyed = true;
 };
 
 module.exports = RecordRequest;
