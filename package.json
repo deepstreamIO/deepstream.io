@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
   "directories": {
@@ -29,5 +29,5 @@
   "bugs": {
     "url": "https://github.com/hoxton-one/deepstream.io/issues"
   },
-  "homepage": "https://github.com/hoxton-one/deepstream.io"
+  "homepage": "http://deepstream.io"
 }
