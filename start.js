@@ -1,4 +1,4 @@
-require('v8-profiler');
+//require('v8-profiler');
 
 var Deepstream = require( './src/deepstream.io' ),
 	AmqpConnector = require( 'deepstream.io-msg-amqp' ),

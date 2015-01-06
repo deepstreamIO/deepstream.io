@@ -7,8 +7,18 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	C = require( './constants/constants' );
 
-	require( 'colors' );
+require( 'colors' );
 
+/**
+ * Deepstream is a realtime data server that scales horizontally
+ * by running in clusters of interacting nodes
+ *
+ * @copyright 2015 Hoxton-One Ltd.
+ * @author Wolfram Hempel
+ * @version <version>
+ * 
+ * @constructor
+ */
 var Deepstream = function() {
 	this._options = require( './default-options' );
 	this._connectionEndpoint = null;
@@ -27,8 +37,23 @@ var Deepstream = function() {
 	];
 };
 
+/**
+ * Sets the name of the process
+ *
+ * @type {String}
+ */
 process.title = 'deepstream server';
 
+/**
+ * Set a deepstream option. For a list of all available options
+ * please see default-options.
+ *
+ * @param {String} key   the name of the option
+ * @param {Mixed} value  the value, e.g. a portnumber for ports or an instance of a logger class
+ *
+ * @public
+ * @returns {void}
+ */
 Deepstream.prototype.set = function( key, value ) {
 	if( this._options[ key ] === undefined ) {
 		throw new Error( 'Unknown option "' + key + '"' );
@@ -37,6 +62,16 @@ Deepstream.prototype.set = function( key, value ) {
 	this._options[ key ] = value;
 };
 
+/**
+ * Starts up deepstream. The startup process has three steps:
+ * 
+ * - Initialise all dependencies (cache connector, message connector, storage connector and logger)
+ * - Instantiate the messaging pipeline and record-, rpc- and event-handler
+ * - Start TCP and HTTP server
+ *
+ * @public
+ * @returns {void}
+ */
 Deepstream.prototype.start = function() {
 	this._showStartLogo();
 	this._options.logger._$useColors = this._options.colors;
@@ -50,6 +85,13 @@ Deepstream.prototype.start = function() {
 	}
 };
 
+/**
+ * Shows a giant ASCII art logo which is absolutely crucial
+ * to the proper functioning of the server
+ *
+ * @private
+ * @returns {void}
+ */
 Deepstream.prototype._showStartLogo = function() {
 	var logo =
 	' _____________________________________________________________________________\n'+
@@ -65,6 +107,12 @@ Deepstream.prototype._showStartLogo = function() {
 	process.stdout.write( this._options.colors ? logo.yellow : logo );
 };
 
+/**
+ * Invoked once all dependencies are initialised. Instantiates the messaging pipeline and the various handlers.
+ * The startup sequence will be complete once the connection endpoint is started and listening
+ *
+ * @returns {[type]} [description]
+ */
 Deepstream.prototype._init = function() {
 	this._connectionEndpoint = new ConnectionEndpoint( this._options, this._onStarted.bind( this ) );
 	this._messageProcessor = new MessageProcessor( this._options );
@@ -85,6 +133,13 @@ Deepstream.prototype._init = function() {
 	this._initialised = true;
 };
 
+/**
+ * Called whenever a dependency emits a ready event. Once all dependencies are ready
+ * deepstream moves to the init step.
+ *
+ * @private
+ * @returns {void}
+ */
 Deepstream.prototype._checkReady = function() {
 	for( var i = 0; i < this._plugins.length; i++ ) {
 		if( this._options[ this._plugins[ i ] ].isReady !== true ) {
@@ -97,6 +152,12 @@ Deepstream.prototype._checkReady = function() {
 	}
 };
 
+/**
+ * Final callback - Deepstream is up and running now
+ *
+ * @private
+ * @returns {void}
+ */
 Deepstream.prototype._onStarted = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
 };

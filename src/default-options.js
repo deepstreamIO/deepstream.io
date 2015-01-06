@@ -39,5 +39,6 @@ module.exports = {
 	rpcAckTimeout: 1000,
 	rpcTimeout: 10000,
 	cacheRetrievalTimeout: 1000,
-	storageRetrievalTimeout: 2000
+	storageRetrievalTimeout: 2000,
+	dependencyInitialisationTimeout: 2000
 };

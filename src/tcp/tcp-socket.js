@@ -130,6 +130,14 @@ TcpSocket.prototype._onDisconnect = function() {
 	this._isDisconnected = true;
 };
 
+/**
+ * Callback for socket errors
+ * 
+ * @param {String} error
+ * 
+ * @private
+ * @returns {void}
+ */
 TcpSocket.prototype._onError = function( error ) {
 	this._onDisconnect();
 };

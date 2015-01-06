@@ -1,6 +1,5 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' ),
 	RecordRequest = require( './record-request' ),
 	RecordTransition = require( './record-transition' );
@@ -261,7 +260,7 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 };
 
 /**
- * [_createOrRead description]
+ * Register a client as a listener for record subscriptions
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
@@ -270,7 +269,7 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._listen = function( socketWrapper, message ) {
-
+	//TODO
 };
 
 module.exports = RecordHandler;
