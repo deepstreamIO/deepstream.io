@@ -1,3 +1,4 @@
+/* global it, describe, expect, jasmine */
 var proxyquire = require( 'proxyquire' ),
 	RecordRequestMock = require( '../mocks/record-request-mock' ),
 	RecordTransition = proxyquire( '../../src/record/record-transition', { './record-request': RecordRequestMock } ),
