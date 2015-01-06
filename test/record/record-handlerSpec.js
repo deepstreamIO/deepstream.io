@@ -1,3 +1,4 @@
+/* global describe, expect, it, jasmine */
 var RecordHandler = require( '../../src/record/record-handler' ),
 	msg = require( '../test-helper/test-helper' ).msg,
 	StorageMock = require( '../mocks/storage-mock' ),
