@@ -39,6 +39,7 @@ Deepstream.prototype.set = function( key, value ) {
 
 Deepstream.prototype.start = function() {
 	this._showStartLogo();
+	this._options.logger._$useColors = this._options.colors;
 
 	var i,
 		initialiser;
@@ -50,19 +51,22 @@ Deepstream.prototype.start = function() {
 };
 
 Deepstream.prototype._showStartLogo = function() {
-	console.log( ' _____________________________________________________________________________'.yellow );
-	console.log( '                                                                              '.yellow );
-	console.log( '         /                                                             ,      '.yellow );
-	console.log( ' ----__-/----__----__------__---__--_/_---)__----__----__---_--_-----------__-'.yellow );
-	console.log( '   /   /   /___) /___)   /   ) (_ ` /    /   ) /___) /   ) / /  )    /   /   )'.yellow );
-	console.log( ' _(___/___(___ _(___ ___/___/_(__)_(_ __/_____(___ _(___(_/_/__/__o_/___(___/_'.yellow );
-	console.log( '                       /                                                      '.yellow );
-	console.log( '                      /                                                       '.yellow );
-	console.log( '=============================== STARTING... =================================='.yellow );
+	var logo =
+	' _____________________________________________________________________________\n'+
+	'                                                                              \n'+
+	'         /                                                             ,      \n'+
+	' ----__-/----__----__------__---__--_/_---)__----__----__---_--_-----------__-\n'+
+	'   /   /   /___) /___)   /   ) (_ ` /    /   ) /___) /   ) / /  )    /   /   )\n'+
+	' _(___/___(___ _(___ ___/___/_(__)_(_ __/_____(___ _(___(_/_/__/__o_/___(___/_\n'+
+	'                       /                                                      \n'+
+	'                      /                                                       \n'+
+	'=============================== STARTING... ==================================\n';
+
+	process.stdout.write( this._options.colors ? logo.yellow : logo );
 };
 
 Deepstream.prototype._init = function() {
-	this._connectionEndpoint = new ConnectionEndpoint( this._options );
+	this._connectionEndpoint = new ConnectionEndpoint( this._options, this._onStarted.bind( this ) );
 	this._messageProcessor = new MessageProcessor( this._options );
 	this._messageDistributor = new MessageDistributor( this._options );
 	this._connectionEndpoint.onMessage = this._messageProcessor.process.bind( this._messageProcessor );
@@ -77,7 +81,6 @@ Deepstream.prototype._init = function() {
 	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );
 
 	this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind( this._messageDistributor );
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'DeepStream started on ' + this._options.host + ':' + this._options.port );
 
 	this._initialised = true;
 };
@@ -92,6 +95,10 @@ Deepstream.prototype._checkReady = function() {
 	if( this._initialised === false ) {
 		this._init();
 	}
+};
+
+Deepstream.prototype._onStarted = function() {
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
 };
 
 module.exports = Deepstream;

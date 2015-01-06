@@ -1,7 +1,8 @@
 var net = require( 'net' ),
 	event = require( 'events' ),
 	utils = require( 'util' ),
-	TcpSocket = require( './tcp-socket' );
+	TcpSocket = require( './tcp-socket' ),
+	C = require( '../constants/constants' );
 
 /**
  * A faster, more low level alternative to engine.io when communicating
@@ -10,15 +11,15 @@ var net = require( 'net' ),
  * @emits connection <TcpSocket>
  * @emits error <errorMessage>
  * 
- * @param {String} host the host the tcp server listens on for incoming connections
- * @param {Number} port the port the tcp server listens on for incoming connections
+ * @param {Object} options deepstream options
+ * @param {Function} readyCallback will be invoked once the server is listening
  *
  * @constructor
  */
-var TcpEndpoint = function( options ) {
+var TcpEndpoint = function( options, readyCallback ) {
 	this._options = options;
 	this._server = net.createServer( {allowHalfOpen: false}, this._onIncomingConnection.bind( this ) );
-	this._server.listen( this._options.tcpPort, this._options.tcpHost, this._onListen.bind( this ) );
+	this._server.listen( this._options.tcpPort, this._options.tcpHost, readyCallback );
 	this._server.on( 'error', this._onError.bind( this ) );
 };
 
@@ -52,10 +53,6 @@ TcpEndpoint.prototype._onIncomingConnection = function( socket ) {
  */
 TcpEndpoint.prototype._onError = function( error ) {
 	this.emit( 'error', error.toString() );
-};
-
-TcpEndpoint.prototype._onListen = function() {
-	console.log( 'TCP SERVER LISTENING' );//TODO
 };
 
 module.exports = TcpEndpoint;

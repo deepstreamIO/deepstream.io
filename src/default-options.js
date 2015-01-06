@@ -6,6 +6,7 @@ module.exports = {
 	 * General
 	 */
 	serverName: utils.getUid(),
+	colors: argv.colors === 'false' ? false : true,
 
 	/*
 	 * Connectivity

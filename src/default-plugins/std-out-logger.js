@@ -1,6 +1,7 @@
 var StdOutLogger = function() {
+
 	this.isReady = true;
-	
+	this._$useColors = true;
 	this._logLevelColors = [
 		'white',
 		'green',
@@ -14,7 +15,12 @@ var StdOutLogger = function() {
 StdOutLogger.prototype.log = function( logLevel, event, logMessage ) {
 	if( logLevel >= this._currentLogLevel ) {
 		var msg = event + ' | ' + logMessage;
-		console.log( msg[ this._logLevelColors[ logLevel ] ] );
+		
+		if( this._$useColors ) {
+			process.stdout.write( msg[ this._logLevelColors[ logLevel ] ] + '\n' );
+		} else {
+			process.stdout.write( msg + '\n' );
+		}
 	}
 };
 

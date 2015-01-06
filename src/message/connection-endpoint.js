@@ -2,7 +2,9 @@ var C = require( '../constants/constants' ),
 	messageParser = require( './message-parser' ),
 	SocketWrapper = require( './socket-wrapper' ),
 	engine = require('engine.io'),
-	TcpEndpoint = require( '../tcp/tcp-endpoint' );
+	TcpEndpoint = require( '../tcp/tcp-endpoint' ),
+	ENGINE_IO = 0,
+	TCP_ENDPOINT = 1;
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -12,15 +14,19 @@ var C = require( '../constants/constants' ),
  * @constructor
  * 
  * @param {Object} options the extended default options
+ * @param {Function} readyCallback will be invoked once both the engineIo and the tcp connection are established
  */
-var ConnectionEndpoint = function( options ) {
+var ConnectionEndpoint = function( options, readyCallback ) {
 	this._options = options;
+	this._readyCallback = readyCallback;
 
-	this._engineIo = engine.listen( this._options.port, this._options.host );
+	this._engineIoReady = false;
+	this._engineIo = engine.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
 	this._engineIo.on( 'error', this._onError.bind( this ) );
 	this._engineIo.on( 'connection', this._onConnection.bind( this ) );
 
-	this._tcpEndpoint = new TcpEndpoint( options );
+	this._tcpEndpointReady = false;
+	this._tcpEndpoint = new TcpEndpoint( options, this._checkReady.bind( this, TCP_ENDPOINT ) );
 	this._tcpEndpoint.on( 'error', this._onError.bind( this ) );
 	this._tcpEndpoint.on( 'connection', this._onConnection.bind( this ) );
 
@@ -200,6 +206,26 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
 		this._registerAuthenticatedSocket( socketWrapper, username );
 	} else {
 		this._processInvalidAuth( authError, authData, socketWrapper );
+	}
+};
+
+ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
+	var msg;
+
+	if( endpoint === ENGINE_IO ) {
+		msg = 'Listening for browser connections on ' + this._options.host + ':' + this._options.port;
+		this._engineIoReady = true;
+	}
+
+	if( endpoint === TCP_ENDPOINT ) {
+		msg = 'Listening for tcp connections on ' + this._options.tcpHost + ':' + this._options.tcpPort;
+		this._tcpEndpointReady = true;
+	}
+
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, msg );
+
+	if( this._tcpEndpointReady === true && this._engineIoReady === true ) {
+		this._readyCallback();
 	}
 };
 
