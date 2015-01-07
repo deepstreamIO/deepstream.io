@@ -164,6 +164,7 @@ RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
  * @returns {void}
  */
 RecordHandler.prototype._update = function( socketWrapper, message ) {
+
 	if( message.data.length < 3 ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[ 0 ] );
 		return;
@@ -171,6 +172,16 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 
 	var recordName = message.data[ 0 ],
 		version = parseInt( message.data[ 1 ], 10 );
+
+	/*
+	 * If the update message is received from the message bus, rather than from a client,
+	 * assume that the original deepstream node has already updated the record in cache and
+	 * storage and only broadcast the message to subscribers
+	 */
+	if( socketWrapper === C.SOURCE_MESSAGE_CONNECTOR ) {
+		this._$broadcastUpdate( recordName, message, socketWrapper );
+		return;
+	}
 
 	if( isNaN( version ) ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, version );
@@ -193,8 +204,6 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
  * Invoked by RecordTransition. Notifies local subscribers and other deepstream
  * instances of record updates
  *
- * @todo  send over message bus
- *
  * @param   {String} name           record name
  * @param   {Object} message        parsed and validated deepstream message
  * @param   {SocketWrapper} originalSender the socket the update message was received from
@@ -204,12 +213,17 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
  */
 RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSender ) {
 	this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
+
+	if( originalSender !== C.SOURCE_MESSAGE_CONNECTOR ) {
+		this._options.messageConnector.publish( C.TOPIC.RECORD, message );
+	}
 };
 
 /**
  * Called by a RecordTransition, either if it is complete or if an error occured. Removes
  * the transition from the registry
  *
+ * @todo  refactor - this is a bit of a mess
  * @param   {String} recordName record name
  *
  * @package private
@@ -244,9 +258,16 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 
 			if( done === 2 ) {
 				this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.RECORD_DELETION, recordName );
-				var msg = messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.ACK, [ C.ACTIONS.DELETE, recordName ] );
-				socketWrapper.send( msg );
-				this._subscriptionRegistry.sendToSubscribers( recordName, msg, socketWrapper );
+				
+				var msg = {
+					topic: C.TOPIC.RECORD,
+					action: C.ACTIONS.ACK,
+					data: [ C.ACTIONS.DELETE, recordName ],
+					raw: messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.ACK, [ C.ACTIONS.DELETE, recordName ] )
+				};
+
+				socketWrapper.send( msg.raw );
+				this._$broadcastUpdate( recordName, msg, socketWrapper );
 			}
 		}.bind( this );
 
@@ -255,8 +276,17 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 		delete this._transitions[ recordName ];
 	}
 
-	this._options.cache.delete( recordName, checkDone );
-	this._options.storage.delete( recordName, checkDone );
+	/*
+	 * If the delete message is received from the message bus, rather than from a client,
+	 * assume that the original deepstream node has already deleted the record from cache and
+	 * storage and only broadcast the message to subscribers
+	 */
+	if( socketWrapper === C.SOURCE_MESSAGE_CONNECTOR ) {
+		this._$broadcastUpdate( recordName, message, socketWrapper );
+	} else {
+		this._options.cache.delete( recordName, checkDone );
+		this._options.storage.delete( recordName, checkDone );
+	}
 };
 
 /**

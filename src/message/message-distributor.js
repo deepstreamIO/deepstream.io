@@ -54,10 +54,21 @@ MessageDistributor.prototype.registerForTopic = function( topic, callback ) {
 	}
 
 	this._callbacks[ topic ] = callback;
-	this._options.messageConnector.subscribe( topic, this._forwardMessageConnectorMessage.bind( this, callback ) );
+	this._options.messageConnector.subscribe( topic, this._onMessageConnectorMessage.bind( this, callback ) );
 };
 
-MessageDistributor.prototype._forwardMessageConnectorMessage = function( callback, message ) {
+/**
+ * Whenever a message from the messageConnector is received it is passed
+ * to the relevant handler, but with SOURCE_MESSAGE_CONNECTOR instead of
+ * a socketWrapper as sender
+ *
+ * @param   {Function} callback the handler callback
+ * @param   {Object}   message  the already parsed and validated message
+ *
+ * @private
+ * @returns {void}
+ */
+MessageDistributor.prototype._onMessageConnectorMessage = function( callback, message ) {
 	callback( C.SOURCE_MESSAGE_CONNECTOR, message );
 };
 

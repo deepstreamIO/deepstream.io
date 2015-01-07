@@ -6,20 +6,20 @@ var Deepstream = require( './src/deepstream.io' ),
 
 var deepstream = new Deepstream();
 
-deepstream.set( 'host', process.env.IP );
-deepstream.set( 'port', process.env.PORT );
+// deepstream.set( 'host', process.env.IP );
+// deepstream.set( 'port', process.env.PORT );
 
-// deepstream.set( 'messageConnector', new AmqpConnector({
-// 	// Remote
-// 	login: 'nwixdpxf',
-// 	vhost: 'nwixdpxf',
-// 	password: 'YYY',
-// 	host: 'bunny.cloudamqp.com'
+deepstream.set( 'messageConnector', new AmqpConnector({
+	// Remote
+	// login: 'nwixdpxf',
+	// vhost: 'nwixdpxf',
+	// password: 'YYY',
+	// host: 'bunny.cloudamqp.com'
 	
-// 	// Local
-// 	// host: 'localhost',
-// 	// port: 5672
-// }));
+	//Local
+	host: 'localhost',
+	port: 5672
+}));
 
 deepstream.set( 'permissionHandler', {
 	isValidUser: function( handshakeData, authData, callback ) {

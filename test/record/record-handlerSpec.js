@@ -4,7 +4,8 @@ var RecordHandler = require( '../../src/record/record-handler' ),
 	StorageMock = require( '../mocks/storage-mock' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
-	LoggerMock = require( '../mocks/logger-mock' );
+	LoggerMock = require( '../mocks/logger-mock' ),
+	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' );
 
 describe( 'record handler handles messages', function(){
 	var recordHandler,
@@ -13,7 +14,8 @@ describe( 'record handler handles messages', function(){
 		options = {
 			cache: new StorageMock(),
 			storage: new StorageMock(),
-			logger: new LoggerMock()
+			logger: new LoggerMock(),
+			messageConnector: noopMessageConnector
 		};
 
 	it( 'creates the record handler', function(){

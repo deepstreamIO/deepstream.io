@@ -87,7 +87,7 @@ Deepstream.prototype.start = function() {
 
 /**
  * Shows a giant ASCII art logo which is absolutely crucial
- * to the proper functioning of the server
+ * for the proper functioning of the server
  *
  * @private
  * @returns {void}
@@ -111,7 +111,8 @@ Deepstream.prototype._showStartLogo = function() {
  * Invoked once all dependencies are initialised. Instantiates the messaging pipeline and the various handlers.
  * The startup sequence will be complete once the connection endpoint is started and listening
  *
- * @returns {[type]} [description]
+ * @private
+ * @returns {void}
  */
 Deepstream.prototype._init = function() {
 	this._connectionEndpoint = new ConnectionEndpoint( this._options, this._onStarted.bind( this ) );

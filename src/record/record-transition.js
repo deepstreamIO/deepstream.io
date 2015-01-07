@@ -154,11 +154,16 @@ RecordTransition.prototype.destroy = function() {
  *
  * @param   {Object} record
  *
- * @returns {[type]}        [description]
+ * @private
+ * @returns {void}
  */
 RecordTransition.prototype._onRecord = function( record ) {
-	this._record = record;
-	this._next();
+	if( record === null ) {
+		this._onFatalError( 'Received update for non-existant record ' + this._name );
+	} else {
+		this._record = record;
+		this._next();
+	}
 };
 
 /**
@@ -264,7 +269,9 @@ RecordTransition.prototype._onFatalError = function( errorMessage ) {
 	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, errorMessage );
 
 	for( var i = 0; i < this._steps.length; i++ ) {
-		this._steps[ i ].sender.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, this._steps[ i ].version );
+		if( this._steps[ i ].sender !== C.SOURCE_MESSAGE_CONNECTOR ) {
+			this._steps[ i ].sender.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, this._steps[ i ].version );
+		}
 	}
 
 	this.destroy();
