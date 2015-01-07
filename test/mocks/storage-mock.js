@@ -4,6 +4,8 @@ var StorageMock = function() {
 	this.nextOperationWillBeSynchronous = true;
 	this.nextGetWillBeSynchronous = true;
 	this.lastRequestedKey = null;
+	this.lastSetKey = null;
+	this.lastSetValue = null;
 	this.completedSetOperations = 0;
 };
 
@@ -26,6 +28,9 @@ StorageMock.prototype.get = function( key, callback ) {
 };
 
 StorageMock.prototype.set = function( key, value, callback ) {
+	this.lastSetKey = key;
+	this.lastSetValue = value;
+	
 	if( this.nextOperationWillBeSuccessful ) {
 		this.values[ key ] = value;
 	}

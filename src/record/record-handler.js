@@ -127,6 +127,7 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 		_d: {}
 	};
 	
+	// store the records data in the cache and wait for the result
 	this._options.cache.set( recordName, record, function( error ){
 		if( error ) {
 			this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName );
@@ -136,6 +137,15 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 			this._read( recordName, record, socketWrapper );
 		}
 	}.bind( this ));
+	
+	// store the record data in the persistant storage independently and don't wait for the result
+	this._options.storage.set( record, record, function( error ) {
+			if( error ) {
+				this._options.logger.log( C.TOPIC.RECORD,  C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
+			}
+	}.bind( this ) );
+	
+	
 };
 
 /**
