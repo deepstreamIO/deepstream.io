@@ -1,8 +1,8 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	messageBuilder = require( '../message/message-builder' ),
 	RecordRequest = require( './record-request' ),
-	RecordTransition = require( './record-transition' );
+	RecordTransition = require( './record-transition' ),
+	RecordDeletion = require( './record-deletion' );
 
 /**
  * The entry point for record related operations
@@ -236,6 +236,10 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
 /**
  * Deletes a record. If a transition is in progress it will be stopped. Once the
  * deletion is complete, an Ack is returned.
+ * 
+ * If the deletion message is received from the message bus, rather than from a client,
+ * we assume that the original deepstream node has already deleted the record from cache and
+ * storage and we only need to broadcast the message to subscribers
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
@@ -244,49 +248,19 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
  * @returns {void}
  */
 RecordHandler.prototype._delete = function( socketWrapper, message ) {
-
-	var recordName = message.data[ 0 ],
-		done = 0,
-		checkDone = function( error ) {
-			if( error ) {
-				socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_DELETE_ERROR, error );
-				this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_DELETE_ERROR, error );
-				return;
-			}
-
-			done++;
-
-			if( done === 2 ) {
-				this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.RECORD_DELETION, recordName );
-				
-				var msg = {
-					topic: C.TOPIC.RECORD,
-					action: C.ACTIONS.ACK,
-					data: [ C.ACTIONS.DELETE, recordName ],
-					raw: messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.ACK, [ C.ACTIONS.DELETE, recordName ] )
-				};
-
-				socketWrapper.send( msg.raw );
-				this._$broadcastUpdate( recordName, msg, socketWrapper );
-			}
-		}.bind( this );
-
+		var recordName = message.data[ 0 ];
+		
 	if( this._transitions[ recordName ] ) {
 		this._transitions[ recordName ].destroy();
 		delete this._transitions[ recordName ];
 	}
 
-	/*
-	 * If the delete message is received from the message bus, rather than from a client,
-	 * assume that the original deepstream node has already deleted the record from cache and
-	 * storage and only broadcast the message to subscribers
-	 */
 	if( socketWrapper === C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._$broadcastUpdate( recordName, message, socketWrapper );
-	} else {
-		this._options.cache.delete( recordName, checkDone );
-		this._options.storage.delete( recordName, checkDone );
+		return;
 	}
+	
+	new RecordDeletion( this._options, socketWrapper, message, this._$broadcastUpdate.bind( this ) );
 };
 
 /**
