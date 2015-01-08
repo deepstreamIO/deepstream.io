@@ -188,6 +188,6 @@ describe( 'recordRequest returns an error', function(){
 		expect( socketWrapper.socket.lastSendMessage ).toBe( null );
 		recordTransition._recordRequest.onError( 'errorMsg' );
 		expect( logSpy ).toHaveBeenCalledWith( 3, 'RECORD_UPDATE_ERROR', 'errorMsg' );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'RECORD|E|RECORD_UPDATE_ERROR|1+' ) );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'R|E|RECORD_UPDATE_ERROR|1+' ) );
 	});
 });

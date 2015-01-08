@@ -51,7 +51,7 @@ exports.TOPIC = {};
 exports.TOPIC.AUTH = 'A';
 exports.TOPIC.ERROR = 'X';
 exports.TOPIC.EVENT = 'E';
-exports.TOPIC.RECORD = 'RECORD';
+exports.TOPIC.RECORD = 'R';
 exports.TOPIC.RPC = 'RPC';
 exports.TOPIC.PRIVATE = 'PRIVATE/';
 

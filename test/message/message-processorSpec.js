@@ -23,22 +23,22 @@ describe( 'the message processor only forwards valid, authorized messages', func
 	it( 'handles permission errors', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock() );
 		permissionHandlerMock.nextCanPerformActionResult = 'someError';
-		messageProcessor.process( socketWrapper, _msg( 'RECORD|R|/user/wolfram+' ) );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'RECORD|E|MESSAGE_PERMISSION_ERROR|someError+' ) );
+		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'R|E|MESSAGE_PERMISSION_ERROR|someError+' ) );
 	});
 
 	it( 'handles denied messages', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock() );
 		permissionHandlerMock.nextCanPerformActionResult = false;
-		messageProcessor.process( socketWrapper, _msg( 'RECORD|R|/user/wolfram+' ) );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'RECORD|E|MESSAGE_DENIED|RECORD|R|/user/wolfram+' ) );
+		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'R|E|MESSAGE_DENIED|R|R|/user/wolfram+' ) );
 	});
 
 	it( 'provides the correct arguments to canPerformAction', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock() );
 		socketWrapper.user = 'someUser';
 		permissionHandlerMock.nextCanPerformActionResult = false;
-		messageProcessor.process( socketWrapper, _msg( 'RECORD|R|/user/wolfram+' ) );
+		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
 		expect( permissionHandlerMock.lastCanPerformActionQueryArgs.length ).toBe( 3 );
 		expect( permissionHandlerMock.lastCanPerformActionQueryArgs[ 0 ] ).toBe( 'someUser' );
 		expect( permissionHandlerMock.lastCanPerformActionQueryArgs[ 1 ].data[ 0 ] ).toBe( '/user/wolfram' );
@@ -49,7 +49,7 @@ describe( 'the message processor only forwards valid, authorized messages', func
 		socketWrapper.user = 'someUser';
 		permissionHandlerMock.nextCanPerformActionResult = true;
 		expect( lastAuthenticatedMessage ).toBe( null );
-		messageProcessor.process( socketWrapper, _msg( 'RECORD|R|/user/wolfram+' ) );
-		expect( lastAuthenticatedMessage.raw ).toBe( _msg( 'RECORD|R|/user/wolfram' ) );
+		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
+		expect( lastAuthenticatedMessage.raw ).toBe( _msg( 'R|R|/user/wolfram' ) );
 	});
 });

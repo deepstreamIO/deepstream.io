@@ -31,7 +31,7 @@ describe( 'messages from direct connected clients and messages that come in via 
 	    });
 	    
 	    expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-	    expect( subscriber.socket.lastSendMessage ).toBe( msg( 'RECORD|R|someRecord|0|{}+' ) );
+	    expect( subscriber.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|0|{}+' ) );
 	});
 	
 	it( 'receives an update for a record via the messageConnector', function() {
@@ -39,13 +39,13 @@ describe( 'messages from direct connected clients and messages that come in via 
 		expect( options.storage.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
 	    
 	    recordHandler.handle( 'SOURCE_MESSAGE_CONNECTOR', {
-	    	raw: msg( 'RECORD|U|someRecord|1|{"firstname":"Wolfram"}+' ),
+	    	raw: msg( 'R|U|someRecord|1|{"firstname":"Wolfram"}+' ),
 	    	topic: 'RECORD',
 	    	action: 'U',
 	    	data: [ 'someRecord', 1, {"firstname":"Wolfram"} ]
 	    });
 	    
-	    expect( subscriber.socket.lastSendMessage ).toBe( msg( 'RECORD|U|someRecord|1|{"firstname":"Wolfram"}+' ) );
+	    expect( subscriber.socket.lastSendMessage ).toBe( msg( 'R|U|someRecord|1|{"firstname":"Wolfram"}+' ) );
 	    expect( options.cache.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
 		expect( options.storage.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
 	});
@@ -53,7 +53,7 @@ describe( 'messages from direct connected clients and messages that come in via 
 	it( 'receives an update from the client and forwards it to the message connector', function() {
 
 	    recordHandler.handle( subscriber, {
-	    	raw: msg( 'RECORD|U|someRecord|1|{"firstname":"Wolfram"}+' ),
+	    	raw: msg( 'R|U|someRecord|1|{"firstname":"Wolfram"}+' ),
 	    	topic: 'RECORD',
 	    	action: 'U',
 	    	data: [ 'someRecord', 1, '{"firstname":"Wolfram"}' ]
@@ -62,7 +62,7 @@ describe( 'messages from direct connected clients and messages that come in via 
 	    expect( options.cache.lastSetValue ).toEqual( { _v : 1, _d : { firstname: 'Wolfram' } } );
 		expect( options.storage.lastSetValue ).toEqual( { _v : 1, _d : { firstname: 'Wolfram' } } );
 		expect( options.messageConnector.lastPublishedMessage ).toEqual({
-	    	raw: msg( 'RECORD|U|someRecord|1|{"firstname":"Wolfram"}+' ),
+	    	raw: msg( 'R|U|someRecord|1|{"firstname":"Wolfram"}+' ),
 	    	topic: 'RECORD',
 	    	action: 'U',
 	    	data: [ 'someRecord', 1, '{"firstname":"Wolfram"}' ]
