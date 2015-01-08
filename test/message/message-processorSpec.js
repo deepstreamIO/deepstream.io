@@ -17,7 +17,7 @@ describe( 'the message processor only forwards valid, authorized messages', func
 	it( 'rejects invalid messages', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock() );
 		messageProcessor.process( socketWrapper, 'gibberish' );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'ERROR|E|MESSAGE_PARSE_ERROR|gibberish+' ) );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'X|E|MESSAGE_PARSE_ERROR|gibberish+' ) );
 	});
 
 	it( 'handles permission errors', function(){

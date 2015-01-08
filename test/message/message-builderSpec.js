@@ -22,11 +22,11 @@ describe( 'messageBuilder composes valid deepstream messages', function(){
 
 	it( 'creates an invalid message data error message', function(){
 		var msg = messageBuilder.getErrorMsg( C.TOPIC.ERROR, C.EVENT.INVALID_MESSAGE_DATA, 'someError' );
-		expect( msg ).toBe( _msg( 'ERROR|E|INVALID_MESSAGE_DATA|someError+') );
+		expect( msg ).toBe( _msg( 'X|E|INVALID_MESSAGE_DATA|someError+') );
 	});
 
 	it( 'sends messages with missing error message strings', function(){
 		var msg = messageBuilder.getErrorMsg( C.TOPIC.ERROR, C.EVENT.NO_RPC_PROVIDER );
-		expect( msg ).toBe( _msg( 'ERROR|E|NO_RPC_PROVIDER|undefined+') );
+		expect( msg ).toBe( _msg( 'X|E|NO_RPC_PROVIDER|undefined+') );
 	});
 });

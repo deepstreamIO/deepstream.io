@@ -57,6 +57,6 @@ describe( 'message connector distributes messages to callbacks', function(){
 			msg = { 'topic': 'gibberish' };
 		expect( socketWrapper.socket.lastSendMessage ).toBe( null );
 		messageDistributor.distribute( socketWrapper, msg );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'ERROR|E|UNKNOWN_TOPIC|gibberish+' ) );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'X|E|UNKNOWN_TOPIC|gibberish+' ) );
 	});
 });
