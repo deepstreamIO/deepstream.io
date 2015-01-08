@@ -2,24 +2,24 @@
 
 var Deepstream = require( './src/deepstream.io' ),
 	AmqpConnector = require( 'deepstream.io-msg-amqp' ),
-	RedisConnector = require( 'deepstream.io-redis' );
+	redis = require( 'deepstream.io-redis' );
 
 var deepstream = new Deepstream();
 
 // deepstream.set( 'host', process.env.IP );
 // deepstream.set( 'port', process.env.PORT );
 
-deepstream.set( 'messageConnector', new AmqpConnector({
-	// Remote
-	// login: 'nwixdpxf',
-	// vhost: 'nwixdpxf',
-	// password: 'YYY',
-	// host: 'bunny.cloudamqp.com'
+// deepstream.set( 'messageConnector', new AmqpConnector({
+// 	// Remote
+// 	// login: 'nwixdpxf',
+// 	// vhost: 'nwixdpxf',
+// 	// password: 'YYY',
+// 	// host: 'bunny.cloudamqp.com'
 	
-	//Local
-	host: 'localhost',
-	port: 5672
-}));
+// 	//Local
+// 	host: 'localhost',
+// 	port: 5672
+// }));
 
 deepstream.set( 'permissionHandler', {
 	isValidUser: function( handshakeData, authData, callback ) {
@@ -36,16 +36,24 @@ deepstream.set( 'permissionHandler', {
 	}
 });
 
-// deepstream.set( 'cache', new RedisConnector({
-// 	// Remote
-// 	port: 15010,
-// 	host: 'pub-redis-15010.us-east-1-4.4.ec2.garantiadata.com',
-// 	password: 'XXX'
+var redisOptions = {
+	// Remote
+	port: 15010,
+	host: 'pub-redis-15010.us-east-1-4.4.ec2.garantiadata.com',
+	password: 'Arbiter'
 	
 
-// 	//Local
-// 	// port: 6379,
-// 	// host: 'localhost'
-// }));
+	//Local
+	// port: 6379,
+	// host: 'localhost'
+}; 
+
+deepstream.set( 'cache', new redis.CacheConnector( redisOptions ));
+
+deepstream.set( 'messageConnector', new redis.MessageConnector({
+	port: 15010,
+	host: 'pub-redis-15010.us-east-1-4.4.ec2.garantiadata.com',
+	password: 'Arbiter'
+}));
 
 deepstream.start();
