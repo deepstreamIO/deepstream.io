@@ -5,7 +5,7 @@ var SubscriptionRegistry = require( '../../src/utils/subscription-registry' ),
 	socketWrapperOptions = {logger:{ log: function(){}}},
 	_msg = require( '../test-helper/test-helper' ).msg,
 	options = { logger: { log: function( level, event, message ){ lastLogEvent = event; } } },
-	subscriptionRegistry = new SubscriptionRegistry( options, 'EVENT' );
+	subscriptionRegistry = new SubscriptionRegistry( options, 'E' );
 
 describe( 'subscription-registry manages subscriptions', function(){
 
@@ -16,7 +16,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( null );
 
 		subscriptionRegistry.subscribe( 'someName', socketWrapperA );
-		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'EVENT|A|S|someName+' ) );
+		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|S|someName+' ) );
 		subscriptionRegistry.sendToSubscribers( 'someName', _msg( 'someMessage+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'someMessage+' ) );
 	});
@@ -24,7 +24,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 	it( 'doesn\'t subscribe twice to the same name', function(){
 		expect( lastLogEvent ).toBe( 'SUBSCRIBE' );
 		subscriptionRegistry.subscribe( 'someName', socketWrapperA );
-		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'EVENT|E|MULTIPLE_SUBSCRIPTIONS|someName+' ) );
+		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|E|MULTIPLE_SUBSCRIPTIONS|someName+' ) );
 		expect( lastLogEvent ).toBe( 'MULTIPLE_SUBSCRIPTIONS' );
 	});
 
@@ -76,21 +76,21 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperB.socket.lastSendMessage ).toBe( _msg( 'msg4+' ) );
 
 		subscriptionRegistry.unsubscribe( 'someName', socketWrapperB );
-		expect( socketWrapperB.socket.lastSendMessage ).toBe( _msg( 'EVENT|A|US|someName+' ) );
+		expect( socketWrapperB.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );
 		subscriptionRegistry.sendToSubscribers( 'someName', _msg( 'msg5+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'msg5+' ) );
-		expect( socketWrapperB.socket.lastSendMessage ).toBe( _msg( 'EVENT|A|US|someName+' ) );
+		expect( socketWrapperB.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );
 	});
 
 	it( 'handles unsubscribes for non existant topics', function(){
 		subscriptionRegistry.unsubscribe( 'giberish', socketWrapperB );
-		expect( socketWrapperB.socket.lastSendMessage ).toBe( _msg( 'EVENT|E|NOT_SUBSCRIBED|giberish+') );
+		expect( socketWrapperB.socket.lastSendMessage ).toBe( _msg( 'E|E|NOT_SUBSCRIBED|giberish+') );
 	});
 
 	it( 'handles unsubscribes for non existant subscriptions', function(){
 		var newSocketWrapper = new SocketWrapper( new SocketMock(), socketWrapperOptions );
 		subscriptionRegistry.unsubscribe( 'someName', newSocketWrapper );
-		expect( newSocketWrapper.socket.lastSendMessage ).toBe( _msg( 'EVENT|E|NOT_SUBSCRIBED|someName+' ) );
+		expect( newSocketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|NOT_SUBSCRIBED|someName+' ) );
 	});
 
 	it( 'routes the events', function(){
@@ -102,9 +102,9 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'msg7+' ) );
 
 		subscriptionRegistry.unsubscribe( 'someName', socketWrapperA );
-		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'EVENT|A|US|someName+' ) );
+		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );
 		subscriptionRegistry.sendToSubscribers( 'someName', _msg( 'msg8+' ) );
-		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'EVENT|A|US|someName+' ) );
+		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );
 
 		subscriptionRegistry.sendToSubscribers( 'someOtherName', _msg( 'msg9+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'msg9+' ) );
