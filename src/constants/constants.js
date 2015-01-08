@@ -52,7 +52,7 @@ exports.TOPIC.AUTH = 'A';
 exports.TOPIC.ERROR = 'X';
 exports.TOPIC.EVENT = 'E';
 exports.TOPIC.RECORD = 'R';
-exports.TOPIC.RPC = 'RPC';
+exports.TOPIC.RPC = 'P';
 exports.TOPIC.PRIVATE = 'PRIVATE/';
 
 exports.ACTIONS = {};

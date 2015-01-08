@@ -127,7 +127,7 @@ describe( 'keeps track of which remote deepstream instance can provide which rpc
 				}
 			};
 			
-		for( var i = 0; i < 20; i++ ) {
+		while( hadTopicA === false || hadTopicC === false ) {
 			registry.getProviderTopic( 'rpcA', callback );
 		}
 		
