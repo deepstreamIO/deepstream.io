@@ -7,7 +7,7 @@ describe( 'messageBuilder composes valid deepstream messages', function(){
 
 	it( 'creates a simple authentication ack message', function(){
 		var msg = messageBuilder.getMsg( C.TOPIC.AUTH, C.ACTIONS.ACK );
-		expect( msg ).toBe( _msg( 'AUTH|A+') );
+		expect( msg ).toBe( _msg( 'A|A+') );
 	});
 
 	it( 'creates an event subscription message', function(){

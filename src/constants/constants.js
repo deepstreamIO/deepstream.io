@@ -48,7 +48,7 @@ exports.EVENT.VERSION_EXISTS = 'VERSION_EXISTS';
 exports.EVENT.INVALID_VERSION = 'INVALID_VERSION';
 
 exports.TOPIC = {};
-exports.TOPIC.AUTH = 'AUTH';
+exports.TOPIC.AUTH = 'A';
 exports.TOPIC.ERROR = 'ERROR';
 exports.TOPIC.EVENT = 'EVENT';
 exports.TOPIC.RECORD = 'RECORD';
