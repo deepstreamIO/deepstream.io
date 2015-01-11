@@ -190,11 +190,11 @@ RecordTransition.prototype._next = function() {
 	this._currentStep = this._steps.shift();
 
 	if( this._record._v !== this._currentStep.version - 1 ) {
-		this._currentStep.sender.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, this._currentStep.version );
+		this._currentStep.sender.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, this._currentStep.version );
 		
 		var msg = 	this._currentStep.sender.user + ' tried to update record ' + this._name + ' to version ' + 
 					this._currentStep.version + ' but it already was ' + this._record._v;
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_VERSION, msg );
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.VERSION_EXISTS, msg );
 		
 		this._next();
 		return;
