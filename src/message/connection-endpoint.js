@@ -8,7 +8,7 @@ var C = require( '../constants/constants' ),
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
- * connection and authentication requests, authenticates sockets and
+ * connections and authentication requests, authenticates sockets and
  * forwards messages it receives from authenticated sockets.
  *
  * @constructor
@@ -20,15 +20,17 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._options = options;
 	this._readyCallback = readyCallback;
 
+	// Initialise engine.io's server - a combined http and websocket server for browser connections
 	this._engineIoReady = false;
 	this._engineIo = engine.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
 	this._engineIo.on( 'error', this._onError.bind( this ) );
-	this._engineIo.on( 'connection', this._onConnection.bind( this ) );
+	this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
 
+	// Initialise a tcp server to facilitate fast and compatible communication with backend systems
 	this._tcpEndpointReady = false;
 	this._tcpEndpoint = new TcpEndpoint( options, this._checkReady.bind( this, TCP_ENDPOINT ) );
 	this._tcpEndpoint.on( 'error', this._onError.bind( this ) );
-	this._tcpEndpoint.on( 'connection', this._onConnection.bind( this ) );
+	this._tcpEndpoint.on( 'connection', this._onConnection.bind( this, TCP_ENDPOINT ) );
 
 	this._timeout = null;
 	this._msgNum = 0;
@@ -51,17 +53,28 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
 
 /**
- * Callback for engine.io's 'connection' event. Receives
+ * Callback for 'connection' event. Receives
  * a connected socket, wraps it in a SocketWrapper and
  * subscribes to authentication messages
  *
- * @param   {engine.io Socket} socket
+ * @param {Number} endpoint 
+ * @param {TCPSocket|Engine.io} socket
  *
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._onConnection = function( socket ) {
-	var socketWrapper = new SocketWrapper( socket, this._options );
+ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
+	var socketWrapper = new SocketWrapper( socket, this._options ),
+		handshakeData = socketWrapper.getHandshakeData(),
+		logMsg;
+
+	if( endpoint === ENGINE_IO ) {
+		logMsg = 'from ' + handshakeData.referer + ' (' + handshakeData.remoteAddress + ')' + ' via engine.io';
+	} else {
+		logMsg = 'from ' + handshakeData.remoteAddress + ' via tcp';
+	}
+
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
 	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper );
 	socket.on( 'message', socketWrapper.authCallBack );
 };
@@ -79,11 +92,16 @@ ConnectionEndpoint.prototype._onConnection = function( socket ) {
  * @returns {void}
  */
 ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, authMsg ) {
-	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, authMsg );
-
 	var msg = messageParser.parse( authMsg )[ 0 ],
+		logMsg,
 		authData,
 		errorMsg;
+
+	/**
+	 * Log the authentication attempt
+	 */
+	logMsg = socketWrapper.getHandshakeData().remoteAddress  + ': ' + authMsg;
+	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg );
 
 	/**
 	 * Ensure the message is a valid authentication message
@@ -209,6 +227,14 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
 	}
 };
 
+/**
+ * Called for the ready events of both the engine.io server and the tcp server.
+ *
+ * @param   {String} endpoint An endpoint constant
+ *
+ * @private
+ * @returns {void}
+ */
 ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
 	var msg;
 
@@ -229,6 +255,15 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
 	}
 };
 
+/**
+ * Generic callback for connection errors. This will most often be called
+ * if the configured port number isn't available
+ *
+ * @param   {String} error
+ *
+ * @private
+ * @returns {void}
+ */
 ConnectionEndpoint.prototype._onError = function( error ) {
 	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error );
 };

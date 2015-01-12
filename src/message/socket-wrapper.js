@@ -33,13 +33,16 @@ utils.inherits( SocketWrapper, EventEmitter );
  * @returns {Object} handshakeData
  */
 SocketWrapper.prototype.getHandshakeData = function() {
-	return {
-		headers: this.socket.headers,
-		url: this.socket.url,
-		method: this.socket.method,
-		httpVersionMajor: this.socket.httpVersionMajor,
-		httpVersionMinor: this.socket.httpVersionMinor
+	var handshakeData = {
+		remoteAddress: this.socket.remoteAddress
 	};
+
+	if( this.socket.request ) {
+		handshakeData.headers = this.socket.request.headers;
+		handshakeData.referer = this.socket.request.headers.referer;
+	}
+
+	return handshakeData;
 };
 
 /**

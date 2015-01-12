@@ -23,13 +23,7 @@ var TcpSocket = function( options, socket ) {
 	this._socket.on( 'end', this._onDisconnect.bind( this ) );
 	this._socket.on( 'data', this._onData.bind( this ) );
 	this._messageBuffer = '';
-
-	this.headers = null;
-	this.url = socket.remoteAddress + ':' + socket.remotePort;
-	this.method = null;
-	this.httpVersionMajor = null;
-	this.httpVersionMinor = null;
-
+	this.remoteAddress = socket.remoteAddress + ':' + socket.remotePort;
 	this._isClosed = false;
 };
 
