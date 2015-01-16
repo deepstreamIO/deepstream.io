@@ -78,6 +78,14 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	/*
+	 * Remove the socketWrapper as a listener for
+	 * the specified pattern
+	 */
+	else if( message.action === C.ACTIONS.UNLISTEN ) {
+		this._unlisten( socketWrapper, message );
+	}
+
+	/*
 	 * Default for invalid messages
 	 */
 	else {
@@ -283,6 +291,19 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._listen = function( socketWrapper, message ) {
+	//TODO
+};
+
+/**
+ * De-register a client as a listener for record subscriptions
+ *
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message parsed and validated message
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._unlisten = function( socketWrapper, message ) {
 	//TODO
 };
 

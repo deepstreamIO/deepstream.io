@@ -67,6 +67,7 @@ exports.ACTIONS.SUBSCRIBE = 'S';
 exports.ACTIONS.UNSUBSCRIBE = 'US';
 exports.ACTIONS.INVOKE = 'I';
 exports.ACTIONS.LISTEN = 'L';
+exports.ACTIONS.UNLISTEN = 'UL';
 exports.ACTIONS.PROVIDER_UPDATE = 'PU';
 exports.ACTIONS.QUERY = 'Q';
 exports.ACTIONS.CREATEORREAD = 'CR';
