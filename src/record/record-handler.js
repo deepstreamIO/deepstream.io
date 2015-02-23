@@ -2,7 +2,8 @@ var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
 	RecordRequest = require( './record-request' ),
 	RecordTransition = require( './record-transition' ),
-	RecordDeletion = require( './record-deletion' );
+	RecordDeletion = require( './record-deletion' ),
+	ListenerRegistry = require( './listener-registry' );
 
 /**
  * The entry point for record related operations
@@ -11,7 +12,7 @@ var C = require( '../constants/constants' ),
  */
 var RecordHandler = function( options ) {
 	this._options = options;
-	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
+	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD, new ListenerRegistry() );
 	this._transitions = [];
 };
 
@@ -266,7 +267,7 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
  * @returns {void}
  */
 RecordHandler.prototype._delete = function( socketWrapper, message ) {
-		var recordName = message.data[ 0 ];
+	var recordName = message.data[ 0 ];
 		
 	if( this._transitions[ recordName ] ) {
 		this._transitions[ recordName ].destroy();
@@ -279,32 +280,6 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 	}
 	
 	new RecordDeletion( this._options, socketWrapper, message, this._$broadcastUpdate.bind( this ) );
-};
-
-/**
- * Register a client as a listener for record subscriptions
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._listen = function( socketWrapper, message ) {
-	//TODO
-};
-
-/**
- * De-register a client as a listener for record subscriptions
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._unlisten = function( socketWrapper, message ) {
-	//TODO
 };
 
 module.exports = RecordHandler;

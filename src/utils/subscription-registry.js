@@ -9,11 +9,15 @@ var C = require( '../constants/constants' );
  *
  * @param {Object} options deepstream options
  * @param {String} topic one of C.TOPIC
+ * @param {[SubscriptionListener]} subscriptionListener Optional. A class exposing a onSubscriptionMade 
+ *                                                      and onSubscriptionRemoved method.
+ *                                                    
  */
-var SubscriptionRegistry = function( options, topic ) {
+var SubscriptionRegistry = function( options, topic, subscriptionListener ) {
 	this._subscriptions = {};
 	this._options = options;
 	this._topic = topic;
+	this._subscriptionListener = subscriptionListener;
 };
 
 /**
@@ -50,6 +54,9 @@ SubscriptionRegistry.prototype.sendToSubscribers = function( name, msgString, se
 SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	if( this._subscriptions[ name ] === undefined ) {
 		this._subscriptions[ name ] = [];
+		if( this._subscriptionListener ) {
+			this._subscriptionListener.onSubscriptionMade( name );
+		}
 	}
 
 	if( this._subscriptions[ name ].indexOf( socketWrapper ) !== -1 ) {
@@ -88,6 +95,10 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 
 	if( this._subscriptions[ name ].length === 1 ) {
 		delete this._subscriptions[ name ];
+		
+		if( this._subscriptionListener ) {
+			this._subscriptionListener.onSubscriptionRemoved( name );
+		}
 	} else {
 		this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
 	}
