@@ -49,4 +49,42 @@ describe( 'record handler handles messages', function(){
         expect( listeningClient.socket.getMsg( 1 ) ).toBe( msg( 'R|SP|user\/.*|user/A+' ) );
         expect( listeningClient.socket.getMsg( 0 ) ).toBe( msg( 'R|SP|user\/.*|user/B+' ) );
 	});
+	
+	it( 'makes a new subscription', function() {
+	     recordHandler.handle( subscribingClient, {
+	        topic: 'R',
+	        action: 'CR',
+	        data: [ 'user/C' ]
+	    });
+	    expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'R|R|user/C|0|{}+' ) );
+	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'R|SP|user\/.*|user/C+' ) );
+	});
+	
+	it( 'doesn\'t send messages for subsequent subscriptions', function(){
+	     expect( listeningClient.socket.sendMessages.length ).toBe( 4 );
+	     recordHandler.handle( subscribingClient, {
+	        topic: 'R',
+	        action: 'CR',
+	        data: [ 'user/C' ]
+	    });
+	    expect( listeningClient.socket.sendMessages.length ).toBe( 4 );
+	});
+	
+	it( 'removes listeners', function() {
+	     recordHandler.handle( listeningClient, {
+	       topic: 'R',
+	       action: 'UL',
+	       data: [ 'Suser\/.*' ]
+	    });
+	    
+	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'R|A|US|user\/.*+' ) );
+	    expect( listeningClient.socket.sendMessages.length ).toBe( 5 );
+	    
+	     recordHandler.handle( subscribingClient, {
+	        topic: 'R',
+	        action: 'CR',
+	        data: [ 'user/D' ]
+	    });
+	    expect( listeningClient.socket.sendMessages.length ).toBe( 5 );
+	});
 });

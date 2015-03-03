@@ -66,7 +66,10 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 		return;
 	}
 
-	socketWrapper.socket.once( 'close', this.unsubscribeAll.bind( this, socketWrapper ) );
+	if( !this.isSubscriber( socketWrapper ) ) {
+		socketWrapper.socket.once( 'close', this.unsubscribeAll.bind( this, socketWrapper ) );
+	}
+	
 	this._subscriptions[ name ].push( socketWrapper );
 	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
 	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.SUBSCRIBE, logMsg );
@@ -125,9 +128,28 @@ SubscriptionRegistry.prototype.unsubscribeAll = function( socketWrapper ) {
 		index = this._subscriptions[ name ].indexOf( socketWrapper );
 
 		if( index !== -1 ) {
-			this._subscriptions[ name ].splice( index, 1 );
+			this.unsubscribe( name, socketWrapper );
 		}
 	}
+};
+
+/**
+ * Returns true if socketWrapper is subscribed to any of the events in
+ * this registry. This is useful to bind events on close only once
+ * 
+ * @param {SocketWrapper} socketWrapper
+ * 
+ * @public
+ * @returns {Boolean} isSubscriber
+ */
+SubscriptionRegistry.prototype.isSubscriber = function( socketWrapper ) {
+	for( var name in this._subscriptions ) {
+		if( this._subscriptions[ name ].indexOf( socketWrapper ) !== -1 ) {
+			return true;
+		}
+	}
+	
+	return false;
 };
 
 /**

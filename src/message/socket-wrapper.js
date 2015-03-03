@@ -15,7 +15,8 @@ var C = require( '../constants/constants' ),
  */
 var SocketWrapper = function( socket, options ) {
 	this.socket = socket;
-	this.socket.on( 'close', this._onSocketClose.bind( this ) );
+	this.isClosed = false;
+	this.socket.once( 'close', this._onSocketClose.bind( this ) );
 	this._options = options;
 	this.user = null;
 	this.authCallBack = null;
@@ -57,7 +58,9 @@ SocketWrapper.prototype.getHandshakeData = function() {
  * @returns {void}
  */
 SocketWrapper.prototype.sendError = function( topic, type, msg ) {
-	this.socket.send( messageBuilder.getErrorMsg( topic, type, msg ) );
+	if( this.isClosed === false ) {
+		this.socket.send( messageBuilder.getErrorMsg( topic, type, msg ) );
+	}
 };
 
 /**
@@ -71,7 +74,9 @@ SocketWrapper.prototype.sendError = function( topic, type, msg ) {
  * @returns {void}
  */
 SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
-	this.socket.send( messageBuilder.getMsg( topic, action, data ) );
+	if( this.isClosed === false ) {
+		this.socket.send( messageBuilder.getMsg( topic, action, data ) );
+	}
 };
 
 /**
@@ -86,8 +91,10 @@ SocketWrapper.prototype.send = function( msg ) {
 	if( msg.charAt( msg.length - 1 ) !== C.MESSAGE_SEPERATOR ) {
 		msg += C.MESSAGE_SEPERATOR;
 	}
-	
-	this.socket.send( msg );
+
+	if( this.isClosed === false ) {
+		this.socket.send( msg );
+	}
 };
 
 /**
@@ -110,6 +117,7 @@ SocketWrapper.prototype.destroy = function() {
  * @returns {void}
  */
 SocketWrapper.prototype._onSocketClose = function() {
+	this.isClosed = true;
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user );
 };
 

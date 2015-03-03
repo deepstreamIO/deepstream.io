@@ -10,7 +10,7 @@ describe( 'record listener-registry', function(){
     var listenerRegistry,
         options = { logger: new LoggerMock() },
         recordSubscriptionRegistryMock = { getNames: function() { return [ 'car/Mercedes', 'car/Abarth' ]; } },
-        listeningSocket = new SocketWrapper( new SocketMock() );
+        listeningSocket = new SocketWrapper( new SocketMock(), options );
     
     it( 'creates the listener registry', function(){
         listenerRegistry = new ListenerRegistry( options, recordSubscriptionRegistryMock );
@@ -67,10 +67,18 @@ describe( 'record listener-registry', function(){
         
         listenerRegistry.addListener( listeningSocket, message );
         
-        var sendMessages = listeningSocket.socket.sendMessages;
-        
         expect( listeningSocket.socket.getMsg( 2 ) ).toBe( msg( 'R|A|S|car\/[A-Za-z]*$+' ) );
         expect( listeningSocket.socket.getMsg( 1 ) ).toBe( msg( 'R|SP|car\/[A-Za-z]*$|car/Mercedes+' ) );
         expect( listeningSocket.socket.getMsg( 0 ) ).toBe( msg( 'R|SP|car\/[A-Za-z]*$|car/Abarth+' ) );
+    });
+    
+    it( 'removes a socket on close', function() {
+        expect( Object.keys( listenerRegistry._patterns ) ).toEqual( [ 'car/[A-Za-z]*$' ] );
+        expect( listenerRegistry._subscriptionRegistry.getSubscribers( 'car/[A-Za-z]*$' ).length ).toBe( 1 );
+
+        listeningSocket.socket.emit( 'close' );
+
+        expect( Object.keys( listenerRegistry._patterns ) ).toEqual( [] );
+        expect( listenerRegistry._subscriptionRegistry.getSubscribers( 'car/[A-Za-z]*$' ) ).toBe( null );
     });
 });

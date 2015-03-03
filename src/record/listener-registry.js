@@ -37,6 +37,10 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
 		this._onMsgDataError( socketWrapper, e.toString() );
 		return;
 	}
+	
+	if( !this._subscriptionRegistry.isSubscriber( socketWrapper ) ) {
+		socketWrapper.socket.once( 'close', this._reconcilePatterns.bind( this ) );
+	}
 
 	this._subscriptionRegistry.subscribe( pattern, socketWrapper );
 	
@@ -53,8 +57,6 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
 			socketWrapper.send( messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, recordName ] ) );
 		}
 	}
-
-	socketWrapper.once( 'close', this._reconcilePatterns.bind( this ) );
 };
 
 /**
