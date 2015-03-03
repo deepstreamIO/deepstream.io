@@ -1,9 +1,12 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	messageParser = require( '../message/message-parser' );
+	messageParser = require( '../message/message-parser' ),
+	messageBuilder = require( '../message/message-builder' );
 
-ListenerRegistry = function( options ) {
+var ListenerRegistry = function( options, recordSubscriptionRegistry ) {
 	this._options = options;
+	this._recordSubscriptionRegistry = null;
+	this._recordSubscriptionRegistry = recordSubscriptionRegistry;
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
 	this._patterns = {};
 };
@@ -19,7 +22,10 @@ ListenerRegistry = function( options ) {
  */
 ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
 	var pattern = this._getPattern( socketWrapper, message ),
-		regExp;
+		regExp,
+		existingSubscriptions,
+		recordName,
+		i;
 	
 	if( !pattern ) {
 		return;
@@ -33,7 +39,20 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
 	}
 
 	this._subscriptionRegistry.subscribe( pattern, socketWrapper );
-	this._patterns[ pattern ] = { regExp: regExp, hasSubscribers: false };
+	
+	// Create pattern entry (if it doesn't exist already)
+	if( !this._patterns[ pattern ] ) {
+		this._patterns[ pattern ] = { regExp: regExp, hasSubscribers: false };
+	}
+	
+	// Notify socketWrapper of existing subscriptions that match the provided pattern
+	existingSubscriptions = this._recordSubscriptionRegistry.getNames();
+	for( i = 0; i < existingSubscriptions.length; i++ ) {
+		recordName = existingSubscriptions[ i ];
+		if( recordName.match( regExp ) ) {
+			socketWrapper.send( messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, recordName ] ) );
+		}
+	}
 
 	socketWrapper.once( 'close', this._reconcilePatterns.bind( this ) );
 };
@@ -60,7 +79,7 @@ ListenerRegistry.prototype.onSubscriptionMade = function( recordName ) {
 	var pattern, message;
 
 	for( pattern in this._patterns ) {
-		if( recordName.match( this._patterns[ pattern ].regExp ) ) { 
+		if( recordName.match( this._patterns[ pattern ].regExp ) ) {
 			this._patterns[ pattern ].hasSubscribers = true;
 			message = messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, recordName ] );
 			this._subscriptionRegistry.sendToSubscribers( pattern, message );

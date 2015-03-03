@@ -180,4 +180,27 @@ SubscriptionRegistry.prototype.hasSubscribers = function( name ) {
 	return !!this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0;
 };
 
+/**
+ * Returns a list of all the topic this registry 
+ * currently has subscribers for
+ * 
+ * @public
+ * @returns {Array} names
+ */
+SubscriptionRegistry.prototype.getNames = function() {
+	return Object.keys( this._subscriptions );	
+};
+
+/**
+ * Allows to set a subscriptionListener after the class had been instantiated
+ *
+ * @param {SubscriptionListener} subscriptionListener - a class exposing a onSubscriptionMade and onSubscriptionRemoved method
+ *
+ * @public
+ * @returns {void}
+ */
+SubscriptionRegistry.prototype.setSubscriptionListener = function( subscriptionListener ) {
+	this._subscriptionListener = subscriptionListener;
+};
+
 module.exports = SubscriptionRegistry;

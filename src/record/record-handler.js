@@ -12,7 +12,9 @@ var C = require( '../constants/constants' ),
  */
 var RecordHandler = function( options ) {
 	this._options = options;
-	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD, new ListenerRegistry() );
+	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
+	this._listenerRegistry = new ListenerRegistry( options, this._subscriptionRegistry );
+	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
 	this._transitions = [];
 };
 
@@ -75,7 +77,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	 * whose names match a pattern
 	 */
 	else if( message.action === C.ACTIONS.LISTEN ) {
-		this._listen( socketWrapper, message );
+		this._listenerRegistry.addListener( socketWrapper, message );
 	}
 
 	/*
@@ -83,7 +85,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	 * the specified pattern
 	 */
 	else if( message.action === C.ACTIONS.UNLISTEN ) {
-		this._unlisten( socketWrapper, message );
+		this._listenerRegistry.removeListener( socketWrapper, message );
 	}
 
 	/*
