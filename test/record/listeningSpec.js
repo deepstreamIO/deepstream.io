@@ -42,7 +42,7 @@ describe( 'record handler handles messages', function(){
 	    recordHandler.handle( listeningClient, {
 	       topic: 'R',
 	       action: 'L',
-	       data: [ 'Suser\/.*' ]
+	       data: [ 'user\/.*' ]
 	    });
 	    
 	    expect( listeningClient.socket.getMsg( 2 ) ).toBe( msg( 'R|A|S|user\/.*+' ) );
@@ -74,7 +74,7 @@ describe( 'record handler handles messages', function(){
 	     recordHandler.handle( listeningClient, {
 	       topic: 'R',
 	       action: 'UL',
-	       data: [ 'Suser\/.*' ]
+	       data: [ 'user\/.*' ]
 	    });
 	    
 	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'R|A|US|user\/.*+' ) );

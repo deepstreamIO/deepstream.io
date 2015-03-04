@@ -21,7 +21,7 @@ describe( 'record listener-registry', function(){
         var message = {
             topic: 'R',
             action: 'L',
-            data: [ 'Suser\/[A-Za-z]*$' ]
+            data: [ 'user\/[A-Za-z]*$' ]
         };
         
         listenerRegistry.addListener( listeningSocket, message );
@@ -47,7 +47,7 @@ describe( 'record listener-registry', function(){
         var message = {
               topic: 'R',
               action: 'UL',
-              data: [ 'Suser\/[A-Za-z]*$' ]
+              data: [ 'user\/[A-Za-z]*$' ]
         };
        listenerRegistry.removeListener( listeningSocket, message );
        expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|A|US|user\/[A-Za-z]*$+' ) );
@@ -62,7 +62,7 @@ describe( 'record listener-registry', function(){
         var message = {
             topic: 'R',
             action: 'L',
-            data: [ 'Scar\/[A-Za-z]*$' ]
+            data: [ 'car\/[A-Za-z]*$' ]
         };
         
         listenerRegistry.addListener( listeningSocket, message );

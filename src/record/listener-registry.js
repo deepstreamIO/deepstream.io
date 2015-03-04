@@ -99,7 +99,7 @@ ListenerRegistry.prototype._getPattern = function( socketWrapper, message ) {
 		return null;
 	}
 
-	var pattern = messageParser.convertTyped( message.data[ 0 ] );
+	var pattern = message.data[ 0 ];
 
 	if( typeof pattern !== 'string' ) {
 		this._onMsgDataError( socketWrapper, pattern );
