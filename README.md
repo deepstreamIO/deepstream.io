@@ -36,7 +36,7 @@ deepstream.start();
   
   // subscribe to a path within the record
   car.subscribe( 'color', function( color ) {
-  console.log( 'color is now ', color );
+    console.log( 'color is now ', color );
   });
   
   // set the path
@@ -44,7 +44,7 @@ deepstream.start();
   
   // provide a remote procedure call
   client.rpc.provide( 'addTwo', function( data, response ){
-  response.send( data.numberA + data.numberB );
+    response.send( data.numberA + data.numberB );
   });
   
   // invoke the remote procedure call
@@ -54,7 +54,7 @@ deepstream.start();
   
   // subscribe to events
   client.event.subscribe( 'stuff', function( data ){
-  console.log( 'stuff happened' , data );
+    console.log( 'stuff happened' , data );
   });
   
   // emit an event
