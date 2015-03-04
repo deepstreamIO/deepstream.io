@@ -72,6 +72,11 @@ describe( 'record listener-registry', function(){
         expect( listeningSocket.socket.getMsg( 0 ) ).toBe( msg( 'R|SP|car\/[A-Za-z]*$|car/Abarth+' ) );
     });
     
+    it( 'removes subscriptions for a record', function() {
+        listenerRegistry.onSubscriptionRemoved( 'car/Abarth' );
+        expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|SR|car\/[A-Za-z]*$|car/Abarth+' ) );
+    })
+    
     it( 'removes a socket on close', function() {
         expect( Object.keys( listenerRegistry._patterns ) ).toEqual( [ 'car/[A-Za-z]*$' ] );
         expect( listenerRegistry._subscriptionRegistry.getSubscribers( 'car/[A-Za-z]*$' ).length ).toBe( 1 );
