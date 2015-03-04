@@ -23,7 +23,7 @@ deepstream.start();
 
 
 ### Installing the client
-- Install via npm `npm install deepstream.io-client-js
+- Install via npm `npm install deepstream.io-client-js`
 - Now you can do things like
 ```javascript
   var deepstream = require( 'deepstream.io-client-js' );
