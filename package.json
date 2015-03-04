@@ -20,11 +20,13 @@
   },
   "devDependencies": {
     "jasmine-node": "1.14.5",
-    "excel": "0.1.1",
     "engine.io-client": "1.4.2",
     "proxyquire": "1.3.0",
     "grunt": "~0.4.5",
     "grunt-release": "0.9.0"
+  },
+  "optionalDependencies": {
+      "excel": "0.1.1"
   },
   "author": "Wolfram Hempel",
   "license": "MIT",
