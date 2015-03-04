@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node node_modules/jasmine-node/lib/jasmine-node/cli.js test --captureExceptions --autotest --watch ./src"
+    "test": "node node_modules/jasmine-node/lib/jasmine-node/cli.js test --forceexit",
+    "watch": "node node_modules/jasmine-node/lib/jasmine-node/cli.js test --captureExceptions --autotest --watch ./src"
   },
   "repository": {
     "type": "git",
