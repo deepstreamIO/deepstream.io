@@ -27,6 +27,7 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 
 	// Initialise engine.io's server - a combined http and websocket server for browser connections
 	this._engineIoReady = false;
+	this._engineIoServerClosed = false;
 	this._engineIo = engine.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
 	this._engineIo.on( 'error', this._onError.bind( this ) );
 	this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
@@ -74,7 +75,9 @@ ConnectionEndpoint.prototype.close = function() {
 			this._engineIo.clients[ i ].once( 'close', this._checkClosed.bind( this ) );
 		}
 	}
+
 	this._engineIo.close();
+	this._engineIo.httpServer.close(function(){ this._engineIoServerClosed = true; }.bind( this ));
 	
 	// Close the tcp server
 	this._tcpEndpoint.on( 'close', this._checkClosed.bind( this ) );
@@ -89,6 +92,10 @@ ConnectionEndpoint.prototype.close = function() {
  * @returns {void}
  */
 ConnectionEndpoint.prototype._checkClosed = function() {
+	if( this._engineIoServerClosed === false ) {
+		return;
+	}
+	
 	if( this._tcpEndpoint.isClosed === false ) {
 		return;	
 	}

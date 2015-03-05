@@ -97,6 +97,8 @@ Deepstream.prototype.start = function() {
  * @returns {void}
  */
 Deepstream.prototype.stop = function() {
+	
+	//TODO close plugins
 	this._connectionEndpoint.once( 'close', this.emit.bind( this, 'stopped' ) );
 	this._connectionEndpoint.close();
 };
@@ -109,6 +111,10 @@ Deepstream.prototype.stop = function() {
  * @returns {void}
  */
 Deepstream.prototype._showStartLogo = function() {
+	if( this._options.showLogo !== true ) {
+		return;
+	}
+	
 	var logo =
 	' _____________________________________________________________________________\n'+
 	'                                                                              \n'+

@@ -42,7 +42,7 @@ TcpEndpoint.prototype.close = function() {
 	this._server.close();
 	
 	for( var i = 0; i < this._sockets.length; i++ ) {
-		this._sockets[ i ].close();
+		this._sockets[ i ].destroy();
 	}
 };
 
