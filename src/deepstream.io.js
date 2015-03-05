@@ -2,6 +2,8 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	MessageProcessor = require( './message/message-processor' ),
 	MessageDistributor = require( './message/message-distributor' ),
 	EventHandler = require( './event/event-handler' ),
+	EventEmitter = require( 'events' ).EventEmitter,
+	util = require( 'util' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
@@ -36,6 +38,8 @@ var Deepstream = function() {
 		'logger'
 	];
 };
+
+util.inherits( Deepstream, EventEmitter );
 
 /**
  * Sets the name of the process
@@ -83,6 +87,18 @@ Deepstream.prototype.start = function() {
 		initialiser = new DependencyInitialiser( this._options, this._plugins[ i ] );
 		initialiser.once( 'ready', this._checkReady.bind( this ));
 	}
+};
+
+/**
+ * Stops the server and closes all connections. The server can be started again,
+ * but all clients have to reconnect. Will emit a 'stopped' event once done
+ * 
+ * @public
+ * @returns {void}
+ */
+Deepstream.prototype.stop = function() {
+	this._connectionEndpoint.once( 'close', this.emit.bind( this, 'stopped' ) );
+	this._connectionEndpoint.close();
 };
 
 /**
@@ -161,6 +177,7 @@ Deepstream.prototype._checkReady = function() {
  */
 Deepstream.prototype._onStarted = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
+	this.emit( 'started' );
 };
 
 module.exports = Deepstream;

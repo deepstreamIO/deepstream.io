@@ -3,8 +3,11 @@ var C = require( '../constants/constants' ),
 	SocketWrapper = require( './socket-wrapper' ),
 	engine = require('engine.io'),
 	TcpEndpoint = require( '../tcp/tcp-endpoint' ),
+	events = require( 'events' ),
+	util = require( 'util' ),
 	ENGINE_IO = 0,
-	TCP_ENDPOINT = 1;
+	TCP_ENDPOINT = 1,
+	READY_STATE_CLOSED = 'closed';
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -12,6 +15,8 @@ var C = require( '../constants/constants' ),
  * forwards messages it receives from authenticated sockets.
  *
  * @constructor
+ * 
+ * @extends events.EventEmitter
  * 
  * @param {Object} options the extended default options
  * @param {Function} readyCallback will be invoked once both the engineIo and the tcp connection are established
@@ -37,11 +42,14 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._authenticatedSockets = [];
 };
 
+util.inherits( ConnectionEndpoint, events.EventEmitter );
+
 /**
  * Called for every message that's received
  * from an authenticated socket
  *
- * @override
+ * This method will be overridden by an external class and is used instead
+ * of an event emitter to improve the performance of the messaging pipeline
  *
  * @param   {SocketWrapper} socketWrapper
  * @param   {String} message the raw message as sent by the client
@@ -51,6 +59,48 @@ var ConnectionEndpoint = function( options, readyCallback ) {
  * @returns {void}
  */
 ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
+
+/**
+ * Closes both the engine.io connection and the tcp connection. The ConnectionEndpoint
+ * will emit a close event once both are succesfully shut down
+ * 
+ * @public
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype.close = function() {
+	// Close the engine.io server
+	for( var i = 0; i < this._engineIo.clients.length; i++ ) {
+		if( this._engineIo.clients[ i ].readyState !== READY_STATE_CLOSED ) {
+			this._engineIo.clients[ i ].once( 'close', this._checkClosed.bind( this ) );
+		}
+	}
+	this._engineIo.close();
+	
+	// Close the tcp server
+	this._tcpEndpoint.on( 'close', this._checkClosed.bind( this ) );
+	this._tcpEndpoint.close();
+};
+
+/**
+ * Called whenever either the tcp server itself or one of its sockets
+ * is closed. Once everything is closed it will emit a close event
+ * 
+ * @private
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype._checkClosed = function() {
+	if( this._tcpEndpoint.isClosed === false ) {
+		return;	
+	}
+	
+	for( var i = 0; i < this._engineIo.clients.length; i++ ) {
+		if( this._engineIo.clients[ i ].readyState !== READY_STATE_CLOSED ) {
+			return;
+		}
+	}
+	
+	this.emit( 'close' );
+};
 
 /**
  * Callback for 'connection' event. Receives
