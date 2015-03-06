@@ -4,6 +4,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	EventHandler = require( './event/event-handler' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	util = require( 'util' ),
+	defaultOptions = require( './default-options' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
@@ -22,7 +23,7 @@ require( 'colors' );
  * @constructor
  */
 var Deepstream = function() {
-	this._options = require( './default-options' );
+	this._options = defaultOptions.get();
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
