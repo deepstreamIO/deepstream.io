@@ -191,3 +191,30 @@ describe( 'recordRequest returns an error', function(){
 		expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'R|E|RECORD_UPDATE_ERROR|1+' ) );
 	});
 });
+
+describe( 'handles invalid message data', function(){
+	var recordTransition,
+		socketWrapper = new SocketWrapper( new SocketMock() ),
+		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 2, 'somepath', 'O{"invalid":"json' ] },
+		recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
+		logSpy = jasmine.createSpy( 'log' ),
+		options = { cache: new StorageMock(), storage: new StorageMock(), logger: {log: logSpy } };
+
+	options.cache.nextOperationWillBeSynchronous = false;
+
+	it( 'creates the transition', function(){
+		recordTransition = new RecordTransition( 'someRecord', options, recordHandlerMock );
+		expect( recordTransition.hasVersion ).toBeDefined();
+		expect( recordTransition.hasVersion( 2 ) ).toBe( false );
+	});
+
+	it( 'adds a patch to the queue', function(){
+		expect( recordTransition._recordRequest ).toBe( null );
+		recordTransition.add( socketWrapper, 2, patchMessage );
+		expect( recordTransition._recordRequest ).toBe( null );
+	});
+
+	it( 'receives an error', function(){
+		expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'R|E|INVALID_MESSAGE_DATA|SyntaxError: Unexpected end of input:O{"invalid":"json+') );
+	});
+});

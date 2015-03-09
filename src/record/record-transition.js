@@ -112,6 +112,12 @@ RecordTransition.prototype.add = function( socketWrapper, version, message ) {
 		}
 		update.isPatch = true;
 		update.data = messageParser.convertTyped( message.data[ 3 ] );
+		
+		if( update.data instanceof Error ) {
+			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, update.data.toString() + ':' + message.data[ 3 ] );
+			return;
+		}
+		
 		update.path = message.data[ 2 ];
 	}
 

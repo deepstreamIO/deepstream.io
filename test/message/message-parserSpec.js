@@ -1,3 +1,4 @@
+/* global describe, it, expect */
 var messageParser = require( '../../src/message/message-parser' );
 
 describe( 'message parser processes raw messages correctly', function(){
