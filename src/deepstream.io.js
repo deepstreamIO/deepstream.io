@@ -23,6 +23,8 @@ require( 'colors' );
  * @constructor
  */
 var Deepstream = function() {
+	this.isRunning = false;
+
 	this._options = defaultOptions.get();
 	this._connectionEndpoint = null;
 	this._engineIo = null;
@@ -100,6 +102,7 @@ Deepstream.prototype.start = function() {
 Deepstream.prototype.stop = function() {
 	
 	//TODO close plugins
+	this.isRunning = false;
 	this._connectionEndpoint.once( 'close', this.emit.bind( this, 'stopped' ) );
 	this._connectionEndpoint.close();
 };
@@ -184,6 +187,7 @@ Deepstream.prototype._checkReady = function() {
  */
 Deepstream.prototype._onStarted = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
+	this.isRunning = true;
 	this.emit( 'started' );
 };
 
