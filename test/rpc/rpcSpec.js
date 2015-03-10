@@ -3,6 +3,7 @@ var C = require( '../../src/constants/constants' ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	SocketMock = require( '../mocks/socket-mock' ),
+	mockRpcHandler = { getAlternativeProvider: function(){ return []; } },
 	options = {
 		rpcAckTimeout: 5,
 		rpcTimeout: 5
@@ -28,7 +29,7 @@ var C = require( '../../src/constants/constants' ),
 	makeRpc = function( msg ) {
 		var provider = new SocketWrapper( new SocketMock() ),
 			requestor = new SocketWrapper( new SocketMock() ),
-			localRpc = new Rpc( requestor, provider, options, msg );
+			localRpc = new Rpc( mockRpcHandler, requestor, provider, options, msg );
 
 		return {
 			provider: provider,
