@@ -53,6 +53,24 @@ RemoteRpcProviderRegistry.prototype.getProviderTopic = function( rpcName, callba
 };
 
 /**
+ * Returns an array of all currently available provider topics for a specific rpcName
+ * without re-requesting them
+ * 
+ * @param {String} rpcName
+ * 
+ * @public
+ * @returns {Array} providerTopics
+ */
+RemoteRpcProviderRegistry.prototype.getAllProviderTopics = function( rpcName ) {
+	if( this._hasProviderForRpcName( rpcName ) ) {
+		return this._providerCollections[ rpcName ].getAll();
+	}
+	else {
+		return [];
+	}
+}
+
+/**
  * Gate for incoming rpc messages. The only action
  * that's processed by this class is PROVIDER_UPDATE, all
  * other messages will be handled by other classes

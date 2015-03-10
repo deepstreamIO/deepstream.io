@@ -28,6 +28,17 @@ var RpcProxy = function( options, receiverPrivateTopic, rpcName, correlationId )
 utils.inherits( RpcProxy, events.EventEmitter );
 
 /**
+ * Returns the private topic of the remote
+ * part of this proxy
+ * 
+ * @public
+ * @returns {String} remote private topic
+ */
+RpcProxy.prototype.getRemotePrivateTopic = function() {
+	return this._receiverPrivateTopic;	
+};
+
+/**
  * Unsubscribes the proxy from messageConnector messages
  *
  * @public
@@ -105,17 +116,8 @@ RpcProxy.prototype._processIncomingMessage = function( message ) {
 	if( message.data[ 0 ] !== this._rpcName || message.data[ 1 ] !== this._correlationId ) {
 		return;
 	}
-	
-	/**
-	 * @TODO remove
-	 * this should never happen
-	 */
-	if( !message.originalTopic ) {
-		console.log( message );
-		throw new Error( 'no original topic' );
-	}
+
 	message.topic = message.originalTopic;
-	
 	this.emit( C.TOPIC.RPC, message );
 };
 

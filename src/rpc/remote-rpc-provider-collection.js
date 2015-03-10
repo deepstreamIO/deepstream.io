@@ -73,10 +73,10 @@ RpcProviderCollection.prototype.isUpToDate = function() {
  * @todo - actually choose providers in the way described above
  * 
  * @public
- * @returns {String} [description]
+ * @returns {String} privateTopic
  */
 RpcProviderCollection.prototype.getRandomProvider = function() {
-	var privateTopics = Object.keys( this._provider );
+	var privateTopics = this.getAll();
 	
 	if( privateTopics.length === 0 ) {
 		return null;
@@ -84,5 +84,15 @@ RpcProviderCollection.prototype.getRandomProvider = function() {
 	
 	return privateTopics[ Math.floor( Math.random() * privateTopics.length ) ];
 };
+
+/**
+ * Returns an array of all currently registered topics
+ * 
+ * @public
+ * @returns {Array} topics
+ */
+RpcProviderCollection.prototype.getAll = function() {
+	return Object.keys( this._provider );
+}
 
 module.exports = RpcProviderCollection;

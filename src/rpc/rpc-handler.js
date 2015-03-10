@@ -20,7 +20,8 @@ var RpcHandler = function( options ) {
 		C.ACTIONS.RESPONSE, 
 		C.ACTIONS.ACK, 
 		C.ACTIONS.PROVIDER_UPDATE, 
-		C.ACTIONS.QUERY 
+		C.ACTIONS.QUERY,
+		C.ACTIONS.REJECTION
 	];
 };
 
@@ -59,6 +60,85 @@ RpcHandler.prototype.handle = function( socketWrapper, message ) {
 			socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 		}
 	}
+};
+
+/**
+ * This method is called by Rpc to reroute its request
+ * 
+ * If a provider is temporarily unable to service a request, it can reject it. Deepstream
+ * will then try to reroute it to an alternative provider. Finding an alternative provider
+ * happens in this method.
+ * 
+ * Initially, deepstream will look for a local provider that hasn't been used by the RPC yet.
+ * If non can be found, it will go through the currently avaiblable remote providers and try find one that
+ * hasn't been used yet. Please note: It will not make another request for remote providers, based on
+ * the assumption that they are still up to date from the original rpc.
+ * 
+ * If a remote provider couldn't be found or all remote-providers have been tried already
+ * this method will return null - which in turn will prompt the RPC to send a NO_RPC_PROVIDER
+ * error to the client and destroy itself
+ * 
+ * @param {String} 	rpcName
+ * @param {Array} 	usedProviders 	A list of providers that have already been tried and rejected the request
+ * @param {String}	correlationId
+ * 
+ * @public
+ * @returns {SocketWrapper|RpcProxy} alternativeProvider
+ */
+RpcHandler.prototype.getAlternativeProvider = function( rpcName, usedProviders, correlationId ) {
+	var usedRemoteProviderTopics = [],
+		allRemoteProviderTopics,
+		localProviders,
+		i;
+	
+	/*
+	 * Look within the local providers for one that hasn't been used yet
+	 */
+	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
+		localProviders = this._subscriptionRegistry.getSubscribers( rpcName );
+		
+		for( i = 0; i < localProviders.length; i++ ) {
+			if( usedProviders.indexOf( localProviders[ i ] ) === -1 ) {
+				return localProviders[ i ];
+			}
+		}
+	}
+	
+	/*
+	 * Get a list of the private topics of all remote providers
+	 */
+	allRemoteProviderTopics = this._remoteProviderRegistry.getAllProviderTopics( rpcName );
+	
+	/*
+	 * No local or remote providers to service the request? Return here
+	 */
+	if( allRemoteProviderTopics.length === 0 ) {
+		return null;
+	}
+	
+	/*
+	 * Since proxies for remote providers are created on the fly, we can't check for instances here. Instead
+	 * we extract a list of private topics for the used providers
+	 */
+	for( i = 0; i < usedProviders.length; i++ ) {
+		if( usedProviders[ i ] instanceof RpcProxy ) {
+			usedRemoteProviderTopics.push( usedProviders[ i ].getRemotePrivateTopic() );
+		}
+	}
+	
+	/*
+	 * Search for a remote provider that hasn't been used yet
+	 */
+	for( i = 0; i < allRemoteProviderTopics.length; i++ ) {
+		if( usedRemoteProviderTopics.indexOf( allRemoteProviderTopics[ i ] ) === -1 ) {
+			return new RpcProxy( this._options, allRemoteProviderTopics[ i ], rpcName, correlationId );
+		}
+	}
+
+	/*
+	 * No unused providers, whether local or remote, are available
+	 */
+	return null;
 };
 
 /**
@@ -118,7 +198,7 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
 		
 	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
 		provider = this._subscriptionRegistry.getRandomSubscriber( rpcName );
-		new Rpc( socketWrapper, provider, this._options, message );
+		new Rpc( this, socketWrapper, provider, this._options, message );
 	} else {
 		makeRemoteRpcFn = this._makeRemoteRpc.bind( this, socketWrapper, message );
 		this._remoteProviderRegistry.getProviderTopic( rpcName, makeRemoteRpcFn );
@@ -158,7 +238,7 @@ RpcHandler.prototype._makeRemoteRpc = function( requestor, message, error, provi
 	}
 	
 	providerProxy = new RpcProxy( this._options, providerTopic, rpcName, correlationId );
-	new Rpc( requestor, providerProxy, this._options, message );
+	new Rpc( this, requestor, providerProxy, this._options, message );
 };
 
 /**
