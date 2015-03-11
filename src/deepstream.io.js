@@ -113,10 +113,19 @@ Deepstream.prototype.stop = function() {
 		}
 	}
 	
-	utils.combineEvents( closables, 'close', this.emit.bind( this, 'stopped' ) );
-	
-	this.isRunning = false;
+	utils.combineEvents( closables, 'close', this._onStopped.bind( this ) );
 	this._connectionEndpoint.close();
+};
+
+/**
+ * Callback for the final stop event
+ * 
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._onStopped = function() {
+	this.isRunning = false;
+	this.emit( 'stopped' );
 };
 
 /**
