@@ -4,6 +4,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	EventHandler = require( './event/event-handler' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	util = require( 'util' ),
+	utils = require( './utils/utils' ),
 	defaultOptions = require( './default-options' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
@@ -100,10 +101,21 @@ Deepstream.prototype.start = function() {
  * @returns {void}
  */
 Deepstream.prototype.stop = function() {
+	var i,
+		plugin,
+		closables = [ this._connectionEndpoint ];
+		
+	for( i = 0; i < this._plugins.length; i++ ) {
+		plugin = this._options[ this._plugins[ i ] ];
+		if( typeof plugin.close === 'function' ) {
+			closables.push( plugin );
+			setTimeout( plugin.close.bind( plugin ) );
+		}
+	}
 	
-	//TODO close plugins
+	utils.combineEvents( closables, 'close', this.emit.bind( this, 'stopped' ) );
+	
 	this.isRunning = false;
-	this._connectionEndpoint.once( 'close', this.emit.bind( this, 'stopped' ) );
 	this._connectionEndpoint.close();
 };
 
