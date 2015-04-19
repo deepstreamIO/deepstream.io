@@ -26,9 +26,6 @@
     "grunt": "~0.4.5",
     "grunt-release": "0.9.0"
   },
-  "optionalDependencies": {
-    "excel": "0.1.1"
-  },
   "author": "Wolfram Hempel",
   "license": "MIT",
   "bugs": {
