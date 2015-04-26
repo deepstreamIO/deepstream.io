@@ -17,6 +17,7 @@ SocketMock.prototype.getMsg = function( i ) {
 
 SocketMock.prototype.close = function() {
 	this.isDisconnected = true;
+	this.emit( 'close' );
 };
 
 module.exports = SocketMock;

@@ -3,6 +3,7 @@ var PermissionHandlerMock = function() {
 	this.lastUserValidationQueryArgs = null;
 	this.nextCanPerformActionResult = true;
 	this.lastCanPerformActionQueryArgs = null;
+	this.onClientDisconnectCalledWith = null;
 };
 
 PermissionHandlerMock.prototype.isValidUser = function( handshakeData, authData, callback ) {
@@ -21,6 +22,10 @@ PermissionHandlerMock.prototype.canPerformAction = function( username, message, 
 	} else {
 		callback( null, this.nextCanPerformActionResult );
 	}
+};
+
+PermissionHandlerMock.prototype.onClientDisconnect = function( username ) {
+	this.onClientDisconnectCalledWith = username;
 };
 
 module.exports = new PermissionHandlerMock();

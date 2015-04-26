@@ -226,6 +226,7 @@ ConnectionEndpoint.prototype._sendInvalidAuthMsg = function( socketWrapper, msg 
  */
 ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, username ) {
 	socketWrapper.socket.removeListener( 'message', socketWrapper.authCallBack );
+	socketWrapper.socket.once( 'close', this._onSocketClose.bind( this, socketWrapper ) );
 	socketWrapper.socket.on( 'message', function( msg ){ this.onMessage( socketWrapper, msg ); }.bind( this ));
 	socketWrapper.user = username;
 	socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
@@ -323,6 +324,21 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
  */
 ConnectionEndpoint.prototype._onError = function( error ) {
 	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error );
+};
+
+/**
+* Notifies the (optional) onClientDisconnect method of the permissionHandler
+* that the specified client has disconnected
+*
+* @param {SocketWrapper} socketWrapper
+*
+* @private
+* @returns {void}
+*/
+ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
+	if( this._options.permissionHandler.onClientDisconnect ) {
+		this._options.permissionHandler.onClientDisconnect( socketWrapper.user );
+	}
 };
 
 module.exports = ConnectionEndpoint;

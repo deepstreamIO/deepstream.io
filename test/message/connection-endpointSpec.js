@@ -145,4 +145,10 @@ describe( 'the connection endpoint routes valid auth messages to the permissionH
 		socketMock.emit( 'message', 'testMsg' );
 		expect( lastAuthenticatedMessage ).toBe( 'testMsg' );
 	});
+
+	it( 'notifies the permissionHandler when a client disconnects', function(){
+		expect( permissionHandlerMock.onClientDisconnectCalledWith ).toBe( null );
+		socketMock.close();
+		expect( permissionHandlerMock.onClientDisconnectCalledWith ).toBe( 'test-user' );
+	});
 });

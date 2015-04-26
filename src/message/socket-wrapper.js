@@ -4,9 +4,9 @@ var C = require( '../constants/constants' ),
 	utils = require( 'util' ); 
 
 /**
- * This class wraps around an engine.io socket
+ * This class wraps around an engine.io or TCP socket
  * and provides higher level methods that are integrated
- * with deepstreams message structure
+ * with deepstream's message structure
  * 
  * @param {engine.io Socket} socket
  * @extends EventEmitter
