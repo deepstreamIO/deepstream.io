@@ -1,4 +1,5 @@
 var LoggerMock = function() {
+	this.isReady = true;
     this.lastLogLevel = null;
     this.lastLogEvent = null;
     this.lastLogMessage = null;
