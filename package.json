@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node node_modules/jasmine-node/lib/jasmine-node/cli.js test --forceexit",
+    "test": "node node_modules/jasmine-node/lib/jasmine-node/cli.js test --forceexit --captureExceptions",
     "watch": "node node_modules/jasmine-node/lib/jasmine-node/cli.js test --captureExceptions --autotest --watch ./src"
   },
   "repository": {
