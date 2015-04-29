@@ -82,7 +82,7 @@ RecordRequest.prototype._onStorageResponse = function( error, record ) {
 	}
 
 	if( error ) {
-		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from storage' );
+		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from storage', error.toString() );
 	} else {
 		this._onComplete( record || null );
 
