@@ -89,7 +89,7 @@ Deepstream.prototype.start = function() {
 
 	for( i = 0; i < this._plugins.length; i++ ) {
 		initialiser = new DependencyInitialiser( this._options, this._plugins[ i ] );
-		initialiser.once( 'ready', this._checkReady.bind( this ));
+		initialiser.once( 'ready', this._checkReady.bind( this, this._plugins[ i ], initialiser.getDependency() ));
 	}
 };
 
@@ -188,7 +188,11 @@ Deepstream.prototype._init = function() {
  * @private
  * @returns {void}
  */
-Deepstream.prototype._checkReady = function() {
+Deepstream.prototype._checkReady = function( pluginName, plugin ) {
+	if( plugin instanceof EventEmitter ) {
+		plugin.on( 'error', this._onPluginError.bind( this, pluginName ) );
+	}
+
 	for( var i = 0; i < this._plugins.length; i++ ) {
 		if( this._options[ this._plugins[ i ] ].isReady !== true ) {
 			return;
@@ -210,6 +214,21 @@ Deepstream.prototype._onStarted = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
 	this.isRunning = true;
 	this.emit( 'started' );
+};
+
+/**
+ * Callback for plugin errors that occur at runtime. Errors during initialisation
+ * are handled by the DependencyInitialiser
+ *
+ * @param   {String} pluginName
+ * @param   {Error} error
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._onPluginError = function( pluginName, error  ) {
+	var msg = 'Error from ' + pluginName + ' plugin: ' + error.toString();
+	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PLUGIN_ERROR, msg );
 };
 
 module.exports = Deepstream;

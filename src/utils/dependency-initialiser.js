@@ -13,7 +13,7 @@ var C = require( '../constants/constants' ),
  * @constructor
  */
 var DependencyInitialiser = function( options, name ) {
-	this.isReady = true;
+	this.isReady = false;
 
 	this._options = options;
 	this._dependency = options[ name ];
@@ -31,6 +31,16 @@ var DependencyInitialiser = function( options, name ) {
 };
 
 utils.inherits( DependencyInitialiser, EventEmitter );
+
+/**
+ * Returns the underlying dependency (e.g. the Logger, StorageConnector etc.)
+ *
+ * @public
+ * @returns {Dependency}
+ */
+DependencyInitialiser.prototype.getDependency = function() {
+	return this._dependency;
+};
 
 /**
  * Callback for succesfully initialised dependencies
@@ -51,17 +61,14 @@ DependencyInitialiser.prototype._onReady = function() {
  * @returns {void}
  */
 DependencyInitialiser.prototype._onTimeout = function() {
-	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.ERROR, this._name + ' wasn\'t initialised in time' );
+	this._logError( this._name + ' wasn\'t initialised in time' );
 	process.exit();
 };
 
 /**
-* Handles errors emitted by the dependency. If the error is emitted
-* before the dependency is ready, it is logged to the console straight
-* away. (The logger is a dependency in its own right, so can't be relied
-* upon here)
+* Handles errors emitted by the dependency at startup. 
 *
-* @todo Should errors during dependency initialisation be fatal?
+* Plugin errors that occur at runtime are handled by the deepstream.io main class
 *
 * @param {Error|String} error
 *
@@ -70,10 +77,8 @@ DependencyInitialiser.prototype._onTimeout = function() {
 */
 DependencyInitialiser.prototype._onError = function( error ) {
 	if( this.isReady !== true ) {
-		console.log( 'Error while initialising ' + this._name );
-		console.log( error.toString() );
-	} else {
-		// TODO handle dependency runtime errors
+		this._logError( 'Error while initialising ' + this._name + ': ' + error.toString() );
+		process.exit();
 	}
 };
 
@@ -86,6 +91,27 @@ DependencyInitialiser.prototype._onError = function( error ) {
 DependencyInitialiser.prototype._emitReady = function() {
 	this.isReady = true;
 	this.emit( 'ready' );
+};
+
+/**
+ * Logs error messages
+ * 
+ * Since the logger is a dependency in its own right, it can't be relied upon
+ * here. If it is available, it will be used, otherwise the error will be logged
+ * straight to the console
+ *
+ * @param   {String} message the error message
+ *
+ * @private
+ * @returns {void}
+ */
+DependencyInitialiser.prototype._logError = function( message ) {
+	if( this._options.logger && this._options.logger.isReady ) {
+		this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PLUGIN_ERROR, message );
+	} else {
+		console.error( 'Error while initialising dependency' );
+		console.error( message );
+	}
 };
 
 module.exports = DependencyInitialiser;
