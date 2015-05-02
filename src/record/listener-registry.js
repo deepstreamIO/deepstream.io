@@ -142,7 +142,7 @@ ListenerRegistry.prototype._sendUpdate = function( recordName, action ) {
   var pattern, message;
 
   for( pattern in this._patterns ) {
-    if( recordName.match( this._patterns[ pattern ] ) ) {
+    if( this._patterns[ pattern ].test( recordName ) ) {
       message = messageBuilder.getMsg( C.TOPIC.RECORD, action, [ pattern, recordName ] );
       this._subscriptionRegistry.sendToSubscribers( pattern, message );
     }
