@@ -97,7 +97,7 @@ RecordTransition.prototype.add = function( socketWrapper, version, message ) {
 		try{
 			data = JSON.parse( message.data[ 2 ] );
 		} catch( e ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[ 2 ] );
+			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 			return;
 		}
 
