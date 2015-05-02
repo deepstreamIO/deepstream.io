@@ -82,7 +82,12 @@ Deepstream.prototype.set = function( key, value ) {
  */
 Deepstream.prototype.start = function() {
 	this._showStartLogo();
-	this._options.logger._$useColors = this._options.colors;
+
+	if( this._options.logger.isReady ) {
+		this._options.logger.setLogLevel( this._options.logLevel );
+		this._options.logger._$useColors = this._options.colors;
+	}
+	
 
 	var i,
 		initialiser;

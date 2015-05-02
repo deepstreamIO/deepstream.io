@@ -1,5 +1,6 @@
 var argv = require( 'minimist' )( process.argv.slice(2) ),
-	utils = require( './utils/utils' );
+	utils = require( './utils/utils' ),
+	C = require( './constants/constants' );
 
 exports.get = function() {
 	return {
@@ -9,6 +10,7 @@ exports.get = function() {
 		serverName: utils.getUid(),
 		colors: argv.colors === 'false' ? false : true,
 		showLogo: true,
+		logLevel: C.LOG_LEVEL.INFO,
 	
 		/*
 		 * Connectivity
