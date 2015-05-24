@@ -3,6 +3,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	MessageDistributor = require( './message/message-distributor' ),
 	EventHandler = require( './event/event-handler' ),
 	EventEmitter = require( 'events' ).EventEmitter,
+	messageParser = require( './message/message-parser' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
 	defaultOptions = require( './default-options' ),
@@ -25,7 +26,7 @@ require( 'colors' );
  */
 var Deepstream = function() {
 	this.isRunning = false;
-
+	this.constants = C;
 	this._options = defaultOptions.get();
 	this._connectionEndpoint = null;
 	this._engineIo = null;
@@ -120,6 +121,19 @@ Deepstream.prototype.stop = function() {
 	
 	utils.combineEvents( closables, 'close', this._onStopped.bind( this ) );
 	this._connectionEndpoint.close();
+};
+
+/**
+ * Expose the message-parser's convertTyped method
+ * so that it can be used within permissionHandlers
+ *
+ * @param   {String} value A String starting with a type identifier (see C.TYPES)
+ *
+ * @public
+ * @returns {mixed} the converted value
+ */
+Deepstream.prototype.convertTyped = function( value ) {
+	return messageParser.convertTyped( value );
 };
 
 /**
