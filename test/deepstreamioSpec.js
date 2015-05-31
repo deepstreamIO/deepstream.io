@@ -6,4 +6,8 @@ describe( 'the main server class', function(){
 
 		expect( server.convertTyped( 'N42' ) ).toBe( 42 );
 	});
+
+	it( 'exposes constants as a static', function(){
+		expect( Deepstream.constants ).toBeDefined( );
+	});
 });
