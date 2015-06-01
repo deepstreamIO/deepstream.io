@@ -240,7 +240,7 @@ Deepstream.prototype._checkReady = function( pluginName, plugin ) {
  */
 Deepstream.prototype._onStarted = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
-	this.isRunning = true;console.log( 'STARTED' );
+	this.isRunning = true;
 	this.emit( 'started' );
 };
 
