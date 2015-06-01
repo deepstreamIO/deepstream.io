@@ -21,7 +21,7 @@ require( 'colors' );
  * @copyright 2015 Hoxton-One Ltd.
  * @author Wolfram Hempel
  * @version <version>
- * 
+ *
  * @constructor
  */
 var Deepstream = function() {
@@ -36,7 +36,7 @@ var Deepstream = function() {
 	this._rpcHandler = null;
 	this._recordHandler = null;
 	this._initialised = false;
-	this._plugins = [ 
+	this._plugins = [
 		'messageConnector',
 		'storage',
 		'cache',
@@ -52,6 +52,14 @@ util.inherits( Deepstream, EventEmitter );
  * @type {String}
  */
 process.title = 'deepstream server';
+
+/**
+ * Expose constants to allow consumers to access them without
+ * requiring a reference to a deepstream instance.
+ *
+ *
+*/
+Deepstream.constants = C;
 
 /**
  * Set a deepstream option. For a list of all available options
@@ -73,7 +81,7 @@ Deepstream.prototype.set = function( key, value ) {
 
 /**
  * Starts up deepstream. The startup process has three steps:
- * 
+ *
  * - Initialise all dependencies (cache connector, message connector, storage connector and logger)
  * - Instantiate the messaging pipeline and record-, rpc- and event-handler
  * - Start TCP and HTTP server
@@ -88,7 +96,7 @@ Deepstream.prototype.start = function() {
 		this._options.logger.setLogLevel( this._options.logLevel );
 		this._options.logger._$useColors = this._options.colors;
 	}
-	
+
 
 	var i,
 		initialiser;
@@ -102,7 +110,7 @@ Deepstream.prototype.start = function() {
 /**
  * Stops the server and closes all connections. The server can be started again,
  * but all clients have to reconnect. Will emit a 'stopped' event once done
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -110,7 +118,7 @@ Deepstream.prototype.stop = function() {
 	var i,
 		plugin,
 		closables = [ this._connectionEndpoint ];
-		
+
 	for( i = 0; i < this._plugins.length; i++ ) {
 		plugin = this._options[ this._plugins[ i ] ];
 		if( typeof plugin.close === 'function' ) {
@@ -118,7 +126,7 @@ Deepstream.prototype.stop = function() {
 			setTimeout( plugin.close.bind( plugin ) );
 		}
 	}
-	
+
 	this._initialised = false;
 	utils.combineEvents( closables, 'close', this._onStopped.bind( this ) );
 	this._connectionEndpoint.close();
@@ -139,7 +147,7 @@ Deepstream.prototype.convertTyped = function( value ) {
 
 /**
  * Callback for the final stop event
- * 
+ *
  * @private
  * @returns {void}
  */
@@ -159,7 +167,7 @@ Deepstream.prototype._showStartLogo = function() {
 	if( this._options.showLogo !== true ) {
 		return;
 	}
-	
+
 	var logo =
 	' _____________________________________________________________________________\n'+
 	'                                                                              \n'+
@@ -189,10 +197,10 @@ Deepstream.prototype._init = function() {
 
 	this._eventHandler = new EventHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.EVENT, this._eventHandler.handle.bind( this._eventHandler ) );
-	
+
 	this._rpcHandler = new RpcHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RPC, this._rpcHandler.handle.bind( this._rpcHandler ) );
-	
+
 	this._recordHandler = new RecordHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );
 
@@ -218,7 +226,7 @@ Deepstream.prototype._checkReady = function( pluginName, plugin ) {
 			return;
 		}
 	}
-	
+
 	if( this._initialised === false ) {
 		this._init();
 	}
