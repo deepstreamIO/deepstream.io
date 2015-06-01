@@ -13,7 +13,7 @@ var MessageDistributor = function( options ) {
 
 /**
  * Accepts a socketWrapper and a parsed message as input and distributes
- * it to it's subscriber, based on the message's topic
+ * it to its subscriber, based on the message's topic
  *
  * @param   {SocketWrapper} socketWrapper
  * @param   {Object} message parsed and permissioned message
