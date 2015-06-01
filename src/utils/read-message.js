@@ -1,8 +1,8 @@
-var Deepstream = require( '../deepstream.io' );
+var C = require( '../constants/constants' );
 
 function readMessage( message ) {
-	var TOPIC = Deepstream.constants.TOPIC;
-	var ACTIONS = Deepstream.constants.ACTIONS;
+	var TOPIC = C.TOPIC;
+	var ACTIONS = C.ACTIONS;
 	return {
 		isRecord: message.topic === TOPIC.RECORD,
 		isEvent: message.topic === TOPIC.EVENT,
