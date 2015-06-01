@@ -4,6 +4,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	EventHandler = require( './event/event-handler' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	messageParser = require( './message/message-parser' ),
+	readMessage = require( './utils/read-message' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
 	defaultOptions = require( './default-options' ),
@@ -68,27 +69,7 @@ Deepstream.constants = C;
  * @param  {object} message description
  * @return {object}         description
  */
-Deepstream.readMessage = function( message ) {
-	var TOPIC = Deepstream.constants.TOPIC;
-	var ACTIONS = Deepstream.constants.ACTIONS;
-	return {
-		isRecord: message.topic === TOPIC.RECORD,
-		isEvent: message.topic === TOPIC.EVENT,
-		isRPC: message.topic === TOPIC.RPC,
-
-		isCreate: message.action.indexOf( ACTIONS.CREATE ) > -1,
-		isRead: message.action.indexOf( ACTIONS.READ ) > -1,
-		isChange: (
-			message.action === ACTIONS.PATCH ||
-			message.action === ACTIONS.UPDATE
-		),
-		isDelete: message.action === ACTIONS.DELETE,
-
-		name: message.data[ 0 ],
-		path: message.action === ACTIONS.PATCH ? message.data[ 2 ] : undefined,
-		data: message.action === ACTIONS.PATCH ? message.data[ 3 ] : message.data[ 2 ]
-	};
-};
+Deepstream.readMessage = readMessage;
 
 /**
  * Set a deepstream option. For a list of all available options
