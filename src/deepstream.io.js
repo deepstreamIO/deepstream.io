@@ -119,6 +119,7 @@ Deepstream.prototype.stop = function() {
 		}
 	}
 	
+	this._initialised = false;
 	utils.combineEvents( closables, 'close', this._onStopped.bind( this ) );
 	this._connectionEndpoint.close();
 };
@@ -231,7 +232,7 @@ Deepstream.prototype._checkReady = function( pluginName, plugin ) {
  */
 Deepstream.prototype._onStarted = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
-	this.isRunning = true;
+	this.isRunning = true;console.log( 'STARTED' );
 	this.emit( 'started' );
 };
 
