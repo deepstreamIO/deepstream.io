@@ -35,12 +35,15 @@ SubscriptionRegistry.prototype.sendToSubscribers = function( name, msgString, se
 		return;
 	}
 
-	for( var i = 0; i < this._subscriptions[ name ].length; i++ ) {
-		if( this._subscriptions[ name ][ i ] !== sender ) {
+	var i, l = this._subscriptions[ name ].length;
+	
+	for( i = 0; i < l; i++ ) {
+		if( this._subscriptions[ name ] && this._subscriptions[ name ][ i ] !== sender ) {
 			this._subscriptions[ name ][ i ].send( msgString );
 		}
 	}
 };
+
 
 /**
  * Adds a SocketWrapper as a subscriber to a topic
