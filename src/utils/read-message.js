@@ -15,6 +15,16 @@ function readMessage( message ) {
 		),
 		isDelete: message.action === ACTIONS.DELETE,
 
+    isAck: message.action === ACTIONS.ACK,
+    isSubscribe: message.action === ACTIONS.SUBSCRIBE,
+    isUnsubscribe: message.action === ACTIONS.UNSUBSCRIBE,
+    isUnsubscribe: message.action === ACTIONS.UNSUBSCRIBE,
+    isProviderUpdate: message.action === ACTIONS.PROVIDER_UPDATE,
+    isQuery: message.action === ACTIONS.QUERY,
+    isRPC: message.action === ACTIONS.RPC,
+    isRequest: message.action === ACTIONS.REQUEST,
+    isRejection: message.action === ACTIONS.REJECTION,
+
 		name: message.data[ 0 ],
 		path: message.action === ACTIONS.PATCH ? message.data[ 2 ] : undefined,
 		data: message.action === ACTIONS.PATCH ? message.data[ 3 ] : message.data[ 2 ]
