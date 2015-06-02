@@ -203,12 +203,12 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	}
 
 	if( isNaN( version ) ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, version );
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [ recordName, version ] );
 		return;
 	}
 
 	if( this._transitions[ recordName ] && this._transitions[ recordName ].hasVersion( version ) ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, version );
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, [ recordName, version ] );
 		return;
 	}
 
