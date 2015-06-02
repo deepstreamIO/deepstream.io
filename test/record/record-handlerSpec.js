@@ -110,7 +110,7 @@ describe( 'record handler handles messages', function(){
 			data: [ 'existingRecord', 5, '{"name":"Kowalski"}' ]
 		});
 
-		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|VERSION_EXISTS|5+' ) );
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|VERSION_EXISTS|existingRecord|5+' ) );
 		expect( options.logger.lastLogMessage ).toBe( msg( 'someUser tried to update record existingRecord to version 5 but it already was 5' ) );
 	});
 
