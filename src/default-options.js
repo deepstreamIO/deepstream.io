@@ -19,6 +19,13 @@ exports.get = function() {
 		host: argv.host || '0.0.0.0',
 		tcpPort: argv.tcpPort || 6021,
 		tcpHost: argv.tcpHost || '0.0.0.0',
+
+		/*
+		 * SSL Configuration
+		 */
+		useSSL: argv.ssl || false,
+		sslKeyFile: argv.sslKeyFile || null,
+		sslCrtFile: argv.sslCrtFile || null,
 	
 		/*
 		 * Default Plugins
