@@ -38,8 +38,9 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 
 		this._engineIo = engine.attach( server );
 	}
-	else
+	else {
 		this._engineIo = engine.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
+	}
 	this._engineIo.on( 'error', this._onError.bind( this ) );
 	this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
 
