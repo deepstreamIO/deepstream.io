@@ -4,6 +4,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	EventHandler = require( './event/event-handler' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	messageParser = require( './message/message-parser' ),
+	readMessage = require( './utils/read-message' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
 	defaultOptions = require( './default-options' ),
@@ -60,6 +61,15 @@ process.title = 'deepstream server';
  *
 */
 Deepstream.constants = C;
+
+
+/**
+ * Utility method to return a helper object to simplify permissions assertions
+ *
+ * @param  {object} message description
+ * @return {object}         description
+ */
+Deepstream.readMessage = readMessage;
 
 /**
  * Set a deepstream option. For a list of all available options
