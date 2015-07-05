@@ -9,4 +9,4 @@ A scalable server for realtime apps
 
 For API documentation see the [documentation page](http://deepstream.io/docs/)!
 
-For tutorials, plugins see the [tutorial page](http://deepstream.io/tutorials/)!
+For tutorials and plugins see the [tutorial page](http://deepstream.io/tutorials/)!
