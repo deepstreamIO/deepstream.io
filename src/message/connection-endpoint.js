@@ -5,6 +5,8 @@ var C = require( '../constants/constants' ),
 	TcpEndpoint = require( '../tcp/tcp-endpoint' ),
 	events = require( 'events' ),
 	util = require( 'util' ),
+	https = require('https'),
+	fs = require('fs'),
 	ENGINE_IO = 0,
 	TCP_ENDPOINT = 1,
 	READY_STATE_CLOSED = 'closed';
@@ -28,7 +30,17 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	// Initialise engine.io's server - a combined http and websocket server for browser connections
 	this._engineIoReady = false;
 	this._engineIoServerClosed = false;
-	this._engineIo = engine.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
+	if(this._options.useSSL) {
+		var server = https.createServer({
+			key: fs.readFileSync( this._options.sslKeyFile ),
+			cert: fs.readFileSync( this._options.sslCrtFile )
+		}).listen( this._options.port, this._checkReady.bind( this, ENGINE_IO ));
+
+		this._engineIo = engine.attach( server );
+	}
+	else {
+		this._engineIo = engine.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
+	}
 	this._engineIo.on( 'error', this._onError.bind( this ) );
 	this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
 
