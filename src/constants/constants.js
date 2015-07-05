@@ -48,6 +48,7 @@ exports.EVENT.INVALID_MESSAGE = 'INVALID_MESSAGE';
 exports.EVENT.VERSION_EXISTS = 'VERSION_EXISTS';
 exports.EVENT.INVALID_VERSION = 'INVALID_VERSION';
 exports.EVENT.PLUGIN_ERROR = 'PLUGIN_ERROR';
+exports.EVENT.UNKNOWN_CALLEE = 'UNKNOWN_CALLEE';
 
 exports.TOPIC = {};
 exports.TOPIC.AUTH = 'A';
@@ -55,6 +56,7 @@ exports.TOPIC.ERROR = 'X';
 exports.TOPIC.EVENT = 'E';
 exports.TOPIC.RECORD = 'R';
 exports.TOPIC.RPC = 'P';
+exports.TOPIC.WEBRTC = 'W';
 exports.TOPIC.PRIVATE = 'PRIVATE/';
 
 exports.ACTIONS = {};
@@ -79,6 +81,12 @@ exports.ACTIONS.ERROR = 'E';
 exports.ACTIONS.REQUEST = 'REQ';
 exports.ACTIONS.RESPONSE = 'RES';
 exports.ACTIONS.REJECTION = 'REJ';
+
+//WebRtc
+exports.ACTIONS.WEBRTC_REGISTER_CALLEE = 'RC';
+exports.ACTIONS.WEBRTC_OFFER = 'OF';
+exports.ACTIONS.WEBRTC_ANSWER = 'AN';
+exports.ACTIONS.WEBRTC_ICE_CANDIDATE = 'IC';
 
 exports.TYPES = {};
 exports.TYPES.STRING = 'S';

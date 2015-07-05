@@ -10,6 +10,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	defaultOptions = require( './default-options' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
+	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	C = require( './constants/constants' );
 
@@ -36,6 +37,7 @@ var Deepstream = function() {
 	this._eventHandler = null;
 	this._rpcHandler = null;
 	this._recordHandler = null;
+	this._webRtcHandler = null;
 	this._initialised = false;
 	this._plugins = [
 		'messageConnector',
@@ -210,6 +212,9 @@ Deepstream.prototype._init = function() {
 
 	this._rpcHandler = new RpcHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RPC, this._rpcHandler.handle.bind( this._rpcHandler ) );
+
+	this._webRtcHandler = new WebRtcHandler( this._options );
+	this._messageDistributor.registerForTopic( C.TOPIC.WEBRTC, this._webRtcHandler.handle.bind( this._webRtcHandler ) );
 
 	this._recordHandler = new RecordHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );

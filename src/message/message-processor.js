@@ -48,6 +48,7 @@ MessageProcessor.prototype.process = function( socketWrapper, message ) {
 	for( i = 0; i < parsedMessages.length; i++ ) {
 		
 		if( parsedMessages[ i ] === null ) {
+			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, message );
 			socketWrapper.sendError( C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, message );
 			continue;
 		}

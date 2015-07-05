@@ -58,15 +58,5 @@ var deepstream = new Deepstream();
 // 	password: 'YYY'
 // }));
 
-deepstream.on( 'started', function(){
-	console.log( 'START FIRED' );
-	setTimeout(function(){
-		deepstream.stop();
-	}, 100 );
-});
-
-deepstream.on( 'stopped', function() {
-    console.log( 'STOP FIRED' );
-})
 
 deepstream.start();
