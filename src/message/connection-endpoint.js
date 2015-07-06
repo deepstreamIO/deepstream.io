@@ -5,6 +5,8 @@ var C = require( '../constants/constants' ),
 	TcpEndpoint = require( '../tcp/tcp-endpoint' ),
 	events = require( 'events' ),
 	util = require( 'util' ),
+	https = require('https'),
+	http = require('http'),
 	ENGINE_IO = 0,
 	TCP_ENDPOINT = 1,
 	READY_STATE_CLOSED = 'closed';
@@ -28,7 +30,18 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	// Initialise engine.io's server - a combined http and websocket server for browser connections
 	this._engineIoReady = false;
 	this._engineIoServerClosed = false;
-	this._engineIo = engine.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
+	this._server = null;
+	if( this._isHttpsServer() ) {
+		this._server = https.createServer({
+			key: this._options.sslKey,
+			cert: this._options.sslCert
+		});
+	}
+	else {
+		this._server = http.createServer();
+	}
+	this._server.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
+	this._engineIo = engine.attach( this._server );
 	this._engineIo.on( 'error', this._onError.bind( this ) );
 	this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
 
@@ -77,7 +90,7 @@ ConnectionEndpoint.prototype.close = function() {
 	}
 
 	this._engineIo.close();
-	this._engineIo.httpServer.close(function(){ this._engineIoServerClosed = true; }.bind( this ));
+	this._server.close(function(){ this._engineIoServerClosed = true; }.bind( this ));
 	
 	// Close the tcp server
 	this._tcpEndpoint.on( 'close', this._checkClosed.bind( this ) );
@@ -130,6 +143,7 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 	} else {
 		logMsg = 'from ' + handshakeData.remoteAddress + ' via tcp';
 	}
+
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
 	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper );
@@ -339,6 +353,28 @@ ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
 	if( this._options.permissionHandler.onClientDisconnect ) {
 		this._options.permissionHandler.onClientDisconnect( socketWrapper.user );
 	}
+};
+
+/**
+* Returns whether or not sslKey and sslCert have been set to start a https server.
+*
+* @throws Will throw an error if only sslKey or sslCert have been specified
+*
+* @private
+* @returns {boolean}
+*/
+ConnectionEndpoint.prototype._isHttpsServer = function( ) {
+	var isHttps = false;
+	if( this._options.sslKey || this._options.sslCert ) {
+		if( !this._options.sslKey ) {
+			throw new Error( 'Must also include sslKey in order to use HTTPS' );
+		}
+		if( !this._options.sslCert ) {
+			throw new Error( 'Must also include sslCert in order to use HTTPS' );
+		}
+		isHttps = true;
+	}
+	return isHttps;
 };
 
 module.exports = ConnectionEndpoint;
