@@ -1,5 +1,3 @@
-var SocketMock = require( './socket-mock' );
-
 var HttpMock = function(){};
 
 HttpMock.prototype.createServer = function() {
@@ -9,4 +7,4 @@ HttpMock.prototype.createServer = function() {
 	}
 };
 
-module.exports = new HttpMock();
+module.exports = HttpMock;

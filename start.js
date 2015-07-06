@@ -11,8 +11,8 @@ var deepstream = new Deepstream();
 // deepstream.set( 'host', process.env.IP );
 // deepstream.set( 'port', process.env.PORT );
 
-//deepstream.set( 'sslKey', fs.readFileSync( './private.key' ) );
-//deepstream.set( 'sslCert', fs.readFileSync( './public.cert' ) );
+//deepstream.set( 'sslKey', fs.readFileSync( './private.key', 'utf-8' ) );
+//deepstream.set( 'sslCert', fs.readFileSync( './public.cert', 'utf-8' ) );
 
 // deepstream.set( 'messageConnector', new AmqpConnector({
 // 	// Remote

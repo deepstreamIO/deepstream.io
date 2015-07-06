@@ -31,17 +31,10 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._engineIoReady = false;
 	this._engineIoServerClosed = false;
 	this._server = null;
-	if( this._options.sslKey || this._options.sslCert ) {
-		if( !this._options.sslKey ) {
-			throw new Error( 'Must also include sslKey in order to use HTTPS' );
-		}
-		if( !this._options.sslCert ) {
-			throw new Error( 'Must also include sslCert in order to use HTTPS' );
-		}
-
+	if( this._isHttpsServer() ) {
 		this._server = https.createServer({
-			key: this._options.sslKey.toString(),
-			cert: this._options.sslCert.toString()
+			key: this._options.sslKey,
+			cert: this._options.sslCert
 		});
 	}
 	else {
@@ -360,6 +353,28 @@ ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
 	if( this._options.permissionHandler.onClientDisconnect ) {
 		this._options.permissionHandler.onClientDisconnect( socketWrapper.user );
 	}
+};
+
+/**
+* Returns whether or not sslKey and sslCert have been set to start a https server.
+*
+* @throws Will throw an error if only sslKey or sslCert have been specified
+*
+* @private
+* @returns {boolean}
+*/
+ConnectionEndpoint.prototype._isHttpsServer = function( ) {
+	var isHttps = false;
+	if( this._options.sslKey || this._options.sslCert ) {
+		if( !this._options.sslKey ) {
+			throw new Error( 'Must also include sslKey in order to use HTTPS' );
+		}
+		if( !this._options.sslCert ) {
+			throw new Error( 'Must also include sslCert in order to use HTTPS' );
+		}
+		isHttps = true;
+	}
+	return isHttps;
 };
 
 module.exports = ConnectionEndpoint;
