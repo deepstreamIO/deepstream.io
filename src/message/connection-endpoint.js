@@ -6,7 +6,7 @@ var C = require( '../constants/constants' ),
 	events = require( 'events' ),
 	util = require( 'util' ),
 	https = require('https'),
-	fs = require('fs'),
+	http = require('http'),
 	ENGINE_IO = 0,
 	TCP_ENDPOINT = 1,
 	READY_STATE_CLOSED = 'closed';
@@ -30,17 +30,25 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	// Initialise engine.io's server - a combined http and websocket server for browser connections
 	this._engineIoReady = false;
 	this._engineIoServerClosed = false;
-	if(this._options.useSSL) {
-		var server = https.createServer({
-			key: fs.readFileSync( this._options.sslKeyFile ),
-			cert: fs.readFileSync( this._options.sslCrtFile )
-		}).listen( this._options.port, this._checkReady.bind( this, ENGINE_IO ));
+	this._server = null;
+	if( this._options.sslKey || this._options.sslCert ) {
+		if( !this._options.sslKey ) {
+			throw new Error( 'Must also include sslKey in order to use HTTPS' );
+		}
+		if( !this._options.sslCert ) {
+			throw new Error( 'Must also include sslCert in order to use HTTPS' );
+		}
 
-		this._engineIo = engine.attach( server );
+		this._server = https.createServer({
+			key: this._options.sslKey.toString(),
+			cert: this._options.sslCert.toString()
+		});
 	}
 	else {
-		this._engineIo = engine.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
+		this._server = http.createServer();
 	}
+	this._server.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
+	this._engineIo = engine.attach( this._server );
 	this._engineIo.on( 'error', this._onError.bind( this ) );
 	this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
 
@@ -89,7 +97,7 @@ ConnectionEndpoint.prototype.close = function() {
 	}
 
 	this._engineIo.close();
-	this._engineIo.httpServer.close(function(){ this._engineIoServerClosed = true; }.bind( this ));
+	this._server.close(function(){ this._engineIoServerClosed = true; }.bind( this ));
 	
 	// Close the tcp server
 	this._tcpEndpoint.on( 'close', this._checkClosed.bind( this ) );
@@ -142,6 +150,7 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 	} else {
 		logMsg = 'from ' + handshakeData.remoteAddress + ' via tcp';
 	}
+
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
 	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper );

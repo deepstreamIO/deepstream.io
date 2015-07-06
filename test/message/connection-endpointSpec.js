@@ -1,6 +1,7 @@
 var proxyquire = require( 'proxyquire' ).noCallThru(),
 	engineIoMock = require( '../mocks/engine-io-mock' ),
-	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', { 'engine.io': engineIoMock } ),
+	httpMock = require( '../mocks/http-mock' ),
+	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', { 'engine.io': engineIoMock, 'http': httpMock, 'https': httpMock } ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	permissionHandlerMock = require( '../mocks/permission-handler-mock' ),
 	lastAuthenticatedMessage = null,

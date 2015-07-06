@@ -23,9 +23,8 @@ exports.get = function() {
 		/*
 		 * SSL Configuration
 		 */
-		useSSL: argv.ssl || false,
-		sslKeyFile: argv.sslKeyFile || null,
-		sslCrtFile: argv.sslCrtFile || null,
+		sslKey: null,
+		sslCert: null,
 	
 		/*
 		 * Default Plugins
