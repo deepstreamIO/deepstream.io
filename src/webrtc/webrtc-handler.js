@@ -8,7 +8,8 @@ var WebRtcHandler = function( options ) {
 	this._forwardActions = [
 		C.ACTIONS.WEBRTC_OFFER,
 		C.ACTIONS.WEBRTC_ANSWER,
-		C.ACTIONS.WEBRTC_ICE_CANDIDATE
+		C.ACTIONS.WEBRTC_ICE_CANDIDATE,
+		C.ACTIONS.WEBRTC_CALL_DECLINED
 	];
 };
 
