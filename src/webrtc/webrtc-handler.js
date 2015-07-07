@@ -37,7 +37,7 @@ WebRtcHandler.prototype.handle = function( socketWrapper, message ) {
 };
 
 WebRtcHandler.prototype._registerCallee = function( socketWrapper, message ) {
-	if( !this._validateMessage( socketWrapper, message, 2 ) ) {
+	if( !this._validateMessage( socketWrapper, message, 1 ) ) {
 		return;
 	}
 
