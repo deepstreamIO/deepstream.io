@@ -58,7 +58,7 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	if( this._subscriptions[ name ] === undefined ) {
 		this._subscriptions[ name ] = [];
 		if( this._subscriptionListener ) {
-			this._subscriptionListener.onSubscriptionMade( name );
+			this._subscriptionListener.onSubscriptionMade( name, socketWrapper );
 		}
 	}
 
@@ -103,7 +103,7 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 		delete this._subscriptions[ name ];
 		
 		if( this._subscriptionListener ) {
-			this._subscriptionListener.onSubscriptionRemoved( name );
+			this._subscriptionListener.onSubscriptionRemoved( name, socketWrapper );
 		}
 	} else {
 		this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
