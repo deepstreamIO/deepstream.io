@@ -23,7 +23,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( null );
 
 		subscriptionRegistry.subscribe( 'someName', socketWrapperA );
-		expect( subscriptionListenerMock.onSubscriptionMade ).toHaveBeenCalledWith( 'someName' );
+		expect( subscriptionListenerMock.onSubscriptionMade ).toHaveBeenCalledWith( 'someName', socketWrapperA );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|S|someName+' ) );
 		subscriptionRegistry.sendToSubscribers( 'someName', _msg( 'someMessage+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'someMessage+' ) );
@@ -112,7 +112,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 		
 		expect( subscriptionListenerMock.onSubscriptionRemoved ).not.toHaveBeenCalled();
 		subscriptionRegistry.unsubscribe( 'someName', socketWrapperA );
-		expect( subscriptionListenerMock.onSubscriptionRemoved ).toHaveBeenCalledWith( 'someName' );
+		expect( subscriptionListenerMock.onSubscriptionRemoved ).toHaveBeenCalledWith( 'someName', socketWrapperA );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );
 		subscriptionRegistry.sendToSubscribers( 'someName', _msg( 'msg8+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );

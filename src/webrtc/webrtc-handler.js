@@ -1,9 +1,12 @@
 var C = require( '../constants/constants' ),
-	SubscriptionRegistry = require( '../utils/subscription-registry' );
+	SubscriptionRegistry = require( '../utils/subscription-registry' ),
+	messageBuilder = require( '../message/message-builder' ),
+	CALLEE_UPDATE_EVENT = 'callee-update';
 
 var WebRtcHandler = function( options ) {
 	this._options = options;
-	this._subscriptionRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
+	this._calleeRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC, this );
+	this._calleeListenerRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
 	this._callInitiatior = {};
 	this._forwardActions = [
 		C.ACTIONS.WEBRTC_OFFER,
@@ -30,18 +33,34 @@ WebRtcHandler.prototype.handle = function( socketWrapper, message ) {
 	else if( this._forwardActions.indexOf( message.action ) !== -1 ) {
 		this._forwardMessage( socketWrapper, message);
 	}
+	else if( message.action === C.ACTIONS.WEBRTC_LISTEN_FOR_CALLEES ) {
+		this._calleeListenerRegistry.subscribe( CALLEE_UPDATE_EVENT, socketWrapper );
+		socketWrapper.sendMessage( C.TOPIC.WEBRTC, C.ACTIONS.WEBRTC_ALL_CALLEES, this._calleeRegistry.getNames() );
+	}
+	else if( message.action === C.ACTIONS.WEBRTC_UNLISTEN_FOR_CALLEES ) {
+		this._calleeListenerRegistry.unsubscribe( CALLEE_UPDATE_EVENT, socketWrapper );
+	}
 	else {
 		socketWrapper.sendError( C.TOPIC.WEBRTC, C.EVENT.UNKNOWN_ACTION, message.action );
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.raw );
 	}
 };
 
+WebRtcHandler.prototype.onSubscriptionMade = function( calleeName, socketWrapper ) {
+	var message = messageBuilder.getMsg( C.TOPIC.WEBRTC, C.ACTIONS.WEBRTC_CALLEE_ADDED, [ calleeName ] );
+	this._calleeListenerRegistry.sendToSubscribers( CALLEE_UPDATE_EVENT, message, socketWrapper );
+};
+
+WebRtcHandler.prototype.onSubscriptionRemoved = function( calleeName, socketWrapper ) {
+	var message = messageBuilder.getMsg( C.TOPIC.WEBRTC, C.ACTIONS.WEBRTC_CALLEE_REMOVED, [ calleeName ] );
+	this._calleeListenerRegistry.sendToSubscribers( CALLEE_UPDATE_EVENT, message, socketWrapper );
+};
+
 WebRtcHandler.prototype._registerCallee = function( socketWrapper, message ) {
 	if( !this._validateMessage( socketWrapper, message, 1 ) ) {
 		return;
 	}
-
-	this._subscriptionRegistry.subscribe( message.data[ 0 ], socketWrapper );
+	this._calleeRegistry.subscribe( message.data[ 0 ], socketWrapper );
 };
 
 WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
@@ -62,7 +81,7 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 
 	// Request
 	else {
-		if( !this._subscriptionRegistry.hasSubscribers( receiverName ) ) {
+		if( !this._calleeRegistry.hasSubscribers( receiverName ) ) {
 			socketWrapper.sendError( C.TOPIC.WEBRTC, C.EVENT.UNKNOWN_CALLEE, receiverName );
 			return;
 		}
@@ -74,7 +93,7 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 			};
 		}
 
-		this._subscriptionRegistry.sendToSubscribers( receiverName, message.raw, socketWrapper );
+		this._calleeRegistry.sendToSubscribers( receiverName, message.raw, socketWrapper );
 	}
 	
 };
