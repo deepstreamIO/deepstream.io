@@ -12,7 +12,8 @@ var WebRtcHandler = function( options ) {
 		C.ACTIONS.WEBRTC_OFFER,
 		C.ACTIONS.WEBRTC_ANSWER,
 		C.ACTIONS.WEBRTC_ICE_CANDIDATE,
-		C.ACTIONS.WEBRTC_CALL_DECLINED
+		C.ACTIONS.WEBRTC_CALL_DECLINED,
+		C.ACTIONS.WEBRTC_CALL_ENDED
 	];
 };
 
@@ -73,7 +74,7 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 		data = message.data[ 2 ];
 
 	
-
+console.log( Object.keys( this._callInitiatior ), receiverName );
 	// Response
 	if( this._callInitiatior[ receiverName ] ){
 		this._callInitiatior[ receiverName ].socketWrapper.send( message.raw );
@@ -82,6 +83,7 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 	// Request
 	else {
 		if( !this._calleeRegistry.hasSubscribers( receiverName ) ) {
+			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_CALLEE, receiverName );
 			socketWrapper.sendError( C.TOPIC.WEBRTC, C.EVENT.UNKNOWN_CALLEE, receiverName );
 			return;
 		}
