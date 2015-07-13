@@ -21,6 +21,7 @@ var SocketWrapper = function( socket, options ) {
 	this.user = null;
 	this.authCallBack = null;
 	this.authAttempts = 0;
+	this.setMaxListeners( 0 );
 };
 
 utils.inherits( SocketWrapper, EventEmitter );
