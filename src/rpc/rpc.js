@@ -77,6 +77,10 @@ Rpc.prototype.destroy = function() {
 Rpc.prototype._setProvider = function( provider ) {
 	clearTimeout( this._ackTimeout );
 	clearTimeout( this._responseTimeout );
+
+	if( this._provider ) {
+		this._provider.removeListener( C.TOPIC.RPC, this._onProviderResponseFn );
+	}
 	
 	this._provider = provider;
 	this._ackTimeout = setTimeout( this._onAckTimeout.bind( this ), this._options.rpcAckTimeout );
