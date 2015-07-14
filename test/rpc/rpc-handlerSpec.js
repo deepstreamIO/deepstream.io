@@ -147,7 +147,8 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 		rpcHandler.handle( requestor, requestMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );
 		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|{"numA":5, "numB":7}+' ) );
-		
+		expect( provider.listeners( 'P' ).length ).toBe( 1 );
+
 		// Return Ack
 		provider.emit( 'P', ackMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
@@ -168,6 +169,23 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 		provider.emit( 'P', additionalResponseMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );
 		expect( provider.socket.lastSendMessage ).toBe( null );
+		expect( provider.listeners( 'P' ).length ).toBe( 0 );
+	});
+
+	it( 'supports multiple RPCs in quick succession', function(){
+		var requestor = new SocketWrapper( new SocketMock() ),
+			provider = new SocketWrapper( new SocketMock() );
+
+		// Register provider
+		subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
+		rpcHandler.handle( provider, subscriptionMessage );
+		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|A|S|addTwo+' ) );
+
+		expect(function(){
+			for( var i = 0; i < 50; i++ ) {
+				rpcHandler.handle( requestor, requestMessage );
+			}
+		}).not.toThrow();
 	});
 });
 
