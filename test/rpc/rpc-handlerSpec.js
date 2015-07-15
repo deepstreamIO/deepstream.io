@@ -87,7 +87,7 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 describe( 'the rpc handler routes remote procedure call related messages', function(){
 	
 	it( 'sends an error for subscription messages without data', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() ),
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			invalidMessage = { 
 				topic: C.TOPIC.RPC, 
 				action: C.ACTIONS.SUBSCRIBE,
@@ -99,7 +99,7 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 	});
 
 	it( 'sends an error for invalid subscription messages ', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() ),
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			invalidMessage = { 
 				topic: C.TOPIC.RPC, 
 				action: C.ACTIONS.SUBSCRIBE,
@@ -112,7 +112,7 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 	});
 
 	it( 'sends an error for unknown actions', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() ),
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			invalidMessage = { 
 				topic: C.TOPIC.RPC, 
 				action: 'giberrish',
@@ -125,7 +125,7 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 	});
 
 	it( 'routes subscription messages', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() );
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		rpcHandler.handle( socketWrapper, subscriptionMessage );
 		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|A|S|addTwo+' ) );
 
@@ -135,8 +135,8 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 	});
 
 	it( 'executes local rpcs', function(){
-		var requestor = new SocketWrapper( new SocketMock() ),
-			provider = new SocketWrapper( new SocketMock() );
+		var requestor = new SocketWrapper( new SocketMock(), {} ),
+			provider = new SocketWrapper( new SocketMock(), {} );
 
 		// Register provider
 		subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
@@ -173,8 +173,8 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 	});
 
 	it( 'supports multiple RPCs in quick succession', function(){
-		var requestor = new SocketWrapper( new SocketMock() ),
-			provider = new SocketWrapper( new SocketMock() );
+		var requestor = new SocketWrapper( new SocketMock(), {} ),
+			provider = new SocketWrapper( new SocketMock(), {} );
 
 		// Register provider
 		subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
@@ -195,7 +195,7 @@ describe( 'rpc handler routes requests to remote providers', function(){
 	it( 'executes remote rpcs', function(){
 		options.messageConnector.reset();
 
-		requestor = new SocketWrapper( new SocketMock() );
+		requestor = new SocketWrapper( new SocketMock(), {} );
 		expect( options.messageConnector.lastPublishedMessage ).toBe( null );
 
 		// There are no local providers for the substract rpc

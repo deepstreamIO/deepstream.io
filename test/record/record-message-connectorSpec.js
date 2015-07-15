@@ -9,7 +9,7 @@ var RecordHandler = require( '../../src/record/record-handler' ),
 
 describe( 'messages from direct connected clients and messages that come in via message connector co-exist peacefully', function(){
 	var recordHandler,
-		subscriber = new SocketWrapper( new SocketMock() ),
+		subscriber = new SocketWrapper( new SocketMock(), {} ),
 		options = {
 			cache: new StorageMock(),
 			storage: new StorageMock(),

@@ -25,6 +25,11 @@ exports.get = function() {
 		 */
 		sslKey: null,
 		sslCert: null,
+
+		/*
+		 * Data Manipulation
+		 */
+		amendMessage: null,
 	
 		/*
 		 * Default Plugins

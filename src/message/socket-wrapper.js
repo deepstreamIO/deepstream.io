@@ -8,7 +8,9 @@ var C = require( '../constants/constants' ),
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  * 
- * @param {engine.io Socket} socket
+ * @param {engine.io Socket | TcpSocket} socket
+ * @param {Object} options
+ * 
  * @extends EventEmitter
  * 
  * @constructor
@@ -75,9 +77,19 @@ SocketWrapper.prototype.sendError = function( topic, type, msg ) {
  * @returns {void}
  */
 SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
-	if( this.isClosed === false ) {
-		this.socket.send( messageBuilder.getMsg( topic, action, data ) );
+	if( this.isClosed ) {
+		return;
 	}
+
+	if( this._options.amendMessage ) {
+		var amendedData = this._options.amendMessage( data, SocketWrapper.user, topic, action );
+
+		if( amendedData !== undefined ) {
+			data = amendedData;
+		}
+	}
+
+	this.socket.send( messageBuilder.getMsg( topic, action, data ) );
 };
 
 /**

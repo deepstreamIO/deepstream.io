@@ -27,8 +27,8 @@ var C = require( '../../src/constants/constants' ),
 		data: [ 'addTwo', '1234', '12' ]
 	},
 	makeRpc = function( msg ) {
-		var provider = new SocketWrapper( new SocketMock() ),
-			requestor = new SocketWrapper( new SocketMock() ),
+		var provider = new SocketWrapper( new SocketMock(), {} ),
+			requestor = new SocketWrapper( new SocketMock(), {} ),
 			localRpc = new Rpc( mockRpcHandler, requestor, provider, options, msg );
 
 		return {

@@ -86,7 +86,7 @@ Rpc.prototype._setProvider = function( provider ) {
 	this._ackTimeout = setTimeout( this._onAckTimeout.bind( this ), this._options.rpcAckTimeout );
 	this._responseTimeout = setTimeout( this._onResponseTimeout.bind( this ), this._options.rpcTimeout );
 	this._provider.on( C.TOPIC.RPC, this._onProviderResponseFn );
-	this._provider.send( this._provider instanceof RpcProxy ? this._message : this._message.raw );
+	this._send( this._provider, this._message );
 };
 
 /**
@@ -141,7 +141,7 @@ Rpc.prototype._handleAck = function( message ) {
 
 	clearTimeout( this._ackTimeout );
 	this._isAcknowledged = true;
-	this._requestor.send( this._requestor instanceof RpcProxy ? message: message.raw );
+	this._send( this._requestor, message );
 };
 
 /**
@@ -156,7 +156,7 @@ Rpc.prototype._handleAck = function( message ) {
  */
 Rpc.prototype._handleResponse = function( message ) {
 	clearTimeout( this._responseTimeout );
-	this._requestor.send( this._requestor instanceof RpcProxy ? message: message.raw );
+	this._send( this._requestor, message );
 	this.destroy();
 };
 
@@ -206,6 +206,14 @@ Rpc.prototype._onAckTimeout = function() {
 Rpc.prototype._onResponseTimeout = function() {
 	this._requestor.sendError( C.TOPIC.RPC, C.EVENT.RESPONSE_TIMEOUT, [ this._rpcName, this._correlationId ] );
 	this.destroy();
+};
+
+Rpc.prototype._send = function( receiver, message ) {
+	if( receiver instanceof RpcProxy ) {
+		receiver.send( message );
+	} else {
+		receiver.sendMessage( message.topic, message.action, message.data );
+	}
 };
 
 module.exports = Rpc;
