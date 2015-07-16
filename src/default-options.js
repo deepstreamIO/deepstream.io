@@ -29,7 +29,7 @@ exports.get = function() {
 		/*
 		 * Data Manipulation
 		 */
-		amendMessage: null,
+		dataTransforms: null,
 	
 		/*
 		 * Default Plugins

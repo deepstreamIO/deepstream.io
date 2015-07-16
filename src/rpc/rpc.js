@@ -1,5 +1,7 @@
 var C = require( '../constants/constants' ),
-	RpcProxy = require( './rpc-proxy' );
+	RpcProxy = require( './rpc-proxy' ),
+	messageParser = require( '../message/message-parser' ),
+	messageBuilder = require( '../message/message-builder' );
 
 /**
  * Relays a remote procedure call from a requestor to a provider and routes
@@ -86,7 +88,7 @@ Rpc.prototype._setProvider = function( provider ) {
 	this._ackTimeout = setTimeout( this._onAckTimeout.bind( this ), this._options.rpcAckTimeout );
 	this._responseTimeout = setTimeout( this._onResponseTimeout.bind( this ), this._options.rpcTimeout );
 	this._provider.on( C.TOPIC.RPC, this._onProviderResponseFn );
-	this._send( this._provider, this._message );
+	this._send( this._provider, this._message, this._requestor );
 };
 
 /**
@@ -141,7 +143,7 @@ Rpc.prototype._handleAck = function( message ) {
 
 	clearTimeout( this._ackTimeout );
 	this._isAcknowledged = true;
-	this._send( this._requestor, message );
+	this._send( this._requestor, message, this._provider );
 };
 
 /**
@@ -156,7 +158,7 @@ Rpc.prototype._handleAck = function( message ) {
  */
 Rpc.prototype._handleResponse = function( message ) {
 	clearTimeout( this._responseTimeout );
-	this._send( this._requestor, message );
+	this._send( this._requestor, message, this._provider );
 	this.destroy();
 };
 
@@ -208,10 +210,26 @@ Rpc.prototype._onResponseTimeout = function() {
 	this.destroy();
 };
 
-Rpc.prototype._send = function( receiver, message ) {
+Rpc.prototype._send = function( receiver, message, sender ) {
 	if( receiver instanceof RpcProxy ) {
 		receiver.send( message );
 	} else {
+		
+		if( this._options.dataTransforms && this._options.dataTransforms.has( message.topic, message.action ) ) {
+			var data = this._options.dataTransforms.apply( 
+				message.topic, 
+				message.action, 
+				messageParser.convertTyped( message.data[ 2 ], [ ] ), 
+				{
+					sender: sender.user,
+					receiver: receiver.user,
+					rpcName: message.data[ 0 ]
+				}
+			);
+
+			message.data[ 2 ] = messageBuilder.typed( data );
+		}
+		
 		receiver.sendMessage( message.topic, message.action, message.data );
 	}
 };

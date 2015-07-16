@@ -81,8 +81,8 @@ SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
 		return;
 	}
 
-	if( this._options.amendMessage ) {
-		var amendedData = this._options.amendMessage( data, SocketWrapper.user, topic, action );
+	if( this._options.amendData ) {
+		var amendedData = this._options.amendData( data, this.user, topic, action );
 
 		if( amendedData !== undefined ) {
 			data = amendedData;

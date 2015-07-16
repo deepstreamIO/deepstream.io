@@ -1,6 +1,7 @@
 var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	MessageProcessor = require( './message/message-processor' ),
 	MessageDistributor = require( './message/message-distributor' ),
+	DataTransforms = require( './message/data-transforms' ),
 	EventHandler = require( './event/event-handler' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	messageParser = require( './message/message-parser' ),
@@ -107,6 +108,9 @@ Deepstream.prototype.start = function() {
 		this._options.logger._$useColors = this._options.colors;
 	}
 
+	if( this._options.dataTransforms ) {
+		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );
+	}
 
 	var i,
 		initialiser;
