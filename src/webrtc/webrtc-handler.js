@@ -32,7 +32,10 @@ var WebRtcHandler = function( options ) {
 WebRtcHandler.prototype.handle = function( socketWrapper, message ) {
 	if( message.action === C.ACTIONS.WEBRTC_REGISTER_CALLEE ) {
 		this._registerCallee( socketWrapper, message );
-	} 
+	}
+	else if( message.action === C.ACTIONS.WEBRTC_UNREGISTER_CALLEE ) {
+		this._unregisterCallee( socketWrapper, message );
+	}
 	else if( FORWARD_ACTIONS.indexOf( message.action ) !== -1 ) {
 		this._forwardMessage( socketWrapper, message);
 	}
@@ -64,10 +67,15 @@ WebRtcHandler.prototype.onSubscriptionRemoved = function( calleeName, socketWrap
 };
 
 WebRtcHandler.prototype._registerCallee = function( socketWrapper, message ) {
-	if( !this._validateMessage( socketWrapper, message, 1 ) ) {
-		return;
+	if( this._validateMessage( socketWrapper, message, 1 ) ) {
+		this._calleeRegistry.subscribe( message.data[ 0 ], socketWrapper );
 	}
-	this._calleeRegistry.subscribe( message.data[ 0 ], socketWrapper );
+};
+
+WebRtcHandler.prototype._unregisterCallee = function( socketWrapper, message ) {
+	if( this._validateMessage( socketWrapper, message, 1 ) ) {
+		this._calleeRegistry.unsubscribe( message.data[ 0 ], socketWrapper );
+	}
 };
 
 WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
