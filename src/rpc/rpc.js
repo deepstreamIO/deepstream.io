@@ -210,28 +210,31 @@ Rpc.prototype._onResponseTimeout = function() {
 	this.destroy();
 };
 
+/**
+ * Sends a message to a receiver. Applies transformations if applicable
+ *
+ * @param   {SocketWrapper} receiver 	the SocketWrapper that will receive the message. Can be a RpcProxy
+ * @param   {Object} 		message 	deepstream message object
+ * @param   {SocketWrapper} sender 		the SocketWrapper that send the message. Will only be used to extract metaData
+ *
+ * @private
+ * @returns {void}
+ */
 Rpc.prototype._send = function( receiver, message, sender ) {
 	if( receiver instanceof RpcProxy ) {
 		receiver.send( message );
-	} else {
-		
-		if( this._options.dataTransforms && this._options.dataTransforms.has( message.topic, message.action ) ) {
-			var data = this._options.dataTransforms.apply( 
-				message.topic, 
-				message.action, 
-				messageParser.convertTyped( message.data[ 2 ], [ ] ), 
-				{
-					sender: sender.user,
-					receiver: receiver.user,
-					rpcName: message.data[ 0 ]
-				}
-			);
-
-			message.data[ 2 ] = messageBuilder.typed( data );
-		}
-		
-		receiver.sendMessage( message.topic, message.action, message.data );
+		return;
 	}
+		
+	if( this._options.dataTransforms && this._options.dataTransforms.has( message.topic, message.action ) ) {
+		var metaData = { sender: sender.user, receiver: receiver.user, rpcName: message.data[ 0 ] },
+			data = messageParser.convertTyped( message.data[ 2 ] );
+			
+		data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
+		message.data[ 2 ] = messageBuilder.typed( data );
+	}
+	
+	receiver.sendMessage( message.topic, message.action, message.data );
 };
 
 module.exports = Rpc;
