@@ -26,7 +26,7 @@ exports.combineEvents = function( emitters, event, callback ) {
             if( count === emitters.length ) {
                 callback();
             }
-        }
+        };
         
   for( i = 0; i < emitters.length; i++ ) {
       emitters[ i ].once( event, increment );

@@ -3,7 +3,9 @@ var C = require( '../constants/constants' ),
 	RecordRequest = require( './record-request' ),
 	RecordTransition = require( './record-transition' ),
 	RecordDeletion = require( './record-deletion' ),
-	ListenerRegistry = require( './listener-registry' );
+	ListenerRegistry = require( './listener-registry' ),
+	messageParser = require( '../message/message-parser' ),
+	messageBuilder = require( '../message/message-builder' );
 
 /**
  * The entry point for record related operations
@@ -15,6 +17,8 @@ var RecordHandler = function( options ) {
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
 	this._listenerRegistry = new ListenerRegistry( options, this._subscriptionRegistry );
 	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
+	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
+	this._hasPatchTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.PATCH );
 	this._transitions = [];
 };
 
@@ -169,7 +173,18 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
  */
 RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
 	this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d ] );
+	var data = record._d;
+
+	if( this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ ) ) {
+		data = this._options.dataTransforms.apply(
+			C.TOPIC.RECORD,
+			C.ACTIONS.READ,
+			data,
+			{ recordName: recordName, receiver: socketWrapper.user }
+		);
+	}
+
+	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, data ] );
 };
 
  /**
@@ -231,10 +246,68 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSender ) {
-	this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
+	var transformUpdate = message.action === C.ACTIONS.UPDATE && this._hasUpdateTransforms,
+		transformPatch = message.action === C.ACTIONS.PATCH && this._hasPatchTransforms;
 
+	if( transformUpdate || transformPatch ) {
+		this._broadcastTransformedUpdate( transformUpdate, transformPatch, name, message, originalSender );
+	} else {
+		this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
+	}
+	
 	if( originalSender !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._options.messageConnector.publish( C.TOPIC.RECORD, message );
+	}
+};
+
+/**
+ * Called by _$broadcastUpdate if registered transform functions are detected. Disassembles
+ * the message and invokes the transform function prior to sending it to every individual receiver
+ * so that receiver specific transforms can be applied.
+ *
+ * @param   {Boolean} transformUpdate is a update transform function registered that applies to this update?
+ * @param   {Boolean} transformPatch  is a patch transform function registered that applies to this update?
+ * @param   {String} name             the record name
+ * @param   {Object} message          a parsed deepstream message object
+ * @param   {SocketWrapper|String} originalSender  the original sender of the update or a string pointing at the messageBus
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, transformPatch, name, message, originalSender ) {
+	var receiver = this._subscriptionRegistry.getSubscribers( name ) || [],
+		metaData = {
+			recordName: name,
+			version: parseInt( message.data[ 1 ], 10 )
+		},
+		data,
+		i;
+
+	if( transformPatch ) {
+		metaData.path = message.data[ 2 ]; 
+	}
+
+	for( i = 0; i < receiver.length; i++ ) {
+		if( receiver[ i ] === originalSender ) {
+			continue;
+		}
+		metaData.receiver = receiver[ i ].user;
+
+		if( transformUpdate ) {
+			// UPDATE
+			// parse data every time to create a fresh copy 
+			data = JSON.parse( message.data[ 2 ] );
+			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
+			message.data[ 2 ] = JSON.stringify( data );
+		} else {
+			// PATCH
+			// convert data every time to create a fresh copy 
+			data = messageParser.convertTyped( message.data[ 3 ] );
+			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
+			message.data[ 3 ] = messageBuilder.typed( data );
+		}
+
+		receiver[ i ].sendMessage( message.topic, message.action, message.data );
 	}
 };
 
