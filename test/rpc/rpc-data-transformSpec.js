@@ -129,5 +129,4 @@ describe( 'executes local rpc calls', function(){
 		rpc.provider.emit( 'P', responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|N21+' ) );
 	});
-	
 });
