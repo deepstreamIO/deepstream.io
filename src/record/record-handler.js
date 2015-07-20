@@ -179,7 +179,15 @@ RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
 		data = this._options.dataTransforms.apply(
 			C.TOPIC.RECORD,
 			C.ACTIONS.READ,
-			data,
+
+			/*
+			 * Clone the object to make sure that the transform method doesn't accidentally
+			 * modify the object reference for other subscribers.
+			 *
+			 * JSON stringify/parse still seems to be the fastest way to achieve a deep copy.
+			 * TODO Update once native Object.clone // Object.copy becomes a thing
+			 */
+			JSON.parse( JSON.stringify( data ) ),
 			{ recordName: recordName, receiver: socketWrapper.user }
 		);
 	}
