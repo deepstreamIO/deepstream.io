@@ -9,8 +9,8 @@ var RecordHandler = require( '../../src/record/record-handler' ),
 
 describe( 'record handler handles messages', function(){
 	var recordHandler,
-		clientA = new SocketWrapper( new SocketMock() ),
-		clientB = new SocketWrapper( new SocketMock() ),
+		clientA = new SocketWrapper( new SocketMock(), {} ),
+		clientB = new SocketWrapper( new SocketMock(), {} ),
 		options = {
 			cache: new StorageMock(),
 			storage: new StorageMock(),

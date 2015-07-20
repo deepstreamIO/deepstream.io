@@ -15,27 +15,27 @@ describe( 'the message processor only forwards valid, authorized messages', func
 	});
 
 	it( 'rejects invalid messages', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() );
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		messageProcessor.process( socketWrapper, 'gibberish' );
 		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'X|E|MESSAGE_PARSE_ERROR|gibberish+' ) );
 	});
 
 	it( 'handles permission errors', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() );
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		permissionHandlerMock.nextCanPerformActionResult = 'someError';
 		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
 		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'R|E|MESSAGE_PERMISSION_ERROR|someError+' ) );
 	});
 
 	it( 'handles denied messages', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() );
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		permissionHandlerMock.nextCanPerformActionResult = false;
 		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
 		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'R|E|MESSAGE_DENIED|R|R|/user/wolfram+' ) );
 	});
 
 	it( 'provides the correct arguments to canPerformAction', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() );
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		socketWrapper.user = 'someUser';
 		permissionHandlerMock.nextCanPerformActionResult = false;
 		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
@@ -45,7 +45,7 @@ describe( 'the message processor only forwards valid, authorized messages', func
 	});
 
 	it( 'forwards validated and permissioned messages', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() );
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		socketWrapper.user = 'someUser';
 		permissionHandlerMock.nextCanPerformActionResult = true;
 		expect( lastAuthenticatedMessage ).toBe( null );
