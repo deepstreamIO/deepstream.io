@@ -17,6 +17,7 @@ var RecordHandler = function( options ) {
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
 	this._listenerRegistry = new ListenerRegistry( options, this._subscriptionRegistry );
 	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
+	this._hasReadTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
 	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
 	this._hasPatchTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.PATCH );
 	this._transitions = [];
@@ -175,7 +176,7 @@ RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
 	this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 	var data = record._d;
 
-	if( this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ ) ) {
+	if( this._hasReadTransforms ) {
 		data = this._options.dataTransforms.apply(
 			C.TOPIC.RECORD,
 			C.ACTIONS.READ,

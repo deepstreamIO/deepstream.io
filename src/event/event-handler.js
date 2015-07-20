@@ -107,10 +107,10 @@ EventHandler.prototype._triggerEvent = function( messageSource, message ) {
 	}
 
 	if( this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.EVENT, C.ACTIONS.EVENT ) ) {
-		var receiver = this._subscriptionRegistry.getSubscribers( message.data[ 0 ] );
+		var receivers = this._subscriptionRegistry.getSubscribers( message.data[ 0 ] );
 
-		if( receiver ) {
-			receiver.forEach( this._sendTransformedMessage.bind( this, message, messageSource ) );
+		if( receivers ) {
+			receivers.forEach( this._sendTransformedMessage.bind( this, message, messageSource ) );
 		}
 	} else {
 		var outboundMessage = messageBuilder.getMsg( C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data );
