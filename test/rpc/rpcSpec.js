@@ -20,6 +20,12 @@ var C = require( '../../src/constants/constants' ),
 		raw: _msg( 'P|A|addTwo|1234+' ),
 		data: [ 'addTwo', '1234' ]
 	},
+	errorMessage = { 
+		topic: C.TOPIC.RPC, 
+		action: C.ACTIONS.ERROR,
+		raw: _msg( 'P|E|ErrorOccured|addTwo|1234+' ),
+		data: [ 'ErrorOccured', 'addTwo', '1234' ]
+	},
 	responseMessage = { 
 		topic: C.TOPIC.RPC, 
 		action: C.ACTIONS.RESPONSE,
@@ -76,6 +82,12 @@ describe( 'executes local rpc calls', function(){
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
 		rpc.provider.emit( 'P', responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|N12+' ) );
+	});
+
+	it( 'forwards error message', function(){
+		var rpc = makeRpc( requestMessage );
+		rpc.provider.emit( 'P', errorMessage );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|E|ErrorOccured|addTwo|1234+' ) );
 	});
 
 	it( 'ignores ack message if it arrives after response', function(){

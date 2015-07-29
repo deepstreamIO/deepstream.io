@@ -110,17 +110,17 @@ Rpc.prototype._setProvider = function( provider ) {
  * @returns {void}
  */
 Rpc.prototype._processProviderMessage = function( message ) {
-	if( message.data[ 1 ] !== this._correlationId ) {
+	if( message.data[ 1 ] !== this._correlationId && message.data[ 2 ] !== this._correlationId ) {
 		return;
 	}
-	
+
 	if( message.action === C.ACTIONS.ACK ) {
 		this._handleAck( message );
 	} 
 	else if( message.action === C.ACTIONS.REJECTION ) {
 		this._reroute();
 	}
-	else if ( message.action === C.ACTIONS.RESPONSE ) {
+	else if( message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR ) {
 		this._handleResponse( message );
 	}
 };
@@ -233,7 +233,6 @@ Rpc.prototype._send = function( receiver, message, sender ) {
 		data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
 		message.data[ 2 ] = messageBuilder.typed( data );
 	}
-	
 	receiver.sendMessage( message.topic, message.action, message.data );
 };
 

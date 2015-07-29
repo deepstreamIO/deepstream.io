@@ -29,6 +29,12 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 		raw: _msg( 'P|A|addTwo|1234+' ),
 		data: [ 'addTwo', '1234' ]
 	},
+	errorMessage = { 
+		topic: C.TOPIC.RPC, 
+		action: C.ACTIONS.ERROR,
+		raw: _msg( 'P|E|ErrorOccured|addTwo|1234+' ),
+		data: [ 'ErrorOccured', 'addTwo', '1234' ]
+	},
 	responseMessage = { 
 		topic: C.TOPIC.RPC, 
 		action: C.ACTIONS.RESPONSE,
@@ -167,6 +173,31 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 		requestor.socket.lastSendMessage = null;
 		provider.socket.lastSendMessage = null;
 		provider.emit( 'P', additionalResponseMessage );
+		expect( requestor.socket.lastSendMessage ).toBe( null );
+		expect( provider.socket.lastSendMessage ).toBe( null );
+		expect( provider.listeners( 'P' ).length ).toBe( 0 );
+	});
+
+	it( 'executes local rpcs - error scenario', function(){
+		var requestor = new SocketWrapper( new SocketMock(), {} ),
+			provider = new SocketWrapper( new SocketMock(), {} );
+
+		// Register provider
+		subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
+		rpcHandler.handle( provider, subscriptionMessage );
+
+		// Issue Rpc
+		rpcHandler.handle( requestor, requestMessage );
+
+		// Error Response
+		requestor.socket.lastSendMessage = null;
+		provider.emit( 'P', errorMessage );
+		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|E|ErrorOccured|addTwo|1234+' ) );
+
+		// Ignores additional responses
+		requestor.socket.lastSendMessage = null;
+		provider.socket.lastSendMessage = null;
+		provider.emit( 'P', errorMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );
 		expect( provider.socket.lastSendMessage ).toBe( null );
 		expect( provider.listeners( 'P' ).length ).toBe( 0 );
