@@ -32,10 +32,14 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._engineIoServerClosed = false;
 	this._server = null;
 	if( this._isHttpsServer() ) {
-		this._server = https.createServer({
+		var httpsOptions = {
 			key: this._options.sslKey,
 			cert: this._options.sslCert
-		});
+		};
+		if (this._options.sslCa) {
+			httpsOptions.ca = this._options.sslCa;
+		}
+		this._server = https.createServer(httpsOptions);
 	}
 	else {
 		this._server = http.createServer();
