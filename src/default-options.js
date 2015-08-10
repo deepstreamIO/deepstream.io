@@ -25,6 +25,7 @@ exports.get = function() {
 		 */
 		sslKey: null,
 		sslCert: null,
+		sslCa: null,
 
 		/*
 		 * Data Manipulation
