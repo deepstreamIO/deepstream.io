@@ -11,8 +11,8 @@ var C = require( '../../src/constants/constants' ),
 	requestMessage = { 
 		topic: C.TOPIC.RPC, 
 		action: C.ACTIONS.REQUEST,
-		raw: _msg( 'P|REQ|addTwo|1234|{"numA":5, "numB":7}+' ),
-		data: [ 'addTwo', '1234', '{"numA":5, "numB":7}' ]
+		raw: _msg( 'P|REQ|addTwo|1234|O{"numA":5, "numB":7}+' ),
+		data: [ 'addTwo', '1234', 'O{"numA":5, "numB":7}' ]
 	},
 	ackMessage = { 
 		topic: C.TOPIC.RPC, 
@@ -20,15 +20,21 @@ var C = require( '../../src/constants/constants' ),
 		raw: _msg( 'P|A|addTwo|1234+' ),
 		data: [ 'addTwo', '1234' ]
 	},
+	errorMessage = { 
+		topic: C.TOPIC.RPC, 
+		action: C.ACTIONS.ERROR,
+		raw: _msg( 'P|E|ErrorOccured|addTwo|1234+' ),
+		data: [ 'ErrorOccured', 'addTwo', '1234' ]
+	},
 	responseMessage = { 
 		topic: C.TOPIC.RPC, 
 		action: C.ACTIONS.RESPONSE,
-		raw: _msg( 'P|RES|addTwo|1234|12+' ),
-		data: [ 'addTwo', '1234', '12' ]
+		raw: _msg( 'P|RES|addTwo|1234|N12+' ),
+		data: [ 'addTwo', '1234', 'N12' ]
 	},
 	makeRpc = function( msg ) {
-		var provider = new SocketWrapper( new SocketMock() ),
-			requestor = new SocketWrapper( new SocketMock() ),
+		var provider = new SocketWrapper( new SocketMock(), {} ),
+			requestor = new SocketWrapper( new SocketMock(), {} ),
 			localRpc = new Rpc( mockRpcHandler, requestor, provider, options, msg );
 
 		return {
@@ -42,7 +48,7 @@ describe( 'executes local rpc calls', function(){
 
 	it( 'sends the original rpc request to the provider', function(){
 		var provider = makeRpc( requestMessage ).provider;
-		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|{"numA":5, "numB":7}+' ) );
+		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|O{"numA":5, "numB":7}+' ) );
 	});
 
 	it( 'times out if no ack is received in time', function( done ){
@@ -75,15 +81,21 @@ describe( 'executes local rpc calls', function(){
 		rpc.provider.emit( 'P', ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
 		rpc.provider.emit( 'P', responseMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|12+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|N12+' ) );
+	});
+
+	it( 'forwards error message', function(){
+		var rpc = makeRpc( requestMessage );
+		rpc.provider.emit( 'P', errorMessage );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|E|ErrorOccured|addTwo|1234+' ) );
 	});
 
 	it( 'ignores ack message if it arrives after response', function(){
 		var rpc = makeRpc( requestMessage );
 		rpc.provider.emit( 'P', responseMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|12+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|N12+' ) );
 		rpc.provider.emit( 'P', ackMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|12+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|N12+' ) );
 	});
 
 	it( 'sends error for multiple ack messages', function(){
@@ -91,7 +103,7 @@ describe( 'executes local rpc calls', function(){
 		
 		rpc.provider.emit( 'P', ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
-		expect( rpc.provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|{"numA":5, "numB":7}+' ) );
+		expect( rpc.provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|O{"numA":5, "numB":7}+' ) );
 
 		rpc.provider.emit( 'P', ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
@@ -105,7 +117,7 @@ describe( 'executes local rpc calls', function(){
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
 
 		rpc.provider.emit( 'P', responseMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|12+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|N12+' ) );
 
 		rpc.requestor.socket.lastSendMessage = null;
 

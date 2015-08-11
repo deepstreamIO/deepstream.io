@@ -1,6 +1,8 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	messageBuilder = require( '../message/message-builder' );
+	messageParser = require( '../message/message-parser' ),
+	messageBuilder = require( '../message/message-builder' ),
+	STRING = 'string';
 
 /**
  * Handles incoming and outgoing messages for the EVENT topic.
@@ -25,7 +27,6 @@ var EventHandler = function( options ) {
  * @returns {void}
  */
 EventHandler.prototype.handle = function( socketWrapper, message ) {
-
 	if( message.action === C.ACTIONS.SUBSCRIBE ) {
 		this._addSubscriber( socketWrapper, message );
 	}
@@ -92,20 +93,57 @@ EventHandler.prototype._removeSubscriber = function( socketWrapper, message ) {
  * @returns {void}
  */
 EventHandler.prototype._triggerEvent = function( messageSource, message ) {
-	if( typeof message.data[ 0 ] !== 'string' ) {
+	if( typeof message.data[ 0 ] !== STRING ) {
 		if( messageSource !== C.SOURCE_MESSAGE_CONNECTOR ) {
 			messageSource.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 		}
-		
 		return;
 	}
+
 	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.TRIGGER_EVENT, message.raw );
 
 	if( messageSource !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._options.messageConnector.publish( C.TOPIC.EVENT, message );
 	}
-	var outboundMessage = messageBuilder.getMsg( C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data );
-	this._subscriptionRegistry.sendToSubscribers( message.data[ 0 ], outboundMessage, messageSource );
+
+	if( this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.EVENT, C.ACTIONS.EVENT ) ) {
+		var receivers = this._subscriptionRegistry.getSubscribers( message.data[ 0 ] );
+
+		if( receivers ) {
+			receivers.forEach( this._sendTransformedMessage.bind( this, message, messageSource ) );
+		}
+	} else {
+		var outboundMessage = messageBuilder.getMsg( C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data );
+		this._subscriptionRegistry.sendToSubscribers( message.data[ 0 ], outboundMessage, messageSource );
+	}
+};
+
+/**
+ * Applies a data-transform to each individial message before sending it out to its receiver. This method
+ * parses the provided data for every client to avoid accidental manipulation of the original data object
+ *
+ * @param   {Object} originalMessage a deepstream event message object
+ * @param   {SocketWrapper || String} messageSource   the endpoint the message was received from. Can be C.SOURCE_MESSAGE_CONNECTOR
+ * @param   {SocketWrapper} receiver A socket that's subscribed to this event
+ *
+ * @private
+ * @returns {void}
+ */
+EventHandler.prototype._sendTransformedMessage = function( originalMessage, messageSource, receiver ) {
+	if( receiver === messageSource ) {
+		return;
+	}
+
+	var eventName = originalMessage.data[ 0 ],
+		metaData = {},
+		data = messageParser.convertTyped( originalMessage.data[ 1 ] );
+
+	metaData.sender = messageSource === C.SOURCE_MESSAGE_CONNECTOR ? C.SOURCE_MESSAGE_CONNECTOR : messageSource.user;
+	metaData.receiver = receiver.user;
+	metaData.eventName = eventName;
+
+	data = this._options.dataTransforms.apply( C.TOPIC.EVENT, C.ACTIONS.EVENT, data, metaData );
+	receiver.sendMessage( C.TOPIC.EVENT, C.ACTIONS.EVENT, [ eventName, messageBuilder.typed( data ) ]);
 };
 
 /**
@@ -119,7 +157,7 @@ EventHandler.prototype._triggerEvent = function( messageSource, message ) {
  * @returns {Boolean} is valid subscription message
  */
 EventHandler.prototype._validateSubscriptionMessage = function( socketWrapper, message ) {
-	if( message.data && message.data.length === 1 && typeof message.data[ 0 ] === 'string' ) {
+	if( message.data && message.data.length === 1 && typeof message.data[ 0 ] === STRING ) {
 		return true;
 	} else {
 		socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw );

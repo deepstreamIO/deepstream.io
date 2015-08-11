@@ -6,7 +6,7 @@ var RecordRequest = require( '../../src/record/record-request' ),
 	
 describe( 'records are requested from cache and storage sequentually', function(){
 	var recordRequest,
-		socketWrapper = new SocketWrapper( new SocketMock() ),
+		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 		options = {
 			cacheRetrievalTimeout: 10,
 			storageRetrievalTimeout: 10,

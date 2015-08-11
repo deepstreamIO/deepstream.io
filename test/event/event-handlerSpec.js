@@ -23,7 +23,7 @@ var EventHandler = require( '../../src/event/event-handler' ),
 describe( 'the eventHandler routes events correctly', function(){
 		
 	 it( 'sends an error for invalid subscription messages', function(){
-			 var socketWrapper = new SocketWrapper( new SocketMock() ),
+			 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			 invalidMessage = { 
 					 topic: C.TOPIC.EVENT, 
 					 action: C.ACTIONS.SUBSCRIBE,
@@ -35,7 +35,7 @@ describe( 'the eventHandler routes events correctly', function(){
 	 });
 	 
 	 it( 'sends an error for subscription messages without an event name', function(){
-			 var socketWrapper = new SocketWrapper( new SocketMock() ),
+			 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 				invalidMessage = { 
 					 topic: C.TOPIC.EVENT, 
 					 action: C.ACTIONS.SUBSCRIBE,
@@ -48,7 +48,7 @@ describe( 'the eventHandler routes events correctly', function(){
 	 });
 
 	 it( 'sends an error for subscription messages with an invalid action', function(){
-			 var socketWrapper = new SocketWrapper( new SocketMock() ),
+			 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 				invalidMessage = { 
 					 topic: C.TOPIC.EVENT, 
 					 action: 'giberrish',
@@ -61,15 +61,15 @@ describe( 'the eventHandler routes events correctly', function(){
 	 });
 	 
 	 it( 'subscribes to events', function(){
-			 var socketWrapper = new SocketWrapper( new SocketMock() );
+			 var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 			 expect( socketWrapper.socket.lastSendMessage ).toBe( null );
 			 eventHandler.handle( socketWrapper, subscriptionsMessage );
 			 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|A|S|someEvent+' ) );
 	 });
 	 
 		it( 'triggers events', function(){
-				var socketA = new SocketWrapper( new SocketMock() ),
-					socketB = new SocketWrapper( new SocketMock() );
+				var socketA = new SocketWrapper( new SocketMock(), {} ),
+					socketB = new SocketWrapper( new SocketMock(), {} );
 						
 			 eventHandler.handle( socketA, subscriptionsMessage );
 			 eventHandler.handle( socketB, subscriptionsMessage );
@@ -98,7 +98,7 @@ describe( 'the eventHandler routes events correctly', function(){
 			 expect( messageConnectorMock.lastPublishedMessage ).toEqual( eventMessage );
 			 
 			 //Add another socket
-			 var socketC = new SocketWrapper( new SocketMock() );
+			 var socketC = new SocketWrapper( new SocketMock(), {} );
 			 eventHandler.handle( socketC, subscriptionsMessage );
 			 expect( socketC.socket.lastSendMessage ).toBe( _msg( 'E|A|S|someEvent+' ) );
 			 
@@ -110,9 +110,9 @@ describe( 'the eventHandler routes events correctly', function(){
 	 });
 	 
 	 it( 'unsubscribes', function(){
-				var socketA = new SocketWrapper( new SocketMock() ),
-					socketB = new SocketWrapper( new SocketMock() ),
-					socketC = new SocketWrapper( new SocketMock() );
+				var socketA = new SocketWrapper( new SocketMock(), {} ),
+					socketB = new SocketWrapper( new SocketMock(), {} ),
+					socketC = new SocketWrapper( new SocketMock(), {} );
 					
 			eventHandler.handle( socketA, subscriptionsMessage );
 			eventHandler.handle( socketB, subscriptionsMessage );

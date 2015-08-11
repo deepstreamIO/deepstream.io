@@ -9,7 +9,7 @@ var proxyquire = require( 'proxyquire' ),
 
 describe( 'record transition happy path', function(){
 	var recordTransition,
-		socketWrapper = new SocketWrapper( new SocketMock() ),
+		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
 		recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
 		options = { cache: new StorageMock(), storage: new StorageMock() }; 
@@ -38,7 +38,7 @@ describe( 'record transition happy path', function(){
 
 describe( 'record transition multiple steps', function(){
 	var recordTransition,
-		socketWrapper = new SocketWrapper( new SocketMock() ),
+		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
 		patchMessage2 = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 3, 'firstname', 'SLana' ] },
 		updateMessage = { topic: 'RECORD', action: 'U', data: [ 'someRecord', 2, '{ "lastname": "Peterson" }' ] },
@@ -129,7 +129,7 @@ describe( 'record transition multiple steps', function(){
 
 describe( 'destroys the transition', function(){
 	var recordTransition,
-		socketWrapper = new SocketWrapper( new SocketMock() ),
+		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
 		recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
 		options = { cache: new StorageMock(), storage: new StorageMock() };
@@ -163,7 +163,7 @@ describe( 'destroys the transition', function(){
 
 describe( 'recordRequest returns an error', function(){
 	var recordTransition,
-		socketWrapper = new SocketWrapper( new SocketMock() ),
+		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
 		recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
 		logSpy = jasmine.createSpy( 'log' ),
@@ -194,7 +194,7 @@ describe( 'recordRequest returns an error', function(){
 
 describe( 'handles invalid message data', function(){
 	var recordTransition,
-		socketWrapper = new SocketWrapper( new SocketMock() ),
+		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 2, 'somepath', 'O{"invalid":"json' ] },
 		recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
 		logSpy = jasmine.createSpy( 'log' ),

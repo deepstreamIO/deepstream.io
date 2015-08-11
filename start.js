@@ -1,5 +1,5 @@
 //require('v8-profiler');
-
+//var fs = require('fs');
 
 var Deepstream = require( './src/deepstream.io' );
 	// AmqpConnector = require( 'deepstream.io-msg-amqp' ),
@@ -10,6 +10,9 @@ var deepstream = new Deepstream();
 
 // deepstream.set( 'host', process.env.IP );
 // deepstream.set( 'port', process.env.PORT );
+
+//deepstream.set( 'sslKey', fs.readFileSync( './private.key', 'utf-8' ) );
+//deepstream.set( 'sslCert', fs.readFileSync( './public.cert', 'utf-8' ) );
 
 // deepstream.set( 'messageConnector', new AmqpConnector({
 // 	// Remote

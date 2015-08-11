@@ -19,6 +19,7 @@ var RecordDeletion = function( options, socketWrapper, message, successCallback 
 	this._successCallback = successCallback;
 	this._recordName = message.data[ 0 ];
 	this._completed = 0;
+	this._isDestroyed = false;
 
 	this._cacheTimeout = setTimeout( this._handleError.bind( this, 'cache timeout' ), this._options.cacheRetrievalTimeout );
 	this._storageTimeout = setTimeout( this._handleError.bind( this, 'storage timeout' ), this._options.storageRetrievalTimeout );
@@ -39,6 +40,10 @@ var RecordDeletion = function( options, socketWrapper, message, successCallback 
 RecordDeletion.prototype._checkIfDone = function( timeoutId, error ) {
 	clearTimeout( timeoutId );
 	this._completed++;
+
+	if( this._isDestroyed ) {
+		return;
+	}
 
 	if( error ) {
 		this._handleError( error.toString() );
@@ -84,6 +89,7 @@ RecordDeletion.prototype._destroy = function() {
 	this._options = null;
 	this._socketWrapper = null;
 	this._message = null;
+	this._isDestroyed = true;
 };
 
 /**

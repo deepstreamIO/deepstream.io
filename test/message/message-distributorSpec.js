@@ -23,7 +23,7 @@ describe( 'message connector distributes messages to callbacks', function(){
 		expect( messageConnectorMock.lastSubscribedTopic ).toBe( null );
 		messageDistributor.registerForTopic( 'someTopic', testCallback );
 		expect( messageConnectorMock.lastSubscribedTopic ).toBe( 'someTopic' );
-		var socketWrapper = new SocketWrapper( new SocketMock() ),
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			msg = { 'topic': 'someTopic' };
 
 		messageDistributor.distribute( socketWrapper, msg );
@@ -33,7 +33,7 @@ describe( 'message connector distributes messages to callbacks', function(){
 	it( 'only routes matching topics', function(){
 		expect( testCallback.calls.length ).toEqual( 1 );
 
-		var socketWrapper = new SocketWrapper( new SocketMock() ),
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			msg = { 'topic': 'someOtherTopic' };
 
 		messageDistributor.distribute( socketWrapper, msg );
@@ -53,7 +53,7 @@ describe( 'message connector distributes messages to callbacks', function(){
 	});
 
 	it( 'sends errors for messages to unknown topics', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock() ),
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			msg = { 'topic': 'gibberish' };
 		expect( socketWrapper.socket.lastSendMessage ).toBe( null );
 		messageDistributor.distribute( socketWrapper, msg );

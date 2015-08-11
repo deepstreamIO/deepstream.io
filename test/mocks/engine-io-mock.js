@@ -14,4 +14,8 @@ EngineIoMock.prototype.listen = function(){
 	return this;
 };
 
+EngineIoMock.prototype.attach = function( server ){
+	return this;
+};
+
 module.exports = new EngineIoMock();

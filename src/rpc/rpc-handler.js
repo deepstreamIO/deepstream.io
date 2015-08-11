@@ -21,7 +21,8 @@ var RpcHandler = function( options ) {
 		C.ACTIONS.ACK, 
 		C.ACTIONS.PROVIDER_UPDATE, 
 		C.ACTIONS.QUERY,
-		C.ACTIONS.REJECTION
+		C.ACTIONS.REJECTION,
+		C.ACTIONS.ERROR
 	];
 };
 
