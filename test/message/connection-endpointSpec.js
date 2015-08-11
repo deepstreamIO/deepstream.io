@@ -86,7 +86,7 @@ describe( 'validates HTTPS server conditions', function() {
 		}
 	});
 
-	it( 'throws an exception when only sslCert and sslCa is provided', function(){
+	it( 'throws an exception when sslCert and sslCa is provided', function(){
 		try {
 			sslOptions.sslCert = 'sslCertificate';
 			sslOptions.sslCa = 'sslCertificateAuthority';
@@ -95,6 +95,18 @@ describe( 'validates HTTPS server conditions', function() {
 			error = e;
 		} finally {
 			expect( error.message ).toBe( 'Must also include sslKey in order to use HTTPS' );
+		}
+	});
+
+	it( 'throws an exception when sslKey and sslCa is provided', function(){
+		try {
+			sslOptions.sslKey = "sslPrivateKey";
+			sslOptions.sslCa = 'sslCertificateAuthority';
+			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+		} catch( e ) {
+			error = e;
+		} finally {
+			expect( error.message ).toBe( 'Must also include sslCert in order to use HTTPS' );
 		}
 	});
 });
