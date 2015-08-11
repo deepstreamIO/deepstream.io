@@ -55,6 +55,15 @@ describe( 'validates HTTPS server conditions', function() {
 		expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate"} );
 	});
 
+	it( 'creates a https connection when sslKey, sslCert and sslCa are provided', function(){
+		sslOptions.sslKey = 'sslPrivateKey';
+		sslOptions.sslCert = 'sslCertificate';
+		sslOptions.sslCa = 'sslCertificateAuthority';
+		connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+		expect(httpMock.createServer).not.toHaveBeenCalled();
+		expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate", "ca": "sslCertificateAuthority"} );
+	});
+
 	it( 'throws an exception when only sslCert is provided', function(){
 		try {
 			sslOptions.sslCert = 'sslCertificate';
@@ -74,6 +83,18 @@ describe( 'validates HTTPS server conditions', function() {
 			error = e;
 		} finally {
 			expect( error.message ).toBe( 'Must also include sslCert in order to use HTTPS' );
+		}
+	});
+
+	it( 'throws an exception when only sslCert and sslCa is provided', function(){
+		try {
+			sslOptions.sslCert = 'sslCertificate';
+			sslOptions.sslCa = 'sslCertificateAuthority';
+			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+		} catch( e ) {
+			error = e;
+		} finally {
+			expect( error.message ).toBe( 'Must also include sslKey in order to use HTTPS' );
 		}
 	});
 });
