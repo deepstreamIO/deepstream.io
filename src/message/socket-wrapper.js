@@ -8,7 +8,9 @@ var C = require( '../constants/constants' ),
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  * 
- * @param {engine.io Socket} socket
+ * @param {engine.io Socket | TcpSocket} socket
+ * @param {Object} options
+ * 
  * @extends EventEmitter
  * 
  * @constructor
