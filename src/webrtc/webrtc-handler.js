@@ -200,15 +200,30 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
  * @returns {void}
  */
 WebRtcHandler.prototype._clearInitiator = function( socketWrapper, message ) {
+	var subscribers;
+	var subscriberId;
 	if( this._callInitiatiorRegistry.hasSubscribers( message.data[ 0 ] ) ) {
-		this._callInitiatiorRegistry.unsubscribe( message.data[ 0 ], socketWrapper );
+		subscriberId =  message.data[ 0 ];
+	} else if( this._callInitiatiorRegistry.hasSubscribers( message.data[ 1 ] ) ) {
+		subscriberId =  message.data[ 1 ];
 	}
 
-	if( this._callInitiatiorRegistry.hasSubscribers( message.data[ 1 ] ) ) {
-		this._callInitiatiorRegistry.unsubscribe( message.data[ 1 ], socketWrapper );
+	if( subscriberId ) {
+		subscribers = this._callInitiatiorRegistry.getSubscribers( subscriberId );
+		this._callInitiatiorRegistry.unsubscribe( subscriberId, subscribers[ 0 ] );
 	}
 };
 
+/**
+ * Reply with whether the client is still connected. Useful for determining
+ * if the remoteCaller is no longer available.
+ *
+ * @param   {SocketWrapper} socketWrapper
+ * @param   {Object} message parsed and validated deepstream message
+ *
+ * @private
+ * @returns {void}
+ */
 WebRtcHandler.prototype._checkIsAlive = function( socketWrapper, message ) {
 	var isAlive;
 	var remoteId = message.data[ 0 ];

@@ -79,7 +79,7 @@ describe( 'webrtc handler', function(){
 			topic: 'W',
 			action: 'IC',
 			data: [ 'calleeA', localId, 'ice-data' ]
-		});
+		}); 
 
 		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'raw-ice-message-1+' ) );
 		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'raw-ice-message-2+' ) );
@@ -94,7 +94,8 @@ describe( 'webrtc handler', function(){
 		});
 
 		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'raw-ice-message-1+' ) );
-		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'call-end-message+' ) );
+		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'W|A|US|localId+' ) );
+		expect( calleeB.socket.sendMessages.indexOf( msg( 'call-end-message+' ) ) ).not.toBe( -1 );
 	});
 
 	it( 'calleeA tries to send another ICE candidate after the call has ended', function(){
@@ -106,6 +107,6 @@ describe( 'webrtc handler', function(){
 		});
 
 		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'W|E|UNKNOWN_CALLEE|localId+' ) );
-		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'call-end-message+' ) );
+		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'W|A|US|localId+' ) );
 	});
 });
