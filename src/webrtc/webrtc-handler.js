@@ -43,7 +43,7 @@ var WebRtcHandler = function( options ) {
 	this._options = options;
 	this._calleeRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC, this );
 	this._calleeListenerRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
-	this._callInitiatior = {};
+	this._callInitiatiorRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
 };
 
 /**
@@ -62,12 +62,15 @@ WebRtcHandler.prototype.handle = function( socketWrapper, message ) {
 	else if( message.action === C.ACTIONS.WEBRTC_UNREGISTER_CALLEE ) {
 		this._unregisterCallee( socketWrapper, message );
 	}
+	else if( message.action === C.ACTIONS.WEBRTC_IS_ALIVE ) {
+		this._checkIsAlive( socketWrapper, message );
+	}
 	else if( FORWARD_ACTIONS.indexOf( message.action ) !== -1 ) {
 		this._forwardMessage( socketWrapper, message);
 	}
 	else if( FINAL_ACTIONS.indexOf( message.action ) !== -1 ) {
 		this._forwardMessage( socketWrapper, message );
-		this._clearInitiator( message );
+		this._clearInitiator( socketWrapper, message );
 	}
 	else if( message.action === C.ACTIONS.WEBRTC_LISTEN_FOR_CALLEES ) {
 		this._calleeListenerRegistry.subscribe( CALLEE_UPDATE_EVENT, socketWrapper );
@@ -166,8 +169,8 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 		data = message.data[ 2 ];
 
 	// Response
-	if( this._callInitiatior[ receiverName ] ){
-		this._callInitiatior[ receiverName ].send( message.raw );
+	if( this._callInitiatiorRegistry.hasSubscribers( receiverName ) ){
+		this._callInitiatiorRegistry.sendToSubscribers( receiverName, message.raw );
 	} 
 
 	// Request
@@ -178,8 +181,8 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 			return;
 		}
 	
-		if( !this._callInitiatior[ senderName ] ) {
-			this._callInitiatior[ senderName ] = socketWrapper;
+		if( !this._callInitiatiorRegistry.hasSubscribers( senderName ) ) {
+			this._callInitiatiorRegistry.subscribe( senderName, socketWrapper );
 		}
 
 		this._calleeRegistry.sendToSubscribers( receiverName, message.raw, socketWrapper );
@@ -190,20 +193,35 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
  * Once a message with an action that ends a call is received, the related receiver
  * is removed from the list of call-initiators
  *
+ * @param   {SocketWrapper} socketWrapper
  * @param   {Object} message parsed and validated deepstream message
  *
  * @private
  * @returns {void}
  */
-WebRtcHandler.prototype._clearInitiator = function( message ) {
-	if( this._callInitiatior[ message.data[ 0 ] ] ) {
-		delete this._callInitiatior[ message.data[ 0 ] ];
+WebRtcHandler.prototype._clearInitiator = function( socketWrapper, message ) {
+	if( this._callInitiatiorRegistry.hasSubscribers( message.data[ 0 ] ) ) {
+		this._callInitiatiorRegistry.unsubscribe( message.data[ 0 ], socketWrapper );
 	}
 
-	if( this._callInitiatior[ message.data[ 1 ] ] ) {
-		delete this._callInitiatior[ message.data[ 1 ] ];
+	if( this._callInitiatiorRegistry.hasSubscribers( message.data[ 1 ] ) ) {
+		this._callInitiatiorRegistry.unsubscribe( message.data[ 1 ], socketWrapper );
 	}
 };
+
+WebRtcHandler.prototype._checkIsAlive = function( socketWrapper, message ) {
+	var isAlive;
+	var remoteId = message.data[ 0 ];
+
+	if( message.data.length !== 1 || typeof remoteId !== 'string' ) {
+		socketWrapper.sendError( C.TOPIC.WEBRTC, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		return;
+	}
+
+	isAlive = this._callInitiatiorRegistry.hasSubscribers( remoteId ) || this._calleeRegistry.hasSubscribers( remoteId );
+	socketWrapper.sendMessage( C.TOPIC.WEBRTC, C.ACTIONS.WEBRTC_IS_ALIVE, [ remoteId, isAlive ] );
+};
+
 
 /**
  * Checks messages for the right format
