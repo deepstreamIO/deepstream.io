@@ -49,7 +49,7 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
   var pattern = this._getPattern( socketWrapper, message ),
     regExp,
     existingSubscriptions,
-    recordName,
+    name,
     i;
   
   if( !pattern ) {
@@ -77,9 +77,9 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
   // Notify socketWrapper of existing subscriptions that match the provided pattern
   existingSubscriptions = this._parentSubscriptionRegistry.getNames();
   for( i = 0; i < existingSubscriptions.length; i++ ) {
-    recordName = existingSubscriptions[ i ];
-    if( recordName.match( regExp ) ) {
-      socketWrapper.send( messageBuilder.getMsg( this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, recordName ] ) );
+    name = existingSubscriptions[ i ];
+    if( name.match( regExp ) ) {
+      socketWrapper.send( messageBuilder.getMsg( this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, name ] ) );
     }
   }
 };
@@ -106,44 +106,44 @@ ListenerRegistry.prototype.removeListener = function( socketWrapper, message ) {
  * Called by the record subscription registry whenever a subscription
  * is made for the first time. Part of the subscriptionListener interface.
  *
- * @param   {String} recordName
+ * @param   {String} name
  *
  * @public
  * @returns {void}
  */
-ListenerRegistry.prototype.onSubscriptionMade = function( recordName ) {
-  this._sendUpdate( recordName, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND );
+ListenerRegistry.prototype.onSubscriptionMade = function( name ) {
+  this._sendUpdate( name, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND );
 };
 
 /**
  * Called by the record subscription registry whenever the last
  * subscription for a record had been removed. Part of the subscriptionListener interface.
  *
- * @param   {String} recordName
+ * @param   {String} name
  *
  * @public
  * @returns {void}
  */
-ListenerRegistry.prototype.onSubscriptionRemoved = function( recordName ) {
-  this._sendUpdate( recordName, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED );
+ListenerRegistry.prototype.onSubscriptionRemoved = function( name ) {
+  this._sendUpdate( name, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED );
 };
 
 /**
  * Sends a SUBSCRIPTION_FOR_PATTERN_FOUND or SUBSCRIPTION_FOR_PATTERN_REMOVED message
  * to all interested listeners
  *
- * @param   {String} recordName
+ * @param   {String} name
  * @param   {String} action
  *
  * @public
  * @returns {void}
  */
-ListenerRegistry.prototype._sendUpdate = function( recordName, action ) {
+ListenerRegistry.prototype._sendUpdate = function( name, action ) {
   var pattern, message;
 
   for( pattern in this._patterns ) {
-    if( this._patterns[ pattern ].test( recordName ) ) {
-      message = messageBuilder.getMsg( this._type, action, [ pattern, recordName ] );
+    if( this._patterns[ pattern ].test( name ) ) {
+      message = messageBuilder.getMsg( this._type, action, [ pattern, name ] );
       this._subscriptionRegistry.sendToSubscribers( pattern, message );
     }
   }
