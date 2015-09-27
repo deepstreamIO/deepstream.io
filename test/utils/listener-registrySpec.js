@@ -1,5 +1,5 @@
 /* global describe, expect, it, jasmine */
-var ListenerRegistry = require( '../../src/record/listener-registry' ),
+var ListenerRegistry = require( '../../src/utils/listener-registry' ),
 	msg = require( '../test-helper/test-helper' ).msg,
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
@@ -13,7 +13,7 @@ describe( 'record listener-registry', function(){
         listeningSocket = new SocketWrapper( new SocketMock(), options );
     
     it( 'creates the listener registry', function(){
-        listenerRegistry = new ListenerRegistry( options, recordSubscriptionRegistryMock );
+        listenerRegistry = new ListenerRegistry( 'R', options, recordSubscriptionRegistryMock );
         expect( typeof listenerRegistry.addListener ).toBe( 'function' );
     });
     
@@ -75,7 +75,7 @@ describe( 'record listener-registry', function(){
     it( 'removes subscriptions for a record', function() {
         listenerRegistry.onSubscriptionRemoved( 'car/Abarth' );
         expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|SR|car\/[A-Za-z]*$|car/Abarth+' ) );
-    })
+    });
     
     it( 'removes a socket on close', function() {
         expect( Object.keys( listenerRegistry._patterns ) ).toEqual( [ 'car/[A-Za-z]*$' ] );

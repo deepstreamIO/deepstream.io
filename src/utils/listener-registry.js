@@ -4,8 +4,8 @@ var C = require( '../constants/constants' ),
   messageBuilder = require( '../message/message-builder' );
 
 /**
- * Deepstream.io allows clients to register as listeners for record
- * subscriptions. This allows for the creation of 'active' data-providers,
+ * Deepstream.io allows clients to register as listeners for subscriptions. T
+ * This allows for the creation of 'active' data-providers,
  * e.g. data providers that provide data on the fly, based on what clients
  * are actually interested in.
  *
@@ -25,14 +25,14 @@ var C = require( '../constants/constants' ),
  * @constructor
  * 
  * @param {Object} options                    DeepStream options
- * @param {SubscriptionRegistry} recordSubscriptionRegistry The SubscriptionRegistry containing the record subscriptions
+ * @param {SubscriptionRegistry} parentSubscriptionRegistry The SubscriptionRegistry containing the record subscriptions
  *                                                          to allow new listeners to be notified of existing subscriptions
  */
-var ListenerRegistry = function( options, recordSubscriptionRegistry ) {
+var ListenerRegistry = function( type, options, parentSubscriptionRegistry ) {
+  this._type = type;
   this._options = options;
-  this._recordSubscriptionRegistry = null;
-  this._recordSubscriptionRegistry = recordSubscriptionRegistry;
-  this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
+  this._parentSubscriptionRegistry = parentSubscriptionRegistry;
+  this._subscriptionRegistry = new SubscriptionRegistry( options, this._type );
   this._patterns = {};
 };
 
@@ -75,11 +75,11 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
   }
   
   // Notify socketWrapper of existing subscriptions that match the provided pattern
-  existingSubscriptions = this._recordSubscriptionRegistry.getNames();
+  existingSubscriptions = this._parentSubscriptionRegistry.getNames();
   for( i = 0; i < existingSubscriptions.length; i++ ) {
     recordName = existingSubscriptions[ i ];
     if( recordName.match( regExp ) ) {
-      socketWrapper.send( messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, recordName ] ) );
+      socketWrapper.send( messageBuilder.getMsg( this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, recordName ] ) );
     }
   }
 };
@@ -143,7 +143,7 @@ ListenerRegistry.prototype._sendUpdate = function( recordName, action ) {
 
   for( pattern in this._patterns ) {
     if( this._patterns[ pattern ].test( recordName ) ) {
-      message = messageBuilder.getMsg( C.TOPIC.RECORD, action, [ pattern, recordName ] );
+      message = messageBuilder.getMsg( this._type, action, [ pattern, recordName ] );
       this._subscriptionRegistry.sendToSubscribers( pattern, message );
     }
   }
@@ -185,7 +185,7 @@ ListenerRegistry.prototype._getPattern = function( socketWrapper, message ) {
  * @returns {void}
  */
 ListenerRegistry.prototype._onMsgDataError = function( socketWrapper, errorMsg ) {
-  socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, errorMsg );
+  socketWrapper.sendError( this._type, C.EVENT.INVALID_MESSAGE_DATA, errorMsg );
   this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MESSAGE_DATA, errorMsg );
 };
 
