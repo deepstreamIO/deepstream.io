@@ -1,5 +1,6 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
+	ListenerRegistry = require( '../utils/listener-registry' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' ),
 	STRING = 'string';
@@ -14,6 +15,8 @@ var C = require( '../constants/constants' ),
 var EventHandler = function( options ) {
 	this._options = options;
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.EVENT );
+	this._listenerRegistry = new ListenerRegistry( C.TOPIC.EVENT, options, this._subscriptionRegistry );
+	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
 };
 
 /**
@@ -37,6 +40,14 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 
 	else if( message.action === C.ACTIONS.EVENT ) {
 		this._triggerEvent( socketWrapper, message );
+	}
+
+	else if( message.action === C.ACTIONS.LISTEN ) {
+		this._listenerRegistry.addListener( socketWrapper, message );
+	}
+
+	else if( message.action === C.ACTIONS.UNLISTEN ) {
+		this._listenerRegistry.removeListener( socketWrapper, message );
 	}
 
 	else {

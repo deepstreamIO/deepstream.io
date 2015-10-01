@@ -1,9 +1,9 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
+	ListenerRegistry = require( '../utils/listener-registry' ),
 	RecordRequest = require( './record-request' ),
 	RecordTransition = require( './record-transition' ),
 	RecordDeletion = require( './record-deletion' ),
-	ListenerRegistry = require( './listener-registry' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' );
 
@@ -15,7 +15,7 @@ var C = require( '../constants/constants' ),
 var RecordHandler = function( options ) {
 	this._options = options;
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
-	this._listenerRegistry = new ListenerRegistry( options, this._subscriptionRegistry );
+	this._listenerRegistry = new ListenerRegistry( C.TOPIC.RECORD, options, this._subscriptionRegistry );
 	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
 	this._hasReadTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
 	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
