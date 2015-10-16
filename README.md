@@ -4,7 +4,7 @@ A scalable server for realtime apps
 ----------------------------------------------
 Deepstream is a clusterable server that provides everything necessary to build powerful realtime applications. It’s written in nodeJs and freely available under a MIT license. To learn more, please visit:
 
-[http://deepstream.io/]
+[deepstream.io](http://deepstream.io/)
 ==========================================
 
 
