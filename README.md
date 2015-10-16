@@ -2,8 +2,11 @@ deepstream.io ![Build](https://travis-ci.org/hoxton-one/deepstream.io.svg?branch
 ==============================================
 A scalable server for realtime apps
 ----------------------------------------------
+Deepstream is a clusterable server that provides everything necessary to build powerful realtime applications. It’s written in nodeJs and freely available under a MIT license. To learn more, please visit:
 
-**Disclaimer** deepstream.io is nearing feature completion, but that's a very different thing to being done. It's not officially released yet. Use at your own risk.
+[http://deepstream.io/]
+==========================================
+
 
 ## Documentation
 
