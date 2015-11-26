@@ -154,12 +154,14 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 		}
 	}.bind( this ));
 
-	// store the record data in the persistant storage independently and don't wait for the result
-	this._options.storage.set( recordName, record, function( error ) {
-		if( error ) {
-			this._options.logger.log( C.TOPIC.RECORD,  C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
-		}
-	}.bind( this ) );
+	if( !this._options.storageExclusion || !this._options.storageExclusion.test( recordName ) ) {
+		// store the record data in the persistant storage independently and don't wait for the result
+		this._options.storage.set( recordName, record, function( error ) {
+			if( error ) {
+				this._options.logger.log( C.TOPIC.RECORD,  C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
+			}
+		}.bind( this ) );
+	}
 };
 
 /**

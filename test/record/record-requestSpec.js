@@ -74,4 +74,39 @@ describe( 'records are requested from cache and storage sequentually', function(
 	});
 });
 
+describe( 'excluded records are not put into storage', function(){
+	var recordRequest,
+		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+		options = {
+			cacheRetrievalTimeout: 10,
+			storageRetrievalTimeout: 10,
+			cache: new StorageMock(),
+			storage: new StorageMock(),
+			storageExclusion: new RegExp( 'dont-save' )
+		};
+		
+	options.storage.delete = jasmine.createSpy( 'storage.delete' ) ;
+	options.storage.set( 'dont-save/1', { _v:1, _d: {} }, function(){});
+	
+	it( 'returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', function( done ){
+		recordRequest = new RecordRequest( 'dont-save/1', options, socketWrapper, function( record ){
+			expect( record ).toBeNull()
+			done();
+		});
+		expect( options.storage.lastRequestedKey ).toBeNull();
+	});
+	
+	it( 'returns null for non existent records', function( done ){
+		options.cache.nextGetWillBeSynchronous = true;
+
+		recordRequest = new RecordRequest( 'doesNotExist', options, socketWrapper, function( record ){
+			expect( record ).toBe( null );
+			done();
+		});
+		
+		expect( options.cache.lastRequestedKey ).toBe( 'doesNotExist' );
+		expect( options.storage.lastRequestedKey ).toBe( 'doesNotExist' );
+	});
+});
+
 	

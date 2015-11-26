@@ -14,6 +14,7 @@ describe( 'record handler handles messages', function(){
 		options = {
 			cache: new StorageMock(),
 			storage: new StorageMock(),
+			storageExclusion: new RegExp( 'no-storage'),
 			logger: new LoggerMock(),
 			messageConnector: noopMessageConnector
 		};
@@ -30,7 +31,24 @@ describe( 'record handler handles messages', function(){
 			data: [ 'someRecord' ]
 		});
 
+		expect( options.cache.lastSetKey ).toBe( 'someRecord' );
+		expect( options.cache.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
+
+		expect( options.storage.lastSetKey ).toBe( 'someRecord' );
+		expect( options.storage.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
+
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|0|{}+') );
+	});
+
+	it( 'does not store new record when excluded', function(){
+		recordHandler.handle( clientA, {
+			topic: 'RECORD',
+			action: 'CR',
+			data: [ 'no-storage' ]
+		});
+
+		expect( options.storage.lastSetKey ).toBe( 'someRecord' );
+		expect( options.storage.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
 	});
 
 	it( 'returns an existing record', function(){
