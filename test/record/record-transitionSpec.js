@@ -1,3 +1,4 @@
+
 /* global it, describe, expect, jasmine */
 var proxyquire = require( 'proxyquire' ),
 	RecordRequestMock = require( '../mocks/record-request-mock' ),
@@ -121,6 +122,51 @@ describe( 'record transition multiple steps', function(){
 				expect( recordHandlerMock._$broadcastUpdate ).toHaveBeenCalledWith( 'someRecord', patchMessage2, socketWrapper );
 				expect( recordHandlerMock._$transitionComplete ).toHaveBeenCalled();
 				clearInterval( check );
+				done();
+			}
+		}, 1 );
+	});
+
+	it( 'stored each transition in storage', function( done ){
+		var check = setInterval(function(){
+			if( options.storage.completedSetOperations === 3 ) {
+				done();
+			}
+		}, 1 );
+	});
+});
+
+describe( 'record transition ignores storaging data when excluded', function(){
+	var recordTransition,
+		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+		patchMessage = { topic: 'RECORD', action: 'P', data: [ 'no-storage/1', 1, 'firstname', 'SEgon' ] },
+		recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
+		options = { cache: new StorageMock(), storage: new StorageMock(), storageExclusion: new RegExp( 'no-storage/' ) }; 
+
+	it( 'creates the transition', function(){
+		recordTransition = new RecordTransition( 'no-storage/1', options, recordHandlerMock );
+		expect( recordTransition.hasVersion ).toBeDefined();
+		expect( recordTransition.hasVersion( 2 ) ).toBe( false );
+	});
+
+	it( 'adds a patch to the queue', function(){
+		expect( recordTransition._recordRequest ).toBe( null );
+		recordTransition.add( socketWrapper, 1, patchMessage );
+		expect( recordTransition._recordRequest ).toBeDefined();
+		expect( recordTransition._recordRequest.recordName ).toBe( 'no-storage/1' );
+	});
+
+	it( 'retrieves the empty record', function(){
+		expect( recordHandlerMock._$broadcastUpdate ).not.toHaveBeenCalled();
+		expect( recordHandlerMock._$transitionComplete ).not.toHaveBeenCalled();
+		recordTransition._recordRequest.onComplete({ _v: 0, _d: {} });
+		expect( recordHandlerMock._$broadcastUpdate ).toHaveBeenCalledWith( 'no-storage/1', patchMessage, socketWrapper );
+		expect( recordHandlerMock._$transitionComplete ).toHaveBeenCalledWith( 'no-storage/1' );
+	});
+
+	it( 'does not store transition in storage', function( done ){
+		var check = setInterval(function(){
+			if( options.storage.completedSetOperations === 0 ) {
 				done();
 			}
 		}, 1 );

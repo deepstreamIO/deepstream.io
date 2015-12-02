@@ -42,6 +42,11 @@ exports.get = function() {
 		storage: require( './default-plugins/noop-storage' ),
 	
 		/*
+		 * Storage options
+		 */
+		storageExclusion: null,
+
+		/*
 		 * Security
 		 */
 		maxAuthAttempts: 3,

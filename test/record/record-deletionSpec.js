@@ -76,3 +76,36 @@ describe( 'encounters an error during record deletion', function(){
 		options.storage.delete.calls[ 0 ].args[ 1 ]( null );
 	});
 });
+
+describe( 'doesn\'t delete excluded messages from storage', function(){
+	var recordDeletion;
+	var deletionMsg = { topic: 'R', action: 'D', data: [ 'no-storage/1' ] };
+	var options = getOptions();
+	options.storageExclusion = new RegExp( 'no-storage/' )
+	var sender = new SocketWrapper( new SocketMock() );
+	var successCallback = jasmine.createSpy( 'successCallback' );
+
+	it( 'creates the record deletion', function(){
+		expect( options.cache.delete ).not.toHaveBeenCalled();
+		expect( options.storage.delete ).not.toHaveBeenCalled();
+		
+		recordDeletion = new RecordDeletion( options, sender, deletionMsg, successCallback );
+		
+		expect( options.cache.delete.calls[ 0 ].args[ 0 ] ).toBe( 'no-storage/1' );
+		expect( options.storage.delete ).not.toHaveBeenCalled();
+	});
+
+	it( 'receives a response from cache that completes the recordDeletion', function(){
+		expect( recordDeletion._isDestroyed ).toBe( false );
+		expect( successCallback ).not.toHaveBeenCalled();
+		expect( sender.socket.lastSendMessage ).toBe( null );
+
+		options.cache.delete.calls[ 0 ].args[ 1 ]( null );
+		
+		expect( sender.socket.lastSendMessage ).toBe( msg( 'R|A|D|no-storage/1+' ) );
+		expect( recordDeletion._isDestroyed ).toBe( true );
+		expect( successCallback ).toHaveBeenCalled();	
+	});
+
+
+});

@@ -220,7 +220,10 @@ RecordTransition.prototype._next = function() {
 	 * and the transition will continue straight away, rather than wait for the storage response 
 	 * to be returned.
 	 */
-	this._options.storage.set( this._name, this._record, this._onStorageResponse.bind( this ) );
+	if( !this._options.storageExclusion || !this._options.storageExclusion.test( this._name ) ) {
+		this._options.storage.set( this._name, this._record, this._onStorageResponse.bind( this ) );
+	}
+
 	this._options.cache.set( this._name, this._record, this._onCacheResponse.bind( this ) );
 };
 
