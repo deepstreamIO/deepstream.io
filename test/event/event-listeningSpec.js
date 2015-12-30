@@ -41,7 +41,7 @@ describe( 'event handler handles messages', function(){
 	       data: [ 'event\/.*' ]
 	    });
 	    
-	    expect( listeningClient.socket.getMsg( 2 ) ).toBe( msg( 'E|A|S|event\/.*+' ) );
+	    expect( listeningClient.socket.getMsg( 2 ) ).toBe( msg( 'E|A|L|event\/.*+' ) );
         expect( listeningClient.socket.getMsg( 1 ) ).toBe( msg( 'E|SP|event\/.*|event/A+' ) );
         expect( listeningClient.socket.getMsg( 0 ) ).toBe( msg( 'E|SP|event\/.*|event/B+' ) );
 	});
@@ -73,7 +73,7 @@ describe( 'event handler handles messages', function(){
 	       data: [ 'event\/.*' ]
 	    });
 	    
-	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'E|A|US|event\/.*+' ) );
+	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'E|A|UL|event\/.*+' ) );
 	    expect( listeningClient.socket.sendMessages.length ).toBe( 5 );
 	    
 	     eventHandler.handle( subscribingClient, {
