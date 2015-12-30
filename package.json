@@ -15,7 +15,7 @@
     "url": "https://github.com/hoxton-one/deepstream.io.git"
   },
   "dependencies": {
-    "colors": "1.1.2",
+    "colors": "1.0.3",
     "engine.io": "1.6.4",
     "minimist": "1.2.0"
   },
