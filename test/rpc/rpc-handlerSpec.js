@@ -169,6 +169,11 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 		provider.emit( 'P', responseMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|12+' ) );
 
+		// Unregister Subscriber
+		subscriptionMessage.action = C.ACTIONS.UNSUBSCRIBE;
+		rpcHandler.handle( provider, subscriptionMessage );
+		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|A|US|addTwo+' ) );
+
 		// Ignores additional responses
 		requestor.socket.lastSendMessage = null;
 		provider.socket.lastSendMessage = null;
@@ -191,7 +196,9 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 
 		// Error Response
 		requestor.socket.lastSendMessage = null;
+
 		provider.emit( 'P', errorMessage );
+
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|E|ErrorOccured|addTwo|1234+' ) );
 
 		// Ignores additional responses
