@@ -33,6 +33,8 @@ var ListenerRegistry = function( type, options, parentSubscriptionRegistry ) {
   this._options = options;
   this._parentSubscriptionRegistry = parentSubscriptionRegistry;
   this._subscriptionRegistry = new SubscriptionRegistry( options, this._type );
+  this._subscriptionRegistry.setAction( 'subscribe', C.ACTIONS.LISTEN );
+  this._subscriptionRegistry.setAction( 'unsubscribe', C.ACTIONS.UNLISTEN );
   this._patterns = {};
 };
 

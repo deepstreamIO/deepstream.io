@@ -11,13 +11,30 @@ var C = require( '../constants/constants' );
  * @param {String} topic one of C.TOPIC
  * @param {[SubscriptionListener]} subscriptionListener Optional. A class exposing a onSubscriptionMade 
  *                                                      and onSubscriptionRemoved method.
- *                                                    
  */
 var SubscriptionRegistry = function( options, topic, subscriptionListener ) {
 	this._subscriptions = {};
 	this._options = options;
 	this._topic = topic;
 	this._subscriptionListener = subscriptionListener;
+	
+	this._constants = {
+		MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
+		SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
+		UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
+		NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
+	}
+};
+
+/**
+* This method allows you to customise the SubscriptionRegistry so that it can send custom events and ack messages back.
+* For example, when using the C.ACTIONS.LISTEN, you would override SUBSCRIBE with C.ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
+*
+* @param {string} name The name of the the variable to override. This can be either MULTIPLE_SUBSCRIPTIONS, SUBSCRIBE, UNSUBSCRIBE, NOT_SUBSCRIBED
+* @param {string} value The value to override with.
+*/
+SubscriptionRegistry.prototype.setAction = function( name, value ) {
+	this._constants[ name.toUpperCase() ] = value;
 };
 
 /**
@@ -66,8 +83,8 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 
 	if( this._subscriptions[ name ].indexOf( socketWrapper ) !== -1 ) {
 		var msg = 'repeat supscription to "' + name + '" by ' + socketWrapper.user; 
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MULTIPLE_SUBSCRIPTIONS, msg );
-		socketWrapper.sendError( this._topic, C.EVENT.MULTIPLE_SUBSCRIPTIONS, name );
+		this._options.logger.log( C.LOG_LEVEL.WARN, this._constants.MULTIPLE_SUBSCRIPTIONS, msg );
+		socketWrapper.sendError( this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name );
 		return;
 	}
 
@@ -77,8 +94,8 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	
 	this._subscriptions[ name ].push( socketWrapper );
 	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
-	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.SUBSCRIBE, logMsg );
-	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ C.ACTIONS.SUBSCRIBE, name ] );
+	this._options.logger.log( C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg );
+	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ this._constants.SUBSCRIBE, name ] );
 };
 
 /**
@@ -96,8 +113,8 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 	if( this._subscriptions[ name ] === undefined || 
 		this._subscriptions[ name ].indexOf( socketWrapper ) === -1 ) {
 		msg = socketWrapper.user + ' is not subscribed to ' + name;
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.NOT_SUBSCRIBED, msg );
-		socketWrapper.sendError( this._topic, C.EVENT.NOT_SUBSCRIBED, name );
+		this._options.logger.log( C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg );
+		socketWrapper.sendError( this._topic, this._constants.NOT_SUBSCRIBED, name );
 		return;
 	}
 
@@ -112,8 +129,8 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 	}
 
 	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
-	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.UNSUBSCRIBE, logMsg );
-	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ C.ACTIONS.UNSUBSCRIBE, name ] );
+	this._options.logger.log( C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg );
+	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ this._constants.UNSUBSCRIBE, name ] );
 };
 
 /**

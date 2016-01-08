@@ -45,7 +45,7 @@ describe( 'record handler handles messages', function(){
 	       data: [ 'user\/.*' ]
 	    });
 	    
-	    expect( listeningClient.socket.getMsg( 2 ) ).toBe( msg( 'R|A|S|user\/.*+' ) );
+	    expect( listeningClient.socket.getMsg( 2 ) ).toBe( msg( 'R|A|L|user\/.*+' ) );
         expect( listeningClient.socket.getMsg( 1 ) ).toBe( msg( 'R|SP|user\/.*|user/A+' ) );
         expect( listeningClient.socket.getMsg( 0 ) ).toBe( msg( 'R|SP|user\/.*|user/B+' ) );
 	});
@@ -77,7 +77,7 @@ describe( 'record handler handles messages', function(){
 	       data: [ 'user\/.*' ]
 	    });
 	    
-	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'R|A|US|user\/.*+' ) );
+	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'R|A|UL|user\/.*+' ) );
 	    expect( listeningClient.socket.sendMessages.length ).toBe( 5 );
 	    
 	     recordHandler.handle( subscribingClient, {

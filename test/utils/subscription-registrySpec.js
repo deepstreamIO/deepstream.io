@@ -140,3 +140,39 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'msgB+' ) );
 	});
 });
+
+describe( 'subscription-registry allows custom actions to be set', function(){
+
+	var subscriptionRegistry = new SubscriptionRegistry( options, 'E' );
+	var socketWrapper = new SocketWrapper( new SocketMock(), socketWrapperOptions );
+	
+	it( 'overrides the default actions', function(){
+		subscriptionRegistry.setAction( 'subscribe', 'make-aware' );
+		subscriptionRegistry.setAction( 'unsubscribe', 'be-unaware' );
+		subscriptionRegistry.setAction( 'multiple_subscriptions', 'too-aware' );
+		subscriptionRegistry.setAction( 'not_subscribed', 'unaware' );
+	});
+
+	it( 'subscribes to names', function(){
+		subscriptionRegistry.subscribe( 'someName', socketWrapper );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|A|make-aware|someName+' ) );
+	});
+
+	it( 'doesn\'t subscribe twice to the same name', function(){
+		expect( lastLogEvent ).toBe( 'make-aware' );
+		subscriptionRegistry.subscribe( 'someName', socketWrapper );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|too-aware|someName+' ) );
+		expect( lastLogEvent ).toBe( 'too-aware' );
+	});
+
+	it( 'unsubscribes', function(){		
+		subscriptionRegistry.unsubscribe( 'someName', socketWrapper );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|A|be-unaware|someName+' ) );
+	});
+
+	it( 'handles unsubscribes for non existant subscriptions', function(){
+		var newSocketWrapper = new SocketWrapper( new SocketMock(), socketWrapperOptions );
+		subscriptionRegistry.unsubscribe( 'someName', newSocketWrapper );
+		expect( newSocketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|unaware|someName+' ) );
+	});
+});	
