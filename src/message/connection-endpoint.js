@@ -86,6 +86,9 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
  * @returns {void}
  */
 ConnectionEndpoint.prototype.close = function() {
+	this._engineIo.removeAllListeners( 'connection' );
+	this._tcpEndpoint.removeAllListeners( 'connection' );
+
 	// Close the engine.io server
 	for( var i = 0; i < this._engineIo.clients.length; i++ ) {
 		if( this._engineIo.clients[ i ].readyState !== READY_STATE_CLOSED ) {

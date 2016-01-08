@@ -2,6 +2,7 @@ var SocketMock = function(){
 	this.lastSendMessage = null;
 	this.isDisconnected = false;
 	this.sendMessages = [];
+	this.readyState = "";
 };
 
 require("util").inherits( SocketMock, require("events").EventEmitter );
@@ -17,6 +18,7 @@ SocketMock.prototype.getMsg = function( i ) {
 
 SocketMock.prototype.close = function() {
 	this.isDisconnected = true;
+	this.readyState = 'closed';
 	this.emit( 'close' );
 };
 

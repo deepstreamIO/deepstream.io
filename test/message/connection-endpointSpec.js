@@ -25,219 +25,249 @@ connectionEndpoint.onMessage = function( socket, message ){
 	lastAuthenticatedMessage = message;
 };
 
-describe( 'validates HTTPS server conditions', function() {
+describe( 'connection endpoint', function() {
 
-	var options = null;
-	var error = null;
-	var connectionEndpointValidation = null;
+	describe( 'validates HTTPS server conditions', function() {
 
-	beforeEach(function() {
-		sslOptions = {
-			permissionHandler: require( '../mocks/permission-handler-mock' ),
-			logger: { log: function( logLevel, event, msg ){} }
-		};
+		var options = null;
+		var error = null;
+		var connectionEndpointValidation = null;
 
-		spyOn(httpMock, 'createServer').andCallThrough();
-		spyOn(httpsMock, 'createServer').andCallThrough();
-	});
+		beforeEach(function() {
+			sslOptions = {
+				permissionHandler: require( '../mocks/permission-handler-mock' ),
+				logger: { log: function( logLevel, event, msg ){} }
+			};
 
-	it( 'creates a http connection when sslKey and sslCert are not provided', function(){
-		connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-		expect(httpMock.createServer).toHaveBeenCalledWith();
-		expect(httpsMock.createServer).not.toHaveBeenCalled();
-	});
+			spyOn(httpMock, 'createServer').andCallThrough();
+			spyOn(httpsMock, 'createServer').andCallThrough();
+		});
 
-	it( 'creates a https connection when sslKey and sslCert are provided', function(){
-		sslOptions.sslKey = 'sslPrivateKey';
-		sslOptions.sslCert = 'sslCertificate';
-		connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-		expect(httpMock.createServer).not.toHaveBeenCalled();
-		expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate"} );
-	});
+		it( 'creates a http connection when sslKey and sslCert are not provided', function(){
+			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			expect(httpMock.createServer).toHaveBeenCalledWith();
+			expect(httpsMock.createServer).not.toHaveBeenCalled();
+		});
 
-	it( 'creates a https connection when sslKey, sslCert and sslCa are provided', function(){
-		sslOptions.sslKey = 'sslPrivateKey';
-		sslOptions.sslCert = 'sslCertificate';
-		sslOptions.sslCa = 'sslCertificateAuthority';
-		connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-		expect(httpMock.createServer).not.toHaveBeenCalled();
-		expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate", "ca": "sslCertificateAuthority"} );
-	});
-
-	it( 'throws an exception when only sslCert is provided', function(){
-		try {
+		it( 'creates a https connection when sslKey and sslCert are provided', function(){
+			sslOptions.sslKey = 'sslPrivateKey';
 			sslOptions.sslCert = 'sslCertificate';
 			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-		} catch( e ) {
-			error = e;
-		} finally {
-			expect( error.message ).toBe( 'Must also include sslKey in order to use HTTPS' );
-		}
-	});
+			expect(httpMock.createServer).not.toHaveBeenCalled();
+			expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate"} );
+		});
 
-	it( 'throws an exception when only sslKey is provided', function(){
-		try {
-			sslOptions.sslKey = "sslPrivateKey";
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-		} catch( e ) {
-			error = e;
-		} finally {
-			expect( error.message ).toBe( 'Must also include sslCert in order to use HTTPS' );
-		}
-	});
-
-	it( 'throws an exception when sslCert and sslCa is provided', function(){
-		try {
+		it( 'creates a https connection when sslKey, sslCert and sslCa are provided', function(){
+			sslOptions.sslKey = 'sslPrivateKey';
 			sslOptions.sslCert = 'sslCertificate';
 			sslOptions.sslCa = 'sslCertificateAuthority';
 			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-		} catch( e ) {
-			error = e;
-		} finally {
-			expect( error.message ).toBe( 'Must also include sslKey in order to use HTTPS' );
-		}
+			expect(httpMock.createServer).not.toHaveBeenCalled();
+			expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate", "ca": "sslCertificateAuthority"} );
+		});
+
+		it( 'throws an exception when only sslCert is provided', function(){
+			try {
+				sslOptions.sslCert = 'sslCertificate';
+				connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			} catch( e ) {
+				error = e;
+			} finally {
+				expect( error.message ).toBe( 'Must also include sslKey in order to use HTTPS' );
+			}
+		});
+
+		it( 'throws an exception when only sslKey is provided', function(){
+			try {
+				sslOptions.sslKey = "sslPrivateKey";
+				connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			} catch( e ) {
+				error = e;
+			} finally {
+				expect( error.message ).toBe( 'Must also include sslCert in order to use HTTPS' );
+			}
+		});
+
+		it( 'throws an exception when sslCert and sslCa is provided', function(){
+			try {
+				sslOptions.sslCert = 'sslCertificate';
+				sslOptions.sslCa = 'sslCertificateAuthority';
+				connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			} catch( e ) {
+				error = e;
+			} finally {
+				expect( error.message ).toBe( 'Must also include sslKey in order to use HTTPS' );
+			}
+		});
+
+		it( 'throws an exception when sslKey and sslCa is provided', function(){
+			try {
+				sslOptions.sslKey = "sslPrivateKey";
+				sslOptions.sslCa = 'sslCertificateAuthority';
+				connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			} catch( e ) {
+				error = e;
+			} finally {
+				expect( error.message ).toBe( 'Must also include sslCert in order to use HTTPS' );
+			}
+		});
 	});
 
-	it( 'throws an exception when sslKey and sslCa is provided', function(){
-		try {
-			sslOptions.sslKey = "sslPrivateKey";
-			sslOptions.sslCa = 'sslCertificateAuthority';
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-		} catch( e ) {
-			error = e;
-		} finally {
-			expect( error.message ).toBe( 'Must also include sslCert in order to use HTTPS' );
-		}
-	});
-});
+	describe( 'the connection endpoint handles invalid auth messages', function(){
 
-describe( 'the connection endpoint handles invalid auth messages', function(){
+		it( 'creates the connection endpoint', function(){
+			socketMock = engineIoMock.simulateConnection();
+		});
 
-	it( 'creates the connection endpoint', function(){
-		socketMock = engineIoMock.simulateConnection();
-	});
+		it( 'handles invalid auth messages', function(){
+			expect( socketMock.lastSendMessage ).toBe( null );
+			expect( socketMock.isDisconnected ).toBe( false );
 
-	it( 'handles invalid auth messages', function(){
-		expect( socketMock.lastSendMessage ).toBe( null );
-		expect( socketMock.isDisconnected ).toBe( false );
+			socketMock.emit( 'message', 'gibberish' );
 
-		socketMock.emit( 'message', 'gibberish' );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
+			expect( socketMock.isDisconnected ).toBe( true );
+		});
 
-		expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
-		expect( socketMock.isDisconnected ).toBe( true );
+		it( 'has discarded the invalid socket', function(){
+			socketMock.lastSendMessage = null;
+			socketMock.emit( 'message', 'some more gibberish' );
+			expect( socketMock.lastSendMessage ).toBe( null );
+		});
 	});
 
-	it( 'has discarded the invalid socket', function(){
-		socketMock.lastSendMessage = null;
-		socketMock.emit( 'message', 'some more gibberish' );
-		expect( socketMock.lastSendMessage ).toBe( null );
-	});
-});
+	describe( 'the connection endpoint handles invalid json', function(){
 
-describe( 'the connection endpoint handles invalid json', function(){
+		it( 'creates the connection endpoint', function(){
+			socketMock = engineIoMock.simulateConnection();
+		});
 
-	it( 'creates the connection endpoint', function(){
-		socketMock = engineIoMock.simulateConnection();
-	});
+		it( 'handles invalid json messages', function(){
+			expect( socketMock.lastSendMessage ).toBe( null );
+			expect( socketMock.isDisconnected ).toBe( false );
 
-	it( 'handles invalid json messages', function(){
-		expect( socketMock.lastSendMessage ).toBe( null );
-		expect( socketMock.isDisconnected ).toBe( false );
+			socketMock.emit( 'message', _msg( 'A|REQ|{"a":"b}+' ) );
 
-		socketMock.emit( 'message', _msg( 'A|REQ|{"a":"b}+' ) );
-
-		expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
-		expect( socketMock.isDisconnected ).toBe( true );
-	});
-});
-
-describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
-
-	it( 'creates the connection endpoint', function(){
-		socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
+			expect( socketMock.isDisconnected ).toBe( true );
+		});
 	});
 
-	it( 'handles valid auth messages', function(){
-		expect( socketMock.lastSendMessage ).toBe( null );
-		expect( socketMock.isDisconnected ).toBe( false );
-		expect( permissionHandlerMock.lastUserValidationQueryArgs ).toBe( null );
+	describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
 
-		permissionHandlerMock.nextUserValidationResult = false;
+		it( 'creates the connection endpoint', function(){
+			socketMock = engineIoMock.simulateConnection();
+		});
 
-		socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+		it( 'handles valid auth messages', function(){
+			expect( socketMock.lastSendMessage ).toBe( null );
+			expect( socketMock.isDisconnected ).toBe( false );
+			expect( permissionHandlerMock.lastUserValidationQueryArgs ).toBe( null );
 
-		expect( permissionHandlerMock.lastUserValidationQueryArgs.length ).toBe( 3 );
-		expect( permissionHandlerMock.lastUserValidationQueryArgs[ 1 ].user ).toBe( 'wolfram' );
-		expect( lastLoggedMessage.indexOf( 'wolfram' ) ).not.toBe( -1 );
-		expect( socketMock.lastSendMessage ).toBe( _msg('A|E|INVALID_AUTH_DATA|Invalid User+') );
-		expect( socketMock.isDisconnected ).toBe( false );
-	});
-});
+			permissionHandlerMock.nextUserValidationResult = false;
 
-describe( 'disconnects if the number of invalid authentication attempts is exceeded', function(){
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 
-	it( 'creates the connection endpoint', function(){
-		socketMock = engineIoMock.simulateConnection();
-	});
-
-	it( 'handles valid auth messages', function(){
-		permissionHandlerMock.nextUserValidationResult = false;
-		options.maxAuthAttempts = 3;
-
-		socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-		expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|Invalid User+' ) );
-		expect( socketMock.isDisconnected ).toBe( false );
-
-		socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-		expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|Invalid User+' ) );
-		expect( socketMock.isDisconnected ).toBe( false );
-
-		socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-		expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|TOO_MANY_AUTH_ATTEMPTS|too many authentication attempts+' ) );
-		expect( socketMock.isDisconnected ).toBe( true );
-	});
-});
-
-describe( 'doesn\'t log credentials if logInvalidAuthData is set to false', function(){
-	it( 'creates the connection endpoint', function(){
-		options.logInvalidAuthData = false;
-		socketMock = engineIoMock.simulateConnection();
+			expect( permissionHandlerMock.lastUserValidationQueryArgs.length ).toBe( 3 );
+			expect( permissionHandlerMock.lastUserValidationQueryArgs[ 1 ].user ).toBe( 'wolfram' );
+			expect( lastLoggedMessage.indexOf( 'wolfram' ) ).not.toBe( -1 );
+			expect( socketMock.lastSendMessage ).toBe( _msg('A|E|INVALID_AUTH_DATA|Invalid User+') );
+			expect( socketMock.isDisconnected ).toBe( false );
+		});
 	});
 
-	it( 'handles valid auth messages', function(){
-		permissionHandlerMock.nextUserValidationResult = false;
-		socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-		expect( lastLoggedMessage.indexOf( 'wolfram' ) ).toBe( -1 );
-	});
-});
+	describe( 'disconnects if the number of invalid authentication attempts is exceeded', function(){
 
-describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
+		it( 'creates the connection endpoint', function(){
+			socketMock = engineIoMock.simulateConnection();
+		});
 
-	it( 'creates the connection endpoint', function(){
-		socketMock = engineIoMock.simulateConnection();
-	});
+		it( 'handles valid auth messages', function(){
+			permissionHandlerMock.nextUserValidationResult = false;
+			options.maxAuthAttempts = 3;
 
-	it( 'authenticates valid sockets', function(){
-		expect( socketMock.lastSendMessage ).toBe( null );
-		expect( socketMock.isDisconnected ).toBe( false );
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|Invalid User+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
 
-		permissionHandlerMock.nextUserValidationResult = true;
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|Invalid User+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
 
-		socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-
-		expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A+' ) );
-		expect( socketMock.isDisconnected ).toBe( false );
-	});
-
-	it( 'forwards messages from authenticated sockets', function(){
-		expect( lastAuthenticatedMessage ).toBe( null );
-		socketMock.emit( 'message', 'testMsg' );
-		expect( lastAuthenticatedMessage ).toBe( 'testMsg' );
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|TOO_MANY_AUTH_ATTEMPTS|too many authentication attempts+' ) );
+			expect( socketMock.isDisconnected ).toBe( true );
+		});
 	});
 
-	it( 'notifies the permissionHandler when a client disconnects', function(){
-		expect( permissionHandlerMock.onClientDisconnectCalledWith ).toBe( null );
-		socketMock.close();
-		expect( permissionHandlerMock.onClientDisconnectCalledWith ).toBe( 'test-user' );
+	describe( 'doesn\'t log credentials if logInvalidAuthData is set to false', function(){
+		it( 'creates the connection endpoint', function(){
+			options.logInvalidAuthData = false;
+			socketMock = engineIoMock.simulateConnection();
+		});
+
+		it( 'handles valid auth messages', function(){
+			permissionHandlerMock.nextUserValidationResult = false;
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+			expect( lastLoggedMessage.indexOf( 'wolfram' ) ).toBe( -1 );
+		});
+	});
+
+	describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
+
+		it( 'creates the connection endpoint', function(){
+			socketMock = engineIoMock.simulateConnection();
+		});
+
+		it( 'authenticates valid sockets', function(){
+			expect( socketMock.lastSendMessage ).toBe( null );
+			expect( socketMock.isDisconnected ).toBe( false );
+
+			permissionHandlerMock.nextUserValidationResult = true;
+
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
+		});
+
+		it( 'forwards messages from authenticated sockets', function(){
+			expect( lastAuthenticatedMessage ).toBe( null );
+			socketMock.emit( 'message', 'testMsg' );
+			expect( lastAuthenticatedMessage ).toBe( 'testMsg' );
+		});
+
+		it( 'notifies the permissionHandler when a client disconnects', function(){
+			expect( permissionHandlerMock.onClientDisconnectCalledWith ).toBe( null );
+			socketMock.close();
+			expect( permissionHandlerMock.onClientDisconnectCalledWith ).toBe( 'test-user' );
+		});
+	});
+
+	describe( 'closes all client connections on close', function(){
+
+		it( 'calls close on connections', function( done ) {
+			var closeSpy = jasmine.createSpy( 'close-event' );
+			connectionEndpoint.on( 'close', closeSpy );
+			connectionEndpoint.close();
+
+			setTimeout( function() {
+				expect( closeSpy ).toHaveBeenCalled();	
+				done();
+			}, 0 );
+		} );
+
+		it( 'does not allow future connections', function() {
+			socketMock = engineIoMock.simulateConnection();
+
+			expect( socketMock.lastSendMessage ).toBe( null );
+			expect( socketMock.isDisconnected ).toBe( false );
+
+			socketMock.emit( 'message', 'gibberish' );
+
+			expect( socketMock.lastSendMessage ).toBe( null );
+			expect( socketMock.isDisconnected ).toBe( false );
+		} );
+
 	});
 });
