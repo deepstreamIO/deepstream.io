@@ -19,6 +19,8 @@ exports.get = function() {
 		host: argv.host || '0.0.0.0',
 		tcpPort: argv.tcpPort || 6021,
 		tcpHost: argv.tcpHost || '0.0.0.0',
+		httpServer: null,
+		urlPath: '/engine.io',
 
 		/*
 		 * SSL Configuration

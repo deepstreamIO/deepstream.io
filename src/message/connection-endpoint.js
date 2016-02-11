@@ -31,21 +31,31 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._engineIoReady = false;
 	this._engineIoServerClosed = false;
 	this._server = null;
-	if( this._isHttpsServer() ) {
-		var httpsOptions = {
-			key: this._options.sslKey,
-			cert: this._options.sslCert
-		};
-		if (this._options.sslCa) {
-			httpsOptions.ca = this._options.sslCa;
+
+	if ( this._options.httpServer ) {
+		this._server = this._options.httpServer;
+	} else {
+		if( this._isHttpsServer() ) {
+			var httpsOptions = {
+				key: this._options.sslKey,
+				cert: this._options.sslCert
+			};
+			if (this._options.sslCa) {
+				httpsOptions.ca = this._options.sslCa;
+			}
+			this._server = https.createServer(httpsOptions);
 		}
-		this._server = https.createServer(httpsOptions);
+		else {
+			this._server = http.createServer();
+		}
+
+		this._server.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
 	}
-	else {
-		this._server = http.createServer();
-	}
-	this._server.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
-	this._engineIo = engine.attach( this._server );
+
+	var attachOptions = {
+		path: this._options.urlPath
+	};
+	this._engineIo = engine.attach( this._server, attachOptions );
 	this._engineIo.on( 'error', this._onError.bind( this ) );
 	this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
 
