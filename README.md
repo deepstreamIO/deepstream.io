@@ -1,4 +1,4 @@
-[deepstream.io](http://deepstream.io/) ![Build](https://travis-ci.org/hoxton-one/deepstream.io.svg?branch=master) [![npm version](https://badge.fury.io/js/deepstream.io.svg)](http://badge.fury.io/js/deepstream.io)
+[deepstream.io](http://deepstream.io/) [![Build Status](https://travis-ci.org/deepstreamIO/deepstream.io.svg?branch=master)](https://travis-ci.org/deepstreamIO/deepstream.io) [![npm version](https://badge.fury.io/js/deepstream.io.svg)](http://badge.fury.io/js/deepstream.io)
 ==============================================
 A scalable server for realtime apps
 ----------------------------------------------
