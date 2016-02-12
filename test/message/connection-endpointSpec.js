@@ -227,7 +227,7 @@ describe( 'connection endpoint', function() {
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A|test-data+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
 
@@ -252,7 +252,7 @@ describe( 'connection endpoint', function() {
 			connectionEndpoint.close();
 
 			setTimeout( function() {
-				expect( closeSpy ).toHaveBeenCalled();	
+				expect( closeSpy ).toHaveBeenCalled();
 				done();
 			}, 0 );
 		} );

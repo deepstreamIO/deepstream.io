@@ -9,7 +9,7 @@ var PermissionHandlerMock = function() {
 PermissionHandlerMock.prototype.isValidUser = function( handshakeData, authData, callback ) {
 	this.lastUserValidationQueryArgs = arguments;
 	if( this.nextUserValidationResult === true ) {
-		callback( null, 'test-user' );
+		callback( null, 'test-user', 'test-data' );
 	} else {
 		callback( 'Invalid User' );
 	}
