@@ -34,6 +34,11 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 
 	if ( this._options.httpServer ) {
 		this._server = this._options.httpServer;
+		if ( this._server.listening ) {
+			this._checkReady.call( this, ENGINE_IO );
+		} else {
+			this._server.once( 'listening', this._checkReady.bind( this, ENGINE_IO ) );
+		}
 	} else {
 		if( this._isHttpsServer() ) {
 			var httpsOptions = {
