@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "colors": "1.0.3",
-    "engine.io": "1.6.4",
+    "engine.io": "1.6.8",
     "minimist": "1.2.0"
   },
   "devDependencies": {
