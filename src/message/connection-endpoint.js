@@ -27,6 +27,10 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._options = options;
 	this._readyCallback = readyCallback;
 
+	if( !options.webServerEnabled && !options.tcpServerEnabled ) {
+		throw new Error( 'Can\'t start deepstream with both webserver and tcp disabled' );
+	}
+
 	if( options.webServerEnabled ) {
 		// Initialise engine.io's server - a combined http and websocket server for browser connections
 		this._engineIoReady = false;
@@ -101,6 +105,7 @@ ConnectionEndpoint.prototype.close = function() {
 		this._engineIo.close();
 		this._server.close( function(){ 
 			this._engineIoServerClosed = true;
+			this._checkClosed();
 		}.bind( this ));
 	}
 	
@@ -158,7 +163,6 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 	} else {
 		logMsg = 'from ' + handshakeData.remoteAddress + ' via tcp';
 	}
-
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
 	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper );
