@@ -16,7 +16,9 @@ options = {
 	permissionHandler: require( '../mocks/permission-handler-mock' ),
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
-	logInvalidAuthData: true
+	logInvalidAuthData: true,
+	tcpServerEnabled: true,
+	webServerEnabled: true
 };
 
 connectionEndpoint = new ConnectionEndpoint( options );
@@ -36,7 +38,9 @@ describe( 'connection endpoint', function() {
 		beforeEach(function() {
 			sslOptions = {
 				permissionHandler: require( '../mocks/permission-handler-mock' ),
-				logger: { log: function( logLevel, event, msg ){} }
+				logger: { log: function( logLevel, event, msg ){} },
+				tcpServerEnabled: true,
+				webServerEnabled: true
 			};
 
 			spyOn(httpMock, 'createServer').andCallThrough();
