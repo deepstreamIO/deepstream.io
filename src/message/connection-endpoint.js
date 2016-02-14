@@ -333,7 +333,8 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
 	var msg;
 
 	if( endpoint === ENGINE_IO ) {
-		msg = 'Listening for browser connections on ' + this._options.host + ':' + this._options.port;
+		var address = this._server.address();
+		msg = 'Listening for browser connections on ' + address.address + ':' + address.port;
 		this._engineIoReady = true;
 	}
 
