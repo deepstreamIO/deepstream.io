@@ -90,7 +90,7 @@ describe( 'connection endpoint', function() {
 			expect( permissionHandlerMock.lastUserValidationQueryArgs.length ).toBe( 3 );
 			expect( permissionHandlerMock.lastUserValidationQueryArgs[ 1 ].user ).toBe( 'wolfram' );
 			expect( lastLoggedMessage.indexOf( 'wolfram' ) ).not.toBe( -1 );
-			expect( socketMock.lastSendMessage ).toBe( _msg('A|E|INVALID_AUTH_DATA|Invalid User+') );
+			expect( socketMock.lastSendMessage ).toBe( _msg('A|E|INVALID_AUTH_DATA|SInvalid User+') );
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
 	});
@@ -106,11 +106,11 @@ describe( 'connection endpoint', function() {
 			options.maxAuthAttempts = 3;
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|Invalid User+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|SInvalid User+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|Invalid User+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|SInvalid User+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );

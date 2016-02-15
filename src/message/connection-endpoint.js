@@ -345,7 +345,7 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( authError, authData
 	}
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INVALID_AUTH_DATA, logMsg );
-	socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_DATA, authError || 'invalid authentication data' );
+	socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_DATA, messageBuilder.typed( authError ) );
 	socketWrapper.authAttempts++;
 
 	if( socketWrapper.authAttempts >= this._options.maxAuthAttempts ) {
