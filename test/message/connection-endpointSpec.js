@@ -90,7 +90,7 @@ describe( 'connection endpoint', function() {
 			expect( permissionHandlerMock.lastUserValidationQueryArgs.length ).toBe( 3 );
 			expect( permissionHandlerMock.lastUserValidationQueryArgs[ 1 ].user ).toBe( 'wolfram' );
 			expect( lastLoggedMessage.indexOf( 'wolfram' ) ).not.toBe( -1 );
-			expect( socketMock.lastSendMessage ).toBe( _msg('A|E|INVALID_AUTH_DATA|Invalid User+') );
+			expect( socketMock.lastSendMessage ).toBe( _msg('A|E|INVALID_AUTH_DATA|SInvalid User+') );
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
 	});
@@ -106,11 +106,11 @@ describe( 'connection endpoint', function() {
 			options.maxAuthAttempts = 3;
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|Invalid User+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|SInvalid User+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|Invalid User+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_DATA|SInvalid User+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
@@ -163,6 +163,22 @@ describe( 'connection endpoint', function() {
 		});
 	});
 
+	describe( 'forwards additional data for positive authentications', function(){
+		it( 'creates the connection endpoint', function(){
+			socketMock = engineIoMock.simulateConnection();
+			permissionHandlerMock.reset();
+			permissionHandlerMock.nextUserValidationResult = true;
+			permissionHandlerMock.sendNextValidAuthWithData = true;
+		});
+
+		it( 'authenticates valid sockets', function(){
+			expect( socketMock.lastSendMessage ).toBe( null );
+			expect( socketMock.isDisconnected ).toBe( false );
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A|Stest-data+' ) );
+		});
+	});
+
 	describe( 'closes all client connections on close', function(){
 
 		it( 'calls close on connections', function( done ) {
@@ -171,7 +187,7 @@ describe( 'connection endpoint', function() {
 			connectionEndpoint.close();
 
 			setTimeout( function() {
-				expect( closeSpy ).toHaveBeenCalled();	
+				expect( closeSpy ).toHaveBeenCalled();
 				done();
 			}, 0 );
 		} );
