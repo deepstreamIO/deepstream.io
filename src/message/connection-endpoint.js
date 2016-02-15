@@ -1,5 +1,6 @@
 var C = require( '../constants/constants' ),
 	messageParser = require( './message-parser' ),
+	messageBuilder = require( './message-builder' ),
 	SocketWrapper = require( './socket-wrapper' ),
 	engine = require('engine.io'),
 	TcpEndpoint = require( '../tcp/tcp-endpoint' ),
@@ -17,9 +18,9 @@ var C = require( '../constants/constants' ),
  * forwards messages it receives from authenticated sockets.
  *
  * @constructor
- * 
+ *
  * @extends events.EventEmitter
- * 
+ *
  * @param {Object} options the extended default options
  * @param {Function} readyCallback will be invoked once both the engineIo and the tcp connection are established
  */
@@ -61,7 +62,7 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 		this._tcpEndpoint = new TcpEndpoint( options, this._checkReady.bind( this, TCP_ENDPOINT ) );
 		this._tcpEndpoint.on( 'error', this._onError.bind( this ) );
 		this._tcpEndpoint.on( 'connection', this._onConnection.bind( this, TCP_ENDPOINT ) );
-	}	
+	}
 
 	this._timeout = null;
 	this._msgNum = 0;
@@ -81,7 +82,7 @@ util.inherits( ConnectionEndpoint, events.EventEmitter );
  * @param   {String} message the raw message as sent by the client
  *
  * @public
- * 
+ *
  * @returns {void}
  */
 ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
@@ -89,7 +90,7 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
 /**
  * Closes both the engine.io connection and the tcp connection. The ConnectionEndpoint
  * will emit a close event once both are succesfully shut down
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -98,7 +99,7 @@ ConnectionEndpoint.prototype.close = function() {
 	if( this._engineIo ) {
 		this._closeEngineIoServer();
 	}
-	
+
 	// Close the tcp server
 	if( this._tcpEndpoint ) {
 		this._closeTcpServer();
@@ -107,7 +108,7 @@ ConnectionEndpoint.prototype.close = function() {
 
 /**
  * Closes the engine.io and subsequently http server
- * 
+ *
  * TODO: Make sure that engine.io and the http server's
  * clode events align and potentially don't close
  * the http server if it's provided as an external parameter
@@ -124,7 +125,7 @@ ConnectionEndpoint.prototype._closeEngineIoServer = function() {
 		}
 	}
 	this._engineIo.close();
-	this._server.close( function(){ 
+	this._server.close( function(){
 		this._engineIoServerClosed = true;
 		this._checkClosed();
 	}.bind( this ));
@@ -142,11 +143,11 @@ ConnectionEndpoint.prototype._closeTcpServer = function() {
 	this._tcpEndpoint.on( 'close', this._checkClosed.bind( this ) );
 	this._tcpEndpoint.close();
 };
- 
+
 /**
  * Creates an HTTP or HTTPS server for engine.io to attach itself to,
  * depending on the options the client configured
- * 
+ *
  * @private
  * @returns {http.HttpServer || http.HttpsServer}
  */
@@ -171,13 +172,13 @@ ConnectionEndpoint.prototype._createHttpServer = function() {
 /**
  * Called whenever either the tcp server itself or one of its sockets
  * is closed. Once everything is closed it will emit a close event
- * 
+ *
  * @private
  * @returns {void}
  */
 ConnectionEndpoint.prototype._checkClosed = function() {
 	if( this._tcpEndpoint && this._tcpEndpoint.isClosed === false ) {
-		return;	
+		return;
 	}
 
 	if( this._engineIo && this._engineIoServerClosed === false ) {
@@ -189,7 +190,7 @@ ConnectionEndpoint.prototype._checkClosed = function() {
 			return;
 		}
 	}
-	
+
 	this.emit( 'close' );
 };
 
@@ -198,7 +199,7 @@ ConnectionEndpoint.prototype._checkClosed = function() {
  * a connected socket, wraps it in a SocketWrapper and
  * subscribes to authentication messages
  *
- * @param {Number} endpoint 
+ * @param {Number} endpoint
  * @param {TCPSocket|Engine.io} socket
  *
  * @private
@@ -268,14 +269,14 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 		this._sendInvalidAuthMsg( socketWrapper, errorMsg );
 		return;
 	}
-	
+
 	/**
 	 * Forward for authentication
 	 */
-	this._options.permissionHandler.isValidUser( 
-		socketWrapper.getHandshakeData(), 
+	this._options.permissionHandler.isValidUser(
+		socketWrapper.getHandshakeData(),
 		authData,
-		this._processAuthResult.bind( this, authData, socketWrapper ) 
+		this._processAuthResult.bind( this, authData, socketWrapper )
 	);
 };
 
@@ -308,12 +309,17 @@ ConnectionEndpoint.prototype._sendInvalidAuthMsg = function( socketWrapper, msg 
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, username ) {
+ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, username, data ) {
 	socketWrapper.socket.removeListener( 'message', socketWrapper.authCallBack );
 	socketWrapper.socket.once( 'close', this._onSocketClose.bind( this, socketWrapper ) );
 	socketWrapper.socket.on( 'message', function( msg ){ this.onMessage( socketWrapper, msg ); }.bind( this ));
 	socketWrapper.user = username;
-	socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
+	if( typeof data === 'undefined' ) {
+		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
+	} else {
+		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( data ) ] );
+	}
+
 	this._authenticatedSockets.push( socketWrapper );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, username );
 };
@@ -341,7 +347,7 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( authError, authData
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INVALID_AUTH_DATA, logMsg );
 	socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_DATA, authError || 'invalid authentication data' );
 	socketWrapper.authAttempts++;
-	
+
 	if( socketWrapper.authAttempts >= this._options.maxAuthAttempts ) {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts' );
 		socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts' );
@@ -358,12 +364,12 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( authError, authData
  * @param   {String} username
  *
  * @private
- * 
+ *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, authError, username ) {
+ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, authError, username, data ) {
 	if( authError === null ) {
-		this._registerAuthenticatedSocket( socketWrapper, username );
+		this._registerAuthenticatedSocket( socketWrapper, username, data );
 	} else {
 		this._processInvalidAuth( authError, authData, socketWrapper );
 	}

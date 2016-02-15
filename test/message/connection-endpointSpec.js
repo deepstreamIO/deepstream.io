@@ -163,6 +163,22 @@ describe( 'connection endpoint', function() {
 		});
 	});
 
+	describe( 'forwards additional data for positive authentications', function(){
+		it( 'creates the connection endpoint', function(){
+			socketMock = engineIoMock.simulateConnection();
+			permissionHandlerMock.reset();
+			permissionHandlerMock.nextUserValidationResult = true;
+			permissionHandlerMock.sendNextValidAuthWithData = true;
+		});
+
+		it( 'authenticates valid sockets', function(){
+			expect( socketMock.lastSendMessage ).toBe( null );
+			expect( socketMock.isDisconnected ).toBe( false );
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A|Stest-data+' ) );
+		});
+	});
+
 	describe( 'closes all client connections on close', function(){
 
 		it( 'calls close on connections', function( done ) {
@@ -171,7 +187,7 @@ describe( 'connection endpoint', function() {
 			connectionEndpoint.close();
 
 			setTimeout( function() {
-				expect( closeSpy ).toHaveBeenCalled();	
+				expect( closeSpy ).toHaveBeenCalled();
 				done();
 			}, 0 );
 		} );
