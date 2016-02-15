@@ -10,6 +10,7 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	lastLoggedMessage = null,
 	socketMock,
 	options,
+	noop = function(){},
 	connectionEndpoint;
 
 options = {
@@ -40,7 +41,7 @@ describe( 'validates HTTPS server conditions', function() {
 	});
 
 	it( 'creates a http connection when sslKey and sslCert are not provided', function(){
-		connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+		connectionEndpointValidation = new ConnectionEndpoint( sslOptions, noop );
 		expect(httpMock.createServer).toHaveBeenCalledWith();
 		expect(httpsMock.createServer).not.toHaveBeenCalled();
 	});
@@ -48,7 +49,7 @@ describe( 'validates HTTPS server conditions', function() {
 	it( 'creates a https connection when sslKey and sslCert are provided', function(){
 		sslOptions.sslKey = 'sslPrivateKey';
 		sslOptions.sslCert = 'sslCertificate';
-		connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+		connectionEndpointValidation = new ConnectionEndpoint( sslOptions, noop );
 		expect(httpMock.createServer).not.toHaveBeenCalled();
 		expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate"} );
 	});
@@ -57,7 +58,7 @@ describe( 'validates HTTPS server conditions', function() {
 		sslOptions.sslKey = 'sslPrivateKey';
 		sslOptions.sslCert = 'sslCertificate';
 		sslOptions.sslCa = 'sslCertificateAuthority';
-		connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+		connectionEndpointValidation = new ConnectionEndpoint( sslOptions, noop );
 		expect(httpMock.createServer).not.toHaveBeenCalled();
 		expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate", "ca": "sslCertificateAuthority"} );
 	});
@@ -65,7 +66,7 @@ describe( 'validates HTTPS server conditions', function() {
 	it( 'throws an exception when only sslCert is provided', function(){
 		try {
 			sslOptions.sslCert = 'sslCertificate';
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			connectionEndpointValidation = new ConnectionEndpoint( sslOptions, noop );
 		} catch( e ) {
 			error = e;
 		} finally {
@@ -76,7 +77,7 @@ describe( 'validates HTTPS server conditions', function() {
 	it( 'throws an exception when only sslKey is provided', function(){
 		try {
 			sslOptions.sslKey = "sslPrivateKey";
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			connectionEndpointValidation = new ConnectionEndpoint( sslOptions, noop );
 		} catch( e ) {
 			error = e;
 		} finally {
@@ -88,7 +89,7 @@ describe( 'validates HTTPS server conditions', function() {
 		try {
 			sslOptions.sslCert = 'sslCertificate';
 			sslOptions.sslCa = 'sslCertificateAuthority';
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			connectionEndpointValidation = new ConnectionEndpoint( sslOptions, noop );
 		} catch( e ) {
 			error = e;
 		} finally {
@@ -100,7 +101,7 @@ describe( 'validates HTTPS server conditions', function() {
 		try {
 			sslOptions.sslKey = "sslPrivateKey";
 			sslOptions.sslCa = 'sslCertificateAuthority';
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
+			connectionEndpointValidation = new ConnectionEndpoint( sslOptions, noop );
 		} catch( e ) {
 			error = e;
 		} finally {

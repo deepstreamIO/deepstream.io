@@ -1,10 +1,39 @@
-var HttpMock = function(){};
+var EventEmitter = require('events').EventEmitter;
+var util = require('util');
 
-HttpMock.prototype.createServer = function() {
+var HttpServerMock = function() {
+	EventEmitter.call(this);
+	this.listening = false;
+};
+
+util.inherits(HttpServerMock, EventEmitter);
+
+HttpServerMock.prototype.listen = function ( port, host, callback ) {
+	this._port = port;
+	this._host = host;
+	var server = this;
+	process.nextTick( function() {
+		server.listening = true;
+		server.emit('listening');
+		callback && callback();
+	});
+};
+
+HttpServerMock.prototype.close = function( callback ) {
+	this.emit('close');
+	callback && callback();
+};
+
+HttpServerMock.prototype.address = function() {
 	return {
-		listen: function() {},
-		close: function( callback ) {  callback && callback(); }
-	}
+		address: this._host,
+		port: this._port
+	};
+};
+
+var HttpMock = function(){};
+HttpMock.prototype.createServer = function() {
+	return new HttpServerMock();
 };
 
 module.exports = HttpMock;

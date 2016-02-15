@@ -8,6 +8,7 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	permissionHandlerMock = require( '../mocks/permission-handler-mock' ),
 	socketMock,
 	options,
+	noop = function(){},
 	connectionEndpoint;
 
 var otherOptions = {
@@ -22,11 +23,10 @@ describe( 'disabling tcp or webserver endpoints', function() {
 	} );	
 
 	describe( 'disabled http server', function() {
-
 		it( 'creates a connectionEndpoint with a disabled web server', function(  ) {
 			otherOptions.webServerEnabled = false;
 			otherOptions.tcpServerEnabled = true;
-			connectionEndpoint = new ConnectionEndpoint( otherOptions );
+			connectionEndpoint = new ConnectionEndpoint( otherOptions, noop );
 		} );
 
 		it( 'simulates a web client connection', function(){
@@ -54,11 +54,10 @@ describe( 'disabling tcp or webserver endpoints', function() {
 	});
 
 	describe( 'disabled tcp server', function() {
-
-		it( 'creates a connectionEndpoint with a disabled web server', function() {
+		it( 'creates a connectionEndpoint with a disabled TCP server', function() {
 			otherOptions.webServerEnabled = true;
 			otherOptions.tcpServerEnabled = false;
-			connectionEndpoint = new ConnectionEndpoint( otherOptions );		
+			connectionEndpoint = new ConnectionEndpoint( otherOptions, noop );	
 		} );
 
 		it( 'simulates a client connection', function(){
@@ -93,7 +92,7 @@ describe( 'disabling tcp or webserver endpoints', function() {
 			otherOptions.tcpServerEnabled = false;
 
 			expect( function() {
-				connectionEndpoint = new ConnectionEndpoint( otherOptions );
+				connectionEndpoint = new ConnectionEndpoint( otherOptions, noop );
 			} ).toThrow( 'Can\'t start deepstream with both webserver and tcp disabled' );
 		} );
 	});
