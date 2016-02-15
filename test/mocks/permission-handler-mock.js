@@ -1,4 +1,8 @@
 var PermissionHandlerMock = function() {
+	this.reset();
+};
+
+PermissionHandlerMock.prototype.reset = function() {
 	this.nextUserValidationResult = true;
 	this.lastUserValidationQueryArgs = null;
 	this.nextCanPerformActionResult = true;

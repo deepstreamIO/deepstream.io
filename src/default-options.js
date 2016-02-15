@@ -15,6 +15,8 @@ exports.get = function() {
 		/*
 		 * Connectivity
 		 */
+		webServerEnabled: true,
+		tcpServerEnabled: true,
 		port: argv.port || 6020,
 		host: argv.host || '0.0.0.0',
 		tcpPort: argv.tcpPort || 6021,
