@@ -16,101 +16,20 @@ options = {
 	permissionHandler: require( '../mocks/permission-handler-mock' ),
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
-	logInvalidAuthData: true
-};
-
-connectionEndpoint = new ConnectionEndpoint( options );
-
-connectionEndpoint.onMessage = function( socket, message ){
-	lastAuthenticatedMessage = message;
+	logInvalidAuthData: true,
+	tcpServerEnabled: true,
+	webServerEnabled: true
 };
 
 describe( 'connection endpoint', function() {
 
-	describe( 'validates HTTPS server conditions', function() {
+	it( 'create a connection endpoint', function() {
+		permissionHandlerMock.reset();
 
-		var options = null;
-		var error = null;
-		var connectionEndpointValidation = null;
-
-		beforeEach(function() {
-			sslOptions = {
-				permissionHandler: require( '../mocks/permission-handler-mock' ),
-				logger: { log: function( logLevel, event, msg ){} }
-			};
-
-			spyOn(httpMock, 'createServer').andCallThrough();
-			spyOn(httpsMock, 'createServer').andCallThrough();
-		});
-
-		it( 'creates a http connection when sslKey and sslCert are not provided', function(){
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-			expect(httpMock.createServer).toHaveBeenCalledWith();
-			expect(httpsMock.createServer).not.toHaveBeenCalled();
-		});
-
-		it( 'creates a https connection when sslKey and sslCert are provided', function(){
-			sslOptions.sslKey = 'sslPrivateKey';
-			sslOptions.sslCert = 'sslCertificate';
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-			expect(httpMock.createServer).not.toHaveBeenCalled();
-			expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate"} );
-		});
-
-		it( 'creates a https connection when sslKey, sslCert and sslCa are provided', function(){
-			sslOptions.sslKey = 'sslPrivateKey';
-			sslOptions.sslCert = 'sslCertificate';
-			sslOptions.sslCa = 'sslCertificateAuthority';
-			connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-			expect(httpMock.createServer).not.toHaveBeenCalled();
-			expect(httpsMock.createServer).toHaveBeenCalledWith( { "key": "sslPrivateKey", "cert": "sslCertificate", "ca": "sslCertificateAuthority"} );
-		});
-
-		it( 'throws an exception when only sslCert is provided', function(){
-			try {
-				sslOptions.sslCert = 'sslCertificate';
-				connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-			} catch( e ) {
-				error = e;
-			} finally {
-				expect( error.message ).toBe( 'Must also include sslKey in order to use HTTPS' );
-			}
-		});
-
-		it( 'throws an exception when only sslKey is provided', function(){
-			try {
-				sslOptions.sslKey = "sslPrivateKey";
-				connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-			} catch( e ) {
-				error = e;
-			} finally {
-				expect( error.message ).toBe( 'Must also include sslCert in order to use HTTPS' );
-			}
-		});
-
-		it( 'throws an exception when sslCert and sslCa is provided', function(){
-			try {
-				sslOptions.sslCert = 'sslCertificate';
-				sslOptions.sslCa = 'sslCertificateAuthority';
-				connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-			} catch( e ) {
-				error = e;
-			} finally {
-				expect( error.message ).toBe( 'Must also include sslKey in order to use HTTPS' );
-			}
-		});
-
-		it( 'throws an exception when sslKey and sslCa is provided', function(){
-			try {
-				sslOptions.sslKey = "sslPrivateKey";
-				sslOptions.sslCa = 'sslCertificateAuthority';
-				connectionEndpointValidation = new ConnectionEndpoint( sslOptions );
-			} catch( e ) {
-				error = e;
-			} finally {
-				expect( error.message ).toBe( 'Must also include sslCert in order to use HTTPS' );
-			}
-		});
+		connectionEndpoint = new ConnectionEndpoint( options );
+		connectionEndpoint.onMessage = function( socket, message ){
+			lastAuthenticatedMessage = message;
+		};
 	});
 
 	describe( 'the connection endpoint handles invalid auth messages', function(){
