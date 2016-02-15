@@ -35,24 +35,11 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 		// Initialise engine.io's server - a combined http and websocket server for browser connections
 		this._engineIoReady = false;
 		this._engineIoServerClosed = false;
-		this._server = null;
-		if( this._isHttpsServer() ) {
-			var httpsOptions = {
-				key: this._options.sslKey,
-				cert: this._options.sslCert
-			};
-			if (this._options.sslCa) {
-				httpsOptions.ca = this._options.sslCa;
-			}
-			this._server = https.createServer(httpsOptions);
-		}
-		else {
-			this._server = http.createServer();
-		}
+		this._server = this._createHttpServer();
 		this._server.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
 		this._engineIo = engine.attach( this._server );
 		this._engineIo.on( 'error', this._onError.bind( this ) );
-		this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );	
+		this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
 	}
 
 	if( options.tcpServerEnabled ) {
@@ -96,24 +83,73 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
 ConnectionEndpoint.prototype.close = function() {
 	// Close the engine.io server
 	if( this._engineIo ) {
-		this._engineIo.removeAllListeners( 'connection' );
-		for( var i = 0; i < this._engineIo.clients.length; i++ ) {
-			if( this._engineIo.clients[ i ].readyState !== READY_STATE_CLOSED ) {
-				this._engineIo.clients[ i ].once( 'close', this._checkClosed.bind( this ) );
-			}
-		}
-		this._engineIo.close();
-		this._server.close( function(){ 
-			this._engineIoServerClosed = true;
-			this._checkClosed();
-		}.bind( this ));
+		this._closeEngineIoServer();
 	}
 	
 	// Close the tcp server
 	if( this._tcpEndpoint ) {
-		this._tcpEndpoint.removeAllListeners( 'connection' );
-		this._tcpEndpoint.on( 'close', this._checkClosed.bind( this ) );
-		this._tcpEndpoint.close();
+		this._closeTcpServer();
+	}
+};
+
+/**
+ * Closes the engine.io and subsequently http server
+ * 
+ * TODO: Make sure that engine.io and the http server's
+ * clode events align and potentially don't close
+ * the http server if it's provided as an external parameter
+ * and might be used by express etc...
+ *
+ * @private
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype._closeEngineIoServer = function() {
+	this._engineIo.removeAllListeners( 'connection' );
+	for( var i = 0; i < this._engineIo.clients.length; i++ ) {
+		if( this._engineIo.clients[ i ].readyState !== READY_STATE_CLOSED ) {
+			this._engineIo.clients[ i ].once( 'close', this._checkClosed.bind( this ) );
+		}
+	}
+	this._engineIo.close();
+	this._server.close( function(){ 
+		this._engineIoServerClosed = true;
+		this._checkClosed();
+	}.bind( this ));
+};
+
+/**
+ * Issues a close command to the tcp server and subscribes
+ * to its close event
+ *
+ * @private
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype._closeTcpServer = function() {
+	this._tcpEndpoint.removeAllListeners( 'connection' );
+	this._tcpEndpoint.on( 'close', this._checkClosed.bind( this ) );
+	this._tcpEndpoint.close();
+};
+ 
+/**
+ * Creates an HTTP or HTTPS server for engine.io to attach itself to,
+ * depending on the options the client configured
+ * 
+ * @private
+ * @returns {http.HttpServer || http.HttpsServer}
+ */
+ConnectionEndpoint.prototype._createHttpServer = function() {
+	if( this._isHttpsServer() ) {
+		var httpsOptions = {
+			key: this._options.sslKey,
+			cert: this._options.sslCert
+		};
+		if (this._options.sslCa) {
+			httpsOptions.ca = this._options.sslCa;
+		}
+		return https.createServer(httpsOptions);
+	}
+	else {
+		return http.createServer();
 	}
 };
 
