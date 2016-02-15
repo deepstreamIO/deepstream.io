@@ -6,6 +6,8 @@ var HttpServerMock = function() {
 	this.listening = false;
 };
 
+util.inherits(HttpServerMock, EventEmitter);
+
 HttpServerMock.prototype.listen = function ( port, host, callback ) {
 	this._port = port;
 	this._host = host;
@@ -28,8 +30,6 @@ HttpServerMock.prototype.address = function() {
 		port: this._port
 	};
 };
-
-util.inherits(HttpServerMock, EventEmitter);
 
 var HttpMock = function(){};
 HttpMock.prototype.createServer = function() {

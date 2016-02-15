@@ -35,9 +35,22 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 		// Initialise engine.io's server - a combined http and websocket server for browser connections
 		this._engineIoReady = false;
 		this._engineIoServerClosed = false;
-		this._server = this._createHttpServer();
-		this._server.listen( this._options.port, this._options.host, this._checkReady.bind( this, ENGINE_IO ) );
-		this._engineIo = engine.attach( this._server );
+
+		if( this._options.httpServer ) {
+			this._server = this._options.httpServer;
+			this._engineIo = engine.attach( this._server, { path: this._options.urlPath });
+		} else {
+			this._server = this._createHttpServer();
+			this._server.listen( this._options.port, this._options.host );
+			this._engineIo = engine.attach( this._server );
+		}
+
+		if( this._server.listening ) {
+			this._checkReady( ENGINE_IO );
+		} else {
+			this._server.once( 'listening', this._checkReady.bind( this, ENGINE_IO ) );
+  		}
+
 		this._engineIo.on( 'error', this._onError.bind( this ) );
 		this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
 	}
@@ -139,16 +152,18 @@ ConnectionEndpoint.prototype._closeTcpServer = function() {
  */
 ConnectionEndpoint.prototype._createHttpServer = function() {
 	if( this._isHttpsServer() ) {
+
 		var httpsOptions = {
 			key: this._options.sslKey,
 			cert: this._options.sslCert
 		};
-		if (this._options.sslCa) {
+
+		if ( this._options.sslCa ) {
 			httpsOptions.ca = this._options.sslCa;
 		}
-		return https.createServer(httpsOptions);
-	}
-	else {
+
+		return https.createServer( httpsOptions );
+	} else {
 		return http.createServer();
 	}
 };
@@ -363,10 +378,11 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
  * @returns {void}
  */
 ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
-	var msg;
+	var msg, address, tcpEndpointReady, engineIoReady;
 
 	if( endpoint === ENGINE_IO ) {
-		msg = 'Listening for browser connections on ' + this._options.host + ':' + this._options.port;
+		address = this._server.address();
+		msg = 'Listening for browser connections on ' + address.address + ':' + address.port;
 		this._engineIoReady = true;
 	}
 
@@ -377,8 +393,10 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, msg );
 
-	if( ( !this._tcpEndpoint || this._tcpEndpointReady === true ) 
-		&& ( !this._engineIo || this._engineIoReady === true ) ) {
+	tcpEndpointReady = !this._tcpEndpoint || this._tcpEndpointReady === true;
+	engineIoReady = !this._engineIo || this._engineIoReady === true;
+
+	if( tcpEndpointReady && engineIoReady ) {
 		this._readyCallback();
 	}
 };

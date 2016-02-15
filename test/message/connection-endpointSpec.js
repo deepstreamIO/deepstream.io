@@ -194,19 +194,21 @@ describe( 'connection endpoint', function() {
 
 		it ( 'does not create an additional HTTP server', function() {
 			var options = {
+				webServerEnabled: true,
 				'httpServer': httpMock.createServer(),
 				permissionHandler: require( '../mocks/permission-handler-mock' ),
 				logger: { log: function( logLevel, event, msg ){} }
 			};
 
 			spyOn(httpMock, 'createServer');
-			var endpoint = new ConnectionEndpoint(options);
+			var endpoint = new ConnectionEndpoint(options, function(){} );
 			expect( httpMock.createServer ).not.toHaveBeenCalled();
 		});
 
 		it ( 'ready callback is called if server is already listening', function(done) {
 			var server = httpMock.createServer();
 			var options = {
+				webServerEnabled: true,
 				httpServer: server,
 				permissionHandler: require( '../mocks/permission-handler-mock' ),
 				logger: { log: function( logLevel, event, msg ){} }
@@ -221,6 +223,7 @@ describe( 'connection endpoint', function() {
 		it ( 'ready callback is called if server starts listening after endpoint creation', function(done) {
 			var server = httpMock.createServer();
 			var options = {
+				webServerEnabled: true,
 				httpServer: server,
 				permissionHandler: require( '../mocks/permission-handler-mock' ),
 				logger: { log: function( logLevel, event, msg ){} }
