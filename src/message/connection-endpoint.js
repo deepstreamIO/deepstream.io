@@ -345,7 +345,7 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, msg );
 
-	if( this._tcpEndpointReady === true && this._engineIoReady === true ) {
+	if( this._readyCallback && this._tcpEndpointReady === true && this._engineIoReady === true ) {
 		this._readyCallback();
 	}
 };
