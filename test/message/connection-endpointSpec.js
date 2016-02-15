@@ -114,7 +114,7 @@ describe( 'connection endpoint', function() {
 			expect( socketMock.isDisconnected ).toBe( false );
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|TOO_MANY_AUTH_ATTEMPTS|too many authentication attempts+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|TOO_MANY_AUTH_ATTEMPTS|Stoo many authentication attempts+' ) );
 			expect( socketMock.isDisconnected ).toBe( true );
 		});
 	});
