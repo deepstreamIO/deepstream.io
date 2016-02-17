@@ -350,7 +350,7 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( authError, authData
 
 	if( socketWrapper.authAttempts >= this._options.maxAuthAttempts ) {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts' );
-		socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts' );
+		socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, messageBuilder.typed( 'too many authentication attempts' ) );
 		socketWrapper.destroy();
 	}
 };
