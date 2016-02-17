@@ -26,7 +26,7 @@ describe( 'connection endpoint', function() {
 	it( 'create a connection endpoint', function() {
 		permissionHandlerMock.reset();
 
-		connectionEndpoint = new ConnectionEndpoint( options );
+		connectionEndpoint = new ConnectionEndpoint( options, function(){} );
 		connectionEndpoint.onMessage = function( socket, message ){
 			lastAuthenticatedMessage = message;
 		};
