@@ -9,7 +9,7 @@ var C = require( '../constants/constants' );
  *
  * @param {Object} options deepstream options
  * @param {String} topic one of C.TOPIC
- * @param {[SubscriptionListener]} subscriptionListener Optional. A class exposing a onSubscriptionMade 
+ * @param {[SubscriptionListener]} subscriptionListener Optional. A class exposing a onSubscriptionMade
  *                                                      and onSubscriptionRemoved method.
  */
 var SubscriptionRegistry = function( options, topic, subscriptionListener ) {
@@ -17,13 +17,13 @@ var SubscriptionRegistry = function( options, topic, subscriptionListener ) {
 	this._options = options;
 	this._topic = topic;
 	this._subscriptionListener = subscriptionListener;
-	
+	this._unsubscribeAllFunctions = [];
 	this._constants = {
 		MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
 		SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
 		UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
 		NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
-	}
+	};
 };
 
 /**
@@ -53,10 +53,10 @@ SubscriptionRegistry.prototype.sendToSubscribers = function( name, msgString, se
 	}
 
 	var i, l = this._subscriptions[ name ].length;
-	
+
 	for( i = 0; i < l; i++ ) {
-		if( this._subscriptions[ name ] && 
-			this._subscriptions[ name ][ i ] && 
+		if( this._subscriptions[ name ] &&
+			this._subscriptions[ name ][ i ] &&
 			this._subscriptions[ name ][ i ] !== sender
 		) {
 			this._subscriptions[ name ][ i ].send( msgString );
@@ -67,7 +67,7 @@ SubscriptionRegistry.prototype.sendToSubscribers = function( name, msgString, se
 /**
  * Adds a SocketWrapper as a subscriber to a topic
  *
- * @param   {String} name          
+ * @param   {String} name
  * @param   {SocketWrapper} socketWrapper
  *
  * @public
@@ -82,16 +82,21 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	}
 
 	if( this._subscriptions[ name ].indexOf( socketWrapper ) !== -1 ) {
-		var msg = 'repeat supscription to "' + name + '" by ' + socketWrapper.user; 
+		var msg = 'repeat supscription to "' + name + '" by ' + socketWrapper.user;
 		this._options.logger.log( C.LOG_LEVEL.WARN, this._constants.MULTIPLE_SUBSCRIPTIONS, msg );
 		socketWrapper.sendError( this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name );
 		return;
 	}
 
 	if( !this.isSubscriber( socketWrapper ) ) {
-		socketWrapper.socket.once( 'close', this.unsubscribeAll.bind( this, socketWrapper ) );
+		var unsubscribeAllFn = this.unsubscribeAll.bind( this, socketWrapper );
+		this._unsubscribeAllFunctions.push({
+			socketWrapper: socketWrapper,
+			fn: unsubscribeAllFn
+		});
+		socketWrapper.socket.once( 'close', unsubscribeAllFn );
 	}
-	
+
 	this._subscriptions[ name ].push( socketWrapper );
 	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
 	this._options.logger.log( C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg );
@@ -101,16 +106,24 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 /**
  * Removes a SocketWrapper from the list of subscriptions for a topic
  *
- * @param   {String} name          
+ * @param   {String} name
  * @param   {SocketWrapper} socketWrapper
  *
  * @public
  * @returns {void}
  */
 SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
-	var msg;
+	var msg, i;
 
-	if( this._subscriptions[ name ] === undefined || 
+	for( i = 0; i < this._unsubscribeAllFunctions.length; i++ ) {
+		if( this._unsubscribeAllFunctions[ i ].socketWrapper === socketWrapper ) {
+			socketWrapper.socket.removeListener( 'close', this._unsubscribeAllFunctions[ i ].fn );
+			this._unsubscribeAllFunctions.splice( i, 1 );
+			break;
+		}
+	}
+
+	if( this._subscriptions[ name ] === undefined ||
 		this._subscriptions[ name ].indexOf( socketWrapper ) === -1 ) {
 		msg = socketWrapper.user + ' is not subscribed to ' + name;
 		this._options.logger.log( C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg );
@@ -120,7 +133,7 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 
 	if( this._subscriptions[ name ].length === 1 ) {
 		delete this._subscriptions[ name ];
-		
+
 		if( this._subscriptionListener ) {
 			this._subscriptionListener.onSubscriptionRemoved( name, socketWrapper );
 		}
@@ -136,7 +149,7 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 /**
  * Removes the SocketWrapper from all subscriptions. This is also called
  * when the socket closes
- *         
+ *
  * @param   {SocketWrapper} socketWrapper
  *
  * @public
@@ -158,9 +171,9 @@ SubscriptionRegistry.prototype.unsubscribeAll = function( socketWrapper ) {
 /**
  * Returns true if socketWrapper is subscribed to any of the events in
  * this registry. This is useful to bind events on close only once
- * 
+ *
  * @param {SocketWrapper} socketWrapper
- * 
+ *
  * @public
  * @returns {Boolean} isSubscriber
  */
@@ -170,7 +183,7 @@ SubscriptionRegistry.prototype.isSubscriber = function( socketWrapper ) {
 			return true;
 		}
 	}
-	
+
 	return false;
 };
 
@@ -211,7 +224,7 @@ SubscriptionRegistry.prototype.getRandomSubscriber = function( name ) {
 };
 
 /**
- * Returns true if there are SocketWrappers that 
+ * Returns true if there are SocketWrappers that
  * are subscribed to <name> or false if there
  * aren't any subscribers
  *
@@ -225,14 +238,14 @@ SubscriptionRegistry.prototype.hasSubscribers = function( name ) {
 };
 
 /**
- * Returns a list of all the topic this registry 
+ * Returns a list of all the topic this registry
  * currently has subscribers for
- * 
+ *
  * @public
  * @returns {Array} names
  */
 SubscriptionRegistry.prototype.getNames = function() {
-	return Object.keys( this._subscriptions );	
+	return Object.keys( this._subscriptions );
 };
 
 /**
