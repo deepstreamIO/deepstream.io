@@ -12,8 +12,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hoxton-one/deepstream.io.git"
-  },
+    "url": "https://github.com/deepstreamIO/deepstream.io.git"
+  },h
   "dependencies": {
     "colors": "1.0.3",
     "engine.io": "1.6.8",
@@ -29,7 +29,7 @@
   "author": "Wolfram Hempel",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hoxton-one/deepstream.io/issues"
+    "url": "https://github.com/deepstreamIO/deepstream.io/issues"
   },
   "homepage": "http://deepstream.io"
 }
