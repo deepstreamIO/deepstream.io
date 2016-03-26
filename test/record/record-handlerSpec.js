@@ -62,6 +62,51 @@ describe( 'record handler handles messages', function(){
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|existingRecord|3|{"firstname":"Wolfram"}+' ));
 	});
 
+	it( 'returns true for HAS if message exists', function(){
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|H|existingRecord' ),
+			topic: 'RECORD',
+			action: 'H',
+			data: [ 'existingRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|H|existingRecord|T+' ) );
+	});
+
+	it( 'returns false for HAS if message doesn\'t exists', function(){
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|H|nonExistingRecord' ),
+			topic: 'RECORD',
+			action: 'H',
+			data: [ 'nonExistingRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|H|nonExistingRecord|F+' ) );
+	});
+
+	it( 'returns a snapshot of the data that exists with version number and data', function(){
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|SN|existingRecord' ),
+			topic: 'RECORD',
+			action: 'SN',
+			data: [ 'existingRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|existingRecord|3|{"firstname":"Wolfram"}+' ));
+	});
+
+
+	it( 'returns a snapshot of the data that doesn\'t exists with -1 version number and null', function(){
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|SN|nonExistingRecord' ),
+			topic: 'RECORD',
+			action: 'SN',
+			data: [ 'nonExistingRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|nonExistingRecord|-1|null+' ));
+	});
+
 	it( 'patches a record', function(){
 		recordHandler.handle( clientB, {
 			raw: msg( 'R|P|existingRecord|4|lastname|SEgon' ),

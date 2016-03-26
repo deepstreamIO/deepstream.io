@@ -56,6 +56,20 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	/*
+	 * Return the current state of the record in cache or db
+	 */
+	else if( message.action === C.ACTIONS.SNAPSHOT ) {
+		this._snapshot( socketWrapper, message );
+	}
+
+	/*
+	 * Return a Boolean to indicate if record exists in cache or database
+	 */
+	else if( message.action === C.ACTIONS.HAS ) {
+		this._hasRecord( socketWrapper, message );
+	}
+
+	/*
 	 * Handle complete (UPDATE) or partial (PATCH) updates 
 	 */
 	else if( message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH ) {
@@ -103,6 +117,47 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 		}
 	}
+};
+
+/**
+ * Tries to retrieve the record from the cache or storage. If not found in either
+ * returns false, otherwise returns true
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message parsed and validated message
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._hasRecord = function( socketWrapper, message ) {
+	var recordName = message.data[ 0 ],
+		onComplete = function( record ) {
+			var hasRecord = record ? 'T' : 'F';
+			socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.HAS, [ recordName, hasRecord ] );
+		};
+
+	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ) );
+};
+
+/**
+ * Sends the records data current data once loaded from the cache, and null otherwise
+ *
+ * @param {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message parsed and validated message
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
+	var recordName = message.data[ 0 ],
+		onComplete = function( record ) {
+			if( record ) {
+				this._sendRecord( recordName, record, socketWrapper );
+			} else {
+				//TODO: This needs to be improved
+				socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, -1, null ] );
+			}
+		};
+
+	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ) );
 };
 
 /**
@@ -176,6 +231,20 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
  */
 RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
 	this._subscriptionRegistry.subscribe( recordName, socketWrapper );
+	this._sendRecord( recordName, record, socketWrapper );
+};
+
+/**
+ * Sends the records data current data once done
+ *
+ * @param {String} recordName
+ * @param {Object} record
+ * @param {SocketWrapper} socketWrapper the socket that send the request
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._sendRecord = function( recordName, record, socketWrapper ) {
 	var data = record._d;
 
 	if( this._hasReadTransforms ) {
