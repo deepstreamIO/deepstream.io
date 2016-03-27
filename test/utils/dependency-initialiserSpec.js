@@ -4,7 +4,7 @@ var DependencyInitialiser = require( '../../src/utils/dependency-initialiser' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
 	EventEmitter = require( 'events' ).EventEmitter;
 
-describe( 'dependency-initialiser', function(){
+xdescribe( 'dependency-initialiser', function(){
 	var options = {
 		pluginA: new PluginMock( 'A' ),
 		pluginB: new PluginMock( 'B' ),

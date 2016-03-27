@@ -99,7 +99,7 @@ describe( 'rpcProxy proxies calls from and to the remote receiver', function(){
 	   		data: [ 'rpcA', 'corIdA' ]
 	   });
 	   
-	    expect( cb.calls.length ).toBe( 1 );
+	    expect( cb.calls.count() ).toBe( 1 );
 	    
 	    rpcProxy.destroy();
 	    
@@ -109,6 +109,6 @@ describe( 'rpcProxy proxies calls from and to the remote receiver', function(){
 	   		data: [ 'rpcA', 'corIdA' ]
 	   });
 	   
-	   expect( cb.calls.length ).toBe( 1 );
+	   expect( cb.calls.count() ).toBe( 1 );
 	});
 });

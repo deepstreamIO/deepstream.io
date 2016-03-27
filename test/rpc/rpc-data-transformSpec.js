@@ -60,10 +60,10 @@ describe( 'executes local rpc calls', function(){
 			transform: function( data, metaData ) { return data; }
 		}];
 
-		spyOn( settings[ 0 ], 'transform' ).andCallThrough();
+		spyOn( settings[ 0 ], 'transform' ).and.callThrough();
 		var provider = makeRpc( requestMessage, settings ).provider;
-		expect( settings[ 0 ].transform.calls[ 0 ].args[ 0 ] ).toEqual({ numA: 5, numB: 7 });
-		expect( settings[ 0 ].transform.calls[ 0 ].args[ 1 ] ).toEqual({ 
+		expect( settings[ 0 ].transform.calls.argsFor( 0 )[ 0 ] ).toEqual({ numA: 5, numB: 7 });
+		expect( settings[ 0 ].transform.calls.argsFor( 0 )[ 1 ] ).toEqual({ 
 			sender: 'requestor-user-name', 
 			receiver: 'provider-user-name', 
 			rpcName: 'addTwo' });

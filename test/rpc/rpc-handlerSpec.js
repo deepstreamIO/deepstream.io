@@ -8,7 +8,9 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	options = { 
 		messageConnector: new MessageConnectorMock(), 
 		logger: new LoggerMock(),
-		serverName: 'thisServer'
+		serverName: 'thisServer',
+		rpcAckTimeout: 5,
+		rpcTimeout: 5
 	},
 	rpcHandler = new RpcHandler( options ),
 	subscriptionMessage = { 

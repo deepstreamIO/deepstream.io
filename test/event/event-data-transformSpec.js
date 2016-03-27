@@ -60,7 +60,7 @@ describe( 'event handler data transforms', function(){
 			}
 		};
 
-		spyOn( setting, 'transform' ).andCallThrough();
+		spyOn( setting, 'transform' ).and.callThrough();
 
 		var obj = createEventHandler([ setting ]);
 
@@ -71,10 +71,10 @@ describe( 'event handler data transforms', function(){
 			data: [ 'someEvent', 'O{"value":"A"}' ]
 		});
 
-		expect( setting.transform.calls[ 0 ].args[ 0 ] ).toEqual({ value: 'A', extraValue: 'B' });
-		expect( setting.transform.calls[ 0 ].args[ 1 ] ).toEqual({ sender : 'socket_0', receiver : 'socket_1', eventName : 'someEvent' });
-		expect( setting.transform.calls[ 1 ].args[ 0 ] ).toEqual({ value: 'A', extraValue: 'B' });
-		expect( setting.transform.calls[ 1 ].args[ 1 ] ).toEqual({ sender : 'socket_0', receiver : 'socket_2', eventName : 'someEvent' });
+		expect( setting.transform.calls.argsFor( 0 )[ 0 ] ).toEqual({ value: 'A', extraValue: 'B' });
+		expect( setting.transform.calls.argsFor( 0 )[ 1 ] ).toEqual({ sender : 'socket_0', receiver : 'socket_1', eventName : 'someEvent' });
+		expect( setting.transform.calls.argsFor( 1 )[ 0 ] ).toEqual({ value: 'A', extraValue: 'B' });
+		expect( setting.transform.calls.argsFor( 1 )[ 1 ] ).toEqual({ sender : 'socket_0', receiver : 'socket_2', eventName : 'someEvent' });
 		expect( obj.subscriber[ 0 ].socket.lastSendMessage ).toBe( _msg( 'E|A|S|someEvent+' ) );
 		expect( obj.subscriber[ 1 ].socket.lastSendMessage ).toBe( _msg( 'E|EVT|someEvent|O{"value":"A","extraValue":"B"}+' ) );
 		expect( obj.subscriber[ 2 ].socket.lastSendMessage ).toBe( _msg( 'E|EVT|someEvent|O{"value":"A","extraValue":"B"}+' ) );
@@ -92,7 +92,7 @@ describe( 'event handler data transforms', function(){
 			}
 		};
 
-		spyOn( setting, 'transform' ).andCallThrough();
+		spyOn( setting, 'transform' ).and.callThrough();
 
 		var obj = createEventHandler([ setting ]);
 

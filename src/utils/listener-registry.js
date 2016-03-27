@@ -65,11 +65,11 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
     return;
   }
   
-  if( !this._subscriptionRegistry.isSubscriber( socketWrapper ) ) {
+  var inSubscriptionRegistry = this._subscriptionRegistry.isSubscriber( socketWrapper );
+  this._subscriptionRegistry.subscribe( pattern, socketWrapper );
+  if( !inSubscriptionRegistry ) {
     socketWrapper.socket.once( 'close', this._reconcilePatterns.bind( this ) );
   }
-
-  this._subscriptionRegistry.subscribe( pattern, socketWrapper );
   
   // Create pattern entry (if it doesn't exist already)
   if( !this._patterns[ pattern ] ) {

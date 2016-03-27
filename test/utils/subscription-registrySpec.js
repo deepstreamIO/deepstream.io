@@ -32,7 +32,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 	it( 'doesn\'t subscribe twice to the same name', function(){
 		expect( lastLogEvent ).toBe( 'S' );
 		subscriptionRegistry.subscribe( 'someName', socketWrapperA );
-		expect( subscriptionListenerMock.onSubscriptionMade.calls.length ).toBe( 1 );
+		expect( subscriptionListenerMock.onSubscriptionMade.calls.count() ).toBe( 1 );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|E|MULTIPLE_SUBSCRIPTIONS|someName+' ) );
 		expect( lastLogEvent ).toBe( 'MULTIPLE_SUBSCRIPTIONS' );
 	});

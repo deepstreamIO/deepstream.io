@@ -27,17 +27,17 @@ describe( 'message connector distributes messages to callbacks', function(){
 			msg = { 'topic': 'someTopic' };
 
 		messageDistributor.distribute( socketWrapper, msg );
-		expect( testCallback.calls.length ).toEqual( 1 );
+		expect( testCallback.calls.count() ).toEqual( 1 );
 	});
 
 	it( 'only routes matching topics', function(){
-		expect( testCallback.calls.length ).toEqual( 1 );
+		expect( testCallback.calls.count() ).toEqual( 1 );
 
 		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			msg = { 'topic': 'someOtherTopic' };
 
 		messageDistributor.distribute( socketWrapper, msg );
-		expect( testCallback.calls.length ).toEqual( 1 );
+		expect( testCallback.calls.count() ).toEqual( 1 );
 	});
 
 	it( 'throws an error for multiple registrations to the same topic', function(){
