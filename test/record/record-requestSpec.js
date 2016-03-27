@@ -90,10 +90,10 @@ describe( 'excluded records are not put into storage', function(){
 	
 	it( 'returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', function( done ){
 		recordRequest = new RecordRequest( 'dont-save/1', options, socketWrapper, function( record ){
-			expect( record ).toBeNull()
+			expect( record ).toBeNull();
+			expect( options.storage.lastRequestedKey ).toBeNull();
 			done();
 		});
-		expect( options.storage.lastRequestedKey ).toBeNull();
 	});
 	
 	it( 'returns null for non existent records', function( done ){
@@ -101,11 +101,10 @@ describe( 'excluded records are not put into storage', function(){
 
 		recordRequest = new RecordRequest( 'doesNotExist', options, socketWrapper, function( record ){
 			expect( record ).toBe( null );
+			expect( options.cache.lastRequestedKey ).toBe( 'doesNotExist' );
+			expect( options.storage.lastRequestedKey ).toBe( 'doesNotExist' );
 			done();
 		});
-		
-		expect( options.cache.lastRequestedKey ).toBe( 'doesNotExist' );
-		expect( options.storage.lastRequestedKey ).toBe( 'doesNotExist' );
 	});
 });
 

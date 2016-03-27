@@ -36,8 +36,8 @@ describe( 'validates HTTPS server conditions', function() {
 			webServerEnabled: true
 		};
 
-		spyOn(httpMock, 'createServer').andCallThrough();
-		spyOn(httpsMock, 'createServer').andCallThrough();
+		spyOn(httpMock, 'createServer').and.callThrough();
+		spyOn(httpsMock, 'createServer').and.callThrough();
 	});
 
 	it( 'creates a http connection when sslKey and sslCert are not provided', function(){

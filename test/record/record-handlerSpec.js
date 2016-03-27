@@ -211,7 +211,7 @@ describe( 'record handler handles messages', function(){
 		expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|A|D|existingRecord+' ) );
 
 		options.cache.get( 'existingRecord', function( error, record ){
-			expect( record ).toEqual( null );
+			expect( record ).toEqual( undefined );
 		});
 	});
 });

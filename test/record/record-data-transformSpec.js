@@ -63,11 +63,11 @@ describe( 'record handler handles messages', function(){
 			}
 		};
 
-		spyOn( transformSettings, 'transform' ).andCallThrough();
+		spyOn( transformSettings, 'transform' ).and.callThrough();
 
 		var recordHandler = createRecordHandler([transformSettings]);
 		var clientA = createSubscribedClient( recordHandler, 'clientA' );
-		expect( transformSettings.transform.calls[ 0 ].args[ 1 ] ).toEqual({ receiver: 'clientA', recordName: 'someRecord' });
+		expect( transformSettings.transform.calls.argsFor( 0 )[ 1 ] ).toEqual({ receiver: 'clientA', recordName: 'someRecord' });
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|0|{"extraValue":"extraStuff"}+' ) );
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|U|someRecord|1|{"testCount":1}+' ),
@@ -76,7 +76,7 @@ describe( 'record handler handles messages', function(){
 			data: [ 'someRecord', '1', '{"testCount":1}' ]
 		});
 		var clientB = createSubscribedClient( recordHandler, 'clientB' );
-		expect( transformSettings.transform.calls[ 1 ].args[ 1 ] ).toEqual({ receiver: 'clientB', recordName: 'someRecord' });
+		expect( transformSettings.transform.calls.argsFor( 1 )[ 1 ] ).toEqual({ receiver: 'clientB', recordName: 'someRecord' });
 		expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|1|{"testCount":1,"extraValue":"extraStuff"}+' ) );
 	});
 
@@ -104,7 +104,7 @@ describe( 'record handler handles messages', function(){
 			}
 		};
 
-		spyOn( transformSettings, 'transform' ).andCallThrough();
+		spyOn( transformSettings, 'transform' ).and.callThrough();
 
 		var recordHandler = createRecordHandler([transformSettings]);
 		var clientA = createSubscribedClient( recordHandler, 'clientA' );
@@ -116,7 +116,7 @@ describe( 'record handler handles messages', function(){
 			action: 'U',
 			data: [ 'someRecord', '1', '{"testCount":1}' ]
 		});
-		expect( transformSettings.transform.calls[ 0 ].args[ 1 ] ).toEqual({ recordName: 'someRecord', version: 1, receiver: 'clientB' });
+		expect( transformSettings.transform.calls.argsFor( 0 )[ 1 ] ).toEqual({ recordName: 'someRecord', version: 1, receiver: 'clientB' });
 		expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|U|someRecord|1|{"testCount":8}+' ) );
 	});
 
@@ -153,7 +153,7 @@ describe( 'record handler handles messages', function(){
 			}
 		};
 
-		spyOn( transformSettings, 'transform' ).andCallThrough();
+		spyOn( transformSettings, 'transform' ).and.callThrough();
 
 		var recordHandler = createRecordHandler([transformSettings]);
 		var clientA = createSubscribedClient( recordHandler, 'clientA' );
@@ -173,7 +173,7 @@ describe( 'record handler handles messages', function(){
 			action: 'P',
 			data: [ 'someRecord', '2', 'patchTestValue', 'N21' ]
 		});
-		expect( transformSettings.transform.calls[ 0 ].args[ 1 ] ).toEqual({
+		expect( transformSettings.transform.calls.argsFor( 0 )[ 1 ] ).toEqual({
 			recordName : 'someRecord',
 			version : 2,
 			path : 'patchTestValue',

@@ -21,6 +21,12 @@ describe( 'parses low level authData to simpler output', function() {
 			isChange: false,
 			isDelete: false,
 
+			isAck: false, 
+			isSubscribe: false, 
+			isUnsubscribe: false, 
+			isRequest: false, 
+			isRejection: false,
+
 			name: 'RecordName',
 			path: undefined,
 			data: 'data'

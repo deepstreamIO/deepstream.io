@@ -43,7 +43,7 @@ describe( 'keeps track of which remote deepstream instance can provide which rpc
 			}]
 		});
 		
-		expect( rpcAProviderCallback.calls.length ).toBe( 1 );
+		expect( rpcAProviderCallback.calls.count() ).toBe( 1 );
 		expect( rpcAProviderCallback ).toHaveBeenCalledWith( null, 'privateTopicA' );
 		
 		// make sure it doesn't invoke callbacks multiple times for subsequent provider updates
@@ -57,7 +57,7 @@ describe( 'keeps track of which remote deepstream instance can provide which rpc
 			}]
 		});
 		
-		expect( rpcAProviderCallback.calls.length ).toBe( 1 );
+		expect( rpcAProviderCallback.calls.count() ).toBe( 1 );
 	});
 	
 	it( 'handles unsolicited provider updates', function(){
@@ -147,7 +147,7 @@ describe( 'keeps track of which remote deepstream instance can provide which rpc
 		expect( providerCallback ).not.toHaveBeenCalled();
 		
 		setTimeout(function(){
-			expect( providerCallback.calls.length ).toBe( 1 );
+			expect( providerCallback.calls.count() ).toBe( 1 );
 			expect( providerCallback ).toHaveBeenCalledWith( C.EVENT.NO_RPC_PROVIDER );
 			done();
 		}, 30 );
