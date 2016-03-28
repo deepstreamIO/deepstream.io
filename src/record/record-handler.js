@@ -136,7 +136,7 @@ RecordHandler.prototype._hasRecord = function( socketWrapper, message ) {
 			socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.HAS, [ recordName, hasRecord ] );
 		},
 		onError = function( error ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.HAS, recordName );
+			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.HAS, [ recordName, error ] );
 		}
 
 	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ), onError.bind( this ) );
@@ -156,11 +156,11 @@ RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
 			if( record ) {
 				this._sendRecord( recordName, record, socketWrapper );
 			} else {
-				socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, recordName );
+				socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, C.EVENT.RECORD_NOT_FOUND ] );
 			}
 		},
 		onError = function( error ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, recordName );
+			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
 		};
 
 	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ), onError.bind( this ) );

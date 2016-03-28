@@ -94,7 +94,7 @@ describe( 'record handler handles messages', function(){
 			data: [ 'existingRecord' ]
 		});
 
-		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|H|existingRecord+' ) );
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|H|existingRecord|RECORD_LOAD_ERROR+' ) );
 
 		options.cache.nextOperationWillBeSuccessful = true;
 	});
@@ -119,7 +119,7 @@ describe( 'record handler handles messages', function(){
 			data: [ 'nonExistingRecord' ]
 		});
 
-		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|SN|nonExistingRecord+' ));
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|SN|nonExistingRecord|RECORD_NOT_FOUND+' ));
 	});
 
 	it( 'returns an error for a snapshot if message error occurs with record retrieval', function(){
@@ -132,7 +132,7 @@ describe( 'record handler handles messages', function(){
 			data: [ 'existingRecord' ]
 		});
 
-		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|SN|existingRecord+' ) );
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|SN|existingRecord|RECORD_LOAD_ERROR+' ) );
 
 		options.cache.nextOperationWillBeSuccessful = true;
 	});
