@@ -19,11 +19,11 @@ StorageMock.prototype.get = function( key, callback ) {
 	var value = this.values[ key ];
 
 	if( this.nextGetWillBeSynchronous === true ) {
-		callback( null, value );
+		callback( this.nextOperationWillBeSuccessful ? null : 'storageError', value );
 	} else {
-		process.nextTick(function() {
-			callback( null, value );
-		});
+		setTimeout(function(){
+			callback( this.nextOperationWillBeSuccessful ? null : 'storageError', value );
+		}.bind( this ), 5 );
 	}
 };
 

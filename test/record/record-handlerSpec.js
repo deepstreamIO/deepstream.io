@@ -26,7 +26,7 @@ describe( 'record handler handles messages', function(){
 
 	it( 'creates a non existing record', function(){
 		recordHandler.handle( clientA, {
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'CR',
 			data: [ 'someRecord' ]
 		});
@@ -42,7 +42,7 @@ describe( 'record handler handles messages', function(){
 
 	it( 'does not store new record when excluded', function(){
 		recordHandler.handle( clientA, {
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'CR',
 			data: [ 'no-storage' ]
 		});
@@ -54,7 +54,7 @@ describe( 'record handler handles messages', function(){
 	it( 'returns an existing record', function(){
 		options.cache.set( 'existingRecord', { _v:3, _d: { firstname: 'Wolfram' } }, function(){} );
 		recordHandler.handle( clientA, {
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'CR',
 			data: [ 'existingRecord' ]
 		});
@@ -65,7 +65,7 @@ describe( 'record handler handles messages', function(){
 	it( 'returns true for HAS if message exists', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|H|existingRecord' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'H',
 			data: [ 'existingRecord' ]
 		});
@@ -76,7 +76,7 @@ describe( 'record handler handles messages', function(){
 	it( 'returns false for HAS if message doesn\'t exists', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|H|nonExistingRecord' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'H',
 			data: [ 'nonExistingRecord' ]
 		});
@@ -84,10 +84,25 @@ describe( 'record handler handles messages', function(){
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|H|nonExistingRecord|F+' ) );
 	});
 
+	it( 'returns an error for HAS if message error occurs with record retrieval', function(){
+		options.cache.nextOperationWillBeSuccessful = false;
+
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|H|existingRecord' ),
+			topic: 'R',
+			action: 'H',
+			data: [ 'existingRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|H|existingRecord+' ) );
+
+		options.cache.nextOperationWillBeSuccessful = true;
+	});
+
 	it( 'returns a snapshot of the data that exists with version number and data', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|SN|existingRecord' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'SN',
 			data: [ 'existingRecord' ]
 		});
@@ -96,21 +111,36 @@ describe( 'record handler handles messages', function(){
 	});
 
 
-	it( 'returns a snapshot of the data that doesn\'t exists with -1 version number and null', function(){
+	it( 'returns an error for a snapshot of data that doesn\'t exists', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|SN|nonExistingRecord' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'SN',
 			data: [ 'nonExistingRecord' ]
 		});
 
-		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|nonExistingRecord|-1|null+' ));
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|SN|nonExistingRecord+' ));
+	});
+
+	it( 'returns an error for a snapshot if message error occurs with record retrieval', function(){
+		options.cache.nextOperationWillBeSuccessful = false;
+
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|SN|existingRecord' ),
+			topic: 'R',
+			action: 'SN',
+			data: [ 'existingRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|SN|existingRecord+' ) );
+
+		options.cache.nextOperationWillBeSuccessful = true;
 	});
 
 	it( 'patches a record', function(){
 		recordHandler.handle( clientB, {
 			raw: msg( 'R|P|existingRecord|4|lastname|SEgon' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'P',
 			data: [ 'existingRecord', 4, 'lastname', 'SEgon' ]
 		});
@@ -121,7 +151,7 @@ describe( 'record handler handles messages', function(){
 
 	it( 'returns the patched record', function(){
 		recordHandler.handle( clientB, {
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'CR',
 			data: [ 'existingRecord' ]
 		});
@@ -132,7 +162,7 @@ describe( 'record handler handles messages', function(){
 	it( 'updates a record', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|U|existingRecord|5|{"name":"Kowalski"}' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'U',
 			data: [ 'existingRecord', 5, '{"name":"Kowalski"}' ]
 		});
@@ -146,7 +176,7 @@ describe( 'record handler handles messages', function(){
 	it( 'handles unsubscribe messages', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|US|someRecord' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'US',
 			data: [ 'someRecord' ]
 		});
@@ -155,7 +185,7 @@ describe( 'record handler handles messages', function(){
 
 		recordHandler.handle( clientB, {
 			raw: msg( 'R|US|someRecord' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'U',
 			data: [ 'someRecord', 1, '{"bla":"blub"}' ]
 		});
@@ -168,7 +198,7 @@ describe( 'record handler handles messages', function(){
 
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|U|existingRecord|5|{"name":"Kowalski"}' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'U',
 			data: [ 'existingRecord', 5, '{"name":"Kowalski"}' ]
 		});
@@ -180,7 +210,7 @@ describe( 'record handler handles messages', function(){
 	it( 'handles invalid update messages', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|U|existingRecord|6' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'U',
 			data: [ 'existingRecord', 6 ]
 		});
@@ -191,7 +221,7 @@ describe( 'record handler handles messages', function(){
 	it( 'handles invalid patch messages', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|U|existingRecord|6|bla' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'P',
 			data: [ 'existingRecord', 6, 'bla']
 		});
@@ -202,7 +232,7 @@ describe( 'record handler handles messages', function(){
 	it( 'handles deletion messages', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|D|existingRecord' ),
-			topic: 'RECORD',
+			topic: 'R',
 			action: 'D',
 			data: [ 'existingRecord' ]
 		});
