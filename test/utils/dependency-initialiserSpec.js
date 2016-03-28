@@ -4,7 +4,9 @@ var DependencyInitialiser = require( '../../src/utils/dependency-initialiser' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
 	EventEmitter = require( 'events' ).EventEmitter;
 
-xdescribe( 'dependency-initialiser', function(){
+describe( 'dependency-initialiser', function(){
+	var dependencyBInitialiser;
+
 	var options = {
 		pluginA: new PluginMock( 'A' ),
 		pluginB: new PluginMock( 'B' ),
@@ -14,11 +16,22 @@ xdescribe( 'dependency-initialiser', function(){
 	};
 
 
-	it( 'selects the correct plugin', function( done ){
-		var dependencyInitialiser = new DependencyInitialiser( options, 'pluginB' );
-		expect( dependencyInitialiser.getDependency().name ).toBe( 'B' );
+	it( 'selects the correct plugin', function(){
+		dependencyBInitialiser = new DependencyInitialiser( options, 'pluginB' );
+		expect( dependencyBInitialiser.getDependency().name ).toBe( 'B' );
 		expect( options.logger.lastLogEvent ).toBe( null );
 	});
 
-	// TODO - Figure out what's going on with set timeout, then continue
+	it( 'notifies when the plugin is ready', function( done ){
+		var readySpy = jasmine.createSpy();
+		dependencyBInitialiser.on( 'ready', readySpy );
+
+		options.pluginB.setReady();
+		
+		setTimeout( function() {
+			expect( options.logger.lastLogEvent ).toBe( 'INFO' );
+			expect( readySpy.calls.count() ).toBe( 1 );
+			done();
+		}, 5 );
+	});
 });
