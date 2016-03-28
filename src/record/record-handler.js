@@ -121,7 +121,8 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 
 /**
  * Tries to retrieve the record from the cache or storage. If not found in either
- * returns false, otherwise returns true
+ * returns false, otherwise returns true.
+ *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
  *
@@ -131,11 +132,14 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 RecordHandler.prototype._hasRecord = function( socketWrapper, message ) {
 	var recordName = message.data[ 0 ],
 		onComplete = function( record ) {
-			var hasRecord = record ? 'T' : 'F';
+			var hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE;
 			socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.HAS, [ recordName, hasRecord ] );
-		};
+		},
+		onError = function( error ) {
+			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.HAS, [ recordName, error ] );
+		}
 
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ) );
+	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ), onError.bind( this ) );
 };
 
 /**
@@ -152,12 +156,14 @@ RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
 			if( record ) {
 				this._sendRecord( recordName, record, socketWrapper );
 			} else {
-				//TODO: This needs to be improved
-				socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, -1, null ] );
+				socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, C.EVENT.RECORD_NOT_FOUND ] );
 			}
+		},
+		onError = function( error ) {
+			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
 		};
 
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ) );
+	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ), onError.bind( this ) );
 };
 
 /**
@@ -213,7 +219,7 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 		// store the record data in the persistant storage independently and don't wait for the result
 		this._options.storage.set( recordName, record, function( error ) {
 			if( error ) {
-				this._options.logger.log( C.TOPIC.RECORD,  C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
+				this._options.logger.log( C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
 			}
 		}.bind( this ) );
 	}
