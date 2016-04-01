@@ -55,6 +55,7 @@ exports.get = function() {
 		 */
 		maxAuthAttempts: 3,
 		logInvalidAuthData: true,
+		maxMessageSize: 1048576,
 		
 		/*
 		 * Timeouts
