@@ -93,7 +93,7 @@ describe( 'disabling tcp or webserver endpoints', function() {
 
 			expect( function() {
 				connectionEndpoint = new ConnectionEndpoint( otherOptions, noop );
-			} ).toThrow( 'Can\'t start deepstream with both webserver and tcp disabled' );
+			} ).toThrow( new Error( 'Can\'t start deepstream with both webserver and tcp disabled' ) );
 		} );
 	});
 });

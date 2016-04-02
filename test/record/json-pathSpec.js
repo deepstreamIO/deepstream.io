@@ -13,11 +13,11 @@ describe( 'objects are created from paths and their value is set correctly', fun
 
 	it( 'sets values for nested objects', function(){
 		var record = {},
-			jsonPath = new JsonPath( 'adress.street' );
+			jsonPath = new JsonPath( 'address.street' );
 		jsonPath.setValue( record, 'someStreet' );
 
 		expect( record ).toEqual({
-			adress: {
+			address: {
 				street: 'someStreet'
 			}
 		});
@@ -25,16 +25,16 @@ describe( 'objects are created from paths and their value is set correctly', fun
 
 	it( 'sets values for arrays', function(){
 		var record = {},
-			jsonPath = new JsonPath( 'pastAdresses[1].street' );
+			jsonPath = new JsonPath( 'pastAddresses[1].street' );
 		jsonPath.setValue( record, 'someStreet' );
 
-		expect( record ).toEqual({
-			pastAdresses: [
+		expect( JSON.stringify( record ) ).toEqual( JSON.stringify( {
+			pastAddresses: [
 			undefined,
 			{
 				street: 'someStreet'
 			}]
-		});
+		}));
 	});
 
 	it( 'extends existing objects', function(){
