@@ -53,18 +53,13 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
     existingSubscriptions,
     name,
     i;
-  
-  if( !pattern ) {
+
+  regExp = this._validatePattern( socketWrapper, pattern );
+
+  if( !regExp ) {
     return;
   }
 
-  try{
-    regExp = new RegExp( pattern );
-  } catch( e ) {
-    this._onMsgDataError( socketWrapper, e.toString() );
-    return;
-  }
-  
   var inSubscriptionRegistry = this._subscriptionRegistry.isSubscriber( socketWrapper );
   this._subscriptionRegistry.subscribe( pattern, socketWrapper );
   if( !inSubscriptionRegistry ) {
@@ -84,6 +79,34 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
       socketWrapper.send( messageBuilder.getMsg( this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, name ] ) );
     }
   }
+};
+
+/**
+ * Send a snapshot of all the names that match the provided pattern
+ *
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message parsed and validated message
+ *
+ * @private
+ * @returns {void}
+ */
+ListenerRegistry.prototype.sendSnapshot = function( socketWrapper, message ) {
+	var i, matchingNames = [];
+  var pattern = this._getPattern( socketWrapper, message );
+  var existingSubscriptions = this._parentSubscriptionRegistry.getNames();
+  var regExp = this._validatePattern( socketWrapper, pattern );
+
+  if( !regExp ) {
+    return;
+  }
+
+  for( i = 0; i < existingSubscriptions.length; i++ ) {
+    name = existingSubscriptions[ i ];
+    if( name.match( regExp ) ) {
+      matchingNames.push( name );
+    }
+  }
+  socketWrapper.send( messageBuilder.getMsg( this._type, C.ACTIONS.SUBSCRIPTIONS_FOR_PATTERN_FOUND, [ pattern, matchingNames ] ) );
 };
 
 /**
@@ -175,6 +198,28 @@ ListenerRegistry.prototype._getPattern = function( socketWrapper, message ) {
   }
 
   return pattern;
+};
+
+/**
+ * Validates that the pattern is not empty and is a valid regular expression
+ *
+ * @param   {SocketWrapper} socketWrapper
+ * @param   {String} pattern
+ *
+ * @private
+ * @returns {RegExp}
+ */
+ListenerRegistry.prototype._validatePattern = function( socketWrapper, pattern ) {
+  if( !pattern ) {
+    return;
+  }
+
+  try{
+    return new RegExp( pattern );
+  } catch( e ) {
+    this._onMsgDataError( socketWrapper, e.toString() );
+    return;
+  }
 };
 
 /**

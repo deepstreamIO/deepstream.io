@@ -1,5 +1,6 @@
 var events = require( 'events' ),
 	util = require( 'util' ),
+	messageBuilder = require( '../message/message-builder' ),
 	C = require( '../constants/constants' );
 
 /**
@@ -91,10 +92,16 @@ TcpSocket.prototype._onData = function( packet ) {
 	}
 
 	if( packet.charAt( packet.length - 1 ) !== C.MESSAGE_SEPERATOR ) {
+
 		this._messageBuffer += packet;
+
+		if( this._messageBuffer.length >= this._options.maxMessageSize ) {
+			this._maxMessageSizeExceed();
+		}
+
 		return;
 	}
-	
+
 	if( this._messageBuffer.length !== 0 ) {
 		message = this._messageBuffer + packet;
 		this._messageBuffer = '';
@@ -103,6 +110,33 @@ TcpSocket.prototype._onData = function( packet ) {
 	}
 
 	this.emit( 'message', message );
+};
+
+/**
+ * When the message recieved is greater than the maximum allowed amount specified
+ * va maxMessageSize this will remove the preceding valid messages in the buffer
+ * or dump the buffer and emit a MAXIMUM_MESSAGE_SIZE_EXCEEDED event.
+ * 
+ *
+ * @emits 	{String} message
+ *
+ * @private
+ * @returns {void}
+ */
+TcpSocket.prototype._maxMessageSizeExceed = function() {
+	var errorMsg, indexEOM;
+
+	indexEOM = this._messageBuffer.lastIndexOf( C.MESSAGE_SEPERATOR );
+	if(  indexEOM === -1 ) {
+		errorMsg = 'Received message longer than maxMessageSize';
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MAXIMUM_MESSAGE_SIZE_EXCEEDED, errorMsg );
+		this.send( messageBuilder.getErrorMsg( C.TOPIC.ERROR, C.EVENT.MAXIMUM_MESSAGE_SIZE_EXCEEDED, errorMsg ) );
+		this._messageBuffer = '';
+	} else {
+		message = this._messageBuffer.substring( 0, indexEOM + 1 );
+		this._messageBuffer = this._messageBuffer.substring( indexEOM + 1 );
+		this.emit( 'message', message );
+	}
 };
 
 /**

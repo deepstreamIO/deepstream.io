@@ -42,6 +42,10 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 		this._triggerEvent( socketWrapper, message );
 	}
 
+	else if( message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
+		this._listenerRegistry.sendSnapshot( socketWrapper, message );
+	}
+
 	else if( message.action === C.ACTIONS.LISTEN ) {
 		this._listenerRegistry.addListener( socketWrapper, message );
 	}
