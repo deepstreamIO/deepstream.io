@@ -196,9 +196,9 @@ ConnectionEndpoint.prototype._checkClosed = function() {
 
 /**
  * Callback for 'connection' event. Receives
- * a connected socket, wraps it in a SocketWrapper and
- * subscribes to authentication messages
- *
+ * a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user and
+ * subscribes to authentication messages.
+ * 
  * @param {Number} endpoint
  * @param {TCPSocket|Engine.io} socket
  *
@@ -218,6 +218,7 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
 	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper );
+	socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.ACK );
 	socket.on( 'message', socketWrapper.authCallBack );
 };
 
