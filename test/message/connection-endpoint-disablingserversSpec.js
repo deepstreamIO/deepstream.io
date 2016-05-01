@@ -31,10 +31,10 @@ describe( 'disabling tcp or webserver endpoints', function() {
 
 		it( 'simulates a web client connection', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( null );
 		});
 
 		it( 'handles auth messages correctly', function() {
-			expect( socketMock.lastSendMessage ).toBe( null );
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 			expect( socketMock.lastSendMessage ).toBe( null ); //Since it is disabled
 		});
@@ -62,10 +62,10 @@ describe( 'disabling tcp or webserver endpoints', function() {
 
 		it( 'simulates a client connection', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
 		});
 
 		it( 'handles auth messages correctly', function() {
-			expect( socketMock.lastSendMessage ).toBe( null );
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A+' ) );
 		});

@@ -36,12 +36,11 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
 		});
 
 		it( 'handles invalid auth messages', function(){
-			expect( socketMock.lastSendMessage ).toBe( null );
-			expect( socketMock.isDisconnected ).toBe( false );
-
 			socketMock.emit( 'message', 'gibberish' );
 
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
@@ -59,12 +58,11 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
 		});
 
 		it( 'handles invalid json messages', function(){
-			expect( socketMock.lastSendMessage ).toBe( null );
-			expect( socketMock.isDisconnected ).toBe( false );
-
 			socketMock.emit( 'message', _msg( 'A|REQ|{"a":"b}+' ) );
 
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
@@ -76,11 +74,11 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
 		});
 
 		it( 'handles valid auth messages', function(){
-			expect( socketMock.lastSendMessage ).toBe( null );
-			expect( socketMock.isDisconnected ).toBe( false );
 			expect( permissionHandlerMock.lastUserValidationQueryArgs ).toBe( null );
 
 			permissionHandlerMock.nextUserValidationResult = false;
@@ -136,12 +134,11 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
 		});
 
 		it( 'authenticates valid sockets', function(){
-			expect( socketMock.lastSendMessage ).toBe( null );
-			expect( socketMock.isDisconnected ).toBe( false );
-
 			permissionHandlerMock.nextUserValidationResult = true;
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
@@ -166,14 +163,15 @@ describe( 'connection endpoint', function() {
 	describe( 'forwards additional data for positive authentications', function(){
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
+
 			permissionHandlerMock.reset();
 			permissionHandlerMock.nextUserValidationResult = true;
 			permissionHandlerMock.sendNextValidAuthWithData = true;
 		});
 
 		it( 'authenticates valid sockets', function(){
-			expect( socketMock.lastSendMessage ).toBe( null );
-			expect( socketMock.isDisconnected ).toBe( false );
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A|Stest-data+' ) );
 		});

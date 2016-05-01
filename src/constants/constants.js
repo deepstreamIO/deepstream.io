@@ -54,6 +54,7 @@ exports.EVENT.PLUGIN_ERROR = 'PLUGIN_ERROR';
 exports.EVENT.UNKNOWN_CALLEE = 'UNKNOWN_CALLEE';
 
 exports.TOPIC = {};
+exports.TOPIC.CONNECTION = 'C';
 exports.TOPIC.AUTH = 'A';
 exports.TOPIC.ERROR = 'X';
 exports.TOPIC.EVENT = 'E';
