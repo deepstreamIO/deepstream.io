@@ -18,7 +18,7 @@ options = {
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
 	logInvalidAuthData: true,
-	tcpServerEnabled: true,
+	tcpServerEnabled: false,
 	webServerEnabled: true
 };
 
@@ -32,7 +32,7 @@ describe( 'validates HTTPS server conditions', function() {
 		sslOptions = {
 			permissionHandler: require( '../mocks/permission-handler-mock' ),
 			logger: { log: function( logLevel, event, msg ){} },
-			tcpServerEnabled: true,
+			tcpServerEnabled: false,
 			webServerEnabled: true
 		};
 

@@ -17,7 +17,7 @@ options = {
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
 	logInvalidAuthData: true,
-	tcpServerEnabled: true,
+	tcpServerEnabled: false,
 	webServerEnabled: true
 };
 
@@ -208,6 +208,7 @@ describe( 'connection endpoint', function() {
 
 		it ( 'does not create an additional HTTP server', function() {
 			var options = {
+				tcpServerEnabled: false,
 				webServerEnabled: true,
 				'httpServer': httpMock.createServer(),
 				permissionHandler: require( '../mocks/permission-handler-mock' ),
@@ -222,6 +223,7 @@ describe( 'connection endpoint', function() {
 		it ( 'ready callback is called if server is already listening', function(done) {
 			var server = httpMock.createServer();
 			var options = {
+				tcpServerEnabled: false,
 				webServerEnabled: true,
 				httpServer: server,
 				permissionHandler: require( '../mocks/permission-handler-mock' ),

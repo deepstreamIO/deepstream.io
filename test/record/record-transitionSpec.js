@@ -261,6 +261,6 @@ describe( 'handles invalid message data', function(){
 	});
 
 	it( 'receives an error', function(){
-		expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'R|E|INVALID_MESSAGE_DATA|SyntaxError: Unexpected end of input:O{"invalid":"json+') );
+		expect( socketWrapper.socket.lastSendMessage ).toContain( msg( 'R|E|INVALID_MESSAGE_DATA|SyntaxError' ) );
 	});
 });

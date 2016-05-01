@@ -13,7 +13,9 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 
 var otherOptions = {
 	permissionHandler: require( '../mocks/permission-handler-mock' ),
-	logger: { log: function( logLevel, event, msg ){} }
+	logger: { log: function( logLevel, event, msg ){} },
+	tcpPort: 6031,
+	tcpHost: 'localhost'
 };
 
 describe( 'disabling tcp or webserver endpoints', function() {
