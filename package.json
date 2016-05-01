@@ -6,9 +6,13 @@
   "directories": {
     "test": "test"
   },
+  "watch": {
+     "test": "{src,test}/**/*.js"
+  },
   "scripts": {
     "test": "node node_modules/jasmine/bin/jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "reporter": "node jasmine-runner"
+    "reporter": "node jasmine-runner",
+    "watch": "npm-watch"
   },
   "repository": {
     "type": "git",
@@ -25,6 +29,7 @@
     "grunt-release": "0.13.0",
     "jasmine": "^2.4.1",
     "jasmine-spec-reporter": "^2.4.0",
+    "npm-watch": "^0.1.4",
     "proxyquire": "1.7.4"
   },
   "author": "Wolfram Hempel",

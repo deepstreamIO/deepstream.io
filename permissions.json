@@ -1,0 +1,20 @@
+{
+	"record": {
+		"*": {
+			"write": true,
+			"read": true
+		}
+	},
+	"event": {
+		"*": {
+			"write": true,
+			"read": true
+		}
+	},
+	"rpc": {
+		"*": {
+			"provide": true,
+			"request": true
+		}
+	}
+}
