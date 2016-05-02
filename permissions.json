@@ -7,8 +7,8 @@
 	},
 	"event": {
 		"*": {
-			"write": true,
-			"read": true
+			"publish": true,
+			"subscribe": true
 		}
 	},
 	"rpc": {

@@ -30,6 +30,10 @@ validationSteps.doesNotHaveAdditionalTopLevelKeys = function( config ) {
 	return true;
 };
 
+validationSteps.doesOnlyContainValidPaths = function() {
+	return true; //TODO
+};
+
 
 exports.validate = function( config ) {
 	var validationStepResult;
