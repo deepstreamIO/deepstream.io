@@ -1,5 +1,6 @@
+var pathParser = require( './path-parser' );
 var validationSteps = {};
-var topLevelKeys = [ 'record', 'event', 'rpc' ];
+var TOP_LEVEL_KEYS = [ 'record', 'event', 'rpc' ];
 
 validationSteps.isValidType = function( config ) {
 	if( typeof config === 'object' ) {
@@ -10,19 +11,19 @@ validationSteps.isValidType = function( config ) {
 };
 
 
-validationSteps.hasRequiredTopLevelKeys = function( config ) {
-	for( var i = 0; i < topLevelKeys.length; i++ ) {
-		if( typeof config[ topLevelKeys[ i ] ] !== 'object' ) {
-			return 'missing configuration section "' + topLevelKeys[ i ] + '"';
+validationSteps.hasRequiredTOP_LEVEL_KEYS = function( config ) {
+	for( var i = 0; i < TOP_LEVEL_KEYS.length; i++ ) {
+		if( typeof config[ TOP_LEVEL_KEYS[ i ] ] !== 'object' ) {
+			return 'missing configuration section "' + TOP_LEVEL_KEYS[ i ] + '"';
 		}
 	}
 
 	return true;
 };
 
-validationSteps.doesNotHaveAdditionalTopLevelKeys = function( config ) {
+validationSteps.doesNotHaveAdditionalTOP_LEVEL_KEYS = function( config ) {
 	for( var key in config ) {
-		if( topLevelKeys.indexOf( key ) === -1 ) {
+		if( TOP_LEVEL_KEYS.indexOf( key ) === -1 ) {
 			return 'unexpected configuration section "' + key + '"';
 		}
 	}
@@ -30,8 +31,26 @@ validationSteps.doesNotHaveAdditionalTopLevelKeys = function( config ) {
 	return true;
 };
 
-validationSteps.doesOnlyContainValidPaths = function() {
-	return true; //TODO
+validationSteps.doesOnlyContainValidPaths = function( config ) {
+	var i, path, result;
+
+	for( i = 0; i < TOP_LEVEL_KEYS.length; i++ ) {
+
+		// Check empty
+		if( Object.keys( config[ TOP_LEVEL_KEYS[ i ] ] ).length === 0 ) {
+			return 'empty section "' + TOP_LEVEL_KEYS[ i ] + '"';
+		}
+
+		// Check valid
+		for( path in config[ TOP_LEVEL_KEYS[ i ] ] ) {
+			result = pathParser.validate( path );
+			if( result !== true ) {
+				return result + ' for path ' + path + ' in section ' + TOP_LEVEL_KEYS[ i ];
+			}
+		}
+	}
+
+	return true;
 };
 
 

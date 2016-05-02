@@ -48,4 +48,16 @@ describe( 'it validates permission.json files', function(){
 		conf.bogus = {};
 		expect( configValidator.validate( conf ) ).toBe( 'unexpected configuration section "bogus"' );
 	});
+
+	it( 'fails for empty sections', function(){
+		var conf = getConfig();
+		conf.rpc = {};
+		expect( configValidator.validate( conf ) ).toBe( 'empty section "rpc"' );
+	});
+
+	it( 'fails for invalid paths', function(){
+		var conf = getConfig();
+		conf.record.a$$x = {};
+		expect( configValidator.validate( conf ) ).toBe( 'invalid variable name $$ for path a$$x in section record' );
+	});
 });
