@@ -7,6 +7,7 @@ var SocketMock = require( '../mocks/socket-mock' ),
 	lastAuthenticatedMessage = null;
 
 describe( 'the message processor only forwards valid, authorized messages', function(){
+	
 	it( 'creates the message processor', function(){
 		messageProcessor = new MessageProcessor({ 
 			permissionHandler: permissionHandlerMock,

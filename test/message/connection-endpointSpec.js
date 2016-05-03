@@ -18,18 +18,24 @@ options = {
 	maxAuthAttempts: 3,
 	logInvalidAuthData: true,
 	tcpServerEnabled: true,
-	webServerEnabled: true
+	webServerEnabled: true,
+	tcpPort: 6021
 };
 
 describe( 'connection endpoint', function() {
 
-	it( 'create a connection endpoint', function() {
+	beforeAll( function() {
 		permissionHandlerMock.reset();
 
 		connectionEndpoint = new ConnectionEndpoint( options, function(){} );
 		connectionEndpoint.onMessage = function( socket, message ){
 			lastAuthenticatedMessage = message;
 		};
+	});
+
+	afterAll( function( done ) {
+		connectionEndpoint.once( 'close', done );
+		connectionEndpoint.close();
 	});
 
 	describe( 'the connection endpoint handles invalid auth messages', function(){
@@ -206,16 +212,24 @@ describe( 'connection endpoint', function() {
 
 	describe( 'when using an existing HTTP server', function(){
 
+		var endpoint;
+
+		afterEach( function( done ) {
+				endpoint.once( 'close', done );
+				endpoint.close();
+		} );
+
 		it ( 'does not create an additional HTTP server', function() {
 			var options = {
 				webServerEnabled: true,
 				'httpServer': httpMock.createServer(),
 				permissionHandler: require( '../mocks/permission-handler-mock' ),
-				logger: { log: function( logLevel, event, msg ){} }
+				logger: { log: function( logLevel, event, msg ){} },
+				tcpPort: 6021
 			};
 
 			spyOn(httpMock, 'createServer');
-			var endpoint = new ConnectionEndpoint(options, function(){} );
+			endpoint = new ConnectionEndpoint(options, function(){} );
 			expect( httpMock.createServer ).not.toHaveBeenCalled();
 		});
 
@@ -229,7 +243,7 @@ describe( 'connection endpoint', function() {
 			};
 			server.listen( 3000, '0.0.0.0' );
 
-			var endpoint = new ConnectionEndpoint(options, function() {
+			endpoint = new ConnectionEndpoint(options, function() {
 				done();
 			});
 		});
@@ -243,7 +257,7 @@ describe( 'connection endpoint', function() {
 				logger: { log: function( logLevel, event, msg ){} }
 			};
 
-			var endpoint = new ConnectionEndpoint(options, function() {
+			endpoint = new ConnectionEndpoint(options, function() {
 				done();
 			});
 
