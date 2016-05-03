@@ -1,7 +1,9 @@
-var FUNCTION_REGEXP = /([a-zA-Z0-9]*)\(/g;
-var NEW_REGEXP = /[^a-zA-Z0-9^]new[^a-zA-Z0-9]/;
+var FUNCTION_REGEXP = /([a-zA-Z0-9_]*)\(/g;
+var NEW_REGEXP = /^new[^a-zA-Z0-9^]|[^a-zA-Z0-9^]new[^a-zA-Z0-9]/;
+var OLD_DATA_REGEXP = /^oldData[^a-zA-Z0-9^]|[^a-zA-Z0-9^]oldData[^a-zA-Z0-9]/;
+var CROSS_REFERENCE_REGEXP = /^_[^a-zA-Z0-9^]|[^a-zA-Z0-9^]_[^a-zA-Z0-9]/;
 var SUPPORTED_FUNCTIONS = [
-	'&',
+	'_',
 	'startsWith',
 	'endsWith',
 	'includes',
@@ -15,6 +17,10 @@ var SUPPORTED_FUNCTIONS = [
 //charAt
 
 exports.validate = function( rule ) {
+	if( typeof rule === 'boolean' ) {
+		return true;
+	}
+	
 	if( typeof rule !== 'string' ) {
 		return 'rule must be a string';
 	}
@@ -39,9 +45,36 @@ exports.validate = function( rule ) {
 			}
 		}
 	}
+
+	try{
+		new Function( rule ); //jshint ignore:line
+	} catch( e ) {
+		return e.toString();
+	}
+
 	return true;
 };
 
-exports.parse = function( rule ) {
+/**
+ * Cross References:
+ *
+ * Cross references are denoted with an underscore function _()
+ * They can take path variables: _($someId)
+ * variables from data: _(data.someValue)
+ * or strings: _('user/egon')
+ *
+ * @param   {[type]} rule      [description]
+ * @param   {[type]} variables [description]
+ *
+ * @returns {[type]}
+ */
+exports.parse = function( rule, variables ) {
+	var ruleObj = {};
+	var args = variables.slice( 0 );
 
+	args.unshift( '_' );
+	args.push( rule );
+
+	ruleObj.fn = Function.apply(this, args );
+	ruleObj.hasOldData = !!rule.match( OLD_DATA_REGEXP );
 };

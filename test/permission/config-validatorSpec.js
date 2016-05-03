@@ -9,8 +9,8 @@ var getConfig = function() {
 		},
 		"event": {
 			"*": {
-				"write": true,
-				"read": true
+				"publish": true,
+				"subscribe": true
 			}
 		},
 		"rpc": {
@@ -59,5 +59,17 @@ describe( 'it validates permission.json files', function(){
 		var conf = getConfig();
 		conf.record.a$$x = {};
 		expect( configValidator.validate( conf ) ).toBe( 'invalid variable name $$ for path a$$x in section record' );
+	});
+
+	it( 'fails for invalid rule types', function(){
+		var conf = getConfig();
+		conf.rpc.somepath = { write: 'a === b' };
+		expect( configValidator.validate( conf ) ).toBe( 'unknown rule type write in section rpc' );
+	});
+
+	it( 'fails for invalid rules', function(){
+		var conf = getConfig();
+		conf.record.somepath = { write: 'process.exit()' };
+		expect( configValidator.validate( conf ) ).toBe( 'function exit is not supported' );
 	});
 });
