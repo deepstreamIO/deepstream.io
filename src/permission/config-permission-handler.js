@@ -1,4 +1,5 @@
 var configValidator = require( './config-validator' );
+var configCompiler = require( './config-compiler' );
 
 
 var ConfigPermissionHandler = function( config ) {
@@ -6,5 +7,9 @@ var ConfigPermissionHandler = function( config ) {
 	if( validationResult !== true ) {
 		throw new Error( validationResult );
 	}
-	this._config = config;
+	this._config = configCompiler.compile( config );
+};
+
+ConfigPermissionHandler.prototype.canPerformAction = function( username, message, callback ) {
+
 };

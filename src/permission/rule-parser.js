@@ -75,6 +75,8 @@ exports.parse = function( rule, variables ) {
 	args.unshift( '_' );
 	args.push( rule );
 
-	ruleObj.fn = Function.apply(this, args );
+	ruleObj.fn = Function.apply( this, args );
 	ruleObj.hasOldData = !!rule.match( OLD_DATA_REGEXP );
+
+	return ruleObj;
 };
