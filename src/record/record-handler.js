@@ -70,7 +70,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	/*
-	 * Handle complete (UPDATE) or partial (PATCH) updates 
+	 * Handle complete (UPDATE) or partial (PATCH) updates
 	 */
 	else if( message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH ) {
 		this._update( socketWrapper, message );
@@ -119,7 +119,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	 */
 	else {
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
-		
+
 		if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
 			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 		}
@@ -144,7 +144,7 @@ RecordHandler.prototype._hasRecord = function( socketWrapper, message ) {
 		},
 		onError = function( error ) {
 			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.HAS, [ recordName, error ] );
-		}
+		};
 
 	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ), onError.bind( this ) );
 };
@@ -189,7 +189,7 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 			if( record ) {
 				this._read( recordName, record, socketWrapper );
 			} else {
-				this._create( recordName, socketWrapper );
+				this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper, this._create.bind( this, recordName, socketWrapper ) );
 			}
 		};
 
@@ -210,13 +210,13 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 		_v: 0,
 		_d: {}
 	};
-	
+
 	// store the records data in the cache and wait for the result
 	this._options.cache.set( recordName, record, function( error ){
 		if( error ) {
 			this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName );
 			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName );
-		} 
+		}
 		else {
 			this._read( recordName, record, socketWrapper );
 		}
@@ -243,8 +243,10 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
  * @returns {void}
  */
 RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
-	this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-	this._sendRecord( recordName, record, socketWrapper );
+	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper, () => {
+		this._subscriptionRegistry.subscribe( recordName, socketWrapper );
+		this._sendRecord( recordName, record, socketWrapper );
+	});
 };
 
 /**
@@ -283,7 +285,7 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
  /**
  * Applies both full and partial updates. Creates a new record transition that will live as long as updates
  * are in flight and new updates come in
- * 
+ *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
  *
@@ -347,7 +349,7 @@ RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSen
 	} else {
 		this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
 	}
-	
+
 	if( originalSender !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._options.messageConnector.publish( C.TOPIC.RECORD, message );
 	}
@@ -377,7 +379,7 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 		i;
 
 	if( transformPatch ) {
-		metaData.path = message.data[ 2 ]; 
+		metaData.path = message.data[ 2 ];
 	}
 
 	for( i = 0; i < receiver.length; i++ ) {
@@ -388,13 +390,13 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 
 		if( transformUpdate ) {
 			// UPDATE
-			// parse data every time to create a fresh copy 
+			// parse data every time to create a fresh copy
 			data = JSON.parse( message.data[ 2 ] );
 			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
 			message.data[ 2 ] = JSON.stringify( data );
 		} else {
 			// PATCH
-			// convert data every time to create a fresh copy 
+			// convert data every time to create a fresh copy
 			data = messageParser.convertTyped( message.data[ 3 ] );
 			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
 			message.data[ 3 ] = messageBuilder.typed( data );
@@ -421,7 +423,7 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
 /**
  * Deletes a record. If a transition is in progress it will be stopped. Once the
  * deletion is complete, an Ack is returned.
- * 
+ *
  * If the deletion message is received from the message bus, rather than from a client,
  * we assume that the original deepstream node has already deleted the record from cache and
  * storage and we only need to broadcast the message to subscribers
@@ -434,7 +436,7 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
  */
 RecordHandler.prototype._delete = function( socketWrapper, message ) {
 	var recordName = message.data[ 0 ];
-		
+
 	if( this._transitions[ recordName ] ) {
 		this._transitions[ recordName ].destroy();
 		delete this._transitions[ recordName ];
@@ -444,8 +446,47 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 		this._$broadcastUpdate( recordName, message, socketWrapper );
 		return;
 	}
-	
+
 	new RecordDeletion( this._options, socketWrapper, message, this._$broadcastUpdate.bind( this ) );
+};
+
+/**
+ * A secondary permissioning step that is performed once we know if the record exists == should be read
+ * or if it should be created
+ *
+ * @param   {String} action          One of C.ACTIONS, either C.ACTIONS.READ or C.ACTIONS.CREATE
+ * @param   {String} recordName      The name of the record
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Function} successCallback A callback that will only be invoked if the operation was successful
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._permissionAction = function( action, recordName, socketWrapper, successCallback ) {
+	var message = {
+		topic: C.TOPIC.RECORD,
+		action: action,
+		data: [ recordName ]
+	};
+
+	var onResult = function( error, canPerformAction ) {
+		if( error !== null ) {
+			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
+		}
+		else if( canPerformAction !== true ) {
+			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, action + ':' + recordName );
+		}
+		else {
+			successCallback();
+		}
+	};
+
+	this._options.permissionHandler.canPerformAction(
+		socketWrapper.user,
+		message,
+		onResult,
+		socketWrapper.userData
+	);
 };
 
 module.exports = RecordHandler;

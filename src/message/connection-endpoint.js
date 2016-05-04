@@ -315,6 +315,7 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 	socketWrapper.socket.once( 'close', this._onSocketClose.bind( this, socketWrapper ) );
 	socketWrapper.socket.on( 'message', function( msg ){ this.onMessage( socketWrapper, msg ); }.bind( this ));
 	socketWrapper.user = username;
+	socketWrapper.userData = data || null;
 	if( typeof data === 'undefined' ) {
 		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
 	} else {

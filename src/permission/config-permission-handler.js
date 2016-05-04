@@ -10,6 +10,11 @@ var ConfigPermissionHandler = function( config ) {
 	this._config = configCompiler.compile( config );
 };
 
-ConfigPermissionHandler.prototype.canPerformAction = function( username, message, callback ) {
+//TODO remove
+ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authData, callback ) {
+	callback( null, 'authenticated-user', { 'some': 'metaData' } );
+};
+
+ConfigPermissionHandler.prototype.canPerformAction = function( username, message, callback, data ) {
 
 };

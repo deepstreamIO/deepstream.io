@@ -7,7 +7,7 @@ var messageParser = require( './message-parser' ),
  * are - forwards them.
  *
  * @constructor
- * 
+ *
  * @param {Object} options deepstream options
  */
 var MessageProcessor = function( options ) {
@@ -46,17 +46,18 @@ MessageProcessor.prototype.process = function( socketWrapper, message ) {
 		i;
 
 	for( i = 0; i < parsedMessages.length; i++ ) {
-		
+
 		if( parsedMessages[ i ] === null ) {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, message );
 			socketWrapper.sendError( C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, message );
 			continue;
 		}
 
-		this._options.permissionHandler.canPerformAction( 
-			socketWrapper.user, 
-			parsedMessages[ i ], 
-			this._onPermissionResponse.bind( this, socketWrapper, parsedMessages[ i ] ) 
+		this._options.permissionHandler.canPerformAction(
+			socketWrapper.user,
+			parsedMessages[ i ],
+			this._onPermissionResponse.bind( this, socketWrapper, parsedMessages[ i ] ),
+			socketWrapper.userData
 		);
 	}
 };

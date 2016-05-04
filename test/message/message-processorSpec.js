@@ -8,7 +8,7 @@ var SocketMock = require( '../mocks/socket-mock' ),
 
 describe( 'the message processor only forwards valid, authorized messages', function(){
 	it( 'creates the message processor', function(){
-		messageProcessor = new MessageProcessor({ 
+		messageProcessor = new MessageProcessor({
 			permissionHandler: permissionHandlerMock,
 			logger: { log: function(){} }
 		});
@@ -42,7 +42,7 @@ describe( 'the message processor only forwards valid, authorized messages', func
 		socketWrapper.user = 'someUser';
 		permissionHandlerMock.nextCanPerformActionResult = false;
 		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
-		expect( permissionHandlerMock.lastCanPerformActionQueryArgs.length ).toBe( 3 );
+		expect( permissionHandlerMock.lastCanPerformActionQueryArgs.length ).toBe( 4 );
 		expect( permissionHandlerMock.lastCanPerformActionQueryArgs[ 0 ] ).toBe( 'someUser' );
 		expect( permissionHandlerMock.lastCanPerformActionQueryArgs[ 1 ].data[ 0 ] ).toBe( '/user/wolfram' );
 	});

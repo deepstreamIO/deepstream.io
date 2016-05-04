@@ -1,7 +1,7 @@
 var configCompiler = require( '../../src/permission/config-compiler' );
 
 describe( 'compiles user entered config specs into an optimized format', function(){
-	
+
 	it( 'exposes a compile method', function(){
 		expect( typeof configCompiler.compile ).toBe( 'function' );
 	});
