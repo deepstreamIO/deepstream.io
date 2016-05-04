@@ -24,6 +24,10 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 		return;
 	}
 
+	// Get record / event / rpc name from message
 	//Do we have a rule for that message?
+	for( var i = 0; i < this._config[ rules.section ].length; i++ ) {
+
+	}
 
 };

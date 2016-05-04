@@ -32,3 +32,22 @@ exports.combineEvents = function( emitters, event, callback ) {
       emitters[ i ].once( event, increment );
   }  
 };
+
+/**
+ * Takes a key-value map and returns
+ * a map with { value: key } of the old map
+ * 
+ * @param  {Object} map
+ *
+ * @public
+ * @return {Object} reversed map
+ */
+exports.reverseMap = function( map ) {
+  var reversedMap = {}, key;
+
+  for( key in map ) {
+    reversedMap[ map[ key ] ] = key;
+  }
+
+  return reversedMap;
+};

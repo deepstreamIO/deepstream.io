@@ -70,7 +70,7 @@ validationSteps.doesOnlyContainValidPaths = function( config ) {
 };
 
 validationSteps.hasValidRules = function( config ) {
-	var key, path, ruleType, section;
+	var key, path, ruleType, section, validationResult;
 
 	for( section in config ) {
 		for( path in config[ section ] ) {
@@ -78,6 +78,7 @@ validationSteps.hasValidRules = function( config ) {
 				if( SCHEMA[ section ][ ruleType ] !== true ) {
 					return 'unknown rule type ' + ruleType + ' in section ' + section;
 				}
+
 				validationResult = ruleParser.validate( config[ section ][ path ][ ruleType ] );
 				if( validationResult !== true ) {
 					return validationResult;

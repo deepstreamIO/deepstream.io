@@ -14,8 +14,16 @@ var SUPPORTED_FUNCTIONS = [
 	'trim'
 ];
 
-//charAt
-
+/**
+ * Validates a rule. Makes sure that the rule is either a boolean or a string,
+ * that it doesn't contain the new keyword or unsupported function invocations
+ * and that it can be compiled into a javascript function
+ *
+ * @param   {String|Boolean} rule the rule as read from permissions.json
+ *
+ * @public
+ * @returns {Boolean} isValid
+ */
 exports.validate = function( rule ) {
 	if( typeof rule === 'boolean' ) {
 		return true;

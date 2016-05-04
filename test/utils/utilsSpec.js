@@ -32,4 +32,16 @@ describe( 'utils', function(){
         emitters[ 2 ].emit( 'someEvent' );
         expect( callback ).toHaveBeenCalled();
    });
+
+   it( 'reverses maps', function(){
+        var user = {
+            firstname: 'Wolfram',
+            lastname: 'Hempel'
+        };
+
+        expect( utils.reverseMap( user ) ).toEqual({
+            'Wolfram': 'firstname',
+            'Hempel': 'lastname'
+        });
+   });
 });
