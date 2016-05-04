@@ -95,6 +95,7 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
  * @returns {void}
  */
 ConnectionEndpoint.prototype.close = function() {
+
 	// Close the engine.io server
 	if( this._engineIo ) {
 		this._closeEngineIoServer();
