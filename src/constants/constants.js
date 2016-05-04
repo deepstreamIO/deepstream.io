@@ -74,7 +74,6 @@ exports.ACTIONS.SUBSCRIBE = 'S';
 exports.ACTIONS.UNSUBSCRIBE = 'US';
 exports.ACTIONS.HAS = 'H';
 exports.ACTIONS.SNAPSHOT = 'SN';
-exports.ACTIONS.INVOKE = 'I';
 exports.ACTIONS.LISTEN_SNAPSHOT = 'LSN';
 exports.ACTIONS.LISTEN = 'L';
 exports.ACTIONS.UNLISTEN = 'UL';
