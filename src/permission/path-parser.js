@@ -55,6 +55,7 @@ exports.parse = function( path ) {
 
 	return {
 		variables: variables,
+		path: path,
 		regexp: new RegExp( '^' + regExp + '$' )
 	};
 };

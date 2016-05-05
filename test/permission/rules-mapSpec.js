@@ -29,7 +29,7 @@ describe( 'returns the applicable rule for a message', function(){
 		};
 		expect( rulesMap.getRulesForMessage( msg ) ).toEqual({
 			section: 'event',
-			rules: [ 'subscribe' ],
+			ruleTypes: [ 'subscribe' ],
 			action: 'SUBSCRIBE'
 		});
 	});
@@ -41,7 +41,7 @@ describe( 'returns the applicable rule for a message', function(){
 		};
 		expect( rulesMap.getRulesForMessage( msg ) ).toEqual({
 			section: 'record',
-			rules: [ 'write', 'validate' ],
+			ruleTypes: [ 'write', 'validate' ],
 			action: 'PATCH'
 		});
 	});

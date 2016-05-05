@@ -63,7 +63,7 @@ exports.getRulesForMessage = function( message ) {
 
 	return {
 		section: RULES_MAP[ message.topic ].section,
-		rules: RULES_MAP[ message.topic ].actions[ message.action ],
+		ruleTypes: RULES_MAP[ message.topic ].actions[ message.action ],
 		action: actionToKey[ message.action ]
 	};
 };
