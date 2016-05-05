@@ -3,10 +3,10 @@ var C = require( '../constants/constants' ),
 
 /**
  * Logs to the operatingsystem's standard-out and standard-error streams.
- * 
- * Consoles / Terminals as well as most log-managers and logging systems 
+ *
+ * Consoles / Terminals as well as most log-managers and logging systems
  * consume messages from these streams
- * 
+ *
  * @constructor
  */
 var StdOutLogger = function() {
@@ -45,7 +45,7 @@ StdOutLogger.prototype.log = function( logLevel, event, logMessage ) {
 	} else {
 		outputStream = 'stdout';
 	}
-	
+
 	if( this._$useColors ) {
 		process[ outputStream ].write( msg[ this._logLevelColors[ logLevel ] ] + EOL );
 	} else {
