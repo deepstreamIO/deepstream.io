@@ -5,14 +5,12 @@ var SocketMock = require( '../mocks/socket-mock' ),
 	MessageDistributor = require( '../../src/message/message-distributor' ),
 	_msg = require( '../test-helper/test-helper' ).msg;
 
-	
-	
 describe( 'message connector distributes messages to callbacks', function(){
 	var messageDistributor,
 		testCallback = jasmine.createSpy( 'testCallback' );
 
 	it( 'creates the message distributor', function(){
-		messageDistributor = new MessageDistributor({ 
+		messageDistributor = new MessageDistributor({
 			messageConnector: messageConnectorMock,
 			logger: new LoggerMock()
 		});
@@ -28,6 +26,15 @@ describe( 'message connector distributes messages to callbacks', function(){
 
 		messageDistributor.distribute( socketWrapper, msg );
 		expect( testCallback.calls.count() ).toEqual( 1 );
+	});
+
+	it( 'routes messages from the message connector', function(){
+		var cb = jasmine.createSpy( 'callback' );
+		messageDistributor.registerForTopic( 'topicB', cb );
+		expect( messageConnectorMock.lastSubscribedTopic ).toBe( 'topicB' );
+		expect( cb ).not.toHaveBeenCalled();
+		messageConnectorMock.simulateIncomingMessage({ topic: 'topicB' });
+		expect( cb ).toHaveBeenCalled();
 	});
 
 	it( 'only routes matching topics', function(){

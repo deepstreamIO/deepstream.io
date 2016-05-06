@@ -7,9 +7,9 @@ var C = require( '../constants/constants' ),
 
 /**
  * Handles incoming and outgoing messages for the EVENT topic.
- * 
+ *
  * @param {Object} options deepstream options
- * 
+ *
  * @constructor
  */
 var EventHandler = function( options ) {
@@ -22,10 +22,10 @@ var EventHandler = function( options ) {
 /**
  * The main distribution method. Routes messages to functions
  * based on the provided action parameter of the message
- * 
+ *
  * @param {SocketWrapper} socketWrapper
  * @param {Object} message parsed and permissioned deepstream message
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -66,10 +66,10 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 /**
  * Handler for the SUBSCRIBE action. Adds the socketWrapper as
  * a subscriber to the specified event name
- * 
+ *
  * @param {SocketWrapper} socketWrapper
  * @param {Object} message parsed and permissioned deepstream message
- * 
+ *
  * @private
  * @returns {void}
  */
@@ -82,10 +82,10 @@ EventHandler.prototype._addSubscriber = function( socketWrapper, message ) {
 /**
  * Handler for the UNSUBSCRIBE action. Removes the socketWrapper as
  * a subscriber from the specified event name
- * 
+ *
  * @param {SocketWrapper} socketWrapper
  * @param {Object} message parsed and permissioned deepstream message
- * 
+ *
  * @private
  * @returns {void}
  */
@@ -98,12 +98,12 @@ EventHandler.prototype._removeSubscriber = function( socketWrapper, message ) {
 /**
  * Notifies subscribers of events. This method is invoked for the EVENT action. It can
  * be triggered by messages coming in from both clients and the message connector.
- * 
+ *
  * @param {String|SocketWrapper} messageSource If messageSource is the constant SOURCE_MESSAGE_CONNECTOR
  * 												the message was received from the message connector
- * 
+ *
  * @param {Object} message parsed and permissioned deepstream message
- * 
+ *
  * @private
  * @returns {void}
  */
@@ -164,10 +164,10 @@ EventHandler.prototype._sendTransformedMessage = function( originalMessage, mess
 /**
  * Makes sure that subscription message contains the name of the event. Sends an error to the client
  * if not
- * 
+ *
  * @param {SocketWrapper} socketWrapper
  * @param {Object} message parsed and permissioned deepstream message
- * 
+ *
  * @private
  * @returns {Boolean} is valid subscription message
  */

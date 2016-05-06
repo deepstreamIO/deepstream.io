@@ -31,9 +31,14 @@ HttpServerMock.prototype.address = function() {
 	};
 };
 
-var HttpMock = function(){};
+var HttpMock = function(){
+	this.nextServerIsListening = false;
+};
+
 HttpMock.prototype.createServer = function() {
-	return new HttpServerMock();
+	var server = new HttpServerMock();
+	server.listening = this.nextServerIsListening;
+	return server;
 };
 
 module.exports = HttpMock;

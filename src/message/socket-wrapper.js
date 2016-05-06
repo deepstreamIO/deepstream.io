@@ -1,18 +1,18 @@
 var C = require( '../constants/constants' ),
 	messageBuilder = require( './message-builder' ),
 	EventEmitter = require( 'events' ).EventEmitter,
-	utils = require( 'util' ); 
+	utils = require( 'util' );
 
 /**
  * This class wraps around an engine.io or TCP socket
  * and provides higher level methods that are integrated
  * with deepstream's message structure
- * 
+ *
  * @param {engine.io Socket | TcpSocket} socket
  * @param {Object} options
- * 
+ *
  * @extends EventEmitter
- * 
+ *
  * @constructor
  */
 var SocketWrapper = function( socket, options ) {
@@ -32,7 +32,7 @@ utils.inherits( SocketWrapper, EventEmitter );
  * Returns a map of parameters that were collected
  * during the initial http request that established the
  * connection
- * 
+ *
  * @public
  * @returns {Object} handshakeData
  */
@@ -56,7 +56,7 @@ SocketWrapper.prototype.getHandshakeData = function() {
  * @param {String} topic one of C.TOPIC
  * @param {String} type one of C.EVENT
  * @param {String} msg generic error message
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -72,7 +72,7 @@ SocketWrapper.prototype.sendError = function( topic, type, msg ) {
  * @param {String} topic one of C.TOPIC
  * @param {String} action one of C.ACTIONS
  * @param {Array} data Array of strings or JSON-serializable objects
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -84,9 +84,9 @@ SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
 
 /**
  * Low level send method. Sends a string to the client
- * 
+ *
  * @param {String} msg deepstream message string
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -103,7 +103,7 @@ SocketWrapper.prototype.send = function( msg ) {
 /**
  * Destroyes the socket. Removes all deepstream specific
  * logic and closes the connection
- * 
+ *
  * @public
  * @returns {void}
  */

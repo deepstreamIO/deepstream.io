@@ -2,6 +2,7 @@ var SocketMock = function(){
 	this.lastSendMessage = null;
 	this.isDisconnected = false;
 	this.sendMessages = [];
+	this.autoClose = true;
 	this.readyState = "";
 };
 
@@ -13,10 +14,16 @@ SocketMock.prototype.send = function( message ) {
 };
 
 SocketMock.prototype.getMsg = function( i ) {
-	return this.sendMessages[ this.sendMessages.length - ( i + 1 ) ];	
+	return this.sendMessages[ this.sendMessages.length - ( i + 1 ) ];
 };
 
 SocketMock.prototype.close = function() {
+	if( this.autoClose === true ) {
+		this.doClose();
+	}
+};
+
+SocketMock.prototype.doClose = function() {
 	this.isDisconnected = true;
 	this.readyState = 'closed';
 	this.emit( 'close' );

@@ -13,7 +13,7 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 
 var otherOptions = {
 	permissionHandler: require( '../mocks/permission-handler-mock' ),
-	logger: { log: function( logLevel, event, msg ){} },
+	logger: { log: jasmine.createSpy( 'log' ) },
 	tcpPort: 6021
 };
 
@@ -21,7 +21,7 @@ describe( 'disabling tcp or webserver endpoints', function() {
 
 	it( 'resets permission handler mock', function() {
 		permissionHandlerMock.reset();
-	} );	
+	} );
 
 	describe( 'disabled http server', function() {
 		it( 'creates a connectionEndpoint with a disabled web server', function(  ) {
@@ -47,7 +47,7 @@ describe( 'disabling tcp or webserver endpoints', function() {
 				connectionEndpoint.close();
 
 				setTimeout( function() {
-					expect( closeSpy ).toHaveBeenCalled();	
+					expect( closeSpy ).toHaveBeenCalled();
 					done();
 				}, 0 );
 			} );
@@ -58,7 +58,7 @@ describe( 'disabling tcp or webserver endpoints', function() {
 		it( 'creates a connectionEndpoint with a disabled TCP server', function() {
 			otherOptions.webServerEnabled = true;
 			otherOptions.tcpServerEnabled = false;
-			connectionEndpoint = new ConnectionEndpoint( otherOptions, noop );	
+			connectionEndpoint = new ConnectionEndpoint( otherOptions, noop );
 		} );
 
 		it( 'simulates a client connection', function(){
@@ -78,7 +78,7 @@ describe( 'disabling tcp or webserver endpoints', function() {
 				connectionEndpoint.close();
 
 				setTimeout( function() {
-					expect( closeSpy ).toHaveBeenCalled();	
+					expect( closeSpy ).toHaveBeenCalled();
 					done();
 				}, 0 );
 			} );
@@ -95,6 +95,19 @@ describe( 'disabling tcp or webserver endpoints', function() {
 			expect( function() {
 				connectionEndpoint = new ConnectionEndpoint( otherOptions, noop );
 			} ).toThrow( new Error( 'Can\'t start deepstream with both webserver and tcp disabled' ) );
+		} );
+	});
+
+	describe( 'already listening', function() {
+
+		it( 'it creates a connectionEndpoint with a server that\'s already listening', function() {
+			otherOptions.webServerEnabled = true;
+			otherOptions.tcpServerEnabled = false;
+			httpMock.nextServerIsListening = true;
+			otherOptions.logger.log.calls.reset();
+
+			connectionEndpoint = new ConnectionEndpoint( otherOptions, noop );
+			expect( otherOptions.logger.log ).toHaveBeenCalledWith( 1, 'INFO', 'Listening for browser connections on undefined:undefined' );
 		} );
 	});
 });
