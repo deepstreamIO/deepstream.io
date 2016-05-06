@@ -338,4 +338,33 @@ describe( 'record handler handles messages', function(){
 			expect( record ).toEqual( undefined );
 		});
 	});
+
+	it( 'creates another record', function(){
+		options.cache.nextGetWillBeSynchronous = true;
+		recordHandler.handle( clientA, {
+			topic: 'R',
+			action: 'CR',
+			data: [ 'anotherRecord' ]
+		});
+
+		expect( options.cache.lastSetKey ).toBe( 'anotherRecord' );
+		expect( options.cache.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
+
+		expect( options.storage.lastSetKey ).toBe( 'anotherRecord' );
+		expect( options.storage.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|anotherRecord|0|{}+') );
+	});
+
+	it( 'receives a deletion message from the message connector for anotherRecord', function(){
+		recordHandler.handle( 'SOURCE_MESSAGE_CONNECTOR', {
+			raw: msg( 'R|D|anotherRecord' ),
+			topic: 'R',
+			action: 'D',
+			data: [ 'anotherRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|D|anotherRecord+' ) );
+	});
+
 });

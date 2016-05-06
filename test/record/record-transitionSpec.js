@@ -74,6 +74,28 @@ describe( 'record transitions', function() {
 			expect( recordTransition._steps.length ).toBe( 2 );
 		} );
 
+		it( 'adds a message with invalid data to the queue', function() {
+			socketWrapper.socket.lastSendMessage = null;
+			recordTransition.add( socketWrapper, 3, {
+				topic: 'RECORD', 
+				action: 'U',
+				data: [ 1 ]
+			});
+			expect( recordTransition._steps.length ).toBe( 2 );
+			expect( socketWrapper.socket.lastSendMessage).toBe( msg( 'R|E|INVALID_MESSAGE_DATA|undefined+' ) );
+		} );
+
+		it( 'adds a message with broken data to the queue', function() {
+			socketWrapper.socket.lastSendMessage = null;
+			recordTransition.add( socketWrapper, 3, {
+				topic: 'RECORD', 
+				action: 'U',
+				data: [ 'someRecord', 2, '{ "lastname": "Peterson' ]
+			});
+			expect( recordTransition._steps.length ).toBe( 2 );
+			expect( socketWrapper.socket.lastSendMessage).toBe( msg( 'R|E|INVALID_MESSAGE_DATA|undefined+' ) );
+		} );
+
 		it( 'retrieves the empty record', function( done ){
 			expect( recordHandlerMock._$broadcastUpdate ).not.toHaveBeenCalled();
 			expect( recordHandlerMock._$transitionComplete ).not.toHaveBeenCalled();
@@ -139,7 +161,7 @@ describe( 'record transitions', function() {
 		} );
 	} );
 
-	describe( 'ignores storaging data when excluded', function() {
+	describe( 'does not store excluded data', function() {
 		var recordTransition,
 			socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 			patchMessage = { topic: 'RECORD', action: 'P', data: [ 'no-storage/1', 1, 'firstname', 'SEgon' ] },
@@ -176,6 +198,68 @@ describe( 'record transitions', function() {
 		} );
 	} );
 
+	describe( 'destroys a transition between steps', function() {
+		var recordTransition,
+			socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+			patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
+			recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
+			options = { cache: new StorageMock(), storage: new StorageMock() };
+
+		options.cache.nextOperationWillBeSynchronous = false;
+
+		it( 'creates the transition', function() {
+			recordTransition = new RecordTransition( 'someRecord', options, recordHandlerMock );
+			expect( recordTransition.hasVersion ).toBeDefined();
+			expect( recordTransition.hasVersion( 2 ) ).toBe( false );
+		} );
+
+		it( 'adds a patch to the queue', function() {
+			expect( recordTransition._recordRequest ).toBe( null );
+			recordTransition.add( socketWrapper, 1, patchMessage );
+			expect( recordTransition._recordRequest ).toBeDefined();
+			expect( recordTransition._recordRequest.recordName ).toBe( 'someRecord' );
+			recordTransition.isDestroyed = true;
+			recordTransition._recordRequest.onComplete({ _v: 0, _d: {} });
+		} );
+
+		it( 'adds a patch to the queue', function() {
+			expect(function(){
+				recordTransition.add( socketWrapper, 1, patchMessage );
+			}).not.toThrow();
+		} );
+	} );
+
+	describe( 'tries to set a record, but everything goes wrong', function() {
+		var recordTransition,
+			socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+			patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
+			recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
+			options = { 
+				cache: new StorageMock(), 
+				storage: new StorageMock(),
+				logger: { log: jasmine.createSpy( 'log' ) }
+			};
+
+		options.cache.nextOperationWillBeSynchronous = true;
+		options.cache.nextOperationWillBeSuccessful = false;
+		options.storage.nextOperationWillBeSuccessful = false;
+
+		it( 'creates the transition', function() {
+			recordTransition = new RecordTransition( 'someRecord', options, recordHandlerMock );
+			expect( recordTransition.hasVersion ).toBeDefined();
+			expect( recordTransition.hasVersion( 2 ) ).toBe( false );
+		} );
+
+		it( 'adds a patch to the queue', function() {
+			expect( recordTransition._recordRequest ).toBe( null );
+			recordTransition.add( socketWrapper, 1, patchMessage );
+			expect( recordTransition._recordRequest ).toBeDefined();
+			expect( recordTransition._recordRequest.recordName ).toBe( 'someRecord' );
+			recordTransition._recordRequest.onComplete({ _v: 0, _d: {} });
+			expect( options.logger.log ).toHaveBeenCalledWith(  3, 'RECORD_UPDATE_ERROR', 'storageError' );
+		} );
+	} );
+
 	describe( 'destroys the transition', function() {
 		var recordTransition,
 			socketWrapper = new SocketWrapper( new SocketMock(), {} ),
@@ -196,6 +280,14 @@ describe( 'record transitions', function() {
 			recordTransition.add( socketWrapper, 1, patchMessage );
 			expect( recordTransition._recordRequest ).toBeDefined();
 			expect( recordTransition._recordRequest.recordName ).toBe( 'someRecord' );
+			recordTransition._recordRequest.onComplete({ _v: 0, _d: {} });
+		} );
+
+		it( 'adds a patch to the queue', function() {
+			recordTransition.isDestroyed = true;
+			recordTransition.add( socketWrapper, 1, patchMessage );
+			recordTransition.isDestroyed = false;
+			
 		} );
 
 		it( 'destroys the transition', function( done ){
@@ -208,6 +300,12 @@ describe( 'record transitions', function() {
 				done();
 			}, 50 );
 		} );
+
+		it( 'calls destroy a second time without causing problems', function(){
+			recordTransition.destroy();
+			expect( recordTransition.isDestroyed ).toBe( true );
+			expect( recordTransition._steps ).toBe( null );
+		});
 	} );
 
 	describe( 'recordRequest returns an error', function() {
@@ -238,6 +336,66 @@ describe( 'record transitions', function() {
 			recordTransition._recordRequest.onError( 'errorMsg' );
 			expect( logSpy ).toHaveBeenCalledWith( 3, 'RECORD_UPDATE_ERROR', 'errorMsg' );
 			expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'R|E|RECORD_UPDATE_ERROR|1+' ) );
+		} );
+
+		
+	} );
+
+	describe( 'recordRequest returns null', function() {
+		var recordTransition,
+			socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+			patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
+			recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
+			logSpy = jasmine.createSpy( 'log' ),
+			options = { cache: new StorageMock(), storage: new StorageMock(), logger: {log: logSpy } };
+
+		options.cache.nextOperationWillBeSynchronous = false;
+
+		it( 'creates the transition', function() {
+			recordTransition = new RecordTransition( 'someRecord', options, recordHandlerMock );
+			expect( recordTransition.hasVersion ).toBeDefined();
+			expect( recordTransition.hasVersion( 2 ) ).toBe( false );
+		} );
+
+		it( 'adds a patch to the queue', function() {
+			expect( recordTransition._recordRequest ).toBe( null );
+			recordTransition.add( socketWrapper, 1, patchMessage );
+			expect( recordTransition._recordRequest ).toBeDefined();
+			expect( recordTransition._recordRequest.recordName ).toBe( 'someRecord' );
+		} );
+
+		it( 'receives a non existant error', function() {
+			expect( socketWrapper.socket.lastSendMessage ).toBe( null );
+			recordTransition._recordRequest.onComplete( null, null );
+			expect( logSpy ).toHaveBeenCalledWith( 3, 'RECORD_UPDATE_ERROR', 'Received update for non-existant record someRecord' );
+			expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'R|E|RECORD_UPDATE_ERROR|1+' ) );
+		} );
+	});
+
+	describe( 'handles invalid message data', function() {
+		var recordTransition,
+			socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+			patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 2, 'somepath', 'O{"invalid":"json' ] },
+			recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
+			logSpy = jasmine.createSpy( 'log' ),
+			options = { cache: new StorageMock(), storage: new StorageMock(), logger: {log: logSpy } };
+
+		options.cache.nextOperationWillBeSynchronous = false;
+
+		it( 'creates the transition', function() {
+			recordTransition = new RecordTransition( 'someRecord', options, recordHandlerMock );
+			expect( recordTransition.hasVersion ).toBeDefined();
+			expect( recordTransition.hasVersion( 2 ) ).toBe( false );
+		} );
+
+		it( 'adds a patch to the queue', function() {
+			expect( recordTransition._recordRequest ).toBe( null );
+			recordTransition.add( socketWrapper, 2, patchMessage );
+			expect( recordTransition._recordRequest ).toBe( null );
+		} );
+
+		it( 'receives an error', function() {
+			expect( socketWrapper.socket.lastSendMessage ).toContain( msg( 'R|E|INVALID_MESSAGE_DATA|') );
 		} );
 	} );
 
