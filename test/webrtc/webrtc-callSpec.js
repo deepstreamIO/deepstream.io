@@ -16,6 +16,16 @@ describe( 'webrtc handler', function(){
 		expect( typeof webrtcHandler.handle ).toBe( 'function' );
 	});
 
+	it( 'receives a message with an unknown action', function(){
+		webrtcHandler.handle( calleeA, {
+			topic: 'W',
+			action: 'does-not-exist',
+			data: [ 'calleeA' ]
+		});
+
+		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'W|E|UNKNOWN_ACTION|does-not-exist+' ) );
+	});
+
 	it( 'registers calleeA', function(){
 		webrtcHandler.handle( calleeA, {
 			topic: 'W',
@@ -33,9 +43,21 @@ describe( 'webrtc handler', function(){
 			action: 'OF',
 			data: [ localId, 'doesNotExist', 'offer-data' ]
 		});
-		
+
 		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'W|E|UNKNOWN_CALLEE|doesNotExist+' ) );
 		expect( calleeA.socket.lastSendMessage ).toBe(msg( 'W|A|S|calleeA+' ) );
+	});
+
+	it( 'receives a malformed offer offer', function(){
+		webrtcHandler.handle( calleeB, {
+			raw: msg( 'raw-offer-message' ),
+			topic: 'W',
+			action: 'OF',
+			data: [ localId, 7 ]
+		});
+
+		expect( calleeA.socket.lastSendMessage ).toBe(msg( 'W|A|S|calleeA+' ) );
+		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'W|E|INVALID_MESSAGE_DATA|raw-offer-message+' ) );
 	});
 
 	it( 'receives and forwards an offer', function(){
@@ -79,9 +101,33 @@ describe( 'webrtc handler', function(){
 			topic: 'W',
 			action: 'IC',
 			data: [ 'calleeA', localId, 'ice-data' ]
-		}); 
+		});
 
 		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'raw-ice-message-1+' ) );
+		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'raw-ice-message-2+' ) );
+	});
+
+	it( 'checks if the counterparty is still alive with malformed message data', function(){
+		webrtcHandler.handle( calleeA, {
+			raw: msg( 'raw-is-alive-msg' ),
+			topic: 'W',
+			action: 'WIA',
+			data: [ 'calleeA', localId ]
+		});
+
+		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'W|E|INVALID_MESSAGE_DATA|raw-is-alive-msg+' ) );
+		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'raw-ice-message-2+' ) );
+	});
+
+	it( 'checks if the counterparty is still alive', function(){
+		webrtcHandler.handle( calleeA, {
+			raw: msg( 'raw-is-alive-msg+' ),
+			topic: 'W',
+			action: 'WIA',
+			data: [ 'calleeA' ]
+		});
+
+		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'W|WIA|calleeA|true+' ) );
 		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'raw-ice-message-2+' ) );
 	});
 
@@ -93,7 +139,7 @@ describe( 'webrtc handler', function(){
 			data: [ 'calleeA', localId, 'x' ]
 		});
 
-		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'raw-ice-message-1+' ) );
+		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'W|WIA|calleeA|true+' ) );
 		expect( calleeB.socket.lastSendMessage ).toBe( msg( 'W|A|US|localId+' ) );
 		expect( calleeB.socket.sendMessages.indexOf( msg( 'call-end-message+' ) ) ).not.toBe( -1 );
 	});

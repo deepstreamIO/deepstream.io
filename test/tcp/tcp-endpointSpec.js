@@ -29,7 +29,7 @@ describe( 'tcp-socket tests', function() {
 
 	it( 'emits complete messages', function( done ) {
 		clientSocket.write( _msg( 'X|Y|1+' ) , 'utf8' );
-		
+
 		tcpSocket.once( 'message', function( message ) {
 			expect( _show( message ) ).toBe( 'X|Y|1+' );
 			done();
@@ -38,7 +38,7 @@ describe( 'tcp-socket tests', function() {
 
 	it( 'concatenates multiple incomplete messages', function( done ) {
 		clientSocket.write( _msg( 'X|Y|' ) , 'utf8' );
-		
+
 		setTimeout( function() {
 			clientSocket.write( _msg( '2+' ) , 'utf8' );
 			tcpSocket.once( 'message', function( message ) {
@@ -50,7 +50,7 @@ describe( 'tcp-socket tests', function() {
 
 	it( 'extracts all valid messages if buffer exceeds maxMessageSize ', function( done ) {
 		clientSocket.write( _msg( 'X|Y|3+Z|Y|4+X|Y|5+X|Y|6' ) , 'utf8' );
-		
+
 		tcpSocket.once( 'message', function( message ) {
 			expect( _show( message ) ).toBe( 'X|Y|3+Z|Y|4+X|Y|5+' );
 			done();
@@ -59,7 +59,7 @@ describe( 'tcp-socket tests', function() {
 
 	it( 'concatenates the remained of the last incomplete message after buffer was exceeded', function( done ) {
 		clientSocket.write( _msg( '+X|Y|7+' ) , 'utf8' );
-		
+
 		tcpSocket.once( 'message', function( message ) {
 			expect( _show( message ) ).toBe( 'X|Y|6+X|Y|7+' );
 			done();

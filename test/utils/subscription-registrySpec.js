@@ -189,3 +189,11 @@ describe( 'subscription-registry unbinds all events on unsubscribe', function(){
 		}
 	});
 });
+
+describe( 'subscription-registry handles empty states', function(){
+	var subscriptionRegistry = new SubscriptionRegistry( options, 'E' );
+
+	it( 'returns null if no subscriber is registered', function(){
+		expect( subscriptionRegistry.getRandomSubscriber() ).toBe( null );
+	});
+});

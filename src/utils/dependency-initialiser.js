@@ -21,7 +21,6 @@ var DependencyInitialiser = function( options, name ) {
 	this._timeout = null;
 
 	if( this._dependency.isReady ) {
-		clearTimeout( this._timeout );
 		this._onReady();
 	} else {
 		this._timeout = setTimeout( this._onTimeout.bind( this ), this._options.dependencyInitialisationTimeout );
@@ -49,7 +48,10 @@ DependencyInitialiser.prototype.getDependency = function() {
  * @returns {void}
  */
 DependencyInitialiser.prototype._onReady = function() {
-	clearTimeout( this._timeout );
+	if( this._timeout ) {
+		clearTimeout( this._timeout );
+	}
+
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, this._name + ' ready' );
 	process.nextTick( this._emitReady.bind( this ) );
 };
@@ -66,7 +68,7 @@ DependencyInitialiser.prototype._onTimeout = function() {
 };
 
 /**
-* Handles errors emitted by the dependency at startup. 
+* Handles errors emitted by the dependency at startup.
 *
 * Plugin errors that occur at runtime are handled by the deepstream.io main class
 *
@@ -95,7 +97,7 @@ DependencyInitialiser.prototype._emitReady = function() {
 
 /**
  * Logs error messages
- * 
+ *
  * Since the logger is a dependency in its own right, it can't be relied upon
  * here. If it is available, it will be used, otherwise the error will be logged
  * straight to the console
