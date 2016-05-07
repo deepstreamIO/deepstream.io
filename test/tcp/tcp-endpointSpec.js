@@ -4,6 +4,7 @@ var net = require('net'),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	_show = require( '../test-helper/test-helper' ).showChars,
 	noop = function() {},
+	onError = jasmine.createSpy( 'error' ),
 	clientSocket,
 	tcpSocket;
 
@@ -22,7 +23,7 @@ describe( 'tcp-socket tests', function() {
 			tcpSocket = socket;
 			done();
 		} );
-
+		tcpEndpoint.on( 'error', onError );
 		clientSocket = new net.Socket();
 		clientSocket.connect( 6021, '127.0.0.1', noop );
 	} );
@@ -35,6 +36,12 @@ describe( 'tcp-socket tests', function() {
 			done();
 		} );
 	} );
+
+	it( 'proxies errors from the underlying socket', function(){
+		expect( onError ).not.toHaveBeenCalled();
+		tcpEndpoint._server.emit( 'error', 'some-error' );
+		expect( onError ).toHaveBeenCalled();
+	});
 
 	it( 'concatenates multiple incomplete messages', function( done ) {
 		clientSocket.write( _msg( 'X|Y|' ) , 'utf8' );
