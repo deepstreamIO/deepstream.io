@@ -8,10 +8,10 @@ var TcpEndpointMock = function() {
 util.inherits( TcpEndpointMock, EventEmitter );
 
 TcpEndpointMock.prototype.close = function() {
-	setTimeout(() => {
+	setTimeout(function(){
 		this.isClosed = true;
 		this.emit( 'close' );
-	}, 1);
+	}.bind( this ), 1);
 };
 
 module.exports = TcpEndpointMock;
