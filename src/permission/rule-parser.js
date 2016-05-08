@@ -28,7 +28,7 @@ exports.validate = function( rule ) {
 	if( typeof rule === 'boolean' ) {
 		return true;
 	}
-	
+
 	if( typeof rule !== 'string' ) {
 		return 'rule must be a string';
 	}
@@ -45,6 +45,7 @@ exports.validate = function( rule ) {
 	var functionName;
 	var i;
 
+	//TODO _ cross references are only supported for section record
 	if( functions ) {
 		for( i = 0; i < functions.length; i++ ) {
 			functionName = functions[ i ].replace('(', '');
@@ -77,11 +78,15 @@ exports.validate = function( rule ) {
  * @returns {[type]}
  */
 exports.parse = function( rule, variables ) {
+	if( rule === true || rule === false ) {
+		return {
+			fn: function(){ return rule; },
+			hasOldData: false
+		};
+	}
 	var ruleObj = {};
-	var args = variables.slice( 0 );
-
-	args.unshift( '_' );
-	args.push( rule );
+	var args = [ '_', 'user', 'data', 'oldData', 'now', 'action' ].concat( variables );
+	args.push( 'return ' + rule + ';' );
 
 	ruleObj.fn = Function.apply( this, args );
 	ruleObj.hasOldData = !!rule.match( OLD_DATA_REGEXP );
