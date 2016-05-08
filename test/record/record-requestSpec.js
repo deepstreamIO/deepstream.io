@@ -2,7 +2,8 @@
 var RecordRequest = require( '../../src/record/record-request' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	SocketMock = require( '../mocks/socket-mock' ),
-	StorageMock = require( '../mocks/storage-mock' );
+	StorageMock = require( '../mocks/storage-mock' ),
+	msg = require( '../test-helper/test-helper' ).msg;
 
 describe( 'records are requested from cache and storage sequentually', function(){
 	var recordRequest,
@@ -11,7 +12,8 @@ describe( 'records are requested from cache and storage sequentually', function(
 			cacheRetrievalTimeout: 10,
 			storageRetrievalTimeout: 10,
 			cache: new StorageMock(),
-			storage: new StorageMock()
+			storage: new StorageMock(),
+			logger: { log: jasmine.createSpy( 'log' ) }
 		};
 
 	options.cache.set( 'existingRecord', { _v:1, _d: {} }, function(){});
@@ -50,7 +52,7 @@ describe( 'records are requested from cache and storage sequentually', function(
 
 	it( 'requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', function( done ){
 		options.cache.nextGetWillBeSynchronous = false;
-		options.cache.nextGetWillBeSynchronous = false
+		options.cache.nextGetWillBeSynchronous = false;
 
 		recordRequest = new RecordRequest( 'onlyExistsInStorage', options, socketWrapper, function( record ){
 			expect( record ).toEqual( { _v:1, _d: {} } );
@@ -71,6 +73,34 @@ describe( 'records are requested from cache and storage sequentually', function(
 
 		expect( options.cache.lastRequestedKey ).toBe( 'doesNotExist' );
 		expect( options.storage.lastRequestedKey ).toBe( 'doesNotExist' );
+	});
+
+	it( 'fails gracefully if an error occured out of order', function( done ){
+		options.cache.nextGetWillBeSynchronous = true;
+		options.storage.nextGetWillBeSynchronous = false;
+
+		recordRequest = new RecordRequest( 'doesNotExist', options, socketWrapper, function( record ){
+			expect( record ).toBe( null );
+			done();
+		});
+
+		recordRequest._isDestroyed = true;
+		setTimeout(done, 20 );
+	});
+
+	it( 'handles storage errors', function(){
+		options.cache.nextGetWillBeSynchronous = true;
+		options.storage.nextGetWillBeSynchronous = true;
+		options.storage.nextOperationWillBeSuccessful = false;
+
+		recordRequest = new RecordRequest( 'doesNotExist', options, socketWrapper, function( record ){
+			expect( record ).toBe( null );
+			done();
+		});
+
+		expect( options.logger.log ).toHaveBeenCalledWith( 3, 'RECORD_LOAD_ERROR', 'error while loading doesNotExist from storage' );
+
+		expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'R|E|RECORD_LOAD_ERROR|error while loading doesNotExist from storage+' ) );
 	});
 });
 

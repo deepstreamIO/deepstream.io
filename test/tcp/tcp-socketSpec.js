@@ -1,94 +1,125 @@
-var net = require('net'),
-	proxyquire = require( 'proxyquire' ).noCallThru(),
-	TCPEndpoint = require( '../../src/tcp/tcp-endpoint' ),
-	_msg = require( '../test-helper/test-helper' ).msg,
-	_show = require( '../test-helper/test-helper' ).showChars,
-	noop = function() {},
-	clientSocket,
-	tcpSocket;
+var TcpSocket = require( '../../src/tcp/tcp-socket' );
+var net = require( 'net' );
+var msg = require( '../test-helper/test-helper' ).msg;
 
-var options = {
-	tcpPort: 6021,
-	tcpHost: '127.0.0.1',
-	maxMessageSize: 10,
-	logger: { log: function( logLevel, event, msg ){} }
-};
+describe( 'wraps the native net.Socket', function(){
+	var tcpSocket ;
+	var netSocket;
+	var onMessage = jasmine.createSpy( 'message' );
+	var onClose = jasmine.createSpy( 'close' );
+	var options = {
+		logger: { log: jasmine.createSpy( 'log' ) },
+		maxMessageSize: 64
+	};
 
-describe( 'tcp-socket tests', function() {
+	it( 'creates the socket', function(){
+		netSocket = new net.Socket();
+		netSocket.write = jasmine.createSpy( 'write' );
+		tcpSocket = new TcpSocket( options, netSocket );
+		tcpSocket.on( 'message', onMessage );
+		tcpSocket.on( 'close', onClose );
 
-	it( 'creates a tcp socket', function( done ) {
-		tcpEndpoint = new TCPEndpoint( options, noop );
-		tcpEndpoint.on( 'connection', function( socket ) {
-			tcpSocket = socket;
-			done();
-		} );
+		//making sure we're dealing with an unconnected socket
+		expect( netSocket.address() ).toEqual({});
+		expect( tcpSocket.remoteAddress ).toBe( 'undefined:undefined' );
+	});
 
-		clientSocket = new net.Socket();
-		clientSocket.connect( 6021, '127.0.0.1', noop );
-	} );
+	it( 'sends some data on the socket', function(){
+		tcpSocket.send( 'msg1' );
+		expect( netSocket.write ).toHaveBeenCalledWith( 'msg1', 'utf8' );
+	});
 
-	it( 'emits complete messages', function( done ) {
-		clientSocket.write( _msg( 'X|Y|1+' ) , 'utf8' );
-		
-		tcpSocket.once( 'message', function( message ) {
-			expect( _show( message ) ).toBe( 'X|Y|1+' );
-			done();
-		} );
-	} );
+	it( 'receives some data', function(){
+		expect( onMessage ).not.toHaveBeenCalled();
+		netSocket.emit( 'data', msg( 'a+' ));
+		expect( onMessage ).toHaveBeenCalledWith( msg( 'a+' ) );
+	});
 
-	it( 'concatenates multiple incomplete messages', function( done ) {
-		clientSocket.write( _msg( 'X|Y|' ) , 'utf8' );
-		
-		setTimeout( function() {
-			clientSocket.write( _msg( '2+' ) , 'utf8' );
-			tcpSocket.once( 'message', function( message ) {
-				expect( _show( message ) ).toBe( 'X|Y|2+' );
-				done();
-			} );
-		}, 5 );
-	} );
+	it( 'receives a non-string value from the socket', function(){
+		netSocket.emit( 'data', null );
+		expect( options.logger.log ).toHaveBeenCalledWith(   2, 'INVALID_MESSAGE', 'Received non-string message from socket' );
+	});
 
-	it( 'extracts all valid messages if buffer exceeds maxMessageSize ', function( done ) {
-		clientSocket.write( _msg( 'X|Y|3+Z|Y|4+X|Y|5+X|Y|6' ) , 'utf8' );
-		
-		tcpSocket.once( 'message', function( message ) {
-			expect( _show( message ) ).toBe( 'X|Y|3+Z|Y|4+X|Y|5+' );
-			done();
-		} );
-	} );
+	it( 'closes the net socket', function(){
+		expect( onClose ).not.toHaveBeenCalled();
+		netSocket.emit( 'end' );
+		expect( onClose ).toHaveBeenCalled();
+	});
 
-	it( 'concatenates the remained of the last incomplete message after buffer was exceeded', function( done ) {
-		clientSocket.write( _msg( '+X|Y|7+' ) , 'utf8' );
-		
-		tcpSocket.once( 'message', function( message ) {
-			expect( _show( message ) ).toBe( 'X|Y|6+X|Y|7+' );
-			done();
-		} );
-	} );
+	it( 'copes with multiple close events', function(){
+		netSocket.emit( 'end' );
+		expect( onClose.calls.count() ).toBe( 1 );
+	});
 
-	describe( 'on buffer overrun without valid message', function() {
+	it( 'logs messages from half closed sockets', function(){
+		netSocket.emit( 'data', msg( 'b+' ));
+		expect( onMessage.calls.count() ).toBe( 1 );
+		expect( options.logger.log ).toHaveBeenCalledWith(  2, 'CLOSED_SOCKET_INTERACTION', 'Received data on a half closed socket: ' + msg( 'b+' ) );
+	});
 
-		it( 'emits size exceeded message', function( done ) {
-			clientSocket.write( _msg( 'X|Y|thismessageisgarbageanddonetooverrunthebuffer' ) , 'utf8' );
-			clientSocket.once( 'data', function( packet ) {
-				expect( packet.toString() ).toEqual( _msg( 'X|E|MAXIMUM_MESSAGE_SIZE_EXCEEDED|Received message longer than maxMessageSize+' ) );
-				done();
-			} );
-		} );
+	it( 'tries to send messages on a closed socket', function(){
+		tcpSocket.send( 'msg2' );
+		expect( netSocket.write.calls.count() ).toBe( 1 );
+		expect( options.logger.log ).toHaveBeenCalledWith(  3, 'CLOSED_SOCKET_INTERACTION', 'Attempt to send message on closed socket: msg2' );
+	});
+});
 
-		it( 'parses following messages correctly', function( done ) {
-			clientSocket.write( _msg( 'stilloverun+X|Y|8+' ) , 'utf8' );
-			tcpSocket.once( 'message', function( message ) {
-				expect( _show( message ) ).toBe( 'stilloverun+X|Y|8+' );
-				done();
-			} );
-		} );
+describe( 'closes the socket from the server side', function(){
+	var tcpSocket ;
+	var netSocket;
+	var onMessage = jasmine.createSpy( 'message' );
+	var onClose = jasmine.createSpy( 'close' );
+	var options = {
+		logger: { log: jasmine.createSpy( 'log' ) },
+		maxMessageSize: 64
+	};
 
-	} );
+	it( 'creates the socket', function(){
+		netSocket = new net.Socket();
+		netSocket.write = jasmine.createSpy( 'write' );
+		netSocket.end = jasmine.createSpy( 'end' );
+		tcpSocket = new TcpSocket( options, netSocket );
+		tcpSocket.on( 'message', onMessage );
+		tcpSocket.on( 'close', onClose );
 
-	it( 'closes endpoint', function( done ) {
-		tcpEndpoint.once( 'close', done );
-		tcpEndpoint.close();
-	} );
+		//making sure we're dealing with an unconnected socket
+		expect( netSocket.address() ).toEqual({});
+		expect( tcpSocket.remoteAddress ).toBe( 'undefined:undefined' );
+	});
 
-} );
+	it( 'closes the socket', function(){
+		expect( netSocket.end ).not.toHaveBeenCalled();
+		tcpSocket.close();
+		expect( netSocket.end ).toHaveBeenCalled();
+	});
+});
+
+describe( 'closes the socket on error', function(){
+	var tcpSocket ;
+	var netSocket;
+	var onMessage = jasmine.createSpy( 'message' );
+	var onClose = jasmine.createSpy( 'close' );
+	var options = {
+		logger: { log: jasmine.createSpy( 'log' ) },
+		maxMessageSize: 64
+	};
+
+	it( 'creates the socket', function(){
+		netSocket = new net.Socket();
+		netSocket.write = jasmine.createSpy( 'write' );
+		netSocket.end = jasmine.createSpy( 'end' );
+		tcpSocket = new TcpSocket( options, netSocket );
+		tcpSocket.on( 'message', onMessage );
+		tcpSocket.on( 'close', onClose );
+
+		//making sure we're dealing with an unconnected socket
+		expect( netSocket.address() ).toEqual({});
+		expect( tcpSocket.remoteAddress ).toBe( 'undefined:undefined' );
+	});
+
+	it( 'encounters an error', function(){
+		expect( onClose ).not.toHaveBeenCalled();
+		netSocket.emit( 'error', 'some-error' );
+		expect( onClose ).toHaveBeenCalled();
+	});
+});

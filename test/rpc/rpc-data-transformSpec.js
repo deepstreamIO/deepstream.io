@@ -5,20 +5,20 @@ var C = require( '../../src/constants/constants' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	DataTransforms = require( '../../src/message/data-transforms' ),
 	mockRpcHandler = { getAlternativeProvider: function(){ return []; } },
-	requestMessage = { 
-		topic: C.TOPIC.RPC, 
+	requestMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.REQUEST,
 		raw: _msg( 'P|REQ|addTwo|1234|O{"numA":5, "numB":7}+' ),
 		data: [ 'addTwo', '1234', 'O{"numA":5, "numB":7}' ]
 	},
-	ackMessage = { 
-		topic: C.TOPIC.RPC, 
+	ackMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.ACK,
 		raw: _msg( 'P|A|addTwo|1234+' ),
 		data: [ 'addTwo', '1234' ]
 	},
-	responseMessage = { 
-		topic: C.TOPIC.RPC, 
+	responseMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.RESPONSE,
 		raw: _msg( 'P|RES|addTwo|1234|N12+' ),
 		data: [ 'addTwo', '1234', 'N12' ]
@@ -63,9 +63,9 @@ describe( 'executes local rpc calls', function(){
 		spyOn( settings[ 0 ], 'transform' ).and.callThrough();
 		var provider = makeRpc( requestMessage, settings ).provider;
 		expect( settings[ 0 ].transform.calls.argsFor( 0 )[ 0 ] ).toEqual({ numA: 5, numB: 7 });
-		expect( settings[ 0 ].transform.calls.argsFor( 0 )[ 1 ] ).toEqual({ 
-			sender: 'requestor-user-name', 
-			receiver: 'provider-user-name', 
+		expect( settings[ 0 ].transform.calls.argsFor( 0 )[ 1 ] ).toEqual({
+			sender: 'requestor-user-name',
+			receiver: 'provider-user-name',
 			rpcName: 'addTwo' });
 		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|O{"numA":5,"numB":7}+' ) );
 	});
@@ -77,7 +77,7 @@ describe( 'executes local rpc calls', function(){
 			transform: function( data, metaData ) {
 				data.rpcName = metaData.rpcName;
 				data.numA = data.numA * 3;
-				return data; 
+				return data;
 			}
 		}];
 
@@ -92,7 +92,7 @@ describe( 'executes local rpc calls', function(){
 			transform: function( data, metaData ) {
 				data.rpcName = metaData.rpcName;
 				data.numA = 11;
-				return data; 
+				return data;
 			}
 		}];
 
@@ -110,7 +110,7 @@ describe( 'executes local rpc calls', function(){
 			transform: function( data, metaData ) {
 				data.rpcName = metaData.rpcName;
 				data.numA = 11;
-				return data; 
+				return data;
 			}
 		},{
 			topic: C.TOPIC.RPC,

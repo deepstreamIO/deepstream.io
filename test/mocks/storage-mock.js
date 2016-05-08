@@ -1,5 +1,6 @@
 var StorageMock = function() {
 	this.values = {};
+	this.failNextSet = false;
 	this.nextOperationWillBeSuccessful = true;
 	this.nextOperationWillBeSynchronous = true;
 	this.nextGetWillBeSynchronous = true;
@@ -37,6 +38,10 @@ StorageMock.prototype.set = function( key, value, callback ) {
 
 	if( this.nextOperationWillBeSynchronous ) {
 		this.completedSetOperations++;
+		if( this.failNextSet ) {
+			this.failNextSet = false;
+			callback( 'storageError' );
+		}
 		callback( this.nextOperationWillBeSuccessful ? null : 'storageError' );
 	} else {
 		setTimeout(function(){

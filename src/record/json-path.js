@@ -1,5 +1,4 @@
-var SPLIT_REG_EXP = /[\.\[\]]/g,
-	ASTERISK = '*';
+var SPLIT_REG_EXP = /[\.\[\]]/g;
 
 /**
  * This class allows to set or get specific
@@ -63,11 +62,6 @@ JsonPath.prototype._tokenize = function() {
 
 		if( !isNaN( part ) ) {
 			this._tokens.push( parseInt( part, 10 ) );
-			continue;
-		}
-
-		if( part === ASTERISK ) {
-			this._tokens.push( true );
 			continue;
 		}
 

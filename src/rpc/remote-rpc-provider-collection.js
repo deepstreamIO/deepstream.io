@@ -22,7 +22,7 @@ var RpcProviderCollection = function( options ) {
  * Adds a remote provider to the list. The time
  * this method is called determines the start-time
  * for the providers expiry.
- * 
+ *
  * @param {Object} providerData {
  * 	                            	rpcName: <String>,
  * 									privateTopic: <String>
@@ -52,7 +52,7 @@ RpcProviderCollection.prototype.isUpToDate = function() {
 		now = Date.now(),
 		result = false,
 		privateTopic;
-		
+
 	for( privateTopic in this._provider ) {
 		if( ( this._provider[ privateTopic ].timestamp + cacheTime ) < now ) {
 			delete this._provider[ privateTopic ];
@@ -60,39 +60,39 @@ RpcProviderCollection.prototype.isUpToDate = function() {
 			result = true;
 		}
 	}
-    
+
     return result;
 };
 
 /**
- * Returns the private topic for a randomly selected provider. 
- * The likelyhood of every deepstream instance to be choosen as 
- * a provider is determined by the number of clients that are 
+ * Returns the private topic for a randomly selected provider.
+ * The likelyhood of every deepstream instance to be choosen as
+ * a provider is determined by the number of clients that are
  * connected to it that can provide the RPC.
  *
  * @todo - actually choose providers in the way described above
- * 
+ *
  * @public
  * @returns {String} privateTopic
  */
 RpcProviderCollection.prototype.getRandomProvider = function() {
 	var privateTopics = this.getAll();
-	
+
 	if( privateTopics.length === 0 ) {
 		return null;
 	}
-	
+
 	return privateTopics[ Math.floor( Math.random() * privateTopics.length ) ];
 };
 
 /**
  * Returns an array of all currently registered topics
- * 
+ *
  * @public
  * @returns {Array} topics
  */
 RpcProviderCollection.prototype.getAll = function() {
 	return Object.keys( this._provider );
-}
+};
 
 module.exports = RpcProviderCollection;

@@ -11,7 +11,7 @@ var C = require( '../constants/constants' ),
  * @param {String} receiverPrivateTopic
  * @param {String} rpcName
  * @param {String} correlationId
- * 
+ *
  * @extends {EventEmitter}
  * @constructor
  */
@@ -30,12 +30,12 @@ utils.inherits( RpcProxy, events.EventEmitter );
 /**
  * Returns the private topic of the remote
  * part of this proxy
- * 
+ *
  * @public
  * @returns {String} remote private topic
  */
 RpcProxy.prototype.getRemotePrivateTopic = function() {
-	return this._receiverPrivateTopic;	
+	return this._receiverPrivateTopic;
 };
 
 /**
@@ -73,10 +73,10 @@ RpcProxy.prototype.send = function( message ) {
  * Sends an error on the specified topic. The
  * action will automatically be set to C.ACTION.ERROR
  *
- * @param {String} topic one of C.TOPIC
+ * @param {String} topic one of C.TOPIC - ignored in this instance
  * @param {String} type one of C.EVENT
  * @param {String} msg generic error message
- * 
+ *
  * @public
  * @returns {void}
  */
