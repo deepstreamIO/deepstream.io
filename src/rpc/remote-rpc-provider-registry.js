@@ -37,7 +37,7 @@ utils.inherits( RemoteRpcProviderRegistry, EventEmitter );
  * is received from the messageConnector) or when the query times out without having received
  * any PROVIDER_UPDATE messages - in this case with a NO_RPC_PROVIDER error.
  *
- * @param   {String}   rpcName  
+ * @param   {String}   rpcName
  * @param   {Function} callback will be invoked with <error> and <rpc-provider-proxy>
  *
  * @public
@@ -55,9 +55,9 @@ RemoteRpcProviderRegistry.prototype.getProviderTopic = function( rpcName, callba
 /**
  * Returns an array of all currently available provider topics for a specific rpcName
  * without re-requesting them
- * 
+ *
  * @param {String} rpcName
- * 
+ *
  * @public
  * @returns {Array} providerTopics
  */
@@ -68,7 +68,7 @@ RemoteRpcProviderRegistry.prototype.getAllProviderTopics = function( rpcName ) {
 	else {
 		return [];
 	}
-}
+};
 
 /**
  * Gate for incoming rpc messages. The only action
@@ -94,7 +94,7 @@ RemoteRpcProviderRegistry.prototype._processRpcMessage = function( msg ) {
  * but can also be called randomly when other deepstream instances decide
  * to send out an update of their rpc providers
  *
- * @param   {Array} providerDataList A list of providerData maps. See _addProvider below 
+ * @param   {Array} providerDataList A list of providerData maps. See _addProvider below
  *
  * @private
  * @returns {void}
@@ -107,11 +107,11 @@ RemoteRpcProviderRegistry.prototype._onProviderUpdate = function( providerDataLi
 
 /*
  * Adds an individual provider to this registry as a result of a PROVIDER_UPDATE
- * message from the message connector. 
- * 
+ * message from the message connector.
+ *
  * Providers for a specific RPC are stored in a RpcProviderCollection.
  * If no RpcProviderCollection exists yet for the rpcName, a new one will be created.
- * 
+ *
  * This method also clears any pending query timeouts for <rpcName>
  *
  * @param	{String} rpcName
@@ -128,9 +128,9 @@ RemoteRpcProviderRegistry.prototype._addProvider = function( rpcName, providerDa
 	if( !this._providerCollections[ rpcName ] ) {
 		this._providerCollections[ rpcName ] = new RpcProviderCollection( this._options );
 	}
-	
+
 	this._providerCollections[ rpcName ].addProvider( providerData );
-	
+
 	if( this._queryTimeouts[ rpcName ] !== undefined ) {
 		clearTimeout( this._queryTimeouts[ rpcName ] );
 		delete this._queryTimeouts[ rpcName ];
@@ -159,7 +159,7 @@ RemoteRpcProviderRegistry.prototype._hasProviderForRpcName = function( rpcName )
 /**
  * Sends a provider query message to all listening deepstream instances. Clears down any
  * provider registrations for <rpcName> and starts a timeout after which the query will
- * fail if no PROVIDER_UPDATES had been received 
+ * fail if no PROVIDER_UPDATES had been received
  *
  * If there's already a provider query in flight, this method won't do anything.
  *
@@ -169,7 +169,7 @@ RemoteRpcProviderRegistry.prototype._hasProviderForRpcName = function( rpcName )
  * @returns {void}
  */
 RemoteRpcProviderRegistry.prototype._queryProviders = function( rpcName ) {
-	
+
 	/*
 	 * Query for rpcName is already in flight
 	 */
@@ -181,18 +181,18 @@ RemoteRpcProviderRegistry.prototype._queryProviders = function( rpcName ) {
 	 * Delete existing provider collection
 	 */
 	this._providerCollections[ rpcName ] = null;
-	
+
 	var queryMessage = {
 		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.QUERY,
 		data: [ rpcName ]
 	};
-	
+
 	this._options.messageConnector.publish( C.TOPIC.RPC, queryMessage );
-	
-	this._queryTimeouts[ rpcName ] = setTimeout( 
-		this._onProviderQueryTimeout.bind( this, rpcName ), 
-		this._options.rpcProviderQueryTimeout 
+
+	this._queryTimeouts[ rpcName ] = setTimeout(
+		this._onProviderQueryTimeout.bind( this, rpcName ),
+		this._options.rpcProviderQueryTimeout
 	);
 };
 

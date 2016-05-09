@@ -3,7 +3,14 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	HttpMock = require( '../mocks/http-mock' ),
 	httpMock = new HttpMock(),
 	httpsMock = new HttpMock(),
-	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', { 'engine.io': engineIoMock, 'http': httpMock, 'https': httpsMock } ),
+	SocketMock = require( '../mocks/socket-mock' ),
+	TcpEndpointMock = require( '../mocks/tcp-endpoint-mock'),
+	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', {
+		'engine.io': engineIoMock,
+		'http': httpMock,
+		'https': httpsMock,
+		'../tcp/tcp-endpoint': TcpEndpointMock
+	} ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	permissionHandlerMock = require( '../mocks/permission-handler-mock' ),
 	lastAuthenticatedMessage = null,
@@ -28,6 +35,7 @@ describe( 'connection endpoint', function() {
 		permissionHandlerMock.reset();
 
 		connectionEndpoint = new ConnectionEndpoint( options, function(){} );
+		connectionEndpoint.onMessage();
 		connectionEndpoint.onMessage = function( socket, message ){
 			lastAuthenticatedMessage = message;
 		};
@@ -36,6 +44,16 @@ describe( 'connection endpoint', function() {
 	afterAll( function( done ) {
 		connectionEndpoint.once( 'close', done );
 		connectionEndpoint.close();
+	});
+
+	describe( 'the connectionEndpoint handles incoming TCP connections', function(){
+		it( 'simulates an incoming tcp connection', function(){
+			var mockTcpSocket = new SocketMock();
+			mockTcpSocket.remoteAddress = 'test-address';
+			lastLoggedMessage = null;
+			connectionEndpoint._tcpEndpoint.emit( 'connection', mockTcpSocket );
+			expect( lastLoggedMessage ).toBe( 'from test-address via tcp' );
+		});
 	});
 
 	describe( 'the connection endpoint handles invalid auth messages', function(){
@@ -48,7 +66,6 @@ describe( 'connection endpoint', function() {
 
 		it( 'handles invalid auth messages', function(){
 			socketMock.emit( 'message', 'gibberish' );
-
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
 			expect( socketMock.isDisconnected ).toBe( true );
 		});
@@ -70,9 +87,16 @@ describe( 'connection endpoint', function() {
 
 		it( 'handles invalid json messages', function(){
 			socketMock.emit( 'message', _msg( 'A|REQ|{"a":"b}+' ) );
-
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
 			expect( socketMock.isDisconnected ).toBe( true );
+		});
+	});
+
+	describe( 'handles errors from the servers', function(){
+		it( 'handles errors from the engine.io server', function(){
+			lastLoggedMessage = null;
+			engineIoMock.emit( 'error', 'bla' );
+			expect( lastLoggedMessage ).toBe( 'bla' );
 		});
 	});
 
@@ -184,17 +208,27 @@ describe( 'connection endpoint', function() {
 	});
 
 	describe( 'closes all client connections on close', function(){
+		var closeSpy = jasmine.createSpy( 'close-event' );
+		var unclosedSocket;
 
 		it( 'calls close on connections', function( done ) {
-			var closeSpy = jasmine.createSpy( 'close-event' );
+			unclosedSocket = engineIoMock.simulateConnection();
+			unclosedSocket.autoClose = false;
 			connectionEndpoint.on( 'close', closeSpy );
 			connectionEndpoint.close();
+			expect( closeSpy ).not.toHaveBeenCalled();
+			setTimeout( done, 5 );
+		});
 
-			setTimeout( function() {
-				expect( closeSpy ).toHaveBeenCalled();
-				done();
-			}, 0 );
-		} );
+		it( 'closes the last remaining client connection', function( done ){
+			expect( closeSpy ).not.toHaveBeenCalled();
+			unclosedSocket.doClose();
+			setTimeout( done, 5 );
+		});
+
+		it( 'has closed the server', function(){
+			expect( closeSpy ).toHaveBeenCalled();
+		});
 
 		it( 'does not allow future connections', function() {
 			socketMock = engineIoMock.simulateConnection();

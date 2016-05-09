@@ -24,6 +24,28 @@ describe( 'record handler handles messages', function(){
 		expect( recordHandler.handle ).toBeDefined();
 	});
 
+	it( 'rejects messages with invalid data', function(){
+		recordHandler.handle( clientA, {
+			raw: 'raw-message',
+			topic: 'R',
+			action: 'CR',
+			data: []
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|INVALID_MESSAGE_DATA|raw-message+') );
+	});
+
+	it( 'handles unknown actions', function(){
+		recordHandler.handle( clientA, {
+			raw: 'raw-message',
+			topic: 'R',
+			action: 'DOES_NOT_EXIST',
+			data: [ 'someRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|UNKNOWN_ACTION|unknown action DOES_NOT_EXIST+') );
+	});
+
 	it( 'creates a non existing record', function(){
 		recordHandler.handle( clientA, {
 			topic: 'R',
@@ -40,15 +62,43 @@ describe( 'record handler handles messages', function(){
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|0|{}+') );
 	});
 
+	it( 'tries to create a non existing record, but receives an error from the cache', function(){
+		options.cache.failNextSet = true;
+
+		recordHandler.handle( clientA, {
+			topic: 'R',
+			action: 'CR',
+			data: [ 'someRecord7' ]
+		});
+
+		expect( clientA.socket.sendMessages ).toContain( msg( 'R|E|RECORD_CREATE_ERROR|someRecord7+' ) );
+	});
+
+	it( 'tries to create a non existing record, but receives an error from the cache', function(){
+		options.storage.failNextSet = true;
+		options.logger.lastLogMessage = null;
+		recordHandler.handle( clientA, {
+			topic: 'R',
+			action: 'CR',
+			data: [ 'someRecord8' ]
+		});
+
+		expect( options.logger.lastLogMessage ).toBe( 'storage:storageError' );
+	});
+
+
 	it( 'does not store new record when excluded', function(){
+		options.storage.lastSetKey = null;
+		options.storage.lastSetValue = null;
+
 		recordHandler.handle( clientA, {
 			topic: 'R',
 			action: 'CR',
 			data: [ 'no-storage' ]
 		});
 
-		expect( options.storage.lastSetKey ).toBe( 'someRecord' );
-		expect( options.storage.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
+		expect( options.storage.lastSetKey ).toBe( null );
+		expect( options.storage.lastSetValue ).toBe( null );
 	});
 
 	it( 'returns an existing record', function(){
@@ -173,6 +223,17 @@ describe( 'record handler handles messages', function(){
 		});
 	});
 
+	it( 'updates a record with an invalid version number', function(){
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|U|existingRecord|x|{"name":"Kowalski"}' ),
+			topic: 'R',
+			action: 'U',
+			data: [ 'existingRecord', 'x', '{"name":"Kowalski"}' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|INVALID_VERSION|existingRecord|NaN+' ) );
+	});
+
 	it( 'handles unsubscribe messages', function(){
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|US|someRecord' ),
@@ -229,13 +290,46 @@ describe( 'record handler handles messages', function(){
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|INVALID_MESSAGE_DATA|R|U|existingRecord|6|bla+' ) );
 	});
 
+	it( 'updates a record to the same version', function( next ){
+		options.cache.nextGetWillBeSynchronous = false;
+
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|U|existingRecord|6|{"name":"Kowalski"}' ),
+			topic: 'R',
+			action: 'U',
+			data: [ 'existingRecord', 6, '{"name":"Kowalski"}' ]
+		});
+
+		recordHandler.handle( clientB, {
+			raw: msg( 'R|U|existingRecord|6|{"name":"Kowalski"}' ),
+			topic: 'R',
+			action: 'U',
+			data: [ 'existingRecord', 6, '{"name":"Kowalski"}' ]
+		});
+
+		setTimeout(function(){
+			expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|E|VERSION_EXISTS|existingRecord|6+' ) );
+			next();
+		}, 10 );
+
+	});
+
 	it( 'handles deletion messages', function(){
+		options.cache.nextGetWillBeSynchronous = false;
+		recordHandler.handle( clientB, {
+			raw: msg( 'R|U|existingRecord|7|{"name":"Kowalski"}' ),
+			topic: 'R',
+			action: 'U',
+			data: [ 'existingRecord', 7, '{"name":"Kowalski"}' ]
+		});
+
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|D|existingRecord' ),
 			topic: 'R',
 			action: 'D',
 			data: [ 'existingRecord' ]
 		});
+
 
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|A|D|existingRecord+' ) );
 		expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|A|D|existingRecord+' ) );
@@ -244,4 +338,33 @@ describe( 'record handler handles messages', function(){
 			expect( record ).toEqual( undefined );
 		});
 	});
+
+	it( 'creates another record', function(){
+		options.cache.nextGetWillBeSynchronous = true;
+		recordHandler.handle( clientA, {
+			topic: 'R',
+			action: 'CR',
+			data: [ 'anotherRecord' ]
+		});
+
+		expect( options.cache.lastSetKey ).toBe( 'anotherRecord' );
+		expect( options.cache.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
+
+		expect( options.storage.lastSetKey ).toBe( 'anotherRecord' );
+		expect( options.storage.lastSetValue ).toEqual( { _v : 0, _d : {  } } );
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|anotherRecord|0|{}+') );
+	});
+
+	it( 'receives a deletion message from the message connector for anotherRecord', function(){
+		recordHandler.handle( 'SOURCE_MESSAGE_CONNECTOR', {
+			raw: msg( 'R|D|anotherRecord' ),
+			topic: 'R',
+			action: 'D',
+			data: [ 'anotherRecord' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|D|anotherRecord+' ) );
+	});
+
 });

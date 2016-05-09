@@ -50,7 +50,7 @@ var RecordTransition = function( name, options, recordHandler ) {
  * Checks if a specific version number is already processed or
  * queued for processing
  *
- * @param   {Number}  version 
+ * @param   {Number}  version
  *
  * @returns {Boolean} hasVersion
  */
@@ -81,7 +81,7 @@ RecordTransition.prototype.hasVersion = function( version ) {
  * @returns {void}
  */
 RecordTransition.prototype.add = function( socketWrapper, version, message ) {
-	var data, 
+	var data,
 		update = {
 			message: message,
 			version: version,
@@ -112,19 +112,19 @@ RecordTransition.prototype.add = function( socketWrapper, version, message ) {
 		}
 		update.isPatch = true;
 		update.data = messageParser.convertTyped( message.data[ 3 ] );
-		
+
 		if( update.data instanceof Error ) {
 			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, update.data.toString() + ':' + message.data[ 3 ] );
 			return;
 		}
-		
+
 		update.path = message.data[ 2 ];
 	}
 
 	this._steps.push( update );
 
 	if( this._recordRequest === null ) {
-		this._recordRequest = new RecordRequest( 
+		this._recordRequest = new RecordRequest(
 			this._name,
 			this._options,
 			socketWrapper,
@@ -197,11 +197,11 @@ RecordTransition.prototype._next = function() {
 
 	if( this._record._v !== this._currentStep.version - 1 ) {
 		this._currentStep.sender.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, [ this._name, this._currentStep.version ] );
-		
-		var msg = 	this._currentStep.sender.user + ' tried to update record ' + this._name + ' to version ' + 
+
+		var msg = 	this._currentStep.sender.user + ' tried to update record ' + this._name + ' to version ' +
 					this._currentStep.version + ' but it already was ' + this._record._v;
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.VERSION_EXISTS, msg );
-		
+
 		this._next();
 		return;
 	}
@@ -217,7 +217,7 @@ RecordTransition.prototype._next = function() {
 	/*
 	 * Please note: saving to storage is called first to allow for synchronous cache
 	 * responses to destroy the transition, it is however not on the critical path
-	 * and the transition will continue straight away, rather than wait for the storage response 
+	 * and the transition will continue straight away, rather than wait for the storage response
 	 * to be returned.
 	 */
 	if( !this._options.storageExclusion || !this._options.storageExclusion.test( this._name ) ) {

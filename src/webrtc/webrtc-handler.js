@@ -9,7 +9,7 @@ var C = require( '../constants/constants' ),
 	CALLEE_UPDATE_EVENT = 'callee-update',
 
 	/*
-	 * Messages with these actions will just be validated and forwarded between 
+	 * Messages with these actions will just be validated and forwarded between
 	 * the two call participants without triggering any server-side action
 	 */
 	FORWARD_ACTIONS = [
@@ -34,7 +34,7 @@ var C = require( '../constants/constants' ),
  *
  * Every call is a dialog between an initiator, identified by a temporary id and a callee,
  * identified by a calleeName. This class maintains a map of callInitiator to socket that
- * keeps a reference to the initiator for the duration of the call. 
+ * keeps a reference to the initiator for the duration of the call.
  *
  * @param {Object} options deepstream options
  * @constructor
@@ -92,7 +92,7 @@ WebRtcHandler.prototype.handle = function( socketWrapper, message ) {
  * @param   {SocketWrapper} socketWrapper The socket that's associated with the callee
  *
  * @implements {SubscriptionListener}
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -108,7 +108,7 @@ WebRtcHandler.prototype.onSubscriptionMade = function( calleeName, socketWrapper
  * @param   {SocketWrapper} socketWrapper The socket that was associated with the callee
  *
  * @implements {SubscriptionListener}
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -148,11 +148,11 @@ WebRtcHandler.prototype._unregisterCallee = function( socketWrapper, message ) {
 };
 
 /**
- * Forwards a message from the sender to a receiver. The data array for every message 
+ * Forwards a message from the sender to a receiver. The data array for every message
  * that relates to a WebRTC call has the same format [ <senderId>, <receiverId>, <data> ]
  *
  * This method finds the related sender and receiver and forwards the message
- * 
+ *
  * @param   {SocketWrapper} socketWrapper the sender
  * @param   {Object} message parsed and validated deepstream message
  *
@@ -171,7 +171,7 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 	// Response
 	if( this._callInitiatiorRegistry.hasSubscribers( receiverName ) ){
 		this._callInitiatiorRegistry.sendToSubscribers( receiverName, message.raw );
-	} 
+	}
 
 	// Request
 	else {
@@ -180,7 +180,7 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 			socketWrapper.sendError( C.TOPIC.WEBRTC, C.EVENT.UNKNOWN_CALLEE, receiverName );
 			return;
 		}
-	
+
 		if( !this._callInitiatiorRegistry.hasSubscribers( senderName ) ) {
 			this._callInitiatiorRegistry.subscribe( senderName, socketWrapper );
 		}
@@ -244,7 +244,7 @@ WebRtcHandler.prototype._checkIsAlive = function( socketWrapper, message ) {
  * @param   {SocketWrapper} socketWrapper the sender
  * @param   {Object} message parsed and validated deepstream message
  * @param 	{Number} dataLength The expected length of the data array
- * 
+ *
  * @private
  * @returns {Boolean} isValid
  */

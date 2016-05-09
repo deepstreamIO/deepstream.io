@@ -4,7 +4,7 @@ var C = require( '../constants/constants' ),
   messageBuilder = require( '../message/message-builder' );
 
 /**
- * Deepstream.io allows clients to register as listeners for subscriptions. T
+ * Deepstream.io allows clients to register as listeners for subscriptions.
  * This allows for the creation of 'active' data-providers,
  * e.g. data providers that provide data on the fly, based on what clients
  * are actually interested in.
@@ -23,7 +23,7 @@ var C = require( '../constants/constants' ),
  * notification logic is handled by this._subscriptionRegistry
  *
  * @constructor
- * 
+ *
  * @param {Object} options                    DeepStream options
  * @param {SubscriptionRegistry} parentSubscriptionRegistry The SubscriptionRegistry containing the record subscriptions
  *                                                          to allow new listeners to be notified of existing subscriptions
@@ -65,12 +65,12 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
   if( !inSubscriptionRegistry ) {
     socketWrapper.socket.once( 'close', this._reconcilePatterns.bind( this ) );
   }
-  
+
   // Create pattern entry (if it doesn't exist already)
   if( !this._patterns[ pattern ] ) {
     this._patterns[ pattern ] = regExp;
   }
-  
+
   // Notify socketWrapper of existing subscriptions that match the provided pattern
   existingSubscriptions = this._parentSubscriptionRegistry.getNames();
   for( i = 0; i < existingSubscriptions.length; i++ ) {

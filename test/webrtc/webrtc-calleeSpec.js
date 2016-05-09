@@ -19,6 +19,16 @@ describe( 'webrtc handler', function(){
 		expect( typeof webrtcHandler.handle ).toBe( 'function' );
 	});
 
+	it( 'tries to register a callee with an invalid message', function(){
+		webrtcHandler.handle( calleeA, {
+			topic: 'W',
+			action: 'RC',
+			data: [ 1 ]
+		});
+
+		expect( calleeA.socket.lastSendMessage ).toBe( msg( 'W|E|INVALID_MESSAGE_DATA|undefined+' ) );
+	});
+
 	it( 'registers calleeA', function(){
 		webrtcHandler.handle( calleeA, {
 			topic: 'W',

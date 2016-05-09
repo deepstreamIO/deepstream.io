@@ -5,52 +5,52 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	MessageConnectorMock = require( '../mocks/message-connector-mock' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
-	options = { 
-		messageConnector: new MessageConnectorMock(), 
+	options = {
+		messageConnector: new MessageConnectorMock(),
 		logger: new LoggerMock(),
 		serverName: 'thisServer',
 		rpcAckTimeout: 5,
 		rpcTimeout: 5
 	},
 	rpcHandler = new RpcHandler( options ),
-	subscriptionMessage = { 
-		topic: C.TOPIC.RPC, 
+	subscriptionMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.SUBSCRIBE,
 		raw: 'rawMessageString',
 		data: [ 'addTwo' ]
 	},
-	requestMessage = { 
-		topic: C.TOPIC.RPC, 
+	requestMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.REQUEST,
 		raw: _msg( 'P|REQ|addTwo|1234|{"numA":5, "numB":7}+' ),
 		data: [ 'addTwo', '1234', '{"numA":5, "numB":7}' ]
 	},
-	ackMessage = { 
-		topic: C.TOPIC.RPC, 
+	ackMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.ACK,
 		raw: _msg( 'P|A|addTwo|1234+' ),
 		data: [ 'addTwo', '1234' ]
 	},
-	errorMessage = { 
-		topic: C.TOPIC.RPC, 
+	errorMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.ERROR,
 		raw: _msg( 'P|E|ErrorOccured|addTwo|1234+' ),
 		data: [ 'ErrorOccured', 'addTwo', '1234' ]
 	},
-	responseMessage = { 
-		topic: C.TOPIC.RPC, 
+	responseMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.RESPONSE,
 		raw: _msg( 'P|RES|addTwo|1234|12+' ),
 		data: [ 'addTwo', '1234', '12' ]
 	},
-	additionalResponseMessage = { 
-		topic: C.TOPIC.RPC, 
+	additionalResponseMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.RESPONSE,
 		raw: _msg( 'P|RES|addTwo|1234|14+' ),
 		data: [ 'addTwo', '1234', '14' ]
 	},
-	remoteRequestMessage = { 
-		topic: C.TOPIC.RPC, 
+	remoteRequestMessage = {
+		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.REQUEST,
 		raw: _msg( 'P|REQ|substract|44|{"numA":8, "numB":3}+' ),
 		data: [ 'substract', '4', '{"numA":8, "numB":3}' ]
@@ -93,11 +93,11 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	};
 
 describe( 'the rpc handler routes remote procedure call related messages', function(){
-	
+
 	it( 'sends an error for subscription messages without data', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			invalidMessage = { 
-				topic: C.TOPIC.RPC, 
+			invalidMessage = {
+				topic: C.TOPIC.RPC,
 				action: C.ACTIONS.SUBSCRIBE,
 				raw: 'rawMessageString1'
 			};
@@ -108,11 +108,11 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 
 	it( 'sends an error for invalid subscription messages ', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			invalidMessage = { 
-				topic: C.TOPIC.RPC, 
+			invalidMessage = {
+				topic: C.TOPIC.RPC,
 				action: C.ACTIONS.SUBSCRIBE,
 				raw: 'rawMessageString2',
-				data: [ 1, 'a'] 
+				data: [ 1, 'a']
 			};
 
 		rpcHandler.handle( socketWrapper, invalidMessage );
@@ -121,11 +121,11 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 
 	it( 'sends an error for unknown actions', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			invalidMessage = { 
-				topic: C.TOPIC.RPC, 
+			invalidMessage = {
+				topic: C.TOPIC.RPC,
 				action: 'giberrish',
 				raw: 'rawMessageString2',
-				data: [ 1, 'a'] 
+				data: [ 1, 'a']
 			};
 
 		rpcHandler.handle( socketWrapper, invalidMessage );
@@ -232,6 +232,10 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 describe( 'rpc handler routes requests to remote providers', function(){
 	var requestor;
 
+	/*
+	 * Running tests in a single it block now as there were numerous problems
+	 * with Jasmine's sequence
+	 */
 	it( 'executes remote rpcs', function(){
 		options.messageConnector.reset();
 
@@ -241,29 +245,29 @@ describe( 'rpc handler routes requests to remote providers', function(){
 		// There are no local providers for the substract rpc
 		rpcHandler.handle( requestor, remoteRequestMessage );
 		expect( options.messageConnector.lastPublishedMessage ).toEqual( providerQueryMessage );
-	});
+	//});
 
-	it( 'forwards rpc to remote providers', function(){
+	//it( 'forwards rpc to remote providers', function(){
 		expect( requestor.socket.lastSendMessage ).toBe( null );
 
 		options.messageConnector.simulateIncomingMessage( providerUpdateMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );
 		expect( options.messageConnector.lastPublishedMessage ).toEqual( privateRemoteRequestMessage );
-	});
+	//});
 
-	it( 'forwards ack from remote provider to requestor', function(){
+	//it( 'forwards ack from remote provider to requestor', function(){
 		expect( requestor.socket.lastSendMessage ).toBe( null );
 
 		options.messageConnector.simulateIncomingMessage( privateRemoteAckMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|substract|4+') );
-	});
+	//});
 
-	it( 'forwards response from remote provider to requestor', function(){
+	//it( 'forwards response from remote provider to requestor', function(){
 		options.messageConnector.simulateIncomingMessage( privateRemoteResponseMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|substract|4|5+' ) );
-	});
+	//});
 
-	it( 'ignores subsequent responses', function(){
+	//it( 'ignores subsequent responses', function(){
 		requestor.socket.lastSendMessage = null;
 		options.messageConnector.simulateIncomingMessage( privateRemoteResponseMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );

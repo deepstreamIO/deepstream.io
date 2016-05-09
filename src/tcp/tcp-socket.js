@@ -116,7 +116,7 @@ TcpSocket.prototype._onData = function( packet ) {
  * When the message recieved is greater than the maximum allowed amount specified
  * va maxMessageSize this will remove the preceding valid messages in the buffer
  * or dump the buffer and emit a MAXIMUM_MESSAGE_SIZE_EXCEEDED event.
- * 
+ *
  *
  * @emits 	{String} message
  *
@@ -152,7 +152,7 @@ TcpSocket.prototype._onDisconnect = function() {
 	if( this._isDisconnected === true ) {
 		return;
 	}
-	
+
 	this.emit( 'close' );
 	this._isClosed = true;
 	this._isDisconnected = true;
@@ -160,9 +160,9 @@ TcpSocket.prototype._onDisconnect = function() {
 
 /**
  * Callback for socket errors
- * 
+ *
  * @param {String} error
- * 
+ *
  * @private
  * @returns {void}
  */

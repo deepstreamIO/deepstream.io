@@ -2,11 +2,11 @@
 var JsonPath = require( '../../src/record/json-path' );
 
 describe( 'objects are created from paths and their value is set correctly', function(){
-	
+
 	it( 'sets simple values', function(){
 		var record = {},
 			jsonPath = new JsonPath( 'firstname' );
-		
+
 		jsonPath.setValue( record, 'Wolfram' );
 		expect( record ).toEqual({ firstname: 'Wolfram' });
 	});

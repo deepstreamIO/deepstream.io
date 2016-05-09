@@ -10,7 +10,7 @@ var C = require( '../constants/constants' ),
  * from a remote provider within the network
  *
  * @param {RpcHandler}			 rpcHandler
- * @param {String|SocketWrapper} requestor SocketWrapper if requested locally, 
+ * @param {String|SocketWrapper} requestor SocketWrapper if requested locally,
  *                                         C.SOURCE_MESSAGE_CONNECTOR if requested
  *                                         by the message connector
  * @param {SocketWrapper|RpcProviderProxy} provider  A SocketWrapper like class, able to provide the rpc
@@ -43,7 +43,7 @@ var Rpc = function( rpcHandler, requestor, provider, options, message ) {
  */
 Rpc.prototype.destroy = function() {
 	this._provider.removeListener( C.TOPIC.RPC, this._onProviderResponseFn );
-	
+
 	if( this._provider instanceof RpcProxy ) {
 		this._provider.destroy();
 	}
@@ -54,7 +54,7 @@ Rpc.prototype.destroy = function() {
 
 	clearTimeout( this._ackTimeout );
 	clearTimeout( this._responseTimeout );
-	
+
 	this._requestor = null;
 	this._provider = null;
 	this._options = null;
@@ -65,14 +65,14 @@ Rpc.prototype.destroy = function() {
  * By default, a RPC is the communication between one requestor
  * and one provider. If the original provider however rejects
  * the request, deepstream will try to re-route it to another provider.
- * 
+ *
  * This happens in the reroute method. This method will query
  * the rpc-handler for an alternative provider and - if it has
  * found one - call this method to replace the provider and re-do
  * the second leg of the rpc
- * 
+ *
  * @param {SocketWrapper} provider
- * 
+ *
  * @private
  * @returns {void}
  */
@@ -83,7 +83,7 @@ Rpc.prototype._setProvider = function( provider ) {
 	if( this._provider ) {
 		this._provider.removeListener( C.TOPIC.RPC, this._onProviderResponseFn );
 	}
-	
+
 	this._provider = provider;
 	this._ackTimeout = setTimeout( this._onAckTimeout.bind( this ), this._options.rpcAckTimeout );
 	this._responseTimeout = setTimeout( this._onResponseTimeout.bind( this ), this._options.rpcTimeout );
@@ -116,7 +116,7 @@ Rpc.prototype._processProviderMessage = function( message ) {
 
 	if( message.action === C.ACTIONS.ACK ) {
 		this._handleAck( message );
-	} 
+	}
 	else if( message.action === C.ACTIONS.REJECTION ) {
 		this._reroute();
 	}
@@ -166,16 +166,16 @@ Rpc.prototype._handleResponse = function( message ) {
  * This method handles rejection messages from the current provider. If
  * a provider is temporarily unable to serve a request, it can reject it
  * and deepstream will try to reroute to an alternative provider
- * 
+ *
  * If no alternative provider could be found, this method will send a NO_RPC_PROVIDER
  * error to the client and destroy itself
- * 
+ *
  * @private
  * @returns {void}
  */
 Rpc.prototype._reroute = function() {
 	this._usedProviders.push( this._provider );
-	
+
 	var alternativeProvider = this._rpcHandler.getAlternativeProvider( this._rpcName, this._usedProviders, this._correlationId );
 
 	if( alternativeProvider ) {
@@ -225,11 +225,11 @@ Rpc.prototype._send = function( receiver, message, sender ) {
 		receiver.send( message );
 		return;
 	}
-		
+
 	if( this._options.dataTransforms && this._options.dataTransforms.has( message.topic, message.action ) ) {
 		var metaData = { sender: sender.user, receiver: receiver.user, rpcName: message.data[ 0 ] },
 			data = messageParser.convertTyped( message.data[ 2 ] );
-			
+
 		data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
 		message.data[ 2 ] = messageBuilder.typed( data );
 	}
