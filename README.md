@@ -1,6 +1,4 @@
-[deepstream.io](http://deepstream.io/) 
-[![Build Status](https://travis-ci.org/deepstreamIO/deepstream.io.svg?branch=master)](https://travis-ci.org/deepstreamIO/deepstream.io) [![npm version](https://badge.fury.io/js/deepstream.io.svg)](http://badge.fury.io/js/deepstream.io) 
-[![Coverage Status](https://coveralls.io/repos/github/deepstreamIO/deepstream.io/badge.svg?branch=master)](https://coveralls.io/github/deepstreamIO/deepstream.io?branch=master)
+[deepstream.io](http://deepstream.io/) [![Build Status](https://travis-ci.org/deepstreamIO/deepstream.io.svg?branch=master)](https://travis-ci.org/deepstreamIO/deepstream.io) [![npm version](https://badge.fury.io/js/deepstream.io.svg)](http://badge.fury.io/js/deepstream.io) [![Coverage Status](https://coveralls.io/repos/github/deepstreamIO/deepstream.io/badge.svg?branch=master)](https://coveralls.io/github/deepstreamIO/deepstream.io?branch=master)
 ==============================================
 A scalable server for realtime apps
 ----------------------------------------------
