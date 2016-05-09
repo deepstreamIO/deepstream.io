@@ -1,6 +1,7 @@
 var FUNCTION_REGEXP = /([a-zA-Z0-9_]*)\(/g;
 var NEW_REGEXP = /^new[^a-zA-Z0-9^]|[^a-zA-Z0-9^]new[^a-zA-Z0-9]/;
 var OLD_DATA_REGEXP = /^oldData[^a-zA-Z0-9^]|[^a-zA-Z0-9^]oldData[^a-zA-Z0-9]/;
+var DATA_REGEXP = /^data[^a-zA-Z0-9^]|[^a-zA-Z0-9^]data[^a-zA-Z0-9]/;
 var CROSS_REFERENCE_REGEXP = /^_[^a-zA-Z0-9^]|[^a-zA-Z0-9^]_[^a-zA-Z0-9]/;
 var SUPPORTED_FUNCTIONS = [
 	'_',
@@ -81,7 +82,8 @@ exports.parse = function( rule, variables ) {
 	if( rule === true || rule === false ) {
 		return {
 			fn: function(){ return rule; },
-			hasOldData: false
+			hasOldData: false,
+			hasData: false
 		};
 	}
 	var ruleObj = {};
@@ -90,6 +92,7 @@ exports.parse = function( rule, variables ) {
 
 	ruleObj.fn = Function.apply( this, args );
 	ruleObj.hasOldData = !!rule.match( OLD_DATA_REGEXP );
+	ruleObj.hasData = !!rule.match( DATA_REGEXP );
 
 	return ruleObj;
 };

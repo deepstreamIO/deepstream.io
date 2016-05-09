@@ -40,3 +40,62 @@ describe('validates rule strings from permissions.json', function(){
 		expect( ruleParser.validate(  'user.id.toUpperCase(' ) ).toBe( 'SyntaxError: Unexpected token }' );
 	});
 });
+
+describe( 'compiles rules into usable objects', function(){
+	it( 'compiles boolean false', function(){
+		var compiledRule = ruleParser.parse( false, [] );
+		expect( compiledRule.fn() ).toBe( false );
+		expect( typeof compiledRule.fn ).toBe( 'function' );
+		expect( compiledRule.hasOldData ).toBe( false );
+		expect( compiledRule.hasData ).toBe( false );
+	});
+
+	it( 'compiles boolean true', function(){
+		var compiledRule = ruleParser.parse( true, [] );
+		expect( compiledRule.fn() ).toBe( true );
+		expect( typeof compiledRule.fn ).toBe( 'function' );
+		expect( compiledRule.hasOldData ).toBe( false );
+		expect( compiledRule.hasData ).toBe( false );
+	});
+
+	it( 'creates executable functions', function(){
+		var compiledRule = ruleParser.parse( '"bobo"', [] );
+		expect( ruleParser.parse( '"bobo"', [] ).fn() ).toBe( 'bobo' );
+		expect( ruleParser.parse( '2+2', [] ).fn() ).toBe( 4 );
+	});
+
+	it( 'compiles a simple rule', function(){
+		var compiledRule = ruleParser.parse( 'user.id !== "open"', [] );
+		expect( typeof compiledRule.fn ).toBe( 'function' );
+		expect( compiledRule.hasOldData ).toBe( false );
+		expect( compiledRule.hasData ).toBe( false );
+	});
+
+	it( 'compiles a rule referencing data', function(){
+		var compiledRule = ruleParser.parse( 'user.id !== data.someUser', [] );
+		expect( typeof compiledRule.fn ).toBe( 'function' );
+		expect( compiledRule.hasOldData ).toBe( false );
+		expect( compiledRule.hasData ).toBe( true );
+	});
+
+	it( 'compiles a rule referencing oldData', function(){
+		var compiledRule = ruleParser.parse( 'user.id !== oldData.someUser', [] );
+		expect( typeof compiledRule.fn ).toBe( 'function' );
+		expect( compiledRule.hasOldData ).toBe( true );
+		expect( compiledRule.hasData ).toBe( false );
+	});
+
+	it( 'compiles a rule referencing both data and oldData', function(){
+		var compiledRule = ruleParser.parse( 'user.id !== data.someUser && oldData.price <= data.price', [] );
+		expect( typeof compiledRule.fn ).toBe( 'function' );
+		expect( compiledRule.hasOldData ).toBe( true );
+		expect( compiledRule.hasData ).toBe( true );
+	});
+
+	it( 'compiles a rule referencing both data and oldData as well as other records', function(){
+		var compiledRule = ruleParser.parse( '_( "private/"+ user.id ) !== data.someUser && oldData.price <= data.price', [] );
+		expect( typeof compiledRule.fn ).toBe( 'function' );
+		expect( compiledRule.hasOldData ).toBe( true );
+		expect( compiledRule.hasData ).toBe( true );
+	});
+});

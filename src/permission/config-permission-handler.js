@@ -1,9 +1,29 @@
 var configValidator = require( './config-validator' );
 var configCompiler = require( './config-compiler' );
 var rulesMap = require( './rules-map' );
+var RuleApplication = require( './rule-application' );
 
-var ConfigPermissionHandler = function( config ) {
+var ConfigPermissionHandler = function( options, config ) {
 	this._ruleCache = {};
+	this._options = options;
+	this._config = null;
+
+	if( config ) {
+		this.useConfig( config );
+	}
+};
+
+
+//TODO remove
+ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authData, callback ) {
+	callback( null, 'authenticated-user', { 'some': 'metaData' } );
+};
+
+ConfigPermissionHandler.prototype.loadConfig = function( path ) {
+
+};
+
+ConfigPermissionHandler.prototype.useConfig = function( config ) {
 	var validationResult = configValidator.validate( config );
 	if( validationResult !== true ) {
 		throw new Error( validationResult );
@@ -11,55 +31,38 @@ var ConfigPermissionHandler = function( config ) {
 	this._config = configCompiler.compile( config );
 };
 
-//TODO remove
-ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authData, callback ) {
-	callback( null, 'authenticated-user', { 'some': 'metaData' } );
-};
-
 ConfigPermissionHandler.prototype.canPerformAction = function( username, message, callback, authData ) {
 	var ruleSpecification = rulesMap.getRulesForMessage( message );
+	var name = message.data[ 0 ];
+	var ruleData;
 
 	//Is this a message that needs permissioning at all?
 	if( ruleSpecification === null ) {
 		callback( null, true );
 		return;
 	}
-	var name = message.data[ 0 ];
-	var applicableRules = this._getCompiledRulesForName( name, ruleSpecification );
 
-	if( applicableRules === null ) {
-		//TODO - deny everything by default if no rule is specified?
+	ruleData = this._getCompiledRulesForName( name, ruleSpecification );
+
+	if( ruleData === null ) {
+		//TODO - discuss: deny or allow everything by default if no rule is specified?
 		callback( null, true );
 		return;
 	}
 
-	var result;
-
-	//'_', 'user', 'data', 'oldData', 'now', 'action';
-	var _ = function( recordName ) {
-		console.log( 'cross reference called', recordName );
-	};
-
-	var user = {
-		isAuthenticated: username !== 'open',
-		id: username,
-		data: authData
-	};
-
-	var data = {};
-	var oldData = {};
-	var now = Date.now();
-	var action = ruleSpecification.action;
-	var pathVars = name.match( applicableRules.regexp ).slice( 1 );
-	var args = [ _, user, data, oldData, now, action ].concat( pathVars );
-
-	for( var i = 0; i < applicableRules.rules.length; i++ ) {
-		result = applicableRules.rules[ i ].fn.apply( {}, args );
-	}
-
-	callback( null, result );
+	new RuleApplication({
+		username: username,
+		authData: authData,
+		ruleSpecification:ruleSpecification,
+		message: message,
+		action: ruleSpecification.action,
+		regexp: ruleData.regexp,
+		rule: ruleData.rule,
+		name:name,
+		callback: callback,
+		options: this._options
+	});
 };
-
 
 ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, ruleSpecification ) {
 
@@ -82,7 +85,7 @@ ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, rul
 			pathLength = section[ i ].path.length;
 			result = {
 				regexp: section[ i ].regexp,
-				rules: [ section[ i ].rules[ ruleSpecification.ruleTypes ] ]
+				rule: section[ i ].rules[ ruleSpecification.type ]
 			};
 		}
 	}

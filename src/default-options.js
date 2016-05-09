@@ -1,5 +1,6 @@
 var argv = require( 'minimist' )( process.argv.slice(2) ),
 	utils = require( './utils/utils' ),
+	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	C = require( './constants/constants' );
 
 exports.get = function() {
@@ -11,7 +12,7 @@ exports.get = function() {
 		colors: argv.colors === 'false' ? false : true,
 		showLogo: true,
 		logLevel: C.LOG_LEVEL.INFO,
-	
+
 		/*
 		 * Connectivity
 		 */
@@ -35,16 +36,16 @@ exports.get = function() {
 		 * Data Manipulation
 		 */
 		dataTransforms: null,
-	
+
 		/*
 		 * Default Plugins
 		 */
-		permissionHandler: require( './default-plugins/open-permission-handler' ),
+		permissionHandler: new ConfigPermissionHandler( this ),
 		logger: require( './default-plugins/std-out-logger' ),
 		messageConnector: require( './default-plugins/noop-message-connector' ),
 		cache: require( './default-plugins/local-cache' ),
 		storage: require( './default-plugins/noop-storage' ),
-	
+
 		/*
 		 * Storage options
 		 */
@@ -56,7 +57,7 @@ exports.get = function() {
 		maxAuthAttempts: 3,
 		logInvalidAuthData: true,
 		maxMessageSize: 1048576,
-		
+
 		/*
 		 * Timeouts
 		 */

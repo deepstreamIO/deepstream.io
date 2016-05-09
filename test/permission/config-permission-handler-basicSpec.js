@@ -2,7 +2,10 @@ var ConfigPermissionHandler = require( '../../src/permission/config-permission-h
 var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissions;
 var C = require( '../../src/constants/constants' );
 var testPermission = function( permissions, message, username, userdata ) {
-	var permissionHandler = new ConfigPermissionHandler( permissions );
+	var options = {
+		logger: { log: jasmine.createSpy( 'log' ) }
+	};
+	var permissionHandler = new ConfigPermissionHandler( options, permissions );
 	var permissionResult;
 	username = username || 'someUser';
 	userdata = userdata || {};
@@ -54,5 +57,65 @@ describe( 'permission handler applies basic permissions to incoming messages', f
 		};
 
 		expect( testPermission( permissions, message, 'userA' ) ).toBe( true );
+	});
+});
+
+
+describe( 'permission handler applies basic permissions referencing their own data', function(){
+	it( 'checks incoming data against a value for events', function(){
+		var permissions = getBasePermissions();
+
+		permissions.event[ 'some-event' ] = {
+			'publish': 'data.price < 10'
+		};
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'some-event', 'O{"price":15}' ]
+		}) ).toBe( false );
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'some-event', 'O{"price":5}' ]
+		}) ).toBe( true );
+	});
+
+	it( 'checks incoming data against a value for rpcs', function(){
+		var permissions = getBasePermissions();
+
+		permissions.rpc[ '*' ] = {
+			request: false
+		};
+
+		permissions.rpc[ 'trade/book' ] = {
+			'request': 'user.data.role === "fx-trader" && data.assetClass === "fx"'
+		};
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RPC,
+			action: C.ACTIONS.REQUEST,
+			data: [ 'trade/book', '1234', 'O{"assetClass": "equity"}' ]
+		}, null, { role: 'eq-trader' }) ).toBe( false );
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RPC,
+			action: C.ACTIONS.REQUEST,
+			data: [ 'trade/book', '1234', 'O{"assetClass": "fx"}' ]
+		}, null, { role: 'fx-trader' }) ).toBe( true );
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RPC,
+			action: C.ACTIONS.REQUEST,
+			data: [ 'trade/book', '1234', 'O{"assetClass": "fx"}' ]
+		}, null, { role: 'eq-trader' }) ).toBe( false );
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RPC,
+			action: C.ACTIONS.REQUEST,
+			data: [ 'trade/cancel', '1234', 'O{"assetClass": "fx"}' ]
+		}, null, { role: 'fx-trader' }) ).toBe( false );
+
 	});
 });
