@@ -10,6 +10,7 @@ var messageParser = require( '../message/message-parser' );
 var RuleApplication = function( params ) {
 	this._params = params;
 	this._isLoading = false;
+	this._isDestroyed = false;
 	this._crossReferenceFn = this._crossReference.bind( this );
 	this._pathVars = this._getPathVars();
 	this._user = this._getUser();
@@ -18,8 +19,13 @@ var RuleApplication = function( params ) {
 };
 
 RuleApplication.prototype._run = function() {
+	if( this._isDestroyed === true ) {
+		return;
+	}
+
 	var args = this._getArguments();
 	var result;
+
 	if( this._isLoading === true ) {
 		return;
 	}
@@ -27,11 +33,14 @@ RuleApplication.prototype._run = function() {
 	try{
 		result = this._params.rule.fn.apply( {}, args );
 	}catch( error ) {
-		this._params.callback( error.toString(), false );
-		var errorMsg = 'error when executing function ' + this._params.rule.fn.toString() + ' :' + error.toString();
-		this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PERMISSION_ERROR, errorMsg );
-		this._destroy();
-		return;
+		if( this._isLoading === false ) {
+			console.log( 'EXEC', error.toString() );
+			var errorMsg = 'error when executing function ' + this._params.rule.fn.toString() + ' :' + error.toString();
+			this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PERMISSION_ERROR, errorMsg );
+			this._params.callback( error.toString(), false );
+			this._destroy();
+			return;
+		}
 	}
 
 	if( this._isLoading === false ) {
@@ -137,21 +146,30 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 		return;
 	}
 
-	if( this._recordData[ recordName ] ) {
+	if( typeof this._recordData[ recordName ] !== UNDEFINED ) {
 		this._onLoadComplete( recordName, this._recordData[ recordName ] );
 		return;
 	}
 
 	this._isLoading = true;
-	//TODO actually load the record
+	this._recordData[ recordName ] = LOADING;
+
+	new RecordRequest(
+		recordName,
+		this._params.options,
+		null,
+		this._onLoadComplete.bind( this, recordName ),
+		this._onLoadError.bind( this, recordName )
+	);
 };
 
 RuleApplication.prototype._crossReference = function( recordName ) {
 	if( typeof recordName === UNDEFINED || recordName.indexOf( UNDEFINED ) !== -1 ) {
 		return;
 	}
-	else if( this._recordData[ recordName ] ) {
-		return this._recordData[ recordName ];
+	else if( typeof this._recordData[ recordName ] !== UNDEFINED ) {
+		//TODO: Is an empty object a good choice for cross references to a non existing record
+		return this._recordData[ recordName ] || {};
 	}
 	else {
 		this._loadRecord( recordName );
