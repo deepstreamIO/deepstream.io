@@ -43,6 +43,7 @@ var RecordTransition = function( name, options, recordHandler ) {
 	this._record = null;
 	this._currentStep = null;
 	this._recordRequest = null;
+	this._sendVersionExists = [];
 	this.isDestroyed = false;
 };
 
@@ -64,6 +65,31 @@ RecordTransition.prototype.hasVersion = function( version ) {
 	}
 
 	return version <= maxVersion;
+};
+
+/**
+ * Send version exists error if the record has been already loaded, else
+ * store the version exists error to send to the sockerWrapper once the 
+ * record is loaded
+ *
+ * @param   {SocketWrapper} socketWrapper the sender
+ * @param   {Number} version The version number
+ *
+ * @public
+ */
+RecordTransition.prototype.sendVersionExists = function( socketWrapper, version ) {
+	var i, msg, conflict;
+	
+	if( this._record ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, [ this._name, this._record._v, JSON.stringify( this._record._d ) ] );
+		msg = socketWrapper.user + ' tried to update record ' + this._name + ' to version ' +  version + ' but it already was ' + this._record._v;
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.VERSION_EXISTS, msg );
+	} else {
+		this._sendVersionExists.push( {
+			version: version,
+			socketWrapper: socketWrapper
+		} );
+	}
 };
 
 /**
@@ -168,6 +194,7 @@ RecordTransition.prototype._onRecord = function( record ) {
 		this._onFatalError( 'Received update for non-existant record ' + this._name );
 	} else {
 		this._record = record;
+		this._flushVersionExists();
 		this._next();
 	}
 };
@@ -196,12 +223,7 @@ RecordTransition.prototype._next = function() {
 	this._currentStep = this._steps.shift();
 
 	if( this._record._v !== this._currentStep.version - 1 ) {
-		this._currentStep.sender.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, [ this._name, this._currentStep.version ] );
-
-		var msg = 	this._currentStep.sender.user + ' tried to update record ' + this._name + ' to version ' +
-					this._currentStep.version + ' but it already was ' + this._record._v;
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.VERSION_EXISTS, msg );
-
+		this.sendVersionExists(  this._currentStep.sender, this._currentStep.version );
 		this._next();
 		return;
 	}
@@ -225,6 +247,22 @@ RecordTransition.prototype._next = function() {
 	}
 
 	this._options.cache.set( this._name, this._record, this._onCacheResponse.bind( this ) );
+};
+
+/**
+ * Send all the stored version exists errors once the record has been loaded.
+ *
+ * @private
+ */
+RecordTransition.prototype._flushVersionExists = function() {
+	var i, conflict;
+
+	for( i=0; i < this._sendVersionExists.length; i++ ) {
+		conflict = this._sendVersionExists[ i ];
+		this.sendVersionExists( conflict.socketWrapper, conflict.version );
+	}
+
+	this._sendVersionExists = [];
 };
 
 /**
