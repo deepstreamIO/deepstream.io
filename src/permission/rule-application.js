@@ -1,24 +1,27 @@
 var OPEN = 'open';
 var UNDEFINED = 'undefined';
 var LOADING = 'loading';
+var ERROR = 'error';
 
 var C = require( '../constants/constants' );
 var RecordRequest = require( '../record/record-request' );
 var messageParser = require( '../message/message-parser' );
-
-
+//TODO maximum iteration count
 var RuleApplication = function( params ) {
 	this._params = params;
-	this._isLoading = false;
 	this._isDestroyed = false;
+	this._runScheduled = false;
 	this._crossReferenceFn = this._crossReference.bind( this );
 	this._pathVars = this._getPathVars();
 	this._user = this._getUser();
 	this._recordData = {};
+	this._id = Math.random().toString();
 	this._run();
 };
 
 RuleApplication.prototype._run = function() {
+	this._runScheduled = false;
+
 	if( this._isDestroyed === true ) {
 		return;
 	}
@@ -26,15 +29,10 @@ RuleApplication.prototype._run = function() {
 	var args = this._getArguments();
 	var result;
 
-	if( this._isLoading === true ) {
-		return;
-	}
-
 	try{
 		result = this._params.rule.fn.apply( {}, args );
 	}catch( error ) {
-		if( this._isLoading === false ) {
-			console.log( 'EXEC', error.toString() );
+		if( this._isReady() ) {
 			var errorMsg = 'error when executing function ' + this._params.rule.fn.toString() + ' :' + error.toString();
 			this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PERMISSION_ERROR, errorMsg );
 			this._params.callback( error.toString(), false );
@@ -43,7 +41,7 @@ RuleApplication.prototype._run = function() {
 		}
 	}
 
-	if( this._isLoading === false ) {
+	if( this._isReady() ) {
 		this._params.callback( null, result );
 		this._destroy();
 	}
@@ -51,21 +49,24 @@ RuleApplication.prototype._run = function() {
 
 RuleApplication.prototype._onLoadComplete = function( recordName, data ) {
 	this._recordData[ recordName ] = data;
-	this._isLoading = false;
-	this._run();
+
+	if( this._isReady() ) {
+		this._runScheduled = true;
+		process.nextTick( this._run.bind( this ) );
+	}
 };
 
-RuleApplication.prototype._onLoadError = function( error ) {
+RuleApplication.prototype._onLoadError = function( recordName, error ) {
+	this._recordData[ recordName ] = ERROR;
 	var errorMsg = 'failed to load record ' + this._params.name + ' for permissioning:' + error.toString();
 	this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, errorMsg );
-	this._isLoading = false;
 	this._params.callback( error.toString(), false );
 	this._destroy();
 };
 
 RuleApplication.prototype._destroy = function() {
 	this._isDestroyed = true;
-	this._isLoading = false;
+	this._runScheduled = false;
 	this._params = null;
 	this._crossReferenceFn = null;
 	this._pathVars = null;
@@ -141,7 +142,20 @@ RuleApplication.prototype._getPathVars = function() {
 	return this._params.name.match( this._params.regexp ).slice( 1 );
 };
 
+RuleApplication.prototype._isReady = function() {
+	var isLoading = false;
+
+	for( var key in this._recordData ) {
+		if( this._recordData[ key ] === LOADING ) {
+			isLoading = true;
+		}
+	}
+
+	return isLoading === false && this._runScheduled === false;
+};
+
 RuleApplication.prototype._loadRecord = function( recordName ) {
+	console.log( 'load', recordName );
 	if( this._recordData[ recordName ] === LOADING ) {
 		return;
 	}
@@ -151,7 +165,6 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 		return;
 	}
 
-	this._isLoading = true;
 	this._recordData[ recordName ] = LOADING;
 
 	new RecordRequest(
@@ -168,8 +181,7 @@ RuleApplication.prototype._crossReference = function( recordName ) {
 		return;
 	}
 	else if( typeof this._recordData[ recordName ] !== UNDEFINED ) {
-		//TODO: Is an empty object a good choice for cross references to a non existing record
-		return this._recordData[ recordName ] || {};
+		return this._recordData[ recordName ] || null;
 	}
 	else {
 		this._loadRecord( recordName );

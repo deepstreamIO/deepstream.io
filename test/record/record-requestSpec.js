@@ -110,6 +110,7 @@ describe( 'excluded records are not put into storage', function(){
 		options = {
 			cacheRetrievalTimeout: 10,
 			storageRetrievalTimeout: 10,
+			logger: {log: jasmine.createSpy( 'log' ) },
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			storageExclusion: new RegExp( 'dont-save' )
