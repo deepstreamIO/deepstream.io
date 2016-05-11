@@ -309,7 +309,9 @@ RecordTransition.prototype._onStorageResponse = function( error ) {
  * @returns {void}
  */
 RecordTransition.prototype._onFatalError = function( errorMessage ) {
+
 	if( this.isDestroyed === true ) {
+		/* istanbul ignore next */
 		return;
 	}
 

@@ -4,6 +4,7 @@ var StorageMock = function() {
 	this.nextOperationWillBeSuccessful = true;
 	this.nextOperationWillBeSynchronous = true;
 	this.nextGetWillBeSynchronous = true;
+	this.lastGetCallback = null;
 	this.lastRequestedKey = null;
 	this.lastSetKey = null;
 	this.lastSetValue = null;
@@ -15,7 +16,12 @@ StorageMock.prototype.delete = function( key, callback ) {
 	callback( null );
 };
 
+StorageMock.prototype.triggerLastGetCallback = function( errorMessage, value ) {
+	this.lastGetCallback( errorMessage, value );
+};
+
 StorageMock.prototype.get = function( key, callback ) {
+	this.lastGetCallback = callback;
 	this.lastRequestedKey = key;
 	var value = this.values[ key ];
 

@@ -201,7 +201,8 @@ describe( 'record transitions', function() {
 	describe( 'destroys a transition between steps', function() {
 		var recordTransition,
 			socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			patchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
+			firstPatchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 1, 'firstname', 'SEgon' ] },
+			secondPatchMessage = { topic: 'RECORD', action: 'P', data: [ 'someRecord', 2, 'firstname', 'SEgon' ] },
 			recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
 			options = { cache: new StorageMock(), storage: new StorageMock() };
 
@@ -215,16 +216,16 @@ describe( 'record transitions', function() {
 
 		it( 'adds a patch to the queue', function() {
 			expect( recordTransition._recordRequest ).toBe( null );
-			recordTransition.add( socketWrapper, 1, patchMessage );
+			recordTransition.add( socketWrapper, 1, firstPatchMessage );
 			expect( recordTransition._recordRequest ).toBeDefined();
 			expect( recordTransition._recordRequest.recordName ).toBe( 'someRecord' );
-			recordTransition.isDestroyed = true;
 			recordTransition._recordRequest.onComplete({ _v: 0, _d: {} });
 		} );
 
 		it( 'adds a patch to the queue', function() {
 			expect(function(){
-				recordTransition.add( socketWrapper, 1, patchMessage );
+				recordTransition.add( socketWrapper, 2, secondPatchMessage );
+				expect( recordTransition.hasVersion( 2 ) ).toBe( true );
 			}).not.toThrow();
 		} );
 	} );
@@ -284,10 +285,7 @@ describe( 'record transitions', function() {
 		} );
 
 		it( 'adds a patch to the queue', function() {
-			recordTransition.isDestroyed = true;
 			recordTransition.add( socketWrapper, 1, patchMessage );
-			recordTransition.isDestroyed = false;
-			
 		} );
 
 		it( 'destroys the transition', function( done ){
