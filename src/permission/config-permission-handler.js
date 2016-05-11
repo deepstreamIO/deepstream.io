@@ -2,6 +2,7 @@ var configValidator = require( './config-validator' );
 var configCompiler = require( './config-compiler' );
 var rulesMap = require( './rules-map' );
 var RuleApplication = require( './rule-application' );
+var STRING = 'string';
 
 var ConfigPermissionHandler = function( options, config ) {
 	this._ruleCache = {};
@@ -32,9 +33,15 @@ ConfigPermissionHandler.prototype.useConfig = function( config ) {
 };
 
 ConfigPermissionHandler.prototype.canPerformAction = function( username, message, callback, authData ) {
+	if( typeof message.data[ 0 ] !== STRING ) {
+		callback( 'invalid message', false );
+		return;
+	}
+
 	var ruleSpecification = rulesMap.getRulesForMessage( message );
 	var name = message.data[ 0 ];
 	var ruleData;
+
 
 	//Is this a message that needs permissioning at all?
 	if( ruleSpecification === null ) {
@@ -53,6 +60,7 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 	new RuleApplication({
 		username: username,
 		authData: authData,
+		path: ruleData,
 		ruleSpecification:ruleSpecification,
 		message: message,
 		action: ruleSpecification.action,
@@ -84,6 +92,7 @@ ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, rul
 		if( section[ i ].regexp.test( name ) && section[ i ].path.length >= pathLength ) {
 			pathLength = section[ i ].path.length;
 			result = {
+				path: section[ i ].path,
 				regexp: section[ i ].regexp,
 				rule: section[ i ].rules[ ruleSpecification.type ]
 			};

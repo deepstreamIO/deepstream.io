@@ -2,41 +2,83 @@ var OPEN = 'open';
 var UNDEFINED = 'undefined';
 var LOADING = 'loading';
 var ERROR = 'error';
+var STRING = 'string';
+var EOL = require( 'os' ).EOL;
 
 var C = require( '../constants/constants' );
 var RecordRequest = require( '../record/record-request' );
 var messageParser = require( '../message/message-parser' );
-//TODO maximum iteration count
+
+/**
+ * This class handles the evaluation of a single rule. It creates
+ * the required variables, injects them into the rule function and
+ * runs the function recoursively until either all cross-references,
+ * references to old or new data is loaded, it errors or the maxIterationCount
+ * limit is exceeded
+ *
+ * @constructor
+ *
+ * @param {Object} params requires the following keys
+ *
+ * username: <String>,
+ * authData: <Object>,
+ * path: <Object>,
+ * ruleSpecification: <Object>,
+ * message: <Object>,
+ * action: <String>,
+ * regexp: <RegExp>,
+ * rule: <Object>,
+ * name: <String>,
+ * callback: <Function>,
+ * options: <Object>
+ */
 var RuleApplication = function( params ) {
 	this._params = params;
 	this._isDestroyed = false;
 	this._runScheduled = false;
+	this._maxIterationCount = this._params.options.maxRuleIterations || 3;
 	this._crossReferenceFn = this._crossReference.bind( this );
 	this._pathVars = this._getPathVars();
 	this._user = this._getUser();
 	this._recordData = {};
 	this._id = Math.random().toString();
+	this._iterations = 0;
 	this._run();
 };
 
+/**
+ * Runs the rule function. This method is initially called when this class
+ * is constructed and recoursively from thereon whenever the loading of a record
+ * is completed
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._run = function() {
 	this._runScheduled = false;
+	this._iterations++;
 
 	if( this._isDestroyed === true ) {
+		return;
+	}
+
+	if( this._iterations > this._maxIterationCount ) {
+		this._onRuleError( 'Exceeded max iteration count' );
 		return;
 	}
 
 	var args = this._getArguments();
 	var result;
 
+	if( this._isDestroyed === true ) {
+		return;
+	}
+
 	try{
 		result = this._params.rule.fn.apply( {}, args );
 	}catch( error ) {
 		if( this._isReady() ) {
-			var errorMsg = 'error when executing function ' + this._params.rule.fn.toString() + ' :' + error.toString();
-			this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PERMISSION_ERROR, errorMsg );
-			this._params.callback( error.toString(), false );
-			this._destroy();
+			this._onRuleError( error );
 			return;
 		}
 	}
@@ -47,6 +89,36 @@ RuleApplication.prototype._run = function() {
 	}
 };
 
+/**
+ * Callback if a rule has irrecoverably errored. Rule errors due to unresolved
+ * crossreferences are allowed as long as a loading step is in progress
+ *
+ * @param   {Error|String} error
+ *
+ * @private
+ * @returns {void}
+ */
+RuleApplication.prototype._onRuleError = function( error ) {
+	if( this._isDestroyed === true ) {
+		return;
+	}
+	var errorMsg = 'error when executing ' + this._params.rule.fn.toString() + EOL +
+				   'for ' + this._params.path + ': ' + error.toString();
+	this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PERMISSION_ERROR, errorMsg );
+	this._params.callback( errorMsg, false );
+	this._destroy();
+};
+
+/**
+ * Called either asynchronously when data is successfully retrieved from the
+ * cache or synchronously if its already present
+ *
+ * @param   {String} recordName the name of the loaded record data
+ * @param   {Object} data       the data of the record
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._onLoadComplete = function( recordName, data ) {
 	this._recordData[ recordName ] = data;
 
@@ -56,6 +128,16 @@ RuleApplication.prototype._onLoadComplete = function( recordName, data ) {
 	}
 };
 
+/**
+ * Called whenever a storage or cache retrieval fails. Any kind of error during the
+ * permission process is treated as a denied permission
+ *
+ * @param   {String} recordName
+ * @param   {Error}  error
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._onLoadError = function( recordName, error ) {
 	this._recordData[ recordName ] = ERROR;
 	var errorMsg = 'failed to load record ' + this._params.name + ' for permissioning:' + error.toString();
@@ -64,6 +146,13 @@ RuleApplication.prototype._onLoadError = function( recordName, error ) {
 	this._destroy();
 };
 
+/**
+ * Destroys this class and nulls down values to avoid
+ * memory leaks
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._destroy = function() {
 	this._isDestroyed = true;
 	this._runScheduled = false;
@@ -76,9 +165,20 @@ RuleApplication.prototype._destroy = function() {
 };
 
 /**
- * data is supported for record read & write, event publish and rpc request
+ * If data.someValue is used in the rule, this method retrieves or loads the
+ * current data. This can mean different things, depending on the type of message
  *
- * @returns {[type]}
+ * the data arguments is supported for record read & write,
+ * event publish and rpc request
+ *
+ * for event publish, record update and rpc request, the data is already provided
+ * in the message and doesn't need to be loaded
+ *
+ * for record.patch, only a delta is part of the message. For the full data, the current value
+ * is loaded and the patch applied on top
+ *
+ * @private
+ * @returns {void}
  */
 RuleApplication.prototype._getCurrentData = function() {
 	if( this._params.rule.hasData === false ) {
@@ -86,20 +186,47 @@ RuleApplication.prototype._getCurrentData = function() {
 	}
 
 	var msg = this._params.message;
+	var data;
 
 	if( msg.topic === C.TOPIC.EVENT ) {
-		return messageParser.convertTyped( msg.data[ 1 ] );
+		data = messageParser.convertTyped( msg.data[ 1 ] );
+	}
+	else if( msg.topic === C.TOPIC.RPC ) {
+		data = messageParser.convertTyped( msg.data[ 2 ] );
+	}
+	else if( msg.topic === C.TOPIC.RECORD ) {
+		data = this._getRecordMessageData( msg );
 	}
 
-	if( msg.topic === C.TOPIC.RPC ) {
-		return messageParser.convertTyped( msg.data[ 2 ] );
+	if( data instanceof Error ) {
+		this._onRuleError( 'error when converting message data ' + data.toString() );
+	} else {
+		return data;
 	}
+};
 
-	if( msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE ) {
-		return messageParser.convertTyped( msg.data[ 2 ] );
+/**
+ * Extracts the data from record messages and applies patches to
+ * existing data
+ *
+ * @param   {Object} msg a deepstream message
+ *
+ * @private
+ * @returns {Object} recordData
+ */
+RuleApplication.prototype._getRecordMessageData = function( msg ) {
+	var data;
+
+	if( msg.action === C.ACTIONS.UPDATE ) {
+		try{
+			data = JSON.parse( msg.data[ 2 ] );
+		} catch( error ) {
+			return error;
+		}
+
+		return data;
 	}
-
-	if( msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.PATCH ) {
+	else if( msg.action === C.ACTIONS.PATCH ) {
 		if( this._recordData[ this._params.name ] ) {
 			//TODO copy data and apply patch
 			return {};
@@ -109,8 +236,18 @@ RuleApplication.prototype._getCurrentData = function() {
 	}
 };
 
+/**
+ * Returns or loads the record's previous value. Only supported for record
+ * write and read operations
+ *
+ * If getData encounters an error, the rule application might already be destroyed
+ * at this point
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._getOldData = function() {
-	if( this._params.rule.hasOldData === false ) {
+	if( this._isDestroyed === true || this._params.rule.hasOldData === false ) {
 		return null;
 	} else if( this._recordData[ this._params.name ] ) {
 		return this._recordData[ this._params.name ];
@@ -119,6 +256,15 @@ RuleApplication.prototype._getOldData = function() {
 	}
 };
 
+/**
+ * Compile the list of arguments that will be injected
+ * into the permission function. This method is called
+ * everytime the permission is run. This allows it to merge
+ * patches and update the now timestamp
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._getArguments = function() {
 	return [
 		this._crossReferenceFn,
@@ -126,10 +272,17 @@ RuleApplication.prototype._getArguments = function() {
 		this._getCurrentData(),
 		this._getOldData(),
 		Date.now(),
-		this._params.action
+		this._params ? this._params.action : null
 	].concat( this._pathVars );
 };
 
+/**
+ * Returns the data for the user variable. This is only done once
+ * per rule as the user is not expected to change
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._getUser = function() {
 	return {
 		isAuthenticated: this._params.username !== OPEN,
@@ -138,10 +291,28 @@ RuleApplication.prototype._getUser = function() {
 	};
 };
 
+/**
+ * Applies the compiled regexp for the path and extracts
+ * the variables that will be made available as $variableName
+ * within the rule
+ *
+ * This is only done once per rule as the path is not expected
+ * to change
+ *
+ * @private
+ * @returns {Array} pathVars
+ */
 RuleApplication.prototype._getPathVars = function() {
 	return this._params.name.match( this._params.regexp ).slice( 1 );
 };
 
+/**
+ * Returns true if all loading operations that are in progress have finished
+ * and no run has been scheduled yet
+ *
+ * @private
+ * @returns {Boolean}
+ */
 RuleApplication.prototype._isReady = function() {
 	var isLoading = false;
 
@@ -154,8 +325,18 @@ RuleApplication.prototype._isReady = function() {
 	return isLoading === false && this._runScheduled === false;
 };
 
+/**
+ * Loads a record with a given name. This will either result in
+ * a onLoadComplete or onLoadError call. This method should only
+ * be called if the record is not already being loaded or present,
+ * but I'll leave the additional safeguards in until absolutely sure.
+ *
+ * @param   {String} recordName
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._loadRecord = function( recordName ) {
-	console.log( 'load', recordName );
 	if( this._recordData[ recordName ] === LOADING ) {
 		return;
 	}
@@ -176,8 +357,27 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 	);
 };
 
+/**
+ * This method is passed to the rule function as _ to allow crossReferencing
+ * of other records. Cross-references can be nested, leading to this method
+ * being recoursively called until the either all cross references are loaded
+ * or the rule has finally failed
+ *
+ * @param   {String} recordName
+ *
+ * @private
+ * @returns {void}
+ */
 RuleApplication.prototype._crossReference = function( recordName ) {
-	if( typeof recordName === UNDEFINED || recordName.indexOf( UNDEFINED ) !== -1 ) {
+	var type = typeof recordName;
+
+	if( type !== UNDEFINED && type !== STRING ) {
+		this._onRuleError( 'crossreference got unsupported type ' + type );
+	}
+	else if( type === UNDEFINED || recordName.indexOf( UNDEFINED ) !== -1 ) {
+		return;
+	}
+	else if( this._recordData[ recordName ] === LOADING ) {
 		return;
 	}
 	else if( typeof this._recordData[ recordName ] !== UNDEFINED ) {

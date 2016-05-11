@@ -1,15 +1,16 @@
 var ConfigPermissionHandler = require( '../../src/permission/config-permission-handler' );
 var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissions;
 var C = require( '../../src/constants/constants' );
-var testPermission = function( permissions, message, username, userdata ) {
-	var options = {
-		logger: { log: jasmine.createSpy( 'log' ) }
-	};
+var options = {
+	logger: { log: jasmine.createSpy( 'log' ) }
+};
+var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );
 	var permissionResult;
+
 	username = username || 'someUser';
 	userdata = userdata || {};
-	callback = function( error, result ) {
+	callback = callback || function( error, result ) {
 		permissionResult = result;
 	};
 	permissionHandler.canPerformAction( username, message, callback, userdata );
@@ -116,6 +117,113 @@ describe( 'permission handler applies basic permissions referencing their own da
 			action: C.ACTIONS.REQUEST,
 			data: [ 'trade/cancel', '1234', 'O{"assetClass": "fx"}' ]
 		}, null, { role: 'fx-trader' }) ).toBe( false );
+	});
 
+	it( 'checks incoming data against a value for record updates', function(){
+		var permissions = getBasePermissions();
+
+		permissions.record[ 'cars/mercedes' ] = {
+			'write': 'data.manufacturer === "mercedes-benz"'
+		};
+
+		permissions.record[ 'cars/porsche/$model' ] = {
+			'write': 'data.price > 50000 && data.model === $model'
+		};
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.UPDATE,
+			data: [ 'cars/mercedes', 1, '{"manufacturer":"mercedes-benz"}' ]
+		}) ).toBe( true );
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.UPDATE,
+			data: [ 'cars/mercedes', 1, '{"manufacturer":"BMW"}' ]
+		}) ).toBe( false );
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.UPDATE,
+			data: [ 'cars/porsche/911', 1, '{"model": "911", "price": 60000 }' ]
+		}) ).toBe( true );
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.UPDATE,
+			data: [ 'cars/porsche/911', 1, '{"model": "911", "price": 40000 }' ]
+		}) ).toBe( false );
+
+		expect( testPermission( permissions, {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.UPDATE,
+			data: [ 'cars/porsche/911', 1, '{"model": "Boxter", "price": 70000 }' ]
+		}) ).toBe( false );
+	});
+
+	it( 'deals with broken messages', function( next ){
+		var permissions = getBasePermissions();
+
+		permissions.record[ 'cars/mercedes' ] = {
+			'write': 'data.manufacturer === "mercedes-benz"'
+		};
+
+		var message = {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.UPDATE,
+			data: [ 'cars/mercedes', 1, '{"manufacturer":"mercedes-benz"' ]
+		};
+
+		var callback = function( error, result ) {
+			expect( error ).toContain( 'error when converting message data' );
+			expect( result ).toBe( false );
+			next();
+		};
+
+		testPermission( permissions, message, 'user', null, callback );
+	});
+
+	it( 'deals with messages without data', function( next ){
+		var permissions = getBasePermissions();
+
+		permissions.event[ 'some-event' ] = {
+			'publish': 'data.manufacturer === "mercedes-benz"'
+		};
+
+		var message = {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [  ]
+		};
+
+		var callback = function( error, result ) {
+			expect( error ).toContain( 'invalid message' );
+			expect( result ).toBe( false );
+			next();
+		};
+
+		testPermission( permissions, message, 'user', null, callback );
+	});
+
+	it( 'deals with messages with invalid types', function( next ){
+		var permissions = getBasePermissions();
+
+		permissions.event[ 'some-event' ] = {
+			'publish': 'data.manufacturer === "mercedes-benz"'
+		};
+
+		var message = {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'some-event', 'xxx' ]
+		};
+
+		var callback = function( error, result ) {
+			expect( error ).toContain( 'error when converting message data' );
+			expect( result ).toBe( false );
+			next();
+		};
+
+		testPermission( permissions, message, 'user', null, callback );
 	});
 });

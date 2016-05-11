@@ -2,11 +2,12 @@ var ConfigPermissionHandler = require( '../../src/permission/config-permission-h
 var StorageMock = require( '../mocks/storage-mock' );
 var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissions;
 var C = require( '../../src/constants/constants' );
+var noop = function(){};
 var options = {
 	logger: { log: jasmine.createSpy( 'log' ) },
 	cache: new StorageMock(),
 	storage: new StorageMock(),
-	cacheRetrievalTimeout: 100
+	cacheRetrievalTimeout: 500
 };
 
 
@@ -56,8 +57,8 @@ describe( 'permission handler loads data for cross referencing', function(){
 	it( 'retrieves two records from the cache for crossreferencing purposes', function( next ){
 		var permissions = getBasePermissions();
 
-		options.cache.set( 'item/itemA', { isInStock: true }, next );
-		options.cache.set( 'item/itemB', { isInStock: false }, next );
+		options.cache.set( 'item/itemA', { isInStock: true }, noop );
+		options.cache.set( 'item/itemB', { isInStock: false }, noop );
 
 		options.cache.nextGetWillBeSynchronous = false;
 		permissions.record[ 'purchase/$itemId' ] = {
@@ -117,7 +118,7 @@ describe( 'permission handler loads data for cross referencing', function(){
 		};
 
 		var onDone = function( error, result ) {
-			expect( error ).toBe( 'TypeError: Cannot read property \'isInStock\' of null' );
+			expect( error ).toContain( 'TypeError: Cannot read property \'isInStock\' of null' );
 			expect( result ).toBe( false );
 			next();
 		};
@@ -129,8 +130,8 @@ describe( 'permission handler loads data for cross referencing', function(){
 
 		var permissions = getBasePermissions();
 		options.cache.reset();
-		options.cache.set( 'userA', { firstname: 'Egon' }, next );
-		options.cache.set( 'userB', { firstname: 'Mike' }, next );
+		options.cache.set( 'userA', { firstname: 'Egon' }, noop );
+		options.cache.set( 'userB', { firstname: 'Mike' }, noop );
 		options.cache.nextGetWillBeSynchronous = false;
 		permissions.record.userA = {
 			'read': 'oldData.firstname === "Egon" && _("userB").firstname === "Mike"'
@@ -154,36 +155,74 @@ describe( 'permission handler loads data for cross referencing', function(){
 		testPermission( permissions, message, null, null, onDone );
 	});
 
-	//TODO: Breaks everything
-	xit( 'retrieves data for a nested cross references', function( next ){
+	it( 'retrieves keys from variables', function( next ){
 		var permissions = getBasePermissions();
-		options.cache.reset();
-		options.cache.set( 'thing/x', { ref: 'y' }, next );
-		options.cache.set( 'thing/y', { is: 'it' }, next );
 
-		options.cache.nextGetWillBeSynchronous = false;
-		permissions.record[ 'test-record' ] = {
-			'read': '_( "thing/y" ).is === "it"'
-			//'read': '_( "thing/" + _( "thing/x" ) ).is === "it"'
+		options.cache.set( 'userX', { firstname: 'Joe' }, noop );
+
+		permissions.event[ 'some-event' ] = {
+			'publish': '_(data.owner).firstname === "Joe"'
 		};
 
 		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.READ,
-			data: [ 'test-record' ]
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'some-event', 'O{"owner":"userX"}' ]
 		};
 
-		var onDone = function( error, result ) {
+		var callback = function( error, result ) {
 			expect( error ).toBe( null );
 			expect( result ).toBe( true );
-			expect( options.cache.getCalls.length ).toBe( 2 );
-			expect( options.cache.hadGetFor( 'thing/x' ) ).toBe( true );
-			expect( options.cache.hadGetFor( 'thing/y' ) ).toBe( true );
-			expect( options.cache.hadGetFor( 'thing/z' ) ).toBe( false );
 			next();
 		};
 
-		//testPermission( permissions, message, null, null, onDone );
-		next();
+		testPermission( permissions, message, 'username', null, callback );
+	});
+
+	it( 'retrieves keys from variables again', function( next ){
+		var permissions = getBasePermissions();
+
+		options.cache.set( 'userX', { firstname: 'Mike' }, noop );
+
+		permissions.event[ 'some-event' ] = {
+			'publish': '_(data.owner).firstname === "Joe"'
+		};
+
+		var message = {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'some-event', 'O{"owner":"userX"}' ]
+		};
+
+		var callback = function( error, result ) {
+			expect( error ).toBe( null );
+			expect( result ).toBe( false );
+			next();
+		};
+
+		testPermission( permissions, message, 'username', null, callback );
+	});
+
+	it( 'handles load errors', function( next ){
+		var permissions = getBasePermissions();
+
+		permissions.event[ 'some-event' ] = {
+			'publish': '_("bla") < 10'
+		};
+		options.cache.nextOperationWillBeSuccessful = false;
+
+		var message = {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'some-event', 'O{"price":15}' ]
+		};
+
+		var callback = function( error, result ) {
+			expect( error ).toContain( 'RECORD_LOAD_ERROR' );
+			expect( result ).toBe( false );
+			next();
+		};
+
+		testPermission( permissions, message, 'username', null, callback );
 	});
 });
