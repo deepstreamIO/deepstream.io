@@ -2,7 +2,8 @@ var ConfigPermissionHandler = require( '../../src/permission/config-permission-h
 var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissions;
 var C = require( '../../src/constants/constants' );
 var options = {
-	logger: { log: jasmine.createSpy( 'log' ) }
+	logger: { log: jasmine.createSpy( 'log' ) },
+	permissionCacheEvacuationInterval: 60000
 };
 var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );
@@ -39,6 +40,42 @@ describe( 'permission handler applies basic permissions to incoming messages', f
 			topic: C.TOPIC.RECORD,
 			action: C.ACTIONS.READ,
 			data: [ 'private/userA' ]
+		};
+
+		expect( testPermission( permissions, message, 'userB' ) ).toBe( false );
+	});
+
+	it( 'allows actions that dont need permissions for a private record', function(){
+		var permissions = getBasePermissions();
+
+		permissions.record[ 'private/$userId' ] = {
+			'read': 'user.id === $userId'
+		};
+
+		var message = {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.UNSUBSCRIBE,
+			data: [ 'private/userA' ]
+		};
+
+		expect( testPermission( permissions, message, 'userB' ) ).toBe( true );
+	});
+
+	it( 'denies actions that need permissions, but dont have them', function(){
+		var permissions = getBasePermissions();
+
+		delete permissions.event[ '*' ];
+
+		permissions.event.bla = {
+			subscribe: true,
+			publish: true
+		};
+
+
+		var message = {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'blub', 'some-data' ]
 		};
 
 		expect( testPermission( permissions, message, 'userB' ) ).toBe( false );
@@ -225,5 +262,46 @@ describe( 'permission handler applies basic permissions referencing their own da
 		};
 
 		testPermission( permissions, message, 'user', null, callback );
+	});
+});
+
+describe( 'loads permissions repeatedly', function(){
+	var permissionHandler;
+
+	it( 'creates the permissionHandler', function(){
+		permissionHandler = new ConfigPermissionHandler( options, getBasePermissions() );
+		expect( permissionHandler.isReady ).toBe( true );
+	});
+
+	it( 'requests permissions initally, causing a lookup', function( next ){
+		var message = {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'some-event', 'some-data' ]
+		};
+
+		var callback = function( error, result ) {
+			expect( error ).toBe( null );
+			expect( result ).toBe( true );
+			next();
+		};
+
+		permissionHandler.canPerformAction( 'some-user', message, callback );
+	});
+
+		it( 'requests permissions a second time, causing a cache retriaval', function( next ){
+		var message = {
+			topic: C.TOPIC.EVENT,
+			action: C.ACTIONS.EVENT,
+			data: [ 'some-event', 'some-data' ]
+		};
+
+		var callback = function( error, result ) {
+			expect( error ).toBe( null );
+			expect( result ).toBe( true );
+			next();
+		};
+
+		permissionHandler.canPerformAction( 'some-user', message, callback );
 	});
 });

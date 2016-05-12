@@ -2,36 +2,124 @@ var configValidator = require( './config-validator' );
 var configCompiler = require( './config-compiler' );
 var rulesMap = require( './rules-map' );
 var RuleApplication = require( './rule-application' );
+var RuleCache = require( './rule-cache' );
+var events = require( 'events' );
+var utils = require( 'util' );
+var fs = require( 'fs' );
 var STRING = 'string';
 
+/**
+ * A permission handler that reads a rules config JSON, validates
+ * its contents, compiles it and executes the permissions that it contains
+ * against every incoming message.
+ *
+ * This is the standard permission handler that deepstream exposes, in conjunction
+ * with the default permission.json it allows everything, but at the same time provides
+ * a convenient starting point for permission declarations.
+ *
+ * @author deepstreamHub GmbH
+ * @license [https://github.com/deepstreamIO/deepstream.io/blob/master/LICENSE] MIT
+ *
+ * @constructor
+ * @extends {EventEmitter}
+ *
+ * @param {Object} options deepstream options
+ * @param {[Object]} config  Optional config. If no config is provided, the ConfigPermissionHandler will attempt
+ *                           to load it from the path provided in options.permissionConfigPath.
+ */
 var ConfigPermissionHandler = function( options, config ) {
-	this._ruleCache = {};
+	this._ruleCache = new RuleCache( options );
 	this._options = options;
 	this._config = null;
+	this.isReady = false;
 
 	if( config ) {
 		this.useConfig( config );
+	} else {
+		this.loadConfig( this._options.permissionConfigPath );
 	}
 };
 
+utils.inherits( ConfigPermissionHandler, events.EventEmitter );
 
-//TODO remove
+/**
+ * Temporary, will only be here until #146 (https://github.com/deepstreamIO/deepstream.io/issues/146)
+ * is resolved
+ *
+ * @param   {[type]}   connectionData [description]
+ * @param   {[type]}   authData       [description]
+ * @param   {Function} callback       [description]
+ *
+ * @returns {Boolean}
+ */
+/* istanbul ignore next */
 ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authData, callback ) {
-	callback( null, 'authenticated-user', { 'some': 'metaData' } );
+	callback( null, authData.username || 'open' );
 };
 
+/**
+ * Load a configuration file. This will either load a configuration file for the first time at
+ * startup or reload the configuration at runtime
+ *
+ * @todo expose this method via the command line interface
+ *
+ * @param   {String} path the filepath of the permission.json file
+ *
+ * @public
+ * @cli loadConfig
+ * @returns {void}
+ */
 ConfigPermissionHandler.prototype.loadConfig = function( path ) {
-
+	fs.readFile( path, 'utf8', this._onConfigLoaded.bind( this, path ) );
 };
 
+/**
+ * Validates and compiles a loaded config. This can be called as the result
+ * of a config being passed to the permissionHandler upon initialisation,
+ * as a result of loadConfig or at runtime
+ *
+ * @todo expose this method via the command line interface
+ *
+ * @param   {Object} config deepstream permissionConfig
+ *
+ * @public
+ * @cli useConfig
+ * @returns {void}
+ */
 ConfigPermissionHandler.prototype.useConfig = function( config ) {
 	var validationResult = configValidator.validate( config );
+
 	if( validationResult !== true ) {
-		throw new Error( validationResult );
+		this.emit( 'error', 'invalid permission config - ' + validationResult );
+		return;
 	}
+
 	this._config = configCompiler.compile( config );
+	this._ruleCache.reset();
+	this._ready();
 };
 
+/**
+ * Implements the permissionHandler's canPerformAction interface
+ * method
+ *
+ * This is the main entry point for permissionOperations and will
+ * be called for every incoming message. This method executes four steps
+ *
+ * - Check if the incoming message conforms to basic specs
+ * - Check if the incoming message requires permissions
+ * - Load the applicable permissions
+ * - Apply them
+ *
+ * @param   {String}   username the name of the connected user, as specified in isValidUser
+ * @param   {Object}   message  a parsed deepstream message
+ * @param   {Function} callback the callback to provide the result
+ * @param   {[Object]}   authData additional optional authData as passed to isValidUser
+ *
+ * @public
+ * @interface
+ * @returns {void}
+ */
 ConfigPermissionHandler.prototype.canPerformAction = function( username, message, callback, authData ) {
 	if( typeof message.data[ 0 ] !== STRING ) {
 		callback( 'invalid message', false );
@@ -42,8 +130,6 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 	var name = message.data[ 0 ];
 	var ruleData;
 
-
-	//Is this a message that needs permissioning at all?
 	if( ruleSpecification === null ) {
 		callback( null, true );
 		return;
@@ -52,8 +138,7 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 	ruleData = this._getCompiledRulesForName( name, ruleSpecification );
 
 	if( ruleData === null ) {
-		//TODO - discuss: deny or allow everything by default if no rule is specified?
-		callback( null, true );
+		callback( null, false );
 		return;
 	}
 
@@ -72,23 +157,29 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 	});
 };
 
+/**
+ * Evaluates the rules within a section and returns the matching rule for a path.
+ * Takes basic specificity (as deduced from the path length) into account and
+ * caches frequently used rules for faster access
+ *
+ * @param   {String} name              the name of the record, event or rpc the rule applies to
+ * @param   {Object} ruleSpecification a ruleSpecification as provided by the rules-map
+ *
+ * @private
+ * @returns {Object} compiled rules
+ */
 ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, ruleSpecification ) {
 
-	if( this._ruleCache[ name ] ) {
-		return this._ruleCache[ name ];
+	if( this._ruleCache.has( ruleSpecification.section, name ) ) {
+		return this._ruleCache.get( ruleSpecification.section, name );
 	}
 
-	/*
-	 * TODO: Take specificity into account
-	 * TODO: Return one rule per ruletype
-	 * TODO: Only return rule for read / write / validate etc.
-	 * TODO: Cache rules and keep usage count.
-	 */
 	var section = this._config[ ruleSpecification.section ];
-	var i;
+	var i = 0;
 	var pathLength = 0;
-	var result;
-	for( i = 0; i < section.length; i++ ) {
+	var result = null;
+
+	for( i; i < section.length; i++ ) {
 		if( section[ i ].regexp.test( name ) && section[ i ].path.length >= pathLength ) {
 			pathLength = section[ i ].path.length;
 			result = {
@@ -99,7 +190,54 @@ ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, rul
 		}
 	}
 
-	return result || null;
+	if( result ) {
+		this._ruleCache.set( ruleSpecification.section, name, result );
+	}
+
+	return result;
+};
+
+/**
+ * Callback for loadConfig. Parses the incoming configuration string and forwards
+ * it to useConfig if no errors occured
+ *
+ * @param   {Error} loadError a FileSystem Error that occured during the loading of the file
+ * @param   {String} data     the content of the permission.json file as utf-8 encoded string
+ *
+ * @private
+ * @returns {void}
+ */
+ConfigPermissionHandler.prototype._onConfigLoaded = function( path, loadError, data ) {
+	if( loadError ) {
+		this.emit( 'error', 'error while loading config: ' + loadError.toString() );
+		return;
+	}
+
+	var config;
+
+	try{
+		config = JSON.parse( data );
+	} catch( parseError ) {
+		this.emit( 'error', 'error while parsing config: ' + parseError.toString() );
+		return;
+	}
+
+	this.emit( 'config-loaded', path );
+	this.useConfig( config );
+};
+
+/**
+ * Sets this permissionHandler to ready. Occurs once the config has been successfully loaded,
+ * parsed and compiled
+ *
+ * @private
+ * @returns {void}
+ */
+ConfigPermissionHandler.prototype._ready = function() {
+	if( this.isReady === false ) {
+		this.isReady = true;
+		this.emit( 'ready' );
+	}
 };
 
 module.exports = ConfigPermissionHandler;

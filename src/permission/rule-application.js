@@ -8,6 +8,8 @@ var EOL = require( 'os' ).EOL;
 var C = require( '../constants/constants' );
 var RecordRequest = require( '../record/record-request' );
 var messageParser = require( '../message/message-parser' );
+var JsonPath = require( '../record/json-path' );
+var utils = require( '../utils/utils' );
 
 /**
  * This class handles the evaluation of a single rule. It creates
@@ -36,7 +38,7 @@ var RuleApplication = function( params ) {
 	this._params = params;
 	this._isDestroyed = false;
 	this._runScheduled = false;
-	this._maxIterationCount = this._params.options.maxRuleIterations || 3;
+	this._maxIterationCount = this._params.options.maxPermissionRuleIterations;
 	this._crossReferenceFn = this._crossReference.bind( this );
 	this._pathVars = this._getPathVars();
 	this._user = this._getUser();
@@ -57,7 +59,7 @@ var RuleApplication = function( params ) {
 RuleApplication.prototype._run = function() {
 	this._runScheduled = false;
 	this._iterations++;
-
+	/* istanbul ignore next */
 	if( this._isDestroyed === true ) {
 		return;
 	}
@@ -194,8 +196,11 @@ RuleApplication.prototype._getCurrentData = function() {
 	else if( msg.topic === C.TOPIC.RPC ) {
 		data = messageParser.convertTyped( msg.data[ 2 ] );
 	}
-	else if( msg.topic === C.TOPIC.RECORD ) {
-		data = this._getRecordMessageData( msg );
+	else if( msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE ) {
+		data = this._getRecordUpdateData( msg );
+	}
+	else if( msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.PATCH ) {
+		data = this._getRecordPatchData( msg );
 	}
 
 	if( data instanceof Error ) {
@@ -206,33 +211,55 @@ RuleApplication.prototype._getCurrentData = function() {
 };
 
 /**
- * Extracts the data from record messages and applies patches to
- * existing data
+ * Extracts the data from record update messages
  *
  * @param   {Object} msg a deepstream message
  *
  * @private
  * @returns {Object} recordData
  */
-RuleApplication.prototype._getRecordMessageData = function( msg ) {
+RuleApplication.prototype._getRecordUpdateData = function( msg ) {
 	var data;
 
-	if( msg.action === C.ACTIONS.UPDATE ) {
-		try{
-			data = JSON.parse( msg.data[ 2 ] );
-		} catch( error ) {
-			return error;
-		}
-
-		return data;
+	try{
+		data = JSON.parse( msg.data[ 2 ] );
+	} catch( error ) {
+		return error;
 	}
-	else if( msg.action === C.ACTIONS.PATCH ) {
-		if( this._recordData[ this._params.name ] ) {
-			//TODO copy data and apply patch
-			return {};
-		} else {
-			this._loadRecord( this._params.name );
-		}
+
+	return data;
+};
+
+/**
+ * Loads the records current data and applies the patch data onto it
+ * to avoid users having to distuinguish between patches and updates
+ *
+ * @param   {Object} msg a deepstream message
+ *
+ * @private
+ * @returns {Object} recordData
+ */
+RuleApplication.prototype._getRecordPatchData = function( msg ) {
+	if( msg.data.length !== 4 || typeof msg.data[ 2 ] !== STRING ) {
+		return new Error( 'Invalid message data' );
+	}
+
+	var currentData = this._recordData[ this._params.name ];
+	var newData = messageParser.convertTyped( msg.data[ 3 ] );
+	var jsonPath;
+	var data;
+
+	if( newData instanceof Error ) {
+		return newData;
+	}
+
+	if( typeof currentData !== UNDEFINED && currentData !== LOADING ) {
+		jsonPath = new JsonPath( msg.data[ 2 ] );
+		data = JSON.parse( JSON.stringify( currentData ) );
+		jsonPath.setValue( data, newData );
+		return data;
+	} else {
+		this._loadRecord( this._params.name );
 	}
 };
 
@@ -337,10 +364,11 @@ RuleApplication.prototype._isReady = function() {
  * @returns {void}
  */
 RuleApplication.prototype._loadRecord = function( recordName ) {
+	/* istanbul ignore next */
 	if( this._recordData[ recordName ] === LOADING ) {
 		return;
 	}
-
+	/* istanbul ignore next */
 	if( typeof this._recordData[ recordName ] !== UNDEFINED ) {
 		this._onLoadComplete( recordName, this._recordData[ recordName ] );
 		return;

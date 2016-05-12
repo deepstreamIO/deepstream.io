@@ -7,7 +7,8 @@ var options = {
 	logger: { log: jasmine.createSpy( 'log' ) },
 	cache: new StorageMock(),
 	storage: new StorageMock(),
-	cacheRetrievalTimeout: 500
+	cacheRetrievalTimeout: 500,
+	permissionCacheEvacuationInterval: 60000
 };
 
 

@@ -44,7 +44,8 @@ var Deepstream = function() {
 		'messageConnector',
 		'storage',
 		'cache',
-		'logger'
+		'logger',
+		'permissionHandler' //TODO: This now requires the permissionHandler to have a ready flag / emit events
 	];
 };
 

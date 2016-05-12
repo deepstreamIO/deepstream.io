@@ -1,23 +1,41 @@
 var pathParser = require( './path-parser' );
 var ruleParser = require( './rule-parser' );
 var validationSteps = {};
-var TOP_LEVEL_KEYS = [ 'record', 'event', 'rpc' ];
-var SCHEMA = {
-	record: {
-		write: true,
-		read: true,
-		validate: true,
-	},
-	event: {
-		publish: true,
-		subscribe: true
-	},
-	rpc: {
-		provide: true,
-		request: true
+var SCHEMA = require( './config-schema' );
+
+/**
+ * Validates a configuration object. This method runs through multiple
+ * individual validation steps. If any of them returns false,
+ * the validation fails
+ *
+ * @param   {Object} config parsed permission config
+ *
+ * @public
+ * @returns {Boolean|String} validationResult Only true is treated as pass.
+ */
+exports.validate = function( config ) {
+	var validationStepResult;
+	var key;
+
+	for( key in validationSteps ) {
+		validationStepResult = validationSteps[ key ]( config );
+
+		if( validationStepResult !== true ) {
+			return validationStepResult;
+		}
 	}
+
+	return true;
 };
 
+/**
+ * Checks if the configuration is an object
+ *
+ * @param   {Object} config parsed permission config
+ *
+ * @private
+ * @returns {Boolean}
+ */
 validationSteps.isValidType = function( config ) {
 	if( typeof config === 'object' ) {
 		return true;
@@ -26,7 +44,14 @@ validationSteps.isValidType = function( config ) {
 	}
 };
 
-
+/**
+ * Makes sure all sections (record, event, rpc) are present
+ *
+ * @param   {Object} config parsed permission config
+ *
+ * @private
+ * @returns {Boolean}
+ */
 validationSteps.hasRequiredTopLevelKeys = function( config ) {
 	for( var key in SCHEMA ) {
 		if( typeof config[ key ] !== 'object' ) {
@@ -37,6 +62,14 @@ validationSteps.hasRequiredTopLevelKeys = function( config ) {
 	return true;
 };
 
+/**
+ * Makes sure no unsupported sections were added
+ *
+ * @param   {Object} config parsed permission config
+ *
+ * @private
+ * @returns {Boolean}
+ */
 validationSteps.doesNotHaveAdditionalTopLevelKeys = function( config ) {
 	for( var key in config ) {
 		if( typeof SCHEMA[ key ] === 'undefined' ) {
@@ -47,6 +80,14 @@ validationSteps.doesNotHaveAdditionalTopLevelKeys = function( config ) {
 	return true;
 };
 
+/**
+ * Checks if the configuration contains valid path definitions
+ *
+ * @param   {Object} config parsed permission config
+ *
+ * @private
+ * @returns {Boolean}
+ */
 validationSteps.doesOnlyContainValidPaths = function( config ) {
 	var key, path, result;
 
@@ -69,6 +110,14 @@ validationSteps.doesOnlyContainValidPaths = function( config ) {
 	return true;
 };
 
+/**
+ * Runs the rule validator against every rule in each section
+ *
+ * @param   {Object} config parsed permission config
+ *
+ * @private
+ * @returns {Boolean}
+ */
 validationSteps.hasValidRules = function( config ) {
 	var key, path, ruleType, section, validationResult;
 
@@ -84,21 +133,6 @@ validationSteps.hasValidRules = function( config ) {
 					return validationResult;
 				}
 			}
-		}
-	}
-
-	return true;
-};
-
-exports.validate = function( config ) {
-	var validationStepResult;
-	var key;
-
-	for( key in validationSteps ) {
-		validationStepResult = validationSteps[ key ]( config );
-
-		if( validationStepResult !== true ) {
-			return validationStepResult;
 		}
 	}
 

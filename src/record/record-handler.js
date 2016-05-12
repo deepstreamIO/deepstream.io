@@ -243,10 +243,10 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
  * @returns {void}
  */
 RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
-	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper, () => {
+	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper, function() {
 		this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 		this._sendRecord( recordName, record, socketWrapper );
-	});
+	}.bind( this ));
 };
 
 /**
@@ -451,8 +451,8 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 };
 
 /**
- * A secondary permissioning step that is performed once we know if the record exists == should be read
- * or if it should be created
+ * A secondary permissioning step that is performed once we know if the record exists (READ)
+ * or if it should be created (CREATE)
  *
  * @param   {String} action          One of C.ACTIONS, either C.ACTIONS.READ or C.ACTIONS.CREATE
  * @param   {String} recordName      The name of the record

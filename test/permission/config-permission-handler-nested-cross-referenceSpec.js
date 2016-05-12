@@ -7,7 +7,9 @@ var options = {
 	logger: { log: jasmine.createSpy( 'log' ) },
 	cache: new StorageMock(),
 	storage: new StorageMock(),
-	cacheRetrievalTimeout: 500
+	cacheRetrievalTimeout: 500,
+	maxPermissionRuleIterations: 3,
+	permissionCacheEvacuationInterval: 60000
 };
 
 var testPermission = function( permissions, message, username, userdata, callback ) {

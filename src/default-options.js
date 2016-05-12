@@ -4,7 +4,7 @@ var argv = require( 'minimist' )( process.argv.slice(2) ),
 	C = require( './constants/constants' );
 
 exports.get = function() {
-	return {
+	var options = {
 		/*
 		 * General
 		 */
@@ -40,7 +40,6 @@ exports.get = function() {
 		/*
 		 * Default Plugins
 		 */
-		permissionHandler: new ConfigPermissionHandler( this ),
 		logger: require( './default-plugins/std-out-logger' ),
 		messageConnector: require( './default-plugins/noop-message-connector' ),
 		cache: require( './default-plugins/local-cache' ),
@@ -59,6 +58,13 @@ exports.get = function() {
 		maxMessageSize: 1048576,
 
 		/*
+		 * Permissioning
+		 */
+		permissionConfigPath: './permissions.json',
+		maxPermissionRuleIterations: 3,
+		permissionCacheEvacuationInterval: 60000,
+
+		/*
 		 * Timeouts
 		 */
 		rpcProviderQueryTimeout: 1000,
@@ -69,4 +75,8 @@ exports.get = function() {
 		storageRetrievalTimeout: 2000,
 		dependencyInitialisationTimeout: 2000
 	};
+
+	//TODO: Change as soon as we move to config reader
+	options.permissionHandler = new ConfigPermissionHandler( options );
+	return options;
 };
