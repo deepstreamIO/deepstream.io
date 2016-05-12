@@ -29,7 +29,8 @@ options = {
 	maxAuthAttempts: 3,
 	logInvalidAuthData: true,
 	tcpServerEnabled: true,
-	webServerEnabled: true
+	webServerEnabled: true,
+	tcpPort: 3333
 };
 
 describe( 'permissionHandler passes additional user meta data', function() {
