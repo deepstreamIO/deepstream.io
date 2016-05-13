@@ -190,11 +190,7 @@ ConnectionEndpoint.prototype._checkClosed = function() {
 		return;
 	}
 
-	if( this._engineIo && this._engineIoServerClosed === false ) {
-		return;
-	}
-
-	if( this._engineIo && this._engineIo.clientCount > 0 ) {
+	if( this._engineIo && ( this._engineIo.clientsCount > 0 || this._engineIoServerClosed === false ) ) {
 		return;
 	}
 

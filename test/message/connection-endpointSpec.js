@@ -211,19 +211,18 @@ describe( 'connection endpoint', function() {
 		var closeSpy = jasmine.createSpy( 'close-event' );
 		var unclosedSocket;
 
-		it( 'calls close on connections', function( done ) {
+		it( 'calls close on connections', function() {
 			unclosedSocket = engineIoMock.simulateConnection();
 			unclosedSocket.autoClose = false;
-			connectionEndpoint.on( 'close', closeSpy );
+			connectionEndpoint.once( 'close', closeSpy );
 			connectionEndpoint.close();
 			expect( closeSpy ).not.toHaveBeenCalled();
-			setTimeout( done, 5 );
 		});
 
 		it( 'closes the last remaining client connection', function( done ){
+			connectionEndpoint.once( 'close', done );
 			expect( closeSpy ).not.toHaveBeenCalled();
 			unclosedSocket.doClose();
-			setTimeout( done, 5 );
 		});
 
 		it( 'has closed the server', function(){
@@ -298,6 +297,28 @@ describe( 'connection endpoint', function() {
 			setTimeout(function () {
 				server.listen( 3000, '0.0.0.0' );
 			}, 50);
+		});
+
+		it( 'calling close on server does not destroy server', function(done) {
+			var closeCallback = jasmine.createSpy( 'close-callback' );
+			var server = httpMock.createServer();
+			var options = {
+				webServerEnabled: true,
+				httpServer: server,
+				permissionHandler: require( '../mocks/permission-handler-mock' ),
+				logger: { log: function( logLevel, event, msg ){} }
+			};
+
+			endpoint = new ConnectionEndpoint(options, function() {
+				endpoint.close();
+			} );
+
+			endpoint.once( 'close', function() {
+				expect( server.closed ).toBe( false );
+				done();
+			} );
+
+			server.listen( 3000, '0.0.0.0' );
 		});
 
 	});
