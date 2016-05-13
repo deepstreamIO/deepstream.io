@@ -78,6 +78,13 @@ describe( 'compiles rules into usable objects', function(){
 		expect( compiledRule.hasData ).toBe( true );
 	});
 
+	it( 'compiles a rule referencing data followed by a space', function(){
+		var compiledRule = ruleParser.parse(  "data .firstname === \"Yasser\"", [] );
+		expect( typeof compiledRule.fn ).toBe( 'function' );
+		expect( compiledRule.hasOldData ).toBe( false );
+		expect( compiledRule.hasData ).toBe( true );
+	});
+
 	it( 'compiles a rule referencing oldData', function(){
 		var compiledRule = ruleParser.parse( 'user.id !== oldData.someUser', [] );
 		expect( typeof compiledRule.fn ).toBe( 'function' );
