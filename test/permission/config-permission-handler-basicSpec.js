@@ -61,26 +61,6 @@ describe( 'permission handler applies basic permissions to incoming messages', f
 		expect( testPermission( permissions, message, 'userB' ) ).toBe( true );
 	});
 
-	it( 'denies actions that need permissions, but dont have them', function(){
-		var permissions = getBasePermissions();
-
-		delete permissions.event[ '*' ];
-
-		permissions.event.bla = {
-			subscribe: true,
-			publish: true
-		};
-
-
-		var message = {
-			topic: C.TOPIC.EVENT,
-			action: C.ACTIONS.EVENT,
-			data: [ 'blub', 'some-data' ]
-		};
-
-		expect( testPermission( permissions, message, 'userB' ) ).toBe( false );
-	});
-
 	it( 'allows reading of a private record for the right user', function(){
 		var permissions = getBasePermissions();
 

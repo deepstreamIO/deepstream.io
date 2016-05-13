@@ -111,6 +111,27 @@ validationSteps.doesOnlyContainValidPaths = function( config ) {
 };
 
 /**
+ * Each section must specify a generic permission ("*") that
+ * will be applied if no other permission is applicable
+ *
+ * @param   {Object} config parsed permission config
+ *
+ * @private
+ * @returns {Boolean}
+ */
+validationSteps.does = function( config ) {
+	var sectionName;
+
+	for( sectionName in SCHEMA ) {
+		if( !config[ sectionName ][ '*' ] ) {
+			return 'missing root entry "*" for section ' + sectionName;
+		}
+	}
+
+	return true;
+};
+
+/**
  * Runs the rule validator against every rule in each section
  *
  * @param   {Object} config parsed permission config

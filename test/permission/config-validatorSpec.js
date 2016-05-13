@@ -55,6 +55,14 @@ describe( 'it validates permission.json files', function(){
 		expect( configValidator.validate( conf ) ).toBe( 'empty section "rpc"' );
 	});
 
+	it( 'fails if no root permissions are specified', function(){
+		var conf = getConfig();
+		conf.rpc = { 'bla': {
+			'request': 'user.id === $userId'
+		}};
+		expect( configValidator.validate( conf ) ).toBe( 'missing root entry "*" for section rpc' );
+	});
+
 	it( 'fails for invalid paths', function(){
 		var conf = getConfig();
 		conf.record.a$$x = {};

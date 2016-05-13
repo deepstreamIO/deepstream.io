@@ -61,12 +61,13 @@ ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authDa
  * Load a configuration file. This will either load a configuration file for the first time at
  * startup or reload the configuration at runtime
  *
+ * CLI loadConfig <path>
+ *
  * @todo expose this method via the command line interface
  *
  * @param   {String} path the filepath of the permission.json file
  *
  * @public
- * @cli loadConfig
  * @returns {void}
  */
 ConfigPermissionHandler.prototype.loadConfig = function( path ) {
@@ -78,12 +79,13 @@ ConfigPermissionHandler.prototype.loadConfig = function( path ) {
  * of a config being passed to the permissionHandler upon initialisation,
  * as a result of loadConfig or at runtime
  *
+ * CLI useConfig <config>
+ *
  * @todo expose this method via the command line interface
  *
  * @param   {Object} config deepstream permissionConfig
  *
  * @public
- * @cli useConfig
  * @returns {void}
  */
 ConfigPermissionHandler.prototype.useConfig = function( config ) {
@@ -169,7 +171,6 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
  * @returns {Object} compiled rules
  */
 ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, ruleSpecification ) {
-
 	if( this._ruleCache.has( ruleSpecification.section, name ) ) {
 		return this._ruleCache.get( ruleSpecification.section, name );
 	}

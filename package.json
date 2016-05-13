@@ -33,7 +33,7 @@
     "jasmine": "^2.4.1",
     "jasmine-spec-reporter": "^2.4.0",
     "npm-watch": "^0.1.4",
-    "proxyquire": "1.7.4"
+    "proxyquire": "1.7.9"
   },
   "author": "Wolfram Hempel",
   "license": "MIT",
