@@ -53,21 +53,21 @@ describe( 'parses valid paths in permission.json files', function(){
 	it( 'parses a valid path with a variable', function(){
 		var result = pathParser.parse( 'game-score/$gameId' );
 		expect( isRegExp( result.regexp ) ).toBe( true );
-		expect( result.regexp.toString() ).toBe( '/^game-score\\/([a-zA-Z0-9]*)$/' );
+		expect( result.regexp.toString() ).toBe( '/^game-score\\/([a-zA-Z0-9]+)$/' );
 		expect( result.variables ).toEqual( [ '$gameId' ] );
 	});
 
 	it( 'parses a valid path with multiple variables', function(){
 		var result = pathParser.parse( 'game-comment/$gameId/$userId/$commentId' );
 		expect( isRegExp( result.regexp ) ).toBe( true );
-		expect( result.regexp.toString() ).toBe( '/^game-comment\\/([a-zA-Z0-9]*)\\/([a-zA-Z0-9]*)\\/([a-zA-Z0-9]*)$/' );
+		expect( result.regexp.toString() ).toBe( '/^game-comment\\/([a-zA-Z0-9]+)\\/([a-zA-Z0-9]+)\\/([a-zA-Z0-9]+)$/' );
 		expect( result.variables ).toEqual( [ '$gameId', '$userId', '$commentId' ] );
 	});
 
 	it( 'parses a path with a mix of variables and wildcards', function(){
 		var result = pathParser.parse( '$recordName/*' );
 		expect( isRegExp( result.regexp ) ).toBe( true );
-		expect( result.regexp.toString() ).toBe( '/^([a-zA-Z0-9]*)\\/.*$/' );
+		expect( result.regexp.toString() ).toBe( '/^([a-zA-Z0-9]+)\\/.*$/' );
 		expect( result.variables ).toEqual( [ '$recordName' ] );
 	});
 

@@ -139,21 +139,16 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 
 	ruleData = this._getCompiledRulesForName( name, ruleSpecification );
 
-	if( ruleData === null ) {
-		callback( null, false );
-		return;
-	}
-
 	new RuleApplication({
 		username: username,
 		authData: authData,
 		path: ruleData,
-		ruleSpecification:ruleSpecification,
+		ruleSpecification: ruleSpecification,
 		message: message,
 		action: ruleSpecification.action,
 		regexp: ruleData.regexp,
 		rule: ruleData.rule,
-		name:name,
+		name: name,
 		callback: callback,
 		options: this._options
 	});
