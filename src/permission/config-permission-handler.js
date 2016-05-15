@@ -35,8 +35,6 @@ var ConfigPermissionHandler = function( options, config ) {
 
 	if( config ) {
 		this.useConfig( config );
-	} else {
-		this.loadConfig( this._options.permissionConfigPath );
 	}
 };
 
@@ -55,6 +53,20 @@ utils.inherits( ConfigPermissionHandler, events.EventEmitter );
 /* istanbul ignore next */
 ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authData, callback ) {
 	callback( null, authData.username || 'open' );
+};
+
+/**
+ * Will be called by the dependency initialiser once server.start() is called.
+ * This gives users a chance to change the permissionConfigPath using server.set()
+ * first
+ *
+ * @public
+ * @returns {void}
+ */
+ConfigPermissionHandler.prototype.init = function() {
+	if( this._config === null ) {
+		this.loadConfig( this._options.permissionConfigPath );
+	}
 };
 
 /**

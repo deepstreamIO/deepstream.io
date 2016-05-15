@@ -8,6 +8,7 @@ describe( 'permission handler is initialised correctly', function(){
 			permissionCacheEvacuationInterval: 60000
 		});
 		expect( permissionHandler.isReady ).toBe( false );
+		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
 			expect( 'it should not have had this ' + error ).toBe( true );
 			next();
@@ -24,6 +25,7 @@ describe( 'permission handler is initialised correctly', function(){
 			permissionCacheEvacuationInterval: 60000
 		});
 		expect( permissionHandler.isReady ).toBe( false );
+		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
 			expect( error ).toContain( 'ENOENT' );
 			next();
@@ -40,6 +42,7 @@ describe( 'permission handler is initialised correctly', function(){
 			permissionCacheEvacuationInterval: 60000
 		});
 		expect( permissionHandler.isReady ).toBe( false );
+		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
 			expect( error ).toContain( 'SyntaxError' );
 			next();
@@ -56,6 +59,7 @@ describe( 'permission handler is initialised correctly', function(){
 			permissionCacheEvacuationInterval: 60000
 		});
 		expect( permissionHandler.isReady ).toBe( false );
+		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
 			expect( error ).toBe( 'invalid permission config - empty section "record"' );
 			next();
@@ -76,6 +80,7 @@ describe( 'it loads a new config during runtime', function(){
 			permissionConfigPath: './permissions.json',
 			permissionCacheEvacuationInterval: 60000
 		});
+		permissionHandler.init();
 		permissionHandler.on( 'error', onError );
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.on( 'error', function( error ){
