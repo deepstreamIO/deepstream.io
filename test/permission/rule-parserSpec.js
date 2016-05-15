@@ -39,6 +39,14 @@ describe('validates rule strings from permissions.json', function(){
 		expect( ruleParser.validate( 'a b' ) ).toBe( 'SyntaxError: Unexpected identifier' );
 		expect( ruleParser.validate(  'user.id.toUpperCase(' ) ).toBe( 'SyntaxError: Unexpected token }' );
 	});
+
+	it( 'rejects rules that reference old data without it being supported', function(){
+		expect( ruleParser.validate( 'data.price === 500 && oldData.price < 500', 'event', 'publish' ) ).toBe( 'rule publish for event does not support oldData' );
+	});
+
+	it( 'rejects rules that reference data without it being supported', function(){
+		expect( ruleParser.validate( 'user.id === $userId && data.price === 500', 'rpc', 'provide' ) ).toBe( 'rule provide for rpc does not support data' );
+	});
 });
 
 describe( 'compiles rules into usable objects', function(){
