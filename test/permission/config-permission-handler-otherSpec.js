@@ -19,14 +19,25 @@ var testPermission = function( permissions, message, username, userdata, callbac
 };
 
 describe( 'supports spaces after variables and escaped quotes', function(){
-	var permissions = getBasePermissions();
+	it( 'errors for read with data', function(){
+		var permissions = getBasePermissions();
+		permissions.record.someUser = {
+			"read": "data.firstname === \"Yasser\"",
+			"write": "data .firstname === \"Yasser\""
+		};
 
-	permissions.record.someUser = {
-		"read": "data.firstname === \"Yasser\"",
-		"write": "data .firstname === \"Yasser\""
-	};
+		try{
+			new ConfigPermissionHandler( options, permissions );
+		} catch( e ) {
+			expect( e.toString() ).toContain( 'invalid permission config - rule read for record does not support data' );
+		}
+	});
 
 	it( 'allows yasser', function( next ){
+		var permissions = getBasePermissions();
+		permissions.record.someUser = {
+			"write": "data .firstname === \"Yasser\""
+		};
 		var message = {
 			topic: C.TOPIC.RECORD,
 			action: C.ACTIONS.UPDATE,
@@ -43,6 +54,11 @@ describe( 'supports spaces after variables and escaped quotes', function(){
 	});
 
 	it( 'denies Wolfram', function( next ){
+		var permissions = getBasePermissions();
+		permissions.record.someUser = {
+			"write": "data .firstname === \"Yasser\""
+		};
+
 		var message = {
 			topic: C.TOPIC.RECORD,
 			action: C.ACTIONS.UPDATE,

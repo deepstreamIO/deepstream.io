@@ -7,8 +7,7 @@
 module.exports = {
 	record: {
 		write: true,
-		read: true,
-		validate: true,
+		read: true
 	},
 	event: {
 		publish: true,

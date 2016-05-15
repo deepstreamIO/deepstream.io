@@ -80,4 +80,10 @@ describe( 'it validates permission.json files', function(){
 		conf.record.somepath = { write: 'process.exit()' };
 		expect( configValidator.validate( conf ) ).toBe( 'function exit is not supported' );
 	});
+
+	// it( 'fails for rules referencing data that dont support it', function(){
+	// 	var conf = getConfig();
+	// 	conf.record.somepath = { read: 'data.firstname === "Egon"' };
+	// 	expect( configValidator.validate( conf ) ).toBe( 'data is not supported for record read - did you mean "oldData"?' );
+	// });
 });

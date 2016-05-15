@@ -26,13 +26,13 @@ describe('validates rule strings from permissions.json', function(){
 	});
 
 	it( 'rejects rules that call unsupported functions', function(){
-		expect( ruleParser.validate( 'data.lastname.toUpperCase()' ) ).toBe( true );
+		expect( ruleParser.validate( 'data.lastname.toUpperCase()', 'record', 'write' ) ).toBe( true );
 		expect( ruleParser.validate( 'alert("bobo")' ) ).toBe( 'function alert is not supported' );
-		expect( ruleParser.validate( 'data.lastname.toUpperCase() && data.lastname.substr(0,3)' ) ).toBe( 'function substr is not supported' );
+		expect( ruleParser.validate( 'data.lastname.toUpperCase() && data.lastname.substr(0,3)', 'record', 'write' ) ).toBe( 'function substr is not supported' );
 	});
 
 	it( 'rejects invalid cross references', function(){
-		expect( ruleParser.validate( '_("another-record" + data.userId) === $userId' ) ).toBe( true );
+		expect( ruleParser.validate( '_("another-record" + data.userId) === $userId', 'record', 'write' ) ).toBe( true );
 	});
 
 	it( 'rejects rules that are syntactiacally invalid', function(){

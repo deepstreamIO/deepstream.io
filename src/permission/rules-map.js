@@ -2,12 +2,18 @@ var C = require( '../constants/constants' );
 var utils = require( '../utils/utils' );
 var actionToKey = utils.reverseMap( C.ACTIONS );
 var RULES_MAP = {};
-var READ = 'read';
-var WRITE = 'write';
-var PUBLISH = 'publish';
-var SUBSCRIBE = 'subscribe';
-var PROVIDE = 'provide';
-var REQUEST = 'request';
+var RULE_TYPES = {};
+
+
+RULE_TYPES.CREATE = 	{ name: 'create', 		data: false, 	oldData: false };
+RULE_TYPES.READ = 		{ name: 'read', 		data: false, 	oldData: true };
+RULE_TYPES.WRITE = 		{ name: 'write', 		data: true, 	oldData: true };
+RULE_TYPES.DELETE = 	{ name: 'delete', 		data: false, 	oldData: true };
+RULE_TYPES.LISTEN = 	{ name: 'listen', 		data: false, 	oldData: false };
+RULE_TYPES.PUBLISH = 	{ name: 'publish', 		data: true, 	oldData: false };
+RULE_TYPES.SUBSCRIBE = 	{ name: 'subscribe', 	data: true, 	oldData: false };
+RULE_TYPES.PROVIDE = 	{ name: 'provide', 		data: false, 	oldData: false };
+RULE_TYPES.REQUEST = 	{ name: 'request', 		data: true, 	oldData: false };
 
 /**
  * This class maps topic / action combinations to applicable
@@ -22,32 +28,32 @@ var REQUEST = 'request';
  * 		'read': 'user.id === $userId && action !== LISTEN'
  * }
  */
+
 RULES_MAP[ C.TOPIC.RECORD ] = {};
 RULES_MAP[ C.TOPIC.RECORD ].section = 'record';
 RULES_MAP[ C.TOPIC.RECORD ].actions = {};
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.READ ] = READ;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.HAS ] = READ;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.SNAPSHOT ] = READ;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.LISTEN ] = READ;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.LISTEN_SNAPSHOT ] = READ;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.CREATE ] = WRITE;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.UPDATE ] = WRITE;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.PATCH ] = WRITE;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.DELETE ] = WRITE;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.READ ] = RULE_TYPES.READ;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.HAS ] = RULE_TYPES.READ;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.SNAPSHOT ] = RULE_TYPES.READ;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.LISTEN ] = RULE_TYPES.LISTEN;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.LISTEN_SNAPSHOT ] = RULE_TYPES.LISTEN;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.CREATE ] = RULE_TYPES.CREATE;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.UPDATE ] = RULE_TYPES.WRITE;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.PATCH ] = RULE_TYPES.WRITE;
+RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.DELETE ] = RULE_TYPES.DELETE;
 
 RULES_MAP[ C.TOPIC.EVENT ] = {};
 RULES_MAP[ C.TOPIC.EVENT ].section = 'event';
 RULES_MAP[ C.TOPIC.EVENT ].actions = {};
-RULES_MAP[ C.TOPIC.EVENT ].actions[ C.ACTIONS.LISTEN ] = READ;
-RULES_MAP[ C.TOPIC.EVENT ].actions[ C.ACTIONS.SUBSCRIBE ] = SUBSCRIBE;
-RULES_MAP[ C.TOPIC.EVENT ].actions[ C.ACTIONS.EVENT ] = PUBLISH;
+RULES_MAP[ C.TOPIC.EVENT ].actions[ C.ACTIONS.LISTEN ] = RULE_TYPES.LISTEN;
+RULES_MAP[ C.TOPIC.EVENT ].actions[ C.ACTIONS.SUBSCRIBE ] = RULE_TYPES.SUBSCRIBE;
+RULES_MAP[ C.TOPIC.EVENT ].actions[ C.ACTIONS.EVENT ] = RULE_TYPES.PUBLISH;
 
 RULES_MAP[ C.TOPIC.RPC ] = {};
 RULES_MAP[ C.TOPIC.RPC ].section = 'rpc';
 RULES_MAP[ C.TOPIC.RPC ].actions = {};
-RULES_MAP[ C.TOPIC.RPC ].actions[ C.ACTIONS.LISTEN ] = READ;
-RULES_MAP[ C.TOPIC.RPC ].actions[ C.ACTIONS.SUBSCRIBE ] = PROVIDE;
-RULES_MAP[ C.TOPIC.RPC ].actions[ C.ACTIONS.REQUEST ] = REQUEST;
+RULES_MAP[ C.TOPIC.RPC ].actions[ C.ACTIONS.SUBSCRIBE ] = RULE_TYPES.PROVIDE;
+RULES_MAP[ C.TOPIC.RPC ].actions[ C.ACTIONS.REQUEST ] = RULE_TYPES.REQUEST;
 
 /**
  * Returns a map of applicable rule-types for a topic
@@ -69,7 +75,15 @@ exports.getRulesForMessage = function( message ) {
 
 	return {
 		section: RULES_MAP[ message.topic ].section,
-		type: RULES_MAP[ message.topic ].actions[ message.action ],
+		type: RULES_MAP[ message.topic ].actions[ message.action ].name,
 		action: actionToKey[ message.action ]
 	};
+};
+
+exports.supportsData = function( type ) {
+	return RULE_TYPES[ type.toUpperCase() ].data;
+};
+
+exports.supportsOldData = function( type ) {
+	return RULE_TYPES[ type.toUpperCase() ].oldData;
 };

@@ -119,7 +119,7 @@ validationSteps.doesOnlyContainValidPaths = function( config ) {
  * @private
  * @returns {Boolean}
  */
-validationSteps.does = function( config ) {
+validationSteps.doesHaveRootEntries = function( config ) {
 	var sectionName;
 
 	for( sectionName in SCHEMA ) {
@@ -149,7 +149,7 @@ validationSteps.hasValidRules = function( config ) {
 					return 'unknown rule type ' + ruleType + ' in section ' + section;
 				}
 
-				validationResult = ruleParser.validate( config[ section ][ path ][ ruleType ] );
+				validationResult = ruleParser.validate( config[ section ][ path ][ ruleType ], section, ruleType );
 				if( validationResult !== true ) {
 					return validationResult;
 				}

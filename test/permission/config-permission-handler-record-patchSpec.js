@@ -122,4 +122,25 @@ describe( 'constructs data for patch message validation', function(){
 
 		testPermission( permissions, message, null, null, onDone );
 	});
+
+	it( 'returns false if patch if for a non existing record', function( next ){
+		var permissions = getBasePermissions();
+		options.cache.nextGetWillBeSynchronous = false;
+
+		permissions.record[ '*' ].write = 'data.lastname === "Blob"';
+
+		var message = {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.PATCH,
+			data: [ 'somerecord', 1, 'lastname', 'SHempel' ]
+		};
+
+		var onDone = function( error, result ) {
+			expect( error ).toContain( 'Tried to apply patch to non-existant record somerecord' );
+			expect( result ).toBe( false );
+			next();
+		};
+
+		testPermission( permissions, message, null, null, onDone );
+	});
 });

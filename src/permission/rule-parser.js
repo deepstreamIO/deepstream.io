@@ -1,3 +1,4 @@
+var rulesMap = require( './rules-map' );
 var FUNCTION_REGEXP = /([a-zA-Z0-9_]*)\(/g;
 var NEW_REGEXP = /^new[^a-zA-Z0-9^]|[^a-zA-Z0-9^]new[^a-zA-Z0-9]/;
 var OLD_DATA_REGEXP = /^oldData[^a-zA-Z0-9^]|[^a-zA-Z0-9^]oldData[^a-zA-Z0-9]/;
@@ -21,11 +22,13 @@ var SUPPORTED_FUNCTIONS = [
  * and that it can be compiled into a javascript function
  *
  * @param   {String|Boolean} rule the rule as read from permissions.json
+ * @param 	{String} section record, event or rpc
+ * @param 	{String} type read, write, publish, subscribe etc...
  *
  * @public
  * @returns {Boolean} isValid
  */
-exports.validate = function( rule ) {
+exports.validate = function( rule, section, type ) {
 	if( typeof rule === 'boolean' ) {
 		return true;
 	}
@@ -60,6 +63,14 @@ exports.validate = function( rule ) {
 		new Function( rule ); //jshint ignore:line
 	} catch( e ) {
 		return e.toString();
+	}
+
+	if( !!rule.match( OLD_DATA_REGEXP ) && !rulesMap.supportsOldData( type ) ) {
+		return 'rule ' + type + ' for ' + section + ' does not support oldData';
+	}
+
+	if( !!rule.match( DATA_REGEXP ) && !rulesMap.supportsData( type ) ) {
+		return 'rule ' + type + ' for ' + section + ' does not support data';
 	}
 
 	return true;

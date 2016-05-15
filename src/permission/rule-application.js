@@ -253,6 +253,10 @@ RuleApplication.prototype._getRecordPatchData = function( msg ) {
 		return newData;
 	}
 
+	if( currentData === null ) {
+		return new Error( 'Tried to apply patch to non-existant record ' + msg.data[ 0 ] );
+	}
+
 	if( typeof currentData !== UNDEFINED && currentData !== LOADING ) {
 		jsonPath = new JsonPath( msg.data[ 2 ] );
 		data = JSON.parse( JSON.stringify( currentData ) );
