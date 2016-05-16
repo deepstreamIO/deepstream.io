@@ -1,7 +1,7 @@
 var WILDCARD_REGEXP = /\*/g;
 var WILDCARD_STRING = '.*';
 var VARIABLE_REGEXP = /(\$[a-zA-Z0-9]+)/g;
-var VARIABLE_STRING = '([a-zA-Z0-9]+)';
+var VARIABLE_STRING = '([^\/]+)';
 var INVALID_VARIABLE_REGEXP = /(\$[^a-zA-Z0-9])/;
 
 /**

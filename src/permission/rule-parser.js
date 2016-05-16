@@ -92,7 +92,7 @@ exports.validate = function( rule, section, type ) {
 exports.parse = function( rule, variables ) {
 	if( rule === true || rule === false ) {
 		return {
-			fn: function(){ return rule; },
+			fn: rule === true ? function(){ return true; } : function(){ return false; },
 			hasOldData: false,
 			hasData: false
 		};

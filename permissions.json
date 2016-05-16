@@ -1,14 +1,18 @@
 {
 	"record": {
 		"*": {
+			"create": true,
 			"write": true,
-			"read": true
+			"read": true,
+			"delete": true,
+			"listen": true
 		}
 	},
 	"event": {
 		"*": {
 			"publish": true,
-			"subscribe": true
+			"subscribe": true,
+			"listen": true
 		}
 	},
 	"rpc": {

@@ -27,12 +27,13 @@ RuleCache.prototype.reset = function() {
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
+ * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
  *
  * @public
  * @returns {Boolean}
  */
-RuleCache.prototype.has = function( section, name ) {
-	return !!this._data[ section + name ];
+RuleCache.prototype.has = function( section, name, type ) {
+	return !!this._data[ this._toKey( section, name, type ) ];
 };
 
 /**
@@ -40,13 +41,15 @@ RuleCache.prototype.has = function( section, name ) {
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
+ * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
  *
  * @public
  * @returns {Object} rule
  */
-RuleCache.prototype.get = function( section, name ) {
-	this._data[ section + name ].isUsed = true;
-	return this._data[ section + name ].rule;
+RuleCache.prototype.get = function( section, name, type ) {
+	var key = this._toKey( section, name, type );
+	this._data[ key ].isUsed = true;
+	return this._data[ key ].rule;
 };
 
 
@@ -55,16 +58,31 @@ RuleCache.prototype.get = function( section, name ) {
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
+ * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
  * @param 	{Object}  rule the result of a rule lookup
  *
  * @public
  * @returns {Object} rule
  */
-RuleCache.prototype.set = function( section, name, rule ) {
-	this._data[ section + name ] = {
+RuleCache.prototype.set = function( section, name, type, rule ) {
+	this._data[ this._toKey( section, name, type ) ] = {
 		rule: rule,
 		isUsed: true
 	};
+};
+
+/**
+ * Creates a key from the various set parameters
+ *
+ * @param   {String}  section e.g. record, event or rpc
+ * @param   {String}  name    the name of the record, event or rpc
+ * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
+ *
+ * @public
+ * @returns {String} key
+ */
+RuleCache.prototype._toKey = function( section, name, type ) {
+	return section + '_' + name + '_' + type;
 };
 
 /**

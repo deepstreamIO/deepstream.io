@@ -7,6 +7,7 @@ var events = require( 'events' );
 var utils = require( 'util' );
 var fs = require( 'fs' );
 var STRING = 'string';
+var UNDEFINED = 'undefined';
 
 /**
  * A permission handler that reads a rules config JSON, validates
@@ -178,8 +179,8 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
  * @returns {Object} compiled rules
  */
 ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, ruleSpecification ) {
-	if( this._ruleCache.has( ruleSpecification.section, name ) ) {
-		return this._ruleCache.get( ruleSpecification.section, name );
+	if( this._ruleCache.has( ruleSpecification.section, name, ruleSpecification.type ) ) {
+		return this._ruleCache.get( ruleSpecification.section, name, ruleSpecification.type );
 	}
 
 	var section = this._config[ ruleSpecification.section ];
@@ -188,7 +189,11 @@ ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, rul
 	var result = null;
 
 	for( i; i < section.length; i++ ) {
-		if( section[ i ].regexp.test( name ) && section[ i ].path.length >= pathLength ) {
+		if(
+			typeof section[ i ].rules[ ruleSpecification.type ] !== UNDEFINED &&
+			section[ i ].path.length >= pathLength &&
+			section[ i ].regexp.test( name )
+		) {
 			pathLength = section[ i ].path.length;
 			result = {
 				path: section[ i ].path,
@@ -199,7 +204,7 @@ ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, rul
 	}
 
 	if( result ) {
-		this._ruleCache.set( ruleSpecification.section, name, result );
+		this._ruleCache.set( ruleSpecification.section, name, ruleSpecification.type, result );
 	}
 
 	return result;
