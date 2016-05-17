@@ -49,7 +49,7 @@ RecordRequest.prototype._onCacheResponse = function( error, record ) {
 	}
 
 	if( error ) {
-		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from cache:' + error );
+		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from cache:' + error.toString() );
 	}
 	else if( record ) {
 		this._onComplete( record );
@@ -61,7 +61,8 @@ RecordRequest.prototype._onCacheResponse = function( error, record ) {
 		);
 
 		this._options.storage.get( this._recordName, this._onStorageResponse.bind( this ) );
-	} else {
+	}
+	else {
 		this._onComplete( null );	
 	}
 };
@@ -84,7 +85,7 @@ RecordRequest.prototype._onStorageResponse = function( error, record ) {
 	}
 
 	if( error ) {
-		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from storage', error.toString() );
+		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from storage:' + error.toString() );
 	} else {
 		this._onComplete( record || null );
 

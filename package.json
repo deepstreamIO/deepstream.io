@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "node_modules/.bin/istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json",
+    "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner"
   },
   "repository": {
@@ -27,9 +28,10 @@
     "istanbul": "^0.4.3",
     "jasmine": "^2.4.1",
     "jasmine-spec-reporter": "^2.4.0",
-    "proxyquire": "1.7.9"
+    "proxyquire": "1.7.9",
+    "watch": "^0.18.0"
   },
-  "author": "Wolfram Hempel",
+  "author": "deepstreamHub GmbH",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/deepstreamIO/deepstream.io/issues"
