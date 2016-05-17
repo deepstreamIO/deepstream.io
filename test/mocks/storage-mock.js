@@ -49,7 +49,9 @@ StorageMock.prototype.get = function( key, callback ) {
 StorageMock.prototype.set = function( key, value, callback ) {
 	this.lastSetKey = key;
 	this.lastSetValue = value;
-
+	if( value._d === undefined ) {
+		value = { _v:0, _d: value };
+	}
 	if( this.nextOperationWillBeSuccessful ) {
 		this.values[ key ] = value;
 	}

@@ -106,8 +106,8 @@ RuleApplication.prototype._onRuleError = function( error ) {
 	}
 	var errorMsg = 'error when executing ' + this._params.rule.fn.toString() + EOL +
 				   'for ' + this._params.path + ': ' + error.toString();
-	this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PERMISSION_ERROR, errorMsg );
-	this._params.callback( errorMsg, false );
+	this._params.options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, errorMsg );
+	this._params.callback( C.EVENT.MESSAGE_PERMISSION_ERROR, false );
 	this._destroy();
 };
 
@@ -144,7 +144,7 @@ RuleApplication.prototype._onLoadError = function( recordName, error ) {
 	this._recordData[ recordName ] = ERROR;
 	var errorMsg = 'failed to load record ' + this._params.name + ' for permissioning:' + error.toString();
 	this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, errorMsg );
-	this._params.callback( error.toString(), false );
+	this._params.callback( C.EVENT.RECORD_LOAD_ERROR, false );
 	this._destroy();
 };
 
@@ -259,7 +259,7 @@ RuleApplication.prototype._getRecordPatchData = function( msg ) {
 
 	if( typeof currentData !== UNDEFINED && currentData !== LOADING ) {
 		jsonPath = new JsonPath( msg.data[ 2 ] );
-		data = JSON.parse( JSON.stringify( currentData ) );
+		data = JSON.parse( JSON.stringify( currentData._d ) );
 		jsonPath.setValue( data, newData );
 		return data;
 	} else {
@@ -281,7 +281,7 @@ RuleApplication.prototype._getOldData = function() {
 	if( this._isDestroyed === true || this._params.rule.hasOldData === false ) {
 		return null;
 	} else if( this._recordData[ this._params.name ] ) {
-		return this._recordData[ this._params.name ];
+		return this._recordData[ this._params.name ]._d;
 	} else {
 		this._loadRecord( this._params.name );
 	}
@@ -412,11 +412,13 @@ RuleApplication.prototype._crossReference = function( recordName ) {
 	else if( this._recordData[ recordName ] === LOADING ) {
 		return;
 	}
-	else if( typeof this._recordData[ recordName ] !== UNDEFINED ) {
-		return this._recordData[ recordName ] || null;
+	else if( this._recordData[ recordName ] === null ) {
+		return null;
 	}
-	else {
+	else if( typeof this._recordData[ recordName ] === UNDEFINED ) {
 		this._loadRecord( recordName );
+	} else {
+		return this._recordData[ recordName ]._d;
 	}
 };
 

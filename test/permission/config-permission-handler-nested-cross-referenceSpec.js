@@ -3,6 +3,9 @@ var StorageMock = require( '../mocks/storage-mock' );
 var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissions;
 var C = require( '../../src/constants/constants' );
 var noop = function(){};
+var lastError = function() {
+	return options.logger.log.calls.mostRecent().args[ 2 ];
+};
 var options = {
 	logger: { log: jasmine.createSpy( 'log' ) },
 	cache: new StorageMock(),
@@ -75,7 +78,7 @@ describe( 'permission handler loads data for cross referencing', function(){
 		};
 
 		var onDone = function( error, result ) {
-			expect( error ).toContain( 'Cannot read property \'is\' of undefined' );
+			expect( lastError() ).toContain( 'Cannot read property \'is\' of undefined' );
 			expect( result ).toBe( false );
 			next();
 		};
@@ -157,7 +160,7 @@ describe( 'permission handler loads data for cross referencing', function(){
 		};
 
 		var onDone = function( error, result ) {
-			expect( error ).toContain( 'crossreference got unsupported type object' );
+			expect( lastError() ).toContain( 'crossreference got unsupported type object' );
 			expect( result ).toBe( false );
 			next();
 		};
@@ -186,7 +189,7 @@ describe( 'permission handler loads data for cross referencing', function(){
 		};
 
 		var onDone = function( error, result ) {
-			expect( error ).toContain( 'Exceeded max iteration count' );
+			expect( lastError() ).toContain( 'Exceeded max iteration count' );
 			expect( result ).toBe( false );
 			expect( options.cache.getCalls.length ).toBe( 3 );
 			next();

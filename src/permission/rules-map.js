@@ -4,7 +4,13 @@ var actionToKey = utils.reverseMap( C.ACTIONS );
 var RULES_MAP = {};
 var RULE_TYPES = {};
 
-
+/**
+ * Different rule types support different features. Generally, all rules can
+ * use cross referencing _() to reference records, but only record writes, incoming events
+ * or RPC requests carry data and only existing records have a concept of oldData
+ *
+ * @type {Object}
+ */
 RULE_TYPES.CREATE = 	{ name: 'create', 		data: false, 	oldData: false };
 RULE_TYPES.READ = 		{ name: 'read', 		data: false, 	oldData: true };
 RULE_TYPES.WRITE = 		{ name: 'write', 		data: true, 	oldData: true };
@@ -28,7 +34,6 @@ RULE_TYPES.REQUEST = 	{ name: 'request', 		data: true, 	oldData: false };
  * 		'read': 'user.id === $userId && action !== LISTEN'
  * }
  */
-
 RULES_MAP[ C.TOPIC.RECORD ] = {};
 RULES_MAP[ C.TOPIC.RECORD ].section = 'record';
 RULES_MAP[ C.TOPIC.RECORD ].actions = {};
@@ -80,10 +85,26 @@ exports.getRulesForMessage = function( message ) {
 	};
 };
 
+/**
+ * Returns true if a given rule supports references to incoming data
+ *
+ * @param   {String} type one of RULE_TYPES
+ *
+ * @public
+ * @returns {Boolean}
+ */
 exports.supportsData = function( type ) {
 	return RULE_TYPES[ type.toUpperCase() ].data;
 };
 
+/**
+ * Returns true if a given rule supports references to existing data
+ *
+ * @param   {String} type one of RULE_TYPES
+ *
+ * @public
+ * @returns {Boolean}
+ */
 exports.supportsOldData = function( type ) {
 	return RULE_TYPES[ type.toUpperCase() ].oldData;
 };

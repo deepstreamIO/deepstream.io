@@ -10,7 +10,9 @@ var options = {
 	cacheRetrievalTimeout: 500,
 	permissionCacheEvacuationInterval: 60000
 };
-
+var lastError = function() {
+	return options.logger.log.calls.mostRecent().args[ 2 ];
+};
 
 var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );
@@ -92,7 +94,7 @@ describe( 'constructs data for patch message validation', function(){
 		};
 
 		var onDone = function( error, result ) {
-			expect( error ).toContain( 'Invalid message data' );
+			expect( lastError() ).toContain( 'Invalid message data' );
 			expect( result ).toBe( false );
 			next();
 		};
@@ -115,7 +117,7 @@ describe( 'constructs data for patch message validation', function(){
 		};
 
 		var onDone = function( error, result ) {
-			expect( error ).toContain( 'Unknown type' );
+			expect( lastError() ).toContain( 'Unknown type' );
 			expect( result ).toBe( false );
 			next();
 		};
@@ -136,7 +138,7 @@ describe( 'constructs data for patch message validation', function(){
 		};
 
 		var onDone = function( error, result ) {
-			expect( error ).toContain( 'Tried to apply patch to non-existant record somerecord' );
+			expect( lastError() ).toContain( 'Tried to apply patch to non-existant record somerecord' );
 			expect( result ).toBe( false );
 			next();
 		};

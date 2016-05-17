@@ -5,6 +5,10 @@ var options = {
 	logger: { log: jasmine.createSpy( 'log' ) },
 	permissionCacheEvacuationInterval: 60000
 };
+var lastError = function() {
+	return options.logger.log.calls.mostRecent().args[ 2 ];
+};
+
 var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );
 	var permissionResult;
@@ -192,7 +196,7 @@ describe( 'permission handler applies basic permissions referencing their own da
 		};
 
 		var callback = function( error, result ) {
-			expect( error ).toContain( 'error when converting message data' );
+			expect( lastError() ).toContain( 'error when converting message data' );
 			expect( result ).toBe( false );
 			next();
 		};
@@ -212,6 +216,7 @@ describe( 'permission handler applies basic permissions referencing their own da
 			action: C.ACTIONS.EVENT,
 			data: [  ]
 		};
+
 
 		var callback = function( error, result ) {
 			expect( error ).toContain( 'invalid message' );
@@ -236,7 +241,7 @@ describe( 'permission handler applies basic permissions referencing their own da
 		};
 
 		var callback = function( error, result ) {
-			expect( error ).toContain( 'error when converting message data' );
+			expect( lastError() ).toContain( 'error when converting message data' );
 			expect( result ).toBe( false );
 			next();
 		};
