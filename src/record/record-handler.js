@@ -373,6 +373,7 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 			recordName: name,
 			version: parseInt( message.data[ 1 ], 10 )
 		},
+		originalData = JSON.stringify( message.data ),
 		data,
 		i;
 
@@ -388,19 +389,18 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 
 		if( transformUpdate ) {
 			// UPDATE
-			// parse data every time to create a fresh copy
 			data = JSON.parse( message.data[ 2 ] );
 			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
 			message.data[ 2 ] = JSON.stringify( data );
 		} else {
 			// PATCH
-			// convert data every time to create a fresh copy
 			data = messageParser.convertTyped( message.data[ 3 ] );
 			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
 			message.data[ 3 ] = messageBuilder.typed( data );
 		}
 
 		receiver[ i ].sendMessage( message.topic, message.action, message.data );
+		message.data = JSON.parse( originalData );
 	}
 };
 
