@@ -265,7 +265,7 @@ describe( 'record handler handles messages', function(){
 			data: [ 'existingRecord', 5, '{"name":"Kowalski"}' ]
 		});
 
-		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|VERSION_EXISTS|existingRecord|5+' ) );
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|VERSION_EXISTS|existingRecord|5|{"name":"Kowalski"}+' ) );
 		expect( options.logger.lastLogMessage ).toBe( msg( 'someUser tried to update record existingRecord to version 5 but it already was 5' ) );
 	});
 
@@ -291,8 +291,11 @@ describe( 'record handler handles messages', function(){
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|INVALID_MESSAGE_DATA|R|U|existingRecord|6|bla+' ) );
 	});
 
-	it( 'updates a record to the same version', function( next ){
+	it( 'updates a record via same client to the same version', function( done ){
+		options.cacheRetrievalTimeout = 50;
 		options.cache.nextGetWillBeSynchronous = false;
+		clientA.socket.lastSendMessage = null;
+		clientB.socket.lastSendMessage = null;
 
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|U|existingRecord|6|{"name":"Kowalski"}' ),
@@ -301,7 +304,7 @@ describe( 'record handler handles messages', function(){
 			data: [ 'existingRecord', 6, '{"name":"Kowalski"}' ]
 		});
 
-		recordHandler.handle( clientB, {
+		recordHandler.handle( clientA, {
 			raw: msg( 'R|U|existingRecord|6|{"name":"Kowalski"}' ),
 			topic: 'R',
 			action: 'U',
@@ -309,19 +312,58 @@ describe( 'record handler handles messages', function(){
 		});
 
 		setTimeout(function(){
-			expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|E|VERSION_EXISTS|existingRecord|6+' ) );
-			next();
-		}, 10 );
+			expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|U|existingRecord|6|{"name":"Kowalski"}+' ) );
+
+			/**
+			* Important to note this is a race condition since version exists errors are sent as soon as record is retrieved,
+			* which means it hasn't yet been written to cache.
+			*/
+			expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|VERSION_EXISTS|existingRecord|5|{"name":"Kowalski"}+' ) );
+			done();
+		}, 50 );
+
+	});
+
+	it( 'updates a record via different clients to the same version', function( done ){
+		options.cacheRetrievalTimeout = 50;
+		options.cache.nextGetWillBeSynchronous = false;
+		clientA.socket.lastSendMessage = null;
+		clientB.socket.lastSendMessage = null;
+
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|U|existingRecord|7|{"name":"Kowalski"}' ),
+			topic: 'R',
+			action: 'U',
+			data: [ 'existingRecord', 7, '{"name":"Kowalski"}' ]
+		});
+
+		recordHandler.handle( clientB, {
+			raw: msg( 'R|U|existingRecord|7|{"name":"Kowalski"}' ),
+			topic: 'R',
+			action: 'U',
+			data: [ 'existingRecord', 7, '{"name":"Kowalski"}' ]
+		});
+
+		setTimeout(function(){
+			expect( clientA.socket.lastSendMessage ).toBeNull();
+			/**
+			* Important to note this is a race condition since version exists flushes happen before the new record is 
+			* written to cache. 
+			*/
+			expect( clientB.socket.getMsg( 1 ) ).toBe( msg( 'R|E|VERSION_EXISTS|existingRecord|6|{"name":"Kowalski"}+' ) );
+			expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|U|existingRecord|7|{"name":"Kowalski"}+' ) );
+			done();
+		}, 50 );
 
 	});
 
 	it( 'handles deletion messages', function(){
 		options.cache.nextGetWillBeSynchronous = false;
 		recordHandler.handle( clientB, {
-			raw: msg( 'R|U|existingRecord|7|{"name":"Kowalski"}' ),
+			raw: msg( 'R|U|existingRecord|8|{"name":"Kowalski"}' ),
 			topic: 'R',
 			action: 'U',
-			data: [ 'existingRecord', 7, '{"name":"Kowalski"}' ]
+			data: [ 'existingRecord', 8, '{"name":"Kowalski"}' ]
 		});
 
 		recordHandler.handle( clientA, {

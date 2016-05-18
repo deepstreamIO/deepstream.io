@@ -8,6 +8,7 @@ StorageMock.prototype.reset = function() {
 	this.nextOperationWillBeSuccessful = true;
 	this.nextOperationWillBeSynchronous = true;
 	this.nextGetWillBeSynchronous = true;
+	this.lastGetCallback = null;
 	this.lastRequestedKey = null;
 	this.lastSetKey = null;
 	this.lastSetValue = null;
@@ -32,8 +33,13 @@ StorageMock.prototype.hadGetFor = function( key ) {
 	return false;
 };
 
+StorageMock.prototype.triggerLastGetCallback = function( errorMessage, value ) {
+	this.lastGetCallback( errorMessage, value );
+};
+
 StorageMock.prototype.get = function( key, callback ) {
 	this.getCalls.push( arguments );
+	this.lastGetCallback = callback;
 	this.lastRequestedKey = key;
 	var value = this.values[ key ];
 

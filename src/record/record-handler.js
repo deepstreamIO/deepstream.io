@@ -318,7 +318,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	}
 
 	if( this._transitions[ recordName ] && this._transitions[ recordName ].hasVersion( version ) ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, [ recordName, version ] );
+		this._transitions[ recordName ].sendVersionExists( socketWrapper, version );
 		return;
 	}
 
