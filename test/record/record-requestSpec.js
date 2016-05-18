@@ -4,7 +4,7 @@ var RecordRequest = require( '../../src/record/record-request' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	StorageMock = require( '../mocks/storage-mock' ),
 	msg = require( '../test-helper/test-helper' ).msg;
-	
+
 describe( 'records are requested from cache and storage sequentially', function() {
 	var recordRequest,
 		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
@@ -15,10 +15,10 @@ describe( 'records are requested from cache and storage sequentially', function(
 			storage: new StorageMock(),
 			logger: { log: jasmine.createSpy( 'log' ) }
 		};
-		
+
 	options.cache.set( 'existingRecord', { _v:1, _d: {} }, function() {});
 	options.storage.set( 'onlyExistsInStorage', { _v:1, _d: {} }, function() {});
-	
+
 	it( 'requests a record that exists in a synchronous cache', function() {
 		var completeCallback = jasmine.createSpy( 'completeCallback' );
 		options.cache.nextOperationWillBeSynchronous = true;
@@ -27,7 +27,7 @@ describe( 'records are requested from cache and storage sequentially', function(
 		expect( completeCallback ).toHaveBeenCalledWith( { _v:1, _d: {} } );
 		expect( options.storage.lastRequestedKey ).toBe( null );
 	});
-	
+
 	it( 'requests a record that exists in an asynchronous cache', function( done ) {
 		options.cache.nextGetWillBeSynchronous = false;
 		recordRequest = new RecordRequest( 'existingRecord', options, socketWrapper, function( record ) {
@@ -37,7 +37,7 @@ describe( 'records are requested from cache and storage sequentially', function(
 		expect( options.cache.lastRequestedKey ).toBe( 'existingRecord' );
 		expect( options.storage.lastRequestedKey ).toBe( null );
 	});
-	
+
 	it( 'requests a record that doesn\'t exists in a synchronous cache, but in storage', function( done ) {
 		options.cache.nextGetWillBeSynchronous = true;
 
@@ -45,11 +45,11 @@ describe( 'records are requested from cache and storage sequentially', function(
 			expect( record ).toEqual( { _v:1, _d: {} } );
 			done();
 		});
-		
+
 		expect( options.cache.lastRequestedKey ).toBe( 'onlyExistsInStorage' );
 		expect( options.storage.lastRequestedKey ).toBe( 'onlyExistsInStorage' );
 	});
-	
+
 	it( 'requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', function( done ) {
 		options.cache.nextGetWillBeSynchronous = false;
 		options.cache.nextGetWillBeSynchronous = false;
@@ -58,11 +58,11 @@ describe( 'records are requested from cache and storage sequentially', function(
 			expect( record ).toEqual( { _v:1, _d: {} } );
 			done();
 		});
-		
+
 		expect( options.cache.lastRequestedKey ).toBe( 'onlyExistsInStorage' );
 		expect( options.storage.lastRequestedKey ).toBe( 'onlyExistsInStorage' );
 	});
-	
+
 	it( 'returns null for non existent records', function( done ) {
 		options.cache.nextGetWillBeSynchronous = true;
 
@@ -70,7 +70,7 @@ describe( 'records are requested from cache and storage sequentially', function(
 			expect( record ).toBe( null );
 			done();
 		});
-		
+
 		expect( options.cache.lastRequestedKey ).toBe( 'doesNotExist' );
 		expect( options.storage.lastRequestedKey ).toBe( 'doesNotExist' );
 	});
@@ -113,22 +113,22 @@ describe( 'records are requested from cache and storage sequentially', function(
 		options.cache.nextOperationWillBeSuccessful = true;
 		options.storage.nextGetWillBeSynchronous = true;
 		options.storage.nextOperationWillBeSuccessful = false;
-		
+
 		recordRequest = new RecordRequest( 'storageError', options, socketWrapper, completeCallback, function( error, message ) {
-				expect( completeCallback ).not.toHaveBeenCalled();			
-				
+				expect( completeCallback ).not.toHaveBeenCalled();
+
 				expect( error ).toBe( 'RECORD_LOAD_ERROR' );
 				expect( message ).toBe( 'error while loading storageError from storage:storageError' );
 
 				expect( options.logger.log ).toHaveBeenCalledWith( 3, 'RECORD_LOAD_ERROR', 'error while loading storageError from storage:storageError' );
 				expect( socketWrapper.socket.lastSendMessage ).toBe( msg( 'R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+' ) );
-				
+
 				done();
 		});
 	} );
 
 	describe( 'handles cache timeouts', function() {
-		
+
 		var completeCallback = jasmine.createSpy( 'completeCallback' );
 
 		beforeAll( function() {
@@ -157,7 +157,7 @@ describe( 'records are requested from cache and storage sequentially', function(
 	});
 
 	describe( 'handles storage timeouts', function() {
-		
+
 		var completeCallback = jasmine.createSpy( 'completeCallback' );
 
 		beforeAll( function() {
@@ -199,10 +199,10 @@ describe( 'excluded records are not put into storage', function() {
 			storage: new StorageMock(),
 			storageExclusion: new RegExp( 'dont-save' )
 		};
-		
+
 	options.storage.delete = jasmine.createSpy( 'storage.delete' ) ;
 	options.storage.set( 'dont-save/1', { _v:1, _d: {} }, function() {});
-	
+
 	it( 'returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', function( done ) {
 		recordRequest = new RecordRequest( 'dont-save/1', options, socketWrapper, function( record ) {
 			expect( record ).toBeNull();
@@ -210,7 +210,7 @@ describe( 'excluded records are not put into storage', function() {
 			done();
 		});
 	});
-	
+
 	it( 'returns null for non existent records', function( done ) {
 		options.cache.nextGetWillBeSynchronous = true;
 
@@ -222,5 +222,3 @@ describe( 'excluded records are not put into storage', function() {
 		});
 	});
 });
-
-	

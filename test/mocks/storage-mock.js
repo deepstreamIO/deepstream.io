@@ -1,4 +1,8 @@
 var StorageMock = function() {
+	this.reset();
+};
+
+StorageMock.prototype.reset = function() {
 	this.values = {};
 	this.failNextSet = false;
 	this.nextOperationWillBeSuccessful = true;
@@ -9,6 +13,9 @@ var StorageMock = function() {
 	this.lastSetKey = null;
 	this.lastSetValue = null;
 	this.completedSetOperations = 0;
+	this.getCalls = [];
+	clearTimeout( this.getTimeout );
+	clearTimeout( this.setTimeout );
 };
 
 StorageMock.prototype.delete = function( key, callback ) {
@@ -16,11 +23,22 @@ StorageMock.prototype.delete = function( key, callback ) {
 	callback( null );
 };
 
+StorageMock.prototype.hadGetFor = function( key ) {
+	for( var i = 0; i < this.getCalls.length; i++ ) {
+		if( this.getCalls[ i ][ 0 ] === key ) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
 StorageMock.prototype.triggerLastGetCallback = function( errorMessage, value ) {
 	this.lastGetCallback( errorMessage, value );
 };
 
 StorageMock.prototype.get = function( key, callback ) {
+	this.getCalls.push( arguments );
 	this.lastGetCallback = callback;
 	this.lastRequestedKey = key;
 	var value = this.values[ key ];
@@ -28,7 +46,7 @@ StorageMock.prototype.get = function( key, callback ) {
 	if( this.nextGetWillBeSynchronous === true ) {
 		callback( this.nextOperationWillBeSuccessful ? null : 'storageError', value );
 	} else {
-		setTimeout(function(){
+		this.getTimeout = setTimeout(function(){
 			callback( this.nextOperationWillBeSuccessful ? null : 'storageError', value );
 		}.bind( this ), 5 );
 	}
@@ -37,7 +55,9 @@ StorageMock.prototype.get = function( key, callback ) {
 StorageMock.prototype.set = function( key, value, callback ) {
 	this.lastSetKey = key;
 	this.lastSetValue = value;
-	
+	if( value._d === undefined ) {
+		value = { _v:0, _d: value };
+	}
 	if( this.nextOperationWillBeSuccessful ) {
 		this.values[ key ] = value;
 	}
@@ -50,7 +70,7 @@ StorageMock.prototype.set = function( key, value, callback ) {
 		}
 		callback( this.nextOperationWillBeSuccessful ? null : 'storageError' );
 	} else {
-		setTimeout(function(){
+		this.setTimeout = setTimeout(function(){
 			this.completedSetOperations++;
 			callback( this.nextOperationWillBeSuccessful ? null : 'storageError' );
 		}.bind( this ), 30 );

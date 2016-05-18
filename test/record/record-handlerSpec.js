@@ -16,7 +16,8 @@ describe( 'record handler handles messages', function(){
 			storage: new StorageMock(),
 			storageExclusion: new RegExp( 'no-storage'),
 			logger: new LoggerMock(),
-			messageConnector: noopMessageConnector
+			messageConnector: noopMessageConnector,
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
 		};
 
 	it( 'creates the record handler', function(){

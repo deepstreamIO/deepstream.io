@@ -46,7 +46,7 @@ MessageParser.prototype.parse = function( message ) {
 /**
  * Deserializes values created by MessageBuilder.typed to
  * their original format
- * 
+ *
  * @param {String} value
  *
  * @public
@@ -54,11 +54,11 @@ MessageParser.prototype.parse = function( message ) {
  */
 MessageParser.prototype.convertTyped = function( value ) {
 	var type = value.charAt( 0 );
-	
+
 	if( type === C.TYPES.STRING ) {
 		return value.substr( 1 );
 	}
-	
+
 	if( type === C.TYPES.OBJECT ) {
 		try{
 			return JSON.parse( value.substr( 1 ) );
@@ -66,27 +66,27 @@ MessageParser.prototype.convertTyped = function( value ) {
 			return e;
 		}
 	}
-	
+
 	if( type === C.TYPES.NUMBER ) {
 		return parseFloat( value.substr( 1 ) );
 	}
-	
+
 	if( type === C.TYPES.NULL ) {
 		return null;
 	}
-	
+
 	if( type === C.TYPES.TRUE ) {
 		return true;
 	}
-	
+
 	if( type === C.TYPES.FALSE ) {
 		return false;
 	}
-	
+
 	if( type === C.TYPES.UNDEFINED ) {
 		return undefined;
 	}
-	
+
 	return new Error( 'Unknown type' );
 };
 
@@ -110,17 +110,17 @@ MessageParser.prototype._getActions = function() {
 };
 
 /**
- * Parses an individual message (as oposed to a 
+ * Parses an individual message (as oposed to a
  * block of multiple messages as is processed by .parse())
  *
  * @param   {String} message
  *
  * @private
- * 
+ *
  * @returns {Object} parsedMessage
  */
 MessageParser.prototype._parseMessage = function( message ) {
-	var parts = message.split( C.MESSAGE_PART_SEPERATOR ), 
+	var parts = message.split( C.MESSAGE_PART_SEPERATOR ),
 		messageObject = {};
 
 	if( parts.length < 2 ) {

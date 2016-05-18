@@ -15,14 +15,15 @@ describe( 'record handler handles messages', function(){
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			logger: new LoggerMock(),
-			messageConnector: noopMessageConnector
+			messageConnector: noopMessageConnector,
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
 		};
 
 	it( 'creates the record handler', function(){
 		recordHandler = new RecordHandler( options );
 		expect( recordHandler.handle ).toBeDefined();
 	});
-	
+
 	it( 'subscribes to record a and b', function() {
 	    recordHandler.handle( subscribingClient, {
 	        topic: 'R',
@@ -37,19 +38,19 @@ describe( 'record handler handles messages', function(){
 	    });
 	    expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'R|R|user/B|0|{}+' ) );
 	});
-	
+
 	it( 'registers a listener', function() {
 	    recordHandler.handle( listeningClient, {
 	       topic: 'R',
 	       action: 'L',
 	       data: [ 'user\/.*' ]
 	    });
-	    
+
 	    expect( listeningClient.socket.getMsg( 2 ) ).toBe( msg( 'R|A|L|user\/.*+' ) );
         expect( listeningClient.socket.getMsg( 1 ) ).toBe( msg( 'R|SP|user\/.*|user/A+' ) );
         expect( listeningClient.socket.getMsg( 0 ) ).toBe( msg( 'R|SP|user\/.*|user/B+' ) );
 	});
-	
+
 	it( 'makes a new subscription', function() {
 	     recordHandler.handle( subscribingClient, {
 	        topic: 'R',
@@ -59,7 +60,7 @@ describe( 'record handler handles messages', function(){
 	    expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'R|R|user/C|0|{}+' ) );
 	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'R|SP|user\/.*|user/C+' ) );
 	});
-	
+
 	it( 'returns a snapshot of the all records that match the pattern', function(){
 		recordHandler.handle( subscribingClient, {
 			raw: msg( 'R|LSN|user\/*' ),
@@ -80,17 +81,17 @@ describe( 'record handler handles messages', function(){
 	    });
 	    expect( listeningClient.socket.sendMessages.length ).toBe( 4 );
 	});
-	
+
 	it( 'removes listeners', function() {
 	     recordHandler.handle( listeningClient, {
 	       topic: 'R',
 	       action: 'UL',
 	       data: [ 'user\/.*' ]
 	    });
-	    
+
 	    expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'R|A|UL|user\/.*+' ) );
 	    expect( listeningClient.socket.sendMessages.length ).toBe( 5 );
-	    
+
 	     recordHandler.handle( subscribingClient, {
 	        topic: 'R',
 	        action: 'CR',

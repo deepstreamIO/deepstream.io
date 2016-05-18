@@ -189,7 +189,7 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 			if( record ) {
 				this._read( recordName, record, socketWrapper );
 			} else {
-				this._create( recordName, socketWrapper );
+				this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper, this._create.bind( this, recordName, socketWrapper ) );
 			}
 		};
 
@@ -243,8 +243,10 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
  * @returns {void}
  */
 RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
-	this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-	this._sendRecord( recordName, record, socketWrapper );
+	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper, function() {
+		this._subscriptionRegistry.subscribe( recordName, socketWrapper );
+		this._sendRecord( recordName, record, socketWrapper );
+	}.bind( this ));
 };
 
 /**
@@ -446,6 +448,45 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 	}
 
 	new RecordDeletion( this._options, socketWrapper, message, this._$broadcastUpdate.bind( this ) );
+};
+
+/**
+ * A secondary permissioning step that is performed once we know if the record exists (READ)
+ * or if it should be created (CREATE)
+ *
+ * @param   {String} action          One of C.ACTIONS, either C.ACTIONS.READ or C.ACTIONS.CREATE
+ * @param   {String} recordName      The name of the record
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Function} successCallback A callback that will only be invoked if the operation was successful
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._permissionAction = function( action, recordName, socketWrapper, successCallback ) {
+	var message = {
+		topic: C.TOPIC.RECORD,
+		action: action,
+		data: [ recordName ]
+	};
+
+	var onResult = function( error, canPerformAction ) {
+		if( error !== null ) {
+			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
+		}
+		else if( canPerformAction !== true ) {
+			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, action + ':' + recordName );
+		}
+		else {
+			successCallback();
+		}
+	};
+
+	this._options.permissionHandler.canPerformAction(
+		socketWrapper.user,
+		message,
+		onResult,
+		socketWrapper.userData
+	);
 };
 
 module.exports = RecordHandler;

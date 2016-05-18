@@ -1,0 +1,15 @@
+{
+	"record": {},
+	"event": {
+		"*": {
+			"publish": true,
+			"subscribe": true
+		}
+	},
+	"rpc": {
+		"*": {
+			"provide": true,
+			"request": true
+		}
+	}
+}
