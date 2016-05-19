@@ -110,6 +110,7 @@ describe( 'record handler handles messages', function(){
 		var recordHandler = createRecordHandler([transformSettings]);
 		var clientA = createSubscribedClient( recordHandler, 'clientA' );
 		var clientB = createSubscribedClient( recordHandler, 'clientB' );
+		var clientC = createSubscribedClient( recordHandler, 'clientC' );
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|0|{}+' ) );
 		recordHandler.handle( clientA, {
 			raw: msg( 'R|U|someRecord|1|{"testCount":1}+' ),
@@ -117,8 +118,11 @@ describe( 'record handler handles messages', function(){
 			action: 'U',
 			data: [ 'someRecord', '1', '{"testCount":1}' ]
 		});
-		expect( transformSettings.transform.calls.argsFor( 0 )[ 1 ] ).toEqual({ recordName: 'someRecord', version: 1, receiver: 'clientB' });
+
+		expect( transformSettings.transform.calls.count() ).toBe( 2 );
 		expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|U|someRecord|1|{"testCount":8}+' ) );
+		expect( clientC.socket.lastSendMessage ).toBe( msg( 'R|U|someRecord|1|{"testCount":8}+' ) );
+		expect( transformSettings.transform.calls.argsFor( 1 )[ 1 ] ).toEqual({ recordName: 'someRecord', version: 1, receiver: 'clientC' });
 	});
 
 	it( 'sends unaltered patch messages if no transformation is defined', function(){
@@ -159,27 +163,24 @@ describe( 'record handler handles messages', function(){
 		var recordHandler = createRecordHandler([transformSettings]);
 		var clientA = createSubscribedClient( recordHandler, 'clientA' );
 		var clientB = createSubscribedClient( recordHandler, 'clientB' );
+		var clientC = createSubscribedClient( recordHandler, 'clientC' );
 		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|0|{}+' ) );
-		recordHandler.handle( clientA, {
-			raw: msg( 'R|U|someRecord|1|{"testCount":1}+' ),
-			topic: 'R',
-			action: 'U',
-			data: [ 'someRecord', '1', '{"testCount":1}' ]
-		});
-		expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|U|someRecord|1|{"testCount":1}+' ) );
 		
 		recordHandler.handle( clientA, {
-			raw: msg( 'R|P|someRecord|2|patchTestValue|N21+' ),
+			raw: msg( 'R|P|someRecord|1|patchTestValue|N21+' ),
 			topic: 'R',
 			action: 'P',
-			data: [ 'someRecord', '2', 'patchTestValue', 'N21' ]
+			data: [ 'someRecord', '1', 'patchTestValue', 'N21' ]
 		});
-		expect( transformSettings.transform.calls.argsFor( 0 )[ 1 ] ).toEqual({
+
+		expect( transformSettings.transform.calls.count() ).toBe( 2 );
+		expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|P|someRecord|1|patchTestValue|N42+' ) );
+		expect( clientC.socket.lastSendMessage ).toBe( msg( 'R|P|someRecord|1|patchTestValue|N42+' ) );
+		expect( transformSettings.transform.calls.argsFor( 1 )[ 1 ] ).toEqual({
 			recordName : 'someRecord',
-			version : 2,
+			version : 1,
 			path : 'patchTestValue',
-			receiver : 'clientB'
+			receiver : 'clientC'
 		});
-		expect( clientB.socket.lastSendMessage ).toBe( msg( 'R|P|someRecord|2|patchTestValue|N42+' ) );
 	});
 });

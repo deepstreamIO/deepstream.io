@@ -375,6 +375,8 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 			recordName: name,
 			version: parseInt( message.data[ 1 ], 10 )
 		},
+		unparsedData = message.data[ transformUpdate ? 2 : 3 ],
+		messageData = message.data.slice( 0 ),
 		data,
 		i;
 
@@ -390,19 +392,17 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 
 		if( transformUpdate ) {
 			// UPDATE
-			// parse data every time to create a fresh copy
-			data = JSON.parse( message.data[ 2 ] );
+			data = JSON.parse( unparsedData );
 			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
-			message.data[ 2 ] = JSON.stringify( data );
+			messageData[ 2 ] = JSON.stringify( data );
 		} else {
 			// PATCH
-			// convert data every time to create a fresh copy
-			data = messageParser.convertTyped( message.data[ 3 ] );
+			data = messageParser.convertTyped( unparsedData );
 			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
-			message.data[ 3 ] = messageBuilder.typed( data );
+			messageData[ 3 ] = messageBuilder.typed( data );
 		}
 
-		receiver[ i ].sendMessage( message.topic, message.action, message.data );
+		receiver[ i ].sendMessage( message.topic, message.action, messageData );
 	}
 };
 
