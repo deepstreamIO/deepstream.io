@@ -5,6 +5,7 @@ var i=0;
 var EngineIoMock = function(){
 	this.clients = {};
 	this.clientsCount = 0;
+	this.setMaxListeners( 0 );
 };
 
 require("util").inherits( EngineIoMock, require("events").EventEmitter );
