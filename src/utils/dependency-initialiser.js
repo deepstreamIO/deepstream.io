@@ -26,6 +26,10 @@ var DependencyInitialiser = function( options, name ) {
 		this._timeout = setTimeout( this._onTimeout.bind( this ), this._options.dependencyInitialisationTimeout );
 		this._dependency.once( 'ready', this._onReady.bind( this ) );
 		this._dependency.on( 'error', this._onError.bind( this ) );
+
+		if( this._dependency.init ) {
+			this._dependency.init();
+		}
 	}
 };
 

@@ -1,9 +1,10 @@
 var argv = require( 'minimist' )( process.argv.slice(2) ),
 	utils = require( './utils/utils' ),
+	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	C = require( './constants/constants' );
 
 exports.get = function() {
-	return {
+	var options = {
 		/*
 		 * General
 		 */
@@ -11,7 +12,7 @@ exports.get = function() {
 		colors: argv.colors === 'false' ? false : true,
 		showLogo: true,
 		logLevel: C.LOG_LEVEL.INFO,
-	
+
 		/*
 		 * Connectivity
 		 */
@@ -35,16 +36,15 @@ exports.get = function() {
 		 * Data Manipulation
 		 */
 		dataTransforms: null,
-	
+
 		/*
 		 * Default Plugins
 		 */
-		permissionHandler: require( './default-plugins/open-permission-handler' ),
 		logger: require( './default-plugins/std-out-logger' ),
 		messageConnector: require( './default-plugins/noop-message-connector' ),
 		cache: require( './default-plugins/local-cache' ),
 		storage: require( './default-plugins/noop-storage' ),
-	
+
 		/*
 		 * Storage options
 		 */
@@ -56,7 +56,14 @@ exports.get = function() {
 		maxAuthAttempts: 3,
 		logInvalidAuthData: true,
 		maxMessageSize: 1048576,
-		
+
+		/*
+		 * Permissioning
+		 */
+		permissionConfigPath: './permissions.json',
+		maxPermissionRuleIterations: 3,
+		permissionCacheEvacuationInterval: 60000,
+
 		/*
 		 * Timeouts
 		 */
@@ -68,4 +75,8 @@ exports.get = function() {
 		storageRetrievalTimeout: 2000,
 		dependencyInitialisationTimeout: 2000
 	};
+
+	//TODO: Change as soon as we move to config reader
+	options.permissionHandler = new ConfigPermissionHandler( options );
+	return options;
 };

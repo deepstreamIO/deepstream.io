@@ -24,8 +24,8 @@ var RecordRequest = function( recordName, options, socketWrapper, onComplete, on
 	this._onError = onError;
 	this._isDestroyed = false;
 
-	this._cacheRetrievalTimeout = setTimeout( 
-		this._sendError.bind( this, C.EVENT.CACHE_RETRIEVAL_TIMEOUT, this._recordName ), 
+	this._cacheRetrievalTimeout = setTimeout(
+		this._sendError.bind( this, C.EVENT.CACHE_RETRIEVAL_TIMEOUT, this._recordName ),
 		this._options.cacheRetrievalTimeout
 	);
 
@@ -43,7 +43,7 @@ var RecordRequest = function( recordName, options, socketWrapper, onComplete, on
  */
 RecordRequest.prototype._onCacheResponse = function( error, record ) {
 	clearTimeout( this._cacheRetrievalTimeout );
-	
+
 	if( this._isDestroyed === true ) {
 		return;
 	}
@@ -55,15 +55,14 @@ RecordRequest.prototype._onCacheResponse = function( error, record ) {
 		this._onComplete( record );
 	}
 	else if( !this._options.storageExclusion || !this._options.storageExclusion.test( this._recordName ) ) {
-		this._storageRetrievalTimeout = setTimeout( 
-			this._sendError.bind( this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName ), 
+		this._storageRetrievalTimeout = setTimeout(
+			this._sendError.bind( this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName ),
 			this._options.storageRetrievalTimeout
 		);
 
 		this._options.storage.get( this._recordName, this._onStorageResponse.bind( this ) );
-	}
-	else {
-		this._onComplete( null );	
+	} else {
+		this._onComplete( null );
 	}
 };
 
@@ -112,7 +111,9 @@ RecordRequest.prototype._onStorageResponse = function( error, record ) {
  */
 RecordRequest.prototype._sendError = function( event, message ) {
 	this._options.logger.log( C.LOG_LEVEL.ERROR, event, message );
-	this._socketWrapper.sendError( C.TOPIC.RECORD, event, message );
+	if( this._socketWrapper ) {
+		this._socketWrapper.sendError( C.TOPIC.RECORD, event, message );
+	}
 	if( this._onError ) {
 		this._onError( event, message );
 	}

@@ -15,7 +15,8 @@ function createRecordHandler( dataTransformSettings ) {
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			logger: new LoggerMock(),
-			messageConnector: noopMessageConnector
+			messageConnector: noopMessageConnector,
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
 		};
 
 	if( dataTransformSettings ) {
