@@ -4,6 +4,7 @@ var util = require('util');
 var HttpServerMock = function() {
 	EventEmitter.call(this);
 	this.listening = false;
+	this.closed = false;
 };
 
 util.inherits(HttpServerMock, EventEmitter);
@@ -20,6 +21,7 @@ HttpServerMock.prototype.listen = function ( port, host, callback ) {
 };
 
 HttpServerMock.prototype.close = function( callback ) {
+	this.closed = true;
 	this.emit('close');
 	callback && callback();
 };

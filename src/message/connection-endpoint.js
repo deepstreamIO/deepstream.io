@@ -119,17 +119,24 @@ ConnectionEndpoint.prototype.close = function() {
  * @returns {void}
  */
 ConnectionEndpoint.prototype._closeEngineIoServer = function() {
+	this._server.removeAllListeners( 'request' );
 	this._engineIo.removeAllListeners( 'connection' );
-	for( var i = 0; i < this._engineIo.clients.length; i++ ) {
-		if( this._engineIo.clients[ i ].readyState !== READY_STATE_CLOSED ) {
-			this._engineIo.clients[ i ].once( 'close', this._checkClosed.bind( this ) );
+	for( var engineIoClient in this._engineIo.clients ) {
+		if( this._engineIo.clients[ engineIoClient ].readyState !== READY_STATE_CLOSED ) {
+			this._engineIo.clients[ engineIoClient ].once( 'close', this._checkClosed.bind( this ) );
 		}
 	}
 	this._engineIo.close();
-	this._server.close( function(){
+
+	if( this._options.httpServer ) {
 		this._engineIoServerClosed = true;
 		this._checkClosed();
-	}.bind( this ));
+	} else {
+		this._server.close( function(){
+			this._engineIoServerClosed = true;
+			this._checkClosed();
+		}.bind( this ) );
+	}
 };
 
 /**
@@ -178,18 +185,13 @@ ConnectionEndpoint.prototype._createHttpServer = function() {
  * @returns {void}
  */
 ConnectionEndpoint.prototype._checkClosed = function() {
+
 	if( this._tcpEndpoint && this._tcpEndpoint.isClosed === false ) {
 		return;
 	}
 
-	if( this._engineIo && this._engineIoServerClosed === false ) {
+	if( this._engineIo && ( this._engineIo.clientsCount > 0 || this._engineIoServerClosed === false ) ) {
 		return;
-	}
-
-	for( var i = 0; this._engineIo && i < this._engineIo.clients.length; i++ ) {
-		if( this._engineIo.clients[ i ].readyState !== READY_STATE_CLOSED ) {
-			return;
-		}
 	}
 
 	this.emit( 'close' );

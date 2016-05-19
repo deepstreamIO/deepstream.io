@@ -1,7 +1,10 @@
 var SocketMock = require( './socket-mock' );
 
+var i=0;
+
 var EngineIoMock = function(){
-	this.clients = [];
+	this.clients = {};
+	this.clientsCount = 0;
 };
 
 require("util").inherits( EngineIoMock, require("events").EventEmitter );
@@ -9,7 +12,8 @@ require("util").inherits( EngineIoMock, require("events").EventEmitter );
 EngineIoMock.prototype.simulateConnection = function() {
 	var socketMock = new SocketMock();
 	this.emit( 'connection', socketMock );
-	this.clients.push( socketMock );
+	this.clients[ i++ ] =  socketMock;
+	this.clientsCount++;
 	return socketMock;
 };
 
@@ -22,9 +26,11 @@ EngineIoMock.prototype.attach = function( server ){
 };
 
 EngineIoMock.prototype.close = function(){
-	for( var i=0; i<this.clients.length; i++){
-		this.clients[i].close();
+	for( var client in this.clients ) {
+		this.clients[ client ].close();
+		this.clientsCount--;
 	}
+	this.clients = {};
 };
 
 module.exports = new EngineIoMock();
