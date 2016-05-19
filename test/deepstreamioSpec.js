@@ -1,5 +1,6 @@
 var Deepstream = require( '../src/deepstream.io' );
 var ClosableLogger = require( './mocks/closable-logger' );
+var LoggerMock = require( './mocks/logger-mock' );
 
 describe( 'the main server class', function(){
 	it( 'exposes the message parser\'s convertTyped method', function(){
@@ -31,6 +32,8 @@ describe( 'it starts and stops the server', function(){
 
 	it( 'starts the server', function( next ){
 		server = new Deepstream();
+		server.set( 'showLogo', false );
+		server.set( 'logger', new LoggerMock() );
 		server.on( 'started', next );
 		expect( server.isRunning ).toBe( false );
 		server.start();
