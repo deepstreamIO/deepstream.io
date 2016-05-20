@@ -51,9 +51,12 @@ utils.inherits( ConfigPermissionHandler, events.EventEmitter );
  *
  * @returns {Boolean}
  */
+var AuthenticationHandler = require( '../authentication/open-authentication-handler' );
+var authenticationHandler = new AuthenticationHandler();
 /* istanbul ignore next */
 ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authData, callback ) {
-	callback( null, authData.username || 'open' );
+	authenticationHandler.isValidUser( connectionData, authData, callback );
+	//callback( null, authData.username || 'open' );
 };
 
 /**
