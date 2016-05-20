@@ -9,11 +9,11 @@ exports.getUid = function() {
 
 /**
  * Calls <callback> once all <emitters> have emitted <event>
- * 
+ *
  * @param {Array} emitters Array of objects extending events.EventEmitter
  * @param {String} event
  * @param {Function} callback Will be called once every emitter has emitted the event
- * 
+ *
  * @public
  * @returns {void}
  */
@@ -22,21 +22,21 @@ exports.combineEvents = function( emitters, event, callback ) {
         count = 0,
         increment = function() {
             count++;
-            
+
             if( count === emitters.length ) {
                 callback();
             }
         };
-        
+
   for( i = 0; i < emitters.length; i++ ) {
       emitters[ i ].once( event, increment );
-  }  
+  }
 };
 
 /**
  * Takes a key-value map and returns
  * a map with { value: key } of the old map
- * 
+ *
  * @param  {Object} map
  *
  * @public
@@ -51,3 +51,17 @@ exports.reverseMap = function( map ) {
 
   return reversedMap;
 };
+
+exports.validateMap = function( map, schema ) {
+  for( var key in schema ) {
+    if( typeof map[ key ] === 'undefined' ) {
+      return new Error( 'Missing key ' + key );
+    }
+
+    if( typeof map[ key ] !== schema[ key ] ) {
+      return new Error( 'Invalid type ' + typeof map[ key ] + ' for ' + key );
+    }
+  }
+
+  return true;
+}
