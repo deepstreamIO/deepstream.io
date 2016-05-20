@@ -91,6 +91,7 @@ Deepstream.prototype.set = function( key, value ) {
 	}
 
 	this._options[ key ] = value;
+	return this;
 };
 
 /**
