@@ -52,16 +52,28 @@ exports.reverseMap = function( map ) {
   return reversedMap;
 };
 
-exports.validateMap = function( map, schema ) {
+exports.validateMap = function( map, throwError, schema ) {
+  var error;
+
   for( var key in schema ) {
     if( typeof map[ key ] === 'undefined' ) {
-      return new Error( 'Missing key ' + key );
+      error = new Error( 'Missing key ' + key );
+      break;
     }
 
     if( typeof map[ key ] !== schema[ key ] ) {
-      return new Error( 'Invalid type ' + typeof map[ key ] + ' for ' + key );
+      error = new Error( 'Invalid type ' + typeof map[ key ] + ' for ' + key );
+      break;
     }
   }
 
-  return true;
+  if( error ) {
+    if( throwError ) {
+      throw error;
+    } else {
+      return error;
+    }
+  } else {
+    return true;
+  }
 }
