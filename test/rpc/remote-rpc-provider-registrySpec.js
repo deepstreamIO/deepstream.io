@@ -104,7 +104,9 @@ describe( 'keeps track of which remote deepstream instance can provide which rpc
 		expect( options.messageConnector.lastPublishedMessage.data[ 0 ] ).toBe( 'rpcA' );
 	});
 
-	it( 'returns different providers if multiple providers are available for the same rpc', function(){
+	it( 'adds another provider', function(){
+		expect( registry.getAllProviderTopics( 'rpcA' ) ).toEqual([ 'privateTopicA' ] );
+
 		options.messageConnector.simulateIncomingMessage({
 			topic: C.TOPIC.RPC,
 			action: C.ACTIONS.PROVIDER_UPDATE,
@@ -115,6 +117,10 @@ describe( 'keeps track of which remote deepstream instance can provide which rpc
 			}]
 		});
 
+		expect( registry.getAllProviderTopics( 'rpcA' ) ).toEqual([ 'privateTopicA', 'privateTopicC' ]);
+	});
+
+	it( 'returns different providers if multiple providers are available for the same rpc', function(){
 		var hadTopicC = false,
 			hadTopicA = false,
 			callback = function( error, topic ){
