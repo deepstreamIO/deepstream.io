@@ -8,20 +8,27 @@ const UNDEFINED = 'undefined';
 const STRING = 'string';
 const STRING_CHARSET = 'base64';
 
+/**
+ * This authentication handler reads a list of users and their associated password (either
+ * hashed or in cleartext ) from a json file. This can be useful to authenticate smaller amounts
+ * of clients with static credentials, e.g. backend provider that write to publicly readable records
+ *
+ * @public
+ * @extends {EventEmitter}
+ */
 module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 
 	/**
-	 * [constructor description]
+	 * Creates the class, reads and validates the users.json file
 	 *
 	 * @param   {Object} settings
 	 * @param   {String} settings.path path to the user file
 	 * @param   {String} settings.hashAlgo the name of a HMAC digest algorithm, a.g. 'sha512'
 	 * @param   {Int} settings.iterations the amount of times the algorithm should be applied
 	 * @param   {Int} settings.keyLength the length of the resulting key
-	 * @param   {Boolean} watch	if true, the FileBasedAuthenticationHandler will reload the permissions whenver the file changes
-	 * @param
 	 *
-	 * @returns {[type]}
+	 * @constructor
+	 * @returns {void}
 	 */
 	constructor( settings ) {
 		super();
@@ -32,8 +39,9 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 		this._base64KeyLength = 4 * Math.ceil( this._settings.keyLength / 3 );
 		this._jsonLoader.load( settings.path, this._onFileLoad.bind( this ) );
 	}
+
 	/**
-	 * Grants access to any user. Registeres them with username or open
+	 * Main interface. Authenticates incoming connections
 	 *
 	 * @param   {Object}   connectionData
 	 * @param   {Object}   authData
@@ -45,29 +53,43 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 	 */
 	isValidUser( connectionData, authData, callback ) {
 		if( typeof authData.username !== STRING ) {
-			callback( 'missing authentication parameter username' );
+			callback( 'missing authentication parameter username', false );
 			return;
 		}
 
 		if( typeof authData.password !== STRING ) {
-			callback( 'missing authentication parameter password' );
+			callback( 'missing authentication parameter password', false );
 			return;
 		}
 
 		var userData = this._data[ authData.username ];
 
 		if( !userData ) {
-			callback( null, false );
+			callback( null, false, null );
 			return;
 		}
 
 		if( this._settings.hash ) {
-			this._isValid( authData.password, userData.password, callback );
+			this._isValid( authData.password, userData.password, userData.data, callback );
+		} else if( authData.password === userData.password ) {
+			callback( null, true, userData.data || null );
 		} else {
-			callback( null, authData.password === userData.password );
+			callback( null, false, null );
 		}
 	}
 
+	/**
+	 * Utility method for creating hashes including salts based on
+	 * the provided parameters
+	 *
+	 * @todo  this needs to be exposed to users, maybe via CLI?
+	 *
+	 * @param   {String}   password the password that should be hashed
+	 * @param   {Function} callback will be invoked with error, hash once hashing is completed
+	 *
+	 * @public
+	 * @returns {void}
+	 */
 	createHash( password, callback ) {
 		var salt = crypto.randomBytes( 16 ).toString( STRING_CHARSET );
 
@@ -78,11 +100,21 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 			this._settings.keyLength,
 			this._settings.hashAlgo,
 			function( err, hash ) {
-				callback( err, hash.toString( STRING_CHARSET ) + salt );
+				callback( err || null, hash.toString( STRING_CHARSET ) + salt );
 			}.bind( this )
 		);
 	}
 
+	/**
+	 * Callback for loaded JSON files. Makes sure that
+	 * no errors occured and every user has an associated password
+	 *
+	 * @param   {Error} 	error an error that occured during loading or parsing the file
+	 * @param   {Object} 	data  parsed contents of the file
+	 *
+	 * @private
+	 * @returns {void}
+	 */
 	_onFileLoad( error, data ) {
 		if( error ) {
 			this.emit( 'error', error.toString() );
@@ -100,11 +132,18 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 		this.emit( 'ready' );
 	}
 
+	/**
+	 * Called initially to validate the user provided settings
+	 *
+	 * @param   {Object} settings
+	 *
+	 * @private
+	 * @returns {void}
+	 */
 	_validateSettings( settings ) {
 		if( !settings.hash ) {
 			utils.validateMap( settings, true, {
-				path: 'string',
-				watch: 'boolean'
+				path: 'string'
 			});
 			return;
 		}
@@ -113,8 +152,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 			path: 'string',
 			hash: 'string',
 			iterations: 'number',
-			keyLength: 'number',
-			watch: 'boolean'
+			keyLength: 'number'
 		});
 
 		if( crypto.getHashes().indexOf( settings.hash ) === -1 ) {
@@ -122,7 +160,19 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 		}
 	}
 
-	_isValid( password, passwordHashWithSalt, callback ) {
+	/**
+	 * Extracts hash and salt from a string and runs a hasing function
+	 * against it
+	 *
+	 * @param   {String}   password             the cleartext password the user provided
+	 * @param   {String}   passwordHashWithSalt the hash+salt combination from the users.json file
+	 * @param   {Object}   authData             arbitrary authentication data that will be passed on to the permission handler
+	 * @param   {Function} callback             callback that will be invoked once hash is created
+	 *
+	 * @private
+	 * @returns {void}
+	 */
+	_isValid( password, passwordHashWithSalt, authData, callback ) {
 		var expectedHash = passwordHashWithSalt.substr( 0, this._base64KeyLength );
 		var salt = passwordHashWithSalt.substr( this._base64KeyLength );
 
@@ -132,11 +182,27 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 			this._settings.iterations,
 			this._settings.keyLength,
 			this._settings.hashAlgo,
-			this._compareHashResult.bind( this, expectedHash, callback )
+			this._compareHashResult.bind( this, expectedHash, authData, callback )
 		);
 	}
 
-	_compareHashResult( expectedHash, callback, error, actualHashBuffer ) {
-		callback( error || null, expectedHash === actualHashBuffer.toString( STRING_CHARSET ) );
+	/**
+	 * Callback once hashing is completed
+	 *
+	 * @param   {String}   expectedHash     has as retrieved from users.json
+	 * @param   {Object}   authData         optional authentication meta data
+	 * @param   {Function} callback         callback from isValidUser
+	 * @param   {Error}    error            error that occured during hashing
+	 * @param   {Buffer}   actualHashBuffer the buffer containing the bytes for the new hash
+	 *
+	 * @private
+	 * @returns {void}
+	 */
+	_compareHashResult( expectedHash, authData, callback, error, actualHashBuffer ) {
+		if( expectedHash === actualHashBuffer.toString( STRING_CHARSET ) ) {
+			callback( error || null, true, authData || null );
+		} else {
+			callback( error || null, false, null );
+		}
 	}
 }
