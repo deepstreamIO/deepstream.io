@@ -11,7 +11,8 @@
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
     "test": "node node_modules/jasmine/bin/jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "reporter": "node jasmine-runner"
+    "reporter": "node jasmine-runner",
+    "test-http-server": "node test/test-helper/start-test-server.js"
   },
   "repository": {
     "type": "git",
