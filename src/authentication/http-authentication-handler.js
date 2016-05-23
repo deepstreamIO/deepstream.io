@@ -4,8 +4,6 @@ const HttpAuthenticationRequest = require( './http-authentication-request' );
 const EventEmitter = require( 'events' ).EventEmitter;
 const utils = require( '../utils/utils' );
 const url = require( 'url' );
-const UNDEFINED = 'undefined';
-const STRING = 'string';
 
 /**
  *
@@ -19,13 +17,14 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter{
 	 *
 	 * @param   {Object} settings
 	 * @param   {String} settings.endpointUrl http(s) endpoint that will receive post requests
+	 * @param   {Array}  settings.permittedStatusCodes an array of http status codes that qualify as permitted
+	 * @param   {Number} settings.requestTimeout time in milliseconds before the request times out if no reply is received
 	 *
 	 * @constructor
 	 * @returns {void}
 	 */
 	constructor( settings ) {
 		super();
-
 		this.isReady = true;
 		this._settings = settings;
 		this._validateSettings();
@@ -44,28 +43,40 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter{
 	 * @returns {void}
 	 */
 	isValidUser( connectionData, authData, callback ) {
-		new HttpAuthenticationRequest( utils.deepCopy( this._params ), connectionData, authData, callback );
+		new HttpAuthenticationRequest(
+			this._params,
+			connectionData,
+			authData,
+			this._settings,
+			callback
+		);
 	}
 
+	/**
+	 * Parses the provided endpoint URL and extends the resulting
+	 * parameter set with values for the outgoing request
+	 *
+	 * @private
+	 * @returns {void}
+	 */
 	_createUrlParams() {
 		var params = url.parse( this._settings.endpointUrl );
-
-		if( params.host === null ) {
-			throw new Error( 'invalid endpoint url ' + this._settings.endpointUrl );
-		}
-
 		params.method = 'POST';
-		params.headers = {
-			'Content-Type': 'application/json',
-		}
-
+		params.headers = { 'Content-Type': 'application/json' };
 		return params;
 	}
 
+	/**
+	 * Validate the user provided settings
+	 *
+	 * @private
+	 * @returns {void}
+	 */
 	_validateSettings() {
-		if( typeof this._settings.endpointUrl !== STRING ) {
-			throw new Error( 'Missing setting endpointUrl for HttpAuthenticationHandler' );
-		}
+		utils.validateMap( this._settings, true, {
+			endpointUrl: 'url',
+			permittedStatusCodes: 'array',
+			requestTimeout: 'number'
+		});
 	}
 }
-

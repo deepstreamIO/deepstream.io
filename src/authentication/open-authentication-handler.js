@@ -1,4 +1,5 @@
 'use strict';
+
 /**
  * Used for users that don't provide a username
  *
