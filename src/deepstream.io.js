@@ -185,7 +185,7 @@ Deepstream.prototype._showStartLogo = function() {
 	if( this._options.showLogo !== true ) {
 		return;
 	}
-
+	/* istanbul ignore next */
 	var logo =
 	' _____________________________________________________________________________\n'+
 	'                                                                              \n'+
@@ -196,7 +196,7 @@ Deepstream.prototype._showStartLogo = function() {
 	'                       /                                                      \n'+
 	'                      /                                                       \n'+
 	'=============================== STARTING... ==================================\n';
-
+	/* istanbul ignore next */
 	process.stdout.write( this._options.colors ? logo.yellow : logo );
 };
 

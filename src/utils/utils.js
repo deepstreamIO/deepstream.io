@@ -1,4 +1,8 @@
-var url = require( 'url' );
+'use strict';
+
+const url = require( 'url' );
+const OBJECT = 'object';
+
 /**
  * Returns a unique identifier
  *
@@ -19,15 +23,15 @@ exports.getUid = function() {
  * @returns {void}
  */
 exports.combineEvents = function( emitters, event, callback ) {
-		var i,
-				count = 0,
-				increment = function() {
-						count++;
+	var i;
+	var count = 0;
+	var increment = function() {
+		count++;
 
-						if( count === emitters.length ) {
-								callback();
-						}
-				};
+		if( count === emitters.length ) {
+			callback();
+		}
+	};
 
 	for( i = 0; i < emitters.length; i++ ) {
 			emitters[ i ].once( event, increment );
@@ -53,6 +57,16 @@ exports.reverseMap = function( map ) {
 	return reversedMap;
 };
 
+/**
+ * Extended version of the typeof operator. Also supports 'array'
+ * and 'url' to check for valid URL schemas
+ *
+ * @param   {Mixed}   input
+ * @param   {String}  expectedType
+ *
+ * @public
+ * @returns {Boolean}
+ */
 exports.isOfType = function( input, expectedType ) {
 	if( expectedType === 'array' ) {
 		return Array.isArray( input );
@@ -63,6 +77,17 @@ exports.isOfType = function( input, expectedType ) {
 	}
 };
 
+/**
+ * Takes a map and validates it against a basic
+ * json schema in the form { key: type }
+ *
+ * @param   {Object}  map        the map to validate
+ * @param   {Boolean} throwError if true, errors will be thrown rather than returned
+ * @param   {Object}  schema     json schema in the form { key: type }
+ *
+ * @public
+ * @returns {Boolean|Error}
+ */
 exports.validateMap = function( map, throwError, schema ) {
 	var error, key;
 
@@ -89,6 +114,28 @@ exports.validateMap = function( map, throwError, schema ) {
 	}
 };
 
+/**
+ * Tests have shown that JSON stringify outperforms any attempt of
+ * a code based implementation by 50% - 100% whilst also handling edge-cases and keeping implementation
+ * complexity low.
+ *
+ * If ES6/7 ever decides to implement deep copying natively (what happened to Object.clone? that was briefly
+ * a thing...), let's switch it for the native implementation. For now though, even Object.assign({}, obj) only
+ * provides a shallow copy.
+ *
+ * Please find performance test results backing these statements here:
+ *
+ * http://jsperf.com/object-deep-copy-assign
+ *
+ * @param   {Mixed} obj the object that should be cloned
+ *
+ * @public
+ * @returns {Mixed} clone
+ */
 exports.deepCopy = function( obj ) {
-	return JSON.parse( JSON.stringify( obj ) );
+	if( typeof obj === OBJECT ) {
+		return JSON.parse( JSON.stringify( obj ) );
+	} else {
+		return obj;
+	}
 };
