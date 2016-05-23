@@ -10,9 +10,11 @@ module.exports = class TestHttpServer extends EventEmitter{
 		this.lastRequestData = null;
 		this.hasReceivedRequest = false;
 		this.lastRequestHeaders = null;
+		this._port = port;
+		this._callback = callback;
 		this._doLog = doLog;
 		this._response = null;
-		this.server.listen( port, this._log.bind( this, 'server listening on port ' + port ) );
+		this.server.listen( port, this._onListen.bind( this ) );
 	}
 
 	static getRandomPort() {
@@ -38,6 +40,11 @@ module.exports = class TestHttpServer extends EventEmitter{
 	}
 
 
+	_onListen() {
+		this._log.bind( this, 'server listening on port ' + this._port );
+		this._callback();
+	}
+
 	_log( msg ) {
 		if( this._doLog ) {
 			console.log( msg );
@@ -59,6 +66,7 @@ module.exports = class TestHttpServer extends EventEmitter{
 	_onRequestComplete( request ) {
 		this.lastRequestData = JSON.parse( request.postData );
 		this.lastRequestHeaders = request.headers;
+		this.lastRequestMethod = request.method;
 		this.emit( 'request-received' );
 		this._log( 'received data ' + request.postData );
 	}

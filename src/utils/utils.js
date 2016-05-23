@@ -1,3 +1,4 @@
+var url = require( 'url' );
 /**
  * Returns a unique identifier
  *
@@ -18,19 +19,19 @@ exports.getUid = function() {
  * @returns {void}
  */
 exports.combineEvents = function( emitters, event, callback ) {
-    var i,
-        count = 0,
-        increment = function() {
-            count++;
+		var i,
+				count = 0,
+				increment = function() {
+						count++;
 
-            if( count === emitters.length ) {
-                callback();
-            }
-        };
+						if( count === emitters.length ) {
+								callback();
+						}
+				};
 
-  for( i = 0; i < emitters.length; i++ ) {
-      emitters[ i ].once( event, increment );
-  }
+	for( i = 0; i < emitters.length; i++ ) {
+			emitters[ i ].once( event, increment );
+	}
 };
 
 /**
@@ -43,41 +44,51 @@ exports.combineEvents = function( emitters, event, callback ) {
  * @return {Object} reversed map
  */
 exports.reverseMap = function( map ) {
-  var reversedMap = {}, key;
+	var reversedMap = {}, key;
 
-  for( key in map ) {
-    reversedMap[ map[ key ] ] = key;
-  }
+	for( key in map ) {
+		reversedMap[ map[ key ] ] = key;
+	}
 
-  return reversedMap;
+	return reversedMap;
+};
+
+exports.isOfType = function( input, expectedType ) {
+	if( expectedType === 'array' ) {
+		return Array.isArray( input );
+	} else if( expectedType === 'url' ) {
+		return !!url.parse( input ).host;
+	} else {
+		return typeof input === expectedType;
+	}
 };
 
 exports.validateMap = function( map, throwError, schema ) {
-  var error;
+	var error, key;
 
-  for( var key in schema ) {
-    if( typeof map[ key ] === 'undefined' ) {
-      error = new Error( 'Missing key ' + key );
-      break;
-    }
+	for( key in schema ) {
+		if( typeof map[ key ] === 'undefined' ) {
+			error = new Error( 'Missing key ' + key );
+			break;
+		}
 
-    if( typeof map[ key ] !== schema[ key ] ) {
-      error = new Error( 'Invalid type ' + typeof map[ key ] + ' for ' + key );
-      break;
-    }
-  }
+		if( !exports.isOfType( map[ key ], schema[ key ] ) ) {
+			error = new Error( 'Invalid type ' + typeof map[ key ] + ' for ' + key );
+			break;
+		}
+	}
 
-  if( error ) {
-    if( throwError ) {
-      throw error;
-    } else {
-      return error;
-    }
-  } else {
-    return true;
-  }
+	if( error ) {
+		if( throwError ) {
+			throw error;
+		} else {
+			return error;
+		}
+	} else {
+		return true;
+	}
 };
 
 exports.deepCopy = function( obj ) {
-  return JSON.parse( JSON.stringify( obj ) );
+	return JSON.parse( JSON.stringify( obj ) );
 };
