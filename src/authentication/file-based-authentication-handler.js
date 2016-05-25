@@ -53,28 +53,30 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 	 */
 	isValidUser( connectionData, authData, callback ) {
 		if( typeof authData.username !== STRING ) {
-			callback( 'missing authentication parameter username', false );
+			callback( false, { clientData: 'missing authentication parameter username' });
 			return;
 		}
 
 		if( typeof authData.password !== STRING ) {
-			callback( 'missing authentication parameter password', false );
+			callback( false, { clientData: 'missing authentication parameter password' });
 			return;
 		}
 
 		var userData = this._data[ authData.username ];
 
 		if( !userData ) {
-			callback( null, false, null );
+			callback( false );
 			return;
 		}
 
 		if( this._settings.hash ) {
-			this._isValid( authData.password, userData.password, userData.data, callback );
+			this._isValid( authData.password, userData.password, authData.username, userData.data, callback );
 		} else if( authData.password === userData.password ) {
-			callback( null, true, userData.data || null );
+			callback( true, {
+				authData: userData.data || null
+			});
 		} else {
-			callback( null, false, null );
+			callback( false );
 		}
 	}
 
@@ -166,13 +168,14 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 	 *
 	 * @param   {String}   password             the cleartext password the user provided
 	 * @param   {String}   passwordHashWithSalt the hash+salt combination from the users.json file
+	 * @param   {String}   username				as provided by user
 	 * @param   {Object}   authData             arbitrary authentication data that will be passed on to the permission handler
 	 * @param   {Function} callback             callback that will be invoked once hash is created
 	 *
 	 * @private
 	 * @returns {void}
 	 */
-	_isValid( password, passwordHashWithSalt, authData, callback ) {
+	_isValid( password, passwordHashWithSalt, username, authData, callback ) {
 		var expectedHash = passwordHashWithSalt.substr( 0, this._base64KeyLength );
 		var salt = passwordHashWithSalt.substr( this._base64KeyLength );
 
@@ -182,7 +185,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 			this._settings.iterations,
 			this._settings.keyLength,
 			this._settings.hashAlgo,
-			this._compareHashResult.bind( this, expectedHash, authData, callback )
+			this._compareHashResult.bind( this, expectedHash, username, authData, callback )
 		);
 	}
 
@@ -198,11 +201,15 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_compareHashResult( expectedHash, authData, callback, error, actualHashBuffer ) {
+	_compareHashResult( expectedHash, username, authData, callback, error, actualHashBuffer ) {
 		if( expectedHash === actualHashBuffer.toString( STRING_CHARSET ) ) {
-			callback( error || null, true, authData || null );
+			//todo log error
+			callback( true, {
+				username: username,
+				authData: authData || null
+			});
 		} else {
-			callback( error || null, false, null );
+			callback( false );
 		}
 	}
-}
+};

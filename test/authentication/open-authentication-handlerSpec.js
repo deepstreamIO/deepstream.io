@@ -11,12 +11,12 @@ describe( 'open authentication handler', function(){
 	it( 'permissions users without auth data', function(){
 		var callback = jasmine.createSpy( 'callback' );
 		authenticationHandler.isValidUser( null, {}, callback );
-		expect( callback ).toHaveBeenCalledWith( null, 'open' );
+		expect( callback ).toHaveBeenCalledWith( true, {username: 'open'});
 	});
 
 	it( 'permissions users with a username', function(){
 		var callback = jasmine.createSpy( 'callback' );
 		authenticationHandler.isValidUser( null, { username: 'Wolfram' }, callback );
-		expect( callback ).toHaveBeenCalledWith( null, 'Wolfram' );
+		expect( callback ).toHaveBeenCalledWith( true, {username: 'Wolfram' });
 	});
 });

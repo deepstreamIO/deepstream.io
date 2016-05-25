@@ -6,10 +6,11 @@ var testPermission = function( settings ) {
 		password: settings.password
 	};
 
-	var callback = function( error, result, data ) {
-		expect( error ).toBe( settings.expectedError );
+	var callback = function( result, data ) {
 		expect( result ).toBe( settings.expectedResult );
-		expect( data ).toEqual( settings.expectedData || null );
+		if( settings.authData ) {
+			expect( data.authData ).toEqual( settings.authData );
+		}
 		settings.done();
 	};
 
@@ -258,9 +259,9 @@ describe( 'errors for invalid auth-data', function(){
 			password: 'some password'
 		};
 
-		var callback = function( error, result ) {
-			expect( error ).toBe( 'missing authentication parameter username' );
+		var callback = function( result, data ) {
 			expect( result ).toBe( false );
+			expect( data.clientData ).toBe( 'missing authentication parameter username' );
 			done();
 		};
 
@@ -272,9 +273,9 @@ describe( 'errors for invalid auth-data', function(){
 			username: 'some user'
 		};
 
-		var callback = function( error, result ) {
-			expect( error ).toBe( 'missing authentication parameter password' );
+		var callback = function( result, data ) {
 			expect( result ).toBe( false );
+			expect( data.clientData ).toBe( 'missing authentication parameter password' );
 			done();
 		};
 
