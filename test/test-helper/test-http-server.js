@@ -18,7 +18,7 @@ module.exports = class TestHttpServer extends EventEmitter{
 	}
 
 	static getRandomPort() {
-		return Math.floor( Math.random() * 10000 );
+		return 1000 + Math.floor( Math.random() * 9000 );
 	}
 
 	reset() {
