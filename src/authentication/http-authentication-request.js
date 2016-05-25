@@ -144,7 +144,7 @@ module.exports = class HttpAuthenticationRequest{
 		if( statusCode >= 500 && statusCode < 600 ) {
 			this._logError( 'received error for http auth request: ' + this._responseText );
 		}
-		this._callback( false );
+		this._callback( false, this._getResponseData() );
 	}
 
 	/**
