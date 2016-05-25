@@ -201,7 +201,7 @@ ConnectionEndpoint.prototype._checkClosed = function() {
  * Callback for 'connection' event. Receives
  * a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user and
  * subscribes to authentication messages.
- * 
+ *
  * @param {Number} endpoint
  * @param {TCPSocket|Engine.io} socket
  *
@@ -313,20 +313,20 @@ ConnectionEndpoint.prototype._sendInvalidAuthMsg = function( socketWrapper, msg 
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, username, data ) {
+ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, data ) {
 	socketWrapper.socket.removeListener( 'message', socketWrapper.authCallBack );
 	socketWrapper.socket.once( 'close', this._onSocketClose.bind( this, socketWrapper ) );
 	socketWrapper.socket.on( 'message', function( msg ){ this.onMessage( socketWrapper, msg ); }.bind( this ));
-	socketWrapper.user = username;
-	socketWrapper.userData = data || null;
-	if( typeof data === 'undefined' ) {
+	socketWrapper.user = data.username || 'OPEN';
+	socketWrapper.authData = data.authData || null;
+	if( typeof data.clientData === 'undefined' ) {
 		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
 	} else {
-		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( data ) ] );
+		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( data.clientData ) ] );
 	}
 
 	this._authenticatedSockets.push( socketWrapper );
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, username );
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user );
 };
 
 /**
@@ -335,14 +335,14 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
  * exceed the threshold specified in options.maxAuthAttempts
  * the client will be notified and the socket destroyed.
  *
- * @param   {Object} authData      the (invalid) auth data
+ * @param   {Object} authData the (invalid) auth data
  * @param   {SocketWrapper} socketWrapper
  *
  * @private
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processInvalidAuth = function( authError, authData, socketWrapper ) {
+ConnectionEndpoint.prototype._processInvalidAuth = function( clientData, authData, socketWrapper ) {
 	var logMsg = 'invalid authentication data';
 
 	if( this._options.logInvalidAuthData === true ) {
@@ -350,7 +350,7 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( authError, authData
 	}
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INVALID_AUTH_DATA, logMsg );
-	socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_DATA, messageBuilder.typed( authError ) );
+	socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_DATA, messageBuilder.typed( clientData ) );
 	socketWrapper.authAttempts++;
 
 	if( socketWrapper.authAttempts >= this._options.maxAuthAttempts ) {
@@ -372,11 +372,13 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( authError, authData
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, authError, username, data ) {
-	if( authError === null ) {
-		this._registerAuthenticatedSocket( socketWrapper, username, data );
+ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, isAllowed, data ) {
+	data = data || {};
+
+	if( isAllowed === true ) {
+		this._registerAuthenticatedSocket( socketWrapper, data );
 	} else {
-		this._processInvalidAuth( authError, authData, socketWrapper );
+		this._processInvalidAuth( data.clientData, authData, socketWrapper );//todo
 	}
 };
 
