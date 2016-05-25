@@ -2,6 +2,7 @@
 
 const http = require( 'http' );
 const utils = require( '../utils/utils' );
+const C = require( '../constants/constants' );
 
 /**
  * This class represents a single request from deepstream to a http
@@ -105,7 +106,7 @@ module.exports = class HttpAuthenticationRequest{
 		if( this._settings.permittedStatusCodes.indexOf( this._response.statusCode ) === -1 ) {
 			this._onServerReject( this._response.statusCode );
 		} else {
-			this._callback( null, true, this._getResponseData() );
+			this._callback( true, this._getResponseData() );
 		}
 
 		this._destroy();
@@ -126,7 +127,7 @@ module.exports = class HttpAuthenticationRequest{
 			try{
 				return JSON.parse( this._responseText );
 			} catch( e ) {
-				return this._responseText;
+				return { username: this._responseText }
 			}
 		}
 	}
@@ -141,10 +142,9 @@ module.exports = class HttpAuthenticationRequest{
 	 */
 	_onServerReject( statusCode ) {
 		if( statusCode >= 500 && statusCode < 600 ) {
-			this._callback( this._responseText, false, null );
-		} else {
-			this._callback( null, false, null );
+			this._logError( 'received error for http auth request: ' + this._responseText );
 		}
+		this._callback( false );
 	}
 
 	/**
@@ -156,8 +156,21 @@ module.exports = class HttpAuthenticationRequest{
 	 * @returns {void}
 	 */
 	_onError( error ) {
-		this._callback( 'error while making authentication request' + error.toString(), false, null );
+		this._logError( 'error while making authentication request: ' + error.toString() );
+		this._callback( false );
 		this._destroy();
+	}
+
+	/**
+	 * Logs http related errors as warnings
+	 *
+	 * @param   {String} errorMsg
+	 *
+	 * @private
+	 * @returns {void}
+	 */
+	_logError( errorMsg ) {
+		this._settings.logger.log( C.LOG_LEVEL.WARN, C.EVENT.AUTH_ERROR, errorMsg );
 	}
 
 	/**

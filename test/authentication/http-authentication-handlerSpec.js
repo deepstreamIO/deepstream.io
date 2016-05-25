@@ -5,6 +5,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 	var authenticationHandler;
 	var server;
 	var port = TestHttpServer.getRandomPort();
+	var logger = { log: jasmine.createSpy( 'log' ) };
 
 	beforeAll(function( done ){
 		server = new TestHttpServer( port, done );
@@ -18,7 +19,8 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 		authenticationHandler = new AuthenticationHandler({
 			endpointUrl: 'http://localhost:' + port,
 			permittedStatusCodes: [ 200 ],
-			requestTimeout: 60
+			requestTimeout: 60,
+			logger: logger
 		});
 	});
 
@@ -33,13 +35,12 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 			});
 			expect( server.lastRequestMethod ).toBe( 'POST' );
 			expect( server.lastRequestHeaders[ 'content-type' ] ).toBe( 'application/json' );
-			server.respondWith( 200, { 'extra': 'data' } );
+			server.respondWith( 200, { authData: { 'extra': 'data' } } );
 		});
 
-		authenticationHandler.isValidUser( connectionData, authData, function( err, result, authData ){
-			expect( err ).toBe( null );
+		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( true );
-			expect( authData ).toEqual( { 'extra': 'data' } );
+			expect( data ).toEqual( { authData: { 'extra': 'data' } } );
 			done();
 		});
 	});
@@ -58,10 +59,10 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 			server.respondWith( 401 );
 		});
 
-		authenticationHandler.isValidUser( connectionData, authData, function( err, result, authData ){
-			expect( err ).toBe( null );
+		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( false );
-			expect( authData ).toBe( null );
+			expect( arguments.length ).toBe( 1 );
+			expect( logger.log.calls.count() ).toBe( 0 );
 			done();
 		});
 	});
@@ -80,10 +81,30 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 			server.respondWith( 200, '' );
 		});
 
-		authenticationHandler.isValidUser( connectionData, authData, function( err, result, authData ){
-			expect( err ).toBe( null );
+		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( true );
-			expect( authData ).toBe( null );
+			expect( data ).toBe( null );
+			done();
+		});
+	});
+
+	it( 'receives a positive response with only a string', function( done ){
+		var connectionData = { 'connection': 'data' };
+		var authData = { 'username': 'userA' };
+
+		server.once( 'request-received', function(){
+			expect( server.lastRequestData ).toEqual({
+				connectionData: { 'connection': 'data' },
+				authData: { 'username': 'userA' }
+			});
+			expect( server.lastRequestMethod ).toBe( 'POST' );
+			expect( server.lastRequestHeaders[ 'content-type' ] ).toBe( 'application/json' );
+			server.respondWith( 200, 'userA' );
+		});
+
+		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
+			expect( result ).toBe( true );
+			expect( data ).toEqual({ username: 'userA' });
 			done();
 		});
 	});
@@ -96,10 +117,10 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 			server.respondWith( 500, 'oh dear' );
 		});
 
-		authenticationHandler.isValidUser( connectionData, authData, function( err, result, authData ){
-			expect( err ).toBe( 'oh dear' );
+		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( false );
-			expect( authData ).toBe( null );
+			expect( arguments.length ).toBe( 1 );
+			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR', 'received error for http auth request: oh dear' );
 			done();
 		});
 	});
@@ -112,27 +133,13 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 			//don't respond
 		});
 
-		authenticationHandler.isValidUser( connectionData, authData, function( err, result, authData ){
-			expect( err ).toBe( 'error while making authentication requestrequest timed out' );
+		logger.log.calls.reset();
+
+		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( false );
-			expect( authData ).toBe( null );
+			expect( arguments.length ).toBe( 1 );
+			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR', 'error while making authentication request: request timed out' );
 			server.respondWith( 200 );
-			done();
-		});
-	});
-
-	it( 'responds with non json data', function( done ){
-		var connectionData = { 'connection': 'data' };
-		var authData = { 'username': 'userA' };
-
-		server.once( 'request-received', function(){
-			server.respondWith( 200, 'some random string' );
-		});
-
-		authenticationHandler.isValidUser( connectionData, authData, function( err, result, authData ){
-			expect( err ).toBe( null );
-			expect( result ).toBe( true );
-			expect( authData ).toBe( 'some random string' );
 			done();
 		});
 	});

@@ -27,6 +27,6 @@ module.exports = class OpenAuthenticationHandler{
 	 * @returns {void}
 	 */
 	isValidUser( connectionData, authData, callback ) {
-		callback( null, authData.username || OPEN );
+		callback( true, { username: authData.username || OPEN });
 	}
 }
