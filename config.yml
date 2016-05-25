@@ -1,0 +1,73 @@
+# General
+serverName: UUID
+colors: true
+showLogo: true
+logLevel: INFO
+
+# Connectivity
+webServerEnabled: true
+tcpServerEnabled: true
+port: 6020
+host: 0.0.0.0
+tcpPort: 6021
+tcpHost: 0.0.0.0
+httpServer: null
+urlPath: /engine.io
+
+# SSL Configuration
+sslKey: null
+sslCert: null
+sslCa: null
+
+# Data Manipulation
+dataTransforms: null
+
+# Default Plugins
+plugins:
+  logger: ./default-plugins/std-out-logger
+  message: ./default-plugins/noop-message-connector
+  cache: './default-plugins/local-cache'
+  storage: ./default-plugins/noop-storage
+
+# Custom Plugins (alternaive Configuration)
+plugins:
+  logger: your-custom-logger
+
+  message:
+    name: redis
+    options:
+      host: localhost
+      port: 5672
+
+  cache:
+    name: memcached
+    options:
+      serverLocation: 'localhost:11211'
+
+  storage:
+    name: rethink
+    options:
+      host: localhost
+      port: 28015
+
+# Storage options
+storageExclusion: null
+
+# Security
+maxAuthAttempts: 3
+logInvalidAuthData: true
+maxMessageSize: 1048576
+
+# Permissioning
+permissionConfigPath: ./permissions.json
+maxPermissionRuleIterations: 3
+permissionCacheEvacuationInterval: 60000
+
+# Timeouts
+rpcProviderQueryTimeout: 1000
+rpcProviderCacheTime: 60000
+rpcAckTimeout: 1000
+rpcTimeout: 10000
+cacheRetrievalTimeout: 1000
+storageRetrievalTimeout: 2000
+dependencyInitialisationTimeout: 2000
