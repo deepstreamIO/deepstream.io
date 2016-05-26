@@ -139,3 +139,28 @@ exports.deepCopy = function( obj ) {
 		return obj;
 	}
 };
+
+exports.merge = function() {
+	var result = {};
+	var objs = Array.prototype.slice.apply( arguments );
+	var i, key;
+
+	var _merge = ( objA, objB ) => {
+		var key;
+
+		for( key in objB ) {
+			if( objB[ key ].constructor === Object ) {
+				objA[ key ] = objA[ key ] || {};
+				_merge( objA[ key ], objB[ key ] );
+			} else {
+				objA[ key ] = objB[ key ];
+			}
+		}
+	};
+
+	for( i = 0; i < objs.length; i++ ) {
+		_merge( result, objs[ i ] );
+	}
+
+	return result;
+};

@@ -183,3 +183,82 @@ describe( 'validateMap', function(){
         }).toThrow();
     });
 });
+
+describe( 'merges recoursively', function(){
+    it( 'merges two simple objects', function(){
+        var objA = {
+            firstname: 'Homer',
+            lastname: 'Simpson'
+        };
+
+        var objB = {
+            firstname: 'Marge'
+        };
+
+        expect( utils.merge( objA, objB ) ).toEqual({
+            firstname: 'Marge',
+            lastname: 'Simpson'
+        });
+    });
+
+    it( 'merges two nested objects', function(){
+        var objA = {
+            firstname: 'Homer',
+            lastname: 'Simpson',
+            children: {
+                'Bart': {
+                    lastname: 'Simpson'
+                }
+            }
+        };
+
+        var objB = {
+            firstname: 'Marge',
+            children: {
+                'Bart': {
+                    firstname: 'Bart'
+                }
+            }
+        };
+
+        expect( utils.merge( objA, objB ) ).toEqual({
+            firstname: 'Marge',
+            lastname: 'Simpson',
+            children: {
+                'Bart': {
+                    firstname: 'Bart',
+                    lastname: 'Simpson'
+                }
+            }
+        });
+    });
+
+    it( 'merges multiple objects ', function(){
+        var objA = {
+            pets: {
+                birds: [ 'parrot', 'dove' ]
+            }
+            
+        };
+
+        var objB = {
+            jobs: {
+                hunter: false
+            }
+        };
+
+        var objC = {
+            firstname: 'Egon'
+        };
+
+        expect( utils.merge( objA, objB, {}, objC ) ).toEqual({
+            pets: {
+                birds: [ 'parrot', 'dove' ]
+            },
+            jobs: {
+                hunter: false
+            },
+            firstname: 'Egon'
+        });
+    });
+});
