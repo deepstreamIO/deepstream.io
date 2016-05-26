@@ -16,6 +16,7 @@ var lastError = function() {
 
 var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );
+	permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 	var permissionResult;
 
 	username = username || 'someUser';

@@ -32,6 +32,7 @@ var ConfigPermissionHandler = function( options, config ) {
 	this._ruleCache = new RuleCache( options );
 	this._options = options;
 	this._config = null;
+	this._deepstream = null;
 	this.isReady = false;
 
 	if( config ) {
@@ -57,6 +58,18 @@ var authenticationHandler = new AuthenticationHandler();
 ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authData, callback ) {
 	authenticationHandler.isValidUser( connectionData, authData, callback );
 	//callback( null, authData.username || 'open' );
+};
+
+/**
+ * Will be invoked with the initialised recordHandler instance by deepstream.io
+ *
+ * @param {RecordHandler} recordHandler
+ *
+ * @public
+ * @returns {void}
+ */
+ConfigPermissionHandler.prototype.setRecordHandler = function( recordHandler ) {
+	this._recordHandler = recordHandler;
 };
 
 /**
@@ -156,6 +169,7 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 	ruleData = this._getCompiledRulesForName( name, ruleSpecification );
 
 	new RuleApplication({
+		recordHandler: this._recordHandler,
 		username: username,
 		authData: authData,
 		path: ruleData,

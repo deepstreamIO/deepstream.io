@@ -7,6 +7,7 @@ describe( 'permission handler is initialised correctly', function(){
 			permissionConfigPath: './permissions.json',
 			permissionCacheEvacuationInterval: 60000
 		});
+		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
@@ -24,6 +25,7 @@ describe( 'permission handler is initialised correctly', function(){
 			permissionConfigPath: './does-not-exist.json',
 			permissionCacheEvacuationInterval: 60000
 		});
+		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
@@ -41,6 +43,7 @@ describe( 'permission handler is initialised correctly', function(){
 			permissionConfigPath: './test/test-configs/broken-json-config.json',
 			permissionCacheEvacuationInterval: 60000
 		});
+		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
@@ -58,6 +61,7 @@ describe( 'permission handler is initialised correctly', function(){
 			permissionConfigPath: './test/test-configs/invalid-permission-conf.json',
 			permissionCacheEvacuationInterval: 60000
 		});
+		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
@@ -80,6 +84,7 @@ describe( 'it loads a new config during runtime', function(){
 			permissionConfigPath: './permissions.json',
 			permissionCacheEvacuationInterval: 60000
 		});
+		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		permissionHandler.init();
 		permissionHandler.on( 'error', onError );
 		expect( permissionHandler.isReady ).toBe( false );
