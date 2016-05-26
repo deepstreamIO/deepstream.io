@@ -32,7 +32,7 @@ var ConfigPermissionHandler = function( options, config ) {
 	this._ruleCache = new RuleCache( options );
 	this._options = options;
 	this._config = null;
-	this._deepstream = null;
+	this._recordHandler = null;
 	this.isReady = false;
 
 	if( config ) {
