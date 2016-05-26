@@ -185,7 +185,7 @@ Deepstream.prototype._showStartLogo = function() {
 	if( this._options.showLogo !== true ) {
 		return;
 	}
-
+	/* istanbul ignore next */
 	var logo =
 	' _____________________________________________________________________________\n'+
 	'                                                                              \n'+
@@ -196,7 +196,7 @@ Deepstream.prototype._showStartLogo = function() {
 	'                       /                                                      \n'+
 	'                      /                                                       \n'+
 	'=============================== STARTING... ==================================\n';
-
+	/* istanbul ignore next */
 	process.stdout.write( this._options.colors ? logo.yellow : logo );
 };
 
@@ -226,6 +226,10 @@ Deepstream.prototype._init = function() {
 	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );
 
 	this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind( this._messageDistributor );
+
+	if( this._options.permissionHandler.setRecordHandler ) {
+		this._options.permissionHandler.setRecordHandler( this._recordHandler );
+	}
 
 	this._initialised = true;
 };

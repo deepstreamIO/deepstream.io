@@ -13,7 +13,11 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 
 permissionHandler = {
 	isValidUser: function( connectionData, authData, callback ) {
-        callback( null, 'someUser', { firstname: 'Wolfram', role: authData.role } );
+        callback( true, {
+        	username: 'someUser',
+        	clientData: { firstname: 'Wolfram' },
+        	authData: { role: authData.role }
+        });
     },
     canPerformAction: function( username, message, callback, data ) {
         callback( null, true );
@@ -55,14 +59,14 @@ describe( 'permissionHandler passes additional user meta data', function() {
 		socketMock.emit( 'message', _msg( 'A|REQ|{"role": "admin"}+' ) );
 		expect( permissionHandler.isValidUser ).toHaveBeenCalled();
 		expect( permissionHandler.isValidUser.calls.mostRecent().args[ 1 ] ).toEqual({ role: 'admin' });
-		expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A|O{"firstname":"Wolfram","role":"admin"}+' ) );
+		expect( socketMock.lastSendMessage ).toBe( _msg( 'A|A|O{"firstname":"Wolfram"}+' ) );
 	});
 
 	it( 'sends a record read message', function(){
 		spyOn( connectionEndpoint, 'onMessage' );
 		socketMock.emit( 'message', _msg( 'R|CR|someRecord+' ) );
 		expect( connectionEndpoint.onMessage ).toHaveBeenCalled();
-		expect( connectionEndpoint.onMessage.calls.mostRecent().args[ 0 ].userData ).toEqual({ role: 'admin', firstname: 'Wolfram' });
+		expect( connectionEndpoint.onMessage.calls.mostRecent().args[ 0 ].authData ).toEqual({ role: 'admin' });
 	});
 
 });

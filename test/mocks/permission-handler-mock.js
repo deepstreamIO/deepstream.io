@@ -15,12 +15,15 @@ PermissionHandlerMock.prototype.isValidUser = function( handshakeData, authData,
 	this.lastUserValidationQueryArgs = arguments;
 	if( this.nextUserValidationResult === true ) {
 		if( this.sendNextValidAuthWithData === true ) {
-			callback( null, 'test-user', 'test-data' );
+			callback( true, {
+				username: 'test-user',
+				clientData: 'test-data'
+			});
 		} else {
-			callback( null, 'test-user' );
+			callback( true, { username: 'test-user' });
 		}
 	} else {
-		callback( 'Invalid User' );
+		callback( false, { clientData: 'Invalid User' });
 	}
 };
 

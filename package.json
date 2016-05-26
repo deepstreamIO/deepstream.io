@@ -7,11 +7,12 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node_modules/.bin/istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json",
+    "coverage": "node_modules/.bin/istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json",
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
     "test": "node node_modules/jasmine/bin/jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "reporter": "node jasmine-runner"
+    "reporter": "node jasmine-runner",
+    "test-http-server": "node test/test-helper/start-test-server.js"
   },
   "repository": {
     "type": "git",

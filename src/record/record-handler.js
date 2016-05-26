@@ -5,7 +5,8 @@ var C = require( '../constants/constants' ),
 	RecordTransition = require( './record-transition' ),
 	RecordDeletion = require( './record-deletion' ),
 	messageParser = require( '../message/message-parser' ),
-	messageBuilder = require( '../message/message-builder' );
+	messageBuilder = require( '../message/message-builder' ),
+	EventEmitter = require( 'events' ).EventEmitter;
 
 /**
  * The entry point for record related operations
@@ -20,6 +21,7 @@ var RecordHandler = function( options ) {
 	this._hasReadTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
 	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
 	this._hasPatchTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.PATCH );
+	this._transitionEndEmitter = new EventEmitter();
 	this._transitions = [];
 };
 
@@ -418,6 +420,24 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
  */
 RecordHandler.prototype._$transitionComplete = function( recordName ) {
 	delete this._transitions[ recordName ];
+	this._transitionEndEmitter.emit( recordName );
+};
+
+/**
+ * Executes or schedules a callback function once all transitions are complete
+ *
+ * @param   {String}   recordName the name of the record
+ * @param   {Function} callback   function to be executed once all writes to this record are complete
+ *
+ * @public
+ * @returns {void}
+ */
+RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
+	if( this._transitions[ recordName ] ) {
+		this._transitionEndEmitter.once( recordName, callback );
+	} else {
+		callback();
+	}
 };
 
 /**
