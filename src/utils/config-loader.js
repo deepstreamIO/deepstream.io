@@ -4,8 +4,9 @@ var yaml = require( 'js-yaml' );
 var merge  = require('lodash.merge');
 var defaultOptions = require( '../default-options' );
 var utils = require( './utils' );
-var  C = require( '../constants/constants' );
+var C = require( '../constants/constants' );
 var argv = require( 'minimist' )( process.argv.slice(2) );
+var LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 
 module.exports = function(customFilePath) {
   var order = [
@@ -13,38 +14,49 @@ module.exports = function(customFilePath) {
     'config.js',
     'config.yml',
   ];
-  if ( customFilePath != null ) {
-    order.unshift(customFilePath)
-  }
+  var filePath = null;
 
-  var filePath = order.filter(function( filePath ) {
+  if ( customFilePath != null ) {
     try {
-      fs.lstatSync(filePath)
-      return true
-    } catch ( err ) {}
-  })[0]
+      fs.lstatSync( customFilePath )
+      filePath = customFilePath;
+    } catch ( err ) {
+      throw new Error( 'configuration file not found at: ' + customFilePath );
+    }
+  } else {
+    filePath = order.filter(function( filePath ) {
+      try {
+        fs.lstatSync(filePath)
+        return true
+      } catch ( err ) {}
+    })[0];
+  }
 
   if ( filePath == null ) {
     return defaultOptions.get();
   }
   var config = null;
-  var extension = path.extname( filePath )
+  var extension = path.extname( filePath );
+  var fileContent = fs.readFileSync( filePath, 'utf8' );
   try {
     if ( extension === '.yml' ) {
-      config = yaml.safeLoad( fs.readFileSync( filePath, 'utf8' ));
+      config = yaml.safeLoad( fileContent );
+    } else if ( extension === '.js') {
+      config = require( path.resolve( filePath ));
+    } else if ( extension === '.json' ) {
+      config = JSON.parse( fileContent );
     } else {
-      config = require(path.join( process.cwd(), filePath ))
+      throw new Error( extension + ' is not supported as configuration file' );
     }
   } catch ( err ) {
-    console.error( err )
-    process.exit( 1 );
+    // Could not parse config file
+    throw err
   }
 
   // CLI arguments
   var cliArgs = {};
-  var keys = Object.keys(defaultOptions.get())
-  for ( key in keys ) {
-    cliArgs[key] = argv[key] || config[key] || defaultOptions.get()[key]
+  for ( key in Object.keys( defaultOptions.get() )) {
+    cliArgs[key] = argv[key] || undefined;
   }
 
   var result = merge({}, defaultOptions.get(), handleMagicProperties(config), cliArgs);
@@ -52,12 +64,14 @@ module.exports = function(customFilePath) {
 }
 
 function handleMagicProperties( cfg ) {
-  var config = utils.deepCopy( cfg );
+  var config = merge({
+    plugins: {}
+  }, cfg );
   if ( config.serverName === 'UUID' ) {
     config.serverName = utils.getUid();
   }
-  if ( config.logLevel.indexOf(['INFO']) !== -1 ) {
-    config.logLevel = C.LOG_LEVEL[config.logLevel];
+  if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
+    config.logLevel = C.LOG_LEVEL[ config.logLevel ];
   }
   var plugins = {
     logger: config.plugins.logger,
