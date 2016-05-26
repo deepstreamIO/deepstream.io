@@ -140,6 +140,14 @@ exports.deepCopy = function( obj ) {
 	}
 };
 
+/**
+ * Multi Object recoursive merge
+ *
+ * @param {Object} multiple objects to be merged into each other recoursively
+ *
+ * @public
+ * @returns {Object} merged result
+ */
 exports.merge = function() {
 	var result = {};
 	var objs = Array.prototype.slice.apply( arguments );
