@@ -21,6 +21,8 @@
   "dependencies": {
     "colors": "1.0.3",
     "engine.io": "1.6.8",
+    "js-yaml": "^3.6.1",
+    "lodash.merge": "^4.4.0",
     "minimist": "1.2.0"
   },
   "devDependencies": {
