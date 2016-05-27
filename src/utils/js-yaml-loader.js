@@ -123,6 +123,7 @@ function handleLogLevel( config ) {
 }
 
 function handlePlugins( config ) {
+	var req = global && global.require ? global.require : require;
 	var plugins = {
 		logger: config.plugins.logger,
 		messageConnector: config.plugins.message,
@@ -134,7 +135,7 @@ function handlePlugins( config ) {
 		if ( plugin != null ) {
 			var requirePath = path.basename( plugin.path ) === plugin.path ?
 				plugin.path : path.join( process.cwd(), plugin.path );
-			var fn = require( requirePath );
+			var fn = req( requirePath );
 			if ( key === 'logger' ) {
 				config[key] = fn;
 			} else {
