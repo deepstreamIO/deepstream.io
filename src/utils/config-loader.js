@@ -1,20 +1,23 @@
-var fs = require( 'fs' );
-var path = require( 'path' );
-var yaml = require( 'js-yaml' );
-var merge  = require('lodash.merge');
-var defaultOptions = require( '../default-options' );
-var utils = require( './utils' );
-var C = require( '../constants/constants' );
-var argv = require( 'minimist' )( process.argv.slice(2) );
-var LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
+'use strict'
 
-module.exports = function(customFilePath) {
-  var order = [
+const fs = require( 'fs' );
+const path = require( 'path' );
+const yaml = require( 'js-yaml' );
+const merge  = require( 'lodash.merge' );
+const defaultOptions = require( '../default-options' );
+const utils = require( './utils' );
+const C = require( '../constants/constants' );
+const argv = require( 'minimist' )( process.argv.slice( 2 ) );
+const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
+
+module.exports = function( customFilePath ) {
+  const order = [
     'config.json',
     'config.js',
-    'config.yml',
+    'config.yml'
   ];
-  var filePath = null;
+
+  let filePath = null;
 
   if ( customFilePath != null ) {
     try {
@@ -24,25 +27,25 @@ module.exports = function(customFilePath) {
       throw new Error( 'configuration file not found at: ' + customFilePath );
     }
   } else {
-    filePath = order.filter(function( filePath ) {
+    filePath = order.filter( function( filePath ) {
       try {
-        fs.lstatSync(filePath)
+        fs.lstatSync( filePath )
         return true
       } catch ( err ) {}
-    })[0];
+    } )[ 0 ];
   }
 
   if ( filePath == null ) {
     return defaultOptions.get();
   }
-  var config = null;
-  var extension = path.extname( filePath );
-  var fileContent = fs.readFileSync( filePath, 'utf8' );
+  let config = null;
+  const extension = path.extname( filePath );
+  const fileContent = fs.readFileSync( filePath, 'utf8' );
   try {
     if ( extension === '.yml' ) {
       config = yaml.safeLoad( fileContent );
-    } else if ( extension === '.js') {
-      config = require( path.resolve( filePath ));
+    } else if ( extension === '.js' ) {
+      config = require( path.resolve( filePath ) );
     } else if ( extension === '.json' ) {
       config = JSON.parse( fileContent );
     } else {
@@ -55,16 +58,15 @@ module.exports = function(customFilePath) {
 
   // CLI arguments
   var cliArgs = {};
-  for ( key in Object.keys( defaultOptions.get() )) {
+  for ( let key in Object.keys( defaultOptions.get() ) ) {
     cliArgs[key] = argv[key] || undefined;
   }
 
-  var result = merge({}, defaultOptions.get(), handleMagicProperties(config), cliArgs);
-  return result;
+  return merge( {}, defaultOptions.get(), handleMagicProperties( config ), cliArgs );
 }
 
 function handleMagicProperties( cfg ) {
-  var config = merge({
+  const config = merge( {
     plugins: {}
   }, cfg );
   if ( config.serverName === 'UUID' ) {
@@ -79,7 +81,7 @@ function handleMagicProperties( cfg ) {
     cache: config.plugins.cache,
     storage: config.plugins.storage
   }
-  for ( key in plugins ) {
+  for ( let key in plugins ) {
     var plugin = plugins[key]
     if ( plugin != null ) {
       var requirePath = path.basename( plugin.path ) === plugin.path ?
