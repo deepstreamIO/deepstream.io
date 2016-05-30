@@ -11,16 +11,12 @@ port: 6020
 host: 0.0.0.0
 tcpPort: 6021
 tcpHost: 0.0.0.0
-httpServer: null
 urlPath: /engine.io
 
 # SSL Configuration
 sslKey: null
 sslCert: null
 sslCa: null
-
-# Data Manipulation
-dataTransforms: null
 
 # Plugin Configuration
 plugins:
