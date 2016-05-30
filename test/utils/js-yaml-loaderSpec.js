@@ -10,7 +10,9 @@ describe( 'js-yaml-loader', function() {
 
 	it( 'loads the default yml file', function() {
 		var loader = require( '../../src/utils/js-yaml-loader' );
-		var defaultYamlConfig = loader.loadConfig();
+		var result = loader.loadConfig();
+		var defaultYamlConfig = result.config;
+		expect( result.file ).toEqual( 'config.yml' );
 		expect( defaultYamlConfig.serverName ).toEqual( jasmine.any( String ) );
 		defaultYamlConfig = merge( defaultYamlConfig, {
 			permissionHandler: null,
@@ -35,7 +37,7 @@ describe( 'js-yaml-loader', function() {
 			fs: fsMock
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
-		configLoader.loadConfig();
+		configLoader.loadConfig().config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 3 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( 'config.js' );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( 'config.js' );
@@ -49,7 +51,7 @@ describe( 'js-yaml-loader', function() {
 			fs: fsMock
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
-		var config = configLoader.loadConfig( './test/test-configs/config.yml' );
+		var config = configLoader.loadConfig( './test/test-configs/config.yml' ).config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config.yml' );
 		expect( config.serverName ).toBeDefined();
@@ -73,7 +75,7 @@ describe( 'js-yaml-loader', function() {
 			fs: fsMock
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
-		var config = configLoader.loadConfig( './foo.json' );
+		var config = configLoader.loadConfig( './foo.json' ).config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './foo.json' );
 		expect( config.port ).toEqual( 1001 );
@@ -87,12 +89,12 @@ describe( 'js-yaml-loader', function() {
 			fs: fsMock
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
-		var config = configLoader.loadConfig( './test/test-configs/config.js' );
+		var config = configLoader.loadConfig( './test/test-configs/config.js' ).config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config.js' );
 		expect( config.port ).toEqual( 1002 );
 
-		config = configLoader.loadConfig( path.join( process.cwd(), 'test/test-configs/config.js' ) );
+		config = configLoader.loadConfig( path.join( process.cwd(), 'test/test-configs/config.js' ) ).config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 2 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( path.join( process.cwd(), 'test/test-configs/config.js' ) );
 		expect( config.port ).toEqual( 1002 );
@@ -109,7 +111,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
-			configLoader.loadConfig( './not-existing-config' );
+			configLoader.loadConfig( './not-existing-config' ).config;
 		} ).toThrow();
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './not-existing-config' );
@@ -122,7 +124,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
-			configLoader.loadConfig( './test/test-configs/config-broken.yml' );
+			configLoader.loadConfig( './test/test-configs/config-broken.yml' ).config;
 		} ).toThrow();
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config-broken.yml' );
@@ -135,7 +137,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
-			configLoader.loadConfig( './test/test-configs/config-broken.js' );
+			configLoader.loadConfig( './test/test-configs/config-broken.js' ).config;
 		} ).toThrow();
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config-broken.js' );

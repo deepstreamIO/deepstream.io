@@ -54,7 +54,10 @@ function parseFile( filePath, fileContent ) {
 function loadConfig( customFilePath ) {
 	const filePath = findFilePath( customFilePath );
 	if ( filePath == null ) {
-		return defaultOptions.get();
+		return {
+			config: defaultOptions.get(),
+			file: 'default options'
+		};
 	}
 	const config = parseFile( filePath );
 	// CLI arguments
@@ -63,7 +66,10 @@ function loadConfig( customFilePath ) {
 		cliArgs[key] = argv[key] || undefined;
 	}
 
-	return merge( {}, defaultOptions.get(), handleMagicProperties( config ), cliArgs );
+	return {
+		config: merge( {}, defaultOptions.get(), handleMagicProperties( config ), cliArgs ),
+		file: filePath
+	};
 }
 
 function findFilePath( customFilePath ) {

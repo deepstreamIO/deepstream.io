@@ -28,9 +28,15 @@ require( 'colors' );
  * @constructor
  */
 var Deepstream = function( config ) {
+	if ( typeof config === 'object' ) {
+		this._options = config;
+	} else {
+		var result = jsYamlLoader.loadConfig( config );
+		this._options = result.config;
+		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file was loaded from ' + result.file );
+	}
 	this.isRunning = false;
 	this.constants = C;
-	this._options = typeof config === 'object' ? config : jsYamlLoader.loadConfig( config );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -47,6 +53,7 @@ var Deepstream = function( config ) {
 		'logger',
 		'permissionHandler' //TODO: This now requires the permissionHandler to have a ready flag / emit events
 	];
+
 };
 
 util.inherits( Deepstream, EventEmitter );
