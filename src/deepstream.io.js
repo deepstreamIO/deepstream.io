@@ -8,7 +8,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	readMessage = require( './utils/read-message' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
-	configLoader = require( './utils/config-loader' ),
+	jsYamlLoader = require( './utils/js-yaml-loader' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
@@ -27,10 +27,10 @@ require( 'colors' );
  *
  * @constructor
  */
-var Deepstream = function(configPath) {
+var Deepstream = function( config ) {
 	this.isRunning = false;
 	this.constants = C;
-	this._options = configLoader(configPath);
+	this._options = typeof config === 'object' ? config : jsYamlLoader.loadConfig( config );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
