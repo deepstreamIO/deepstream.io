@@ -18,7 +18,7 @@
       ],
       "no-empty": [1],
       "comma-dangle": [1, "never"],
-      "semi": [0, "never"],
+      "semi": [2, "always"],
       "no-console": 1,
       "no-underscore-dangle": 0,
       "no-constant-condition": 0,
