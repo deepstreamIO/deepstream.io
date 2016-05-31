@@ -61,7 +61,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 
 		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( false );
-			expect( arguments.length ).toBe( 1 );
+			expect( data ).toBe( null );
 			expect( logger.log.calls.count() ).toBe( 0 );
 			done();
 		});
@@ -119,7 +119,6 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 
 		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( false );
-			expect( arguments.length ).toBe( 1 );
 			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR', 'received error for http auth request: oh dear' );
 			done();
 		});

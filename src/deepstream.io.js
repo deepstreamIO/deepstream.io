@@ -98,6 +98,7 @@ Deepstream.prototype.set = function( key, value ) {
 	}
 
 	this._options[ key ] = value;
+	return this;
 };
 
 /**
@@ -232,6 +233,10 @@ Deepstream.prototype._init = function() {
 	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );
 
 	this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind( this._messageDistributor );
+
+	if( this._options.permissionHandler.setRecordHandler ) {
+		this._options.permissionHandler.setRecordHandler( this._recordHandler );
+	}
 
 	this._initialised = true;
 };
