@@ -3,7 +3,6 @@
 const fs = require( 'fs' );
 const path = require( 'path' );
 const yaml = require( 'js-yaml' );
-const merge	= require( 'lodash.merge' );
 const defaultOptions = require( '../default-options' );
 const utils = require( './utils' );
 const C = require( '../constants/constants' );
@@ -35,19 +34,17 @@ function parseFile( filePath, fileContent ) {
 	}
 	let config = null;
 	const extension = path.extname( filePath );
-	try {
-		if ( extension === '.yml' ) {
-			config = yaml.safeLoad( fileContent );
-		} else if ( extension === '.js' ) {
-			config = require( path.resolve( filePath ) );
-		} else if ( extension === '.json' ) {
-			config = JSON.parse( fileContent );
-		} else {
-			throw new Error( extension + ' is not supported as configuration file' );
-		}
-	} catch ( parseError ) {
-		throw parseError;
+	
+	if ( extension === '.yml' ) {
+		config = yaml.safeLoad( fileContent );
+	} else if ( extension === '.js' ) {
+		config = require( path.resolve( filePath ) );
+	} else if ( extension === '.json' ) {
+		config = JSON.parse( fileContent );
+	} else {
+		throw new Error( extension + ' is not supported as configuration file' );
 	}
+
 	return config;
 }
 
@@ -67,7 +64,7 @@ function loadConfig( customFilePath ) {
 	}
 
 	return {
-		config: merge( {}, defaultOptions.get(), handleMagicProperties( config ), cliArgs ),
+		config: utils.merge( {}, defaultOptions.get(), handleMagicProperties( config ), cliArgs ),
 		file: filePath
 	};
 }
@@ -99,7 +96,7 @@ function findFilePath( customFilePath ) {
 }
 
 function handleMagicProperties( cfg ) {
-	const config = merge( {
+	const config = utils.merge( {
 		plugins: {}
 	}, cfg );
 
