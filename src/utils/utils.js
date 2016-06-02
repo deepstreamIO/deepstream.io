@@ -139,3 +139,36 @@ exports.deepCopy = function( obj ) {
 		return obj;
 	}
 };
+
+/**
+ * Multi Object recoursive merge
+ *
+ * @param {Object} multiple objects to be merged into each other recoursively
+ *
+ * @public
+ * @returns {Object} merged result
+ */
+exports.merge = function() {
+	var result = {};
+	var objs = Array.prototype.slice.apply( arguments );
+	var i, key;
+
+	var _merge = ( objA, objB ) => {
+		var key;
+
+		for( key in objB ) {
+			if( objB[ key ] && objB[ key ].constructor === Object ) {
+				objA[ key ] = objA[ key ] || {};
+				_merge( objA[ key ], objB[ key ] );
+			} else if( objB[ key ] !== undefined ) {
+				objA[ key ] = objB[ key ];
+			}
+		}
+	};
+
+	for( i = 0; i < objs.length; i++ ) {
+		_merge( result, objs[ i ] );
+	}
+
+	return result;
+};
