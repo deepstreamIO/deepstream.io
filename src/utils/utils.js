@@ -157,10 +157,10 @@ exports.merge = function() {
 		var key;
 
 		for( key in objB ) {
-			if( objB[ key ].constructor === Object ) {
+			if( objB[ key ] && objB[ key ].constructor === Object ) {
 				objA[ key ] = objA[ key ] || {};
 				_merge( objA[ key ], objB[ key ] );
-			} else {
+			} else if( objB[ key ] !== undefined ) {
 				objA[ key ] = objB[ key ];
 			}
 		}
