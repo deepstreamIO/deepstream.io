@@ -83,4 +83,11 @@ describe( 'it starts and stops a configured server', function(){
 	it( 'has stopped the server', function(){
 		expect( server.isRunning ).toBe( false );
 	});
+
+	it( 'fail starting the server with an empty options parameter', function(){
+		server = new Deepstream( {} );
+		expect(function(){
+			server.start();
+		}).toThrow();
+	});
 });

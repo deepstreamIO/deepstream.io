@@ -1,3 +1,4 @@
+'use strict';
 /* global jasmine, spyOn, describe, it, expect */
 
 var proxyquire = require( 'proxyquire' );
@@ -100,6 +101,22 @@ describe( 'js-yaml-loader', function() {
 		expect( config.port ).toEqual( 1002 );
 	} );
 
+	it( 'fails if the custom file format is not supported', function() {
+		var fsMock = {
+			lstatSync: function() {
+				return true;
+			},
+			readFileSync: function() {}
+		};
+		var configLoader = proxyquire( '../../src/utils/js-yaml-loader', {
+			fs: fsMock
+		} );
+		spyOn( fsMock, 'lstatSync' ).and.callThrough();
+		expect( function() {
+			configLoader.loadConfig( './config.foo' ).config;
+		} ).toThrowError( '.foo is not supported as configuration file' );
+	} );
+
 	it( 'fails if the custom file was not found', function() {
 		var fsMock = {
 			lstatSync: function() {
@@ -112,7 +129,7 @@ describe( 'js-yaml-loader', function() {
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
 			configLoader.loadConfig( './not-existing-config' ).config;
-		} ).toThrow();
+		} ).toThrowError( 'configuration file not found at: ./not-existing-config' );
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './not-existing-config' );
 	} );
@@ -125,7 +142,7 @@ describe( 'js-yaml-loader', function() {
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
 			configLoader.loadConfig( './test/test-configs/config-broken.yml' ).config;
-		} ).toThrow();
+		} ).toThrowError( /asdsad: ooops/ );
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config-broken.yml' );
 	} );
@@ -138,9 +155,95 @@ describe( 'js-yaml-loader', function() {
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
 			configLoader.loadConfig( './test/test-configs/config-broken.js' ).config;
-		} ).toThrow();
+		} ).toThrowError( /foobarBreaksIt is not defined/ );
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config-broken.js' );
+	} );
+
+} );
+
+describe( 'load plugins by relative path property', function() {
+	var config;
+	beforeAll( function() {
+		var fsMock = {
+			lstatSync: function() {
+				return true;
+			},
+			readFileSync: function( filePath ) {
+				if ( filePath === './config.json' ) {
+					return `{
+					  "plugins": {
+					    "logger": {
+					      "path": "./logger"
+					    },
+					    "message": {
+					      "path": "./message",
+					      "options": { "foo": 3, "bar": 4 }
+					    }
+					  }
+					}`;
+				} else {
+					throw new Error( 'should not require any other file: ' + filePath );
+				}
+			}
+		};
+		var loggerModule = function( options ) { return options; };
+		loggerModule['@noCallThru'] = true;
+		class MessageModule { constructor( options ) {this.options = options; }}
+		MessageModule['@noCallThru'] = true;
+		var configLoader = proxyquire( '../../src/utils/js-yaml-loader', {
+			fs: fsMock,
+			[process.cwd() + '/logger']: loggerModule,
+			[process.cwd() + '/message']: MessageModule
+		} );
+		config = configLoader.loadConfig( './config.json' ).config;
+	} );
+
+	it( 'load the any plugin except the logger using new keyword', function() {
+		expect( config.messageConnector.options ).toEqual( {foo: 3, bar: 4} );
+	} );
+
+	it( 'load the logger plugin without using new keyword', function() {
+		expect( config.logger( {a: 1, b: 2} ) ).toEqual( {a: 1, b: 2} );
+	} );
+
+} );
+
+describe( 'load plugins by path property (npm module style)', function() {
+	var config;
+	beforeAll( function() {
+		var fsMock = {
+			lstatSync: function() {
+				return true;
+			},
+			readFileSync: function( filePath ) {
+				if ( filePath === './config.json' ) {
+					return `{
+					  "plugins": {
+					    "cache": {
+					      "path": "foo-bar-qox",
+					      "options": { "foo": 3, "bar": 4 }
+					    }
+					  }
+					}`;
+				} else {
+					throw new Error( 'should not require any other file: ' + filePath );
+				}
+			}
+		};
+		class FooBar {
+			constructor( options ) { this.options = options; }
+		}
+		FooBar['@noCallThru'] = true;
+		var configLoader = proxyquire( '../../src/utils/js-yaml-loader', {
+			fs: fsMock,
+			'foo-bar-qox': FooBar
+		} );
+		config = configLoader.loadConfig( './config.json' ).config;
+	} );
+
+	it( 'load the any plugin except the logger using new keyword', function() {
+		expect( config.cache.options ).toEqual( {foo: 3, bar: 4} );
 	} );
 
 } );

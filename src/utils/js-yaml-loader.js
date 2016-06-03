@@ -34,7 +34,7 @@ function parseFile( filePath, fileContent ) {
 	}
 	let config = null;
 	const extension = path.extname( filePath );
-	
+
 	if ( extension === '.yml' ) {
 		config = yaml.safeLoad( fileContent );
 	} else if ( extension === '.js' ) {
@@ -129,7 +129,7 @@ function handlePlugins( config ) {
 	for ( let key in plugins ) {
 		var plugin = plugins[key];
 		if ( plugin != null ) {
-			var requirePath = path.basename( plugin.path ) === plugin.path ?
+			var requirePath = plugin.path[ 0 ] !== '.' ?
 				plugin.path : path.join( process.cwd(), plugin.path );
 			var fn = require( requirePath );
 			if ( key === 'logger' ) {
@@ -143,8 +143,5 @@ function handlePlugins( config ) {
 
 module.exports = {
 	async: readAndParseFile,
-	sync: function( filePath ) {
-		return parseFile( filePath );
-	},
 	loadConfig: loadConfig
 };
