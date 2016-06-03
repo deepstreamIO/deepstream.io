@@ -35,7 +35,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 		this._validateSettings( settings );
 		this._settings = settings;
 		this._base64KeyLength = 4 * Math.ceil( this._settings.keyLength / 3 );
-		jsYamlLoader.async( settings.path, this._onFileLoad.bind( this ) );
+		jsYamlLoader.readAndParseFile( settings.path, this._onFileLoad.bind( this ) );
 	}
 
 	/**
