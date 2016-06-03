@@ -120,6 +120,11 @@ function handleLogLevel( config ) {
 }
 
 function handlePlugins( config ) {
+	var connectors = [
+		'messageConnector',
+		'cache',
+		'storage'
+	];
 	var plugins = {
 		logger: config.plugins.logger,
 		messageConnector: config.plugins.message,
@@ -129,9 +134,20 @@ function handlePlugins( config ) {
 	for ( let key in plugins ) {
 		var plugin = plugins[key];
 		if ( plugin != null ) {
-			var requirePath = plugin.path[ 0 ] !== '.' ?
+			var fn = null;
+			if ( plugin.path != null ) {
+				var requirePath = plugin.path[ 0 ] !== '.' ?
 				plugin.path : path.join( process.cwd(), plugin.path );
-			var fn = require( requirePath );
+				fn = require( requirePath );
+			} else if ( plugin.name != null ) {
+				var connectorKey = key;
+				if ( connectors.indexOf( connectorKey ) !== -1 ) {
+					if ( connectorKey === 'messageConnector' ) {
+						connectorKey = 'msg';
+					}
+					fn = require( 'deepstream.io-' + connectorKey + '-' + plugin.name );
+				}
+			}
 			if ( key === 'logger' ) {
 				config[key] = fn;
 			} else {
