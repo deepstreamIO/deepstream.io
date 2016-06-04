@@ -50,11 +50,11 @@ if [ $OS = 'linux' ]; then
 		-m '<info@deepstream.io>' \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
-		-f ./build/deepstream=/usr/bin/deepstream ./scripts/daemon/init-script=/etc/init.d/deepstreamfpm
+		-f ./config.yml=/etc/deepstream/config.yml ./permissions.json=/etc/deepstream/permissions.json ./build/deepstream=/usr/bin/deepstream ./scripts/daemon/init-script=/etc/init.d/deepstreamfpm
 
 	fpm \
 		-s dir \
-		-t rpm \
+		-t deb \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
@@ -64,7 +64,7 @@ if [ $OS = 'linux' ]; then
 		-m '<info@deepstream.io>' \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
-		-f --deb-no-default-config-files ./build/deepstream=/usr/bin/deepstream ./scripts/daemon/init-script=/etc/init.d/deepstream
+		-f ./config.yml=/etc/deepstream/config.yml ./permissions.json=/etc/deepstream/permissions.json ./build/deepstream=/usr/bin/deepstream ./scripts/daemon/init-script=/etc/init.d/deepstream
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
