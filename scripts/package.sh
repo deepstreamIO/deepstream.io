@@ -36,6 +36,7 @@ fi
 # fi
 
 if [ $OS = 'linux' ]; then
+	gem install fpm
 
 	fpm \
 		-s dir \
@@ -58,7 +59,7 @@ if [ $OS = 'linux' ]; then
 		-v $PACKAGE_VERSION \
 		--license MIT \
 		--vendor 'deepstreamHub GmbH' \
-		--description 'deepstream.io rpm package' \
+		--description 'deepstream.io deb package' \
 		--url https://deepstream.io/ \
 		-m '<info@deepstream.io>' \
 		--before-remove ./scripts/daemon/before-remove \
