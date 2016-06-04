@@ -33,7 +33,7 @@ deploy:
     bucket: ds-server-artifacts
     skip_cleanup: true
     acl: public_read
-    local_dir: $( ls build | grep -v src )
+    local_dir: $( ls build | grep -v src | grep -E 'v?[1-9]' )
     upload-dir: $TRAVIS_REPO_SLUG
   - provider: releases
     skip_cleanup: true
