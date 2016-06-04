@@ -65,6 +65,8 @@ if [ $OS = 'linux' ]; then
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f ./config.yml=/etc/deepstream/config.yml ./permissions.json=/etc/deepstream/permissions.json ./build/deepstream=/usr/bin/deepstream ./scripts/daemon/init-script=/etc/init.d/deepstream
+
+		echo Files in build directory are $( ls build/ )
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
