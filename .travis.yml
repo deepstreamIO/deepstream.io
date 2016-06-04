@@ -4,12 +4,7 @@ env:
   - CXX=g++-4.8
 
 node_js:
-  - "stable"
-  - "6"
-  - "5"
-  - "4"
   - "4.4.4" # Stated specifically for packaging
-  - "4.0.0" # Used as lowest common dominator
 
 matrix:
   include:
