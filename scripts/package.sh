@@ -35,7 +35,7 @@ fi
 # 	echo 'Work in progress'
 # fi
 
-if [ os = 'linux' ]; then
+if [ $OS = 'linux' ]; then
 	gem install fpm
 
 	fpm \
