@@ -21,7 +21,7 @@ console.log( `Compiling: ${fileName}` );
 nexe.compile({
 		"input": "start.js",
 		"output": fileName,
-		"nodeTempDir": "build/src",
+		"nodeTempDir": "nexe_node",
 		"framework": "node",
 		"nodeVersion": nodeVersion,
 		"js-flags": "--use_strict",

@@ -22,7 +22,7 @@ after_script:
 
 cache:
   directories:
-    - build/src
+    - nexe_node
 
 deploy:
   - provider: s3
@@ -33,7 +33,7 @@ deploy:
     bucket: ds-server-artifacts
     skip_cleanup: true
     acl: public_read
-    local_dir: $( ls build | grep -v src | grep -E 'v?[1-9]' )
+    local_dir: build
     upload-dir: $TRAVIS_REPO_SLUG
   - provider: releases
     skip_cleanup: true
