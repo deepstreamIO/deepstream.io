@@ -5,7 +5,7 @@ os:
   - Visual Studio 2015
 
 install:
-  - ps: Install-Product node 4.4.4
+  - ps: Install-Product node 4.4.5
   - npm install
 
 test_script:

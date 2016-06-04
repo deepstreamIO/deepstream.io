@@ -1,5 +1,5 @@
 #!/bin/bash
-PACKAGED_NODE_VERSION="v4.4.4"
+PACKAGED_NODE_VERSION="v4.4.5"
 NODE_VERSION=$( node --version )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )

@@ -1,7 +1,7 @@
 var nexe = require( 'nexe' );
 var os = require( 'os' );
 
-var nodeVersion = '4.4.4';
+var nodeVersion = '4.4.5';
 var commit = process.env.TRAVIS_COMMIT || process.env.APPVEYOR_REPO_COMMIT || 'local';
 var platform = os.platform();
 var extension = platform == 'win32' ? '.exe' : '';

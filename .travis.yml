@@ -4,11 +4,11 @@ env:
   - CXX=g++-4.8
 
 node_js:
-  - "4.4.4" # Stated specifically for packaging
+  - "4.4.5" # Stated specifically for packaging
 
 matrix:
   include:
-    - node_js: "4.4.4"
+    - node_js: "4.4.5"
       os: osx
 
 script:
