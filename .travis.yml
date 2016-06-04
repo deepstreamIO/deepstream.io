@@ -11,10 +11,6 @@ matrix:
     - node_js: "4.4.5"
       os: osx
 
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y rpm
-
 script:
   - npm run coverage
   - node scripts/package.js
@@ -59,3 +55,4 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-4.8
+    - rpm
