@@ -35,9 +35,23 @@ fi
 # 	echo 'Work in progress'
 # fi
 
-# if [ os = 'linux' ]; then
-# 	gem install fpm
-# fi
+if [ os = 'linux' ]; then
+	gem install fpm
+
+	fpm \
+		-s dir \
+		-t rpm \
+		-n deepstream.io \
+		-v $PACKAGE_VERSION \
+		--license MIT \
+		--vendor 'deepstreamHub GmbH' \
+		--description 'deepstream.io rpm package' \
+		--url https://deepstream.io/ \
+		-m '<info@deepstream.io>' \
+		--before-remove ./scripts/deamon/before-remove \
+		--after-upgrade ./scripts/deamon/after-upgrade \
+		-f ./build/deepstream=/usr/bin/deepstream ./scripts/deamon/init-script=/etc/init.d/deepstream
+fi
 
 rm -rf $DEEPSTREAM_PACKAGE
 echo 'Done'
