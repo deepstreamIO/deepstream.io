@@ -48,9 +48,9 @@ if [ $OS = 'linux' ]; then
 		--description 'deepstream.io rpm package' \
 		--url https://deepstream.io/ \
 		-m '<info@deepstream.io>' \
-		--before-remove ./scripts/deamon/before-remove \
-		--after-upgrade ./scripts/deamon/after-upgrade \
-		-f ./build/deepstream=/usr/bin/deepstream ./scripts/deamon/init-script=/etc/init.d/deepstream
+		--before-remove ./scripts/daemon/before-remove \
+		--after-upgrade ./scripts/daemon/after-upgrade \
+		-f ./build/deepstream=/usr/bin/deepstream ./scripts/daemon/init-script=/etc/init.d/deepstream
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
