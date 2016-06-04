@@ -35,6 +35,7 @@ deploy:
     acl: public_read
     local_dir: build
     upload-dir: $TRAVIS_REPO_SLUG
+
   - provider: releases
     skip_cleanup: true
     api_key:

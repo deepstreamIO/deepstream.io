@@ -5,7 +5,8 @@ COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
-DEEPSTREAM_PACKAGE=build/$PACKAGE_VERSION/deepstream.io
+PACKAGE_DIR=build/$PACKAGE_VERSION
+DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 
 if [ $NODE_VERSION != $PACKAGED_NODE_VERSION ]; then
 	echo Packaging only done on $PACKAGED_NODE_VERSION
@@ -14,7 +15,7 @@ fi
 
 rm -rf build/$PACKAGE_VERSION
 
-mkdir build/$PACKAGE_VERSION
+mkdir $PACKAGE_DIR
 mkdir $DEEPSTREAM_PACKAGE
 mkdir $DEEPSTREAM_PACKAGE/conf
 mkdir $DEEPSTREAM_PACKAGE/var
@@ -25,4 +26,18 @@ cp permissions.json $DEEPSTREAM_PACKAGE/conf/permissions.json
 cp config.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
+if [ $OS = 'win32' ]; then
+	cd $DEEPSTREAM_PACKAGE
+	7z a ../deepstream.io-$PACKAGE_VERSION.zip .
+fi
+
+# if [ OS = 'darwin']; then
+# 	echo 'Work in progress'
+# fi
+
+# if [ os = 'linux' ]; then
+# 	gem install fpm
+# fi
+
+rm -rf $DEEPSTREAM_PACKAGE
 echo 'Done'
