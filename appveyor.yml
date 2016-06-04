@@ -29,7 +29,6 @@ deploy:
       secure: AMUWZVZ4o7lS6f5ogqxTTCqDUR/TYEmPaVXzb7yRRyFUTF/zQFnZHYk1G/j7ie8/
     bucket: ds-server-artifacts
     folder: $(APPVEYOR_REPO_NAME)
-    artifact: build\deepstream-*
 
   - provider: GitHub
     release: $(APPVEYOR_REPO_TAG_NAME)
