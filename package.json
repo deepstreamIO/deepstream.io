@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
   "directories": {
@@ -20,7 +20,6 @@
   "optionalDependencies": {
     "bufferutil": "^1.2.1",
     "charset": "^1.0.0",
-    "bufferutil": "^1.2.1",
     "utf-8-validate": "^1.2.1"
   },
   "dependencies": {
