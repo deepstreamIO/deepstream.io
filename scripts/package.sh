@@ -41,6 +41,7 @@ if [ $OS = 'linux' ]; then
 	fpm \
 		-s dir \
 		-t rpm \
+		--package build/ \
 		--prefix build \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
@@ -56,13 +57,14 @@ if [ $OS = 'linux' ]; then
 	fpm \
 		-s dir \
 		-t deb \
+		--package build/ \
 		--prefix build \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
 		--vendor 'deepstreamHub GmbH' \
 		--description 'deepstream.io deb package' \
-		--url https://deepstream.io/ \
+		--url https://deepstream.io/ \5
 		-m '<info@deepstream.io>' \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
