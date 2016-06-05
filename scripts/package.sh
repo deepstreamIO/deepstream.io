@@ -5,7 +5,7 @@ COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
-PACKAGE_DIR=build/$PACKAGE_VERSION
+PACKAGE_DIR=build/$PACKAGE_VERSION/$COMMIT
 DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 
 if [ $NODE_VERSION != $PACKAGED_NODE_VERSION ]; then
@@ -15,8 +15,7 @@ fi
 
 rm -rf build/$PACKAGE_VERSION
 
-mkdir $PACKAGE_DIR
-mkdir $DEEPSTREAM_PACKAGE
+mkdir -p $DEEPSTREAM_PACKAGE
 mkdir $DEEPSTREAM_PACKAGE/conf
 mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
@@ -41,7 +40,7 @@ if [ $OS = 'linux' ]; then
 	fpm \
 		-s dir \
 		-t rpm \
-		--package ./build \
+		--package ./build/$PACKAGE_VERSION/$COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
@@ -56,7 +55,7 @@ if [ $OS = 'linux' ]; then
 	fpm \
 		-s dir \
 		-t deb \
-		--package ./build \
+		--package ./build/$PACKAGE_VERSION/$COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
@@ -70,6 +69,7 @@ if [ $OS = 'linux' ]; then
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
+rm build/deepstream
 
 echo Files in build directory are $( ls build/ )
 echo 'Done'
