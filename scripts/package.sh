@@ -62,7 +62,7 @@ if [ $OS = 'linux' ]; then
 		--license MIT \
 		--vendor 'deepstreamHub GmbH' \
 		--description 'deepstream.io deb package' \
-		--url https://deepstream.io/ \5
+		--url https://deepstream.io/ \
 		-m '<info@deepstream.io>' \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
