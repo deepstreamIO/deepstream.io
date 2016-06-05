@@ -28,6 +28,7 @@ cp build/deepstream $DEEPSTREAM_PACKAGE/
 if [ $OS = 'win32' ]; then
 	cd $DEEPSTREAM_PACKAGE
 	7z a ../deepstream.io-$PACKAGE_VERSION.zip .
+	cd -
 fi
 
 # if [ OS = 'darwin']; then
