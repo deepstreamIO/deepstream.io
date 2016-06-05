@@ -41,8 +41,7 @@ if [ $OS = 'linux' ]; then
 	fpm \
 		-s dir \
 		-t rpm \
-		--package build/ \
-		--prefix build \
+		--package ./build \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
@@ -57,8 +56,7 @@ if [ $OS = 'linux' ]; then
 	fpm \
 		-s dir \
 		-t deb \
-		--package build/ \
-		--prefix build \
+		--package ./build \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
