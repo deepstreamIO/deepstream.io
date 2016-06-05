@@ -66,7 +66,7 @@ if [ $OS = 'linux' ]; then
 		-m '<info@deepstream.io>' \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
-		-f ./config.yml=/etc/deepstream/config.yml ./permissions.json=/etc/deepstream/permissions.json ./build/deepstream=/usr/bin/deepstream ./scripts/daemon/init-script=/etc/init.d/deepstream
+		-f --deb-no-default-config-files ./config.yml=/etc/deepstream/config.yml ./permissions.json=/etc/deepstream/permissions.json ./build/deepstream=/usr/bin/deepstream ./scripts/daemon/init-script=/etc/init.d/deepstream
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
