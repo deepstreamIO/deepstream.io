@@ -3,7 +3,7 @@
 
 var proxyquire = require( 'proxyquire' );
 var defaultOptions = require( '../../src/default-options' );
-
+var utils = require( '../../src/utils/utils' );
 var C = require( '../../src/constants/constants' );
 var path = require( 'path' );
 
@@ -15,12 +15,12 @@ describe( 'js-yaml-loader', function() {
 		var defaultYamlConfig = result.config;
 		expect( result.file ).toEqual( 'config.yml' );
 		expect( defaultYamlConfig.serverName ).toEqual( jasmine.any( String ) );
-		defaultYamlConfig = merge( defaultYamlConfig, {
+		defaultYamlConfig = utils.merge( defaultYamlConfig, {
 			permissionHandler: null,
 			plugins: null,
 			serverName: null
 		} );
-		var defaultConfig = merge( defaultOptions.get(), {
+		var defaultConfig = utils.merge( defaultOptions.get(), {
 			permissionHandler: null,
 			plugins: null,
 			serverName: null
