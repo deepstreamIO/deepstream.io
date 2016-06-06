@@ -13,6 +13,27 @@ if [ $NODE_VERSION != $PACKAGED_NODE_VERSION ]; then
 	exit
 fi
 
+if [ $OS = 'win32' ]; then
+	EXTENSION=".exe"
+else
+	EXTENSION=""
+fi
+
+EXECUTABLE_NAME=build/deepstream${EXTENSION}
+
+echo "Creating $EXECUTABLE_NAME, this will take a while..."
+
+./node_modules/.bin/nexe \
+	--input 'start.js' \
+	--output $EXECUTABLE_NAME \
+	--runtime "4.4.5" \
+	--temp "nexe_node" \
+	--flags "--use_strict" \
+	--framework "node" \
+	> /dev/null
+
+echo "Packaging to dir structure at $DEEPSTREAM_PACKAGE"
+
 rm -rf build/$PACKAGE_VERSION
 
 mkdir -p $DEEPSTREAM_PACKAGE
@@ -26,6 +47,7 @@ cp config.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 if [ $OS = 'win32' ]; then
+	echo "OS is windows, hence creating zip deepstream.io-$PACKAGE_VERSION.zip"
 	cd $DEEPSTREAM_PACKAGE
 	7z a ../deepstream.io-$PACKAGE_VERSION.zip .
 	cd -

@@ -13,7 +13,6 @@ matrix:
 
 script:
   - npm run coverage
-  - node scripts/package.js
 
 after_script:
   - "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
@@ -37,6 +36,8 @@ deploy:
     acl: public_read
     local_dir: build
     upload-dir: $TRAVIS_REPO_SLUG
+    on:
+      branch: master
 
   - provider: releases
     skip_cleanup: true
