@@ -3,7 +3,7 @@
 
 var proxyquire = require( 'proxyquire' );
 var defaultOptions = require( '../../src/default-options' );
-var merge = require( 'lodash.merge' );
+
 var C = require( '../../src/constants/constants' );
 var path = require( 'path' );
 
