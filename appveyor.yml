@@ -19,6 +19,7 @@ artifacts:
   - path: '*.zip'
 
 before_deploy:
+  - bash scripts\prepackage.sh
   - node scripts\package.js
   - bash scripts\package.sh
   - For /d %%d in ( build\** ) do MOVE %%d %cd%
@@ -33,7 +34,7 @@ deploy:
     bucket: ds-server-artifacts
     folder: $(APPVEYOR_REPO_NAME)
     on:
-      branch: master
+      appveyor_repo_tag: false
 
   - provider: GitHub
     release: $(APPVEYOR_REPO_TAG_NAME)
