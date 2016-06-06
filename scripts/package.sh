@@ -5,7 +5,7 @@ COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
-PACKAGE_DIR=build/$PACKAGE_VERSION/$COMMIT
+PACKAGE_DIR=build/$PACKAGE_VERSION
 DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 
 if [ $NODE_VERSION != $PACKAGED_NODE_VERSION ]; then
@@ -41,7 +41,8 @@ if [ $OS = 'linux' ]; then
 	fpm \
 		-s dir \
 		-t rpm \
-		--package ./build/$PACKAGE_VERSION/$COMMIT \
+		--package ./build/$PACKAGE_VERSION \
+		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
@@ -56,7 +57,8 @@ if [ $OS = 'linux' ]; then
 	fpm \
 		-s dir \
 		-t deb \
-		--package ./build/$PACKAGE_VERSION/$COMMIT \
+		--package ./build/$PACKAGE_VERSION \
+		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
