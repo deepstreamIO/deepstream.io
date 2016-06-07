@@ -110,7 +110,7 @@ if [ $OS = "linux" ]; then
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
-#rm build/deepstream
+rm build/deepstream
 
 echo "Files in build directory are $( ls build/ )"
 echo "Done"
