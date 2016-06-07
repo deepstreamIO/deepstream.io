@@ -104,7 +104,7 @@ module.exports.loadConfig = function( argv ) {
 	if( _configFile ) {
 		customFilePath = _configFile;
 		cliOptions.configPrefix = path.dirname( _configFile );
-		cliOptions.libPrefix = cliOptions.configPrefix
+		cliOptions.libPrefix = cliOptions.configPrefix;
 	}
 	if ( _libPrefix ) {
 		cliOptions.libPrefix = _libPrefix;
@@ -112,8 +112,8 @@ module.exports.loadConfig = function( argv ) {
 	const filePath = findFilePath( customFilePath );
 	if ( filePath == null ) {
 		return {
-			config: defaultOptions.get(),
-			file: 'default options'
+			config: appendPermissionHandler( defaultOptions.get(), cliOptions ),
+			file: null
 		};
 	}
 	const config = parseFile( filePath );
@@ -124,12 +124,17 @@ module.exports.loadConfig = function( argv ) {
 	}
 
 	let result = handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
-	result.permissionHandler = new ConfigPermissionHandler( result );
 	return {
-		config: result,
+		config: appendPermissionHandler( result, cliOptions ),
 		file: filePath
 	};
 };
+
+function appendPermissionHandler( config, cliOptions ) {
+	handlePermissionFile( config, cliOptions );
+	config.permissionHandler = new ConfigPermissionHandler( config );
+	return config;
+}
 
 /**
  * Does lookups for the depstream configuration file.
@@ -184,7 +189,6 @@ function handleMagicProperties( cfg, cliOptions ) {
 	handleUUIDProperty( config );
 	handleLogLevel( config );
 	handlePlugins( config, cliOptions );
-	handlePermissionFile( config, cliOptions );
 
 	return config;
 }
@@ -217,7 +221,7 @@ function handleLogLevel( config ) {
 	}
 }
 
-function handlePermissionFile( config, cliOptions ) {
+	function handlePermissionFile( config, cliOptions ) {
 	var prefix = cliOptions.configPrefix;
 	if ( prefix ) {
 		if ( prefix[ 0 ] === '/' ) {

@@ -13,7 +13,8 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	RecordHandler = require( './record/record-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
-	C = require( './constants/constants' );
+	C = require( './constants/constants' ),
+	pkg = require( '../package.json' );
 
 require( 'colors' );
 
@@ -111,9 +112,13 @@ Deepstream.prototype.set = function( key, value ) {
  */
 Deepstream.prototype.start = function() {
 	this._showStartLogo();
-
-	if( this._options.file ) {
-		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file was loaded from ' + this._options.file );
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
+	if( this._configFile === undefined ) {
+		// API call was ued with an object in the constructor
+	} else if ( this._configFile === null ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INFO, 'no configration file was found' );
+	} else {
+		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file was loaded from ' + this._configFile );
 	}
 
 	if( this._options.logger.isReady ) {
@@ -185,7 +190,9 @@ Deepstream.prototype._loadConfig = function( config, cliOptions ) {
 	if ( config != null ) {
 		return config;
 	} else {
-		return jsYamlLoader.loadConfig( cliOptions ).config;
+		var result = jsYamlLoader.loadConfig( cliOptions );
+		this._configFile = result.file;
+		return result.config;
 	}
 };
 
