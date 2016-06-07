@@ -3,6 +3,9 @@
   "version": "1.0.0-beta.2",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
+  "bin": {
+    "deepstream": "./bin/deepstream"
+  },
   "directories": {
     "test": "test"
   },
