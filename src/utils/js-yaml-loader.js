@@ -265,6 +265,8 @@ function handlePlugins( config, cliOptions ) {
 						connectorKey = 'msg';
 					}
 					fn = require( 'deepstream.io-' + connectorKey + '-' + plugin.name );
+				} else if ( key === 'logger' && plugin.name === 'default' ) {
+					fn = require( '../default-plugins/std-out-logger' );
 				}
 			}
 			if ( key === 'logger' ) {

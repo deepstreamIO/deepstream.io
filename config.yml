@@ -21,7 +21,7 @@ sslCa: null
 # Plugin Configuration
 plugins:
   logger:
-    path: ./src/default-plugins/std-out-logger
+    name: default
 
   # message:
   #   path: redis
