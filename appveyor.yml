@@ -4,9 +4,6 @@ platform:
 os:
   - Visual Studio 2015
 
-before_install:
-  - gem install package_cloud
-
 install:
   - ps: Install-Product node 4.4.5
   - npm install
