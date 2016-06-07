@@ -349,3 +349,54 @@ describe( 'load plugins by name with a name convention with lib prefix', functio
 		expect( config.storage.options ).toEqual( {foo: -3, bar: -4} );
 	} );
 } );
+
+describe( 'load plugins by name with a name convention with an absolute lib prefix', function() {
+	var config;
+	beforeAll( function() {
+		var fsMock = {
+			lstatSync: function() {
+				return true;
+			},
+			readFileSync: function( filePath ) {
+				if ( filePath === './config.json' ) {
+					return `{
+					  "plugins": {
+					    "message": {
+					      "name": "super-messager",
+					      "options": { "foo": -1, "bar": -2 }
+					    },
+							"storage": {
+					      "name": "super-storage",
+					      "options": { "foo": -3, "bar": -4 }
+					    }
+					  }
+					}`;
+				} else {
+					throw new Error( 'should not require any other file: ' + filePath );
+				}
+			}
+		};
+		class SuperMessager {
+			constructor( options ) { this.options = options; }
+		}
+		SuperMessager['@noCallThru'] = true;
+		class SuperStorage {
+			constructor( options ) { this.options = options; }
+		}
+		SuperStorage['@noCallThru'] = true;
+		var configLoader = proxyquire( '../../src/utils/js-yaml-loader', {
+			fs: fsMock,
+			[path.join( '/foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
+			[path.join( '/foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
+		} );
+		config = configLoader.loadConfig( {
+			config: './config.json',
+			libPrefix: '/foobar'
+		} ).config;
+	} );
+
+	it( 'load the any plugin except the logger using new keyword', function() {
+		expect( config.messageConnector.options ).toEqual( {foo: -1, bar: -2} );
+		expect( config.storage.options ).toEqual( {foo: -3, bar: -4} );
+	} );
+} );

@@ -1,3 +1,5 @@
+var child_process = require( 'child_process' );
+var path = require( 'path' );
 var Deepstream = require( '../src/deepstream.io' );
 var ClosableLogger = require( './mocks/closable-logger' );
 var LoggerMock = require( './mocks/logger-mock' );
@@ -89,5 +91,26 @@ describe( 'it starts and stops a configured server', function(){
 		expect(function(){
 			server.start();
 		}).toThrow();
+	});
+
+});
+
+describe( 'handle server startup without config file', function(){
+	it( 'fail starting the server without a config', function(done){
+		var cwd = path.resolve('./bin')
+		var result = child_process.exec('./deepstream', {
+			cwd: cwd
+		}, function(error, stdout, stderr) {
+			expect( stderr ).toContain( 'no such file or directory' );
+			expect( stderr ).toContain( 'permissions.json' );
+			done()
+		})
+	});
+	it( 'fail starting the server without a config', function(){
+		server = new Deepstream();
+		server.set( 'showLogo', false );
+		server.set( 'logger', new LoggerMock() );
+		server._configFile = null;
+		server.start();
 	});
 });
