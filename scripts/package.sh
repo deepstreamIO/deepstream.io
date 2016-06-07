@@ -32,8 +32,7 @@ echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 	--runtime $PACKAGED_NODE_VERSION \
 	--temp "nexe_node" \
 	--flags "--use_strict" \
-	--framework "node" \
-	> /dev/null
+	--framework "node"
 
 echo "Packaging to dir structure at $DEEPSTREAM_PACKAGE"
 
