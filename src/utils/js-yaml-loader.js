@@ -86,8 +86,7 @@ module.exports.loadConfig = function( argv ) {
 	if ( typeof argv === 'string' ) {
 		// backwards compatibility for the tests
 		argv = {
-			config: argv,
-			libPrefix: process.cwd()
+			config: argv
 		};
 	} else if ( argv == null ) {
 		argv = {};
@@ -96,15 +95,13 @@ module.exports.loadConfig = function( argv ) {
 	var _libPrefix = argv.l || argv.libPrefix;
 
 	var cliOptions = {
-		configPrefix: process.cwd(),
-		libPrefix: process.cwd()
+		configPrefix: process.cwd()
 	};
 
 	var customFilePath = undefined;
 	if( _configFile ) {
 		customFilePath = _configFile;
 		cliOptions.configPrefix = path.dirname( _configFile );
-		cliOptions.libPrefix = cliOptions.configPrefix;
 	}
 	if ( _libPrefix ) {
 		cliOptions.libPrefix = _libPrefix;
@@ -221,7 +218,7 @@ function handleLogLevel( config ) {
 	}
 }
 
-	function handlePermissionFile( config, cliOptions ) {
+function handlePermissionFile( config, cliOptions ) {
 	var prefix = cliOptions.configPrefix;
 	if ( prefix ) {
 		if ( prefix[ 0 ] === '/' ) {
@@ -229,6 +226,17 @@ function handleLogLevel( config ) {
 		} else {
 			config.permissionConfigPath = path.join( process.cwd(), prefix, config.permissionConfigPath );
 		}
+	}
+}
+
+function considerLibPrefix( filePath, cliOptions ) {
+	if ( cliOptions.libPrefix == null ) {
+		return filePath;
+	}
+	if ( cliOptions.libPrefix[ 0 ] === '/' ) {
+		return path.join( cliOptions.libPrefix, filePath );
+	} else {
+		return path.join( process.cwd(), cliOptions.libPrefix, filePath );
 	}
 }
 
@@ -248,6 +256,9 @@ function handleLogLevel( config ) {
  * @returns {void}
  */
 function handlePlugins( config, cliOptions ) {
+	// nexe needs global.require for "dynamic" modules
+	// but browserify and proxyquire can't handle global.require
+	var req = global && global.require ? global.require : require;
 	var connectors = [
 		'messageConnector',
 		'cache',
@@ -259,22 +270,17 @@ function handlePlugins( config, cliOptions ) {
 		cache: config.plugins.cache,
 		storage: config.plugins.storage
 	};
+	var requirePath;
 	for ( let key in plugins ) {
 		var plugin = plugins[key];
 		if ( plugin != null ) {
 			var fn = null;
 			if ( plugin.path != null ) {
-				var requirePath;
 				if ( plugin.path[ 0 ] !== '.' ) {
 					requirePath = plugin.path;
 				} else {
-					if ( cliOptions.libPrefix[ 0 ] === '/' ) {
-						requirePath = path.join( cliOptions.libPrefix, plugin.path );
-					} else {
-						requirePath = path.join( process.cwd(), cliOptions.libPrefix, plugin.path );
-					}
+					requirePath = considerLibPrefix( plugin.path, cliOptions );
 				}
-				// plugin.path : path.join( process.cwd(), plugin.path );
 				fn = require( requirePath );
 			} else if ( plugin.name != null ) {
 				var connectorKey = key;
@@ -282,9 +288,11 @@ function handlePlugins( config, cliOptions ) {
 					if ( connectorKey === 'messageConnector' ) {
 						connectorKey = 'msg';
 					}
-					fn = require( 'deepstream.io-' + connectorKey + '-' + plugin.name );
+					requirePath = 'deepstream.io-' + connectorKey + '-' + plugin.name;
+					requirePath = considerLibPrefix( requirePath, cliOptions );
+					fn = req( requirePath );
 				} else if ( key === 'logger' && plugin.name === 'default' ) {
-					fn = require( '../default-plugins/std-out-logger' );
+					fn = req( '../default-plugins/std-out-logger' );
 				}
 			}
 			if ( key === 'logger' ) {
