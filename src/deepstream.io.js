@@ -25,18 +25,14 @@ require( 'colors' );
  * @author Wolfram Hempel
  * @version <version>
  *
+ * @param {Object|String} configOrPath Configuration object or path to config file
+ * 
  * @constructor
  */
-var Deepstream = function( config ) {
-	if ( typeof config === 'object' ) {
-		this._options = config;
-	} else {
-		var result = jsYamlLoader.loadConfig( config );
-		this._options = result.config;
-		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file was loaded from ' + result.file );
-	}
+var Deepstream = function( configOrPath ) {
 	this.isRunning = false;
 	this.constants = C;
+	this._options = this._loadConfig( configOrPath );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -113,6 +109,10 @@ Deepstream.prototype.set = function( key, value ) {
 Deepstream.prototype.start = function() {
 	this._showStartLogo();
 
+	if( this._options.file ) {
+		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file was loaded from ' + this._options.file );
+	}
+
 	if( this._options.logger.isReady ) {
 		this._options.logger.setLogLevel( this._options.logLevel );
 		this._options.logger._$useColors = this._options.colors;
@@ -167,6 +167,22 @@ Deepstream.prototype.stop = function() {
  */
 Deepstream.prototype.convertTyped = function( value ) {
 	return messageParser.convertTyped( value );
+};
+
+/**
+ * Synchronously loads a configuration file and returns
+ * the result
+ *
+ * @param   {String|Object} configOrPath Configuration object or path to the file
+ *
+ * @returns {Object} config
+ */
+Deepstream.prototype._loadConfig = function( configOrPath ) {
+	if ( typeof configOrPath === 'object' ) {
+		return configOrPath;
+	} else {
+		return jsYamlLoader.loadConfig( configOrPath ).config;
+	}
 };
 
 /**

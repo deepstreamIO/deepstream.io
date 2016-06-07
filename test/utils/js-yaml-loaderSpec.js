@@ -193,8 +193,8 @@ describe( 'load plugins by relative path property', function() {
 		MessageModule['@noCallThru'] = true;
 		var configLoader = proxyquire( '../../src/utils/js-yaml-loader', {
 			fs: fsMock,
-			[process.cwd() + '/logger']: loggerModule,
-			[process.cwd() + '/message']: MessageModule
+			[ path.join( process.cwd(), 'logger' )]: loggerModule,
+			[ path.join( process.cwd(), 'message')]: MessageModule
 		} );
 		config = configLoader.loadConfig( './config.json' ).config;
 	} );
