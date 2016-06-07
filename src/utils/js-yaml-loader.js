@@ -6,7 +6,6 @@ const yaml = require( 'js-yaml' );
 const defaultOptions = require( '../default-options' );
 const utils = require( './utils' );
 const C = require( '../constants/constants' );
-const argv = require( 'minimist' )( process.argv.slice( 2 ) );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 
 /**
@@ -82,7 +81,33 @@ function parseFile( filePath, fileContent ) {
  * @public
  * @returns {Object} config
  */
-module.exports.loadConfig = function( customFilePath ) {
+module.exports.loadConfig = function( argv ) {
+	if ( typeof argv === 'string' ) {
+		// backwards compatibility for the tests
+		argv = {
+			config: argv,
+			libPrefix: process.cwd()
+		};
+	} else if ( argv == null ) {
+		argv = {};
+	}
+	var _configFile = argv.c || argv.config;
+	var _libPrefix = argv.l || argv.libPrefix;
+
+	var cliOptions = {
+		configPrefix: process.cwd(),
+		libPrefix: process.cwd()
+	};
+
+	var customFilePath = undefined;
+	if( _configFile ) {
+		customFilePath = _configFile;
+		cliOptions.configPrefix = path.dirname( _configFile );
+		cliOptions.libPrefix = cliOptions.configPrefix
+	}
+	if ( _libPrefix ) {
+		cliOptions.libPrefix = _libPrefix;
+	}
 	const filePath = findFilePath( customFilePath );
 	if ( filePath == null ) {
 		return {
@@ -97,8 +122,9 @@ module.exports.loadConfig = function( customFilePath ) {
 		cliArgs[key] = argv[key] || undefined;
 	}
 
+	var result = handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
 	return {
-		config: utils.merge( {}, defaultOptions.get(), handleMagicProperties( config ), cliArgs ),
+		config: result,
 		file: filePath
 	};
 };
@@ -148,14 +174,14 @@ function findFilePath( customFilePath ) {
  * @private
  * @returns {void}
  */
-function handleMagicProperties( cfg ) {
+function handleMagicProperties( cfg, cliOptions ) {
 	const config = utils.merge( {
 		plugins: {}
 	}, cfg );
 
 	handleUUIDProperty( config );
 	handleLogLevel( config );
-	handlePlugins( config );
+	handlePlugins( config, cliOptions );
 
 	return config;
 }
@@ -203,7 +229,7 @@ function handleLogLevel( config ) {
  * @private
  * @returns {void}
  */
-function handlePlugins( config ) {
+function handlePlugins( config, cliOptions ) {
 	var connectors = [
 		'messageConnector',
 		'cache',
@@ -220,8 +246,17 @@ function handlePlugins( config ) {
 		if ( plugin != null ) {
 			var fn = null;
 			if ( plugin.path != null ) {
-				var requirePath = plugin.path[ 0 ] !== '.' ?
-				plugin.path : path.join( process.cwd(), plugin.path );
+				var requirePath;
+				if ( plugin.path[ 0 ] !== '.' ) {
+					requirePath = plugin.path;
+				} else {
+					if ( cliOptions.libPrefix[ 0 ] === '/' ) {
+						requirePath = path.join( cliOptions.libPrefix, plugin.path );
+					} else {
+						requirePath = path.join( process.cwd(), cliOptions.libPrefix, plugin.path );
+					}
+				}
+				// plugin.path : path.join( process.cwd(), plugin.path );
 				fn = require( requirePath );
 			} else if ( plugin.name != null ) {
 				var connectorKey = key;

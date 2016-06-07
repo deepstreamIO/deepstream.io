@@ -25,14 +25,17 @@ require( 'colors' );
  * @author Wolfram Hempel
  * @version <version>
  *
- * @param {Object|String} configOrPath Configuration object or path to config file
- * 
+ * @param {Object} config Configuration object
+ * @param {Object} cliOptions which can contain the config file path and the lib prefix path
+ *
  * @constructor
  */
-var Deepstream = function( configOrPath ) {
+
+
+var Deepstream = function( config, cliOptions ) {
 	this.isRunning = false;
 	this.constants = C;
-	this._options = this._loadConfig( configOrPath );
+	this._options = this._loadConfig( config, cliOptions );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -173,15 +176,16 @@ Deepstream.prototype.convertTyped = function( value ) {
  * Synchronously loads a configuration file and returns
  * the result
  *
- * @param   {String|Object} configOrPath Configuration object or path to the file
+ * @param {Object} config Configuration object
+ * @param {Object} cliOptions which can contain the config file path and the lib prefix path
  *
  * @returns {Object} config
  */
-Deepstream.prototype._loadConfig = function( configOrPath ) {
-	if ( typeof configOrPath === 'object' ) {
-		return configOrPath;
+Deepstream.prototype._loadConfig = function( config, cliOptions ) {
+	if ( config != null ) {
+		return config;
 	} else {
-		return jsYamlLoader.loadConfig( configOrPath ).config;
+		return jsYamlLoader.loadConfig( cliOptions ).config;
 	}
 };
 

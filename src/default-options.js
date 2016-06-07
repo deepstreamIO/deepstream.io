@@ -1,5 +1,4 @@
-var argv = require( 'minimist' )( process.argv.slice(2) ),
-	utils = require( './utils/utils' ),
+var utils = require( './utils/utils' ),
 	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	C = require( './constants/constants' );
 
@@ -9,7 +8,7 @@ exports.get = function() {
 		 * General
 		 */
 		serverName: utils.getUid(),
-		colors: argv.colors === 'false' ? false : true,
+		colors: true,
 		showLogo: true,
 		logLevel: C.LOG_LEVEL.INFO,
 
@@ -18,10 +17,10 @@ exports.get = function() {
 		 */
 		webServerEnabled: true,
 		tcpServerEnabled: true,
-		port: argv.port || 6020,
-		host: argv.host || '0.0.0.0',
-		tcpPort: argv.tcpPort || 6021,
-		tcpHost: argv.tcpHost || '0.0.0.0',
+		port: 6020,
+		host: '0.0.0.0',
+		tcpPort: 6021,
+		tcpHost: '0.0.0.0',
 		httpServer: null,
 		urlPath: '/engine.io',
 
