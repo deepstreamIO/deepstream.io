@@ -58,7 +58,15 @@ if [ $OS = "win32" ]; then
 fi
 
 if [ $OS = "darwin" ]; then
-	echo "OS is mac, a work in progress"
+	echo "OS is mac, creating .pkg using FPM"
+	gem install fpm
+
+	fpm \
+		-s dir \
+		-t osxpkg \
+		--package ./build/$PACKAGE_VERSION \
+		-n deepstream.io \
+		$DEEPSTREAM_PACKAGE
 fi
 
 if [ $OS = "linux" ]; then
