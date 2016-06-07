@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+
 PACKAGED_NODE_VERSION="v4.4.5"
 NODE_VERSION=$( node --version )
 COMMIT=$( node scripts/details.js COMMIT )
@@ -8,23 +10,24 @@ OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
 DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 
+EXTENSION=""
+if [ $OS = "win32" ]; then
+	EXTENSION=".exe"
+fi
+
+echo "Starting deepstream.io packaging"
+
 if [ $NODE_VERSION != $PACKAGED_NODE_VERSION ]; then
-	echo Packaging only done on $PACKAGED_NODE_VERSION
+	echo "Packaging only done on $PACKAGED_NODE_VERSION"
 	exit
 fi
 
-if [ $OS = 'win32' ]; then
-	EXTENSION=".exe"
-else
-	EXTENSION=""
-fi
+EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
-EXECUTABLE_NAME=build/deepstream${EXTENSION}
-
-echo "Creating $EXECUTABLE_NAME, this will take a while..."
+echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 
 ./node_modules/.bin/nexe \
-	--input 'start.js' \
+	--input "start.js" \
 	--output $EXECUTABLE_NAME \
 	--runtime "4.4.5" \
 	--temp "nexe_node" \
@@ -46,18 +49,20 @@ cp permissions.json $DEEPSTREAM_PACKAGE/conf/permissions.json
 cp config.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
-if [ $OS = 'win32' ]; then
+if [ $OS = "win32" ]; then
 	echo "OS is windows, hence creating zip deepstream.io-$PACKAGE_VERSION.zip"
 	cd $DEEPSTREAM_PACKAGE
-	7z a ../deepstream.io-$PACKAGE_VERSION.zip .
+	7z a ../deepstream.io-$PACKAGE_VERSION-$COMMIT.zip . > /dev/null
+	cp ../deepstream.io-$PACKAGE_VERSION-$COMMIT.zip ../../deepstream.io-$PACKAGE_VERSION.zip
 	cd -
 fi
 
-# if [ OS = 'darwin']; then
-# 	echo 'Work in progress'
-# fi
+if [ $OS = "darwin" ]; then
+	echo "OS is mac, a work in progress"
+fi
 
-if [ $OS = 'linux' ]; then
+if [ $OS = "linux" ]; then
+	echo "OS is linux, creating rpm and deb using FPM"
 	gem install fpm
 
 	fpm \
@@ -68,10 +73,10 @@ if [ $OS = 'linux' ]; then
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
-		--vendor 'deepstreamHub GmbH' \
-		--description 'deepstream.io rpm package' \
+		--vendor "deepstreamHub GmbH" \
+		--description "deepstream.io rpm package" \
 		--url https://deepstream.io/ \
-		-m '<info@deepstream.io>' \
+		-m "<info@deepstream.io>" \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
@@ -89,10 +94,10 @@ if [ $OS = 'linux' ]; then
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
 		--license MIT \
-		--vendor 'deepstreamHub GmbH' \
-		--description 'deepstream.io deb package' \
+		--vendor "deepstreamHub GmbH" \
+		--description "deepstream.io deb package" \
 		--url https://deepstream.io/ \
-		-m '<info@deepstream.io>' \
+		-m "<info@deepstream.io>" \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
@@ -105,7 +110,7 @@ if [ $OS = 'linux' ]; then
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
-rm build/deepstream
+#rm build/deepstream
 
-echo Files in build directory are $( ls build/ )
-echo 'Done'
+echo "Files in build directory are $( ls build/ )"
+echo "Done"

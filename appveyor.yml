@@ -4,6 +4,9 @@ platform:
 os:
   - Visual Studio 2015
 
+before_install:
+  gem install package_cloud
+
 install:
   - ps: Install-Product node 4.4.5
   - npm install
@@ -14,9 +17,11 @@ test_script:
   - npm test
 
 artifacts:
-  - path: '**\**\*.zip'
   - path: '**\*.zip'
+    name: 'deepstream.io-commit'
+
   - path: '*.zip'
+    name: 'deepstream.io-release'
 
 before_deploy:
   - bash scripts\package.sh
@@ -31,6 +36,7 @@ deploy:
       secure: AMUWZVZ4o7lS6f5ogqxTTCqDUR/TYEmPaVXzb7yRRyFUTF/zQFnZHYk1G/j7ie8/
     bucket: ds-server-artifacts
     folder: $(APPVEYOR_REPO_NAME)
+    artifact: 'deepstream.io-commit'
     on:
       branch: master
       appveyor_repo_tag: false
@@ -41,6 +47,7 @@ deploy:
     auth_token:
       secure: tZHuiZVCwkXRYMihVyoNrmDxAm6xPbXyop7Plg5uUWIIqA1EoUCrTYd/V+0D1I+Y
     draft: true
+    artifact: 'deepstream.io-release'
     on:
       appveyor_repo_tag: true
 
