@@ -50,34 +50,47 @@ cp config.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 if [ $OS = "win32" ]; then
-	echo "OS is windows, creating zip deepstream.io-$PACKAGE_VERSION.zip"
+	COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "
+	CLEAN_NAME="deepstream.io-windows-$PACKAGE_VERSION.zip"
+
+	echo "OS is windows, creating zip deepstream.io-windows-$PACKAGE_VERSION.zip"
 	cd $DEEPSTREAM_PACKAGE
-	7z a ../deepstream.io-$PACKAGE_VERSION-$COMMIT.zip . > /dev/null
-	cp ../deepstream.io-$PACKAGE_VERSION-$COMMIT.zip ../../deepstream.io-$PACKAGE_VERSION.zip
+	7z a ../$COMMIT_NAME . > /dev/null
+	cp ../$COMMIT_NAME ../../$CLEAN_NAME
 	cd -
 fi
 
 if [ $OS = "darwin" ]; then
-	echo "OS is mac, creating .pkg using FPM"
-	gem install fpm
+	COMMIT_NAME="deepstream.io-mac-$PACKAGE_VERSION-$COMMIT.zip"
+	CLEAN_NAME="deepstream.io-mac-$PACKAGE_VERSION.zip"
 
-	fpm \
-		-s dir \
-		-t osxpkg \
-		-v $PACKAGE_VERSION \
-		--package ./build/$PACKAGE_VERSION \
-		-n deepstream.io \
-		--license MIT \
-		--vendor "deepstreamHub GmbH" \
-		--url https://deepstream.io/ \
-		-m "<info@deepstream.io>" \
-		$DEEPSTREAM_PACKAGE
+	echo "OS is mac, creating $CLEAN_NAME"
+
+	cd $DEEPSTREAM_PACKAGE
+	zip -r ../$COMMIT_NAME .
+	cp ../$COMMIT_NAME ../../$CLEAN_NAME
+	cd -
+
+	echo "Skipping .pkg creation"
+	# gem install fpm
+	# fpm \
+	# 	-s dir \
+	# 	-t osxpkg \
+	# 	-v $PACKAGE_VERSION \
+	# 	--package ./build/$PACKAGE_VERSION \
+	# 	-n deepstream.io \
+	# 	--license MIT \
+	# 	--vendor "deepstreamHub GmbH" \
+	# 	--url https://deepstream.io/ \
+	# 	-m "<info@deepstream.io>" \
+	# 	$DEEPSTREAM_PACKAGE
 fi
 
 if [ $OS = "linux" ]; then
-	echo "OS is linux, creating rpm and deb using FPM"
+	echo "OS is linux, installing FPM"
 	gem install fpm
 
+	echo "Creating rpm"
 	fpm \
 		-s dir \
 		-t rpm \
@@ -99,6 +112,7 @@ if [ $OS = "linux" ]; then
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
+	echo "Creating deb"
 	fpm \
 		-s dir \
 		-t deb \
@@ -120,6 +134,15 @@ if [ $OS = "linux" ]; then
 		./users.json=/etc/deepstream/users.json \
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
+
+	COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
+	CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
+
+	echo "Creating tar.gz"
+	cd $DEEPSTREAM_PACKAGE
+	tar czf ../$COMMIT_NAME .
+	cp ../$COMMIT_NAME ../../$CLEAN_NAME
+	cd -
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE

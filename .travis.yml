@@ -49,6 +49,7 @@ deploy:
       secure: "TQswArJ38P6LHt1/kvJ8TruJ5GLXxrWq9sOi7uyJQKo64mBDE3JbrDuRO6osjkBdAWZtc+9uBuGfvuIwMJPNiw0Qxw+X/JBZJLm+IHoau/qoRD5R+uF2p4KD3CapeGQ3bzlEiv3QeTrhXLowgxBKvi8Uj96OlNaRazoALYheWsdUr7e4m8mDqrDT7EO3tu/SR2dQlysQkgoWZoHy43HJay6De5eMO8BqpA78ZKFZ4Um2wcZI/aalfcTvyWwTuDMV/IUucbHkuqmuOCjjG1Z9IOszEbLu79cLMB3ZCR0iFCKP55xBuZ3p/UYPAXgfGmbIvRc9wvqKqe4ocFw9GmFAH+iDfdYul68DsbevkhBS8xNuOq1zNfLknCqwiBwlHDWFb2x52OE/EOqUaVZ+1ppEZs5HxJb+P/5C7fXREmptxYLirfMg6lsrc2qcrjbGUUFDuCMDf46zMl/WHrvFXgSrDfBQBU96nd0B1Mj09tXGKz/g1PEib3k5854kLZ0VO5iJT8TbQX6+0gOBv+7h64HdKZ/TdWbR69W5hK5xDXBaeeCN7/GoFRMnkjk+z0gTjVknTH7CYwK4JlZa3mVpmWRA91F72AjRMGgDVnGrB5asCcqoxsnoDm8fflktAM5h6k8sEIQg3kf7ilzpGjEOYo4kIWCt6ZUcgBpsAUomloJaOII="
     file_glob: true
     file:
+      - "build/**/*.pkg"
       - "build/**/*.deb"
       - "build/**/*.rpm"
       - "build/**/*.tar.gz"
