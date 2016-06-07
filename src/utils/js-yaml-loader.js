@@ -4,6 +4,7 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 const yaml = require( 'js-yaml' );
 const defaultOptions = require( '../default-options' );
+const ConfigPermissionHandler = require( '../permission/config-permission-handler' );
 const utils = require( './utils' );
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
@@ -122,7 +123,8 @@ module.exports.loadConfig = function( argv ) {
 		cliArgs[key] = argv[key] || undefined;
 	}
 
-	var result = handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
+	let result = handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
+	result.permissionHandler = new ConfigPermissionHandler( result );
 	return {
 		config: result,
 		file: filePath
@@ -182,6 +184,7 @@ function handleMagicProperties( cfg, cliOptions ) {
 	handleUUIDProperty( config );
 	handleLogLevel( config );
 	handlePlugins( config, cliOptions );
+	handlePermissionFile( config, cliOptions );
 
 	return config;
 }
@@ -211,6 +214,17 @@ function handleUUIDProperty( config ) {
 function handleLogLevel( config ) {
 	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
 		config.logLevel = C.LOG_LEVEL[ config.logLevel ];
+	}
+}
+
+function handlePermissionFile( config, cliOptions ) {
+	var prefix = cliOptions.configPrefix;
+	if ( prefix ) {
+		if ( prefix[ 0 ] === '/' ) {
+			config.permissionConfigPath = path.join( prefix, config.permissionConfigPath );
+		} else {
+			config.permissionConfigPath = path.join( process.cwd(), prefix, config.permissionConfigPath );
+		}
 	}
 }
 

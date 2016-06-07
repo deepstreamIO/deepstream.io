@@ -16,11 +16,13 @@ describe( 'js-yaml-loader', function() {
 		expect( result.file ).toEqual( 'config.yml' );
 		expect( defaultYamlConfig.serverName ).toEqual( jasmine.any( String ) );
 		defaultYamlConfig = utils.merge( defaultYamlConfig, {
+			permissionConfigPath: null,
 			permissionHandler: null,
 			plugins: null,
 			serverName: null
 		} );
 		var defaultConfig = utils.merge( defaultOptions.get(), {
+			permissionConfigPath: null,
 			permissionHandler: null,
 			plugins: null,
 			serverName: null

@@ -1,5 +1,4 @@
 var utils = require( './utils/utils' ),
-	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	C = require( './constants/constants' );
 
 exports.get = function() {
@@ -75,7 +74,5 @@ exports.get = function() {
 		dependencyInitialisationTimeout: 2000
 	};
 
-	//TODO: Change as soon as we move to config reader
-	options.permissionHandler = new ConfigPermissionHandler( options );
 	return options;
 };
