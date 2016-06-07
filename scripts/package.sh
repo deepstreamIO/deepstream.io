@@ -94,7 +94,7 @@ if [ $OS = "linux" ]; then
 	fpm \
 		-s dir \
 		-t rpm \
-		--package ./build/$PACKAGE_VERSION \
+		--package ./build/ \
 		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
@@ -116,7 +116,7 @@ if [ $OS = "linux" ]; then
 	fpm \
 		-s dir \
 		-t deb \
-		--package ./build/$PACKAGE_VERSION \
+		--package ./build \
 		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
