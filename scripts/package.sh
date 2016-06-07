@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PACKAGED_NODE_VERSION="v4.4.5"
+PACKAGED_NODE_VERSION="4.4.5"
 NODE_VERSION=$( node --version )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
@@ -17,7 +17,7 @@ fi
 
 echo "Starting deepstream.io packaging"
 
-if [ $NODE_VERSION != $PACKAGED_NODE_VERSION ]; then
+if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
 	echo "Packaging only done on $PACKAGED_NODE_VERSION"
 	exit
 fi
@@ -29,7 +29,7 @@ echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 ./node_modules/.bin/nexe \
 	--input "start.js" \
 	--output $EXECUTABLE_NAME \
-	--runtime "4.4.5" \
+	--runtime $PACKAGED_NODE_VERSION \
 	--temp "nexe_node" \
 	--flags "--use_strict" \
 	--framework "node" \
@@ -50,7 +50,7 @@ cp config.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 if [ $OS = "win32" ]; then
-	echo "OS is windows, hence creating zip deepstream.io-$PACKAGE_VERSION.zip"
+	echo "OS is windows, creating zip deepstream.io-$PACKAGE_VERSION.zip"
 	cd $DEEPSTREAM_PACKAGE
 	7z a ../deepstream.io-$PACKAGE_VERSION-$COMMIT.zip . > /dev/null
 	cp ../deepstream.io-$PACKAGE_VERSION-$COMMIT.zip ../../deepstream.io-$PACKAGE_VERSION.zip
@@ -64,8 +64,13 @@ if [ $OS = "darwin" ]; then
 	fpm \
 		-s dir \
 		-t osxpkg \
+		-v $PACKAGE_VERSION \
 		--package ./build/$PACKAGE_VERSION \
 		-n deepstream.io \
+		--license MIT \
+		--vendor "deepstreamHub GmbH" \
+		--url https://deepstream.io/ \
+		-m "<info@deepstream.io>" \
 		$DEEPSTREAM_PACKAGE
 fi
 
