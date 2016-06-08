@@ -14,8 +14,9 @@ name="deepstream"
 cmd="deepstream"
 
 pid_file="/var/run/$name.pid"
-stdout_log="/var/deepstream/$name.log"
-stderr_log="/var/deepstream/$name.err"
+lib_dir="/var/lib/deepstream"
+stdout_log="/var/log/deepstream/$name.log"
+stderr_log="/var/log/deepstream/$name.err"
 conf_file="/etc/deepstream/config.yml"
 
 get_pid() {
@@ -38,7 +39,7 @@ case "$1" in
 
         echo "Starting $name.."
         cd "$dir"
-        $cmd >> "$stdout_log" 2>&1 &
+        $cmd  -c $conf_file -l $lib_dir >> "$stdout_log" 2>&1 &
         echo $! > "$pid_file"
         if ! is_running; then
             echo "Unable to start, see $stdout_log"

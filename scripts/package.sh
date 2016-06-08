@@ -104,6 +104,9 @@ if [ $OS = "linux" ]; then
 		-m "<info@deepstream.io>" \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
+		--directories /etc/deepstream \
+		--directories /var/log/deepstream \
+		--directories /var/lib/deepstream \
 		-f \
 		./config.yml=/etc/deepstream/config.yml \
 		./permissions.json=/etc/deepstream/permissions.json \
