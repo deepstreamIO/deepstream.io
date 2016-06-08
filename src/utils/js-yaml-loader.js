@@ -84,12 +84,7 @@ function parseFile( filePath, fileContent ) {
 
  */
 module.exports.loadConfig = function( argv ) {
-	if ( typeof argv === 'string' ) {
-		// backwards compatibility for the tests
-		argv = {
-			config: argv
-		};
-	} else if ( argv == null ) {
+	if ( argv == null ) {
 		argv = {};
 	}
 	var _configFile = argv.c || argv.config;

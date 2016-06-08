@@ -54,7 +54,7 @@ describe( 'js-yaml-loader', function() {
 			fs: fsMock
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
-		var config = configLoader.loadConfig( './test/test-configs/config.yml' ).config;
+		var config = configLoader.loadConfig( {config:'./test/test-configs/config.yml'} ).config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config.yml' );
 		expect( config.serverName ).toBeDefined();
@@ -78,7 +78,7 @@ describe( 'js-yaml-loader', function() {
 			fs: fsMock
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
-		var config = configLoader.loadConfig( './foo.json' ).config;
+		var config = configLoader.loadConfig( {config: './foo.json'} ).config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './foo.json' );
 		expect( config.port ).toEqual( 1001 );
@@ -92,12 +92,12 @@ describe( 'js-yaml-loader', function() {
 			fs: fsMock
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
-		var config = configLoader.loadConfig( './test/test-configs/config.js' ).config;
+		var config = configLoader.loadConfig( {config:'./test/test-configs/config.js'} ).config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config.js' );
 		expect( config.port ).toEqual( 1002 );
 
-		config = configLoader.loadConfig( path.join( process.cwd(), 'test/test-configs/config.js' ) ).config;
+		config = configLoader.loadConfig( {config:path.join( process.cwd(), 'test/test-configs/config.js' )} ).config;
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 2 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( path.join( process.cwd(), 'test/test-configs/config.js' ) );
 		expect( config.port ).toEqual( 1002 );
@@ -115,7 +115,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
-			configLoader.loadConfig( './config.foo' ).config;
+			configLoader.loadConfig( {config:'./config.foo'} ).config;
 		} ).toThrowError( '.foo is not supported as configuration file' );
 	} );
 
@@ -130,7 +130,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
-			configLoader.loadConfig( './not-existing-config' ).config;
+			configLoader.loadConfig( {config:'./not-existing-config'} ).config;
 		} ).toThrowError( 'configuration file not found at: ./not-existing-config' );
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './not-existing-config' );
@@ -143,7 +143,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
-			configLoader.loadConfig( './test/test-configs/config-broken.yml' ).config;
+			configLoader.loadConfig( {config:'./test/test-configs/config-broken.yml'} ).config;
 		} ).toThrowError( /asdsad: ooops/ );
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config-broken.yml' );
@@ -156,7 +156,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
 		expect( function() {
-			configLoader.loadConfig( './test/test-configs/config-broken.js' ).config;
+			configLoader.loadConfig( {config:'./test/test-configs/config-broken.js'} ).config;
 		} ).toThrowError( /foobarBreaksIt is not defined/ );
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 1 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( './test/test-configs/config-broken.js' );
@@ -198,7 +198,7 @@ describe( 'load plugins by relative path property', function() {
 			'./logger': loggerModule,
 			'./message': MessageModule
 		} );
-		config = configLoader.loadConfig( './config.json' ).config;
+		config = configLoader.loadConfig( {config:'./config.json'} ).config;
 	} );
 
 	it( 'load the any plugin except the logger using new keyword', function() {
@@ -241,7 +241,7 @@ describe( 'load plugins by path property (npm module style)', function() {
 			fs: fsMock,
 			'foo-bar-qox': FooBar
 		} );
-		config = configLoader.loadConfig( './config.json' ).config;
+		config = configLoader.loadConfig( {config:'./config.json'} ).config;
 	} );
 
 	it( 'load the any plugin except the logger using new keyword', function() {
