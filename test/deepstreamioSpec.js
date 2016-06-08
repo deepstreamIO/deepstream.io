@@ -97,7 +97,7 @@ describe( 'it starts and stops a configured server', function() {
 } );
 
 describe( 'handle server startup without config file', function() {
-	it( 'fail starting the server without a config', function( done ) {
+	it( 'via CLI', function( done ) {
 		var cwd = path.resolve( './bin' );
 		child_process.exec( './deepstream', {
 			cwd: cwd
@@ -107,7 +107,7 @@ describe( 'handle server startup without config file', function() {
 			done();
 		} );
 	} );
-	it( 'fail starting the server without a config', function( done ) {
+	it( 'via API', function( done ) {
 		var server = new Deepstream();
 		var logger = new ClosableLogger();
 		server.set( 'dataTransforms', [] );
