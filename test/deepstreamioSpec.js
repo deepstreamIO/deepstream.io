@@ -99,13 +99,17 @@ describe( 'it starts and stops a configured server', function() {
 describe( 'handle server startup without config file', function() {
 	it( 'via CLI', function( done ) {
 		var cwd = path.resolve( './bin' );
-		child_process.exec( './deepstream', {
-			cwd: cwd
-		}, function( error, stdout, stderr ) {
+		try {
+			child_process.execSync( './deepstream', {
+				cwd: cwd,
+				stdio: ['ignore', 'ignore', 'pipe']
+			} );
+		} catch ( err ) {
+			var stderr = err.stderr.toString();
 			expect( stderr ).toContain( 'no such file or directory' );
 			expect( stderr ).toContain( 'permissions.json' );
 			done();
-		} );
+		}
 	} );
 	it( 'via API', function( done ) {
 		var server = new Deepstream();
@@ -114,10 +118,8 @@ describe( 'handle server startup without config file', function() {
 		server.set( 'showLogo', false );
 		server.set( 'logger', logger );
 		server._configFile = null;
-		server.on( 'started', function() {
-			server.stop();
-			done();
-		} );
+		server.on( 'started', server.stop );
+		server.on( 'stopped', done );
 		server.start();
 	} );
 } );
