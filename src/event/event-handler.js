@@ -138,7 +138,7 @@ EventHandler.prototype._triggerEvent = function( messageSource, message ) {
  * parses the provided data for every client to avoid accidental manipulation of the original data object
  *
  * @param   {Object} originalMessage a deepstream event message object
- * @param   {SocketWrapper || String} messageSource   the endpoint the message was received from. Can be C.SOURCE_MESSAGE_CONNECTOR
+ * @param   {SocketWrapper |String} messageSource   the endpoint the message was received from. Can be C.SOURCE_MESSAGE_CONNECTOR
  * @param   {SocketWrapper} receiver A socket that's subscribed to this event
  *
  * @private
