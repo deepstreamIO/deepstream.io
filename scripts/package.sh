@@ -27,7 +27,7 @@ EXECUTABLE_NAME="build/deepstream$EXTENSION"
 echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 
 ./node_modules/.bin/nexe \
-	--input "start.js" \
+	--input "bin/deepstream" \
 	--output $EXECUTABLE_NAME \
 	--runtime $PACKAGED_NODE_VERSION \
 	--temp "nexe_node" \
