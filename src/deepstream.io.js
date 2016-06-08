@@ -9,6 +9,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
 	jsYamlLoader = require( './utils/js-yaml-loader' ),
+	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
@@ -126,6 +127,8 @@ Deepstream.prototype.start = function() {
 	} else {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
 	}
+
+	this._options.permissionHandler = new ConfigPermissionHandler( this._options );
 
 	if( this._options.dataTransforms ) {
 		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );

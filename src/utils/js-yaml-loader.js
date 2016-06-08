@@ -4,7 +4,6 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 const yaml = require( 'js-yaml' );
 const defaultOptions = require( '../default-options' );
-const ConfigPermissionHandler = require( '../permission/config-permission-handler' );
 const utils = require( './utils' );
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
@@ -93,7 +92,6 @@ module.exports.loadConfig = function( argv ) {
 	var cliOptions = {
 		configPrefix: process.cwd()
 	};
-
 	var customFilePath = undefined;
 	if( _configFile ) {
 		customFilePath = _configFile;
@@ -105,7 +103,7 @@ module.exports.loadConfig = function( argv ) {
 	const filePath = findFilePath( customFilePath );
 	if ( filePath == null ) {
 		return {
-			config: appendPermissionHandler( defaultOptions.get(), cliOptions ),
+			config: rewritePermissionFilePath( defaultOptions.get(), cliOptions ),
 			file: null
 		};
 	}
@@ -115,28 +113,12 @@ module.exports.loadConfig = function( argv ) {
 	for ( let key in defaultOptions.get() ) {
 		cliArgs[key] = argv[key] || undefined;
 	}
-
 	let result = handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
 	return {
-		config: appendPermissionHandler( result, cliOptions ),
+		config: rewritePermissionFilePath( result, cliOptions ),
 		file: filePath
 	};
 };
-
-/**
- * Calling rewritePermissionFilePath and initializing the ConfigPermissionHandler
- *
- * @param {Object} config deepstream configuration object
- * @param {Object} cliOptions CLI arguments from the CLI interface
- *
- * @private
- * @returns {void}
- */
-function appendPermissionHandler( config, cliOptions ) {
-	rewritePermissionFilePath( config, cliOptions );
-	config.permissionHandler = new ConfigPermissionHandler( config );
-	return config;
-}
 
 /**
  * Does lookups for the depstream configuration file.
@@ -241,6 +223,7 @@ function rewritePermissionFilePath( config, cliOptions ) {
 		return;
 	}
 	config.permissionConfigPath =  handleRelativeAndAbsolutePath( config.permissionConfigPath, prefix );
+	return config;
 }
 
 /**
