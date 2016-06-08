@@ -13,7 +13,8 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	RecordHandler = require( './record/record-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
-	C = require( './constants/constants' );
+	C = require( './constants/constants' ),
+	pkg = require( '../package.json' );
 
 require( 'colors' );
 
@@ -25,18 +26,17 @@ require( 'colors' );
  * @author Wolfram Hempel
  * @version <version>
  *
+ * @param {Object} config Configuration object
+ * @param {Object} cliOptions which can contain the config file path and the lib prefix path
+ *
  * @constructor
  */
-var Deepstream = function( config ) {
-	if ( typeof config === 'object' ) {
-		this._options = config;
-	} else {
-		var result = jsYamlLoader.loadConfig( config );
-		this._options = result.config;
-		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file was loaded from ' + result.file );
-	}
+
+
+var Deepstream = function( config, cliOptions ) {
 	this.isRunning = false;
 	this.constants = C;
+	this._options = this._loadConfig( config, cliOptions );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -113,6 +113,14 @@ Deepstream.prototype.set = function( key, value ) {
  */
 Deepstream.prototype.start = function() {
 	this._showStartLogo();
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
+	if( this._configFile === undefined ) {
+		// API was called with an object in the constructor
+	} else if ( this._configFile === null ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INFO, 'no configration file was found' );
+	} else {
+		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file was loaded from ' + this._configFile );
+	}
 
 	if( this._options.logger.isReady ) {
 		this._options.logger.setLogLevel( this._options.logLevel );
@@ -168,6 +176,25 @@ Deepstream.prototype.stop = function() {
  */
 Deepstream.prototype.convertTyped = function( value ) {
 	return messageParser.convertTyped( value );
+};
+
+/**
+ * Synchronously loads a configuration file and returns
+ * the result
+ *
+ * @param {Object} config Configuration object
+ * @param {Object} cliOptions which can contain the config file path and the lib prefix path
+ *
+ * @returns {Object} config
+ */
+Deepstream.prototype._loadConfig = function( config, cliOptions ) {
+	if ( config != null ) {
+		return config;
+	} else {
+		var result = jsYamlLoader.loadConfig( cliOptions );
+		this._configFile = result.file;
+		return result.config;
+	}
 };
 
 /**

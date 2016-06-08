@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+
+var argv = require( 'minimist' )( process.argv.slice( 2 ) );
+var Deepstream = require( '../src/deepstream.io.js' );
+var pgk = require( '../package.json' );
+
+if ( argv.help ) {
+	console.log(
+		'usage: deepstream.io [options]\n\n' +
+		'Options:\n' +
+		'  -c, --config     path to the deepstream configration file, parent directory ' +
+												'will be used as prefix for other config files, defaults to CWD\n' +
+		'  -l, --libPrefix  path where to lookup for plugins like connectors and logger, defaults to node_modules'
+	);
+	return;
+} else if ( argv.version ) {
+	console.log(pgk.version)
+	return;
+}
+var ds = new Deepstream( null, argv );
+ds.start();

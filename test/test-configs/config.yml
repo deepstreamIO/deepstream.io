@@ -6,4 +6,4 @@ showLogo: false
 logLevel: ERROR
 plugins:
   logger:
-    path: ./src/default-plugins/std-out-logger
+    name: default

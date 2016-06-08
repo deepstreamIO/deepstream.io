@@ -1,9 +1,9 @@
-/* global describe, it, expect, jasmine */
+/* global describe, it, expect */
 var jsYamlLoader = require( '../../src/utils/js-yaml-loader' );
 
 describe( 'json loader loads and parses json files', function(){
 	var jsonLoader = {
-		load: jsYamlLoader.async
+		load: jsYamlLoader.readAndParseFile
 	};
 
 	it( 'initialises the loader', function(){
