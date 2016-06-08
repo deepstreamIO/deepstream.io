@@ -124,7 +124,7 @@ module.exports.loadConfig = function( argv ) {
 };
 
 /**
- * Calling handlePermissionFile and initializing the ConfigPermissionHandler
+ * Calling rewritePermissionFilePath and initializing the ConfigPermissionHandler
  *
  * @param {Object} config deepstream configuration object
  * @param {Object} cliOptions CLI arguments from the CLI interface
@@ -133,7 +133,7 @@ module.exports.loadConfig = function( argv ) {
  * @returns {void}
  */
 function appendPermissionHandler( config, cliOptions ) {
-	handlePermissionFile( config, cliOptions );
+	rewritePermissionFilePath( config, cliOptions );
 	config.permissionHandler = new ConfigPermissionHandler( config );
 	return config;
 }
@@ -235,23 +235,17 @@ function handleLogLevel( config ) {
  * @private
  * @returns {vpod}
  */
-function handlePermissionFile( config, cliOptions ) {
+function rewritePermissionFilePath( config, cliOptions ) {
 	var prefix = cliOptions.configPrefix;
-	if ( prefix ) {
-		if ( prefix[ 0 ] === '/' ) {
-			config.permissionConfigPath = path.join( prefix, config.permissionConfigPath );
-		} else {
-			config.permissionConfigPath = path.join( process.cwd(), prefix, config.permissionConfigPath );
-		}
+	if ( prefix == null ) {
+		return;
 	}
+	config.permissionConfigPath =  handleRelativeAndAbsolutePath( config.permissionConfigPath, prefix );
 }
 
 /**
  * If libPrefix is not set the filePath will be returned
- *
- * Otherwise it will either replace the lookup path instead of node_modules
- * if the libPrefix is absolute.
- * If the libPrefix is not absolute it will append the libPrefix to the CWD
+ * Default lookup is the node_modules directory in the CWD.
  *
  * @param {String} filePath
  * @param {Object} cliOptions CLI arguments from the CLI interface
@@ -263,10 +257,26 @@ function considerLibPrefix( filePath, cliOptions ) {
 	if ( cliOptions.libPrefix == null ) {
 		return filePath;
 	}
-	if ( cliOptions.libPrefix[ 0 ] === '/' ) {
-		return path.join( cliOptions.libPrefix, filePath );
+	return handleRelativeAndAbsolutePath( filePath, cliOptions.libPrefix );
+}
+
+/**
+ * If a prefix is not set the filePath will be returned
+ *
+ * Otherwise it will either replace return a new path prepended with the prefix.
+ * If the prefix is not an absolute path it will also prepend the CWD.
+ *
+ * @param {String} filePath
+ * @param {String} prefix
+ *
+ * @private
+ * @returns {String} file path with the prefix
+ */
+function handleRelativeAndAbsolutePath( filePath, prefix ) {
+	if ( path.parse( prefix ).root !== '' ) {
+		return path.join( prefix, filePath );
 	} else {
-		return path.join( process.cwd(), cliOptions.libPrefix, filePath );
+		return path.join( process.cwd(), prefix, filePath );
 	}
 }
 
