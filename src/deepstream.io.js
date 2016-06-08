@@ -9,6 +9,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
 	jsYamlLoader = require( './utils/js-yaml-loader' ),
+	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
@@ -113,19 +114,22 @@ Deepstream.prototype.set = function( key, value ) {
  */
 Deepstream.prototype.start = function() {
 	this._showStartLogo();
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
-	if( this._configFile === undefined ) {
-		// API was called with an object in the constructor
-	} else if ( this._configFile === null ) {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INFO, 'no configration file was found' );
-	} else {
-		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file was loaded from ' + this._configFile );
-	}
 
 	if( this._options.logger.isReady ) {
 		this._options.logger.setLogLevel( this._options.logLevel );
 		this._options.logger._$useColors = this._options.colors;
 	}
+
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
+	if( this._configFile === undefined ) {
+		// API was called with an object in the constructor
+	} else if ( this._configFile === null ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INFO, 'no configuration file found' );
+	} else {
+		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
+	}
+
+	this._options.permissionHandler = new ConfigPermissionHandler( this._options );
 
 	if( this._options.dataTransforms ) {
 		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );

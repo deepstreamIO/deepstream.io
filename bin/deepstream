@@ -14,7 +14,7 @@ if ( argv.help ) {
 	);
 	return;
 } else if ( argv.version ) {
-	console.log(pgk.version)
+	console.log( pgk.version );
 	return;
 }
 var ds = new Deepstream( null, argv );
