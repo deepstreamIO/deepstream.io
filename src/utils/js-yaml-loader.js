@@ -77,10 +77,11 @@ function parseFile( filePath, fileContent ) {
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  *
- * @param {String} customFilePath
+ * @param {Object} argv minimist arguments
  *
  * @public
- * @returns {Object} config
+ * @returns {Object} config deepstream configuration object
+
  */
 module.exports.loadConfig = function( argv ) {
 	if ( typeof argv === 'string' ) {
@@ -127,6 +128,15 @@ module.exports.loadConfig = function( argv ) {
 	};
 };
 
+/**
+ * Calling handlePermissionFile and initializing the ConfigPermissionHandler
+ *
+ * @param {Object} config deepstream configuration object
+ * @param {Object} cliOptions CLI arguments from the CLI interface
+ *
+ * @private
+ * @returns {void}
+ */
 function appendPermissionHandler( config, cliOptions ) {
 	handlePermissionFile( config, cliOptions );
 	config.permissionHandler = new ConfigPermissionHandler( config );
@@ -173,7 +183,8 @@ function findFilePath( customFilePath ) {
  * Handle configuration properties which are transformed into non trivial
  * data types
  *
- * @param {Object} config
+ * @param {Object} config deepstream configuration object
+ * @param {Object} cliOptions CLI arguments from the CLI interface
  *
  * @private
  * @returns {void}
@@ -193,7 +204,7 @@ function handleMagicProperties( cfg, cliOptions ) {
 /**
  * Transform the UUID string config to a UUID in the config object.
  *
- * @param {Object} config
+ * @param {Object} config deepstream configuration object
  *
  * @private
  * @returns {void}
@@ -207,7 +218,7 @@ function handleUUIDProperty( config ) {
 /**
  * Transform log level string (enum) to its internal value
  *
- * @param {Object} config
+ * @param {Object} config deepstream configuration object
  *
  * @private
  * @returns {void}
@@ -218,6 +229,17 @@ function handleLogLevel( config ) {
 	}
 }
 
+/**
+ * Handle configPrefix for permission config file.
+ * configPrefix needs to be set in the cliOptions.
+ *
+ *
+ * @param {Object} config deepstream configuration object
+ * @param {Object} cliOptions CLI arguments from the CLI interface
+ *
+ * @private
+ * @returns {vpod}
+ */
 function handlePermissionFile( config, cliOptions ) {
 	var prefix = cliOptions.configPrefix;
 	if ( prefix ) {
@@ -229,6 +251,19 @@ function handlePermissionFile( config, cliOptions ) {
 	}
 }
 
+/**
+ * If libPrefix is not set the filePath will be returned
+ *
+ * Otherwise it will either replace the lookup path instead of node_modules
+ * if the libPrefix is absolute.
+ * If the libPrefix is not absolute it will append the libPrefix to the CWD
+ *
+ * @param {String} filePath
+ * @param {Object} cliOptions CLI arguments from the CLI interface
+ *
+ * @private
+ * @returns {String} file path with the libPrefix set in cliOptions
+ */
 function considerLibPrefix( filePath, cliOptions ) {
 	if ( cliOptions.libPrefix == null ) {
 		return filePath;
@@ -249,8 +284,10 @@ function considerLibPrefix( filePath, cliOptions ) {
  * working directory, or the npm module name - or as a `name` property with
  * a naming convetion: `{message: {name: 'redis'}}` will be resolved to the
  * npm module `deepstream.io-msg-direct`
+ * cliOptions can modify the lookup path for the plugins via libPrefix property
  *
- * @param {Object} config
+ * @param {Object} config deepstream configuration object
+ * @param {Object} cliOptions CLI arguments from the CLI interface
  *
  * @private
  * @returns {void}
