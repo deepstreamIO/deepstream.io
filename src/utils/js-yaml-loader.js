@@ -281,6 +281,9 @@ function handleRelativeAndAbsolutePath( filePath, prefix ) {
  * @returns {void}
  */
 function handlePlugins( config, cliOptions ) {
+	if ( config.plugins == null ) {
+		return;
+	}
 	// nexe needs global.require for "dynamic" modules
 	// but browserify and proxyquire can't handle global.require
 	var req = global && global.require ? global.require : require;
@@ -316,8 +319,6 @@ function handlePlugins( config, cliOptions ) {
 					requirePath = 'deepstream.io-' + connectorKey + '-' + plugin.name;
 					requirePath = considerLibPrefix( requirePath, cliOptions );
 					fn = req( requirePath );
-				} else if ( key === 'logger' && plugin.name === 'default' ) {
-					fn = req( '../default-plugins/std-out-logger' );
 				}
 			}
 			if ( key === 'logger' ) {

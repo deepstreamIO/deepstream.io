@@ -20,9 +20,10 @@ sslCa: null
 
 # Plugin Configuration
 plugins:
-  logger:
-    name: default
 
+  # logger:
+  #   name: default
+  #
   # message:
   #   path: redis
   #   options:

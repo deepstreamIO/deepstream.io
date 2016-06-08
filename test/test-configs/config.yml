@@ -4,6 +4,3 @@ host: 1.2.3.4
 colors: false
 showLogo: false
 logLevel: ERROR
-plugins:
-  logger:
-    name: default
