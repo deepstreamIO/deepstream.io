@@ -112,7 +112,7 @@ module.exports.loadConfig = function( argv ) {
 	const config = parseFile( filePath );
 	// CLI arguments
 	var cliArgs = {};
-	for ( let key in Object.keys( defaultOptions.get() ) ) {
+	for ( let key in defaultOptions.get() ) {
 		cliArgs[key] = argv[key] || undefined;
 	}
 
