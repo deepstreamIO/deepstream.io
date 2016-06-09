@@ -1,9 +1,11 @@
 var rulesMap = require( './rules-map' );
-var FUNCTION_REGEXP = /([a-zA-Z0-9_]*)\(/g;
-var NEW_REGEXP = /^new[^a-zA-Z0-9^]|[^a-zA-Z0-9^]new[^a-zA-Z0-9]/;
-var OLD_DATA_REGEXP = /^oldData[^a-zA-Z0-9^]|[^a-zA-Z0-9^]oldData[^a-zA-Z0-9]/;
-var DATA_REGEXP = /^data[^a-zA-Z0-9^]|[^a-zA-Z0-9^]data[^a-zA-Z0-9]/;
-var CROSS_REFERENCE_REGEXP = /^_[^a-zA-Z0-9^]|[^a-zA-Z0-9^]_[^a-zA-Z0-9]/;
+
+var FUNCTION_REGEXP = /([\w]+)\(/g;
+var NEW_REGEXP = /(^|[^\w~])new[^\w~]/;
+var OLD_DATA_REGEXP = /(^|[^\w~])oldData[^\w~]/;
+var DATA_REGEXP = /(^|[^\w~])data[^\w~]/;
+var CROSS_REFERENCE_REGEXP = /(^|[^\w~])_[^\w~]/;
+
 var SUPPORTED_FUNCTIONS = [
 	'_',
 	'startsWith',

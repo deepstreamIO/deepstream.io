@@ -368,6 +368,7 @@ RuleApplication.prototype._isReady = function() {
  * @returns {void}
  */
 RuleApplication.prototype._loadRecord = function( recordName ) {
+
 	/* istanbul ignore next */
 	if( this._recordData[ recordName ] === LOADING ) {
 		return;
@@ -380,13 +381,15 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 
 	this._recordData[ recordName ] = LOADING;
 
-	new RecordRequest(
-		recordName,
-		this._params.options,
-		null,
-		this._onLoadComplete.bind( this, recordName ),
-		this._onLoadError.bind( this, recordName )
-	);
+	this._params.recordHandler.runWhenRecordStable( recordName, () => {
+		new RecordRequest(
+			recordName,
+			this._params.options,
+			null,
+			this._onLoadComplete.bind( this, recordName ),
+			this._onLoadError.bind( this, recordName )
+		);
+	});
 };
 
 /**

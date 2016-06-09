@@ -23,8 +23,8 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @param   {Object} settings
 	 * @param   {String} settings.path path to the user file
 	 * @param   {String} settings.hashAlgo the name of a HMAC digest algorithm, a.g. 'sha512'
-	 * @param   {Int} settings.iterations the amount of times the algorithm should be applied
-	 * @param   {Int} settings.keyLength the length of the resulting key
+	 * @param   {Number} settings.iterations the amount of times the algorithm should be applied
+	 * @param   {Number} settings.keyLength the length of the resulting key
 	 *
 	 * @constructor
 	 * @returns {void}
@@ -204,7 +204,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 			//todo log error
 			callback( true, {
 				username: username,
-				authData: authData || null
+				clientData: authData || null
 			} );
 		} else {
 			callback( false );
