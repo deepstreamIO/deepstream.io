@@ -89,8 +89,11 @@ module.exports.loadConfig = function( argv ) {
 	var _configFile = argv.c || argv.config;
 	var _libPrefix = argv.l || argv.libPrefix;
 
+	// default values
 	var cliOptions = {
-		configPrefix: process.cwd()
+		configPrefix: path.join( process.cwd(), 'config' ),
+		// will default to lookup in node_modules for paths starting with a letter
+		libPrefix: null
 	};
 	var customFilePath = undefined;
 	if( _configFile ) {
@@ -121,7 +124,7 @@ module.exports.loadConfig = function( argv ) {
 };
 
 /**
- * Does lookups for the depstream configuration file.
+ * Does lookups for the deepstream configuration file.
  * Lookup order: config.json, config.js, config.yml
  * The order will be ignored if customFilePath  will be passed.
  *
@@ -132,9 +135,9 @@ module.exports.loadConfig = function( argv ) {
  */
 function findFilePath( customFilePath ) {
 	const order = [
-		'config.json',
-		'config.js',
-		'config.yml'
+		'config/config.json',
+		'config/config.js',
+		'config/config.yml'
 	];
 	let filePath = null;
 
@@ -166,16 +169,16 @@ function findFilePath( customFilePath ) {
  * @private
  * @returns {void}
  */
-function handleMagicProperties( cfg, cliOptions ) {
-	const config = utils.merge( {
+function handleMagicProperties( config, cliOptions ) {
+	const _config = utils.merge( {
 		plugins: {}
-	}, cfg );
+	}, config );
 
-	handleUUIDProperty( config );
-	handleLogLevel( config );
-	handlePlugins( config, cliOptions );
+	handleUUIDProperty( _config );
+	handleLogLevel( _config );
+	handlePlugins( _config, cliOptions );
 
-	return config;
+	return _config;
 }
 
 /**

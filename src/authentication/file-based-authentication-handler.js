@@ -205,7 +205,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 			callback( true, {
 				username: username,
 				clientData: authData || null
-			});
+			} );
 		} else {
 			callback( false );
 		}

@@ -47,7 +47,7 @@ describe( 'loads and retrieves values from the rule cache', function(){
 				clearInterval( interval );
 				next();
 			}
-		}, 5 );
+		}, 10 );
 	});
 
 	it( 'removes the entry once it stops being requested', function( next ){

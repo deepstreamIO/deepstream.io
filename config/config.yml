@@ -49,7 +49,29 @@ maxAuthAttempts: 3
 logInvalidAuthData: true
 maxMessageSize: 1048576
 
+#Authentication
+auth:
+  type: open
+
+  # # or file type
+  # type: file
+  # # path to the user file
+  # path: ./users.json
+  # # the name of a HMAC digest algorithm
+  # hash: 'md5'
+  # # the number of times the algorithm should be applied
+  # iterations: 100
+  # # the length of the resulting key
+  # keyLength: 32
+  #
+  # # or http type
+  # type: http
+  # endpointUrl: https://someurl.com/validateLogin
+  # permittedStatusCodes: [ 200 ]
+  # requestTimeout: 2000
+
 # Permissioning
+permissionType: config
 permissionConfigPath: ./permissions.json
 maxPermissionRuleIterations: 3
 permissionCacheEvacuationInterval: 60000

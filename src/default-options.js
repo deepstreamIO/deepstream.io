@@ -23,6 +23,7 @@ exports.get = function() {
 		httpServer: null,
 		urlPath: '/engine.io',
 
+
 		/*
 		 * SSL Configuration
 		 */
@@ -34,6 +35,13 @@ exports.get = function() {
 		 * Data Manipulation
 		 */
 		dataTransforms: null,
+
+		/*
+		 * Authentication
+		 */
+		auth: {
+			type: 'open'
+		},
 
 		/*
 		 * Default Plugins
@@ -58,6 +66,7 @@ exports.get = function() {
 		/*
 		 * Permissioning
 		 */
+		permissionType: 'config',
 		permissionConfigPath: './permissions.json',
 		maxPermissionRuleIterations: 3,
 		permissionCacheEvacuationInterval: 60000,
