@@ -222,9 +222,6 @@ function handleLogLevel( config ) {
  */
 function rewritePermissionFilePath( config, cliOptions ) {
 	var prefix = cliOptions.configPrefix;
-	if ( prefix == null ) {
-		return;
-	}
 	config.permissionConfigPath =  handleRelativeAndAbsolutePath( config.permissionConfigPath, prefix );
 	return config;
 }
