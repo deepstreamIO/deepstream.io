@@ -11,7 +11,6 @@
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "reporter": "node jasmine-runner",
     "test-http-server": "node test/test-helper/start-test-server.js"
   },
   "repository": {
@@ -27,7 +26,7 @@
     "coveralls": "^2.11.9",
     "engine.io-client": "^1.6.4",
     "grunt": "~0.4.5",
-    "grunt-release": "0.13.0",
+    "grunt-release": "0.14.0",
     "istanbul": "^0.4.3",
     "jasmine": "^2.4.1",
     "jasmine-spec-reporter": "^2.4.0",
