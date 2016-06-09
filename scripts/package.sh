@@ -102,6 +102,7 @@ if [ $OS = "linux" ]; then
 		--description "deepstream.io rpm package" \
 		--url https://deepstream.io/ \
 		-m "<info@deepstream.io>" \
+		--after-install ./scripts/daemon/after-install \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
@@ -124,6 +125,7 @@ if [ $OS = "linux" ]; then
 		--description "deepstream.io deb package" \
 		--url https://deepstream.io/ \
 		-m "<info@deepstream.io>" \
+		--after-install ./scripts/daemon/after-install \
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
