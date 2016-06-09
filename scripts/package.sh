@@ -22,6 +22,21 @@ if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
 	exit
 fi
 
+if [ $OS = "win32" ]; then
+	echo "Downloading node src ( not via nexe )"
+	mkdir -p nexe_node/node/$PACKAGED_NODE_VERSION
+	cd nexe_node/node/$PACKAGED_NODE_VERSION
+
+	curl -o node-$PACKAGED_NODE_VERSION.tar.gz https://nodejs.org/dist/v$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION.tar.gz
+	tar -xzf node-$PACKAGED_NODE_VERSION.tar.gz
+
+	cd -
+
+	cp scripts/resources/node.rc nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/node.rc
+	cp scripts/resources/deepstream.ico nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/deepstream.ico
+	sed -i "s/DEEPSTREAM_VERSION/$PACKAGE_VERSION/" nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/node.rc
+fi
+
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 echo "Creating '$EXECUTABLE_NAME', this will take a while..."
