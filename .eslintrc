@@ -1,0 +1,30 @@
+{
+    "extends": "eslint:recommended",
+    "env": {
+        "es6": true,
+        "browser": false,
+        "node" : true
+    },
+    "rules": {
+      "strict": [0],
+      "indent": [2, "tab"],
+      "space-infix-ops": [2],
+      "space-in-parens": [2, "always"],
+      "space-before-blocks": [2, "always"],
+      "space-before-function-paren": [2, "never"],
+      "space-before-keywords" : [
+         2,
+         "always"
+      ],
+      "no-empty": [1],
+      "comma-dangle": [1, "never"],
+      "semi": [2, "always"],
+      "no-console": 1,
+      "no-underscore-dangle": 0,
+      "no-constant-condition": 0,
+      "no-use-before-define": 0,
+      "max-len": [2, 120, 4, {"ignoreComments": true}],
+      "no-new": 1,
+      "prefer-arrow-callback": 1
+    }
+}
