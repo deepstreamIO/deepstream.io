@@ -89,8 +89,11 @@ module.exports.loadConfig = function( argv ) {
 	var _configFile = argv.c || argv.config;
 	var _libPrefix = argv.l || argv.libPrefix;
 
+	// default values
 	var cliOptions = {
-		configPrefix: process.cwd()
+		configPrefix: process.cwd(),
+		// will default to lookup in node_modules for paths starting with a letter
+		libPrefix: null
 	};
 	var customFilePath = undefined;
 	if( _configFile ) {

@@ -23,6 +23,7 @@ exports.get = function() {
 		httpServer: null,
 		urlPath: '/engine.io',
 
+
 		/*
 		 * SSL Configuration
 		 */
@@ -34,6 +35,13 @@ exports.get = function() {
 		 * Data Manipulation
 		 */
 		dataTransforms: null,
+
+		/*
+		 * Authentication
+		 */
+		auth: {
+			type: 'open'
+		},
 
 		/*
 		 * Default Plugins
