@@ -91,7 +91,7 @@ module.exports.loadConfig = function( argv ) {
 
 	// default values
 	var cliOptions = {
-		configPrefix: path.join( process.cwd(), 'config' ),
+		configPrefix: path.join( process.cwd(), 'conf' ),
 		// will default to lookup in node_modules for paths starting with a letter
 		libPrefix: null
 	};
@@ -135,9 +135,9 @@ module.exports.loadConfig = function( argv ) {
  */
 function findFilePath( customFilePath ) {
 	const order = [
-		'config/config.json',
-		'config/config.js',
-		'config/config.yml'
+		'conf/config.json',
+		'conf/config.js',
+		'conf/config.yml'
 	];
 	let filePath = null;
 
