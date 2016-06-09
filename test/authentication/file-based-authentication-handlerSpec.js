@@ -208,9 +208,8 @@ describe( 'errors for invalid configs', function(){
 			path: './does-not-exist.json',
 			hash: false
 		});
-
 		authenticationHandler.on( 'error', function( error ){
-			expect( error ).toContain( 'error while loading config' );
+			expect( error ).toContain( 'no such file or directory' );
 			done();
 		});
 	});
@@ -222,7 +221,7 @@ describe( 'errors for invalid configs', function(){
 		});
 
 		authenticationHandler.on( 'error', function( error ){
-			expect( error ).toContain( 'error while parsing config' );
+			expect( error.toString() ).toContain( 'Unexpected token }' );
 			done();
 		});
 	});

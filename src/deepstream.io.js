@@ -8,12 +8,14 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	readMessage = require( './utils/read-message' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
-	defaultOptions = require( './default-options' ),
+	jsYamlLoader = require( './utils/js-yaml-loader' ),
+	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
-	C = require( './constants/constants' );
+	C = require( './constants/constants' ),
+	pkg = require( '../package.json' );
 
 require( 'colors' );
 
@@ -25,12 +27,17 @@ require( 'colors' );
  * @author Wolfram Hempel
  * @version <version>
  *
+ * @param {Object} config Configuration object
+ * @param {Object} cliOptions which can contain the config file path and the lib prefix path
+ *
  * @constructor
  */
-var Deepstream = function() {
+
+
+var Deepstream = function( config, cliOptions ) {
 	this.isRunning = false;
 	this.constants = C;
-	this._options = defaultOptions.get();
+	this._options = this._loadConfig( config, cliOptions );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -47,6 +54,7 @@ var Deepstream = function() {
 		'logger',
 		'permissionHandler' //TODO: This now requires the permissionHandler to have a ready flag / emit events
 	];
+
 };
 
 util.inherits( Deepstream, EventEmitter );
@@ -112,6 +120,17 @@ Deepstream.prototype.start = function() {
 		this._options.logger._$useColors = this._options.colors;
 	}
 
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
+	if( this._configFile === undefined ) {
+		// API was called with an object in the constructor
+	} else if ( this._configFile === null ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INFO, 'no configuration file found' );
+	} else {
+		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
+	}
+
+	this._options.permissionHandler = new ConfigPermissionHandler( this._options );
+
 	if( this._options.dataTransforms ) {
 		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );
 	}
@@ -161,6 +180,25 @@ Deepstream.prototype.stop = function() {
  */
 Deepstream.prototype.convertTyped = function( value ) {
 	return messageParser.convertTyped( value );
+};
+
+/**
+ * Synchronously loads a configuration file and returns
+ * the result
+ *
+ * @param {Object} config Configuration object
+ * @param {Object} cliOptions which can contain the config file path and the lib prefix path
+ *
+ * @returns {Object} config
+ */
+Deepstream.prototype._loadConfig = function( config, cliOptions ) {
+	if ( config != null ) {
+		return config;
+	} else {
+		var result = jsYamlLoader.loadConfig( cliOptions );
+		this._configFile = result.file;
+		return result.config;
+	}
 };
 
 /**

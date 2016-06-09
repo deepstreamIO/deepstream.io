@@ -157,7 +157,7 @@ ConnectionEndpoint.prototype._closeTcpServer = function() {
  * depending on the options the client configured
  *
  * @private
- * @returns {http.HttpServer || http.HttpsServer}
+ * @returns {http.HttpServer | http.HttpsServer}
  */
 ConnectionEndpoint.prototype._createHttpServer = function() {
 	if( this._isHttpsServer() ) {

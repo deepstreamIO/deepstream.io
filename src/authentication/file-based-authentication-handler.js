@@ -1,10 +1,9 @@
 'use strict';
 
 const crypto = require( 'crypto' );
-const JsonLoader = require( '../utils/json-loader' );
+const jsYamlLoader = require( '../utils/js-yaml-loader' );
 const utils = require( '../utils/utils' );
 const EventEmitter = require( 'events' ).EventEmitter;
-const UNDEFINED = 'undefined';
 const STRING = 'string';
 const STRING_CHARSET = 'base64';
 
@@ -16,7 +15,7 @@ const STRING_CHARSET = 'base64';
  * @public
  * @extends {EventEmitter}
  */
-module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
+module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 
 	/**
 	 * Creates the class, reads and validates the users.json file
@@ -33,11 +32,10 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 	constructor( settings ) {
 		super();
 		this.isReady = false;
-		this._jsonLoader = new JsonLoader();
 		this._validateSettings( settings );
 		this._settings = settings;
 		this._base64KeyLength = 4 * Math.ceil( this._settings.keyLength / 3 );
-		this._jsonLoader.load( settings.path, this._onFileLoad.bind( this ) );
+		jsYamlLoader.readAndParseFile( settings.path, this._onFileLoad.bind( this ) );
 	}
 
 	/**
@@ -53,12 +51,12 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 	 */
 	isValidUser( connectionData, authData, callback ) {
 		if( typeof authData.username !== STRING ) {
-			callback( false, { clientData: 'missing authentication parameter username' });
+			callback( false, { clientData: 'missing authentication parameter username' } );
 			return;
 		}
 
 		if( typeof authData.password !== STRING ) {
-			callback( false, { clientData: 'missing authentication parameter password' });
+			callback( false, { clientData: 'missing authentication parameter password' } );
 			return;
 		}
 
@@ -74,7 +72,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 		} else if( authData.password === userData.password ) {
 			callback( true, {
 				authData: userData.data || null
-			});
+			} );
 		} else {
 			callback( false );
 		}
@@ -146,7 +144,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 		if( !settings.hash ) {
 			utils.validateMap( settings, true, {
 				path: 'string'
-			});
+			} );
 			return;
 		}
 
@@ -155,7 +153,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 			hash: 'string',
 			iterations: 'number',
 			keyLength: 'number'
-		});
+		} );
 
 		if( crypto.getHashes().indexOf( settings.hash ) === -1 ) {
 			throw new Error( 'Unknown Hash ' + settings.hash );
@@ -207,7 +205,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter{
 			callback( true, {
 				username: username,
 				clientData: authData || null
-			});
+			} );
 		} else {
 			callback( false );
 		}

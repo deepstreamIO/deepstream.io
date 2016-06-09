@@ -3,6 +3,9 @@
   "version": "1.0.0-beta.3",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
+  "bin": {
+    "deepstream": "./bin/deepstream"
+  },
   "directories": {
     "test": "test"
   },
@@ -21,6 +24,7 @@
   "dependencies": {
     "colors": "1.0.3",
     "engine.io": "1.6.8",
+    "js-yaml": "^3.6.1",
     "minimist": "1.2.0"
   },
   "devDependencies": {
