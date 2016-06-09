@@ -58,9 +58,7 @@ mkdir $DEEPSTREAM_PACKAGE/conf
 mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
 
-cp users.json $DEEPSTREAM_PACKAGE/conf/users.json
-cp permissions.json $DEEPSTREAM_PACKAGE/conf/permissions.json
-cp config.yml $DEEPSTREAM_PACKAGE/conf/config.yml
+cp conf $DEEPSTREAM_PACKAGE/conf
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 if [ $OS = "win32" ]; then
@@ -121,9 +119,7 @@ if [ $OS = "linux" ]; then
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
-		./config.yml=/etc/deepstream/config.yml \
-		./permissions.json=/etc/deepstream/permissions.json \
-		./users.json=/etc/deepstream/users.json \
+		./conf=/etc/deepstream/ \
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
@@ -145,9 +141,7 @@ if [ $OS = "linux" ]; then
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
 		--deb-no-default-config-files \
-		./config.yml=/etc/deepstream/config.yml \
-		./permissions.json=/etc/deepstream/permissions.json \
-		./users.json=/etc/deepstream/users.json \
+		./conf=/etc/deepstream/ \
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
