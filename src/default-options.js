@@ -66,6 +66,7 @@ exports.get = function() {
 		/*
 		 * Permissioning
 		 */
+		permissionType: 'config',
 		permissionConfigPath: './permissions.json',
 		maxPermissionRuleIterations: 3,
 		permissionCacheEvacuationInterval: 60000,
