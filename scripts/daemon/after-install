@@ -1,8 +1,8 @@
 chmod +x /etc/init.d/deepstream
 
-mkdir -p /var/logs/deepstream
+mkdir -p /var/log/deepstream
 mkdir -p /var/lib/deepstream
 
-chmod -R 755 /var/logs/deepstream
-chmod -R 755 /var/lib/deepstream
-chmod -R 755 /etc/deepstream
+chmod -R 777 /var/log/deepstream
+chmod -R 777 /var/lib/deepstream
+chmod -R 777 /etc/deepstream
