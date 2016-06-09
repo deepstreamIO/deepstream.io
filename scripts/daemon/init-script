@@ -13,7 +13,7 @@ dir="/usr/bin/"
 name="deepstream"
 cmd="deepstream"
 
-pid_file="/var/run/$name.pid"
+pid_file="/var/run/deepstream/$name.pid"
 lib_dir="/var/lib/deepstream"
 stdout_log="/var/log/deepstream/$name.log"
 stderr_log="/var/log/deepstream/$name.err"
