@@ -124,7 +124,7 @@ module.exports.loadConfig = function( argv ) {
 };
 
 /**
- * Does lookups for the depstream configuration file.
+ * Does lookups for the deepstream configuration file.
  * Lookup order: config.json, config.js, config.yml
  * The order will be ignored if customFilePath  will be passed.
  *
@@ -169,16 +169,16 @@ function findFilePath( customFilePath ) {
  * @private
  * @returns {void}
  */
-function handleMagicProperties( cfg, cliOptions ) {
-	const config = utils.merge( {
+function handleMagicProperties( config, cliOptions ) {
+	const _config = utils.merge( {
 		plugins: {}
-	}, cfg );
+	}, config );
 
-	handleUUIDProperty( config );
-	handleLogLevel( config );
-	handlePlugins( config, cliOptions );
+	handleUUIDProperty( _config );
+	handleLogLevel( _config );
+	handlePlugins( _config, cliOptions );
 
-	return config;
+	return _config;
 }
 
 /**

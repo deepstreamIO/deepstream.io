@@ -96,7 +96,6 @@ describe( 'it starts and stops a configured server', function() {
 
 } );
 
-// TODO: fix this on windows, it fails with warning: possible EventEmitter memory leak detected
 describe( 'handle server startup without config file', function() {
 	it( 'via CLI', function( done ) {
 		var cwd = path.resolve( './bin' );
