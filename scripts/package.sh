@@ -58,7 +58,7 @@ mkdir $DEEPSTREAM_PACKAGE/conf
 mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
 
-cp conf $DEEPSTREAM_PACKAGE/conf
+cp -r conf $DEEPSTREAM_PACKAGE/conf
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 if [ $OS = "win32" ]; then
