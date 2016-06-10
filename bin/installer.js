@@ -1,5 +1,6 @@
 'use strict';
 
+const colors = require( 'colors' );
 const needle = require( 'needle' );
 const fs = require( 'fs' );
 const path = require( 'path' );
@@ -21,9 +22,7 @@ const getWebUrl = function( repo ) {
 };
 
 const downloadRelease = function( releases, type, name, version, outputDir, callback ) {
-	if (releases.message === 'Not Found') {
-
-	}
+	outputDir = outputDir == null ? 'lib' : outputDir;
 	const repo = `deepstream.io-${type}-${name}`;
 	const filteredReleases = releases.filter( item => {
 		if ( version == null ) {
@@ -32,55 +31,67 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 		return item.tag_name === version || item.tag_name === 'v' + version;
 	} );
 	if ( filteredReleases.length === 0 ) {
-		callback( new Error( `${repo} ${version} not found, see ${getWebUrl( repo )}` ) );
+		return callback( new Error( `${repo} ${version} not found, see ${getWebUrl( repo )}` ) );
 	}
 	const release = filteredReleases[0];
-	if ( version == null ) {
-		version = release.tag_name;
-	}
-
+	version = version == null ? release.tag_name : version;
 	const releaseForMachine = release.assets.filter( item => item.name.indexOf( platform ) !== -1 );
 	if ( releaseForMachine.length === 0 ) {
-		callback( new Error( `relase for your platform not found, see ${getWebUrl( repo )}` ) );
+		return callback( new Error( `relase for your platform not found, see ${getWebUrl( repo )}` ) );
 	}
-	if ( outputDir == null ) {
-		outputDir = 'lib';
-	}
+
 	const downloadUrl = releaseForMachine[0].browser_download_url;
 	const extension = path.extname( downloadUrl );
 	const basename = path.basename( downloadUrl, extension ).replace( 'deepstream.io-', '' );
 	const urlBase = 'https://github.com';
 	const urlPath = downloadUrl.substr( urlBase.length );
-
 	const basenameWithVersion = `${basename}-${version}${extension}`;
 	const outputFile = path.join( outputDir, basenameWithVersion );
 	mkdirp.sync( outputDir );
 
-	console.log( 'downloading version ' + version );
-	const outStream = fs.createWriteStream( outputFile );
+	if ( process.env.VERBOSE ) {
+		console.log( 'downloading version ' + version );
+	}
+	const outStream = fs.createWriteStream( outputFile + '.zip' );
+	downloadArchive( urlPath, outStream, function( err ) {
+		if ( err ) {
+			return callback ( err );
+		}
+		callback( null, {
+			archive: outputFile,
+			name: repo,
+			version: version
+		} );
+	} );
+};
+
+const downloadArchive = function( urlPath, outStream, callback ) {
 	needle.get( 'https://github.com' + urlPath, {
 		follow_max: 5,
 		headers: {'User-Agent': 'nodejs-client'}
 	} )
 		.on( 'readable', function() {
-			process.stdout.write( '.' );
+			if ( process.env.VERBOSE ) {
+				process.stdout.write( '.'.grey );
+			}
 		} )
 		.on( 'end', function() {
-			console.log( '\ndownload complete' );
-			callback( null, {
-				archive: outputFile,
-				name: repo
-			} );
+			if ( process.env.VERBOSE ) {
+				process.stdout.clearLine();
+				process.stdout.cursorTo( 0 );
+				process.stdout.write( 'download complete' + '\n' );
+			}
+			callback();
 		} )
 		.pipe( outStream );
 };
 
-
-
 const fetchReleases = function( type, name, callback ) {
 	const repo = `deepstream.io-${type}-${name}`;
 	const urlPath = `/repos/deepstreamIO/${repo}/releases`;
-	console.log( 'searching for ' + repo );
+	if ( process.env.VERBOSE ) {
+		console.log( 'searching for ' + repo );
+	}
 	needle.get( 'https://api.github.com' + urlPath, {
 		headers: {'User-Agent': 'nodejs-client'}
 	}, function( error, response ) {
@@ -92,18 +103,25 @@ const fetchReleases = function( type, name, callback ) {
 		}
 		callback( null, response.body );
 	} );
-
 };
 
 const extract = function( data, platform ) {
 	var archivePath = data.archive;
 	const outputParent = path.dirname( archivePath );
 	var outPath = path.join( outputParent, data.name );
-	if ( platform === 'linux'  ) {
-		execSync( `mkdir -p ${outPath} && tar -xzf ${archivePath} -C ${outPath} ` );
-	} else {
-		extractZip( archivePath, outPath );
+	try {
+		if ( platform === 'linux'  ) {
+			execSync( `mkdir -p ${outPath} && tar -xzf ${archivePath} -C ${outPath} ` );
+		} else {
+			extractZip( archivePath, outPath );
+		}
+	} catch ( err ) {
+		if ( process.env.VERBOSE ) {
+			console.error( err );
+		}
+		throw new Error( 'Could not extract archive' );
 	}
+	console.log( colors.green( `${data.name} ${data.version} was installed to ${outputParent}` ) );
 	return outPath;
 };
 
@@ -114,22 +132,28 @@ const extractZip = function( archivePath, outputDirectory ) {
 
 const showConfig = function( directory ) {
 	var content = fs.readFileSync( path.join( directory, CONFIG_EXAMPLE_FILE ), 'utf8' );
-	console.log( 'connector installed to ' + directory );
-	console.log( 'you need to configure the connector in your deepstream configuration file' );
-	console.log( 'example configuration:\n' + content );
+	if ( process.env.VERBOSE ) {
+		console.log( 'you need to configure the connector in your deepstream configuration file' );
+	}
+	content = '  ' + content.replace( /\n/g, '\n  ' );
+	console.log( 'example configuration:\n' + colors.grey( content ) );
 };
 
-module.exports = function( type, name, version, outputDirectory, callback ) {
-	fetchReleases( type, name, function( error, releases ) {
+module.exports = function( opts, callback ) {
+	fetchReleases( opts.type, opts.name, function( error, releases ) {
 		if ( error ) {
 			return callback( error );
 		}
-		downloadRelease( releases, type, name, version, outputDirectory, function( error, result ) {
+		downloadRelease( releases, opts.type, opts.name, opts.version, opts.dir, function( error, result ) {
 			if ( error ) {
 				return callback( error );
 			}
-			var extractedDirectory = extract( result, platform );
-			showConfig( extractedDirectory );
+			try {
+				var extractedDirectory = extract( result, platform );
+				showConfig( extractedDirectory );
+			} catch ( error ) {
+				callback( error );
+			}
 		} );
 	} );
 };

@@ -1,26 +1,28 @@
 #!/usr/bin/env node
 'use strict';
 
-var argv = require( 'minimist' )( process.argv.slice( 2 ) );
-var Deepstream = require( '../src/deepstream.io.js' );
-var pgk = require( '../package.json' );
-var installer = require( './installer' );
+require( 'colors' );
+const argv = require( 'minimist' )( process.argv.slice( 2 ) );
+const Deepstream = require( '../src/deepstream.io.js' );
+const pgk = require( '../package.json' );
+const installer = require( './installer' );
 
 if ( argv.help ) {
 	console.log(
 		'usage: deepstream.io [options]\n\n' +
 		'Options:\n' +
-		'  -c, --config     path to the deepstream configration file, parent directory ' +
-												'will be used as prefix for other config files, defaults to CWD\n' +
-		'  -l, --libPrefix  path where to lookup for plugins like connectors and logger, defaults to node_modules' +
+		'  -c, --config        path to the deepstream configration file, parent directory ' +
+													'will be used as prefix for other config files, defaults to CWD\n' +
+		'  -l, --libPrefix     path where to lookup for plugins like connectors and logger, defaults to node_modules' +
 		'\n\n' +
 		'Subcommands:\n' +
-		'  install <type> <name>[:<version>] [--dir]    installs a connector for your platform\n' +
+		'  install             installs a connector for your platform\n' +
+		'  install <type> <name>[:<version>] [--dir] [--verbose]\n' +
 		'          <type>      allowed values: {cache|message|storage}\n' +
-		'          <name>      name of the connector (available connectors are listet on https://deepstream.io/download)\n' +
+		'          <name>      name of the connector (list of connectors: https://deepstream.io/download)\n' +
 		'          <version>   version of the connector, defaults to the latest version\n' +
-		'          --dir       directory where to extract the connector, defaults to ./lib/<type>-<name>-<version>\n'
-
+		'          --dir       directory where to extract the connector, defaults to ./lib\n' +
+		'          --verbose   more debug output\n'
 	);
 	return;
 } else if ( argv.version ) {
@@ -31,17 +33,31 @@ if ( argv.help ) {
 if ( argv._.indexOf( 'install' ) !== -1 ) {
 	const subArgs = [].concat( argv._ );
 	subArgs.shift();
-	installer(
-		subArgs[0],
-		subArgs[1].split( ':' )[0],
-		subArgs[1].split( ':' )[1],
-		argv.dir,
-		function( err ) {
-			if ( err ) {
-				console.error( err );
-				process.exit( 1 );
-			}
-		} );
+	if ( argv.verbose ) {
+		process.env.VERBOSE = true;
+	}
+	var type, name, version;
+	try {
+		type = subArgs[0];
+		name = subArgs[1].split( ':' )[0];
+		version = subArgs[1].split( ':' )[1];
+	} catch ( err ) {
+		if ( err ) {
+			console.error( 'Invalid arguments'.red );
+			process.exit( 1 );
+		}
+	}
+	installer( {
+		type: type,
+		name: name,
+		version: version,
+		dir: argv.dir
+	}, function( err ) {
+		if ( err ) {
+			console.error( err.toString().red );
+			process.exit( 1 );
+		}
+	} );
 	return;
 }
 
