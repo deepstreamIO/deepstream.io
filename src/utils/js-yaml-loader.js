@@ -17,22 +17,22 @@ const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
  * @public
  * @returns {void}
  */
-module.exports.readAndParseFile = function( filePath, callback ) {
-	try {
-		fs.readFile( filePath, 'utf8', function( error, fileContent ) {
+exports.readAndParseFile = function( filePath, callback ) {
+	try{
+			fs.readFile( filePath, 'utf8', function( error, fileContent ) {
 			if ( error ) {
 				return callback ( error );
 			}
-			try {
-				const config = parseFile( filePath, fileContent );
-				return callback( null, config );
 
+			try {
+				var config = parseFile( filePath, fileContent );
+				return callback( null, config );
 			} catch ( error ) {
 				return callback ( error );
 			}
 		} );
-	} catch ( error ) {
-		return callback ( error );
+	} catch( error ) {
+		callback( error );
 	}
 };
 
