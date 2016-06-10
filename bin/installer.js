@@ -5,7 +5,10 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 const os = require( 'os' );
 const url = require( 'url' );
+const AdmZip = require( 'adm-zip' );
+const execSync = require( 'child_process' ).execSync;
 
+const CONFIG_EXAMPLE_FILE = 'README.md';
 const SYSTEM = {
 	'linux': 'linux',
 	'darwin': 'mac',
@@ -34,10 +37,11 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 	}
 	const downloadUrl = releaseForMachine[0].browser_download_url;
 	const extension = path.extname( downloadUrl );
+	const basename = path.basename( downloadUrl, extension ).replace( 'deepstream.io-', '' );
 	const urlBase = 'https://github.com';
 	const urlPath = downloadUrl.substr( urlBase.length );
 
-	const outputFile = `${outputDir}/${repo}${extension}`;
+	const outputFile = `${outputDir}/${basename}-${version}${extension}`;
 
 	try {
 		// ignore if already exists
@@ -74,13 +78,15 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 					} );
 						response.on( 'end', function() {
 							console.log( '\ndownload complete' );
-							callback();
+							callback( null, {
+								archive: outputFile,
+								name: repo
+							} );
 						} );
 					response.pipe( outStream );
 				} );
 			} else {
-				console.log( '\ndownload complete' );
-				fs.writeFile( outputFile, body, callback );
+				process.exit( 1 );
 			}
 		} );
 	} );
@@ -102,18 +108,47 @@ const fetchReleases = function( type, name, callback ) {
 		} );
 
 		response.on( 'end', function() {
-			console.log( 'meta data loaded' );
 			const data = JSON.parse( body );
 			callback( null, data );
 		} );
 	} );
 };
 
-module.exports = function( type, name, version, outputFile, callback ) {
+const extract = function( data, platform ) {
+	var archivePath = data.archive;
+	const outputParent = path.dirname( archivePath );
+	var outPath = path.join( outputParent, data.name );
+	if ( platform === 'linux'  ) {
+		execSync( `mkdir -p ${outPath} && tar -xzf ${archivePath} -C ${outPath} ` );
+	} else {
+		extractZip( archivePath, outPath );
+	}
+	return outPath;
+};
+
+const extractZip = function( archivePath, outputDirectory ) {
+	var zip = new AdmZip( archivePath );
+	zip.extractAllTo( outputDirectory, true );
+};
+
+const showConfig = function( directory ) {
+	var content = fs.readFileSync( path.join( directory, CONFIG_EXAMPLE_FILE ), 'utf8' );
+	console.log( 'connector installed to ' + directory );
+	console.log( 'you need to configure the connector in your deepstream configuration file' );
+	console.log( 'here is an example:\n' + content );
+};
+
+module.exports = function( type, name, version, outputDirectory, callback ) {
 	fetchReleases( type, name, function( error, releases ) {
 		if ( error ) {
 			return callback( error );
 		}
-		downloadRelease( releases, type, name, version, outputFile, callback );
+		downloadRelease( releases, type, name, version, outputDirectory, function( error, result ) {
+			if ( error ) {
+				return callback( error );
+			}
+			var extractedDirectory = extract( result, platform );
+			showConfig( extractedDirectory );
+		} );
 	} );
 };

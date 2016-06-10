@@ -14,7 +14,6 @@
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "reporter": "node jasmine-runner",
     "test-http-server": "node test/test-helper/start-test-server.js"
   },
   "repository": {
@@ -22,6 +21,7 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
+    "adm-zip": "^0.4.7",
     "colors": "1.0.3",
     "engine.io": "1.6.8",
     "js-yaml": "^3.6.1",
