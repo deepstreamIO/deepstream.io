@@ -96,7 +96,7 @@ describe( 'it starts and stops a configured server', function() {
 
 } );
 
-describe( 'handle server startup without config file', function() {
+xdescribe( 'handle server startup without config file', function() {
 	it( 'via CLI', function( done ) {
 		var cwd = path.resolve( './bin' );
 		try {
