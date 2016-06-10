@@ -108,7 +108,7 @@ if [ $OS = "linux" ]; then
 		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
-		--license Apache 2 \
+		--license "Apache 2" \
 		--vendor "deepstreamHub GmbH" \
 		--description "deepstream.io rpm package" \
 		--url https://deepstream.io/ \
@@ -131,7 +131,7 @@ if [ $OS = "linux" ]; then
 		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
-		--license Apache 2 \
+		--license "Apache 2" \
 		--vendor "deepstreamHub GmbH" \
 		--description "deepstream.io deb package" \
 		--url https://deepstream.io/ \
