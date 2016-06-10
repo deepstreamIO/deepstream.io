@@ -7,6 +7,7 @@ const defaultOptions = require( '../default-options' );
 const utils = require( './utils' );
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
+const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
 
 /**
  * Reads and parse a general configuraiton file content.
@@ -33,6 +34,59 @@ exports.readAndParseFile = function( filePath, callback ) {
 		} );
 	} catch( error ) {
 		callback( error );
+	}
+};
+
+/**
+ * This method executes parallel exists-checks for
+ * each file extension specified in SUPPORTED_EXTENSIONS.
+ *
+ * Callback is invoked with an error for anything but exactly one
+ * readable file under the given path
+ *
+ * @param   {String}   basePath folder/file path without extension
+ * @param   {Function} callback Will be invoked with error|null and existing file path
+ *
+ * @public
+ * @returns {void}
+ */
+exports.getExistingFilePath = function( basePath, callback ) {
+	var existingPath;
+	var checkedPath;
+	var checksCompleted = 0;
+	var i;
+	var isComplete = false;
+
+	var complete = function( error, filePath ) {
+		if( isComplete === false ) {
+			isComplete = true;
+			callback( error, filePath );
+		}
+	};
+
+	var onAccessible = function( checkedPath, err ) {
+		checksCompleted++;
+
+		if( err === null ) {
+			if( existingPath ) {
+				complete( 'Ambiguous Filepaths: found both ' + checkedPath + ' and ' + existingPath );
+			} else {
+				existingPath = checkedPath;
+			}
+		}
+
+		if( checksCompleted === SUPPORTED_EXTENSIONS.length ) {
+			if( existingPath ) {
+				complete( null, existingPath );
+			} else {
+				complete( 'no file found at ' + basePath );
+			}
+		}
+	};
+
+	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
+		checkedPath = basePath + SUPPORTED_EXTENSIONS[ i ];
+		fs.access( checkedPath, fs.R_OK, onAccessible.bind( this, checkedPath ) );
 	}
 };
 
