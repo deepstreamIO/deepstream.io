@@ -108,7 +108,7 @@ if [ $OS = "linux" ]; then
 		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
-		--license MIT \
+		--license Apache 2 \
 		--vendor "deepstreamHub GmbH" \
 		--description "deepstream.io rpm package" \
 		--url https://deepstream.io/ \
@@ -117,7 +117,9 @@ if [ $OS = "linux" ]; then
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
-		./conf=/etc/deepstream/ \
+		./conf/config.yml=/etc/deepstream/config.yml \
+		./conf/users.json=/etc/deepstream/users.json \
+		./conf/permissions.json=/etc/deepstream/permissions.json \
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
@@ -129,7 +131,7 @@ if [ $OS = "linux" ]; then
 		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
-		--license MIT \
+		--license Apache 2 \
 		--vendor "deepstreamHub GmbH" \
 		--description "deepstream.io deb package" \
 		--url https://deepstream.io/ \
@@ -139,7 +141,9 @@ if [ $OS = "linux" ]; then
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
 		--deb-no-default-config-files \
-		./conf=/etc/deepstream/ \
+		./conf/config.yml=/etc/deepstream/config.yml \
+		./conf/users.json=/etc/deepstream/users.json \
+		./conf/permissions.json=/etc/deepstream/permissions.json \
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
