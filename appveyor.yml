@@ -41,7 +41,7 @@ deploy:
     auth_token:
       secure: tZHuiZVCwkXRYMihVyoNrmDxAm6xPbXyop7Plg5uUWIIqA1EoUCrTYd/V+0D1I+Y
     draft: true
-    artifact: 'deepstream.io-release'
+    artifact: '*.zip'
     on:
       appveyor_repo_tag: true
 
