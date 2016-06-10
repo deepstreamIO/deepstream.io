@@ -6,6 +6,7 @@ const path = require( 'path' );
 const os = require( 'os' );
 const AdmZip = require( 'adm-zip' );
 const execSync = require( 'child_process' ).execSync;
+const mkdirp = require( 'mkdirp' );
 
 const CONFIG_EXAMPLE_FILE = 'README.md';
 const SYSTEM = {
@@ -20,18 +21,25 @@ const getWebUrl = function( repo ) {
 };
 
 const downloadRelease = function( releases, type, name, version, outputDir, callback ) {
+	if (releases.message === 'Not Found') {
+
+	}
 	const repo = `deepstream.io-${type}-${name}`;
-	releases.filter( item => {
+	const filteredReleases = releases.filter( item => {
 		if ( version == null ) {
 			return true;
 		}
 		return item.tag_name === version || item.tag_name === 'v' + version;
 	} );
-	if ( releases.length === 0 ) {
-		callback( new Error( `connector ${repo} ${version} not found, see ${getWebUrl( repo )}` ) );
+	if ( filteredReleases.length === 0 ) {
+		callback( new Error( `${repo} ${version} not found, see ${getWebUrl( repo )}` ) );
 	}
-	version = releases[0].tag_name;
-	const releaseForMachine = releases[0].assets.filter( item => item.name.indexOf( platform ) !== -1 );
+	const release = filteredReleases[0];
+	if ( version == null ) {
+		version = release.tag_name;
+	}
+
+	const releaseForMachine = release.assets.filter( item => item.name.indexOf( platform ) !== -1 );
 	if ( releaseForMachine.length === 0 ) {
 		callback( new Error( `relase for your platform not found, see ${getWebUrl( repo )}` ) );
 	}
@@ -44,12 +52,9 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 	const urlBase = 'https://github.com';
 	const urlPath = downloadUrl.substr( urlBase.length );
 
-	const outputFile = `${outputDir}/${basename}-${version}${extension}`;
-
-	try {
-		// ignore if already exists
-		fs.mkdirSync( outputDir );
-	} catch ( err ) {}
+	const basenameWithVersion = `${basename}-${version}${extension}`;
+	const outputFile = path.join( outputDir, basenameWithVersion );
+	mkdirp.sync( outputDir );
 
 	console.log( 'downloading version ' + version );
 	const outStream = fs.createWriteStream( outputFile );
@@ -82,6 +87,9 @@ const fetchReleases = function( type, name, callback ) {
 		if ( error ) {
 			return callback( error );
 		}
+		if ( response.statusCode === 404 ) {
+			return callback( new Error( 'not found, see available connectors on https://deepstream.io/download' ) );
+		}
 		callback( null, response.body );
 	} );
 
@@ -108,7 +116,7 @@ const showConfig = function( directory ) {
 	var content = fs.readFileSync( path.join( directory, CONFIG_EXAMPLE_FILE ), 'utf8' );
 	console.log( 'connector installed to ' + directory );
 	console.log( 'you need to configure the connector in your deepstream configuration file' );
-	console.log( 'here is an example:\n' + content );
+	console.log( 'example configuration:\n' + content );
 };
 
 module.exports = function( type, name, version, outputDirectory, callback ) {
