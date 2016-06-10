@@ -52,7 +52,7 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 	if ( process.env.VERBOSE ) {
 		console.log( 'downloading version ' + version );
 	}
-	const outStream = fs.createWriteStream( outputFile + '.zip' );
+	const outStream = fs.createWriteStream( outputFile );
 	downloadArchive( urlPath, outStream, function( err ) {
 		if ( err ) {
 			return callback ( err );
@@ -121,7 +121,9 @@ const extract = function( data, platform ) {
 		}
 		throw new Error( 'Could not extract archive' );
 	}
-	console.log( colors.green( `${data.name} ${data.version} was installed to ${outputParent}` ) );
+	if ( !process.env.QUITE ) {
+		console.log( colors.green( `${data.name} ${data.version} was installed to ${outputParent}` ) );
+	}
 	return outPath;
 };
 
@@ -136,7 +138,9 @@ const showConfig = function( directory ) {
 		console.log( 'you need to configure the connector in your deepstream configuration file' );
 	}
 	content = '  ' + content.replace( /\n/g, '\n  ' );
-	console.log( 'example configuration:\n' + colors.grey( content ) );
+	if ( !process.env.QUITE ) {
+		console.log( 'example configuration:\n' + colors.grey( content ) );
+	}
 };
 
 module.exports = function( opts, callback ) {
@@ -151,6 +155,7 @@ module.exports = function( opts, callback ) {
 			try {
 				var extractedDirectory = extract( result, platform );
 				showConfig( extractedDirectory );
+				callback();
 			} catch ( error ) {
 				callback( error );
 			}

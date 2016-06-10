@@ -22,7 +22,8 @@ if ( argv.help ) {
 		'          <name>      name of the connector (list of connectors: https://deepstream.io/download)\n' +
 		'          <version>   version of the connector, defaults to the latest version\n' +
 		'          --dir       directory where to extract the connector, defaults to ./lib\n' +
-		'          --verbose   more debug output\n'
+		'          --verbose   more debug output\n' +
+		'          --quite     no output\n'
 	);
 	return;
 } else if ( argv.version ) {
@@ -33,7 +34,9 @@ if ( argv.help ) {
 if ( argv._.indexOf( 'install' ) !== -1 ) {
 	const subArgs = [].concat( argv._ );
 	subArgs.shift();
-	if ( argv.verbose ) {
+	if ( argv.quite ) {
+		process.env.QUITE = true;
+	} else if ( argv.verbose ) {
 		process.env.VERBOSE = true;
 	}
 	var type, name, version;
