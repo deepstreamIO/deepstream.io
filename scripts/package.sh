@@ -54,11 +54,9 @@ echo "Packaging to dir structure at $DEEPSTREAM_PACKAGE"
 rm -rf build/$PACKAGE_VERSION
 
 mkdir -p $DEEPSTREAM_PACKAGE
-mkdir $DEEPSTREAM_PACKAGE/conf
 mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
-
-cp -r conf $DEEPSTREAM_PACKAGE/conf
+cp -r conf $DEEPSTREAM_PACKAGE/
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 if [ $OS = "win32" ]; then
