@@ -1,10 +1,9 @@
 'use strict';
 
-const https = require( 'https' );
+const needle = require( 'needle' );
 const fs = require( 'fs' );
 const path = require( 'path' );
 const os = require( 'os' );
-const url = require( 'url' );
 const AdmZip = require( 'adm-zip' );
 const execSync = require( 'child_process' ).execSync;
 
@@ -16,6 +15,10 @@ const SYSTEM = {
 };
 const platform = SYSTEM[ os.platform() ];
 
+const getWebUrl = function( repo ) {
+	return `https://github.com/deepstreamIO/${repo}/releases`;
+};
+
 const downloadRelease = function( releases, type, name, version, outputDir, callback ) {
 	const repo = `deepstream.io-${type}-${name}`;
 	releases.filter( item => {
@@ -25,12 +28,12 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 		return item.tag_name === version || item.tag_name === 'v' + version;
 	} );
 	if ( releases.length === 0 ) {
-		callback( new Error( `connector ${repo} ${version} not found` ) );
+		callback( new Error( `connector ${repo} ${version} not found, see ${getWebUrl( repo )}` ) );
 	}
 	version = releases[0].tag_name;
 	const releaseForMachine = releases[0].assets.filter( item => item.name.indexOf( platform ) !== -1 );
 	if ( releaseForMachine.length === 0 ) {
-		callback( new Error( `relase for your platform not found` ) );
+		callback( new Error( `relase for your platform not found, see ${getWebUrl( repo )}` ) );
 	}
 	if ( outputDir == null ) {
 		outputDir = 'lib';
@@ -47,71 +50,41 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 		// ignore if already exists
 		fs.mkdirSync( outputDir );
 	} catch ( err ) {}
+
 	console.log( 'downloading version ' + version );
-	https.get( {
-		host: 'github.com',
-		path: urlPath,
-		port: 443,
-		headers: { 'User-Agent': 'nodejs-client' }
-	}, function( response ) {
-		let body = '';
-		response.on( 'data', function( chunk ) {
+	const outStream = fs.createWriteStream( outputFile );
+	needle.get( 'https://github.com' + urlPath, {
+		follow_max: 5,
+		headers: {'User-Agent': 'nodejs-client'}
+	} )
+		.on( 'readable', function() {
 			process.stdout.write( '.' );
-			body += chunk;
-		} );
-		response.on( 'end', function() {
-			// check for redirect
-			const matchedResult = body.match( /href="(.*)"/ );
-			if ( matchedResult && matchedResult[1] != null ) {
-				const encodedUrl = matchedResult[1].replace( /&amp;/g, '&' );
-				// console.log( 'download from ' + encodedUrl );
-				const urlObject = url.parse( encodedUrl );
-				https.get( {
-					host: urlObject.host,
-					path: urlObject.path,
-					port: 443,
-					headers: { 'User-Agent': 'nodejs-client' }
-				} ).on( 'response', function( response ) {
-					const outStream = fs.createWriteStream( outputFile );
-					response.on( 'data', function() {
-						process.stdout.write( '.' );
-					} );
-						response.on( 'end', function() {
-							console.log( '\ndownload complete' );
-							callback( null, {
-								archive: outputFile,
-								name: repo
-							} );
-						} );
-					response.pipe( outStream );
-				} );
-			} else {
-				process.exit( 1 );
-			}
-		} );
-	} );
+		} )
+		.on( 'end', function() {
+			console.log( '\ndownload complete' );
+			callback( null, {
+				archive: outputFile,
+				name: repo
+			} );
+		} )
+		.pipe( outStream );
 };
+
+
 
 const fetchReleases = function( type, name, callback ) {
 	const repo = `deepstream.io-${type}-${name}`;
 	const urlPath = `/repos/deepstreamIO/${repo}/releases`;
 	console.log( 'searching for ' + repo );
-	https.get( {
-		host: 'api.github.com',
-		path: urlPath,
-		port: 443,
-		headers: { 'User-Agent': 'nodejs-client' }
-	}, function( response ) {
-		let body = '';
-		response.on( 'data', function( chunk ) {
-			body += chunk;
-		} );
-
-		response.on( 'end', function() {
-			const data = JSON.parse( body );
-			callback( null, data );
-		} );
+	needle.get( 'https://api.github.com' + urlPath, {
+		headers: {'User-Agent': 'nodejs-client'}
+	}, function( error, response ) {
+		if ( error ) {
+			return callback( error );
+		}
+		callback( null, response.body );
 	} );
+
 };
 
 const extract = function( data, platform ) {
