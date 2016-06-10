@@ -1,8 +1,10 @@
 #!/usr/bin/env node
+'use strict';
 
 var argv = require( 'minimist' )( process.argv.slice( 2 ) );
 var Deepstream = require( '../src/deepstream.io.js' );
 var pgk = require( '../package.json' );
+var installer = require( './installer' );
 
 if ( argv.help ) {
 	console.log(
@@ -10,12 +12,38 @@ if ( argv.help ) {
 		'Options:\n' +
 		'  -c, --config     path to the deepstream configration file, parent directory ' +
 												'will be used as prefix for other config files, defaults to CWD\n' +
-		'  -l, --libPrefix  path where to lookup for plugins like connectors and logger, defaults to node_modules'
+		'  -l, --libPrefix  path where to lookup for plugins like connectors and logger, defaults to node_modules' +
+		'\n\n' +
+		'Subcommands:\n' +
+		'  install <type> <name>[:<version>] [--dir]    installs a connector for your platform\n' +
+		'          <type>      allowed values: {cache|message|storage}\n' +
+		'          <name>      name of the connector (available connectors are listet on http://deepstream.io/connectors)\n' +
+		'          <version>   version of the connector, defaults to the latest version\n' +
+		'          --dir       directory where to extract the connector, defaults to ./lib/<type>-<name>-<version>\n'
+
 	);
 	return;
 } else if ( argv.version ) {
 	console.log( pgk.version );
 	return;
 }
+
+if ( argv._.indexOf( 'install' ) !== -1 ) {
+	const subArgs = [].concat( argv._ );
+	subArgs.shift();
+	installer(
+		subArgs[0],
+		subArgs[1].split( ':' )[0],
+		subArgs[1].split( ':' )[1],
+		argv.dir,
+		function( err ) {
+			if ( err ) {
+				console.error( err );
+				process.exit( 1 );
+			}
+		} );
+	return;
+}
+
 var ds = new Deepstream( null, argv );
 ds.start();
