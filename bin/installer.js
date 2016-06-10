@@ -111,7 +111,7 @@ const extract = function( data, platform ) {
 	var outPath = path.join( outputParent, data.name );
 	try {
 		if ( platform === 'linux'  ) {
-			execSync( `mkdir -p ${outPath} && tar -xzf ${archivePath} -C ${outPath} ` );
+			execSync( `mkdir -p ${outPath} && tar -xzf ${archivePath} -C ${outPath}` );
 		} else {
 			extractZip( archivePath, outPath );
 		}

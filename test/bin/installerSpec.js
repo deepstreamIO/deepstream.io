@@ -17,15 +17,15 @@ class Needle extends Emitter {
 						assets: [
 							{
 								name: 'windows',
-								browser_download_url: 'https://github.com/deepstream.io-cache-redis-window.zip'
+								browser_download_url: 'https://github.com/deepstream.io-cache-redis-test.zip'
 							},
 							{
 								name: 'linux',
-								browser_download_url: 'https://github.com/deepstream.io-cache-redis-linux.tar.gz'}
+								browser_download_url: 'https://github.com/deepstream.io-cache-redis-test.zip'}
 								,
 							{
 								name: 'mac',
-								browser_download_url: 'https://github.com/deepstream.io-cache-redis-mac.zip'
+								browser_download_url: 'https://github.com/deepstream.io-cache-redis-test.zip'
 							}
 						]
 					}
@@ -75,19 +75,24 @@ describe( 'CLI installer', function() {
 
 	it( 'downloads a connector and extract it', function( done ) {
 
-		var zipConstructor = jasmine.createSpy( 'callback' );
-		var zipExtractor = jasmine.createSpy( 'callback' );
+		const zipConstructor = jasmine.createSpy( 'callback' );
+		const zipExtractor = jasmine.createSpy( 'callback' );
 		const zipMock = createZipMock( zipConstructor, zipExtractor );
+		const child_processMock = {
+			execSync: function() {}
+		};
 		spyOn( needleMock, 'get' ).and.callThrough();
 		spyOn( mkdirp, 'sync' );
 		spyOn( fsMock, 'readFileSync' ).and.callThrough();
 		spyOn( fsMock, 'createWriteStream' ).and.callThrough();
+		spyOn( child_processMock, 'execSync' );
 		var installer = proxyquire( '../../bin/installer', {
 			needle: {
 				get: needleMock.get,
 			},
 			'adm-zip': zipMock,
 			fs: fsMock,
+			'child_process': child_processMock
 		} );
 
 
@@ -105,14 +110,19 @@ describe( 'CLI installer', function() {
 				.toEqual( 'https://api.github.com/repos/deepstreamIO/deepstream.io-cache-redis/releases' );
 			// fetch archive
 			expect( needleMock.get.calls.argsFor( 1 )[0] )
-				.toEqual( 'https://github.com/deepstream.io-cache-redis-mac.zip' );
+				.toEqual( 'https://github.com/deepstream.io-cache-redis-test.zip' );
 			// save archive
 			expect( mkdirp.sync.calls.argsFor( 0 )[0] ).toEqual( 'lib' );
-			expect( fsMock.createWriteStream.calls.argsFor( 0 )[0] ).toEqual( 'lib/cache-redis-mac-1.0.0.zip' );
+			expect( fsMock.createWriteStream.calls.argsFor( 0 )[0] ).toEqual( 'lib/cache-redis-test-1.0.0.zip' );
 			// prepare extract archive
-			expect( zipConstructor.calls.argsFor( 0 )[0] ).toEqual( 'lib/cache-redis-mac-1.0.0.zip' );
-
-			expect( zipExtractor.calls.argsFor( 0 ) ).toEqual( [ 'lib/deepstream.io-cache-redis', true ] );
+			if ( child_processMock.execSync.calls.count() ) {
+				expect( child_processMock.execSync.calls.argsFor( 0 )[0] )
+					.toEqual( 'mkdir -p lib/deepstream.io-cache-redis && ' +
+					'tar -xzf lib/cache-redis-test-1.0.0.zip -C lib/deepstream.io-cache-redis' );
+			} else {
+				expect( zipConstructor.calls.argsFor( 0 )[0] ).toEqual( 'lib/cache-redis-test-1.0.0.zip' );
+				expect( zipExtractor.calls.argsFor( 0 ) ).toEqual( [ 'lib/deepstream.io-cache-redis', true ] );
+			}
 			// show example config
 			expect( fsMock.readFileSync.calls.argsFor( 0 )[0] ).toEqual( 'lib/deepstream.io-cache-redis/README.md' );
 			done();
