@@ -26,10 +26,13 @@
     "utf-8-validate": "^1.2.1"
   },
   "dependencies": {
+    "adm-zip": "^0.4.7",
     "colors": "1.0.3",
     "engine.io": "1.6.9",
     "js-yaml": "^3.6.1",
-    "minimist": "1.2.0"
+    "minimist": "1.2.0",
+    "mkdirp": "^0.5.1",
+    "needle": "^1.0.0"
   },
   "devDependencies": {
     "coveralls": "^2.11.9",
