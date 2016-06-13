@@ -9,7 +9,7 @@ const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 
 /**
- * Reads and parse a general configuraiton file content.
+ * Reads and parse a general configuration file content.
  *
  * @param {String} filePath
  * @param {Function} callback
@@ -91,7 +91,7 @@ module.exports.loadConfig = function( argv ) {
 
 	// default values
 	var cliOptions = {
-		configPrefix: path.join( process.cwd(), 'config' ),
+		configPrefix: path.join( process.cwd(), 'conf' ),
 		// will default to lookup in node_modules for paths starting with a letter
 		libPrefix: null
 	};
@@ -135,9 +135,9 @@ module.exports.loadConfig = function( argv ) {
  */
 function findFilePath( customFilePath ) {
 	const order = [
-		'config/config.json',
-		'config/config.js',
-		'config/config.yml'
+		'conf/config.json',
+		'conf/config.js',
+		'conf/config.yml'
 	];
 	let filePath = null;
 
@@ -222,6 +222,9 @@ function handleLogLevel( config ) {
  */
 function rewritePermissionFilePath( config, cliOptions ) {
 	var prefix = cliOptions.configPrefix;
+	if ( prefix == null ) {
+		return config;
+	}
 	config.permissionConfigPath =  handleRelativeAndAbsolutePath( config.permissionConfigPath, prefix );
 	return config;
 }
