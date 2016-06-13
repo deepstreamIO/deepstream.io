@@ -16,6 +16,7 @@ if [ $OS = "win32" ]; then
 fi
 
 echo "Starting deepstream.io packaging"
+mkdir build
 
 if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
 	echo "Packaging only done on $PACKAGED_NODE_VERSION"
