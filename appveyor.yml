@@ -1,3 +1,9 @@
+branches:
+  # whitelist
+  only:
+    - master
+    - production
+    
 platform:
   - x64
 
