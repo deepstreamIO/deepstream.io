@@ -17,6 +17,9 @@ matrix:
 
 script:
   - npm run coverage
+  # This has to happen here and not in before_deploy to be put in travis cache
+  - chmod 555 scripts/package.sh
+  - ./scripts/package.sh
 
 after_script:
   - "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
@@ -24,10 +27,6 @@ after_script:
 cache:
   directories:
     - nexe_node
-
-before_deploy:
-  - chmod 555 scripts/package.sh
-  - ./scripts/package.sh
 
 deploy:
   - provider: s3
