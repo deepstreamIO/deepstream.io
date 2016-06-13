@@ -16,7 +16,7 @@ if [ $OS = "win32" ]; then
 fi
 
 echo "Starting deepstream.io packaging"
-mkdir build
+mkdir -p build
 
 if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
 	echo "Packaging only done on $PACKAGED_NODE_VERSION"
@@ -28,14 +28,20 @@ if [ $OS = "win32" ]; then
 	mkdir -p nexe_node/node/$PACKAGED_NODE_VERSION
 	cd nexe_node/node/$PACKAGED_NODE_VERSION
 
-	curl -o node-$PACKAGED_NODE_VERSION.tar.gz https://nodejs.org/dist/v$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION.tar.gz
-	tar -xzf node-$PACKAGED_NODE_VERSION.tar.gz
+	#curl -o node-$PACKAGED_NODE_VERSION.tar.gz https://nodejs.org/dist/v$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION.tar.gz
+	#tar -xzf node-$PACKAGED_NODE_VERSION.tar.gz
 
 	cd -
 
 	cp scripts/resources/node.rc nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/node.rc
 	cp scripts/resources/deepstream.ico nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/deepstream.ico
-	sed -i "s/DEEPSTREAM_VERSION/$PACKAGE_VERSION/" nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/node.rc
+
+	NAME=$PACKAGE_VERSION
+	if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+		echo "Version can't contain characters versions in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
+		NAME="0.0.0"
+	fi
+	sed -i "s/DEEPSTREAM_VERSION/$NAME/" nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/node.rc
 fi
 
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
