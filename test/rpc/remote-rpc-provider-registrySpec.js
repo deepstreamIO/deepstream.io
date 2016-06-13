@@ -4,7 +4,7 @@ var RemoteRpcProviderRegistry = require( '../../src/rpc/remote-rpc-provider-regi
 	options = {
 		messageConnector: new MessageConnectorMock(),
 		rpcProviderQueryTimeout: 10,
-		rpcProviderCacheTime: 10
+		rpcProviderCacheTime: 40
 	};
 
 describe( 'keeps track of which remote deepstream instance can provide which rpc', function(){
@@ -156,7 +156,7 @@ describe( 'keeps track of which remote deepstream instance can provide which rpc
 			expect( providerCallback.calls.count() ).toBe( 1 );
 			expect( providerCallback ).toHaveBeenCalledWith( C.EVENT.NO_RPC_PROVIDER );
 			done();
-		}, 30 );
+		}, 60 );
 	});
 
 	it( 'retuns topics for registered providers', function(){

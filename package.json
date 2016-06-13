@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "4.0.0",
+  "version": "1.0.0-beta.4",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
   "bin": {
@@ -41,8 +41,8 @@
     "grunt-release": "0.13.0",
     "istanbul": "^0.4.3",
     "jasmine": "^2.4.1",
-    "jasmine-spec-reporter": "^2.4.0",
     "nexe": "^1.1.2",
+    "jasmine-spec-reporter": "^2.5.0",
     "proxyquire": "1.7.9",
     "watch": "^0.18.0"
   },
