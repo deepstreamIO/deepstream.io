@@ -1,10 +1,12 @@
 'use strict';
 /* global jasmine, spyOn, describe, it, expect */
 
-var proxyquire = require( 'proxyquire' );
-var mkdirp = require( 'mkdirp' );
-var Emitter = require( 'events' ).EventEmitter;
-var Stream = require( 'stream' );
+const path = require( 'path' );
+const pj = path.join;
+const proxyquire = require( 'proxyquire' );
+const mkdirp = require( 'mkdirp' );
+const Emitter = require( 'events' ).EventEmitter;
+const Stream = require( 'stream' );
 
 class Needle extends Emitter {
 	get( urlPath, options, callback ) {
@@ -60,7 +62,7 @@ function createZipMock( cb1, cb2 ) {
 
 const fsMock = {
 	readFileSync: function() {
-		return 'config:\n  host: localhost\n  port: 1234';
+		return 'config:\n	host: localhost\n	port: 1234';
 	},
 	createWriteStream: function() {
 		var stream = new Stream.Writable();
@@ -103,6 +105,7 @@ describe( 'CLI installer', function() {
 			dir: null
 		};
 		process.env.QUITE = 1;
+
 		installer( installOptions, function( error ) {
 			expect( error ).toBeUndefined();
 			// fetch all releases
@@ -113,15 +116,16 @@ describe( 'CLI installer', function() {
 				.toEqual( 'https://github.com/deepstream.io-cache-redis-test.zip' );
 			// save archive
 			expect( mkdirp.sync.calls.argsFor( 0 )[0] ).toEqual( 'lib' );
-			expect( fsMock.createWriteStream.calls.argsFor( 0 )[0] ).toEqual( 'lib/cache-redis-test-1.0.0.zip' );
+			expect( fsMock.createWriteStream.calls.argsFor( 0 )[0] )
+				.toEqual( pj( 'lib', 'cache-redis-test-1.0.0.zip' ) );
 			// prepare extract archive
 			if ( child_processMock.execSync.calls.count() ) {
 				expect( child_processMock.execSync.calls.argsFor( 0 )[0] )
 					.toEqual( 'mkdir -p lib/deepstream.io-cache-redis && ' +
 					'tar -xzf lib/cache-redis-test-1.0.0.zip -C lib/deepstream.io-cache-redis' );
 			} else {
-				expect( zipConstructor.calls.argsFor( 0 )[0] ).toEqual( 'lib/cache-redis-test-1.0.0.zip' );
-				expect( zipExtractor.calls.argsFor( 0 ) ).toEqual( [ 'lib/deepstream.io-cache-redis', true ] );
+				expect( zipConstructor.calls.argsFor( 0 )[0] ).toEqual( pj( 'lib', 'cache-redis-test-1.0.0.zip' ) );
+				expect( zipExtractor.calls.argsFor( 0 ) ).toEqual( [ pj( 'lib', 'deepstream.io-cache-redis' ), true ] );
 			}
 			// show example config
 			expect( fsMock.readFileSync.calls.argsFor( 0 )[0] ).toEqual( 'lib/deepstream.io-cache-redis/README.md' );
