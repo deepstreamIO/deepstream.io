@@ -28,8 +28,8 @@ if [ $OS = "win32" ]; then
 	mkdir -p nexe_node/node/$PACKAGED_NODE_VERSION
 	cd nexe_node/node/$PACKAGED_NODE_VERSION
 
-	#curl -o node-$PACKAGED_NODE_VERSION.tar.gz https://nodejs.org/dist/v$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION.tar.gz
-	#tar -xzf node-$PACKAGED_NODE_VERSION.tar.gz
+	curl -o node-$PACKAGED_NODE_VERSION.tar.gz https://nodejs.org/dist/v$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION.tar.gz
+	tar -xzf node-$PACKAGED_NODE_VERSION.tar.gz
 
 	cd -
 
