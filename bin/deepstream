@@ -8,27 +8,9 @@ const pgk = require( '../package.json' );
 const installer = require( './installer' );
 
 if ( argv.help ) {
-	console.log(
-		'usage: deepstream.io [options]\n\n' +
-		'Options:\n' +
-		'  -c, --config        path to the deepstream configration file, parent directory ' +
-													'will be used as prefix for other config files, defaults to CWD\n' +
-		'  -l, --libPrefix     path where to lookup for plugins like connectors and logger, defaults to node_modules' +
-		'\n\n' +
-		'Subcommands:\n' +
-		'  install             installs a connector for your platform\n' +
-		'  install <type> <name>[:<version>] [--dir] [--verbose]\n' +
-		'          <type>      allowed values: {cache|message|storage}\n' +
-		'          <name>      name of the connector (list of connectors: https://deepstream.io/download)\n' +
-		'          <version>   version of the connector, defaults to the latest version\n' +
-		'          --dir       directory where to extract the connector, defaults to ./lib\n' +
-		'          --verbose   more debug output\n' +
-		'          --quite     no output\n'
-	);
-	return;
+	return printHelp();
 } else if ( argv.version ) {
-	console.log( pgk.version );
-	return;
+	return console.log( pgk.version );
 }
 
 if ( argv._.indexOf( 'install' ) !== -1 ) {
@@ -47,6 +29,7 @@ if ( argv._.indexOf( 'install' ) !== -1 ) {
 	} catch ( err ) {
 		if ( err ) {
 			console.error( 'Invalid arguments'.red );
+			printHelp();
 			process.exit( 1 );
 		}
 	}
@@ -66,3 +49,23 @@ if ( argv._.indexOf( 'install' ) !== -1 ) {
 
 var ds = new Deepstream( null, argv );
 ds.start();
+
+function printHelp() {
+	console.log(
+		'usage: deepstream.io [options]\n\n' +
+		'Options:\n' +
+		'  -c, --config        path to the deepstream configration file, parent directory ' +
+													'will be used as prefix for other config files, defaults to CWD\n' +
+		'  -l, --libPrefix     path where to lookup for plugins like connectors and logger, defaults to node_modules' +
+		'\n\n' +
+		'Subcommands:\n' +
+		'  install             installs a connector for your platform\n' +
+		'  install <type> <name>[:<version>] [--dir] [--verbose]\n' +
+		'          <type>      allowed values: {cache|message|storage}\n' +
+		'          <name>      name of the connector (list of connectors: https://deepstream.io/download)\n' +
+		'          <version>   version of the connector, defaults to the latest version\n' +
+		'          --dir       directory where to extract the connector, defaults to ./lib\n' +
+		'          --verbose   more debug output\n' +
+		'          --quite     no output\n'
+	);
+}
