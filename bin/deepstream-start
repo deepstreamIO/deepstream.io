@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+'use strict';
+
+const Deepstream = require( '../src/deepstream.io.js' );
+
+var program = require( 'commander' );
+
+program
+  .option( '-c, --config [file path]', 'enable some foo' )
+  .option( '-l, --libPrefix [directory path]', 'enable some bar' );
+
+program.parse( process.argv );
+var ds = new Deepstream( null, program );
+ds.start();

@@ -23,9 +23,9 @@
   "dependencies": {
     "adm-zip": "^0.4.7",
     "colors": "1.0.3",
+    "commander": "^2.9.0",
     "engine.io": "1.6.8",
     "js-yaml": "^3.6.1",
-    "minimist": "1.2.0",
     "mkdirp": "^0.5.1",
     "needle": "^1.0.0"
   },

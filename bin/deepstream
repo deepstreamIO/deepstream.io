@@ -2,70 +2,15 @@
 'use strict';
 
 require( 'colors' );
-const argv = require( 'minimist' )( process.argv.slice( 2 ) );
-const Deepstream = require( '../src/deepstream.io.js' );
 const pgk = require( '../package.json' );
-const installer = require( './installer' );
+// const installer = require( './installer' );
 
-if ( argv.help ) {
-	return printHelp();
-} else if ( argv.version ) {
-	return console.log( pgk.version );
-}
+var program = require( 'commander' );
 
-if ( argv._.indexOf( 'install' ) !== -1 ) {
-	const subArgs = [].concat( argv._ );
-	subArgs.shift();
-	if ( argv.quite ) {
-		process.env.QUITE = true;
-	} else if ( argv.verbose ) {
-		process.env.VERBOSE = true;
-	}
-	var type, name, version;
-	try {
-		type = subArgs[0];
-		name = subArgs[1].split( ':' )[0];
-		version = subArgs[1].split( ':' )[1];
-	} catch ( err ) {
-		if ( err ) {
-			console.error( 'Invalid arguments'.red );
-			printHelp();
-			process.exit( 1 );
-		}
-	}
-	installer( {
-		type: type,
-		name: name,
-		version: version,
-		dir: argv.dir
-	}, function( err ) {
-		if ( err ) {
-			console.error( err.toString().red );
-			process.exit( 1 );
-		}
-	} );
-	return;
-}
+program
+	.version( pgk.version )
+	.command( 'start [options]', 'start a deepstream server' )
+	.command( 'stop', 'stop a running deepstream server' )
+	.command( 'install', 'install connectors' );
 
-var ds = new Deepstream( null, argv );
-ds.start();
-
-function printHelp() {
-	console.log(
-		'usage: deepstream.io [options]\n\n' +
-		'Options:\n' +
-		'  -c, --config        path to the deepstream configration file, parent directory ' +
-													'will be used as prefix for other config files, defaults to CWD\n' +
-		'  -l, --libPrefix     path where to lookup for plugins like connectors and logger, defaults to node_modules' +
-		'\n\n' +
-		'Subcommands:\n' +
-		'  install             installs a connector for your platform\n' +
-		'  install <type> <name>[:<version>] [--dir] [--verbose]\n' +
-		'          <type>      allowed values: {cache|message|storage}\n' +
-		'          <name>      name of the connector (list of connectors: https://deepstream.io/download)\n' +
-		'          <version>   version of the connector, defaults to the latest version\n' +
-		'          --dir       directory where to extract the connector, defaults to ./lib\n' +
-		'          --verbose   more debug output\n' +
-		'          --quite     no output\n'
-	);
-}
+program.parse( process.argv );

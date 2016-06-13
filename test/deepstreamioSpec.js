@@ -100,7 +100,7 @@ describe( 'handle server startup without config file', function() {
 	it( 'via CLI', function( done ) {
 		var cwd = path.resolve( './bin' );
 		try {
-			child_process.execSync( 'node deepstream', {
+			child_process.execSync( 'node deepstream start', {
 				cwd: cwd,
 				stdio: ['ignore', 'ignore', 'pipe']
 			} );

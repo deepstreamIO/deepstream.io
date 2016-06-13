@@ -76,7 +76,7 @@ function parseFile( filePath, fileContent ) {
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  *
- * @param {Object} argv minimist arguments
+ * @param {Object} parsed argv by commander
  *
  * @public
  * @returns {Object} config deepstream configuration object
