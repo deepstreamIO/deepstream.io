@@ -46,7 +46,7 @@
         },
         "debug": {
           "version": "2.2.0",
-          "from": "debug@2.2.0",
+          "from": "debug@>=2.1.2 <3.0.0",
           "resolved": "https://registry.npmjs.org/debug/-/debug-2.2.0.tgz",
           "dependencies": {
             "ms": {
@@ -222,6 +222,30 @@
           "version": "2.3.5",
           "from": "nan@>=2.0.5 <3.0.0",
           "resolved": "https://registry.npmjs.org/nan/-/nan-2.3.5.tgz"
+        }
+      }
+    },
+    "xml2js": {
+      "version": "0.4.16",
+      "from": "xml2js@latest",
+      "resolved": "https://registry.npmjs.org/xml2js/-/xml2js-0.4.16.tgz",
+      "dependencies": {
+        "sax": {
+          "version": "1.2.1",
+          "from": "sax@>=0.6.0",
+          "resolved": "https://registry.npmjs.org/sax/-/sax-1.2.1.tgz"
+        },
+        "xmlbuilder": {
+          "version": "4.2.1",
+          "from": "xmlbuilder@>=4.1.0 <5.0.0",
+          "resolved": "https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-4.2.1.tgz",
+          "dependencies": {
+            "lodash": {
+              "version": "4.13.1",
+              "from": "lodash@>=4.0.0 <5.0.0",
+              "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.13.1.tgz"
+            }
+          }
         }
       }
     }
