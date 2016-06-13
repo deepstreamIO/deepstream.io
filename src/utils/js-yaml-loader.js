@@ -9,6 +9,12 @@ const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
 
+var authStrategies = {
+	open: require( '../authentication/open-authentication-handler' ),
+	file: require( '../authentication/file-based-authentication-handler' ),
+	http: require( '../authentication/http-authentication-handler' )
+};
+
 /**
  * Reads and parse a general configuraiton file content.
  *
@@ -20,7 +26,7 @@ const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
  */
 exports.readAndParseFile = function( filePath, callback ) {
 	try{
-			fs.readFile( filePath, 'utf8', function( error, fileContent ) {
+		fs.readFile( filePath, 'utf8', function( error, fileContent ) {
 			if ( error ) {
 				return callback ( error );
 			}
@@ -224,13 +230,18 @@ function findFilePath( customFilePath ) {
  * @returns {void}
  */
 function handleMagicProperties( config, cliOptions ) {
-	const _config = utils.merge( {
+	var _config = utils.merge( {
 		plugins: {}
 	}, config );
 
 	handleUUIDProperty( _config );
 	handleLogLevel( _config );
 	handlePlugins( _config, cliOptions );
+
+	if( !config.permissionHandler ) {
+		_config.permissionHandler = {};
+		handleAuthStrategy( _config );
+	}
 
 	return _config;
 }
@@ -382,4 +393,16 @@ function handlePlugins( config, cliOptions ) {
 			}
 		}
 	}
+}
+
+function handleAuthStrategy( config ) {
+	if( !authStrategies[ config.auth.type ] ) {
+		throw new Error( 'Unknown authentication type ' + config.auth.type );
+	}
+	var authenticationHandler = new authStrategies[ config.auth.type ]( config.auth.type );
+	config.permissionHandler.isValidUser = authenticationHandler.isValidUser;
+}
+
+function handlePermissionStrategy( config ) {
+
 }

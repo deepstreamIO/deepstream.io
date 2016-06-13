@@ -15,7 +15,8 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	C = require( './constants/constants' ),
-	pkg = require( '../package.json' );
+	pkg = require( '../package.json' ),
+	argv = require( 'minimist' )( process.argv.slice( 2 ) ) || {};
 
 require( 'colors' );
 
@@ -23,21 +24,17 @@ require( 'colors' );
  * Deepstream is a realtime data server that scales horizontally
  * by running in clusters of interacting nodes
  *
- * @copyright 2015 Hoxton-One Ltd.
- * @author Wolfram Hempel
- * @version <version>
+ * @copyright 2016 deepstreamHub GmbH
+ * @author deepstreamHub GmbH
  *
  * @param {Object} config Configuration object
- * @param {Object} cliOptions which can contain the config file path and the lib prefix path
  *
  * @constructor
  */
-
-
-var Deepstream = function( config, cliOptions ) {
+var Deepstream = function( config ) {
 	this.isRunning = false;
 	this.constants = C;
-	this._options = this._loadConfig( config, cliOptions );
+	this._options = this._loadConfig( config );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -187,15 +184,14 @@ Deepstream.prototype.convertTyped = function( value ) {
  * the result
  *
  * @param {Object} config Configuration object
- * @param {Object} cliOptions which can contain the config file path and the lib prefix path
  *
  * @returns {Object} config
  */
-Deepstream.prototype._loadConfig = function( config, cliOptions ) {
+Deepstream.prototype._loadConfig = function( config ) {
 	if ( config != null ) {
 		return config;
 	} else {
-		var result = jsYamlLoader.loadConfig( cliOptions );
+		var result = jsYamlLoader.loadConfig( argv );
 		this._configFile = result.file;
 		return result.config;
 	}

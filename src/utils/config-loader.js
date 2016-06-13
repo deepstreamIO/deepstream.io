@@ -1,3 +1,3 @@
-module.exports = function loadConfig( argv, callback ) {
+exports.create = function loadConfig( argv, callback ) {
 
 };
