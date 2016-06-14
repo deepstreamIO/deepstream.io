@@ -66,10 +66,11 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 };
 
 const downloadArchive = function( urlPath, outStream, callback ) {
-	needle.get( 'https://github.com' + urlPath, {
-		follow_max: 5,
-		headers: {'User-Agent': 'nodejs-client'}
-	} )
+	try {
+		needle.get( 'https://github.com' + urlPath, {
+			follow_max: 5,
+			headers: {'User-Agent': 'nodejs-client'}
+		} )
 		.on( 'readable', function() {
 			if ( process.env.VERBOSE ) {
 				process.stdout.write( '.'.grey );
@@ -81,9 +82,17 @@ const downloadArchive = function( urlPath, outStream, callback ) {
 				process.stdout.cursorTo( 0 );
 				process.stdout.write( 'download complete' + '\n' );
 			}
-			callback();
+			return callback();
 		} )
-		.pipe( outStream );
+		.pipe( outStream )
+		.on( 'error', function( err ) {
+			// TODO: if the outStream throws an error callback will be
+			// called twice, need to figure out, how to solve, maybe with 'pump'
+			console.error( 'Error while saving the archive', err );
+		} );
+	} catch ( err ) {
+		return callback( err );
+	}
 };
 
 const fetchReleases = function( type, name, callback ) {
@@ -121,7 +130,7 @@ const extract = function( data, platform ) {
 		}
 		throw new Error( 'Could not extract archive' );
 	}
-	if ( !process.env.QUITE ) {
+	if ( !process.env.QUIET ) {
 		console.log( colors.green( `${data.name} ${data.version} was installed to ${outputParent}` ) );
 	}
 	return outPath;
@@ -138,7 +147,7 @@ const showConfig = function( directory ) {
 		console.log( 'you need to configure the connector in your deepstream configuration file' );
 	}
 	content = '  ' + content.replace( /\n/g, '\n  ' );
-	if ( !process.env.QUITE ) {
+	if ( !process.env.QUIET ) {
 		console.log( 'example configuration:\n' + colors.grey( content ) );
 	}
 };

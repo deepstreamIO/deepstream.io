@@ -3,7 +3,6 @@
 
 require( 'colors' );
 const pgk = require( '../package.json' );
-// const installer = require( './installer' );
 
 var program = require( 'commander' );
 

@@ -5,8 +5,8 @@ var program = require( 'commander' );
 const installer = require( './installer' );
 
 program
-  .usage( '<type> <name>:[version] [options]' )
-	.option( '--libPrefix [directory]', 'directory where to extract the connector, defaults to ./lib' )
+	.usage( '<type> <name>:[version] [options]' )
+	.option( '-l, --libPrefix [directory]', 'directory where to extract the connector, defaults to ./lib' )
 	.option( '--verbose', 'more debug output' )
 	.option( '--quiet', 'no output' );
 
@@ -32,11 +32,17 @@ const nameAndVersion = installArgs[1].split( ':' );
 const name = nameAndVersion[0];
 const version = nameAndVersion[1];
 
+if ( program.quiet ) {
+	process.env.QUIET = 1;
+} else if ( program.verbose ) {
+	process.env.VERBOSE = 1;
+}
+
 installer( {
 	type: type,
 	name: name,
 	version: version,
-	dir: program.dir
+	dir: program.libPrefix
 }, function( err ) {
 	if ( err ) {
 		console.error( err.toString().red );
