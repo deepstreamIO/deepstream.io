@@ -159,6 +159,9 @@ describe( 'installer', function() {
 	} );
 
 	it( 'error while downloading the archive', function( done ) {
+		const fsMock = {
+			createWriteStream: dummyWritedStream()
+		};
 		const needleMock = new Needle(
 			// request handler for fetching all releases
 			function( urlPath, options, callback ) {
@@ -170,9 +173,11 @@ describe( 'installer', function() {
 			// request handler for all other requests, not starting with 'https://api'
 			dummyReadStream( {error: new Error( 'dummy-stream-read-error' )} )
 		);
+		spyOn( mkdirp, 'sync' );
 		needleMock['@noCallThru'] = true;
 		var installer = proxyquire( '../../bin/installer', {
-			needle: needleMock
+			needle: needleMock,
+			fs: fsMock
 		} );
 
 		installer( {type: 'foo', name: 'bar', version: '1.2.3'}, function( error ) {
@@ -197,6 +202,7 @@ describe( 'installer', function() {
 			// request handler for all other requests, not starting with 'https://api'
 			dummyReadStream()
 		);
+		spyOn( mkdirp, 'sync' );
 		needleMock['@noCallThru'] = true;
 		var installer = proxyquire( '../../bin/installer', {
 			needle: needleMock,
@@ -224,6 +230,7 @@ describe( 'installer', function() {
 			// request handler for all other requests, not starting with 'https://api'
 			dummyReadStream()
 		);
+		spyOn( mkdirp, 'sync' );
 		needleMock['@noCallThru'] = true;
 		var installer = proxyquire( '../../bin/installer', {
 			needle: needleMock,
@@ -266,6 +273,7 @@ describe( 'installer', function() {
 		spyOn( fsMock, 'readFileSync' ).and.callThrough();
 		spyOn( fsMock, 'createWriteStream' ).and.callThrough();
 		spyOn( child_processMock, 'execSync' );
+		needleMock['@noCallThru'] = true;
 		var installer = proxyquire( '../../bin/installer', {
 			needle: needleMock,
 			'adm-zip': zipMock,
@@ -302,7 +310,8 @@ describe( 'installer', function() {
 				expect( zipExtractor.calls.argsFor( 0 ) ).toEqual( [ pj( 'lib', 'deepstream.io-cache-redis' ), true ] );
 			}
 			// show example config
-			expect( fsMock.readFileSync.calls.argsFor( 0 )[0] ).toEqual( pj( 'lib', 'deepstream.io-cache-redis', 'README.md' ) );
+			expect( fsMock.readFileSync.calls.argsFor( 0 )[0] )
+				.toEqual( pj( 'lib', 'deepstream.io-cache-redis', 'README.md' ) );
 			done();
 		} );
 
