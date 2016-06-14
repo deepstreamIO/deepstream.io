@@ -5,12 +5,13 @@ const path = require( 'path' );
 const yaml = require( 'js-yaml' );
 const defaultOptions = require( '../default-options' );
 const utils = require( './utils' );
+const ConfigPermissionHandler = require( '../permission/config-permission-handler' );
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
 
 var authStrategies = {
-	open: require( '../authentication/open-authentication-handler' ),
+	none: require( '../authentication/open-authentication-handler' ),
 	file: require( '../authentication/file-based-authentication-handler' ),
 	http: require( '../authentication/http-authentication-handler' )
 };
@@ -177,6 +178,7 @@ module.exports.loadConfig = function( argv ) {
 		cliArgs[key] = argv[key] || undefined;
 	}
 	let result = handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
+
 	return {
 		config: rewritePermissionFilePath( result, cliOptions ),
 		file: filePath
@@ -238,10 +240,7 @@ function handleMagicProperties( config, cliOptions ) {
 	handleLogLevel( _config );
 	handlePlugins( _config, cliOptions );
 
-	if( !config.permissionHandler ) {
-		_config.permissionHandler = {};
-		handleAuthStrategy( _config );
-	}
+	handleAuthStrategy( _config );
 
 	return _config;
 }
@@ -287,7 +286,7 @@ function handleLogLevel( config ) {
  */
 function rewritePermissionFilePath( config, cliOptions ) {
 	var prefix = cliOptions.configPrefix;
-	config.permissionConfigPath =  handleRelativeAndAbsolutePath( config.permissionConfigPath, prefix );
+	config.permission.options.path = handleRelativeAndAbsolutePath( config.permission.options.path, prefix );
 	return config;
 }
 
@@ -396,13 +395,26 @@ function handlePlugins( config, cliOptions ) {
 }
 
 function handleAuthStrategy( config ) {
+	if( !config.auth ) {
+		return;
+	}
+
 	if( !authStrategies[ config.auth.type ] ) {
 		throw new Error( 'Unknown authentication type ' + config.auth.type );
 	}
-	var authenticationHandler = new authStrategies[ config.auth.type ]( config.auth.type );
-	config.permissionHandler.isValidUser = authenticationHandler.isValidUser;
+
+	config.authenticationHandler = new (authStrategies[ config.auth.type ])( config.auth.options );
 }
 
 function handlePermissionStrategy( config ) {
+	if( !config.permission) {
+		return;
+	}
 
+	if( config.permission.type !== 'config' ) {
+		throw new Error( 'Unknown permission type ' + config.permission.type );
+		// TODO other permission types?
+	}
+
+	config.permissionHandler = new ConfigPermissionHandler( config.permission.options );
 }
