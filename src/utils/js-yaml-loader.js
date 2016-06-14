@@ -9,7 +9,7 @@ const ConfigPermissionHandler = require( '../permission/config-permission-handle
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
-
+var argv = require( 'minimist' )( process.argv.slice( 2 ) );
 var authStrategies = {
 	none: require( '../authentication/open-authentication-handler' ),
 	file: require( '../authentication/file-based-authentication-handler' ),
@@ -143,7 +143,7 @@ function parseFile( filePath, fileContent ) {
  * @returns {Object} config deepstream configuration object
 
  */
-module.exports.loadConfig = function( argv ) {
+module.exports.loadConfig = function() {
 	if ( argv == null ) {
 		argv = {};
 	}
@@ -241,6 +241,7 @@ function handleMagicProperties( config, cliOptions ) {
 	handlePlugins( _config, cliOptions );
 
 	handleAuthStrategy( _config );
+	handlePermissionStrategy( _config );
 
 	return _config;
 }

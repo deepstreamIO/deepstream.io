@@ -55,7 +55,7 @@ maxMessageSize: 1048576 # maximum allowed size of an individual message in bytes
 auth:
   type: none
 
-# reading users and passwords from a file
+# # reading users and passwords from a file
 #  type: file
 #  options:
 #    path: ./users.json # path to the user file
@@ -63,7 +63,7 @@ auth:
 #    iterations: 100 # the number of times the algorithm should be applied
 #    keyLength: 32 # the length of the resulting key
 
-# getting permissions from a http webhook
+# # getting permissions from a http webhook
 #  type: http
 #  options:
 #    endpointUrl: https://someurl.com/validateLogin # a post request will be send to this url on every incoming connection

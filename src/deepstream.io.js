@@ -126,12 +126,9 @@ Deepstream.prototype.start = function() {
 	} else {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
 	}
-console.log( this._options.authenticationHandler );
+
 	var authTypeMsg = 'authentication type ' + ( this._options.authenticationHandler.type || 'custom' );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, authTypeMsg );
-
-
-	this._options.permissionHandler = new ConfigPermissionHandler( this._options );
 
 	if( this._options.dataTransforms ) {
 		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );
@@ -196,7 +193,7 @@ Deepstream.prototype._loadConfig = function( config ) {
 	if ( config != null ) {
 		return config;
 	} else {
-		var result = jsYamlLoader.loadConfig( argv );
+		var result = jsYamlLoader.loadConfig();
 		this._configFile = result.file;
 		return result.config;
 	}

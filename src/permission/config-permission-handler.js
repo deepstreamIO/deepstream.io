@@ -29,7 +29,7 @@ var UNDEFINED = 'undefined';
  *                           to load it from the path provided in options.path.
  */
 var ConfigPermissionHandler = function( options, config ) {
-	this.type = 'valve permissions loaded from ' + config.path;
+	this.type = 'valve permissions loaded from ' + options.path;
 	this._ruleCache = new RuleCache( options );
 	this._options = options;
 	this._config = null;
