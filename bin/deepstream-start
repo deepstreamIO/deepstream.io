@@ -3,6 +3,7 @@
 
 const colors = require( 'colors' );
 const fs = require( 'fs' );
+const os = require( 'os' );
 const path = require( 'path' );
 const child_process = require( 'child_process' );
 const Deepstream = require( '../src/deepstream.io.js' );
@@ -22,6 +23,10 @@ function detachErrorHandler() {
 
 program.parse( process.argv );
 if ( program.detach ) {
+	if ( os.platform() === 'win32' ) {
+		console.error( 'detached mode not supported on windows' );
+		process.exit( 1 );
+	}
 	const args = [];
 	if ( program.config != null ) {
 		args.push( '--config' );
