@@ -8,6 +8,14 @@ const os = require( 'os' );
 const DEFAULT_PID_FILE = path.join( os.tmpDir(), 'deepstream.pid' );
 const PID_FILE = process.env.PID_FILE || DEFAULT_PID_FILE;
 
+/**
+ * Save a JSON (pid and timestamp) object to the temp directofy of the system
+ *
+ * @param  {String|Number} pid Connector type: {cache|message|storage}
+ * @callback callback
+ * @param {error} error
+ * @return {void}
+ */
 const save = function( pid, callback ) {
 	if ( callback == null ) {
 		callback = function() {};
@@ -26,6 +34,13 @@ const save = function( pid, callback ) {
 	} );
 };
 
+/**
+ * Try to read the pid file from the temp directory
+ *
+ * @callback callback
+ * @param {error} error
+ * @return {void}
+ */
 const read = function( callback ) {
 	fs.readFile( PID_FILE, 'utf8', function( err, content ) {
 		if ( err ) {
@@ -39,13 +54,21 @@ const read = function( callback ) {
 	} );
 };
 
+/**
+ * Ensure that there is no process running with the PID in the pid file,
+ * otherwise throw an error.
+ *
+ * @callback callback
+ * @param {error} error
+ * @return {void}
+ */
 const ensureNotRunning = function( callback ) {
 	read( function( err, data ) {
 		if ( err ) {
 			if ( err.code  === 'ENOENT' ) {
 				return callback();
 			}
-			return exit( err );
+			return callback( err );
 		}
 		try {
 			const pid = data.pid;
@@ -56,11 +79,19 @@ const ensureNotRunning = function( callback ) {
 				return callback();
 			}
 		} catch ( err ) {
-			return exit( err );
+			return callback( err );
 		}
 	} );
 };
 
+/**
+ * Exit the current process with a status code 0.
+ * If you pass an error as argument, it will exit with 1 and the error will
+ * printed to the stderr.
+ *
+ * @param  {Error} err Optional error object
+ * @return {void}
+ */
 const exit = function( err ) {
 	if ( err instanceof Error ) {
 		console.error ( colors.red( err.toString() ) );
@@ -72,6 +103,13 @@ const exit = function( err ) {
 	}
 };
 
+/**
+ * Try to find a process with the given pid and returns true if it is running.
+ * Otherwise false.
+ *
+ * @param  {String|Number} pid
+ * @return {Boolean}
+ */
 const isRunning = function( pid ) {
 	try {
 		return process.kill( pid, 0 );
@@ -80,15 +118,28 @@ const isRunning = function( pid ) {
 	}
 };
 
+/**
+ * Delete the pid file
+ *
+ * @callback callback Optional callback
+ * @param {error} error
+ * @return {void}
+ */
 const remove = function( callback ) {
-	if ( callback == null ) {
-		callback = function() {};
-	}
 	fs.unlink( PID_FILE, function( err ) {
-		callback ( err );
+		if ( callback != null ) {
+			return callback ( err );
+		}
+		console.error( err );
 	} );
 };
 
+/**
+ * Try to find a process from the pid file and kills it.
+ * Prints out if a process or pid file was found or not for how long it was running.
+ *
+ * @return {void}
+ */
 const stop = function() {
 	read( function( err, data ) {
 		if ( err ) {

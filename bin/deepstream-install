@@ -27,6 +27,11 @@ if ( installArgs.length < 2 ) {
 	program.help();
 }
 
+/*
+ * Syntax:
+ * TYPE NAME:VERSION
+ * version is optional
+ */
 const type = installArgs[0];
 const nameAndVersion = installArgs[1].split( ':' );
 const name = nameAndVersion[0];
