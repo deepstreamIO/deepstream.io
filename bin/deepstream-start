@@ -1,14 +1,58 @@
 #!/usr/bin/env node
 'use strict';
 
+const colors = require( 'colors' );
+const fs = require( 'fs' );
+const path = require( 'path' );
+const child_process = require( 'child_process' );
 const Deepstream = require( '../src/deepstream.io.js' );
+const pidHelper = require( './pid-helper' );
 
 var program = require( 'commander' );
 
 program
-  .option( '-c, --config [file path]', 'enable some foo' )
-  .option( '-l, --libPrefix [directory path]', 'enable some bar' );
+	.option( '-c, --config [file]', 'configration file, parent directory will be used as prefix for other config files' )
+	.option( '-l, --libPrefix [directory]', 'path where to lookup for plugins like connectors and logger' )
+	.option( '-d, --detach', 'detach the deepstream server process' );
+
+function detachErrorHandler() {
+	console.log( 'Error during detaching the deepstream process, run without --detach'.red );
+	process.exit( 1 );
+}
 
 program.parse( process.argv );
-var ds = new Deepstream( null, program );
-ds.start();
+if ( program.detach ) {
+	const args = [];
+	if ( program.config != null ) {
+		args.push( '--config' );
+		args.push( program.config );
+	}
+	if ( program.libPrefix != null ) {
+		args.push( '--libPrefix' );
+		args.push( program.libPrefix );
+	}
+	pidHelper.ensureNotRunning( function() {
+		const child = child_process.spawn( path.resolve( __dirname, 'deepstream-start' ), args, {
+			detached: true,
+			stdio: [ 'ignore']
+		} );
+		const WAIT_FOR_ERRORS = 2000;
+		// register handler if the child process will fail during WAIT_FOR_ERRORS
+		child.on( 'close', detachErrorHandler );
+		child.on( 'exit', detachErrorHandler );
+		child.unref();
+		// wait, maybe ther is an error during startup
+		setTimeout( function() {
+			console.log( 'process was detached with pid ' + child.pid );
+			process.exit( 0 );
+		}, WAIT_FOR_ERRORS );
+	} );
+} else {
+	var ds = new Deepstream( null, program );
+	ds.start();
+	process.
+		removeAllListeners( 'SIGINT' ).on( 'SIGINT', pidHelper.exit ).
+		removeAllListeners( 'SIGTERM' ).on( 'SIGTERM', pidHelper.exit );
+	pidHelper.save( process.pid );
+
+}

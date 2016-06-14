@@ -9,8 +9,10 @@ var program = require( 'commander' );
 
 program
 	.version( pgk.version )
-	.command( 'start [options]', 'start a deepstream server' )
+	.usage( '[command]' )
+	.command( 'start', 'start a deepstream server' )
 	.command( 'stop', 'stop a running deepstream server' )
+	.command( 'status', 'display if a deepstream server is running' )
 	.command( 'install', 'install connectors' );
 
 program.parse( process.argv );

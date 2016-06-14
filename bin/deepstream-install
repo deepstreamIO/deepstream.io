@@ -6,7 +6,7 @@ const installer = require( './installer' );
 
 program
   .usage( '<type> <name>:[version] [options]' )
-	.option( '--dir [file path]', 'enable some foo' )
+	.option( '--libPrefix [directory]', 'directory where to extract the connector, defaults to ./lib' )
 	.option( '--verbose', 'more debug output' )
 	.option( '--quiet', 'no output' );
 
