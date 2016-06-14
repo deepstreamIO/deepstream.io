@@ -10,6 +10,6 @@ pidHelper.read( function( err, data ) {
 		const seconds = ( new Date().getTime() - data.timestamp ) / 1000;
 		console.log( 'process running with PID ' + data.pid + ' since ' + seconds + ' seonds' );
 	} else {
-		console.log( 'not running no process for PID ' + data.pid );
+		console.log( 'not running (no process for PID ' + data.pid + ')');
 	}
 } );

@@ -97,13 +97,14 @@ describe( 'it starts and stops a configured server', function() {
 } );
 
 describe( 'handle server startup without config file', function() {
+	var cwd = path.resolve( './bin' );
+	var execOptions =  {
+		cwd: cwd,
+		stdio: ['ignore', 'ignore', 'pipe']
+	};
 	it( 'via CLI', function( done ) {
-		var cwd = path.resolve( './bin' );
 		try {
-			child_process.execSync( 'node deepstream start', {
-				cwd: cwd,
-				stdio: ['ignore', 'ignore', 'pipe']
-			} );
+			child_process.execSync( 'node deepstream start', execOptions );
 		} catch ( err ) {
 			var stderr = err.stderr.toString();
 			expect( stderr ).toContain( 'no such file or directory' );

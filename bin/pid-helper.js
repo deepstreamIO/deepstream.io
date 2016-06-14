@@ -111,5 +111,6 @@ module.exports = {
 	ensureNotRunning: ensureNotRunning,
 	exit: exit,
 	stop: stop,
-	read: read
+	read: read,
+	PID_FILE: PID_FILE
 };

@@ -16,7 +16,7 @@ program
 	.option( '-d, --detach', 'detach the deepstream server process' );
 
 function detachErrorHandler() {
-	console.log( 'Error during detaching the deepstream process, run without --detach'.red );
+	console.error( 'Error during detaching the deepstream process, run without --detach'.red );
 	process.exit( 1 );
 }
 
