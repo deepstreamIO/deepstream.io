@@ -34,6 +34,18 @@
       "from": "colors@1.0.3",
       "resolved": "https://registry.npmjs.org/colors/-/colors-1.0.3.tgz"
     },
+    "commander": {
+      "version": "2.9.0",
+      "from": "commander@>=2.9.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/commander/-/commander-2.9.0.tgz",
+      "dependencies": {
+        "graceful-readlink": {
+          "version": "1.0.1",
+          "from": "graceful-readlink@>=1.0.0",
+          "resolved": "https://registry.npmjs.org/graceful-readlink/-/graceful-readlink-1.0.1.tgz"
+        }
+      }
+    },
     "engine.io": {
       "version": "1.6.9",
       "from": "engine.io@1.6.9",
@@ -46,7 +58,7 @@
         },
         "debug": {
           "version": "2.2.0",
-          "from": "debug@>=2.1.2 <3.0.0",
+          "from": "debug@2.2.0",
           "resolved": "https://registry.npmjs.org/debug/-/debug-2.2.0.tgz",
           "dependencies": {
             "ms": {
@@ -167,11 +179,6 @@
         }
       }
     },
-    "minimist": {
-      "version": "1.2.0",
-      "from": "minimist@1.2.0",
-      "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.0.tgz"
-    },
     "mkdirp": {
       "version": "0.5.1",
       "from": "mkdirp@>=0.5.1 <0.6.0",
@@ -227,7 +234,7 @@
     },
     "xml2js": {
       "version": "0.4.16",
-      "from": "xml2js@latest",
+      "from": "xml2js@>=0.4.16 <0.5.0",
       "resolved": "https://registry.npmjs.org/xml2js/-/xml2js-0.4.16.tgz",
       "dependencies": {
         "sax": {

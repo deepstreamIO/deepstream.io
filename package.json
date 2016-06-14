@@ -33,7 +33,7 @@
     "js-yaml": "^3.6.1",
     "mkdirp": "^0.5.1",
     "needle": "^1.0.0",
-    "xml2js": "latest"
+    "xml2js": "^0.4.16"
   },
   "devDependencies": {
     "coveralls": "^2.11.9",
