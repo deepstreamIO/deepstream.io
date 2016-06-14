@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
   "bin": {
@@ -20,14 +20,20 @@
     "type": "git",
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
+  "optionalDependencies": {
+    "bufferutil": "^1.2.1",
+    "charset": "^1.0.0",
+    "utf-8-validate": "^1.2.1"
+  },
   "dependencies": {
     "adm-zip": "^0.4.7",
     "colors": "1.0.3",
     "commander": "^2.9.0",
-    "engine.io": "1.6.8",
+    "engine.io": "1.6.9",
     "js-yaml": "^3.6.1",
     "mkdirp": "^0.5.1",
-    "needle": "^1.0.0"
+    "needle": "^1.0.0",
+    "xml2js": "latest"
   },
   "devDependencies": {
     "coveralls": "^2.11.9",
@@ -36,7 +42,8 @@
     "grunt-release": "0.13.0",
     "istanbul": "^0.4.3",
     "jasmine": "^2.4.1",
-    "jasmine-spec-reporter": "^2.4.0",
+    "nexe": "^1.1.2",
+    "jasmine-spec-reporter": "^2.5.0",
     "proxyquire": "1.7.9",
     "watch": "^0.18.0"
   },

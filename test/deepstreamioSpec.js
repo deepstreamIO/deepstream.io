@@ -119,8 +119,8 @@ describe( 'handle server startup without config file', function() {
 		server.set( 'showLogo', false );
 		server.set( 'logger', logger );
 		server._configFile = null;
-		server.on( 'started', server.stop );
 		server.on( 'stopped', done );
+		server.on( 'started', server.stop );
 		server.start();
 	} );
 } );

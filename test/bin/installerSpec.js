@@ -302,7 +302,7 @@ describe( 'installer', function() {
 				expect( zipExtractor.calls.argsFor( 0 ) ).toEqual( [ pj( 'lib', 'deepstream.io-cache-redis' ), true ] );
 			}
 			// show example config
-			expect( fsMock.readFileSync.calls.argsFor( 0 )[0] ).toEqual( 'lib/deepstream.io-cache-redis/README.md' );
+			expect( fsMock.readFileSync.calls.argsFor( 0 )[0] ).toEqual( pj( 'lib', 'deepstream.io-cache-redis', 'README.md' ) );
 			done();
 		} );
 
