@@ -277,7 +277,7 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 	/**
 	 * Forward for authentication
 	 */
-	this._options.permissionHandler.isValidUser(
+	this._options.authenticationHandler.isValidUser(
 		socketWrapper.getHandshakeData(),
 		authData,
 		this._processAuthResult.bind( this, authData, socketWrapper )

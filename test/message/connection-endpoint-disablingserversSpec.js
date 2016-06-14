@@ -12,7 +12,8 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	connectionEndpoint;
 
 var otherOptions = {
-	permissionHandler: require( '../mocks/permission-handler-mock' ),
+	permissionHandler: permissionHandlerMock,
+	authenticationHandler: permissionHandlerMock,
 	logger: { log: jasmine.createSpy( 'log' ) },
 	tcpPort: 6021
 };

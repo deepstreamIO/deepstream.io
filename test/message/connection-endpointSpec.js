@@ -20,7 +20,8 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	connectionEndpoint;
 
 options = {
-	permissionHandler: require( '../mocks/permission-handler-mock' ),
+	permissionHandler: permissionHandlerMock,
+	authenticationHandler: permissionHandlerMock,
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
 	logInvalidAuthData: true,
