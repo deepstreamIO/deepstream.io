@@ -165,13 +165,28 @@ describe( 'js-yaml-loader', function() {
 } );
 
 describe( 'supports environment variable substitution', function() {
-	it( 'loads the default config file with a environmentvariable set', function() {
-		process.env.ENVIRONMENT_VARIABLE_TEST="an_environment_variable_value";
-		var configLoader = require( '../../src/utils/js-yaml-loader' );
+	var configLoader
+
+	beforeAll( function() {
+		process.env.ENVIRONMENT_VARIABLE_TEST_1="an_environment_variable_value";
+		process.env.ENVIRONMENT_VARIABLE_TEST_2="another_environment_variable_value";
+		configLoader = require( '../../src/utils/js-yaml-loader' );
+	});
+
+	it( 'does environment variable substitution for yaml', function() {
 		var config = configLoader.loadConfig( {config:'./test/test-configs/config.yml'} ).config;
-		expect( config.localvariable ).toBe( 'local_variable_value' );
 		expect( config.environmentvariable ).toBe( 'an_environment_variable_value' );
+		expect( config.another.environmentvariable ).toBe( 'another_environment_variable_value' );
+		expect( config.thisenvironmentdoesntexist ).toBe( '$DOESNT_EXIST' );
 	} );
+
+	it( 'does environment variable substitution for json', function() {
+		var config = configLoader.loadConfig( {config:'./test/test-configs/json-with-env-variables.json'} ).config;
+		expect( config.environmentvariable ).toBe( 'an_environment_variable_value' );
+		expect( config.another.environmentvariable ).toBe( 'another_environment_variable_value' );
+		expect( config.thisenvironmentdoesntexist ).toBe( '$DOESNT_EXIST' );
+	} );
+
 } );
 
 describe( 'load plugins by relative path property', function() {

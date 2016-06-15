@@ -5,9 +5,7 @@ colors: false
 showLogo: false
 logLevel: ERROR
 
-env:
-  - &environmentvariable ENVIRONMENT_VARIABLE_TEST
-  - &localvariable local_variable_value
-
-environmentvariable: *environmentvariable
-localvariable: *localvariable
+thisenvironmentdoesntexist: $DOESNT_EXIST
+environmentvariable: $ENVIRONMENT_VARIABLE_TEST_1
+another:
+  environmentvariable: $ENVIRONMENT_VARIABLE_TEST_2
