@@ -9,7 +9,7 @@ const ConfigPermissionHandler = require( '../permission/config-permission-handle
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
-var argv = require( 'minimist' )( process.argv.slice( 2 ) );
+var commandLineArguments = require( 'minimist' )( process.argv.slice( 2 ) );
 var authStrategies = {
 	none: require( '../authentication/open-authentication-handler' ),
 	file: require( '../authentication/file-based-authentication-handler' ),
@@ -111,9 +111,6 @@ exports.getExistingFilePath = function( basePath, callback ) {
  * @returns {Object} config
  */
 function parseFile( filePath, fileContent ) {
-	if ( fileContent == null ) {
-		fileContent = fs.readFileSync( filePath, {encoding: 'utf8'} );
-	}
 	let config = null;
 	const extension = path.extname( filePath );
 
@@ -137,16 +134,14 @@ function parseFile( filePath, fileContent ) {
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  *
- * @param {Object} argv minimist arguments
+ * @param {Object} args minimist arguments
  *
  * @public
  * @returns {Object} config deepstream configuration object
 
  */
-module.exports.loadConfig = function() {
-	if ( argv == null ) {
-		argv = {};
-	}
+module.exports.loadConfig = function( args ) {
+	var argv = args || commandLineArguments;
 	var _configFile = argv.c || argv.config;
 	var _libPrefix = argv.l || argv.libPrefix;
 
@@ -165,13 +160,12 @@ module.exports.loadConfig = function() {
 		cliOptions.libPrefix = _libPrefix;
 	}
 	const filePath = findFilePath( customFilePath );
-	if ( filePath == null ) {
-		return {
-			config: rewritePermissionFilePath( defaultOptions.get(), cliOptions ),
-			file: null
-		};
+
+	if ( filePath === undefined ) {
+		throw new Error( 'No config file found' );
 	}
-	const config = parseFile( filePath );
+
+	const config = parseFile( filePath, fs.readFileSync( filePath, {encoding: 'utf8'} ) );
 	// CLI arguments
 	var cliArgs = {};
 	for ( let key in defaultOptions.get() ) {

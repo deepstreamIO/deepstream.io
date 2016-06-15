@@ -60,12 +60,14 @@ describe( 'js-yaml-loader', function() {
 		defaultYamlConfig = utils.merge( defaultYamlConfig, {
 			permission: { type: 'config', options: { path: null } },
 			permissionHandler: null,
+			authenticationHandler: null,
 			plugins: null,
 			serverName: null
 		} );
 		var defaultConfig = utils.merge( defaultOptions.get(), {
 			permission: { type: 'config', options: { path: null } },
 			permissionHandler: null,
+			authenticationHandler: null,
 			plugins: null,
 			serverName: null
 		} );
@@ -82,7 +84,10 @@ describe( 'js-yaml-loader', function() {
 			fs: fsMock
 		} );
 		spyOn( fsMock, 'lstatSync' ).and.callThrough();
-		configLoader.loadConfig().config;
+		expect(function(){
+			configLoader.loadConfig();
+		}).toThrow();
+
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 3 );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( 'config/config.js' );
 		expect( fsMock.lstatSync ).toHaveBeenCalledWith( 'config/config.js' );

@@ -4,7 +4,7 @@ var C = require( '../../src/constants/constants' );
 describe( 'permission handler is initialised correctly', function(){
 	it( 'loads a valid config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			permissionConfigPath: './config/permissions.json',
+			path: './config/permissions.json',
 			cacheEvacuationInterval: 60000
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
@@ -22,7 +22,7 @@ describe( 'permission handler is initialised correctly', function(){
 
 	it( 'fails to load a non existant config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			permissionConfigPath: './does-not-exist.json',
+			path: './does-not-exist.json',
 			cacheEvacuationInterval: 60000
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
@@ -40,7 +40,7 @@ describe( 'permission handler is initialised correctly', function(){
 
 	it( 'fails when loading a broken config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			permissionConfigPath: './test/test-configs/broken-json-config.json',
+			path: './test/test-configs/broken-json-config.json',
 			cacheEvacuationInterval: 60000
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
@@ -58,7 +58,7 @@ describe( 'permission handler is initialised correctly', function(){
 
 	it( 'fails when loading an invalid config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			permissionConfigPath: './test/test-configs/invalid-permission-conf.json',
+			path: './test/test-configs/invalid-permission-conf.json',
 			cacheEvacuationInterval: 60000
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
@@ -81,7 +81,7 @@ describe( 'it loads a new config during runtime', function(){
 
 	it( 'loads a valid config file upon initialisation', function( next ){
 		permissionHandler = new ConfigPermissionHandler({
-			permissionConfigPath: './config/permissions.json',
+			path: './config/permissions.json',
 			cacheEvacuationInterval: 60000
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
