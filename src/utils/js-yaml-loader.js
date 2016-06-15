@@ -138,45 +138,94 @@ function parseFile( filePath, fileContent ) {
  *
  * @public
  * @returns {Object} config deepstream configuration object
-
  */
 module.exports.loadConfig = function( args ) {
 	var argv = args || commandLineArguments;
-	var _configFile = argv.c || argv.config;
-	var _libPrefix = argv.l || argv.libPrefix;
+	var configFilePath = getConfigFilePath( argv );
+	var configString = fs.readFileSync( configFilePath, { encoding: 'utf8' } );
+	var rawConfig = parseFile( configFilePath, configString );
+	var config = initialiseConfig( rawConfig, argv );
+
+	return {
+		config: config,
+		file: configFilePath
+	};
+};
+
+function initialiseConfig( config, argv ) {
+	var cliArgs = {}, key;
+
+	for ( key in defaultOptions.get() ) {
+		cliArgs[key] = argv[key] || undefined;
+	}
+
+	if( config.auth && config.auth.options && config.auth.options.path ) {
+		config.auth.options.path = handleRelativeAndAbsolutePath( config.auth.options.path, cliOptions.configPrefix );
+	}
+
+	if( config.permission && config.permission.options && config.permission.options.path ) {
+		config.permission.options.path = handleRelativeAndAbsolutePath( config.permission.options.path, cliOptions.configPrefix );
+	}
+
+	return handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
+};
+
+function getConfigFilePath( argv ) {
+	var configFilePath;
+	var configDir;
+
+	if( argv.c || argv.config ) {
+		configFilePath = argv.c || argv.config;
+	}
+	else {
+		configFilePath = findFilePath( path.join( process.cwd(), 'config' ) );
+	}
+
+	if( !configFilePath ) {
+		throw new Error( 'No config file found' );
+	}
+	else {
+		return configFilePath;
+	}
+
+
+	else {
+		configDir = path.dirname( configFilePath )
+	}
+
+	var defaultConfigFilePath = path.join( process.cwd(), 'config' );
+
+	if( configuredConfigFilePath ) {
+		path.dirname( configFile )
+	}
+
+
+
+	var libPrefix = argv.l || argv.libPrefix;
+	var cliOptions, customFilePath, filePath;
 
 	// default values
-	var cliOptions = {
+	cliOptions = {
 		configPrefix: path.join( process.cwd(), 'config' ),
 		// will default to lookup in node_modules for paths starting with a letter
 		libPrefix: null
 	};
-	var customFilePath = undefined;
-	if( _configFile ) {
-		customFilePath = _configFile;
-		cliOptions.configPrefix = path.dirname( _configFile );
+
+	customFilePath = undefined;
+	if( configFile ) {
+		customFilePath = configFile;
+		cliOptions.configPrefix = path.dirname( configFile );
 	}
-	if ( _libPrefix ) {
-		cliOptions.libPrefix = _libPrefix;
+	if ( libPrefix ) {
+		cliOptions.libPrefix = libPrefix;
 	}
-	const filePath = findFilePath( customFilePath );
+	filePath = findFilePath( customFilePath );
 
 	if ( filePath === undefined ) {
 		throw new Error( 'No config file found' );
 	}
 
-	const config = parseFile( filePath, fs.readFileSync( filePath, {encoding: 'utf8'} ) );
-	// CLI arguments
-	var cliArgs = {};
-	for ( let key in defaultOptions.get() ) {
-		cliArgs[key] = argv[key] || undefined;
-	}
-	let result = handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
-
-	return {
-		config: rewritePermissionFilePath( result, cliOptions ),
-		file: filePath
-	};
+	return filePath;
 };
 
 /**
@@ -269,23 +318,6 @@ function handleLogLevel( config ) {
 }
 
 /**
- * Handle configPrefix for permission config file.
- * configPrefix needs to be set in the cliOptions.
- *
- *
- * @param {Object} config deepstream configuration object
- * @param {Object} cliOptions CLI arguments from the CLI interface
- *
- * @private
- * @returns {vpod}
- */
-function rewritePermissionFilePath( config, cliOptions ) {
-	var prefix = cliOptions.configPrefix;
-	config.permission.options.path = handleRelativeAndAbsolutePath( config.permission.options.path, prefix );
-	return config;
-}
-
-/**
  * If libPrefix is not set the filePath will be returned
  * Default lookup is the node_modules directory in the CWD.
  *
@@ -332,6 +364,8 @@ function handleRelativeAndAbsolutePath( filePath, prefix ) {
  * a naming convetion: `{message: {name: 'redis'}}` will be resolved to the
  * npm module `deepstream.io-msg-direct`
  * cliOptions can modify the lookup path for the plugins via libPrefix property
+ *
+ * @todo  refactor
  *
  * @param {Object} config deepstream configuration object
  * @param {Object} cliOptions CLI arguments from the CLI interface
@@ -389,9 +423,18 @@ function handlePlugins( config, cliOptions ) {
 	}
 }
 
+/**
+ * Instantiates the authenticationhandler registered for
+ * config.auth.type
+ *
+ * @param   {Object} config deepstream configuration object
+ *
+ * @private
+ * @returns {void}
+ */
 function handleAuthStrategy( config ) {
 	if( !config.auth ) {
-		return;
+		throw new Error( 'No authentication type specified' );
 	}
 
 	if( !authStrategies[ config.auth.type ] ) {
@@ -401,14 +444,22 @@ function handleAuthStrategy( config ) {
 	config.authenticationHandler = new (authStrategies[ config.auth.type ])( config.auth.options );
 }
 
+/**
+ * Instantiates the permissionhandler registered for
+ * config.auth.type
+ *
+ * @param   {Object} config deepstream configuration object
+ *
+ * @private
+ * @returns {void}
+ */
 function handlePermissionStrategy( config ) {
 	if( !config.permission) {
-		return;
+		throw new Error( 'No permission type specified' );
 	}
 
 	if( config.permission.type !== 'config' ) {
-		throw new Error( 'Unknown permission type ' + config.permission.type );
-		// TODO other permission types?
+		throw new Error( 'Unknown permission type ' + config.permission.type ); // TODO other permission types?
 	}
 
 	config.permissionHandler = new ConfigPermissionHandler( config.permission.options );

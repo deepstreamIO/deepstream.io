@@ -27,7 +27,7 @@ describe( 'does authentication for hashed passwords', function(){
 	it( 'creates the authentication handler', function( done ){
 		authenticationHandler = new AuthenticationHandler( settings );
 		authenticationHandler.on( 'ready', done );
-		expect( authenticationHandler.type ).toBe( 'file (./test/test-configs/users-unhashed.json)' );
+		expect( authenticationHandler.type ).toBe( 'file using ./test/test-configs/users-unhashed.json' );
 	});
 
 	it( 'confirms userC with valid password', function( done ){

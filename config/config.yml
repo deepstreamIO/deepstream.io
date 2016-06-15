@@ -56,19 +56,19 @@ auth:
   type: none
 
 # # reading users and passwords from a file
-#  type: file
-#  options:
-#    path: ./users.json # path to the user file
-#    hash: 'md5' # the name of a HMAC digest algorithm
-#    iterations: 100 # the number of times the algorithm should be applied
-#    keyLength: 32 # the length of the resulting key
+#   type: file
+#   options:
+#     path: ./users.json # path to the user file
+#     hash: 'md5' # the name of a HMAC digest algorithm
+#     iterations: 100 # the number of times the algorithm should be applied
+#     keyLength: 32 # the length of the resulting key
 
 # # getting permissions from a http webhook
-#  type: http
-#  options:
-#    endpointUrl: https://someurl.com/validateLogin # a post request will be send to this url on every incoming connection
-#    permittedStatusCodes: [ 200 ] # any of these will be treated as access granted
-#    requestTimeout: 2000 # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+#   type: http
+#   options:
+#     endpointUrl: https://someurl.com/validateLogin # a post request will be send to this url on every incoming connection
+#     permittedStatusCodes: [ 200 ] # any of these will be treated as access granted
+#     requestTimeout: 2000 # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
 
 # Permissioning
 permission:

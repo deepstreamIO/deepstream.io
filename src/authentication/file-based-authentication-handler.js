@@ -32,7 +32,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	constructor( settings ) {
 		super();
 		this.isReady = false;
-		this.type = 'file (' + settings.path  + ')';
+		this.type = 'file using ' + settings.path;
 		this._validateSettings( settings );
 		this._settings = settings;
 		this._base64KeyLength = 4 * Math.ceil( this._settings.keyLength / 3 );
