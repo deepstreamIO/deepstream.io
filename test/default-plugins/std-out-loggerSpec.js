@@ -1,4 +1,4 @@
-var logger = require( '../../src/default-plugins/std-out-logger' );
+var Logger = require( '../../src/default-plugins/std-out-logger' );
 var C = require( '../../src/constants/constants' );
 
 describe( 'logs to stdout and stderr', function(){
@@ -9,6 +9,8 @@ describe( 'logs to stdout and stderr', function(){
 	var comp = function( std, exp ) {
 		return std.calls.mostRecent().args[ 0 ].indexOf( exp ) !== -1;
 	};
+
+	var logger = new Logger();
 
 	beforeAll(function(){
 		Object.defineProperty(process, 'stdout', {

@@ -65,4 +65,4 @@ StdOutLogger.prototype.setLogLevel = function( logLevel ) {
 	this._currentLogLevel = logLevel;
 };
 
-module.exports = new StdOutLogger();
+module.exports = StdOutLogger;

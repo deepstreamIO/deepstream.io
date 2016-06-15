@@ -37,7 +37,7 @@ require( 'colors' );
 var Deepstream = function( config, cliOptions ) {
 	this.isRunning = false;
 	this.constants = C;
-	this._options = this._loadConfig( config, cliOptions );
+	this._loadConfig( config, cliOptions );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -183,22 +183,21 @@ Deepstream.prototype.convertTyped = function( value ) {
 };
 
 /**
- * Synchronously loads a configuration file and returns
- * the result
+ * Synchronously loads a configuration file and instantiate the logger
  *
  * @param {Object} config Configuration object
  * @param {Object} cliOptions which can contain the config file path and the lib prefix path
  *
- * @returns {Object} config
+ * @returns {void}
  */
 Deepstream.prototype._loadConfig = function( config, cliOptions ) {
-	if ( config != null ) {
-		return config;
-	} else {
+	if ( config == null ) {
 		var result = jsYamlLoader.loadConfig( cliOptions );
 		this._configFile = result.file;
-		return result.config;
+		config = result.config;
 	}
+	this._options = config;
+	this._options.logger = new config.logger();
 };
 
 /**
