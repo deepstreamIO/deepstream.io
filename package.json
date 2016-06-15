@@ -14,7 +14,6 @@
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "reporter": "node jasmine-runner",
     "test-http-server": "node test/test-helper/start-test-server.js"
   },
   "repository": {
@@ -35,6 +34,7 @@
     "istanbul": "^0.4.3",
     "jasmine": "^2.4.1",
     "jasmine-spec-reporter": "^2.4.0",
+    "n0p3": "^1.0.2",
     "proxyquire": "1.7.9",
     "watch": "^0.18.0"
   },

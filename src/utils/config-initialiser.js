@@ -17,13 +17,11 @@ exports.initialise = function( config, argv ) {
 	handleUUIDProperty( config );
 	handleLogLevel( config );
 	handlePlugins( config, argv );
-
 	handleAuthStrategy( config );
 	handlePermissionStrategy( config );
 
 	return config;
 };
-
 
 /**
  * Transform the UUID string config to a UUID in the config object.
@@ -177,7 +175,7 @@ function handlePermissionStrategy( config ) {
  */
 function considerLibPrefix( filePath, argv ) {
 	var libDir = argv.l || argv.libPrefix || commandLineArguments.l || commandLineArguments.libPrefix;
-	
+
 	if ( libDir ) {
 		return utils.normalisePath( filePath, libDir );
 	}
