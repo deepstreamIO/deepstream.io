@@ -13,6 +13,14 @@ var authStrategies = {
 	http: require( '../authentication/http-authentication-handler' )
 };
 
+/**
+ * Takes a configuration object and instantiates functional properties
+ *
+ * @param   {Object} config configuration
+ * @param   {Object} argv   command line args
+ *
+ * @returns {Object} configuration
+ */
 exports.initialise = function( config, argv ) {
 	handleUUIDProperty( config );
 	handleLogLevel( config );
@@ -50,7 +58,6 @@ function handleLogLevel( config ) {
 		config.logLevel = C.LOG_LEVEL[ config.logLevel ];
 	}
 }
-
 
 /**
  * Handle the plugins property in the config object
@@ -114,6 +121,8 @@ function handlePlugins( config, argv ) {
 				}
 			}
 			if ( key === 'logger' ) {
+				//TODO No downside in making the logger a class too
+				/* istanbul ignore next */
 				config[key] = fn;
 			} else {
 				config[key] = new fn( plugin.options );

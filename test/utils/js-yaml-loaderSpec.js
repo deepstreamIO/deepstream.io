@@ -114,6 +114,16 @@ describe( 'js-yaml-loader', function() {
 		expect( config.logLevel ).toEqual( C.LOG_LEVEL.ERROR );
 	} );
 
+	it( 'loads a missing custom yml file path', function() {
+		var fsMock = {};
+
+		var configLoader = require( '../../src/utils/js-yaml-loader' );
+		expect(function(){
+			configLoader.loadConfig( {config:'./test/test-configs/does-not-exist.yml'} )
+		}).toThrowError( 'configuration file not found at: ./test/test-configs/does-not-exist.yml' );
+	
+	} );
+
 	it( 'load a custom json file path', function() {
 		var fsMock = {
 			lstatSync: function() {},

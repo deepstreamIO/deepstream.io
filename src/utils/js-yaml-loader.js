@@ -84,7 +84,7 @@ module.exports.loadConfig = function( args ) {
 	var argv = args || commandLineArguments;
 	var customConfigPath = argv.c || argv.config;
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
-	var configString = readConfigFileSync( configPath )
+	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
 	var rawConfig = parseFile( configPath, configString );
 	var config = extendConfig( rawConfig, argv, path.dirname( configPath ) );
 
@@ -94,15 +94,18 @@ module.exports.loadConfig = function( args ) {
 	};
 };
 
-function readConfigFileSync( configFilePath ) {
-	try{
-		return fs.readFileSync( configFilePath, { encoding: 'utf8' } )
-	} catch( error ) {
-		console.error( 'Error while reading config file from ' + configFilePath );
-		throw error;
-	}
-}
 
+/**
+ * Augments the basic configuration with command line parameters
+ * and normalizes paths within it
+ *
+ * @param   {Object} config    configuration
+ * @param   {Object} argv      command line arguments
+ * @param   {String} configDir config directory
+ *
+ * @private
+ * @returns {Object} extended config
+ */
 function extendConfig( config, argv, configDir ) {
 	var cliArgs = {};
 	var key;
@@ -122,6 +125,14 @@ function extendConfig( config, argv, configDir ) {
 	return utils.merge( { plugins: {} }, defaultOptions.get(), config, cliArgs );
 };
 
+/**
+ * Checks if a config file is present at a given path
+ *
+ * @param   {String} configPath the path to the config file
+ *
+ * @private
+ * @returns {String} verified path
+ */
 function verifyCustomConfigPath( configPath ) {
 	if( fileExistsSync( configPath ) ) {
 		return configPath;
@@ -130,6 +141,12 @@ function verifyCustomConfigPath( configPath ) {
 	}
 }
 
+/**
+ * Fallback if no config path is specified. Will attempt to load the file from the default directory
+ *
+ * @private
+ * @returns {String} filePath
+ */
 function getDefaultConfigPath() {
 	var defaultConfigBaseName = path.join( 'config', 'config' );
 	var filePath, i;
@@ -145,6 +162,14 @@ function getDefaultConfigPath() {
 	throw new Error( 'No config file found' );
 }
 
+/**
+ * Returns true if a file exists for a given path
+ *
+ * @param   {String} path
+ *
+ * @private
+ * @returns {Boolean} exists
+ */
 function fileExistsSync( path ) {
 	try{
 		fs.lstatSync( path );

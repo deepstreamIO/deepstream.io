@@ -82,5 +82,98 @@ describe( 'translates shortcodes into paths', function(){
 
 		expect( errored ).toBe( true );
 	});
+});
 
-})
+describe( 'creates the right authentication handler', function(){
+	var configInitialiser = require( '../../src/utils/config-initialiser' );
+
+	it( 'works for authtype: none', function(){
+		var config = defaultConfig.get();
+
+		config.auth = {
+			type: 'none'
+		};
+		configInitialiser.initialise( config, {} );
+		expect( config.authenticationHandler.type ).toBe( 'none' );
+	});
+
+	it( 'works for authtype: http', function(){
+		var config = defaultConfig.get();
+
+		config.auth = {
+			type: 'http',
+			options: {
+				endpointUrl: 'http://some-url.com',
+				permittedStatusCodes: [ 200 ],
+				requestTimeout: 2000
+			}
+		};
+
+		configInitialiser.initialise( config, {} );
+		expect( config.authenticationHandler.type ).toBe( 'http webhook to http://some-url.com' );
+	});
+
+	it( 'fails for missing auth sections', function(){
+		var config = defaultConfig.get();
+
+		delete config.auth;
+
+		expect(function(){
+			configInitialiser.initialise( config, {} );
+		}).toThrowError( 'No authentication type specified' );
+	});
+
+	it( 'fails for unknown auth types', function(){
+		var config = defaultConfig.get();
+
+		config.auth = {
+			type: 'bla',
+			options: {}
+		};
+
+		expect(function(){
+			configInitialiser.initialise( config, {} );
+		}).toThrowError( 'Unknown authentication type bla' );
+	});
+});
+
+describe( 'creates the permissionHandler', function(){
+	var configInitialiser = require( '../../src/utils/config-initialiser' );
+
+	it( 'creates the config permission handler', function(){
+		var config = defaultConfig.get();
+
+		config.permission = {
+			type: 'config',
+			options: {
+				path: './test/test-configs/basic-permission-config.json'
+			}
+		};
+		configInitialiser.initialise( config, {} );
+		expect( config.permissionHandler.type ).toBe( 'valve permissions loaded from ./test/test-configs/basic-permission-config.json' );
+	});
+
+	it( 'fails for invalid permission types', function(){
+		var config = defaultConfig.get();
+
+		config.permission = {
+			type: 'does-not-exist',
+			options: {
+				path: './test/test-configs/basic-permission-config.json'
+			}
+		};
+		expect(function(){
+			configInitialiser.initialise( config, {} );
+		}).toThrowError( 'Unknown permission type does-not-exist' );
+
+	});
+
+	it( 'fails for missing permission configs', function(){
+		var config = defaultConfig.get();
+		delete config.permission;
+
+		expect(function(){
+			configInitialiser.initialise( config, {} );
+		}).toThrowError( 'No permission type specified' );
+	});
+});
