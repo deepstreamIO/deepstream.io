@@ -1,7 +1,8 @@
 {
-	"environmentvariable": "$ENVIRONMENT_VARIABLE_TEST_1",
+	"multipleenvs": "${EXAMPLE_HOST}:${EXAMPLE_PORT}",
+	"environmentvariable": "${ENVIRONMENT_VARIABLE_TEST_1}",
 	"another": {
-		"environmentvariable": "$ENVIRONMENT_VARIABLE_TEST_2"
+		"environmentvariable": "${ENVIRONMENT_VARIABLE_TEST_2}"
 	},
-	"thisenvironmentdoesntexist": "$DOESNT_EXIST"
+	"thisenvironmentdoesntexist": "${DOESNT_EXIST}"
 }

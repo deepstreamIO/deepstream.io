@@ -349,9 +349,9 @@ function handlePlugins( config, cliOptions ) {
  * @returns {void}
  */
 function replaceEnvironmentVariables( fileContent ) {
-	var environmentVariable = new RegExp( /\$(\w+)/g );
+	var environmentVariable = new RegExp( /\${([^\}]+)}/g );
 	fileContent = fileContent.replace( environmentVariable, ( a, b ) => {
-		return process.env[ b ] || `$${b}`;
+		return process.env[ b ] || b;
 	} );
 	return fileContent;
 }

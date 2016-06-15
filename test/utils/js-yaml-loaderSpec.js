@@ -170,6 +170,8 @@ describe( 'supports environment variable substitution', function() {
 	beforeAll( function() {
 		process.env.ENVIRONMENT_VARIABLE_TEST_1="an_environment_variable_value";
 		process.env.ENVIRONMENT_VARIABLE_TEST_2="another_environment_variable_value";
+		process.env.EXAMPLE_HOST="host"
+		process.env.EXAMPLE_PORT=1234
 		configLoader = require( '../../src/utils/js-yaml-loader' );
 	});
 
@@ -177,14 +179,16 @@ describe( 'supports environment variable substitution', function() {
 		var config = configLoader.loadConfig( {config:'./test/test-configs/config.yml'} ).config;
 		expect( config.environmentvariable ).toBe( 'an_environment_variable_value' );
 		expect( config.another.environmentvariable ).toBe( 'another_environment_variable_value' );
-		expect( config.thisenvironmentdoesntexist ).toBe( '$DOESNT_EXIST' );
+		expect( config.thisenvironmentdoesntexist ).toBe( 'DOESNT_EXIST' );
+		expect( config.multipleenvs ).toBe( 'host:1234' );
 	} );
 
 	it( 'does environment variable substitution for json', function() {
 		var config = configLoader.loadConfig( {config:'./test/test-configs/json-with-env-variables.json'} ).config;
 		expect( config.environmentvariable ).toBe( 'an_environment_variable_value' );
 		expect( config.another.environmentvariable ).toBe( 'another_environment_variable_value' );
-		expect( config.thisenvironmentdoesntexist ).toBe( '$DOESNT_EXIST' );
+		expect( config.thisenvironmentdoesntexist ).toBe( 'DOESNT_EXIST' );
+		expect( config.multipleenvs ).toBe( 'host:1234' );
 	} );
 
 } );
