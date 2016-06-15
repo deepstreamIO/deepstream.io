@@ -148,7 +148,7 @@ function verifyCustomConfigPath( configPath ) {
  * @returns {String} filePath
  */
 function getDefaultConfigPath() {
-	var defaultConfigBaseName = path.join( 'config', 'config' );
+	var defaultConfigBaseName = path.join( 'conf', 'config' );
 	var filePath, i;
 
 	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {

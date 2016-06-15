@@ -55,7 +55,9 @@ describe( 'js-yaml-loader', function() {
 		var loader = require( '../../src/utils/js-yaml-loader' );
 		var result = loader.loadConfig();
 		var defaultYamlConfig = result.config;
-		expect( result.file ).toContain( 'config.yml' );
+
+		expect( result.file ).toEqual( path.join( 'conf', 'config.yml' ) );
+
 		expect( defaultYamlConfig.serverName ).toEqual( jasmine.any( String ) );
 		defaultYamlConfig = utils.merge( defaultYamlConfig, {
 			permission: { type: 'config', options: { path: null } },
@@ -89,9 +91,9 @@ describe( 'js-yaml-loader', function() {
 		}).toThrow();
 
 		expect( fsMock.lstatSync ).toHaveBeenCalledTimes( 3 );
-		expect( fsMock.lstatSync ).toHaveBeenCalledWith( path.join( 'config', 'config.js' ) );
-		expect( fsMock.lstatSync ).toHaveBeenCalledWith( path.join( 'config', 'config.json' ) );
-		expect( fsMock.lstatSync ).toHaveBeenCalledWith( path.join( 'config', 'config.yml' ) );
+		expect( fsMock.lstatSync ).toHaveBeenCalledWith( path.join( 'conf', 'config.js' ) );
+		expect( fsMock.lstatSync ).toHaveBeenCalledWith( path.join( 'conf', 'config.json' ) );
+		expect( fsMock.lstatSync ).toHaveBeenCalledWith( path.join( 'conf', 'config.yml' ) );
 	} );
 
 	it( 'load a custom yml file path', function() {

@@ -1,0 +1,10 @@
+chmod +x /etc/init.d/deepstream
+
+mkdir -p /var/run/deepstream
+mkdir -p /var/log/deepstream
+mkdir -p /var/lib/deepstream
+
+chmod -R 777 /var/run/deepstream
+chmod -R 777 /var/log/deepstream
+chmod -R 777 /var/lib/deepstream
+chmod -R 777 /etc/deepstream

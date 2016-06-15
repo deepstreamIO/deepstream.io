@@ -4,8 +4,8 @@ var C = require( '../../src/constants/constants' );
 describe( 'permission handler is initialised correctly', function(){
 	it( 'loads a valid config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			path: './config/permissions.json',
-			cacheEvacuationInterval: 60000
+			path: './conf/permissions.json',
+			permissionCacheEvacuationInterval: 60000
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
@@ -81,8 +81,8 @@ describe( 'it loads a new config during runtime', function(){
 
 	it( 'loads a valid config file upon initialisation', function( next ){
 		permissionHandler = new ConfigPermissionHandler({
-			path: './config/permissions.json',
-			cacheEvacuationInterval: 60000
+			path: './conf/permissions.json',
+			permissionCacheEvacuationInterval: 60000
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		permissionHandler.init();
