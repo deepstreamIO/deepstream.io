@@ -164,6 +164,16 @@ describe( 'js-yaml-loader', function() {
 
 } );
 
+describe( 'supports environment variable substitution', function() {
+	it( 'loads the default config file with a environmentvariable set', function() {
+		process.env.ENVIRONMENT_VARIABLE_TEST="an_environment_variable_value";
+		var configLoader = require( '../../src/utils/js-yaml-loader' );
+		var config = configLoader.loadConfig( {config:'./test/test-configs/config.yml'} ).config;
+		expect( config.localvariable ).toBe( 'local_variable_value' );
+		expect( config.environmentvariable ).toBe( 'an_environment_variable_value' );
+	} );
+} );
+
 describe( 'load plugins by relative path property', function() {
 	var config;
 	beforeAll( function() {

@@ -4,3 +4,10 @@ host: 1.2.3.4
 colors: false
 showLogo: false
 logLevel: ERROR
+
+env:
+  - &environmentvariable ENVIRONMENT_VARIABLE_TEST
+  - &localvariable local_variable_value
+
+environmentvariable: *environmentvariable
+localvariable: *localvariable

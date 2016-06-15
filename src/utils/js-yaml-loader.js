@@ -58,6 +58,9 @@ function parseFile( filePath, fileContent ) {
 
 	if ( extension === '.yml' ) {
 		config = yaml.safeLoad( fileContent );
+		if( config.env ) {
+			config = yaml.safeLoad( replaceEnvironmentVariables( config.env, fileContent ) );
+		}
 	} else if ( extension === '.js' ) {
 		config = require( path.resolve( filePath ) );
 	} else if ( extension === '.json' ) {
@@ -331,4 +334,35 @@ function handlePlugins( config, cliOptions ) {
 			}
 		}
 	}
+}
+
+/**
+ * Handle the introduction of global enviroment variables within
+ * the yaml file, allowing value substitution.
+ *
+ * For example:
+ * ```
+ * env:
+ *   - &hostname HOST_VARIABLE_ON_PATH
+ *   - &hostport PATH_VARIABLE_ON_PATH
+ *
+ * host: *hostname
+ * port: *hostport
+ * ```
+ *
+ * @param {Object} env current environment values
+ * @param {String} ymlFileContent The loaded yaml file
+ *
+ * @private
+ * @returns {void}
+ */
+function replaceEnvironmentVariables( env, ymlFileContent ) {
+	var environmentVariable;
+	for( var i=0; i < env.length; i++ ) {
+		environmentVariable = new RegExp( '(' + env[ i ] + ')' );
+		ymlFileContent = ymlFileContent.replace( environmentVariable, ( a, b ) => {
+			return process.env[ b ] || b;
+		} );
+	}
+	return ymlFileContent;
 }
