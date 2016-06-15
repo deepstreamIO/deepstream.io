@@ -141,127 +141,76 @@ function parseFile( filePath, fileContent ) {
  */
 module.exports.loadConfig = function( args ) {
 	var argv = args || commandLineArguments;
-	var configFilePath = getConfigFilePath( argv );
-	var configString = fs.readFileSync( configFilePath, { encoding: 'utf8' } );
-	var rawConfig = parseFile( configFilePath, configString );
-	var config = initialiseConfig( rawConfig, argv );
+	var customConfigPath = argv.c || argv.config;
+	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
+	var configString = readConfigFileSync( configPath )
+	var rawConfig = parseFile( configPath, configString );
+	var config = initialiseConfig( rawConfig, argv, path.dirname( configPath ) );
 
 	return {
 		config: config,
-		file: configFilePath
+		file: configPath
 	};
 };
 
-function initialiseConfig( config, argv ) {
-	var cliArgs = {}, key;
+function readConfigFileSync( configFilePath ) {
+	try{
+		return fs.readFileSync( configFilePath, { encoding: 'utf8' } )
+	} catch( error ) {
+		console.error( 'Error while reading config file from ' + configFilePath );
+		throw error;
+	}
+}
+
+function initialiseConfig( config, argv, configDir ) {
+	var cliArgs = {};
+	var key;
 
 	for ( key in defaultOptions.get() ) {
 		cliArgs[key] = argv[key] || undefined;
 	}
 
 	if( config.auth && config.auth.options && config.auth.options.path ) {
-		config.auth.options.path = handleRelativeAndAbsolutePath( config.auth.options.path, cliOptions.configPrefix );
+		config.auth.options.path = handleRelativeAndAbsolutePath( config.auth.options.path, configDir );
 	}
 
 	if( config.permission && config.permission.options && config.permission.options.path ) {
-		config.permission.options.path = handleRelativeAndAbsolutePath( config.permission.options.path, cliOptions.configPrefix );
+		config.permission.options.path = handleRelativeAndAbsolutePath( config.permission.options.path, configDir );
 	}
 
-	return handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
+	return handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), argv );
 };
 
-function getConfigFilePath( argv ) {
-	var configFilePath;
-	var configDir;
-
-	if( argv.c || argv.config ) {
-		configFilePath = argv.c || argv.config;
-	}
-	else {
-		configFilePath = findFilePath( path.join( process.cwd(), 'config' ) );
-	}
-
-	if( !configFilePath ) {
-		throw new Error( 'No config file found' );
-	}
-	else {
-		return configFilePath;
-	}
-
-
-	else {
-		configDir = path.dirname( configFilePath )
-	}
-
-	var defaultConfigFilePath = path.join( process.cwd(), 'config' );
-
-	if( configuredConfigFilePath ) {
-		path.dirname( configFile )
-	}
-
-
-
-	var libPrefix = argv.l || argv.libPrefix;
-	var cliOptions, customFilePath, filePath;
-
-	// default values
-	cliOptions = {
-		configPrefix: path.join( process.cwd(), 'config' ),
-		// will default to lookup in node_modules for paths starting with a letter
-		libPrefix: null
-	};
-
-	customFilePath = undefined;
-	if( configFile ) {
-		customFilePath = configFile;
-		cliOptions.configPrefix = path.dirname( configFile );
-	}
-	if ( libPrefix ) {
-		cliOptions.libPrefix = libPrefix;
-	}
-	filePath = findFilePath( customFilePath );
-
-	if ( filePath === undefined ) {
-		throw new Error( 'No config file found' );
-	}
-
-	return filePath;
-};
-
-/**
- * Does lookups for the deepstream configuration file.
- * Lookup order: config.json, config.js, config.yml
- * The order will be ignored if customFilePath  will be passed.
- *
- * @param {String} customFilePath
- *
- * @private
- * @returns {String} filePath
- */
-function findFilePath( customFilePath ) {
-	const order = [
-		'config/config.json',
-		'config/config.js',
-		'config/config.yml'
-	];
-	let filePath = null;
-
-	if ( customFilePath != null ) {
-		try {
-			fs.lstatSync( customFilePath );
-			filePath = customFilePath;
-		} catch ( err ) {
-			throw new Error( 'configuration file not found at: ' + customFilePath );
-		}
+function verifyCustomConfigPath( configPath ) {
+	if( fileExistsSync( configPath ) ) {
+		return configPath;
 	} else {
-		filePath = order.filter( function( filePath ) {
-			try {
-				fs.lstatSync( filePath );
-				return true;
-			} catch ( err ) {}
-		} )[ 0 ];
+		throw new Error( 'configuration file not found at: ' + configPath );
 	}
-	return filePath;
+}
+
+function getDefaultConfigPath() {
+	var defaultConfigBaseName = path.join( 'config', 'config' );
+	var filePath, i;
+
+	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
+		filePath = defaultConfigBaseName + SUPPORTED_EXTENSIONS[ i ];
+		
+		if( fileExistsSync( filePath ) ) {
+			return filePath;
+		}
+	}
+
+	throw new Error( 'No config file found' );
+}
+
+function fileExistsSync( path ) {
+	try{
+		fs.lstatSync( path );
+		return true;
+	} catch( e ) {
+		return false;
+	}
 }
 
 /**
@@ -269,19 +218,18 @@ function findFilePath( customFilePath ) {
  * data types
  *
  * @param {Object} config deepstream configuration object
- * @param {Object} cliOptions CLI arguments from the CLI interface
  *
  * @private
  * @returns {void}
  */
-function handleMagicProperties( config, cliOptions ) {
+function handleMagicProperties( config, argv ) {
 	var _config = utils.merge( {
 		plugins: {}
 	}, config );
 
 	handleUUIDProperty( _config );
 	handleLogLevel( _config );
-	handlePlugins( _config, cliOptions );
+	handlePlugins( _config, argv );
 
 	handleAuthStrategy( _config );
 	handlePermissionStrategy( _config );
@@ -322,16 +270,19 @@ function handleLogLevel( config ) {
  * Default lookup is the node_modules directory in the CWD.
  *
  * @param {String} filePath
- * @param {Object} cliOptions CLI arguments from the CLI interface
  *
  * @private
  * @returns {String} file path with the libPrefix set in cliOptions
  */
-function considerLibPrefix( filePath, cliOptions ) {
-	if ( cliOptions.libPrefix == null ) {
+function considerLibPrefix( filePath, argv ) {
+	var libDir = argv.l || argv.libPrefix || commandLineArguments.l || commandLineArguments.libPrefix;
+
+	if ( libDir ) {
+		return handleRelativeAndAbsolutePath( filePath, libDir );
+	}
+	else {
 		return filePath;
 	}
-	return handleRelativeAndAbsolutePath( filePath, cliOptions.libPrefix );
 }
 
 /**
@@ -368,12 +319,12 @@ function handleRelativeAndAbsolutePath( filePath, prefix ) {
  * @todo  refactor
  *
  * @param {Object} config deepstream configuration object
- * @param {Object} cliOptions CLI arguments from the CLI interface
+ * @param {Object} argv CLI arguments from the CLI interface
  *
  * @private
  * @returns {void}
  */
-function handlePlugins( config, cliOptions ) {
+function handlePlugins( config, argv ) {
 	if ( config.plugins == null ) {
 		return;
 	}
@@ -400,7 +351,7 @@ function handlePlugins( config, cliOptions ) {
 				if ( plugin.path[ 0 ] !== '.' ) {
 					requirePath = plugin.path;
 				} else {
-					requirePath = considerLibPrefix( plugin.path, cliOptions );
+					requirePath = considerLibPrefix( plugin.path, argv );
 				}
 				fn = require( requirePath );
 			} else if ( plugin.name != null ) {
@@ -410,7 +361,7 @@ function handlePlugins( config, cliOptions ) {
 						connectorKey = 'msg';
 					}
 					requirePath = 'deepstream.io-' + connectorKey + '-' + plugin.name;
-					requirePath = considerLibPrefix( requirePath, cliOptions );
+					requirePath = considerLibPrefix( requirePath, argv );
 					fn = req( requirePath );
 				}
 			}
