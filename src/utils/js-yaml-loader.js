@@ -5,16 +5,10 @@ const path = require( 'path' );
 const yaml = require( 'js-yaml' );
 const defaultOptions = require( '../default-options' );
 const utils = require( './utils' );
-const ConfigPermissionHandler = require( '../permission/config-permission-handler' );
-const C = require( '../constants/constants' );
-const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
+const configInitialiser = require( './config-initialiser' );
+
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
 var commandLineArguments = require( 'minimist' )( process.argv.slice( 2 ) );
-var authStrategies = {
-	none: require( '../authentication/open-authentication-handler' ),
-	file: require( '../authentication/file-based-authentication-handler' ),
-	http: require( '../authentication/http-authentication-handler' )
-};
 
 /**
  * Reads and parse a general configuraiton file content.
@@ -41,59 +35,6 @@ exports.readAndParseFile = function( filePath, callback ) {
 		} );
 	} catch( error ) {
 		callback( error );
-	}
-};
-
-/**
- * This method executes parallel exists-checks for
- * each file extension specified in SUPPORTED_EXTENSIONS.
- *
- * Callback is invoked with an error for anything but exactly one
- * readable file under the given path
- *
- * @param   {String}   basePath folder/file path without extension
- * @param   {Function} callback Will be invoked with error|null and existing file path
- *
- * @public
- * @returns {void}
- */
-exports.getExistingFilePath = function( basePath, callback ) {
-	var existingPath;
-	var checkedPath;
-	var checksCompleted = 0;
-	var i;
-	var isComplete = false;
-
-	var complete = function( error, filePath ) {
-		if( isComplete === false ) {
-			isComplete = true;
-			callback( error, filePath );
-		}
-	};
-
-	var onAccessible = function( checkedPath, err ) {
-		checksCompleted++;
-
-		if( err === null ) {
-			if( existingPath ) {
-				complete( 'Ambiguous Filepaths: found both ' + checkedPath + ' and ' + existingPath );
-			} else {
-				existingPath = checkedPath;
-			}
-		}
-
-		if( checksCompleted === SUPPORTED_EXTENSIONS.length ) {
-			if( existingPath ) {
-				complete( null, existingPath );
-			} else {
-				complete( 'no file found at ' + basePath );
-			}
-		}
-	};
-
-	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
-		checkedPath = basePath + SUPPORTED_EXTENSIONS[ i ];
-		fs.access( checkedPath, fs.R_OK, onAccessible.bind( this, checkedPath ) );
 	}
 };
 
@@ -145,10 +86,10 @@ module.exports.loadConfig = function( args ) {
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
 	var configString = readConfigFileSync( configPath )
 	var rawConfig = parseFile( configPath, configString );
-	var config = initialiseConfig( rawConfig, argv, path.dirname( configPath ) );
+	var config = extendConfig( rawConfig, argv, path.dirname( configPath ) );
 
 	return {
-		config: config,
+		config: configInitialiser.initialise( config, argv ),
 		file: configPath
 	};
 };
@@ -162,7 +103,7 @@ function readConfigFileSync( configFilePath ) {
 	}
 }
 
-function initialiseConfig( config, argv, configDir ) {
+function extendConfig( config, argv, configDir ) {
 	var cliArgs = {};
 	var key;
 
@@ -171,14 +112,14 @@ function initialiseConfig( config, argv, configDir ) {
 	}
 
 	if( config.auth && config.auth.options && config.auth.options.path ) {
-		config.auth.options.path = handleRelativeAndAbsolutePath( config.auth.options.path, configDir );
+		config.auth.options.path = utils.normalisePath( config.auth.options.path, configDir );
 	}
 
 	if( config.permission && config.permission.options && config.permission.options.path ) {
-		config.permission.options.path = handleRelativeAndAbsolutePath( config.permission.options.path, configDir );
+		config.permission.options.path = utils.normalisePath( config.permission.options.path, configDir );
 	}
 
-	return handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), argv );
+	return utils.merge( { plugins: {} }, defaultOptions.get(), config, cliArgs );
 };
 
 function verifyCustomConfigPath( configPath ) {
@@ -211,207 +152,4 @@ function fileExistsSync( path ) {
 	} catch( e ) {
 		return false;
 	}
-}
-
-/**
- * Handle configuration properties which are transformed into non trivial
- * data types
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
- */
-function handleMagicProperties( config, argv ) {
-	var _config = utils.merge( {
-		plugins: {}
-	}, config );
-
-	handleUUIDProperty( _config );
-	handleLogLevel( _config );
-	handlePlugins( _config, argv );
-
-	handleAuthStrategy( _config );
-	handlePermissionStrategy( _config );
-
-	return _config;
-}
-
-/**
- * Transform the UUID string config to a UUID in the config object.
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
- */
-function handleUUIDProperty( config ) {
-	if ( config.serverName === 'UUID' ) {
-		config.serverName = utils.getUid();
-	}
-}
-
-/**
- * Transform log level string (enum) to its internal value
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
- */
-function handleLogLevel( config ) {
-	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
-		config.logLevel = C.LOG_LEVEL[ config.logLevel ];
-	}
-}
-
-/**
- * If libPrefix is not set the filePath will be returned
- * Default lookup is the node_modules directory in the CWD.
- *
- * @param {String} filePath
- *
- * @private
- * @returns {String} file path with the libPrefix set in cliOptions
- */
-function considerLibPrefix( filePath, argv ) {
-	var libDir = argv.l || argv.libPrefix || commandLineArguments.l || commandLineArguments.libPrefix;
-
-	if ( libDir ) {
-		return handleRelativeAndAbsolutePath( filePath, libDir );
-	}
-	else {
-		return filePath;
-	}
-}
-
-/**
- * If a prefix is not set the filePath will be returned
- *
- * Otherwise it will either replace return a new path prepended with the prefix.
- * If the prefix is not an absolute path it will also prepend the CWD.
- *
- * @param {String} filePath
- * @param {String} prefix
- *
- * @private
- * @returns {String} file path with the prefix
- */
-function handleRelativeAndAbsolutePath( filePath, prefix ) {
-	if ( path.parse( prefix ).root !== '' ) {
-		return path.join( prefix, filePath );
-	} else {
-		return path.join( process.cwd(), prefix, filePath );
-	}
-}
-
-/**
- * Handle the plugins property in the config object
- * for logger and the connectors.
- * Modifies the config object and load the logger and connectors
- * and passing options for the connectors
- * Plugins can be passed either as a `path` property  - a relative to the
- * working directory, or the npm module name - or as a `name` property with
- * a naming convetion: `{message: {name: 'redis'}}` will be resolved to the
- * npm module `deepstream.io-msg-direct`
- * cliOptions can modify the lookup path for the plugins via libPrefix property
- *
- * @todo  refactor
- *
- * @param {Object} config deepstream configuration object
- * @param {Object} argv CLI arguments from the CLI interface
- *
- * @private
- * @returns {void}
- */
-function handlePlugins( config, argv ) {
-	if ( config.plugins == null ) {
-		return;
-	}
-	// nexe needs global.require for "dynamic" modules
-	// but browserify and proxyquire can't handle global.require
-	var req = global && global.require ? global.require : require;
-	var connectors = [
-		'messageConnector',
-		'cache',
-		'storage'
-	];
-	var plugins = {
-		logger: config.plugins.logger,
-		messageConnector: config.plugins.message,
-		cache: config.plugins.cache,
-		storage: config.plugins.storage
-	};
-	var requirePath;
-	for ( let key in plugins ) {
-		var plugin = plugins[key];
-		if ( plugin != null ) {
-			var fn = null;
-			if ( plugin.path != null ) {
-				if ( plugin.path[ 0 ] !== '.' ) {
-					requirePath = plugin.path;
-				} else {
-					requirePath = considerLibPrefix( plugin.path, argv );
-				}
-				fn = require( requirePath );
-			} else if ( plugin.name != null ) {
-				var connectorKey = key;
-				if ( connectors.indexOf( connectorKey ) !== -1 ) {
-					if ( connectorKey === 'messageConnector' ) {
-						connectorKey = 'msg';
-					}
-					requirePath = 'deepstream.io-' + connectorKey + '-' + plugin.name;
-					requirePath = considerLibPrefix( requirePath, argv );
-					fn = req( requirePath );
-				}
-			}
-			if ( key === 'logger' ) {
-				config[key] = fn;
-			} else {
-				config[key] = new fn( plugin.options );
-			}
-		}
-	}
-}
-
-/**
- * Instantiates the authenticationhandler registered for
- * config.auth.type
- *
- * @param   {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
- */
-function handleAuthStrategy( config ) {
-	if( !config.auth ) {
-		throw new Error( 'No authentication type specified' );
-	}
-
-	if( !authStrategies[ config.auth.type ] ) {
-		throw new Error( 'Unknown authentication type ' + config.auth.type );
-	}
-
-	config.authenticationHandler = new (authStrategies[ config.auth.type ])( config.auth.options );
-}
-
-/**
- * Instantiates the permissionhandler registered for
- * config.auth.type
- *
- * @param   {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
- */
-function handlePermissionStrategy( config ) {
-	if( !config.permission) {
-		throw new Error( 'No permission type specified' );
-	}
-
-	if( config.permission.type !== 'config' ) {
-		throw new Error( 'Unknown permission type ' + config.permission.type ); // TODO other permission types?
-	}
-
-	config.permissionHandler = new ConfigPermissionHandler( config.permission.options );
 }

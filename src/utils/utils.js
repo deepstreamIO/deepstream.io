@@ -1,5 +1,5 @@
 'use strict';
-
+const path = require( 'path' );
 const url = require( 'url' );
 const OBJECT = 'object';
 
@@ -172,3 +172,23 @@ exports.merge = function() {
 
 	return result;
 };
+
+/**
+ * If a prefix is not set the filePath will be returned
+ *
+ * Otherwise it will either replace return a new path prepended with the prefix.
+ * If the prefix is not an absolute path it will also prepend the CWD.
+ *
+ * @param {String} filePath
+ * @param {String} prefix
+ *
+ * @private
+ * @returns {String} file path with the prefix
+ */
+exports.normalisePath = function( filePath, prefix ) {
+	if ( path.parse( prefix ).root !== '' ) {
+		return path.join( prefix, filePath );
+	} else {
+		return path.join( process.cwd(), prefix, filePath );
+	}
+}
