@@ -291,6 +291,7 @@ function handlePlugins( config, cliOptions ) {
 	// but browserify and proxyquire can't handle global.require
 	var req = global && global.require ? global.require : require;
 	var connectors = [
+		'logger',
 		'messageConnector',
 		'cache',
 		'storage'
@@ -324,11 +325,8 @@ function handlePlugins( config, cliOptions ) {
 					fn = req( requirePath );
 				}
 			}
-			if ( key === 'logger' ) {
-				config[key] = fn;
-			} else {
-				config[key] = new fn( plugin.options );
-			}
+			console.log('instantiazing ', plugin.name)
+			config[key] = new fn( plugin.options );
 		}
 	}
 }

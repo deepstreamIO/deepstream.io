@@ -8,6 +8,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	readMessage = require( './utils/read-message' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
+	Logger = require( './default-plugins/logger' ),
 	jsYamlLoader = require( './utils/js-yaml-loader' ),
 	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
@@ -51,7 +52,6 @@ var Deepstream = function( config, cliOptions ) {
 		'messageConnector',
 		'storage',
 		'cache',
-		'logger',
 		'permissionHandler' //TODO: This now requires the permissionHandler to have a ready flag / emit events
 	];
 
@@ -118,6 +118,10 @@ Deepstream.prototype.start = function() {
 	if( this._options.logger.isReady ) {
 		this._options.logger.setLogLevel( this._options.logLevel );
 		this._options.logger._$useColors = this._options.colors;
+	}
+
+	if( !this._options.logger.isReady ) {
+		//TODO: consider to handle this case
 	}
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
@@ -197,7 +201,7 @@ Deepstream.prototype._loadConfig = function( config, cliOptions ) {
 		config = result.config;
 	}
 	this._options = config;
-	this._options.logger = new config.logger();
+	this._options.logger = config.logger;
 };
 
 /**

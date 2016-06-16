@@ -18,25 +18,42 @@ sslKey: null
 sslCert: null
 sslCa: null
 
+# logger:
+#   -
+#     type: custom
+#     path: ./test/test-helper/custom-logger
+  # -
+  #   type: console
+  #   options:
+  #     level: info
+  #     colorize: true
+  # -
+  #   type: file
+  #   level: debug
+  #   options:
+  #     filename: 'logs.json'
+  # -
+  #   type: time
+  #   level: warn
+  #   options:
+  #     filename: time-roated-logfile
+  #     datePattern: .yyyy-MM-dd-HH-mm
+
 # Plugin Configuration
 plugins:
-
-  # logger:
-  #   name: default
-  #
   # message:
-  #   path: redis
+  #   name: redis
   #   options:
   #     host: localhost
   #     port: 5672
   #
   # cache:
-  #   path: memcached
+  #   name: memcached
   #   options:
   #     serverLocation: 'localhost:11211'
   #
   # storage:
-  #   path: rethink
+  #   name: rethink
   #   options:
   #     host: localhost
   #     port: 28015

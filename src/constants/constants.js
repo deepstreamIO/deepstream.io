@@ -8,7 +8,7 @@ exports.LOG_LEVEL.DEBUG = 0;
 exports.LOG_LEVEL.INFO = 1;
 exports.LOG_LEVEL.WARN = 2;
 exports.LOG_LEVEL.ERROR = 3;
-exports.LOG_LEVEL.OFF = 4;
+exports.LOG_LEVEL.OFF = 100;
 
 exports.EVENT = {};
 exports.EVENT.TRIGGER_EVENT = 'TRIGGER_EVENT';

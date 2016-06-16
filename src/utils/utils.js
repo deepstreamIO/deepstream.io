@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require( 'path' );
 const url = require( 'url' );
 const OBJECT = 'object';
 
@@ -151,7 +152,7 @@ exports.deepCopy = function( obj ) {
 exports.merge = function() {
 	var result = {};
 	var objs = Array.prototype.slice.apply( arguments );
-	var i, key;
+	var i;
 
 	var _merge = ( objA, objB ) => {
 		var key;
@@ -172,3 +173,42 @@ exports.merge = function() {
 
 	return result;
 };
+
+/*
+ * file        || relative (starts with .) | absolute | else (npm module path)
+ * -----------------------------------------------------------------------------
+ * *prefix     || *CWD + prefix + file     | file     | *CWD + prefix + file
+ * *no prefix  ||  CWD + file              | file     | file (resolved by nodes require)
+ *
+ * *CWD = ignore CWD if prefix is absolute
+ */
+exports.lookupRequirePath = function( filePath, prefix ) {
+	if ( path.parse( filePath ).root !== '' ) {
+		// filePath is absolute
+		return filePath;
+	} else if ( filePath[0] !== '.' ) {
+		// filePath is not relative (and not absolute)
+		if ( prefix == null ) {
+			return filePath;
+		} else {
+			return resolvePrefixAndFile( prefix, filePath );
+		}
+	} else {
+		// filePath is relative, starts with .
+		if ( prefix == null ) {
+			return path.join( process.cwd(), filePath );
+		} else {
+			return resolvePrefixAndFile( prefix, filePath );
+		}
+	}
+};
+
+function resolvePrefixAndFile( nonAbsoluteFilePath, prefix ) {
+	if ( path.parse( prefix ).root === '' ) {
+		// prefix is not absolute
+		return path.join( process.cwd(), prefix, nonAbsoluteFilePath );
+	} else {
+		// prefix is absolute
+		return path.join( prefix, nonAbsoluteFilePath );
+	}
+}

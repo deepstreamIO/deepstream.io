@@ -33,6 +33,8 @@
     "minimist": "1.2.0",
     "mkdirp": "^0.5.1",
     "needle": "^1.0.0",
+    "winston": "^2.2.0",
+    "winston-daily-rotate-file": "^1.1.4",
     "xml2js": "latest"
   },
   "devDependencies": {

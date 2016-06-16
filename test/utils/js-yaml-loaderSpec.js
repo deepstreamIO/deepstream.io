@@ -205,10 +205,6 @@ describe( 'load plugins by relative path property', function() {
 		expect( config.messageConnector.options ).toEqual( {foo: 3, bar: 4} );
 	} );
 
-	it( 'load the logger plugin without using new keyword', function() {
-		expect( config.logger( {a: 1, b: 2} ) ).toEqual( {a: 1, b: 2} );
-	} );
-
 } );
 
 describe( 'load plugins by path property (npm module style)', function() {
