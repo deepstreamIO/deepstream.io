@@ -29,6 +29,7 @@ permissionHandler = {
 
 options = {
 	permissionHandler: permissionHandler,
+	authenticationHandler: permissionHandler,
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
 	logInvalidAuthData: true,

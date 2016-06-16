@@ -106,8 +106,7 @@ describe( 'handle server startup without config file', function() {
 			} );
 		} catch ( err ) {
 			var stderr = err.stderr.toString();
-			expect( stderr ).toContain( 'no such file or directory' );
-			expect( stderr ).toContain( 'permissions.json' );
+			expect( stderr ).toContain( 'No config file found' );
 			done();
 		}
 	} );
@@ -118,8 +117,8 @@ describe( 'handle server startup without config file', function() {
 		server.set( 'showLogo', false );
 		server.set( 'logger', logger );
 		server._configFile = null;
-		server.on( 'started', server.stop );
 		server.on( 'stopped', done );
+		server.on( 'started', server.stop );
 		server.start();
 	} );
 } );

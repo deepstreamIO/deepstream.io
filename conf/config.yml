@@ -1,0 +1,88 @@
+# General
+serverName: UUID # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
+colors: true # Use colors when logging. (This looks good in a console, but will leave color markers in logfiles)
+showLogo: true # Show the deepstream logo on startup (highly recommended)
+logLevel: INFO # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
+
+# Connectivity
+webServerEnabled: true # accept incoming HTTP long-polling and websocket connections
+tcpServerEnabled: true # accept incoming TCP connections
+port: 6020 # port for the HTTP/websocket server
+host: 0.0.0.0 # host for the HTTP/websocket server
+tcpPort: 6021 # port for the TCP server
+tcpHost: 0.0.0.0 # host for the TCP server
+urlPath: /engine.io # url path HTTP/WEBSOCKET connections connect to
+# TODO - Change to deepstream to decouple from engine.io usage
+
+# SSL Configuration
+sslKey: null
+sslCert: null
+sslCa: null
+# TODO - Introduce file paths for this
+
+# Plugin Configuration
+plugins:
+
+  # logger:
+  #   name: default
+  #
+  # message:
+  #   path: redis
+  #   options:
+  #     host: localhost
+  #     port: 5672
+  #
+  # cache:
+  #   path: memcached
+  #   options:
+  #     serverLocation: 'localhost:11211'
+  #
+  # storage:
+  #   path: rethink
+  #   options:
+  #     host: localhost
+  #     port: 28015
+
+# Storage options
+storageExclusion: null # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
+
+# Security
+maxAuthAttempts: 3 # invalid login attempts before the connection is cut
+logInvalidAuthData: true # if true, the logs will contain the cleartext username / password of invalid login attempts
+maxMessageSize: 1048576 # maximum allowed size of an individual message in bytes
+
+#Authentication
+auth:
+  type: none
+
+# # reading users and passwords from a file
+#   type: file
+#   options:
+#     path: ./users.json # path to the user file
+#     hash: 'md5' # the name of a HMAC digest algorithm
+#     iterations: 100 # the number of times the algorithm should be applied
+#     keyLength: 32 # the length of the resulting key
+
+# # getting permissions from a http webhook
+#   type: http
+#   options:
+#     endpointUrl: https://someurl.com/validateLogin # a post request will be send to this url on every incoming connection
+#     permittedStatusCodes: [ 200 ] # any of these will be treated as access granted
+#     requestTimeout: 2000 # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+
+# Permissioning
+permission:
+  type: config # Only config or custom permissionHandler at the moment
+  options:
+    path: ./permissions.json # Path to the permissionFile. Can be json, js or yaml
+    maxRuleIterations: 3 # Amount of times nested cross-references will be loaded. Avoids endless loops
+    cacheEvacuationInterval: 60000 # PermissionResults are cached to increase performance. Lower number means more loading
+
+# Timeouts (in milliseconds)
+rpcProviderQueryTimeout: 1000
+rpcProviderCacheTime: 60000
+rpcAckTimeout: 1000
+rpcTimeout: 10000
+cacheRetrievalTimeout: 1000
+storageRetrievalTimeout: 2000
+dependencyInitialisationTimeout: 2000

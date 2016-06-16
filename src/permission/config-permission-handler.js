@@ -26,9 +26,10 @@ var UNDEFINED = 'undefined';
  *
  * @param {Object} options deepstream options
  * @param {[Object]} config  Optional config. If no config is provided, the ConfigPermissionHandler will attempt
- *                           to load it from the path provided in options.permissionConfigPath.
+ *                           to load it from the path provided in options.path.
  */
 var ConfigPermissionHandler = function( options, config ) {
+	this.type = 'valve permissions loaded from ' + options.path;
 	this._ruleCache = new RuleCache( options );
 	this._options = options;
 	this._config = null;
@@ -41,24 +42,6 @@ var ConfigPermissionHandler = function( options, config ) {
 };
 
 utils.inherits( ConfigPermissionHandler, events.EventEmitter );
-
-/**
- * Temporary, will only be here until #146 (https://github.com/deepstreamIO/deepstream.io/issues/146)
- * is resolved
- *
- * @param   {[type]}   connectionData [description]
- * @param   {[type]}   authData       [description]
- * @param   {Function} callback       [description]
- *
- * @returns {Boolean}
- */
-var AuthenticationHandler = require( '../authentication/open-authentication-handler' );
-var authenticationHandler = new AuthenticationHandler();
-/* istanbul ignore next */
-ConfigPermissionHandler.prototype.isValidUser = function( connectionData, authData, callback ) {
-	authenticationHandler.isValidUser( connectionData, authData, callback );
-	//callback( null, authData.username || 'open' );
-};
 
 /**
  * Will be invoked with the initialised recordHandler instance by deepstream.io
@@ -74,7 +57,7 @@ ConfigPermissionHandler.prototype.setRecordHandler = function( recordHandler ) {
 
 /**
  * Will be called by the dependency initialiser once server.start() is called.
- * This gives users a chance to change the permissionConfigPath using server.set()
+ * This gives users a chance to change the path using server.set()
  * first
  *
  * @public
@@ -82,7 +65,7 @@ ConfigPermissionHandler.prototype.setRecordHandler = function( recordHandler ) {
  */
 ConfigPermissionHandler.prototype.init = function() {
 	if( this._config === null ) {
-		this.loadConfig( this._options.permissionConfigPath );
+		this.loadConfig( this._options.path );
 	}
 };
 

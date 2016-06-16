@@ -2,7 +2,7 @@
 var messageParser = require( '../../src/message/message-parser' );
 
 describe( 'message parser processes raw messages correctly', function(){
-	
+
 	var x = String.fromCharCode( 30 ), // ASCII Record Seperator 1E
 		y = String.fromCharCode( 31 ); // ASCII Unit Separator 1F
 
