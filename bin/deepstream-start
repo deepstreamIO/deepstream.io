@@ -6,15 +6,28 @@ const fs = require( 'fs' );
 const os = require( 'os' );
 const path = require( 'path' );
 const child_process = require( 'child_process' );
-const Deepstream = require( '../src/deepstream.io.js' );
+const C = require( '../src/constants/constants.js' );
 const pidHelper = require( './pid-helper' );
 
 var program = require( 'commander' );
 
 program
-	.option( '-c, --config [file]', 'configration file, parent directory will be used as prefix for other config files' )
+	.option( '-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files' )
 	.option( '-l, --libPrefix [directory]', 'path where to lookup for plugins like connectors and logger' )
-	.option( '-d, --detach', 'detach the deepstream server process' );
+	.option( '-d, --detach', 'detach the deepstream server process' )
+
+	.option( '--serverName <name>', 'Each server within a cluster needs a unique name' )
+	.option( '--colors', 'Use colors when logging' )
+	.option( '--showLogo', 'Show the deepstream logo on startup' )
+	.option( '--logLevel <level>', 'Log messages with this level and above', parseLogLevel )
+	.option( '--webServerEnabled [false]', 'Accept/Decline incoming HTTP connections', parseServerEnabled )
+	.option( '--tcpServerEnabled [false]', 'Accept/Decline incoming TCP connections', parseServerEnabled )
+	.option( '--host <host>', 'host for the HTTP/websocket server' )
+	.option( '--port <port>', 'port for the HTTP/websocket server', parsePort )
+	.option( '--tcpHost <host>', 'host for the TCP server' )
+	.option( '--tcpPort <port>', 'tcpHost', parsePort )
+	.option( '--disableAuth', 'Force deepstream to use "none" auth type' )
+	.option( '--disablePermissions', 'Force deepstream to use "none" permissions' )
 
 function detachErrorHandler() {
 	console.error( 'Error during detaching the deepstream process, run without --detach'.red );
@@ -22,7 +35,9 @@ function detachErrorHandler() {
 }
 
 program.parse( process.argv );
+
 process.deepstreamCLI = program;
+const Deepstream = require( '../src/deepstream.io.js' );
 
 if ( program.detach ) {
 	// --detach is not supported for windows
@@ -69,4 +84,50 @@ if ( program.detach ) {
 		removeAllListeners( 'SIGTERM' ).on( 'SIGTERM', pidHelper.exit );
 	pidHelper.save( process.pid );
 
+}
+
+/**
+* Used by commander to parse the log level and and fails if invalid
+* value is passed in
+* @private
+*/
+function parseLogLevel( logLevel ) {
+	if( ! /debug|info|warn|error|off/i.test( logLevel ) ) {
+		console.error( 'Log level must be one of the following (debug|info|warn|error|off)' );
+		process.exit(1);
+	}
+	return logLevel.toUpperCase();
+}
+
+/**
+* Used by commander to parse the portnumber and fails if invalid
+* value is passed in
+* @private
+*/
+function parsePort( port ) {
+	const portNumber = Number( port );
+	if( !portNumber ) {
+		console.error( 'Provided port number must be an integer' );
+		process.exit(1);
+	}
+	return portNumber;
+}
+
+/**
+* Used by commander to parse the disabling/enabling of servers and fails if invalid
+* value is passed in
+* @private
+*/
+function parseServerEnabled( enabled ) {
+	var isEnabled;
+	if( typeof enabled === "undefined" || enabled === 'true' ) {
+		isEnabled = true;
+	}
+	else if( typeof enabled !== "undefined" && enabled === 'false' ) {
+		isEnabled = false;
+	} else {
+		console.error( 'Invalid argument for (webServerEnabled|tcpServerEnabled), please provide true or false' );
+		process.exit( 1 );
+	}
+	return isEnabled;
 }

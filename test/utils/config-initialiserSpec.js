@@ -135,6 +135,20 @@ describe( 'creates the right authentication handler', function(){
 			configInitialiser.initialise( config, {} );
 		}).toThrowError( 'Unknown authentication type bla' );
 	});
+
+	it( 'overrides with type "none" when disableAuth is set', function(){
+		process.deepstreamCLI = { disableAuth: true };
+		var config = defaultConfig.get();
+
+		config.auth = {
+			type: 'http',
+			options: {}
+		};
+
+		configInitialiser.initialise( config, {} );
+		expect( config.authenticationHandler.type ).toBe( 'none' );
+		delete process.deepstreamCLI;
+	});
 });
 
 describe( 'creates the permissionHandler', function(){
@@ -175,5 +189,19 @@ describe( 'creates the permissionHandler', function(){
 		expect(function(){
 			configInitialiser.initialise( config, {} );
 		}).toThrowError( 'No permission type specified' );
+	});
+
+	xit( 'overrides with type "none" when disablePermissions is set', function(){
+		process.deepstreamCLI = { disablePermissions: true };
+		var config = defaultConfig.get();
+
+		config.permission = {
+			type: 'config',
+			options: {}
+		};
+
+		configInitialiser.initialise( config, {} );
+		expect( config.permissionHandler.type ).toBe( 'none' );
+		delete process.deepstreamCLI;
 	});
 });

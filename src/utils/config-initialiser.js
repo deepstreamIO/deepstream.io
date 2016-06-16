@@ -5,12 +5,16 @@ const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const ConfigPermissionHandler = require( '../permission/config-permission-handler' );
 const utils = require( './utils' );
 const path = require( 'path' );
+var commandLineArguments;
 
-var commandLineArguments = process.deepstreamCLI || {};
 var authStrategies = {
 	none: require( '../authentication/open-authentication-handler' ),
 	file: require( '../authentication/file-based-authentication-handler' ),
 	http: require( '../authentication/http-authentication-handler' )
+};
+var permissionStrategies = {
+	config: require( '../permission/config-permission-handler' ),
+	none: require( '../permission/open-permission-handler' )
 };
 
 /**
@@ -22,6 +26,8 @@ var authStrategies = {
  * @returns {Object} configuration
  */
 exports.initialise = function( config, argv ) {
+	commandLineArguments = process.deepstreamCLI || {};
+
 	handleUUIDProperty( config );
 	handleLogLevel( config );
 	handlePlugins( config, argv );
@@ -149,7 +155,12 @@ function handleAuthStrategy( config ) {
 		throw new Error( 'Unknown authentication type ' + config.auth.type );
 	}
 
-	config.authenticationHandler = new (authStrategies[ config.auth.type ])( config.auth.options );
+	if( commandLineArguments.disableAuth ) {
+		config.auth.type = 'none';
+		config.auth.options = {};
+	}
+
+	config.authenticationHandler = new ( authStrategies[ config.auth.type ] )( config.auth.options );
 }
 
 /**
@@ -170,7 +181,12 @@ function handlePermissionStrategy( config ) {
 		throw new Error( 'Unknown permission type ' + config.permission.type ); // TODO other permission types?
 	}
 
-	config.permissionHandler = new ConfigPermissionHandler( config.permission.options );
+	if( commandLineArguments.disablePermissions ) {
+		config.permission.type = 'none';
+		config.permission.options = {};
+	}
+
+	config.permissionHandler = new ( permissionStrategies[ config.permission.type ] )( config.permission.options );
 }
 
 /**

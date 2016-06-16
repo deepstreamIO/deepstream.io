@@ -249,6 +249,29 @@ describe( 'supports environment variable substitution', function() {
 
 } );
 
+describe( 'merges in deepstreamCLI options', function() {
+	var configLoader
+
+	beforeAll( function() {
+		process.deepstreamCLI = {
+			webServerEnabled: false,
+			port: 5555
+		}
+		configLoader = require( '../../src/utils/js-yaml-loader' );
+	});
+
+	afterAll( function() {
+			delete process.env.deepstreamCLI;
+	} );
+
+	it( 'does environment variable substitution for yaml', function() {
+		var config = configLoader.loadConfig().config;
+		expect( config.webServerEnabled ).toBe( false );
+		expect( config.port ).toBe( 5555 );
+	} );
+
+} );
+
 describe( 'load plugins by relative path property', function() {
 	var config;
 	beforeAll( function() {
