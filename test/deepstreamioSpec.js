@@ -107,8 +107,7 @@ describe( 'handle server startup without config file', function() {
 			child_process.execSync( 'node deepstream start', execOptions );
 		} catch ( err ) {
 			var stderr = err.stderr.toString();
-			expect( stderr ).toContain( 'no such file or directory' );
-			expect( stderr ).toContain( 'permissions.json' );
+			expect( stderr ).toContain( 'No config file found' );
 			done();
 		}
 	} );

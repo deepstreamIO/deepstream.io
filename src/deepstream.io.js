@@ -15,7 +15,8 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	C = require( './constants/constants' ),
-	pkg = require( '../package.json' );
+	pkg = require( '../package.json' ),
+	argv = require( 'commander' ).parse( ( process.argv.slice( 2 ) ) || {} );
 
 require( 'colors' );
 
@@ -23,21 +24,17 @@ require( 'colors' );
  * Deepstream is a realtime data server that scales horizontally
  * by running in clusters of interacting nodes
  *
- * @copyright 2015 Hoxton-One Ltd.
- * @author Wolfram Hempel
- * @version <version>
+ * @copyright 2016 deepstreamHub GmbH
+ * @author deepstreamHub GmbH
  *
  * @param {Object} config Configuration object
- * @param {Object} cliOptions which can contain the config file path and the lib prefix path
  *
  * @constructor
  */
-
-
-var Deepstream = function( config, cliOptions ) {
+var Deepstream = function( config ) {
 	this.isRunning = false;
 	this.constants = C;
-	this._options = this._loadConfig( config, cliOptions );
+	this._options = this._loadConfig( config );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -121,6 +118,7 @@ Deepstream.prototype.start = function() {
 	}
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
+
 	if( this._configFile === undefined ) {
 		// API was called with an object in the constructor
 	} else if ( this._configFile === null ) {
@@ -129,7 +127,8 @@ Deepstream.prototype.start = function() {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
 	}
 
-	this._options.permissionHandler = new ConfigPermissionHandler( this._options );
+	var authTypeMsg = 'authentication type ' + ( this._options.authenticationHandler.type || 'custom' );
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, authTypeMsg );
 
 	if( this._options.dataTransforms ) {
 		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );
@@ -187,15 +186,14 @@ Deepstream.prototype.convertTyped = function( value ) {
  * the result
  *
  * @param {Object} config Configuration object
- * @param {Object} cliOptions which can contain the config file path and the lib prefix path
  *
  * @returns {Object} config
  */
-Deepstream.prototype._loadConfig = function( config, cliOptions ) {
+Deepstream.prototype._loadConfig = function( config ) {
 	if ( config != null ) {
 		return config;
 	} else {
-		var result = jsYamlLoader.loadConfig( cliOptions );
+		var result = jsYamlLoader.loadConfig();
 		this._configFile = result.file;
 		return result.config;
 	}

@@ -16,12 +16,15 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 	});
 
 	it( 'creates the authentication handler', function(){
+		var endpointUrl = 'http://localhost:' + port;
+
 		authenticationHandler = new AuthenticationHandler({
-			endpointUrl: 'http://localhost:' + port,
+			endpointUrl: endpointUrl,
 			permittedStatusCodes: [ 200 ],
 			requestTimeout: 60,
 			logger: logger
 		});
+		expect( authenticationHandler.type ).toBe( 'http webhook to ' + endpointUrl );
 	});
 
 	it( 'issues a request when isValidUser is called and receives 200 in return', function( done ){

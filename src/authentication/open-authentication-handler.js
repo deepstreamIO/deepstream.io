@@ -16,6 +16,15 @@ const OPEN = 'open';
  */
 module.exports = class OpenAuthenticationHandler{
 	/**
+	 * @param {String} type exposes the type for logging purposes. This one is called
+	 *                      none to avoid confusion with openAuth
+	 */
+	constructor() {
+		this.type = 'none';
+		this.isReady = true;
+	}
+
+	/**
 	 * Grants access to any user. Registeres them with username or open
 	 *
 	 * @param   {Object}   connectionData

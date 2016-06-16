@@ -2,8 +2,7 @@ branches:
   # whitelist
   only:
     - master
-    - production
-    
+
 platform:
   - x64
 
@@ -21,12 +20,11 @@ test_script:
   # Artifacts are packaged before before_deploy
   - bash scripts\package.sh
   - For /d %%d in ( build\** ) do MOVE %%d %cd%
-  - For %%d in ( build\** ) do MOVE %%d %cd%
 
 artifacts:
   - path: '**\*.zip'
 
-  - path: '*.zip'
+  - path: 'build\*.zip'
     name: 'deepstream.io-release'
 
 deploy:
@@ -47,7 +45,7 @@ deploy:
     auth_token:
       secure: tZHuiZVCwkXRYMihVyoNrmDxAm6xPbXyop7Plg5uUWIIqA1EoUCrTYd/V+0D1I+Y
     draft: true
-    artifact: '*.zip'
+    artifact: 'deepstream.io-release'
     on:
       appveyor_repo_tag: true
 

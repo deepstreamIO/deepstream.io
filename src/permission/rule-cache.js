@@ -8,7 +8,7 @@
 var RuleCache = function( options ) {
 	this._options = options;
 	this._data = {};
-	setInterval( this._purge.bind( this ), options.permissionCacheEvacuationInterval );
+	setInterval( this._purge.bind( this ), options.cacheEvacuationInterval );
 };
 
 /**
@@ -87,7 +87,7 @@ RuleCache.prototype._toKey = function( section, name, type ) {
 
 /**
  * This method is called repeatedly on an interval, defined by
- * permissionCacheEvacuationInterval.
+ * cacheEvacuationInterval.
  *
  * If a rule in the cache has been used in the last interval, it sets its isUsed flag to false.
  * Whenever the rule is used, the isUsed flag will be set to true
