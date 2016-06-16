@@ -15,8 +15,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	C = require( './constants/constants' ),
-	pkg = require( '../package.json' ),
-	argv = require( 'commander' ).parse( ( process.argv.slice( 2 ) ) || {} );
+	pkg = require( '../package.json' );
 
 require( 'colors' );
 

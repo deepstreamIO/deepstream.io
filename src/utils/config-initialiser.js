@@ -6,7 +6,7 @@ const ConfigPermissionHandler = require( '../permission/config-permission-handle
 const utils = require( './utils' );
 const path = require( 'path' );
 
-var commandLineArguments = require( 'commander' ).parse( ( process.argv.slice( 2 ) ) || {} );
+var commandLineArguments = process.deepstreamCLI || {};
 var authStrategies = {
 	none: require( '../authentication/open-authentication-handler' ),
 	file: require( '../authentication/file-based-authentication-handler' ),

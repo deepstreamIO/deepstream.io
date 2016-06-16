@@ -22,6 +22,7 @@ function detachErrorHandler() {
 }
 
 program.parse( process.argv );
+process.deepstreamCLI = program;
 
 if ( program.detach ) {
 	// --detach is not supported for windows

@@ -8,8 +8,7 @@ const utils = require( './utils' );
 const configInitialiser = require( './config-initialiser' );
 
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
-var commandLineArguments = require( 'commander' ).parse( ( process.argv.slice( 2 ) ) );
-
+var commandLineArguments = process.deepstreamCLI || {};
 /**
  * Reads and parse a general configuraiton file content.
  *
