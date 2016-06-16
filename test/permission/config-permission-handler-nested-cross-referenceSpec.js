@@ -11,8 +11,8 @@ var options = {
 	cache: new StorageMock(),
 	storage: new StorageMock(),
 	cacheRetrievalTimeout: 500,
-	maxPermissionRuleIterations: 3,
-	permissionCacheEvacuationInterval: 60000
+	maxRuleIterations: 3,
+	cacheEvacuationInterval: 60000
 };
 
 var testPermission = function( permissions, message, username, userdata, callback ) {

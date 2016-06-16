@@ -6,6 +6,7 @@ describe( 'open authentication handler', function(){
 	it( 'creates the handler', function(){
 		authenticationHandler = new AuthenticationHandler();
 		expect( typeof authenticationHandler.isValidUser ).toBe( 'function' );
+		expect( authenticationHandler.type ).toBe( 'none' );
 	});
 
 	it( 'permissions users without auth data', function(){

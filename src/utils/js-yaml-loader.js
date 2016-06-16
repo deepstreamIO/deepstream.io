@@ -5,11 +5,13 @@ const path = require( 'path' );
 const yaml = require( 'js-yaml' );
 const defaultOptions = require( '../default-options' );
 const utils = require( './utils' );
-const C = require( '../constants/constants' );
-const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
+const configInitialiser = require( './config-initialiser' );
+
+const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
+var commandLineArguments = require( 'minimist' )( process.argv.slice( 2 ) );
 
 /**
- * Reads and parse a general configuration file content.
+ * Reads and parse a general configuraiton file content.
  *
  * @param {String} filePath
  * @param {Function} callback
@@ -17,22 +19,22 @@ const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
  * @public
  * @returns {void}
  */
-module.exports.readAndParseFile = function( filePath, callback ) {
-	try {
+exports.readAndParseFile = function( filePath, callback ) {
+	try{
 		fs.readFile( filePath, 'utf8', function( error, fileContent ) {
 			if ( error ) {
 				return callback ( error );
 			}
-			try {
-				const config = parseFile( filePath, fileContent );
-				return callback( null, config );
 
+			try {
+				var config = parseFile( filePath, fileContent );
+				return callback( null, config );
 			} catch ( error ) {
 				return callback ( error );
 			}
 		} );
-	} catch ( error ) {
-		return callback ( error );
+	} catch( error ) {
+		callback( error );
 	}
 };
 
@@ -50,9 +52,6 @@ module.exports.readAndParseFile = function( filePath, callback ) {
  * @returns {Object} config
  */
 function parseFile( filePath, fileContent ) {
-	if ( fileContent == null ) {
-		fileContent = fs.readFileSync( filePath, {encoding: 'utf8'} );
-	}
 	let config = null;
 	const extension = path.extname( filePath );
 
@@ -76,259 +75,106 @@ function parseFile( filePath, fileContent ) {
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  *
- * @param {Object} argv minimist arguments
+ * @param {Object} args minimist arguments
  *
  * @public
  * @returns {Object} config deepstream configuration object
-
  */
-module.exports.loadConfig = function( argv ) {
-	if ( argv == null ) {
-		argv = {};
-	}
-	var _configFile = argv.c || argv.config;
-	var _libPrefix = argv.l || argv.libPrefix;
+module.exports.loadConfig = function( args ) {
+	var argv = args || commandLineArguments;
+	var customConfigPath = argv.c || argv.config;
+	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
+	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
+	var rawConfig = parseFile( configPath, configString );
+	var config = extendConfig( rawConfig, argv, path.dirname( configPath ) );
 
-	// default values
-	var cliOptions = {
-		configPrefix: path.join( process.cwd(), 'conf' ),
-		// will default to lookup in node_modules for paths starting with a letter
-		libPrefix: null
-	};
-	var customFilePath = undefined;
-	if( _configFile ) {
-		customFilePath = _configFile;
-		cliOptions.configPrefix = path.dirname( _configFile );
-	}
-	if ( _libPrefix ) {
-		cliOptions.libPrefix = _libPrefix;
-	}
-	const filePath = findFilePath( customFilePath );
-	if ( filePath == null ) {
-		return {
-			config: rewritePermissionFilePath( defaultOptions.get(), cliOptions ),
-			file: null
-		};
-	}
-	const config = parseFile( filePath );
-	// CLI arguments
-	var cliArgs = {};
-	for ( let key in defaultOptions.get() ) {
-		cliArgs[key] = argv[key] || undefined;
-	}
-	let result = handleMagicProperties( utils.merge( {}, defaultOptions.get(), config, cliArgs ), cliOptions );
 	return {
-		config: rewritePermissionFilePath( result, cliOptions ),
-		file: filePath
+		config: configInitialiser.initialise( config, argv ),
+		file: configPath
 	};
 };
 
+
 /**
- * Does lookups for the deepstream configuration file.
- * Lookup order: config.json, config.js, config.yml
- * The order will be ignored if customFilePath  will be passed.
+ * Augments the basic configuration with command line parameters
+ * and normalizes paths within it
  *
- * @param {String} customFilePath
+ * @param   {Object} config    configuration
+ * @param   {Object} argv      command line arguments
+ * @param   {String} configDir config directory
+ *
+ * @private
+ * @returns {Object} extended config
+ */
+function extendConfig( config, argv, configDir ) {
+	var cliArgs = {};
+	var key;
+
+	for ( key in defaultOptions.get() ) {
+		cliArgs[key] = argv[key] || undefined;
+	}
+
+	if( config.auth && config.auth.options && config.auth.options.path ) {
+		config.auth.options.path = utils.normalisePath( config.auth.options.path, configDir );
+	}
+
+	if( config.permission && config.permission.options && config.permission.options.path ) {
+		config.permission.options.path = utils.normalisePath( config.permission.options.path, configDir );
+	}
+
+	return utils.merge( { plugins: {} }, defaultOptions.get(), config, cliArgs );
+};
+
+/**
+ * Checks if a config file is present at a given path
+ *
+ * @param   {String} configPath the path to the config file
+ *
+ * @private
+ * @returns {String} verified path
+ */
+function verifyCustomConfigPath( configPath ) {
+	if( fileExistsSync( configPath ) ) {
+		return configPath;
+	} else {
+		throw new Error( 'configuration file not found at: ' + configPath );
+	}
+}
+
+/**
+ * Fallback if no config path is specified. Will attempt to load the file from the default directory
  *
  * @private
  * @returns {String} filePath
  */
-function findFilePath( customFilePath ) {
-	const order = [
-		'conf/config.json',
-		'conf/config.js',
-		'conf/config.yml'
-	];
-	let filePath = null;
+function getDefaultConfigPath() {
+	var defaultConfigBaseName = path.join( 'conf', 'config' );
+	var filePath, i;
 
-	if ( customFilePath != null ) {
-		try {
-			fs.lstatSync( customFilePath );
-			filePath = customFilePath;
-		} catch ( err ) {
-			throw new Error( 'configuration file not found at: ' + customFilePath );
+	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
+		filePath = defaultConfigBaseName + SUPPORTED_EXTENSIONS[ i ];
+		
+		if( fileExistsSync( filePath ) ) {
+			return filePath;
 		}
-	} else {
-		filePath = order.filter( function( filePath ) {
-			try {
-				fs.lstatSync( filePath );
-				return true;
-			} catch ( err ) {}
-		} )[ 0 ];
 	}
-	return filePath;
+
+	throw new Error( 'No config file found' );
 }
 
 /**
- * Handle configuration properties which are transformed into non trivial
- * data types
+ * Returns true if a file exists for a given path
  *
- * @param {Object} config deepstream configuration object
- * @param {Object} cliOptions CLI arguments from the CLI interface
+ * @param   {String} path
  *
  * @private
- * @returns {void}
+ * @returns {Boolean} exists
  */
-function handleMagicProperties( config, cliOptions ) {
-	const _config = utils.merge( {
-		plugins: {}
-	}, config );
-
-	handleUUIDProperty( _config );
-	handleLogLevel( _config );
-	handlePlugins( _config, cliOptions );
-
-	return _config;
-}
-
-/**
- * Transform the UUID string config to a UUID in the config object.
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
- */
-function handleUUIDProperty( config ) {
-	if ( config.serverName === 'UUID' ) {
-		config.serverName = utils.getUid();
-	}
-}
-
-/**
- * Transform log level string (enum) to its internal value
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
- */
-function handleLogLevel( config ) {
-	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
-		config.logLevel = C.LOG_LEVEL[ config.logLevel ];
-	}
-}
-
-/**
- * Handle configPrefix for permission config file.
- * configPrefix needs to be set in the cliOptions.
- *
- *
- * @param {Object} config deepstream configuration object
- * @param {Object} cliOptions CLI arguments from the CLI interface
- *
- * @private
- * @returns {vpod}
- */
-function rewritePermissionFilePath( config, cliOptions ) {
-	var prefix = cliOptions.configPrefix;
-	if ( prefix == null ) {
-		return config;
-	}
-	config.permissionConfigPath =  handleRelativeAndAbsolutePath( config.permissionConfigPath, prefix );
-	return config;
-}
-
-/**
- * If libPrefix is not set the filePath will be returned
- * Default lookup is the node_modules directory in the CWD.
- *
- * @param {String} filePath
- * @param {Object} cliOptions CLI arguments from the CLI interface
- *
- * @private
- * @returns {String} file path with the libPrefix set in cliOptions
- */
-function considerLibPrefix( filePath, cliOptions ) {
-	if ( cliOptions.libPrefix == null ) {
-		return filePath;
-	}
-	return handleRelativeAndAbsolutePath( filePath, cliOptions.libPrefix );
-}
-
-/**
- * If a prefix is not set the filePath will be returned
- *
- * Otherwise it will either replace return a new path prepended with the prefix.
- * If the prefix is not an absolute path it will also prepend the CWD.
- *
- * @param {String} filePath
- * @param {String} prefix
- *
- * @private
- * @returns {String} file path with the prefix
- */
-function handleRelativeAndAbsolutePath( filePath, prefix ) {
-	if ( path.parse( prefix ).root !== '' ) {
-		return path.join( prefix, filePath );
-	} else {
-		return path.join( process.cwd(), prefix, filePath );
-	}
-}
-
-/**
- * Handle the plugins property in the config object
- * for logger and the connectors.
- * Modifies the config object and load the logger and connectors
- * and passing options for the connectors
- * Plugins can be passed either as a `path` property  - a relative to the
- * working directory, or the npm module name - or as a `name` property with
- * a naming convetion: `{message: {name: 'redis'}}` will be resolved to the
- * npm module `deepstream.io-msg-direct`
- * cliOptions can modify the lookup path for the plugins via libPrefix property
- *
- * @param {Object} config deepstream configuration object
- * @param {Object} cliOptions CLI arguments from the CLI interface
- *
- * @private
- * @returns {void}
- */
-function handlePlugins( config, cliOptions ) {
-	if ( config.plugins == null ) {
-		return;
-	}
-	// nexe needs global.require for "dynamic" modules
-	// but browserify and proxyquire can't handle global.require
-	var req = global && global.require ? global.require : require;
-	var connectors = [
-		'messageConnector',
-		'cache',
-		'storage'
-	];
-	var plugins = {
-		logger: config.plugins.logger,
-		messageConnector: config.plugins.message,
-		cache: config.plugins.cache,
-		storage: config.plugins.storage
-	};
-	var requirePath;
-	for ( let key in plugins ) {
-		var plugin = plugins[key];
-		if ( plugin != null ) {
-			var fn = null;
-			if ( plugin.path != null ) {
-				if ( plugin.path[ 0 ] !== '.' ) {
-					requirePath = plugin.path;
-				} else {
-					requirePath = considerLibPrefix( plugin.path, cliOptions );
-				}
-				fn = require( requirePath );
-			} else if ( plugin.name != null ) {
-				var connectorKey = key;
-				if ( connectors.indexOf( connectorKey ) !== -1 ) {
-					if ( connectorKey === 'messageConnector' ) {
-						connectorKey = 'msg';
-					}
-					requirePath = 'deepstream.io-' + connectorKey + '-' + plugin.name;
-					requirePath = considerLibPrefix( requirePath, cliOptions );
-					fn = req( requirePath );
-				}
-			}
-			if ( key === 'logger' ) {
-				config[key] = fn;
-			} else {
-				config[key] = new fn( plugin.options );
-			}
-		}
+function fileExistsSync( path ) {
+	try{
+		fs.lstatSync( path );
+		return true;
+	} catch( e ) {
+		return false;
 	}
 }

@@ -26,6 +26,7 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter{
 	constructor( settings ) {
 		super();
 		this.isReady = true;
+		this.type = 'http webhook to ' + settings.endpointUrl;
 		this._settings = settings;
 		this._validateSettings();
 		this._params = this._createUrlParams();
