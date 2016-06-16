@@ -40,7 +40,19 @@ exports.get = function() {
 		 * Authentication
 		 */
 		auth: {
-			type: 'open'
+			type: 'none'
+		},
+
+		/*
+		 * Permissioning
+		 */
+		permission: {
+			type: 'config',
+			options: {
+				path: './permissions.json',
+				maxRuleIterations: 3,
+				cacheEvacuationInterval: 60000
+			}
 		},
 
 		/*
@@ -62,14 +74,6 @@ exports.get = function() {
 		maxAuthAttempts: 3,
 		logInvalidAuthData: true,
 		maxMessageSize: 1048576,
-
-		/*
-		 * Permissioning
-		 */
-		permissionType: 'config',
-		permissionConfigPath: './permissions.json',
-		maxPermissionRuleIterations: 3,
-		permissionCacheEvacuationInterval: 60000,
 
 		/*
 		 * Timeouts

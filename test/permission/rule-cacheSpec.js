@@ -4,7 +4,7 @@ describe( 'loads and retrieves values from the rule cache', function(){
 	var ruleCache;
 
 	it( 'creates the rule cache', function(){
-		ruleCache = new RuleCache({ permissionCacheEvacuationInterval: 10 });
+		ruleCache = new RuleCache({ cacheEvacuationInterval: 10 });
 		expect( ruleCache.has( 'record', '*', 'write' ) ).toBe( false );
 	});
 
