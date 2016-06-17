@@ -6,9 +6,8 @@ const yaml = require( 'js-yaml' );
 const defaultOptions = require( '../default-options' );
 const utils = require( './utils' );
 const configInitialiser = require( './config-initialiser' );
-
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
-var commandLineArguments = process.deepstreamCLI || {};
+
 /**
  * Reads and parse a general configuraiton file content.
  *
@@ -80,7 +79,7 @@ function parseFile( filePath, fileContent ) {
  * @returns {Object} config deepstream configuration object
  */
 module.exports.loadConfig = function( args ) {
-	var argv = args || commandLineArguments;
+	var argv = args || process.deepstreamCLI || {};
 	var customConfigPath = argv.c || argv.config;
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
 	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
@@ -110,7 +109,7 @@ function extendConfig( config, argv, configDir ) {
 	var key;
 
 	for ( key in defaultOptions.get() ) {
-		cliArgs[key] = argv[key] || undefined;
+		cliArgs[key] = typeof argv[key] === 'undefined' ? undefined : argv[key];
 	}
 
 	if( config.auth && config.auth.options && config.auth.options.path ) {
