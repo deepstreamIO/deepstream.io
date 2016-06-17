@@ -191,7 +191,7 @@ describe( 'creates the permissionHandler', function(){
 		}).toThrowError( 'No permission type specified' );
 	});
 
-	xit( 'overrides with type "none" when disablePermissions is set', function(){
+	it( 'overrides with type "none" when disablePermissions is set', function(){
 		process.deepstreamCLI = { disablePermissions: true };
 		var config = defaultConfig.get();
 
