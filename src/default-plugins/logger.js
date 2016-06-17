@@ -43,7 +43,6 @@ const LEVELS_AND_COLORS = {
 class Logger {
 	constructor( loggerConfig ) {
 		this.isReady = false;
-		this._currentLogLevel = 3;
 
 		this._loggerConfig = loggerConfig;
 		this._transports = [];
@@ -54,11 +53,11 @@ class Logger {
 			levels: LEVELS_AND_COLORS.levels
 		} );
 		winston.addColors( LEVELS_AND_COLORS.colors );
+		this.isReady = true;
 	}
 
 	_initializeTransports() {
 		if ( this._loggerConfig ) {
-			console.log('WTF')
 			const loggers = this._loggerConfig;
 			for ( let i = 0; i < loggers.length; i++ ) {
 				const logger = this._loggerConfig[i];
@@ -89,7 +88,6 @@ class Logger {
 			}
 		} else {
 			// default logger (behaviour like the std-out-logger)
-			console.log('DEFAULT')
 			this._transports.push( new ( winston.transports.Console )( {
 				level: 'info',
 				stderrLevels: ['error', 'warn'],
@@ -101,7 +99,6 @@ class Logger {
 				}
 			} ) );
 		}
-		this.isReady = true;
 	}
 
 	/**
@@ -127,7 +124,6 @@ class Logger {
 	* @returns {void}
 	*/
 	setLogLevel( logLevel ) {
-		this._initializeTransports();
 		this._logger.configure( {
 			level: logLevel,
 			transports: this._transports

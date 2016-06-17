@@ -21,6 +21,21 @@ sslCa: null
 # TODO - Introduce file paths for this
 
 # logger:
+#   type: custom
+#   path: ./src/default-plugins/std-out-logger
+
+  # type: default
+  # options:
+  #   -
+  #     type: console
+  #     options:
+  #       level: info
+  #       colorize: true
+#
+# logger:
+#   path: ../../src/default-plugins/std-out-logger
+
+# logger:
 #   -
 #     type: custom
 #     path: ./test/test-helper/custom-logger

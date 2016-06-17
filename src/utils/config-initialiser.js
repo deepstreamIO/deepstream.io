@@ -4,7 +4,6 @@ const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const ConfigPermissionHandler = require( '../permission/config-permission-handler' );
 const utils = require( './utils' );
-const path = require( 'path' );
 
 var commandLineArguments = require( 'minimist' )( process.argv.slice( 2 ) );
 var authStrategies = {
@@ -91,7 +90,6 @@ function handlePlugins( config, argv ) {
 		'storage'
 	];
 	var plugins = {
-		logger: config.plugins.logger,
 		messageConnector: config.plugins.message,
 		cache: config.plugins.cache,
 		storage: config.plugins.storage
@@ -120,13 +118,7 @@ function handlePlugins( config, argv ) {
 					fn = req( requirePath );
 				}
 			}
-			if ( key === 'logger' ) {
-				//TODO No downside in making the logger a class too
-				/* istanbul ignore next */
-				config[key] = fn;
-			} else {
-				config[key] = new fn( plugin.options );
-			}
+			config[key] = new fn( plugin.options );
 		}
 	}
 }

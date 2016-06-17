@@ -7,17 +7,15 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	messageParser = require( './message/message-parser' ),
 	readMessage = require( './utils/read-message' ),
 	util = require( 'util' ),
-	utils = require( './utils/utils' ),
 	Logger = require( './default-plugins/logger' ),
+	utils = require( './utils/utils' ),
 	jsYamlLoader = require( './utils/js-yaml-loader' ),
-	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	C = require( './constants/constants' ),
-	pkg = require( '../package.json' ),
-	argv = require( 'minimist' )( process.argv.slice( 2 ) ) || {};
+	pkg = require( '../package.json' );
 
 require( 'colors' );
 
@@ -143,7 +141,7 @@ Deepstream.prototype.start = function() {
 
 	for( i = 0; i < this._plugins.length; i++ ) {
 		initialiser = new DependencyInitialiser( this._options, this._plugins[ i ] );
-		initialiser.once( 'ready', this._checkReady.bind( this, this._plugins[ i ], initialiser.getDependency() ));
+		initialiser.once( 'ready', this._checkReady.bind( this, this._plugins[ i ], initialiser.getDependency() ) );
 	}
 };
 
@@ -199,7 +197,13 @@ Deepstream.prototype._loadConfig = function( config ) {
 		config = result.config;
 	}
 	this._options = config;
-	this._options.logger = config.logger;
+	if ( config.logger == null || config.logger.type === 'default' ) {
+		this._options.logger = new Logger( ( config.logger || {} ).options );
+	} else {
+		var requirePath = utils.lookupRequirePath( config.logger.path );
+		var fn = require( requirePath );
+		this._options.logger = new fn( config.logger.options );
+	}
 };
 
 /**
