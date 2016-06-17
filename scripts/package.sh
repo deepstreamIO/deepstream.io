@@ -9,6 +9,7 @@ PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
 DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
+GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 
 EXTENSION=""
 if [ $OS = "win32" ]; then
@@ -21,6 +22,18 @@ mkdir -p build
 if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
 	echo "Packaging only done on $PACKAGED_NODE_VERSION"
 	exit
+fi
+
+if ! [ ${GIT_BRANCH} = 'master' ]; then
+	if [[ -z ${TRAVIS_TAG} ]] && [[ -z ${APPVEYOR_REPO_TAG} ]]; then
+		echo "Only runs on tags or master"
+		exit
+	elif [[ ${APPVEYOR_REPO_TAG} = false ]]; then
+		echo "On appveyor, not a tag or master"
+		exit
+	else
+		echo "Running on tag ${TRAVIS_TAG} ${APPVEYOR_REPO_TAG}"
+	fi
 fi
 
 if [ $OS = "win32" ]; then
