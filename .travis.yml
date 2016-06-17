@@ -4,21 +4,22 @@ sudo: required
 services:
   - docker
 
-matrix:
-  - DISTRO=centos
-    VERSION=7
+env:
+  matrix:
+    - DISTRO=centos
+      VERSION=7
 
-  - DISTRO=ubuntu
-    VERSION=trusty
+    - DISTRO=ubuntu
+      VERSION=trusty
 
-  - DISTRO=ubuntu
-    VERSION=wily
+    - DISTRO=ubuntu
+      VERSION=wily
 
-  - DISTRO=ubuntu
-    VERSION=xenial
+    - DISTRO=ubuntu
+      VERSION=xenial
 
-  - DISTRO=debian
-    VERSION=jessie
+    - DISTRO=debian
+      VERSION=jessie
 
 script:
   - chmod +x linux.sh
