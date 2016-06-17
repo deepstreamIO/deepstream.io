@@ -64,14 +64,16 @@ describe( 'js-yaml-loader', function() {
 			permissionHandler: null,
 			authenticationHandler: null,
 			plugins: null,
-			serverName: null
+			serverName: null,
+			logger: null
 		} );
 		var defaultConfig = utils.merge( defaultOptions.get(), {
 			permission: { type: 'config', options: { path: null } },
 			permissionHandler: null,
 			authenticationHandler: null,
 			plugins: null,
-			serverName: null
+			serverName: null,
+			logger: null
 		} );
 		expect( defaultYamlConfig ).toEqual( defaultConfig );
 	} );

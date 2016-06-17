@@ -1,7 +1,9 @@
-var Logger = require( '../../src/default-plugins/std-out-logger' );
+/* globals jasmine, expect, beforeAll, afterAll, it */
+
+var Logger = require( '../../src/default-plugins/logger' );
 var C = require( '../../src/constants/constants' );
 
-describe( 'logs to stdout and stderr', function(){
+describe( 'logs to stdout and stderr', function() {
 	var originalStdOut = process.stdout;
 	var originalStdErr = process.stderr;
 	var stdout = jasmine.createSpy( 'stdout' );
@@ -10,41 +12,41 @@ describe( 'logs to stdout and stderr', function(){
 		return std.calls.mostRecent().args[ 0 ].indexOf( exp ) !== -1;
 	};
 
-	var logger = new Logger();
+	var logger = new Logger( {colorize: false} );
 
-	beforeAll(function(){
-		Object.defineProperty(process, 'stdout', {
+	beforeAll( function() {
+		Object.defineProperty( process, 'stdout', {
 			value: { write: stdout }
-		});
-		Object.defineProperty(process, 'stderr', {
+		} );
+		Object.defineProperty( process, 'stderr', {
 			value: { write: stderr }
-		});
-	});
+		} );
+	} );
 
-	afterAll(function(){
-		Object.defineProperty(process, 'stdout', {
+	afterAll( function() {
+		Object.defineProperty( process, 'stdout', {
 			value: originalStdOut
-		});
-		Object.defineProperty(process, 'stderr', {
+		} );
+		Object.defineProperty( process, 'stderr', {
 			value: originalStdErr
-		});
-	});
+		} );
+	} );
 
-	it( 'creates the logger', function(){
+	it( 'creates the logger', function() {
 		expect( logger.isReady ).toBe( true );
 		logger.log( C.LOG_LEVEL.INFO, 'a', 'b' );
 		expect( comp( stdout, 'a | b' ) ).toBe( true );
-	});
+	} );
 
-	it( 'logs to stderr', function(){
+	it( 'logs to stderr', function() {
 		stdout.calls.reset();
 		stderr.calls.reset();
 		logger.log( C.LOG_LEVEL.ERROR, 'd', 'e' );
 		expect( stdout.calls.count() ).toBe( 0 );
 		expect( stderr.calls.count() ).toBe( 1 );
-	});
+	} );
 
-	it( 'logs above log level', function(){
+	it( 'logs above log level', function() {
 		logger.setLogLevel( C.LOG_LEVEL.DEBUG );
 		logger._$useColors = false;
 		stdout.calls.reset();
@@ -54,5 +56,5 @@ describe( 'logs to stdout and stderr', function(){
 		stdout.calls.reset();
 		logger.log( C.LOG_LEVEL.INFO, 'd', 'e' );
 		expect( stdout.calls.count() ).toBe( 0 );
-	});
-});
+	} );
+} );

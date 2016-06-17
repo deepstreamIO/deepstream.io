@@ -1,6 +1,7 @@
 'use strict';
 
 const C = require( '../constants/constants' );
+const Logger = require( '../default-plugins/logger' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const ConfigPermissionHandler = require( '../permission/config-permission-handler' );
 const utils = require( './utils' );
@@ -22,7 +23,7 @@ var authStrategies = {
  */
 exports.initialise = function( config, argv ) {
 	handleUUIDProperty( config );
-	handleLogLevel( config );
+	handleLogger( config );
 	handlePlugins( config, argv );
 	handleAuthStrategy( config );
 	handlePermissionStrategy( config );
@@ -52,10 +53,24 @@ function handleUUIDProperty( config ) {
  * @private
  * @returns {void}
  */
-function handleLogLevel( config ) {
+function handleLogger( config ) {
+	if ( config.logger == null || config.logger.type === 'default' ) {
+		config.logger = {
+			fn: Logger,
+			option: ( config.logger || {} ).options
+		};
+	}
+
+	if ( config.logger.fn == null ) {
+		const requirePath = utils.lookupRequirePath( config.logger.path );
+		config.logger.fn = require( requirePath );
+	}
+
 	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
 		config.logLevel = C.LOG_LEVEL[ config.logLevel ];
 	}
+
+	config.logger = new config.logger.fn( config.logger.options );
 }
 
 /**

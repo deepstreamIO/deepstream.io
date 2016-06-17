@@ -1,9 +1,32 @@
-/* global expect, describe, it */
+/* global jasmine, beforeAll, afterAll, expect, describe, it */
 var child_process = require( 'child_process' );
 var path = require( 'path' );
 var Deepstream = require( '../src/deepstream.io' );
 var ClosableLogger = require( './mocks/closable-logger' );
 var LoggerMock = require( './mocks/logger-mock' );
+
+var originalStdOut = process.stdout;
+var originalStdErr = process.stderr;
+var stdout = jasmine.createSpy( 'stdout' );
+var stderr = jasmine.createSpy( 'stderr' );
+
+beforeAll( function() {
+	Object.defineProperty( process, 'stdout', {
+		value: { write: stdout }
+	} );
+	Object.defineProperty( process, 'stderr', {
+		value: { write: stderr }
+	} );
+} );
+
+afterAll( function() {
+	Object.defineProperty( process, 'stdout', {
+		value: originalStdOut
+	} );
+	Object.defineProperty( process, 'stderr', {
+		value: originalStdErr
+	} );
+} );
 
 describe( 'the main server class', function() {
 	it( 'exposes the message parser\'s convertTyped method', function() {
@@ -57,7 +80,7 @@ describe( 'it starts and stops a configured server', function() {
 	var server;
 	var logger;
 
-	it( 'configures the server', function() {
+	beforeEach( function() {
 		server = new Deepstream();
 		logger = new ClosableLogger();
 		server.set( 'dataTransforms', [] );
@@ -65,34 +88,45 @@ describe( 'it starts and stops a configured server', function() {
 		server.set( 'logger', logger );
 	} );
 
-	it( 'starts the server', function( next ) {
-		server.on( 'started', next );
+	afterEach( function( next ) {
+		if ( server.isRunning ) {
+			server.on( 'stopped', next );
+			server.stop();
+		} else {
+			next();
+		}
+	} );
+
+	it( 'starts and stops the server', function( next ) {
 		expect( server.isRunning ).toBe( false );
+		server.on( 'started', function() {
+			expect( server.isRunning ).toBe( true );
+			server.on( 'stopped', function() {
+				expect( server.isRunning ).toBe( false );
+				next();
+			} );
+			server.stop();
+		} );
 		server.start();
 	} );
 
-	xit( 'encounters a plugin error', function() {
-		expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Deepstream started' );
-		logger.emit( 'error', 'test error' );
-		expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from logger plugin: test error' );
+	it( 'encounters a plugin error', function( next ) {
+		server.on( 'started', function() {
+			server._options.logger.emit( 'error', 'test error' );
+			expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from logger plugin: test error' );
+			next();
+		} );
+		server.start();
 	} );
 
-	it( 'stops the server', function( next ) {
-		expect( server.isRunning ).toBe( true );
-		server.on( 'stopped', next );
-		server.stop();
-	} );
-
-	it( 'has stopped the server', function() {
-		expect( server.isRunning ).toBe( false );
-	} );
-
-	xit( 'should merge the options with default values', function( done ) {
+	fit( 'should merge the options with default values', function( next ) {
 		// even if the options is an empty object
-		server = new Deepstream( {} );
+		server = new Deepstream( {permission: {type: 'none'}} );
 		server.set( 'logger', logger );
-		server.on( 'started', stop );
-		server.on( 'stopped', next );
+		server.on( 'started', function() {
+			expect( server.isRunning ).toBe( true );
+			next();
+		} );
 		server.start();
 	} );
 

@@ -40,10 +40,8 @@ const LEVELS_AND_COLORS = {
 * consume messages from these streams
 *
 */
-class Logger {
+class Logger  {
 	constructor( loggerConfig ) {
-		this.isReady = false;
-
 		this._loggerConfig = loggerConfig;
 		this._transports = [];
 		this._initializeTransports();
@@ -56,15 +54,18 @@ class Logger {
 		this.isReady = true;
 	}
 
+	// this logger is sync, no need to implement event handler
+	// on() {}
+	// once() {}
+	// off() {}
+
 	_initializeTransports() {
-		if ( this._loggerConfig ) {
-			const loggers = this._loggerConfig;
+		if ( this._loggerConfig && this._loggerConfig.type === 'default' ) {
+			const loggers = this._loggerConfig.options;
 			for ( let i = 0; i < loggers.length; i++ ) {
-				const logger = this._loggerConfig[i];
+				const logger = this._loggerConfig.options[i];
 				if ( logger.type === 'console' ) {
-					this._transports.push(
-						new ( winston.transports.Console )( utils.merge( {colorize: true}, logger.options ) )
-					);
+					this._transports.push( createConsoleTransport( logger.options ) );
 				} else if ( logger.type === 'file' ) {
 					if ( !logger.options && !logger.options.filename ) {
 						throw new Error( 'file logger needs a filename, but found: ' + logger.options );
@@ -88,16 +89,7 @@ class Logger {
 			}
 		} else {
 			// default logger (behaviour like the std-out-logger)
-			this._transports.push( new ( winston.transports.Console )( {
-				level: 'info',
-				stderrLevels: ['error', 'warn'],
-				formatter: function( options ) {
-					const message = ( options.meta && options.meta.event ? options.meta.event : '' ) +
-						' | ' +
-						( options.message ? options.message : '' );
-					return colors.colorize( options.level, message );
-				}
-			} ) );
+			this._transports.push( createConsoleTransport( this._loggerConfig ) );
 		}
 	}
 
@@ -124,11 +116,31 @@ class Logger {
 	* @returns {void}
 	*/
 	setLogLevel( logLevel ) {
-		this._logger.configure( {
-			level: logLevel,
-			transports: this._transports
-		} );
+		const transportNames = Object.keys( this._logger.transports );
+		for ( let i = 0; i < transportNames.length; i++ ) {
+			const name = transportNames[i];
+			const transport = this._logger.transports[name];
+			transport.level = LEVELS_AND_COLORS.lookup[logLevel];
+		}
 	}
+}
+
+function createConsoleTransport( loggerConfig ) {
+	const defaults = {
+		level: 'info',
+		colorize: true,
+		stderrLevels: ['error', 'warn'],
+		formatter: ( options ) => {
+			const message = ( options.meta && options.meta.event ? options.meta.event : '' ) +
+			' | ' +
+			( options.message ? options.message : '' );
+			if ( options.colorize ) {
+				return colors.colorize( options.level, message );
+			}
+			return message;
+		}
+	};
+	return new ( winston.transports.Console )( utils.merge( defaults, loggerConfig ) );
 }
 
 module.exports = Logger;

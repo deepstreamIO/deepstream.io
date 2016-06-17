@@ -7,8 +7,9 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	messageParser = require( './message/message-parser' ),
 	readMessage = require( './utils/read-message' ),
 	util = require( 'util' ),
-	Logger = require( './default-plugins/logger' ),
+	configInitialiser = require( './utils/config-initialiser' ),
 	utils = require( './utils/utils' ),
+	defaultOptions = require( './default-options' ),
 	jsYamlLoader = require( './utils/js-yaml-loader' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
@@ -108,16 +109,20 @@ Deepstream.prototype.set = function( key, value ) {
  * @returns {void}
  */
 Deepstream.prototype.start = function() {
+	if( !this.loggerInitializer ) {
+		this.loggerInitializer = new DependencyInitialiser( this._options, 'logger' );
+		this.loggerInitializer.once( 'ready',
+			this._checkReady.bind( this, 'logger', this.loggerInitializer.getDependency() )
+		);
+		this.loggerInitializer.once( 'ready', this._start.bind( this ) );
+	}
+};
+
+Deepstream.prototype._start = function() {
+	this._options.logger.setLogLevel( this._options.logLevel );
+	// this._options.logger._setColors( this._options.colors );
+
 	this._showStartLogo();
-
-	if( this._options.logger.isReady ) {
-		this._options.logger.setLogLevel( this._options.logLevel );
-		this._options.logger._$useColors = this._options.colors;
-	}
-
-	if( !this._options.logger.isReady ) {
-		//TODO: consider to handle this case
-	}
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
 
@@ -157,6 +162,11 @@ Deepstream.prototype.stop = function() {
 		plugin,
 		closables = [ this._connectionEndpoint ];
 
+	if( typeof this._options.logger.close === 'function' ) {
+		closables.push( this._options.logger );
+		setTimeout( this._options.logger.close.bind( this._options.logger ) );
+	}
+
 	for( i = 0; i < this._plugins.length; i++ ) {
 		plugin = this._options[ this._plugins[ i ] ];
 		if( typeof plugin.close === 'function' ) {
@@ -184,7 +194,7 @@ Deepstream.prototype.convertTyped = function( value ) {
 };
 
 /**
- * Synchronously loads a configuration file and instantiate the logger
+ * Synchronously loads a configuration file
  *
  * @param {Object} config Configuration object
  *
@@ -195,15 +205,11 @@ Deepstream.prototype._loadConfig = function( config ) {
 		var result = jsYamlLoader.loadConfig();
 		this._configFile = result.file;
 		config = result.config;
+	} else {
+		var rawConfig = utils.merge( defaultOptions.get(), config );
+		config = configInitialiser.initialise( rawConfig );
 	}
 	this._options = config;
-	if ( config.logger == null || config.logger.type === 'default' ) {
-		this._options.logger = new Logger( ( config.logger || {} ).options );
-	} else {
-		var requirePath = utils.lookupRequirePath( config.logger.path );
-		var fn = require( requirePath );
-		this._options.logger = new fn( config.logger.options );
-	}
 };
 
 /**

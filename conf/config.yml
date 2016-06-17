@@ -22,39 +22,27 @@ sslCa: null
 
 # logger:
 #   type: custom
-#   path: ./src/default-plugins/std-out-logger
-
-  # type: default
-  # options:
-  #   -
-  #     type: console
-  #     options:
-  #       level: info
-  #       colorize: true
-#
-# logger:
-#   path: ../../src/default-plugins/std-out-logger
+#   path: ./test/test-helper/custom-logger
 
 # logger:
-#   -
-#     type: custom
-#     path: ./test/test-helper/custom-logger
-  # -
-  #   type: console
-  #   options:
-  #     level: info
-  #     colorize: true
-  # -
-  #   type: file
-  #   level: debug
-  #   options:
-  #     filename: 'logs.json'
-  # -
-  #   type: time
-  #   level: warn
-  #   options:
-  #     filename: time-roated-logfile
-  #     datePattern: .yyyy-MM-dd-HH-mm
+#   type: default
+#   options:
+#     -
+#       type: console
+#       options:
+#         level: info
+#         colorize: false
+#     -
+#       type: file
+#       level: debug
+#       options:
+#         filename: 'logs.json'
+#     -
+#       type: time
+#       level: warn
+#       options:
+#         filename: time-roated-logfile
+#         datePattern: .yyyy-MM-dd-HH-mm
 
 # Plugin Configuration
 plugins:
