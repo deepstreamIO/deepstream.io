@@ -4,26 +4,22 @@ sudo: required
 services:
   - docker
 
-env:
-  global:
-    - RELEASE_VERSION=1.0.0-beta.4
+matrix:
+  - DISTRO=centos
+    VERSION=7
 
-  matrix:
-    - DISTRO=centos
-      VERSION=7
+  - DISTRO=ubuntu
+    VERSION=trusty
 
-    - DISTRO=ubuntu
-      VERSION=trusty
+  - DISTRO=ubuntu
+    VERSION=wily
 
-    - DISTRO=ubuntu
-      VERSION=wily
+  - DISTRO=ubuntu
+    VERSION=xenial
 
-    - DISTRO=ubuntu
-      VERSION=xenial
-
-    - DISTRO=debian
-      VERSION=jessie
+  - DISTRO=debian
+    VERSION=jessie
 
 script:
   - chmod +x linux.sh
-  - ./linux.sh $DISTRO $VERSION "$RELEASE_VERSION"
+  - ./linux.sh $DISTRO $VERSION

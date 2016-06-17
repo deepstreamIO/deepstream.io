@@ -3,12 +3,19 @@ set -e
 
 if [ -z $1 ]; then echo "First param is distro ( centos | debian | ubuntu | ... )"; exit 1; fi
 if [ -z $2 ]; then echo "Second param is version ( wheezy | 7 | ... )"; exit 1; fi
-if [ -z $3 ]; then echo "Third param is version ( X.X.X )"; exit 1; fi
+
+if [ -z $3 ]; then
+	echo "No distribution version provided, so using the version from package.json"
+	git checkout master
+	GIT_TAG_NAME=$( cat package.json | grep version | awk '{ print $2 }' | sed s/\"//g | sed s/,//g )
+	git checkout releases/package
+else
+	GIT_TAG_NAME="v$3"
+fi
 
 DISTRO=$1
 DISTRO_NAME=$2
 VERSION=$3
-GIT_TAG_NAME="v$3"
 
 if [ $DISTRO = "ubuntu" ] || [ $DISTRO = "debian" ]; then
 	ENV="deb"
