@@ -1,0 +1,56 @@
+#!/usr/bin/env node
+'use strict';
+
+var program = require( 'commander' );
+const installer = require( './installer' );
+
+program
+	.usage( '<type> <name>:[version] [options]' )
+	.option( '-l, --libPrefix [directory]', 'directory where to extract the connector, defaults to ./lib' )
+	.option( '--verbose', 'more debug output' )
+	.option( '--quiet', 'no output' );
+
+program.on('--help', function() {
+	console.log( '  Examples:' );
+	console.log( '' );
+	console.log( '    $ deepstream install cache redis' );
+	console.log( '    $ deepstream install storage rethinkdb:0.1.0' );
+	console.log( '' );
+	console.log( '    list of available connectors: https://deepstream.io/download' );
+	console.log( '' );
+} );
+
+program.parse( process.argv );
+
+const installArgs = program.args;
+if ( installArgs.length < 2 ) {
+	program.help();
+}
+
+/*
+ * Syntax:
+ * TYPE NAME:VERSION
+ * version is optional
+ */
+const type = installArgs[0];
+const nameAndVersion = installArgs[1].split( ':' );
+const name = nameAndVersion[0];
+const version = nameAndVersion[1];
+
+if ( program.quiet ) {
+	process.env.QUIET = 1;
+} else if ( program.verbose ) {
+	process.env.VERBOSE = 1;
+}
+
+installer( {
+	type: type,
+	name: name,
+	version: version,
+	dir: program.libPrefix
+}, function( err ) {
+	if ( err ) {
+		console.error( err.toString().red );
+		process.exit( 1 );
+	}
+} );
