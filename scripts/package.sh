@@ -24,7 +24,7 @@ if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
 fi
 
 if [ $OS = "win32" ]; then
-	echo "Downloading node src ( not via nexe )"
+	echo "Downloading node src ( not via nexe ) in order to patch the icon and details"
 	mkdir -p nexe_node/node/$PACKAGED_NODE_VERSION
 	cd nexe_node/node/$PACKAGED_NODE_VERSION
 
@@ -54,7 +54,23 @@ echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 	--runtime $PACKAGED_NODE_VERSION \
 	--temp "nexe_node" \
 	--flags "--use_strict" \
-	--framework "node"
+	--framework "node" \
+	> /dev/null &
+
+PROC_ID=$!
+MINUTES=0;
+while kill -0 "$PROC_ID" >/dev/null 2>&1; do
+	echo "Compiling node... ($MINUTES minutes)"
+	sleep 60
+	MINUTES=$[MINUTES+1]
+done
+
+if wait $pid; then
+		echo "Nexe Build Succeeded"
+else
+		echo "Nexe Build Failed"
+		exit 1
+fi
 
 echo "Packaging to dir structure at $DEEPSTREAM_PACKAGE"
 

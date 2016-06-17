@@ -6,9 +6,7 @@ const yaml = require( 'js-yaml' );
 const defaultOptions = require( '../default-options' );
 const utils = require( './utils' );
 const configInitialiser = require( './config-initialiser' );
-
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
-var commandLineArguments = require( 'minimist' )( process.argv.slice( 2 ) );
 
 /**
  * Reads and parse a general configuraiton file content.
@@ -56,11 +54,11 @@ function parseFile( filePath, fileContent ) {
 	const extension = path.extname( filePath );
 
 	if ( extension === '.yml' ) {
-		config = yaml.safeLoad( fileContent );
+		config = yaml.safeLoad( replaceEnvironmentVariables( fileContent ) );
 	} else if ( extension === '.js' ) {
 		config = require( path.resolve( filePath ) );
 	} else if ( extension === '.json' ) {
-		config = JSON.parse( fileContent );
+		config = JSON.parse( replaceEnvironmentVariables( fileContent ) );
 	} else {
 		throw new Error( extension + ' is not supported as configuration file' );
 	}
@@ -75,13 +73,13 @@ function parseFile( filePath, fileContent ) {
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  *
- * @param {Object} args minimist arguments
+ * @param {Object} args commander arguments
  *
  * @public
  * @returns {Object} config deepstream configuration object
  */
 module.exports.loadConfig = function( args ) {
-	var argv = args || commandLineArguments;
+	var argv = args || process.deepstreamCLI || {};
 	var customConfigPath = argv.c || argv.config;
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
 	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
@@ -111,7 +109,7 @@ function extendConfig( config, argv, configDir ) {
 	var key;
 
 	for ( key in defaultOptions.get() ) {
-		cliArgs[key] = argv[key] || undefined;
+		cliArgs[key] = typeof argv[key] === 'undefined' ? undefined : argv[key];
 	}
 
 	if( config.auth && config.auth.options && config.auth.options.path ) {
@@ -123,7 +121,7 @@ function extendConfig( config, argv, configDir ) {
 	}
 
 	return utils.merge( { plugins: {} }, defaultOptions.get(), config, cliArgs );
-};
+}
 
 /**
  * Checks if a config file is present at a given path
@@ -178,4 +176,27 @@ function fileExistsSync( path ) {
 	} catch( e ) {
 		return false;
 	}
+}
+
+/**
+ * Handle the introduction of global enviroment variables within
+ * the yaml file, allowing value substitution.
+ *
+ * For example:
+ * ```
+ * host: $HOST_NAME
+ * port: $HOST_PORT
+ * ```
+ *
+ * @param {String} fileContent The loaded yaml file
+ *
+ * @private
+ * @returns {void}
+ */
+function replaceEnvironmentVariables( fileContent ) {
+	var environmentVariable = new RegExp( /\${([^\}]+)}/g );
+	fileContent = fileContent.replace( environmentVariable, ( a, b ) => {
+		return process.env[ b ] || b;
+	} );
+	return fileContent;
 }

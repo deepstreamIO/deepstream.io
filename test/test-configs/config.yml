@@ -4,3 +4,9 @@ host: 1.2.3.4
 colors: false
 showLogo: false
 logLevel: ERROR
+
+multipleenvs: '${EXAMPLE_HOST}:${EXAMPLE_PORT}'
+thisenvironmentdoesntexist: ${DOESNT_EXIST}
+environmentvariable: ${ENVIRONMENT_VARIABLE_TEST_1}
+another:
+  environmentvariable: ${ENVIRONMENT_VARIABLE_TEST_2}
