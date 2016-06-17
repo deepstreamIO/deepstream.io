@@ -223,15 +223,15 @@ describe( 'js-yaml-loader', function() {
 } );
 
 describe( 'supports environment variable substitution', function() {
-	var configLoader
+	var configLoader;
 
 	beforeAll( function() {
-		process.env.ENVIRONMENT_VARIABLE_TEST_1="an_environment_variable_value";
-		process.env.ENVIRONMENT_VARIABLE_TEST_2="another_environment_variable_value";
-		process.env.EXAMPLE_HOST="host"
-		process.env.EXAMPLE_PORT=1234
+		process.env.ENVIRONMENT_VARIABLE_TEST_1 = "an_environment_variable_value";
+		process.env.ENVIRONMENT_VARIABLE_TEST_2 = "another_environment_variable_value";
+		process.env.EXAMPLE_HOST = "host";
+		process.env.EXAMPLE_PORT = 1234;
 		configLoader = require( '../../src/utils/js-yaml-loader' );
-	});
+	} );
 
 	it( 'does environment variable substitution for yaml', function() {
 		var config = configLoader.loadConfig( {config:'./test/test-configs/config.yml'} ).config;
@@ -252,18 +252,18 @@ describe( 'supports environment variable substitution', function() {
 } );
 
 describe( 'merges in deepstreamCLI options', function() {
-	var configLoader
+	var configLoader;
 
 	beforeAll( function() {
 		process.deepstreamCLI = {
 			webServerEnabled: false,
 			port: 5555
-		}
+		};
 		configLoader = require( '../../src/utils/js-yaml-loader' );
-	});
+	} );
 
 	afterAll( function() {
-			delete process.env.deepstreamCLI;
+		delete process.env.deepstreamCLI;
 	} );
 
 	it( 'does environment variable substitution for yaml', function() {
@@ -313,12 +313,8 @@ describe( 'load plugins by relative path property', function() {
 		config = configLoader.loadConfig( {config:'./config.json'} ).config;
 	} );
 
-	it( 'load the any plugin except the logger using new keyword', function() {
+	it( 'load plugins', function() {
 		expect( config.messageConnector.options ).toEqual( {foo: 3, bar: 4} );
-	} );
-
-	it( 'load the logger plugin without using new keyword', function() {
-		expect( config.logger( {a: 1, b: 2} ) ).toEqual( {a: 1, b: 2} );
 	} );
 
 } );
@@ -357,7 +353,7 @@ describe( 'load plugins by path property (npm module style)', function() {
 		config = configLoader.loadConfig( {config:'./config.json'} ).config;
 	} );
 
-	it( 'load the any plugin except the logger using new keyword', function() {
+	it( 'load plugins', function() {
 		expect( config.cache.options ).toEqual( {foo: 3, bar: 4} );
 	} );
 } );
@@ -408,7 +404,7 @@ describe( 'load plugins by name with a name convention', function() {
 		} ).config;
 	} );
 
-	it( 'load the any plugin except the logger using new keyword', function() {
+	it( 'load plugins', function() {
 		expect( config.messageConnector.options ).toEqual( {foo: 5, bar: 6} );
 		expect( config.storage.options ).toEqual( {foo: 7, bar: 8} );
 	} );
@@ -461,7 +457,7 @@ describe( 'load plugins by name with a name convention with lib prefix', functio
 		} ).config;
 	} );
 
-	it( 'load the any plugin except the logger using new keyword', function() {
+	it( 'load plugins', function() {
 		expect( config.messageConnector.options ).toEqual( {foo: -1, bar: -2} );
 		expect( config.storage.options ).toEqual( {foo: -3, bar: -4} );
 	} );
@@ -512,6 +508,11 @@ describe( 'load plugins by name with a name convention with an absolute lib pref
 			config: './config.json',
 			libPrefix: '/foobar'
 		} ).config;
+	} );
+
+	it( 'load plugins', function() {
+		expect( config.messageConnector.options ).toEqual( {foo: -1, bar: -2} );
+		expect( config.storage.options ).toEqual( {foo: -3, bar: -4} );
 	} );
 
 } );

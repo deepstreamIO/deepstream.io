@@ -179,12 +179,12 @@ function handleAuthStrategy( config ) {
  * @returns {void}
  */
 function handlePermissionStrategy( config ) {
-	if( !config.permission) {
+	if( !config.permission ) {
 		throw new Error( 'No permission type specified' );
 	}
 
-	if( config.permission.type !== 'config' ) {
-		throw new Error( 'Unknown permission type ' + config.permission.type ); // TODO other permission types?
+	if( !permissionStrategies[ config.permission.type ] ) {
+		throw new Error( 'Unknown permission type ' + config.permission.type );
 	}
 
 	if( commandLineArguments.disablePermissions ) {
