@@ -1,8 +1,3 @@
-branches:
-  # whitelist
-  only:
-    - master
-
 platform:
   - x64
 
@@ -22,10 +17,10 @@ test_script:
   - For /d %%d in ( build\** ) do MOVE %%d %cd%
 
 artifacts:
-  - path: '**\*.zip'
-
   - path: 'build\*.zip'
     name: 'deepstream.io-release'
+
+  - path: '**\*.zip'
 
 deploy:
   - provider: S3
