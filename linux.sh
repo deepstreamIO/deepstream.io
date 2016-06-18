@@ -7,7 +7,7 @@ if [ -z $2 ]; then echo "Second param is version ( wheezy | 7 | ... )"; exit 1; 
 if [ -z $3 ]; then
 	echo "No distribution version provided, so using the version from package.json"
 	curl -o package.json https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/package.json
-	GIT_TAG_NAME=$( cat package.json | grep version | awk '{ print $2 }' | sed s/\"//g | sed s/,//g )
+	GIT_TAG_NAME="v$( cat package.json | grep version | awk '{ print $2 }' | sed s/\"//g | sed s/,//g )"
 else
 	GIT_TAG_NAME="v$3"
 fi
