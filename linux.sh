@@ -55,7 +55,6 @@ RUN apt-get install -y python python2.7
 EOF
 fi
 
-
 cat >>Dockerfile <<EOF
 RUN gem install fpm
 
@@ -69,7 +68,7 @@ RUN mkdir build
 RUN git checkout tags/$GIT_TAG_NAME
 RUN npm install
 RUN chmod 555 scripts/package.sh
-RUN ./scripts/package.sh
+RUN ./scripts/package.sh true
 EOF
 
 if [ $ENV = 'deb' ]; then
