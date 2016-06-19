@@ -39,12 +39,11 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 
 		if( this._options.httpServer ) {
 			this._server = this._options.httpServer;
-			this._engineIo = engine.attach( this._server, { path: this._options.urlPath });
 		} else {
 			this._server = this._createHttpServer();
 			this._server.listen( this._options.port, this._options.host );
-			this._engineIo = engine.attach( this._server );
 		}
+		this._engineIo = engine.attach( this._server, { path: this._options.urlPath });
 
 		if( this._server.listening ) {
 			this._checkReady( ENGINE_IO );
