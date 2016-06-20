@@ -1,7 +1,7 @@
 'use strict';
 
+const Logger = require( 'deepstream.io-logger-winston' );
 const C = require( '../constants/constants' );
-const Logger = require( '../default-plugins/logger' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const utils = require( './utils' );
 var commandLineArguments;
