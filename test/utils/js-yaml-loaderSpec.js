@@ -448,8 +448,8 @@ describe( 'load plugins by name with a name convention with lib prefix', functio
 		SuperStorage['@global'] = true;
 		var configLoader = proxyquire( '../../src/utils/js-yaml-loader', {
 			fs: fsMock,
-			[path.join( process.cwd(), 'foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
-			[path.join( process.cwd(), 'foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
+			[path.resolve( process.cwd(), 'foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
+			[path.resolve( process.cwd(), 'foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
 		} );
 		config = configLoader.loadConfig( {
 			config: './config.json',
@@ -501,8 +501,8 @@ describe( 'load plugins by name with a name convention with an absolute lib pref
 		SuperStorage['@global'] = true;
 		var configLoader = proxyquire( '../../src/utils/js-yaml-loader', {
 			fs: fsMock,
-			[path.join( '/foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
-			[path.join( '/foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
+			[path.resolve( '/foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
+			[path.resolve( '/foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
 		} );
 		config = configLoader.loadConfig( {
 			config: './config.json',
