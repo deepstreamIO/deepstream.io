@@ -46,6 +46,86 @@
         }
       }
     },
+    "deepstream.io-logger-winston": {
+      "version": "1.0.0",
+      "from": "deepstream.io-logger-winston@*",
+      "dependencies": {
+        "lodash.merge": {
+          "version": "4.4.0",
+          "from": "lodash.merge@>=4.4.0 <5.0.0",
+          "resolved": "https://registry.npmjs.org/lodash.merge/-/lodash.merge-4.4.0.tgz",
+          "dependencies": {
+            "lodash._baseclone": {
+              "version": "4.5.7",
+              "from": "lodash._baseclone@>=4.5.0 <4.6.0",
+              "resolved": "https://registry.npmjs.org/lodash._baseclone/-/lodash._baseclone-4.5.7.tgz"
+            },
+            "lodash._root": {
+              "version": "3.0.1",
+              "from": "lodash._root@>=3.0.0 <3.1.0",
+              "resolved": "https://registry.npmjs.org/lodash._root/-/lodash._root-3.0.1.tgz"
+            },
+            "lodash.isplainobject": {
+              "version": "4.0.4",
+              "from": "lodash.isplainobject@>=4.0.0 <5.0.0",
+              "resolved": "https://registry.npmjs.org/lodash.isplainobject/-/lodash.isplainobject-4.0.4.tgz"
+            },
+            "lodash.keysin": {
+              "version": "4.1.4",
+              "from": "lodash.keysin@>=4.0.0 <5.0.0",
+              "resolved": "https://registry.npmjs.org/lodash.keysin/-/lodash.keysin-4.1.4.tgz"
+            },
+            "lodash.rest": {
+              "version": "4.0.3",
+              "from": "lodash.rest@>=4.0.0 <5.0.0",
+              "resolved": "https://registry.npmjs.org/lodash.rest/-/lodash.rest-4.0.3.tgz"
+            }
+          }
+        },
+        "winston": {
+          "version": "2.2.0",
+          "from": "winston@>=2.2.0 <3.0.0",
+          "resolved": "https://registry.npmjs.org/winston/-/winston-2.2.0.tgz",
+          "dependencies": {
+            "async": {
+              "version": "1.0.0",
+              "from": "async@>=1.0.0 <1.1.0",
+              "resolved": "https://registry.npmjs.org/async/-/async-1.0.0.tgz"
+            },
+            "cycle": {
+              "version": "1.0.3",
+              "from": "cycle@>=1.0.0 <1.1.0",
+              "resolved": "https://registry.npmjs.org/cycle/-/cycle-1.0.3.tgz"
+            },
+            "eyes": {
+              "version": "0.1.8",
+              "from": "eyes@>=0.1.0 <0.2.0",
+              "resolved": "https://registry.npmjs.org/eyes/-/eyes-0.1.8.tgz"
+            },
+            "isstream": {
+              "version": "0.1.2",
+              "from": "isstream@>=0.1.0 <0.2.0",
+              "resolved": "https://registry.npmjs.org/isstream/-/isstream-0.1.2.tgz"
+            },
+            "pkginfo": {
+              "version": "0.3.1",
+              "from": "pkginfo@>=0.3.0 <0.4.0",
+              "resolved": "https://registry.npmjs.org/pkginfo/-/pkginfo-0.3.1.tgz"
+            },
+            "stack-trace": {
+              "version": "0.0.9",
+              "from": "stack-trace@>=0.0.0 <0.1.0",
+              "resolved": "https://registry.npmjs.org/stack-trace/-/stack-trace-0.0.9.tgz"
+            }
+          }
+        },
+        "winston-daily-rotate-file": {
+          "version": "1.1.4",
+          "from": "winston-daily-rotate-file@>=1.1.4 <2.0.0",
+          "resolved": "https://registry.npmjs.org/winston-daily-rotate-file/-/winston-daily-rotate-file-1.1.4.tgz"
+        }
+      }
+    },
     "engine.io": {
       "version": "1.6.9",
       "from": "engine.io@1.6.9",
@@ -231,48 +311,6 @@
           "resolved": "https://registry.npmjs.org/nan/-/nan-2.3.5.tgz"
         }
       }
-    },
-    "winston": {
-      "version": "2.2.0",
-      "from": "winston@*",
-      "resolved": "https://registry.npmjs.org/winston/-/winston-2.2.0.tgz",
-      "dependencies": {
-        "async": {
-          "version": "1.0.0",
-          "from": "async@>=1.0.0 <1.1.0",
-          "resolved": "https://registry.npmjs.org/async/-/async-1.0.0.tgz"
-        },
-        "cycle": {
-          "version": "1.0.3",
-          "from": "cycle@>=1.0.0 <1.1.0",
-          "resolved": "https://registry.npmjs.org/cycle/-/cycle-1.0.3.tgz"
-        },
-        "eyes": {
-          "version": "0.1.8",
-          "from": "eyes@>=0.1.0 <0.2.0",
-          "resolved": "https://registry.npmjs.org/eyes/-/eyes-0.1.8.tgz"
-        },
-        "isstream": {
-          "version": "0.1.2",
-          "from": "isstream@>=0.1.0 <0.2.0",
-          "resolved": "https://registry.npmjs.org/isstream/-/isstream-0.1.2.tgz"
-        },
-        "pkginfo": {
-          "version": "0.3.1",
-          "from": "pkginfo@>=0.3.0 <0.4.0",
-          "resolved": "https://registry.npmjs.org/pkginfo/-/pkginfo-0.3.1.tgz"
-        },
-        "stack-trace": {
-          "version": "0.0.9",
-          "from": "stack-trace@>=0.0.0 <0.1.0",
-          "resolved": "https://registry.npmjs.org/stack-trace/-/stack-trace-0.0.9.tgz"
-        }
-      }
-    },
-    "winston-daily-rotate-file": {
-      "version": "1.1.4",
-      "from": "winston-daily-rotate-file@*",
-      "resolved": "https://registry.npmjs.org/winston-daily-rotate-file/-/winston-daily-rotate-file-1.1.4.tgz"
     },
     "xml2js": {
       "version": "0.4.16",
