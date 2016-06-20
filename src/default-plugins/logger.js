@@ -54,11 +54,6 @@ class Logger  {
 		this.isReady = true;
 	}
 
-	// this logger is sync, no need to implement event handler
-	// on() {}
-	// once() {}
-	// off() {}
-
 	_initializeTransports() {
 		if ( this._loggerOptions && this._loggerOptions.type === 'default' ) {
 			const loggers = this._loggerOptions.options || [];

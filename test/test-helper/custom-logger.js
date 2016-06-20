@@ -8,10 +8,9 @@ class CustomLogger extends Emitter {
 		this.options = options;
 		this.isReady = false;
 		setTimeout( () => {
-			// this.isReady = true;
-			// this.emit('ready')
-			this.emit( 'error', new Error('boom') );
-		}, 1500 );
+			this.isReady = true;
+			this.emit( 'ready' );
+		}, 1 );
 	}
 
 	log( level, event, msg ) {

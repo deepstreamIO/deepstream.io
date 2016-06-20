@@ -132,7 +132,6 @@ describe( 'it starts and stops a configured server', function() {
 	} );
 
 	it( 'should merge the options with default values', function( next ) {
-		// even if the options is an empty object
 		server = new Deepstream( {permission: {type: 'none'}} );
 		server.set( 'logger', logger );
 		server.on( 'started', function() {
