@@ -24,15 +24,17 @@ if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
 	exit
 fi
 
-if ! [ ${GIT_BRANCH} = 'master' ]; then
-	if [[ -z ${TRAVIS_TAG} ]] && [[ -z ${APPVEYOR_REPO_TAG} ]]; then
-		echo "Only runs on tags or master"
-		exit
-	elif [[ ${APPVEYOR_REPO_TAG} = false ]]; then
-		echo "On appveyor, not a tag or master"
-		exit
-	else
-		echo "Running on tag ${TRAVIS_TAG} ${APPVEYOR_REPO_TAG}"
+if [ -z $1  ]; then
+	if ! [ ${GIT_BRANCH} = 'master' ]; then
+		if [[ -z ${TRAVIS_TAG} ]] && [[ -z ${APPVEYOR_REPO_TAG} ]]; then
+			echo "Only runs on tags or master"
+			exit
+		elif [[ ${APPVEYOR_REPO_TAG} = false ]]; then
+			echo "On appveyor, not a tag or master"
+			exit
+		else
+			echo "Running on tag ${TRAVIS_TAG} ${APPVEYOR_REPO_TAG}"
+		fi
 	fi
 fi
 

@@ -1,4 +1,0 @@
-#!/usr/bin/env node
-
-const pidHelper = require( './pid-helper' );
-pidHelper.stop();
