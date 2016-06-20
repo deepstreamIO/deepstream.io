@@ -46,7 +46,7 @@
     "jasmine-spec-reporter": "^2.5.0",
     "n0p3": "^1.0.2",
     "proxyquire": "1.7.9",
-    "watch": "^0.18.0"
+    "watch": "^0.19.1"
   },
   "author": "deepstreamHub GmbH",
   "license": "MIT",
