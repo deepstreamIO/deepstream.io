@@ -21,28 +21,13 @@ sslCa: null
 # TODO - Introduce file paths for this
 
 # logger:
-#   type: custom
-#   path: ./test/test-helper/custom-logger
-
-# logger:
 #   type: default
 #   options:
 #     -
 #       type: console
 #       options:
 #         level: info
-#         colorize: false
-#     -
-#       type: file
-#       level: debug
-#       options:
-#         filename: 'logs.json'
-#     -
-#       type: time
-#       level: warn
-#       options:
-#         filename: time-roated-logfile
-#         datePattern: .yyyy-MM-dd-HH-mm
+#         colorize: true
 
 # Plugin Configuration
 plugins:
