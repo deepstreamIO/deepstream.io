@@ -1,9 +1,13 @@
 'use strict';
 
 const DefaultLogger = require( 'deepstream.io-logger-winston' );
+
+const fs = require( 'fs' );
+const utils = require( '../utils/utils' );
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
-const utils = require( './utils' );
+
+const file = require( './file' );
 var commandLineArguments;
 
 var authStrategies = {
@@ -20,16 +24,16 @@ var permissionStrategies = {
  * Takes a configuration object and instantiates functional properties
  *
  * @param   {Object} config configuration
- * @param   {Object} argv   command line args
  *
  * @returns {Object} configuration
  */
-exports.initialise = function( config, argv ) {
-	commandLineArguments = process.deepstreamCLI || {};
+exports.initialise = function( config ) {
+	commandLineArguments = global.deepstreamCLI || {};
 
 	handleUUIDProperty( config );
-	handleLogger( config, argv );
-	handlePlugins( config, argv );
+	handleSSLProperties( config );
+	handleLogger( config );
+	handlePlugins( config );
 	handleAuthStrategy( config );
 	handlePermissionStrategy( config );
 
@@ -51,6 +55,34 @@ function handleUUIDProperty( config ) {
 }
 
 /**
+ * Replace the ssl config with paths
+ *
+ * @param {Object} config deepstream configuration object
+ *
+ * @private
+ * @returns {void}
+ */
+function handleSSLProperties( config ) {
+	var sslFiles = [ 'sslKey', 'sslCert', 'sslCa' ];
+	var key, resolvedFilePath, filePath;
+	for( var i=0; i< sslFiles.length; i++ ) {
+		key = sslFiles[ i ];
+		filePath = config[ key ];
+		if( !filePath ) {
+			continue;
+		}
+		resolvedFilePath = file.lookupConfRequirePath( filePath );
+		fs.readFile( resolvedFilePath, 'utf8', function( error, fileContent ) {
+			if ( error ) {
+				console.error( `The file path "${resolvedFilePath}" provided by "${key}" does not exist.` );
+				process.exit();
+			}
+			config[ key ] = fileContent;
+		} );
+	}
+}
+
+/**
  * Transform log level string (enum) to its internal value
  *
  * @param {Object} config deepstream configuration object
@@ -58,13 +90,13 @@ function handleUUIDProperty( config ) {
  * @private
  * @returns {void}
  */
-function handleLogger( config, argv ) {
+function handleLogger( config ) {
 	let configOptions = ( config.logger || {} ).options;
 	let Logger;
 	if ( config.logger == null ) {
 		Logger = DefaultLogger;
 	} else {
-		Logger = resolvePluginClass( config.logger, 'logger', argv );
+		Logger = resolvePluginClass( config.logger, 'logger' );
 	}
 	config.logger = new Logger( configOptions );
 	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
@@ -112,25 +144,25 @@ function handlePlugins( config, argv ) {
 	for ( let key in plugins ) {
 		var plugin = plugins[key];
 		if ( plugin != null ) {
-			var pluginConstructor = resolvePluginClass( plugin, connectors[key], argv );
+			var pluginConstructor = resolvePluginClass( plugin, connectors[key] );
 			config[key] = new pluginConstructor( plugin.options );
 		}
 	}
 }
 
-function resolvePluginClass( plugin, type, argv ) {
+function resolvePluginClass( plugin, type ) {
 	// nexe needs global.require for "dynamic" modules
 	// but browserify and proxyquire can't handle global.require
 	var req = global && global.require ? global.require : require;
 	var requirePath;
 	var pluginConstructor;
 	if ( plugin.path != null ) {
-		requirePath = considerLibPrefix( plugin.path, argv );
+		requirePath = file.lookupLibRequirePath( plugin.path );
 		pluginConstructor = req( requirePath );
 	} else if ( plugin.name != null ) {
 		if ( type != null ) {
 			requirePath = 'deepstream.io-' + type + '-' + plugin.name;
-			requirePath = considerLibPrefix( requirePath, argv );
+			requirePath = file.lookupLibRequirePath( requirePath );
 			pluginConstructor = req( requirePath );
 		}
 	} else {
@@ -162,6 +194,10 @@ function handleAuthStrategy( config ) {
 		config.auth.options = {};
 	}
 
+	if( config.auth.options && config.auth.options.path ) {
+		config.auth.options.path = file.lookupConfRequirePath( config.auth.options.path );
+	}
+
 	config.authenticationHandler = new ( authStrategies[ config.auth.type ] )( config.auth.options );
 }
 
@@ -188,22 +224,9 @@ function handlePermissionStrategy( config ) {
 		config.permission.options = {};
 	}
 
-	config.permissionHandler = new ( permissionStrategies[ config.permission.type ] )( config.permission.options );
-}
-
-/**
- * If libPrefix is not set the filePath will be returned
- * Default lookup is the node_modules directory in the CWD.
- *
- * @param {String} filePath
- *
- * @private
- * @returns {String} file path with the libPrefix set in cliOptions
- */
-function considerLibPrefix( filePath, argv ) {
-	if ( argv == null ) {
-		argv = {};
+	if( config.permission.options && config.permission.options.path ) {
+		config.permission.options.path = file.lookupConfRequirePath( config.permission.options.path );
 	}
-	var libDir = argv.l || argv.libPrefix || commandLineArguments.l || commandLineArguments.libPrefix;
-	return utils.lookupRequirePath( filePath, libDir );
+
+	config.permissionHandler = new ( permissionStrategies[ config.permission.type ] )( config.permission.options );
 }

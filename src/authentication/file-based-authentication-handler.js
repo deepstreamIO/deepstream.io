@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require( 'crypto' );
-const jsYamlLoader = require( '../utils/js-yaml-loader' );
+const jsYamlLoader = require( '../config/js-yaml-loader' );
 const utils = require( '../utils/utils' );
 const EventEmitter = require( 'events' ).EventEmitter;
 const STRING = 'string';

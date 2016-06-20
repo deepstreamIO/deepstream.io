@@ -32,7 +32,7 @@ module.exports = function( program ) {
 }
 
 function action() {
-	process.deepstreamCLI = this;
+	global.deepstreamCLI = this;
 
 	if ( this.detach ) {
 		// --detach is not supported for windows

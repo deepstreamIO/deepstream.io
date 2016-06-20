@@ -3,13 +3,17 @@
 const fs = require( 'fs' );
 const path = require( 'path' );
 const yaml = require( 'js-yaml' );
+
 const defaultOptions = require( '../default-options' );
-const utils = require( './utils' );
+const utils = require( '../utils/utils' );
+
 const configInitialiser = require( './config-initialiser' );
+const file = require( './file' );
+
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
 
 /**
- * Reads and parse a general configuraiton file content.
+ * Reads and parse a general configuration file content.
  *
  * @param {String} filePath
  * @param {Function} callback
@@ -79,19 +83,38 @@ function parseFile( filePath, fileContent ) {
  * @returns {Object} config deepstream configuration object
  */
 module.exports.loadConfig = function( args ) {
-	var argv = args || process.deepstreamCLI || {};
-	var customConfigPath = argv.c || argv.config;
-	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
+	var argv = args || global.deepstreamCLI || {};
+	setGlobalLibDirectory( argv );
+	var configPath = setGlobalConfigDirectory( argv );
 	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
 	var rawConfig = parseFile( configPath, configString );
 	var config = extendConfig( rawConfig, argv, path.dirname( configPath ) );
 
 	return {
-		config: configInitialiser.initialise( config, argv ),
+		config: configInitialiser.initialise( config ),
 		file: configPath
 	};
 };
 
+/**
+* Set the globalConfig prefix that will be used as the directory for ssl, permissions and auth
+* relative files within the config file
+*/
+function setGlobalConfigDirectory( argv ) {
+	var customConfigPath = argv.c || argv.config;
+	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
+	global.deepstreamConfigDir = path.dirname( configPath );
+	return configPath;
+}
+
+/**
+* Set the globalLib prefix that will be used as the directory for the logger
+* and plugins within the config file
+*/
+function setGlobalLibDirectory( argv ) {
+	var libDir = argv.l || argv.libPrefix;
+	global.deepstreamLibDir = libDir;
+}
 
 /**
  * Augments the basic configuration with command line parameters
@@ -112,14 +135,6 @@ function extendConfig( config, argv, configDir ) {
 		cliArgs[key] = typeof argv[key] === 'undefined' ? undefined : argv[key];
 	}
 
-	if( config.auth && config.auth.options && config.auth.options.path ) {
-		config.auth.options.path = utils.lookupRequirePath( config.auth.options.path, configDir );
-	}
-
-	if( config.permission && config.permission.options && config.permission.options.path ) {
-		config.permission.options.path = utils.lookupRequirePath( config.permission.options.path, configDir );
-	}
-
 	return utils.merge( { plugins: {} }, defaultOptions.get(), config, cliArgs );
 }
 
@@ -132,7 +147,7 @@ function extendConfig( config, argv, configDir ) {
  * @returns {String} verified path
  */
 function verifyCustomConfigPath( configPath ) {
-	if( fileExistsSync( configPath ) ) {
+	if( file.fileExistsSync( configPath ) ) {
 		return configPath;
 	} else {
 		throw new Error( 'configuration file not found at: ' + configPath );
@@ -146,36 +161,18 @@ function verifyCustomConfigPath( configPath ) {
  * @returns {String} filePath
  */
 function getDefaultConfigPath() {
-	var defaultConfigBaseName = path.join( 'conf', 'config' );
+	var defaultConfigBaseName = path.join( '.','conf', 'config' );
 	var filePath, i;
 
 	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
 		filePath = defaultConfigBaseName + SUPPORTED_EXTENSIONS[ i ];
-
-		if( fileExistsSync( filePath ) ) {
+		if( file.fileExistsSync( filePath ) ) {
 			return filePath;
 		}
+
 	}
 
 	throw new Error( 'No config file found' );
-}
-
-/**
- * Returns true if a file exists for a given path
- *
- * @param   {String} path
- *
- * @private
- * @returns {Boolean} exists
- */
-
-function fileExistsSync( path ) {
-	try{
-		fs.lstatSync( path );
-		return true;
-	} catch( e ) {
-		return false;
-	}
 }
 
 /**
