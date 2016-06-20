@@ -5,13 +5,18 @@ require( 'colors' );
 const pgk = require( '../package.json' );
 
 var program = require( 'commander' );
+const install = require( './deepstream-install' );
+const start = require( './deepstream-start' );
+const status = require( './deepstream-status' );
+const stop = require( './deepstream-stop' );
 
 program
 	.version( pgk.version )
-	.usage( '[command]' )
-	.command( 'start', 'start a deepstream server' )
-	.command( 'stop', 'stop a running deepstream server' )
-	.command( 'status', 'display if a deepstream server is running' )
-	.command( 'install', 'install connectors' );
+	.usage( '[command]' );
+
+start( program );
+stop( program );
+status( program );
+install( program );
 
 program.parse( process.argv );
