@@ -10,11 +10,11 @@ describe( 'plugins are initialised as per configuration', function() {
 		var config = defaultConfig.get();
 		config.plugins = {
 			cache: {
-				path: '../../test/test-plugins/plugin-a',
+				path: './test/test-plugins/plugin-a',
 				options: { some: 'options' }
 			}
 		};
-		configInitialiser.initialise( config, {} );
+		configInitialiser.initialise( config );
 		expect( config.cache.type ).toBe( 'pluginA' );
 		expect( config.cache.options ).toEqual( { some: 'options' } );
 	} );
@@ -27,11 +27,12 @@ describe( 'plugins are initialised as per configuration', function() {
 				options: {}
 			}
 		};
-		configInitialiser.initialise( config, {} );
+
+		configInitialiser.initialise( config );
 		expect( config.cache.toString() ).toBe( '[object Object]' );
 	} );
 
-	it( 'loads plugins from a relative path', function() {
+	it( 'loads plugins from a relative path and a libprefix', function() {
 		var config = defaultConfig.get();
 		config.plugins = {
 			cache: {
@@ -95,7 +96,7 @@ describe( 'creates the right authentication handler', function() {
 		config.auth = {
 			type: 'none'
 		};
-		configInitialiser.initialise( config, {} );
+		configInitialiser.initialise( config );
 		expect( config.authenticationHandler.type ).toBe( 'none' );
 	} );
 
@@ -111,7 +112,7 @@ describe( 'creates the right authentication handler', function() {
 			}
 		};
 
-		configInitialiser.initialise( config, {} );
+		configInitialiser.initialise( config );
 		expect( config.authenticationHandler.type ).toBe( 'http webhook to http://some-url.com' );
 	} );
 
@@ -121,7 +122,7 @@ describe( 'creates the right authentication handler', function() {
 		delete config.auth;
 
 		expect(function() {
-			configInitialiser.initialise( config, {} );
+			configInitialiser.initialise( config );
 		} ).toThrowError( 'No authentication type specified' );
 	} );
 
@@ -134,7 +135,7 @@ describe( 'creates the right authentication handler', function() {
 		};
 
 		expect(function() {
-			configInitialiser.initialise( config, {} );
+			configInitialiser.initialise( config );
 		} ).toThrowError( 'Unknown authentication type bla' );
 	} );
 
@@ -147,7 +148,7 @@ describe( 'creates the right authentication handler', function() {
 			options: {}
 		};
 
-		configInitialiser.initialise( config, {} );
+		configInitialiser.initialise( config );
 		expect( config.authenticationHandler.type ).toBe( 'none' );
 		delete process.deepstreamCLI;
 	} );
@@ -165,7 +166,7 @@ describe( 'creates the permissionHandler', function() {
 				path: './test/test-configs/basic-permission-config.json'
 			}
 		};
-		configInitialiser.initialise( config, {} );
+		configInitialiser.initialise( config );
 		expect( config.permissionHandler.type ).toBe( 'valve permissions loaded from ./test/test-configs/basic-permission-config.json' );
 	} );
 
@@ -179,7 +180,7 @@ describe( 'creates the permissionHandler', function() {
 			}
 		};
 		expect(function() {
-			configInitialiser.initialise( config, {} );
+			configInitialiser.initialise( config );
 		} ).toThrowError( 'Unknown permission type does-not-exist' );
 
 	} );
@@ -189,7 +190,7 @@ describe( 'creates the permissionHandler', function() {
 		delete config.permission;
 
 		expect(function() {
-			configInitialiser.initialise( config, {} );
+			configInitialiser.initialise( config );
 		} ).toThrowError( 'No permission type specified' );
 	} );
 
@@ -202,7 +203,7 @@ describe( 'creates the permissionHandler', function() {
 			options: {}
 		};
 
-		configInitialiser.initialise( config, {} );
+		configInitialiser.initialise( config );
 		expect( config.permissionHandler.type ).toBe( 'none' );
 		delete process.deepstreamCLI;
 	} );
@@ -211,13 +212,12 @@ describe( 'creates the permissionHandler', function() {
 		var config = defaultConfig.get();
 
 		config.logger = {
-			type: 'custom',
 			path: './test/test-helper/custom-logger',
 			options: {
 				a: 1
 			}
 		};
-		configInitialiser.initialise( config, {} );
+		configInitialiser.initialise( config );
 		expect( config.logger.options ).toEqual( {a: 1} );
 	} );
 
@@ -225,13 +225,13 @@ describe( 'creates the permissionHandler', function() {
 		var config = defaultConfig.get();
 
 		config.logger = {
-			type: 'not-existing-logger-type',
+			norNameNorPath: 'foo',
 		};
 		try {
-			configInitialiser.initialise( config, {} );
+			configInitialiser.initialise( config );
 			next.fail( 'should fail' );
 		} catch ( err ) {
-			expect( err.toString() ).toContain( 'not-existing-logger-type' );
+			expect( err.toString() ).toContain( 'neither name nor path property found' );
 			next();
 		}
 	} );

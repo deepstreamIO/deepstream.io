@@ -307,8 +307,8 @@ describe( 'load plugins by relative path property', function() {
 		MessageModule['@global'] = true;
 		var configLoader = proxyquire( '../../src/utils/js-yaml-loader', {
 			fs: fsMock,
-			'./logger': loggerModule,
-			'./message': MessageModule
+			[path.resolve( './logger' )]: loggerModule,
+			[path.resolve( './message' )]: MessageModule
 		} );
 		config = configLoader.loadConfig( {config:'./config.json'} ).config;
 	} );

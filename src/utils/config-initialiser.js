@@ -1,6 +1,5 @@
 'use strict';
 
-const Logger = require( 'deepstream.io-logger-winston' );
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const utils = require( './utils' );
@@ -28,7 +27,7 @@ exports.initialise = function( config, argv ) {
 	commandLineArguments = process.deepstreamCLI || {};
 
 	handleUUIDProperty( config );
-	handleLogger( config );
+	handleLogger( config, argv );
 	handlePlugins( config, argv );
 	handleAuthStrategy( config );
 	handlePermissionStrategy( config );
@@ -58,18 +57,15 @@ function handleUUIDProperty( config ) {
  * @private
  * @returns {void}
  */
-function handleLogger( config ) {
-	let configClazz;
+function handleLogger( config, argv ) {
 	let configOptions = ( config.logger || {} ).options;
-	if ( config.logger == null || config.logger.type === 'default' ) {
-		configClazz = Logger;
-	} else if ( config.logger.type === 'custom' ) {
-		const requirePath = utils.lookupRequirePath( config.logger.path );
-		configClazz = require( requirePath );
+	let Logger;
+	if ( typeof config.logger  === 'function' ) {
+		Logger = config.logger;
 	} else {
-		throw new Error( 'logger type ' + config.logger.type + ' not supported' );
+		Logger = resolvePluginClass( config.logger, 'logger', argv );
 	}
-	config.logger = new configClazz( configOptions );
+	config.logger = new Logger( configOptions );
 	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
 		// TODO: config.logLevel is obsolete
 		config.logLevel = C.LOG_LEVEL[ config.logLevel ];
@@ -100,46 +96,45 @@ function handlePlugins( config, argv ) {
 	if ( config.plugins == null ) {
 		return;
 	}
-	// nexe needs global.require for "dynamic" modules
-	// but browserify and proxyquire can't handle global.require
-	var req = global && global.require ? global.require : require;
-	var connectors = [
-		'messageConnector',
-		'cache',
-		'storage'
-	];
+	var connectors = {
+		'messageConnector': 'msg',
+		'cache': 'cache',
+		'storage': 'storage'
+	};
 	var plugins = {
 		messageConnector: config.plugins.message,
 		cache: config.plugins.cache,
 		storage: config.plugins.storage
 	};
-	var requirePath;
+
 	for ( let key in plugins ) {
 		var plugin = plugins[key];
 		if ( plugin != null ) {
-			var fn = null;
-			if ( plugin.path != null ) {
-				if ( plugin.path[ 0 ] !== '.' ) {
-					requirePath = plugin.path;
-				} else {
-					requirePath = considerLibPrefix( plugin.path, argv );
-				}
-				fn = require( requirePath );
-			} else if ( plugin.name != null ) {
-				var connectorKey = key;
-				if ( connectors.indexOf( connectorKey ) !== -1 ) {
-					if ( connectorKey === 'messageConnector' ) {
-						connectorKey = 'msg';
-					}
-					requirePath = 'deepstream.io-' + connectorKey + '-' + plugin.name;
-					requirePath = considerLibPrefix( requirePath, argv );
-
-					fn = req( requirePath );
-				}
-			}
-			config[key] = new fn( plugin.options );
+			var pluginConstructor = resolvePluginClass( plugin, connectors[key], argv );
+			config[key] = new pluginConstructor( plugin.options );
 		}
 	}
+}
+
+function resolvePluginClass( plugin, type, argv ) {
+	// nexe needs global.require for "dynamic" modules
+	// but browserify and proxyquire can't handle global.require
+	var req = global && global.require ? global.require : require;
+	var requirePath;
+	var pluginConstructor;
+	if ( plugin.path != null ) {
+		requirePath = considerLibPrefix( plugin.path, argv );
+		pluginConstructor = req( requirePath );
+	} else if ( plugin.name != null ) {
+		if ( type != null ) {
+			requirePath = 'deepstream.io-' + type + '-' + plugin.name;
+			requirePath = considerLibPrefix( requirePath, argv );
+			pluginConstructor = req( requirePath );
+		}
+	} else {
+		throw new Error( 'neither name nor path property found for ' + type );
+	}
+	return pluginConstructor;
 }
 
 /**
@@ -204,12 +199,9 @@ function handlePermissionStrategy( config ) {
  * @returns {String} file path with the libPrefix set in cliOptions
  */
 function considerLibPrefix( filePath, argv ) {
+	if ( argv == null ) {
+		argv = {};
+	}
 	var libDir = argv.l || argv.libPrefix || commandLineArguments.l || commandLineArguments.libPrefix;
-
-	if ( libDir ) {
-		return utils.lookupRequirePath( filePath, libDir );
-	}
-	else {
-		return filePath;
-	}
+	return utils.lookupRequirePath( filePath, libDir );
 }
