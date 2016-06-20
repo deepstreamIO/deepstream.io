@@ -74,11 +74,14 @@ function action() {
 		// non-detach casee
 		const Deepstream = require( '../src/deepstream.io.js' );
 		var ds = new Deepstream( null );
+		ds.on( 'started', function() {
+			pidHelper.save( process.pid );
+		} );
 		ds.start();
 		process.
 			removeAllListeners( 'SIGINT' ).on( 'SIGINT', pidHelper.exit ).
 			removeAllListeners( 'SIGTERM' ).on( 'SIGTERM', pidHelper.exit );
-		pidHelper.save( process.pid );
+
 	}
 }
 
