@@ -15,7 +15,7 @@
     "reporter": "node jasmine-runner",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "test-http-server": "node test/test-helper/start-test-server.js",
-    "shrinkwrap": "node scripts/shrinkwrap"
+    "shrinkwrap": "npm shrinkwrap && node scripts/shrinkwrap"
   },
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
     "adm-zip": "^0.4.7",
     "colors": "1.0.3",
     "commander": "^2.9.0",
-    "deepstream.io-logger-winston": "^1.0.0",
+    "deepstream.io-logger-winston": "^1.1.0",
     "engine.io": "1.6.9",
     "js-yaml": "^3.6.1",
     "mkdirp": "^0.5.1",

@@ -47,8 +47,9 @@
       }
     },
     "deepstream.io-logger-winston": {
-      "version": "1.0.0",
-      "from": "deepstream.io-logger-winston@*",
+      "version": "1.1.0",
+      "from": "deepstream.io-logger-winston@1.1.0",
+      "resolved": "https://registry.npmjs.org/deepstream.io-logger-winston/-/deepstream.io-logger-winston-1.1.0.tgz",
       "dependencies": {
         "lodash.merge": {
           "version": "4.4.0",
