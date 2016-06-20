@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0-beta.5",
   "dependencies": {
     "adm-zip": {
       "version": "0.4.7",
@@ -147,9 +147,9 @@
               }
             },
             "negotiator": {
-              "version": "0.6.1",
-              "from": "negotiator@0.6.1",
-              "resolved": "https://registry.npmjs.org/negotiator/-/negotiator-0.6.1.tgz"
+              "version": "0.4.9",
+              "from": "negotiator@0.4.9",
+              "resolved": "https://registry.npmjs.org/negotiator/-/negotiator-0.4.9.tgz"
             }
           }
         }
@@ -231,6 +231,48 @@
           "resolved": "https://registry.npmjs.org/nan/-/nan-2.3.5.tgz"
         }
       }
+    },
+    "winston": {
+      "version": "2.2.0",
+      "from": "winston@*",
+      "resolved": "https://registry.npmjs.org/winston/-/winston-2.2.0.tgz",
+      "dependencies": {
+        "async": {
+          "version": "1.0.0",
+          "from": "async@>=1.0.0 <1.1.0",
+          "resolved": "https://registry.npmjs.org/async/-/async-1.0.0.tgz"
+        },
+        "cycle": {
+          "version": "1.0.3",
+          "from": "cycle@>=1.0.0 <1.1.0",
+          "resolved": "https://registry.npmjs.org/cycle/-/cycle-1.0.3.tgz"
+        },
+        "eyes": {
+          "version": "0.1.8",
+          "from": "eyes@>=0.1.0 <0.2.0",
+          "resolved": "https://registry.npmjs.org/eyes/-/eyes-0.1.8.tgz"
+        },
+        "isstream": {
+          "version": "0.1.2",
+          "from": "isstream@>=0.1.0 <0.2.0",
+          "resolved": "https://registry.npmjs.org/isstream/-/isstream-0.1.2.tgz"
+        },
+        "pkginfo": {
+          "version": "0.3.1",
+          "from": "pkginfo@>=0.3.0 <0.4.0",
+          "resolved": "https://registry.npmjs.org/pkginfo/-/pkginfo-0.3.1.tgz"
+        },
+        "stack-trace": {
+          "version": "0.0.9",
+          "from": "stack-trace@>=0.0.0 <0.1.0",
+          "resolved": "https://registry.npmjs.org/stack-trace/-/stack-trace-0.0.9.tgz"
+        }
+      }
+    },
+    "winston-daily-rotate-file": {
+      "version": "1.1.4",
+      "from": "winston-daily-rotate-file@*",
+      "resolved": "https://registry.npmjs.org/winston-daily-rotate-file/-/winston-daily-rotate-file-1.1.4.tgz"
     },
     "xml2js": {
       "version": "0.4.16",
