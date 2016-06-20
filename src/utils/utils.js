@@ -207,7 +207,7 @@ exports.lookupRequirePath = function( filePath, prefix ) {
 	} else {
 		// filePath is relative, starts with .
 		if ( prefix == null ) {
-			return path.join( process.cwd(), filePath );
+			return path.resolve( process.cwd(), filePath );
 		} else {
 			return resolvePrefixAndFile( filePath, prefix );
 		}
@@ -217,9 +217,9 @@ exports.lookupRequirePath = function( filePath, prefix ) {
 function resolvePrefixAndFile( nonAbsoluteFilePath, prefix ) {
 	if ( path.parse( prefix ).root === '' ) {
 		// prefix is not absolute
-		return path.join( process.cwd(), prefix, nonAbsoluteFilePath );
+		return path.resolve( process.cwd(), prefix, nonAbsoluteFilePath );
 	} else {
 		// prefix is absolute
-		return path.join( prefix, nonAbsoluteFilePath );
+		return path.resolve( prefix, nonAbsoluteFilePath );
 	}
 }
