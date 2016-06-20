@@ -174,13 +174,24 @@ exports.merge = function() {
 	return result;
 };
 
-/*
+/**
+ * If a prefix is not set the filePath will be returned
+ *
+ * Otherwise it will either replace return a new path prepended with the prefix.
+ * If the prefix is not an absolute path it will also prepend the CWD.
+ *
  * file        || relative (starts with .) | absolute | else (npm module path)
  * -----------------------------------------------------------------------------
  * *prefix     || *CWD + prefix + file     | file     | *CWD + prefix + file
  * *no prefix  ||  CWD + file              | file     | file (resolved by nodes require)
  *
  * *CWD = ignore CWD if prefix is absolute
+ *
+ * @param {String} filePath
+ * @param {String} prefix
+ *
+ * @private
+ * @returns {String} file path with the prefix
  */
 exports.lookupRequirePath = function( filePath, prefix ) {
 	if ( path.parse( filePath ).root !== '' ) {
@@ -191,14 +202,14 @@ exports.lookupRequirePath = function( filePath, prefix ) {
 		if ( prefix == null ) {
 			return filePath;
 		} else {
-			return resolvePrefixAndFile( prefix, filePath );
+			return resolvePrefixAndFile( filePath, prefix );
 		}
 	} else {
 		// filePath is relative, starts with .
 		if ( prefix == null ) {
 			return path.join( process.cwd(), filePath );
 		} else {
-			return resolvePrefixAndFile( prefix, filePath );
+			return resolvePrefixAndFile( filePath, prefix );
 		}
 	}
 };
@@ -210,25 +221,5 @@ function resolvePrefixAndFile( nonAbsoluteFilePath, prefix ) {
 	} else {
 		// prefix is absolute
 		return path.join( prefix, nonAbsoluteFilePath );
-	}
-}
-
-/**
- * If a prefix is not set the filePath will be returned
- *
- * Otherwise it will either replace return a new path prepended with the prefix.
- * If the prefix is not an absolute path it will also prepend the CWD.
- *
- * @param {String} filePath
- * @param {String} prefix
- *
- * @private
- * @returns {String} file path with the prefix
- */
-exports.normalisePath = function( filePath, prefix ) {
-	if ( path.parse( prefix ).root !== '' ) {
-		return path.join( prefix, filePath );
-	} else {
-		return path.join( process.cwd(), prefix, filePath );
 	}
 }

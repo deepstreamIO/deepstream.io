@@ -113,11 +113,11 @@ function extendConfig( config, argv, configDir ) {
 	}
 
 	if( config.auth && config.auth.options && config.auth.options.path ) {
-		config.auth.options.path = utils.normalisePath( config.auth.options.path, configDir );
+		config.auth.options.path = utils.lookupRequirePath( config.auth.options.path, configDir );
 	}
 
 	if( config.permission && config.permission.options && config.permission.options.path ) {
-		config.permission.options.path = utils.normalisePath( config.permission.options.path, configDir );
+		config.permission.options.path = utils.lookupRequirePath( config.permission.options.path, configDir );
 	}
 
 	return utils.merge( { plugins: {} }, defaultOptions.get(), config, cliArgs );

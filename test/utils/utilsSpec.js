@@ -1,6 +1,8 @@
 /* global describe, it, expect, jasmine */
-var utils = require( '../../src/utils/utils' ),
-	EventEmitter = require( 'events' ).EventEmitter;
+
+var path = require( 'path' );
+var utils = require( '../../src/utils/utils' );
+var EventEmitter = require( 'events' ).EventEmitter;
 
 describe( 'utils', function(){
 
@@ -238,7 +240,7 @@ describe( 'merges recoursively', function(){
 			pets: {
 				birds: [ 'parrot', 'dove' ]
 			}
-			
+
 		};
 
 		var objB = {
@@ -269,7 +271,7 @@ describe( 'merges recoursively', function(){
 				cat: 2,
 				ape: 3
 			}
-			
+
 		};
 
 		var objB = {
@@ -291,3 +293,40 @@ describe( 'merges recoursively', function(){
 
 	});
 });
+
+describe( 'lookupRequirePath', function() {
+	it( 'check cases with no or a relative prefix', function() {
+		// node style path (no dot at the start and not absolute path)
+		expect( utils.lookupRequirePath( 'foo-bar' ) ).toEqual( 'foo-bar' );
+		expect( utils.lookupRequirePath( 'dir/foo-bar' ) ).toEqual( 'dir/foo-bar' );
+		expect( utils.lookupRequirePath( 'foo-bar', 'pre' ) ).toEqual( path.resolve( 'pre', 'foo-bar' ) );
+		expect( utils.lookupRequirePath( 'dir/foo-bar', 'pre' ) ).toEqual( path.resolve( 'pre', 'dir', 'foo-bar' ) );
+
+		// use an absolute path for the filename
+		expect( utils.lookupRequirePath( '/usr/foo-bar' ) ).toEqual( '/usr/foo-bar' );
+		expect( utils.lookupRequirePath( '/usr/dir/foo-bar' ) ).toEqual( '/usr/dir/foo-bar' );
+		expect( utils.lookupRequirePath( '/usr/foo-bar', 'pre' ) ).toEqual( '/usr/foo-bar' );
+		expect( utils.lookupRequirePath( '/usr/dir/foo-bar', 'pre' ) ).toEqual( '/usr/dir/foo-bar' );
+
+		// use a relative path for the filename
+		expect( utils.lookupRequirePath( './foo-bar' ) ).toEqual( path.resolve( 'foo-bar' ) );
+		expect( utils.lookupRequirePath( './dir/foo-bar' ) ).toEqual( path.resolve( 'dir', 'foo-bar' ) );
+		expect( utils.lookupRequirePath( './foo-bar', 'pre' ) ).toEqual( path.resolve( 'pre', 'foo-bar' ) );
+		expect( utils.lookupRequirePath( './dir/foo-bar', 'pre' ) ).toEqual( path.resolve( 'pre', 'dir', 'foo-bar' ) );
+	} );
+
+	it( 'check cases with an absolute prefix', function() {
+		// node style path (no dot at the start and not absolute path)
+		expect( utils.lookupRequirePath( 'foo-bar', '/pre' ) ).toEqual( path.resolve( '/pre', 'foo-bar' ) );
+		expect( utils.lookupRequirePath( 'dir/foo-bar', '/pre' ) ).toEqual( path.resolve( '/pre', 'dir', 'foo-bar' ) );
+
+		// use an absolute path for the filename
+		expect( utils.lookupRequirePath( '/usr/foo-bar', '/pre' ) ).toEqual( '/usr/foo-bar' );
+		expect( utils.lookupRequirePath( '/usr/dir/foo-bar', '/pre' ) ).toEqual( '/usr/dir/foo-bar' );
+
+		// use a relative path for the filename
+		expect( utils.lookupRequirePath( './foo-bar', '/pre' ) ).toEqual( path.resolve( '/pre', 'foo-bar' ) );
+		expect( utils.lookupRequirePath( './dir/foo-bar', '/pre' ) ).toEqual( path.resolve( '/pre', 'dir', 'foo-bar' ) );
+
+	} );
+} );

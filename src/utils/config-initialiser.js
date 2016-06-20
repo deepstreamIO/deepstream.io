@@ -207,7 +207,7 @@ function considerLibPrefix( filePath, argv ) {
 	var libDir = argv.l || argv.libPrefix || commandLineArguments.l || commandLineArguments.libPrefix;
 
 	if ( libDir ) {
-		return utils.normalisePath( filePath, libDir );
+		return utils.lookupRequirePath( filePath, libDir );
 	}
 	else {
 		return filePath;
