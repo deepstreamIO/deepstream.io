@@ -55,7 +55,7 @@ function action() {
 			if ( err ) {
 				return pidHelper.exit( err );
 			}
-			const child = child_process.spawn( path.resolve( __dirname, 'deepstream-start' ), args, {
+			const child = child_process.spawn( path.resolve( __dirname, 'deepstream' ), ['start'].concat( args ), {
 				detached: true,
 				stdio: [ 'ignore']
 			} );
