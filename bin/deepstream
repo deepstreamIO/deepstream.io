@@ -11,8 +11,8 @@ const status = require( './deepstream-status' );
 const stop = require( './deepstream-stop' );
 
 program
-	.version( pgk.version )
-	.usage( '[command]' );
+	.usage( '[command]' )
+	.version( pgk.version );
 
 start( program );
 stop( program );
@@ -20,3 +20,7 @@ status( program );
 install( program );
 
 program.parse( process.argv );
+
+if ( program.args.length === 0 ) {
+	program.help();
+}
