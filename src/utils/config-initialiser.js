@@ -1,5 +1,6 @@
 'use strict';
 
+const DefaultLogger = require( 'deepstream.io-logger-winston' );
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 const utils = require( './utils' );
@@ -60,16 +61,17 @@ function handleUUIDProperty( config ) {
 function handleLogger( config, argv ) {
 	let configOptions = ( config.logger || {} ).options;
 	let Logger;
-	if ( typeof config.logger  === 'function' ) {
-		Logger = config.logger;
+	if ( config.logger == null ) {
+		Logger = DefaultLogger;
 	} else {
 		Logger = resolvePluginClass( config.logger, 'logger', argv );
 	}
 	config.logger = new Logger( configOptions );
 	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
-		// TODO: config.logLevel is obsolete
+		// NOTE: config.logLevel has highest priority, compare to the level defined
+		// in the nested logger object
 		config.logLevel = C.LOG_LEVEL[ config.logLevel ];
-		config.logger.setLogLevel( C.LOG_LEVEL[ config.logLevel ] );
+		config.logger.setLogLevel( config.logLevel );
 	}
 }
 

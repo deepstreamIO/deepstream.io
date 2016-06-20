@@ -21,12 +21,13 @@ sslCa: null
 # TODO - Introduce file paths for this
 
 # logger:
-#   type: default
+#   name: winston
 #   options:
+#     # specify a list of transports (console, file, time)
 #     -
 #       type: console
 #       options:
-#         level: info
+#         level: info # value of logLevel will always overwrite this value
 #         colorize: true
 
 # Plugin Configuration

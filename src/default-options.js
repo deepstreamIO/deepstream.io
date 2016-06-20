@@ -56,11 +56,6 @@ exports.get = function() {
 		},
 
 		/*
-		 * Default Logger
-		 */
-		logger: require( 'deepstream.io-logger-winston' ),
-
-		/*
 		 * Default Plugins
 		 */
 		messageConnector: require( './default-plugins/noop-message-connector' ),
