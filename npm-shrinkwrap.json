@@ -227,9 +227,9 @@
               }
             },
             "negotiator": {
-              "version": "0.4.9",
-              "from": "negotiator@0.4.9",
-              "resolved": "https://registry.npmjs.org/negotiator/-/negotiator-0.4.9.tgz"
+              "version": "0.6.1",
+              "from": "negotiator@0.6.1",
+              "resolved": "https://registry.npmjs.org/negotiator/-/negotiator-0.6.1.tgz"
             }
           }
         }
