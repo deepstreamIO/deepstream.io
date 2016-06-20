@@ -1,10 +1,12 @@
+/* globals describe, it, expect */
+
 var defaultConfig = require( '../../src/default-options' );
 var path = require( 'path' );
 
-describe( 'plugins are initialised as per configuration', function(){
+describe( 'plugins are initialised as per configuration', function() {
 	var configInitialiser = require( '../../src/utils/config-initialiser' );
 
-	it( 'loads plugins from a relative path', function(){
+	it( 'loads plugins from a relative path', function() {
 		var config = defaultConfig.get();
 		config.plugins = {
 			cache: {
@@ -14,10 +16,10 @@ describe( 'plugins are initialised as per configuration', function(){
 		};
 		configInitialiser.initialise( config, {} );
 		expect( config.cache.type ).toBe( 'pluginA' );
-		expect( config.cache.options ).toEqual({ some: 'options' });
-	});
+		expect( config.cache.options ).toEqual( { some: 'options' } );
+	} );
 
-	it( 'loads plugins via module names', function(){
+	it( 'loads plugins via module names', function() {
 		var config = defaultConfig.get();
 		config.plugins = {
 			cache: {
@@ -27,9 +29,9 @@ describe( 'plugins are initialised as per configuration', function(){
 		};
 		configInitialiser.initialise( config, {} );
 		expect( config.cache.toString() ).toBe( '[object Object]' );
-	});
+	} );
 
-	it( 'loads plugins from a relative path', function(){
+	it( 'loads plugins from a relative path', function() {
 		var config = defaultConfig.get();
 		config.plugins = {
 			cache: {
@@ -39,14 +41,14 @@ describe( 'plugins are initialised as per configuration', function(){
 		};
 		configInitialiser.initialise( config, { l: './test/test-plugins' } );
 		expect( config.cache.type ).toBe( 'pluginA' );
-		expect( config.cache.options ).toEqual({ some: 'options' });
-	});
-});
+		expect( config.cache.options ).toEqual({ some: 'options' } );
+	} );
+} );
 
-describe( 'translates shortcodes into paths', function(){
+describe( 'translates shortcodes into paths', function() {
 	var configInitialiser = require( '../../src/utils/config-initialiser' );
 
-	it( 'translates cache', function(){
+	it( 'translates cache', function() {
 		var config = defaultConfig.get();
 		var errored = false;
 		config.plugins = {
@@ -62,9 +64,9 @@ describe( 'translates shortcodes into paths', function(){
 		}
 
 		expect( errored ).toBe( true );
-	});
+	} );
 
-	it( 'translates message connectors', function(){
+	it( 'translates message connectors', function() {
 		var config = defaultConfig.get();
 		var errored = false;
 		config.plugins = {
@@ -81,13 +83,13 @@ describe( 'translates shortcodes into paths', function(){
 		}
 
 		expect( errored ).toBe( true );
-	});
-});
+	} );
+} );
 
-describe( 'creates the right authentication handler', function(){
+describe( 'creates the right authentication handler', function() {
 	var configInitialiser = require( '../../src/utils/config-initialiser' );
 
-	it( 'works for authtype: none', function(){
+	it( 'works for authtype: none', function() {
 		var config = defaultConfig.get();
 
 		config.auth = {
@@ -95,9 +97,9 @@ describe( 'creates the right authentication handler', function(){
 		};
 		configInitialiser.initialise( config, {} );
 		expect( config.authenticationHandler.type ).toBe( 'none' );
-	});
+	} );
 
-	it( 'works for authtype: http', function(){
+	it( 'works for authtype: http', function() {
 		var config = defaultConfig.get();
 
 		config.auth = {
@@ -111,19 +113,19 @@ describe( 'creates the right authentication handler', function(){
 
 		configInitialiser.initialise( config, {} );
 		expect( config.authenticationHandler.type ).toBe( 'http webhook to http://some-url.com' );
-	});
+	} );
 
-	it( 'fails for missing auth sections', function(){
+	it( 'fails for missing auth sections', function() {
 		var config = defaultConfig.get();
 
 		delete config.auth;
 
-		expect(function(){
+		expect(function() {
 			configInitialiser.initialise( config, {} );
-		}).toThrowError( 'No authentication type specified' );
-	});
+		} ).toThrowError( 'No authentication type specified' );
+	} );
 
-	it( 'fails for unknown auth types', function(){
+	it( 'fails for unknown auth types', function() {
 		var config = defaultConfig.get();
 
 		config.auth = {
@@ -131,12 +133,12 @@ describe( 'creates the right authentication handler', function(){
 			options: {}
 		};
 
-		expect(function(){
+		expect(function() {
 			configInitialiser.initialise( config, {} );
-		}).toThrowError( 'Unknown authentication type bla' );
-	});
+		} ).toThrowError( 'Unknown authentication type bla' );
+	} );
 
-	it( 'overrides with type "none" when disableAuth is set', function(){
+	it( 'overrides with type "none" when disableAuth is set', function() {
 		process.deepstreamCLI = { disableAuth: true };
 		var config = defaultConfig.get();
 
@@ -148,13 +150,13 @@ describe( 'creates the right authentication handler', function(){
 		configInitialiser.initialise( config, {} );
 		expect( config.authenticationHandler.type ).toBe( 'none' );
 		delete process.deepstreamCLI;
-	});
-});
+	} );
+} );
 
-describe( 'creates the permissionHandler', function(){
+describe( 'creates the permissionHandler', function() {
 	var configInitialiser = require( '../../src/utils/config-initialiser' );
 
-	it( 'creates the config permission handler', function(){
+	it( 'creates the config permission handler', function() {
 		var config = defaultConfig.get();
 
 		config.permission = {
@@ -165,9 +167,9 @@ describe( 'creates the permissionHandler', function(){
 		};
 		configInitialiser.initialise( config, {} );
 		expect( config.permissionHandler.type ).toBe( 'valve permissions loaded from ./test/test-configs/basic-permission-config.json' );
-	});
+	} );
 
-	it( 'fails for invalid permission types', function(){
+	it( 'fails for invalid permission types', function() {
 		var config = defaultConfig.get();
 
 		config.permission = {
@@ -176,22 +178,22 @@ describe( 'creates the permissionHandler', function(){
 				path: './test/test-configs/basic-permission-config.json'
 			}
 		};
-		expect(function(){
+		expect(function() {
 			configInitialiser.initialise( config, {} );
-		}).toThrowError( 'Unknown permission type does-not-exist' );
+		} ).toThrowError( 'Unknown permission type does-not-exist' );
 
-	});
+	} );
 
-	it( 'fails for missing permission configs', function(){
+	it( 'fails for missing permission configs', function() {
 		var config = defaultConfig.get();
 		delete config.permission;
 
-		expect(function(){
+		expect(function() {
 			configInitialiser.initialise( config, {} );
-		}).toThrowError( 'No permission type specified' );
-	});
+		} ).toThrowError( 'No permission type specified' );
+	} );
 
-	it( 'overrides with type "none" when disablePermissions is set', function(){
+	it( 'overrides with type "none" when disablePermissions is set', function() {
 		process.deepstreamCLI = { disablePermissions: true };
 		var config = defaultConfig.get();
 
@@ -203,5 +205,34 @@ describe( 'creates the permissionHandler', function(){
 		configInitialiser.initialise( config, {} );
 		expect( config.permissionHandler.type ).toBe( 'none' );
 		delete process.deepstreamCLI;
-	});
-});
+	} );
+
+	it( 'load a custom logger', function() {
+		var config = defaultConfig.get();
+
+		config.logger = {
+			type: 'custom',
+			path: './test/test-helper/custom-logger',
+			options: {
+				a: 1
+			}
+		};
+		configInitialiser.initialise( config, {} );
+		expect( config.logger.options ).toEqual( {a: 1} );
+	} );
+
+	it( 'throw an error for a unsupported logger type', function( next ) {
+		var config = defaultConfig.get();
+
+		config.logger = {
+			type: 'not-existing-logger-type',
+		};
+		try {
+			configInitialiser.initialise( config, {} );
+			next.fail( 'should fail' );
+		} catch ( err ) {
+			expect( err.toString() ).toContain( 'not-existing-logger-type' );
+			next();
+		}
+	} );
+} );

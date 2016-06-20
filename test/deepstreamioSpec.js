@@ -110,10 +110,22 @@ describe( 'it starts and stops a configured server', function() {
 		server.start();
 	} );
 
-	it( 'encounters a plugin error', function( next ) {
+	it( 'encounters a logger error', function( next ) {
 		server.on( 'started', function() {
 			server._options.logger.emit( 'error', 'test error' );
 			expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from logger plugin: test error' );
+			next();
+		} );
+		server.start();
+	} );
+	it( 'encounters a plugin error', function( next ) {
+		var fakeCloseablePlugin = new  ClosableLogger();
+		server.set( 'cache', fakeCloseablePlugin );
+		server.on( 'started', function() {
+			fakeCloseablePlugin.emit( 'error', 'test error' );
+			//TODO: why fakeCloseablePlugin contains console args?
+			expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from cache plugin: test error' );
+			expect( fakeCloseablePlugin.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from cache plugin: test error' );
 			next();
 		} );
 		server.start();

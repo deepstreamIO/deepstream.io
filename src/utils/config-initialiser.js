@@ -59,23 +59,22 @@ function handleUUIDProperty( config ) {
  * @returns {void}
  */
 function handleLogger( config ) {
+	let configClazz;
+	let configOptions = ( config.logger || {} ).options;
 	if ( config.logger == null || config.logger.type === 'default' ) {
-		config.logger = {
-			fn: Logger,
-			option: ( config.logger || {} ).options
-		};
-	}
-
-	if ( config.logger.fn == null ) {
+		configClazz = Logger;
+	} else if ( config.logger.type === 'custom' ) {
 		const requirePath = utils.lookupRequirePath( config.logger.path );
-		config.logger.fn = require( requirePath );
+		configClazz = require( requirePath );
+	} else {
+		throw new Error( 'logger type ' + config.logger.type + ' not supported' );
 	}
-
+	config.logger = new configClazz( configOptions );
 	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
+		// TODO: config.logLevel is obsolete
 		config.logLevel = C.LOG_LEVEL[ config.logLevel ];
+		config.logger.setLogLevel( C.LOG_LEVEL[ config.logLevel ] );
 	}
-
-	config.logger = new config.logger.fn( config.logger.options );
 }
 
 /**

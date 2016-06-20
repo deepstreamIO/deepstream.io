@@ -41,8 +41,8 @@ const LEVELS_AND_COLORS = {
 *
 */
 class Logger  {
-	constructor( loggerConfig ) {
-		this._loggerConfig = loggerConfig;
+	constructor( loggerOptions ) {
+		this._loggerOptions = loggerOptions;
 		this._transports = [];
 		this._initializeTransports();
 
@@ -60,16 +60,18 @@ class Logger  {
 	// off() {}
 
 	_initializeTransports() {
-		if ( this._loggerConfig && this._loggerConfig.type === 'default' ) {
-			const loggers = this._loggerConfig.options;
+		if ( this._loggerOptions && this._loggerOptions.type === 'default' ) {
+			const loggers = this._loggerOptions.options || [];
 			for ( let i = 0; i < loggers.length; i++ ) {
-				const logger = this._loggerConfig.options[i];
+				const logger = this._loggerOptions.options[i];
+				if ( logger.type === 'file' || logger.type === 'time' ) {
+					if ( logger.options == null || logger.options.filename == null ) {
+						throw new Error( 'transport "' + logger.type + '" needs a filename option' );
+					}
+				}
 				if ( logger.type === 'console' ) {
 					this._transports.push( createConsoleTransport( logger.options ) );
 				} else if ( logger.type === 'file' ) {
-					if ( !logger.options && !logger.options.filename ) {
-						throw new Error( 'file logger needs a filename, but found: ' + logger.options );
-					}
 					this._transports.push(
 						new ( winston.transports.File )( logger.options )
 					);
@@ -77,19 +79,13 @@ class Logger  {
 					this._transports.push(
 						new ( winstonRotateFile )( logger.options )
 					);
-				} else if ( logger.type === 'custom' ) {
-					const requirePath = utils.lookupRequirePath( logger.path );
-					const clazz = require( requirePath );
-					this._transports.push(
-						new ( clazz )( logger.options )
-					);
 				} else {
-					throw new Error( `logger type ${logger.type} not supported` );
+					throw new Error( `transport type ${logger.type} not supported` );
 				}
 			}
 		} else {
 			// default logger (behaviour like the std-out-logger)
-			this._transports.push( createConsoleTransport( this._loggerConfig ) );
+			this._transports.push( createConsoleTransport( this._loggerOptions ) );
 		}
 	}
 
@@ -125,7 +121,7 @@ class Logger  {
 	}
 }
 
-function createConsoleTransport( loggerConfig ) {
+function createConsoleTransport( loggerOptions ) {
 	const defaults = {
 		level: 'info',
 		colorize: true,
@@ -140,7 +136,7 @@ function createConsoleTransport( loggerConfig ) {
 			return message;
 		}
 	};
-	return new ( winston.transports.Console )( utils.merge( defaults, loggerConfig ) );
+	return new ( winston.transports.Console )( utils.merge( defaults, loggerOptions ) );
 }
 
 module.exports = Logger;

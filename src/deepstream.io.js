@@ -119,9 +119,6 @@ Deepstream.prototype.start = function() {
 };
 
 Deepstream.prototype._start = function() {
-	this._options.logger.setLogLevel( this._options.logLevel );
-	// this._options.logger._setColors( this._options.colors );
-
 	this._showStartLogo();
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
