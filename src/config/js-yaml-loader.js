@@ -88,7 +88,7 @@ module.exports.loadConfig = function( args ) {
 	var configPath = setGlobalConfigDirectory( argv );
 	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
 	var rawConfig = parseFile( configPath, configString );
-	var config = extendConfig( rawConfig, argv, path.dirname( configPath ) );
+	var config = extendConfig( rawConfig, argv );
 
 	return {
 		config: configInitialiser.initialise( config ),
@@ -127,7 +127,7 @@ function setGlobalLibDirectory( argv ) {
  * @private
  * @returns {Object} extended config
  */
-function extendConfig( config, argv, configDir ) {
+function extendConfig( config, argv ) {
 	var cliArgs = {};
 	var key;
 
