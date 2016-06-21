@@ -249,7 +249,7 @@ describe( 'config-initialiser', function() {
 				configInitialiser.initialise( config );
 				next.fail( 'should fail' );
 			} catch ( err ) {
-				expect( err.toString() ).toContain( 'neither name nor path property found' );
+				expect( err.toString() ).toContain( 'Neither name nor path property found' );
 				next();
 			}
 		} );

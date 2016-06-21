@@ -123,13 +123,11 @@ Deepstream.prototype._start = function() {
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
 
-	if( this._configFile === undefined ) {
-		// API was called with an object in the constructor
-	} else if ( this._configFile === null ) {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INFO, 'no configuration file found' );
-	} else {
+	// otherwise (no configFile) deepstream was invoked by API
+	if ( this._configFile != null ) {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
 	}
+
 
 	var authTypeMsg = 'authentication type ' + ( this._options.authenticationHandler.type || 'custom' );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, authTypeMsg );

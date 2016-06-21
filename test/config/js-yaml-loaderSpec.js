@@ -145,7 +145,7 @@ describe( 'js-yaml-loader', function() {
 			var stub = setUpStub();
 			expect(function(){
 				stub.configLoader.loadConfig( {config:'./test/test-configs/does-not-exist.yml'} )
-			}).toThrowError( 'configuration file not found at: ./test/test-configs/does-not-exist.yml' );
+			}).toThrowError( 'Configuration file not found at: ./test/test-configs/does-not-exist.yml' );
 		} );
 
 		it( 'load a custom json file path', function() {
@@ -181,7 +181,7 @@ describe( 'js-yaml-loader', function() {
 			var stub = setUpStub( false );
 			expect( function() {
 				stub.configLoader.loadConfig( {config:'./not-existing-config'} ).config;
-			} ).toThrowError( 'configuration file not found at: ./not-existing-config' );
+			} ).toThrowError( 'Configuration file not found at: ./not-existing-config' );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 1 );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( './not-existing-config' );
 		} );

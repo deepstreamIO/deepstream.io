@@ -65,7 +65,7 @@ function handleUUIDProperty( config ) {
 function handleSSLProperties( config ) {
 	var sslFiles = [ 'sslKey', 'sslCert', 'sslCa' ];
 	var key, resolvedFilePath, filePath;
-	for( var i=0; i< sslFiles.length; i++ ) {
+	for( var i = 0; i < sslFiles.length; i++ ) {
 		key = sslFiles[ i ];
 		filePath = config[ key ];
 		if( !filePath ) {
@@ -74,8 +74,7 @@ function handleSSLProperties( config ) {
 		resolvedFilePath = file.lookupConfRequirePath( filePath );
 		fs.readFile( resolvedFilePath, 'utf8', function( error, fileContent ) {
 			if ( error ) {
-				console.error( `The file path "${resolvedFilePath}" provided by "${key}" does not exist.` );
-				process.exit();
+				throw new Error( `The file path "${resolvedFilePath}" provided by "${key}" does not exist.` );
 			}
 			config[ key ] = fileContent;
 		} );
@@ -166,7 +165,7 @@ function resolvePluginClass( plugin, type ) {
 			pluginConstructor = req( requirePath );
 		}
 	} else {
-		throw new Error( 'neither name nor path property found for ' + type );
+		throw new Error( 'Neither name nor path property found for ' + type );
 	}
 	return pluginConstructor;
 }

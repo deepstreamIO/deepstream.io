@@ -150,7 +150,7 @@ function verifyCustomConfigPath( configPath ) {
 	if( file.fileExistsSync( configPath ) ) {
 		return configPath;
 	} else {
-		throw new Error( 'configuration file not found at: ' + configPath );
+		throw new Error( 'Configuration file not found at: ' + configPath );
 	}
 }
 
@@ -161,7 +161,7 @@ function verifyCustomConfigPath( configPath ) {
  * @returns {String} filePath
  */
 function getDefaultConfigPath() {
-	var defaultConfigBaseName = path.join( '.','conf', 'config' );
+	var defaultConfigBaseName = path.join( '.', 'conf', 'config' );
 	var filePath, i;
 
 	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
