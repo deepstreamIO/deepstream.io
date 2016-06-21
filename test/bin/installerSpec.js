@@ -106,7 +106,7 @@ describe( 'installer', function() {
 		} );
 
 		installer( {type: 'foo', name: 'bar'}, function( error ) {
-			expect( error.toString() ).toContain( 'not found' );
+			expect( error.toString() ).toContain( 'Not found' );
 			expect( error.toString() ).toContain( 'see available' );
 			done();
 		} );
@@ -311,7 +311,7 @@ describe( 'installer', function() {
 			}
 			// show example config
 			expect( fsMock.readFileSync.calls.argsFor( 0 )[0] )
-				.toEqual( pj( 'lib', 'deepstream.io-cache-redis', 'README.md' ) );
+				.toEqual( pj( 'lib', 'deepstream.io-cache-redis', 'example-config.yml' ) );
 			done();
 		} );
 

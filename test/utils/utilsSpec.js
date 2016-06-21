@@ -1,6 +1,8 @@
 /* global describe, it, expect, jasmine */
-var utils = require( '../../src/utils/utils' ),
-	EventEmitter = require( 'events' ).EventEmitter;
+
+var path = require( 'path' );
+var utils = require( '../../src/utils/utils' );
+var EventEmitter = require( 'events' ).EventEmitter;
 
 describe( 'utils', function(){
 
@@ -238,7 +240,7 @@ describe( 'merges recoursively', function(){
 			pets: {
 				birds: [ 'parrot', 'dove' ]
 			}
-			
+
 		};
 
 		var objB = {
@@ -269,7 +271,7 @@ describe( 'merges recoursively', function(){
 				cat: 2,
 				ape: 3
 			}
-			
+
 		};
 
 		var objB = {

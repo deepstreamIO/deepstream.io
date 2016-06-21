@@ -1,6 +1,5 @@
 # General
 serverName: UUID # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
-colors: true # Use colors when logging. (This looks good in a console, but will leave color markers in logfiles)
 showLogo: true # Show the deepstream logo on startup (highly recommended)
 logLevel: INFO # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 
@@ -11,34 +10,38 @@ port: 6020 # port for the HTTP/websocket server
 host: 0.0.0.0 # host for the HTTP/websocket server
 tcpPort: 6021 # port for the TCP server
 tcpHost: 0.0.0.0 # host for the TCP server
-urlPath: /engine.io # url path HTTP/WEBSOCKET connections connect to
-# TODO - Change to deepstream to decouple from engine.io usage
+urlPath: /deepstream # url path HTTP/WEBSOCKET connections connect to
 
 # SSL Configuration
 sslKey: null
 sslCert: null
 sslCa: null
-# TODO - Introduce file paths for this
+
+# logger:
+#   name: winston
+#   options:
+#     # specify a list of transports (console, file, time)
+#     -
+#       type: console
+#       options:
+#         level: info # value of logLevel will always overwrite this value
+#         colorize: true
 
 # Plugin Configuration
 plugins:
-
-  # logger:
-  #   name: default
-  #
   # message:
-  #   path: redis
+  #   name: redis
   #   options:
   #     host: localhost
   #     port: 5672
   #
   # cache:
-  #   path: memcached
+  #   name: memcached
   #   options:
   #     serverLocation: 'localhost:11211'
   #
   # storage:
-  #   path: rethink
+  #   name: rethink
   #   options:
   #     host: localhost
   #     port: 28015

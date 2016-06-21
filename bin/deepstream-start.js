@@ -32,7 +32,7 @@ module.exports = function( program ) {
 }
 
 function action() {
-	process.deepstreamCLI = this;
+	global.deepstreamCLI = this;
 
 	if ( this.detach ) {
 		// --detach is not supported for windows
@@ -73,11 +73,16 @@ function action() {
 	} else {
 		// non-detach casee
 		const Deepstream = require( '../src/deepstream.io.js' );
-		var ds = new Deepstream( null );
-		ds.on( 'started', function() {
-			pidHelper.save( process.pid );
-		} );
-		ds.start();
+		try {
+			var ds = new Deepstream();
+			ds.on( 'started', function() {
+				pidHelper.save( process.pid );
+			} );
+			ds.start();
+		} catch ( err ) {
+			console.error( err.toString() );
+			process.exit( 1 );
+		}
 		process.
 			removeAllListeners( 'SIGINT' ).on( 'SIGINT', pidHelper.exit ).
 			removeAllListeners( 'SIGTERM' ).on( 'SIGTERM', pidHelper.exit );

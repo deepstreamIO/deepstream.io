@@ -21,7 +21,7 @@ exports.get = function() {
 		tcpPort: 6021,
 		tcpHost: '0.0.0.0',
 		httpServer: null,
-		urlPath: '/engine.io',
+		urlPath: '/deepstream',
 
 
 		/*
@@ -47,18 +47,12 @@ exports.get = function() {
 		 * Permissioning
 		 */
 		permission: {
-			type: 'config',
-			options: {
-				path: './permissions.json',
-				maxRuleIterations: 3,
-				cacheEvacuationInterval: 60000
-			}
+			type: 'none'
 		},
 
 		/*
 		 * Default Plugins
 		 */
-		logger: require( './default-plugins/std-out-logger' ),
 		messageConnector: require( './default-plugins/noop-message-connector' ),
 		cache: require( './default-plugins/local-cache' ),
 		storage: require( './default-plugins/noop-storage' ),

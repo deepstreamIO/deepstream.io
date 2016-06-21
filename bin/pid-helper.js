@@ -6,7 +6,7 @@ const path = require( 'path' );
 const os = require( 'os' );
 
 const DEFAULT_PID_FILE = path.join( os.tmpDir(), 'deepstream.pid' );
-const PID_FILE = process.env.PID_FILE || DEFAULT_PID_FILE;
+const PID_FILE = process.env.DEEPSTREAM_PID_FILE || DEFAULT_PID_FILE;
 
 /**
  * Save a JSON (pid and timestamp) object to the temp directofy of the system

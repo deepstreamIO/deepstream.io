@@ -8,8 +8,9 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	readMessage = require( './utils/read-message' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
-	jsYamlLoader = require( './utils/js-yaml-loader' ),
-	ConfigPermissionHandler = require( './permission/config-permission-handler' ),
+	defaultOptions = require( './default-options' ),
+	configInitialiser = require( './config/config-initialiser' ),
+	jsYamlLoader = require( './config/js-yaml-loader' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
@@ -18,6 +19,8 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	pkg = require( '../package.json' );
 
 require( 'colors' );
+
+const STATES = C.STATES;
 
 /**
  * Deepstream is a realtime data server that scales horizontally
@@ -31,9 +34,9 @@ require( 'colors' );
  * @constructor
  */
 var Deepstream = function( config ) {
-	this.isRunning = false;
+	this._currentState = STATES.CLOSED;
 	this.constants = C;
-	this._options = this._loadConfig( config );
+	this._loadConfig( config );
 	this._connectionEndpoint = null;
 	this._engineIo = null;
 	this._messageProcessor = null;
@@ -42,12 +45,10 @@ var Deepstream = function( config ) {
 	this._rpcHandler = null;
 	this._recordHandler = null;
 	this._webRtcHandler = null;
-	this._initialised = false;
 	this._plugins = [
 		'messageConnector',
 		'storage',
 		'cache',
-		'logger',
 		'permissionHandler' //TODO: This now requires the permissionHandler to have a ready flag / emit events
 	];
 
@@ -99,9 +100,20 @@ Deepstream.prototype.set = function( key, value ) {
 };
 
 /**
+ * Returns true if the deepstream server is running, otherwise false
+ *
+ * @public
+ * @returns {boolean}
+ */
+Deepstream.prototype.isRunning = function() {
+	return this._currentState === STATES.IS_RUNNING;
+};
+
+/**
  * Starts up deepstream. The startup process has three steps:
  *
- * - Initialise all dependencies (cache connector, message connector, storage connector and logger)
+ * - First of all initialise the logger and wait for it (ready event)
+ * - Then initialise all other dependencies (cache connector, message connector, storage connector)
  * - Instantiate the messaging pipeline and record-, rpc- and event-handler
  * - Start TCP and HTTP server
  *
@@ -109,22 +121,36 @@ Deepstream.prototype.set = function( key, value ) {
  * @returns {void}
  */
 Deepstream.prototype.start = function() {
-	this._showStartLogo();
-
-	if( this._options.logger.isReady ) {
-		this._options.logger.setLogLevel( this._options.logLevel );
-		this._options.logger._$useColors = this._options.colors;
+	if( this._currentState !== STATES.CLOSED ) {
+		throw new Error( `Server can only start after it stops succesfully, currently ${this._currentState}` );
 	}
+	this._currentState = STATES.STARTING;
+
+	var loggerInitializer = new DependencyInitialiser( this._options, 'logger' );
+	loggerInitializer.once( 'ready',
+		this._checkReady.bind( this, 'logger', loggerInitializer.getDependency() )
+	);
+	loggerInitializer.once( 'ready', this._start.bind( this ) );
+};
+
+/**
+ * This is the actual function which starts deepstream. It is invoked after+
+ * the logger was intialized or emitted the read event if it was initialized
+ * asynchronously
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._start = function() {
+	this._showStartLogo();
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
 
-	if( this._configFile === undefined ) {
-		// API was called with an object in the constructor
-	} else if ( this._configFile === null ) {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INFO, 'no configuration file found' );
-	} else {
+	// otherwise (no configFile) deepstream was invoked by API
+	if ( this._configFile != null ) {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
 	}
+
 
 	var authTypeMsg = 'authentication type ' + ( this._options.authenticationHandler.type || 'custom' );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, authTypeMsg );
@@ -138,7 +164,7 @@ Deepstream.prototype.start = function() {
 
 	for( i = 0; i < this._plugins.length; i++ ) {
 		initialiser = new DependencyInitialiser( this._options, this._plugins[ i ] );
-		initialiser.once( 'ready', this._checkReady.bind( this, this._plugins[ i ], initialiser.getDependency() ));
+		initialiser.once( 'ready', this._checkReady.bind( this, this._plugins[ i ], initialiser.getDependency() ) );
 	}
 };
 
@@ -150,9 +176,19 @@ Deepstream.prototype.start = function() {
  * @returns {void}
  */
 Deepstream.prototype.stop = function() {
+	if( this._currentState !== STATES.IS_RUNNING ) {
+		throw new Error( `Server can only be stopped after it starts succesfully, currently ${this._currentState}` )
+	}
+	this._currentState = STATES.CLOSING;
+
 	var i,
 		plugin,
 		closables = [ this._connectionEndpoint ];
+
+	if( typeof this._options.logger.close === 'function' ) {
+		closables.push( this._options.logger );
+		setTimeout( this._options.logger.close.bind( this._options.logger ) );
+	}
 
 	for( i = 0; i < this._plugins.length; i++ ) {
 		plugin = this._options[ this._plugins[ i ] ];
@@ -162,7 +198,6 @@ Deepstream.prototype.stop = function() {
 		}
 	}
 
-	this._initialised = false;
 	utils.combineEvents( closables, 'close', this._onStopped.bind( this ) );
 	this._connectionEndpoint.close();
 };
@@ -181,21 +216,25 @@ Deepstream.prototype.convertTyped = function( value ) {
 };
 
 /**
- * Synchronously loads a configuration file and returns
- * the result
+ * Synchronously loads a configuration file
+ * Initialization of plugins and logger will be triggered by the
+ * configInitialiser, but it should not block. Instead the ready events of
+ * those plugins are handled through the DependencyInitialiser in this instnace.
  *
  * @param {Object} config Configuration object
- *
- * @returns {Object} config
+ * @private
+ * @returns {void}
  */
 Deepstream.prototype._loadConfig = function( config ) {
-	if ( config != null ) {
-		return config;
-	} else {
-		var result = jsYamlLoader.loadConfig();
+	if ( config == null || typeof config === 'string' ) {
+		var result = jsYamlLoader.loadConfig( config );
 		this._configFile = result.file;
-		return result.config;
+		config = result.config;
+	} else {
+		var rawConfig = utils.merge( defaultOptions.get(), config );
+		config = configInitialiser.initialise( rawConfig );
 	}
+	this._options = config;
 };
 
 /**
@@ -205,7 +244,7 @@ Deepstream.prototype._loadConfig = function( config ) {
  * @returns {void}
  */
 Deepstream.prototype._onStopped = function() {
-	this.isRunning = false;
+	this._currentState = STATES.CLOSED;
 	this.emit( 'stopped' );
 };
 
@@ -266,7 +305,7 @@ Deepstream.prototype._init = function() {
 		this._options.permissionHandler.setRecordHandler( this._recordHandler );
 	}
 
-	this._initialised = true;
+	this._currentState = STATES.INITIALIZED;
 };
 
 /**
@@ -287,7 +326,7 @@ Deepstream.prototype._checkReady = function( pluginName, plugin ) {
 		}
 	}
 
-	if( this._initialised === false ) {
+	if( this._currentState === STATES.STARTING ) {
 		this._init();
 	}
 };
@@ -300,7 +339,7 @@ Deepstream.prototype._checkReady = function( pluginName, plugin ) {
  */
 Deepstream.prototype._onStarted = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
-	this.isRunning = true;
+	this._currentState = STATES.IS_RUNNING;
 	this.emit( 'started' );
 };
 

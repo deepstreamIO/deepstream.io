@@ -1,4 +1,4 @@
-/* global expect, describe, it */
+/* global jasmine, beforeAll, afterAll, expect, describe, it */
 var child_process = require( 'child_process' );
 var path = require( 'path' );
 var Deepstream = require( '../src/deepstream.io' );
@@ -33,23 +33,65 @@ describe( 'the main server class', function() {
 describe( 'it starts and stops the server', function() {
 	var server;
 
+	it( 'starts the server twice', function( next ) {
+		server = new Deepstream( {showLogo: false}  );
+		server.set( 'logger', new LoggerMock() );
+		server.on( 'started', function() {
+			try {
+				server.start();
+				next.fail( 'should fail to start deepstream twice' );
+			} catch ( err ) {
+				expect( err.toString() ).toContain( 'can only start after it stops succesfully' );
+				next();
+			}
+		} );
+		expect( server.isRunning() ).toBe( false );
+		server.start();
+	} );
+
+	//NOTE: depends on test before
+	it( 'stops the server', function( next ) {
+		expect( server.isRunning() ).toBe( true );
+		server.on( 'stopped', function() {
+			expect( server.isRunning() ).toBe( false );
+			try {
+				server.stop();
+				next.fail( 'should fail to stop deepstream twice' );
+			} catch ( err ) {
+				expect( err.toString() ).toContain( 'only be stopped after it starts succesfully' );
+				next();
+			}
+		} );
+		server.stop();
+	} );
+
+	//NOTE: depends on the test before
+	it( 'start the server again from the same instance', function( next ) {
+		server.on( 'started', server.stop );
+		server.on( 'stopped', next );
+		server.start();
+	} );
+} );
+
+describe( 'it handle calling start and stop twice', function() {
+	var server;
+
 	it( 'starts the server', function( next ) {
-		server = new Deepstream();
-		server.set( 'showLogo', false );
+		server = new Deepstream( {showLogo: false} );
 		server.set( 'logger', new LoggerMock() );
 		server.on( 'started', next );
-		expect( server.isRunning ).toBe( false );
+		expect( server.isRunning() ).toBe( false );
 		server.start();
 	} );
 
 	it( 'stops the server', function( next ) {
-		expect( server.isRunning ).toBe( true );
+		expect( server.isRunning() ).toBe( true );
 		server.on( 'stopped', next );
 		server.stop();
 	} );
 
 	it( 'has stopped the server', function() {
-		expect( server.isRunning ).toBe( false );
+		expect( server.isRunning() ).toBe( false );
 	} );
 } );
 
@@ -57,7 +99,7 @@ describe( 'it starts and stops a configured server', function() {
 	var server;
 	var logger;
 
-	it( 'configures the server', function() {
+	beforeEach( function() {
 		server = new Deepstream();
 		logger = new ClosableLogger();
 		server.set( 'dataTransforms', [] );
@@ -65,33 +107,57 @@ describe( 'it starts and stops a configured server', function() {
 		server.set( 'logger', logger );
 	} );
 
-	it( 'starts the server', function( next ) {
-		server.on( 'started', next );
-		expect( server.isRunning ).toBe( false );
+	afterEach( function( next ) {
+		if ( server.isRunning() ) {
+			server.on( 'stopped', next );
+			server.stop();
+		} else {
+			next();
+		}
+	} );
+
+	it( 'starts and stops the server', function( next ) {
+		expect( server.isRunning() ).toBe( false );
+		server.on( 'started', function() {
+			expect( server.isRunning() ).toBe( true );
+			server.on( 'stopped', function() {
+				expect( server.isRunning() ).toBe( false );
+				next();
+			} );
+			server.stop();
+		} );
 		server.start();
 	} );
 
-	it( 'encounters a plugin error', function() {
-		expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Deepstream started' );
-		logger.emit( 'error', 'test error' );
-		expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from logger plugin: test error' );
+	it( 'encounters a logger error', function( next ) {
+		server.on( 'started', function() {
+			server._options.logger.emit( 'error', 'test error' );
+			expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from logger plugin: test error' );
+			next();
+		} );
+		server.start();
+	} );
+	it( 'encounters a plugin error', function( next ) {
+		var fakeCloseablePlugin = new  ClosableLogger();
+		server.set( 'cache', fakeCloseablePlugin );
+		server.on( 'started', function() {
+			fakeCloseablePlugin.emit( 'error', 'test error' );
+			//TODO: why fakeCloseablePlugin contains console args?
+			expect( logger.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from cache plugin: test error' );
+			expect( fakeCloseablePlugin.log.calls.mostRecent().args[ 2 ] ).toBe( 'Error from cache plugin: test error' );
+			next();
+		} );
+		server.start();
 	} );
 
-	it( 'stops the server', function( next ) {
-		expect( server.isRunning ).toBe( true );
-		server.on( 'stopped', next );
-		server.stop();
-	} );
-
-	it( 'has stopped the server', function() {
-		expect( server.isRunning ).toBe( false );
-	} );
-
-	it( 'fail starting the server with an empty options parameter', function() {
-		server = new Deepstream( {} );
-		expect( function() {
-			server.start();
-		} ).toThrow();
+	it( 'should merge the options with default values', function( next ) {
+		server = new Deepstream( {showLogo: false, permission: {type: 'none'}} );
+		server.set( 'logger', logger );
+		server.on( 'started', function() {
+			expect( server.isRunning() ).toBe( true );
+			next();
+		} );
+		server.start();
 	} );
 
 } );
@@ -122,4 +188,5 @@ describe( 'handle server startup without config file', function() {
 		server.on( 'started', server.stop );
 		server.start();
 	} );
+
 } );
