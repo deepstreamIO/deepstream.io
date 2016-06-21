@@ -12,7 +12,7 @@ const path = require( 'path' );
 */
 exports.lookupLibRequirePath = function( filePath ) {
 	return exports.lookupRequirePath( filePath, global.deepstreamLibDir );
-}
+};
 
 /**
 * Append the global configuration directory as the prefix to any path
@@ -25,11 +25,12 @@ exports.lookupLibRequirePath = function( filePath ) {
 */
 exports.lookupConfRequirePath = function( filePath ) {
 	return exports.lookupRequirePath( filePath, global.deepstreamConfDir );
-}
+};
 
 /**
- * If a prefix is not set the filePath will be returned
+ * Resolve a path which will be passed to *require*.
  *
+ * If a prefix is not set the filePath will be returned
  * Otherwise it will either replace return a new path prepended with the prefix.
  * If the prefix is not an absolute path it will also prepend the CWD.
  *
@@ -82,7 +83,7 @@ exports.fileExistsSync = function( filePath ) {
 	} catch( e ) {
 		return false;
 	}
-}
+};
 
 /**
 * Append the prefix to the current working directory,

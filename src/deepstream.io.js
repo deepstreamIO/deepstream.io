@@ -101,7 +101,8 @@ Deepstream.prototype.set = function( key, value ) {
 /**
  * Starts up deepstream. The startup process has three steps:
  *
- * - Initialise all dependencies (cache connector, message connector, storage connector and logger)
+ * - First of all initialise the logger and wait for it (ready event)
+ * - Then initialise all other dependencies (cache connector, message connector, storage connector)
  * - Instantiate the messaging pipeline and record-, rpc- and event-handler
  * - Start TCP and HTTP server
  *
@@ -118,6 +119,14 @@ Deepstream.prototype.start = function() {
 	}
 };
 
+/**
+ * This is the actual function which starts deepstream. It is invoked after+
+ * the logger was intialized or emitted the read event if it was initialized
+ * asynchronously
+ *
+ * @private
+ * @returns {void}
+ */
 Deepstream.prototype._start = function() {
 	this._showStartLogo();
 
@@ -190,9 +199,12 @@ Deepstream.prototype.convertTyped = function( value ) {
 
 /**
  * Synchronously loads a configuration file
+ * Initialization of plugins and logger will be triggered by the
+ * configInitialiser, but it should not block. Instead the ready events of
+ * those plugins are handled through the DependencyInitialiser in this instnace.
  *
  * @param {Object} config Configuration object
- *
+ * @private
  * @returns {void}
  */
 Deepstream.prototype._loadConfig = function( config ) {

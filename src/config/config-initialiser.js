@@ -11,7 +11,8 @@ const fileUtils = require( './file-utils' );
 var commandLineArguments;
 
 /**
- * Takes a configuration object and instantiates functional properties
+ * Takes a configuration object and instantiates functional properties.
+ * CLI arguments will be considered.
  *
  * @param   {Object} config configuration
  *
@@ -45,7 +46,8 @@ function handleUUIDProperty( config ) {
 }
 
 /**
- * Replace the ssl config with paths
+ * Load the SSL files
+ * CLI arguments will be considered.
  *
  * @param {Object} config deepstream configuration object
  *
@@ -71,7 +73,8 @@ function handleSSLProperties( config ) {
 }
 
 /**
- * Transform log level string (enum) to its internal value
+ * Initialize the logger and overwrite the root logLevel if it's set
+ * CLI arguments will be considered.
  *
  * @param {Object} config deepstream configuration object
  *
@@ -96,30 +99,36 @@ function handleLogger( config ) {
 }
 
 /**
- * Handle the plugins property in the config object
- * for logger and the connectors.
- * Modifies the config object and load the logger and connectors
- * and passing options for the connectors
- * Plugins can be passed either as a `path` property  - a relative to the
- * working directory, or the npm module name - or as a `name` property with
- * a naming convetion: `{message: {name: 'redis'}}` will be resolved to the
- * npm module `deepstream.io-msg-direct`
- * cliOptions can modify the lookup path for the plugins via libPrefix property
+ * Handle the plugins property in the config object the connectors.
+ * Allowed types: {message|cache|storage}
+ * Plugins can be passed either as a __path__ property or as a __name__ property with
+ * a naming convetion: *{cache: {name: 'redis'}}* will be resolved to the
+ * npm module *deepstream.io-cache-direct*
+ * Exception: *message* will be resolved to *msg*
+ * Options to the constructor of the plugin can be passed as *options* object.
  *
- * @todo  refactor
+ * CLI arguments will be considered.
  *
  * @param {Object} config deepstream configuration object
- * @param {Object} argv CLI arguments from the CLI interface
  *
  * @private
  * @returns {void}
  */
-function handlePlugins( config, argv ) {
+function handlePlugins( config ) {
 	if ( config.plugins == null ) {
 		return;
 	}
-	var connectors = {
-		'messageConnector': 'msg',
+	// mappnig between the root properties which contains the plugin instance
+	// and the plugin configuration objects
+	var connectorMap = {
+		'messageConnector': 'message',
+		'cache': 'cache',
+		'storage': 'storage'
+	};
+	// mapping between the plugin configuration properties and the npm module
+	// name resolution
+	var typeMap = {
+		'message': 'msg',
 		'cache': 'cache',
 		'storage': 'storage'
 	};
@@ -132,15 +141,27 @@ function handlePlugins( config, argv ) {
 	for ( let key in plugins ) {
 		var plugin = plugins[key];
 		if ( plugin != null ) {
-			var pluginConstructor = resolvePluginClass( plugin, connectors[key] );
+			var pluginConstructor = resolvePluginClass( plugin, typeMap[connectorMap[key]] );
 			config[key] = new pluginConstructor( plugin.options );
 		}
 	}
 }
 
+/**
+ * Instantiate the given plugin, which either needs a path property or a name
+ * property which fits to the npm module name convention. Options will be passed
+ * to the constructor.
+ *
+ * CLI arguments will be considered.
+ *
+ * @param {Object} config deepstream configuration object
+ *
+ * @private
+ * @returns {Function} Instance return be the plugin constructor
+ */
 function resolvePluginClass( plugin, type ) {
-	// nexe needs global.require for "dynamic" modules
-	// but browserify and proxyquire can't handle global.require
+	// nexe needs *global.require* for __dynamic__ modules
+	// but browserify and proxyquire can't handle *global.require*
 	var req = global && global.require ? global.require : require;
 	var requirePath;
 	var pluginConstructor;
@@ -160,8 +181,9 @@ function resolvePluginClass( plugin, type ) {
 }
 
 /**
- * Instantiates the authenticationhandler registered for
- * config.auth.type
+ * Instantiates the authentication handler registered for *config.auth.type*
+ *
+ * CLI arguments will be considered.
  *
  * @param   {Object} config deepstream configuration object
  *
@@ -196,8 +218,9 @@ function handleAuthStrategy( config ) {
 }
 
 /**
- * Instantiates the permissionhandler registered for
- * config.auth.type
+ * Instantiates the permission handler registered for *config.permission.type*
+ *
+ * CLI arguments will be considered.
  *
  * @param   {Object} config deepstream configuration object
  *
