@@ -10,6 +10,13 @@ exports.LOG_LEVEL.WARN = 2;
 exports.LOG_LEVEL.ERROR = 3;
 exports.LOG_LEVEL.OFF = 100;
 
+exports.STATES = {};
+exports.STATES.STARTING = 'starting';
+exports.STATES.INITIALIZED = 'initialized';
+exports.STATES.IS_RUNNING = 'is-running';
+exports.STATES.CLOSING = 'closing';
+exports.STATES.CLOSED = 'closed';
+
 exports.EVENT = {};
 exports.EVENT.TRIGGER_EVENT = 'TRIGGER_EVENT';
 exports.EVENT.INCOMING_CONNECTION = 'INCOMING_CONNECTION';

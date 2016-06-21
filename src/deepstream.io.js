@@ -20,6 +20,8 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 
 require( 'colors' );
 
+const STATES = C.STATES;
+
 /**
  * Deepstream is a realtime data server that scales horizontally
  * by running in clusters of interacting nodes
@@ -32,7 +34,7 @@ require( 'colors' );
  * @constructor
  */
 var Deepstream = function( config ) {
-	this.isRunning = false;
+	this._currentState = STATES.CLOSED;
 	this.constants = C;
 	this._loadConfig( config );
 	this._connectionEndpoint = null;
@@ -43,7 +45,6 @@ var Deepstream = function( config ) {
 	this._rpcHandler = null;
 	this._recordHandler = null;
 	this._webRtcHandler = null;
-	this._initialised = false;
 	this._plugins = [
 		'messageConnector',
 		'storage',
@@ -99,6 +100,16 @@ Deepstream.prototype.set = function( key, value ) {
 };
 
 /**
+ * Returns true if the deepstream server is running, otherwise false
+ *
+ * @public
+ * @returns {boolean}
+ */
+Deepstream.prototype.isRunning = function() {
+	return this._currentState === STATES.IS_RUNNING;
+};
+
+/**
  * Starts up deepstream. The startup process has three steps:
  *
  * - First of all initialise the logger and wait for it (ready event)
@@ -110,12 +121,18 @@ Deepstream.prototype.set = function( key, value ) {
  * @returns {void}
  */
 Deepstream.prototype.start = function() {
+	if( this._currentState !== STATES.CLOSED ) {
+		throw new Error( `Server can only start after it stops succesfully, currently ${this._currentState}` );
+	}
+	this._currentState = STATES.STARTING;
+
 	if( !this.loggerInitializer ) {
 		this.loggerInitializer = new DependencyInitialiser( this._options, 'logger' );
 		this.loggerInitializer.once( 'ready',
 			this._checkReady.bind( this, 'logger', this.loggerInitializer.getDependency() )
 		);
 		this.loggerInitializer.once( 'ready', this._start.bind( this ) );
+		return true;
 	}
 };
 
@@ -162,6 +179,11 @@ Deepstream.prototype._start = function() {
  * @returns {void}
  */
 Deepstream.prototype.stop = function() {
+	if( this._currentState !== STATES.IS_RUNNING ) {
+		throw new Error( `Server can only be stopped after it starts succesfully, currently ${this._currentState}` )
+	}
+	this._currentState = STATES.CLOSING;
+
 	var i,
 		plugin,
 		closables = [ this._connectionEndpoint ];
@@ -179,7 +201,6 @@ Deepstream.prototype.stop = function() {
 		}
 	}
 
-	this._initialised = false;
 	utils.combineEvents( closables, 'close', this._onStopped.bind( this ) );
 	this._connectionEndpoint.close();
 };
@@ -226,7 +247,7 @@ Deepstream.prototype._loadConfig = function( config ) {
  * @returns {void}
  */
 Deepstream.prototype._onStopped = function() {
-	this.isRunning = false;
+	this._currentState = STATES.CLOSED;
 	this.emit( 'stopped' );
 };
 
@@ -287,7 +308,7 @@ Deepstream.prototype._init = function() {
 		this._options.permissionHandler.setRecordHandler( this._recordHandler );
 	}
 
-	this._initialised = true;
+	this._currentState = STATES.INITIALIZED;
 };
 
 /**
@@ -308,7 +329,7 @@ Deepstream.prototype._checkReady = function( pluginName, plugin ) {
 		}
 	}
 
-	if( this._initialised === false ) {
+	if( this._currentState === STATES.STARTING ) {
 		this._init();
 	}
 };
@@ -321,7 +342,7 @@ Deepstream.prototype._checkReady = function( pluginName, plugin ) {
  */
 Deepstream.prototype._onStarted = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started' );
-	this.isRunning = true;
+	this._currentState = STATES.IS_RUNNING;
 	this.emit( 'started' );
 };
 

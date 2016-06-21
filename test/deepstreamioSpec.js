@@ -33,23 +33,66 @@ describe( 'the main server class', function() {
 describe( 'it starts and stops the server', function() {
 	var server;
 
+	it( 'starts the server twice', function( next ) {
+		server = new Deepstream( {showLogo: false}  );
+		server.set( 'logger', new LoggerMock() );
+		server.on( 'started', function() {
+			try {
+				server.start();
+				next.fail( 'should fail to start deepstream twice' );
+			} catch ( err ) {
+				expect( err.toString() ).toContain( 'can only start after it stops succesfully' );
+				next();
+			}
+		} );
+		expect( server.isRunning() ).toBe( false );
+		server.start();
+	} );
+
+	//NOTE: depends on test before
+	it( 'stops the server', function( next ) {
+		expect( server.isRunning() ).toBe( true );
+		server.on( 'stopped', function() {
+			expect( server.isRunning() ).toBe( false );
+			try {
+				server.stop();
+				next.fail( 'should fail to stop deepstream twice' );
+			} catch ( err ) {
+				expect( err.toString() ).toContain( 'only be stopped after it starts succesfully' );
+				next();
+			}
+
+			next()
+		} );
+		server.stop();
+	} );
+
+	//NOTE: depends on the test before
+	xit( 'start the server again from the same instance', function( next ) {
+		server.on( 'started', next );
+		server.start();
+	} );
+} );
+
+describe( 'it handle calling start and stop twice', function() {
+	var server;
+
 	it( 'starts the server', function( next ) {
-		server = new Deepstream();
-		server.set( 'showLogo', false );
+		server = new Deepstream( {showLogo: false} );
 		server.set( 'logger', new LoggerMock() );
 		server.on( 'started', next );
-		expect( server.isRunning ).toBe( false );
+		expect( server.isRunning() ).toBe( false );
 		server.start();
 	} );
 
 	it( 'stops the server', function( next ) {
-		expect( server.isRunning ).toBe( true );
+		expect( server.isRunning() ).toBe( true );
 		server.on( 'stopped', next );
 		server.stop();
 	} );
 
 	it( 'has stopped the server', function() {
-		expect( server.isRunning ).toBe( false );
+		expect( server.isRunning() ).toBe( false );
 	} );
 } );
 
@@ -66,7 +109,7 @@ describe( 'it starts and stops a configured server', function() {
 	} );
 
 	afterEach( function( next ) {
-		if ( server.isRunning ) {
+		if ( server.isRunning() ) {
 			server.on( 'stopped', next );
 			server.stop();
 		} else {
@@ -75,11 +118,11 @@ describe( 'it starts and stops a configured server', function() {
 	} );
 
 	it( 'starts and stops the server', function( next ) {
-		expect( server.isRunning ).toBe( false );
+		expect( server.isRunning() ).toBe( false );
 		server.on( 'started', function() {
-			expect( server.isRunning ).toBe( true );
+			expect( server.isRunning() ).toBe( true );
 			server.on( 'stopped', function() {
-				expect( server.isRunning ).toBe( false );
+				expect( server.isRunning() ).toBe( false );
 				next();
 			} );
 			server.stop();
@@ -109,10 +152,10 @@ describe( 'it starts and stops a configured server', function() {
 	} );
 
 	it( 'should merge the options with default values', function( next ) {
-		server = new Deepstream( {permission: {type: 'none'}} );
+		server = new Deepstream( {showLogo: false, permission: {type: 'none'}} );
 		server.set( 'logger', logger );
 		server.on( 'started', function() {
-			expect( server.isRunning ).toBe( true );
+			expect( server.isRunning() ).toBe( true );
 			next();
 		} );
 		server.start();
@@ -146,4 +189,5 @@ describe( 'handle server startup without config file', function() {
 		server.on( 'started', server.stop );
 		server.start();
 	} );
+
 } );
