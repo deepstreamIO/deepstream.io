@@ -93,9 +93,10 @@ describe( 'js-yaml-loader', function() {
 
 			expect( result.file ).toEqual( path.join( 'conf', 'config.yml' ) );
 
+
 			expect( defaultYamlConfig.serverName ).toEqual( jasmine.any( String ) );
 			defaultYamlConfig = utils.merge( defaultYamlConfig, {
-				permission: { type: 'config', options: { path: null } },
+				permission: { type: 'none', options: null },
 				permissionHandler: null,
 				authenticationHandler: null,
 				plugins: null,
@@ -103,13 +104,15 @@ describe( 'js-yaml-loader', function() {
 				logger: null
 			} );
 			var defaultConfig = utils.merge( defaultOptions.get(), {
-				permission: { type: 'config', options: { path: null } },
+				permission: { type: 'none', options: null },
 				permissionHandler: null,
 				authenticationHandler: null,
 				plugins: null,
 				serverName: null,
 				logger: null
 			} );
+			// console.log(JSON.stringify(defaultYamlConfig, null, 1))
+			// console.log(JSON.stringify(defaultConfig, null, 1))
 			expect( defaultYamlConfig ).toEqual( defaultConfig );
 		} );
 

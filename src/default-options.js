@@ -47,12 +47,7 @@ exports.get = function() {
 		 * Permissioning
 		 */
 		permission: {
-			type: 'config',
-			options: {
-				path: './permissions.json',
-				maxRuleIterations: 3,
-				cacheEvacuationInterval: 60000
-			}
+			type: 'none'
 		},
 
 		/*
