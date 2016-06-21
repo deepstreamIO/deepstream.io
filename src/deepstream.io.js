@@ -126,14 +126,11 @@ Deepstream.prototype.start = function() {
 	}
 	this._currentState = STATES.STARTING;
 
-	if( !this.loggerInitializer ) {
-		this.loggerInitializer = new DependencyInitialiser( this._options, 'logger' );
-		this.loggerInitializer.once( 'ready',
-			this._checkReady.bind( this, 'logger', this.loggerInitializer.getDependency() )
-		);
-		this.loggerInitializer.once( 'ready', this._start.bind( this ) );
-		return true;
-	}
+	var loggerInitializer = new DependencyInitialiser( this._options, 'logger' );
+	loggerInitializer.once( 'ready',
+		this._checkReady.bind( this, 'logger', loggerInitializer.getDependency() )
+	);
+	loggerInitializer.once( 'ready', this._start.bind( this ) );
 };
 
 /**

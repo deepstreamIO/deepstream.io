@@ -61,15 +61,14 @@ describe( 'it starts and stops the server', function() {
 				expect( err.toString() ).toContain( 'only be stopped after it starts succesfully' );
 				next();
 			}
-
-			next()
 		} );
 		server.stop();
 	} );
 
 	//NOTE: depends on the test before
-	xit( 'start the server again from the same instance', function( next ) {
-		server.on( 'started', next );
+	it( 'start the server again from the same instance', function( next ) {
+		server.on( 'started', server.stop );
+		server.on( 'stopped', next );
 		server.start();
 	} );
 } );
