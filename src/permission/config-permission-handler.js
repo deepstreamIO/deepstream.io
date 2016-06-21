@@ -164,7 +164,7 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 		name: name,
 		callback: callback,
 		options: this._options
-	});
+	} );
 };
 
 /**

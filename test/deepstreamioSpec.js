@@ -5,29 +5,6 @@ var Deepstream = require( '../src/deepstream.io' );
 var ClosableLogger = require( './mocks/closable-logger' );
 var LoggerMock = require( './mocks/logger-mock' );
 
-var originalStdOut = process.stdout;
-var originalStdErr = process.stderr;
-var stdout = jasmine.createSpy( 'stdout' );
-var stderr = jasmine.createSpy( 'stderr' );
-
-beforeAll( function() {
-	Object.defineProperty( process, 'stdout', {
-		value: { write: stdout }
-	} );
-	Object.defineProperty( process, 'stderr', {
-		value: { write: stderr }
-	} );
-} );
-
-afterAll( function() {
-	Object.defineProperty( process, 'stdout', {
-		value: originalStdOut
-	} );
-	Object.defineProperty( process, 'stderr', {
-		value: originalStdErr
-	} );
-} );
-
 describe( 'the main server class', function() {
 	it( 'exposes the message parser\'s convertTyped method', function() {
 		var server = new Deepstream();

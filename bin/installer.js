@@ -9,7 +9,7 @@ const AdmZip = require( 'adm-zip' );
 const execSync = require( 'child_process' ).execSync;
 const mkdirp = require( 'mkdirp' );
 
-const CONFIG_EXAMPLE_FILE = 'README.md';
+const CONFIG_EXAMPLE_FILE = 'example-config.yml';
 const SYSTEM = {
 	'linux': 'linux',
 	'darwin': 'mac',
@@ -51,7 +51,7 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 	version = version == null ? release.tag_name : version;
 	const releaseForMachine = release.assets.filter( item => item.name.indexOf( platform ) !== -1 );
 	if ( releaseForMachine.length === 0 ) {
-		return callback( new Error( `relase for your platform not found, see ${getWebUrl( repo )}` ) );
+		return callback( new Error( `Release for your platform not found, see ${getWebUrl( repo )}` ) );
 	}
 
 	const downloadUrl = releaseForMachine[0].browser_download_url;
@@ -64,7 +64,7 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
 	mkdirp.sync( outputDir );
 
 	if ( process.env.VERBOSE ) {
-		console.log( 'downloading version ' + version );
+		console.log( 'Downloading version ' + version );
 	}
 	const outStream = fs.createWriteStream( outputFile );
 	downloadArchive( urlPath, outStream, function( err ) {
@@ -103,7 +103,7 @@ const downloadArchive = function( urlPath, outStream, callback ) {
 			if ( process.env.VERBOSE ) {
 				process.stdout.clearLine();
 				process.stdout.cursorTo( 0 );
-				process.stdout.write( 'download complete' + '\n' );
+				process.stdout.write( 'Download complete' + '\n' );
 			}
 			return callback();
 		} )
@@ -142,7 +142,7 @@ const fetchReleases = function( type, name, callback ) {
 			return callback( error );
 		}
 		if ( response.statusCode === 404 ) {
-			return callback( new Error( 'not found, see available connectors on https://deepstream.io/download' ) );
+			return callback( new Error( 'Not found, see available connectors on https://deepstream.io/download' ) );
 		}
 		callback( null, response.body );
 	} );
@@ -198,13 +198,19 @@ const extractZip = function( archivePath, outputDirectory ) {
  * @return {void}
  */
 const showConfig = function( directory ) {
-	var content = fs.readFileSync( path.join( directory, CONFIG_EXAMPLE_FILE ), 'utf8' );
-	if ( process.env.VERBOSE ) {
-		console.log( 'you need to configure the connector in your deepstream configuration file' );
-	}
-	content = '  ' + content.replace( /\n/g, '\n  ' );
-	if ( !process.env.QUIET ) {
-		console.log( 'example configuration:\n' + colors.grey( content ) );
+	try {
+		var content = fs.readFileSync( path.join( directory, CONFIG_EXAMPLE_FILE ), 'utf8' );
+		if ( process.env.VERBOSE ) {
+			console.log( 'You need to configure the connector in your deepstream configuration file' );
+		}
+		content = '  ' + content.replace( /\n/g, '\n  ' );
+		if ( !process.env.QUIET ) {
+			console.log( 'Example configuration:\n' + colors.grey( content ) );
+		}
+	} catch ( err ) {
+		if ( !process.env.QUIET ) {
+			console.log( 'Example configuration not found' );
+		}
 	}
 };
 
