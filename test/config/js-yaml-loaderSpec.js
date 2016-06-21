@@ -22,7 +22,7 @@ function setUpStub( fileExists, fileContent ) {
 	}
 
 	var configLoader = proxyquire( '../../src/config/js-yaml-loader', {
-		'./file': fileMock,
+		'./file-utils': fileMock,
 		'fs': fsMock
 	} );
 	spyOn( fileMock, 'fileExistsSync' ).and.callThrough();
@@ -292,7 +292,7 @@ describe( 'js-yaml-loader', function() {
 			MessageModule['@global'] = true;
 			var configLoader = proxyquire( '../../src/config/js-yaml-loader', {
 				fs: fsMock,
-				'./file': fileMock,
+				'./file-utils': fileMock,
 				[path.resolve( './logger' )]: loggerModule,
 				[path.resolve( './message' )]: MessageModule
 			} );
@@ -336,7 +336,7 @@ describe( 'js-yaml-loader', function() {
 			FooBar['@global'] = true;
 			var configLoader = proxyquire( '../../src/config/js-yaml-loader', {
 				fs: fsMock,
-				'./file': fileMock,
+				'./file-utils': fileMock,
 				'foo-bar-qox': FooBar
 			} );
 			config = configLoader.loadConfig( {config:'./config.json'} ).config;
@@ -387,7 +387,7 @@ describe( 'js-yaml-loader', function() {
 			SuperStorage['@global'] = true;
 			var configLoader = proxyquire( '../../src/config/js-yaml-loader', {
 				fs: fsMock,
-				'./file': fileMock,
+				'./file-utils': fileMock,
 				'deepstream.io-msg-super-messager': SuperMessager,
 				'deepstream.io-storage-super-storage': SuperStorage
 			} );
@@ -442,7 +442,7 @@ describe( 'js-yaml-loader', function() {
 			SuperStorage['@global'] = true;
 			var configLoader = proxyquire( '../../src/config/js-yaml-loader', {
 				fs: fsMock,
-				'./file': fileMock,
+				'./file-utils': fileMock,
 				[path.resolve( process.cwd(), 'foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
 				[path.resolve( process.cwd(), 'foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
 			} );
@@ -498,7 +498,7 @@ describe( 'js-yaml-loader', function() {
 			SuperStorage['@global'] = true;
 			var configLoader = proxyquire( '../../src/config/js-yaml-loader', {
 				fs: fsMock,
-				'./file': fileMock,
+				'./file-utils': fileMock,
 				[path.resolve( '/foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
 				[path.resolve( '/foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
 			} );

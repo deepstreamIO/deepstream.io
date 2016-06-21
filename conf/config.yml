@@ -11,14 +11,12 @@ port: 6020 # port for the HTTP/websocket server
 host: 0.0.0.0 # host for the HTTP/websocket server
 tcpPort: 6021 # port for the TCP server
 tcpHost: 0.0.0.0 # host for the TCP server
-urlPath: /engine.io # url path HTTP/WEBSOCKET connections connect to
-# TODO - Change to deepstream to decouple from engine.io usage
+urlPath: /deepstream # url path HTTP/WEBSOCKET connections connect to
 
 # SSL Configuration
 sslKey: null
 sslCert: null
 sslCa: null
-# TODO - Introduce file paths for this
 
 # logger:
 #   name: winston

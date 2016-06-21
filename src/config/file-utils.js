@@ -24,7 +24,7 @@ exports.lookupLibRequirePath = function( filePath ) {
 * @returns {String} file path with the configuration prefix used
 */
 exports.lookupConfRequirePath = function( filePath ) {
-	return exports.lookupRequirePath( filePath, global.deepstreamConfigDir );
+	return exports.lookupRequirePath( filePath, global.deepstreamConfDir );
 }
 
 /**

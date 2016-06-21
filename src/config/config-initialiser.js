@@ -7,18 +7,8 @@ const utils = require( '../utils/utils' );
 const C = require( '../constants/constants' );
 const LOG_LEVEL_KEYS = Object.keys( C.LOG_LEVEL );
 
-const file = require( './file' );
+const fileUtils = require( './file-utils' );
 var commandLineArguments;
-
-var authStrategies = {
-	none: require( '../authentication/open-authentication-handler' ),
-	file: require( '../authentication/file-based-authentication-handler' ),
-	http: require( '../authentication/http-authentication-handler' )
-};
-var permissionStrategies = {
-	config: require( '../permission/config-permission-handler' ),
-	none: require( '../permission/open-permission-handler' )
-};
 
 /**
  * Takes a configuration object and instantiates functional properties
@@ -71,13 +61,12 @@ function handleSSLProperties( config ) {
 		if( !filePath ) {
 			continue;
 		}
-		resolvedFilePath = file.lookupConfRequirePath( filePath );
-		fs.readFile( resolvedFilePath, 'utf8', function( error, fileContent ) {
-			if ( error ) {
-				throw new Error( `The file path "${resolvedFilePath}" provided by "${key}" does not exist.` );
-			}
-			config[ key ] = fileContent;
-		} );
+		resolvedFilePath = fileUtils.lookupConfRequirePath( filePath );
+		try {
+			config[ key ] = fs.readFileSync( resolvedFilePath, 'utf8' );
+		} catch( e ) {
+			throw new Error( `The file path "${resolvedFilePath}" provided by "${key}" does not exist.` );
+		}
 	}
 }
 
@@ -156,12 +145,12 @@ function resolvePluginClass( plugin, type ) {
 	var requirePath;
 	var pluginConstructor;
 	if ( plugin.path != null ) {
-		requirePath = file.lookupLibRequirePath( plugin.path );
+		requirePath = fileUtils.lookupLibRequirePath( plugin.path );
 		pluginConstructor = req( requirePath );
 	} else if ( plugin.name != null ) {
 		if ( type != null ) {
 			requirePath = 'deepstream.io-' + type + '-' + plugin.name;
-			requirePath = file.lookupLibRequirePath( requirePath );
+			requirePath = fileUtils.lookupLibRequirePath( requirePath );
 			pluginConstructor = req( requirePath );
 		}
 	} else {
@@ -180,6 +169,12 @@ function resolvePluginClass( plugin, type ) {
  * @returns {void}
  */
 function handleAuthStrategy( config ) {
+	var authStrategies = {
+		none: require( '../authentication/open-authentication-handler' ),
+		file: require( '../authentication/file-based-authentication-handler' ),
+		http: require( '../authentication/http-authentication-handler' )
+	};
+
 	if( !config.auth ) {
 		throw new Error( 'No authentication type specified' );
 	}
@@ -194,7 +189,7 @@ function handleAuthStrategy( config ) {
 	}
 
 	if( config.auth.options && config.auth.options.path ) {
-		config.auth.options.path = file.lookupConfRequirePath( config.auth.options.path );
+		config.auth.options.path = fileUtils.lookupConfRequirePath( config.auth.options.path );
 	}
 
 	config.authenticationHandler = new ( authStrategies[ config.auth.type ] )( config.auth.options );
@@ -210,6 +205,11 @@ function handleAuthStrategy( config ) {
  * @returns {void}
  */
 function handlePermissionStrategy( config ) {
+	var permissionStrategies = {
+		config: require( '../permission/config-permission-handler' ),
+		none: require( '../permission/open-permission-handler' )
+	};
+
 	if( !config.permission ) {
 		throw new Error( 'No permission type specified' );
 	}
@@ -224,7 +224,7 @@ function handlePermissionStrategy( config ) {
 	}
 
 	if( config.permission.options && config.permission.options.path ) {
-		config.permission.options.path = file.lookupConfRequirePath( config.permission.options.path );
+		config.permission.options.path = fileUtils.lookupConfRequirePath( config.permission.options.path );
 	}
 
 	config.permissionHandler = new ( permissionStrategies[ config.permission.type ] )( config.permission.options );

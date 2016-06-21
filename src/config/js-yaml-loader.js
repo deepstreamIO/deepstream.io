@@ -8,7 +8,7 @@ const defaultOptions = require( '../default-options' );
 const utils = require( '../utils/utils' );
 
 const configInitialiser = require( './config-initialiser' );
-const file = require( './file' );
+const fileUtils = require( './file-utils' );
 
 const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
 
@@ -103,7 +103,7 @@ module.exports.loadConfig = function( args ) {
 function setGlobalConfigDirectory( argv ) {
 	var customConfigPath = argv.c || argv.config;
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
-	global.deepstreamConfigDir = path.dirname( configPath );
+	global.deepstreamConfDir = path.dirname( configPath );
 	return configPath;
 }
 
@@ -147,7 +147,7 @@ function extendConfig( config, argv, configDir ) {
  * @returns {String} verified path
  */
 function verifyCustomConfigPath( configPath ) {
-	if( file.fileExistsSync( configPath ) ) {
+	if( fileUtils.fileExistsSync( configPath ) ) {
 		return configPath;
 	} else {
 		throw new Error( 'Configuration file not found at: ' + configPath );
@@ -166,7 +166,7 @@ function getDefaultConfigPath() {
 
 	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
 		filePath = defaultConfigBaseName + SUPPORTED_EXTENSIONS[ i ];
-		if( file.fileExistsSync( filePath ) ) {
+		if( fileUtils.fileExistsSync( filePath ) ) {
 			return filePath;
 		}
 

@@ -1,18 +1,18 @@
 /* globals describe, it, expect */
 
 var defaultConfig = require( '../../src/default-options' );
+var configInitialiser = require( '../../src/config/config-initialiser' );
 var path = require( 'path' );
 
 describe( 'config-initialiser', function() {
 
-	afterAll( function() {
+	beforeAll( function() {
 		global.deepstreamConfDir = null;
 		global.deepstreamLibDir = null;
 		global.deepstreamCLI = null;
 	})
 
 	describe( 'plugins are initialised as per configuration', function() {
-		var configInitialiser = require( '../../src/config/config-initialiser' );
 
 		it( 'loads plugins from a relative path', function() {
 			var config = defaultConfig.get();
@@ -56,8 +56,29 @@ describe( 'config-initialiser', function() {
 		} );
 	} );
 
+	describe( 'ssl files are loaded if provided', function() {
+
+		it( 'fails with incorrect path passed in', function() {
+			[ 'sslKey', 'sslCert', 'sslCa' ].forEach( function( key ) {
+				var config = defaultConfig.get();
+				config[ key ] = './does-not-exist';
+				expect(function() {
+					configInitialiser.initialise( config );
+				} ).toThrowError();
+			} );
+		} );
+
+		it( 'loads sslFiles from a relative path and a config prefix', function() {
+			global.deepstreamConfDir = './test/test-configs';
+
+			var config = defaultConfig.get();
+			config.sslKey = './sslKey.pem';
+			configInitialiser.initialise( config );
+			expect( config.sslKey ).toBe( 'I\'m a key' );
+		} );
+	} );
+
 	describe( 'translates shortcodes into paths', function() {
-		var configInitialiser = require( '../../src/config/config-initialiser' );
 
 		it( 'translates cache', function() {
 			global.deepstreamLibDir = '/foobar';
@@ -100,7 +121,6 @@ describe( 'config-initialiser', function() {
 	} );
 
 	describe( 'creates the right authentication handler', function() {
-		var configInitialiser = require( '../../src/config/config-initialiser' );
 
 		it( 'works for authtype: none', function() {
 			var config = defaultConfig.get();
@@ -110,6 +130,21 @@ describe( 'config-initialiser', function() {
 			};
 			configInitialiser.initialise( config );
 			expect( config.authenticationHandler.type ).toBe( 'none' );
+		} );
+
+		it( 'works for authtype: user', function() {
+			global.deepstreamConfDir = './test/test-configs';
+			var config = defaultConfig.get();
+
+			config.auth = {
+				type: 'file',
+				options: {
+					path: './users.json'
+				}
+			};
+			configInitialiser.initialise( config );
+			expect( config.authenticationHandler.type ).toContain( 'file using' );
+			expect( config.authenticationHandler.type ).toContain( path.resolve( 'test/test-configs/users.json') );
 		} );
 
 		it( 'works for authtype: http', function() {
@@ -167,7 +202,6 @@ describe( 'config-initialiser', function() {
 	} );
 
 	describe( 'creates the permissionHandler', function() {
-		var configInitialiser = require( '../../src/config/config-initialiser' );
 
 		it( 'creates the config permission handler', function() {
 			var config = defaultConfig.get();
@@ -175,7 +209,7 @@ describe( 'config-initialiser', function() {
 			config.permission = {
 				type: 'config',
 				options: {
-					path: './test/test-configs/basic-permission-config.json'
+					path: './basic-permission-config.json'
 				}
 			};
 			configInitialiser.initialise( config );
@@ -223,7 +257,6 @@ describe( 'config-initialiser', function() {
 	} );
 
 	describe( 'supports custom loggers', function() {
-		var configInitialiser = require( '../../src/config/config-initialiser' );
 
 		it( 'load a custom logger', function() {
 			global.deepstreamLibDir = null;

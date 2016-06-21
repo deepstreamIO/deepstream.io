@@ -21,7 +21,7 @@ exports.get = function() {
 		tcpPort: 6021,
 		tcpHost: '0.0.0.0',
 		httpServer: null,
-		urlPath: '/engine.io',
+		urlPath: '/deepstream',
 
 
 		/*
