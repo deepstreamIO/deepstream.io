@@ -77,15 +77,15 @@ function parseFile( filePath, fileContent ) {
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  *
- * @param {Object} args commander arguments
+ * @param {Object|String} args commander arguments or path to config
  *
  * @public
  * @returns {Object} config deepstream configuration object
  */
-module.exports.loadConfig = function( args ) {
+module.exports.loadConfig = function( filePath, /* test only */ args ) {
 	var argv = args || global.deepstreamCLI || {};
 	setGlobalLibDirectory( argv );
-	var configPath = setGlobalConfigDirectory( argv );
+	var configPath = setGlobalConfigDirectory( argv, filePath );
 	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
 	var rawConfig = parseFile( configPath, configString );
 	var config = extendConfig( rawConfig, argv );
@@ -100,8 +100,8 @@ module.exports.loadConfig = function( args ) {
 * Set the globalConfig prefix that will be used as the directory for ssl, permissions and auth
 * relative files within the config file
 */
-function setGlobalConfigDirectory( argv ) {
-	var customConfigPath = argv.c || argv.config;
+function setGlobalConfigDirectory( argv, filePath ) {
+	var customConfigPath = argv.c || argv.config || filePath;
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
 	global.deepstreamConfDir = path.dirname( configPath );
 	return configPath;
@@ -169,7 +169,6 @@ function getDefaultConfigPath() {
 		if( fileUtils.fileExistsSync( filePath ) ) {
 			return filePath;
 		}
-
 	}
 
 	throw new Error( 'No config file found' );

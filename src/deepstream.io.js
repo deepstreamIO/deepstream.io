@@ -229,8 +229,8 @@ Deepstream.prototype.convertTyped = function( value ) {
  * @returns {void}
  */
 Deepstream.prototype._loadConfig = function( config ) {
-	if ( config == null ) {
-		var result = jsYamlLoader.loadConfig();
+	if ( config == null || typeof config === 'string' ) {
+		var result = jsYamlLoader.loadConfig( config );
 		this._configFile = result.file;
 		config = result.config;
 	} else {

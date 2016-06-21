@@ -10,7 +10,7 @@ var path = require( 'path' );
 function setUpStub( fileExists, fileContent ) {
 	var fileMock = {};
 	if( typeof fileExists !== 'undefined' ) {
-		 fileMock.fileExistsSync = function() {
+		fileMock.fileExistsSync = function() {
 			return !!fileExists;
 		};
 	}
@@ -31,7 +31,7 @@ function setUpStub( fileExists, fileContent ) {
 		configLoader: configLoader,
 		fileMock: fileMock,
 		fsMock: fsMock
-	}
+	};
 
 }
 
@@ -41,7 +41,7 @@ describe( 'js-yaml-loader', function() {
 		global.deepstreamConfDir = null;
 		global.deepstreamLibDir = null;
 		global.deepstreamCLI = null;
-	});
+	} );
 
 	describe( 'js-yaml-loader loads and parses json files', function(){
 		var jsYamlLoader = require( '../../src/config/js-yaml-loader' );
@@ -131,7 +131,7 @@ describe( 'js-yaml-loader', function() {
 
 		it( 'load a custom yml file path', function() {
 			var stub = setUpStub();
-			var config = stub.configLoader.loadConfig( {config:'./test/test-configs/config.yml'} ).config;
+			var config = stub.configLoader.loadConfig( './test/test-configs/config.yml' ).config;
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 1 );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( './test/test-configs/config.yml' );
 			expect( config.serverName ).toBeDefined();
@@ -147,13 +147,13 @@ describe( 'js-yaml-loader', function() {
 		it( 'loads a missing custom yml file path', function() {
 			var stub = setUpStub();
 			expect(function(){
-				stub.configLoader.loadConfig( {config:'./test/test-configs/does-not-exist.yml'} )
+				stub.configLoader.loadConfig( null, {config:'./test/test-configs/does-not-exist.yml'} )
 			}).toThrowError( 'Configuration file not found at: ./test/test-configs/does-not-exist.yml' );
 		} );
 
 		it( 'load a custom json file path', function() {
 			var stub = setUpStub( true, JSON.stringify( {port: 1001} ) );
-			var config = stub.configLoader.loadConfig( {config: './foo.json'} ).config;
+			var config = stub.configLoader.loadConfig( null, {config: './foo.json'} ).config;
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 1 );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( './foo.json' );
 			expect( config.port ).toEqual( 1001 );
@@ -162,12 +162,12 @@ describe( 'js-yaml-loader', function() {
 		it( 'load a custom js file path', function() {
 			var stub = setUpStub();
 
-			var config = stub.configLoader.loadConfig( {config:'./test/test-configs/config.js'} ).config;
+			var config = stub.configLoader.loadConfig( null, {config:'./test/test-configs/config.js'} ).config;
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 1 );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( './test/test-configs/config.js' );
 			expect( config.port ).toEqual( 1002 );
 
-			config = stub.configLoader.loadConfig( {config:path.join( process.cwd(), 'test/test-configs/config.js' )} ).config;
+			config = stub.configLoader.loadConfig( null, {config:path.join( process.cwd(), 'test/test-configs/config.js' )} ).config;
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 2 );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( path.join( process.cwd(), 'test/test-configs/config.js' ) );
 			expect( config.port ).toEqual( 1002 );
@@ -176,14 +176,14 @@ describe( 'js-yaml-loader', function() {
 		it( 'fails if the custom file format is not supported', function() {
 			var stub = setUpStub( true, 'content doesnt matter here' );
 			expect( function() {
-				stub.configLoader.loadConfig( {config:'./config.foo'} ).config;
+				stub.configLoader.loadConfig( null, {config:'./config.foo'} ).config;
 			} ).toThrowError( '.foo is not supported as configuration file' );
 		} );
 
 		it( 'fails if the custom file was not found', function() {
 			var stub = setUpStub( false );
 			expect( function() {
-				stub.configLoader.loadConfig( {config:'./not-existing-config'} ).config;
+				stub.configLoader.loadConfig( null, {config:'./not-existing-config'} ).config;
 			} ).toThrowError( 'Configuration file not found at: ./not-existing-config' );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 1 );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( './not-existing-config' );
@@ -192,7 +192,7 @@ describe( 'js-yaml-loader', function() {
 		it( 'fails if the yaml file is invalid', function() {
 			var stub = setUpStub();
 			expect( function() {
-				stub.configLoader.loadConfig( {config:'./test/test-configs/config-broken.yml'} ).config;
+				stub.configLoader.loadConfig( null, {config:'./test/test-configs/config-broken.yml'} ).config;
 			} ).toThrowError( /asdsad: ooops/ );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 1 );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( './test/test-configs/config-broken.yml' );
@@ -201,7 +201,7 @@ describe( 'js-yaml-loader', function() {
 		it( 'fails if the js file is invalid', function() {
 			var stub = setUpStub();
 			expect( function() {
-				stub.configLoader.loadConfig( {config:'./test/test-configs/config-broken.js'} ).config;
+				stub.configLoader.loadConfig( null, {config:'./test/test-configs/config-broken.js'} ).config;
 			} ).toThrowError( /foobarBreaksIt is not defined/ );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 1 );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( './test/test-configs/config-broken.js' );
@@ -220,7 +220,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 
 		it( 'does environment variable substitution for yaml', function() {
-			var config = configLoader.loadConfig( {config:'./test/test-configs/config.yml'} ).config;
+			var config = configLoader.loadConfig( null, {config:'./test/test-configs/config.yml'} ).config;
 			expect( config.environmentvariable ).toBe( 'an_environment_variable_value' );
 			expect( config.another.environmentvariable ).toBe( 'another_environment_variable_value' );
 			expect( config.thisenvironmentdoesntexist ).toBe( 'DOESNT_EXIST' );
@@ -228,7 +228,7 @@ describe( 'js-yaml-loader', function() {
 		} );
 
 		it( 'does environment variable substitution for json', function() {
-			var config = configLoader.loadConfig( {config:'./test/test-configs/json-with-env-variables.json'} ).config;
+			var config = configLoader.loadConfig( null, {config:'./test/test-configs/json-with-env-variables.json'} ).config;
 			expect( config.environmentvariable ).toBe( 'an_environment_variable_value' );
 			expect( config.another.environmentvariable ).toBe( 'another_environment_variable_value' );
 			expect( config.thisenvironmentdoesntexist ).toBe( 'DOESNT_EXIST' );
@@ -299,7 +299,7 @@ describe( 'js-yaml-loader', function() {
 				[path.resolve( './logger' )]: loggerModule,
 				[path.resolve( './message' )]: MessageModule
 			} );
-			config = configLoader.loadConfig( {config:'./config.json'} ).config;
+			config = configLoader.loadConfig( null, {config:'./config.json'} ).config;
 		} );
 
 		it( 'load plugins', function() {
@@ -342,7 +342,7 @@ describe( 'js-yaml-loader', function() {
 				'./file-utils': fileMock,
 				'foo-bar-qox': FooBar
 			} );
-			config = configLoader.loadConfig( {config:'./config.json'} ).config;
+			config = configLoader.loadConfig( null, {config:'./config.json'} ).config;
 		} );
 
 		it( 'load plugins', function() {
@@ -394,7 +394,7 @@ describe( 'js-yaml-loader', function() {
 				'deepstream.io-msg-super-messager': SuperMessager,
 				'deepstream.io-storage-super-storage': SuperStorage
 			} );
-			config = configLoader.loadConfig( {
+			config = configLoader.loadConfig( null, {
 				config: './config.json'
 			} ).config;
 		} );
@@ -449,7 +449,7 @@ describe( 'js-yaml-loader', function() {
 				[path.resolve( process.cwd(), 'foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
 				[path.resolve( process.cwd(), 'foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
 			} );
-			config = configLoader.loadConfig( {
+			config = configLoader.loadConfig( null, {
 				config: './config.json',
 				libPrefix: 'foobar'
 			} ).config;
@@ -505,7 +505,7 @@ describe( 'js-yaml-loader', function() {
 				[path.resolve( '/foobar', 'deepstream.io-msg-super-messager' )]: SuperMessager,
 				[path.resolve( '/foobar', 'deepstream.io-storage-super-storage' )]: SuperStorage
 			} );
-			config = configLoader.loadConfig( {
+			config = configLoader.loadConfig( null, {
 				config: './config.json',
 				libPrefix: '/foobar'
 			} ).config;
