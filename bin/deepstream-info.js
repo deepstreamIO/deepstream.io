@@ -2,7 +2,6 @@ var fs = require('fs');
 var path = require('path');
 var os = require( 'os' );
 var glob = require('glob');
-var meta = require( '../meta.json' );
 
 module.exports = function( program ) {
 	program
@@ -13,6 +12,7 @@ module.exports = function( program ) {
 };
 
 function printMeta() {
+	var meta = require( '../meta.json' );
 	meta.platform = os.platform();
 	meta.arch = os.arch();
 	meta.nodeVersion = process.version;
