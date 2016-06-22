@@ -11,7 +11,11 @@ var options = {
 	cache: new StorageMock(),
 	storage: new StorageMock(),
 	cacheRetrievalTimeout: 500,
-	cacheEvacuationInterval: 60000
+	permission: {
+		options: {
+			cacheEvacuationInterval: 60000
+		}
+	}
 };
 
 

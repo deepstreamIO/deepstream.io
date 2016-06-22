@@ -74,7 +74,7 @@ function action() {
 		// non-detach casee
 		const Deepstream = require( '../src/deepstream.io.js' );
 		try {
-			var ds = new Deepstream();
+			var ds = new Deepstream( null );
 			ds.on( 'started', function() {
 				pidHelper.save( process.pid );
 			} );

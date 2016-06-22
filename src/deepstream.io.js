@@ -127,9 +127,6 @@ Deepstream.prototype.start = function() {
 	this._currentState = STATES.STARTING;
 
 	var loggerInitializer = new DependencyInitialiser( this._options, 'logger' );
-	loggerInitializer.once( 'ready',
-		this._checkReady.bind( this, 'logger', loggerInitializer.getDependency() )
-	);
 	loggerInitializer.once( 'ready', this._start.bind( this ) );
 };
 
@@ -151,11 +148,10 @@ Deepstream.prototype._start = function() {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
 	}
 
-
 	var authTypeMsg = 'authentication type ' + ( this._options.authenticationHandler.type || 'custom' );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, authTypeMsg );
 
-	if( this._options.dataTransforms ) {
+	if( this._options.dataTransforms && this._options.dataTransforms instanceof Array ) {
 		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );
 	}
 
@@ -166,6 +162,7 @@ Deepstream.prototype._start = function() {
 		initialiser = new DependencyInitialiser( this._options, this._plugins[ i ] );
 		initialiser.once( 'ready', this._checkReady.bind( this, this._plugins[ i ], initialiser.getDependency() ) );
 	}
+	this._checkReady( 'logger', this._options.logger );
 };
 
 /**
@@ -226,7 +223,7 @@ Deepstream.prototype.convertTyped = function( value ) {
  * @returns {void}
  */
 Deepstream.prototype._loadConfig = function( config ) {
-	if ( config == null || typeof config === 'string' ) {
+	if ( config === null || typeof config === 'string' ) {
 		var result = jsYamlLoader.loadConfig( config );
 		this._configFile = result.file;
 		config = result.config;

@@ -3,7 +3,12 @@ var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissi
 var C = require( '../../src/constants/constants' );
 var options = {
 	logger: { log: jasmine.createSpy( 'log' ) },
-	cacheEvacuationInterval: 60000
+	permission: {
+		options: {
+			cacheEvacuationInterval: 60000,
+			maxRuleIterations: 3,
+		}
+	}
 };
 var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );

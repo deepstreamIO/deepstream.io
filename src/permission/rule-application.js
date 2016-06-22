@@ -38,7 +38,7 @@ var RuleApplication = function( params ) {
 	this._params = params;
 	this._isDestroyed = false;
 	this._runScheduled = false;
-	this._maxIterationCount = this._params.options.maxRuleIterations;
+	this._maxIterationCount = this._params.permissionOptions.maxRuleIterations;
 	this._crossReferenceFn = this._crossReference.bind( this );
 	this._pathVars = this._getPathVars();
 	this._user = this._getUser();
@@ -106,7 +106,7 @@ RuleApplication.prototype._onRuleError = function( error ) {
 	}
 	var errorMsg = 'error when executing ' + this._params.rule.fn.toString() + EOL +
 				   'for ' + this._params.path + ': ' + error.toString();
-	this._params.options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, errorMsg );
+	this._params.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, errorMsg );
 	this._params.callback( C.EVENT.MESSAGE_PERMISSION_ERROR, false );
 	this._destroy();
 };
@@ -143,7 +143,7 @@ RuleApplication.prototype._onLoadComplete = function( recordName, data ) {
 RuleApplication.prototype._onLoadError = function( recordName, error ) {
 	this._recordData[ recordName ] = ERROR;
 	var errorMsg = 'failed to load record ' + this._params.name + ' for permissioning:' + error.toString();
-	this._params.options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, errorMsg );
+	this._params.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, errorMsg );
 	this._params.callback( C.EVENT.RECORD_LOAD_ERROR, false );
 	this._destroy();
 };
@@ -381,7 +381,7 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 
 	this._recordData[ recordName ] = LOADING;
 
-	this._params.recordHandler.runWhenRecordStable( recordName, () => {
+	//this._params.recordHandler.runWhenRecordStable( recordName, () => {
 		new RecordRequest(
 			recordName,
 			this._params.options,
@@ -389,7 +389,7 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 			this._onLoadComplete.bind( this, recordName ),
 			this._onLoadError.bind( this, recordName )
 		);
-	});
+	//});
 };
 
 /**

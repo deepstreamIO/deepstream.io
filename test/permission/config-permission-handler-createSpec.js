@@ -5,9 +5,13 @@ var StorageMock = require( '../mocks/storage-mock' );
 
 var options = {
 	logger: { log: jasmine.createSpy( 'log' ) },
-	cacheEvacuationInterval: 60000,
 	cache: new StorageMock(),
-	storage: new StorageMock()
+	storage: new StorageMock(),
+	permission: {
+		options: {
+			cacheEvacuationInterval: 60000
+		}
+	}
 };
 var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );

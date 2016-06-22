@@ -8,7 +8,12 @@ var options = {
 	cache: new StorageMock(),
 	storage: new StorageMock(),
 	cacheRetrievalTimeout: 500,
-	cacheEvacuationInterval: 60000
+	permission: {
+		options: {
+			cacheEvacuationInterval: 60000,
+			maxRuleIterations: 3,
+		}
+	}
 };
 var lastError = function() {
 	return options.logger.log.calls.mostRecent().args[ 2 ];

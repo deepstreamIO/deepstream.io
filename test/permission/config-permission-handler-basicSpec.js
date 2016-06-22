@@ -3,7 +3,11 @@ var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissi
 var C = require( '../../src/constants/constants' );
 var options = {
 	logger: { log: jasmine.createSpy( 'log' ) },
-	cacheEvacuationInterval: 60000
+	permission: {
+		options: {
+			cacheEvacuationInterval: 60000
+		}
+	}
 };
 var lastError = function() {
 	return options.logger.log.calls.mostRecent().args[ 2 ];
