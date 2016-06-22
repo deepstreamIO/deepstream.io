@@ -31,31 +31,6 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	if( !options.webServerEnabled && !options.tcpServerEnabled ) {
 		throw new Error( 'Can\'t start deepstream with both webserver and tcp disabled' );
 	}
-
-	if( options.webServerEnabled ) {
-		// Initialise engine.io's server - a combined http and websocket server for browser connections
-		this._engineIoReady = false;
-		this._engineIoServerClosed = false;
-
-		if( this._options.httpServer ) {
-			this._server = this._options.httpServer;
-			this._engineIo = engine.attach( this._server, { path: this._options.urlPath });
-		} else {
-			this._server = this._createHttpServer();
-			this._server.listen( this._options.port, this._options.host );
-			this._engineIo = engine.attach( this._server );
-		}
-
-		if( this._server.listening ) {
-			this._checkReady( ENGINE_IO );
-		} else {
-			this._server.once( 'listening', this._checkReady.bind( this, ENGINE_IO ) );
-  		}
-
-		this._engineIo.on( 'error', this._onError.bind( this ) );
-		this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
-	}
-
 	if( options.tcpServerEnabled ) {
 		// Initialise a tcp server to facilitate fast and compatible communication with backend systems
 		this._tcpEndpointReady = false;
@@ -63,6 +38,29 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 		this._tcpEndpoint.on( 'error', this._onError.bind( this ) );
 		this._tcpEndpoint.on( 'connection', this._onConnection.bind( this, TCP_ENDPOINT ) );
 	}
+	if( options.webServerEnabled ) {
+		// Initialise engine.io's server - a combined http and websocket server for browser connections
+		this._engineIoReady = false;
+		this._engineIoServerClosed = false;
+
+		if( this._options.httpServer ) {
+			this._server = this._options.httpServer;
+		} else {
+			this._server = this._createHttpServer();
+			this._server.listen( this._options.port, this._options.host );
+		}
+		this._engineIo = engine.attach( this._server, { path: this._options.urlPath } );
+
+		if( this._server.listening === true || this._server._handle != null ) {
+			this._checkReady( ENGINE_IO );
+		} else {
+			this._server.once( 'listening', this._checkReady.bind( this, ENGINE_IO ) );
+		}
+
+		this._engineIo.on( 'error', this._onError.bind( this ) );
+		this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
+	}
+
 
 	this._timeout = null;
 	this._msgNum = 0;
@@ -95,7 +93,6 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
  * @returns {void}
  */
 ConnectionEndpoint.prototype.close = function() {
-
 	// Close the engine.io server
 	if( this._engineIo ) {
 		this._closeEngineIoServer();
