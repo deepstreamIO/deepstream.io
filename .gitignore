@@ -20,6 +20,7 @@ coverage
 # nexe
 build
 nexe_node
+meta.json
 
 # Compiled binary addons (http://nodejs.org/api/addons.html)
 build/Release

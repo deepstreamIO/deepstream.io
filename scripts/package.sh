@@ -38,6 +38,9 @@ if [ -z $1  ]; then
 	fi
 fi
 
+echo "Generating meta.json"
+node scripts/details.js META
+
 if [ $OS = "win32" ]; then
 	echo "Downloading node src ( not via nexe ) in order to patch the icon and details"
 	mkdir -p nexe_node/node/$PACKAGED_NODE_VERSION
