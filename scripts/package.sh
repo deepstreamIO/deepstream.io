@@ -25,7 +25,8 @@ if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
 fi
 
 if [ -z $1  ]; then
-	if ! [ ${GIT_BRANCH} = 'master' ]; then
+	if ! [[ ${TRAVIS_BRANCH} = 'master' ]] && ! [[ ${APPVEYOR_REPO_BRANCH} = 'master' ]] && ! [[ ${GIT_BRANCH} = 'master' ]]; then
+		echo "Running on branch ${GIT_BRANCH}"
 		if [[ -z ${TRAVIS_TAG} ]] && [[ -z ${APPVEYOR_REPO_TAG} ]]; then
 			echo "Only runs on tags or master"
 			exit
@@ -35,6 +36,8 @@ if [ -z $1  ]; then
 		else
 			echo "Running on tag ${TRAVIS_TAG} ${APPVEYOR_REPO_TAG}"
 		fi
+	else
+		echo "Running on master"
 	fi
 fi
 
