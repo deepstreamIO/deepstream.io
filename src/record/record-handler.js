@@ -525,7 +525,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
 		}
 		else if( canPerformAction !== true ) {
-			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, action + ':' + recordName );
+			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, [ recordName, action  ] );
 		}
 		else {
 			successCallback();
