@@ -9,6 +9,7 @@ const install = require( './deepstream-install' );
 const start = require( './deepstream-start' );
 const status = require( './deepstream-status' );
 const stop = require( './deepstream-stop' );
+const info = require( './deepstream-info' );
 
 program
 	.usage( '[command]' )
@@ -18,6 +19,7 @@ start( program );
 stop( program );
 status( program );
 install( program );
+info( program );
 
 program.parse( process.argv );
 
