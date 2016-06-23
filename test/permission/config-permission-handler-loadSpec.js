@@ -11,7 +11,7 @@ describe( 'permission handler is initialised correctly', function(){
 				}
 			}
 		});
-		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
+		permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
