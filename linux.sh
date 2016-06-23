@@ -16,6 +16,9 @@ DISTRO=$1
 DISTRO_NAME=$2
 GIT_TAG_NAME=v$VERSION
 
+# RPM does not support dashes in versions
+RPM_PACKAGE_VERSION=$( sed "s/-/_/" <<< ${VERSION} )
+
 if [ $DISTRO = "ubuntu" ] || [ $DISTRO = "debian" ]; then
 	ENV="deb"
 elif [ $DISTRO = "centos" ] || [ $DISTRO = "fedora" ]; then
@@ -87,7 +90,7 @@ fi
 if [ $ENV = 'rpm' ]; then
 		cat >>Dockerfile <<EOF
 RUN curl \
--T "build/deepstream.io-${VERSION}-1.x86_64.rpm" \
+-T "build/deepstream.io-${RPM_PACKAGE_VERSION}-1.x86_64.rpm" \
 -H "X-Bintray-Publish:1" \
 -u "yasserf:$BINTRAY_API_KEY" \
 "https://api.bintray.com/content/deepstreamio/rpm/deepstream.io/${GIT_TAG_NAME}/deepstream.io-${DISTRO_NAME}-${VERSION}-1.x86_64.rpm"
