@@ -29,12 +29,11 @@ describe( 'tcp-socket tests', function() {
 	} );
 
 	it( 'emits complete messages', function( done ) {
-		clientSocket.write( _msg( 'X|Y|1+' ) , 'utf8' );
-
 		tcpSocket.once( 'message', function( message ) {
 			expect( _show( message ) ).toBe( 'X|Y|1+' );
 			done();
 		} );
+		clientSocket.write( _msg( 'X|Y|1+' ) , 'utf8' );
 	} );
 
 	it( 'proxies errors from the underlying socket', function(){
@@ -44,51 +43,48 @@ describe( 'tcp-socket tests', function() {
 	});
 
 	it( 'concatenates multiple incomplete messages', function( done ) {
-		clientSocket.write( _msg( 'X|Y|' ) , 'utf8' );
-
 		setTimeout( function() {
-			clientSocket.write( _msg( '2+' ) , 'utf8' );
 			tcpSocket.once( 'message', function( message ) {
 				expect( _show( message ) ).toBe( 'X|Y|2+' );
 				done();
 			} );
+			clientSocket.write( _msg( '2+' ) , 'utf8' );
 		}, 5 );
+		clientSocket.write( _msg( 'X|Y|' ) , 'utf8' );
 	} );
 
 	it( 'extracts all valid messages if buffer exceeds maxMessageSize ', function( done ) {
-		clientSocket.write( _msg( 'X|Y|3+Z|Y|4+X|Y|5+X|Y|6' ) , 'utf8' );
-
 		tcpSocket.once( 'message', function( message ) {
 			expect( _show( message ) ).toBe( 'X|Y|3+Z|Y|4+X|Y|5+' );
 			done();
 		} );
+		clientSocket.write( _msg( 'X|Y|3+Z|Y|4+X|Y|5+X|Y|6' ) , 'utf8' );
 	} );
 
 	it( 'concatenates the remained of the last incomplete message after buffer was exceeded', function( done ) {
-		clientSocket.write( _msg( '+X|Y|7+' ) , 'utf8' );
-
 		tcpSocket.once( 'message', function( message ) {
 			expect( _show( message ) ).toBe( 'X|Y|6+X|Y|7+' );
 			done();
 		} );
+		clientSocket.write( _msg( '+X|Y|7+' ) , 'utf8' );
 	} );
 
 	describe( 'on buffer overrun without valid message', function() {
 
 		it( 'emits size exceeded message', function( done ) {
-			clientSocket.write( _msg( 'X|Y|thismessageisgarbageanddonetooverrunthebuffer' ) , 'utf8' );
 			clientSocket.once( 'data', function( packet ) {
 				expect( packet.toString() ).toEqual( _msg( 'X|E|MAXIMUM_MESSAGE_SIZE_EXCEEDED|Received message longer than maxMessageSize+' ) );
 				done();
 			} );
+			clientSocket.write( _msg( 'X|Y|thismessageisgarbageanddonetooverrunthebuffer' ) , 'utf8' );
 		} );
 
 		it( 'parses following messages correctly', function( done ) {
-			clientSocket.write( _msg( 'stilloverun+X|Y|8+' ) , 'utf8' );
 			tcpSocket.once( 'message', function( message ) {
 				expect( _show( message ) ).toBe( 'stilloverun+X|Y|8+' );
 				done();
 			} );
+			clientSocket.write( _msg( 'stilloverun+X|Y|8+' ) , 'utf8' );
 		} );
 
 	} );
