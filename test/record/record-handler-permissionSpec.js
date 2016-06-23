@@ -78,7 +78,7 @@ describe( 'record handler handles messages', function(){
 
 		expect( permissionHandler.lastArgs.length ).toBe( 1 );
 		expect( permissionHandler.lastArgs[ 0 ][ 1 ].action ).toBe( 'R' );
-		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|MESSAGE_DENIED|R:some-record+' ) );
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|E|MESSAGE_DENIED|some-record|R+' ) );
 	});
 
 	it( 'handles a permission error', function(){

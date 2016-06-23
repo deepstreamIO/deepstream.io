@@ -76,16 +76,32 @@ MessageProcessor.prototype.process = function( socketWrapper, message ) {
  */
 MessageProcessor.prototype._onPermissionResponse = function( socketWrapper, message, error, result ) {
 	if( error !== null ) {
-		socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
+		socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, this._getPermissionErrorData( message ) );
 		return;
 	}
 
 	if( result !== true ) {
-		socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, message.raw );
+		socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, this._getPermissionErrorData( message ) );
 		return;
 	}
 
 	this.onAuthenticatedMessage( socketWrapper, message );
 };
+
+/**
+ * Create data in the correct format expected in a MESSAGE_DENIED or MESSAGE_PERMISSION_ERROR
+ *
+ * @param   {Object} message 	parsed message - might have been manipulated
+ *                            	by the permissionHandler
+ * @returns {Object}
+ */
+MessageProcessor.prototype._getPermissionErrorData = function( message ) {
+	var data = [ message.data[ 0 ], message.action ];
+	if( message.data.length > 1 ) {
+			data = data.concat( message.data.slice( 1 ) );
+	}
+	return data;
+}
 
 module.exports = MessageProcessor;

@@ -4,14 +4,16 @@ var SocketMock = require( '../mocks/socket-mock' ),
 	MessageProcessor = require( '../../src/message/message-processor' ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	messageProcessor,
+	log,
 	lastAuthenticatedMessage = null;
 
 describe( 'the message processor only forwards valid, authorized messages', function(){
-	
+
 	it( 'creates the message processor', function(){
+		log = jasmine.createSpy( 'log' );
 		messageProcessor = new MessageProcessor({
 			permissionHandler: permissionHandlerMock,
-			logger: { log: function(){} }
+			logger: { log: log }
 		});
 		messageProcessor.onAuthenticatedMessage = function( socketWrapper, message ) {
 			lastAuthenticatedMessage = message;
@@ -28,14 +30,16 @@ describe( 'the message processor only forwards valid, authorized messages', func
 		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		permissionHandlerMock.nextCanPerformActionResult = 'someError';
 		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'R|E|MESSAGE_PERMISSION_ERROR|someError+' ) );
+		expect( log ).toHaveBeenCalled();
+		expect( log ).toHaveBeenCalledWith( 2, 'MESSAGE_PERMISSION_ERROR', 'someError' );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'R|E|MESSAGE_PERMISSION_ERROR|/user/wolfram|R+' ) );
 	});
 
 	it( 'handles denied messages', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		permissionHandlerMock.nextCanPerformActionResult = false;
 		messageProcessor.process( socketWrapper, _msg( 'R|R|/user/wolfram+' ) );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'R|E|MESSAGE_DENIED|R|R|/user/wolfram+' ) );
+		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'R|E|MESSAGE_DENIED|/user/wolfram|R+' ) );
 	});
 
 	it( 'provides the correct arguments to canPerformAction', function(){
