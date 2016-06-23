@@ -125,7 +125,7 @@ Deepstream.prototype.start = function() {
 		throw new Error( `Server can only start after it stops succesfully, currently ${this._currentState}` );
 	}
 	this._currentState = STATES.STARTING;
-
+	this._showStartLogo();
 	var loggerInitializer = new DependencyInitialiser( this._options, 'logger' );
 	loggerInitializer.once( 'ready',
 		this._checkReady.bind( this, 'logger', loggerInitializer.getDependency() )
@@ -142,8 +142,6 @@ Deepstream.prototype.start = function() {
  * @returns {void}
  */
 Deepstream.prototype._start = function() {
-	this._showStartLogo();
-
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
 
 	// otherwise (no configFile) deepstream was invoked by API

@@ -219,6 +219,9 @@ describe( 'installer', function() {
 		const fsMock = {
 			createWriteStream: dummyWritedStream()
 		};
+		const childProcessMock = {
+			execSync: function() { throw new Error( 'Could not extract archive' );}
+		};
 		const needleMock = new Needle(
 			// request handler for fetching all releases
 			function( urlPath, options, callback ) {
@@ -234,7 +237,8 @@ describe( 'installer', function() {
 		needleMock['@noCallThru'] = true;
 		var installer = proxyquire( '../../bin/installer', {
 			needle: needleMock,
-			fs: fsMock
+			fs: fsMock,
+			child_process: childProcessMock
 		} );
 
 		installer( {type: 'foo', name: 'bar', version: '1.2.3', verbose: true}, function( error ) {
@@ -278,7 +282,7 @@ describe( 'installer', function() {
 			needle: needleMock,
 			'adm-zip': zipMock,
 			fs: fsMock,
-			'child_process': child_processMock
+			child_process: child_processMock
 		} );
 
 		var installOptions = {
