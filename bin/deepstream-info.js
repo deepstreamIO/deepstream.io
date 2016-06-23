@@ -22,7 +22,6 @@ function printMeta() {
 
 function fetchLibs(libPrefix, meta) {
 	var directory = libPrefix || 'lib';
-	console.log('checking path: ', directory);
 	var files = glob.sync(path.join(directory, '*', 'package.json'));
 	meta.libs = files.map(function(filePath) {
 		var pkg = fs.readFileSync(filePath, 'utf8');
