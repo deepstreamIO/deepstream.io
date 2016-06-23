@@ -156,6 +156,7 @@ RuleApplication.prototype._onLoadError = function( recordName, error ) {
  * @returns {void}
  */
 RuleApplication.prototype._destroy = function() {
+	this._params.recordHandler.removeRecordRequest( this._params.name );
 	this._isDestroyed = true;
 	this._runScheduled = false;
 	this._params = null;
@@ -381,7 +382,7 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 
 	this._recordData[ recordName ] = LOADING;
 
-	//this._params.recordHandler.runWhenRecordStable( recordName, () => {
+	this._params.recordHandler.runWhenRecordStable( recordName, () => {
 		new RecordRequest(
 			recordName,
 			this._params.options,
@@ -389,7 +390,7 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 			this._onLoadComplete.bind( this, recordName ),
 			this._onLoadError.bind( this, recordName )
 		);
-	//});
+	});
 };
 
 /**
