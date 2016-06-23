@@ -29,12 +29,13 @@ var UNDEFINED = 'undefined';
  *                           to load it from the path provided in options.path.
  */
 var ConfigPermissionHandler = function( options, config ) {
-	this.type = 'valve permissions loaded from ' + options.path;
 	this._ruleCache = new RuleCache( options );
 	this._options = options;
+	this._permissionOptions = options.permission.options;
 	this._config = null;
 	this._recordHandler = null;
 	this.isReady = false;
+	this.type = 'valve permissions loaded from ' + this._permissionOptions.path;
 
 	if( config ) {
 		this.useConfig( config );
@@ -65,7 +66,7 @@ ConfigPermissionHandler.prototype.setRecordHandler = function( recordHandler ) {
  */
 ConfigPermissionHandler.prototype.init = function() {
 	if( this._config === null ) {
-		this.loadConfig( this._options.path );
+		this.loadConfig( this._permissionOptions.path );
 	}
 };
 
@@ -163,6 +164,8 @@ ConfigPermissionHandler.prototype.canPerformAction = function( username, message
 		rule: ruleData.rule,
 		name: name,
 		callback: callback,
+		logger: this._options.logger,
+		permissionOptions: this._permissionOptions,
 		options: this._options
 	} );
 };
@@ -225,7 +228,6 @@ ConfigPermissionHandler.prototype._onConfigLoaded = function( path, loadError, d
 		this.emit( 'error', 'error while loading config: ' + loadError.toString() );
 		return;
 	}
-
 	var config;
 
 	try{

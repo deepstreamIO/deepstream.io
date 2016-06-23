@@ -21,8 +21,8 @@ var RecordHandler = function( options ) {
 	this._hasReadTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
 	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
 	this._hasPatchTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.PATCH );
-	this._transitionEndEmitter = new EventEmitter();
-	this._transitions = [];
+	this._transitions = {};
+	this._recordRequestsInProgress = {};
 };
 
 /**
@@ -420,11 +420,41 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
  */
 RecordHandler.prototype._$transitionComplete = function( recordName ) {
 	delete this._transitions[ recordName ];
-	this._transitionEndEmitter.emit( recordName );
 };
 
 /**
  * Executes or schedules a callback function once all transitions are complete
+ *
+ * This is called from the PermissionHandler destroy method, which
+ * could occur in cases where 'runWhenRecordStable' is never called,
+ * such as when no cross referencing or data loading is used.
+ *
+ * @param   {String}   recordName the name of the record
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype.removeRecordRequest = function( recordName ) {
+	var callback;
+
+	if( !this._recordRequestsInProgress[ recordName ] ) {
+		return;
+	}
+
+	if( this._recordRequestsInProgress[ recordName ].length === 0 ) {
+		delete this._recordRequestsInProgress[ recordName ];
+		return;
+	}
+
+	callback = this._recordRequestsInProgress[ recordName ].splice( 0, 1 )[ 0 ];
+	callback();
+};
+
+/**
+ * Executes or schedules a callback function once all record requests are removed.
+ * This is critical to block reads until writes have occured for a record, which is
+ * only from permissions when a rule is required to be run and the cache has not
+ * verified it has the latest version
  *
  * @param   {String}   recordName the name of the record
  * @param   {Function} callback   function to be executed once all writes to this record are complete
@@ -433,10 +463,11 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
  * @returns {void}
  */
 RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
-	if( this._transitions[ recordName ] ) {
-		this._transitionEndEmitter.once( recordName, callback );
-	} else {
+	if( !this._recordRequestsInProgress[ recordName ] ) {
+		this._recordRequestsInProgress[ recordName ] = [];
 		callback();
+	} else {
+		this._recordRequestsInProgress[ recordName ].push( callback );
 	}
 };
 

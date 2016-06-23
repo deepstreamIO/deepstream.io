@@ -8,7 +8,12 @@ var options = {
 	cache: new StorageMock(),
 	storage: new StorageMock(),
 	cacheRetrievalTimeout: 500,
-	cacheEvacuationInterval: 60000
+	permission: {
+		options: {
+			cacheEvacuationInterval: 60000,
+			maxRuleIterations: 3,
+		}
+	}
 };
 var lastError = function() {
 	return options.logger.log.calls.mostRecent().args[ 2 ];
@@ -16,7 +21,7 @@ var lastError = function() {
 
 var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );
-	permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
+	permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
 	var permissionResult;
 
 	username = username || 'someUser';

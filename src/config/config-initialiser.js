@@ -250,5 +250,5 @@ function handlePermissionStrategy( config ) {
 		config.permission.options.path = fileUtils.lookupConfRequirePath( config.permission.options.path );
 	}
 
-	config.permissionHandler = new ( permissionStrategies[ config.permission.type ] )( config.permission.options );
+	config.permissionHandler = new ( permissionStrategies[ config.permission.type ] )( config );
 }

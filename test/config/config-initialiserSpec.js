@@ -204,6 +204,7 @@ describe( 'config-initialiser', function() {
 	describe( 'creates the permissionHandler', function() {
 
 		it( 'creates the config permission handler', function() {
+			global.deepstreamConfDir = './test/test-configs';
 			var config = defaultConfig.get();
 
 			config.permission = {

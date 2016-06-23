@@ -79,7 +79,7 @@ RecordTransition.prototype.hasVersion = function( version ) {
  */
 RecordTransition.prototype.sendVersionExists = function( socketWrapper, version ) {
 	var i, msg, conflict;
-	
+
 	if( this._record ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, [ this._name, this._record._v, JSON.stringify( this._record._d ) ] );
 		msg = socketWrapper.user + ' tried to update record ' + this._name + ' to version ' +  version + ' but it already was ' + this._record._v;

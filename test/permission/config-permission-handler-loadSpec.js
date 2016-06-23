@@ -4,10 +4,14 @@ var C = require( '../../src/constants/constants' );
 describe( 'permission handler is initialised correctly', function(){
 	it( 'loads a valid config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			path: './conf/permissions.json',
-			permissionCacheEvacuationInterval: 60000
+			permission: {
+				options: {
+					path: './conf/permissions.json',
+					cacheEvacuationInterval: 60000
+				}
+			}
 		});
-		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
+		permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
@@ -22,8 +26,12 @@ describe( 'permission handler is initialised correctly', function(){
 
 	it( 'fails to load a non existant config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			path: './does-not-exist.json',
-			cacheEvacuationInterval: 60000
+			permission: {
+				options: {
+					path: './does-not-exist.json',
+					cacheEvacuationInterval: 60000
+				}
+			}
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
@@ -40,8 +48,12 @@ describe( 'permission handler is initialised correctly', function(){
 
 	it( 'fails when loading a broken config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			path: './test/test-configs/broken-json-config.json',
-			cacheEvacuationInterval: 60000
+			permission: {
+				options: {
+					path: './test/test-configs/broken-json-config.json',
+					cacheEvacuationInterval: 60000
+				}
+			}
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
@@ -58,8 +70,12 @@ describe( 'permission handler is initialised correctly', function(){
 
 	it( 'fails when loading an invalid config file upon initialisation', function( next ){
 		var permissionHandler = new ConfigPermissionHandler({
-			path: './test/test-configs/invalid-permission-conf.json',
-			cacheEvacuationInterval: 60000
+			permission: {
+				options: {
+					path: './test/test-configs/invalid-permission-conf.json',
+					cacheEvacuationInterval: 60000
+				}
+			}
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
@@ -81,8 +97,12 @@ describe( 'it loads a new config during runtime', function(){
 
 	it( 'loads a valid config file upon initialisation', function( next ){
 		permissionHandler = new ConfigPermissionHandler({
-			path: './conf/permissions.json',
-			permissionCacheEvacuationInterval: 60000
+			permission: {
+				options: {
+					path: './conf/permissions.json',
+					cacheEvacuationInterval: 60000
+				}
+			}
 		});
 		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
 		permissionHandler.init();
