@@ -41,7 +41,7 @@ RUN apt-get install -y nodejs
 EOF
 else
 	cat >>Dockerfile <<EOF
-RUN yum update
+RUN yum update -y
 RUN yum install -y git curl rpmbuild ruby ruby-devel rubygems rpm-build
 RUN yum -y install gcc gcc-c++ make openssl-devel
 RUN curl --silent --location https://rpm.nodesource.com/setup_4.x | bash -
