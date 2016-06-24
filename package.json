@@ -14,8 +14,7 @@
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "test-http-server": "node test/test-helper/start-test-server.js",
-    "shrinkwrap": "npm shrinkwrap && node scripts/shrinkwrap"
+    "test-http-server": "node test/test-helper/start-test-server.js"
   },
   "repository": {
     "type": "git",
@@ -35,8 +34,7 @@
     "glob": "^7.0.5",
     "js-yaml": "^3.6.1",
     "mkdirp": "^0.5.1",
-    "needle": "^1.0.0",
-    "xml2js": "^0.4.16"
+    "needle": "^1.0.0"
   },
   "devDependencies": {
     "coveralls": "^2.11.9",
