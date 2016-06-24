@@ -50,6 +50,22 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 			this._server.listen( this._options.port, this._options.host );
 		}
 		this._engineIo = engine.attach( this._server, { path: this._options.urlPath } );
+		try {
+			const uws = require( 'uws' );
+			// Since uws doesn't work on windows but is required by nexe
+			// we provide a fake module to patch it if necassary
+			if( !uws.Server ) {
+				throw '';
+			}
+			this._engineIo.ws = new ( require( 'uws' ).Server ) ({
+					noServer: true,
+					clientTracking: false,
+					perMessageDeflate: false
+			} );
+			this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Using uws websocket server' );
+		} catch( e ) {
+			this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Using ws websocket server' );
+		}
 
 		if( this._server.listening === true || this._server._handle != null ) {
 			this._checkReady( ENGINE_IO );

@@ -21,6 +21,7 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "optionalDependencies": {
+    "uws": "^0.5.1",
     "bufferutil": "^1.2.1",
     "charset": "^1.0.0",
     "utf-8-validate": "^1.2.1"
