@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "coveralls": "^2.11.9",
-    "engine.io-client": "^1.6.4",
+    "engine.io-client": "^1.6.11",
     "grunt": "^1.0.1 ",
     "grunt-release": "^0.14.0",
     "istanbul": "^0.4.3",
