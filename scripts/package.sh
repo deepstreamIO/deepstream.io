@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-PACKAGED_NODE_VERSION="4.4.5"
+LTS_VERSION="4"
 NODE_VERSION=$( node --version )
+NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
 PACKAGE_NAME=$( node scripts/details.js NAME )
@@ -16,11 +17,11 @@ if [ $OS = "win32" ]; then
 	EXTENSION=".exe"
 fi
 
-echo "Starting deepstream.io packaging"
+echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
 mkdir -p build
 
-if [ $NODE_VERSION != "v$PACKAGED_NODE_VERSION" ]; then
-	echo "Packaging only done on $PACKAGED_NODE_VERSION"
+if ! [[ $NODE_VERSION_WITHOUT_V == $LTS_VERSION* ]]; then
+	echo "Packaging only done on $LTS_VERSION.x"
 	exit
 fi
 
@@ -41,7 +42,7 @@ if [ -z $1  ]; then
 	fi
 fi
 
-echo "Patching accepts dependency of engine.io (npm-shrinkwrap.json)"
+echo "Patching accepts dependency of engine.io (npm-shrinkwrap)"
 rm -rf node_modules/engine.io
 rm -f npm-shrinkwrap.json
 npm install
@@ -69,23 +70,23 @@ mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_mo
 
 if [ $OS = "win32" ]; then
 	echo "Downloading node src ( not via nexe ) in order to patch the icon and details"
-	mkdir -p nexe_node/node/$PACKAGED_NODE_VERSION
-	cd nexe_node/node/$PACKAGED_NODE_VERSION
+	mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+	cd nexe_node/node/$NODE_VERSION_WITHOUT_V
 
-	curl -o node-$PACKAGED_NODE_VERSION.tar.gz https://nodejs.org/dist/v$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION.tar.gz
-	tar -xzf node-$PACKAGED_NODE_VERSION.tar.gz
+	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+	tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
 
 	cd -
 
-	cp scripts/resources/node.rc nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/node.rc
-	cp scripts/resources/deepstream.ico nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/deepstream.ico
+	cp scripts/resources/node.rc nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
+	cp scripts/resources/deepstream.ico nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/deepstream.ico
 
 	NAME=$PACKAGE_VERSION
 	if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
 		echo "Version can't contain characters versions in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
 		NAME="0.0.0"
 	fi
-	sed -i "s/DEEPSTREAM_VERSION/$NAME/" nexe_node/node/$PACKAGED_NODE_VERSION/node-v$PACKAGED_NODE_VERSION/src/res/node.rc
+	sed -i "s/DEEPSTREAM_VERSION/$NAME/" nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
 fi
 
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
@@ -95,7 +96,7 @@ echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 ./node_modules/.bin/nexe \
 	--input "bin/deepstream" \
 	--output $EXECUTABLE_NAME \
-	--runtime $PACKAGED_NODE_VERSION \
+	--runtime $NODE_VERSION_WITHOUT_V \
 	--temp "nexe_node" \
 	--flags "--use_strict" \
 	--framework "node" \
