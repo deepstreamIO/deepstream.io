@@ -59,6 +59,11 @@ node scripts/details.js META
 echo "Patching winston files for nexe/browserify"
 cp scripts/patch-files/winston-transports.js node_modules/deepstream.io-logger-winston/node_modules/winston/lib/winston/transports.js
 echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winston/node_modules/winston/node_modules/pkginfo/lib/pkginfo.js
+echo "Patching uws files for nexe/browserify"
+if [ ! -d 'node_modules/uws' ]; then
+	mkdir -p node_modules/uws
+	echo "module.exports = function() {}" > node_modules/uws/index.js
+fi
 
 echo "Adding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
