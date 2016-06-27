@@ -5,13 +5,13 @@ env:
 
 node_js:
   - "stable"
-  - "6.0"
-  - "5.0"
-  - "4.4.5" # Stated specifically for packaging
+  - "6"
+  - "5"
+  - "4" # Stated specifically for packaging
 
 matrix:
   include:
-    - node_js: "4.4.5"
+    - node_js: "4"
       os: osx
 
 script:
