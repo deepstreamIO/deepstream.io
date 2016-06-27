@@ -98,6 +98,7 @@ if [ -d node_modules/uws ] && [[ ! -d $NODE_DEPS/uws ]]; then
 else
 	echo "Skipped uws patch, folders in native node are"
 	echo $( ls $NODE_DEPS )
+	rm -rf node_modules/uws
 fi
 
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
