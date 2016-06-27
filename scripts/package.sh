@@ -230,3 +230,4 @@ rm build/deepstream
 
 echo "Files in build directory are $( ls build/ )"
 echo "Done"
+rm -f npm-shrinkwrap
