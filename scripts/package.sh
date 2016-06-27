@@ -59,11 +59,6 @@ node scripts/details.js META
 echo "Patching winston files for nexe/browserify"
 cp scripts/patch-files/winston-transports.js node_modules/deepstream.io-logger-winston/node_modules/winston/lib/winston/transports.js
 echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winston/node_modules/winston/node_modules/pkginfo/lib/pkginfo.js
-echo "Patching uws files for nexe/browserify"
-if [ ! -d 'node_modules/uws' ]; then
-	mkdir -p node_modules/uws
-	echo "module.exports = function() {}" > node_modules/uws/index.js
-fi
 
 echo "Adding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
@@ -87,6 +82,19 @@ if [ $OS = "win32" ]; then
 		NAME="0.0.0"
 	fi
 	sed -i "s/DEEPSTREAM_VERSION/$NAME/" nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
+fi
+
+NODE_DEPS=nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps
+UWS_ADDON=uws/nodejs/dist/addon.cpp
+if [ -d node_modules/uws ] && [[ ! -d $NODE_DEPS/uws ]]; then
+	echo "Adding native uws"
+	mv -f node_modules/uws $NODE_DEPS/
+	sed -i "s/const uws/var uws/" $NODE_DEPS/uws/nodejs/dist/uws.js
+	sed -i "s/})();/}); uws = process.binding('uws')/" $NODE_DEPS/uws/nodejs/dist/uws.js
+	sed -i "s/NODE_MODULE(uws, Main)/NODE_MODULE(node_uws, Main)/" $NODE_DEPS/uws/nodejs/addon.cpp
+	cp $NODE_DEPS/uws/nodejs/dist/uws.js $NODE_DEPS/../lib/uws.js
+	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_DEPS/../node.gyp
+	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_DEPS/../node.gyp
 fi
 
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
