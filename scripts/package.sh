@@ -56,6 +56,26 @@ npm install
 echo "Generating meta.json"
 node scripts/details.js META
 
+echo "Downloading node src ( not via nexe ) in order to patch the icon and details"
+mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+
+curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+
+cd -
+
+cp scripts/resources/node.rc nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
+cp scripts/resources/deepstream.ico nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/deepstream.ico
+
+NAME=$PACKAGE_VERSION
+if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+	echo "Version can't contain characters versions in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
+	NAME="0.0.0"
+fi
+sed -i "s/DEEPSTREAM_VERSION/$NAME/" nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
+
+# Nexe Patches 
 echo "Patching winston files for nexe/browserify"
 cp scripts/patch-files/winston-transports.js node_modules/deepstream.io-logger-winston/node_modules/winston/lib/winston/transports.js
 echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winston/node_modules/winston/node_modules/pkginfo/lib/pkginfo.js
@@ -63,27 +83,7 @@ echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winsto
 echo "Adding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
 
-if [ $OS = "win32" ]; then
-	echo "Downloading node src ( not via nexe ) in order to patch the icon and details"
-	mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-	cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-
-	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-	tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-
-	cd -
-
-	cp scripts/resources/node.rc nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
-	cp scripts/resources/deepstream.ico nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/deepstream.ico
-
-	NAME=$PACKAGE_VERSION
-	if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
-		echo "Version can't contain characters versions in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
-		NAME="0.0.0"
-	fi
-	sed -i "s/DEEPSTREAM_VERSION/$NAME/" nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
-fi
-
+# Patch Native Modules
 NODE_DEPS=nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps
 UWS_ADDON=uws/nodejs/dist/addon.cpp
 if [ -d node_modules/uws ] && [[ ! -d $NODE_DEPS/uws ]]; then
