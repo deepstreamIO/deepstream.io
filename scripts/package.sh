@@ -85,7 +85,6 @@ mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_mo
 
 # Patch Native Modules
 NODE_DEPS=nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps
-UWS_ADDON=uws/nodejs/dist/addon.cpp
 if [ -d node_modules/uws ] && [[ ! -d $NODE_DEPS/uws ]]; then
 	echo "Adding native uws"
 	mv -f node_modules/uws $NODE_DEPS/
