@@ -89,6 +89,7 @@ if [ -d node_modules/uws ] && [[ ! -d $NODE_DEPS/uws ]]; then
 	echo "Adding native uws"
 	mv -f node_modules/uws $NODE_DEPS/
 	echo $( ls $NODE_DEPS )
+	echo $( ls $NODE_DEPS/uws )
 	sed -i "s/const uws/var uws/" $NODE_DEPS/uws/nodejs/dist/uws.js
 	sed -i "s/})();/}); uws = process.binding('uws')/" $NODE_DEPS/uws/nodejs/dist/uws.js
 	sed -i "s/NODE_MODULE(uws, Main)/NODE_MODULE(node_uws, Main)/" $NODE_DEPS/uws/nodejs/addon.cpp
