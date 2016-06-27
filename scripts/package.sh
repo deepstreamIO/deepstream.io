@@ -95,6 +95,9 @@ if [ -d node_modules/uws ] && [[ ! -d $NODE_DEPS/uws ]]; then
 	cp $NODE_DEPS/uws/nodejs/dist/uws.js $NODE_DEPS/../lib/uws.js
 	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_DEPS/../node.gyp
 	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_DEPS/../node.gyp
+else
+	echo "Skipped uws patch, folders in native node are"
+	echo $( ls $NODE_DEPS )
 fi
 
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
