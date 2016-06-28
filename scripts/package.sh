@@ -84,12 +84,18 @@ echo "Adding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
 
 # Patch Native Modules
-NODE_DEPS=nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps
-if [ -d node_modules/uws ] && [[ ! -d $NODE_DEPS/uws ]]; then
+NODE_DEPS="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps"
+if [ $OS == "win32" ]; then
+	echo "Empty uws in windows"
+	mkdir -p node_modules/uws
+	echo "module.exports = function() {}" > node_modules/uws/index.js
+elif [[ ! -d $NODE_DEPS/uws ]]; then
 	echo "Adding native uws"
-	mv -f node_modules/uws $NODE_DEPS/
-	echo $( ls $NODE_DEPS )
-	echo $( ls $NODE_DEPS/uws )
+	curl -L -o $NODE_DEPS/uws.tar.gz https://github.com/uWebSockets/uWebSockets/archive/v0.6.3.tar.gz
+	tar -xzf $NODE_DEPS/uws.tar.gz -C $NODE_DEPS
+	mv $NODE_DEPS/uWebSockets* $NODE_DEPS/uws
+	rm -rf $NODE_DEPS/uws.tar.gz
+
 	sed -i "s/const uws/var uws/" $NODE_DEPS/uws/nodejs/dist/uws.js
 	sed -i "s/})();/}); uws = process.binding('uws')/" $NODE_DEPS/uws/nodejs/dist/uws.js
 	sed -i "s/NODE_MODULE(uws, Main)/NODE_MODULE(node_uws, Main)/" $NODE_DEPS/uws/nodejs/addon.cpp
@@ -97,9 +103,9 @@ if [ -d node_modules/uws ] && [[ ! -d $NODE_DEPS/uws ]]; then
 	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_DEPS/../node.gyp
 	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_DEPS/../node.gyp
 else
-	echo "Skipped uws patch, folders in native node are"
-	echo $( ls $NODE_DEPS )
+	echo "Skipped uws patch, already exists"
 fi
+rm -rf node_modules/uws
 
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
