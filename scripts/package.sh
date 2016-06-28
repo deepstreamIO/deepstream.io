@@ -48,13 +48,13 @@ fi
 echo "Patching accepts dependency of engine.io (npm-shrinkwrap)"
 rm -rf node_modules/engine.io
 rm -f npm-shrinkwrap.json
-npm install
+npm install > /dev/null 2> /dev/null
 
-npm shrinkwrap >> /dev/null
+npm shrinkwrap > /dev/null 2> /dev/null
 node scripts/shrinkwrap.js
 # Use versions that have been modified
 rm -rf node_modules/engine.io
-npm install
+npm install > /dev/null 2> /dev/null
 
 echo "Generating meta.json"
 node scripts/details.js META
@@ -75,7 +75,7 @@ if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
 	echo "Version can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
 	NAME="0.0.0"
 fi
-sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
+sed -i 's/DEEPSTREAM_VERSION/$NAME/' $NODE_SOURCE/src/res/node.rc
 
 # Nexe Patches
 echo "Patching winston files for nexe/browserify"
@@ -86,8 +86,8 @@ echo "Adding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
 
 # Patch Native Modules
-if [ $OS == "win32" ]; then
-	echo "Adding empty uws module for needle"
+if ! [ $OS == "linux" ]; then
+	echo "Adding empty uws module for uws"
 	mkdir -p node_modules/uws
 	echo "module.exports = function() {}" >> node_modules/uws/index.js
 elif [[ ! -d $NODE_DEPS/uws ]]; then
@@ -100,7 +100,7 @@ elif [[ ! -d $NODE_DEPS/uws ]]; then
 	sed -i "s/const uws/var uws/" $NODE_DEPS/uws/nodejs/dist/uws.js
 	sed -i "s/})();/}); uws = process.binding('uws')/" $NODE_DEPS/uws/nodejs/dist/uws.js
 	sed -i "s/NODE_MODULE(uws, Main)/NODE_MODULE(node_uws, Main)/" $NODE_DEPS/uws/nodejs/addon.cpp
-	cp $NODE_DEPS/uws/nodejs/dist/uws.js $NODE_DEPS/../lib/uws.js
+	cp $NODE_DEPS/uws/nodejs/dist/uws.js $NODE_SOURCE/lib/uws.js
 	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_SOURCE/node.gyp
 	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_SOURCE/node.gyp
 
@@ -126,7 +126,7 @@ echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 PROC_ID=$!
 MINUTES=0;
 while kill -0 "$PROC_ID" >/dev/null 2>&1; do
-	echo "Compiling node... ($MINUTES minutes)"
+	echo "Compiling deepstream... ($MINUTES minutes)"
 	sleep 60
 	MINUTES=$[MINUTES+1]
 done
