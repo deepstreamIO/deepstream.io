@@ -67,7 +67,6 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 		} catch( e ) {
 			this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Using ws websocket server' );
 		}
-		this._engineIo = engine.attach( this._server, { path: this._options.urlPath });
 
 		if( this._server.listening === true || this._server._handle != null ) {
 			this._checkReady( ENGINE_IO );
