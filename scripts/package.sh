@@ -124,11 +124,11 @@ echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 	> /dev/null &
 
 PROC_ID=$!
-MINUTES=0;
+SECONDS=0;
 while kill -0 "$PROC_ID" >/dev/null 2>&1; do
-	echo "Compiling deepstream... ($MINUTES minutes)"
-	sleep 60
-	MINUTES=$[MINUTES+1]
+	echo -ne "\rCompiling deepstream... ($SECONDS SECONDS)"
+	sleep 1
+	SECONDS=$[SECONDS+1]
 done
 
 if wait $pid; then
