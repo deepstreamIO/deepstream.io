@@ -10,7 +10,8 @@ const utils = require( '../utils/utils' );
 const configInitialiser = require( './config-initialiser' );
 const fileUtils = require( './file-utils' );
 
-const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
+const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];path.join( '.', 'conf', 'config' );
+const DEFAULT_CONFIG_DIRS = [ path.join( '.', 'conf', 'config' ), '/etc/deepstream/config', '/usr/local/etc/deepstream/config' ];
 
 /**
  * Reads and parse a general configuration file content.
@@ -161,13 +162,14 @@ function verifyCustomConfigPath( configPath ) {
  * @returns {String} filePath
  */
 function getDefaultConfigPath() {
-	var defaultConfigBaseName = path.join( '.', 'conf', 'config' );
-	var filePath, i;
+	var filePath, i, k;
 
-	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
-		filePath = defaultConfigBaseName + SUPPORTED_EXTENSIONS[ i ];
-		if( fileUtils.fileExistsSync( filePath ) ) {
-			return filePath;
+	for( k = 0; k < DEFAULT_CONFIG_DIRS.length; k++ ) {
+		for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
+			filePath = DEFAULT_CONFIG_DIRS[ k ] + SUPPORTED_EXTENSIONS[ i ];
+			if( fileUtils.fileExistsSync( filePath ) ) {
+				return filePath;
+			}
 		}
 	}
 
