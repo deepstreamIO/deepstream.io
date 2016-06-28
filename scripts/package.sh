@@ -132,7 +132,7 @@ fi
 
 echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
 cp -r conf $DEEPSTREAM_PACKAGE/
-mv build/deepstream $DEEPSTREAM_PACKAGE/
+cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 if [ $OS = "win32" ]; then
 	COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "
@@ -186,7 +186,7 @@ if [ $OS = "linux" ]; then
         cd -	
 
 	echo "Installing FPM"
-	gem install fpm
+	gem install fpm > /dev/null
 
 	echo "Creating rpm"
 	fpm \
