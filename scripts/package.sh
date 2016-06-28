@@ -97,7 +97,7 @@ mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
 
 if [ -d node_modules/uws ]; then
-        echo "Adding uws as thirdparty library for performance improvements"
+	echo "Adding uws as thirdparty library for performance improvements"
         mv -f node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
 else
 	echo "Adding empty uws module"
@@ -172,7 +172,20 @@ if [ $OS = "darwin" ]; then
 fi
 
 if [ $OS = "linux" ]; then
-	echo "OS is linux, installing FPM"
+	echo "OS is linux"
+
+
+        echo "Creating tar.gz"
+
+        COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
+        CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
+
+        cd $DEEPSTREAM_PACKAGE
+        tar czf ../$COMMIT_NAME .
+        cp ../$COMMIT_NAME ../../$CLEAN_NAME
+        cd -	
+
+	echo "Installing FPM"
 	gem install fpm
 
 	echo "Creating rpm"
@@ -221,15 +234,6 @@ if [ $OS = "linux" ]; then
 		./conf/permissions.json=/etc/deepstream/permissions.json \
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
-
-	COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
-	CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
-
-	echo "Creating tar.gz"
-	cd $DEEPSTREAM_PACKAGE
-	tar czf ../$COMMIT_NAME .
-	cp ../$COMMIT_NAME ../../$CLEAN_NAME
-	cd -
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
