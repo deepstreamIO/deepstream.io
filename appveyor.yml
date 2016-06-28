@@ -13,7 +13,7 @@ test_script:
   - npm --version
   - npm test
   # Artifacts are packaged before before_deploy
-  - bash scripts\package.sh true
+  - bash scripts\package.sh
   - For /d %%d in ( build\** ) do MOVE %%d %cd%
 
 artifacts:
