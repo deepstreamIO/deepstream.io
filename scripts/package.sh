@@ -19,6 +19,7 @@ EXTENSION=""
 if [ $OS = "win32" ]; then
 	EXTENSION=".exe"
 fi
+EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
 mkdir -p build
@@ -59,14 +60,15 @@ npm install > /dev/null 2> /dev/null
 echo "Generating meta.json"
 node scripts/details.js META
 
-echo "Downloading node src"
-mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-cd -
-
 if [ $OS = "win32" ]; then
+
+	echo "Downloading node src"
+	mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+	cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+	tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+	cd -
+
 	NAME=$PACKAGE_VERSION
 
 	echo "Patch the window executable icon and details"
@@ -88,32 +90,19 @@ echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winsto
 echo "Adding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
 
-# Patch Native Modules
-if ! [ $OS == "linux" ]; then
-	echo "Adding empty uws module for uws"
-	mkdir -p node_modules/uws
-	echo "module.exports = function() {}" >> node_modules/uws/index.js
-elif [[ ! -d $NODE_DEPS/uws ]]; then
-	echo "Adding native uws"
-	curl -L -o $NODE_DEPS/uws.tar.gz https://github.com/uWebSockets/uWebSockets/archive/v0.6.3.tar.gz
-	tar -xzf $NODE_DEPS/uws.tar.gz -C $NODE_DEPS
-	mv $NODE_DEPS/uWebSockets* $NODE_DEPS/uws
-	rm -rf $NODE_DEPS/uws.tar.gz
+# Creatine package structure
+rm -rf build/$PACKAGE_VERSION
+mkdir -p $DEEPSTREAM_PACKAGE
+mkdir $DEEPSTREAM_PACKAGE/var
+mkdir $DEEPSTREAM_PACKAGE/lib
 
-	sed -i "s/const uws/var uws/" $NODE_DEPS/uws/nodejs/dist/uws.js
-	sed -i "s/})();/}); uws = process.binding('uws')/" $NODE_DEPS/uws/nodejs/dist/uws.js
-	sed -i "s/NODE_MODULE(uws, Main)/NODE_MODULE(node_uws, Main)/" $NODE_DEPS/uws/nodejs/addon.cpp
-	cp $NODE_DEPS/uws/nodejs/dist/uws.js $NODE_SOURCE/lib/uws.js
-	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_SOURCE/node.gyp
-	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_SOURCE/node.gyp
-
-	rm -rf node_modules/uws
+if [ -d node_modules/uws ]; then
+        echo "Adding uws as thirdparty library for performance improvements"
+        mv -f node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
 else
-	rm -rf node_modules/uws
-	echo "Skipped uws patch, already exists"
+	echo "Adding empty uws module"
+	mkdir -p node_modules/uws && echo "module.exports = function() {}" >> node_modules/uws/index.js
 fi
-
-EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 
@@ -141,15 +130,9 @@ else
 		exit 1
 fi
 
-echo "Packaging to dir structure at $DEEPSTREAM_PACKAGE"
-
-rm -rf build/$PACKAGE_VERSION
-
-mkdir -p $DEEPSTREAM_PACKAGE
-mkdir $DEEPSTREAM_PACKAGE/var
-mkdir $DEEPSTREAM_PACKAGE/lib
+echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
 cp -r conf $DEEPSTREAM_PACKAGE/
-cp build/deepstream $DEEPSTREAM_PACKAGE/
+mv build/deepstream $DEEPSTREAM_PACKAGE/
 
 if [ $OS = "win32" ]; then
 	COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "

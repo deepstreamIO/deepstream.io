@@ -11,6 +11,7 @@ const path = require( 'path' );
 * @returns {String} file path with the library prefix used
 */
 exports.lookupLibRequirePath = function( filePath ) {
+	console.log( filePath,  exports.lookupRequirePath( filePath, global.deepstreamLibDir ))
 	return exports.lookupRequirePath( filePath, global.deepstreamLibDir );
 };
 
