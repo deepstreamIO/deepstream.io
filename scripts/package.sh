@@ -13,12 +13,12 @@ DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 
 NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
-NODE_DEPS="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps"
 
 EXTENSION=""
 if [ $OS = "win32" ]; then
 	EXTENSION=".exe"
 fi
+EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
 mkdir -p build
@@ -59,61 +59,58 @@ npm install > /dev/null 2> /dev/null
 echo "Generating meta.json"
 node scripts/details.js META
 
-echo "Downloading node src"
-mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-cd -
-
 if [ $OS = "win32" ]; then
+	echo "Windows icon"
+	echo -e "\tDownloading node src"
+	mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+	cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+	tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+	cd -
+
 	NAME=$PACKAGE_VERSION
 
-	echo "Patch the window executable icon and details"
+	echo -e "\tPatch the window executable icon and details"
 	cp scripts/resources/node.rc $NODE_SOURCE/src/res/node.rc
 	cp scripts/resources/deepstream.ico $NODE_SOURCE/src/res/deepstream.ico
 
 	if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
-		echo "Version can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
+		echo -e "\tVersion can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
 		NAME="0.0.0"
 	fi
-	sed -i 's/DEEPSTREAM_VERSION/$NAME/' $NODE_SOURCE/src/res/node.rc
+	sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
 fi
 
 # Nexe Patches
-echo "Patching winston files for nexe/browserify"
+echo "Nexe Patches for Browserify"
+echo -e "\tPatching winston files for nexe/browserify"
 cp scripts/patch-files/winston-transports.js node_modules/deepstream.io-logger-winston/node_modules/winston/lib/winston/transports.js
 echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winston/node_modules/winston/node_modules/pkginfo/lib/pkginfo.js
 
-echo "Adding empty xml2js module for needle"
+echo -e "\tAdding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
 
-# Patch Native Modules
-if ! [ $OS == "linux" ]; then
-	echo "Adding empty uws module for uws"
-	mkdir -p node_modules/uws
-	echo "module.exports = function() {}" >> node_modules/uws/index.js
-elif [[ ! -d $NODE_DEPS/uws ]]; then
-	echo "Adding native uws"
-	curl -L -o $NODE_DEPS/uws.tar.gz https://github.com/uWebSockets/uWebSockets/archive/v0.6.3.tar.gz
-	tar -xzf $NODE_DEPS/uws.tar.gz -C $NODE_DEPS
-	mv $NODE_DEPS/uWebSockets* $NODE_DEPS/uws
-	rm -rf $NODE_DEPS/uws.tar.gz
+echo -e "\tAdding empty bufferutil module, since optional install can break and isn't bundled anyway"
+rm -rf node_modules/bufferutil
+mkdir -p node_modules/bufferutil && echo "module.exports = function() {}" >> node_modules/bufferutil/index.js
 
-	sed -i "s/const uws/var uws/" $NODE_DEPS/uws/nodejs/dist/uws.js
-	sed -i "s/})();/}); uws = process.binding('uws')/" $NODE_DEPS/uws/nodejs/dist/uws.js
-	sed -i "s/NODE_MODULE(uws, Main)/NODE_MODULE(node_uws, Main)/" $NODE_DEPS/uws/nodejs/addon.cpp
-	cp $NODE_DEPS/uws/nodejs/dist/uws.js $NODE_SOURCE/lib/uws.js
-	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_SOURCE/node.gyp
-	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_SOURCE/node.gyp
+echo -e "\tAdding empty utf-8-validate module, since optional install can break and isn't bundled anyway"
+rm -rf node_modules/utf-8-validate
+mkdir -p node_modules/utf-8-validate && echo "module.exports = function() {}" >> node_modules/utf-8-validate/index.js
 
-	rm -rf node_modules/uws
+# Creatine package structure
+rm -rf build/$PACKAGE_VERSION
+mkdir -p $DEEPSTREAM_PACKAGE
+mkdir $DEEPSTREAM_PACKAGE/var
+mkdir $DEEPSTREAM_PACKAGE/lib
+
+if [ -d node_modules/uws ]; then
+	echo "Adding uws as thirdparty library for performance improvements"
+	mv -f node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
 else
-	rm -rf node_modules/uws
-	echo "Skipped uws patch, already exists"
+	echo -e "\tAdding empty uws module"
+	mkdir -p node_modules/uws && echo "module.exports = function() {}" >> node_modules/uws/index.js
 fi
-
-EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 
@@ -127,35 +124,36 @@ echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 	> /dev/null &
 
 PROC_ID=$!
-MINUTES=0;
+SECONDS=0;
 while kill -0 "$PROC_ID" >/dev/null 2>&1; do
-	echo "Compiling deepstream... ($MINUTES minutes)"
-	sleep 60
-	MINUTES=$[MINUTES+1]
+	echo -ne "\rCompiling deepstream... ($SECONDS SECONDS)"
+	sleep 1
+	SECONDS=$[SECONDS+1]
 done
 
+echo ""
+
 if wait $pid; then
-		echo "Nexe Build Succeeded"
+		echo -e "\tNexe Build Succeeded"
 else
-		echo "Nexe Build Failed"
+		echo -e "\tNexe Build Failed"
 		exit 1
 fi
 
-echo "Packaging to dir structure at $DEEPSTREAM_PACKAGE"
-
-rm -rf build/$PACKAGE_VERSION
-
-mkdir -p $DEEPSTREAM_PACKAGE
-mkdir $DEEPSTREAM_PACKAGE/var
-mkdir $DEEPSTREAM_PACKAGE/lib
+echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
 cp -r conf $DEEPSTREAM_PACKAGE/
 cp build/deepstream $DEEPSTREAM_PACKAGE/
+
+echo "Patching config file for zip lib and var directories"
+sed -i 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
+
 
 if [ $OS = "win32" ]; then
 	COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "
 	CLEAN_NAME="deepstream.io-windows-$PACKAGE_VERSION.zip"
 
-	echo "OS is windows, creating zip deepstream.io-windows-$PACKAGE_VERSION.zip"
+	echo "OS is windows"
+	echo -e "\tCreating zip deepstream.io-windows-$PACKAGE_VERSION.zip"
 	cd $DEEPSTREAM_PACKAGE
 	7z a ../$COMMIT_NAME . > /dev/null
 	cp ../$COMMIT_NAME ../../$CLEAN_NAME
@@ -166,14 +164,15 @@ if [ $OS = "darwin" ]; then
 	COMMIT_NAME="deepstream.io-mac-$PACKAGE_VERSION-$COMMIT.zip"
 	CLEAN_NAME="deepstream.io-mac-$PACKAGE_VERSION.zip"
 
-	echo "OS is mac, creating $CLEAN_NAME"
+	echo "OS is mac"
+	echo -e "\tCreating $CLEAN_NAME"
 
 	cd $DEEPSTREAM_PACKAGE
 	zip -r ../$COMMIT_NAME .
 	cp ../$COMMIT_NAME ../../$CLEAN_NAME
 	cd -
 
-	echo "Skipping .pkg creation"
+	echo -e "\tSkipping .pkg creation"
 	# gem install fpm
 	# fpm \
 	# 	-s dir \
@@ -189,10 +188,27 @@ if [ $OS = "darwin" ]; then
 fi
 
 if [ $OS = "linux" ]; then
-	echo "OS is linux, installing FPM"
-	gem install fpm
+	echo "OS is linux"
 
-	echo "Creating rpm"
+
+        echo -e "\tCreating tar.gz"
+
+        COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
+        CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
+
+        cd $DEEPSTREAM_PACKAGE
+        tar czf ../$COMMIT_NAME .
+        cp ../$COMMIT_NAME ../../$CLEAN_NAME
+        cd -	
+
+        echo -e "\tPatching config file for linux distros..."
+        sed -i 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+ 	sed -i 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+
+	echo -e "\tInstalling FPM"
+	gem install fpm > /dev/null
+
+	echo -e "\t\tCreating rpm"
 	fpm \
 		-s dir \
 		-t rpm \
@@ -215,7 +231,7 @@ if [ $OS = "linux" ]; then
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
-	echo "Creating deb"
+	echo -e "\t\tCreating deb"
 	fpm \
 		-s dir \
 		-t deb \
@@ -238,15 +254,6 @@ if [ $OS = "linux" ]; then
 		./conf/permissions.json=/etc/deepstream/permissions.json \
 		./build/deepstream=/usr/bin/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
-
-	COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
-	CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
-
-	echo "Creating tar.gz"
-	cd $DEEPSTREAM_PACKAGE
-	tar czf ../$COMMIT_NAME .
-	cp ../$COMMIT_NAME ../../$CLEAN_NAME
-	cd -
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE

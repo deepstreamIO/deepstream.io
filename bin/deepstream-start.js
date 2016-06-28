@@ -14,7 +14,7 @@ module.exports = function( program ) {
 		.description( 'start a deepstream server' )
 
 		.option( '-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files' )
-		.option( '-l, --lib-prefix [directory]', 'path where to lookup for plugins like connectors and logger' )
+		.option( '-l, --lib-dir [directory]', 'path where to lookup for plugins like connectors and logger' )
 		.option( '-d, --detach', 'detach the deepstream server process' )
 
 		.option( '--server-name <name>', 'Each server within a cluster needs a unique name' )

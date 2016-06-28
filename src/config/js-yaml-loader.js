@@ -85,12 +85,11 @@ function parseFile( filePath, fileContent ) {
  */
 module.exports.loadConfig = function( filePath, /* test only */ args ) {
 	var argv = args || global.deepstreamCLI || {};
-	setGlobalLibDirectory( argv );
 	var configPath = setGlobalConfigDirectory( argv, filePath );
 	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
 	var rawConfig = parseFile( configPath, configString );
 	var config = extendConfig( rawConfig, argv );
-
+	setGlobalLibDirectory( argv, config );
 	return {
 		config: configInitialiser.initialise( config ),
 		file: configPath
@@ -102,7 +101,11 @@ module.exports.loadConfig = function( filePath, /* test only */ args ) {
 * relative files within the config file
 */
 function setGlobalConfigDirectory( argv, filePath ) {
-	var customConfigPath = argv.c || argv.config || filePath || process.env.DEEPSTREAM_CONFIG_DIRECTORY;
+	var customConfigPath =
+			argv.c ||
+			argv.config ||
+			filePath ||
+			process.env.DEEPSTREAM_CONFIG_DIRECTORY;
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
 	global.deepstreamConfDir = path.dirname( configPath );
 	return configPath;
@@ -112,8 +115,12 @@ function setGlobalConfigDirectory( argv, filePath ) {
 * Set the globalLib prefix that will be used as the directory for the logger
 * and plugins within the config file
 */
-function setGlobalLibDirectory( argv ) {
-	var libDir = argv.l || argv.libPrefix || process.env.DEEPSTREAM_LIBRARY_DIRECTORY;
+function setGlobalLibDirectory( argv, config ) {
+	var libDir =
+			argv.l ||
+			argv.libDir ||
+			( config.libDir && fileUtils.lookupConfRequirePath( config.libDir ) ) ||
+			process.env.DEEPSTREAM_LIBRARY_DIRECTORY;
 	global.deepstreamLibDir = libDir;
 }
 

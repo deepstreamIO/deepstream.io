@@ -456,7 +456,7 @@ describe( 'js-yaml-loader', function() {
 			} );
 			config = configLoader.loadConfig( null, {
 				config: './config.json',
-				libPrefix: 'foobar'
+				libDir: 'foobar'
 			} ).config;
 		} );
 
@@ -512,7 +512,7 @@ describe( 'js-yaml-loader', function() {
 			} );
 			config = configLoader.loadConfig( null, {
 				config: './config.json',
-				libPrefix: '/foobar'
+				libDir: '/foobar'
 			} ).config;
 		} );
 
