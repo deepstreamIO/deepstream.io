@@ -12,6 +12,9 @@ PACKAGE_DIR=build/$PACKAGE_VERSION
 DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 
+NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
+NODE_DEPS="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps"
+
 EXTENSION=""
 if [ $OS = "win32" ]; then
 	EXTENSION=".exe"
@@ -56,26 +59,25 @@ npm install
 echo "Generating meta.json"
 node scripts/details.js META
 
-echo "Downloading node src ( not via nexe ) in order to patch the icon and details"
+echo "Downloading node src"
 mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
 cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-
 curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
 tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-
 cd -
 
-cp scripts/resources/node.rc nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
-cp scripts/resources/deepstream.ico nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/deepstream.ico
+echo "Patch the window executable icon and details"
+cp scripts/resources/node.rc $NODE_SOURCE/src/res/node.rc
+cp scripts/resources/deepstream.ico $NODE_SOURCE/src/res/deepstream.ico
 
 NAME=$PACKAGE_VERSION
 if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
-	echo "Version can't contain characters versions in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
+	echo "Version can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
 	NAME="0.0.0"
 fi
-sed -i "s/DEEPSTREAM_VERSION/$NAME/" nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/src/res/node.rc
+sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
 
-# Nexe Patches 
+# Nexe Patches
 echo "Patching winston files for nexe/browserify"
 cp scripts/patch-files/winston-transports.js node_modules/deepstream.io-logger-winston/node_modules/winston/lib/winston/transports.js
 echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winston/node_modules/winston/node_modules/pkginfo/lib/pkginfo.js
@@ -84,11 +86,10 @@ echo "Adding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
 
 # Patch Native Modules
-NODE_DEPS="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps"
 if [ $OS == "win32" ]; then
-	echo "Empty uws in windows"
+	echo "Adding empty uws module for needle"
 	mkdir -p node_modules/uws
-	echo "module.exports = function() {}" > node_modules/uws/index.js
+	echo "module.exports = function() {}" >> node_modules/uws/index.js
 elif [[ ! -d $NODE_DEPS/uws ]]; then
 	echo "Adding native uws"
 	curl -L -o $NODE_DEPS/uws.tar.gz https://github.com/uWebSockets/uWebSockets/archive/v0.6.3.tar.gz
@@ -100,12 +101,14 @@ elif [[ ! -d $NODE_DEPS/uws ]]; then
 	sed -i "s/})();/}); uws = process.binding('uws')/" $NODE_DEPS/uws/nodejs/dist/uws.js
 	sed -i "s/NODE_MODULE(uws, Main)/NODE_MODULE(node_uws, Main)/" $NODE_DEPS/uws/nodejs/addon.cpp
 	cp $NODE_DEPS/uws/nodejs/dist/uws.js $NODE_DEPS/../lib/uws.js
-	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_DEPS/../node.gyp
-	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_DEPS/../node.gyp
+	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_SOURCE/node.gyp
+	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_SOURCE/node.gyp
+
+	rm -rf node_modules/uws
 else
+	rm -rf node_modules/uws
 	echo "Skipped uws patch, already exists"
 fi
-rm -rf node_modules/uws
 
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
