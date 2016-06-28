@@ -19,7 +19,7 @@ function stopServer() {
 	return child_process.spawnSync( 'node', ['bin/deepstream', 'stop'], execOptions );
 }
 
-xdescribe('Command Line Interface', function() {
+describe('Command Line Interface', function() {
 	it( 'start, status and stop', function() {
 		child_process.exec( 'node bin/deepstream start', execOptions );
 		let output = '';
