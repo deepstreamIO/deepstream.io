@@ -90,6 +90,16 @@ echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winsto
 echo "Adding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
 
+if [ -d node_modules/bufferutil ]; then
+	echo "Adding empty bufferutil module, since optional didn't install and isn't bundled anyway"
+	mkdir -p node_modules/bufferutil && echo "module.exports = function() {}" >> node_modules/bufferutil/index.js
+fi
+
+if [ -d node_modules/utf-8-validate ]; then
+	echo "Adding empty utf-8-validate module, since optional didn't install and isn't bundled anyway"
+	mkdir -p node_modules/utf-8-validate && echo "module.exports = function() {}" >> node_modules/utf-8-validate/index.js
+fi
+
 # Creatine package structure
 rm -rf build/$PACKAGE_VERSION
 mkdir -p $DEEPSTREAM_PACKAGE
