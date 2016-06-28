@@ -142,6 +142,10 @@ echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
 cp -r conf $DEEPSTREAM_PACKAGE/
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
+echo "Patching config file for zip lib and var directories"
+sed -i 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
+
+
 if [ $OS = "win32" ]; then
 	COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "
 	CLEAN_NAME="deepstream.io-windows-$PACKAGE_VERSION.zip"
@@ -192,6 +196,10 @@ if [ $OS = "linux" ]; then
         tar czf ../$COMMIT_NAME .
         cp ../$COMMIT_NAME ../../$CLEAN_NAME
         cd -	
+
+        echo "Patching config file for linux distros"
+        sed -i 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+ 	sed -i 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
 
 	echo "Installing FPM"
 	gem install fpm > /dev/null
