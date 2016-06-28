@@ -13,86 +13,24 @@ dir="/usr/bin/"
 name="deepstream"
 cmd="deepstream"
 
+DEEPSTREAM_PID_FILE="/var/run/deepstream/$name.pid"
 pid_file="/var/run/deepstream/$name.pid"
 lib_dir="/var/lib/deepstream"
-stdout_log="/var/log/deepstream/$name.log"
-stderr_log="/var/log/deepstream/$name.err"
-conf_file="/etc/deepstream/config.yml"
 
-get_pid() {
-    cat "$pid_file"
-}
-
-is_running() {
-    [ -f "$pid_file" ] && ps `get_pid` > /dev/null 2>&1
-}
+cd $dir
 
 case "$1" in
     start)
-    if is_running; then
-        echo "Already started"
-    else
-        if [ ! -f "$conf_file" ]; then
-            echo "Please provide a config file"
-            exit 1
-        fi
-
-        echo "Starting $name.."
-        cd "$dir"
-        $cmd  -c $conf_file -l $lib_dir >> "$stdout_log" 2>&1 &
-        echo $! > "$pid_file"
-        if ! is_running; then
-            echo "Unable to start, see $stdout_log"
-            exit 1
-        fi
-    fi
+        ./$cmd start > /dev/null &
     ;;
     stop)
-    if is_running; then
-        echo -n "Stopping $name..."
-        kill `get_pid`
-        for i in {1..10}
-        do
-            if ! is_running; then
-                break
-            fi
-
-            echo -n "."
-            sleep 1
-        done
-        echo
-
-        if is_running; then
-            echo "Not stopped; may still be shutting down or shutdown may have failed"
-            exit 1
-        else
-            echo "Stopped"
-            if [ -f "$pid_file" ]; then
-                rm "$pid_file"
-            fi
-        fi
-    else
-        echo "Not running"
-    fi
-    ;;
-    restart)
-    $0 stop
-    if is_running; then
-        echo "Unable to stop, will not attempt to start"
-        exit 1
-    fi
-    $0 start
+        ./$cmd stop
     ;;
     status)
-    if is_running; then
-        echo "Running"
-    else
-        echo "Stopped"
-        exit 1
-    fi
+        ./$cmd status
     ;;
     *)
-    echo "Usage: $0 {start|stop|restart|status}"
+    echo "Usage: $0 {start|stop|status}"
     exit 1
     ;;
 esac

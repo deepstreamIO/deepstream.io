@@ -123,10 +123,15 @@ describe( 'js-yaml-loader', function() {
 				stub.configLoader.loadConfig();
 			}).toThrow();
 
-			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 3 );
+			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 9 );
+
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( path.join( 'conf', 'config.js' ) );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( path.join( 'conf', 'config.json' ) );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( path.join( 'conf', 'config.yml' ) );
+
+			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( '/etc/deepstream/config.js' );
+			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( '/etc/deepstream/config.json' );
+			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( '/etc/deepstream/config.yml' );
 		} );
 
 		it( 'load a custom yml file path', function() {
