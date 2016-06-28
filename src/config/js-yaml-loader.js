@@ -101,7 +101,11 @@ module.exports.loadConfig = function( filePath, /* test only */ args ) {
 * relative files within the config file
 */
 function setGlobalConfigDirectory( argv, filePath ) {
-	var customConfigPath = argv.c || argv.config || filePath || process.env.DEEPSTREAM_CONFIG_DIRECTORY;
+	var customConfigPath =
+			argv.c ||
+			argv.config ||
+			filePath ||
+			process.env.DEEPSTREAM_CONFIG_DIRECTORY;
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
 	global.deepstreamConfDir = path.dirname( configPath );
 	return configPath;
@@ -112,7 +116,11 @@ function setGlobalConfigDirectory( argv, filePath ) {
 * and plugins within the config file
 */
 function setGlobalLibDirectory( argv, config ) {
-	var libDir = argv.l || argv.libDir || fileUtils.lookupConfRequirePath( config.libDir ) || process.env.DEEPSTREAM_LIBRARY_DIRECTORY;
+	var libDir =
+			argv.l ||
+			argv.libDir ||
+			( config.libDir && fileUtils.lookupConfRequirePath( config.libDir ) ) ||
+			process.env.DEEPSTREAM_LIBRARY_DIRECTORY;
 	global.deepstreamLibDir = libDir;
 }
 

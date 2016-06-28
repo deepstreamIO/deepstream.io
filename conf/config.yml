@@ -2,7 +2,7 @@
 serverName: UUID # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
 showLogo: true # Show the deepstream logo on startup (highly recommended)
 logLevel: INFO # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
-libDir: ./lib  # Directory where all plugins reside
+#libDir: ./lib  # Directory where all plugins reside
 
 # Connectivity
 webServerEnabled: true # accept incoming HTTP long-polling and websocket connections
@@ -42,7 +42,7 @@ plugins:
   #     serverLocation: 'localhost:11211'
   #
   # storage:
-  #   name: rethink
+  #   name: rethinkdb
   #   options:
   #     host: localhost
   #     port: 28015
