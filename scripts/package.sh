@@ -66,16 +66,19 @@ curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSI
 tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
 cd -
 
-echo "Patch the window executable icon and details"
-cp scripts/resources/node.rc $NODE_SOURCE/src/res/node.rc
-cp scripts/resources/deepstream.ico $NODE_SOURCE/src/res/deepstream.ico
+if [ $OS = "win32" ]; then
+	NAME=$PACKAGE_VERSION
 
-NAME=$PACKAGE_VERSION
-if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
-	echo "Version can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
-	NAME="0.0.0"
+	echo "Patch the window executable icon and details"
+	cp scripts/resources/node.rc $NODE_SOURCE/src/res/node.rc
+	cp scripts/resources/deepstream.ico $NODE_SOURCE/src/res/deepstream.ico
+
+	if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+		echo "Version can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
+		NAME="0.0.0"
+	fi
+	sed -i 's/DEEPSTREAM_VERSION/$NAME/' $NODE_SOURCE/src/res/node.rc
 fi
-sed -i 's/DEEPSTREAM_VERSION/$NAME/' $NODE_SOURCE/src/res/node.rc
 
 # Nexe Patches
 echo "Patching winston files for nexe/browserify"
