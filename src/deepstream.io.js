@@ -265,7 +265,7 @@ Deepstream.prototype._showStartLogo = function() {
 
 	/* istanbul ignore next */
 	process.stdout.write( logo + EOL );
-	process.stdout.write( ' =========================   ' + ( this._options.colors ? 'starting'.cyan : 'starting' ) + '   ==========================' + EOL );
+	process.stdout.write( ' =========================   starting   ==========================' + EOL );
 };
 
 /**
