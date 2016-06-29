@@ -12,7 +12,18 @@ module.exports = function( program ) {
 };
 
 function printMeta() {
-	var meta = require( '../meta.json' );
+	var meta;
+	try {
+		meta = require( '../meta.json' );
+	} catch (err) {
+		// if deepstream is not installed as binary (source or npm)
+		pkg = require('../package.json')
+		meta = {
+			deepstreamVersion: pkg.version,
+			ref: pkg.gitHead || pkg._resolved || 'N/A',
+			buildTime: 'N/A'
+		}
+	}
 	meta.platform = os.platform();
 	meta.arch = os.arch();
 	meta.nodeVersion = process.version;
