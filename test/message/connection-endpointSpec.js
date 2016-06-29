@@ -149,6 +149,25 @@ describe( 'connection endpoint', function() {
 		});
 	});
 
+	describe( 'disconnects client if authentication timeout is exceeded', function(){
+
+		it( 'shortens authentication timeout', function(){
+			connectionEndpoint._authenticationTimeout = 500;
+		});
+
+		it( 'creates the connection endpoint', function(){
+			socketMock = engineIoMock.simulateConnection();
+		});
+
+		it( 'disconnects client after timeout and sends force close', function( done ){
+			setTimeout( function() {
+				expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|TOO_MANY_AUTH_ATTEMPTS|Sclient forcefully disconneted+') );
+				expect( socketMock.isDisconnected ).toBe( true );
+				done();
+			}, 700 );
+		});
+	});
+
 	describe( 'doesn\'t log credentials if logInvalidAuthData is set to false', function(){
 		it( 'creates the connection endpoint', function(){
 			options.logInvalidAuthData = false;

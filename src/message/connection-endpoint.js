@@ -85,6 +85,8 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._timeout = null;
 	this._msgNum = 0;
 	this._authenticatedSockets = [];
+	this._authDisconnectTimers = [];
+	this._authenticationTimeout = 5000;
 };
 
 util.inherits( ConnectionEndpoint, events.EventEmitter );
@@ -113,6 +115,11 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
  * @returns {void}
  */
 ConnectionEndpoint.prototype.close = function() {
+	//Clear disconnect timeouts
+	for (var i = 0; i < this._authDisconnectTimers.length; i++) {
+		clearTimeout( this._authDisconnectTimers[i] );
+	}
+
 	// Close the engine.io server
 	if( this._engineIo ) {
 		this._closeEngineIoServer();
@@ -228,7 +235,8 @@ ConnectionEndpoint.prototype._checkClosed = function() {
 ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 	var socketWrapper = new SocketWrapper( socket, this._options ),
 		handshakeData = socketWrapper.getHandshakeData(),
-		logMsg;
+		logMsg,
+		disconnectTimer;
 
 	if( endpoint === ENGINE_IO ) {
 		logMsg = 'from ' + handshakeData.referer + ' (' + handshakeData.remoteAddress + ')' + ' via engine.io';
@@ -237,8 +245,17 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 	}
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
-	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper );
+
+	var disconnectTimer = setTimeout( function() {
+		socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, messageBuilder.typed( 'client forcefully disconneted' ) );
+		socketWrapper.destroy();
+	}, this._authenticationTimeout );
+	this._authDisconnectTimers.push( disconnectTimer );
+
+	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper, disconnectTimer );
+
 	socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.ACK );
+	
 	socket.on( 'message', socketWrapper.authCallBack );
 };
 
@@ -254,11 +271,13 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, authMsg ) {
+ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, disconnectTimer, authMsg ) {
 	var msg = messageParser.parse( authMsg )[ 0 ],
 		logMsg,
 		authData,
 		errorMsg;
+
+	clearTimeout( disconnectTimer );
 
 	/**
 	 * Log the authentication attempt
