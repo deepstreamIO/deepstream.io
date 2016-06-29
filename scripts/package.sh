@@ -48,13 +48,13 @@ fi
 echo "Patching accepts dependency of engine.io (npm-shrinkwrap)"
 rm -rf node_modules/engine.io
 rm -f npm-shrinkwrap.json
-npm install > /dev/null 2> /dev/null
+npm install --loglevel error
 
-npm shrinkwrap > /dev/null 2> /dev/null
+npm shrinkwrap --loglevel error
 node scripts/shrinkwrap.js
 # Use versions that have been modified
 rm -rf node_modules/engine.io
-npm install > /dev/null 2> /dev/null
+npm install --loglevel error
 
 echo "Generating meta.json"
 node scripts/details.js META
@@ -78,7 +78,7 @@ if [ $OS = "win32" ]; then
 		echo -e "\tVersion can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
 		NAME="0.0.0"
 	fi
-	sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
+	sed -i '' 's/DEEPSTREAM_VERSION/$NAME/' $NODE_SOURCE/src/res/node.rc
 fi
 
 # Nexe Patches
@@ -145,7 +145,7 @@ cp -r conf $DEEPSTREAM_PACKAGE/
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 echo "Patching config file for zip lib and var directories"
-sed -i 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
+sed -i '' 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
 
 
 if [ $OS = "win32" ]; then
@@ -202,8 +202,8 @@ if [ $OS = "linux" ]; then
         cd -	
 
         echo -e "\tPatching config file for linux distros..."
-        sed -i 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
- 	sed -i 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+        sed -i '' 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+ 	sed -i '' 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
 
 	echo -e "\tInstalling FPM"
 	gem install fpm > /dev/null
