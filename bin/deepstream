@@ -4,13 +4,14 @@
 require( 'colors' );
 const pgk = require( '../package.json' );
 
-var program = require( 'commander' );
+const Command = require( 'commander' ).Command;
 const install = require( './deepstream-install' );
 const start = require( './deepstream-start' );
 const status = require( './deepstream-status' );
 const stop = require( './deepstream-stop' );
 const info = require( './deepstream-info' );
 
+var program = new Command( 'deepstream' );
 program
 	.usage( '[command]' )
 	.version( pgk.version );
