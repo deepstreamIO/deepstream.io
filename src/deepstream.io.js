@@ -91,6 +91,10 @@ Deepstream.readMessage = readMessage;
  * @returns {void}
  */
 Deepstream.prototype.set = function( key, value ) {
+	if( key === 'message' ) {
+		key = 'messageConnector';
+	}
+
 	if( this._options[ key ] === undefined ) {
 		throw new Error( 'Unknown option "' + key + '"' );
 	}

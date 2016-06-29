@@ -1,6 +1,6 @@
 'use strict';
 
-const DefaultLogger = require( 'deepstream.io-logger-winston' );
+const DefaultLogger = require( '../default-plugins/std-out-logger' );
 
 const fs = require( 'fs' );
 const utils = require( '../utils/utils' );
@@ -89,6 +89,19 @@ function handleLogger( config ) {
 	} else {
 		Logger = resolvePluginClass( config.logger, 'logger' );
 	}
+
+	if( configOptions instanceof Array ) {
+		// Note: This will not work on options without filename, and
+		// is biased against for the winston logger
+		var options;
+		for( var i=0; i<configOptions.length; i++ ) {
+			options = configOptions[ i ].options;
+			if( options && options.filename ) {
+				options.filename = fileUtils.lookupConfRequirePath( options.filename );
+			}
+		}
+	}
+
 	config.logger = new Logger( configOptions );
 	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
 		// NOTE: config.logLevel has highest priority, compare to the level defined

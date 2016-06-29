@@ -33,7 +33,7 @@ describe( 'permission handler is initialised correctly', function(){
 				}
 			}
 		});
-		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
+		permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
@@ -55,7 +55,7 @@ describe( 'permission handler is initialised correctly', function(){
 				}
 			}
 		});
-		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
+		permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
@@ -77,7 +77,7 @@ describe( 'permission handler is initialised correctly', function(){
 				}
 			}
 		});
-		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
+		permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
 		expect( permissionHandler.isReady ).toBe( false );
 		permissionHandler.init();
 		permissionHandler.on( 'error', function( error ){
@@ -104,7 +104,7 @@ describe( 'it loads a new config during runtime', function(){
 				}
 			}
 		});
-		permissionHandler.setRecordHandler({ runWhenRecordStable: ( r, c ) => { c(); }});
+		permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
 		permissionHandler.init();
 		permissionHandler.on( 'error', onError );
 		expect( permissionHandler.isReady ).toBe( false );

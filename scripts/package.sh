@@ -78,14 +78,12 @@ if [ $OS = "win32" ]; then
 		echo -e "\tVersion can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
 		NAME="0.0.0"
 	fi
-	sed -i '' 's/DEEPSTREAM_VERSION/$NAME/' $NODE_SOURCE/src/res/node.rc
+
+	sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
 fi
 
 # Nexe Patches
 echo "Nexe Patches for Browserify"
-echo -e "\tPatching winston files for nexe/browserify"
-cp scripts/patch-files/winston-transports.js node_modules/deepstream.io-logger-winston/node_modules/winston/lib/winston/transports.js
-echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winston/node_modules/winston/node_modules/pkginfo/lib/pkginfo.js
 
 echo -e "\tAdding empty xml2js module for needle"
 mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
@@ -111,6 +109,10 @@ else
 	echo -e "\tAdding empty uws module"
 	mkdir -p node_modules/uws && echo "module.exports = function() {}" >> node_modules/uws/index.js
 fi
+
+echo "Adding winston logger to libs"
+npm install deepstream.io-logger-winston
+mv -f node_modules/deepstream.io-logger-winston $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
 
 echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 
@@ -145,8 +147,11 @@ cp -r conf $DEEPSTREAM_PACKAGE/
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 echo "Patching config file for zip lib and var directories"
-sed -i '' 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
-
+if [ $OS = "darwin" ]; then
+	sed -i '' 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
+else
+	sed -i 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
+fi
 
 if [ $OS = "win32" ]; then
 	COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "
@@ -191,19 +196,25 @@ if [ $OS = "linux" ]; then
 	echo "OS is linux"
 
 
-        echo -e "\tCreating tar.gz"
+	echo -e "\tCreating tar.gz"
 
-        COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
-        CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
+	COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
+	CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
 
-        cd $DEEPSTREAM_PACKAGE
-        tar czf ../$COMMIT_NAME .
-        cp ../$COMMIT_NAME ../../$CLEAN_NAME
-        cd -	
+	cd $DEEPSTREAM_PACKAGE
+	tar czf ../$COMMIT_NAME .
+	cp ../$COMMIT_NAME ../../$CLEAN_NAME
+	cd -
 
-        echo -e "\tPatching config file for linux distros..."
-        sed -i '' 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
- 	sed -i '' 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+	echo -e "\tPatching config file for linux distros..."
+
+	if [ $OS = "darwin" ]; then
+		sed -i '' 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+		sed -i '' 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+	else
+		sed -i 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+		sed -i 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+	fi
 
 	echo -e "\tInstalling FPM"
 	gem install fpm > /dev/null
@@ -229,6 +240,7 @@ if [ $OS = "linux" ]; then
 		./conf/users.json=/etc/deepstream/users.json \
 		./conf/permissions.json=/etc/deepstream/permissions.json \
 		./build/deepstream=/usr/bin/deepstream \
+		./build/lib=/var/lib/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
 	echo -e "\t\tCreating deb"
@@ -253,6 +265,7 @@ if [ $OS = "linux" ]; then
 		./conf/users.json=/etc/deepstream/users.json \
 		./conf/permissions.json=/etc/deepstream/permissions.json \
 		./build/deepstream=/usr/bin/deepstream \
+		./build/lib=/var/lib/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 fi
 

@@ -27,6 +27,14 @@ sslCa: null
 #       options:
 #         level: info # value of logLevel will always overwrite this value
 #         colorize: true
+#     -
+#       type: file
+#       options:
+#         filename: ../var/deepstream.log
+#     -
+#       type: time
+#       options:
+#         filename: ../var/deepstream
 
 # Plugin Configuration
 plugins:
