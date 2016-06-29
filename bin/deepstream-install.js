@@ -7,7 +7,7 @@ module.exports = function( program ) {
 		.command( 'install' )
 		.description( 'install connectors' )
 		.usage( '<type> <name>[:version]' )
-		.option( '-l, --libPrefix [directory]', 'directory where to extract the connector, defaults to ./lib' )
+		.option( '-l, --lib-dir [directory]', 'directory where to extract the connector, defaults to ./lib' )
 		.option( '--verbose', 'more debug output' )
 		.option( '--quiet', 'no output' )
 		.on('--help', function() {

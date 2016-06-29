@@ -144,8 +144,12 @@ Deepstream.prototype._start = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
 
 	// otherwise (no configFile) deepstream was invoked by API
-	if ( this._configFile != null ) {
+	if( this._configFile != null ) {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
+	}
+
+	if( global.deepstreamLibDir ) {
+                this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'library directory set to: ' + global.deepstreamLibDir );
 	}
 
 	var authTypeMsg = 'authentication type ' + ( this._options.authenticationHandler.type || 'custom' );
