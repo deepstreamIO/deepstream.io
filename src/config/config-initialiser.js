@@ -103,7 +103,7 @@ function handleLogger( config ) {
  * Allowed types: {message|cache|storage}
  * Plugins can be passed either as a __path__ property or as a __name__ property with
  * a naming convetion: *{cache: {name: 'redis'}}* will be resolved to the
-deepstream.io-cache-direct * npm module *deepstream.io-cache-redis*
+ * npm module *deepstream.io-cache-redis*
  * Exception: *message* will be resolved to *msg*
  * Options to the constructor of the plugin can be passed as *options* object.
  *
