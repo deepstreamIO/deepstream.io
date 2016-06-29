@@ -83,18 +83,18 @@ if [ $OS = "win32" ]; then
 fi
 
 # Nexe Patches
-echo "Nexe Patches for Browserify"
+echo "Nexe Patches for Browserify, copying stub versions of optional installs since they aern't bundled anyway"
 
-echo -e "\tAdding empty xml2js module for needle"
-mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
+echo -e "\tStubbing xml2js for needle"
+mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
 
-echo -e "\tAdding empty bufferutil module, since optional install can break and isn't bundled anyway"
+echo -e "\tStubbing bufferutil"
 rm -rf node_modules/bufferutil
-mkdir -p node_modules/bufferutil && echo "module.exports = function() {}" >> node_modules/bufferutil/index.js
+mkdir -p node_modules/bufferutil && echo "throw new Error()" >> node_modules/bufferutil/index.js
 
-echo -e "\tAdding empty utf-8-validate module, since optional install can break and isn't bundled anyway"
+echo -e "\tStubbing utf-8-validate"
 rm -rf node_modules/utf-8-validate
-mkdir -p node_modules/utf-8-validate && echo "module.exports = function() {}" >> node_modules/utf-8-validate/index.js
+mkdir -p node_modules/utf-8-validate && echo "throw new Error()" >> node_modules/utf-8-validate/index.js
 
 # Creatine package structure
 rm -rf build/$PACKAGE_VERSION
@@ -147,11 +147,7 @@ cp -r conf $DEEPSTREAM_PACKAGE/
 cp build/deepstream $DEEPSTREAM_PACKAGE/
 
 echo "Patching config file for zip lib and var directories"
-if [ $OS = "darwin" ]; then
-	sed -i '' 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
-else
-	sed -i 's@#libDir:@libDir:@' $DEEPSTREAM_PACKAGE/conf/config.yml
-fi
+cp -f ./scripts/package-conf.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 
 if [ $OS = "win32" ]; then
 	COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "

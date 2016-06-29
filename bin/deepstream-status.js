@@ -7,9 +7,9 @@ function statusCheck( cmd, program ) {
 		}
 		if ( pidHelper.isRunning( data.pid ) ) {
 			const seconds = ( new Date().getTime() - data.timestamp ) / 1000;
-			console.log( 'process running with PID ' + data.pid + ' since ' + seconds + ' seonds' );
+			console.log( 'Process running with PID ' + data.pid + ' since ' + seconds + ' seconds' );
 		} else {
-			console.log( 'not running (no process for PID ' + data.pid + ')');
+			console.log( 'Not running (no process for PID ' + data.pid + ')');
 		}
 	} );
 }

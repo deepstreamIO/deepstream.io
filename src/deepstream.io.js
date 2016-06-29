@@ -6,8 +6,6 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	messageParser = require( './message/message-parser' ),
 	readMessage = require( './utils/read-message' ),
-	EOL = require( 'os' ).EOL,
-	fs = require( 'fs' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
 	defaultOptions = require( './default-options' ),
@@ -265,11 +263,18 @@ Deepstream.prototype._showStartLogo = function() {
 		return;
 	}
 	/* istanbul ignore next */
-	var logo = fs.readFileSync( './ascii-logo.txt', 'utf8' );
-
+	var logo =
+	' _____________________________________________________________________________\n'+
+	'                                                                              \n'+
+	'         /                                                             ,      \n'+
+	' ----__-/----__----__------__---__--_/_---)__----__----__---_--_-----------__-\n'+
+	'   /   /   /___) /___)   /   ) (_ ` /    /   ) /___) /   ) / /  )    /   /   )\n'+
+	' _(___/___(___ _(___ ___/___/_(__)_(_ __/_____(___ _(___(_/_/__/__o_/___(___/_\n'+
+	'                       /                                                      \n'+
+	'                      /                                                       \n'+
+	'=============================== STARTING... ==================================\n';
 	/* istanbul ignore next */
-	process.stdout.write( logo + EOL );
-	process.stdout.write( ' =========================   starting   ==========================' + EOL );
+	process.stdout.write( this._options.colors ? logo.yellow : logo );
 };
 
 /**

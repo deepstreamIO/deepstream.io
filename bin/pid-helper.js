@@ -148,10 +148,10 @@ const stop = function() {
 			try {
 				process.kill( data.pid );
 			} catch ( err ) {
-				return console.log( 'no proccess found for PID ' + data.pid );
+				return console.log( 'No process found for PID ' + data.pid );
 			}
 			const uptime = new Date().getTime() - data.timestamp;
-			console.log( 'deepstream was running for ' + uptime / 1000 + ' secconds' );
+			console.log( 'Deepstream was running for ' + uptime / 1000 + ' seconds' );
 		}
 	} );
 };
