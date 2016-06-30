@@ -225,7 +225,7 @@ if [ $OS = "linux" ]; then
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
-		./conf/config=/etc/deepstream \
+		./conf=/etc/deepstream \
 		./build/deepstream=/usr/bin/deepstream \
 		$DEEPSTREAM_PACKAGE/lib=/var/lib/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
