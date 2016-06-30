@@ -1,3 +1,5 @@
+require( 'colors' );
+
 var C = require( '../constants/constants' ),
 	EOL = require( 'os' ).EOL;
 

@@ -47,7 +47,7 @@
     "watch": "^0.19.1"
   },
   "author": "deepstreamHub GmbH",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/deepstreamIO/deepstream.io/issues"
   },

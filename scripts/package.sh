@@ -111,8 +111,12 @@ else
 fi
 
 echo "Adding winston logger to libs"
-npm install deepstream.io-logger-winston
-mv -f node_modules/deepstream.io-logger-winston $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
+cd $DEEPSTREAM_PACKAGE/lib
+echo '{ "name": "TEMP" }' > package.json
+npm install deepstream.io-logger-winston --loglevel error
+mv -f node_modules/deepstream.io-logger-winston ./deepstream.io-logger-winston
+rm -rf node_modules package.json
+cd -
 
 echo "Creating '$EXECUTABLE_NAME', this will take a while..."
 NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &

@@ -20,8 +20,6 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	C = require( './constants/constants' ),
 	pkg = require( '../package.json' );
 
-require( 'colors' );
-
 const STATES = C.STATES;
 
 /**
