@@ -2,7 +2,7 @@
 serverName: UUID # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
 showLogo: true # Show the deepstream logo on startup (highly recommended)
 logLevel: INFO # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
-libDir: ../lib  # Directory where all plugins reside
+#libDir: ../lib  # Directory where all plugins reside
 
 # Connectivity
 webServerEnabled: true # accept incoming HTTP long-polling and websocket connections
@@ -19,19 +19,19 @@ sslCert: null
 sslCa: null
 
 # Logger Configuration
-logger:
-  name: winston
-  options:
-    # specify a list of transports (console, file, time)
-    -
-      type: console
-      options:
-        level: info # value of logLevel will always overwrite this value
-        colorize: true
-    -
-      type: time
-      options:
-        filename: ../var/deepstream
+# logger:
+#   name: winston
+#   options:
+#     # specify a list of transports (console, file, time)
+#     -
+#       type: console
+#       options:
+#         level: info # value of logLevel will always overwrite this value
+#         colorize: true
+#     -
+#       type: time
+#       options:
+#         filename: ../var/deepstream
 
 # Plugin Configuration
 plugins:

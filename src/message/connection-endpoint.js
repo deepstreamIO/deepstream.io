@@ -51,12 +51,12 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 			this._server.listen( this._options.port, this._options.host );
 		}
 		this._engineIo = engine.attach( this._server, { path: this._options.urlPath } );
-		try 
+		try
 		{
-                        // Since uws doesn't work on windows but is required by windows
-                        // we provide a fake module to patch it if necassary, and look it up
+			// Since uws doesn't work on windows but is required by windows
+			// we provide a fake module to patch it if necassary, and look it up
 			// from libs incase of a binary deployment since it's a native module
-	                var req = global && global.require ? global.require : require;
+			var req = global && global.require ? global.require : require;
 			const uws = req( fileUtils.lookupLibRequirePath( 'uws' ) );
 			if( !uws.Server ) {
 				throw '';
@@ -284,7 +284,7 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 		errorMsg = 'Error parsing auth message';
 
 		if( this._options.logInvalidAuthData === true ) {
-		 	errorMsg += ' "' + authMsg + '": ' + e.toString();
+			errorMsg += ' "' + authMsg + '": ' + e.toString();
 		}
 
 		this._sendInvalidAuthMsg( socketWrapper, errorMsg );

@@ -115,15 +115,7 @@ npm install deepstream.io-logger-winston
 mv -f node_modules/deepstream.io-logger-winston $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
 
 echo "Creating '$EXECUTABLE_NAME', this will take a while..."
-
-./node_modules/.bin/nexe \
-	--input "bin/deepstream" \
-	--output $EXECUTABLE_NAME \
-	--runtime $NODE_VERSION_WITHOUT_V \
-	--temp "nexe_node" \
-	--flags "--use_strict" \
-	--framework "node" \
-	> /dev/null &
+NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &
 
 PROC_ID=$!
 SECONDS=0;
