@@ -43,7 +43,7 @@
     "nexe": "^1.1.2",
     "jasmine-spec-reporter": "^2.5.0",
     "n0p3": "^1.0.2",
-    "proxyquire": "1.7.9",
+    "proxyquire": "1.7.10",
     "watch": "^0.19.1"
   },
   "author": "deepstreamHub GmbH",
