@@ -6,16 +6,17 @@ var RuleCache = require( './rule-cache' );
 var events = require( 'events' );
 var utils = require( 'util' );
 var fs = require( 'fs' );
+var jsYamlLoader = require( '../config/js-yaml-loader' );
 var STRING = 'string';
 var UNDEFINED = 'undefined';
 
 /**
- * A permission handler that reads a rules config JSON, validates
+ * A permission handler that reads a rules config YAML or JSON, validates
  * its contents, compiles it and executes the permissions that it contains
  * against every incoming message.
  *
  * This is the standard permission handler that deepstream exposes, in conjunction
- * with the default permission.json it allows everything, but at the same time provides
+ * with the default permission.yml it allows everything, but at the same time provides
  * a convenient starting point for permission declarations.
  *
  * @author deepstreamHub GmbH
@@ -78,13 +79,13 @@ ConfigPermissionHandler.prototype.init = function() {
  *
  * @todo expose this method via the command line interface
  *
- * @param   {String} path the filepath of the permission.json file
+ * @param   {String} path the filepath of the permission.yml file
  *
  * @public
  * @returns {void}
  */
-ConfigPermissionHandler.prototype.loadConfig = function( path ) {
-	fs.readFile( path, 'utf8', this._onConfigLoaded.bind( this, path ) );
+ConfigPermissionHandler.prototype.loadConfig = function( filePath ) {
+	jsYamlLoader.readAndParseFile( filePath, this._onConfigLoaded.bind( this, filePath ) );
 };
 
 /**
@@ -218,26 +219,17 @@ ConfigPermissionHandler.prototype._getCompiledRulesForName = function( name, rul
  * it to useConfig if no errors occured
  *
  * @param   {Error} loadError a FileSystem Error that occured during the loading of the file
- * @param   {String} data     the content of the permission.json file as utf-8 encoded string
+ * @param   {String} data     the content of the permission.yml file as utf-8 encoded string
  *
  * @private
  * @returns {void}
  */
-ConfigPermissionHandler.prototype._onConfigLoaded = function( path, loadError, data ) {
+ConfigPermissionHandler.prototype._onConfigLoaded = function( filePath, loadError, config ) {
 	if( loadError ) {
 		this.emit( 'error', 'error while loading config: ' + loadError.toString() );
 		return;
 	}
-	var config;
-
-	try{
-		config = JSON.parse( data );
-	} catch( parseError ) {
-		this.emit( 'error', 'error while parsing config: ' + parseError.toString() );
-		return;
-	}
-
-	this.emit( 'config-loaded', path );
+	this.emit( 'config-loaded', filePath );
 	this.useConfig( config );
 };
 

@@ -123,7 +123,7 @@ describe( 'js-yaml-loader', function() {
 				stub.configLoader.loadConfig();
 			}).toThrow();
 
-			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 9 );
+			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledTimes( 12 );
 
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( path.join( 'conf', 'config.js' ) );
 			expect( stub.fileMock.fileExistsSync ).toHaveBeenCalledWith( path.join( 'conf', 'config.json' ) );

@@ -10,7 +10,7 @@ const utils = require( '../utils/utils' );
 const configInitialiser = require( './config-initialiser' );
 const fileUtils = require( './file-utils' );
 
-const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];path.join( '.', 'conf', 'config' );
+const SUPPORTED_EXTENSIONS = [ '.yml', '.yaml', '.json', '.js' ];path.join( '.', 'conf', 'config' );
 const DEFAULT_CONFIG_DIRS = [ path.join( '.', 'conf', 'config' ), '/etc/deepstream/config', '/usr/local/etc/deepstream/config' ];
 
 /**
@@ -185,7 +185,7 @@ function getDefaultConfigPath() {
 
 /**
  * Handle the introduction of global enviroment variables within
- * the yaml file, allowing value substitution.
+ * the yml file, allowing value substitution.
  *
  * For example:
  * ```
@@ -193,7 +193,7 @@ function getDefaultConfigPath() {
  * port: $HOST_PORT
  * ```
  *
- * @param {String} fileContent The loaded yaml file
+ * @param {String} fileContent The loaded yml file
  *
  * @private
  * @returns {void}
