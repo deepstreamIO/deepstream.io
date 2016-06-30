@@ -57,7 +57,7 @@ MessageProcessor.prototype.process = function( socketWrapper, message ) {
 			socketWrapper.user,
 			parsedMessages[ i ],
 			this._onPermissionResponse.bind( this, socketWrapper, parsedMessages[ i ] ),
-			socketWrapper.userData
+			socketWrapper.authData
 		);
 	}
 };

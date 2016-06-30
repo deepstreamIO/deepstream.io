@@ -536,7 +536,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 		socketWrapper.user,
 		message,
 		onResult,
-		socketWrapper.userData
+		socketWrapper.authData
 	);
 };
 
