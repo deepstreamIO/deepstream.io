@@ -8,13 +8,3 @@ chmod -R 777 /var/run/deepstream
 chmod -R 777 /var/log/deepstream
 chmod -R 777 /var/lib/deepstream
 chmod -R 777 /etc/deepstream
-
-cd /var/lib/deepstream
-
-rm -rf uws
-tar xzf uws.tar.gz
-rm -rf uws.tar.gz
-
-rm -rf deepstream.io-logger-winston
-tar xzf deepstream.io-logger-winston.tar.gz
-rm -rf deepstream.io-logger-winston.tar.gz

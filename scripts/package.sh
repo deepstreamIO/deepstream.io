@@ -204,10 +204,6 @@ if [ $OS = "linux" ]; then
 		sed -i 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
 	fi
 
-	echo -e "\Zipping libs files for packaging"
-	tar czf $DEEPSTREAM_PACKAGE/lib/uws.tar.gz $DEEPSTREAM_PACKAGE/lib/uws
-	tar czf $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston.tar.gz $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
-
 	echo -e "\tInstalling FPM"
 	gem install fpm > /dev/null
 
@@ -229,12 +225,9 @@ if [ $OS = "linux" ]; then
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
-		./conf/config.yml=/etc/deepstream/config.yml \
-		./conf/users.json=/etc/deepstream/users.json \
-		./conf/permissions.json=/etc/deepstream/permissions.json \
+		./conf/config=/etc/deepstream \
 		./build/deepstream=/usr/bin/deepstream \
-		./build/lib/uws.tar.gz=$DEEPSTREAM_PACKAGE/lib/uws.tar.gz \
-		./build/lib/deepstream.io-logger-winston.tar.gz=$DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston.tar.gz \
+		$DEEPSTREAM_PACKAGE/lib=/var/lib/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
 	echo -e "\t\tCreating deb"
@@ -255,12 +248,9 @@ if [ $OS = "linux" ]; then
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
 		--deb-no-default-config-files \
-		./conf/config.yml=/etc/deepstream/config.yml \
-		./conf/users.json=/etc/deepstream/users.json \
-		./conf/permissions.json=/etc/deepstream/permissions.json \
+		./conf=/etc/deepstream \
 		./build/deepstream=/usr/bin/deepstream \
-		./build/lib/uws.tar.gz=$DEEPSTREAM_PACKAGE/lib/uws.tar.gz \
-		./build/lib/deepstream.io-logger-winston.tar.gz=$DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston.tar.gz \
+		$DEEPSTREAM_PACKAGE/lib=/var/lib/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 fi
 
