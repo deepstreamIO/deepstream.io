@@ -8,3 +8,5 @@ chmod -R 777 /var/run/deepstream
 chmod -R 777 /var/log/deepstream
 chmod -R 777 /var/lib/deepstream
 chmod -R 777 /etc/deepstream
+
+cp /etc/deepstream/config.d/* /etc/deepstream/

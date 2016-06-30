@@ -1,5 +1,1 @@
 /etc/init.d/deepstream stop
-
-cd /var/lib/deepstream
-rm -rf uws*
-rm -rf deepstream.io-logger-winston*
