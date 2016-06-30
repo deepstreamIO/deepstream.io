@@ -223,6 +223,7 @@ if [ $OS = "linux" ]; then
 		-m "<info@deepstream.io>" \
 		--after-install ./scripts/daemon/after-install \
 		--before-remove ./scripts/daemon/before-remove \
+		--before-upgrade ./scripts/daemon/before-upgrade \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
 		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
@@ -245,6 +246,7 @@ if [ $OS = "linux" ]; then
 		-m "<info@deepstream.io>" \
 		--after-install ./scripts/daemon/after-install \
 		--before-remove ./scripts/daemon/before-remove \
+		--before-upgrade ./scripts/daemon/before-upgrade \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
 		--deb-no-default-config-files \
