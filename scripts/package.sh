@@ -225,9 +225,9 @@ if [ $OS = "linux" ]; then
 		--before-remove ./scripts/daemon/before-remove \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
-		./conf=/etc/deepstream \
+		./conf/=/etc/deepstream/ \
+		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
 		./build/deepstream=/usr/bin/deepstream \
-		$DEEPSTREAM_PACKAGE/lib=/var/lib/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 
 	echo -e "\t\tCreating deb"
@@ -249,8 +249,8 @@ if [ $OS = "linux" ]; then
 		-f \
 		--deb-no-default-config-files \
 		./conf=/etc/deepstream \
+		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
 		./build/deepstream=/usr/bin/deepstream \
-		$DEEPSTREAM_PACKAGE/lib=/var/lib/deepstream \
 		./scripts/daemon/init-script=/etc/init.d/deepstream
 fi
 
