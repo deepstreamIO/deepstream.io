@@ -1,1 +1,11 @@
 /etc/init.d/deepstream restart
+
+cd /var/lib/deepstream
+
+rm -rf uws
+tar xzf uws.tar.gz
+rm -rf uws.tar.gz
+
+rm -rf deepstream.io-logger-winston
+tar xzf deepstream.io-logger-winston.tar.gz
+rm -rf deepstream.io-logger-winston.tar.gz
