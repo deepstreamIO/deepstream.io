@@ -1,0 +1,16 @@
+record:
+  "*":
+    create: true
+    write: true
+    read: true
+    delete: true
+    listen: true
+event:
+  "*":
+    publish: true
+    subscribe: true
+    listen: true
+rpc:
+  "*":
+    provide: true
+    request: true

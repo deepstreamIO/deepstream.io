@@ -6,7 +6,7 @@ describe( 'permission handler is initialised correctly', function(){
 		var permissionHandler = new ConfigPermissionHandler({
 			permission: {
 				options: {
-					path: './conf/permissions.json',
+					path: './conf/permissions.yml',
 					cacheEvacuationInterval: 60000
 				}
 			}
@@ -28,7 +28,7 @@ describe( 'permission handler is initialised correctly', function(){
 		var permissionHandler = new ConfigPermissionHandler({
 			permission: {
 				options: {
-					path: './does-not-exist.json',
+					path: './does-not-exist.yml',
 					cacheEvacuationInterval: 60000
 				}
 			}
@@ -99,7 +99,7 @@ describe( 'it loads a new config during runtime', function(){
 		permissionHandler = new ConfigPermissionHandler({
 			permission: {
 				options: {
-					path: './conf/permissions.json',
+					path: './conf/permissions.yml',
 					cacheEvacuationInterval: 60000
 				}
 			}

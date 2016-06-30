@@ -272,7 +272,6 @@ Deepstream.prototype._showStartLogo = function() {
 		logo = nexeres.get( 'ascii-logo.txt' ).toString( 'ascii' );
 	}
 	catch( e ) {
-		console.log( 'e' )
 		logo = fs.readFileSync( './ascii-logo.txt', 'utf8' );
 	}
 
