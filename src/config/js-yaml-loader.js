@@ -72,6 +72,28 @@ function parseFile( filePath, fileContent ) {
 }
 
 /**
+ * Loads a config file without having to initialise it. Useful for one
+ * off operations such as generating a hash via cli
+ *
+ * @param {Object|String} args commander arguments or path to config
+ *
+ * @public
+ * @returns {Object} config deepstream configuration object
+ */
+module.exports.loadConfigWithoutInitialisation = function( filePath, /* test only */ args ) {
+	var argv = args || global.deepstreamCLI || {};
+	var configPath = setGlobalConfigDirectory( argv, filePath );
+	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
+	var rawConfig = parseFile( configPath, configString );
+	var config = extendConfig( rawConfig, argv );
+	setGlobalLibDirectory( argv, config );
+	return {
+		config: config,
+		configPath: configPath
+	};
+};
+
+/**
  * Loads a file as deepstream config. CLI args have highest priority after the
  * configuration file. If some properties are not set they will be defaulted
  * to default values defined in the defaultOptions.js file.
@@ -84,15 +106,10 @@ function parseFile( filePath, fileContent ) {
  * @returns {Object} config deepstream configuration object
  */
 module.exports.loadConfig = function( filePath, /* test only */ args ) {
-	var argv = args || global.deepstreamCLI || {};
-	var configPath = setGlobalConfigDirectory( argv, filePath );
-	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
-	var rawConfig = parseFile( configPath, configString );
-	var config = extendConfig( rawConfig, argv );
-	setGlobalLibDirectory( argv, config );
+	const config = exports.loadConfigWithoutInitialisation( filePath, args );
 	return {
-		config: configInitialiser.initialise( config ),
-		file: configPath
+		config: configInitialiser.initialise( config.config ),
+		file: config.configPath
 	};
 };
 

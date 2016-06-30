@@ -72,6 +72,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 			this._isValid( authData.password, userData.password, authData.username, userData.data, callback );
 		} else if( authData.password === userData.password ) {
 			callback( true, {
+				username: authData.username,
 				authData: userData.data || null
 			} );
 		} else {
