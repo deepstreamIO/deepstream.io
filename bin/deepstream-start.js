@@ -46,9 +46,9 @@ function action() {
 			args.push( '--config' );
 			args.push( this.config );
 		}
-		if ( this.libPrefix != null ) {
-			args.push( '--libPrefix' );
-			args.push( this.libPrefix );
+		if ( this.libDir != null ) {
+			args.push( '--libDir' );
+			args.push( this.libDir );
 		}
 		// ensure there is no pid file with a running process
 		pidHelper.ensureNotRunning( function( err ) {

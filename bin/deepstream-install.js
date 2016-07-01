@@ -1,13 +1,15 @@
 'use strict';
 
 const installer = require( './installer' );
+const jsYamlLoader = require( '../src/config/js-yaml-loader' );
 
 module.exports = function( program ) {
 	program
 		.command( 'install' )
 		.description( 'install connectors' )
 		.usage( '<type> <name>[:version]' )
-		.option( '-l, --lib-dir [directory]', 'directory where to extract the connector, defaults to ./lib' )
+		.option( '-c, --config [file]', 'configuration file containing the lib directory' )
+		.option( '-l, --lib-dir [directory]', 'directory where to extract the connector' )
 		.option( '--verbose', 'more debug output' )
 		.option( '--quiet', 'no output' )
 		.on('--help', function() {
@@ -28,13 +30,24 @@ function action( type, nameAndVersion ) {
 		this.help();
 	}
 
+	if( !this.libDir ) {
+		try {
+			global.deepstreamCLI = this;
+			jsYamlLoader.loadConfigWithoutInitialisation();
+			this.libDir = global.deepstreamLibDir;
+		} catch( e ) {
+			console.error( 'Please provide a libDir or a configFile to provide the relevant install information' );
+			process.exit( 1 );
+		}
+	}
+
 	/*
 	 * Syntax:
 	 * TYPE NAME:VERSION
 	 * version is optional
 	 */
-	 type = installArgs[0];
-	 nameAndVersion = installArgs[1].split( ':' );
+	type = installArgs[0];
+	nameAndVersion = installArgs[1].split( ':' );
 	const name = nameAndVersion[0];
 	const  version = nameAndVersion[1];
 
@@ -48,7 +61,7 @@ function action( type, nameAndVersion ) {
 		type: type,
 		name: name,
 		version: version,
-		dir: this.libPrefix
+		dir: this.libDir
 	}, function( err ) {
 		if ( err ) {
 			console.error( err.toString().red );

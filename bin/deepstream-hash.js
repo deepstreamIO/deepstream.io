@@ -10,6 +10,7 @@ module.exports = function( program ) {
 }
 
 function hash( password ) {
+	global.deepstreamCLI = this;
 	const config = jsYamlLoader.loadConfigWithoutInitialisation().config;
 
 	if( config.auth.type !== 'file' ) {
