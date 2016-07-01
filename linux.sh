@@ -37,8 +37,10 @@ EOF
 
 if [ $ENV = 'deb' ]; then
 	cat >>Dockerfile <<EOF
+
+RUN apt-add-repository ppa:brightbox/ruby-ng -y
 RUN apt-get update
-RUN apt-get install -y curl build-essential git ruby ruby-dev rpm
+RUN apt-get install -y curl build-essential git ruby2.2 ruby-dev rpm
 RUN curl -sL https://deb.nodesource.com/setup_4.x | bash -
 RUN apt-get install -y nodejs
 EOF
