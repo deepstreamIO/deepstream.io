@@ -1,10 +1,12 @@
 language: node_js
 
+before_install:
+  - rvm install 2.2.2
+
 env:
   - CXX=g++-4.8
 
 node_js:
-  - "stable"
   - "6"
   - "5"
   - "4" # Stated specifically for packaging
