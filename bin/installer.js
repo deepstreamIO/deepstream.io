@@ -203,7 +203,6 @@ const showConfig = function( directory ) {
 		if ( process.env.VERBOSE ) {
 			console.log( 'You need to configure the connector in your deepstream configuration file' );
 		}
-		content = '  ' + content.replace( /\n/g, '\n  ' );
 		if ( !process.env.QUIET ) {
 			console.log( 'Example configuration:\n' + colors.grey( content ) );
 		}
