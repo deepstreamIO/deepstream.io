@@ -3,29 +3,29 @@ const jsYamlLoader = require( '../src/config/js-yaml-loader' );
 
 module.exports = function( program ) {
 	program
-		.command( 'encrypt [password]' )
-		.description( 'Encrypt a plain text password using hash configuration set within configuration file' )
+		.command( 'hash [password]' )
+		.description( 'Generate a hash from a plain text password using file auth configuration settings' )
 		.option( '-c, --config [file]', 'configuration file containing file auth and hash settings' )
-		.action( encrypt );
+		.action( hash );
 }
 
-function encrypt( password ) {
+function hash( password ) {
 	const config = jsYamlLoader.loadConfigWithoutInitialisation().config;
 
 	if( config.auth.type !== 'file' ) {
-			console.error( 'Error: Can only use encrypt with file authentication as auth type' );
+			console.error( 'Error: Can only use hash with file authentication as auth type' );
 			process.exit( 1 );
 	}
 
 	if( !config.auth.options.hash ) {
-			console.error( 'Error: Can only use encrypt with file authentication using hash' );
+			console.error( 'Error: Can only use hash with file authentication' );
 			process.exit( 1 );
 	}
 
 	config.auth.options.path  = '';
 
 	if( !password ) {
-			console.error( 'Error: Must provide password to encrypt' );
+			console.error( 'Error: Must provide password to hash' );
 			process.exit( 1 );
 	}
 

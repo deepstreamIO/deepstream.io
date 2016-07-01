@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
-
 require( 'colors' );
+
 const pgk = require( '../package.json' );
 
 const Command = require( 'commander' ).Command;
@@ -10,7 +10,7 @@ const start = require( './deepstream-start' );
 const status = require( './deepstream-status' );
 const stop = require( './deepstream-stop' );
 const info = require( './deepstream-info' );
-const encrypt = require( './deepstream-encrypt' );
+const hash = require( './deepstream-hash' );
 
 var program = new Command( 'deepstream' );
 program
@@ -22,7 +22,7 @@ stop( program );
 status( program );
 install( program );
 info( program );
-encrypt( program );
+hash( program );
 
 program.parse( process.argv );
 
