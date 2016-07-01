@@ -39,7 +39,7 @@ if [ $ENV = 'deb' ]; then
 	cat >>Dockerfile <<EOF
 
 RUN apt-get update
-RUN apt-get install software-properties-common python-software-properties # install apt-add-repository
+RUN apt-get install -y software-properties-common python-software-properties # install apt-add-repository
 RUN apt-add-repository ppa:brightbox/ruby-ng -y # add ruby 2
 RUN apt-get update
 RUN apt-get install -y curl build-essential git ruby2.2 ruby-dev rpm
