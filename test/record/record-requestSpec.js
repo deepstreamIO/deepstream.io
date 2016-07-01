@@ -52,7 +52,7 @@ describe( 'records are requested from cache and storage sequentially', function(
 
 	it( 'requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', function( done ) {
 		options.cache.nextGetWillBeSynchronous = false;
-		options.cache.nextGetWillBeSynchronous = false;
+		options.storage.nextGetWillBeSynchronous = false;
 
 		recordRequest = new RecordRequest( 'onlyExistsInStorage', options, socketWrapper, function( record ) {
 			expect( record ).toEqual( { _v:1, _d: {} } );
