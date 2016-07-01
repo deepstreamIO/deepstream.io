@@ -9,8 +9,8 @@ describe( 'records are requested from cache and storage sequentially', function(
 	var recordRequest,
 		socketWrapper = new SocketWrapper( new SocketMock(), {} ),
 		options = {
-			cacheRetrievalTimeout: 10,
-			storageRetrievalTimeout: 10,
+			cacheRetrievalTimeout: 30,
+			storageRetrievalTimeout: 30,
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			logger: { log: jasmine.createSpy( 'log' ) }
