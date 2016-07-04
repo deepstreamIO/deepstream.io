@@ -4,7 +4,7 @@ const jsYamlLoader = require( '../src/config/js-yaml-loader' );
 module.exports = function( program ) {
 	program
 		.command( 'hash [password]' )
-		.description( 'Generate a hash from a plain text password using file auth configuration settings' )
+		.description( 'Generate a hash from a plaintext password using file auth configuration settings' )
 		.option( '-c, --config [file]', 'configuration file containing file auth and hash settings' )
 		.action( hash );
 }
