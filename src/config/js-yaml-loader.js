@@ -58,7 +58,7 @@ function parseFile( filePath, fileContent ) {
 	let config = null;
 	const extension = path.extname( filePath );
 
-	if ( extension === '.yml' ) {
+	if ( extension === '.yml' || extension === '.yaml' ) {
 		config = yaml.safeLoad( replaceEnvironmentVariables( fileContent ) );
 	} else if ( extension === '.js' ) {
 		config = require( path.resolve( filePath ) );
