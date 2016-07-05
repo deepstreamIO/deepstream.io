@@ -1,4 +1,5 @@
 'use strict';
+const EventEmitter = require( 'events' ).EventEmitter;
 
 /**
  * Used for users that don't provide a username
@@ -14,12 +15,13 @@ const OPEN = 'open';
  *
  * @class OpenAuthenticationHandler
  */
-module.exports = class OpenAuthenticationHandler{
+module.exports = class OpenAuthenticationHandler extends EventEmitter{
 	/**
 	 * @param {String} type exposes the type for logging purposes. This one is called
 	 *                      none to avoid confusion with openAuth
 	 */
 	constructor() {
+		super();
 		this.type = 'none';
 		this.isReady = true;
 	}

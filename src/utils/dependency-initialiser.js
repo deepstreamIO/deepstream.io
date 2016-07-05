@@ -56,7 +56,8 @@ DependencyInitialiser.prototype._onReady = function() {
 		clearTimeout( this._timeout );
 	}
 
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, this._name + ' ready' );
+	var dependencyType = this._dependency.type ? ': ' + this._dependency.type : ''
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, `${this._name} ready${dependencyType}`  );
 	process.nextTick( this._emitReady.bind( this ) );
 };
 
