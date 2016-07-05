@@ -47,15 +47,18 @@ function action() {
 			args.push( this.config );
 		}
 		if ( this.libDir != null ) {
-			args.push( '--libDir' );
+			args.push( '--lib-dir' );
 			args.push( this.libDir );
 		}
+		// TODO: need to pass other options as well, which are accessable directly as properties of this
+		//       but need to transform camelCase back to kebabCase, like tcpPort
+
 		// ensure there is no pid file with a running process
 		pidHelper.ensureNotRunning( function( err ) {
 			if ( err ) {
 				return pidHelper.exit( err, true );
 			}
-			const child = child_process.spawn( path.resolve( __dirname, 'deepstream' ), ['start'].concat( args ), {
+			const child = child_process.spawn( path.join(__dirname, 'deepstream') , ['start'].concat( args ), {
 				detached: true,
 				stdio: [ 'ignore']
 			} );
@@ -89,7 +92,6 @@ function action() {
 		process.
 			removeAllListeners( 'SIGINT' ).on( 'SIGINT', pidHelper.exit ).
 			removeAllListeners( 'SIGTERM' ).on( 'SIGTERM', pidHelper.exit );
-
 	}
 }
 
@@ -119,7 +121,7 @@ function parseLogLevel( logLevel ) {
 function parseInteger( name, port ) {
 	const portNumber = Number( port );
 	if( !portNumber ) {
-		console.error( 'Provided ${name} must be an integer' );
+		console.error( `Provided ${name} must be an integer` );
 		process.exit(1);
 	}
 	return portNumber;
