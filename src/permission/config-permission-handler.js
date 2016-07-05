@@ -247,9 +247,4 @@ ConfigPermissionHandler.prototype._ready = function() {
 	}
 };
 
-ConfigPermissionHandler.prototype.close = function() {
-	this._ruleCache.close();
-	this.emit( 'close' );
-};
-
 module.exports = ConfigPermissionHandler;

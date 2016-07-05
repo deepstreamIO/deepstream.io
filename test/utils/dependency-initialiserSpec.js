@@ -39,8 +39,8 @@ describe( 'encounters timeouts and errors during dependency initialisations', fu
 	var dependencyInitialiser;
 	var readySpy;
 	var onReady = jasmine.createSpy( 'onReady' );
+	var exit = jasmine.createSpy( 'exit');
 	var log = jasmine.createSpy( 'log' );
-	var fatal = jasmine.createSpy( 'fatal' );
 	var originalProcessExit = process.exit;
 	var originalConsoleLog = console.log;
 	var options = {
@@ -49,7 +49,10 @@ describe( 'encounters timeouts and errors during dependency initialisations', fu
 		dependencyInitialisationTimeout: 1
 	};
 
-	it( 'disables console.error', function(){
+	it( 'disables process exit', function(){
+		Object.defineProperty( process, 'exit', {
+			value: exit
+		});
 
 		Object.defineProperty( console, 'error', {
 			value: log
@@ -59,14 +62,13 @@ describe( 'encounters timeouts and errors during dependency initialisations', fu
 	it( 'creates a depdendency initialiser', function( next ){
 		dependencyInitialiser = new DependencyInitialiser( options, 'plugin' );
 		dependencyInitialiser.on( 'ready', onReady );
-		dependencyInitialiser.on( 'fatal', fatal );
 		expect( options.plugin.isReady ).toBe( false );
 		setTimeout( next, 5 );
 	});
 
 	it( 'doesnt initialise a plugin in time', function(){
 		expect( onReady ).not.toHaveBeenCalled();
-		expect( fatal ).toHaveBeenCalled();
+		expect( exit ).toHaveBeenCalled();
 		expect( options.logger.log ).toHaveBeenCalledWith(  3, 'PLUGIN_ERROR', 'plugin wasn\'t initialised in time' );
 	});
 
@@ -79,13 +81,16 @@ describe( 'encounters timeouts and errors during dependency initialisations', fu
 	});
 
 	it( 'has logged the plugin error', function(){
-		expect( fatal ).toHaveBeenCalled();
+		expect( exit ).toHaveBeenCalled();
 		expect( onReady ).not.toHaveBeenCalled();
 		expect( log ).toHaveBeenCalledWith(  'Error while initialising dependency' );
 		expect( log ).toHaveBeenCalledWith(  'Error while initialising plugin: something went wrong' );
 	});
 
-	it( 'enables console.error', function(){
+	it( 'enables process exit', function(){
+		Object.defineProperty( process, 'exit', {
+			value: originalProcessExit
+		});
 
 		Object.defineProperty( console, 'error', {
 			value: originalConsoleLog

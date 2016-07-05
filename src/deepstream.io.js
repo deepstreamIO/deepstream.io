@@ -165,12 +165,9 @@ Deepstream.prototype._start = function() {
 	var i,
 		initialiser;
 
-	this.initialisers = []
 	for( i = 0; i < this._plugins.length; i++ ) {
 		initialiser = new DependencyInitialiser( this._options, this._plugins[ i ] );
-		this.initialisers.push(initialiser)
 		initialiser.once( 'ready', this._checkReady.bind( this, this._plugins[ i ], initialiser.getDependency() ) );
-		initialiser.once( 'fatal', this._onFatal.bind(this) );
 	}
 	this._checkReady( 'logger', this._options.logger );
 };
@@ -364,24 +361,6 @@ Deepstream.prototype._onStarted = function() {
 Deepstream.prototype._onPluginError = function( pluginName, error  ) {
 	var msg = 'Error from ' + pluginName + ' plugin: ' + error.toString();
 	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PLUGIN_ERROR, msg );
-};
-
-/**
- * Callback for plugin fatal errors that occur at initialization time. Errors during initialisation
- * are handled by the DependencyInitialiser
- *
- * @private
- * @returns {void}
- */
-Deepstream.prototype._onFatal = function() {
-	for( i = 0; i < this.initialisers.length; i++ ) {
-		var initialiser = this.initialisers[i];
-		var dependency = initialiser.getDependency();
-		if( typeof dependency.close === 'function' ) {
-			dependency.close();
-		}
-	}
-	this.emit('fatal')
 };
 
 module.exports = Deepstream;

@@ -92,17 +92,14 @@ const ensureNotRunning = function( callback ) {
  * @param  {Error} err Optional error object
  * @return {void}
  */
-const exit = function( err, keepPid ) {
-	const errorCode = err ? 1 : 0
-	if( err instanceof Error ) {
+const exit = function( err ) {
+	if ( err instanceof Error ) {
 		console.error ( colors.red( err.toString() ) );
-	}
-	if( !keepPid ) {
-		remove( function() {
-			process.exit( errorCode );
-		} );
+		process.exit( 1 );
 	} else {
-		process.exit( errorCode );
+		remove( function() {
+			process.exit( 0 );
+		} );
 	}
 };
 
