@@ -232,8 +232,7 @@ if [ $OS = "linux" ]; then
 		-f \
 		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
 		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
-		./build/deepstream=/usr/bin/deepstream \
-		./scripts/daemon/init-script=/etc/init.d/deepstream
+		./build/deepstream=/usr/bin/deepstream
 
 	echo -e "\t\tCreating deb"
 	fpm \
@@ -256,8 +255,7 @@ if [ $OS = "linux" ]; then
 		--deb-no-default-config-files \
 		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
 		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
-		./build/deepstream=/usr/bin/deepstream \
-		./scripts/daemon/init-script=/etc/init.d/deepstream
+		./build/deepstream=/usr/bin/deepstream
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
