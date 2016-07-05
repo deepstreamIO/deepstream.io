@@ -8,6 +8,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	readMessage = require( './utils/read-message' ),
 	EOL = require( 'os' ).EOL,
 	fs = require( 'fs' ),
+	path = require( 'path' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
 	defaultOptions = require( './default-options' ),
@@ -270,7 +271,7 @@ Deepstream.prototype._showStartLogo = function() {
 		logo = nexeres.get( 'ascii-logo.txt' ).toString( 'ascii' );
 	}
 	catch( e ) {
-		logo = fs.readFileSync( './ascii-logo.txt', 'utf8' );
+		logo = fs.readFileSync( path.join(__dirname, '..', '/ascii-logo.txt'), 'utf8' );
 	}
 
 	/* istanbul ignore next */
