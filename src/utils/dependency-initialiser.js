@@ -68,7 +68,7 @@ DependencyInitialiser.prototype._onReady = function() {
  */
 DependencyInitialiser.prototype._onTimeout = function() {
 	this._logError( this._name + ' wasn\'t initialised in time' );
-	process.exit( 1 );
+	this.emit( 'fatal' )
 };
 
 /**
@@ -84,8 +84,9 @@ DependencyInitialiser.prototype._onTimeout = function() {
 DependencyInitialiser.prototype._onError = function( error ) {
 	if( this.isReady !== true ) {
 		this._logError( 'Error while initialising ' + this._name + ': ' + error.toString() );
-		process.exit( 1 );
 	}
+	this.emit( 'fatal' )
+
 };
 
 /**

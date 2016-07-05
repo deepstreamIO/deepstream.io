@@ -53,13 +53,13 @@ function action() {
 		// ensure there is no pid file with a running process
 		pidHelper.ensureNotRunning( function( err ) {
 			if ( err ) {
-				return pidHelper.exit( err );
+				return pidHelper.exit( err, true );
 			}
 			const child = child_process.spawn( path.resolve( __dirname, 'deepstream' ), ['start'].concat( args ), {
 				detached: true,
 				stdio: [ 'ignore']
 			} );
-			const WAIT_FOR_ERRORS = 2000;
+			const WAIT_FOR_ERRORS = 3000;
 			// register handler if the child process will fail within WAIT_FOR_ERRORS period
 			child.on( 'close', detachErrorHandler );
 			child.on( 'exit', detachErrorHandler );
@@ -78,6 +78,9 @@ function action() {
 			ds.on( 'started', function() {
 				pidHelper.save( process.pid );
 			} );
+			ds.on( 'fatal', function() {
+				pidHelper.exit(new Error( 'Shutting down deepstream due to a fatal error' ));
+			} );
 			ds.start();
 		} catch ( err ) {
 			console.error( err.toString() );
@@ -91,7 +94,7 @@ function action() {
 }
 
 function detachErrorHandler() {
-	console.error( 'Error during detaching the deepstream process, run without --detach'.red );
+	console.error( 'Error during detaching the deepstream process, see logs or run without --detach'.red );
 	process.exit( 1 );
 }
 

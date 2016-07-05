@@ -8,7 +8,7 @@
 var RuleCache = function( options ) {
 	this._options = options;
 	this._data = {};
-	setInterval( this._purge.bind( this ), options.cacheEvacuationInterval );
+	this._intervalId = setInterval( this._purge.bind( this ), options.cacheEvacuationInterval );
 };
 
 /**
@@ -105,5 +105,17 @@ RuleCache.prototype._purge = function() {
 		}
 	}
 };
+
+/**
+ * Stop the interval to trigger the _purge method.
+ *
+ * @private
+ * @returns {void}
+ */
+RuleCache.prototype.close = function() {
+	if (this._intervalId) {
+		clearInterval( this._intervalId );
+	}
+}
 
 module.exports = RuleCache;
