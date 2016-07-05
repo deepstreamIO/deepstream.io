@@ -221,6 +221,9 @@ const showConfig = function( directory ) {
  * @return {void}
  */
 module.exports = function( opts, callback ) {
+	if (opts.type === 'message') {
+		opts.type = 'msg'
+	}
 	fetchReleases( opts.type, opts.name, function( error, releases ) {
 		if ( error ) {
 			return callback( error );
