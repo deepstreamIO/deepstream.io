@@ -62,7 +62,7 @@ function action() {
 				detached: true,
 				stdio: [ 'ignore']
 			} );
-			const WAIT_FOR_ERRORS = 2000;
+			const WAIT_FOR_ERRORS = 3000;
 			// register handler if the child process will fail within WAIT_FOR_ERRORS period
 			child.on( 'close', detachErrorHandler );
 			child.on( 'exit', detachErrorHandler );
@@ -77,6 +77,7 @@ function action() {
 		// non-detach casee
 		const Deepstream = require( '../src/deepstream.io.js' );
 		try {
+			process.on( 'uncaughtException', pidHelper.exit );
 			var ds = new Deepstream( null );
 			ds.on( 'started', function() {
 				pidHelper.save( process.pid );
@@ -93,7 +94,7 @@ function action() {
 }
 
 function detachErrorHandler() {
-	console.error( 'Error during detaching the deepstream process, run without --detach'.red );
+	console.error( 'Error during detaching the deepstream process, see logs or run without --detach'.red );
 	process.exit( 1 );
 }
 

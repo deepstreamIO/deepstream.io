@@ -41,7 +41,6 @@ describe( 'encounters timeouts and errors during dependency initialisations', fu
 	var onReady = jasmine.createSpy( 'onReady' );
 	var exit = jasmine.createSpy( 'exit');
 	var log = jasmine.createSpy( 'log' );
-	var originalProcessExit = process.exit;
 	var originalConsoleLog = console.log;
 	var options = {
 		plugin: new PluginMock( 'A' ),
@@ -49,49 +48,42 @@ describe( 'encounters timeouts and errors during dependency initialisations', fu
 		dependencyInitialisationTimeout: 1
 	};
 
-	it( 'disables process exit', function(){
-		Object.defineProperty( process, 'exit', {
-			value: exit
-		});
+	it( 'disables console.error', function(){
 
 		Object.defineProperty( console, 'error', {
 			value: log
 		});
 	});
 
-	it( 'creates a depdendency initialiser', function( next ){
+	it( 'creates a depdendency initialiser and doesnt initialise a plugin in time', function( next ){
 		dependencyInitialiser = new DependencyInitialiser( options, 'plugin' );
 		dependencyInitialiser.on( 'ready', onReady );
 		expect( options.plugin.isReady ).toBe( false );
-		setTimeout( next, 5 );
-	});
-
-	it( 'doesnt initialise a plugin in time', function(){
+		process.once( 'uncaughtException', function() {
+			expect( options.logger.log ).toHaveBeenCalledWith(  3, 'PLUGIN_ERROR', 'plugin wasn\'t initialised in time' );
+			next();
+		} );
 		expect( onReady ).not.toHaveBeenCalled();
-		expect( exit ).toHaveBeenCalled();
-		expect( options.logger.log ).toHaveBeenCalledWith(  3, 'PLUGIN_ERROR', 'plugin wasn\'t initialised in time' );
+
 	});
 
-	it( 'creates another depdendency initialiser', function( next ){
+	it( 'creates another depdendency initialiser with a plugin error', function( next ){
+		process.once( 'uncaughtException', function(err) {
+			expect( onReady ).not.toHaveBeenCalled();
+			expect( log ).toHaveBeenCalledWith(  'Error while initialising dependency' );
+			expect( log ).toHaveBeenCalledWith(  'Error while initialising plugin: something went wrong' );
+			next();
+		} );
 		dependencyInitialiser = new DependencyInitialiser( options, 'plugin' );
 		dependencyInitialiser.on( 'ready', onReady );
 		options.logger.isReady = false;
-		options.plugin.emit( 'error', 'something went wrong' );
-		setTimeout( next , 50 );
+		try {
+			options.plugin.emit( 'error', 'something went wrong' );
+			next.fail();
+		} catch (_err) {}
 	});
 
-	it( 'has logged the plugin error', function(){
-		expect( exit ).toHaveBeenCalled();
-		expect( onReady ).not.toHaveBeenCalled();
-		expect( log ).toHaveBeenCalledWith(  'Error while initialising dependency' );
-		expect( log ).toHaveBeenCalledWith(  'Error while initialising plugin: something went wrong' );
-	});
-
-	it( 'enables process exit', function(){
-		Object.defineProperty( process, 'exit', {
-			value: originalProcessExit
-		});
-
+	it( 'enable console.error', function(){
 		Object.defineProperty( console, 'error', {
 			value: originalConsoleLog
 		});
