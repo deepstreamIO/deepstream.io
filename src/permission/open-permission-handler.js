@@ -1,16 +1,19 @@
 'use strict';
 
+const EventEmitter = require( 'events' ).EventEmitter;
+
 /**
  * The open permission handler allows any action to occur without applying
  * any permissions.
  *
  * @class OpenPermissionHandler
  */
-module.exports = class OpenPermissionHandler{
+module.exports = class OpenPermissionHandler extends EventEmitter{
 	/**
 	 * @param {String} type exposes the type for logging purposes
 	 */
 	constructor() {
+		super();
 		this.type = 'none';
 		this.isReady = true;
 	}

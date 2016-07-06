@@ -50,7 +50,8 @@ var Deepstream = function( config ) {
 		'messageConnector',
 		'storage',
 		'cache',
-		'permissionHandler' //TODO: This now requires the permissionHandler to have a ready flag / emit events
+		'authenticationHandler',
+		'permissionHandler'
 	];
 
 };
@@ -152,11 +153,8 @@ Deepstream.prototype._start = function() {
 	}
 
 	if( global.deepstreamLibDir ) {
-                this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'library directory set to: ' + global.deepstreamLibDir );
+		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'library directory set to: ' + global.deepstreamLibDir );
 	}
-
-	var authTypeMsg = 'authentication type ' + ( this._options.authenticationHandler.type || 'custom' );
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, authTypeMsg );
 
 	if( this._options.dataTransforms && this._options.dataTransforms instanceof Array ) {
 		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );
