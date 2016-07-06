@@ -20,16 +20,18 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter{
 	 * @param   {Array}  settings.permittedStatusCodes an array of http status codes that qualify as permitted
 	 * @param   {Number} settings.requestTimeout time in milliseconds before the request times out if no reply is received
 	 *
+	 * @param 	{Logger} logger
+	 *
 	 * @constructor
 	 * @returns {void}
 	 */
-	constructor( settings ) {
+	constructor( settings, logger ) {
 		super();
 		this.isReady = true;
 		this.type = 'http webhook to ' + settings.endpointUrl;
 		this._settings = settings;
+		this._logger = logger;
 		this._validateSettings();
-		this._params = this._createUrlParams();
 	}
 
 	/**
@@ -45,26 +47,11 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter{
 	 */
 	isValidUser( connectionData, authData, callback ) {
 		new HttpAuthenticationRequest(
-			this._params,
-			connectionData,
-			authData,
+			{ connectionData: connectionData, authData: authData },
 			this._settings,
+			this._logger,
 			callback
 		);
-	}
-
-	/**
-	 * Parses the provided endpoint URL and extends the resulting
-	 * parameter set with values for the outgoing request
-	 *
-	 * @private
-	 * @returns {void}
-	 */
-	_createUrlParams() {
-		var params = url.parse( this._settings.endpointUrl );
-		params.method = 'POST';
-		params.headers = { 'Content-Type': 'application/json' };
-		return params;
 	}
 
 	/**

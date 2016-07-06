@@ -37,7 +37,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 				authData: { 'username': 'userA' }
 			});
 			expect( server.lastRequestMethod ).toBe( 'POST' );
-			expect( server.lastRequestHeaders[ 'content-type' ] ).toBe( 'application/json' );
+			expect( server.lastRequestHeaders[ 'content-type' ] ).toContain( 'application/json' );
 			server.respondWith( 200, { authData: { 'extra': 'data' } } );
 		});
 
@@ -58,7 +58,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 				authData: { 'username': 'userA' }
 			});
 			expect( server.lastRequestMethod ).toBe( 'POST' );
-			expect( server.lastRequestHeaders[ 'content-type' ] ).toBe( 'application/json' );
+			expect( server.lastRequestHeaders[ 'content-type' ] ).toContain( 'application/json' );
 			server.respondWith( 401 );
 		});
 
@@ -80,7 +80,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 				authData: { 'username': 'userA' }
 			});
 			expect( server.lastRequestMethod ).toBe( 'POST' );
-			expect( server.lastRequestHeaders[ 'content-type' ] ).toBe( 'application/json' );
+			expect( server.lastRequestHeaders[ 'content-type' ] ).toContain( 'application/json' );
 			server.respondWith( 200, '' );
 		});
 
@@ -101,7 +101,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 				authData: { 'username': 'userA' }
 			});
 			expect( server.lastRequestMethod ).toBe( 'POST' );
-			expect( server.lastRequestHeaders[ 'content-type' ] ).toBe( 'application/json' );
+			expect( server.lastRequestHeaders[ 'content-type' ] ).toContain( 'application/json' );
 			server.respondWith( 200, 'userA' );
 		});
 
@@ -122,7 +122,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 
 		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( false );
-			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR', 'received error for http auth request: oh dear' );
+			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR',  'http auth server error: oh dear' );
 			done();
 		});
 	});
@@ -139,8 +139,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 
 		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
 			expect( result ).toBe( false );
-			expect( arguments.length ).toBe( 1 );
-			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR', 'error while making authentication request: request timed out' );
+			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR', 'http auth error: Error: socket hang up' );
 			server.respondWith( 200 );
 			done();
 		});
