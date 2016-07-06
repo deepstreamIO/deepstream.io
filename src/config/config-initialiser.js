@@ -227,7 +227,7 @@ function handleAuthStrategy( config ) {
 		config.auth.options.path = fileUtils.lookupConfRequirePath( config.auth.options.path );
 	}
 
-	config.authenticationHandler = new ( authStrategies[ config.auth.type ] )( config.auth.options );
+	config.authenticationHandler = new ( authStrategies[ config.auth.type ] )( config.auth.options, config.logger );
 }
 
 /**

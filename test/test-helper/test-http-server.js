@@ -31,6 +31,7 @@ module.exports = class TestHttpServer extends EventEmitter{
 		if( typeof data === 'object' ) {
 			data = JSON.stringify( data );
 		}
+		this._response.setHeader( 'content-type', 'application/json');
 		this._response.writeHead( statusCode );
 		this._response.end( data );
 	}
