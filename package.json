@@ -14,7 +14,8 @@
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "test-http-server": "node test/test-helper/start-test-server.js"
+    "test-http-server": "node test/test-helper/start-test-server.js",
+    "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE"
   },
   "repository": {
     "type": "git",
@@ -34,15 +35,16 @@
     "needle": "^1.0.0"
   },
   "devDependencies": {
+    "async": "^0.2.9",
     "coveralls": "^2.11.9",
     "engine.io-client": "^1.6.11",
     "grunt": "^1.0.1 ",
     "grunt-release": "^0.14.0",
     "istanbul": "^0.4.3",
     "jasmine": "^2.4.1",
-    "nexe": "^1.1.2",
     "jasmine-spec-reporter": "^2.5.0",
     "n0p3": "^1.0.2",
+    "nexe": "^1.1.2",
     "proxyquire": "1.7.10",
     "watch": "^0.19.1"
   },
