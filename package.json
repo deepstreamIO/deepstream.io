@@ -22,7 +22,7 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "optionalDependencies": {
-    "uws": "^0.6.5"
+    "uws": "^0.7.1"
   },
   "dependencies": {
     "adm-zip": "^0.4.7",
