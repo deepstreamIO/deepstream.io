@@ -6,6 +6,7 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', { 'engine.io': engineIoMock, 'http': httpMock, 'https': httpsMock } ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	permissionHandlerMock = require( '../mocks/permission-handler-mock' ),
+	authenticationHandlerMock = require( '../mocks/authentication-handler-mock' ),
 	socketMock,
 	options,
 	noop = function(){},
@@ -13,7 +14,7 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 
 var otherOptions = {
 	permissionHandler: permissionHandlerMock,
-	authenticationHandler: permissionHandlerMock,
+	authenticationHandler: authenticationHandlerMock,
 	logger: { log: jasmine.createSpy( 'log' ) },
 	tcpPort: 6021
 };
