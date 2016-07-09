@@ -225,9 +225,6 @@ if [ $OS = "linux" ]; then
 		sed -i 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
 	fi
 
-	echo -e "\tInstalling FPM"
-	gem install fpm > /dev/null
-
 	echo -e "\t\tCreating rpm"
 
 	fpm \
