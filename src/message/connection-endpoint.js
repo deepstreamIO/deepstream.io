@@ -454,8 +454,8 @@ ConnectionEndpoint.prototype._onError = function( error ) {
 * @returns {void}
 */
 ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
-	if( this._options.permissionHandler.onClientDisconnect ) {
-		this._options.permissionHandler.onClientDisconnect( socketWrapper.user );
+	if( this._options.authenticationHandler.onClientDisconnect ) {
+		this._options.authenticationHandler.onClientDisconnect( socketWrapper.user );
 	}
 };
 
