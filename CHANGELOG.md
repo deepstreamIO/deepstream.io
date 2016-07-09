@@ -21,8 +21,7 @@ deepstream is shipped with a _conf_ directory which contains three files:
 
 For all config types support these file types: __.yml__, __.json__ and __.js__
 
-###### Constructor API. 
-
+###### Constructor API
 There are different options what you can pass:
   - not passing any arguments ( consistent with 0.x )
   - passing `null` will result in loading the default configuration file in the directory _conf/config.yml_
@@ -33,6 +32,9 @@ There are different options what you can pass:
 You can write your permission into a structured file. This file supports a special syntax, which allows you to do advanced permission checks. This syntax is called __Valve__.
 
 #### Enhancements
+
+###### uws
+deepstream now uses [uws](https://github.com/uWebSockets/uWebSockets), a native C++ websocket server
 
 ###### no process.exit on plugin initialization error or timeout
 deepstream will not longer stops your process via `process.exit()`. This happened before when a connector failed to initialise correctly [#243](https://github.com/deepstreamIO/deepstream.io/issues/243) instead it will throw an error now.
@@ -67,11 +69,11 @@ ds.set( 'permissionHandler', permissionHandler )
 ds.set( 'authenticationHandler', permissionHandler )
 ```
 
-###### Plugin API 
+###### Plugin API
 All connectors including, the `permissionHandler`, `authenticationHandler` and `logger` all need to implement the plugin interface which means exporting an object that:
 
 - has a constructor
-- has an `isReady` property which is true once the connector has been initialized. For example in the case a database connector this would only be `true` once the connection has been established. If the connector is synchronous you can set this to true within the constructor. 
+- has an `isReady` property which is true once the connector has been initialized. For example in the case a database connector this would only be `true` once the connection has been established. If the connector is synchronous you can set this to true within the constructor.
 - extends the EventEmitter, and emits a `ready` event once initialized and `error` on error.
 
 ###### Logger and colors options

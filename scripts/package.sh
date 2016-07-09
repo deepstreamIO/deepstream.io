@@ -50,6 +50,9 @@ rm -rf node_modules/engine.io
 rm -f npm-shrinkwrap.json
 npm install --loglevel error
 
+echo -e "\tGenerate License File using unmodified npm packages"
+./scripts/license-aggregator.js > build/DEPENDENCIES.LICENSE
+
 npm shrinkwrap --loglevel error
 node scripts/shrinkwrap.js
 # Use versions that have been modified
@@ -61,12 +64,15 @@ node scripts/details.js META
 
 if [ $OS = "win32" ]; then
 	echo "Windows icon"
-	echo -e "\tDownloading node src"
-	mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-	cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-	tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-	cd -
+
+	if [ -d nexe_node/node/$NODE_VERSION_WITHOUT_V ]; then
+		echo -e "\tDownloading node src"
+		mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+		cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+		curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+		tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+		cd -
+	fi
 
 	NAME=$PACKAGE_VERSION
 
@@ -101,10 +107,11 @@ rm -rf build/$PACKAGE_VERSION
 mkdir -p $DEEPSTREAM_PACKAGE
 mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
+mkdir $DEEPSTREAM_PACKAGE/doc
 
 if [ -d node_modules/uws ]; then
 	echo "Adding uws as thirdparty library for performance improvements"
-	mv -f node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
+	cp -rf node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
 else
 	echo -e "\tAdding empty uws module"
 	mkdir -p node_modules/uws && echo "module.exports = function() {}" >> node_modules/uws/index.js
@@ -137,6 +144,16 @@ else
 		echo -e "\tNexe Build Failed"
 		exit 1
 fi
+
+echo "Adding docs"
+echo -e "\tAdding Readme"
+echo "Documentation is available at https://deepstream.io
+" > $DEEPSTREAM_PACKAGE/doc/README
+echo -e "\tAdding Changelog"
+cp CHANGELOG.md $DEEPSTREAM_PACKAGE/doc/CHANGELOG.md
+echo -e "\tAdding Licenses"
+cp $NODE_SOURCE/LICENSE $DEEPSTREAM_PACKAGE/doc/NODE.LICENSE
+mv build/DEPENDENCIES.LICENSE $DEEPSTREAM_PACKAGE/doc/LICENSE
 
 echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
 cp -r conf $DEEPSTREAM_PACKAGE/
@@ -230,6 +247,7 @@ if [ $OS = "linux" ]; then
 		--before-upgrade ./scripts/daemon/before-upgrade \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
+		$DEEPSTREAM_PACKAGE/doc/=/usr/share/doc/deepstream/ \
 		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
 		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
 		./build/deepstream=/usr/bin/deepstream
@@ -253,6 +271,7 @@ if [ $OS = "linux" ]; then
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
 		--deb-no-default-config-files \
+		$DEEPSTREAM_PACKAGE/doc/=/usr/share/doc/deepstream/ \
 		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
 		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
 		./build/deepstream=/usr/bin/deepstream
