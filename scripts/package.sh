@@ -65,14 +65,12 @@ node scripts/details.js META
 if [ $OS = "win32" ]; then
 	echo "Windows icon"
 
-	if [ -d nexe_node/node/$NODE_VERSION_WITHOUT_V ]; then
-		echo -e "\tDownloading node src"
-		mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-		cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-		curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-		tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-		cd -
-	fi
+	echo -e "\tDownloading node src"
+	mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+	cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+	tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+	cd -
 
 	NAME=$PACKAGE_VERSION
 
