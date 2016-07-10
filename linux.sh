@@ -37,12 +37,8 @@ EOF
 
 if [ $ENV = 'deb' ]; then
 	cat >>Dockerfile <<EOF
-
 RUN apt-get update
-RUN apt-get install -y software-properties-common python-software-properties # install apt-add-repository
-RUN apt-add-repository ppa:brightbox/ruby-ng -y # add ruby 2
-RUN apt-get update
-RUN apt-get install -y curl build-essential git ruby2.2 ruby-dev rpm
+RUN apt-get install -y curl build-essential git ruby ruby-dev rpm
 RUN curl -sL https://deb.nodesource.com/setup_4.x | bash -
 RUN apt-get install -y nodejs
 EOF
@@ -63,7 +59,7 @@ EOF
 fi
 
 cat >>Dockerfile <<EOF
-RUN gem install fpm
+RUN gem install fpm  --conservative || echo "fpm install failed"
 
 RUN echo "Start"
 
@@ -74,6 +70,10 @@ WORKDIR deepstream.io
 RUN mkdir build
 RUN git checkout tags/$GIT_TAG_NAME
 RUN npm install
+RUN chmod 555 scripts/package.sh
+
+RUN rm scripts/package.sh
+RUN curl -s -L https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/package.sh -o scripts/package.sh
 RUN chmod 555 scripts/package.sh
 RUN ./scripts/package.sh true
 EOF
