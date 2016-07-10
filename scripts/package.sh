@@ -45,6 +45,11 @@ if [ -z $1  ]; then
 	fi
 fi
 
+if [ $OS = "linux" ]; then
+	echo "Checking if FPM is installed"
+	fpm --version
+fi
+
 echo "Patching accepts dependency of engine.io (npm-shrinkwrap)"
 rm -rf node_modules/engine.io
 rm -f npm-shrinkwrap.json
@@ -201,7 +206,6 @@ fi
 
 if [ $OS = "linux" ]; then
 	echo "OS is linux"
-
 
 	echo -e "\tCreating tar.gz"
 
