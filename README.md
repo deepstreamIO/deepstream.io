@@ -2,14 +2,14 @@
 ==============================================
 A scalable server for realtime apps
 ----------------------------------------------
-Deepstream is a clusterable server that provides everything necessary to build powerful realtime applications. It’s written in nodeJs and freely available under a MIT license. To learn more, please visit http://deepstream.io/
+Deepstream is a clusterable server that provides everything necessary to build powerful realtime applications. It’s written in nodeJs and freely available under a AGPL-3.0 license. To learn more, please visit http://deepstream.io/
 
 * Stores and syncs data in realtime
 * Built in node.js
 * Works for browsers, backend & mobile
 * Scales via clustering
 * Exceptionally fast & easy to use
-* Open Source and free (MIT License)
+* Open Source and free
 
 
 ## Documentation
