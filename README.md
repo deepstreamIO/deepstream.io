@@ -4,5 +4,7 @@ The Open Realtime Server
 ----------------------------------------------
 deepstream is a new type of server that syncs data and sends events across millions of clients
 
-[https://deepstream.io/]
+## https://deepstream.io/
+
+![Elton](elton-square.png)
 
