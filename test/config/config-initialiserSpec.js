@@ -259,6 +259,20 @@ describe( 'config-initialiser', function() {
 
 	describe( 'supports custom loggers', function() {
 
+		it( 'load the default logger with options', function() {
+			global.deepstreamLibDir = null;
+			var config = defaultConfig.get();
+
+			config.logger = {
+				name: 'default',
+				options: {
+					logLevel: 2
+				}
+			};
+			configInitialiser.initialise( config );
+			expect( config.logger._options ).toEqual( {logLevel: 2} );
+		} );
+
 		it( 'load a custom logger', function() {
 			global.deepstreamLibDir = null;
 			var config = defaultConfig.get();

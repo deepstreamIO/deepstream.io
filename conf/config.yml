@@ -20,18 +20,28 @@ sslCa: null
 
 # Logger Configuration
 # logger:
+#   # use either the default logger
+#   name: default
+#    options:
+#      colors: true
+#      logLevel: INFO # value of logLevel (line 4) will always overwrite this value
+
+#   # or the winston logger
 #   name: winston
 #   options:
 #     # specify a list of transports (console, file, time)
 #     -
 #       type: console
 #       options:
-#         level: info # value of logLevel will always overwrite this value
+#         level: info # value of logLevel (line 4) will always overwrite this value
 #         colorize: true
 #     -
 #       type: time
 #       options:
 #         filename: ../var/deepstream
+
+#   # or a custom logger
+#   path: ./my-custom-logger
 
 # Plugin Configuration
 plugins:

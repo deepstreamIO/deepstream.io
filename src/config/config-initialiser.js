@@ -84,7 +84,7 @@ function handleSSLProperties( config ) {
 function handleLogger( config ) {
 	let configOptions = ( config.logger || {} ).options;
 	let Logger;
-	if ( config.logger == null ) {
+	if ( config.logger == null || config.logger.name === 'default' ) {
 		Logger = DefaultLogger;
 	} else {
 		Logger = resolvePluginClass( config.logger, 'logger' );
