@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Bug Fixes
+
+- Fix issue when try to pass options to the default logger [TODO]() ([update docs](https://github.com/deepstreamIO/deepstream.io-website/pull/35/commits/838617d93cf00e66176cdf06d161fd8f86574aa1) as well)
+
 ## [1.0.0] - 2016-07-09
 
 ### Features
