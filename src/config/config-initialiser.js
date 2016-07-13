@@ -23,10 +23,10 @@ exports.initialise = function( config ) {
 
 	handleUUIDProperty( config );
 	handleSSLProperties( config );
-	handleLogger( config );
-	handlePlugins( config );
-	handleAuthStrategy( config );
-	handlePermissionStrategy( config );
+	// handleLogger( config );
+	// handlePlugins( config );
+	// handleAuthStrategy( config );
+	// handlePermissionStrategy( config );
 
 	return config;
 };
