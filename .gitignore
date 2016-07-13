@@ -35,3 +35,5 @@ npm-shrinkwrap.json
 
 # IDE configuration
 .idea
+
+licenses.json

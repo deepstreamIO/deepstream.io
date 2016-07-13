@@ -4,6 +4,7 @@ var C = require( '../constants/constants' ),
 	SocketWrapper = require( './socket-wrapper' ),
 	engine = require('engine.io'),
 	TcpEndpoint = require( '../tcp/tcp-endpoint' ),
+	fileUtils = require( '../config/file-utils' ),
 	events = require( 'events' ),
 	util = require( 'util' ),
 	https = require('https'),
@@ -51,14 +52,17 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 		}
 
 		this._engineIo = engine.attach( this._server, { path: this._options.urlPath } );
-		try {
-			const uws = require( 'uws' );
-			// Since uws doesn't work on windows but is required by nexe
-			// we provide a fake module to patch it if necassary
+		try
+		{
+			// Since uws doesn't work on windows but is required by windows
+			// we provide a fake module to patch it if necassary, and look it up
+			// from libs incase of a binary deployment since it's a native module
+			var req = global && global.require ? global.require : require;
+			const uws = req( fileUtils.lookupLibRequirePath( 'uws' ) );
 			if( !uws.Server ) {
 				throw '';
 			}
-			this._engineIo.ws = new ( require( 'uws' ).Server ) ({
+			this._engineIo.ws = new ( uws.Server ) ({
 					noServer: true,
 					clientTracking: false,
 					perMessageDeflate: false
@@ -281,7 +285,7 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 		errorMsg = 'Error parsing auth message';
 
 		if( this._options.logInvalidAuthData === true ) {
-		 	errorMsg += ' "' + authMsg + '": ' + e.toString();
+			errorMsg += ' "' + authMsg + '": ' + e.toString();
 		}
 
 		this._sendInvalidAuthMsg( socketWrapper, errorMsg );
@@ -451,8 +455,8 @@ ConnectionEndpoint.prototype._onError = function( error ) {
 * @returns {void}
 */
 ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
-	if( this._options.permissionHandler.onClientDisconnect ) {
-		this._options.permissionHandler.onClientDisconnect( socketWrapper.user );
+	if( this._options.authenticationHandler.onClientDisconnect ) {
+		this._options.authenticationHandler.onClientDisconnect( socketWrapper.user );
 	}
 };
 

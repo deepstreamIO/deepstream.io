@@ -1,4 +1,4 @@
-chmod +x /etc/init.d/deepstream
+cp /etc/deepstream/conf.d/* /etc/deepstream/
 
 mkdir -p /var/run/deepstream
 mkdir -p /var/log/deepstream

@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 'use strict';
-
 require( 'colors' );
+
 const pgk = require( '../package.json' );
 
-var program = require( 'commander' );
+const Command = require( 'commander' ).Command;
 const install = require( './deepstream-install' );
 const start = require( './deepstream-start' );
 const status = require( './deepstream-status' );
 const stop = require( './deepstream-stop' );
 const info = require( './deepstream-info' );
+const hash = require( './deepstream-hash' );
 
+var program = new Command( 'deepstream' );
 program
 	.usage( '[command]' )
 	.version( pgk.version );
@@ -20,9 +22,10 @@ stop( program );
 status( program );
 install( program );
 info( program );
+hash( program );
 
 program.parse( process.argv );
 
 if ( program.args.length === 0 ) {
-	program.help();
+	program.emit( 'start' );
 }

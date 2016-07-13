@@ -7,7 +7,6 @@ exports.get = function() {
 		 * General
 		 */
 		serverName: utils.getUid(),
-		colors: true,
 		showLogo: true,
 		logLevel: C.LOG_LEVEL.INFO,
 

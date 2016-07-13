@@ -13,12 +13,12 @@ DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 
 NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
-NODE_DEPS="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V/deps"
 
 EXTENSION=""
 if [ $OS = "win32" ]; then
 	EXTENSION=".exe"
 fi
+EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
 mkdir -p build
@@ -45,117 +45,132 @@ if [ -z $1  ]; then
 	fi
 fi
 
+if [ $OS = "linux" ]; then
+	echo "Checking if FPM is installed"
+	fpm --version
+fi
+
 echo "Patching accepts dependency of engine.io (npm-shrinkwrap)"
 rm -rf node_modules/engine.io
 rm -f npm-shrinkwrap.json
-npm install > /dev/null 2> /dev/null
+npm install --loglevel error
 
-npm shrinkwrap > /dev/null 2> /dev/null
+echo -e "\tGenerate License File using unmodified npm packages"
+./scripts/license-aggregator.js > build/DEPENDENCIES.LICENSE
+
+npm shrinkwrap --loglevel error
 node scripts/shrinkwrap.js
 # Use versions that have been modified
 rm -rf node_modules/engine.io
-npm install > /dev/null 2> /dev/null
+npm install --loglevel error
 
 echo "Generating meta.json"
 node scripts/details.js META
 
-echo "Downloading node src"
-mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-cd -
-
 if [ $OS = "win32" ]; then
+	echo "Windows icon"
+
+	echo -e "\tDownloading node src"
+	mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+	cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+	tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+	cd -
+
 	NAME=$PACKAGE_VERSION
 
-	echo "Patch the window executable icon and details"
+	echo -e "\tPatch the window executable icon and details"
 	cp scripts/resources/node.rc $NODE_SOURCE/src/res/node.rc
 	cp scripts/resources/deepstream.ico $NODE_SOURCE/src/res/deepstream.ico
 
 	if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
-		echo "Version can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
+		echo -e "\tVersion can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
 		NAME="0.0.0"
 	fi
-	sed -i 's/DEEPSTREAM_VERSION/$NAME/' $NODE_SOURCE/src/res/node.rc
+
+	sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
 fi
 
 # Nexe Patches
-echo "Patching winston files for nexe/browserify"
-cp scripts/patch-files/winston-transports.js node_modules/deepstream.io-logger-winston/node_modules/winston/lib/winston/transports.js
-echo "module.exports = function() {}" > node_modules/deepstream.io-logger-winston/node_modules/winston/node_modules/pkginfo/lib/pkginfo.js
+echo "Nexe Patches for Browserify, copying stub versions of optional installs since they aern't bundled anyway"
 
-echo "Adding empty xml2js module for needle"
-mkdir -p node_modules/xml2js && echo "module.exports = function() {}" >> node_modules/xml2js/index.js
+echo -e "\tStubbing xml2js for needle"
+mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
 
-# Patch Native Modules
-if ! [ $OS == "linux" ]; then
-	echo "Adding empty uws module for uws"
-	mkdir -p node_modules/uws
-	echo "module.exports = function() {}" >> node_modules/uws/index.js
-elif [[ ! -d $NODE_DEPS/uws ]]; then
-	echo "Adding native uws"
-	curl -L -o $NODE_DEPS/uws.tar.gz https://github.com/uWebSockets/uWebSockets/archive/v0.6.3.tar.gz
-	tar -xzf $NODE_DEPS/uws.tar.gz -C $NODE_DEPS
-	mv $NODE_DEPS/uWebSockets* $NODE_DEPS/uws
-	rm -rf $NODE_DEPS/uws.tar.gz
+echo -e "\tStubbing bufferutil"
+rm -rf node_modules/bufferutil
+mkdir -p node_modules/bufferutil && echo "throw new Error()" >> node_modules/bufferutil/index.js
 
-	sed -i "s/const uws/var uws/" $NODE_DEPS/uws/nodejs/dist/uws.js
-	sed -i "s/})();/}); uws = process.binding('uws')/" $NODE_DEPS/uws/nodejs/dist/uws.js
-	sed -i "s/NODE_MODULE(uws, Main)/NODE_MODULE(node_uws, Main)/" $NODE_DEPS/uws/nodejs/addon.cpp
-	cp $NODE_DEPS/uws/nodejs/dist/uws.js $NODE_SOURCE/lib/uws.js
-	sed -i "s/uv.cc',/uv.cc','uws\/nodejs\/dist\/addon.cpp'/" $NODE_SOURCE/node.gyp
-	sed -i "s/'lib\/zlib.js',/'lib\/zlib.js','lib\/uws.js',/" $NODE_SOURCE/node.gyp
+echo -e "\tStubbing utf-8-validate"
+rm -rf node_modules/utf-8-validate
+mkdir -p node_modules/utf-8-validate && echo "throw new Error()" >> node_modules/utf-8-validate/index.js
 
-	rm -rf node_modules/uws
-else
-	rm -rf node_modules/uws
-	echo "Skipped uws patch, already exists"
-fi
-
-EXECUTABLE_NAME="build/deepstream$EXTENSION"
-
-echo "Creating '$EXECUTABLE_NAME', this will take a while..."
-
-./node_modules/.bin/nexe \
-	--input "bin/deepstream" \
-	--output $EXECUTABLE_NAME \
-	--runtime $NODE_VERSION_WITHOUT_V \
-	--temp "nexe_node" \
-	--flags "--use_strict" \
-	--framework "node" \
-	> /dev/null &
-
-PROC_ID=$!
-MINUTES=0;
-while kill -0 "$PROC_ID" >/dev/null 2>&1; do
-	echo "Compiling deepstream... ($MINUTES minutes)"
-	sleep 60
-	MINUTES=$[MINUTES+1]
-done
-
-if wait $pid; then
-		echo "Nexe Build Succeeded"
-else
-		echo "Nexe Build Failed"
-		exit 1
-fi
-
-echo "Packaging to dir structure at $DEEPSTREAM_PACKAGE"
-
+# Creatine package structure
 rm -rf build/$PACKAGE_VERSION
-
 mkdir -p $DEEPSTREAM_PACKAGE
 mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
+mkdir $DEEPSTREAM_PACKAGE/doc
+
+if [ -d node_modules/uws ]; then
+	echo "Adding uws as thirdparty library for performance improvements"
+	cp -rf node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
+else
+	echo -e "\tAdding empty uws module"
+	mkdir -p node_modules/uws && echo "module.exports = function() {}" >> node_modules/uws/index.js
+fi
+
+echo "Adding winston logger to libs"
+cd $DEEPSTREAM_PACKAGE/lib
+echo '{ "name": "TEMP" }' > package.json
+npm install deepstream.io-logger-winston --loglevel error
+mv -f node_modules/deepstream.io-logger-winston ./deepstream.io-logger-winston
+rm -rf node_modules package.json
+cd -
+
+echo "Creating '$EXECUTABLE_NAME', this will take a while..."
+NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &
+
+PROC_ID=$!
+SECONDS=0;
+while kill -0 "$PROC_ID" >/dev/null 2>&1; do
+	echo -ne "\rCompiling deepstream... ($SECONDS SECONDS)"
+	sleep 1
+	SECONDS=$[SECONDS+1]
+done
+
+echo ""
+
+if wait $pid; then
+		echo -e "\tNexe Build Succeeded"
+else
+		echo -e "\tNexe Build Failed"
+		exit 1
+fi
+
+echo "Adding docs"
+echo -e "\tAdding Readme"
+echo "Documentation is available at https://deepstream.io
+" > $DEEPSTREAM_PACKAGE/doc/README
+echo -e "\tAdding Changelog"
+cp CHANGELOG.md $DEEPSTREAM_PACKAGE/doc/CHANGELOG.md
+echo -e "\tAdding Licenses"
+cp $NODE_SOURCE/LICENSE $DEEPSTREAM_PACKAGE/doc/NODE.LICENSE
+mv build/DEPENDENCIES.LICENSE $DEEPSTREAM_PACKAGE/doc/LICENSE
+
+echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
 cp -r conf $DEEPSTREAM_PACKAGE/
 cp build/deepstream $DEEPSTREAM_PACKAGE/
+
+echo "Patching config file for zip lib and var directories"
+cp -f ./scripts/package-conf.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 
 if [ $OS = "win32" ]; then
 	COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "
 	CLEAN_NAME="deepstream.io-windows-$PACKAGE_VERSION.zip"
 
-	echo "OS is windows, creating zip deepstream.io-windows-$PACKAGE_VERSION.zip"
+	echo "OS is windows"
+	echo -e "\tCreating zip deepstream.io-windows-$PACKAGE_VERSION.zip"
 	cd $DEEPSTREAM_PACKAGE
 	7z a ../$COMMIT_NAME . > /dev/null
 	cp ../$COMMIT_NAME ../../$CLEAN_NAME
@@ -166,14 +181,15 @@ if [ $OS = "darwin" ]; then
 	COMMIT_NAME="deepstream.io-mac-$PACKAGE_VERSION-$COMMIT.zip"
 	CLEAN_NAME="deepstream.io-mac-$PACKAGE_VERSION.zip"
 
-	echo "OS is mac, creating $CLEAN_NAME"
+	echo "OS is mac"
+	echo -e "\tCreating $CLEAN_NAME"
 
 	cd $DEEPSTREAM_PACKAGE
 	zip -r ../$COMMIT_NAME .
 	cp ../$COMMIT_NAME ../../$CLEAN_NAME
 	cd -
 
-	echo "Skipping .pkg creation"
+	echo -e "\tSkipping .pkg creation"
 	# gem install fpm
 	# fpm \
 	# 	-s dir \
@@ -189,10 +205,30 @@ if [ $OS = "darwin" ]; then
 fi
 
 if [ $OS = "linux" ]; then
-	echo "OS is linux, installing FPM"
-	gem install fpm
+	echo "OS is linux"
 
-	echo "Creating rpm"
+	echo -e "\tCreating tar.gz"
+
+	COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
+	CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
+
+	cd $DEEPSTREAM_PACKAGE
+	tar czf ../$COMMIT_NAME .
+	cp ../$COMMIT_NAME ../../$CLEAN_NAME
+	cd -
+
+	echo -e "\tPatching config file for linux distros..."
+
+	if [ $OS = "darwin" ]; then
+		sed -i '' 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+		sed -i '' 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+	else
+		sed -i 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+		sed -i 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+	fi
+
+	echo -e "\t\tCreating rpm"
+
 	fpm \
 		-s dir \
 		-t rpm \
@@ -200,22 +236,22 @@ if [ $OS = "linux" ]; then
 		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
-		--license "Apache 2" \
+		--license "AGPL-3.0" \
 		--vendor "deepstreamHub GmbH" \
 		--description "deepstream.io rpm package" \
 		--url https://deepstream.io/ \
 		-m "<info@deepstream.io>" \
 		--after-install ./scripts/daemon/after-install \
 		--before-remove ./scripts/daemon/before-remove \
+		--before-upgrade ./scripts/daemon/before-upgrade \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
-		./conf/config.yml=/etc/deepstream/config.yml \
-		./conf/users.json=/etc/deepstream/users.json \
-		./conf/permissions.json=/etc/deepstream/permissions.json \
-		./build/deepstream=/usr/bin/deepstream \
-		./scripts/daemon/init-script=/etc/init.d/deepstream
+		$DEEPSTREAM_PACKAGE/doc/=/usr/share/doc/deepstream/ \
+		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
+		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
+		./build/deepstream=/usr/bin/deepstream
 
-	echo "Creating deb"
+	echo -e "\t\tCreating deb"
 	fpm \
 		-s dir \
 		-t deb \
@@ -223,30 +259,21 @@ if [ $OS = "linux" ]; then
 		--package-name-suffix $COMMIT \
 		-n deepstream.io \
 		-v $PACKAGE_VERSION \
-		--license "Apache 2" \
+		--license "AGPL-3.0" \
 		--vendor "deepstreamHub GmbH" \
 		--description "deepstream.io deb package" \
 		--url https://deepstream.io/ \
 		-m "<info@deepstream.io>" \
 		--after-install ./scripts/daemon/after-install \
 		--before-remove ./scripts/daemon/before-remove \
+		--before-upgrade ./scripts/daemon/before-upgrade \
 		--after-upgrade ./scripts/daemon/after-upgrade \
 		-f \
 		--deb-no-default-config-files \
-		./conf/config.yml=/etc/deepstream/config.yml \
-		./conf/users.json=/etc/deepstream/users.json \
-		./conf/permissions.json=/etc/deepstream/permissions.json \
-		./build/deepstream=/usr/bin/deepstream \
-		./scripts/daemon/init-script=/etc/init.d/deepstream
-
-	COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
-	CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
-
-	echo "Creating tar.gz"
-	cd $DEEPSTREAM_PACKAGE
-	tar czf ../$COMMIT_NAME .
-	cp ../$COMMIT_NAME ../../$CLEAN_NAME
-	cd -
+		$DEEPSTREAM_PACKAGE/doc/=/usr/share/doc/deepstream/ \
+		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
+		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
+		./build/deepstream=/usr/bin/deepstream
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE

@@ -56,7 +56,8 @@ DependencyInitialiser.prototype._onReady = function() {
 		clearTimeout( this._timeout );
 	}
 
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, this._name + ' ready' );
+	var dependencyType = this._dependency.type ? ': ' + this._dependency.type : ''
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, `${this._name} ready${dependencyType}`  );
 	process.nextTick( this._emitReady.bind( this ) );
 };
 
@@ -67,8 +68,12 @@ DependencyInitialiser.prototype._onReady = function() {
  * @returns {void}
  */
 DependencyInitialiser.prototype._onTimeout = function() {
-	this._logError( this._name + ' wasn\'t initialised in time' );
-	process.exit( 1 );
+	const message = this._name + ' wasn\'t initialised in time';
+	this._logError( message );
+	const error = new Error( message );
+	error.code = C.EVENT.PLUGIN_INITIALIZATION_TIMEOUT;
+	throw error;
+
 };
 
 /**
@@ -84,7 +89,8 @@ DependencyInitialiser.prototype._onTimeout = function() {
 DependencyInitialiser.prototype._onError = function( error ) {
 	if( this.isReady !== true ) {
 		this._logError( 'Error while initialising ' + this._name + ': ' + error.toString() );
-		process.exit( 1 );
+		error.code = C.EVENT.PLUGIN_INITIALIZATION_ERROR;
+		throw error;
 	}
 };
 

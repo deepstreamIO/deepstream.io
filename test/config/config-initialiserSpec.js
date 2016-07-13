@@ -40,7 +40,7 @@ describe( 'config-initialiser', function() {
 			expect( config.cache.toString() ).toBe( '[object Object]' );
 		} );
 
-		it( 'loads plugins from a relative path and a libprefix', function() {
+		it( 'loads plugins from a relative path and lib dir', function() {
 			global.deepstreamLibDir = './test/test-plugins';
 
 			var config = defaultConfig.get();

@@ -1,6 +1,6 @@
 'use strict';
 
-const DefaultLogger = require( 'deepstream.io-logger-winston' );
+const DefaultLogger = require( '../default-plugins/std-out-logger' );
 
 const fs = require( 'fs' );
 const utils = require( '../utils/utils' );
@@ -89,6 +89,19 @@ function handleLogger( config ) {
 	} else {
 		Logger = resolvePluginClass( config.logger, 'logger' );
 	}
+
+	if( configOptions instanceof Array ) {
+		// Note: This will not work on options without filename, and
+		// is biased against for the winston logger
+		var options;
+		for( var i=0; i<configOptions.length; i++ ) {
+			options = configOptions[ i ].options;
+			if( options && options.filename ) {
+				options.filename = fileUtils.lookupConfRequirePath( options.filename );
+			}
+		}
+	}
+
 	config.logger = new Logger( configOptions );
 	if ( LOG_LEVEL_KEYS.indexOf( config.logLevel ) !== -1 ) {
 		// NOTE: config.logLevel has highest priority, compare to the level defined
@@ -103,7 +116,7 @@ function handleLogger( config ) {
  * Allowed types: {message|cache|storage}
  * Plugins can be passed either as a __path__ property or as a __name__ property with
  * a naming convetion: *{cache: {name: 'redis'}}* will be resolved to the
- * npm module *deepstream.io-cache-direct*
+ * npm module *deepstream.io-cache-redis*
  * Exception: *message* will be resolved to *msg*
  * Options to the constructor of the plugin can be passed as *options* object.
  *
@@ -214,7 +227,7 @@ function handleAuthStrategy( config ) {
 		config.auth.options.path = fileUtils.lookupConfRequirePath( config.auth.options.path );
 	}
 
-	config.authenticationHandler = new ( authStrategies[ config.auth.type ] )( config.auth.options );
+	config.authenticationHandler = new ( authStrategies[ config.auth.type ] )( config.auth.options, config.logger );
 }
 
 /**

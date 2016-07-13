@@ -13,6 +13,7 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	} ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	permissionHandlerMock = require( '../mocks/permission-handler-mock' ),
+	authenticationHandlerMock = require( '../mocks/authentication-handler-mock' ),
 	lastAuthenticatedMessage = null,
 	lastLoggedMessage = null,
 	socketMock,
@@ -21,7 +22,7 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 
 options = {
 	permissionHandler: permissionHandlerMock,
-	authenticationHandler: permissionHandlerMock,
+	authenticationHandler: authenticationHandlerMock,
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
 	logInvalidAuthData: true,
@@ -33,7 +34,7 @@ options = {
 describe( 'connection endpoint', function() {
 
 	beforeAll( function() {
-		permissionHandlerMock.reset();
+		authenticationHandlerMock.reset();
 
 		connectionEndpoint = new ConnectionEndpoint( options, function(){} );
 		connectionEndpoint.onMessage();
@@ -110,14 +111,14 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'handles valid auth messages', function(){
-			expect( permissionHandlerMock.lastUserValidationQueryArgs ).toBe( null );
+			expect( authenticationHandlerMock.lastUserValidationQueryArgs ).toBe( null );
 
-			permissionHandlerMock.nextUserValidationResult = false;
+			authenticationHandlerMock.nextUserValidationResult = false;
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 
-			expect( permissionHandlerMock.lastUserValidationQueryArgs.length ).toBe( 3 );
-			expect( permissionHandlerMock.lastUserValidationQueryArgs[ 1 ].user ).toBe( 'wolfram' );
+			expect( authenticationHandlerMock.lastUserValidationQueryArgs.length ).toBe( 3 );
+			expect( authenticationHandlerMock.lastUserValidationQueryArgs[ 1 ].user ).toBe( 'wolfram' );
 			expect( lastLoggedMessage.indexOf( 'wolfram' ) ).not.toBe( -1 );
 			expect( socketMock.lastSendMessage ).toBe( _msg('A|E|INVALID_AUTH_DATA|SInvalid User+') );
 			expect( socketMock.isDisconnected ).toBe( false );
@@ -131,7 +132,7 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'handles valid auth messages', function(){
-			permissionHandlerMock.nextUserValidationResult = false;
+			authenticationHandlerMock.nextUserValidationResult = false;
 			options.maxAuthAttempts = 3;
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
@@ -155,7 +156,7 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'handles valid auth messages', function(){
-			permissionHandlerMock.nextUserValidationResult = false;
+			authenticationHandlerMock.nextUserValidationResult = false;
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 			expect( lastLoggedMessage.indexOf( 'wolfram' ) ).toBe( -1 );
 		});
@@ -170,7 +171,7 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'authenticates valid sockets', function(){
-			permissionHandlerMock.nextUserValidationResult = true;
+			authenticationHandlerMock.nextUserValidationResult = true;
 
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 
@@ -185,9 +186,9 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'notifies the permissionHandler when a client disconnects', function(){
-			expect( permissionHandlerMock.onClientDisconnectCalledWith ).toBe( null );
+			expect( authenticationHandlerMock.onClientDisconnectCalledWith ).toBe( null );
 			socketMock.close();
-			expect( permissionHandlerMock.onClientDisconnectCalledWith ).toBe( 'test-user' );
+			expect( authenticationHandlerMock.onClientDisconnectCalledWith ).toBe( 'test-user' );
 		});
 	});
 
@@ -197,9 +198,9 @@ describe( 'connection endpoint', function() {
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 
-			permissionHandlerMock.reset();
-			permissionHandlerMock.nextUserValidationResult = true;
-			permissionHandlerMock.sendNextValidAuthWithData = true;
+			authenticationHandlerMock.reset();
+			authenticationHandlerMock.nextUserValidationResult = true;
+			authenticationHandlerMock.sendNextValidAuthWithData = true;
 		});
 
 		it( 'authenticates valid sockets', function(){

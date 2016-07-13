@@ -10,7 +10,8 @@ const utils = require( '../utils/utils' );
 const configInitialiser = require( './config-initialiser' );
 const fileUtils = require( './file-utils' );
 
-const SUPPORTED_EXTENSIONS = [ '.yml', '.json', '.js' ];
+const SUPPORTED_EXTENSIONS = [ '.yml', '.yaml', '.json', '.js' ];path.join( '.', 'conf', 'config' );
+const DEFAULT_CONFIG_DIRS = [ path.join( '.', 'conf', 'config' ), '/etc/deepstream/config', '/usr/local/etc/deepstream/config' ];
 
 /**
  * Reads and parse a general configuration file content.
@@ -57,7 +58,7 @@ function parseFile( filePath, fileContent ) {
 	let config = null;
 	const extension = path.extname( filePath );
 
-	if ( extension === '.yml' ) {
+	if ( extension === '.yml' || extension === '.yaml' ) {
 		config = yaml.safeLoad( replaceEnvironmentVariables( fileContent ) );
 	} else if ( extension === '.js' ) {
 		config = require( path.resolve( filePath ) );
@@ -69,6 +70,28 @@ function parseFile( filePath, fileContent ) {
 
 	return config;
 }
+
+/**
+ * Loads a config file without having to initialise it. Useful for one
+ * off operations such as generating a hash via cli
+ *
+ * @param {Object|String} args commander arguments or path to config
+ *
+ * @public
+ * @returns {Object} config deepstream configuration object
+ */
+module.exports.loadConfigWithoutInitialisation = function( filePath, /* test only */ args ) {
+	var argv = args || global.deepstreamCLI || {};
+	var configPath = setGlobalConfigDirectory( argv, filePath );
+	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
+	var rawConfig = parseFile( configPath, configString );
+	var config = extendConfig( rawConfig, argv );
+	setGlobalLibDirectory( argv, config );
+	return {
+		config: config,
+		configPath: configPath
+	};
+};
 
 /**
  * Loads a file as deepstream config. CLI args have highest priority after the
@@ -83,16 +106,10 @@ function parseFile( filePath, fileContent ) {
  * @returns {Object} config deepstream configuration object
  */
 module.exports.loadConfig = function( filePath, /* test only */ args ) {
-	var argv = args || global.deepstreamCLI || {};
-	setGlobalLibDirectory( argv );
-	var configPath = setGlobalConfigDirectory( argv, filePath );
-	var configString = fs.readFileSync( configPath, { encoding: 'utf8' } );
-	var rawConfig = parseFile( configPath, configString );
-	var config = extendConfig( rawConfig, argv );
-
+	const config = exports.loadConfigWithoutInitialisation( filePath, args );
 	return {
-		config: configInitialiser.initialise( config ),
-		file: configPath
+		config: configInitialiser.initialise( config.config ),
+		file: config.configPath
 	};
 };
 
@@ -101,7 +118,11 @@ module.exports.loadConfig = function( filePath, /* test only */ args ) {
 * relative files within the config file
 */
 function setGlobalConfigDirectory( argv, filePath ) {
-	var customConfigPath = argv.c || argv.config || filePath || process.env.DEEPSTREAM_CONFIG_DIRECTORY;
+	var customConfigPath =
+			argv.c ||
+			argv.config ||
+			filePath ||
+			process.env.DEEPSTREAM_CONFIG_DIRECTORY;
 	var configPath = customConfigPath ? verifyCustomConfigPath( customConfigPath ) : getDefaultConfigPath();
 	global.deepstreamConfDir = path.dirname( configPath );
 	return configPath;
@@ -111,8 +132,12 @@ function setGlobalConfigDirectory( argv, filePath ) {
 * Set the globalLib prefix that will be used as the directory for the logger
 * and plugins within the config file
 */
-function setGlobalLibDirectory( argv ) {
-	var libDir = argv.l || argv.libPrefix || process.env.DEEPSTREAM_LIBRARY_DIRECTORY;
+function setGlobalLibDirectory( argv, config ) {
+	var libDir =
+			argv.l ||
+			argv.libDir ||
+			( config.libDir && fileUtils.lookupConfRequirePath( config.libDir ) ) ||
+			process.env.DEEPSTREAM_LIBRARY_DIRECTORY;
 	global.deepstreamLibDir = libDir;
 }
 
@@ -161,13 +186,14 @@ function verifyCustomConfigPath( configPath ) {
  * @returns {String} filePath
  */
 function getDefaultConfigPath() {
-	var defaultConfigBaseName = path.join( '.', 'conf', 'config' );
-	var filePath, i;
+	var filePath, i, k;
 
-	for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
-		filePath = defaultConfigBaseName + SUPPORTED_EXTENSIONS[ i ];
-		if( fileUtils.fileExistsSync( filePath ) ) {
-			return filePath;
+	for( k = 0; k < DEFAULT_CONFIG_DIRS.length; k++ ) {
+		for( i = 0; i < SUPPORTED_EXTENSIONS.length; i++ ) {
+			filePath = DEFAULT_CONFIG_DIRS[ k ] + SUPPORTED_EXTENSIONS[ i ];
+			if( fileUtils.fileExistsSync( filePath ) ) {
+				return filePath;
+			}
 		}
 	}
 
@@ -176,7 +202,7 @@ function getDefaultConfigPath() {
 
 /**
  * Handle the introduction of global enviroment variables within
- * the yaml file, allowing value substitution.
+ * the yml file, allowing value substitution.
  *
  * For example:
  * ```
@@ -184,7 +210,7 @@ function getDefaultConfigPath() {
  * port: $HOST_PORT
  * ```
  *
- * @param {String} fileContent The loaded yaml file
+ * @param {String} fileContent The loaded yml file
  *
  * @private
  * @returns {void}

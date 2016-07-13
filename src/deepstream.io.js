@@ -6,6 +6,9 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	messageParser = require( './message/message-parser' ),
 	readMessage = require( './utils/read-message' ),
+	EOL = require( 'os' ).EOL,
+	fs = require( 'fs' ),
+	path = require( 'path' ),
 	util = require( 'util' ),
 	utils = require( './utils/utils' ),
 	defaultOptions = require( './default-options' ),
@@ -17,8 +20,6 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	C = require( './constants/constants' ),
 	pkg = require( '../package.json' );
-
-require( 'colors' );
 
 const STATES = C.STATES;
 
@@ -49,7 +50,8 @@ var Deepstream = function( config ) {
 		'messageConnector',
 		'storage',
 		'cache',
-		'permissionHandler' //TODO: This now requires the permissionHandler to have a ready flag / emit events
+		'authenticationHandler',
+		'permissionHandler'
 	];
 
 };
@@ -91,6 +93,10 @@ Deepstream.readMessage = readMessage;
  * @returns {void}
  */
 Deepstream.prototype.set = function( key, value ) {
+	if( key === 'message' ) {
+		key = 'messageConnector';
+	}
+
 	if( this._options[ key ] === undefined ) {
 		throw new Error( 'Unknown option "' + key + '"' );
 	}
@@ -142,12 +148,13 @@ Deepstream.prototype._start = function() {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,  'deepstream version: ' + pkg.version );
 
 	// otherwise (no configFile) deepstream was invoked by API
-	if ( this._configFile != null ) {
+	if( this._configFile != null ) {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'configuration file loaded from ' + this._configFile );
 	}
 
-	var authTypeMsg = 'authentication type ' + ( this._options.authenticationHandler.type || 'custom' );
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, authTypeMsg );
+	if( global.deepstreamLibDir ) {
+		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'library directory set to: ' + global.deepstreamLibDir );
+	}
 
 	if( this._options.dataTransforms && this._options.dataTransforms instanceof Array ) {
 		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );
@@ -255,18 +262,19 @@ Deepstream.prototype._showStartLogo = function() {
 		return;
 	}
 	/* istanbul ignore next */
-	var logo =
-	' _____________________________________________________________________________\n'+
-	'                                                                              \n'+
-	'         /                                                             ,      \n'+
-	' ----__-/----__----__------__---__--_/_---)__----__----__---_--_-----------__-\n'+
-	'   /   /   /___) /___)   /   ) (_ ` /    /   ) /___) /   ) / /  )    /   /   )\n'+
-	' _(___/___(___ _(___ ___/___/_(__)_(_ __/_____(___ _(___(_/_/__/__o_/___(___/_\n'+
-	'                       /                                                      \n'+
-	'                      /                                                       \n'+
-	'=============================== STARTING... ==================================\n';
+	var logo;
+
+	try {
+		const nexeres = require( 'nexeres' );
+		logo = nexeres.get( 'ascii-logo.txt' ).toString( 'ascii' );
+	}
+	catch( e ) {
+		logo = fs.readFileSync( path.join(__dirname, '..', '/ascii-logo.txt'), 'utf8' );
+	}
+
 	/* istanbul ignore next */
-	process.stdout.write( this._options.colors ? logo.yellow : logo );
+	process.stdout.write( logo + EOL );
+	process.stdout.write( ' =========================   starting   ==========================' + EOL );
 };
 
 /**
