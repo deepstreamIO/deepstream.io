@@ -411,3 +411,60 @@ describe( 'record handler handles messages', function(){
 	});
 
 });
+
+
+describe( 'record handler handles messages', function(){
+	var recordHandler,
+		clientA = new SocketWrapper( new SocketMock(), {} ),
+		clientB = new SocketWrapper( new SocketMock(), {} ),
+		options = {
+			cache: new StorageMock(),
+			storage: new StorageMock(),
+			storageExclusion: new RegExp( 'no-storage'),
+			logger: new LoggerMock(),
+			messageConnector: noopMessageConnector,
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+		};
+
+	options.cache.nextGetWillBeSynchronous = true;
+
+	it( 'creates the record handler', function(){
+		recordHandler = new RecordHandler( options );
+		expect( recordHandler.handle ).toBeDefined();
+	});
+
+	it( 'creates record test', function(){
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|CR|test' ),
+			topic: 'R',
+			action: 'CR',
+			data: [ 'test' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|test|0|{}+' ) );
+	});
+
+	it( 'deletes record test', function(){
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|D|test' ),
+			topic: 'R',
+			action: 'D',
+			data: [ 'test' ]
+		});
+
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|A|D|test+' ) );
+	});
+
+	it( 'creates record test', function(){
+		clientA.socket.sendMessages = [];
+		recordHandler.handle( clientA, {
+			raw: msg( 'R|CR|test' ),
+			topic: 'R',
+			action: 'CR',
+			data: [ 'test' ]
+		});
+
+		expect( clientA.socket.sendMessages[ 0 ] ).not.toContain( 'MULTIPLE_SUBSCRIPTIONS' );
+		expect( clientA.socket.lastSendMessage ).toBe( msg( 'R|R|test|0|{}+' ) );
+	});
+});
