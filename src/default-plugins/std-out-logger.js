@@ -22,7 +22,7 @@ var StdOutLogger = function( options ) {
 		'red'
 	];
 
-	this._currentLogLevel = 0;
+	this._currentLogLevel = C.LOG_LEVEL[ this._options.logLevel ] || C.LOG_LEVEL.DEBUG;
 };
 
 /**
