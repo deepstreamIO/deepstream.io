@@ -108,11 +108,12 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
  *
  * @param   {String} name
  * @param   {SocketWrapper} socketWrapper
+ * @param 	{Boolean} silent supresses logs and unsubscribe ACK messages
  *
  * @public
  * @returns {void}
  */
-SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
+SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper, silent ) {
 	var msg, i;
 
 	for( i = 0; i < this._unsubscribeAllFunctions.length; i++ ) {
@@ -141,9 +142,11 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper ) {
 		this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
 	}
 
-	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
-	this._options.logger.log( C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg );
-	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ this._constants.UNSUBSCRIBE, name ] );
+	if( !silent ) {
+		var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
+		this._options.logger.log( C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg );
+		socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ this._constants.UNSUBSCRIBE, name ] );
+	}
 };
 
 /**
