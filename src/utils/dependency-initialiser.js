@@ -20,6 +20,14 @@ var DependencyInitialiser = function( options, name ) {
 	this._name = name;
 	this._timeout = null;
 
+	if( typeof this._dependency.on !== 'function' && typeof this._dependency.isReady === 'undefined' ) {
+		const errorMessage = `${this._name} needs to implement isReady or be an emitter`;
+		this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage );
+		const error = new Error( errorMessage );
+		error.code = 'PLUGIN_INITIALIZATION_ERROR';
+		throw error;
+	}
+
 	if( this._dependency.isReady ) {
 		this._onReady();
 	} else {

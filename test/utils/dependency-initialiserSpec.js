@@ -1,21 +1,32 @@
 /* global describe, it, expect, jasmine */
-var DependencyInitialiser = require( '../../src/utils/dependency-initialiser' ),
+var C = require( '../../src/constants/constants' ),
+  DependencyInitialiser = require( '../../src/utils/dependency-initialiser' ),
 	PluginMock = require( '../mocks/plugin-mock' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
 	EventEmitter = require( 'events' ).EventEmitter;
 
 describe( 'dependency-initialiser', function(){
+	var dependencyInitialiser;
 	var dependencyBInitialiser;
 
 	var options = {
 		pluginA: new PluginMock( 'A' ),
 		pluginB: new PluginMock( 'B' ),
 		pluginC: new PluginMock( 'C' ),
+		brokenPlugin: {},
 		logger: new LoggerMock(),
 		dependencyInitialisationTimeout: 10
 	};
 
+	it( 'throws an error if dependency doesnt implement emitter or has isReady', function(){
+		expect(function(){
+			new DependencyInitialiser( options, 'brokenPlugin' );
+		}).toThrow();
+		expect( options.logger.lastLogEvent ).toBe( C.EVENT.PLUGIN_INITIALIZATION_ERROR );
+	});
+
 	it( 'selects the correct plugin', function(){
+		options.logger.lastLogEvent = null;
 		dependencyBInitialiser = new DependencyInitialiser( options, 'pluginB' );
 		expect( dependencyBInitialiser.getDependency().name ).toBe( 'B' );
 		expect( options.logger.lastLogEvent ).toBe( null );
