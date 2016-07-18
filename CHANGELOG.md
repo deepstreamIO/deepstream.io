@@ -1,8 +1,14 @@
-## [Unreleased]
+## [1.0.1] - 2016-07-18
 
 ### Bug Fixes
 
 - Fix issue when try to pass options to the default logger [#288](https://github.com/deepstreamIO/deepstream.io/pull/288) ([update docs](https://github.com/deepstreamIO/deepstream.io-website/pull/35/commits/838617d93cf00e66176cdf06d161fd8f86574aa1) as well)
+
+- Fix issue deleting a record does not unsubscribe it and all other connections, not allowing resubscriptions to occur #293
+
+#### Enhancements
+
+###### Throw better error if dependency doesn't implement Emitter or isReady
 
 ## [1.0.0] - 2016-07-09
 
