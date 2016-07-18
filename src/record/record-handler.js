@@ -494,11 +494,32 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
 	}
 
 	if( socketWrapper === C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._$broadcastUpdate( recordName, message, socketWrapper );
-		return;
+		this._onDeleted( recordName, message, socketWrapper );
 	}
+	else {
+		new RecordDeletion( this._options, socketWrapper, message, this._onDeleted.bind( this ) );
+	}
+};
 
-	new RecordDeletion( this._options, socketWrapper, message, this._$broadcastUpdate.bind( this ) );
+/*
+ * Callback for completed deletions. Notifies subscribers of the delete and unsubscribes them
+ *
+ * @param   {String} name           record name
+ * @param   {Object} message        parsed and validated deepstream message
+ * @param   {SocketWrapper} originalSender the socket the update message was received from
+ *
+ * @package private
+ * @returns {void}
+ */
+RecordHandler.prototype._onDeleted = function( name, message, originalSender ) {
+	var subscribers = this._subscriptionRegistry.getSubscribers( name );
+	var i;
+
+	this._$broadcastUpdate( name, message, originalSender );
+	
+	for( i = 0; i < subscribers.length; i++ ) {
+		this._subscriptionRegistry.unsubscribe( name, subscribers[ i ], true );
+	}
 };
 
 /**
