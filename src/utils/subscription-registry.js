@@ -201,7 +201,7 @@ SubscriptionRegistry.prototype.isSubscriber = function( socketWrapper ) {
  */
 SubscriptionRegistry.prototype.getSubscribers = function( name ) {
 	if( this.hasSubscribers( name ) ) {
-		return this._subscriptions[ name ];
+		return this._subscriptions[ name ].slice();
 	} else {
 		return null;
 	}
