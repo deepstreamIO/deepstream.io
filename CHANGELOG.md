@@ -1,3 +1,9 @@
+## [1.0.2] - 2016-07-19
+
+### Bug Fixes
+
+- Fixed issue regarding last subscription to a deleted record not being cleared up
+
 ## [1.0.1] - 2016-07-18
 
 ### Bug Fixes
