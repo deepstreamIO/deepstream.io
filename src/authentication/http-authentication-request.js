@@ -12,9 +12,9 @@ module.exports = class HttpAuthenticationRequest{
 	/**
 	 * Creates and issues the request and starts the timeout
 	 *
-	 * @param   {Object}   data 		  Map with authData and connectionData
+	 * @param   {Object}   data           Map with authData and connectionData
 	 * @param   {Object}   settings       contains requestTimeout and permittedStatusCodes
-	 * @param   {Function} callback       Called with error, isAuthenticated, authData
+	 * @param   {Function} callback       Called with error, isAuthenticated, userData
 	 * @param 	{Logger}   logger
 	 *
 	 * @constructor

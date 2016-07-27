@@ -330,16 +330,16 @@ ConnectionEndpoint.prototype._sendInvalidAuthMsg = function( socketWrapper, msg 
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, data ) {
+ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, userData ) {
 	socketWrapper.socket.removeListener( 'message', socketWrapper.authCallBack );
 	socketWrapper.socket.once( 'close', this._onSocketClose.bind( this, socketWrapper ) );
 	socketWrapper.socket.on( 'message', function( msg ){ this.onMessage( socketWrapper, msg ); }.bind( this ));
-	socketWrapper.user = data.username || 'OPEN';
-	socketWrapper.authData = data.authData || null;
-	if( typeof data.clientData === 'undefined' ) {
+	socketWrapper.user = userData.username || 'OPEN';
+	socketWrapper.authData = userData.serverData || null;
+	if( typeof userData.clientData === 'undefined' ) {
 		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
 	} else {
-		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( data.clientData ) ] );
+		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( userData.clientData ) ] );
 	}
 
 	this._authenticatedSockets.push( socketWrapper );
@@ -382,20 +382,20 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( clientData, authDat
  *
  * @param   {Object} authData
  * @param   {SocketWrapper} socketWrapper
- * @param   {String} authError     String or null if auth succesfull
- * @param   {String} username
+ * @param   {Boolean} isAllowed
+ * @param   {Object} userData
  *
  * @private
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, isAllowed, data ) {
-	data = data || {};
+ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, isAllowed, userData ) {
+	userData = userData || {};
 
 	if( isAllowed === true ) {
-		this._registerAuthenticatedSocket( socketWrapper, data );
+		this._registerAuthenticatedSocket( socketWrapper, userData );
 	} else {
-		this._processInvalidAuth( data.clientData, authData, socketWrapper );//todo
+		this._processInvalidAuth( userData.clientData, authData, socketWrapper );//todo
 	}
 };
 

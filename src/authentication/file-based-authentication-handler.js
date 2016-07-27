@@ -69,11 +69,12 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 		}
 
 		if( this._settings.hash ) {
-			this._isValid( authData.password, userData.password, authData.username, userData.data, callback );
+			this._isValid( authData.password, userData.password, authData.username, userData.serverData, userData.clientData, callback );
 		} else if( authData.password === userData.password ) {
 			callback( true, {
 				username: authData.username,
-				authData: userData.data || null
+				serverData: typeof userData.serverData === 'undefined' ? null : userData.serverData,
+				clientData: typeof userData.serverData === 'undefined' ? null : userData.serverData
 			} );
 		} else {
 			callback( false );
@@ -168,14 +169,15 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 *
 	 * @param   {String}   password             the cleartext password the user provided
 	 * @param   {String}   passwordHashWithSalt the hash+salt combination from the users.json file
-	 * @param   {String}   username				as provided by user
-	 * @param   {Object}   authData             arbitrary authentication data that will be passed on to the permission handler
+	 * @param   {String}   username             as provided by user
+	 * @param   {Object}   serverData           arbitrary authentication data that will be passed on to the permission handler
+	 * @param   {Object}   clientData           arbitrary authentication data that will be passed on to the client
 	 * @param   {Function} callback             callback that will be invoked once hash is created
 	 *
 	 * @private
 	 * @returns {void}
 	 */
-	_isValid( password, passwordHashWithSalt, username, authData, callback ) {
+	_isValid( password, passwordHashWithSalt, username, serverData, clientData, callback ) {
 		var expectedHash = passwordHashWithSalt.substr( 0, this._base64KeyLength );
 		var salt = passwordHashWithSalt.substr( this._base64KeyLength );
 
@@ -185,7 +187,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 			this._settings.iterations,
 			this._settings.keyLength,
 			this._settings.hash,
-			this._compareHashResult.bind( this, expectedHash, username, authData, callback )
+			this._compareHashResult.bind( this, expectedHash, username, serverData, clientData, callback )
 		);
 	}
 
@@ -193,7 +195,8 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * Callback once hashing is completed
 	 *
 	 * @param   {String}   expectedHash     has as retrieved from users.json
-	 * @param   {Object}   authData         optional authentication meta data
+	 * @param   {Object}   serverData       arbitrary authentication data that will be passed on to the permission handler
+	 * @param   {Object}   clientData       arbitrary authentication data that will be passed on to the client
 	 * @param   {Function} callback         callback from isValidUser
 	 * @param   {Error}    error            error that occured during hashing
 	 * @param   {Buffer}   actualHashBuffer the buffer containing the bytes for the new hash
@@ -201,12 +204,13 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @private
 	 * @returns {void}
 	 */
-	_compareHashResult( expectedHash, username, authData, callback, error, actualHashBuffer ) {
+	_compareHashResult( expectedHash, username, serverData, clientData, callback, error, actualHashBuffer ) {
 		if( expectedHash === actualHashBuffer.toString( STRING_CHARSET ) ) {
 			//todo log error
 			callback( true, {
 				username: username,
-				clientData: authData || null
+				serverData: serverData || null,
+				clientData: clientData || null
 			} );
 		} else {
 			callback( false );

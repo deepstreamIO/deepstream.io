@@ -1,6 +1,6 @@
 var AuthenticationHandler = require( '../../src/authentication/file-based-authentication-handler' );
 
-var testPermission = function( settings ) {
+var testAuthentication = function( settings ) {
 	var authData = {
 		username: settings.username,
 		password: settings.password
@@ -8,9 +8,17 @@ var testPermission = function( settings ) {
 
 	var callback = function( result, data ) {
 		expect( result ).toBe( settings.expectedResult );
-		if( settings.authData ) {
-			expect( data.authData ).toEqual( settings.authData );
+
+		if( settings.expectedResult ) {
+			expect( data ).toEqual( {
+				username: settings.username,
+				serverData: settings.serverData,
+				clientData: settings.clientData
+			} );
+		} else {
+			expect( data ).toBeUndefined();
 		}
+
 		settings.done();
 	};
 
@@ -31,22 +39,24 @@ describe( 'does authentication for hashed passwords', function(){
 	});
 
 	it( 'confirms userC with valid password', function( done ){
-		testPermission({
+		testAuthentication({
 			username: 'userC',
 			password: 'userCPass',
-			expectedError: null,
 			expectedResult: true,
+			serverData: null,
+			clientData: null,
 			done: done,
 			handler: authenticationHandler
 		});
 	});
 
 	it( 'rejects userC with invalid password', function( done ){
-		testPermission({
+		testAuthentication({
 			username: 'userC',
 			password: 'userDPass',
-			expectedError: null,
 			expectedResult: false,
+			serverData: null,
+			clientData: null,
 			done: done,
 			handler: authenticationHandler
 		});
@@ -68,22 +78,21 @@ describe( 'does authentication for hashed passwords', function(){
 	});
 
 	it( 'confirms userA with valid password', function( done ){
-		testPermission({
+		testAuthentication({
 			username: 'userA',
 			password: 'userAPass',
-			expectedError: null,
 			expectedResult: true,
-			expectedData: { "some": "values" },
+			serverData: { "some": "values" },
+			clientData: { "all": "othervalue" },
 			done: done,
 			handler: authenticationHandler
 		});
 	});
 
 	it( 'rejects userA with an invalid password', function( done ){
-		testPermission({
+		testAuthentication({
 			username: 'userA',
 			password: 'wrongPassword',
-			expectedError: null,
 			expectedResult: false,
 			done: done,
 			handler: authenticationHandler
@@ -91,10 +100,9 @@ describe( 'does authentication for hashed passwords', function(){
 	});
 
 	it( 'rejects userA with user B\'s password', function( done ){
-		testPermission({
+		testAuthentication({
 			username: 'userA',
 			password: 'userBPass',
-			expectedError: null,
 			expectedResult: false,
 			done: done,
 			handler: authenticationHandler
@@ -102,21 +110,21 @@ describe( 'does authentication for hashed passwords', function(){
 	});
 
 	it( 'accepts userB with user B\'s password', function( done ){
-		testPermission({
+		testAuthentication({
 			username: 'userB',
 			password: 'userBPass',
-			expectedError: null,
 			expectedResult: true,
+			serverData: null,
+			clientData: { "all": "client data" },
 			done: done,
 			handler: authenticationHandler
 		});
 	});
 
 	it( 'rejects unknown userQ', function( done ){
-		testPermission({
+		testAuthentication({
 			username: 'userQ',
 			password: 'userBPass',
-			expectedError: null,
 			expectedResult: false,
 			done: done,
 			handler: authenticationHandler

@@ -16,7 +16,7 @@ permissionHandler = {
         callback( true, {
         	username: 'someUser',
         	clientData: { firstname: 'Wolfram' },
-        	authData: { role: authData.role }
+        	serverData: { role: authData.role }
         });
     },
     canPerformAction: function( username, message, callback, data ) {
