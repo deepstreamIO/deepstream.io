@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Bug Fixes
+
+- CLI: installer for connectors sometimes fail to download (and extract) the archive [#305](https://github.com/deepstreamIO/deepstream.io/issues/305)
+- CLI: detach mode fails on package binary [#246](https://github.com/deepstreamIO/deepstream.io/issues/246)
+
 ## [1.0.2] - 2016-07-19
 
 ### Bug Fixes
