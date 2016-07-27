@@ -36,7 +36,7 @@ xdescribe('Command Line Interface', function() {
 		if ( IS_WIN ) {
 			return;
 		}
-		child_process.exec( 'node bin/deepstream start --detach', execOptions );
+		child_process.exec( 'node bin/deepstream start &', execOptions );
 		let output = '';
 		while ( output.indexOf( 'process running with PID' ) === -1 ) {
 			output = child_process.spawnSync( 'node', ['bin/deepstream', 'status'], execOptions ).stdout;
@@ -51,7 +51,7 @@ xdescribe('Command Line Interface', function() {
 		if ( !IS_WIN ) {
 			return;
 		}
-		const result = child_process.spawnSync( 'node', ['bin/deepstream', 'start', '--detach'], execOptions );
+		const result = child_process.spawnSync( 'node', ['bin/deepstream', 'start', '&'], execOptions );
 		expect( result.status ).toEqual( 1 );
 		expect( result.stderr ).toContain( 'windows' );
 		expect( result.stdout === '' ).toBe( true );
@@ -66,7 +66,7 @@ xdescribe('Command Line Interface', function() {
 		while ( output.indexOf( 'process running with PID' ) === -1 ) {
 			output = child_process.spawnSync( 'node', ['bin/deepstream', 'status'], execOptions ).stdout;
 		}
-		const startDetachResult = child_process.spawnSync( 'node', ['bin/deepstream', 'start', '-d'], execOptions );
+		const startDetachResult = child_process.spawnSync( 'node', ['bin/deepstream', 'start', '&'], execOptions );
 		expect( startDetachResult.status ).toEqual( 1 );
 		expect( startDetachResult.stderr ).toContain( 'server is already running' );
 		expect( startDetachResult.stdout === '' ).toBe( true );
@@ -85,7 +85,7 @@ xdescribe('Command Line Interface', function() {
 		const fileContent = fs.readFileSync( pidHelper.PID_FILE, 'utf8' );
 		const pidFileContent = JSON.parse( fileContent );
 		fs.unlinkSync( pidHelper.PID_FILE );
-		const startDetachResult = child_process.spawnSync( 'node', ['bin/deepstream', 'start', '-d'], execOptions );
+		const startDetachResult = child_process.spawnSync( 'node', ['bin/deepstream', 'start', '&'], execOptions );
 		expect( startDetachResult.status ).toEqual( 1 );
 		expect( startDetachResult.stdout === '' ).toBe( true );
 		expect( startDetachResult.stderr === '' ).toBe( false );
