@@ -66,6 +66,7 @@ plugins:
 storageExclusion: null # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
 
 # Security
+unauthenticatedClientTimeout: 180000 # amount of time a connection can remain open while not being logged in
 maxAuthAttempts: 3 # invalid login attempts before the connection is cut
 logInvalidAuthData: true # if true, the logs will contain the cleartext username / password of invalid login attempts
 maxMessageSize: 1048576 # maximum allowed size of an individual message in bytes

@@ -85,8 +85,6 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._timeout = null;
 	this._msgNum = 0;
 	this._authenticatedSockets = [];
-	this._authDisconnectTimers = [];
-	this._authenticationTimeout = 5000;
 };
 
 util.inherits( ConnectionEndpoint, events.EventEmitter );
@@ -115,11 +113,6 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
  * @returns {void}
  */
 ConnectionEndpoint.prototype.close = function() {
-	//Clear disconnect timeouts
-	for (var i = 0; i < this._authDisconnectTimers.length; i++) {
-		clearTimeout( this._authDisconnectTimers[i] );
-	}
-
 	// Close the engine.io server
 	if( this._engineIo ) {
 		this._closeEngineIoServer();
@@ -246,16 +239,15 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
 
-	var disconnectTimer = setTimeout( function() {
-		socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, messageBuilder.typed( 'client forcefully disconneted' ) );
-		socketWrapper.destroy();
-	}, this._authenticationTimeout );
-	this._authDisconnectTimers.push( disconnectTimer );
+	if( this._options.unauthenticatedClientTimeout !== null ) {
+		disconnectTimer = setTimeout( this._processConnectionTimeout.bind( this, socketWrapper ), this._options.unauthenticatedClientTimeout );
+		socketWrapper.socket.once( 'close', clearTimeout.bind( null, disconnectTimer ) );
+	}
 
 	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper, disconnectTimer );
 
 	socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.ACK );
-	
+
 	socket.on( 'message', socketWrapper.authCallBack );
 };
 
@@ -265,19 +257,18 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
  * the case and - if so - forwards it to the permission handler for authentication
  *
  * @param   {SocketWrapper} socketWrapper
+ * @param   {Timeout} disconnectTimeout
  * @param   {String} authMsg
  *
  * @private
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, disconnectTimer, authMsg ) {
+ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, disconnectTimeout, authMsg ) {
 	var msg = messageParser.parse( authMsg )[ 0 ],
 		logMsg,
 		authData,
 		errorMsg;
-
-	clearTimeout( disconnectTimer );
 
 	/**
 	 * Log the authentication attempt
@@ -316,7 +307,7 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 	this._options.authenticationHandler.isValidUser(
 		socketWrapper.getHandshakeData(),
 		authData,
-		this._processAuthResult.bind( this, authData, socketWrapper )
+		this._processAuthResult.bind( this, authData, socketWrapper, disconnectTimeout )
 	);
 };
 
@@ -397,6 +388,23 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( clientData, authDat
 };
 
 /**
+ * Callback for connections that have not authenticated succesfully within
+ * the expected timeframe
+ *
+ * @param   {SocketWrapper} socketWrapper
+ *
+ * @private
+ *
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype._processConnectionTimeout = function( socketWrapper ) {
+	var log = 'connection has not authenticated successfully in the expected time';
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log );
+	socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, messageBuilder.typed( log ) );
+	socketWrapper.destroy();
+};
+
+/**
  * Callback for the results returned by the permissionHandler
  *
  * @param   {Object} authData
@@ -408,8 +416,10 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( clientData, authDat
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, isAllowed, userData ) {
+ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, disconnectTimeout, isAllowed, userData ) {
 	userData = userData || {};
+
+	clearTimeout( disconnectTimeout );
 
 	if( isAllowed === true ) {
 		this._registerAuthenticatedSocket( socketWrapper, userData );
