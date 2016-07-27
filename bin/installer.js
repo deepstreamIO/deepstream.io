@@ -89,33 +89,22 @@ const downloadRelease = function( releases, type, name, version, outputDir, call
  * @return {void}
  */
 const downloadArchive = function( urlPath, outStream, callback ) {
-	try {
-		needle.get( 'https://github.com' + urlPath, {
-			follow_max: 5,
-			headers: {'User-Agent': 'nodejs-client'}
-		} )
-		.on( 'readable', function() {
-			if ( process.env.VERBOSE ) {
-				process.stdout.write( '.'.grey );
-			}
-		} )
-		.on( 'end', function() {
-			if ( process.env.VERBOSE ) {
-				process.stdout.clearLine();
-				process.stdout.cursorTo( 0 );
-				process.stdout.write( 'Download complete' + '\n' );
-			}
-			return callback();
-		} )
-		.pipe( outStream )
-		.on( 'error', function( err ) {
-			// TODO: if the outStream throws an error callback will be
-			// called twice, need to figure out, how to solve, maybe with 'pump'
-			console.error( 'Error while saving the archive', err );
-		} );
-	} catch ( err ) {
-		return callback( err );
-	}
+	needle.get( 'https://github.com' + urlPath, {
+		follow_max: 5,
+		headers: {'User-Agent': 'nodejs-client'}
+	}, (error, response) => {
+		if ( error ) {
+			return callback( error );
+		}
+		outStream.write(response.body)
+		outStream.end()
+		if ( process.env.VERBOSE ) {
+			process.stdout.clearLine();
+			process.stdout.cursorTo( 0 );
+			process.stdout.write( 'Download complete' + '\n' );
+		}
+		return callback()
+	} )
 };
 
 /**
@@ -136,13 +125,17 @@ const fetchReleases = function( type, name, callback ) {
 		console.log( 'searching for ' + repo );
 	}
 	needle.get( 'https://api.github.com' + urlPath, {
-		headers: {'User-Agent': 'nodejs-client'}
+		headers: {'User-Agent': 'nodejs-client'},
 	}, function( error, response ) {
 		if ( error ) {
 			return callback( error );
 		}
 		if ( response.statusCode === 404 ) {
 			return callback( new Error( 'Not found, see available connectors on https://deepstream.io/download' ) );
+		}
+		if ( response.statusCode == 403 ) {
+			// API rate limit
+			return callback( new Error(response.body.message))
 		}
 		callback( null, response.body );
 	} );
