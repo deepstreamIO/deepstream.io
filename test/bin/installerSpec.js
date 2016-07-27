@@ -171,7 +171,9 @@ describe( 'installer', function() {
 				} );
 			},
 			// request handler for all other requests, not starting with 'https://api'
-			dummyReadStream( {error: new Error( 'dummy-stream-read-error' )} )
+			function( urlPath, options, callback ) {
+				return callback( new Error('dummy-stream-read-error'))
+			}
 		);
 		spyOn( mkdirp, 'sync' );
 		needleMock['@noCallThru'] = true;
@@ -182,35 +184,6 @@ describe( 'installer', function() {
 
 		installer( {type: 'foo', name: 'bar', version: '1.2.3'}, function( error ) {
 			expect( error.toString() ).toContain( 'dummy-stream-read-error' );
-			done();
-		} );
-	} );
-
-	// error handling doesn't work yet, see downloadArchive()
-	xit( 'error while saving the archive', function( done ) {
-		const fsMock = {
-			createWriteStream: dummyWritedStream( {error: new Error( 'dummy-stream-write-error' )} )
-		};
-		const needleMock = new Needle(
-			// request handler for fetching all releases
-			function( urlPath, options, callback ) {
-				return callback( null, {
-					statusCode: 200,
-					body: [{ tag_name: '1.2.3', assets: assets }]
-				} );
-			},
-			// request handler for all other requests, not starting with 'https://api'
-			dummyReadStream()
-		);
-		spyOn( mkdirp, 'sync' );
-		needleMock['@noCallThru'] = true;
-		var installer = proxyquire( '../../bin/installer', {
-			needle: needleMock,
-			fs: fsMock
-		} );
-
-		installer( {type: 'foo', name: 'bar', version: '1.2.3', verbose: true}, function( error ) {
-			expect( error.toString() ).toContain( 'dummy-stream-write-error' );
 			done();
 		} );
 	} );
@@ -231,7 +204,9 @@ describe( 'installer', function() {
 				} );
 			},
 			// request handler for all other requests, not starting with 'https://api'
-			dummyReadStream()
+			function( urlPath, options, callback ) {
+				return callback( null, {body: ''})
+			}
 		);
 		spyOn( mkdirp, 'sync' );
 		needleMock['@noCallThru'] = true;
@@ -263,7 +238,9 @@ describe( 'installer', function() {
 				} );
 			},
 			// request handler for all other requests, not starting with 'https://api'
-			dummyReadStream()
+			function( urlPath, options, callback ) {
+				return callback( null, {body: ''})
+			}
 		);
 		const zipConstructor = jasmine.createSpy( 'callback' );
 		const zipExtractor = jasmine.createSpy( 'callback' );
