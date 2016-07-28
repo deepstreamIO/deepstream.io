@@ -21,6 +21,7 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	connectionEndpoint;
 
 options = {
+	unauthenticatedClientTimeout: null,
 	permissionHandler: permissionHandlerMock,
 	authenticationHandler: authenticationHandlerMock,
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
@@ -146,6 +147,26 @@ describe( 'connection endpoint', function() {
 			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|TOO_MANY_AUTH_ATTEMPTS|Stoo many authentication attempts+' ) );
 			expect( socketMock.isDisconnected ).toBe( true );
+		});
+	});
+
+	describe( 'disconnects client if authentication timeout is exceeded', function(){
+
+		beforeAll( function() {
+			options.unauthenticatedClientTimeout = 100;
+			socketMock = engineIoMock.simulateConnection();
+		} );
+
+		afterAll( function() {
+			options.unauthenticatedClientTimeout = null;
+		} );
+
+		it( 'disconnects client after timeout and sends force close', function( done ){
+			setTimeout( function() {
+				expect( socketMock.lastSendMessage ).toBe( _msg( 'C|E|CONNECTION_AUTHENTICATION_TIMEOUT|Sconnection has not authenticated successfully in the expected time+') );
+				expect( socketMock.isDisconnected ).toBe( true );
+				done();
+			}, 150 );
 		});
 	});
 

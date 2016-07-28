@@ -228,7 +228,8 @@ ConnectionEndpoint.prototype._checkClosed = function() {
 ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 	var socketWrapper = new SocketWrapper( socket, this._options ),
 		handshakeData = socketWrapper.getHandshakeData(),
-		logMsg;
+		logMsg,
+		disconnectTimer;
 
 	if( endpoint === ENGINE_IO ) {
 		logMsg = 'from ' + handshakeData.referer + ' (' + handshakeData.remoteAddress + ')' + ' via engine.io';
@@ -237,8 +238,16 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 	}
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
-	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper );
+
+	if( this._options.unauthenticatedClientTimeout !== null ) {
+		disconnectTimer = setTimeout( this._processConnectionTimeout.bind( this, socketWrapper ), this._options.unauthenticatedClientTimeout );
+		socketWrapper.socket.once( 'close', clearTimeout.bind( null, disconnectTimer ) );
+	}
+
+	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper, disconnectTimer );
+
 	socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.ACK );
+
 	socket.on( 'message', socketWrapper.authCallBack );
 };
 
@@ -248,13 +257,14 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
  * the case and - if so - forwards it to the permission handler for authentication
  *
  * @param   {SocketWrapper} socketWrapper
+ * @param   {Timeout} disconnectTimeout
  * @param   {String} authMsg
  *
  * @private
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, authMsg ) {
+ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, disconnectTimeout, authMsg ) {
 	var msg = messageParser.parse( authMsg )[ 0 ],
 		logMsg,
 		authData,
@@ -297,7 +307,7 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 	this._options.authenticationHandler.isValidUser(
 		socketWrapper.getHandshakeData(),
 		authData,
-		this._processAuthResult.bind( this, authData, socketWrapper )
+		this._processAuthResult.bind( this, authData, socketWrapper, disconnectTimeout )
 	);
 };
 
@@ -378,6 +388,23 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( clientData, authDat
 };
 
 /**
+ * Callback for connections that have not authenticated succesfully within
+ * the expected timeframe
+ *
+ * @param   {SocketWrapper} socketWrapper
+ *
+ * @private
+ *
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype._processConnectionTimeout = function( socketWrapper ) {
+	var log = 'connection has not authenticated successfully in the expected time';
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log );
+	socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, messageBuilder.typed( log ) );
+	socketWrapper.destroy();
+};
+
+/**
  * Callback for the results returned by the permissionHandler
  *
  * @param   {Object} authData
@@ -389,8 +416,10 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( clientData, authDat
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, isAllowed, userData ) {
+ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, disconnectTimeout, isAllowed, userData ) {
 	userData = userData || {};
+
+	clearTimeout( disconnectTimeout );
 
 	if( isAllowed === true ) {
 		this._registerAuthenticatedSocket( socketWrapper, userData );

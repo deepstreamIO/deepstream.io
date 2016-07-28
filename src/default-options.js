@@ -64,6 +64,7 @@ exports.get = function() {
 		/*
 		 * Security
 		 */
+		unauthenticatedClientTimeout: 180000,
 		maxAuthAttempts: 3,
 		logInvalidAuthData: true,
 		maxMessageSize: 1048576,

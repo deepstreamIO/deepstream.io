@@ -3,8 +3,18 @@
 ### Bug Fixes
 
 - CLI: installer for connectors sometimes fail to download (and extract) the archive [#305](https://github.com/deepstreamIO/deepstream.io/issues/305)
-- CLI: detach mode fails on package binary [#246](https://github.com/deepstreamIO/deepstream.io/issues/246)
 - Auth: File authentication doesn't contain `serverData` and `clientData` [#304](https://github.com/deepstreamIO/deepstream.io/issues/304)
+
+###### Read data using `FileAuthentication` using clientData and serverData rather than data
+
+```yaml
+userA:
+  password: tsA+yfWGoEk9uEU/GX1JokkzteayLj6YFTwmraQrO7k=75KQ2Mzm
+  serverData:
+    role: admin
+  clientData:
+    nickname: Dave
+```
 
 ### Features
 
