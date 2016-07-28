@@ -15,7 +15,6 @@ module.exports = function( program ) {
 
 		.option( '-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files' )
 		.option( '-l, --lib-dir [directory]', 'path where to lookup for plugins like connectors and logger' )
-		.option( '-d, --detach', 'detach the deepstream server process' )
 
 		.option( '--server-name <name>', 'Each server within a cluster needs a unique name' )
 		.option( '--web-server-enabled [true|false]', 'Accept/Decline incoming HTTP connections', parseBoolean.bind( null, '--web-server-enabled' ) )
@@ -33,69 +32,21 @@ module.exports = function( program ) {
 
 function action() {
 	global.deepstreamCLI = this;
-
-	if ( this.detach ) {
-		// --detach is not supported for windows
-		if ( os.platform() === 'win32' ) {
-			console.error( 'detached mode not supported on windows' );
-			process.exit( 1 );
-		}
-		// proxy arguments from commander to the spawing process
-		const args = [];
-		if ( this.config != null ) {
-			args.push( '--config' );
-			args.push( this.config );
-		}
-		if ( this.libDir != null ) {
-			args.push( '--lib-dir' );
-			args.push( this.libDir );
-		}
-		// TODO: need to pass other options as well, which are accessable directly as properties of this
-		//       but need to transform camelCase back to kebabCase, like tcpPort
-
-		// ensure there is no pid file with a running process
-		pidHelper.ensureNotRunning( function( err ) {
-			if ( err ) {
-				return pidHelper.exit( err );
-			}
-			const child = child_process.spawn( path.join(__dirname, 'deepstream') , ['start'].concat( args ), {
-				detached: true,
-				stdio: [ 'ignore']
-			} );
-			const WAIT_FOR_ERRORS = 3000;
-			// register handler if the child process will fail within WAIT_FOR_ERRORS period
-			child.on( 'close', detachErrorHandler );
-			child.on( 'exit', detachErrorHandler );
-			child.unref();
-			// wait, maybe ther is an error during startup
-			setTimeout( function() {
-				console.log( 'process was detached with pid ' + child.pid );
-				process.exit( 0 );
-			}, WAIT_FOR_ERRORS );
+	const Deepstream = require( '../src/deepstream.io.js' );
+	try {
+		process.on( 'uncaughtException', pidHelper.exit );
+		var ds = new Deepstream( null );
+		ds.on( 'started', function() {
+			pidHelper.save( process.pid );
 		} );
-	} else {
-		// non-detach casee
-		const Deepstream = require( '../src/deepstream.io.js' );
-		try {
-			process.on( 'uncaughtException', pidHelper.exit );
-			var ds = new Deepstream( null );
-			ds.on( 'started', function() {
-				pidHelper.save( process.pid );
-			} );
-			ds.start();
-		} catch ( err ) {
-			console.error( err.toString() );
-			process.exit( 1 );
-		}
-		process.
-			removeAllListeners( 'SIGINT' ).on( 'SIGINT', pidHelper.exit ).
-			removeAllListeners( 'SIGTERM' ).on( 'SIGTERM', pidHelper.exit );
+		ds.start();
+	} catch ( err ) {
+		console.error( err.toString() );
+		process.exit( 1 );
 	}
-}
-
-function detachErrorHandler() {
-	console.error( 'Error during detaching the deepstream process, see logs or run without --detach'.red );
-	process.exit( 1 );
+	process.
+		removeAllListeners( 'SIGINT' ).on( 'SIGINT', pidHelper.exit ).
+		removeAllListeners( 'SIGTERM' ).on( 'SIGTERM', pidHelper.exit );
 }
 
 /**
