@@ -4,9 +4,20 @@
 
 - CLI: installer for connectors sometimes fail to download (and extract) the archive [#305](https://github.com/deepstreamIO/deepstream.io/issues/305)
 - CLI: detach mode fails on package binary [#246](https://github.com/deepstreamIO/deepstream.io/issues/246)
-
+- Auth: File authentication doesn't contain `serverData` and `clientData` [#304](https://github.com/deepstreamIO/deepstream.io/issues/304)
 ## [1.0.2] - 2016-07-19
 
+### Features
+
+###### Make connection timeout
+
+Users can now provide a `unauthenticatedClientTimeout` that forces connections to close if they don't authenticate in time.
+This helps reduce load on server by terminating idle connections.
+
+- null: Disable timeout
+- number: Time in milliseconds before connection is terminated
+
+## [1.0.2] - 2016-07-19
 ### Bug Fixes
 
 - Fixed issue regarding last subscription to a deleted record not being cleared up
