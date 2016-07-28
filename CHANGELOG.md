@@ -1,4 +1,4 @@
-## [Unreleased]
+## [1.0.3] - 2016-07-28
 
 ### Bug Fixes
 
@@ -20,7 +20,7 @@ userA:
 
 ###### Make connection timeout
 
-Users can now provide a `unauthenticatedClientTimeout` that forces connections to close if they don't authenticate in time.
+Users can now provide a `unauthenticatedClientTimeout` config option that forces connections to close if they don't authenticate in time.
 This helps reduce load on server by terminating idle connections.
 
 - `null`: Disable timeout
