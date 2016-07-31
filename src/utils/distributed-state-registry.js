@@ -17,6 +17,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		this._options.messageConnector.subscribe( topic, this._processIncomingMessage.bind( this ) );
 		this._data = {};
 		this._reconciliationTimeouts = {};
+		this._fullStateSent = false;
 	}
 
 	add( name ) {
@@ -144,11 +145,15 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		}
 	}
 
+	_resetFullStateSent() {
+		this._fullStateSent = false;
+	}
+
 	_sendFullState() {
 		var localState = [], name;
 
 		for( name in this._data ) {
-			if( this._data[ name ].nodes[ serverName ] ) {
+			if( this._data[ name ].nodes[ this._options.serverName ] ) {
 				localState.push( name );
 			}
 		}
@@ -158,6 +163,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 			action: C.EVENT.DISTRIBUTED_STATE_FULL_STATE,
 			data: [ this._options.serverName, localState ]
 		});
+
+		this._fullStateSent = true;
+		setTimeout( this._resetFullStateSent.bind( this ), this._options.stateReconciliationTimeout );
 	}
 
 	_applyFullState( serverName, names ) {
@@ -192,7 +200,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		}
 
 		else if( message.action === C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE ) {
-			if( message.data[ 0 ] === this._options.serverName ) {
+			if( message.data[ 0 ] === this._options.serverName && this._fullStateSent === false ) {
 				this._sendFullState();
 			}
 		}
