@@ -25,7 +25,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		expect( options.messageConnector.lastPublishedMessage ).toEqual({
 			topic: 'TEST_TOPIC',
 			action: 'DISTRIBUTED_STATE_ADD',
-			data: [ 'test-name-a', 'server-name-a', 1052 ]
+			data: [ 'test-name-a', 'server-name-a', 2467841850 ]
 		});
 
 		expect( callback ).toHaveBeenCalledWith( 'test-name-a' );
@@ -42,7 +42,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		expect( options.messageConnector.lastPublishedMessage ).toEqual({
 			topic: 'TEST_TOPIC',
 			action: 'DISTRIBUTED_STATE_ADD',
-			data: [ 'test-name-b', 'server-name-a', 2105 ]
+			data: [ 'test-name-b', 'server-name-a', 4935683701 ]
 		});
 
 		expect( callback ).toHaveBeenCalledWith( 'test-name-b' );
@@ -70,7 +70,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		options.messageConnector.simulateIncomingMessage({
 			topic: 'TEST_TOPIC',
 			action: 'DISTRIBUTED_STATE_ADD',
-			data: [ 'test-name-c', 'server-name-b', 1054 ]
+			data: [ 'test-name-c', 'server-name-b', 2467841852 ]
 		});
 
 		expect( options.messageConnector.lastPublishedTopic ).toBe( null );
@@ -87,7 +87,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		options.messageConnector.simulateIncomingMessage({
 			topic: 'TEST_TOPIC',
 			action: 'DISTRIBUTED_STATE_ADD',
-			data: [ 'test-name-d', 'server-name-b', 2109 ]
+			data: [ 'test-name-d', 'server-name-b', 4935683705 ]
 		});
 
 		expect( options.messageConnector.lastPublishedTopic ).toBe( null );
@@ -104,7 +104,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		options.messageConnector.simulateIncomingMessage({
 			topic: 'TEST_TOPIC',
 			action: 'DISTRIBUTED_STATE_ADD',
-			data: [ 'test-name-c', 'server-name-c', 1054 ]
+			data: [ 'test-name-c', 'server-name-c', 2467841852 ]
 		});
 
 		expect( options.messageConnector.lastPublishedTopic ).toBe( null );
@@ -124,7 +124,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		expect( options.messageConnector.lastPublishedMessage ).toEqual({
 			topic: 'TEST_TOPIC',
 			action: 'DISTRIBUTED_STATE_REMOVE',
-			data: [ 'test-name-a', 'server-name-a', 1053 ]
+			data: [ 'test-name-a', 'server-name-a', 2467841851 ]
 		});
 		expect( callback ).toHaveBeenCalledWith( 'test-name-a' );
 		expect( registry.getAll() ).toEqual([ 'test-name-b', 'test-name-c', 'test-name-d' ]);
@@ -138,7 +138,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		options.messageConnector.simulateIncomingMessage({
 			topic: 'TEST_TOPIC',
 			action: 'DISTRIBUTED_STATE_REMOVE',
-			data: [ 'test-name-d', 'server-name-b', 1054 ]
+			data: [ 'test-name-d', 'server-name-b', 2467841852 ]
 		});
 
 		expect( options.messageConnector.lastPublishedTopic ).toBe( null );
@@ -180,6 +180,15 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		expect( callback ).toHaveBeenCalledWith( 'test-name-c' );
 		expect( registry.getAll() ).toEqual([ 'test-name-b' ]);
 	});
+
+	it( 'ensures that no reconciliation messages where pending', function( done ){
+		options.messageConnector.reset();
+		setTimeout(function(){
+			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
+			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
+			done();
+		}, 50 );
+	});
 });
 
 describe( 'distributed-state-registry reconciles states', function(){
@@ -205,7 +214,7 @@ describe( 'distributed-state-registry reconciles states', function(){
 		options.messageConnector.simulateIncomingMessage({
 			topic: 'TEST_TOPIC',
 			action: 'DISTRIBUTED_STATE_ADD',
-			data: [ 'test-name-z', 'server-name-b', 1077 ] // should be 1054
+			data: [ 'test-name-z', 'server-name-b', 666 ] // should be 2467841875
 		});
 
 		expect( options.messageConnector.lastPublishedTopic ).toBe( null );

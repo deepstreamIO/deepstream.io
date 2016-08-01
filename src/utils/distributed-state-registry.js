@@ -228,7 +228,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		var checkSum = 0, i;
 
 		for( i = 0; i < name.length; i++ ) {
-			checkSum += name.charCodeAt( i );
+			checkSum = ( ( checkSum << 5 ) - checkSum ) + name.charCodeAt( i );
 		}
 
 		return checkSum;
