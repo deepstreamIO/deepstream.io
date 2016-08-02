@@ -10,38 +10,63 @@ var ListenerRegistry = require( '../../src/utils/listener-registry' ),
 describe( 'listener-registry', function(){
     var listenerRegistry,
         options = { logger: new LoggerMock() },
-        recordSubscriptionRegistryMock = { getNames: function() { return [ 'car/Mercedes', 'car/Abarth' ]; } },
-        listeningSocket = new SocketWrapper( new SocketMock(), options );
+        recordSubscriptionRegistryMock = {
+            getNames: function() {
+                return [ 'car/Mercedes', 'car/Abarth' ];
+            }
+        };
 
-    it( 'creates the listener registry', function(){
+    beforeEach(function() {
+        listeningSocket = new SocketWrapper( new SocketMock(), options );
         listenerRegistry = new ListenerRegistry( 'R', options, recordSubscriptionRegistryMock );
         expect( typeof listenerRegistry.addListener ).toBe( 'function' );
     });
 
-    it( 'adds a listener', function() {
-        var message = {
-            topic: 'R',
-            action: 'L',
-            data: [ 'user\/[A-Za-z]*$' ]
-        };
+    function addListener(topic, action, data) {
+        updateListenerRegistry(topic, action, data)
+    }
 
-        listenerRegistry.addListener( listeningSocket, message );
+    function removeListener(topic, action, data) {
+        updateListenerRegistry(topic, action, data, {removeListener: true})
+    }
+
+    function updateListenerRegistry(topic, action, data, options) {
+        if ( options == null ) {
+            options = {}
+        }
+        var message = {
+            topic: topic,
+            action: action,
+            data: data
+        };
+        if (options.removeListener) {
+            listenerRegistry.removeListener( listeningSocket, message );
+        } else {
+            listenerRegistry.addListener( listeningSocket, message );
+        }
+    }
+
+    it( 'adds a listener', function() {
+        addListener('R', 'L', [ 'user\/[A-Za-z]*$' ])
         expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|A|L|user\/[A-Za-z]*$+' ) );
-    });
+    })
 
     it( 'makes a subscription that matches the listener\'s pattern', function(){
-       listenerRegistry.onSubscriptionMade( 'user/Wolfram' );
-       expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|SP|user\/[A-Za-z]*$|user/Wolfram+' ) );
+        addListener('R', 'L', [ 'user\/[A-Za-z]*$' ])
+        listenerRegistry.onSubscriptionMade( 'user/Wolfram' );
+        expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|SP|user\/[A-Za-z]*$|user/Wolfram+' ) );
     });
 
     it( 'makes a subscription that doesn\'t match the listener\'s pattern', function(){
-       listenerRegistry.onSubscriptionMade( 'user/Egon22' );
-       expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|SP|user\/[A-Za-z]*$|user/Wolfram+' ) );
+        addListener('R', 'L', [ 'user\/[A-Za-z]*$' ])
+        listenerRegistry.onSubscriptionMade( 'user/Egon22' );
+        expect( listeningSocket.socket.lastSendMessage ).not.toContain( msg( 'Egon' ) );
     });
 
     it( 'makes a second subscription that matches the listener\'s pattern', function(){
-       listenerRegistry.onSubscriptionMade( 'user/Arthur' );
-       expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|SP|user\/[A-Za-z]*$|user/Arthur+' ) );
+        addListener('R', 'L', [ 'user\/[A-Za-z]*$' ])
+        listenerRegistry.onSubscriptionMade( 'user/Arthur' );
+        expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|SP|user\/[A-Za-z]*$|user/Arthur+' ) );
     });
 
     it( 'requests a snapshot of the listeners', function() {
@@ -56,40 +81,33 @@ describe( 'listener-registry', function(){
     });
 
     it( 'removes the listener', function() {
-        var message = {
-              topic: 'R',
-              action: 'UL',
-              data: [ 'user\/[A-Za-z]*$' ]
-        };
-       listenerRegistry.removeListener( listeningSocket, message );
-       expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|A|UL|user\/[A-Za-z]*$+' ) );
+        addListener('R', 'L', [ 'user\/[A-Za-z]*$' ])
+        removeListener('R', 'UL', [ 'user\/[A-Za-z]*$' ])
+        expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|A|UL|user\/[A-Za-z]*$+' ) );
     });
 
     it( 'makes a third subscription that matches the now removed listener\'s pattern', function(){
-       listenerRegistry.onSubscriptionMade( 'user/Yasser' );
-       expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|A|UL|user\/[A-Za-z]*$+' ) );
+        addListener('R', 'L', [ 'user\/[A-Za-z]*$' ])
+        removeListener('R', 'UL', [ 'user\/[A-Za-z]*$' ])
+        listenerRegistry.onSubscriptionMade( 'user/Yasser' );
+        expect( listeningSocket.socket.lastSendMessage ).not.toContain( 'Yasser' );
     });
 
     it( 'adds a listener with a pattern for which subscriptions already exists', function() {
-        var message = {
-            topic: 'R',
-            action: 'L',
-            data: [ 'car\/[A-Za-z]*$' ]
-        };
-
-        listenerRegistry.addListener( listeningSocket, message );
-
+        addListener('R', 'L', [ 'car\/[A-Za-z]*$' ])
         expect( listeningSocket.socket.getMsg( 2 ) ).toBe( msg( 'R|A|L|car\/[A-Za-z]*$+' ) );
         expect( listeningSocket.socket.getMsg( 1 ) ).toBe( msg( 'R|SP|car\/[A-Za-z]*$|car/Mercedes+' ) );
         expect( listeningSocket.socket.getMsg( 0 ) ).toBe( msg( 'R|SP|car\/[A-Za-z]*$|car/Abarth+' ) );
     });
 
     it( 'removes subscriptions for a record', function() {
+        addListener('R', 'L', [ 'car\/[A-Za-z]*$' ])
         listenerRegistry.onSubscriptionRemoved( 'car/Abarth' );
         expect( listeningSocket.socket.lastSendMessage ).toBe( msg( 'R|SR|car\/[A-Za-z]*$|car/Abarth+' ) );
     });
 
     it( 'removes a socket on close', function() {
+        addListener('R', 'L', [ 'car\/[A-Za-z]*$' ])
         expect( Object.keys( listenerRegistry._patterns ) ).toEqual( [ 'car/[A-Za-z]*$' ] );
         expect( listenerRegistry._subscriptionRegistry.getSubscribers( 'car/[A-Za-z]*$' ).length ).toBe( 1 );
 
@@ -100,13 +118,17 @@ describe( 'listener-registry', function(){
     });
 });
 
-describe( 'listener-registry errors', function(){
+fdescribe( 'listener-registry errors', function(){
     var listenerRegistry,
         options = { logger: { log: jasmine.createSpy( 'log' ) } },
-        recordSubscriptionRegistryMock = { getNames: function() { return [ 'car/Mercedes', 'car/Abarth' ]; } },
-        listeningSocket = new SocketWrapper( new SocketMock(), options );
+        recordSubscriptionRegistryMock = {
+            getNames: function() {
+                return [ 'car/Mercedes', 'car/Abarth' ];
+            }
+        };
 
-    it( 'creates the listener registry', function(){
+    beforeEach(function() {
+        listeningSocket = new SocketWrapper( new SocketMock(), options );
         listenerRegistry = new ListenerRegistry( 'R', options, recordSubscriptionRegistryMock );
         expect( typeof listenerRegistry.addListener ).toBe( 'function' );
     });
