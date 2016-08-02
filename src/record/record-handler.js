@@ -104,17 +104,13 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	 * Listen to requests for a particular record or records
 	 * whose names match a pattern
 	 */
-	else if( message.action === C.ACTIONS.LISTEN ) {
-		this._listenerRegistry.addListener( socketWrapper, message );
+	else if( message.action === C.ACTIONS.LISTEN ||
+		message.action === C.ACTIONS.UNLISTEN ||
+		message.action === C.ACTIONS.LISTEN_ACCEPT ||
+		message.action === C.ACTIONS.LISTEN_REJECT ) {
+		this._listenerRegistry.handle( socketWrapper, message );
 	}
 
-	/*
-	 * Remove the socketWrapper as a listener for
-	 * the specified pattern
-	 */
-	else if( message.action === C.ACTIONS.UNLISTEN ) {
-		this._listenerRegistry.removeListener( socketWrapper, message );
-	}
 
 	/*
 	 * Default for invalid messages
@@ -516,7 +512,7 @@ RecordHandler.prototype._onDeleted = function( name, message, originalSender ) {
 	var i;
 
 	this._$broadcastUpdate( name, message, originalSender );
-	
+
 	for( i = 0; i < subscribers.length; i++ ) {
 		this._subscriptionRegistry.unsubscribe( name, subscribers[ i ], true );
 	}

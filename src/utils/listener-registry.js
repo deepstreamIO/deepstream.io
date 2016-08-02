@@ -36,7 +36,50 @@ var ListenerRegistry = function( type, options, parentSubscriptionRegistry ) {
   this._subscriptionRegistry.setAction( 'subscribe', C.ACTIONS.LISTEN );
   this._subscriptionRegistry.setAction( 'unsubscribe', C.ACTIONS.UNLISTEN );
   this._patterns = {};
+  this._providedRecords = {};
+  this._listenInProgress = {};
 };
+
+/*
+TODO
+*/
+
+ListenerRegistry.prototype.handle = function( socketWrapper, message ) {
+  console.log('handle', message)
+  if (message.action === C.ACTIONS.LISTEN ) {
+    this.addListener( socketWrapper, message );
+  } else if (message.action === C.ACTIONS.UNLISTEN ) {
+    this.removeListener( socketWrapper, message );
+  } else if( this._listenInProgress[ message.data[ 1 ] ] ) {
+    if (message.action === C.ACTIONS.LISTEN_ACCEPT ) {
+      this._providedRecords[ message.data[ 1 ] ] = {
+        socketWrapper: socketWrapper,
+        pattern: message.data[ 0 ]
+      }
+      // tell all subscribers that this is being published
+      delete this._listenInProgress[ message.data[ 1 ] ];
+      // TODO: clear timeout
+    } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
+      // try next listener
+      this.triggerNextProvider( message.data[ 1 ] );
+    }
+  } else {
+    console.log(arguments)
+    console.error(new Error('TODO').stack)
+    // send error that accepting or rejecting listen pattern / subscription
+    // that isn't being asked for
+  }
+
+
+}
+
+/*
+TODO
+*/
+
+ListenerRegistry.prototype.hasActiveProvider = function( susbcriptionName ) {
+  return !!this._providedRecords[ susbcriptionName ];
+}
 
 /**
  * Register a client as a listener for record subscriptions
@@ -73,10 +116,22 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
 
   // Notify socketWrapper of existing subscriptions that match the provided pattern
   existingSubscriptions = this._parentSubscriptionRegistry.getNames();
+  console.log('existingSubscriptions', existingSubscriptions)
   for( i = 0; i < existingSubscriptions.length; i++ ) {
     name = existingSubscriptions[ i ];
+    console.log('name.match', name, regExp)
     if( name.match( regExp ) ) {
-      socketWrapper.send( messageBuilder.getMsg( this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, name ] ) );
+      console.log('this._listenInProgress', this._listenInProgress)
+      if( this._listenInProgress[ name ] ) {
+        console.log('listen in progress')
+        this._listenInProgress[ name ].push({
+          socketWrapper: socketWrapper,
+          pattern: pattern
+        });
+      } else {
+        this._listenInProgress[ name ] = [];
+        socketWrapper.send( messageBuilder.getMsg( this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ pattern, name ] ) );
+      }
     }
   }
 };
@@ -125,6 +180,18 @@ ListenerRegistry.prototype.removeListener = function( socketWrapper, message ) {
     this._subscriptionRegistry.unsubscribe( pattern, socketWrapper );
     this._reconcilePatterns();
   }
+
+  var name;
+  for( name in this._listenInProgress ) {
+    for( var i=0; i<this._listenInProgress[name].length; i++) {
+      if(
+        this._listenInProgress[name][i].socketWrapper === socketWrapper &&
+        this._listenInProgress[name][i].pattern === pattern
+      ) {
+        this._listenInProgress[name].splice( i, 1);
+      }
+    }
+  }
 };
 
 /**
@@ -137,8 +204,35 @@ ListenerRegistry.prototype.removeListener = function( socketWrapper, message ) {
  * @returns {void}
  */
 ListenerRegistry.prototype.onSubscriptionMade = function( name ) {
-  this._sendUpdate( name, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND );
+  var pattern, message;
+  var action = C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND;
+
+  this._listenInProgress[ name ] = [];
+
+  for( pattern in this._patterns ) {
+    if( this._patterns[ pattern ].test( name ) ) {
+      var providersForPattern = this._subscriptionRegistry.getSubscribers( pattern );
+      for( var i = 0; i < providersForPattern.length; i++ ) {
+        this._listenInProgress[ name ].push( {
+          pattern: pattern,
+          socketWrapper: providersForPattern[ i ]
+        });
+      }
+    }
+  }
+  this.triggerNextProvider( name );
 };
+
+ListenerRegistry.prototype.triggerNextProvider = function ( name ) {
+  // TODO: creat a timeout, if timeout happens -> treat it as a reject
+  var provider = (this._listenInProgress[ name ] || []).shift();
+  if( provider ) {
+    provider.socketWrapper.send( messageBuilder.getMsg(
+      this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ provider.pattern, name ]
+      )
+    );
+  }
+}
 
 /**
  * Called by the record subscription registry whenever the last
@@ -150,28 +244,15 @@ ListenerRegistry.prototype.onSubscriptionMade = function( name ) {
  * @returns {void}
  */
 ListenerRegistry.prototype.onSubscriptionRemoved = function( name ) {
-  this._sendUpdate( name, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED );
-};
-
-/**
- * Sends a SUBSCRIPTION_FOR_PATTERN_FOUND or SUBSCRIPTION_FOR_PATTERN_REMOVED message
- * to all interested listeners
- *
- * @param   {String} name
- * @param   {String} action
- *
- * @public
- * @returns {void}
- */
-ListenerRegistry.prototype._sendUpdate = function( name, action ) {
-  var pattern, message;
-
-  for( pattern in this._patterns ) {
-    if( this._patterns[ pattern ].test( name ) ) {
-      message = messageBuilder.getMsg( this._type, action, [ pattern, name ] );
-      this._subscriptionRegistry.sendToSubscribers( pattern, message );
-    }
+  var provider = this._providedRecords[ name ];
+  if ( provider == null ) {
+    return;
   }
+  provider.socketWrapper.send(
+    messageBuilder.getMsg(
+      this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, name ]
+      )
+    );
 };
 
 /**
