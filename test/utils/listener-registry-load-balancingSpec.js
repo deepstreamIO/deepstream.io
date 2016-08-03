@@ -13,7 +13,7 @@ var listenerRegistry,
 	recordSubscriptionRegistryMock = null;
 
 
-function updateListener(socketWrapper, action, pattern) {
+function updateRegistryAndVerify(socketWrapper, action, pattern) {
 	updateRegistry(socketWrapper, action, [ pattern ])
 	verify(socketWrapper, [C.ACTIONS.ACK, action], pattern)
 }
@@ -87,7 +87,7 @@ function verify(provider, actions, pattern, subscriptionName) {
 	);
 }
 
-describe( 'listener-registry-load-balancing', function() {
+fdescribe( 'listener-registry-load-balancing', function() {
 	beforeEach(function() {
 		subscribedTopics = [];
 		recordSubscriptionRegistryMock = {
@@ -119,7 +119,7 @@ describe( 'listener-registry-load-balancing', function() {
 
 		it( 'single provider accepts a subscription', function() {
 			// 1
-			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
 			subcribe( 'a/1' )
 			// 3
@@ -150,7 +150,7 @@ describe( 'listener-registry-load-balancing', function() {
 
 		it( 'single provider rejects a subscription', function() {
 			// 1
-			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
 			subcribe( 'a/1' )
 			// 3
@@ -175,8 +175,9 @@ describe( 'listener-registry-load-balancing', function() {
 		*/
 
 		it( 'single provider rejects a subscription with a pattern for which subscriptions already exists', function() {
-			// 1
+			// 0
 			subscribedTopics.push( 'b/1' )
+			// 1
 			updateRegistry( provider1, C.ACTIONS.LISTEN, [ 'b/.*' ] )
 			verify( provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
 
@@ -247,9 +248,9 @@ describe( 'listener-registry-load-balancing', function() {
 
 		it( 'first rejects, seconds accepts', function() {
 			// 1
-			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
-			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
+			updateRegistryAndVerify( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
 			// 3
 			subcribe( 'a/1' )
 			// 4
@@ -287,9 +288,9 @@ describe( 'listener-registry-load-balancing', function() {
 		*/
 		it( 'first accepts, seconds does nothing', function() {
 			// 1
-			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
-			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
+			updateRegistryAndVerify( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
 			// 3
 			subcribe( 'a/1' )
 			// 4
@@ -326,14 +327,14 @@ describe( 'listener-registry-load-balancing', function() {
 
 		it( 'first rejects, seconds - which start listening after first gets SP - accepts', function() {
 			// 1
-			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
 			subcribe( 'a/1' )
 			// 3
 			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4
-			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
+			updateRegistryAndVerify( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
 
 			// 5
 			reject( provider1, 'a/.*', 'a/1' );
@@ -359,9 +360,9 @@ describe( 'listener-registry-load-balancing', function() {
 
 		it( 'no messages after unlisten', function() {
 			// 1
-			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
-			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
+			updateRegistryAndVerify( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
 			// 3
 			subcribe( 'a/1' )
 
@@ -370,7 +371,7 @@ describe( 'listener-registry-load-balancing', function() {
 			verify( provider2, null )
 
 			// 5
-			updateListener( provider2, C.ACTIONS.UNLISTEN, 'a/[0-9]' )
+			updateRegistryAndVerify( provider2, C.ACTIONS.UNLISTEN, 'a/[0-9]' )
 
 			// 6
 			reject( provider1, 'a/.*', 'a/1' );
