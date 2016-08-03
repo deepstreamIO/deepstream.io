@@ -13,8 +13,8 @@ var listenerRegistry,
 	recordSubscriptionRegistryMock = null;
 
 
-function addListener(action, pattern, socketWrapper) {
-	updateRegistry(action, [ pattern ], socketWrapper)
+function updateListener(socketWrapper, action, pattern) {
+	updateRegistry(socketWrapper, action, [ pattern ])
 	providerGets(socketWrapper, [C.ACTIONS.ACK, action], pattern)
 }
 
@@ -33,7 +33,7 @@ function unsubscribe( subscriptionName ) {
 	listenerRegistry.onSubscriptionRemoved( subscriptionName );
 }
 
-function updateRegistry( action, data, socket) {
+function updateRegistry( socket, action, data ) {
 	var message = {
 		topic: C.TOPIC.RECORD,
 		action: action,
@@ -42,13 +42,13 @@ function updateRegistry( action, data, socket) {
 	listenerRegistry.handle( socket, message );
 }
 
-function accept(pattern, subscriptionName, socketWrapper) {
-	updateRegistry( C.ACTIONS.LISTEN_ACCEPT, [pattern, subscriptionName ], socketWrapper);
+function accept(socketWrapper, pattern, subscriptionName) {
+	updateRegistry( socketWrapper, C.ACTIONS.LISTEN_ACCEPT, [pattern, subscriptionName ] );
 	expect( listenerRegistry.hasActiveProvider( subscriptionName ) ).toBe( true );
 }
 
-function reject(pattern, subscriptionName, socketWrapper) {
-	updateRegistry( C.ACTIONS.LISTEN_REJECT, [pattern, subscriptionName ], socketWrapper);
+function reject(socketWrapper, pattern, subscriptionName) {
+	updateRegistry( socketWrapper, C.ACTIONS.LISTEN_REJECT, [pattern, subscriptionName ] );
 	expect( listenerRegistry.hasActiveProvider( subscriptionName ) ).toBe( false );
 }
 
@@ -119,14 +119,14 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'single provider accepts a subscription', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
+			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
 			subcribe( 'a/1' )
 			// 3
 			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4 TODO:
-			accept( 'a/.*', 'a/1' , provider1);
+			accept( provider1, 'a/.*', 'a/1' );
 			// 6
 			unsubscribe( 'a/1' );
 			// 7
@@ -150,14 +150,14 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'single provider rejects a subscription', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
+			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
 			subcribe( 'a/1' )
 			// 3
 			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4
-			reject( 'a/.*', 'a/1' , provider1);
+			reject( provider1, 'a/.*', 'a/1' );
 
 			// 5
 			unsubscribe( 'a/1' );
@@ -177,14 +177,14 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		it( 'single provider rejects a subscription with a pattern for which subscriptions already exists', function() {
 			// 1
 			subscribedTopics.push( 'b/1' )
-			updateRegistry( C.ACTIONS.LISTEN, [ 'b/.*' ], provider1 )
+			updateRegistry( provider1, C.ACTIONS.LISTEN, [ 'b/.*' ] )
 			providerGets( provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
 
 			// 2
 			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'b/.*', 'b/1', {index: 0})
 
 			// 3
-			reject( 'b/.*', 'b/1' , provider1);
+			reject( provider1, 'b/.*', 'b/1' );
 			// 4
 			unsubscribe( 'b/1' );
 			// 5
@@ -207,13 +207,13 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			subscribedTopics.push('b/1')
 
 			// 1
-			updateRegistry(C.ACTIONS.LISTEN, [ 'b/.*' ], provider1)
+			updateRegistry( provider1, C.ACTIONS.LISTEN, [ 'b/.*' ] )
 	        providerGets(provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
 			// 2
 			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'b/.*', 'b/1', {index: 0})
 
 			// 3
-			accept( 'b/.*', 'b/1' , provider1);
+			accept( provider1, 'b/.*', 'b/1' );
 
 			// 4 TODO:
 
@@ -247,9 +247,9 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'first rejects, seconds accepts', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
+			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
-			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', provider2)
+			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
 			// 3
 			subcribe( 'a/1' )
 			// 4
@@ -257,13 +257,13 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			providerGets(provider2, null)
 
 			// 5
-			reject( 'a/.*', 'a/1' , provider1);
+			reject( provider1, 'a/.*', 'a/1' );
 			// 6
 			providerGets( provider1, null )
 			providerGets( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/[0-9]', 'a/1' )
 
 			// 7
-			accept( 'a/[0-9]', 'a/1' , provider2);
+			accept( provider2, 'a/[0-9]', 'a/1' );
 
 			// 8 TODO
 
@@ -287,9 +287,9 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		*/
 		it( 'first accepts, seconds does nothing', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
+			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
-			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', provider2)
+			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
 			// 3
 			subcribe( 'a/1' )
 			// 4
@@ -297,7 +297,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			providerGets(provider2, null)
 
 			// 5
-			accept( 'a/.*', 'a/1' , provider1);
+			accept( provider1, 'a/.*', 'a/1' );
 			// 6
 			providerGets(provider1, null)
 			providerGets(provider2, null)
@@ -326,24 +326,24 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'first rejects, seconds - which start listening after first gets SP - accepts', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
+			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
 			subcribe( 'a/1' )
 			// 3
 			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4
-			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', provider2)
+			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
 
 			// 5
-			reject( 'a/.*', 'a/1' , provider1);
+			reject( provider1, 'a/.*', 'a/1' );
 
 			// 6
 			providerGets( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/[0-9]', 'a/1')
 			providerGets( provider1, null )
 
 			// 7
-			accept( 'a/[0-9]', 'a/1' , provider2);
+			accept( provider2, 'a/[0-9]', 'a/1' );
 
 		});
 
@@ -359,9 +359,9 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'no messages after unlisten', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
+			updateListener( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
-			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', provider2)
+			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
 			// 3
 			subcribe( 'a/1' )
 
@@ -370,10 +370,10 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			providerGets( provider2, null )
 
 			// 5
-			addListener( C.ACTIONS.UNLISTEN, 'a/[0-9]', provider2)
+			updateListener( provider2, C.ACTIONS.UNLISTEN, 'a/[0-9]' )
 
 			// 6
-			reject( 'a/.*', 'a/1' , provider1);
+			reject( provider1, 'a/.*', 'a/1' );
 
 			// 7
 			providerGets( provider1, null )
