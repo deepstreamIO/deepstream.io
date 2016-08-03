@@ -87,7 +87,7 @@ function verify(provider, actions, pattern, subscriptionName) {
 	);
 }
 
-fdescribe( 'listener-registry-load-balancing', function() {
+describe( 'listener-registry-load-balancing', function() {
 	beforeEach(function() {
 		subscribedTopics = [];
 		recordSubscriptionRegistryMock = {
