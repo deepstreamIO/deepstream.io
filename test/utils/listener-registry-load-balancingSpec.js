@@ -23,6 +23,7 @@ function addListener(action, pattern, socketWrapper) {
 
 function subcribe( subscriptionName ) {
 	listenerRegistry.onSubscriptionMade( subscriptionName );
+	subscribedTopics.push(subscriptionName)
 }
 
 function unsubscribe( subscriptionName ) {
@@ -50,7 +51,7 @@ function reject(pattern, subscriptionName, socketWrapper) {
 
 fdescribe( 'listener-registry-load-balancing', function() {
 	beforeEach(function() {
-		subscribedTopics = [ 'b/1' ];
+		subscribedTopics = [];
 		recordSubscriptionRegistryMock = {
 			getNames: function() {
 				return subscribedTopics;
@@ -141,6 +142,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'single provider rejects a subscription with a pattern for which subscriptions already exists', function() {
 			// 1
+			subscribedTopics.push('b/1')
 			updateListenerRegistry(C.ACTIONS.LISTEN, [ 'b/.*' ], listeningSocket)
 	        expect( listeningSocket.socket.getMsg( 1 ) ).toBe( msg( 'R|A|L|b/.*+' ) );
 
@@ -168,6 +170,9 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		*/
 
 		it( 'single provider accepts a subscription with a pattern for which subscriptions already exists', function() {
+			// 0
+			subscribedTopics.push('b/1')
+
 			// 1
 			updateListenerRegistry(C.ACTIONS.LISTEN, [ 'b/.*' ], listeningSocket)
 	        expect( listeningSocket.socket.getMsg( 1 ) ).toBe( msg( 'R|A|L|b/.*+' ) );
@@ -305,7 +310,6 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
 			// 2
 			subcribe( 'a/1' )
-			subscribedTopics.push('a/1')
 			// 3
 			expect( listeningSocket.socket.lastSendMessage ).toBe(
 				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/.*|a/1+` )

@@ -115,14 +115,10 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
 
   // Notify socketWrapper of existing subscriptions that match the provided pattern
   existingSubscriptions = this._parentSubscriptionRegistry.getNames();
-  console.log('existingSubscriptions', existingSubscriptions)
   for( i = 0; i < existingSubscriptions.length; i++ ) {
     name = existingSubscriptions[ i ];
-    console.log('name.match', name, regExp)
     if( name.match( regExp ) ) {
-      console.log('this._listenInProgress', this._listenInProgress)
       if( this._listenInProgress[ name ] ) {
-        console.log('listen in progress')
         this._listenInProgress[ name ].push({
           socketWrapper: socketWrapper,
           pattern: pattern
