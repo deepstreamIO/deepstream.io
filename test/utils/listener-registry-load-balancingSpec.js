@@ -15,7 +15,7 @@ var listenerRegistry,
 
 function updateListener(socketWrapper, action, pattern) {
 	updateRegistry(socketWrapper, action, [ pattern ])
-	providerGets(socketWrapper, [C.ACTIONS.ACK, action], pattern)
+	verify(socketWrapper, [C.ACTIONS.ACK, action], pattern)
 }
 
 function subcribe( subscriptionName, useParentSubscriptionRegistry ) {
@@ -53,7 +53,7 @@ function reject(socketWrapper, pattern, subscriptionName) {
 }
 
 var messageHistory = {}
-function providerGets(provider, actions, pattern, subscriptionName) {
+function verify(provider, actions, pattern, subscriptionName) {
 	var messageIndex = 0;
 	var options = {};
 	var lastArg = arguments[ arguments.length - 1];
@@ -123,14 +123,14 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 2
 			subcribe( 'a/1' )
 			// 3
-			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
+			verify(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4 TODO:
 			accept( provider1, 'a/.*', 'a/1' );
 			// 6
 			unsubscribe( 'a/1' );
 			// 7
-			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/.*', 'a/1' )
+			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/.*', 'a/1' )
 			// 8 TODO:
 
             // 9 TODO: fix implementaiton for this expectation
@@ -154,7 +154,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 2
 			subcribe( 'a/1' )
 			// 3
-			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
+			verify(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4
 			reject( provider1, 'a/.*', 'a/1' );
@@ -162,7 +162,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 5
 			unsubscribe( 'a/1' );
 			// 6
-			providerGets(provider1, null)
+			verify(provider1, null)
 		});
 
 		/*
@@ -178,17 +178,17 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 1
 			subscribedTopics.push( 'b/1' )
 			updateRegistry( provider1, C.ACTIONS.LISTEN, [ 'b/.*' ] )
-			providerGets( provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
+			verify( provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
 
 			// 2
-			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'b/.*', 'b/1', {index: 0})
+			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'b/.*', 'b/1', {index: 0})
 
 			// 3
 			reject( provider1, 'b/.*', 'b/1' );
 			// 4
 			unsubscribe( 'b/1' );
 			// 5
-			providerGets( provider1, null)
+			verify( provider1, null)
 		});
 
 		/*
@@ -208,9 +208,9 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 			// 1
 			updateRegistry( provider1, C.ACTIONS.LISTEN, [ 'b/.*' ] )
-	        providerGets(provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
+	        verify(provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
 			// 2
-			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'b/.*', 'b/1', {index: 0})
+			verify(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'b/.*', 'b/1', {index: 0})
 
 			// 3
 			accept( provider1, 'b/.*', 'b/1' );
@@ -221,7 +221,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			unsubscribe( 'b/1' );
 
 			// 6
-			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'b/.*', 'b/1')
+			verify(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'b/.*', 'b/1')
 
 			// 7 TODO:
 		});
@@ -253,14 +253,14 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 3
 			subcribe( 'a/1' )
 			// 4
-			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
-			providerGets(provider2, null)
+			verify(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
+			verify(provider2, null)
 
 			// 5
 			reject( provider1, 'a/.*', 'a/1' );
 			// 6
-			providerGets( provider1, null )
-			providerGets( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/[0-9]', 'a/1' )
+			verify( provider1, null )
+			verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/[0-9]', 'a/1' )
 
 			// 7
 			accept( provider2, 'a/[0-9]', 'a/1' );
@@ -271,9 +271,9 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			unsubscribe( 'a/1' );
 
 			// 10
-			providerGets(provider1, null)
+			verify(provider1, null)
 			// 11
-			providerGets(provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/[0-9]', 'a/1')
+			verify(provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/[0-9]', 'a/1')
 
 			// 12 TODO:
 		});
@@ -293,14 +293,14 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 3
 			subcribe( 'a/1' )
 			// 4
-			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
-			providerGets(provider2, null)
+			verify(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
+			verify(provider2, null)
 
 			// 5
 			accept( provider1, 'a/.*', 'a/1' );
 			// 6
-			providerGets(provider1, null)
-			providerGets(provider2, null)
+			verify(provider1, null)
+			verify(provider2, null)
 
 			// 7 TODO
 
@@ -308,9 +308,9 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			unsubscribe( 'a/1' );
 
 			// 10
-			providerGets(provider2, null)
+			verify(provider2, null)
 			// 11
-			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/.*', 'a/1')
+			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/.*', 'a/1')
 
 		});
 
@@ -330,7 +330,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 2
 			subcribe( 'a/1' )
 			// 3
-			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
+			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4
 			updateListener( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
@@ -339,8 +339,8 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			reject( provider1, 'a/.*', 'a/1' );
 
 			// 6
-			providerGets( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/[0-9]', 'a/1')
-			providerGets( provider1, null )
+			verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/[0-9]', 'a/1')
+			verify( provider1, null )
 
 			// 7
 			accept( provider2, 'a/[0-9]', 'a/1' );
@@ -366,8 +366,8 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			subcribe( 'a/1' )
 
 			// 4
-			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1' )
-			providerGets( provider2, null )
+			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1' )
+			verify( provider2, null )
 
 			// 5
 			updateListener( provider2, C.ACTIONS.UNLISTEN, 'a/[0-9]' )
@@ -376,8 +376,8 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			reject( provider1, 'a/.*', 'a/1' );
 
 			// 7
-			providerGets( provider1, null )
-			providerGets( provider2, null )
+			verify( provider1, null )
+			verify( provider2, null )
 
 		});
 
