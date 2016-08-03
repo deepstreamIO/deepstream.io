@@ -45,7 +45,6 @@ TODO
 */
 
 ListenerRegistry.prototype.handle = function( socketWrapper, message ) {
-  console.log('handle', message)
   if (message.action === C.ACTIONS.LISTEN ) {
     this.addListener( socketWrapper, message );
   } else if (message.action === C.ACTIONS.UNLISTEN ) {
@@ -64,7 +63,7 @@ ListenerRegistry.prototype.handle = function( socketWrapper, message ) {
       this.triggerNextProvider( message.data[ 1 ] );
     }
   } else {
-    console.log(arguments)
+    console.log(message)
     console.error(new Error('TODO').stack)
     // send error that accepting or rejecting listen pattern / subscription
     // that isn't being asked for
@@ -251,8 +250,9 @@ ListenerRegistry.prototype.onSubscriptionRemoved = function( name ) {
   provider.socketWrapper.send(
     messageBuilder.getMsg(
       this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, name ]
-      )
-    );
+    )
+  );
+  delete this._providedRecords[ name ];
 };
 
 /**

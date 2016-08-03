@@ -72,7 +72,8 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		6.  clients discards a/1
 		7.  provider gets a SR
 		8.  send publishing=false to the clients (new action: PUBLISHING // TODO:
-		9.  recieving unknown accept/reject throws an error
+		9.  a/1 should have no active provider
+		10. recieving unknown accept/reject throws an error
 		*/
 
 		it( 'single provider accepts a subscription', function() {
@@ -94,10 +95,10 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			);
 			// 8 TODO:
 
-            // TODO: fix implementaiton for this expectation
+            // 9 TODO: fix implementaiton for this expectation
             expect( listenerRegistry.hasActiveProvider( 'a/1' ) ).toBe( false );
 
-			// 9
+			// 10
 		});
 
 		/*
@@ -249,7 +250,13 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 12 TODO:
 		});
 
-
+		/*
+		1.  provider 1 does listen a/.*
+		2.  provider 2 does listen a/[0-9]
+		3.  clients request a/1
+		4.  provider 1 gets a SP
+		5.  provider 1 responds with ACCEPT
+		*/
 		it( 'first accepts, seconds does nothing', function() {
 			// 1
 			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
@@ -293,7 +300,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		7.  provider 2 responds with ACCEPT
 		*/
 
-		it( 'first accepts, seconds does nothing', function() {
+		it( 'first rejects, seconds - which start listening after first gets SP - accepts', function() {
 			// 1
 			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
 			// 2
@@ -319,7 +326,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			secondListenerSocket.socket.lastSendMessage = null;
 
 			// 7
-			//accept( 'a/[0-9]', 'a/1' , secondListenerSocket);
+			accept( 'a/[0-9]', 'a/1' , secondListenerSocket);
 
 		});
 
@@ -333,7 +340,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		7.  provider 2 does not get anything
 		*/
 
-		it( 'first accepts, seconds does nothing', function() {
+		it( 'no messages after unlisten', function() {
 			// 1
 			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
 			// 2
