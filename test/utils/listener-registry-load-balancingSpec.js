@@ -14,23 +14,26 @@ var listenerRegistry,
 
 
 function addListener(action, pattern, socketWrapper) {
-	updateListenerRegistry(action, [ pattern ], socketWrapper)
-	expect( socketWrapper.socket.lastSendMessage ).toBe(
-		msg( `${C.TOPIC.RECORD}|${C.ACTIONS.ACK}|${action}|${pattern}+` )
-	);
-	socketWrapper.socket.lastSendMessage = null;
+	updateRegistry(action, [ pattern ], socketWrapper)
+	providerGets(socketWrapper, [C.ACTIONS.ACK, action], pattern)
 }
 
-function subcribe( subscriptionName ) {
+function subcribe( subscriptionName, useParentSubscriptionRegistry ) {
+	if( useParentSubscriptionRegistry !== false ) {
+		useParentSubscriptionRegistry = true;
+	}
 	listenerRegistry.onSubscriptionMade( subscriptionName );
-	subscribedTopics.push(subscriptionName)
+	if( useParentSubscriptionRegistry ) {
+		subscribedTopics.push(subscriptionName)
+	}
+
 }
 
 function unsubscribe( subscriptionName ) {
 	listenerRegistry.onSubscriptionRemoved( subscriptionName );
 }
 
-function updateListenerRegistry( action, data, socket) {
+function updateRegistry( action, data, socket) {
 	var message = {
 		topic: C.TOPIC.RECORD,
 		action: action,
@@ -40,13 +43,48 @@ function updateListenerRegistry( action, data, socket) {
 }
 
 function accept(pattern, subscriptionName, socketWrapper) {
-	updateListenerRegistry( C.ACTIONS.LISTEN_ACCEPT, [pattern, subscriptionName ], socketWrapper);
+	updateRegistry( C.ACTIONS.LISTEN_ACCEPT, [pattern, subscriptionName ], socketWrapper);
 	expect( listenerRegistry.hasActiveProvider( subscriptionName ) ).toBe( true );
 }
 
 function reject(pattern, subscriptionName, socketWrapper) {
-	updateListenerRegistry( C.ACTIONS.LISTEN_REJECT, [pattern, subscriptionName ], socketWrapper);
+	updateRegistry( C.ACTIONS.LISTEN_REJECT, [pattern, subscriptionName ], socketWrapper);
 	expect( listenerRegistry.hasActiveProvider( subscriptionName ) ).toBe( false );
+}
+
+var messageHistory = {}
+function providerGets(provider, actions, pattern, subscriptionName) {
+	var messageIndex = 0;
+	var options = {};
+	var lastArg = arguments[ arguments.length - 1];
+	if (typeof lastArg === 'object' ) {
+		options = lastArg || {};
+	}
+	if( actions == null) {
+		var lastMessage = provider.socket.getMsg( 0 );
+		expect( lastMessage ).toBe( (messageHistory[provider] || {}).message );
+		expect( provider.socket.getMsgSize()).toBe( (messageHistory[provider] || {}).size );
+		return
+	}
+	if( options.index != null ) {
+		messageIndex = options.index;
+	}
+	if( !( actions instanceof Array ) ) {
+		actions = [ actions ];
+	}
+	if( subscriptionName == null || typeof subscriptionName !== 'string' ) {
+		subscriptionName = '';
+	} else {
+		subscriptionName = '|' + subscriptionName;
+	}
+	var message = provider.socket.getMsg( messageIndex );
+	messageHistory[provider] = {
+		message: message,
+		size: provider.socket.getMsgSize()
+	}
+	expect( message ).toBe(
+		msg( `${C.TOPIC.RECORD}|${actions.join('|')}|${pattern}${subscriptionName}+` )
+	);
 }
 
 fdescribe( 'listener-registry-load-balancing', function() {
@@ -57,8 +95,10 @@ fdescribe( 'listener-registry-load-balancing', function() {
 				return subscribedTopics;
 			}
 		};
-		listeningSocket = new SocketWrapper( new SocketMock(), options );
-		secondListenerSocket = new SocketWrapper( new SocketMock(), options );
+		provider1 = new SocketWrapper( new SocketMock(), options );
+		provider1.toString = function() { return 'provider1' }
+		provider2 = new SocketWrapper( new SocketMock(), options );
+		provider2.toString = function() { return 'provider2' }
 		listenerRegistry = new ListenerRegistry( 'R', options, recordSubscriptionRegistryMock );
 		expect( typeof listenerRegistry.addListener ).toBe( 'function' );
 	});
@@ -79,21 +119,18 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'single provider accepts a subscription', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
 			// 2
 			subcribe( 'a/1' )
 			// 3
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/.*|a/1+` )
-			);
+			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
+
 			// 4 TODO:
-			accept( 'a/.*', 'a/1' , listeningSocket);
+			accept( 'a/.*', 'a/1' , provider1);
 			// 6
 			unsubscribe( 'a/1' );
 			// 7
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED}|a/.*|a/1+` )
-			);
+			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/.*', 'a/1' )
 			// 8 TODO:
 
             // 9 TODO: fix implementaiton for this expectation
@@ -113,22 +150,19 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'single provider rejects a subscription', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
 			// 2
 			subcribe( 'a/1' )
 			// 3
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/.*|a/1+` )
-			);
-			listeningSocket.socket.lastSendMessage = null;
+			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4
-			reject( 'a/.*', 'a/1' , listeningSocket);
+			reject( 'a/.*', 'a/1' , provider1);
 
 			// 5
 			unsubscribe( 'a/1' );
 			// 6
-			expect( listeningSocket.socket.lastSendMessage ).toBeNull();
+			providerGets(provider1, null)
 		});
 
 		/*
@@ -142,20 +176,19 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'single provider rejects a subscription with a pattern for which subscriptions already exists', function() {
 			// 1
-			subscribedTopics.push('b/1')
-			updateListenerRegistry(C.ACTIONS.LISTEN, [ 'b/.*' ], listeningSocket)
-	        expect( listeningSocket.socket.getMsg( 1 ) ).toBe( msg( 'R|A|L|b/.*+' ) );
+			subscribedTopics.push( 'b/1' )
+			updateRegistry( C.ACTIONS.LISTEN, [ 'b/.*' ], provider1 )
+			providerGets( provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
 
 			// 2
-			expect( listeningSocket.socket.getMsg( 0 ) ).toBe( msg( 'R|SP|b/.*|b/1+' ) );
-			listeningSocket.socket.lastSendMessage = null;
+			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'b/.*', 'b/1', {index: 0})
 
 			// 3
-			reject( 'b/.*', 'b/1' , listeningSocket);
+			reject( 'b/.*', 'b/1' , provider1);
 			// 4
 			unsubscribe( 'b/1' );
 			// 5
-			expect( listeningSocket.socket.lastSendMessage ).toBeNull();
+			providerGets( provider1, null)
 		});
 
 		/*
@@ -174,15 +207,13 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			subscribedTopics.push('b/1')
 
 			// 1
-			updateListenerRegistry(C.ACTIONS.LISTEN, [ 'b/.*' ], listeningSocket)
-	        expect( listeningSocket.socket.getMsg( 1 ) ).toBe( msg( 'R|A|L|b/.*+' ) );
-
+			updateRegistry(C.ACTIONS.LISTEN, [ 'b/.*' ], provider1)
+	        providerGets(provider1, [C.ACTIONS.ACK, C.ACTIONS.LISTEN], 'b/.*', {index: 1})
 			// 2
-			expect( listeningSocket.socket.getMsg( 0 ) ).toBe( msg( 'R|SP|b/.*|b/1+' ) );
-			listeningSocket.socket.lastSendMessage = null;
+			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'b/.*', 'b/1', {index: 0})
 
 			// 3
-			accept( 'b/.*', 'b/1' , listeningSocket);
+			accept( 'b/.*', 'b/1' , provider1);
 
 			// 4 TODO:
 
@@ -190,9 +221,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			unsubscribe( 'b/1' );
 
 			// 6
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED}|b/.*|b/1+` )
-			);
+			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'b/.*', 'b/1')
 
 			// 7 TODO:
 		});
@@ -218,27 +247,23 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'first rejects, seconds accepts', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
 			// 2
-			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', secondListenerSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', provider2)
 			// 3
 			subcribe( 'a/1' )
 			// 4
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/.*|a/1+` )
-			);
-			expect( secondListenerSocket.socket.lastSendMessage ).toBeNull();
-			listeningSocket.socket.lastSendMessage = null;
+			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
+			providerGets(provider2, null)
+
 			// 5
-			reject( 'a/.*', 'a/1' , listeningSocket);
+			reject( 'a/.*', 'a/1' , provider1);
 			// 6
-			expect( listeningSocket.socket.lastSendMessage ).toBeNull();
-			expect( secondListenerSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/[0-9]|a/1+` )
-			);
-			secondListenerSocket.socket.lastSendMessage = null;
+			providerGets( provider1, null )
+			providerGets( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/[0-9]', 'a/1' )
+
 			// 7
-			accept( 'a/[0-9]', 'a/1' , secondListenerSocket);
+			accept( 'a/[0-9]', 'a/1' , provider2);
 
 			// 8 TODO
 
@@ -246,12 +271,10 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			unsubscribe( 'a/1' );
 
 			// 10
-			expect( listeningSocket.socket.lastSendMessage ).toBeNull();
-
+			providerGets(provider1, null)
 			// 11
-			expect( secondListenerSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED}|a/[0-9]|a/1+` )
-			);
+			providerGets(provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/[0-9]', 'a/1')
+
 			// 12 TODO:
 		});
 
@@ -264,22 +287,20 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		*/
 		it( 'first accepts, seconds does nothing', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
 			// 2
-			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', secondListenerSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', provider2)
 			// 3
 			subcribe( 'a/1' )
 			// 4
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/.*|a/1+` )
-			);
-			expect( secondListenerSocket.socket.lastSendMessage ).toBeNull();
-			listeningSocket.socket.lastSendMessage = null;
+			providerGets(provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
+			providerGets(provider2, null)
+
 			// 5
-			accept( 'a/.*', 'a/1' , listeningSocket);
+			accept( 'a/.*', 'a/1' , provider1);
 			// 6
-			expect( listeningSocket.socket.lastSendMessage ).toBeNull();
-			expect( secondListenerSocket.socket.lastSendMessage ).toBeNull();
+			providerGets(provider1, null)
+			providerGets(provider2, null)
 
 			// 7 TODO
 
@@ -287,12 +308,10 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			unsubscribe( 'a/1' );
 
 			// 10
-			expect( secondListenerSocket.socket.lastSendMessage ).toBeNull();
-
+			providerGets(provider2, null)
 			// 11
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED}|a/.*|a/1+` )
-			);
+			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, 'a/.*', 'a/1')
+
 		});
 
 		/*
@@ -307,30 +326,24 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'first rejects, seconds - which start listening after first gets SP - accepts', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
 			// 2
 			subcribe( 'a/1' )
 			// 3
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/.*|a/1+` )
-			);
-			listeningSocket.socket.lastSendMessage = null;
+			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1')
 
 			// 4
-			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', secondListenerSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', provider2)
 
 			// 5
-			reject( 'a/.*', 'a/1' , listeningSocket);
+			reject( 'a/.*', 'a/1' , provider1);
 
 			// 6
-			expect( secondListenerSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/[0-9]|a/1+` )
-			);
-			expect( listeningSocket.socket.lastSendMessage ).toBeNull();
-			secondListenerSocket.socket.lastSendMessage = null;
+			providerGets( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/[0-9]', 'a/1')
+			providerGets( provider1, null )
 
 			// 7
-			accept( 'a/[0-9]', 'a/1' , secondListenerSocket);
+			accept( 'a/[0-9]', 'a/1' , provider2);
 
 		});
 
@@ -346,28 +359,25 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 		it( 'no messages after unlisten', function() {
 			// 1
-			addListener( C.ACTIONS.LISTEN, 'a/.*', listeningSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/.*', provider1)
 			// 2
-			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', secondListenerSocket)
+			addListener( C.ACTIONS.LISTEN, 'a/[0-9]', provider2)
 			// 3
 			subcribe( 'a/1' )
 
 			// 4
-			expect( listeningSocket.socket.lastSendMessage ).toBe(
-				msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND}|a/.*|a/1+` )
-			);
-			expect( secondListenerSocket.socket.lastSendMessage ).toBeNull();
-			listeningSocket.socket.lastSendMessage = null;
+			providerGets( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, 'a/.*', 'a/1' )
+			providerGets( provider2, null )
 
 			// 5
-			addListener( C.ACTIONS.UNLISTEN, 'a/[0-9]', secondListenerSocket)
+			addListener( C.ACTIONS.UNLISTEN, 'a/[0-9]', provider2)
 
 			// 6
-			reject( 'a/.*', 'a/1' , listeningSocket);
+			reject( 'a/.*', 'a/1' , provider1);
 
 			// 7
-			expect( listeningSocket.socket.lastSendMessage ).toBeNull();
-			expect( secondListenerSocket.socket.lastSendMessage ).toBeNull();
+			providerGets( provider1, null )
+			providerGets( provider2, null )
 
 		});
 

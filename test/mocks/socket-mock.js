@@ -17,6 +17,10 @@ SocketMock.prototype.getMsg = function( i ) {
 	return this.sendMessages[ this.sendMessages.length - ( i + 1 ) ];
 };
 
+SocketMock.prototype.getMsgSize = function( i ) {
+	return this.sendMessages.length;
+};
+
 SocketMock.prototype.close = function() {
 	if( this.autoClose === true ) {
 		this.doClose();
