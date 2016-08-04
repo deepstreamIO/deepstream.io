@@ -38,6 +38,8 @@ var ListenerRegistry = function( type, options, clientRegistry ) {
   this._patterns = {};
   this._providedRecords = {};
   this._listenInProgress = {};
+  this._timeoutMap = {};
+  this._timedoutProviders = {};
 };
 
 /*
@@ -45,18 +47,32 @@ TODO
 */
 
 ListenerRegistry.prototype.handle = function( socketWrapper, message ) {
+  var index = (this._timedoutProviders[ message.data[ 1 ] ] || []).findIndex( function( provider ) {
+    return provider.socketWrapper === socketWrapper && provider.pattern === message.data[ 0 ];
+  });
   if (message.action === C.ACTIONS.LISTEN ) {
     this.addListener( socketWrapper, message );
   } else if (message.action === C.ACTIONS.UNLISTEN ) {
     this.removeListener( socketWrapper, message );
+  } else if( this._timedoutProviders[ message.data[ 1 ] ] && index !== -1) {
+    if (message.action === C.ACTIONS.LISTEN_ACCEPT ) {
+      socketWrapper.send(
+        messageBuilder.getMsg(
+          this._type,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+          [ message.data[ 0 ], message.data[ 1 ] ]
+        )
+      );
+    }
+    this._timedoutProviders[ message.data[ 1 ] ].splice( index, 1 );
   } else if( this._listenInProgress[ message.data[ 1 ] ] ) {
     if (message.action === C.ACTIONS.LISTEN_ACCEPT ) {
       this.accept( socketWrapper, message );
+      // notify timeod out methods that accepted SR
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
-      // try next listener
       this.triggerNextProvider( message.data[ 1 ] );
     }
-  } else {
+  }  else {
     console.log(message)
     console.error(new Error('TODO').stack)
     // send error that accepting or rejecting listen pattern / subscription
@@ -88,9 +104,9 @@ ListenerRegistry.prototype.accept = function( socketWrapper, message ) {
     );
   }).bind( this ) );
 
+  // clear timeout for other providers
+  clearTimeout( this._timeoutMap[ subscriptionName ] );
   delete this._listenInProgress[ subscriptionName ];
-
-  // TODO: clear timeout
 }
 
 function createHasProviderMessage(hasProvider, type, subscriptionName) {
@@ -100,6 +116,12 @@ function createHasProviderMessage(hasProvider, type, subscriptionName) {
       [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
     );
 }
+
+/*
+ provider 1 times out
+ provider 2 times out
+ provider 3 accepts -> set
+*/
 
 /*
 TODO
@@ -265,9 +287,19 @@ ListenerRegistry.prototype.createListenMap = function ( pattern, name ) {
 }
 
 ListenerRegistry.prototype.triggerNextProvider = function ( name ) {
-  // TODO: creat a timeout, if timeout happens -> treat it as a reject
   var provider = (this._listenInProgress[ name ] || []).shift();
+
   if( provider ) {
+    var timeoutId = setTimeout((function() {
+      // console.log('timing out now', provider.pattern)
+      if( this._timedoutProviders[ name ] == null ) {
+        this._timedoutProviders[ name ] = [];
+      }
+      this._timedoutProviders[ name ].push( provider );
+      this.triggerNextProvider( name );
+    }).bind( this ), 20 );
+    this._timeoutMap[ name ] = timeoutId;
+    // console.log('3>>> found', provider.pattern)
     provider.socketWrapper.send( messageBuilder.getMsg(
       this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ provider.pattern, name ]
       )

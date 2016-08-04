@@ -42,14 +42,16 @@ function updateRegistry( socket, action, data ) {
 	listenerRegistry.handle( socket, message );
 }
 
-function accept(socketWrapper, pattern, subscriptionName) {
+function accept(socketWrapper, pattern, subscriptionName, doesnthaveActiveProvider) {
 	updateRegistry( socketWrapper, C.ACTIONS.LISTEN_ACCEPT, [pattern, subscriptionName ] );
-	expect( listenerRegistry.hasActiveProvider( subscriptionName ) ).toBe( true );
+	expect( listenerRegistry.hasActiveProvider( subscriptionName ) ).toBe( !doesnthaveActiveProvider );
 }
 
-function reject(socketWrapper, pattern, subscriptionName) {
+function reject(socketWrapper, pattern, subscriptionName, doNotCheckActiveProvider) {
 	updateRegistry( socketWrapper, C.ACTIONS.LISTEN_REJECT, [pattern, subscriptionName ] );
-	expect( listenerRegistry.hasActiveProvider( subscriptionName ) ).toBe( false );
+	if( !doNotCheckActiveProvider) {
+		expect( listenerRegistry.hasActiveProvider( subscriptionName ) ).toBe( false );
+	}
 }
 
 var messageHistory = {}
@@ -570,13 +572,12 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		3.  clients request a/1
 		4.  provider 1 gets a SP
 		5.  provider 1 times out -> treat as REJECT
-		7.  provider 1 responds with Reject
 		6.  provider 2 gets a SP
 		7.  provider 2 responds with ACCEPT
-		9.  provider 1 does not get anything
+		8.  provider 1 does not get anything
 		*/
 
-		xit( 'provider 1 times out, provider 2 accepts', function() {
+		it( 'provider 1 times out, provider 2 accepts', function(done) {
 			// 1
 			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
@@ -586,12 +587,21 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 			// 4
 			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/.*', 'a/1'] )
-			verify( provider2, null )
+			// console.log('a', messageHistory)
 
 			// 5
-			timeout( provider1, 'a/.*', 'a/1' );
+			setTimeout(function() {
+				// 7
+				accept( provider2, 'a/[0-9]', 'a/1' )
 
+				// 6
+				verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[0-9]', 'a/1'] )
 
+				// 8
+				// console.log('b', messageHistory)
+				verify( provider1, null )
+				done()
+			}, 25)
 		});
 
 		/*
@@ -599,26 +609,86 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		2.  provider 2 does listen a/[0-9]
 		3.  clients request a/1
 		4.  provider 1 gets a SP
-		5.  provider 1 times out -> REJECT
+		5.  provider 1 times out -> treat as REJECT
 		6.  provider 2 gets a SP
 		7.  provider 1 responds with ACCEPT
-		6.  provider 1 gets a SR
-		7.  provider 2 responds with ACCEPT
-		9.  provider 1 does not get anything
+		8.  provider 2 responds with ACCEPT
+        9.  provider 1 gets a SR
 		*/
+
+		it( 'provider 1 times out, but then it accepts but will be ignored because provider 2 accepts as well', function(done) {
+			// 1
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			// 2
+			updateRegistryAndVerify( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
+			// 3
+			subscribe( 'a/1', client1 )
+
+			// 4
+			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/.*', 'a/1'] )
+
+			// 5
+			setTimeout(function() {
+				// 6
+				verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[0-9]', 'a/1'] )
+
+				// 7
+				accept( provider1, 'a/.*', 'a/1', true ) // hold this provider
+
+				// 8
+				accept( provider2, 'a/[0-9]', 'a/1' ) // use this provider -> provide 1 should be droped
+
+				// 9
+				verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, ['a/.*', 'a/1'] )
+
+				// 10
+				verify( provider1, null )
+				done()
+			}, 25)
+		});
 
 		/*
 		1.  provider 1 does listen a/.*
 		2.  provider 2 does listen a/[0-9]
 		3.  clients request a/1
 		4.  provider 1 gets a SP
-		5.  provider 1 times out -> REJECT
+		5.  provider 1 times out -> treat as REJECT
 		6.  provider 2 gets a SP
 		7.  provider 1 responds with ACCEPT ( hold in pending and accept if next publisher rejects )
 		7.  provider 2 responds with REJECT
 		9.  client gets publish true
 		*/
 
+		it( 'provider 1 times out, but then it accept and will be used because provider 2 rejects', function(done) {
+			// 1
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			// 2
+			updateRegistryAndVerify( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
+			// 3
+			subscribe( 'a/1', client1 )
+
+			// 4
+			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/.*', 'a/1'] )
+
+			// 5
+			setTimeout(function() {
+				// 6
+				verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[0-9]', 'a/1'] )
+
+				// 7
+				accept( provider1, 'a/.*', 'a/1', true) // in pending state
+
+				// 10
+				reject( provider2, 'a/[0-9]', 'a/1', true ) // should let provder 1 do the work
+
+				// 9
+				var msgString = msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|a/1|${C.TYPES.TRUE}+` )
+				expect( sendToSubscribersMock ).toHaveBeenCalledWith('a/1', msgString)
+				expect( sendToSubscribersMock.calls.count() ).toBe( 1 )
+
+				done()
+			}, 25)
+		});
 
         // +++ Interval ( Not mandotory, can be null )
 
