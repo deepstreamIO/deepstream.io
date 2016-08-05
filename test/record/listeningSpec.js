@@ -7,7 +7,7 @@ var RecordHandler = require( '../../src/record/record-handler' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
 	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' );
 
-describe( 'record handler handles messages', function(){
+xdescribe( 'record handler handles messages', function(){
 	var recordHandler,
 	    subscribingClient = new SocketWrapper( new SocketMock(), {} ),
 		listeningClient = new SocketWrapper( new SocketMock(), {} ),

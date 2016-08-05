@@ -7,7 +7,7 @@ var ListenerRegistry = require( '../../src/utils/listener-registry' ),
 	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' );
 
 
-describe( 'listener-registry', function(){
+xdescribe( 'listener-registry', function(){
     var listenerRegistry,
         options = { logger: new LoggerMock() },
         recordSubscriptionRegistryMock = {
@@ -118,7 +118,7 @@ describe( 'listener-registry', function(){
     });
 });
 
-describe( 'listener-registry errors', function(){
+xdescribe( 'listener-registry errors', function(){
     var listenerRegistry,
         options = { logger: { log: jasmine.createSpy( 'log' ) } },
         recordSubscriptionRegistryMock = {

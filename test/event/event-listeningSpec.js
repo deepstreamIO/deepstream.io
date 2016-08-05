@@ -6,7 +6,7 @@ var EventHandler = require( '../../src/event/event-handler' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
 	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' );
 
-describe( 'event handler handles messages', function(){
+xdescribe( 'event handler handles messages', function(){
 	var eventHandler,
 	    subscribingClient = new SocketWrapper( new SocketMock(), {} ),
 		listeningClient = new SocketWrapper( new SocketMock(), {} ),
