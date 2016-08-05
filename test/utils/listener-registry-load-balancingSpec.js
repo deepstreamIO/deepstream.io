@@ -9,9 +9,12 @@ var ListenerRegistry = require( '../../src/utils/listener-registry' ),
 
 var subscribedTopics,
 	sendToSubscribersMock,
+	provider1,
+	provider2,
+	provider3,
 	client1,
-	client2;
-var listenerRegistry,
+	client2,
+    listenerRegistry,
 	options = { logger: new LoggerMock() },
 	clientRegistry = null;
 
@@ -87,7 +90,7 @@ function verify(provider, actions, data) {
 	);
 }
 
-fdescribe( 'listener-registry-load-balancing', function() {
+describe( 'listener-registry-load-balancing', function() {
 	beforeEach(function() {
 		sendToSubscribersMock = jasmine.createSpy( 'sendToSubscribersMock' );
 		subscribedTopics = [];
@@ -103,6 +106,8 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		provider1.toString = function() { return 'provider1' }
 		provider2 = new SocketWrapper( new SocketMock(), options );
 		provider2.toString = function() { return 'provider2' }
+		provider3 = new SocketWrapper( new SocketMock(), options );
+		provider3.toString = function() { return 'provider3' }
 		listenerRegistry = new ListenerRegistry( 'R', options, clientRegistry );
 		expect( typeof listenerRegistry.addListener ).toBe( 'function' );
 	});
@@ -389,7 +394,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 		12. send publishing=false to the clients (new action: PUBLISHING // TODO:
 		*/
 
-		it( 'first rejects, seconds accepts', function() {
+		it( 'first rejects, seconds accepts', function(done) {
 			// 1
 			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
 			// 2
@@ -405,7 +410,7 @@ fdescribe( 'listener-registry-load-balancing', function() {
 			// 6
 			verify( provider1, null )
 			verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[0-9]', 'a/1'] )
-
+			return done()
 			// 7
 			accept( provider2, 'a/[0-9]', 'a/1' );
 
@@ -597,6 +602,11 @@ fdescribe( 'listener-registry-load-balancing', function() {
 				accept( provider2, 'a/[0-9]', 'a/1' )
 
 				// 8
+				var msgString = msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|a/1|${C.TYPES.TRUE}+` )
+				expect( sendToSubscribersMock ).toHaveBeenCalledWith('a/1', msgString)
+				expect( sendToSubscribersMock.calls.count() ).toBe( 1 )
+
+				// 9
 				verify( provider1, null )
 				done()
 			}, 25)
@@ -632,14 +642,20 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 				// 7
 				accept( provider1, 'a/.*', 'a/1', true ) // hold this provider
+				expect( sendToSubscribersMock.calls.count() ).toBe( 0 )
 
 				// 8
 				accept( provider2, 'a/[0-9]', 'a/1' ) // use this provider -> provide 1 should be droped
 
 				// 9
-				verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, ['a/.*', 'a/1'] )
+				var msgString = msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|a/1|${C.TYPES.TRUE}+` )
+				expect( sendToSubscribersMock ).toHaveBeenCalledWith('a/1', msgString)
+				expect( sendToSubscribersMock.calls.count() ).toBe( 1 )
 
 				// 10
+				verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, ['a/.*', 'a/1'] )
+
+				// 11
 				verify( provider1, null )
 				done()
 			}, 25)
@@ -670,7 +686,6 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 			// 5
 			setTimeout(function() {
-				console.log('after timeout')
 				// 6
 				verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[0-9]', 'a/1'] )
 
@@ -686,7 +701,63 @@ fdescribe( 'listener-registry-load-balancing', function() {
 				expect( sendToSubscribersMock ).toHaveBeenCalledWith('a/1', msgString)
 				expect( sendToSubscribersMock.calls.count() ).toBe( 1 )
 
+				verify( provider1, null )
+
 				done()
+			}, 25)
+		});
+
+		it( 'provider 1 and 2 times out and 3 rejects, 1 and 2 accepts later and 1 wins', function(done) {
+			// 1
+			updateRegistryAndVerify( provider1, C.ACTIONS.LISTEN, 'a/.*' )
+			// 2
+			updateRegistryAndVerify( provider2, C.ACTIONS.LISTEN, 'a/[0-9]' )
+			// 3
+			updateRegistryAndVerify( provider3, C.ACTIONS.LISTEN, 'a/[1]' )
+
+			// 4
+			subscribe( 'a/1', client1 )
+
+			// 4
+			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/.*', 'a/1'] )
+
+			// 5
+			setTimeout(function() {
+				// 6
+				verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[0-9]', 'a/1'] )
+
+				// 7
+				setTimeout(function() {
+					// 8
+					verify( provider3, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[1]', 'a/1'] )
+
+					// 9
+					accept( provider1, 'a/.*', 'a/1', true ) // in pending state
+					expect( sendToSubscribersMock.calls.count() ).toBe( 0 )
+
+					// 10
+					accept( provider2, 'a/[0-9]', 'a/1', true ) // in pending state
+					expect( sendToSubscribersMock.calls.count() ).toBe( 0 )
+
+					// 11
+					reject( provider3, 'a/[0-9]', 'a/1', true ) // should let provder 1 do the work
+
+					// 12
+					var msgString = msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|a/1|${C.TYPES.TRUE}+` )
+					expect( sendToSubscribersMock ).toHaveBeenCalledWith('a/1', msgString)
+					expect( sendToSubscribersMock.calls.count() ).toBe( 1 )
+
+					// 13
+					verify( provider1, null )
+
+					// 14
+					verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, ['a/[0-9]', 'a/1'] )
+
+					done()
+
+				}, 25)
+
+
 			}, 25)
 		});
 
