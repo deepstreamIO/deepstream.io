@@ -47,32 +47,52 @@ TODO
 */
 
 ListenerRegistry.prototype.handle = function( socketWrapper, message ) {
-  var index = (this._timedoutProviders[ message.data[ 1 ] ] || []).findIndex( function( provider ) {
-    return provider.socketWrapper === socketWrapper && provider.pattern === message.data[ 0 ];
+  var pattern = message.data[ 0 ];
+  var subscriptionName = message.data[ 1 ];
+  var indexOfTimedoutProvider = (this._timedoutProviders[ subscriptionName ] || []).findIndex( function( provider ) {
+    return provider.socketWrapper === socketWrapper && provider.pattern === pattern;
   });
+  var timedoutButReadyProvider = (this._timedoutProviders[ subscriptionName ] || []).filter( provider => provider.isReady )[0]
+  // console.log(socketWrapper.toString(), message, this._listenInProgress)
   if (message.action === C.ACTIONS.LISTEN ) {
     this.addListener( socketWrapper, message );
   } else if (message.action === C.ACTIONS.UNLISTEN ) {
     this.removeListener( socketWrapper, message );
-  } else if( this._timedoutProviders[ message.data[ 1 ] ] && index !== -1) {
-    if (message.action === C.ACTIONS.LISTEN_ACCEPT ) {
-      socketWrapper.send(
-        messageBuilder.getMsg(
-          this._type,
-          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-          [ message.data[ 0 ], message.data[ 1 ] ]
-        )
-      );
+  } else if( this._timedoutProviders[ subscriptionName ] && indexOfTimedoutProvider !== -1) {
+    if ( message.action === C.ACTIONS.LISTEN_ACCEPT || message.action === C.ACTIONS.LISTEN_REJECT ) {
+      var provider = this._timedoutProviders[ subscriptionName ][ indexOfTimedoutProvider ];
+      provider.isReady = true;
+      provider.action = message.action
+      provider.pattern = pattern
     }
-    this._timedoutProviders[ message.data[ 1 ] ].splice( index, 1 );
-  } else if( this._listenInProgress[ message.data[ 1 ] ] ) {
+  } else if( this._listenInProgress[ subscriptionName ] ) {
     if (message.action === C.ACTIONS.LISTEN_ACCEPT ) {
       this.accept( socketWrapper, message );
-      // notify timeod out methods that accepted SR
+      if( timedoutButReadyProvider ) {
+        var index = this._timedoutProviders[ subscriptionName ].indexOf( timedoutButReadyProvider );
+        this._timedoutProviders[ subscriptionName ].splice( index, 1 );
+        if( timedoutButReadyProvider.action === C.ACTIONS.LISTEN_ACCEPT ) {
+          timedoutButReadyProvider.socketWrapper.send(
+            messageBuilder.getMsg(
+              this._type,
+              C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+              [ timedoutButReadyProvider.pattern, subscriptionName ]
+            )
+          );
+        }
+      }
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
-      this.triggerNextProvider( message.data[ 1 ] );
+      if( timedoutButReadyProvider ) {
+        var index = this._timedoutProviders[ subscriptionName ].indexOf( timedoutButReadyProvider );
+        this._timedoutProviders[ subscriptionName ].splice( index, 1 );
+        if( timedoutButReadyProvider.action === C.ACTIONS.LISTEN_ACCEPT ) {
+          this.accept( timedoutButReadyProvider.socketWrapper, message );
+        }
+      } else {
+        this.triggerNextProvider( subscriptionName );
+      }
     }
-  }  else {
+  } else {
     console.log(message)
     console.error(new Error('TODO').stack)
     // send error that accepting or rejecting listen pattern / subscription
@@ -240,7 +260,7 @@ ListenerRegistry.prototype.removeListener = function( socketWrapper, message ) {
         this._listenInProgress[name][i].socketWrapper === socketWrapper &&
         this._listenInProgress[name][i].pattern === pattern
       ) {
-        this._listenInProgress[name].splice( i, 1);
+        this._listenInProgress[name].splice( i, 1 );
       }
     }
   }
@@ -259,9 +279,9 @@ ListenerRegistry.prototype.onSubscriptionMade = function( name, socketWrapper, c
   var pattern, message;
   var action = C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND;
 
-  if( this.hasActiveProvider( name )) {
+  if( this.hasActiveProvider( name ) ) {
     socketWrapper.send( messageBuilder.getMsg(
-      this._type, C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [name, C.TYPES.TRUE]
+      this._type, C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [ name, C.TYPES.TRUE ]
     ) );
     return;
   }
@@ -299,7 +319,6 @@ ListenerRegistry.prototype.triggerNextProvider = function ( name ) {
       this.triggerNextProvider( name );
     }).bind( this ), 20 );
     this._timeoutMap[ name ] = timeoutId;
-    // console.log('3>>> found', provider.pattern)
     provider.socketWrapper.send( messageBuilder.getMsg(
       this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ provider.pattern, name ]
       )

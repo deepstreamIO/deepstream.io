@@ -587,18 +587,16 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 			// 4
 			verify( provider1, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/.*', 'a/1'] )
-			// console.log('a', messageHistory)
 
 			// 5
 			setTimeout(function() {
-				// 7
-				accept( provider2, 'a/[0-9]', 'a/1' )
-
 				// 6
 				verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[0-9]', 'a/1'] )
 
+				// 7
+				accept( provider2, 'a/[0-9]', 'a/1' )
+
 				// 8
-				// console.log('b', messageHistory)
 				verify( provider1, null )
 				done()
 			}, 25)
@@ -672,11 +670,13 @@ fdescribe( 'listener-registry-load-balancing', function() {
 
 			// 5
 			setTimeout(function() {
+				console.log('after timeout')
 				// 6
 				verify( provider2, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, ['a/[0-9]', 'a/1'] )
 
 				// 7
-				accept( provider1, 'a/.*', 'a/1', true) // in pending state
+				accept( provider1, 'a/.*', 'a/1', true ) // in pending state
+				expect( sendToSubscribersMock.calls.count() ).toBe( 0 )
 
 				// 10
 				reject( provider2, 'a/[0-9]', 'a/1', true ) // should let provder 1 do the work
