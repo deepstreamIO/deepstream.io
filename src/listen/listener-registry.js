@@ -1,6 +1,6 @@
 var C = require( '../constants/constants' ),
   SubscriptionRegistry = require( '../utils/subscription-registry' ),
-  TimeoutRegistry = require( './timeout-registry' ),
+  TimeoutRegistry = require( './listener-timeout-registry' ),
   messageParser = require( '../message/message-parser' ),
   messageBuilder = require( '../message/message-builder' );
 
@@ -47,23 +47,15 @@ TODO
 */
 
 ListenerRegistry.prototype.handle = function( socketWrapper, message ) {
-  //console.log(socketWrapper.toString(), message, this._listenInProgress)
   var pattern = message.data[ 0 ];
   var subscriptionName = message.data[ 1 ];
   if (message.action === C.ACTIONS.LISTEN ) {
-
     this.addListener( socketWrapper, message );
-
   } else if (message.action === C.ACTIONS.UNLISTEN ) {
-
     this.removeListener( socketWrapper, message );
-
-  } else if( this._listenerTimeoutRegistery.hasLateProviders( socketWrapper, message ) ) {
-
+  } else if( this._listenerTimeoutRegistery.isLateProvider( socketWrapper, message ) ) {
     this._listenerTimeoutRegistery.handle( socketWrapper, message );
-
   } else if( this._listenInProgress[ subscriptionName ] ) {
-
     if (message.action === C.ACTIONS.LISTEN_ACCEPT ) {
       this.accept( socketWrapper, message );
       this._listenerTimeoutRegistery.rejectRemainingRevitalized( subscriptionName );
@@ -76,13 +68,12 @@ ListenerRegistry.prototype.handle = function( socketWrapper, message ) {
         this.triggerNextProvider( subscriptionName );
       }
     }
-
   } else {
-
-    console.log(message)
-    console.error(new Error('TODO').stack)
-    // send error that accepting or rejecting listen pattern / subscription
-    // that isn't being asked for
+    socketWrapper.send( messageBuilder.getMsg(
+      this._type,
+      C.ACTIONS.ERROR,
+      [ message.action, pattern, subscriptionName ]
+    ) );
   }
 }
 
@@ -103,12 +94,7 @@ ListenerRegistry.prototype.accept = function( socketWrapper, message ) {
     createHasProviderMessage( true, this._type, subscriptionName )
   );
 
-  socketWrapper.socket.once( 'close', (function() {
-    this._clientRegistry.sendToSubscribers(
-      subscriptionName,
-      createHasProviderMessage( false,  this._type, subscriptionName )
-    );
-  }).bind( this ) );
+  socketWrapper.socket.once( 'close', this.removeListener.bind( this, socketWrapper, message ) );
 
   this._listenerTimeoutRegistery.clearTimeout( subscriptionName );
   delete this._listenInProgress[ subscriptionName ];
@@ -122,19 +108,10 @@ function createHasProviderMessage(hasProvider, type, subscriptionName) {
     );
 }
 
-/*
- provider 1 times out
- provider 2 times out
- provider 3 accepts -> set
+/**
+*
 */
-
-/*
-TODO
-*/
-
 ListenerRegistry.prototype.hasActiveProvider = function( susbcriptionName ) {
-  // do i have a local provider ( i know the provider pattern, the subscription name and the provider socket
-  // does any other deepstream node actually provide this subscriptionName
   return !!this._providedRecords[ susbcriptionName ];
 }
 
@@ -189,8 +166,6 @@ ListenerRegistry.prototype.addListener = function( socketWrapper, message ) {
       }
     }
   }
-
-  // now do the same thing but with remote subscriptions
 };
 
 /**
@@ -249,6 +224,18 @@ ListenerRegistry.prototype.removeListener = function( socketWrapper, message ) {
       }
     }
   }
+
+  var name = message.data[ 1 ];
+  if( this._providedRecords[ name ] && this._providedRecords[ name ].socketWrapper === socketWrapper) {
+    this._clientRegistry.sendToSubscribers(
+      name,
+      createHasProviderMessage( false,  this._type, name )
+    );
+    delete this._providedRecords[ name ];
+
+    this.createListenMap( name );
+    this.triggerNextProvider( name );
+  }
 };
 
 /**
@@ -261,7 +248,7 @@ ListenerRegistry.prototype.removeListener = function( socketWrapper, message ) {
  * @returns {void}
  */
 ListenerRegistry.prototype.onSubscriptionMade = function( name, socketWrapper, count ) {
-  var pattern, message;
+  var message;
   var action = C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND;
 
   if( this.hasActiveProvider( name ) ) {
@@ -270,12 +257,12 @@ ListenerRegistry.prototype.onSubscriptionMade = function( name, socketWrapper, c
     ) );
     return;
   }
-  this.createListenMap( pattern, name );
 
+  this.createListenMap( name );
   this.triggerNextProvider( name );
 };
 
-ListenerRegistry.prototype.createListenMap = function ( pattern, name ) {
+ListenerRegistry.prototype.createListenMap = function ( name ) {
   // Creating the map
   this._listenInProgress[ name ] = [];
   for( pattern in this._patterns ) {
@@ -330,6 +317,12 @@ ListenerRegistry.prototype.onSubscriptionRemoved = function( name, socketWrapper
       this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, name ]
     )
   );
+
+  this._clientRegistry.sendToSubscribers(
+    name,
+    createHasProviderMessage( false, this._type, name )
+  );
+
   delete this._providedRecords[ name ];
 };
 

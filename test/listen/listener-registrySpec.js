@@ -1,5 +1,5 @@
 /* global describe, expect, it, jasmine */
-var ListenerRegistry = require( '../../src/utils/listener-registry' ),
+var ListenerRegistry = require( '../../src/listen/listener-registry' ),
 	msg = require( '../test-helper/test-helper' ).msg,
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),

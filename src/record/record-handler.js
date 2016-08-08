@@ -1,6 +1,6 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	ListenerRegistry = require( '../utils/listener-registry' ),
+	ListenerRegistry = require( '../listen/listener-registry' ),
 	RecordRequest = require( './record-request' ),
 	RecordTransition = require( './record-transition' ),
 	RecordDeletion = require( './record-deletion' ),

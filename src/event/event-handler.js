@@ -1,6 +1,6 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	ListenerRegistry = require( '../utils/listener-registry' ),
+	ListenerRegistry = require( '../listen/listener-registry' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' ),
 	STRING = 'string';
