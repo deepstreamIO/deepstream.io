@@ -92,7 +92,7 @@ class ListenerTestUtils {
 	}
 
 	providerAcceptsAndIsSentSubscriptionRemoved( provider, pattern, subscriptionName ) {
-		this.providerRejectsAndPreviousTimeoutProviderThatAcceptedIsUsed( provider, pattern, subscriptionName )
+		this.providerAcceptsButIsntAcknowledged( provider, pattern, subscriptionName )
 		this.providerGetsSubscriptionRemoved( provider, pattern, subscriptionName )
 	}
 

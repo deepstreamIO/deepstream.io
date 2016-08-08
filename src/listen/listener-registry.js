@@ -95,12 +95,13 @@ class ListenerRegistry {
   _processResponseForListInProgress( socketWrapper, subscriptionName, message ) {
     if (message.action === C.ACTIONS.LISTEN_ACCEPT ) {
       this._accept( socketWrapper, message );
-      this._listenerTimeoutRegistery.rejectRemainingLateResponders( subscriptionName );
+      this._listenerTimeoutRegistery.rejectLateResponderThatAccepted( subscriptionName );
+      this._listenerTimeoutRegistery.clear( subscriptionName );
     } else if (message.action === C.ACTIONS.LISTEN_REJECT ) {
-      const provider = this._listenerTimeoutRegistery.getNextLateResponder( subscriptionName );
+      const provider = this._listenerTimeoutRegistery.getLateResponderThatAccepted( subscriptionName );
       if( provider ) {
         this._accept( provider.socketWrapper, message );
-        this._listenerTimeoutRegistery.rejectRemainingLateResponders( subscriptionName );
+        this._listenerTimeoutRegistery.clear( subscriptionName );
       } else {
         this._triggerNextProvider( subscriptionName );
       }
