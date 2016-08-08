@@ -103,6 +103,8 @@ describe( 'subscription-registry manages subscriptions', function(){
 	});
 
 	it( 'routes the events', function(){
+		subscriptionListenerMock.onSubscriptionRemoved.calls.reset();
+
 		subscriptionRegistry.subscribe( 'someOtherName', socketWrapperA );
 		subscriptionRegistry.sendToSubscribers( 'someOtherName', _msg( 'msg6+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'msg6+' ) );
