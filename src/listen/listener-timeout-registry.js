@@ -3,7 +3,15 @@
 const messageBuilder = require( '../message/message-builder' );
 const C = require( '../constants/constants' );
 
-class TimeoutRegistry {
+class ListenerTimeoutRegistry {
+	/**
+   * The ListenerTimeoutRegistry is responsible for keeping track of listeners that have
+   * been asked whether they want to provide a certain subscription, but have not yet
+   * responded.
+   *
+   * @param {Topic} type
+   * @param {Map} options
+   */
 	constructor( type, options ) {
 		this._type = type;
 		this._options = options;
@@ -11,6 +19,13 @@ class TimeoutRegistry {
 		this._timedoutProviders = {};
 	}
 
+	/**
+	* The main entry point, which takes a message from a provider
+	* that has already timed out and does the following:
+	*
+	* 1) If reject, remove from map
+	* 2) If accept, store as an accepted and reject all following accepts
+	*/
 	handle( socketWrapper, message ) {
 		const pattern = message.data[ 0 ];
 		const name = message.data[ 1 ];
@@ -42,12 +57,12 @@ class TimeoutRegistry {
 		clearTimeout( this._timeoutMap[ name ] );
 	}
 
-	isLateProvider( socketWrapper, message ) {
+	isALateResponder( socketWrapper, message ) {
 		const index = this._getIndex( socketWrapper, message )
 		return this._timedoutProviders[ message.data[ 1 ] ] && index !== -1;
 	}
 
-	rejectRemainingRevitalized( name ) {
+	rejectRemainingLateResponders( name ) {
 		this._getLateProviders( name ).forEach( (provider, index) => {
 			provider.socketWrapper.send(
 				messageBuilder.getMsg(
@@ -60,7 +75,7 @@ class TimeoutRegistry {
 		});
 	}
 
-	getNextRevitalized( name ) {
+	getNextLateResponder( name ) {
 		const provider =  this._getLateProviders( name ).shift();
 		if (provider == null) {
 			return;
@@ -84,4 +99,4 @@ class TimeoutRegistry {
 }
 
 
-module.exports = TimeoutRegistry
+module.exports = ListenerTimeoutRegistry;

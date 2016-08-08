@@ -94,23 +94,16 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	/*
-	 * Return a list of all the records that much the pattern
-	 */
-	else if( message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
-		this._listenerRegistry.sendSnapshot( socketWrapper, message );
-	}
-
-	/*
 	 * Listen to requests for a particular record or records
 	 * whose names match a pattern
 	 */
 	else if( message.action === C.ACTIONS.LISTEN ||
 		message.action === C.ACTIONS.UNLISTEN ||
 		message.action === C.ACTIONS.LISTEN_ACCEPT ||
-		message.action === C.ACTIONS.LISTEN_REJECT ) {
+		message.action === C.ACTIONS.LISTEN_REJECT ||
+		message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
 		this._listenerRegistry.handle( socketWrapper, message );
 	}
-
 
 	/*
 	 * Default for invalid messages

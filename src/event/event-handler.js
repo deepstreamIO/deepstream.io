@@ -42,16 +42,16 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 		this._triggerEvent( socketWrapper, message );
 	}
 
-	else if( message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
-		this._listenerRegistry.sendSnapshot( socketWrapper, message );
-	}
-
-	else if( message.action === C.ACTIONS.LISTEN ) {
-		this._listenerRegistry.addListener( socketWrapper, message );
-	}
-
-	else if( message.action === C.ACTIONS.UNLISTEN ) {
-		this._listenerRegistry.removeListener( socketWrapper, message );
+	/*
+	 * Listen to requests for a particular event or events
+	 * whose names match a pattern
+	 */
+	else if( message.action === C.ACTIONS.LISTEN ||
+		message.action === C.ACTIONS.UNLISTEN ||
+		message.action === C.ACTIONS.LISTEN_ACCEPT ||
+		message.action === C.ACTIONS.LISTEN_REJECT ||
+		message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
+		this._listenerRegistry.handle( socketWrapper, message );
 	}
 
 	else {
