@@ -122,15 +122,16 @@ class ListenerRegistry {
     const pattern = this._getPattern( socketWrapper, message );
     const existingSubscriptions = this._clientRegistry.getNames();
     const regExp = this._validatePattern( socketWrapper, pattern );
+    var subscriptionName;
 
     if( !regExp ) {
       return;
     }
 
     for( var i = 0; i < existingSubscriptions.length; i++ ) {
-      name = existingSubscriptions[ i ];
-      if( name.match( regExp ) ) {
-        matchingNames.push( name );
+      subscriptionName = existingSubscriptions[ i ];
+      if( subscriptionName.match( regExp ) ) {
+        matchingNames.push( subscriptionName );
       }
     }
 
