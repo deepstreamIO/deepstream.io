@@ -102,7 +102,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 		expect( newSocketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|NOT_SUBSCRIBED|someName+' ) );
 	});
 
-	xit( 'routes the events', function(){
+	it( 'routes the events', function(){
 		subscriptionRegistry.subscribe( 'someOtherName', socketWrapperA );
 		subscriptionRegistry.sendToSubscribers( 'someOtherName', _msg( 'msg6+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'msg6+' ) );
