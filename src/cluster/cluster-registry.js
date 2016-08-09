@@ -5,50 +5,8 @@ const EventEmitter = require( 'events' ).EventEmitter;
 /**
  * 	Uses options
  * 	clusterKeepAliveInterval
- *
- * Uses topic C.TOPIC.CLUSTER
- *
- * Emits "add" <serverName>
- * Emits "remove" <serverName>
- *
-
- * Remove Message
- *
- * {
- *   topic: C.TOPIC.CLUSTER
- *   action: C.ACTIONS.REMOVE
- *   data: [ serverName ]
- * }
- *
- * Status Request Message
- * can be used if checksum got out of sync or if new node joined
- *
- * {
- *   topic: C.TOPIC.CLUSTER
- *   action: C.ACTIONS.STATUS_REQUEST,
- *   data: []
- * }
- *
- * Status / KeepAlive / Add message
- *
- * {
- *   topic: C.TOPIC.CLUSTER
- *   action: C.ACTIONS.STATUS
- *   data: [ serverName, clusterChecksum, statusData ]
- * }
- *
- * statusData can be e.g.
- *
- * {
- * 		browserConnections: 3434,
- * 		tcpConnections: 32,
- * 		memory: 0.6,
- * 		checkSum: checkSum
- * }
- *
- * // Client
- * ds.cluster.subscribe();??
- * ds.cluster.unsubscribe();??
+ * 	clusterActiveCheckInterval
+ * 	clusterNodeInactiveTimeout
  */
 module.exports = class ClusterRegistry extends EventEmitter{
 	constructor( options, connectionEndpoint ) {
@@ -58,6 +16,7 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, this._onMessage.bind( this ) );
 		this._publishExists();
 		setInterval( this._publishExists.bind( this ), this._options.clusterKeepAliveInterval );
+		setInterval( this._checkNodes.bind( this ), this._options.clusterActiveCheckInterval );
 		process.on( 'beforeExit', this.leaveCluster.bind( this ) );
 		process.on( 'exit', this.leaveCluster.bind( this ) );
 	}
@@ -74,7 +33,7 @@ module.exports = class ClusterRegistry extends EventEmitter{
 	}
 
 	getAll() {
-
+		return Object.keys( this._nodes );
 	}
 
 	getLeastUtilizedExternalUrl() {
@@ -93,8 +52,12 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		}
 
 		if( message.action === C.ACTIONS.STATUS ) {
-			this._addNode( message.data[ 0 ] );
-		}
+			if( !this._nodes[ data.serverName ] ) {
+				this._addNode( message.data[ 0 ] );
+			} else {
+				this._updateNode( message.data[ 0 ] );
+			}
+		} 
 		else if( message.action === C.ACTIONS.REMOVE ) {
 			this._removeNode( message.data[ 0 ] );
 		}
@@ -103,11 +66,25 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		}
 	}
 
-	_addNode( data ) {
-		if( !this._nodes[ data.serverName ] ) {
-			this._nodes[ data.serverName ] = data;
-			this.emit( 'add', data.serverName );
+	_checkNodes() {
+		var now = Date.now(),
+			serverName;
+
+		for( serverName in this._nodes ) {
+			if( this._nodes[ serverName ].lastStatusTime - now > this._options.clusterNodeInactiveTimeout ) {
+				this._removeNode( this._nodes[ serverName ] );
+			}
 		}
+	}
+
+	_updateNode( data ) {
+		this._nodes[ data.serverName ] = data;
+		this._nodes[ data.serverName ].lastStatusTime = Date.now();
+	}
+
+	_addNode( data ) {
+		this._nodes[ data.serverName ] = data;
+		this.emit( 'add', data.serverName );
 	}
 
 	_removeNode( data ) {
@@ -128,8 +105,7 @@ module.exports = class ClusterRegistry extends EventEmitter{
 				browserConnections: this._connectionEndpoint.getBrowserConnectionCount(),
 				tcpConnections: this._connectionEndpoint.getTcpConnectionCount(),
 				memory: memoryStats.heapUsed / memoryStats.heapTotal,
-				externalUrl: this._options.externalUrl//,
-	//			clusterChecksum: this._clusterChecksum TOTO
+				externalUrl: this._options.externalUrl
 			}]
 		});
 	}

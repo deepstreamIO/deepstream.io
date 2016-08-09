@@ -13,7 +13,8 @@ fdescribe( 'distributed-state-registry adds and removes names', function(){
 		serverName: 'server-name-a',
 		externalUrl: 'some-host:1234',
 		clusterKeepAliveInterval: 20,
-		clusterKeepAliveTimeout: 100,
+		clusterActiveCheckInterval: 50,
+		clusterNodeInactiveTimeout: 100,
 		messageConnector: new MessageConnectorMock()
 	};
 
