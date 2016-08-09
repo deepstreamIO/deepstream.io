@@ -202,6 +202,7 @@ Deepstream.prototype.stop = function() {
 	}
 
 	utils.combineEvents( closables, 'close', this._onStopped.bind( this ) );
+	this._clusterRegistry.leaveCluster();
 	this._connectionEndpoint.close();
 };
 
