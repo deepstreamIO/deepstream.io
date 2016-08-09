@@ -125,6 +125,30 @@ ConnectionEndpoint.prototype.close = function() {
 };
 
 /**
+ * Returns the number of currently connected browsers. This is used by the
+ * cluster module to determine loadbalancing endpoints
+ *
+ * @public
+ * @returns {Number} browserConnectionCount
+ */
+ConnectionEndpoint.prototype.getBrowserConnectionCount = function() {
+	// TODO
+	return 0;
+};
+
+/**
+ * Returns the number of currently established TCP connections. This is used by the
+ * cluster module to determine loadbalancing endpoints
+ *
+ * @public
+ * @returns {Number} browserConnectionCount
+ */
+ConnectionEndpoint.prototype.getTcpConnectionCount = function() {
+	// TODO
+	return 0;
+};
+
+/**
  * Closes the engine.io and subsequently http server
  *
  * TODO: Make sure that engine.io and the http server's

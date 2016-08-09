@@ -2,7 +2,7 @@
 
 const EventEmitter = require( 'events' ).EventEmitter;
 /**
- * Uses options
+ * 	Uses options
  * 	clusterKeepAliveInterval
  *
  * Uses topic C.TOPIC.CLUSTER
@@ -15,7 +15,7 @@ const EventEmitter = require( 'events' ).EventEmitter;
  * {
  *   topic: C.TOPIC.CLUSTER
  *   action: C.ACTIONS.ADD
- *   data: [ serverName, publicIp ]
+ *   data: [ serverName, publicIp, status ]
  * }
  *
  * Remove Message
@@ -49,14 +49,20 @@ const EventEmitter = require( 'events' ).EventEmitter;
  * 		browserConnections: 3434,
  * 		tcpConnections: 32,
  * 		memory: 0.6,
- * 		records: 634,
- * 		events: 345,
- * 		rpcs: 32
+ * 		checkSum: checkSum
  * }
+ *
+ * // Client
+ * ds.cluster.subscribe();??
+ * ds.cluster.unsubscribe();??
  */
 module.exports = class ClusterRegistry extends EventEmitter{
-	constructor( options ) {
+	constructor( options, connectionEndpoint ) {
 		super();
+		this._options = options;
+		this._connectionEndpoint = connectionEndpoint;
+		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, this._onMessage.bind( this ) );
+		this._publishExists();
 	}
 
 	getAll() {
@@ -65,5 +71,31 @@ module.exports = class ClusterRegistry extends EventEmitter{
 
 	getLeastUtilizedExternalUrl() {
 
+	}
+
+	_onMessage( data ) {
+
+	}
+
+	_publishExists() {
+		this._options.messageConnector.publish( C.TOPIC.CLUSTER, {
+			topic: C.TOPIC.CLUSTER,
+			action: C.ACTIONS.EXISTS,
+			data:[
+				this._options.serverName,
+				this._options.publicIp,
+				this._getState()
+			]
+		});
+	}
+
+	_getState() {
+		var memoryStats = process.memoryUsage();
+
+		return {
+			browserConnections: this._connectionEndpoint.getBrowserConnectionCount(),
+			tcpConnections: this._connectionEndpoint.getTcpConnectionCount(),
+			memory: memoryStats.heapUsed / memoryStats.heapTotal
+		}
 	}
 }
