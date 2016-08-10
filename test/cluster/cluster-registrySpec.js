@@ -6,7 +6,7 @@ var connectionEndpointMock = {
 	getTcpConnectionCount: function() { return 7; }
 };
 
-fdescribe( 'distributed-state-registry adds and removes names', function(){
+describe( 'distributed-state-registry adds and removes names', function(){
 	var clusterRegistry;
 
 	var addSpy = jasmine.createSpy( 'add' );
@@ -19,7 +19,7 @@ fdescribe( 'distributed-state-registry adds and removes names', function(){
 		clusterActiveCheckInterval: 50,
 		clusterNodeInactiveTimeout: 100,
 		messageConnector: new MessageConnectorMock(),
-		logger: { log: function(){ console.log( arguments ); } }
+		logger: { log: jasmine.createSpy( 'log' ) }
 	};
 
 	it( 'sends an exist message when the cluster registry is created', function(){
@@ -37,9 +37,25 @@ fdescribe( 'distributed-state-registry adds and removes names', function(){
 		expect( isNaN( mem ) === false && mem > 0 && mem < 1 ).toBe( true );
 	});
 
+	it( 'continuously sends status messages', function( done ){
+		var count = 0;
+		var memory = 0;
+		var int = setInterval(function(){
+			expect( options.messageConnector.lastPublishedMessage.data[ 0 ].memory ).not.toBe( memory );
+			expect( options.messageConnector.lastPublishedMessage.data[ 0 ].serverName ).toBe( 'server-name-a' );
+			count++;
+			memory = options.messageConnector.lastPublishedMessage.data[ 0 ].memory;
+			options.messageConnector.reset();
+			if( count > 3 ) {
+				clearInterval( int );
+				done();
+			}
+		}, 30 );
+	});
+
 	it( 'receives a message that adds a node', function(){
 		expect( clusterRegistry.getAll() ).toEqual([ 'server-name-a']);
-		
+
 		options.messageConnector.simulateIncomingMessage({
 			topic: C.TOPIC.CLUSTER,
 			action: C.ACTIONS.STATUS,
@@ -57,7 +73,6 @@ fdescribe( 'distributed-state-registry adds and removes names', function(){
 	});
 
 	it( 'receives another message that adds a node', function(){
-
 		options.messageConnector.simulateIncomingMessage({
 			topic: C.TOPIC.CLUSTER,
 			action: C.ACTIONS.STATUS,
@@ -72,6 +87,27 @@ fdescribe( 'distributed-state-registry adds and removes names', function(){
 
 		expect( addSpy ).toHaveBeenCalledWith( 'server-name-c' );
 		expect( clusterRegistry.getAll() ).toEqual([ 'server-name-a', 'server-name-b', 'server-name-c' ]);
+	});
+
+	it( 'receives a message without data', function(){
+		expect( options.logger.log ).not.toHaveBeenCalled();
+		options.messageConnector.simulateIncomingMessage({
+			topic: C.TOPIC.CLUSTER,
+			action: C.ACTIONS.STATUS,
+			data: []
+		});
+		expect( options.logger.log ).toHaveBeenCalledWith(  2, 'INVALID_MESSAGE_DATA', [] );
+	});
+
+	it( 'receives a message with an unknown action', function(){
+		expect( options.logger.log.calls.count() ).toBe( 1 );
+		options.messageConnector.simulateIncomingMessage({
+			topic: C.TOPIC.CLUSTER,
+			action: 'does not exist',
+			data: [ 'bla' ]
+		});
+		expect( options.logger.log.calls.count() ).toBe( 2 );
+		expect( options.logger.log ).toHaveBeenCalledWith(  2, 'UNKNOWN_ACTION', 'does not exist' );
 	});
 
 	it( 'returns the least utilized node', function(){
@@ -111,5 +147,15 @@ fdescribe( 'distributed-state-registry adds and removes names', function(){
 			expect( clusterRegistry.getAll() ).toEqual([ 'server-name-a' ]);
 			done();
 		}, 500 );
+	});
+
+	it( 'sends a remove message when the process ends', function(){
+		options.messageConnector.reset();
+		process.emit( 'exit' );
+		expect( options.messageConnector.lastPublishedMessage ).toEqual(({
+			topic: C.TOPIC.CLUSTER,
+			action: C.ACTIONS.REMOVE,
+			data: [ 'server-name-a' ]
+		}));
 	});
 });

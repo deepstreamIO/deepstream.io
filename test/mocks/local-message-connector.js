@@ -17,7 +17,7 @@ module.exports = class LocalMessageConnector{
 	}
 
 	unsubscribe( topic, callback ) {
-		this._emitter.off( topic, callback );
+		this._emitter.removeListener( topic, callback );
 	}
 
 	publish( topic, data ) {
