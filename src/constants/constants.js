@@ -104,8 +104,8 @@ exports.ACTIONS.ERROR = 'E';
 exports.ACTIONS.REQUEST = 'REQ';
 exports.ACTIONS.RESPONSE = 'RES';
 exports.ACTIONS.REJECTION = 'REJ';
-exports.ACTIONS.EXISTS = 'EX';
-exports.ACTIONS.LEAVE = 'LV';
+exports.ACTIONS.STATUS = 'ST';
+exports.ACTIONS.REMOVE = 'RM';
 
 //WebRtc
 exports.ACTIONS.WEBRTC_REGISTER_CALLEE = 'RC';
