@@ -190,7 +190,7 @@ class ListenerRegistry {
     }
 
     // stop providing
-    this._sendHasProviderUpdate( false, this._type, subscriptionName );
+    this._sendHasProviderUpdate( false, subscriptionName );
     provider.socketWrapper.send(
       messageBuilder.getMsg(
         this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, subscriptionName ]
@@ -219,7 +219,7 @@ class ListenerRegistry {
       pattern: message.data[ 0 ]
     }
 
-    this._sendHasProviderUpdate( true, this._type, subscriptionName );
+    this._sendHasProviderUpdate( true, subscriptionName );
   }
 
   /**
@@ -339,7 +339,7 @@ class ListenerRegistry {
     const provider = this._providedRecords[ subscriptionName ];
     if( provider && provider.socketWrapper === socketWrapper) {
       delete this._providedRecords[ subscriptionName ];
-      this._sendHasProviderUpdate( false, this._type, subscriptionName );
+      this._sendHasProviderUpdate( false, subscriptionName );
       this._createListenMap( subscriptionName );
       this._triggerNextProvider( subscriptionName );
     }
@@ -351,8 +351,11 @@ class ListenerRegistry {
    * @private
    * @returns {Message}
    */
-  _sendHasProviderUpdate( hasProvider, type, subscriptionName ) {
-    this._clientRegistry.sendToSubscribers( subscriptionName, this._createHasProviderMessage( hasProvider,  this._type, subscriptionName ) );
+  _sendHasProviderUpdate( hasProvider, subscriptionName ) {
+    if( this._type !== C.TOPIC.RECORD ) {
+      return
+    }
+    this._clientRegistry.sendToSubscribers( subscriptionName, this._createHasProviderMessage( hasProvider, this._type, subscriptionName ) );
   }
 
   /**
