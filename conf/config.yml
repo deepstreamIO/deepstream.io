@@ -12,6 +12,7 @@ host: 0.0.0.0 # host for the HTTP/websocket server
 tcpPort: 6021 # port for the TCP server
 tcpHost: 0.0.0.0 # host for the TCP server
 urlPath: /deepstream # url path HTTP/WEBSOCKET connections connect to
+externalUrl: null # webfacing URL under which this client is reachable. Used for loadbalancing / failover
 
 # SSL Configuration
 sslKey: null

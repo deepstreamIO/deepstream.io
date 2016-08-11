@@ -21,6 +21,7 @@ exports.get = function() {
 		tcpHost: '0.0.0.0',
 		httpServer: null,
 		urlPath: '/deepstream',
+		externalUrl: null,
 
 
 		/*
