@@ -6,7 +6,7 @@ var connectionEndpointMock = {
 	getTcpConnectionCount: function() { return 7; }
 };
 
-describe( 'distributed-state-registry adds and removes names', function(){
+fdescribe( 'distributed-state-registry adds and removes names', function(){
 	var clusterRegistry;
 
 	var addSpy = jasmine.createSpy( 'add' );
@@ -35,6 +35,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		expect( msg.data[ 0 ].browserConnections ).toBe( 8 );
 		expect( msg.data[ 0 ].tcpConnections ).toBe( 7 );
 		expect( isNaN( mem ) === false && mem > 0 && mem < 1 ).toBe( true );
+		expect( options.logger.log ).toHaveBeenCalledWith( 1, 'CLUSTER_JOIN', 'server-name-a' );
 	});
 
 	it( 'continuously sends status messages', function( done ){
@@ -67,7 +68,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 				externalUrl: 'external-url-b'
 			}]
 		});
-
+		expect( options.logger.log ).toHaveBeenCalledWith( 1, 'CLUSTER_JOIN', 'server-name-b' );
 		expect( addSpy ).toHaveBeenCalledWith( 'server-name-b' );
 		expect( clusterRegistry.getAll() ).toEqual([ 'server-name-a', 'server-name-b' ]);
 	});
@@ -85,12 +86,13 @@ describe( 'distributed-state-registry adds and removes names', function(){
 			}]
 		});
 
+		expect( options.logger.log ).toHaveBeenCalledWith( 1, 'CLUSTER_JOIN', 'server-name-c' );
+		expect( options.logger.log.calls.count() ).toBe( 3 );
 		expect( addSpy ).toHaveBeenCalledWith( 'server-name-c' );
 		expect( clusterRegistry.getAll() ).toEqual([ 'server-name-a', 'server-name-b', 'server-name-c' ]);
 	});
 
 	it( 'receives a message without data', function(){
-		expect( options.logger.log ).not.toHaveBeenCalled();
 		options.messageConnector.simulateIncomingMessage({
 			topic: C.TOPIC.CLUSTER,
 			action: C.ACTIONS.STATUS,
@@ -100,13 +102,12 @@ describe( 'distributed-state-registry adds and removes names', function(){
 	});
 
 	it( 'receives a message with an unknown action', function(){
-		expect( options.logger.log.calls.count() ).toBe( 1 );
 		options.messageConnector.simulateIncomingMessage({
 			topic: C.TOPIC.CLUSTER,
 			action: 'does not exist',
 			data: [ 'bla' ]
 		});
-		expect( options.logger.log.calls.count() ).toBe( 2 );
+
 		expect( options.logger.log ).toHaveBeenCalledWith(  2, 'UNKNOWN_ACTION', 'does not exist' );
 	});
 
@@ -138,12 +139,14 @@ describe( 'distributed-state-registry adds and removes names', function(){
 
 		expect( clusterRegistry.getAll() ).toEqual([ 'server-name-a', 'server-name-b' ]);
 		expect( clusterRegistry.getLeastUtilizedExternalUrl() ).toBe( 'external-url-b' );
+		expect( options.logger.log ).toHaveBeenCalledWith( 1, 'CLUSTER_LEAVE', 'server-name-c' );
 	});
 
 	it( 'removes a node due to timeout', function( done ){
 		expect( clusterRegistry.getAll() ).toEqual([ 'server-name-a', 'server-name-b' ]);
 
 		setTimeout(function(){
+			expect( options.logger.log ).toHaveBeenCalledWith( 1, 'CLUSTER_LEAVE', 'server-name-b' );
 			expect( clusterRegistry.getAll() ).toEqual([ 'server-name-a' ]);
 			done();
 		}, 500 );
