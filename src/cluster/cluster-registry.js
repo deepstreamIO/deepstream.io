@@ -13,25 +13,33 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		super();
 		this._options = options;
 		this._connectionEndpoint = connectionEndpoint;
+		this._inCluster = false;
 		this._nodes = {};
 		this._onMessageFn = this._onMessage.bind( this );
+		this._leaveClusterFn = this.leaveCluster.bind( this );
 		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, this._onMessageFn );
 		this._publishStatus();
 		this._publishInterval = setInterval( this._publishStatus.bind( this ), this._options.clusterKeepAliveInterval );
 		this._checkInterval = setInterval( this._checkNodes.bind( this ), this._options.clusterActiveCheckInterval );
-		process.on( 'beforeExit', this.leaveCluster.bind( this ) );
-		process.on( 'exit', this.leaveCluster.bind( this ) );
+		process.on( 'beforeExit', this._leaveClusterFn );
+		process.on( 'exit', this._leaveClusterFn );
 	}
 
 	leaveCluster() {
+		if( this._inCluster === false ) {
+			return;
+		}
 		this._options.messageConnector.publish( C.TOPIC.CLUSTER, {
 			topic: C.TOPIC.CLUSTER,
 			action: C.ACTIONS.REMOVE,
 			data:[ this._options.serverName ]
 		});
 		this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
+		process.removeListener( 'beforeExit', this._leaveClusterFn );
+		process.removeListener( 'exit', this._leaveClusterFn );
 		clearInterval( this._publishInterval );
 		clearInterval( this._checkInterval );
+		this._inCluster = false;
 	}
 
 	getAll() {
@@ -96,6 +104,7 @@ module.exports = class ClusterRegistry extends EventEmitter{
 	}
 
 	_publishStatus() {
+		this._inCluster = true;
 		var memoryStats = process.memoryUsage();
 
 		var data = {
