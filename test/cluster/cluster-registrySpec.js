@@ -6,7 +6,7 @@ var connectionEndpointMock = {
 	getTcpConnectionCount: function() { return 7; }
 };
 
-fdescribe( 'distributed-state-registry adds and removes names', function(){
+describe( 'distributed-state-registry adds and removes names', function(){
 	var clusterRegistry;
 
 	var addSpy = jasmine.createSpy( 'add' );
