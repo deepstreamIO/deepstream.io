@@ -111,7 +111,7 @@ describe( 'listener-registry-local-load-balancing', function() {
 			tu.subscriptionHasActiveProvider( 'a/1', false )
 		});
 
-		it( 'accepts a subscription for 2 clients', function() {
+		it( 'accepts a subscription for 2 clients and sends SR when client unsubscribes', function() {
 			// 1. provider does listen a/.*
 			tu.providerListensTo( 1, 'a/.*' )
 			// 2.  client 1 requests a/1
@@ -125,7 +125,7 @@ describe( 'listener-registry-local-load-balancing', function() {
 			// 6. provider 1 subscribes a/1
 			tu.providerSubscribesTo( 1, 'a/1' )
 			// 7.  client 1 discards a/1
-			tu.clientUnsubscribesTo( 1, 'a/1' )
+			tu.clientUnsubscribesAndOnlyRemainingSubscriberIsProvider( 1, 'a/1' )
 			// 8.  provider gets send Subscription removed because provider is the last subscriber
 			tu.providerGetsSubscriptionRemoved( 1, 'a/.*', 'a/1' )
 		});

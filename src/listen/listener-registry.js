@@ -176,22 +176,27 @@ class ListenerRegistry {
   onSubscriptionRemoved( subscriptionName, socketWrapper, count ) {
     const provider = this._providedRecords[ subscriptionName ];
 
-    if( count > 1 || !provider ) {
+    if( !provider ) {
       return;
     }
 
-    if( count === 1 && provider.socketWrapper !== socketWrapper) {
+    if( count > 1 ) {
       return;
     }
 
+    // provider discarded, but there is still another active subscriber
+    if( count === 1 && provider.socketWrapper === socketWrapper) {
+      return;
+    }
+
+    // stop providing
+    this._sendHasProviderUpdate( false, this._type, subscriptionName );
     provider.socketWrapper.send(
       messageBuilder.getMsg(
         this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, subscriptionName ]
       )
     );
     delete this._providedRecords[ subscriptionName ];
-
-    this._sendHasProviderUpdate( false, this._type, subscriptionName );
   }
 
   /**

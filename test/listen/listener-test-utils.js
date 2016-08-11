@@ -140,6 +140,11 @@ class ListenerTestUtils {
 		subscribedTopics.push(subscriptionName)
 	}
 
+
+	clientUnsubscribesAndOnlyRemainingSubscriberIsProvider( client, subscriptionName ) {
+		listenerRegistry.onSubscriptionRemoved( subscriptionName, clients[ client ], 1 );
+	}
+
 	clientUnsubscribesTo( client, subscriptionName, remainingSubscriptions ) {
 		if(remainingSubscriptions == null) {
 			remainingSubscriptions = 0
