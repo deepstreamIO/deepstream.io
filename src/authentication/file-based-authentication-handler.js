@@ -74,7 +74,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 			callback( true, {
 				username: authData.username,
 				serverData: typeof userData.serverData === 'undefined' ? null : userData.serverData,
-				clientData: typeof userData.serverData === 'undefined' ? null : userData.serverData
+				clientData: typeof userData.clientData === 'undefined' ? null : userData.clientData
 			} );
 		} else {
 			callback( false );

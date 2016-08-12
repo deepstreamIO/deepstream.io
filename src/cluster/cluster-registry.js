@@ -77,6 +77,14 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		return Object.keys( this._nodes );
 	}
 
+	getUniqueState( state, callback ) {
+
+	}
+
+	releaseUniqueState( state ) {
+		
+	}
+
 	/**
 	 * Returns the public url of the least utilized node within the cluster.
 	 *
@@ -210,3 +218,8 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		});
 	}
 }
+
+// When new node joins with leaderScore > currentLeader
+// every node keeps pendingLeadership flag... (or whatever)
+// currentLeader finishes current locks, then broadcasts LEADER_RELEASE
+// every node now removes pendingLeader flag

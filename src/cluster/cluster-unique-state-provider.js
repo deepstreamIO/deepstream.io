@@ -115,6 +115,6 @@ module.exports = class UniqueRegistry{
 	}
 
 	_onNodeRemoved() {
-		
+		// elect next highest node
 	}
 }
