@@ -80,6 +80,8 @@ exports.TOPIC.RECORD = 'R';
 exports.TOPIC.RPC = 'P';
 exports.TOPIC.WEBRTC = 'W';
 exports.TOPIC.CLUSTER = 'CL';
+exports.TOPIC.LEADER = 'L';
+exports.TOPIC.LEADER_PRIVATE = 'LP_';
 exports.TOPIC.PRIVATE = 'PRIVATE/';
 
 exports.ACTIONS = {};
@@ -109,6 +111,8 @@ exports.ACTIONS.RESPONSE = 'RES';
 exports.ACTIONS.REJECTION = 'REJ';
 exports.ACTIONS.STATUS = 'ST';
 exports.ACTIONS.REMOVE = 'RM';
+exports.ACTIONS.LEADER_REQUEST = 'LR';
+exports.ACTIONS.LEADER_VOTE = 'LV';
 
 //WebRtc
 exports.ACTIONS.WEBRTC_REGISTER_CALLEE = 'RC';
