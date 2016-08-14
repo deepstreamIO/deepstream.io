@@ -8,7 +8,9 @@ var ListenerRegistry = require( '../../src/listen/listener-registry' ),
 	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' ),
 	C = require( '../../src/constants/constants' );
 
-var subscribedTopics,
+var topic,
+	subscribedTopics,
+	subscribers = [],
 	sendToSubscribersMock,
 	providers,
 	clients,
@@ -18,7 +20,8 @@ var subscribedTopics,
 	messageHistory;
 
 class ListenerTestUtils {
-	constructor() {
+	constructor( listenerTopic ) {
+		topic = listenerTopic || C.TOPIC.RECORD;
 		messageHistory = {};
 		sendToSubscribersMock = jasmine.createSpy( 'sendToSubscribersMock' );
 
@@ -27,16 +30,21 @@ class ListenerTestUtils {
 			getNames: function() {
 				return subscribedTopics;
 			},
+			getSubscribers: function() {
+				return subscribers;
+			},
 			sendToSubscribers: sendToSubscribersMock
 		};
 
 		clients = [
 			null, // to make tests start from 1
 			new SocketWrapper( new SocketMock(), options ),
+			new SocketWrapper( new SocketMock(), options ),
 			new SocketWrapper( new SocketMock(), options )
 		];
 		clients[1].toString = function() { return 'c1' };
 		clients[2].toString = function() { return 'c2' };
+		clients[3].toString = function() { return 'c3' };
 
 		providers = [
 			null, // to make tests start from 1
@@ -49,8 +57,15 @@ class ListenerTestUtils {
 		providers[2].toString = function() { return 'p2' };
 		providers[3].toString = function() { return 'p3' };
 
-		listenerRegistry = new ListenerRegistry( 'R', options, clientRegistry );
+		listenerRegistry = new ListenerRegistry( topic, options, clientRegistry );
 		expect( typeof listenerRegistry.handle ).toBe( 'function' );
+	}
+
+	nothingHappened() {
+		for( var i=1; i<4; i++) {
+			this.providerRecievedNoNewMessages( i )
+			this.clientDoesNotRecievePublishedUpdate( i )
+		}
 	}
 
 	/**
@@ -106,6 +121,13 @@ class ListenerTestUtils {
 	providerSubscribesTo( provider, subscriptionName ) {
 		listenerRegistry.onSubscriptionMade( subscriptionName, providers[ provider ], undefined );
 		subscribedTopics.push(subscriptionName)
+		subscribers.push(providers[provider])
+	}
+
+	providerUnsubscribesTo( provider, subscriptionName, subscriptionCount ) {
+		listenerRegistry.onSubscriptionRemoved( subscriptionName, providers[ provider ], subscriptionCount || 0 );
+		subscribedTopics.splice(subscribedTopics.indexOf(subscriptionName), 1)
+		subscribers.splice(subscribers.indexOf(providers[provider]), 1)
 	}
 
 	providerRecievedNoNewMessages( provider ) {
@@ -128,6 +150,10 @@ class ListenerTestUtils {
 		providers[ provider ].socket.emit( 'close' )
 	}
 
+	providerRecievesPublishedUpdate( provider, subscription, state ) {
+		verify( providers[ provider ], C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [subscription, state? C.TYPES.TRUE : C.TYPES.FALSE ] )
+	}
+
 	/**
 	* Subscriber Utils
 	*/
@@ -135,14 +161,22 @@ class ListenerTestUtils {
 		subscribedTopics.push( subscriptionName )
 	}
 
-	clientSubscribesTo( client, subscriptionName ) {
-		listenerRegistry.onSubscriptionMade( subscriptionName, clients[ client ], undefined );
+	clientSubscribesToButIsNotFirstSubscriber( client, subscriptionName ) {
+		listenerRegistry.onSubscriptionMade( subscriptionName, clients[ client ], 5 );
 		subscribedTopics.push(subscriptionName)
 	}
 
+	clientSubscribesTo( client, subscriptionName, currentSusbcriptions ) {
+		listenerRegistry.onSubscriptionMade( subscriptionName, clients[ client ], currentSusbcriptions || 1 );
+		subscribedTopics.push(subscriptionName)
+	}
 
 	clientUnsubscribesAndOnlyRemainingSubscriberIsProvider( client, subscriptionName ) {
 		listenerRegistry.onSubscriptionRemoved( subscriptionName, clients[ client ], 1 );
+	}
+
+	clientUnSubscribesToButIsNotLastSubscriber( client, subscriptionName ) {
+		this.clientUnsubscribesTo( client, subscriptionName, 1 )
 	}
 
 	clientUnsubscribesTo( client, subscriptionName, remainingSubscriptions ) {
@@ -160,8 +194,16 @@ class ListenerTestUtils {
 		verify( clients[ client ], C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [subscription, state? C.TYPES.TRUE : C.TYPES.FALSE ] )
 	}
 
+	clientDoesNotRecievePublishedUpdate( client ) {
+		this.clientRecievedNoNewMessages( client )
+	}
+
+	publishUpdateIsNotSentToSubscribers( subscription ) {
+		expect( sendToSubscribersMock.calls.count() ).toEqual( 0 )
+	}
+
 	publishUpdateSentToSubscribers( subscription, state ) {
-		var msgString = msg( `${C.TOPIC.RECORD}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|${subscription}|${state ? C.TYPES.TRUE : C.TYPES.FALSE}+` )
+		var msgString = msg( `${topic}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|${subscription}|${state ? C.TYPES.TRUE : C.TYPES.FALSE}+` )
 		expect( sendToSubscribersMock.calls.mostRecent().args ).toEqual( [ subscription, msgString ] )
 	}
 
@@ -175,10 +217,10 @@ module.exports = ListenerTestUtils;
 
 function updateRegistry( socket, action, data ) {
 	var message = {
-		topic: C.TOPIC.RECORD,
+		topic: topic,
 		action: action,
 		data: data,
-		raw: msg( `${C.TOPIC.RECORD}|${action}|${data.join('|')}+` )
+		raw: msg( `${topic}|${action}|${data.join('|')}+` )
 	};
 	listenerRegistry.handle( socket, message );
 }
@@ -188,7 +230,7 @@ function verify(provider, actions, data, messageIndex, negate ) {
 	if( actions == null) {
 		var lastMessage = provider.socket.getMsg( 0 );
 		expect( lastMessage ).toBe( (messageHistory[provider] || {}).message );
-		expect( provider.socket.getMsgSize()).toBe( (messageHistory[provider] || {}).size );
+		expect( provider.socket.getMsgSize()).toBe( (messageHistory[provider] && messageHistory[provider].size) || 0 );
 		return
 	}
 	if( !( actions instanceof Array ) ) {
@@ -202,7 +244,7 @@ function verify(provider, actions, data, messageIndex, negate ) {
 		message: message,
 		size: provider.socket.getMsgSize()
 	}
-	var expectedMessage = msg( `${C.TOPIC.RECORD}|${actions.join('|')}|${data.join('|')}+` );
+	var expectedMessage = msg( `${topic}|${actions.join('|')}|${data.join('|')}+` );
 	if( negate ) {
 		expect( message ).not.toBe( expectedMessage );
 	} else {

@@ -32,17 +32,17 @@ class ListenerRegistry {
 	 * @param {SubscriptionRegistry} clientRegistry The SubscriptionRegistry containing the record subscriptions
 	 *                               to allow new listeners to be notified of existing subscriptions
 	 */
-	constructor( type, options, clientRegistry ) {
-		this._type = type;
+	constructor( topic, options, clientRegistry ) {
+		this._topic = topic;
 		this._options = options;
 		this._clientRegistry = clientRegistry;
-		this._providerRegistry = new SubscriptionRegistry( options, this._type );
+		this._providerRegistry = new SubscriptionRegistry( options, this._topic );
 		this._providerRegistry.setAction( 'subscribe', C.ACTIONS.LISTEN );
 		this._providerRegistry.setAction( 'unsubscribe', C.ACTIONS.UNLISTEN );
 		this._patterns = {};
 		this._providedRecords = {};
 		this._listenInProgress = {};
-		this._listenerTimeoutRegistery = new TimeoutRegistry( type, options );
+		this._listenerTimeoutRegistery = new TimeoutRegistry( topic, options );
 	}
 
 	/**
@@ -135,7 +135,7 @@ class ListenerRegistry {
 			}
 		}
 
-		socketWrapper.send( messageBuilder.getMsg( this._type, C.ACTIONS.SUBSCRIPTIONS_FOR_PATTERN_FOUND, [ pattern, matchingNames ] ) );
+		socketWrapper.send( messageBuilder.getMsg( this._topic, C.ACTIONS.SUBSCRIPTIONS_FOR_PATTERN_FOUND, [ pattern, matchingNames ] ) );
 	}
 
 	/**
@@ -148,14 +148,13 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	onSubscriptionMade( name, socketWrapper, count ) {
-		if( this.hasActiveProvider( name ) ) {
+		if( this.hasActiveProvider( name ) && this._topic === C.TOPIC.RECORD ) {
 			socketWrapper.send( messageBuilder.getMsg(
-				this._type, C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [ name, C.TYPES.TRUE ]
+				this._topic, C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [ name, C.TYPES.TRUE ]
 			) );
 			return;
 		}
 
-		// TODO: Test
 		if( count > 1 ) {
 			return;
 		}
@@ -189,11 +188,16 @@ class ListenerRegistry {
 			return;
 		}
 
+		// provider isn't a subscriber, meaning we should wait for 0
+		if( count === 1 && this._clientRegistry.getSubscribers().indexOf( provider.socketWrapper ) === -1 ) {
+			return;
+		}
+
 		// stop providing
 		this._sendHasProviderUpdate( false, subscriptionName );
 		provider.socketWrapper.send(
 			messageBuilder.getMsg(
-				this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, subscriptionName ]
+				this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, subscriptionName ]
 			)
 		);
 		delete this._providedRecords[ subscriptionName ];
@@ -239,7 +243,6 @@ class ListenerRegistry {
 			return;
 		}
 
-		//TODO: Test this case
 		const inSubscriptionRegistry = this._providerRegistry.isSubscriber( socketWrapper );
 		if( !inSubscriptionRegistry ) {
 			this._providerRegistry.subscribe( pattern, socketWrapper );
@@ -256,7 +259,7 @@ class ListenerRegistry {
 
 	/**
 	 * Find subscriptions that match pattern, and notify them that
-	 * the can be provided.
+	 * they can be provided.
 	 *
 	 * We will attempt to notify all possible providers rather than
 	 * just the single provider for load balancing purposes and
@@ -272,7 +275,6 @@ class ListenerRegistry {
 			if( subscriptionName.match( regExp ) ) {
 				const listenInProgress = this._listenInProgress[ subscriptionName ];
 				if( this._providedRecords[ subscriptionName ] ) {
-					//TODO: Test this case
 					continue;
 				} else if( listenInProgress ) {
 					listenInProgress.push( {
@@ -352,10 +354,10 @@ class ListenerRegistry {
 	 * @returns {Message}
 	 */
 	_sendHasProviderUpdate( hasProvider, subscriptionName ) {
-		if( this._type !== C.TOPIC.RECORD ) {
+		if( this._topic !== C.TOPIC.RECORD ) {
 			return
 		}
-		this._clientRegistry.sendToSubscribers( subscriptionName, this._createHasProviderMessage( hasProvider, this._type, subscriptionName ) );
+		this._clientRegistry.sendToSubscribers( subscriptionName, this._createHasProviderMessage( hasProvider, this._topic, subscriptionName ) );
 	}
 
 	/**
@@ -364,9 +366,9 @@ class ListenerRegistry {
 	 * @private
 	 * @returns {Message}
 	 */
-	_createHasProviderMessage(hasProvider, type, subscriptionName) {
+	_createHasProviderMessage(hasProvider, topic, subscriptionName) {
 		return messageBuilder.getMsg(
-				type,
+				topic,
 				C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
 				[subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
 			);
@@ -415,7 +417,7 @@ class ListenerRegistry {
 		const provider = this._listenInProgress[ subscriptionName ].shift();
 		this._listenerTimeoutRegistery.addTimeout( subscriptionName, provider, this._triggerNextProvider.bind( this ) );
 		provider.socketWrapper.send( messageBuilder.getMsg(
-			this._type, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ provider.pattern, subscriptionName ]
+			this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ provider.pattern, subscriptionName ]
 			)
 		);
 	}
@@ -480,7 +482,7 @@ class ListenerRegistry {
 	 */
 	_onMsgDataError( socketWrapper, errorMsg, errorEvent ) {
 		errorEvent = errorEvent || C.EVENT.INVALID_MESSAGE_DATA;
-		socketWrapper.sendError( this._type, errorEvent, errorMsg );
+		socketWrapper.sendError( this._topic, errorEvent, errorMsg );
 		this._options.logger.log( C.LOG_LEVEL.ERROR, errorEvent, errorMsg );
 	}
 
