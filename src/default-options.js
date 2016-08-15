@@ -21,6 +21,7 @@ exports.get = function() {
 		tcpHost: '0.0.0.0',
 		httpServer: null,
 		urlPath: '/deepstream',
+		externalUrl: null,
 
 
 		/*
@@ -79,7 +80,10 @@ exports.get = function() {
 		cacheRetrievalTimeout: 1000,
 		storageRetrievalTimeout: 2000,
 		dependencyInitialisationTimeout: 2000,
-		stateReconciliationTimeout: 500
+		stateReconciliationTimeout: 500,
+		clusterKeepAliveInterval: 5000,
+		clusterActiveCheckInterval: 1000,
+		clusterNodeInactiveTimeout: 6000
 	};
 
 	return options;

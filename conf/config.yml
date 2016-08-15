@@ -12,6 +12,7 @@ host: 0.0.0.0 # host for the HTTP/websocket server
 tcpPort: 6021 # port for the TCP server
 tcpHost: 0.0.0.0 # host for the TCP server
 urlPath: /deepstream # url path HTTP/WEBSOCKET connections connect to
+externalUrl: null # webfacing URL under which this client is reachable. Used for loadbalancing / failover
 
 # SSL Configuration
 sslKey: null
@@ -107,3 +108,9 @@ cacheRetrievalTimeout: 1000
 storageRetrievalTimeout: 2000
 dependencyInitialisationTimeout: 2000
 stateReconciliationTimeout: 500
+# The interval at which a status message is sent by each node within a cluster
+clusterKeepAliveInterval: 5000
+# The interval at which all nodes within a cluster registry are checked for timeouts
+clusterActiveCheckInterval: 1000
+# The longest duration since the last status message was received until the remote node is declared inactive
+clusterNodeInactiveTimeout: 6000
