@@ -244,9 +244,9 @@ class ListenerRegistry {
 			return;
 		}
 
-		const inSubscriptionRegistry = this._providerRegistry.isSubscriber( socketWrapper );
-		if( !inSubscriptionRegistry ) {
-			// this only allows one pattern for a listener!
+		const providers = this._providerRegistry.getSubscribers( pattern );
+		const notInSubscriptionRegistry = !providers || providers.indexOf( socketWrapper ) === -1;
+		if( notInSubscriptionRegistry ) {
 			this._providerRegistry.subscribe( pattern, socketWrapper );
 			this._addUniqueCloseListener( socketWrapper, this._reconcilePatternsBound );
 		}
@@ -409,7 +409,7 @@ class ListenerRegistry {
 		for( var pattern in this._patterns ) {
 			if( this._patterns[ pattern ].test( subscriptionName ) ) {
 				var providersForPattern = this._providerRegistry.getSubscribers( pattern );
-				for( var i = 0; i < providersForPattern.length; i++ ) {
+				for( var i = 0; providersForPattern && i < providersForPattern.length; i++ ) {
 					providers.push( {
 						pattern: pattern,
 						socketWrapper: providersForPattern[ i ]
