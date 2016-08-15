@@ -43,6 +43,7 @@ class ListenerRegistry {
 		this._providedRecords = {};
 		this._listenInProgress = {};
 		this._listenerTimeoutRegistery = new TimeoutRegistry( topic, options );
+		this._reconcilePatternsBound = this._reconcilePatterns.bind( this );
 	}
 
 	/**
@@ -212,16 +213,16 @@ class ListenerRegistry {
 	_accept( socketWrapper, message ) {
 		const subscriptionName = message.data[ 1 ];
 
-		socketWrapper.socket.once( 'close', this._removeListener.bind( this, socketWrapper, message ) );
-
 		delete this._listenInProgress[ subscriptionName ];
 
 		this._listenerTimeoutRegistery.clearTimeout( subscriptionName );
 
 		this._providedRecords[ subscriptionName ] = {
 			socketWrapper: socketWrapper,
-			pattern: message.data[ 0 ]
+			pattern: message.data[ 0 ],
+			closeListener: this._removeListener.bind( this, socketWrapper, message )
 		}
+		socketWrapper.socket.once( 'close', this._providedRecords[ subscriptionName ].closeListener );
 
 		this._sendHasProviderUpdate( true, subscriptionName );
 	}
@@ -245,8 +246,9 @@ class ListenerRegistry {
 
 		const inSubscriptionRegistry = this._providerRegistry.isSubscriber( socketWrapper );
 		if( !inSubscriptionRegistry ) {
+			// this only allows one pattern for a listener!
 			this._providerRegistry.subscribe( pattern, socketWrapper );
-			socketWrapper.socket.once( 'close', this._reconcilePatterns.bind( this ) );
+			this._addUniqueCloseListener( socketWrapper, this._reconcilePatternsBound );
 		}
 
 		// Create pattern entry (if it doesn't exist already)
@@ -255,6 +257,22 @@ class ListenerRegistry {
 		}
 
 		this._reconcileSubscriptionsToPatterns( regExp, pattern, socketWrapper );
+	}
+
+	_addUniqueCloseListener(socketWrapper, eventHandler) {
+		var eventName = 'close';
+		var socketListeners = socketWrapper.socket.listeners( eventName );
+		var listenerFound = false;
+		for( var i=0; i<socketListeners.length; i++) {
+			var item = socketListeners[ i ];
+			if( item.listener === eventHandler ) {
+				listenerFound = true;
+				break;
+			}
+		}
+		if( !listenerFound ) {
+			socketWrapper.socket.once( eventName, eventHandler );
+		}
 	}
 
 	/**
@@ -299,13 +317,12 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_removeListener( socketWrapper, message ) {
-		const subscriptionName = message.data[ 1 ];
 		const pattern = this._getPattern( socketWrapper, message );
 
 		this._providerRegistry.unsubscribe( pattern, socketWrapper );
 		this._reconcilePatterns();
 		this._removeListenerFromInProgress( pattern, socketWrapper );
-		this._removeListenerIfActive( subscriptionName, pattern, socketWrapper );
+		this._removeListenerIfActive( pattern, socketWrapper );
 	}
 
 	/**
@@ -337,13 +354,20 @@ class ListenerRegistry {
 	 * @private
 	 * @returns {Message}
 	 */
-	_removeListenerIfActive( subscriptionName, pattern, socketWrapper ) {
-		const provider = this._providedRecords[ subscriptionName ];
-		if( provider && provider.socketWrapper === socketWrapper) {
-			delete this._providedRecords[ subscriptionName ];
-			this._sendHasProviderUpdate( false, subscriptionName );
-			this._createListenMap( subscriptionName );
-			this._triggerNextProvider( subscriptionName );
+	_removeListenerIfActive( pattern, socketWrapper ) {
+		var subscriptionName, i, listenInProgress;
+		for( var subscriptionName in this._providedRecords ) {
+			var provider = this._providedRecords[ subscriptionName ];
+			if(
+				provider.socketWrapper === socketWrapper &&
+				provider.pattern === pattern
+			) {
+				provider.socketWrapper.socket.removeListener( 'close', provider.closeListener );
+				delete this._providedRecords[ subscriptionName ];
+				this._sendHasProviderUpdate( false, subscriptionName );
+				this._createListenMap( subscriptionName );
+				this._triggerNextProvider( subscriptionName );
+			}
 		}
 	}
 
@@ -433,7 +457,7 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_getPattern( socketWrapper, message ) {
-		if( message.data.length !== 1 ) {
+		if( message.data.length > 2  ) {
 			this._onMsgDataError( socketWrapper, message.raw );
 			return null;
 		}
