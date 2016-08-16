@@ -1,3 +1,12 @@
+## [1.0.4] - 2016-08-16
+
+### Bug Fixes
+
+- Auth: File authentication sends server data to client on cleartext passwords [#322](https://github.com/deepstreamIO/deepstream.io/issues/322)
+
+- Auth: HTTP authentication missing logger during when attempting to log any errors occured on http server [#320](https://github.com/deepstreamIO/deepstream.io/issues/320)
+
+
 ## [1.0.3] - 2016-07-28
 
 ### Bug Fixes

@@ -25,7 +25,7 @@ var testAuthentication = function( settings ) {
 	settings.handler.isValidUser( null, authData, callback );
 };
 
-describe( 'does authentication for hashed passwords', function(){
+describe( 'does authentication for cleartext passwords', function(){
 	var authenticationHandler;
 	var settings = {
 		path: './test/test-configs/users-unhashed.json',
@@ -43,8 +43,20 @@ describe( 'does authentication for hashed passwords', function(){
 			username: 'userC',
 			password: 'userCPass',
 			expectedResult: true,
+			serverData: { "some": "values" },
+			clientData: { "all": "othervalue" },
+			done: done,
+			handler: authenticationHandler
+		});
+	});
+
+	it( 'confirms userD with valid password', function( done ){
+		testAuthentication({
+			username: 'userD',
+			password: 'userDPass',
+			expectedResult: true,
 			serverData: null,
-			clientData: null,
+			clientData: { "all": "client data" },
 			done: done,
 			handler: authenticationHandler
 		});

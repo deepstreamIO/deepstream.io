@@ -22,8 +22,7 @@ describe( 'it forwards authentication attempts as http post requests to a specif
 			endpointUrl: endpointUrl,
 			permittedStatusCodes: [ 200 ],
 			requestTimeout: 60,
-			logger: logger
-		});
+		}, logger );
 		expect( authenticationHandler.type ).toBe( 'http webhook to ' + endpointUrl );
 	});
 
