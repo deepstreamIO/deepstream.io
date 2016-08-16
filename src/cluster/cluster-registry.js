@@ -31,6 +31,8 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		this._connectionEndpoint = connectionEndpoint;
 		this._inCluster = false;
 		this._nodes = {};
+		this._leaderScore = Math.random();
+		this._locks = {};
 		this._onMessageFn = this._onMessage.bind( this );
 		this._leaveClusterFn = this.leaveCluster.bind( this );
 		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, this._onMessageFn );
@@ -75,6 +77,21 @@ module.exports = class ClusterRegistry extends EventEmitter{
 	 */
 	getAll() {
 		return Object.keys( this._nodes );
+	}
+
+	getCurrentLeader() {
+		var maxScore = 0,
+			serverName,
+			leader = null;
+
+		for( serverName in this._nodes ) {
+			if( this._nodes[ serverName ].leaderScore > maxScore ) {
+				maxScore = this._nodes[ serverName ].leaderScore;
+				leader = serverName;
+			}
+		}
+
+		return leader;
 	}
 
 	/**
@@ -198,6 +215,7 @@ module.exports = class ClusterRegistry extends EventEmitter{
 			browserConnections: this._connectionEndpoint.getBrowserConnectionCount(),
 			tcpConnections: this._connectionEndpoint.getTcpConnectionCount(),
 			memory: memoryStats.heapUsed / memoryStats.heapTotal,
+			leaderScore: this._leaderScore,
 			externalUrl: this._options.externalUrl
 		};
 
@@ -210,3 +228,8 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		});
 	}
 }
+
+// When new node joins with leaderScore > currentLeader
+// every node keeps pendingLeadership flag... (or whatever)
+// currentLeader finishes current locks, then broadcasts LEADER_RELEASE
+// every node now removes pendingLeader flag
