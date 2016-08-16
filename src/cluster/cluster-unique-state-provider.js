@@ -1,6 +1,13 @@
 'use strict';
 
 const C = require( '../constants/constants' );
+const EventEmitter = require( 'events' ).EventEmitter;
+const SUPPORTED_ACTIONS = {};
+
+SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RESPONSE ] = true;
+SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_REQUEST ] = true;
+SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RELEASE ] = true;
+
 
 /**
  * Uses options
@@ -20,101 +27,125 @@ module.exports = class UniqueRegistry{
 	constructor( options, clusterRegistry ) {
 		this._options = options;
 		this._clusterRegistry = clusterRegistry;
-		
-		this._leaderVotes = {};
-		this._currentLeader = null;
-		this._iAmTheLeader = false;
-		this._privateTopic = C.TOPIC.LEADER_PRIVATE_ + options.serverName;
-		this._onLeaderMessageFn = this._onLeaderMessage.bind( this );
+		this._locks = {};
+		this._responseEventEmitter = new EventEmitter();
 		this._onPrivateMessageFn = this._onPrivateMessage.bind( this );
-		this._onNodeRemoveFunction = this._onNodeRemoved.bind( this );
-		this._clusterRegistry.on( 'remove', this._onNodeRemoveFunction );
-		this._options.messageConnector.subscribe( C.TOPIC.LEADER, this._onLeaderMessageFn );
-		this._options.messageConnector.subscribe( this._privateTopic, this._onPrivateMessageFn );
-		this._initiateLeaderVote();
+		this._localTopic = this._getPrivateTopic( this._options.serverName );
+		this._options.messageConnector.subscribe( this._localTopic, this._onPrivateMessageFn );
 	}
 
 	get( name, callback ) {
-		// callback will be invoked with <bool> success
+		var leaderServerName = this._clusterRegistry.getCurrentLeader();
+
+		if( this._options.serverName === leaderServerName ) {
+			callback( this._getLock( name ) );
+		} else {
+			this._getRemoteLock( name, leaderServerName, callback );
+		}
 	}
 
 	release( name ) {
-		// will also happen on unique timeout
+		var leaderServerName = this._clusterRegistry.getCurrentLeader();
+
+		if( this._options.serverName === leaderServerName ) {
+			this._releaseLock( name );
+		} else {
+			this._releaseRemoteLock( name, leaderServerName );
+		}
 	}
 
-	destroy() {
-		this._options.messageConnector.unsubscribe( C.TOPIC.LEADER, this._onLeaderMessageFn );
-		this._options.messageConnector.unsubscribe( this._privateTopic, this._onPrivateMessageFn );
+	_getRemoteLock( name, leaderServerName, callback ) {
+		this._responseEventEmitter.once( name, callback );
+
+		var remoteTopic = this._getPrivateTopic( leaderServerName );
+
+		this._options.messageConnector.publish( remoteTopic, {
+			topic: remoteTopic,
+			action: C.ACTIONS.LOCK_REQUEST,
+			data: [{
+				name: name,
+				responseTopic: this._localTopic
+			}]
+		});
 	}
 
-	_onLeaderMessage( message ) {
-		if( message.action === C.ACTIONS.LEADER_REQUEST ) {
-			this._leaderVotes = {};
-			this._sendLeaderVote();
-		}
-		else if ( message.action === C.ACTIONS.LEADER_VOTE ) {
-			this._processLeaderVote( message );
-		}
+	_releaseRemoteLock( name, leaderServerName ) {
+		var remoteTopic = this._getPrivateTopic( leaderServerName );
+
+		this._options.messageConnector.publish( remoteTopic, {
+			topic: remoteTopic,
+			action: C.ACTIONS.LOCK_RELEASE,
+			data: [{
+				name: name,
+				responseTopic: this._localTopic
+			}]
+		});
 	}
 
 	_onPrivateMessage( message ) {
+		if( !SUPPORTED_ACTIONS[ message.action ] ) {
+			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
+			return;
+		}
 
-	}
-
-	_initiateLeaderVote() {
-		this._leaderVotes = {};
-		this._options.messageConnector.publish( C.TOPIC.LEADER, {
-			topic: C.TOPIC.LEADER,
-			action: C.ACTIONS.LEADER_REQUEST,
-			data: []
-		});
-		this._sendLeaderVote();
-	}
-
-	_processLeaderVote( message ) {
-		if( !message.data || message.data.length !== 2 ) {
+		if( !message.data || !message.data[ 0 ] ) {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, message.data );
 			return;
 		}
 
-		this._leaderVotes[ message.data[ 0 ] ] = message.data[ 1 ];
-		var serverNames = this._clusterRegistry.getAll();
-
-		for( var i = 0; i < serverNames.length; i++ ) {
-			if( !this._leaderVotes[ serverNames[ i ] ] ) {
-				return;
-			}
+		if( message.action === C.ACTIONS.LOCK_RESPONSE ) {
+			this._handleRemoteLockResponse( message.data[ 0 ] );
+			return;
 		}
 
-		this._electNewLeader();
+		//LOCK_REQUEST & LOCK_RELEASE require this node to be the leader
+		if( this._isLeader() === false ) {
+			//TODO - What happens if the remote node believes we are the leader
+			//but we don't agree?
+			return;
+		}
+
+		if( message.action === C.ACTIONS.LOCK_REQUEST ) {
+			this._handleRemoteLockRequest( message.data[ 0 ] );
+		}
+		else if( message.action === C.ACTIONS.LOCK_RELEASE ) {
+			this._handleRemoteLockRelease( message.data[ 0 ] );
+		}
 	}
 
-	_sendLeaderVote() {
-		this._leaderVotes[ this._options.serverName ] = Math.random();
-		this._options.messageConnector.publish( C.TOPIC.LEADER, {
-			topic: C.TOPIC.LEADER,
-			action: C.ACTIONS.LEADER_VOTE,
-			data: [ this._options.serverName, this._leaderVotes[ this._options.serverName ] ]
+	_handleRemoteLockRequest( data ) {
+		this._options.messageConnector.publish( data.responseTopic, {
+			topic: responseTopic,
+			action: C.ACTIONS.LOCK_RESPONSE,
+			data: [{
+				name: data.name,
+				result: this._getLock( data.name )
+			}]
 		});
 	}
 
-	_electNewLeader() {
-		var serverName,
-			currentHighScore = 0,
-			currentHighScoreName;
-
-		for( serverName in this._leaderVotes ) {
-			if( this._leaderVotes[ serverName ] > currentHighScore ) {
-				currentHighScore = this._leaderVotes[ serverName ];
-				currentHighScoreName = serverName;
-			}
-		}
-
-		this._currentLeader = serverName;
-		this._iAmTheLeader = this._currentLeader === this._options.serverName;
+	_handleRemoteLockResponse( data ) {
+		this._responseEventEmitter.once( data.name, data.result );
 	}
 
-	_onNodeRemoved() {
-		// elect next highest node
+	_handleRemoteLockRelease( data ) {
+
+	}
+
+	_getPrivateTopic( serverName ) {
+		return C.TOPIC.LEADER_PRIVATE_ + serverName;
+	}
+
+	_isLeader() {
+		return this._options.serverName === this._clusterRegistry.getCurrentLeader();
+	}
+
+	_getLock( name, callback ) {
+		if( this._locks[ name ] === true ) {
+			return false;
+		} else {
+			this._locks[ name ] = true;
+			return true; // TODO Do we need to broadcast lock set?
+		}
 	}
 }

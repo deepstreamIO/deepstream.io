@@ -31,6 +31,8 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		this._connectionEndpoint = connectionEndpoint;
 		this._inCluster = false;
 		this._nodes = {};
+		this._leaderScore = Math.random();
+		this._locks = {};
 		this._onMessageFn = this._onMessage.bind( this );
 		this._leaveClusterFn = this.leaveCluster.bind( this );
 		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, this._onMessageFn );
@@ -77,12 +79,19 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		return Object.keys( this._nodes );
 	}
 
-	getUniqueState( state, callback ) {
+	getCurrentLeader() {
+		var maxScore = 0,
+			serverName,
+			leader = null;
 
-	}
+		for( serverName in this._nodes ) {
+			if( this._nodes[ serverName ].leaderScore > maxScore ) {
+				maxScore = this._nodes[ serverName ].leaderScore;
+				leader = serverName;
+			}
+		}
 
-	releaseUniqueState( state ) {
-		
+		return leader;
 	}
 
 	/**
@@ -206,6 +215,7 @@ module.exports = class ClusterRegistry extends EventEmitter{
 			browserConnections: this._connectionEndpoint.getBrowserConnectionCount(),
 			tcpConnections: this._connectionEndpoint.getTcpConnectionCount(),
 			memory: memoryStats.heapUsed / memoryStats.heapTotal,
+			leaderScore: this._leaderScore,
 			externalUrl: this._options.externalUrl
 		};
 
