@@ -125,7 +125,7 @@ module.exports = class UniqueRegistry{
 	}
 
 	_handleRemoteLockResponse( data ) {
-		this._responseEventEmitter.once( data.name, data.result );
+		this._responseEventEmitter.emit( data.name, data.result );
 	}
 
 	_handleRemoteLockRelease( data ) {
@@ -133,7 +133,7 @@ module.exports = class UniqueRegistry{
 	}
 
 	_getPrivateTopic( serverName ) {
-		return C.TOPIC.LEADER_PRIVATE_ + serverName;
+		return C.TOPIC.LEADER_PRIVATE + serverName;
 	}
 
 	_isLeader() {
@@ -147,5 +147,9 @@ module.exports = class UniqueRegistry{
 			this._locks[ name ] = true;
 			return true; // TODO Do we need to broadcast lock set?
 		}
+	}
+
+	_releaseLock( name ) {
+		delete this._locks[ name ];
 	}
 }
