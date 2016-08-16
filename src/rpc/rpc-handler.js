@@ -96,7 +96,7 @@ RpcHandler.prototype.getAlternativeProvider = function( rpcName, usedProviders, 
 	 * Look within the local providers for one that hasn't been used yet
 	 */
 	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
-		localProviders = this._subscriptionRegistry.getSubscribers( rpcName );
+		localProviders = this._subscriptionRegistry.getLocalSubscribers( rpcName );
 
 		for( i = 0; i < localProviders.length; i++ ) {
 			if( usedProviders.indexOf( localProviders[ i ] ) === -1 ) {
@@ -198,7 +198,7 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
 		provider;
 
 	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
-		provider = this._subscriptionRegistry.getRandomSubscriber( rpcName );
+		provider = this._subscriptionRegistry.getRandomLocalSubscriber( rpcName );
 		new Rpc( this, socketWrapper, provider, this._options, message );
 	} else {
 		makeRemoteRpcFn = this._makeRemoteRpc.bind( this, socketWrapper, message );
@@ -302,7 +302,7 @@ RpcHandler.prototype._onPrivateMessage = function( msg ) {
  */
 RpcHandler.prototype._respondToProviderQuery = function( msg ) {
     var rpcName = msg.data[ 0 ],
-    	providers = this._subscriptionRegistry.getSubscribers( rpcName ),
+    	providers = this._subscriptionRegistry.getLocalSubscribers( rpcName ),
     	queryResponse;
 
     if( !providers ) {

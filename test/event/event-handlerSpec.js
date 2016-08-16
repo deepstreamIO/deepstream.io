@@ -5,7 +5,12 @@ var EventHandler = require( '../../src/event/event-handler' ),
 		SocketMock = require( '../mocks/socket-mock' ),
 		messageConnectorMock = new (require( '../mocks/message-connector-mock' ))(),
 		LoggerMock = require( '../mocks/logger-mock' ),
-		options = { messageConnector: messageConnectorMock, logger: new LoggerMock() },
+		options = {
+			serverName: 'server-name-a',
+			stateReconciliationTimeout: 10,
+			messageConnector: messageConnectorMock,
+			logger: new LoggerMock()
+		},
 		eventHandler = new EventHandler( options ),
 		subscriptionsMessage = {
 			 topic: C.TOPIC.EVENT,

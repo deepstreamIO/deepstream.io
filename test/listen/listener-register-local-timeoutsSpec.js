@@ -2,7 +2,7 @@
 var ListenerTestUtils = require( './listener-test-utils' );
 var tu;
 
-describe( 'listener-registry-local-timeouts', function() {
+xdescribe( 'listener-registry-local-timeouts', function() {
 	beforeEach(function() {
 		tu = new ListenerTestUtils();
 	});

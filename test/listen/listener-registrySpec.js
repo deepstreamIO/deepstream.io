@@ -6,19 +6,20 @@ var ListenerRegistry = require('../../src/listen/listener-registry'),
 	LoggerMock = require('../mocks/logger-mock'),
 	noopMessageConnector = require('../../src/default-plugins/noop-message-connector');
 
+var listenerRegistry,
+	options = {
+		messageConnector: noopMessageConnector,
+		logger: {
+			log: jasmine.createSpy( 'logger' )
+		}
+	},
+	recordSubscriptionRegistryMock = {
+		getNames: function() {
+			return ['car/Mercedes', 'car/Abarth'];
+		}
+	};
 
 describe('listener-registry errors', function() {
-	var listenerRegistry,
-		options = {
-			logger: {
-				log: jasmine.createSpy( 'logger' )
-			}
-		},
-		recordSubscriptionRegistryMock = {
-			getNames: function() {
-				return ['car/Mercedes', 'car/Abarth'];
-			}
-		};
 
 	beforeEach(function() {
 		listeningSocket = new SocketWrapper(new SocketMock(), options);

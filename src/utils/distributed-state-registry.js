@@ -49,6 +49,17 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	}
 
 	/**
+	 * Checks if a given entry exists within the registry
+	 *
+	 * @param   {String}  name       the name of the entry
+	 *
+	 * @returns {Boolean} exists
+	 */
+	has( name ) {
+		return !!this._data[ name ];
+	}
+
+	/**
 	 * Add a name/entry to the registry. If the entry doesn't exist yet,
 	 * this will notify the other nodes within the cluster
 	 *

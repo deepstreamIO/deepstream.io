@@ -41,7 +41,9 @@ var C = require( '../constants/constants' ),
  */
 var WebRtcHandler = function( options ) {
 	this._options = options;
-	this._calleeRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC, this );
+	this._calleeRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
+	this._calleeRegistry.setSubscriptionListener( this );
+
 	this._calleeListenerRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
 	this._callInitiatiorRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
 };
@@ -209,7 +211,7 @@ WebRtcHandler.prototype._clearInitiator = function( socketWrapper, message ) {
 	}
 
 	if( subscriberId ) {
-		subscribers = this._callInitiatiorRegistry.getSubscribers( subscriberId );
+		subscribers = this._callInitiatiorRegistry.getLocalSubscribers( subscriberId );
 		this._callInitiatiorRegistry.unsubscribe( subscriberId, subscribers[ 0 ] );
 	}
 };

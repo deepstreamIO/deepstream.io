@@ -5,7 +5,7 @@ var ListenerRegistry = require( '../../src/listen/listener-registry' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
-	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' ),
+	LocalMessageConnector = require( '../mocks/local-message-connector' ),
 	C = require( '../../src/constants/constants' );
 
 var topic,
@@ -15,8 +15,7 @@ var topic,
 	providers,
 	clients,
 	listenerRegistry,
-	options = { logger: new LoggerMock() },
-	clientRegistry = null,
+	clientRegistry,
 	messageHistory;
 
 class ListenerTestUtils {
@@ -30,10 +29,17 @@ class ListenerTestUtils {
 			getNames: function() {
 				return subscribedTopics;
 			},
-			getSubscribers: function() {
+			getLocalSubscribers: function() {
 				return subscribers;
 			},
 			sendToSubscribers: sendToSubscribersMock
+		};
+
+		var options = {
+			serverName: 'server-name-a',
+			stateReconciliationTimeout: 10,
+			messageConnector: new LocalMessageConnector(),
+			logger: new LoggerMock()
 		};
 
 		clients = [

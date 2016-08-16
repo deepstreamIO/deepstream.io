@@ -2,6 +2,7 @@ var WebRtcHandler = require( '../../src/webrtc/webrtc-handler' );
 var SocketMock = require( '../mocks/socket-mock' );
 var SocketWrapper = require( '../../src/message/socket-wrapper' );
 var logger = { log: jasmine.createSpy( 'log' ) };
+var noopMessageConnector = require('../../src/default-plugins/noop-message-connector');
 var msg = require( '../test-helper/test-helper' ).msg;
 
 describe( 'webrtc handler', function(){
@@ -12,7 +13,10 @@ describe( 'webrtc handler', function(){
 
 
 	it( 'initializes the WebRtcHandler', function(){
-		webrtcHandler = new WebRtcHandler({ logger: logger });
+		webrtcHandler = new WebRtcHandler({
+			messageConnector: noopMessageConnector,
+			logger: logger
+		});
 		expect( typeof webrtcHandler.handle ).toBe( 'function' );
 	});
 

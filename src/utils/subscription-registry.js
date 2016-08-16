@@ -1,4 +1,5 @@
-var C = require( '../constants/constants' );
+const C = require( '../constants/constants' );
+const DistributedStateRegistry = require( '../utils/distributed-state-registry' );
 
 /**
  * A generic mechanism to handle subscriptions from sockets to topics.
@@ -9,14 +10,13 @@ var C = require( '../constants/constants' );
  *
  * @param {Object} options deepstream options
  * @param {String} topic one of C.TOPIC
- * @param {[SubscriptionListener]} subscriptionListener Optional. A class exposing a onSubscriptionMade
- *                                                      and onSubscriptionRemoved method.
+ * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
  */
-var SubscriptionRegistry = function( options, topic, subscriptionListener ) {
+var SubscriptionRegistry = function( options, topic, clusterTopic ) {
 	this._subscriptions = {};
 	this._options = options;
 	this._topic = topic;
-	this._subscriptionListener = subscriptionListener;
+	this._subscriptionListener = null;
 	this._unsubscribeAllFunctions = [];
 	this._constants = {
 		MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
@@ -24,7 +24,30 @@ var SubscriptionRegistry = function( options, topic, subscriptionListener ) {
 		UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
 		NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
 	};
+	this._clusterSubscriptions = new DistributedStateRegistry( clusterTopic || `${topic}_${C.TOPIC.SUBSCRIPTIONS}`, options );
+	this._clusterSubscriptions.on( 'add', this._onClusterSubscriptionAdded.bind( this ) );
+	this._clusterSubscriptions.on( 'remove', this._onClusterSubscriptionRemoved.bind( this ) );
 };
+
+SubscriptionRegistry.prototype._onClusterSubscriptionAdded = function( name ) {
+	// If subscription was added remotely and isn't already in local subscriptions
+	// inform users its an initial add
+	if( this._subscriptions[ name ] === undefined && this._subscriptionListener ) {
+		console.log( 'subscription added', name)
+		this._subscriptionListener.onSubscriptionMade( name, null, 1 );
+	}
+};
+
+SubscriptionRegistry.prototype._onClusterSubscriptionRemoved = function( name ) {
+	// If subscription was removed remotely and isn't already in local subscriptions
+	// inform users its an final remove
+	console.log( 'subscription removed', name)
+	if( this._subscriptions[ name ] === undefined && this._subscriptionListener ) {
+		console.log( 'subscription removed inner', name)
+		this._subscriptionListener.onSubscriptionMade( name, null, 0 );
+	}
+};
+
 
 /**
 * This method allows you to customise the SubscriptionRegistry so that it can send custom events and ack messages back.
@@ -85,7 +108,7 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 		return;
 	}
 
-	if( !this.isSubscriber( socketWrapper ) ) {
+	if( !this.isLocalSubscriber( socketWrapper ) ) {
 		var unsubscribeAllFn = this.unsubscribeAll.bind( this, socketWrapper );
 		this._unsubscribeAllFunctions.push({
 			socketWrapper: socketWrapper,
@@ -95,6 +118,7 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	}
 
 	this._subscriptions[ name ].push( socketWrapper );
+	this._clusterSubscriptions.add( name );
 
 	if( this._subscriptionListener ) {
 		this._subscriptionListener.onSubscriptionMade( name, socketWrapper, this._subscriptions[ name ].length );
@@ -135,6 +159,7 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper, sile
 	}
 
 	if( this._subscriptions[ name ].length === 1 ) {
+		this._clusterSubscriptions.remove( name );
 		delete this._subscriptions[ name ];
 	} else {
 		this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
@@ -180,9 +205,9 @@ SubscriptionRegistry.prototype.unsubscribeAll = function( socketWrapper ) {
  * @param {SocketWrapper} socketWrapper
  *
  * @public
- * @returns {Boolean} isSubscriber
+ * @returns {Boolean} isLocalSubscriber
  */
-SubscriptionRegistry.prototype.isSubscriber = function( socketWrapper ) {
+SubscriptionRegistry.prototype.isLocalSubscriber = function( socketWrapper ) {
 	for( var name in this._subscriptions ) {
 		if( this._subscriptions[ name ].indexOf( socketWrapper ) !== -1 ) {
 			return true;
@@ -201,7 +226,7 @@ SubscriptionRegistry.prototype.isSubscriber = function( socketWrapper ) {
  * @public
  * @returns {Array} SocketWrapper[]
  */
-SubscriptionRegistry.prototype.getSubscribers = function( name ) {
+SubscriptionRegistry.prototype.getLocalSubscribers = function( name ) {
 	if( this.hasSubscribers( name ) ) {
 		return this._subscriptions[ name ].slice();
 	} else {
@@ -218,8 +243,8 @@ SubscriptionRegistry.prototype.getSubscribers = function( name ) {
  * @public
  * @returns {SocketWrapper}
  */
-SubscriptionRegistry.prototype.getRandomSubscriber = function( name ) {
-	var subscribers = this.getSubscribers( name );
+SubscriptionRegistry.prototype.getRandomLocalSubscriber = function( name ) {
+	var subscribers = this.getLocalSubscribers( name );
 
 	if( subscribers ) {
 		return subscribers[ Math.floor( Math.random() * subscribers.length ) ];
@@ -239,7 +264,7 @@ SubscriptionRegistry.prototype.getRandomSubscriber = function( name ) {
  * @returns {Boolean} hasSubscribers
  */
 SubscriptionRegistry.prototype.hasSubscribers = function( name ) {
-	return !!this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0;
+	 return !!this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0;
 };
 
 /**

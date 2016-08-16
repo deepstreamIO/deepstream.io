@@ -4,15 +4,18 @@ var EventHandler = require( '../../src/event/event-handler' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
-	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' );
+	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' ),
+	options = {
+		serverName: 'server-name-a',
+		stateReconciliationTimeout: 10,
+		messageConnector: noopMessageConnector,
+		logger: new LoggerMock()
+	},
+	eventHandler,
+	subscribingClient = new SocketWrapper( new SocketMock(), {} ),
+	listeningClient = new SocketWrapper( new SocketMock(), {} );
 
 describe( 'event handler handles messages', function(){
-	var eventHandler,
-			subscribingClient = new SocketWrapper( new SocketMock(), {} ),
-		listeningClient = new SocketWrapper( new SocketMock(), {} ),
-		options = {
-			logger: new LoggerMock()
-		};
 
 	it( 'creates the event handler', function(){
 		eventHandler = new EventHandler( options );
