@@ -43,10 +43,9 @@ class ListenerRegistry {
 		this._listenerTimeoutRegistery = new TimeoutRegistry( topic, options );
 		this._reconcilePatternsBound = this._reconcilePatterns.bind( this );
 
-		this._providerRegistry = new SubscriptionRegistry( options, this._topic );
+		this._providerRegistry = new SubscriptionRegistry( options, this._topic, `${topic}_${C.TOPIC.LISTEN_PATTERNS}` );
 		this._providerRegistry.setAction( 'subscribe', C.ACTIONS.LISTEN );
 		this._providerRegistry.setAction( 'unsubscribe', C.ACTIONS.UNLISTEN );
-		this._clusterListenPatterns = new DistributedStateRegistry( `${topic}_${C.TOPIC.LISTEN_PATTERNS}`, options );
 
 		this._locallyProvidedRecords = {};
 		this._clusterProvidedRecords = new DistributedStateRegistry( `${topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`, options );
@@ -261,7 +260,6 @@ class ListenerRegistry {
 		// Create pattern entry (if it doesn't exist already)
 		if( !this._patterns[ pattern ] ) {
 			this._patterns[ pattern ] = regExp;
-			this._clusterListenPatterns.add( pattern );
 		}
 
 		this._reconcileSubscriptionsToPatterns( regExp, pattern, socketWrapper );
@@ -556,7 +554,6 @@ class ListenerRegistry {
 	_reconcilePatterns() {
 		for( var pattern in this._patterns ) {
 			if( !this._providerRegistry.hasSubscribers( pattern ) ) {
-				this._clusterListenPatterns.remove( pattern );
 				delete this._patterns[ pattern ];
 			}
 		}

@@ -46,6 +46,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		this._data = {};
 		this._reconciliationTimeouts = {};
 		this._fullStateSent = false;
+		this._requestFullState( C.ALL );
 	}
 
 	/**
@@ -265,7 +266,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	_verifyCheckSum( serverName, remoteCheckSum ) {
 		if( this._getCheckSumTotal( serverName ) !== remoteCheckSum ) {
 			this._reconciliationTimeouts[ serverName ] = setTimeout(
-				this._reconcile.bind( this, serverName ),
+				this._requestFullState.bind( this, serverName ),
 				this._options.stateReconciliationTimeout
 			);
 		} else if( this._reconciliationTimeouts[ serverName ] ) {
@@ -285,7 +286,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_reconcile( serverName ) {
+	_requestFullState( serverName ) {
 		this._options.messageConnector.publish( this._topic, {
 			topic: this._topic,
 			action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
@@ -388,7 +389,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		}
 
 		else if( message.action === C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE ) {
-			if( message.data[ 0 ] === this._options.serverName && this._fullStateSent === false ) {
+			if( message.data[ 0 ] === C.ALL || ( message.data[ 0 ] === this._options.serverName && this._fullStateSent === false ) ) {
 				this._sendFullState();
 			}
 		}
