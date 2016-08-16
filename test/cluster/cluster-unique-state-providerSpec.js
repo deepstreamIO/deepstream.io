@@ -10,7 +10,9 @@ describe( 'unique state provider handles local locks', function(){
 	var options = {
 		serverName: 'server-name-a',
 		messageConnector: new MessageConnectorMock(),
-		logger: { log: jasmine.createSpy( 'log' ) }
+		logger: { log: jasmine.createSpy( 'log' ) },
+		lockTimeout: 100,
+		lockRequestTimeout: 50
 	};
 
 	var clusterRegistryMock = new ClusterRegistryMock();
@@ -54,7 +56,9 @@ fdescribe( 'unique state provider handles remove locks', function(){
 	var options = {
 		serverName: 'server-name-a',
 		messageConnector: new MessageConnectorMock(),
-		logger: { log: jasmine.createSpy( 'log' ) }
+		logger: { log: jasmine.createSpy( 'log' ) },
+		lockTimeout: 100,
+		lockRequestTimeout: 50
 	};
 
 	var clusterRegistryMock = new ClusterRegistryMock();
@@ -92,5 +96,17 @@ fdescribe( 'unique state provider handles remove locks', function(){
 		});
 		expect( options.logger.log ).not.toHaveBeenCalled();
 		expect( lockCallbackA ).toHaveBeenCalledWith( true );
+	});
+
+	it( 'releases the remote lock', function(){
+		options.messageConnector.reset();
+		uniqueStateProvider.release( 'lock-a' );
+		expect( options.messageConnector.lastPublishedMessage ).toEqual({
+			topic: 'LP_server-name-b',
+			action: C.ACTIONS.LOCK_RELEASE,
+			data:[{
+				name: 'lock-a'
+			}]
+		});
 	});
 });
