@@ -38,8 +38,11 @@ class ListenerRegistry {
 		this._options = options;
 		this._clientRegistry = clientRegistry;
 
+		this._uniqueLockName = `${topic}_LISTEN_LOCK`;
+		this._uniqueStateProvider = this._options.uniqueRegistry;
+
 		this._patterns = {};
-		this._listenInProgress = {};
+		this._localListenInProgress = {};
 		this._listenerTimeoutRegistery = new TimeoutRegistry( topic, options );
 		this._reconcilePatternsBound = this._reconcilePatterns.bind( this );
 
@@ -49,6 +52,10 @@ class ListenerRegistry {
 
 		this._locallyProvidedRecords = {};
 		this._clusterProvidedRecords = new DistributedStateRegistry( `${topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`, options );
+
+		this._leadingListen = {};
+		this._listenTopic = this._getMessageBusTopic( this._options.serverName, this._topic );
+		this._options.messageConnector.subscribe( this._listenTopic, this._handleMessageBus.bind( this ) );
 	}
 
 	/**
@@ -62,7 +69,7 @@ class ListenerRegistry {
 	}
 
 	/**
-	 * The main entry point toe the handle class.
+	 * The main entry point to the handle class.
 	 * Called on any of the following actions:
 	 * 1) C.ACTIONS.LISTEN
 	 * 2) C.ACTIONS.UNLISTEN
@@ -80,17 +87,27 @@ class ListenerRegistry {
 		const pattern = message.data[ 0 ];
 		const subscriptionName = message.data[ 1 ];
 		if (message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
-			this._sendSnapshot( socketWrapper, message );
+			// removing this functionality since it is no longer applicable
 		} else if (message.action === C.ACTIONS.LISTEN ) {
 			this._addListener( socketWrapper, message );
 		} else if (message.action === C.ACTIONS.UNLISTEN ) {
 			this._removeListener( socketWrapper, message );
 		} else if( this._listenerTimeoutRegistery.isALateResponder( socketWrapper, message ) ) {
 			this._listenerTimeoutRegistery.handle( socketWrapper, message );
-		} else if( this._listenInProgress[ subscriptionName ] ) {
+		} else if( this._localListenInProgress[ subscriptionName ] ) {
 			this._processResponseForListenInProgress( socketWrapper, subscriptionName, message );
 		} else {
 			this._onMsgDataError( socketWrapper, message.raw, C.EVENT.INVALID_MESSAGE );
+		}
+	}
+
+	_handleMessageBus( message ) {
+		if( this._options.serverName !== message.data[ 0 ] ) {
+			return;
+		}
+
+		if( message[ 1 ] = C.ACTIONS.LISTEN ) {
+			this._startLocalDiscoveryStage( message.data[ 2 ] );
 		}
 	}
 
@@ -112,36 +129,6 @@ class ListenerRegistry {
 				this._triggerNextProvider( subscriptionName );
 			}
 		}
-	}
-
-	/**
-	 * Send a snapshot of all the names that match the provided pattern
-	 *
-	 * @param   {SocketWrapper} socketWrapper the socket that send the request
-	 * @param   {Object} message parsed and validated message
-	 *
-	 * @private
-	 * @returns {void}
-	 */
-	_sendSnapshot( socketWrapper, message ) {
-		const matchingNames = [];
-		const pattern = this._getPattern( socketWrapper, message );
-		const existingSubscriptions = this._clientRegistry.getNames();
-		const regExp = this._validatePattern( socketWrapper, pattern );
-		var subscriptionName;
-
-		if( !regExp ) {
-			return;
-		}
-
-		for( var i = 0; i < existingSubscriptions.length; i++ ) {
-			subscriptionName = existingSubscriptions[ i ];
-			if( subscriptionName.match( regExp ) ) {
-				matchingNames.push( subscriptionName );
-			}
-		}
-
-		socketWrapper.send( messageBuilder.getMsg( this._topic, C.ACTIONS.SUBSCRIPTIONS_FOR_PATTERN_FOUND, [ pattern, matchingNames ] ) );
 	}
 
 	/**
@@ -200,7 +187,6 @@ class ListenerRegistry {
 			return;
 		}
 
-		// TODO: This is now duplicated in this._removeActiveListener, sort of
 		provider.socketWrapper.send(
 			messageBuilder.getMsg(
 				this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, subscriptionName ]
@@ -219,7 +205,7 @@ class ListenerRegistry {
 	_accept( socketWrapper, message ) {
 		const subscriptionName = message.data[ 1 ];
 
-		delete this._listenInProgress[ subscriptionName ];
+		this._stopLocalDiscoveryStage( subscriptionName );
 
 		this._listenerTimeoutRegistery.clearTimeout( subscriptionName );
 
@@ -300,7 +286,7 @@ class ListenerRegistry {
 		for( var i = 0; i < existingSubscriptions.length; i++ ) {
 			var subscriptionName = existingSubscriptions[ i ];
 			if( subscriptionName.match( regExp ) ) {
-				const listenInProgress = this._listenInProgress[ subscriptionName ];
+				const listenInProgress = this._localListenInProgress[ subscriptionName ];
 				if( this._locallyProvidedRecords[ subscriptionName ] ) {
 					continue;
 				} else if( listenInProgress ) {
@@ -342,8 +328,8 @@ class ListenerRegistry {
 	 */
 	_removeListenerFromInProgress( pattern, socketWrapper ) {
 		var subscriptionName, i, listenInProgress;
-		for( var subscriptionName in this._listenInProgress ) {
-			listenInProgress = this._listenInProgress[ subscriptionName ];
+		for( var subscriptionName in this._localListenInProgress ) {
+			listenInProgress = this._localListenInProgress[ subscriptionName ];
 			for( var i=0; i< listenInProgress.length; i++) {
 				if(
 					listenInProgress[i].socketWrapper === socketWrapper &&
@@ -386,6 +372,7 @@ class ListenerRegistry {
 		delete this._locallyProvidedRecords[ subscriptionName ];
 		this._clusterProvidedRecords.remove( subscriptionName );
 	}
+
 	/**
 	 * Sends a has provider update to all subscribers
 	 *
@@ -423,9 +410,44 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_startDiscoveryStage( subscriptionName ) {
+		this._uniqueStateProvider.get( `${this._uniqueLockName}_${subscriptionName}`, ( success ) => {
+			// generate a map of all servers that can provide..
+			success && this._startLocalDiscoveryStage( subscriptionName );
+		} );
+	}
+
+	/**
+	 * Start discovery phase once a lock is obtained from the leader within
+	 * the cluster
+	 *
+	 * @param   {String} subscriptionName the subscription name
+	 *
+	 * @private
+	 * @returns {void}
+	 */
+	_startLocalDiscoveryStage( subscriptionName ) {
 		this._createListenMap( subscriptionName );
-		if( this._listenInProgress[ subscriptionName ] ) {
+		if( this._localListenInProgress[ subscriptionName ] ) {
 			this._triggerNextProvider( subscriptionName );
+		}
+	}
+
+	_stopLocalDiscoveryStage( subscriptionName ) {
+		delete this._localListenInProgress[ subscriptionName ];
+		
+		if( this._leadingListen[ subscriptionName ] ) {
+			if( this.hasProvider( subscriptionName ) || this._leadingListen[ subscriptionName ].length === 0 ) {
+				delete this._leadingListen[ subscriptionName ];
+				this._uniqueStateProvider.remove( this._uniqueLockName );		
+			} else {
+				const nextServer = this._leadingListen[ subscriptionName ].splice( 0, 1 )[ 0 ];
+				const messageTopic = this._getMessageBusTopic( nextServer, topic );
+				this._options.messageConnector.publish( messageTopic, {
+					topic: messageTopic,
+					action: C.ACTIONS.LISTEN,
+					data:[ serverName, subscriptionName ]
+				});
+			}
 		}
 	}
 
@@ -449,7 +471,7 @@ class ListenerRegistry {
 			}
 		}
 		if( providers.length > 0 ) {
-			this._listenInProgress[ subscriptionName ] = providers;
+			this._localListenInProgress[ subscriptionName ] = providers;
 		}
 	}
 
@@ -461,17 +483,17 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_triggerNextProvider( subscriptionName ) {
-		if( !this._listenInProgress[ subscriptionName ] ) {
+		if( !this._localListenInProgress[ subscriptionName ] ) {
 			return;
 		}
 
 		//TODO: Needs tests
-		if( this._listenInProgress[ subscriptionName ].length === 0 ) {
-			delete this._listenInProgress[ subscriptionName ];
+		if( this._localListenInProgress[ subscriptionName ].length === 0 ) {
+			this._stopLocalDiscoveryStage( subscriptionName );
 			return;
 		}
 
-		const provider = this._listenInProgress[ subscriptionName ].shift();
+		const provider = this._localListenInProgress[ subscriptionName ].shift();
 		this._listenerTimeoutRegistery.addTimeout( subscriptionName, provider, this._triggerNextProvider.bind( this ) );
 		provider.socketWrapper.send( messageBuilder.getMsg(
 			this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ provider.pattern, subscriptionName ]
@@ -557,6 +579,10 @@ class ListenerRegistry {
 				delete this._patterns[ pattern ];
 			}
 		}
+	}
+
+	_getMessageBusTopic( serverName, topic ) {
+		return C.TOPIC.LEADER_PRIVATE + serverName + topic + C.ACTIONS.LISTEN;
 	}
 }
 

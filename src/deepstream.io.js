@@ -19,6 +19,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	ClusterRegistry = require( './cluster/cluster-registry' ),
+	UniqueRegistry = require( './cluster/cluster-unique-state-provider' ),
 	C = require( './constants/constants' ),
 	pkg = require( '../package.json' );
 
@@ -202,7 +203,7 @@ Deepstream.prototype.stop = function() {
 	}
 
 	utils.combineEvents( closables, 'close', this._onStopped.bind( this ) );
-	this._clusterRegistry.leaveCluster();
+	this._options.clusterRegistry.leaveCluster();
 	this._connectionEndpoint.close();
 };
 
@@ -291,7 +292,6 @@ Deepstream.prototype._init = function() {
 	this._messageProcessor = new MessageProcessor( this._options );
 	this._messageDistributor = new MessageDistributor( this._options );
 	this._connectionEndpoint.onMessage = this._messageProcessor.process.bind( this._messageProcessor );
-	this._clusterRegistry = new ClusterRegistry( this._options, this._connectionEndpoint );
 	this._eventHandler = new EventHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.EVENT, this._eventHandler.handle.bind( this._eventHandler ) );
 
@@ -309,6 +309,9 @@ Deepstream.prototype._init = function() {
 	if( this._options.permissionHandler.setRecordHandler ) {
 		this._options.permissionHandler.setRecordHandler( this._recordHandler );
 	}
+
+	this._options.clusterRegistry = new ClusterRegistry( this._options, this._connectionEndpoint );
+	this._options.uniqueRegistry = new UniqueRegistry( this._options, this._options.clusterRegistry );
 
 	this._currentState = STATES.INITIALIZED;
 };
