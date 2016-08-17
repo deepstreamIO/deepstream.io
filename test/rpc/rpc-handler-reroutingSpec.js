@@ -102,7 +102,11 @@ describe('rpc handler returns alternative providers for the same rpc', function(
 			action: C.ACTIONS.QUERY,
 			data: [ 'rpcX' ]
 		});
-		expect( options.messageConnector.lastPublishedMessage ).toEqual( null );
+		expect( options.messageConnector.lastPublishedMessage ).toEqual( {
+			topic: 'P_SUBSCRIPTIONS',
+			action: 'DISTRIBUTED_STATE_ADD',
+			data: [ 'rpcB', 'thisServer', 7013881 ]
+		} );
 	});
 
 	it( 'receives a provider query for an rpc with providers', function(){

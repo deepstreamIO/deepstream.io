@@ -17,7 +17,11 @@ describe( 'record handler handles messages', function(){
 			storageExclusion: new RegExp( 'no-storage'),
 			logger: new LoggerMock(),
 			messageConnector: noopMessageConnector,
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function() {},
+				release: function() {}
+			}
 		};
 
 	it( 'creates the record handler', function(){
@@ -423,7 +427,11 @@ describe( 'record handler handles messages', function(){
 			storageExclusion: new RegExp( 'no-storage'),
 			logger: new LoggerMock(),
 			messageConnector: noopMessageConnector,
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function() {},
+				release: function() {}
+			}
 		};
 
 	options.cache.nextGetWillBeSynchronous = true;

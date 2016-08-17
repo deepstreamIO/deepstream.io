@@ -34,15 +34,13 @@ class SubscriptionRegistry {
 	}
 
 	_onClusterSubscriptionAdded( name ) {
-		console.log( 'subscription added', name)
-		if( this._subscriptionListener ) {
+		if( this._subscriptionListener && !this._subscriptions[ name ] ) {
 			this._subscriptionListener.onSubscriptionMade( name, null, 1 );
 		}
 	}
 
 	_onClusterSubscriptionRemoved( name ) {
-		console.log( 'subscription removed', name )
-		if( this._subscriptionListener ) {
+		if( this._subscriptionListener && this._subscriptions[ name ]) {
 			this._subscriptionListener.onSubscriptionRemoved( name, null, 0 );
 		}
 	}
@@ -116,13 +114,12 @@ class SubscriptionRegistry {
 		}
 
 		this._subscriptions[ name ].push( socketWrapper );
-		this._clusterSubscriptions.add( name );
 
-		if( this._subscriptions[ name ].length > 1 && this._subscriptionListener ) {
-			if( this._subscriptionListener ) {
-				this._subscriptionListener.onSubscriptionMade( name, socketWrapper, this._subscriptions[ name ].length );
-			}
+		if( this._subscriptionListener ) {
+			this._subscriptionListener.onSubscriptionMade( name, socketWrapper, this._subscriptions[ name ].length );
 		}
+
+		this._clusterSubscriptions.add( name );
 
 		var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
 		this._options.logger.log( C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg );
@@ -163,9 +160,14 @@ class SubscriptionRegistry {
 			delete this._subscriptions[ name ];
 		} else {
 			this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
-			if( this._subscriptionListener ) {
-				this._subscriptionListener.onSubscriptionRemoved( name, socketWrapper, this._subscriptions[ name ].length );	
-			}
+		}
+		
+		if( this._subscriptionListener ) {
+			this._subscriptionListener.onSubscriptionRemoved( 
+				name, 
+				socketWrapper, 
+				this._subscriptions[ name ] ? this._subscriptions[ name ].length : 0
+			);	
 		}
 
 		if( !silent ) {

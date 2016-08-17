@@ -16,7 +16,11 @@ describe( 'record handler handles messages', function(){
 			storage: new StorageMock(),
 			logger: new LoggerMock(),
 			messageConnector: noopMessageConnector,
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function( name, callback ) { callback( true ); },
+				release: function() {}
+			}
 		};
 
 	it( 'creates the record handler', function(){
@@ -59,17 +63,6 @@ describe( 'record handler handles messages', function(){
 			});
 			expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'R|R|user/C|0|{}+' ) );
 			expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'R|SP|user\/.*|user/C+' ) );
-	});
-
-	it( 'returns a snapshot of the all records that match the pattern', function(){
-		recordHandler.handle( subscribingClient, {
-			raw: msg( 'R|LSN|user\/*' ),
-			topic: 'R',
-			action: 'LSN',
-			data: [ 'user\/*' ]
-		});
-
-		expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'R|SF|user/*|["user/A","user/B","user/C"]+' ));
 	});
 
 	it( 'doesn\'t send messages for subsequent subscriptions', function(){

@@ -59,15 +59,4 @@ describe('listener-registry errors', function() {
 		expect(options.logger.log).toHaveBeenCalledWith(3, 'INVALID_MESSAGE_DATA', 'SyntaxError: Invalid regular expression: /us(/: Unterminated group');
 		expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|SyntaxError: Invalid regular expression: /us(/: Unterminated group+'));
 	});
-
-	it('requests a snapshot with an invalid regexp', function() {
-		var socketWrapper = new SocketWrapper(new SocketMock());
-		listenerRegistry.handle(socketWrapper, {
-			topic: 'R',
-			action: 'LSN',
-			data: ['xs(']
-		});
-		expect(options.logger.log).toHaveBeenCalledWith(3, 'INVALID_MESSAGE_DATA', 'SyntaxError: Invalid regular expression: /xs(/: Unterminated group');
-		expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|SyntaxError: Invalid regular expression: /xs(/: Unterminated group+'));
-	});
 });

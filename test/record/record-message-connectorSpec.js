@@ -11,11 +11,16 @@ describe( 'messages from direct connected clients and messages that come in via 
 	var recordHandler,
 		subscriber = new SocketWrapper( new SocketMock(), {} ),
 		options = {
+			serverName: 'a-server-name',
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			logger: new LoggerMock(),
 			messageConnector: new MessageConnectorMock(),
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function( name, callback ) { callback( true ); },
+				release: function() {}
+			}
 		};
 
 	it( 'creates the record handler', function(){
@@ -31,7 +36,11 @@ describe( 'messages from direct connected clients and messages that come in via 
 	    	data: [ 'someRecord' ]
 	    });
 
-	    expect( options.messageConnector.lastPublishedMessage ).toBe( null );
+	    expect( options.messageConnector.lastPublishedMessage ).toEqual( {
+	    	topic: 'R_SUBSCRIPTIONS',
+	    	action: 'DISTRIBUTED_STATE_ADD',
+	    	data: [ 'someRecord', 'a-server-name', -5602883995 ]
+	    } );
 	    expect( subscriber.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|0|{}+' ) );
 	});
 

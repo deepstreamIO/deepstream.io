@@ -9,7 +9,11 @@ var EventHandler = require( '../../src/event/event-handler' ),
 		serverName: 'server-name-a',
 		stateReconciliationTimeout: 10,
 		messageConnector: noopMessageConnector,
-		logger: new LoggerMock()
+		logger: new LoggerMock(),
+		uniqueRegistry: {
+			get: function( name, callback ) { callback( true ); },
+			release: function() {}
+		}
 	},
 	eventHandler,
 	subscribingClient = new SocketWrapper( new SocketMock(), {} ),
@@ -57,17 +61,6 @@ describe( 'event handler handles messages', function(){
 			});
 			expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'E|A|S|event/C+' ) );
 			expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'E|SP|event\/.*|event/C+' ) );
-	});
-
-	it( 'returns a snapshot of the all event that match the pattern', function(){
-		eventHandler.handle( subscribingClient, {
-			raw: msg( 'E|LSN|user\/*' ),
-			topic: 'E',
-			action: 'LSN',
-			data: [ 'event\/*' ]
-		});
-
-		expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'E|SF|event/*|["event/A","event/B","event/C"]+' ));
 	});
 
 	it( 'doesn\'t send messages for subsequent subscriptions', function(){

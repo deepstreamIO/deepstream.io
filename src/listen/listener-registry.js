@@ -4,6 +4,7 @@ var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
 	DistributedStateRegistry = require( '../utils/distributed-state-registry' ),
 	TimeoutRegistry = require( './listener-timeout-registry' ),
+	ListenerUtils = require( './listener-utils' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' );
 
@@ -38,8 +39,9 @@ class ListenerRegistry {
 		this._options = options;
 		this._clientRegistry = clientRegistry;
 
-		this._uniqueLockName = `${topic}_LISTEN_LOCK`;
 		this._uniqueStateProvider = this._options.uniqueRegistry;
+
+		this._listenerUtils = new ListenerUtils( topic, options, clientRegistry );
 
 		this._patterns = {};
 		this._localListenInProgress = {};
@@ -54,7 +56,7 @@ class ListenerRegistry {
 		this._clusterProvidedRecords = new DistributedStateRegistry( `${topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`, options );
 
 		this._leadingListen = {};
-		this._listenTopic = this._getMessageBusTopic( this._options.serverName, this._topic );
+		this._listenTopic = this._listenerUtils.getMessageBusTopic( this._options.serverName, this._topic );
 		this._options.messageConnector.subscribe( this._listenTopic, this._handleMessageBus.bind( this ) );
 	}
 
@@ -86,9 +88,7 @@ class ListenerRegistry {
 	handle( socketWrapper, message ) {
 		const pattern = message.data[ 0 ];
 		const subscriptionName = message.data[ 1 ];
-		if (message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
-			// removing this functionality since it is no longer applicable
-		} else if (message.action === C.ACTIONS.LISTEN ) {
+		if (message.action === C.ACTIONS.LISTEN ) {
 			this._addListener( socketWrapper, message );
 		} else if (message.action === C.ACTIONS.UNLISTEN ) {
 			this._removeListener( socketWrapper, message );
@@ -97,17 +97,17 @@ class ListenerRegistry {
 		} else if( this._localListenInProgress[ subscriptionName ] ) {
 			this._processResponseForListenInProgress( socketWrapper, subscriptionName, message );
 		} else {
-			this._onMsgDataError( socketWrapper, message.raw, C.EVENT.INVALID_MESSAGE );
+			this._listenerUtils.onMsgDataError( socketWrapper, message.raw, C.EVENT.INVALID_MESSAGE );
 		}
 	}
 
 	_handleMessageBus( message ) {
-		if( this._options.serverName !== message.data[ 0 ] ) {
-			return;
-		}
-
-		if( message[ 1 ] = C.ACTIONS.LISTEN ) {
-			this._startLocalDiscoveryStage( message.data[ 2 ] );
+		if( this._options.serverName === message.data[ 0 ] ) {
+			if( message[ 1 ] === C.ACTIONS.LISTEN ) {
+				this._startLocalDiscoveryStage( message.data[ 2 ] );
+			} else if( message[ 1 ] === C.ACTIONS.ACK ) {
+				this._nextDiscoveryStage( message.data[ 2 ] );
+			}
 		}
 	}
 
@@ -142,11 +142,7 @@ class ListenerRegistry {
 	 */
 	onSubscriptionMade( subscriptionName, socketWrapper, count ) {
 		if( this.hasActiveProvider( subscriptionName ) ) {
-			if( socketWrapper && this._topic === C.TOPIC.RECORD ) {
-				socketWrapper.send( messageBuilder.getMsg(
-					this._topic, C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [ subscriptionName, C.TYPES.TRUE ]
-				) );
-			}
+			this._listenerUtils.sendHasProviderUpdateToSingleSubscriber( true, socketWrapper, subscriptionName );
 			return;
 		}
 
@@ -187,12 +183,7 @@ class ListenerRegistry {
 			return;
 		}
 
-		provider.socketWrapper.send(
-			messageBuilder.getMsg(
-				this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, subscriptionName ]
-			)
-		);
-
+		this._listenerUtils.sendSubscriptionForPatternRemoved( provider, subscriptionName );
 		this._removeActiveListener( subscriptionName, provider );
 	}
 
@@ -205,8 +196,6 @@ class ListenerRegistry {
 	_accept( socketWrapper, message ) {
 		const subscriptionName = message.data[ 1 ];
 
-		this._stopLocalDiscoveryStage( subscriptionName );
-
 		this._listenerTimeoutRegistery.clearTimeout( subscriptionName );
 
 		this._locallyProvidedRecords[ subscriptionName ] = {
@@ -216,7 +205,9 @@ class ListenerRegistry {
 		}
 		socketWrapper.socket.once( 'close', this._locallyProvidedRecords[ subscriptionName ].closeListener );
 		this._clusterProvidedRecords.add( subscriptionName );
-		this._sendHasProviderUpdate( true, subscriptionName );
+		this._listenerUtils.sendHasProviderUpdate( true, subscriptionName );
+
+		this._stopLocalDiscoveryStage( subscriptionName );
 	}
 
 	/**
@@ -229,8 +220,8 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_addListener( socketWrapper, message ) {
-		const pattern = this._getPattern( socketWrapper, message );
-		const regExp = this._validatePattern( socketWrapper, pattern );
+		const pattern = this._listenerUtils.getPattern( socketWrapper, message );
+		const regExp = this._listenerUtils.validatePattern( socketWrapper, pattern );
 
 		if( !regExp ) {
 			return;
@@ -240,7 +231,7 @@ class ListenerRegistry {
 		const notInSubscriptionRegistry = !providers || providers.indexOf( socketWrapper ) === -1;
 		if( notInSubscriptionRegistry ) {
 			this._providerRegistry.subscribe( pattern, socketWrapper );
-			this._addUniqueCloseListener( socketWrapper, this._reconcilePatternsBound );
+			this._listenerUtils.addUniqueCloseListener( socketWrapper, this._reconcilePatternsBound );
 		}
 
 		// Create pattern entry (if it doesn't exist already)
@@ -249,25 +240,6 @@ class ListenerRegistry {
 		}
 
 		this._reconcileSubscriptionsToPatterns( regExp, pattern, socketWrapper );
-	}
-
-	/**
-	* Adds a unique close listener to avoid unnecessary adds
-	*/
-	_addUniqueCloseListener(socketWrapper, eventHandler) {
-		var eventName = 'close';
-		var socketListeners = socketWrapper.socket.listeners( eventName );
-		var listenerFound = false;
-		for( var i=0; i<socketListeners.length; i++) {
-			var item = socketListeners[ i ];
-			if( item.listener === eventHandler ) {
-				listenerFound = true;
-				break;
-			}
-		}
-		if( !listenerFound ) {
-			socketWrapper.socket.once( eventName, eventHandler );
-		}
 	}
 
 	/**
@@ -311,34 +283,13 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_removeListener( socketWrapper, message ) {
-		const pattern = this._getPattern( socketWrapper, message );
+		const pattern = message.data[ 0 ] ;
 
+		this._listenerUtils.sendHasProviderUpdate( socketWrapper, message );
 		this._providerRegistry.unsubscribe( pattern, socketWrapper );
-		this._reconcilePatterns();
-		this._removeListenerFromInProgress( pattern, socketWrapper );
+		this._reconcilePatterns( this._patterns, this._providerRegistry );
+		this._listenerUtils.removeListenerFromInProgress( this._localListenInProgress, pattern, socketWrapper );
 		this._removeListenerIfActive( pattern, socketWrapper );
-	}
-
-	/**
-	 * Remove provider from listen in progress map if it unlistens during
-	 * discovery stage
-	 *
-	 * @private
-	 * @returns {Message}
-	 */
-	_removeListenerFromInProgress( pattern, socketWrapper ) {
-		var subscriptionName, i, listenInProgress;
-		for( var subscriptionName in this._localListenInProgress ) {
-			listenInProgress = this._localListenInProgress[ subscriptionName ];
-			for( var i=0; i< listenInProgress.length; i++) {
-				if(
-					listenInProgress[i].socketWrapper === socketWrapper &&
-					listenInProgress[i].pattern === pattern
-				) {
-					listenInProgress.splice( i, 1 );
-				}
-			}
-		}
 	}
 
 	/**
@@ -368,36 +319,9 @@ class ListenerRegistry {
 	 * @returns {Void}
 	*/
 	_removeActiveListener( subscriptionName, provider ) {
-		this._sendHasProviderUpdate( false, subscriptionName );
+		this._listenerUtils.sendHasProviderUpdate( false, subscriptionName );
 		delete this._locallyProvidedRecords[ subscriptionName ];
 		this._clusterProvidedRecords.remove( subscriptionName );
-	}
-
-	/**
-	 * Sends a has provider update to all subscribers
-	 *
-	 * @private
-	 * @returns {Message}
-	 */
-	_sendHasProviderUpdate( hasProvider, subscriptionName ) {
-		if( this._topic !== C.TOPIC.RECORD ) {
-			return
-		}
-		this._clientRegistry.sendToSubscribers( subscriptionName, this._createHasProviderMessage( hasProvider, this._topic, subscriptionName ) );
-	}
-
-	/**
-	 * Create a has provider update message
-	 *
-	 * @private
-	 * @returns {Message}
-	 */
-	_createHasProviderMessage(hasProvider, topic, subscriptionName) {
-		return messageBuilder.getMsg(
-				topic,
-				C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-				[subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
-			);
 	}
 
 	/**
@@ -410,10 +334,20 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_startDiscoveryStage( subscriptionName ) {
-		this._uniqueStateProvider.get( `${this._uniqueLockName}_${subscriptionName}`, ( success ) => {
-			// generate a map of all servers that can provide..
+		this._uniqueStateProvider.get( this._listenerUtils.getUniqueLockName( subscriptionName ), ( success ) => {
+			this._leadingListen[ subscriptionName ] = [ this._options.serverName ];
 			success && this._startLocalDiscoveryStage( subscriptionName );
 		} );
+	}
+
+	_nextDiscoveryStage( subscriptionName ) {
+		if( this.hasActiveProvider( subscriptionName ) || this._leadingListen[ subscriptionName ].length === 0 ) {
+			delete this._leadingListen[ subscriptionName ];
+			this._uniqueStateProvider.release(  this._listenerUtils.getUniqueLockName( subscriptionName ) );		
+		} else {
+			const nextServerName = this._leadingListen[ subscriptionName ].splice( 0, 1 )[ 0 ];
+			this._listenerUtils.sendRemoteDiscoveryStart( nextServerName, subscriptionName );
+		}
 	}
 
 	/**
@@ -426,52 +360,23 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_startLocalDiscoveryStage( subscriptionName ) {
-		this._createListenMap( subscriptionName );
-		if( this._localListenInProgress[ subscriptionName ] ) {
-			this._triggerNextProvider( subscriptionName );
+		const localListenMap = this._listenerUtils.createLocalListenMap( this._patterns, this._providerRegistry, subscriptionName );
+
+		if( localListenMap.length > 0 ) {
+			this._localListenInProgress[ subscriptionName ] = localListenMap;
+			if( this._localListenInProgress[ subscriptionName ] ) {
+				this._triggerNextProvider( subscriptionName );
+			}
 		}
 	}
 
 	_stopLocalDiscoveryStage( subscriptionName ) {
 		delete this._localListenInProgress[ subscriptionName ];
-		
-		if( this._leadingListen[ subscriptionName ] ) {
-			if( this.hasProvider( subscriptionName ) || this._leadingListen[ subscriptionName ].length === 0 ) {
-				delete this._leadingListen[ subscriptionName ];
-				this._uniqueStateProvider.remove( this._uniqueLockName );		
-			} else {
-				const nextServer = this._leadingListen[ subscriptionName ].splice( 0, 1 )[ 0 ];
-				const messageTopic = this._getMessageBusTopic( nextServer, topic );
-				this._options.messageConnector.publish( messageTopic, {
-					topic: messageTopic,
-					action: C.ACTIONS.LISTEN,
-					data:[ serverName, subscriptionName ]
-				});
-			}
-		}
-	}
 
-	/**
-	 * Create a map of all the listeners that patterns match the subscriptionName
-	 *
-	 * @private
-	 * @returns {void}
-	 */
-	_createListenMap( subscriptionName ) {
-		const providers = [];
-		for( var pattern in this._patterns ) {
-			if( this._patterns[ pattern ].test( subscriptionName ) ) {
-				var providersForPattern = this._providerRegistry.getLocalSubscribers( pattern );
-				for( var i = 0; providersForPattern && i < providersForPattern.length; i++ ) {
-					providers.push( {
-						pattern: pattern,
-						socketWrapper: providersForPattern[ i ]
-					});
-				}
-			}
-		}
-		if( providers.length > 0 ) {
-			this._localListenInProgress[ subscriptionName ] = providers;
+		if( this._leadingListen[ subscriptionName ] ) {
+			this._nextDiscoveryStage( subscriptionName );
+		} else {
+			this._listenerUtils.sendRemoteDiscoveryStop( 'leaderserver', subscriptionName );
 		}
 	}
 
@@ -495,74 +400,7 @@ class ListenerRegistry {
 
 		const provider = this._localListenInProgress[ subscriptionName ].shift();
 		this._listenerTimeoutRegistery.addTimeout( subscriptionName, provider, this._triggerNextProvider.bind( this ) );
-		provider.socketWrapper.send( messageBuilder.getMsg(
-			this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [ provider.pattern, subscriptionName ]
-			)
-		);
-	}
-
-	/**
-	 * Extracts the subscription pattern from the message and notifies the sender
-	 * if something went wrong
-	 *
-	 * @param   {SocketWrapper} socketWrapper
-	 * @param   {Object} message
-	 *
-	 * @private
-	 * @returns {void}
-	 */
-	_getPattern( socketWrapper, message ) {
-		if( message.data.length > 2  ) {
-			this._onMsgDataError( socketWrapper, message.raw );
-			return null;
-		}
-
-		var pattern = message.data[ 0 ];
-
-		if( typeof pattern !== 'string' ) {
-			this._onMsgDataError( socketWrapper, pattern );
-			return null;
-		}
-
-		return pattern;
-	}
-
-	/**
-	 * Validates that the pattern is not empty and is a valid regular expression
-	 *
-	 * @param   {SocketWrapper} socketWrapper
-	 * @param   {String} pattern
-	 *
-	 * @private
-	 * @returns {RegExp}
-	 */
-	_validatePattern( socketWrapper, pattern ) {
-		if( !pattern ) {
-			return;
-		}
-
-		try{
-			return new RegExp( pattern );
-		} catch( e ) {
-			this._onMsgDataError( socketWrapper, e.toString() );
-			return;
-		}
-	}
-
-	/**
-	 * Processes errors for invalid messages
-	 *
-	 * @param   {SocketWrapper} socketWrapper
-	 * @param   {String} errorMsg
-	 * @param   {Event} [errorEvent] Default to C.EVENT.INVALID_MESSAGE_DATA
-	 *
-	 * @private
-	 * @returns {void}
-	 */
-	_onMsgDataError( socketWrapper, errorMsg, errorEvent ) {
-		errorEvent = errorEvent || C.EVENT.INVALID_MESSAGE_DATA;
-		socketWrapper.sendError( this._topic, errorEvent, errorMsg );
-		this._options.logger.log( C.LOG_LEVEL.ERROR, errorEvent, errorMsg );
+		this._listenerUtils.sendSubscriptionForPatternFound( provider, subscriptionName );
 	}
 
 	/**
@@ -580,11 +418,6 @@ class ListenerRegistry {
 			}
 		}
 	}
-
-	_getMessageBusTopic( serverName, topic ) {
-		return C.TOPIC.LEADER_PRIVATE + serverName + topic + C.ACTIONS.LISTEN;
-	}
 }
-
 
 module.exports = ListenerRegistry;

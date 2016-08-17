@@ -14,7 +14,11 @@ var EventHandler = require( '../../src/event/event-handler' ),
 		result.eventHandler = new EventHandler({
 			messageConnector: messageConnectorMock,
 			dataTransforms: new DataTransforms( dataTransformSettigns ),
-			logger: new LoggerMock()
+			logger: new LoggerMock(),
+			uniqueRegistry: {
+				get: function() {},
+				release: function() {}
+			}
 		});
 
 		for( i = 0; i < 3; i++ ) {

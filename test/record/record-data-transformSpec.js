@@ -16,7 +16,11 @@ function createRecordHandler( dataTransformSettings ) {
 			storage: new StorageMock(),
 			logger: new LoggerMock(),
 			messageConnector: noopMessageConnector,
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function() {},
+				release: function() {}
+			}
 		};
 
 	if( dataTransformSettings ) {

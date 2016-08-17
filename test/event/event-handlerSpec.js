@@ -1,80 +1,86 @@
 var EventHandler = require( '../../src/event/event-handler' ),
-		SocketWrapper = require( '../../src/message/socket-wrapper' ),
-		C = require( '../../src/constants/constants' ),
-		_msg = require( '../test-helper/test-helper' ).msg,
-		SocketMock = require( '../mocks/socket-mock' ),
-		messageConnectorMock = new (require( '../mocks/message-connector-mock' ))(),
-		LoggerMock = require( '../mocks/logger-mock' ),
-		options = {
-			serverName: 'server-name-a',
-			stateReconciliationTimeout: 10,
-			messageConnector: messageConnectorMock,
-			logger: new LoggerMock()
-		},
-		eventHandler = new EventHandler( options ),
-		subscriptionsMessage = {
-			 topic: C.TOPIC.EVENT,
-			 action: C.ACTIONS.SUBSCRIBE,
-			 raw: 'rawMessageString',
-			 data: [ 'someEvent' ]
+	SocketWrapper = require( '../../src/message/socket-wrapper' ),
+	C = require( '../../src/constants/constants' ),
+	_msg = require( '../test-helper/test-helper' ).msg,
+	SocketMock = require( '../mocks/socket-mock' ),
+	messageConnectorMock = new (require( '../mocks/message-connector-mock' ))(),
+	ClusterRegistry = require( '../../src/cluster/cluster-registry' ),
+	UniqueRegistry = require( '../../src/cluster/cluster-unique-state-provider' ),
+	LoggerMock = require( '../mocks/logger-mock' ),
+	options = {
+		serverName: 'server-name-a',
+		stateReconciliationTimeout: 10,
+		messageConnector: messageConnectorMock,
+		logger: new LoggerMock(),
+		uniqueRegistry: {
+			get: function() {},
+			release: function() {}
+		}
+	},
+	subscriptionsMessage = {
+		 topic: C.TOPIC.EVENT,
+		 action: C.ACTIONS.SUBSCRIBE,
+		 raw: 'rawMessageString',
+		 data: [ 'someEvent' ]
 	 },
 	 eventMessage = {
 			 topic: C.TOPIC.EVENT,
 			 action: C.ACTIONS.EVENT,
 			 raw: 'rawMessageString',
 			 data: [ 'someEvent' ]
-	 };
+	 },
+	 eventHandler = new EventHandler( options );
 
 describe( 'the eventHandler routes events correctly', function(){
 
 	 it( 'sends an error for invalid subscription messages', function(){
-			 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			 invalidMessage = {
-					 topic: C.TOPIC.EVENT,
-					 action: C.ACTIONS.SUBSCRIBE,
-					 raw: 'rawMessageString'
-			 };
+		 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+		 invalidMessage = {
+				 topic: C.TOPIC.EVENT,
+				 action: C.ACTIONS.SUBSCRIBE,
+				 raw: 'rawMessageString'
+		 };
 
-			 eventHandler.handle( socketWrapper, invalidMessage );
-			 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|INVALID_MESSAGE_DATA|rawMessageString+' ) );
+		 eventHandler.handle( socketWrapper, invalidMessage );
+		 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|INVALID_MESSAGE_DATA|rawMessageString+' ) );
 	 });
 
 	 it( 'sends an error for subscription messages without an event name', function(){
-			 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-				invalidMessage = {
-					 topic: C.TOPIC.EVENT,
-					 action: C.ACTIONS.SUBSCRIBE,
-					 raw: 'rawMessageString',
-					 data: []
-			 };
+		 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+			invalidMessage = {
+				 topic: C.TOPIC.EVENT,
+				 action: C.ACTIONS.SUBSCRIBE,
+				 raw: 'rawMessageString',
+				 data: []
+		 };
 
-			 eventHandler.handle( socketWrapper, invalidMessage );
-			 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|INVALID_MESSAGE_DATA|rawMessageString+' ) );
+		 eventHandler.handle( socketWrapper, invalidMessage );
+		 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|INVALID_MESSAGE_DATA|rawMessageString+' ) );
 	 });
 
 	 it( 'sends an error for subscription messages with an invalid action', function(){
-			 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-				invalidMessage = {
-					 topic: C.TOPIC.EVENT,
-					 action: 'giberrish',
-					 raw: 'rawMessageString',
-					 data: []
-			 };
+		 var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+			invalidMessage = {
+				 topic: C.TOPIC.EVENT,
+				 action: 'giberrish',
+				 raw: 'rawMessageString',
+				 data: []
+		 };
 
-			 eventHandler.handle( socketWrapper, invalidMessage );
-			 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|UNKNOWN_ACTION|unknown action giberrish+' ) );
+		 eventHandler.handle( socketWrapper, invalidMessage );
+		 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|E|UNKNOWN_ACTION|unknown action giberrish+' ) );
 	 });
 
 	 it( 'subscribes to events', function(){
-			 var socketWrapper = new SocketWrapper( new SocketMock(), {} );
-			 expect( socketWrapper.socket.lastSendMessage ).toBe( null );
-			 eventHandler.handle( socketWrapper, subscriptionsMessage );
-			 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|A|S|someEvent+' ) );
+		 var socketWrapper = new SocketWrapper( new SocketMock(), {} );
+		 expect( socketWrapper.socket.lastSendMessage ).toBe( null );
+		 eventHandler.handle( socketWrapper, subscriptionsMessage );
+		 expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'E|A|S|someEvent+' ) );
 	 });
 
 	it( 'triggers events', function(){
-			var socketA = new SocketWrapper( new SocketMock(), {} ),
-				socketB = new SocketWrapper( new SocketMock(), {} );
+		var socketA = new SocketWrapper( new SocketMock(), {} ),
+			socketB = new SocketWrapper( new SocketMock(), {} );
 
 		 eventHandler.handle( socketA, subscriptionsMessage );
 		 eventHandler.handle( socketB, subscriptionsMessage );
@@ -128,9 +134,9 @@ describe( 'the eventHandler routes events correctly', function(){
 	});
 
 	 it( 'unsubscribes', function(){
-				var socketA = new SocketWrapper( new SocketMock(), {} ),
-					socketB = new SocketWrapper( new SocketMock(), {} ),
-					socketC = new SocketWrapper( new SocketMock(), {} );
+			var socketA = new SocketWrapper( new SocketMock(), {} ),
+				socketB = new SocketWrapper( new SocketMock(), {} ),
+				socketC = new SocketWrapper( new SocketMock(), {} );
 
 			eventHandler.handle( socketA, subscriptionsMessage );
 			eventHandler.handle( socketB, subscriptionsMessage );

@@ -144,7 +144,7 @@ describe( 'distributed-state-registry reconciles state in a cluster', function()
 		registryB.addCallback.calls.reset();
 		registryC.addCallback.calls.reset();
 		registryB.registry.add( 'test-entry-g' );
-		expect( messageConnector.messages.length ).toBe( 2 );
+		expect( messageConnector.messages.length ).toBe( 11 );
 		expect( registryA.addCallback ).toHaveBeenCalledWith( 'test-entry-g' );
 		expect( registryB.addCallback ).toHaveBeenCalledWith( 'test-entry-g' );
 		expect( registryC.addCallback ).toHaveBeenCalledWith( 'test-entry-g' );
@@ -155,19 +155,35 @@ describe( 'distributed-state-registry reconciles state in a cluster', function()
 	});
 
 	it( 'has reconciled the compromised state', function(){
-		expect( messageConnector.messages.length ).toBe( 5 );
+		expect( messageConnector.messages.length ).toBe( 14 );
+
+		// registry A asks for state
+		expect( messageConnector.messages[ 0 ].data.action ).toBe( 'DISTRIBUTED_STATE_REQUEST_FULL_STATE' );
+		expect( messageConnector.messages[ 1 ].data.action ).toBe( 'DISTRIBUTED_STATE_FULL_STATE' );
+
+		// registry B asks for state
+		expect( messageConnector.messages[ 2 ].data.action ).toBe( 'DISTRIBUTED_STATE_REQUEST_FULL_STATE' );
+		expect( messageConnector.messages[ 3 ].data.action ).toBe( 'DISTRIBUTED_STATE_FULL_STATE' );
+		expect( messageConnector.messages[ 4 ].data.action ).toBe( 'DISTRIBUTED_STATE_FULL_STATE' );
+
+		// registry C asks for state
+		expect( messageConnector.messages[ 5 ].data.action ).toBe( 'DISTRIBUTED_STATE_REQUEST_FULL_STATE' );
+		expect( messageConnector.messages[ 6 ].data.action ).toBe( 'DISTRIBUTED_STATE_FULL_STATE' );
+		expect( messageConnector.messages[ 7 ].data.action ).toBe( 'DISTRIBUTED_STATE_FULL_STATE' );
+		expect( messageConnector.messages[ 8 ].data.action ).toBe( 'DISTRIBUTED_STATE_FULL_STATE' );
 
 		// add 'test-entry-a'
-		expect( messageConnector.messages[ 0 ].data.action ).toBe( 'DISTRIBUTED_STATE_ADD' );
+		expect( messageConnector.messages[ 9 ].data.action ).toBe( 'DISTRIBUTED_STATE_ADD' );
 		// add 'test-entry-g', 'test-entry-f' has been dropped
-		expect( messageConnector.messages[ 1 ].data.action ).toBe( 'DISTRIBUTED_STATE_ADD' );
+		expect( messageConnector.messages[ 10 ].data.action ).toBe( 'DISTRIBUTED_STATE_ADD' );
 		// full state request from either A or C arrives
-		expect( messageConnector.messages[ 2 ].data.action ).toBe( 'DISTRIBUTED_STATE_REQUEST_FULL_STATE' );
+		expect( messageConnector.messages[ 11 ].data.action ).toBe( 'DISTRIBUTED_STATE_REQUEST_FULL_STATE' );
 		// B response immediatly with full state
-		expect( messageConnector.messages[ 3 ].data.action ).toBe( 'DISTRIBUTED_STATE_FULL_STATE' );
+		expect( messageConnector.messages[ 12 ].data.action ).toBe( 'DISTRIBUTED_STATE_FULL_STATE' );
 		// full state request from the other registry (either A or C) arrives, but is ignored as fulls state has already
 		// been send within stateReconciliationTimeout
-		expect( messageConnector.messages[ 4 ].data.action ).toBe( 'DISTRIBUTED_STATE_REQUEST_FULL_STATE' );
+		expect( messageConnector.messages[ 13 ].data.action ).toBe( 'DISTRIBUTED_STATE_REQUEST_FULL_STATE' );
+
 		expect( registryA.addCallback ).toHaveBeenCalledWith( 'test-entry-f' );
 		expect( registryC.addCallback ).toHaveBeenCalledWith( 'test-entry-f' );
 		expect( registryA.registry.getAll() ).toEqual([ 'test-entry-a', 'test-entry-g', 'test-entry-f' ]);
