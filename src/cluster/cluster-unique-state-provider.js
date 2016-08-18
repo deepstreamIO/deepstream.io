@@ -24,7 +24,7 @@ SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RELEASE ] = true;
  * 		C.ACTIONS.LEADER_VOTE
  *
  */
-module.exports = class UniqueRegistry{
+module.exports = class UniqueRegistry {
 	constructor( options, clusterRegistry ) {
 		this._options = options;
 		this._clusterRegistry = clusterRegistry;
@@ -118,7 +118,7 @@ module.exports = class UniqueRegistry{
 
 	_handleRemoteLockRequest( data ) {
 		this._options.messageConnector.publish( data.responseTopic, {
-			topic: responseTopic,
+			topic: data.responseTopic,
 			action: C.ACTIONS.LOCK_RESPONSE,
 			data: [{
 				name: data.name,

@@ -60,6 +60,7 @@ module.exports = class ClusterRegistry extends EventEmitter{
 			action: C.ACTIONS.REMOVE,
 			data:[ this._options.serverName ]
 		});
+		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, () => {} ); // TODO: This is triggered during pragamatic deepstream.stop
 		this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
 		process.removeListener( 'beforeExit', this._leaveClusterFn );
 		process.removeListener( 'exit', this._leaveClusterFn );

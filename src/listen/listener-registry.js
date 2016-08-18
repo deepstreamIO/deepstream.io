@@ -101,6 +101,16 @@ class ListenerRegistry {
 		}
 	}
 
+	/**
+	 * Handle messages that arrive via the message bus
+	 *
+	 * This can either messages by the leader indicating that the
+	 * node is responsible for starting a local discovery phase,
+	 * or from a resulting node with an ack to allow the leader
+	 * to move on release its lock
+	 * @param  {Object} message The message recieved
+	 * @return void
+	 */
 	_handleMessageBus( message ) {
 		if( this._options.serverName === message.data[ 0 ] ) {
 			if( message[ 1 ] === C.ACTIONS.LISTEN ) {

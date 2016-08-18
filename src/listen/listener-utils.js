@@ -6,6 +6,13 @@ var C = require( '../constants/constants' ),
 
 class ListenerUtils {
 
+	/**
+	 * Construct a class with utils that can be called in from the main
+	 * listener registery, but that do not actually require state.
+	 * @param  {Topic} topic          the topic used to create the listen registery
+	 * @param  {Object} options        the options the server was initialised with
+	 * @param  {SubscriptionRegistery} clientRegistry the client registry passed into the listen registry
+	 */
 	constructor( topic, options, clientRegistry ) {
 		this._uniqueLockName = `${topic}_LISTEN_LOCK`;
 		this._topic = topic;
@@ -14,8 +21,10 @@ class ListenerUtils {
 	}
 
 	/**
-	* Adds a unique close listener to avoid unnecessary adds
-	*/
+	 * Adds a unique close listener to avoid unnecessary adds
+	 * @param {SocketWrapper} socketWrapper
+	 * @param {Function} eventHandler  the event to call when the socket closes
+	 */
 	addUniqueCloseListener( socketWrapper, eventHandler ) {
 		const eventName = 'close';
 		const socketListeners = socketWrapper.socket.listeners( eventName );
@@ -37,14 +46,15 @@ class ListenerUtils {
 	 * Remove provider from listen in progress map if it unlistens during
 	 * discovery stage
 	 *
-	 * @private
-	 * @returns {Message}
+	 * @param  {Object} listensCurrentlyInProgress the listeners currently in progress
+	 * @param  {String} pattern the pattern that has been unlistened to
+	 * @param  {SocketWrapper} socketWrapper the socket wrapper of the provider that unlistened
 	 */
 	removeListenerFromInProgress( listensCurrentlyInProgress, pattern, socketWrapper ) {
 		var subscriptionName, i, listenInProgress;
-		for( var subscriptionName in listensCurrentlyInProgress ) {
+		for( subscriptionName in listensCurrentlyInProgress ) {
 			listenInProgress = listensCurrentlyInProgress[ subscriptionName ];
-			for( var i=0; i< listenInProgress.length; i++) {
+			for( i=0; i< listenInProgress.length; i++) {
 				if(
 					listenInProgress[i].socketWrapper === socketWrapper &&
 					listenInProgress[i].pattern === pattern
@@ -56,10 +66,10 @@ class ListenerUtils {
 	}
 
 	/**
-	 * Sends a has provider update to all subscribers
-	 *
-	 * @private
-	 * @returns {Message}
+	 * Sends a has provider update to a single subcriber
+	 * @param  {Boolean} hasProvider      send T or F so provided status
+	 * @param  {SocketWrapper}  socketWrapper    the socket wrapper to send to, if it doesn't exist then don't do anything
+	 * @param  {String}  subscriptionName The subscription name which provided status changed
 	 */
 	sendHasProviderUpdateToSingleSubscriber( hasProvider, socketWrapper, subscriptionName ) {
 		if( socketWrapper && this._topic === C.TOPIC.RECORD ) {
@@ -68,10 +78,9 @@ class ListenerUtils {
 	}
 
 	/**
-	 * Sends a has provider update to all subscribers
-	 *
-	 * @private
-	 * @returns {Message}
+	 * Sends a has provider update to all subcribers
+	 * @param  {Boolean} hasProvider      send T or F so provided status
+	 * @param  {String}  subscriptionName The subscription name which provided status changed
 	 */
 	sendHasProviderUpdate( hasProvider, subscriptionName ) {
 		if( this._topic !== C.TOPIC.RECORD ) {
@@ -80,6 +89,13 @@ class ListenerUtils {
 		this._clientRegistry.sendToSubscribers( subscriptionName, this._createHasProviderMessage( hasProvider, this._topic, subscriptionName ) );
 	}
 
+	/**
+	 * Sent by the listen leader, and is used to inform the next server in the cluster to
+	 * start a local discovery
+	 *
+	 * @param  {String} serverName       the name of the server to notify
+	 * @param  {String} subscriptionName the subscription to find a provider for
+	 */
 	sendRemoteDiscoveryStart( serverName, subscriptionName ) {
 		const messageTopic = this.getMessageBusTopic( serverName, this._topic );
 		this._options.messageConnector.publish( messageTopic, {
@@ -89,6 +105,13 @@ class ListenerUtils {
 		});
 	}
 
+	/**
+	 * Sent by the listen follower, and is used to inform the leader that it has
+	 * complete its local discovery start
+	 *
+	 * @param  {String} listenLeaderServerName	the name of the listen leader
+	 * @param  {String} subscriptionName the subscription to that has just finished
+	 */
 	sendRemoteDiscoveryStop( listenLeaderServerName, subscriptionName ) {
 		const messageTopic = this.getMessageBusTopic( listenLeaderServerName, this._topic );
 		this._options.messageConnector.publish( messageTopic, {
@@ -99,10 +122,10 @@ class ListenerUtils {
 	}
 
 	/**
-	 * Create a has provider update message
+	 * Send a subscription found to a provider
 	 *
-	 * @private
-	 * @returns {Message}
+	 * @param  {{patten:String, socketWrapper:SocketWrapper}} provider An object containing an provider that can provide the subscription
+	 * @param  {String} subscriptionName the subscription to find a provider for
 	 */
 	sendSubscriptionForPatternFound( provider, subscriptionName ) {
 		provider.socketWrapper.send( messageBuilder.getMsg(
@@ -112,10 +135,10 @@ class ListenerUtils {
 	}
 
 	/**
-	 * Create a has provider update message
+	 * Send a subscription removed to a provider
 	 *
-	 * @private
-	 * @returns {Message}
+	 * @param  {{patten:String, socketWrapper:SocketWrapper}} provider An object containing the provider that is currently the active provider
+	 * @param  {String} subscriptionName the subscription to stop providing
 	 */
 	sendSubscriptionForPatternRemoved( provider, subscriptionName ) {
 		provider.socketWrapper.send(
@@ -127,16 +150,18 @@ class ListenerUtils {
 
 	/**
 	 * Create a map of all the listeners that patterns match the subscriptionName locally
-	 *
-	 * @private
-	 * @returns {void}
+	 * @param  {Object} patterns         All patterns currently on this deepstream node
+	 * @param  {SusbcriptionRegistery} providerRegistry All the providers currently registered
+	 * @param  {String} subscriptionName the subscription to find a provider for
+	 * @return {Array}                  An array of all the providers that can provide the subscription
 	 */
 	createLocalListenMap( patterns, providerRegistry, subscriptionName ) {
+		var pattern, providersForPattern, i;
 		const providers = [];
-		for( var pattern in patterns ) {
+		for( pattern in patterns ) {
 			if( patterns[ pattern ].test( subscriptionName ) ) {
-				var providersForPattern = providerRegistry.getLocalSubscribers( pattern );
-				for( var i = 0; providersForPattern && i < providersForPattern.length; i++ ) {
+				providersForPattern = providerRegistry.getLocalSubscribers( pattern );
+				for( i = 0; providersForPattern && i < providersForPattern.length; i++ ) {
 					providers.push( {
 						pattern: pattern,
 						socketWrapper: providersForPattern[ i ]
@@ -154,8 +179,7 @@ class ListenerUtils {
 	 * @param   {SocketWrapper} socketWrapper
 	 * @param   {Object} message
 	 *
-	 * @private
-	 * @returns {void}
+	 * @returns {String}
 	 */
 	getPattern( socketWrapper, message ) {
 		if( message.data.length > 2  ) {
@@ -179,7 +203,6 @@ class ListenerUtils {
 	 * @param   {SocketWrapper} socketWrapper
 	 * @param   {String} pattern
 	 *
-	 * @private
 	 * @returns {RegExp}
 	 */
 	validatePattern( socketWrapper, pattern ) {
@@ -201,9 +224,6 @@ class ListenerUtils {
 	 * @param   {SocketWrapper} socketWrapper
 	 * @param   {String} errorMsg
 	 * @param   {Event} [errorEvent] Default to C.EVENT.INVALID_MESSAGE_DATA
-	 *
-	 * @private
-	 * @returns {void}
 	 */
 	onMsgDataError( socketWrapper, errorMsg, errorEvent ) {
 		errorEvent = errorEvent || C.EVENT.INVALID_MESSAGE_DATA;
@@ -211,10 +231,23 @@ class ListenerUtils {
 		this._options.logger.log( C.LOG_LEVEL.ERROR, errorEvent, errorMsg );
 	}
 
+	/**
+	 * Get the unique topic to use for the message bus
+	 * @param  {String} serverName the name of the server
+	 * @param  {Topic} topic
+	 * @return {String}
+	 */
 	getMessageBusTopic( serverName, topic ) {
 		return C.TOPIC.LEADER_PRIVATE + serverName + topic + C.ACTIONS.LISTEN;
 	}
 
+	/**
+	 * Returns the unique lock when leading a listen discovery phase
+	 *
+	 * @param  {String} subscriptionName the subscription to find a provider for
+	 *
+	 * @return {String}
+	 */
 	getUniqueLockName( subscriptionName ) {
 		return `${this._uniqueLockName}_${subscriptionName}`;
 	}
@@ -222,7 +255,6 @@ class ListenerUtils {
 	/**
 	 * Create a has provider update message
 	 *
-	 * @private
 	 * @returns {Message}
 	 */
 	_createHasProviderMessage(hasProvider, topic, subscriptionName) {

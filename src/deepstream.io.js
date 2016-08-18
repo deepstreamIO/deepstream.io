@@ -292,6 +292,10 @@ Deepstream.prototype._init = function() {
 	this._messageProcessor = new MessageProcessor( this._options );
 	this._messageDistributor = new MessageDistributor( this._options );
 	this._connectionEndpoint.onMessage = this._messageProcessor.process.bind( this._messageProcessor );
+
+	this._options.clusterRegistry = new ClusterRegistry( this._options, this._connectionEndpoint );
+	this._options.uniqueRegistry = new UniqueRegistry( this._options, this._options.clusterRegistry );
+
 	this._eventHandler = new EventHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.EVENT, this._eventHandler.handle.bind( this._eventHandler ) );
 
@@ -309,9 +313,6 @@ Deepstream.prototype._init = function() {
 	if( this._options.permissionHandler.setRecordHandler ) {
 		this._options.permissionHandler.setRecordHandler( this._recordHandler );
 	}
-
-	this._options.clusterRegistry = new ClusterRegistry( this._options, this._connectionEndpoint );
-	this._options.uniqueRegistry = new UniqueRegistry( this._options, this._options.clusterRegistry );
 
 	this._currentState = STATES.INITIALIZED;
 };
