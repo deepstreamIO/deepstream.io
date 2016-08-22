@@ -2,7 +2,8 @@
 
 var C = require( '../constants/constants' ),
 	messageParser = require( '../message/message-parser' ),
-	messageBuilder = require( '../message/message-builder' );
+	messageBuilder = require( '../message/message-builder' ),
+	utils = require( '../utils/utils' );
 
 class ListenerUtils {
 
@@ -18,28 +19,6 @@ class ListenerUtils {
 		this._topic = topic;
 		this._options = options;
 		this._clientRegistry = clientRegistry;
-	}
-
-	/**
-	 * Adds a unique close listener to avoid unnecessary adds
-	 * @param {SocketWrapper} socketWrapper
-	 * @param {Function} eventHandler  the event to call when the socket closes
-	 */
-	addUniqueCloseListener( socketWrapper, eventHandler ) {
-		const eventName = 'close';
-		const socketListeners = socketWrapper.socket.listeners( eventName );
-		const listenerFound = false;
-		var i, item;
-		for( i=0; i<socketListeners.length; i++) {
-			item = socketListeners[ i ];
-			if( item.listener === eventHandler ) {
-				listenerFound = true;
-				break;
-			}
-		}
-		if( !listenerFound ) {
-			socketWrapper.socket.once( eventName, eventHandler );
-		}
 	}
 
 	/**
@@ -146,6 +125,29 @@ class ListenerUtils {
 				this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ provider.pattern, subscriptionName ]
 			)
 		);
+	}
+
+	/**
+	 * Create a map of all the listeners that patterns match the subscriptionName locally
+	 * @param  {Object} patterns         All patterns currently on this deepstream node
+	 * @param  {SusbcriptionRegistery} providerRegistry All the providers currently registered
+	 * @param  {String} subscriptionName the subscription to find a provider for
+	 * @return {Array}                  An array of all the providers that can provide the subscription
+	 */
+	createRemoteListenArray( patterns, providerRegistry, subscriptionName ) {
+		var isMatch, pattern, providersForPattern, i;
+		const providerPatterns = providerRegistry.getSubscriptions();
+		var servers = {};
+
+		for( var i=0; i<providerPatterns.length; i++ ) {
+			pattern = providerPatterns[ i ];
+
+			if( patterns[ pattern ].test( subscriptionName ) ) {
+				servers = utils.merge( servers, providerRegistry.getAllServers( pattern ) );
+			}
+		}
+
+		return Object.keys( servers );
 	}
 
 	/**

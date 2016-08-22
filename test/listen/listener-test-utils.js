@@ -34,7 +34,10 @@ class ListenerTestUtils {
 			getLocalSubscribers: function() {
 				return subscribers;
 			},
-			sendToSubscribers: sendToSubscribersMock
+			sendToSubscribers: sendToSubscribersMock,
+			hasSubscribers: function() {
+				return false;
+			}
 		};
 
 		// TODO Mock process insead

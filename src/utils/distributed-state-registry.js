@@ -110,6 +110,16 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	}
 
 	/**
+	 * Returns all the servers with a shared interest
+	 *
+	 * @public
+	 * @returns {Array} entries
+	 */
+	getAllServers( name ) {
+		return this._data[ name ].nodes;
+	}
+
+	/**
 	 * Returns all currently registered entries
 	 *
 	 * @public

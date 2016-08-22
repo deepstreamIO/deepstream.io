@@ -33,6 +33,14 @@ class SubscriptionRegistry {
 		this._clusterSubscriptions.on( 'remove', this._onClusterSubscriptionRemoved.bind( this ) );
 	}
 
+	getAllServers( subscriptionName ) {
+		return this._clusterSubscriptions.getAllServers( subscriptionName );
+	}
+
+	getSubscriptions() {
+		return this._clusterSubscriptions.getAll();
+	}
+
 	_onClusterSubscriptionAdded( name ) {
 		if( this._subscriptionListener && !this._subscriptions[ name ] ) {
 			this._subscriptionListener.onSubscriptionMade( name, null, 1 );
@@ -40,7 +48,7 @@ class SubscriptionRegistry {
 	}
 
 	_onClusterSubscriptionRemoved( name ) {
-		if( this._subscriptionListener && this._subscriptions[ name ]) {
+		if( this._subscriptionListener && !this._subscriptions[ name ] ) {
 			this._subscriptionListener.onSubscriptionRemoved( name, null, 0 );
 		}
 	}
@@ -161,13 +169,13 @@ class SubscriptionRegistry {
 		} else {
 			this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
 		}
-		
+
 		if( this._subscriptionListener ) {
-			this._subscriptionListener.onSubscriptionRemoved( 
-				name, 
-				socketWrapper, 
+			this._subscriptionListener.onSubscriptionRemoved(
+				name,
+				socketWrapper,
 				this._subscriptions[ name ] ? this._subscriptions[ name ].length : 0
-			);	
+			);
 		}
 
 		if( !silent ) {
