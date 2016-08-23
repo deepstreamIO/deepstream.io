@@ -117,12 +117,13 @@ module.exports = class UniqueRegistry {
 	}
 
 	_handleRemoteLockRequest( data ) {
+		var result = this._getLock( data.name );
 		this._options.messageConnector.publish( data.responseTopic, {
 			topic: data.responseTopic,
 			action: C.ACTIONS.LOCK_RESPONSE,
 			data: [{
 				name: data.name,
-				result: this._getLock( data.name )
+				result: result
 			}]
 		});
 	}
@@ -132,7 +133,7 @@ module.exports = class UniqueRegistry {
 	}
 
 	_handleRemoteLockRelease( data ) {
-
+		delete this._locks[ data.name ];
 	}
 
 	_getPrivateTopic( serverName ) {
@@ -144,11 +145,11 @@ module.exports = class UniqueRegistry {
 	}
 
 	_getLock( name, callback ) {
-		this._lockTimeouts[ name ] = utils.setTimeout(
+/*		this._lockTimeouts[ name ] = utils.setTimeout(
 			this._onLockTimeout.bind( this, name ),
 			this._options.lockTimeout
 		);
-		
+*/
 		if( this._locks[ name ] === true ) {
 			return false;
 		} else {

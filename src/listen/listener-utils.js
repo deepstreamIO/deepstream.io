@@ -80,7 +80,7 @@ class ListenerUtils {
 		this._options.messageConnector.publish( messageTopic, {
 			topic: messageTopic,
 			action: C.ACTIONS.LISTEN,
-			data:[ serverName, subscriptionName ]
+			data:[ serverName, subscriptionName, this._options.serverName ]
 		});
 	}
 
@@ -95,7 +95,7 @@ class ListenerUtils {
 		const messageTopic = this.getMessageBusTopic( listenLeaderServerName, this._topic );
 		this._options.messageConnector.publish( messageTopic, {
 			topic: messageTopic,
-			action: C.ACTIONS.LISTEN,
+			action: C.ACTIONS.ACK,
 			data:[ listenLeaderServerName, subscriptionName ]
 		});
 	}
@@ -147,7 +147,9 @@ class ListenerUtils {
 			}
 		}
 
-		return Object.keys( servers );
+		const serverNames = Object.keys( servers );
+		serverNames.splice( serverNames.indexOf( this._options.serverName ), 1 );
+		return serverNames;
 	}
 
 	/**

@@ -60,6 +60,7 @@ class ListenerRegistry {
 		this._clusterProvidedRecords.on( 'add', this._onRecordStartProvided.bind( this ) );
 		this._clusterProvidedRecords.on( 'remove', this._onRecordStopProvided.bind( this ) );
 
+		this._leadListen = {};
 		this._leadingListen = {};
 		this._listenTopic = this._listenerUtils.getMessageBusTopic( this._options.serverName, this._topic );
 		this._options.messageConnector.subscribe( this._listenTopic, this._handleMessageBus.bind( this ) );
@@ -118,10 +119,11 @@ class ListenerRegistry {
 	 */
 	_handleMessageBus( message ) {
 		if( this._options.serverName === message.data[ 0 ] ) {
-			if( message[ 1 ] === C.ACTIONS.LISTEN ) {
-				this._startLocalDiscoveryStage( message.data[ 2 ] );
-			} else if( message[ 1 ] === C.ACTIONS.ACK ) {
-				this._nextDiscoveryStage( message.data[ 2 ] );
+			if( message.action === C.ACTIONS.LISTEN ) {
+				this._leadListen[ message.data[ 1 ] ] = message.data[ 2 ];
+				this._startLocalDiscoveryStage( message.data[ 1 ] );
+			} else if( message.action === C.ACTIONS.ACK ) {
+				this._nextDiscoveryStage( message.data[ 1 ] );
 			}
 		}
 	}
@@ -340,10 +342,25 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_startDiscoveryStage( subscriptionName ) {
+		const localListenArray = this._listenerUtils.createLocalListenMap( this._patterns, this._providerRegistry, subscriptionName );
+
+		if( localListenArray.length === 0 ) {
+			return;
+		}
+
 		const remoteListenArray = this._listenerUtils.createRemoteListenArray( this._patterns, this._providerRegistry, subscriptionName );
+
 		this._uniqueStateProvider.get( this._listenerUtils.getUniqueLockName( subscriptionName ), ( success ) => {
-			this._leadingListen[ subscriptionName ] = remoteListenArray;
-			success && this._startLocalDiscoveryStage( subscriptionName );
+
+			if( success ) {
+				if( this.hasActiveProvider( subscriptionName ) ) {
+					this._uniqueStateProvider.release(  this._listenerUtils.getUniqueLockName( subscriptionName ) );
+					return;
+				}
+
+				this._leadingListen[ subscriptionName ] = remoteListenArray;
+				this._startLocalDiscoveryStage( subscriptionName );
+			}
 		} );
 	}
 
@@ -390,7 +407,8 @@ class ListenerRegistry {
 		if( this._leadingListen[ subscriptionName ] ) {
 			this._nextDiscoveryStage( subscriptionName );
 		} else {
-			this._listenerUtils.sendRemoteDiscoveryStop( 'leaderserver', subscriptionName );
+			this._listenerUtils.sendRemoteDiscoveryStop( this._leadListen[ subscriptionName ], subscriptionName );
+			delete this._leadListen[ subscriptionName ];
 		}
 	}
 
@@ -420,7 +438,10 @@ class ListenerRegistry {
 
 	_onRecordStartProvided( subscriptionName ) {
 		this._listenerUtils.sendHasProviderUpdate( true, subscriptionName );
-		this._nextDiscoveryStage( subscriptionName );
+		if( this._leadingListen[ subscriptionName ] ) {
+			// Clears down discovery if was provided. TODO: Refactor
+			this._nextDiscoveryStage( subscriptionName );
+		}
 	}
 
 	_onRecordStopProvided( subscriptionName ) {
