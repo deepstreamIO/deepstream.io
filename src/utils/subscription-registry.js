@@ -37,7 +37,14 @@ class SubscriptionRegistry {
 		return this._clusterSubscriptions.getAllServers( subscriptionName );
 	}
 
-	getSubscriptions() {
+	/**
+	 * Returns a list of all the topic this registry
+	 * currently has subscribers for
+	 *
+	 * @public
+	 * @returns {Array} names
+	 */
+	getNames() {
 		return this._clusterSubscriptions.getAll();
 	}
 
@@ -274,17 +281,6 @@ class SubscriptionRegistry {
 	 */
 	hasSubscribers( name ) {
 		 return !!this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0;
-	}
-
-	/**
-	 * Returns a list of all the topic this registry
-	 * currently has subscribers for
-	 *
-	 * @public
-	 * @returns {Array} names
-	 */
-	getNames() {
-		return Object.keys( this._subscriptions );
 	}
 
 	/**

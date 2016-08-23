@@ -51,8 +51,8 @@ class ListenerRegistry {
 		this._providerRegistry.setAction( 'subscribe', C.ACTIONS.LISTEN );
 		this._providerRegistry.setAction( 'unsubscribe', C.ACTIONS.UNLISTEN );
 		this._providerRegistry.setSubscriptionListener( {
-			onSubscriptionRemoved: this._reconcilePatterns.bind( this ),
-			onSubscriptionMade: function(){}
+			onSubscriptionRemoved: this._removePattern.bind( this ),
+			onSubscriptionMade: this._addPattern.bind( this )
 		} );
 
 		this._locallyProvidedRecords = {};
@@ -224,18 +224,6 @@ class ListenerRegistry {
 		this._stopLocalDiscoveryStage( subscriptionName );
 	}
 
-	_onRecordStartProvided( subscriptionName ) {
-		this._listenerUtils.sendHasProviderUpdate( true, subscriptionName );
-		this._nextDiscoveryStage( subscriptionName );
-	}
-
-	_onRecordStopProvided( subscriptionName ) {
-		this._listenerUtils.sendHasProviderUpdate( false, subscriptionName );
-		if( this._clientRegistry.hasSubscribers( subscriptionName ) ) {
-			this._startDiscoveryStage( subscriptionName );
-		}
-	}
-
 	/**
 	 * Register a client as a listener for record subscriptions
 	 *
@@ -257,11 +245,6 @@ class ListenerRegistry {
 		const notInSubscriptionRegistry = !providers || providers.indexOf( socketWrapper ) === -1;
 		if( notInSubscriptionRegistry ) {
 			this._providerRegistry.subscribe( pattern, socketWrapper );
-
-			// Create pattern entry (if it doesn't exist already)
-			if( !this._patterns[ pattern ] ) {
-				this._patterns[ pattern ] = regExp;
-			}
 		}
 
 		this._reconcileSubscriptionsToPatterns( regExp, pattern, socketWrapper );
@@ -419,39 +402,56 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_triggerNextProvider( subscriptionName ) {
-		if( !this._localListenInProgress[ subscriptionName ] ) {
+		const listenInProgress = this._localListenInProgress[ subscriptionName ];
+
+		if( !listenInProgress ) {
 			return;
 		}
 
-		//TODO: Needs tests
-		if( this._localListenInProgress[ subscriptionName ].length === 0 ) {
+		if( listenInProgress.length === 0 ) {
 			this._stopLocalDiscoveryStage( subscriptionName );
 			return;
 		}
 
-		const provider = this._localListenInProgress[ subscriptionName ].shift();
+		const provider = listenInProgress.shift();
 		this._listenerTimeoutRegistery.addTimeout( subscriptionName, provider, this._triggerNextProvider.bind( this ) );
 		this._listenerUtils.sendSubscriptionForPatternFound( provider, subscriptionName );
 	}
 
+	_onRecordStartProvided( subscriptionName ) {
+		this._listenerUtils.sendHasProviderUpdate( true, subscriptionName );
+		this._nextDiscoveryStage( subscriptionName );
+	}
+
+	_onRecordStopProvided( subscriptionName ) {
+		this._listenerUtils.sendHasProviderUpdate( false, subscriptionName );
+		if( this._clientRegistry.hasSubscribers( subscriptionName ) ) {
+			this._startDiscoveryStage( subscriptionName );
+		}
+	}
+
 	/**
-	 * Clean-up for pattern subscriptions. Once a pattern has been removed from
-	 * the provider registry cleanup the providers
+	 * Compile the pattern regex when first provided
+	 * @private
+	 * @returns {void}
+	 */
+	_addPattern( pattern, socketWrapper, count ) {
+		if( count === 1 ) {
+			this._patterns[ pattern ] = new RegExp( pattern );
+		}
+	}
+
+	/**
+	 * Delete the pattern regex when removed
 	 *
 	 * @private
 	 * @returns {void}
 	 */
-	_reconcilePatterns( subscriptionName, socketWrapper, count ) {
+	_removePattern( pattern, socketWrapper, count ) {
 		if( count > 0 ) {
 			return;
 		}
-
-		const allPatterns = this._providerRegistry.getSubscriptions();
-		for( var pattern in this._patterns ) {
-			if( allPatterns.indexOf( pattern ) === -1 ) {
-				delete this._patterns[ pattern ];
-			}
-		}
+		delete this._patterns[ pattern ];
 	}
 }
 

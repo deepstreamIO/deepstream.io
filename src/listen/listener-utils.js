@@ -136,7 +136,7 @@ class ListenerUtils {
 	 */
 	createRemoteListenArray( patterns, providerRegistry, subscriptionName ) {
 		var isMatch, pattern, providersForPattern, i;
-		const providerPatterns = providerRegistry.getSubscriptions();
+		const providerPatterns = providerRegistry.getNames();
 		var servers = {};
 
 		for( var i=0; i<providerPatterns.length; i++ ) {
