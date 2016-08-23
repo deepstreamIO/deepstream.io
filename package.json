@@ -35,7 +35,7 @@
     "needle": "^1.0.0"
   },
   "devDependencies": {
-    "async": "^0.2.9",
+    "async": "^2.0.0",
     "coveralls": "^2.11.9",
     "engine.io-client": "^1.6.11",
     "grunt": "^1.0.1 ",
