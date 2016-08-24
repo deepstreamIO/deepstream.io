@@ -50,7 +50,7 @@ describe( 'unique state provider handles local locks', function(){
 	});
 });
 
-fdescribe( 'unique state provider handles remove locks', function(){
+describe( 'unique state provider handles remove locks', function(){
 	var uniqueStateProvider;
 
 	var options = {
