@@ -1,6 +1,6 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	ListenerRegistry = require( '../utils/listener-registry' ),
+	ListenerRegistry = require( '../listen/listener-registry' ),
 	RecordRequest = require( './record-request' ),
 	RecordTransition = require( './record-transition' ),
 	RecordDeletion = require( './record-deletion' ),
@@ -94,26 +94,15 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	/*
-	 * Return a list of all the records that much the pattern
-	 */
-	else if( message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
-		this._listenerRegistry.sendSnapshot( socketWrapper, message );
-	}
-
-	/*
 	 * Listen to requests for a particular record or records
 	 * whose names match a pattern
 	 */
-	else if( message.action === C.ACTIONS.LISTEN ) {
-		this._listenerRegistry.addListener( socketWrapper, message );
-	}
-
-	/*
-	 * Remove the socketWrapper as a listener for
-	 * the specified pattern
-	 */
-	else if( message.action === C.ACTIONS.UNLISTEN ) {
-		this._listenerRegistry.removeListener( socketWrapper, message );
+	else if( message.action === C.ACTIONS.LISTEN ||
+		message.action === C.ACTIONS.UNLISTEN ||
+		message.action === C.ACTIONS.LISTEN_ACCEPT ||
+		message.action === C.ACTIONS.LISTEN_REJECT ||
+		message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
+		this._listenerRegistry.handle( socketWrapper, message );
 	}
 
 	/*
@@ -516,7 +505,7 @@ RecordHandler.prototype._onDeleted = function( name, message, originalSender ) {
 	var i;
 
 	this._$broadcastUpdate( name, message, originalSender );
-	
+
 	for( i = 0; i < subscribers.length; i++ ) {
 		this._subscriptionRegistry.unsubscribe( name, subscribers[ i ], true );
 	}
