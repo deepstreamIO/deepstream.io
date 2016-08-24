@@ -6,7 +6,9 @@ var SubscriptionRegistry = require( '../../src/utils/subscription-registry' ),
 	socketWrapperOptions = {logger:{ log: function(){}}},
 	_msg = require( '../test-helper/test-helper' ).msg,
 	LocalMessageConnector = require( '../mocks/local-message-connector' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))(),
 	options = {
+		clusterRegistry: clusterRegistryMock,
 		serverName: 'server-name-a',
 		stateReconciliationTimeout: 10,
 		messageConnector: new LocalMessageConnector(),
@@ -120,7 +122,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 
 		expect( subscriptionListenerMock.onSubscriptionRemoved ).not.toHaveBeenCalled();
 		subscriptionRegistry.unsubscribe( 'someName', socketWrapperA );
-		expect( subscriptionListenerMock.onSubscriptionRemoved ).toHaveBeenCalledWith( 'someName', socketWrapperA, 0 );
+		expect( subscriptionListenerMock.onSubscriptionRemoved ).toHaveBeenCalledWith( 'someName', socketWrapperA, 0, 0 );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );
 		subscriptionRegistry.sendToSubscribers( 'someName', _msg( 'msg8+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );

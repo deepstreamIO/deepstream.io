@@ -136,7 +136,11 @@ class SubscriptionRegistry {
 		this._subscriptions[ name ].push( socketWrapper );
 
 		if( this._subscriptionListener ) {
-			this._subscriptionListener.onSubscriptionMade( name, socketWrapper, this._subscriptions[ name ].length );
+			this._subscriptionListener.onSubscriptionMade(
+				name,
+				socketWrapper,
+				this._subscriptions[ name ].length
+			);
 		}
 
 		this._clusterSubscriptions.add( name );
@@ -183,10 +187,16 @@ class SubscriptionRegistry {
 		}
 
 		if( this._subscriptionListener ) {
+			//TODO: OPTIMISE!!
+			const allServerNames = Object.keys( this._clusterSubscriptions.getAllServers( name ) );
+			if(  allServerNames.indexOf( this._options.serverName ) > -1 ) {
+				allServerNames.splice( allServerNames.indexOf( this._options.serverName ), 1 );
+			}
 			this._subscriptionListener.onSubscriptionRemoved(
 				name,
 				socketWrapper,
-				this._subscriptions[ name ] ? this._subscriptions[ name ].length : 0
+				this._subscriptions[ name ] ? this._subscriptions[ name ].length : 0,
+				allServerNames.length
 			);
 		}
 
@@ -322,7 +332,7 @@ class SubscriptionRegistry {
 	 */
 	_onClusterSubscriptionRemoved( name ) {
 		if( this._subscriptionListener && !this._subscriptions[ name ] ) {
-			this._subscriptionListener.onSubscriptionRemoved( name, null, 0 );
+			this._subscriptionListener.onSubscriptionRemoved( name, null, 0, 0 );
 		}
 	}
 

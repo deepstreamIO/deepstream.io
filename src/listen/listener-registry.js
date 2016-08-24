@@ -157,13 +157,13 @@ class ListenerRegistry {
 	 * @public
 	 * @returns {void}
 	 */
-	onSubscriptionMade( subscriptionName, socketWrapper, count ) {
+	onSubscriptionMade( subscriptionName, socketWrapper, localCount ) {
 		if( this.hasActiveProvider( subscriptionName ) ) {
 			this._listenerUtils.sendHasProviderUpdateToSingleSubscriber( true, socketWrapper, subscriptionName );
 			return;
 		}
 
-		if( count > 1 ) {
+		if( localCount > 1 ) {
 			return;
 		}
 
@@ -179,24 +179,24 @@ class ListenerRegistry {
 	 * @public
 	 * @returns {void}
 	 */
-	onSubscriptionRemoved( subscriptionName, socketWrapper, count ) {
+	onSubscriptionRemoved( subscriptionName, socketWrapper, localCount, remoteCount ) {
 		const provider = this._locallyProvidedRecords[ subscriptionName ];
 
 		if( !provider ) {
 			return;
 		}
 
-		if( count > 1 ) {
+		if( localCount > 1 || remoteCount > 0 ) {
 			return;
 		}
 
 		// provider discarded, but there is still another active subscriber
-		if( count === 1 && provider.socketWrapper === socketWrapper) {
+		if( localCount === 1 && provider.socketWrapper === socketWrapper) {
 			return;
 		}
 
 		// provider isn't a subscriber, meaning we should wait for 0
-		if( count === 1 && this._clientRegistry.getLocalSubscribers().indexOf( provider.socketWrapper ) === -1 ) {
+		if( localCount === 1 && this._clientRegistry.getLocalSubscribers().indexOf( provider.socketWrapper ) === -1 ) {
 			return;
 		}
 
@@ -345,12 +345,11 @@ class ListenerRegistry {
 	 */
 	_startDiscoveryStage( subscriptionName ) {
 		const localListenArray = this._listenerUtils.createLocalListenMap( this._patterns, this._providerRegistry, subscriptionName );
+		const remoteListenArray = this._listenerUtils.createRemoteListenArray( this._patterns, this._providerRegistry, subscriptionName );
 
-		if( localListenArray.length === 0 ) {
+		if( localListenArray.length === 0 && remoteListenArray.length === 0 ) {
 			return;
 		}
-
-		const remoteListenArray = this._listenerUtils.createRemoteListenArray( this._patterns, this._providerRegistry, subscriptionName );
 
 		this._uniqueStateProvider.get( this._listenerUtils.getUniqueLockName( subscriptionName ), ( success ) => {
 
@@ -359,7 +358,6 @@ class ListenerRegistry {
 					this._uniqueStateProvider.release(  this._listenerUtils.getUniqueLockName( subscriptionName ) );
 					return;
 				}
-
 				this._leadingListen[ subscriptionName ] = remoteListenArray;
 				this._startLocalDiscoveryStage( subscriptionName );
 			}
@@ -397,9 +395,7 @@ class ListenerRegistry {
 
 		if( localListenMap.length > 0 ) {
 			this._localListenInProgress[ subscriptionName ] = localListenMap;
-			if( this._localListenInProgress[ subscriptionName ] ) {
-				this._triggerNextProvider( subscriptionName );
-			}
+			this._triggerNextProvider( subscriptionName );
 		}
 	}
 
@@ -471,10 +467,14 @@ class ListenerRegistry {
 	 * @returns {void}
 	 */
 	_removePattern( pattern, socketWrapper, count ) {
-		if( count > 0 ) {
-			return;
+		if( socketWrapper ) {
+			this._listenerUtils.removeListenerFromInProgress( this._localListenInProgress, pattern, socketWrapper );
+			this._removeListenerIfActive( pattern, socketWrapper );
 		}
-		delete this._patterns[ pattern ];
+
+		if( count === 0 ) {
+			delete this._patterns[ pattern ];
+		}
 	}
 }
 

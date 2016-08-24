@@ -5,12 +5,14 @@ var RecordHandler = require( '../../src/record/record-handler' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
-	MessageConnectorMock = require( '../mocks/message-connector-mock.js' );
+	MessageConnectorMock = require( '../mocks/message-connector-mock.js' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 describe( 'messages from direct connected clients and messages that come in via message connector co-exist peacefully', function(){
 	var recordHandler,
 		subscriber = new SocketWrapper( new SocketMock(), {} ),
 		options = {
+			clusterRegistry: clusterRegistryMock,
 			serverName: 'a-server-name',
 			cache: new StorageMock(),
 			storage: new StorageMock(),

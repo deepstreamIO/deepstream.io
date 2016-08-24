@@ -4,6 +4,7 @@ var SocketWrapper = require( '../../src/message/socket-wrapper' );
 var logger = { log: jasmine.createSpy( 'log' ) };
 var noopMessageConnector = require('../../src/default-plugins/noop-message-connector');
 var msg = require( '../test-helper/test-helper' ).msg;
+var clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 describe( 'webrtc handler', function(){
 
@@ -14,6 +15,7 @@ describe( 'webrtc handler', function(){
 
 	it( 'initializes the WebRtcHandler', function(){
 		webrtcHandler = new WebRtcHandler({
+			clusterRegistry: clusterRegistryMock,
 			messageConnector: noopMessageConnector,
 			logger: logger
 		});

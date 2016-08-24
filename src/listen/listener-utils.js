@@ -232,6 +232,7 @@ class ListenerUtils {
 	onMsgDataError( socketWrapper, errorMsg, errorEvent ) {
 		errorEvent = errorEvent || C.EVENT.INVALID_MESSAGE_DATA;
 		socketWrapper.sendError( this._topic, errorEvent, errorMsg );
+		// TODO: This isn't a CRITICAL error, would we say its an info
 		this._options.logger.log( C.LOG_LEVEL.ERROR, errorEvent, errorMsg );
 	}
 

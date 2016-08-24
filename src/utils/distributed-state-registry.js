@@ -43,6 +43,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		this._topic = topic;
 		this._options = options;
 		this._options.messageConnector.subscribe( topic, this._processIncomingMessage.bind( this ) );
+		this._options.clusterRegistry.on( 'remove', this.removeAll.bind( this ) );
 		this._data = {};
 		this._reconciliationTimeouts = {};
 		this._fullStateSent = false;
@@ -116,7 +117,11 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @returns {Array} entries
 	 */
 	getAllServers( name ) {
-		return this._data[ name ].nodes;
+		if( this._data[ name ] ) {
+			return this._data[ name ].nodes;
+		} else {
+			return {};
+		}
 	}
 
 	/**
@@ -147,7 +152,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 			return;
 		}
 
-		this._data[ name ].nodes[ serverName ] = false;
+		delete this._data[ name ].nodes[ serverName ];
 
 		for( serverName in this._data[ name ].nodes ) {
 			if( this._data[ name ].nodes[ serverName ] === true ) {
@@ -172,6 +177,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @returns {void}
 	 */
 	_add( name, serverName ) {
+
 		if( !this._data[ name ] ) {
 			this._data[ name ] = {
 				nodes: {},

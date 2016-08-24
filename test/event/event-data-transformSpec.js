@@ -6,12 +6,14 @@ var EventHandler = require( '../../src/event/event-handler' ),
 	messageConnectorMock = new (require( '../mocks/message-connector-mock' ))(),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	LoggerMock = require( '../mocks/logger-mock' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))(),
 	createEventHandler = function( dataTransformSettigns ) {
 		var result = { subscriber: [] },
 			subscriber,
 			i;
 
 		result.eventHandler = new EventHandler({
+			clusterRegistry: clusterRegistryMock,
 			messageConnector: messageConnectorMock,
 			dataTransforms: new DataTransforms( dataTransformSettigns ),
 			logger: new LoggerMock(),
@@ -24,8 +26,8 @@ var EventHandler = require( '../../src/event/event-handler' ),
 		for( i = 0; i < 3; i++ ) {
 			subscriber = new SocketWrapper( new SocketMock() );
 			subscriber.user = 'socket_' + i;
-			result.eventHandler.handle( subscriber, { 
-				topic: C.TOPIC.EVENT, 
+			result.eventHandler.handle( subscriber, {
+				topic: C.TOPIC.EVENT,
 				action: C.ACTIONS.SUBSCRIBE,
 				raw: 'rawMessageString',
 				data: [ 'someEvent' ]
@@ -41,9 +43,9 @@ describe( 'event handler data transforms', function(){
 
 	it( 'distributes events directly if no transform is specified', function(){
 		var obj = createEventHandler([]);
-		
-		obj.eventHandler.handle( obj.subscriber[ 0 ], { 
-			topic: C.TOPIC.EVENT, 
+
+		obj.eventHandler.handle( obj.subscriber[ 0 ], {
+			topic: C.TOPIC.EVENT,
 			action: C.ACTIONS.EVENT,
 			raw: 'rawMessageString',
 			data: [ 'someEvent', 'O{"value":"A"}' ]
@@ -68,8 +70,8 @@ describe( 'event handler data transforms', function(){
 
 		var obj = createEventHandler([ setting ]);
 
-		obj.eventHandler.handle( obj.subscriber[ 0 ], { 
-			topic: C.TOPIC.EVENT, 
+		obj.eventHandler.handle( obj.subscriber[ 0 ], {
+			topic: C.TOPIC.EVENT,
 			action: C.ACTIONS.EVENT,
 			raw: 'rawMessageString',
 			data: [ 'someEvent', 'O{"value":"A"}' ]
@@ -100,8 +102,8 @@ describe( 'event handler data transforms', function(){
 
 		var obj = createEventHandler([ setting ]);
 
-		obj.eventHandler.handle( obj.subscriber[ 0 ], { 
-			topic: C.TOPIC.EVENT, 
+		obj.eventHandler.handle( obj.subscriber[ 0 ], {
+			topic: C.TOPIC.EVENT,
 			action: C.ACTIONS.EVENT,
 			raw: 'rawMessageString',
 			data: [ 'someEvent', 'O{"value":"C"}' ]

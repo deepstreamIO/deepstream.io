@@ -1,8 +1,10 @@
 var DistributedStateRegistry = require( '../../src/utils/distributed-state-registry' );
 var LocalMessageConnector = require( '../mocks/local-message-connector' );
+var clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 var createRegistry = function ( serverName, messageConnector ) {
 	var options = {
+		clusterRegistry: clusterRegistryMock,
 		serverName: serverName,
 		stateReconciliationTimeout: 10,
 		messageConnector: messageConnector

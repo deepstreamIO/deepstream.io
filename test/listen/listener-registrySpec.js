@@ -4,10 +4,12 @@ var ListenerRegistry = require('../../src/listen/listener-registry'),
 	SocketMock = require('../mocks/socket-mock'),
 	SocketWrapper = require('../../src/message/socket-wrapper'),
 	LoggerMock = require('../mocks/logger-mock'),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))(),
 	noopMessageConnector = require('../../src/default-plugins/noop-message-connector');
 
 var listenerRegistry,
 	options = {
+		clusterRegistry: clusterRegistryMock,
 		messageConnector: noopMessageConnector,
 		logger: {
 			log: jasmine.createSpy( 'logger' )
