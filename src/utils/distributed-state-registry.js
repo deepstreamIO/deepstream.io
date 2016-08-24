@@ -43,9 +43,22 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		this._topic = topic;
 		this._options = options;
 		this._options.messageConnector.subscribe( topic, this._processIncomingMessage.bind( this ) );
+		this._options.clusterRegistry.on( 'remove', this.removeAll.bind( this ) );
 		this._data = {};
 		this._reconciliationTimeouts = {};
 		this._fullStateSent = false;
+		this._requestFullState( C.ALL );
+	}
+
+	/**
+	 * Checks if a given entry exists within the registry
+	 *
+	 * @param   {String}  name       the name of the entry
+	 *
+	 * @returns {Boolean} exists
+	 */
+	has( name ) {
+		return !!this._data[ name ];
 	}
 
 	/**
@@ -98,6 +111,20 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	}
 
 	/**
+	 * Returns all the servers with a shared interest
+	 *
+	 * @public
+	 * @returns {Array} entries
+	 */
+	getAllServers( name ) {
+		if( this._data[ name ] ) {
+			return this._data[ name ].nodes;
+		} else {
+			return {};
+		}
+	}
+
+	/**
 	 * Returns all currently registered entries
 	 *
 	 * @public
@@ -125,7 +152,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 			return;
 		}
 
-		this._data[ name ].nodes[ serverName ] = false;
+		delete this._data[ name ].nodes[ serverName ];
 
 		for( serverName in this._data[ name ].nodes ) {
 			if( this._data[ name ].nodes[ serverName ] === true ) {
@@ -150,6 +177,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @returns {void}
 	 */
 	_add( name, serverName ) {
+
 		if( !this._data[ name ] ) {
 			this._data[ name ] = {
 				nodes: {},
@@ -254,7 +282,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	_verifyCheckSum( serverName, remoteCheckSum ) {
 		if( this._getCheckSumTotal( serverName ) !== remoteCheckSum ) {
 			this._reconciliationTimeouts[ serverName ] = setTimeout(
-				this._reconcile.bind( this, serverName ),
+				this._requestFullState.bind( this, serverName ),
 				this._options.stateReconciliationTimeout
 			);
 		} else if( this._reconciliationTimeouts[ serverName ] ) {
@@ -274,7 +302,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_reconcile( serverName ) {
+	_requestFullState( serverName ) {
 		this._options.messageConnector.publish( this._topic, {
 			topic: this._topic,
 			action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
@@ -377,7 +405,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		}
 
 		else if( message.action === C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE ) {
-			if( message.data[ 0 ] === this._options.serverName && this._fullStateSent === false ) {
+			if( message.data[ 0 ] === C.ALL || ( message.data[ 0 ] === this._options.serverName && this._fullStateSent === false ) ) {
 				this._sendFullState();
 			}
 		}

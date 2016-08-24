@@ -5,19 +5,25 @@ var RecordHandler = require( '../../src/record/record-handler' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
-	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' );
+	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 describe( 'record handler handles messages', function(){
 	var recordHandler,
 		clientA = new SocketWrapper( new SocketMock(), {} ),
 		clientB = new SocketWrapper( new SocketMock(), {} ),
 		options = {
+			clusterRegistry: clusterRegistryMock,
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			storageExclusion: new RegExp( 'no-storage'),
 			logger: new LoggerMock(),
 			messageConnector: noopMessageConnector,
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function() {},
+				release: function() {}
+			}
 		};
 
 	it( 'creates the record handler', function(){
@@ -418,12 +424,17 @@ describe( 'record handler handles messages', function(){
 		clientA = new SocketWrapper( new SocketMock(), {} ),
 		clientB = new SocketWrapper( new SocketMock(), {} ),
 		options = {
+			clusterRegistry: clusterRegistryMock,
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			storageExclusion: new RegExp( 'no-storage'),
 			logger: new LoggerMock(),
 			messageConnector: noopMessageConnector,
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function() {},
+				release: function() {}
+			}
 		};
 
 	options.cache.nextGetWillBeSynchronous = true;

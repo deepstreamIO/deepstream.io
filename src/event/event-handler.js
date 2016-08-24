@@ -122,7 +122,7 @@ EventHandler.prototype._triggerEvent = function( messageSource, message ) {
 	}
 
 	if( this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.EVENT, C.ACTIONS.EVENT ) ) {
-		var receivers = this._subscriptionRegistry.getSubscribers( message.data[ 0 ] );
+		var receivers = this._subscriptionRegistry.getLocalSubscribers( message.data[ 0 ] );
 
 		if( receivers ) {
 			receivers.forEach( this._sendTransformedMessage.bind( this, message, messageSource ) );

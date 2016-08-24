@@ -173,3 +173,21 @@ exports.merge = function() {
 
 	return result;
 };
+
+/**
+ * Set timeout utility that adds support for disabling a timeout
+ * by passing null
+ *
+ * @param {Function} callback        the function that will be called after the given time
+ * @param {Number}   timeoutDuration the duration of the timeout in milliseconds
+ *
+ * @public
+ * @returns {Number} timeoutId
+ */
+exports.setTimeout = function( callback, timeoutDuration ) {
+	if( timeoutDuration !== null ) {
+		return setTimeout( callback, timeoutDuration );
+	} else {
+		return -1;
+	}
+};
