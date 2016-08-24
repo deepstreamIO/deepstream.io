@@ -76,9 +76,6 @@ SubscriptionRegistry.prototype.sendToSubscribers = function( name, msgString, se
 SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	if( this._subscriptions[ name ] === undefined ) {
 		this._subscriptions[ name ] = [];
-		if( this._subscriptionListener ) {
-			this._subscriptionListener.onSubscriptionMade( name, socketWrapper );
-		}
 	}
 
 	if( this._subscriptions[ name ].indexOf( socketWrapper ) !== -1 ) {
@@ -98,6 +95,11 @@ SubscriptionRegistry.prototype.subscribe = function( name, socketWrapper ) {
 	}
 
 	this._subscriptions[ name ].push( socketWrapper );
+
+	if( this._subscriptionListener ) {
+		this._subscriptionListener.onSubscriptionMade( name, socketWrapper, this._subscriptions[ name ].length );
+	}
+
 	var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
 	this._options.logger.log( C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg );
 	socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ this._constants.SUBSCRIBE, name ] );
@@ -134,12 +136,12 @@ SubscriptionRegistry.prototype.unsubscribe = function( name, socketWrapper, sile
 
 	if( this._subscriptions[ name ].length === 1 ) {
 		delete this._subscriptions[ name ];
-
-		if( this._subscriptionListener ) {
-			this._subscriptionListener.onSubscriptionRemoved( name, socketWrapper );
-		}
 	} else {
 		this._subscriptions[ name ].splice( this._subscriptions[ name ].indexOf( socketWrapper ), 1 );
+	}
+
+	if( this._subscriptionListener ) {
+		this._subscriptionListener.onSubscriptionRemoved( name, socketWrapper, (this._subscriptions[ name ] || [] ).length );
 	}
 
 	if( !silent ) {

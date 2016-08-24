@@ -12,17 +12,16 @@ SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RELEASE ] = true;
 
 /**
  * Uses options
- * 		lockTimeout
- *   	lockRequestTimeout
+ *      uniqueTimeout
+ *      leaderResponseTimeout
  *
  * Uses topics
- * 		C.TOPIC.LEADER
- * 		C.TOPIC.LEADER_PRIVATE_<serverName>
+ *      C.TOPIC.LEADER
+ *      C.TOPIC.LEADER_PRIVATE_<serverName>
  *
  * Uses action
- * 		C.ACTIONS.LEADER_REQUEST
- * 		C.ACTIONS.LEADER_VOTE
- *
+ *      C.ACTIONS.LEADER_REQUEST
+ *      C.ACTIONS.LEADER_VOTE
  */
 module.exports = class UniqueRegistry{
 	constructor( options, clusterRegistry ) {
@@ -148,7 +147,7 @@ module.exports = class UniqueRegistry{
 			this._onLockTimeout.bind( this, name ),
 			this._options.lockTimeout
 		);
-		
+
 		if( this._locks[ name ] === true ) {
 			return false;
 		} else {
