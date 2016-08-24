@@ -17,7 +17,6 @@ describe( 'unique state provider handles local locks', function(){
 
 	var clusterRegistryMock = new ClusterRegistryMock();
 
-
 	it( 'creates the provider', function(){
 		uniqueStateProvider = new ClusterUniqueStateProvider( options, clusterRegistryMock );
 		expect( typeof uniqueStateProvider.get ).toBe( 'function' );
@@ -50,7 +49,7 @@ describe( 'unique state provider handles local locks', function(){
 	});
 });
 
-fdescribe( 'unique state provider handles remove locks', function(){
+describe( 'unique state provider handles remove locks', function(){
 	var uniqueStateProvider;
 
 	var options = {

@@ -361,7 +361,7 @@ RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSen
  * @returns {void}
  */
 RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, transformPatch, name, message, originalSender ) {
-	var receiver = this._subscriptionRegistry.getSubscribers( name ) || [],
+	var receiver = this._subscriptionRegistry.getLocalSubscribers( name ) || [],
 		metaData = {
 			recordName: name,
 			version: parseInt( message.data[ 1 ], 10 )
@@ -501,7 +501,7 @@ RecordHandler.prototype._delete = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._onDeleted = function( name, message, originalSender ) {
-	var subscribers = this._subscriptionRegistry.getSubscribers( name );
+	var subscribers = this._subscriptionRegistry.getLocalSubscribers( name );
 	var i;
 
 	this._$broadcastUpdate( name, message, originalSender );

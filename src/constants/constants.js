@@ -2,6 +2,7 @@ exports.MESSAGE_SEPERATOR = String.fromCharCode( 30 ); // ASCII Record Seperator
 exports.MESSAGE_PART_SEPERATOR = String.fromCharCode( 31 ); // ASCII Unit Separator 1F
 
 exports.SOURCE_MESSAGE_CONNECTOR = 'SOURCE_MESSAGE_CONNECTOR';
+exports.ALL = 'ALL';
 
 exports.LOG_LEVEL = {};
 exports.LOG_LEVEL.DEBUG = 0;
@@ -84,6 +85,12 @@ exports.TOPIC.LEADER = 'L';
 exports.TOPIC.LEADER_PRIVATE = 'LP_';
 exports.TOPIC.PRIVATE = 'PRIVATE/';
 
+exports.TOPIC.LISTEN = 'LISTEN';
+exports.TOPIC.PUBLISHED_SUBSCRIPTIONS = 'PUBLISHED_SUBSCRIPTIONS';
+exports.TOPIC.LISTEN_PATTERNS = 'LISTEN_PATTERNS';
+exports.TOPIC.SUBSCRIPTIONS = 'SUBSCRIPTIONS';
+
+
 exports.ACTIONS = {};
 exports.ACTIONS.ACK = 'A';
 exports.ACTIONS.READ = 'R';
@@ -114,6 +121,12 @@ exports.ACTIONS.RESPONSE = 'RES';
 exports.ACTIONS.REJECTION = 'REJ';
 exports.ACTIONS.STATUS = 'ST';
 exports.ACTIONS.REMOVE = 'RM';
+exports.ACTIONS.LEADER_REQUEST = 'LR';
+exports.ACTIONS.LEADER_VOTE = 'LV';
+exports.ACTIONS.LOCK_REQUEST = 'LRQ';
+exports.ACTIONS.LOCK_RESPONSE = 'LRP';
+exports.ACTIONS.LOCK_RELEASE = 'LRL';
+
 exports.ACTIONS.LEADER_REQUEST = 'LR';
 exports.ACTIONS.LEADER_VOTE = 'LV';
 exports.ACTIONS.LOCK_REQUEST = 'LRQ';

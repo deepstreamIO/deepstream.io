@@ -9,21 +9,24 @@ SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RESPONSE ] = true;
 SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_REQUEST ] = true;
 SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RELEASE ] = true;
 
-
 /**
  * Uses options
- *      uniqueTimeout
- *      leaderResponseTimeout
+ *      lockTimeout
+ *      lockRequestTimeout
  *
  * Uses topics
- *      C.TOPIC.LEADER
- *      C.TOPIC.LEADER_PRIVATE_<serverName>
+ * 	    C.TOPIC.LEADER
+ * 	    C.TOPIC.LEADER_PRIVATE_<serverName>
+ *
+ * Uses action
+ * 		C.ACTIONS.LEADER_REQUEST
+ * 		C.ACTIONS.LEADER_VOTE
  *
  * Uses action
  *      C.ACTIONS.LEADER_REQUEST
  *      C.ACTIONS.LEADER_VOTE
  */
-module.exports = class UniqueRegistry{
+module.exports = class UniqueRegistry {
 	constructor( options, clusterRegistry ) {
 		this._options = options;
 		this._clusterRegistry = clusterRegistry;
@@ -131,7 +134,7 @@ module.exports = class UniqueRegistry{
 	}
 
 	_handleRemoteLockRelease( data ) {
-
+		delete this._locks[ data.name ];
 	}
 
 	_getPrivateTopic( serverName ) {
@@ -143,11 +146,11 @@ module.exports = class UniqueRegistry{
 	}
 
 	_getLock( name, callback ) {
-		this._lockTimeouts[ name ] = utils.setTimeout(
+/*		this._lockTimeouts[ name ] = utils.setTimeout(
 			this._onLockTimeout.bind( this, name ),
 			this._options.lockTimeout
 		);
-
+*/
 		if( this._locks[ name ] === true ) {
 			return false;
 		} else {

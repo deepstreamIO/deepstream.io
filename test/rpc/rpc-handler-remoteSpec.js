@@ -4,9 +4,11 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	C = require( '../../src/constants/constants' ),
 	msg = require( '../test-helper/test-helper' ).msg,
 	SocketMock = require( '../mocks/socket-mock' ),
-	MessageConnectorMock = require( '../mocks/message-connector-mock' );
+	MessageConnectorMock = require( '../mocks/message-connector-mock' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 var options = {
+	clusterRegistry: clusterRegistryMock,
 	messageConnector: new MessageConnectorMock(),
 	logger: { log: jasmine.createSpy( 'log' ) },
 	serverName: 'thisServer',
