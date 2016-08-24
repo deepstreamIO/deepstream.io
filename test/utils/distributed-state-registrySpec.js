@@ -1,10 +1,12 @@
 var DistributedStateRegistry = require( '../../src/utils/distributed-state-registry' );
 var MessageConnectorMock = require( '../mocks/message-connector-mock' );
+var clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 describe( 'distributed-state-registry adds and removes names', function(){
 	var registry;
 
 	var options = {
+		clusterRegistry: clusterRegistryMock,
 		serverName: 'server-name-a',
 		stateReconciliationTimeout: 10,
 		messageConnector: new MessageConnectorMock()
@@ -195,6 +197,7 @@ describe( 'distributed-state-registry reconciles states', function(){
 	var registry;
 
 	var options = {
+		clusterRegistry: clusterRegistryMock,
 		serverName: 'server-name-a',
 		stateReconciliationTimeout: 10,
 		logger: { log: function(){ console.log( arguments ); }},

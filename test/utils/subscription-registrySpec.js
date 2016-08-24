@@ -5,7 +5,15 @@ var SubscriptionRegistry = require( '../../src/utils/subscription-registry' ),
 	lastLogEvent = null,
 	socketWrapperOptions = {logger:{ log: function(){}}},
 	_msg = require( '../test-helper/test-helper' ).msg,
-	options = { logger: { log: function( level, event, message ){ lastLogEvent = event; } } },
+	LocalMessageConnector = require( '../mocks/local-message-connector' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))(),
+	options = {
+		clusterRegistry: clusterRegistryMock,
+		serverName: 'server-name-a',
+		stateReconciliationTimeout: 10,
+		messageConnector: new LocalMessageConnector(),
+		logger: { log: function( level, event, message ){ lastLogEvent = event; } }
+	},
 	subscriptionRegistry = new SubscriptionRegistry( options, 'E' ),
 	subscriptionListenerMock = {
 		onSubscriptionMade: jasmine.createSpy( 'onSubscriptionMade' ),
@@ -38,12 +46,12 @@ describe( 'subscription-registry manages subscriptions', function(){
 	});
 
 	it( 'returns the subscribed socket', function(){
-		expect( subscriptionRegistry.getSubscribers( 'someName' ) ).toEqual([ socketWrapperA ]);
+		expect( subscriptionRegistry.getLocalSubscribers( 'someName' ) ).toEqual([ socketWrapperA ]);
 	});
 
 	it( 'determines if it has subscriptions', function(){
-		expect( subscriptionRegistry.hasSubscribers( 'someName' ) ).toBe( true );
-		expect( subscriptionRegistry.hasSubscribers( 'someOtherName' ) ).toBe( false );
+		expect( subscriptionRegistry.hasLocalSubscribers( 'someName' ) ).toBe( true );
+		expect( subscriptionRegistry.hasLocalSubscribers( 'someOtherName' ) ).toBe( false );
 	});
 
 	it( 'distributes messages to multiple subscribers', function(){
@@ -54,7 +62,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 	});
 
 	it( 'returns a random subscribed socket', function(){
-		expect( subscriptionRegistry.getSubscribers( 'someName' ) ).toEqual([ socketWrapperA, socketWrapperB ]);
+		expect( subscriptionRegistry.getLocalSubscribers( 'someName' ) ).toEqual([ socketWrapperA, socketWrapperB ]);
 
 		var returnedA = false,
 			returnedB = false,
@@ -62,7 +70,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 			i;
 
 		for( i = 0; i < 100; i++ ) {
-			randomSubscriber = subscriptionRegistry.getRandomSubscriber( 'someName' );
+			randomSubscriber = subscriptionRegistry.getRandomLocalSubscriber( 'someName' );
 			if( randomSubscriber === socketWrapperA ) returnedA = true;
 			if( randomSubscriber === socketWrapperB ) returnedB = true;
 		}
@@ -114,7 +122,7 @@ describe( 'subscription-registry manages subscriptions', function(){
 
 		expect( subscriptionListenerMock.onSubscriptionRemoved ).not.toHaveBeenCalled();
 		subscriptionRegistry.unsubscribe( 'someName', socketWrapperA );
-		expect( subscriptionListenerMock.onSubscriptionRemoved ).toHaveBeenCalledWith( 'someName', socketWrapperA, 0 );
+		expect( subscriptionListenerMock.onSubscriptionRemoved ).toHaveBeenCalledWith( 'someName', socketWrapperA, 0, 0 );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );
 		subscriptionRegistry.sendToSubscribers( 'someName', _msg( 'msg8+' ) );
 		expect( socketWrapperA.socket.lastSendMessage ).toBe( _msg( 'E|A|US|someName+' ) );
@@ -196,6 +204,6 @@ describe( 'subscription-registry handles empty states', function(){
 	var subscriptionRegistry = new SubscriptionRegistry( options, 'E' );
 
 	it( 'returns null if no subscriber is registered', function(){
-		expect( subscriptionRegistry.getRandomSubscriber() ).toBe( null );
+		expect( subscriptionRegistry.getRandomLocalSubscriber() ).toBe( null );
 	});
 });

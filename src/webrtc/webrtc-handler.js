@@ -41,7 +41,9 @@ var C = require( '../constants/constants' ),
  */
 var WebRtcHandler = function( options ) {
 	this._options = options;
-	this._calleeRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC, this );
+	this._calleeRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
+	this._calleeRegistry.setSubscriptionListener( this );
+
 	this._calleeListenerRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
 	this._callInitiatiorRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
 };
@@ -169,19 +171,19 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 		data = message.data[ 2 ];
 
 	// Response
-	if( this._callInitiatiorRegistry.hasSubscribers( receiverName ) ){
+	if( this._callInitiatiorRegistry.hasLocalSubscribers( receiverName ) ){
 		this._callInitiatiorRegistry.sendToSubscribers( receiverName, message.raw );
 	}
 
 	// Request
 	else {
-		if( !this._calleeRegistry.hasSubscribers( receiverName ) ) {
+		if( !this._calleeRegistry.hasLocalSubscribers( receiverName ) ) {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_CALLEE, receiverName );
 			socketWrapper.sendError( C.TOPIC.WEBRTC, C.EVENT.UNKNOWN_CALLEE, receiverName );
 			return;
 		}
 
-		if( !this._callInitiatiorRegistry.hasSubscribers( senderName ) ) {
+		if( !this._callInitiatiorRegistry.hasLocalSubscribers( senderName ) ) {
 			this._callInitiatiorRegistry.subscribe( senderName, socketWrapper );
 		}
 
@@ -202,14 +204,14 @@ WebRtcHandler.prototype._forwardMessage = function( socketWrapper, message ) {
 WebRtcHandler.prototype._clearInitiator = function( socketWrapper, message ) {
 	var subscribers;
 	var subscriberId;
-	if( this._callInitiatiorRegistry.hasSubscribers( message.data[ 0 ] ) ) {
+	if( this._callInitiatiorRegistry.hasLocalSubscribers( message.data[ 0 ] ) ) {
 		subscriberId =  message.data[ 0 ];
-	} else if( this._callInitiatiorRegistry.hasSubscribers( message.data[ 1 ] ) ) {
+	} else if( this._callInitiatiorRegistry.hasLocalSubscribers( message.data[ 1 ] ) ) {
 		subscriberId =  message.data[ 1 ];
 	}
 
 	if( subscriberId ) {
-		subscribers = this._callInitiatiorRegistry.getSubscribers( subscriberId );
+		subscribers = this._callInitiatiorRegistry.getLocalSubscribers( subscriberId );
 		this._callInitiatiorRegistry.unsubscribe( subscriberId, subscribers[ 0 ] );
 	}
 };
@@ -233,7 +235,7 @@ WebRtcHandler.prototype._checkIsAlive = function( socketWrapper, message ) {
 		return;
 	}
 
-	isAlive = this._callInitiatiorRegistry.hasSubscribers( remoteId ) || this._calleeRegistry.hasSubscribers( remoteId );
+	isAlive = this._callInitiatiorRegistry.hasLocalSubscribers( remoteId ) || this._calleeRegistry.hasLocalSubscribers( remoteId );
 	socketWrapper.sendMessage( C.TOPIC.WEBRTC, C.ACTIONS.WEBRTC_IS_ALIVE, [ remoteId, isAlive ] );
 };
 

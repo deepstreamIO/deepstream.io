@@ -4,15 +4,24 @@ var EventHandler = require( '../../src/event/event-handler' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
-	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' );
+	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))(),
+	options = {
+		clusterRegistry: clusterRegistryMock,
+		serverName: 'server-name-a',
+		stateReconciliationTimeout: 10,
+		messageConnector: noopMessageConnector,
+		logger: new LoggerMock(),
+		uniqueRegistry: {
+			get: function( name, callback ) { callback( true ); },
+			release: function() {}
+		}
+	},
+	eventHandler,
+	subscribingClient = new SocketWrapper( new SocketMock(), {} ),
+	listeningClient = new SocketWrapper( new SocketMock(), {} );
 
 describe( 'event handler handles messages', function(){
-	var eventHandler,
-			subscribingClient = new SocketWrapper( new SocketMock(), {} ),
-		listeningClient = new SocketWrapper( new SocketMock(), {} ),
-		options = {
-			logger: new LoggerMock()
-		};
 
 	it( 'creates the event handler', function(){
 		eventHandler = new EventHandler( options );
@@ -54,17 +63,6 @@ describe( 'event handler handles messages', function(){
 			});
 			expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'E|A|S|event/C+' ) );
 			expect( listeningClient.socket.lastSendMessage ).toBe( msg( 'E|SP|event\/.*|event/C+' ) );
-	});
-
-	it( 'returns a snapshot of the all event that match the pattern', function(){
-		eventHandler.handle( subscribingClient, {
-			raw: msg( 'E|LSN|user\/*' ),
-			topic: 'E',
-			action: 'LSN',
-			data: [ 'event\/*' ]
-		});
-
-		expect( subscribingClient.socket.lastSendMessage ).toBe( msg( 'E|SF|event/*|["event/A","event/B","event/C"]+' ));
 	});
 
 	it( 'doesn\'t send messages for subsequent subscriptions', function(){
