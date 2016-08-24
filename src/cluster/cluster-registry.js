@@ -13,7 +13,7 @@ const EventEmitter = require( 'events' ).EventEmitter;
  * @emits add <serverName>
  * @emits remove <serverName>
  */
-module.exports = class ClusterRegistry extends EventEmitter{
+module.exports = class ClusterRegistry extends EventEmitter {
 
 	/**
 	 * Creates the class, initialises all intervals and publishes the
@@ -31,8 +31,10 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		this._connectionEndpoint = connectionEndpoint;
 		this._inCluster = false;
 		this._nodes = {};
+
 		this._leaderScore = Math.random();
 		this._locks = {};
+
 		this._onMessageFn = this._onMessage.bind( this );
 		this._leaveClusterFn = this.leaveCluster.bind( this );
 		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, this._onMessageFn );
@@ -60,7 +62,9 @@ module.exports = class ClusterRegistry extends EventEmitter{
 			action: C.ACTIONS.REMOVE,
 			data:[ this._options.serverName ]
 		});
+
 		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, () => {} ); // TODO: This is triggered during pragamatic deepstream.stop
+
 		this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
 		process.removeListener( 'beforeExit', this._leaveClusterFn );
 		process.removeListener( 'exit', this._leaveClusterFn );
@@ -229,8 +233,3 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		});
 	}
 }
-
-// When new node joins with leaderScore > currentLeader
-// every node keeps pendingLeadership flag... (or whatever)
-// currentLeader finishes current locks, then broadcasts LEADER_RELEASE
-// every node now removes pendingLeader flag

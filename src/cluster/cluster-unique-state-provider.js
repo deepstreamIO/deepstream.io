@@ -9,15 +9,14 @@ SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RESPONSE ] = true;
 SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_REQUEST ] = true;
 SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RELEASE ] = true;
 
-
 /**
  * Uses options
- * 		lockTimeout
- *   	lockRequestTimeout
+ *      lockTimeout
+ *      lockRequestTimeout
  *
  * Uses topics
- * 		C.TOPIC.LEADER
- * 		C.TOPIC.LEADER_PRIVATE_<serverName>
+ * 	    C.TOPIC.LEADER
+ * 	    C.TOPIC.LEADER_PRIVATE_<serverName>
  *
  * Uses action
  * 		C.ACTIONS.LEADER_REQUEST
