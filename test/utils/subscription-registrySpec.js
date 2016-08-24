@@ -48,8 +48,8 @@ describe( 'subscription-registry manages subscriptions', function(){
 	});
 
 	it( 'determines if it has subscriptions', function(){
-		expect( subscriptionRegistry.hasSubscribers( 'someName' ) ).toBe( true );
-		expect( subscriptionRegistry.hasSubscribers( 'someOtherName' ) ).toBe( false );
+		expect( subscriptionRegistry.hasLocalSubscribers( 'someName' ) ).toBe( true );
+		expect( subscriptionRegistry.hasLocalSubscribers( 'someOtherName' ) ).toBe( false );
 	});
 
 	it( 'distributes messages to multiple subscribers', function(){

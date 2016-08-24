@@ -317,7 +317,9 @@ class ListenerRegistry {
 			) {
 				provider.socketWrapper.socket.removeListener( 'close', provider.closeListener );
 				this._removeActiveListener( subscriptionName );
-				this._startDiscoveryStage( subscriptionName );
+				if( this._clientRegistry.getLocalSubscribers( subscriptionName ) ) {
+					this._startDiscoveryStage( subscriptionName );
+				}
 			}
 		}
 	}
@@ -446,7 +448,7 @@ class ListenerRegistry {
 
 	_onRecordStopProvided( subscriptionName ) {
 		this._listenerUtils.sendHasProviderUpdate( false, subscriptionName );
-		if( this._clientRegistry.hasSubscribers( subscriptionName ) ) {
+		if( !this.hasActiveProvider( subscriptionName ) && this._clientRegistry.hasName( subscriptionName ) ) {
 			this._startDiscoveryStage( subscriptionName );
 		}
 	}

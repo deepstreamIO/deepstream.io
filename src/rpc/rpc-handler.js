@@ -95,7 +95,7 @@ RpcHandler.prototype.getAlternativeProvider = function( rpcName, usedProviders, 
 	/*
 	 * Look within the local providers for one that hasn't been used yet
 	 */
-	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
+	if( this._subscriptionRegistry.hasLocalSubscribers( rpcName ) ) {
 		localProviders = this._subscriptionRegistry.getLocalSubscribers( rpcName );
 
 		for( i = 0; i < localProviders.length; i++ ) {
@@ -197,7 +197,7 @@ RpcHandler.prototype._makeRpc = function( socketWrapper, message ) {
 		makeRemoteRpcFn,
 		provider;
 
-	if( this._subscriptionRegistry.hasSubscribers( rpcName ) ) {
+	if( this._subscriptionRegistry.hasLocalSubscribers( rpcName ) ) {
 		provider = this._subscriptionRegistry.getRandomLocalSubscriber( rpcName );
 		new Rpc( this, socketWrapper, provider, this._options, message );
 	} else {

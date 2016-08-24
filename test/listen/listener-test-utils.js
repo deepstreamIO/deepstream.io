@@ -28,16 +28,16 @@ class ListenerTestUtils {
 
 		subscribedTopics = [];
 		clientRegistry = {
+			hasName: function( subscriptionName ) {
+				return subscribedTopics.indexOf( subscriptionName );
+			},
 			getNames: function() {
 				return subscribedTopics;
 			},
 			getLocalSubscribers: function() {
 				return subscribers;
 			},
-			sendToSubscribers: sendToSubscribersMock,
-			hasSubscribers: function() {
-				return false;
-			}
+			sendToSubscribers: sendToSubscribersMock
 		};
 
 		// TODO Mock process insead

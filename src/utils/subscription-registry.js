@@ -33,6 +33,12 @@ class SubscriptionRegistry {
 		this._clusterSubscriptions.on( 'remove', this._onClusterSubscriptionRemoved.bind( this ) );
 	}
 
+	/**
+	 * Return all the servers that have this subscription. This just exposes the
+	 * DistributedStateRegistry
+	 * @param  {String} subscriptionName the subscriptionName to look for
+	 * @return {Array}  An array of all the servernames with this subscription
+	 */
 	getAllServers( subscriptionName ) {
 		return this._clusterSubscriptions.getAllServers( subscriptionName );
 	}
@@ -48,16 +54,15 @@ class SubscriptionRegistry {
 		return this._clusterSubscriptions.getAll();
 	}
 
-	_onClusterSubscriptionAdded( name ) {
-		if( this._subscriptionListener && !this._subscriptions[ name ] ) {
-			this._subscriptionListener.onSubscriptionMade( name, null, 1 );
-		}
-	}
-
-	_onClusterSubscriptionRemoved( name ) {
-		if( this._subscriptionListener && !this._subscriptions[ name ] ) {
-			this._subscriptionListener.onSubscriptionRemoved( name, null, 0 );
-		}
+	/**
+	 * Returns true if the subscription exists somewhere
+	 * in the cluster
+	 *
+	 * @public
+	 * @returns {Array} names
+	 */
+	hasName( subscriptionName ) {
+		return this._clusterSubscriptions.getAll().indexOf( subscriptionName ) !== -1;
 	}
 
 	/**
@@ -243,7 +248,7 @@ class SubscriptionRegistry {
 	 * @returns {Array} SocketWrapper[]
 	 */
 	getLocalSubscribers( name ) {
-		if( this.hasSubscribers( name ) ) {
+		if( this.hasLocalSubscribers( name ) ) {
 			return this._subscriptions[ name ].slice();
 		} else {
 			return null;
@@ -277,9 +282,9 @@ class SubscriptionRegistry {
 	 * @param   {String}  name
 	 *
 	 * @public
-	 * @returns {Boolean} hasSubscribers
+	 * @returns {Boolean} hasLocalSubscribers
 	 */
-	hasSubscribers( name ) {
+	hasLocalSubscribers( name ) {
 		 return !!this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0;
 	}
 
@@ -293,6 +298,32 @@ class SubscriptionRegistry {
 	 */
 	setSubscriptionListener( subscriptionListener ) {
 		this._subscriptionListener = subscriptionListener;
+	}
+
+	/**
+	 * Called when a subscription has been added to the cluster
+	 * This can be invoked locally or remotely, so we check if it
+	 * is a local invocation and ignore it if so in favour of the
+	 * call done from subscribe
+	 * @param  {String} name the name that was added
+	 */
+	_onClusterSubscriptionAdded( name ) {
+		if( this._subscriptionListener && !this._subscriptions[ name ] ) {
+			this._subscriptionListener.onSubscriptionMade( name, null, 1 );
+		}
+	}
+
+	/**
+	 * Called when a subscription has been removed from the cluster
+	 * This can be invoked locally or remotely, so we check if it
+	 * is a local invocation and ignore it if so in favour of the
+	 * call done from unsubscribe
+	 * @param  {String} name the name that was removed
+	 */
+	_onClusterSubscriptionRemoved( name ) {
+		if( this._subscriptionListener && !this._subscriptions[ name ] ) {
+			this._subscriptionListener.onSubscriptionRemoved( name, null, 0 );
+		}
 	}
 
 }
