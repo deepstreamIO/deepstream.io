@@ -1,7 +1,7 @@
 'use strict';
 
 const C = require( '../constants/constants' );
-const DistributedStateRegistry = require( '../utils/distributed-state-registry' );
+const DistributedStateRegistry = require( '../cluster/distributed-state-registry' );
 
 class SubscriptionRegistry {
 

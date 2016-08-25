@@ -1,4 +1,4 @@
-var DistributedStateRegistry = require( '../../src/utils/distributed-state-registry' );
+var DistributedStateRegistry = require( '../../src/cluster/distributed-state-registry' );
 var LocalMessageConnector = require( '../mocks/local-message-connector' );
 var clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 

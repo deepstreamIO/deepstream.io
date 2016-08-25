@@ -2,7 +2,7 @@
 
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	DistributedStateRegistry = require( '../utils/distributed-state-registry' ),
+	DistributedStateRegistry = require( '../cluster/distributed-state-registry' ),
 	TimeoutRegistry = require( './listener-timeout-registry' ),
 	ListenerUtils = require( './listener-utils' ),
 	messageParser = require( '../message/message-parser' ),
