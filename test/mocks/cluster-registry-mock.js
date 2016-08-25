@@ -3,10 +3,11 @@
 const EventEmitter = require( 'events' ).EventEmitter;
 
 module.exports = class ClusterRegistryMock extends EventEmitter{
-	constructor() {
+	constructor( options ) {
 		super();
 		this.all = null;
 		this.currentLeader = null;
+		this.options = options;
 		this.reset();
 	}
 
@@ -17,6 +18,10 @@ module.exports = class ClusterRegistryMock extends EventEmitter{
 
 	getAll() {
 		return this.all;
+	}
+
+	isLeader() {
+		return this.currentLeader === this.options.serverName;
 	}
 
 	getCurrentLeader() {

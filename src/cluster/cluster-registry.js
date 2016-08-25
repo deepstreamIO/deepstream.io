@@ -86,6 +86,14 @@ module.exports = class ClusterRegistry extends EventEmitter {
 	}
 
 	/**
+	 * Returns true if this node is the cluster leader
+	 * @return {Boolean} [description]
+	 */
+	isLeader() {
+		return this._options.serverName === this.getCurrentLeader();
+	}
+
+	/**
 	* Returns the name of the current leader
 	* @return {String}
 	*/

@@ -47,12 +47,13 @@ class ListenerTestUtils {
 			serverName: 'server-name-a',
 			stateReconciliationTimeout: 10,
 			messageConnector: new LocalMessageConnector(),
-			logger: new LoggerMock()
+			logger: new LoggerMock(),
+			listenResponseTimeout: 30
 		};
 		options.clusterRegistry = new ClusterRegistry( options, {
 			getBrowserConnectionCount: function() {},
 			getTcpConnectionCount: function() {}
-		} ); 
+		} );
 		options.uniqueRegistry = new UniqueRegistry( options, options.clusterRegistry ); 
 
 		clients = [

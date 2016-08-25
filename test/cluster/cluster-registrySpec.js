@@ -157,21 +157,22 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		}, 500 );
 	});
 
-	// we can't simulate an exit via the process since it is triggered
-	// to test harness
+	var expectedLength;
 	it( 'publishes leave message when closing down', function(){
+		expectedLength = options.messageConnector.publishedMessages.length + 1;
+
 		clusterRegistry.leaveCluster();
 
 		expect( options.messageConnector.lastPublishedMessage ).toEqual(
 			{ topic: 'CL', action: 'RM', data: [ 'server-name-a' ] }
 		);
-		expect( options.messageConnector.publishedMessages.length ).toBe( 18 );
+		expect( options.messageConnector.publishedMessages.length ).toBe( expectedLength );
 	});
 
 	it( 'doesn\'t publish leave message when trying to leave twice', function(){
 		clusterRegistry.leaveCluster();
 
-		expect( options.messageConnector.publishedMessages.length ).toBe( 18 );
+		expect( options.messageConnector.publishedMessages.length ).toBe( expectedLength );
 	});
 
 	// we can't simulate an exit via the process since it is triggered

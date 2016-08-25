@@ -64,7 +64,16 @@ class ListenerTimeoutRegistry {
 	* @private
 	*/
 	removeProvider( socketWrapper ) {
-		// TODO
+		for( var acceptedProvider in this._acceptedProvider ) {
+			if( this._acceptedProvider[ acceptedProvider ].socketWrapper === socketWrapper ) {
+				delete this._acceptedProvider[ acceptedProvider ];
+			}
+		}
+		for( var subscriptionName in this._timeoutMap ) {
+			if( this._timeoutMap[ subscriptionName ] ) {
+				this.clearTimeout( subscriptionName );
+			}
+		}
 	}
 
 	/**
@@ -85,7 +94,7 @@ class ListenerTimeoutRegistry {
 			}
 			this._timedoutProviders[ subscriptionName ].push( provider );
 			callback( subscriptionName );
-		}, 20 ); // TODO: Configurable
+		}, this._options.listenResponseTimeout );
 		this._timeoutMap[ subscriptionName ] = timeoutId;
 	}
 
@@ -97,6 +106,7 @@ class ListenerTimeoutRegistry {
 	*/
 	clearTimeout( subscriptionName ) {
 		clearTimeout( this._timeoutMap[ subscriptionName ] );
+		delete this._timeoutMap[ subscriptionName ];
 	}
 
 	/**

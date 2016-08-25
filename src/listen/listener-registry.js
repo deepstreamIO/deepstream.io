@@ -434,6 +434,9 @@ class ListenerRegistry {
 		this._listenerUtils.sendSubscriptionForPatternFound( provider, subscriptionName );
 	}
 
+	/**
+	 * Triggered when a subscription is being provided by a node in the cluster
+	 */
 	_onRecordStartProvided( subscriptionName ) {
 		this._listenerUtils.sendHasProviderUpdate( true, subscriptionName );
 		if( this._leadingListen[ subscriptionName ] ) {
@@ -442,6 +445,9 @@ class ListenerRegistry {
 		}
 	}
 
+	/**
+	* Triggered when a subscription is stopped being provided by a node in the cluster
+	*/
 	_onRecordStopProvided( subscriptionName ) {
 		this._listenerUtils.sendHasProviderUpdate( false, subscriptionName );
 		if( !this.hasActiveProvider( subscriptionName ) && this._clientRegistry.hasName( subscriptionName ) ) {
@@ -468,6 +474,7 @@ class ListenerRegistry {
 	 */
 	_removePattern( pattern, socketWrapper, count ) {
 		if( socketWrapper ) {
+			this._listenerTimeoutRegistery.removeProvider( socketWrapper );
 			this._listenerUtils.removeListenerFromInProgress( this._localListenInProgress, pattern, socketWrapper );
 			this._removeListenerIfActive( pattern, socketWrapper );
 		}
