@@ -34,7 +34,7 @@ describe( 'unique state provider handles cluster locks', function(){
 		b,
 		c;
 
-	beforeEach( function( done ) {
+	beforeEach( ( done ) => {
 		a = createServer( 'servername-a', 1 );
 		b = createServer( 'servername-b', 2 );
 		c = createServer( 'servername-c', 3 );
@@ -42,6 +42,12 @@ describe( 'unique state provider handles cluster locks', function(){
 		// Done for nodes to find each other out
 		setTimeout( done, 50 );
 	});
+
+	afterEach( () => {
+		a.clusterRegistry.leaveCluster();
+		b.clusterRegistry.leaveCluster();
+		c.clusterRegistry.leaveCluster();
+	} );
 
 	it( 'provider A gets a lock, provider B can\'t get one', function(){
 		a.uniqueStateProvider.get( 'a', a.spy );
