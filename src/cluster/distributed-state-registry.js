@@ -273,6 +273,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 *   another message from the remote server arrives before the reconciliation request
 	 *   is send, it will be cancelled.
 	 *
+	 * TODO: Shouldn't this remove the timeout first?
+	 *
 	 * @param   {String} serverName     the name of the remote server for which the checkSum should be calculated
 	 * @param   {Number} remoteCheckSum The checksum the remote server has calculated for all its local entries
 	 *

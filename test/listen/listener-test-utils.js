@@ -223,7 +223,11 @@ class ListenerTestUtils {
 
 	publishUpdateSentToSubscribers( subscription, state ) {
 		var msgString = msg( `${topic}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|${subscription}|${state ? C.TYPES.TRUE : C.TYPES.FALSE}+` )
-		expect( sendToSubscribersMock.calls.mostRecent().args ).toEqual( [ subscription, msgString ] )
+		if( sendToSubscribersMock.calls.mostRecent() ) {
+			expect( sendToSubscribersMock.calls.mostRecent().args ).toEqual( [ subscription, msgString ] )
+		} else {
+			expect( "Send to subscribers never called" ).toEqual( 0 );
+		}
 	}
 
 	subscriptionHasActiveProvider( subscription, value ) {

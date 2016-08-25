@@ -62,7 +62,9 @@ module.exports = class ClusterRegistry extends EventEmitter {
 			data:[ this._options.serverName ]
 		});
 
-		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, () => {} ); // TODO: This is triggered during pragamatic deepstream.stop
+		// TODO: If a message connector doesn't close this is required to avoid an error
+		// being thrown during shutdown
+		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, () => {} );
 
 		this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
 		process.removeListener( 'beforeExit', this._leaveClusterFn );
@@ -83,6 +85,10 @@ module.exports = class ClusterRegistry extends EventEmitter {
 		return Object.keys( this._nodes );
 	}
 
+	/**
+	* Returns the name of the current leader
+	* @return {String}
+	*/
 	getCurrentLeader() {
 		var maxScore = 0,
 			serverName,
