@@ -162,7 +162,7 @@ describe( 'unique state provider', function(){
 				} ]
 			});
 			expect( options.logger.log ).toHaveBeenCalled();
-			expect( options.logger.log ).toHaveBeenCalledWith( C.LOG_LEVEL.WARN, C.EVENT.INVALID_LEADER_REQUEST, 'server LP_server-name-a assumes this node \'server-name-a\' is the leader' );
+			expect( options.logger.log ).toHaveBeenCalledWith( C.LOG_LEVEL.WARN, C.EVENT.INVALID_LEADER_REQUEST, 'server server-name-a assumes this node \'server-name-a\' is the leader' );
 		});
 	});
 });
