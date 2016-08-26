@@ -129,6 +129,13 @@ class ListenerRegistry {
 				this._startLocalDiscoveryStage( message.data[ 1 ] );
 			} else if( message.action === C.ACTIONS.ACK ) {
 				this._nextDiscoveryStage( message.data[ 1 ] );
+			} else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
+				this.onSubscriptionRemoved(
+					message.data[ 1 ],
+					null,
+					this._clientRegistry.getLocalSubscribers( message.data[ 1 ] ).length,
+					Object.keys(this._clientRegistry.getAllServers( message.data[ 1 ] )).length - 1
+				);
 			}
 		}
 	}
@@ -193,6 +200,12 @@ class ListenerRegistry {
 	 */
 	onSubscriptionRemoved( subscriptionName, socketWrapper, localCount, remoteCount ) {
 		const provider = this._locallyProvidedRecords[ subscriptionName ];
+
+		if( this.hasActiveProvider( subscriptionName ) && !provider ) {
+			var serverName = Object.keys( this._clusterProvidedRecords.getAllServers( subscriptionName ))[ 0 ];
+			this._listenerUtils.sendLastSubscriberRemoved( serverName, subscriptionName );
+			return;
+		}
 
 		if( !provider ) {
 			return;
