@@ -105,7 +105,7 @@ describe('rpc handler returns alternative providers for the same rpc', function(
 			data: [ 'rpcX' ]
 		});
 		expect( options.messageConnector.lastPublishedMessage ).toEqual( {
-			topic: 'P_SUBSCRIPTIONS',
+			topic: 'P_SUB',
 			action: 'DISTRIBUTED_STATE_ADD',
 			data: [ 'rpcB', 'thisServer', 7013881 ]
 		} );

@@ -39,7 +39,7 @@ describe( 'messages from direct connected clients and messages that come in via 
 	    });
 
 	    expect( options.messageConnector.lastPublishedMessage ).toEqual( {
-	    	topic: 'R_SUBSCRIPTIONS',
+	    	topic: 'R_SUB',
 	    	action: 'DISTRIBUTED_STATE_ADD',
 	    	data: [ 'someRecord', 'a-server-name', -5602883995 ]
 	    } );
