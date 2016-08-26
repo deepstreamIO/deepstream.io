@@ -34,9 +34,11 @@ class SubscriptionRegistry {
 	}
 
 	/**
-	 * Return all the servers that have this subscription. This just exposes the
-	 * DistributedStateRegistry
+	 * Return all the servers that have this subscription.
+	 *
 	 * @param  {String} subscriptionName the subscriptionName to look for
+	 *
+	 * @public
 	 * @return {Array}  An array of all the servernames with this subscription
 	 */
 	getAllServers( subscriptionName ) {
@@ -71,6 +73,9 @@ class SubscriptionRegistry {
 	*
 	* @param {string} name The name of the the variable to override. This can be either MULTIPLE_SUBSCRIPTIONS, SUBSCRIBE, UNSUBSCRIBE, NOT_SUBSCRIBED
 	* @param {string} value The value to override with.
+	*
+	* @public
+	* @returns {void}
 	*/
 	setAction( name, value ) {
 		this._constants[ name.toUpperCase() ] = value;

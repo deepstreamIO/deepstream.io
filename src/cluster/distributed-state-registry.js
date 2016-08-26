@@ -18,11 +18,8 @@ DATA_LENGTH[ C.EVENT.DISTRIBUTED_STATE_REMOVE ] = 3;
  * an 'add' event is emitted. Whenever its removed by the last node within the cluster,
  * a 'remove' event is emitted.
  *
- * @todo Currently, this class expects to be notified from the outside when a node leaves the cluster
- * (removeAll call). It might make sense to implement cluster presence/hardbeats on a global level or
- * have this class explicitly listen to a CLUSTER_STATUS topic. - Let's discuss next week
- *
  * @extends {EventEmitter}
+ *
  * @event 'add' emitted whenever an entry is added for the first time
  * @event 'remove' emitted whenever an entry is removed by the last node
  *
@@ -55,6 +52,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 *
 	 * @param   {String}  name       the name of the entry
 	 *
+	 * @public
 	 * @returns {Boolean} exists
 	 */
 	has( name ) {
@@ -111,10 +109,10 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	}
 
 	/**
-	 * Returns all the servers with a shared interest
+	 * Returns all the servers that hold a given state
 	 *
 	 * @public
-	 * @returns {Array} entries
+	 * @returns {Object} entries
 	 */
 	getAllServers( name ) {
 		if( this._data[ name ] ) {
