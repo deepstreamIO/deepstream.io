@@ -208,7 +208,7 @@ class ListenerRegistry {
 		}
 
 		// provider isn't a subscriber, meaning we should wait for 0
-		if( localCount === 1 && this._clientRegistry.getLocalSubscribers().indexOf( provider.socketWrapper ) === -1 ) {
+		if( localCount === 1 && this._clientRegistry.getLocalSubscribers(subscriptionName).indexOf( provider.socketWrapper ) === -1 ) {
 			return;
 		}
 
@@ -455,6 +455,10 @@ class ListenerRegistry {
 		}
 
 		const provider = listenInProgress.shift();
+		if( this._clientRegistry.getLocalSubscribers( subscriptionName ).indexOf( provider.socketWrapper ) !== -1 ) {
+			this._triggerNextProvider( subscriptionName );
+			return;
+		}
 		this._listenerTimeoutRegistery.addTimeout( subscriptionName, provider, this._triggerNextProvider.bind( this ) );
 		this._listenerUtils.sendSubscriptionForPatternFound( provider, subscriptionName );
 	}
