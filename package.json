@@ -10,7 +10,7 @@
     "test": "test"
   },
   "scripts": {
-    "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json",
+    "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
@@ -26,27 +26,26 @@
   },
   "dependencies": {
     "adm-zip": "^0.4.7",
-    "colors": "1.0.3",
+    "colors": "^1.0.3",
     "commander": "^2.9.0",
     "engine.io": "1.6.11",
     "glob": "^7.0.5",
     "js-yaml": "^3.6.1",
     "mkdirp": "^0.5.1",
-    "needle": "^1.0.0"
+    "needle": "^1.1.0"
   },
   "devDependencies": {
     "async": "^0.2.9",
-    "coveralls": "^2.11.9",
+    "coveralls": "^2.11.12",
     "engine.io-client": "^1.6.11",
-    "grunt": "^1.0.1 ",
-    "grunt-release": "^0.14.0",
-    "istanbul": "^0.4.3",
+    "grunt": "^1.0.1",
+    "istanbul": "^0.4.4",
     "jasmine": "^2.4.1",
     "jasmine-spec-reporter": "^2.5.0",
     "n0p3": "^1.0.2",
     "nexe": "^1.1.2",
     "proxyquire": "1.7.10",
-    "watch": "^0.19.1"
+    "watch": "^0.19.2"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",

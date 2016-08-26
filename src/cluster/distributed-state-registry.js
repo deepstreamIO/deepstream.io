@@ -18,11 +18,8 @@ DATA_LENGTH[ C.EVENT.DISTRIBUTED_STATE_REMOVE ] = 3;
  * an 'add' event is emitted. Whenever its removed by the last node within the cluster,
  * a 'remove' event is emitted.
  *
- * @todo Currently, this class expects to be notified from the outside when a node leaves the cluster
- * (removeAll call). It might make sense to implement cluster presence/hardbeats on a global level or
- * have this class explicitly listen to a CLUSTER_STATUS topic. - Let's discuss next week
- *
  * @extends {EventEmitter}
+ *
  * @event 'add' emitted whenever an entry is added for the first time
  * @event 'remove' emitted whenever an entry is removed by the last node
  *
@@ -43,9 +40,23 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		this._topic = topic;
 		this._options = options;
 		this._options.messageConnector.subscribe( topic, this._processIncomingMessage.bind( this ) );
+		this._options.clusterRegistry.on( 'remove', this.removeAll.bind( this ) );
 		this._data = {};
 		this._reconciliationTimeouts = {};
 		this._fullStateSent = false;
+		this._requestFullState( C.ALL );
+	}
+
+	/**
+	 * Checks if a given entry exists within the registry
+	 *
+	 * @param   {String}  name       the name of the entry
+	 *
+	 * @public
+	 * @returns {Boolean} exists
+	 */
+	has( name ) {
+		return !!this._data[ name ];
 	}
 
 	/**
@@ -98,6 +109,20 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	}
 
 	/**
+	 * Returns all the servers that hold a given state
+	 *
+	 * @public
+	 * @returns {Object} entries
+	 */
+	getAllServers( name ) {
+		if( this._data[ name ] ) {
+			return this._data[ name ].nodes;
+		} else {
+			return {};
+		}
+	}
+
+	/**
 	 * Returns all currently registered entries
 	 *
 	 * @public
@@ -125,7 +150,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 			return;
 		}
 
-		this._data[ name ].nodes[ serverName ] = false;
+		delete this._data[ name ].nodes[ serverName ];
 
 		for( serverName in this._data[ name ].nodes ) {
 			if( this._data[ name ].nodes[ serverName ] === true ) {
@@ -150,6 +175,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @returns {void}
 	 */
 	_add( name, serverName ) {
+
 		if( !this._data[ name ] ) {
 			this._data[ name ] = {
 				nodes: {},
@@ -245,6 +271,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 *   another message from the remote server arrives before the reconciliation request
 	 *   is send, it will be cancelled.
 	 *
+	 * TODO: Shouldn't this remove the timeout first?
+	 *
 	 * @param   {String} serverName     the name of the remote server for which the checkSum should be calculated
 	 * @param   {Number} remoteCheckSum The checksum the remote server has calculated for all its local entries
 	 *
@@ -254,7 +282,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	_verifyCheckSum( serverName, remoteCheckSum ) {
 		if( this._getCheckSumTotal( serverName ) !== remoteCheckSum ) {
 			this._reconciliationTimeouts[ serverName ] = setTimeout(
-				this._reconcile.bind( this, serverName ),
+				this._requestFullState.bind( this, serverName ),
 				this._options.stateReconciliationTimeout
 			);
 		} else if( this._reconciliationTimeouts[ serverName ] ) {
@@ -274,7 +302,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_reconcile( serverName ) {
+	_requestFullState( serverName ) {
 		this._options.messageConnector.publish( this._topic, {
 			topic: this._topic,
 			action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
@@ -377,7 +405,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 		}
 
 		else if( message.action === C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE ) {
-			if( message.data[ 0 ] === this._options.serverName && this._fullStateSent === false ) {
+			if( message.data[ 0 ] === C.ALL || ( message.data[ 0 ] === this._options.serverName && this._fullStateSent === false ) ) {
 				this._sendFullState();
 			}
 		}

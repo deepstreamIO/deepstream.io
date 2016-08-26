@@ -83,7 +83,10 @@ exports.get = function() {
 		stateReconciliationTimeout: 500,
 		clusterKeepAliveInterval: 5000,
 		clusterActiveCheckInterval: 1000,
-		clusterNodeInactiveTimeout: 6000
+		clusterNodeInactiveTimeout: 6000,
+		listenResponseTimeout: 500,
+		lockTimeout: 1000,
+		lockRequestTimeout: 1000
 	};
 
 	return options;

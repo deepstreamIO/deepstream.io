@@ -5,17 +5,24 @@ var RecordHandler = require( '../../src/record/record-handler' ),
 	SocketMock = require( '../mocks/socket-mock' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
-	MessageConnectorMock = require( '../mocks/message-connector-mock.js' );
+	MessageConnectorMock = require( '../mocks/message-connector-mock.js' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 describe( 'messages from direct connected clients and messages that come in via message connector co-exist peacefully', function(){
 	var recordHandler,
 		subscriber = new SocketWrapper( new SocketMock(), {} ),
 		options = {
+			clusterRegistry: clusterRegistryMock,
+			serverName: 'a-server-name',
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			logger: new LoggerMock(),
 			messageConnector: new MessageConnectorMock(),
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function( name, callback ) { callback( true ); },
+				release: function() {}
+			}
 		};
 
 	it( 'creates the record handler', function(){
@@ -31,7 +38,11 @@ describe( 'messages from direct connected clients and messages that come in via 
 	    	data: [ 'someRecord' ]
 	    });
 
-	    expect( options.messageConnector.lastPublishedMessage ).toBe( null );
+	    expect( options.messageConnector.lastPublishedMessage ).toEqual( {
+	    	topic: 'R_SUB',
+	    	action: 'DISTRIBUTED_STATE_ADD',
+	    	data: [ 'someRecord', 'a-server-name', -5602883995 ]
+	    } );
 	    expect( subscriber.socket.lastSendMessage ).toBe( msg( 'R|R|someRecord|0|{}+' ) );
 	});
 

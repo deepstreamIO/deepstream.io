@@ -4,9 +4,11 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	C = require( '../../src/constants/constants' ),
 	msg = require( '../test-helper/test-helper' ).msg,
 	SocketMock = require( '../mocks/socket-mock' ),
-	MessageConnectorMock = require( '../mocks/message-connector-mock' );
+	MessageConnectorMock = require( '../mocks/message-connector-mock' ),
+	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 var options = {
+	clusterRegistry: clusterRegistryMock,
 	messageConnector: new MessageConnectorMock(),
 	logger: { log: jasmine.createSpy( 'log' ) },
 	serverName: 'thisServer',
@@ -102,7 +104,11 @@ describe('rpc handler returns alternative providers for the same rpc', function(
 			action: C.ACTIONS.QUERY,
 			data: [ 'rpcX' ]
 		});
-		expect( options.messageConnector.lastPublishedMessage ).toEqual( null );
+		expect( options.messageConnector.lastPublishedMessage ).toEqual( {
+			topic: 'P_SUB',
+			action: 'DISTRIBUTED_STATE_ADD',
+			data: [ 'rpcB', 'thisServer', 7013881 ]
+		} );
 	});
 
 	it( 'receives a provider query for an rpc with providers', function(){

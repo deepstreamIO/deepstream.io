@@ -31,7 +31,6 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		return result;
 	};
 
-
 	var a,b,c;
 
 	it( 'creates three registries', function( done ){

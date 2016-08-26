@@ -6,17 +6,23 @@ var RecordHandler = require( '../../src/record/record-handler' ),
 	SocketWrapper = require( '../../src/message/socket-wrapper' ),
 	DataTransforms = require( '../../src/message/data-transforms' ),
 	LoggerMock = require( '../mocks/logger-mock' ),
+	ClusterRegistryMock = require( '../mocks/cluster-registry-mock' ),
 	noopMessageConnector = require( '../../src/default-plugins/noop-message-connector' );
 
 function createRecordHandler( dataTransformSettings ) {
 	var recordHandler,
 		clients = [],
 		options = {
+			clusterRegistry: new ClusterRegistryMock(),
 			cache: new StorageMock(),
 			storage: new StorageMock(),
 			logger: new LoggerMock(),
 			messageConnector: noopMessageConnector,
-			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }}
+			permissionHandler: { canPerformAction: function( a, b, c ){ c( null, true ); }},
+			uniqueRegistry: {
+				get: function() {},
+				release: function() {}
+			}
 		};
 
 	if( dataTransformSettings ) {

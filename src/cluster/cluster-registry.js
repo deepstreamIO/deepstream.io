@@ -13,7 +13,7 @@ const EventEmitter = require( 'events' ).EventEmitter;
  * @emits add <serverName>
  * @emits remove <serverName>
  */
-module.exports = class ClusterRegistry extends EventEmitter{
+module.exports = class ClusterRegistry extends EventEmitter {
 
 	/**
 	 * Creates the class, initialises all intervals and publishes the
@@ -61,7 +61,11 @@ module.exports = class ClusterRegistry extends EventEmitter{
 			action: C.ACTIONS.REMOVE,
 			data:[ this._options.serverName ]
 		});
-		this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
+
+		// TODO: If a message connector doesn't close this is required to avoid an error
+		// being thrown during shutdown
+		//this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
+		
 		process.removeListener( 'beforeExit', this._leaveClusterFn );
 		process.removeListener( 'exit', this._leaveClusterFn );
 		clearInterval( this._publishInterval );
@@ -80,6 +84,18 @@ module.exports = class ClusterRegistry extends EventEmitter{
 		return Object.keys( this._nodes );
 	}
 
+	/**
+	 * Returns true if this node is the cluster leader
+	 * @return {Boolean} [description]
+	 */
+	isLeader() {
+		return this._options.serverName === this.getCurrentLeader();
+	}
+
+	/**
+	* Returns the name of the current leader
+	* @return {String}
+	*/
 	getCurrentLeader() {
 		var maxScore = 0,
 			serverName,

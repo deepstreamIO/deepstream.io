@@ -4,6 +4,7 @@ const messageBuilder = require( '../message/message-builder' );
 const C = require( '../constants/constants' );
 
 class ListenerTimeoutRegistry {
+
 	/**
 	 * The ListenerTimeoutRegistry is responsible for keeping track of listeners that have
 	 * been asked whether they want to provide a certain subscription, but have not yet
@@ -11,6 +12,8 @@ class ListenerTimeoutRegistry {
 	 *
 	 * @param {Topic} type
 	 * @param {Map} options
+	 *
+	 * @constructor
 	 */
 	constructor( type, options ) {
 		this._type = type;
@@ -26,6 +29,12 @@ class ListenerTimeoutRegistry {
 	*
 	* 1) If reject, remove from map
 	* 2) If accept, store as an accepted and reject all following accepts
+	*
+	* @param {SocketWrapper} socketWrapper
+	* @param {Object} message deepstream message
+	*
+	* @private
+	* @returns {void}
 	*/
 	handle( socketWrapper, message ) {
 		const pattern = message.data[ 0 ];
@@ -49,9 +58,13 @@ class ListenerTimeoutRegistry {
 		}
 	}
 
-/**
+	/**
 	* Clear cache once discovery phase is complete
-	* @private
+	*
+	* @param {String} subscriptionName the subscription that needs to be removed
+	*
+	* @public
+	* @returns {void}
 	*/
 	clear( subscriptionName ) {
 		delete this._timeoutMap[ subscriptionName ];
@@ -61,23 +74,42 @@ class ListenerTimeoutRegistry {
 
 	/**
 	* Called whenever a provider closes to ensure cleanup
+	*
+	* @param {SocketWrapper} socketWrapper the now closed connection endpoint
+	*
 	* @private
+	* @returns {void}
 	*/
 	removeProvider( socketWrapper ) {
-		// TODO
+		for( var acceptedProvider in this._acceptedProvider ) {
+			if( this._acceptedProvider[ acceptedProvider ].socketWrapper === socketWrapper ) {
+				delete this._acceptedProvider[ acceptedProvider ];
+			}
+		}
+		for( var subscriptionName in this._timeoutMap ) {
+			if( this._timeoutMap[ subscriptionName ] ) {
+				this.clearTimeout( subscriptionName );
+			}
+		}
 	}
-
 	/**
-	* Start a timeout for a provider. If it doesn't respond within
-	* it trigger the callback to process with the next listener.
-	* If the provider comes back after the timeout with a reject,
-	* ignore it, if it comes back with an accept and no other listener
-	* accepted yet, wait for the next listener response or timeout,
-	* if a reject just remove, if an accept and another provider already
-	* accepted, then send it an immediate SUBSCRIPTION_REMOVED message.
-	*
-	* @public
-	*/
+	 * Starts a timeout for a provider. The following cases can apply
+	 *
+	 * Provider accepts within the timeout: We stop here
+	 * Provider rejects within the timeout: We ask the next provider
+	 * Provider doesn't respond within the timeout: We ask the next provider
+	 *
+	 * Provider accepts after the timeout:
+	 * 	If no other provider accepted yet, we'll wait for the current request to end and stop here
+	 * 	If another provider has accepted already, we'll immediatly send a SUBSCRIPTION_REMOVED message
+	 *
+	 * @param {String}   subscriptionName [description]
+	 * @param {[type]}   provider         [description] TODO!!!
+	 * @param {Function} callback         [description]
+	 *
+	 * @public
+	 * @returns {void}
+	 */
 	addTimeout( subscriptionName, provider, callback ) {
 		var timeoutId = setTimeout( () => {
 			if (this._timedoutProviders[ subscriptionName ] == null ) {
@@ -85,7 +117,7 @@ class ListenerTimeoutRegistry {
 			}
 			this._timedoutProviders[ subscriptionName ].push( provider );
 			callback( subscriptionName );
-		}, 20 ); // TODO: Configurable
+		}, this._options.listenResponseTimeout );
 		this._timeoutMap[ subscriptionName ] = timeoutId;
 	}
 
@@ -97,6 +129,7 @@ class ListenerTimeoutRegistry {
 	*/
 	clearTimeout( subscriptionName ) {
 		clearTimeout( this._timeoutMap[ subscriptionName ] );
+		delete this._timeoutMap[ subscriptionName ];
 	}
 
 	/**

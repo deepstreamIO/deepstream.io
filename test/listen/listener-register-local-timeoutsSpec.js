@@ -34,7 +34,7 @@ describe( 'listener-registry-local-timeouts', function() {
 		// 9
 		tu.providerRecievedNoNewMessages( 2 )
 		done()
-		}, 25)
+		}, 40)
 	});
 
 	it( 'provider 1 times out, but then it accepts but will be ignored because provider 2 accepts as well', function(done) {
@@ -57,7 +57,7 @@ describe( 'listener-registry-local-timeouts', function() {
 		tu.providerGetsSubscriptionRemoved( 1, 'a/.*', 'a/1' )
 		tu.providerRecievedNoNewMessages( 2 )
 		done()
-		}, 25)
+		}, 40)
 	});
 
 	it( 'provider 1 times out, but then it accept and will be used because provider 2 rejects', function(done) {
@@ -77,7 +77,7 @@ describe( 'listener-registry-local-timeouts', function() {
 		// 11. subscription doesnt have active provider
 		tu.subscriptionHasActiveProvider( 'a/1', true )
 		done()
-		}, 25)
+		}, 40)
 	});
 
 	it( 'provider 1 and 2 times out and 3 rejects, 1 rejects and 2 accepts later and 2 wins', function(done) {
@@ -106,12 +106,42 @@ describe( 'listener-registry-local-timeouts', function() {
 		// 14. First provider is not sent anything
 		tu.providerRecievedNoNewMessages( 1 )
 		done()
-		}, 25)
-		}, 25)
+		}, 40)
+		}, 40)
+	});
+
+	it( '1 rejects and 2 accepts later and dies and 3 wins', function(done) {
+		// 5. provider 3 does listen a/[1]
+		tu.providerListensTo( 3, 'a/[1]' )
+		// 6. Timeout occurs
+		setTimeout(function() {
+		// 7. Provider 2 gets subscription found
+		tu.providerGetsSubscriptionFound( 2, 'a/[0-9]', 'a/1' )
+		tu.providerRecievedNoNewMessages( 1 )
+		tu.providerRecievedNoNewMessages( 3 )
+		// 8. Timeout occurs
+		setTimeout(function() {
+		// 9. Provider 3 gets subscription found
+		tu.providerGetsSubscriptionFound( 3, 'a/[1]', 'a/1' )
+		tu.providerRecievedNoNewMessages( 1 )
+		tu.providerRecievedNoNewMessages( 2 )
+		// 10. provider 1 responds with ACCEPT
+		tu.providerRejects( 1, 'a/.*', 'a/1' )
+		// 11. provider 2 responds with ACCEPT
+		tu.providerAcceptsButIsntAcknowledged( 2, 'a/[0-9]', 'a/1' )
+		// 12. provider 2 dies
+		tu.providerLosesItsConnection( 2 )
+		// 13. provider 3 responds with reject
+		tu.providerRejects( 3, 'a/[1]', 'a/1' )
+		// 14. send publishing=true to the clients
+		tu.publishUpdateIsNotSentToSubscribers()
+		done()
+		}, 40)
+		}, 40)
 	});
 
 	// TODO: One of those magical timeouts that randomly fail other tests
-	xit( 'provider 1 and 2 times out and 3 rejects, 1 and 2 accepts later and 1 wins', function(done) {
+	it( 'provider 1 and 2 times out and 3 rejects, 1 and 2 accepts later and 1 wins', function(done) {
 		// 5. provider 3 does listen a/[1]
 		tu.providerListensTo( 3, 'a/[1]' )
 		// 6. Timeout occurs
@@ -137,7 +167,7 @@ describe( 'listener-registry-local-timeouts', function() {
 		// 14. First provider is not sent anything
 		tu.providerRecievedNoNewMessages( 1 )
 		done()
-		}, 25)
-		}, 25)
+		}, 40)
+		}, 40)
 	});
 });

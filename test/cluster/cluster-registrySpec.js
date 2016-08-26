@@ -5,8 +5,13 @@ var connectionEndpointMock = {
 	getBrowserConnectionCount: function() { return 8; },
 	getTcpConnectionCount: function() { return 7; }
 };
+var EventEmitter = require( 'events' ).EventEmitter;
+
+var realProcess;
+var emitter;
 
 describe( 'distributed-state-registry adds and removes names', function(){
+
 	var clusterRegistry;
 
 	var addSpy = jasmine.createSpy( 'add' );
@@ -152,7 +157,27 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		}, 500 );
 	});
 
-	it( 'sends a remove message when the process ends', function(){
+	var expectedLength;
+	it( 'publishes leave message when closing down', function(){
+		expectedLength = options.messageConnector.publishedMessages.length + 1;
+
+		clusterRegistry.leaveCluster();
+
+		expect( options.messageConnector.lastPublishedMessage ).toEqual(
+			{ topic: 'CL', action: 'RM', data: [ 'server-name-a' ] }
+		);
+		expect( options.messageConnector.publishedMessages.length ).toBe( expectedLength );
+	});
+
+	it( 'doesn\'t publish leave message when trying to leave twice', function(){
+		clusterRegistry.leaveCluster();
+
+		expect( options.messageConnector.publishedMessages.length ).toBe( expectedLength );
+	});
+
+	// we can't simulate an exit via the process since it is triggered
+	// to test harness
+	xit( 'sends a remove message when the process ends', function(){
 		options.messageConnector.reset();
 		process.emit( 'exit' );
 		expect( options.messageConnector.lastPublishedMessage ).toEqual(({
