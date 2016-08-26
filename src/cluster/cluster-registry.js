@@ -64,9 +64,8 @@ module.exports = class ClusterRegistry extends EventEmitter {
 
 		// TODO: If a message connector doesn't close this is required to avoid an error
 		// being thrown during shutdown
-		this._options.messageConnector.subscribe( C.TOPIC.CLUSTER, () => {} );
-
-		this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
+		//this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
+		
 		process.removeListener( 'beforeExit', this._leaveClusterFn );
 		process.removeListener( 'exit', this._leaveClusterFn );
 		clearInterval( this._publishInterval );

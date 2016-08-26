@@ -391,7 +391,7 @@ class ListenerRegistry {
 			delete this._leadingListen[ subscriptionName ];
 			this._uniqueStateProvider.release(  this._listenerUtils.getUniqueLockName( subscriptionName ) );
 		} else {
-			const nextServerName = this._leadingListen[ subscriptionName ].splice( 0, 1 )[ 0 ];
+			const nextServerName = this._leadingListen[ subscriptionName ].shift();
 			this._listenerUtils.sendRemoteDiscoveryStart( nextServerName, subscriptionName );
 		}
 	}
@@ -445,7 +445,7 @@ class ListenerRegistry {
 	_triggerNextProvider( subscriptionName ) {
 		const listenInProgress = this._localListenInProgress[ subscriptionName ];
 
-		if( !listenInProgress ) {
+		if( typeof listenInProgress === 'undefined' ) {
 			return;
 		}
 

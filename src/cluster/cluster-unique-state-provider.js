@@ -34,8 +34,7 @@ module.exports = class UniqueRegistry {
 		this._options = options;
 		this._clusterRegistry = clusterRegistry;
 		this._locks = {};
-		this._requestLockTimeouts = {};
-		this._releaseLockTimeouts = {};
+		this._timeouts = {};
 		this._responseEventEmitter = new EventEmitter();
 		this._onPrivateMessageFn = this._onPrivateMessage.bind( this );
 		this._localTopic = this._getPrivateTopic( this._options.serverName );
@@ -58,7 +57,7 @@ module.exports = class UniqueRegistry {
 		if( this._options.serverName === leaderServerName ) {
 			callback( this._getLock( name ) );
 		}
-		else if( !this._requestLockTimeouts[ name ] ) {
+		else if( !this._timeouts[ name ] ) {
 			this._getRemoteLock( name, leaderServerName, callback );
 		}
 		else {
@@ -98,7 +97,7 @@ module.exports = class UniqueRegistry {
 	 */
 	_getRemoteLock( name, leaderServerName, callback ) {
 
-		this._requestLockTimeouts[ name ] = utils.setTimeout(
+		this._timeouts[ name ] = utils.setTimeout(
 			this._onLockRequestTimeout.bind( this, name ),
 			this._options.lockRequestTimeout
 		);
@@ -215,8 +214,8 @@ module.exports = class UniqueRegistry {
 	 * @returns {void}
 	 */
 	_handleRemoteLockResponse( data ) {
-		clearTimeout( this._requestLockTimeouts[ data.name ] );
-		delete this._requestLockTimeouts[ data.name ];
+		clearTimeout( this._timeouts[ data.name ] );
+		delete this._timeouts[ data.name ];
 		this._responseEventEmitter.emit( data.name, data.result );
 	}
 
@@ -254,14 +253,13 @@ module.exports = class UniqueRegistry {
 	 * @return {boolean}
 	 */
 	_getLock( name ) {
-		this._releaseLockTimeouts[ name ] = utils.setTimeout(
-			this._onLockTimeout.bind( this, name ),
-			this._options.lockTimeout
-		);
-
 		if( this._locks[ name ] === true ) {
 			return false;
 		} else {
+			this._timeouts[ name ] = utils.setTimeout(
+				this._onLockTimeout.bind( this, name ),
+				this._options.lockTimeout
+			);
 			this._locks[ name ] = true;
 			return true;
 		}
@@ -280,8 +278,8 @@ module.exports = class UniqueRegistry {
 	 * @returns {void}
 	 */
 	_releaseLock( name ) {
-		clearTimeout( this._releaseLockTimeouts[ name ] );
-		delete this._releaseLockTimeouts[ name ];
+		clearTimeout( this._timeouts[ name ] );
+		delete this._timeouts[ name ];
 		delete this._locks[ name ];
 	}
 
