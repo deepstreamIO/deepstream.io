@@ -135,7 +135,7 @@ module.exports = class ListenerRegistry {
 					message.data[ 1 ],
 					null,
 					this._clientRegistry.getLocalSubscribersCount( message.data[ 1 ] ),
-					this._clientRegistry.getAllServers( message.data[ 1 ] ) - 1
+					this._clientRegistry.getAllServers( message.data[ 1 ] ).length - 1
 				);
 			}
 		}
