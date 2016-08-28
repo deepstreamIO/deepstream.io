@@ -98,7 +98,10 @@ WebRtcHandler.prototype.handle = function( socketWrapper, message ) {
  * @public
  * @returns {void}
  */
-WebRtcHandler.prototype.onSubscriptionMade = function( calleeName, socketWrapper ) {
+WebRtcHandler.prototype.onSubscriptionMade = function( calleeName, socketWrapper, localSubscriptions ) {
+	if( localSubscriptions > 1 ) {
+		return;
+	}
 	var message = messageBuilder.getMsg( C.TOPIC.WEBRTC, C.ACTIONS.WEBRTC_CALLEE_ADDED, [ calleeName ] );
 	this._calleeListenerRegistry.sendToSubscribers( CALLEE_UPDATE_EVENT, message, socketWrapper );
 };
@@ -114,7 +117,11 @@ WebRtcHandler.prototype.onSubscriptionMade = function( calleeName, socketWrapper
  * @public
  * @returns {void}
  */
-WebRtcHandler.prototype.onSubscriptionRemoved = function( calleeName, socketWrapper ) {
+WebRtcHandler.prototype.onSubscriptionRemoved = function( calleeName, socketWrapper, localSubscriptions ) {
+	if( localSubscriptions > 0 ) {
+		return;
+	}
+
 	var message = messageBuilder.getMsg( C.TOPIC.WEBRTC, C.ACTIONS.WEBRTC_CALLEE_REMOVED, [ calleeName ] );
 	this._calleeListenerRegistry.sendToSubscribers( CALLEE_UPDATE_EVENT, message, socketWrapper );
 };

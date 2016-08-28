@@ -220,7 +220,7 @@ module.exports = class UniqueRegistry {
 	}
 
 	/**
-	 * Called when a remote node notifies the cluster that a lock has been removeded
+	 * Called when a remote node notifies the cluster that a lock has been removed
 	 *
 	 * @param  {Object} data messageData
 	 *
@@ -228,6 +228,8 @@ module.exports = class UniqueRegistry {
 	 * @returns {void}
 	 */
 	_handleRemoteLockRelease( data ) {
+		clearTimeout( this._timeouts[ data.name ] );
+		delete this._timeouts[ data.name ];
 		delete this._locks[ data.name ];
 	}
 

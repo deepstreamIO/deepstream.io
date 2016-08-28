@@ -37,6 +37,9 @@ class ListenerTestUtils {
 			getLocalSubscribers: function() {
 				return subscribers;
 			},
+			hasLocalSubscribers: function() {
+				return subscribers.length > 0;
+			},
 			sendToSubscribers: sendToSubscribersMock
 		};
 
