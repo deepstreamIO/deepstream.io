@@ -1,3 +1,21 @@
+## [1.1.0] - 2016-08-28
+
+### Features
+
+- Listening: Listeners have been drastically improved [https://github.com/deepstreamIO/deepstream.io/issues/211], and now:
+- works correctly across a cluster
+- can inform the user whenever the last subscription has been removed even if the listener itself is subscribed
+- only allows a single listener to provide a record
+- has a concept of provided, allowing records on the client side to be aware if the data is being actively updated by a backend component
+
+As part of this story, we now have multiple significant improvements in the server itself, such as:
+- a `distributed state registry` which allows all clusters to keep their state in sync
+- a `unique state provider` allowing cluster wide locks
+- a `cluster-registry` that provides shares server presence and state across the cluster
+
+Because of these we can now start working on some really cool features such as advanced failover, user presence and others!
+
+
 ## [1.0.4] - 2016-08-16
 
 ### Bug Fixes
