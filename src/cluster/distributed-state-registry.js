@@ -116,9 +116,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 */
 	getAllServers( name ) {
 		if( this._data[ name ] ) {
-			return this._data[ name ].nodes;
+			return Object.keys( this._data[ name ].nodes );
 		} else {
-			return {};
+			return [];
 		}
 	}
 
@@ -270,8 +270,6 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * - If the checksums don't match, it schedules a reconciliation request. If
 	 *   another message from the remote server arrives before the reconciliation request
 	 *   is send, it will be cancelled.
-	 *
-	 * TODO: Shouldn't this remove the timeout first?
 	 *
 	 * @param   {String} serverName     the name of the remote server for which the checkSum should be calculated
 	 * @param   {Number} remoteCheckSum The checksum the remote server has calculated for all its local entries

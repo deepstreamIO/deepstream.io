@@ -89,15 +89,13 @@ RpcHandler.prototype.handle = function( socketWrapper, message ) {
 RpcHandler.prototype.getAlternativeProvider = function( rpcName, usedProviders, correlationId ) {
 	var usedRemoteProviderTopics = [],
 		allRemoteProviderTopics,
-		localProviders,
+		localProviders = this._subscriptionRegistry.getLocalSubscribers( rpcName ),
 		i;
 
 	/*
 	 * Look within the local providers for one that hasn't been used yet
 	 */
-	if( this._subscriptionRegistry.hasLocalSubscribers( rpcName ) ) {
-		localProviders = this._subscriptionRegistry.getLocalSubscribers( rpcName );
-
+	if( localProviders ) {
 		for( i = 0; i < localProviders.length; i++ ) {
 			if( usedProviders.indexOf( localProviders[ i ] ) === -1 ) {
 				return localProviders[ i ];

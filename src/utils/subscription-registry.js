@@ -192,10 +192,10 @@ class SubscriptionRegistry {
 		}
 
 		if( this._subscriptionListener ) {
-			//TODO: OPTIMISE!!
-			const allServerNames = Object.keys( this._clusterSubscriptions.getAllServers( name ) );
-			if(  allServerNames.indexOf( this._options.serverName ) > -1 ) {
-				allServerNames.splice( allServerNames.indexOf( this._options.serverName ), 1 );
+			const allServerNames = this._clusterSubscriptions.getAllServers( name );
+			const indexOfCurrentNode = allServerNames.indexOf( this._options.serverName );
+			if(  indexOfCurrentNode > -1 ) {
+				allServerNames.splice( indexOfCurrentNode, 1 );
 			}
 			this._subscriptionListener.onSubscriptionRemoved(
 				name,
@@ -254,6 +254,23 @@ class SubscriptionRegistry {
 	}
 
 	/**
+	 * Returns the amount of local subscribers to a specific subscription
+	 *
+	 * @param   {String} name
+	 *
+	 * @public
+	 * @returns {Number}
+	 */
+	getLocalSubscribersCount( name ) {
+		const subscriptions = this._subscriptions[ name ];
+		if( subscriptions ) {
+			return subscriptions.length;
+		} else {
+			return 0;
+		}
+	}
+
+	/**
 	 * Returns an array of SocketWrappers that are subscribed
 	 * to <name> or null if there are no subscribers
 	 *
@@ -266,7 +283,7 @@ class SubscriptionRegistry {
 		if( this.hasLocalSubscribers( name ) ) {
 			return this._subscriptions[ name ].slice();
 		} else {
-			return [];
+			return null;
 		}
 	}
 
@@ -285,7 +302,7 @@ class SubscriptionRegistry {
 		if( subscribers ) {
 			return subscribers[ Math.floor( Math.random() * subscribers.length ) ];
 		} else {
-			return [];
+			return null;
 		}
 	}
 
@@ -300,7 +317,8 @@ class SubscriptionRegistry {
 	 * @returns {Boolean} hasLocalSubscribers
 	 */
 	hasLocalSubscribers( name ) {
-		 return !!this._subscriptions[ name ] && this._subscriptions[ name ].length !== 0;
+		const subscriptions = this._subscriptions[ name ];
+		return !!subscriptions && subscriptions.length !== 0;
 	}
 
 	/**

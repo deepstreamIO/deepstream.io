@@ -3,7 +3,7 @@
 const messageBuilder = require( '../message/message-builder' );
 const C = require( '../constants/constants' );
 
-class ListenerTimeoutRegistry {
+module.exports = class ListenerTimeoutRegistry {
 
 	/**
 	 * The ListenerTimeoutRegistry is responsible for keeping track of listeners that have
@@ -103,9 +103,9 @@ class ListenerTimeoutRegistry {
 	 * 	If no other provider accepted yet, we'll wait for the current request to end and stop here
 	 * 	If another provider has accepted already, we'll immediatly send a SUBSCRIPTION_REMOVED message
 	 *
-	 * @param {String}   subscriptionName [description]
-	 * @param {[type]}   provider         [description] TODO!!!
-	 * @param {Function} callback         [description]
+	 * @param {String}   subscriptionName The subscription name
+	 * @param {Object}   provider         The provider that may timeout
+	 * @param {Function} callback         The callback if the timeout occurs
 	 *
 	 * @public
 	 * @returns {void}
@@ -189,6 +189,3 @@ class ListenerTimeoutRegistry {
 	}
 
 }
-
-
-module.exports = ListenerTimeoutRegistry;

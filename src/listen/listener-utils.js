@@ -5,7 +5,7 @@ var C = require( '../constants/constants' ),
 	messageBuilder = require( '../message/message-builder' ),
 	utils = require( '../utils/utils' );
 
-class ListenerUtils {
+module.exports = class ListenerUtils {
 
 	/**
 	 * Construct a class with utils that can be called in from the main
@@ -100,6 +100,10 @@ class ListenerUtils {
 		});
 	}
 
+	/**
+	* Send by a node when all local subscriptions are discarded, allowing other nodes
+	* to do a provider cleanup if necessary
+	*/
 	sendLastSubscriberRemoved( serverName, subscriptionName ) {
 		const messageTopic = this.getMessageBusTopic( serverName, this._topic );
 		this._options.messageConnector.publish( messageTopic, {
@@ -144,21 +148,21 @@ class ListenerUtils {
 	 * @return {Array}                  An array of all the providers that can provide the subscription
 	 */
 	createRemoteListenArray( patterns, providerRegistry, subscriptionName ) {
-		var isMatch, pattern, providersForPattern, i;
+		var pattern, providersForPattern, i;
+		var servers = [];
 		const providerPatterns = providerRegistry.getNames();
-		var servers = {};
 
-		for( var i=0; i<providerPatterns.length; i++ ) {
+		for( i=0; i<providerPatterns.length; i++ ) {
 			pattern = providerPatterns[ i ];
 
 			if( patterns[ pattern ].test( subscriptionName ) ) {
-				servers = utils.merge( servers, providerRegistry.getAllServers( pattern ) );
+				servers = servers.concat( providerRegistry.getAllServers( pattern ) );
 			}
 		}
 
-		const serverNames = Object.keys( servers );
-		serverNames.splice( serverNames.indexOf( this._options.serverName ), 1 );
-		return serverNames;
+		const set = new Set( servers );
+		set.delete( this._options.serverName );
+		return Array.from( set );
 	}
 
 	/**
@@ -168,7 +172,7 @@ class ListenerUtils {
 	 * @param  {String} subscriptionName the subscription to find a provider for
 	 * @return {Array}                  An array of all the providers that can provide the subscription
 	 */
-	createLocalListenMap( patterns, providerRegistry, subscriptionName ) {
+	createLocalListenArray( patterns, providerRegistry, subscriptionName ) {
 		var pattern, providersForPattern, i;
 		const providers = [];
 		for( pattern in patterns ) {
@@ -279,5 +283,3 @@ class ListenerUtils {
 			);
 	}
 }
-
-module.exports = ListenerUtils;

@@ -361,7 +361,7 @@ RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSen
  * @returns {void}
  */
 RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, transformPatch, name, message, originalSender ) {
-	var receiver = this._subscriptionRegistry.getLocalSubscribers( name ) || [],
+	var receivers = this._subscriptionRegistry.getLocalSubscribers( name ),
 		metaData = {
 			recordName: name,
 			version: parseInt( message.data[ 1 ], 10 )
@@ -371,15 +371,19 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 		data,
 		i;
 
+	if( !receivers ) {
+		return;
+	}
+
 	if( transformPatch ) {
 		metaData.path = message.data[ 2 ];
 	}
 
-	for( i = 0; i < receiver.length; i++ ) {
-		if( receiver[ i ] === originalSender ) {
+	for( i = 0; i < receivers.length; i++ ) {
+		if( receivers[ i ] === originalSender ) {
 			continue;
 		}
-		metaData.receiver = receiver[ i ].user;
+		metaData.receiver = receivers[ i ].user;
 
 		if( transformUpdate ) {
 			// UPDATE
@@ -393,7 +397,7 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 			messageData[ 3 ] = messageBuilder.typed( data );
 		}
 
-		receiver[ i ].sendMessage( message.topic, message.action, messageData );
+		receivers[ i ].sendMessage( message.topic, message.action, messageData );
 	}
 };
 
@@ -506,7 +510,7 @@ RecordHandler.prototype._onDeleted = function( name, message, originalSender ) {
 
 	this._$broadcastUpdate( name, message, originalSender );
 
-	for( i = 0; i < subscribers.length; i++ ) {
+	for( i = 0; subscribers && i < subscribers.length; i++ ) {
 		this._subscriptionRegistry.unsubscribe( name, subscribers[ i ], true );
 	}
 };

@@ -113,12 +113,12 @@ describe( 'distributed-state-registry cluster', function(){
 			registryB.registry.add( 'test-entry-same' );
 			registryC.registry.add( 'test-entry-same' );
 
-			expect( registryA.registry.getAllServers( 'test-entry-same' ) ).toEqual( { 'server-name-b': true, 'server-name-c': true } );
+			expect( registryA.registry.getAllServers( 'test-entry-same' ) ).toEqual( ['server-name-b', 'server-name-c'] );
 
 			registryB.registry.remove( 'test-entry-same' );
 			registryC.registry.remove( 'test-entry-same' );
 
-			expect( registryA.registry.getAllServers( 'test-entry-same' ) ).toEqual( {} );
+			expect( registryA.registry.getAllServers( 'test-entry-same' ) ).toEqual( [] );
 		});
 
 		it( 'removes an entire server', function(){
