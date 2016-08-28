@@ -357,7 +357,6 @@ module.exports = class ListenerRegistry {
 	 * @returns {Void}
 	*/
 	_removeActiveListener( subscriptionName, provider ) {
-		this._listenerUtils.sendHasProviderUpdate( false, subscriptionName );
 		delete this._locallyProvidedRecords[ subscriptionName ];
 		this._clusterProvidedRecords.remove( subscriptionName );
 	}
