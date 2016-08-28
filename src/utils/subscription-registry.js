@@ -266,7 +266,7 @@ class SubscriptionRegistry {
 		if( this.hasLocalSubscribers( name ) ) {
 			return this._subscriptions[ name ].slice();
 		} else {
-			return null;
+			return [];
 		}
 	}
 
@@ -285,7 +285,7 @@ class SubscriptionRegistry {
 		if( subscribers ) {
 			return subscribers[ Math.floor( Math.random() * subscribers.length ) ];
 		} else {
-			return null;
+			return [];
 		}
 	}
 

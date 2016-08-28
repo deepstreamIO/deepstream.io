@@ -129,6 +129,13 @@ class ListenerRegistry {
 				this._startLocalDiscoveryStage( message.data[ 1 ] );
 			} else if( message.action === C.ACTIONS.ACK ) {
 				this._nextDiscoveryStage( message.data[ 1 ] );
+			} else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
+				this.onSubscriptionRemoved(
+					message.data[ 1 ],
+					null,
+					this._clientRegistry.getLocalSubscribers( message.data[ 1 ] ).length,
+					Object.keys(this._clientRegistry.getAllServers( message.data[ 1 ] )).length - 1
+				);
 			}
 		}
 	}
@@ -194,6 +201,12 @@ class ListenerRegistry {
 	onSubscriptionRemoved( subscriptionName, socketWrapper, localCount, remoteCount ) {
 		const provider = this._locallyProvidedRecords[ subscriptionName ];
 
+		if( this.hasActiveProvider( subscriptionName ) && !provider ) {
+			var serverName = Object.keys( this._clusterProvidedRecords.getAllServers( subscriptionName ))[ 0 ];
+			this._listenerUtils.sendLastSubscriberRemoved( serverName, subscriptionName );
+			return;
+		}
+
 		if( !provider ) {
 			return;
 		}
@@ -208,7 +221,7 @@ class ListenerRegistry {
 		}
 
 		// provider isn't a subscriber, meaning we should wait for 0
-		if( localCount === 1 && this._clientRegistry.getLocalSubscribers().indexOf( provider.socketWrapper ) === -1 ) {
+		if( localCount === 1 && this._clientRegistry.getLocalSubscribers(subscriptionName).indexOf( provider.socketWrapper ) === -1 ) {
 			return;
 		}
 
@@ -455,6 +468,10 @@ class ListenerRegistry {
 		}
 
 		const provider = listenInProgress.shift();
+		if( this._clientRegistry.getLocalSubscribers( subscriptionName ).indexOf( provider.socketWrapper ) !== -1 ) {
+			this._triggerNextProvider( subscriptionName );
+			return;
+		}
 		this._listenerTimeoutRegistery.addTimeout( subscriptionName, provider, this._triggerNextProvider.bind( this ) );
 		this._listenerUtils.sendSubscriptionForPatternFound( provider, subscriptionName );
 	}

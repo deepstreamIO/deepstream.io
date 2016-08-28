@@ -100,6 +100,15 @@ class ListenerUtils {
 		});
 	}
 
+	sendLastSubscriberRemoved( serverName, subscriptionName ) {
+		const messageTopic = this.getMessageBusTopic( serverName, this._topic );
+		this._options.messageConnector.publish( messageTopic, {
+			topic: messageTopic,
+			action: C.ACTIONS.UNSUBSCRIBE,
+			data:[ serverName, subscriptionName ]
+		});
+	}
+
 	/**
 	 * Send a subscription found to a provider
 	 *
