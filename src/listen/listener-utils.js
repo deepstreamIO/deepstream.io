@@ -154,8 +154,12 @@ module.exports = class ListenerUtils {
 
 		for( i=0; i<providerPatterns.length; i++ ) {
 			pattern = providerPatterns[ i ];
-
-			if( patterns[ pattern ].test( subscriptionName ) ) {
+			const p = patterns[ pattern ];
+			if (p == null) {
+				this._options.logger.log( C.LOG_LEVEL.WARN, '', 'canot handle pattern' + pattern );
+				return;
+			}
+			if( p.test( subscriptionName ) ) {
 				servers = servers.concat( providerRegistry.getAllServers( pattern ) );
 			}
 		}
