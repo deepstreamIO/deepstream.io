@@ -1,5 +1,9 @@
 ## [1.1.0] - UNRELEASED
 
+### Bug Fixes
+
+- Fix wrong validation of valve permissions when `data` is used as a property [#346](https://github.com/deepstreamIO/deepstream.io/pull/346)
+
 ### Features
 
 - Listening: Listeners have been drastically improved [https://github.com/deepstreamIO/deepstream.io/issues/211], and now:
