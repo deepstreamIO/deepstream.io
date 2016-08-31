@@ -47,6 +47,12 @@ describe('validates rule strings from permissions.json', function(){
 	it( 'rejects rules that reference data without it being supported', function(){
 		expect( ruleParser.validate( 'user.id === $userId && data.price === 500', 'rpc', 'provide' ) ).toBe( 'rule provide for rpc does not support data' );
 	});
+
+	it( 'validates a rule referencing data as a property for a type (read) where the injected (root) data is not available', function(){
+		var validatedRule = ruleParser.validate( 'user.id !== user.data.someUser', 'record', 'read' );
+		expect( typeof validatedRule ).toBe( 'boolean' );
+		expect( validatedRule ).toBe( true );
+	});
 });
 
 describe( 'compiles rules into usable objects', function(){
