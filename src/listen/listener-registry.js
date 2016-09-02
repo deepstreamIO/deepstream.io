@@ -65,8 +65,6 @@ module.exports = class ListenerRegistry {
 		this._leadingListen = {};
 		this._listenTopic = this._listenerUtils.getMessageBusTopic( this._options.serverName, this._topic );
 		this._options.messageConnector.subscribe( this._listenTopic, this._onIncomingMessage.bind( this ) );
-
-
 	}
 
 	/**
