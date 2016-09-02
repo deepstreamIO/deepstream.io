@@ -1,3 +1,6 @@
+// used to create a heapdump in production via kill -USR2 $PID
+//require('heapdump');
+
 var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	MessageProcessor = require( './message/message-processor' ),
 	MessageDistributor = require( './message/message-distributor' ),
@@ -21,6 +24,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	ClusterRegistry = require( './cluster/cluster-registry' ),
 	UniqueRegistry = require( './cluster/cluster-unique-state-provider' ),
 	C = require( './constants/constants' ),
+	profiler = require('v8-profiler'),
 	pkg = require( '../package.json' );
 
 const STATES = C.STATES;
@@ -55,8 +59,34 @@ var Deepstream = function( config ) {
 		'authenticationHandler',
 		'permissionHandler'
 	];
+	setupProfSignals();
 
 };
+
+function setupProfSignals(){
+	process.on('SIGUSR2', function () {
+		var time = Date.now();
+		console.log(`Received SIGUSR2 at ${time}.`);
+
+		if ( !this._isProfiling ){
+			console.log('Start profiling');
+			profiler.startProfiling();
+			this._isProfiling = true;
+		}
+		else {
+			console.log('Stop profiling');
+			var prof = profiler.stopProfiling();
+			var filename = `profile_${process.pid}_${time}.json`;
+			console.log(`Writing profile to ${filename}`);
+			prof.export(function(_, result) {
+				fs.writeFileSync(filename, result);
+				prof.delete();
+			});
+			this._isProfiling = false;
+		}
+	}.bind(this));
+}
+
 
 util.inherits( Deepstream, EventEmitter );
 

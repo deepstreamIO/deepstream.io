@@ -378,6 +378,10 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 
 	this._authenticatedSockets.push( socketWrapper );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user );
+
+	if (socketWrapper.user === 'open'){
+		console.log(socketWrapper.socket._socket);
+	}
 };
 
 /**
@@ -507,6 +511,8 @@ ConnectionEndpoint.prototype._onError = function( error ) {
 * @returns {void}
 */
 ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
+	var index = this._authenticatedSockets.indexOf(socketWrapper);
+	this._authenticatedSockets.splice(index, 1);
 	if( this._options.authenticationHandler.onClientDisconnect ) {
 		this._options.authenticationHandler.onClientDisconnect( socketWrapper.user );
 	}
