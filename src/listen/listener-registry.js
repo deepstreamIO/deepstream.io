@@ -101,6 +101,7 @@ module.exports = class ListenerRegistry {
 		if (message.action === C.ACTIONS.LISTEN ) {
 			this._addListener( socketWrapper, message );
 		} else if (message.action === C.ACTIONS.UNLISTEN ) {
+			this._providerRegistry.unsubscribe( pattern, socketWrapper );
 			this._removeListener( socketWrapper, message );
 		} else if( this._listenerTimeoutRegistery.isALateResponder( socketWrapper, message ) ) {
 			this._listenerTimeoutRegistery.handle( socketWrapper, message );
@@ -323,7 +324,6 @@ module.exports = class ListenerRegistry {
 	_removeListener( socketWrapper, message ) {
 		const pattern = message.data[ 0 ] ;
 
-		this._providerRegistry.unsubscribe( pattern, socketWrapper );
 		this._listenerUtils.removeListenerFromInProgress( this._localListenInProgress, pattern, socketWrapper );
 		this._removeListenerIfActive( pattern, socketWrapper );
 	}
