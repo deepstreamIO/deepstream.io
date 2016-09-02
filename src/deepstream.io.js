@@ -310,7 +310,7 @@ Deepstream.prototype._init = function() {
 	this._recordHandler = new RecordHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );
 
-	this._presenceHandler = new PresenceHandler( this._options );
+	this._presenceHandler = new PresenceHandler( this._options, this._connectionEndpoint );
 	this._messageDistributor.registerForTopic( C.TOPIC.PRESENCE, this._presenceHandler.handle.bind( this._presenceHandler ) );
 
 	this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind( this._messageDistributor );

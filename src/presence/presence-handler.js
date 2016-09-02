@@ -8,8 +8,9 @@ var C = require( '../constants/constants' ),
 
 module.exports = class PresenceHandler {
 
-	constructor( options ) {
+	constructor( options, connectionEndpoint ) {
 		this._options = options;
+		this._connectionEndpoint = connectionEndpoint;
 		this._loggedInClients = new DistributedStateRegistry( C.TOPIC.PRESENCE, this._options );
 		this._loggedInClients.on( 'add', this._onClientAdded.bind( this ) );
 		this._loggedInClients.on( 'remove', this._onClientRemoved.bind( this ) );
@@ -30,10 +31,18 @@ module.exports = class PresenceHandler {
 	}
 
 	_onClientAdded( username ) {
-		console.log( username, 'has been added' );
+		var sockWrappers = this._connectionEndpoint.getAuthenticatedSockets();
+		for (var i = sockWrappers.length - 1; i >= 0; i--) {
+			if( sockWrappers[ i ].user !== 'OPEN' || sockWrappers[ i ].user !== username ) 
+				sockWrappers[i].sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_ADD, [ username ] );
+		}
 	}
 
 	_onClientRemoved( username ) {
-		console.log( username, 'has been removed' );
+		var sockWrappers = this._connectionEndpoint.getAuthenticatedSockets();
+		for (var i = sockWrappers.length - 1; i >= 0; i--) {
+			if( sockWrappers[ i ].user !== 'OPEN' || sockWrappers[ i ].user !== username ) 
+				sockWrappers[i].sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_REMOVE, [ username ] );
+		}
 	}
 }

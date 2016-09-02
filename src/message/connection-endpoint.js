@@ -148,6 +148,10 @@ ConnectionEndpoint.prototype.getTcpConnectionCount = function() {
 	return 0;
 };
 
+ConnectionEndpoint.prototype.getAuthenticatedSockets = function() {
+	return this._authenticatedSockets;
+}
+
 /**
  * Closes the engine.io and subsequently http server
  *
