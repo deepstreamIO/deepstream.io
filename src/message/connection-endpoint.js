@@ -520,9 +520,9 @@ ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
 		this._options.authenticationHandler.onClientDisconnect( socketWrapper.user );
 	}
 
-	if( socketWrapper.user !== 'OPEN' ) {
+	if( socketWrapper.user !== 'OPEN' && socketWrapper.user !== 'open' ) {
 		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ messageBuilder.typed( socketWrapper.user ) ] );
-		setTimeout( this.onMessage( socketWrapper, msg ), 0);
+		process.nextTick( this.onMessage.bind( this, socketWrapper, msg ) );
 	}
 };
 
