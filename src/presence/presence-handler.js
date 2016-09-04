@@ -17,7 +17,7 @@ module.exports = class PresenceHandler {
 	}
 
 	handle( socketWrapper, message ) {
-		if( !socketWrapper.user || socketWrapper.user === 'OPEN' ) {
+		if( !socketWrapper.user ) {
 			return;
 		}
 
@@ -26,7 +26,8 @@ module.exports = class PresenceHandler {
 			this._onClientAdded( socketWrapper );
 		} 
 		else if ( message.action === C.ACTIONS.PRESENCE_LEAVE ) {
-			this._connectedClients.remove( socketWrapper.user )
+			this._connectedClients.remove( socketWrapper.user );
+			this._onClientRemoved( socketWrapper );
 		}
 		else if( message.action === C.ACTIONS.SUBSCRIBE ) {
 			if( message.data[ 0 ] === C.ACTIONS.PRESENCE_JOIN ) {
@@ -53,7 +54,7 @@ module.exports = class PresenceHandler {
 		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_JOIN, addMsg, socketWrapper );
 	}
 
-	_onClientRemoved( topic, socketWrapper, count ) {
+	_onClientRemoved( socketWrapper ) {
 		var rmMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ socketWrapper.user ] );
 		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_LEAVE, rmMsg, socketWrapper );
 	}
