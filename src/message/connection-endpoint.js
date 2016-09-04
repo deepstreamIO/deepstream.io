@@ -382,7 +382,7 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 
 	if( userData.username && userData.username !== 'OPEN' && userData.username !== 'open' ) {
 		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ messageBuilder.typed( userData.username ) ] );
-		process.nextTick( this.onMessage( socketWrapper, msg ) );
+		process.nextTick( this.onMessage.bind( this, socketWrapper, msg ) );
 	}
 
 	this._authenticatedSockets.push( socketWrapper );
