@@ -9,56 +9,64 @@ var C = require( '../constants/constants' ),
 
 module.exports = class PresenceHandler {
 
-	constructor( options, connectionEndpoint ) {
+	constructor( options ) {
 		this._options = options;
-		this._connectionEndpoint = connectionEndpoint;
+		this._connectionEndpoint = options.connectionEndpoint;
 		this._presenceRegistry = new SubscriptionRegistry( options, C.TOPIC.PRESENCE );
-		this._presenceRegistry.setAction( 'subscribe', C.ACTIONS.PRESENCE_ADD );
-		this._presenceRegistry.setAction( 'unsubscribe', C.ACTIONS.PRESENCE_REMOVE );
-		this._presenceRegistry.setSubscriptionListener( {
-			onSubscriptionRemoved: this._onClientRemoved.bind( this ),
-			onSubscriptionMade: this._onClientAdded.bind( this )
-		} );
+		//this._presenceRegistry.setAction( 'subscribe', C.ACTIONS.PRESENCE_JOIN );
+		//this._presenceRegistry.setAction( 'unsubscribe', C.ACTIONS.PRESENCE_LEAVE );
+		//this._presenceRegistry.setSubscriptionListener( {
+		//	onSubscriptionRemoved: this._onClientRemoved.bind( this ),
+		//	onSubscriptionMade: this._onClientAdded.bind( this )
+		//} );
 
 		this._connectedClients = new DistributedStateRegistry( C.TOPIC.PRESENCE, options );
 	}
 
 	handle( socketWrapper, message ) {
-		if ( message.action === C.ACTIONS.PRESENCE_ADD ) {
+		if( !socketWrapper.user || socketWrapper.user === 'OPEN' ) {
+			console.log('nulling')
+			return;
+		}
+
+		if ( message.action === C.ACTIONS.PRESENCE_JOIN ) {
+			console.log(socketWrapper.user, 'joining')
 			this._connectedClients.add( socketWrapper.user );
+			this._onClientAdded( socketWrapper );
 		} 
-		else if ( message.action === C.ACTIONS.PRESENCE_REMOVE ) {
+		else if ( message.action === C.ACTIONS.PRESENCE_LEAVE ) {
 			this._connectedClients.remove( socketWrapper.user )
 		}
 		else if( message.action === C.ACTIONS.SUBSCRIBE ) {
-			if( message.data[ 0 ] === C.ACTIONS.PRESENCE_ADD ) {
-				console.log('Subsciring client')
-				this._presenceRegistry.subscribe( C.TOPIC.PRESENCE_ADD, socketWrapper );
+			if( message.data[ 0 ] === C.ACTIONS.PRESENCE_JOIN ) {
+				console.log( socketWrapper.user, 'subscribing to logins')
+				this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_JOIN, socketWrapper );
 			}
-			else if( message.data[ 0 ] === C.ACTIONS.PRESENCE_REMOVE ) {
-				this._presenceRegistry.subscribe( C.TOPIC.PRESENCE_REMOVE, socketWrapper );
+			else if( message.data[ 0 ] === C.ACTIONS.PRESENCE_LEAVE ) {
+				console.log( socketWrapper.user, 'subscribing to logouts')
+				this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_LEAVE, socketWrapper );
 			}
 			else {
-				console.log('ERRR incorrect subscription')
-				//socketWrapper.sendError
+				throw new Error('Wrong action')
 			}
 			
 		}
-		else if( message.action === C.ACTIONS.QUERY ) {			
+		else if( message.action === C.ACTIONS.QUERY ) {	
+			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.ACK, [ C.ACTIONS.QUERY ] );
 			var clients = this._connectedClients.getAll();
 			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients );
 		}
 	}
 
-	_onClientAdded( topic, socketWrapper, count ) {
-		console.log('CLIENT ADDED', socketWrapper.user, count)
-		var addMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_ADD, [ socketWrapper.user ] );
-		this._presenceRegistry.sendToSubscribers( C.TOPIC.PRESENCE, addMsg, socketWrapper );
+	_onClientAdded( socketWrapper ) {
+		console.log('Notifying that', socketWrapper.user, 'joined')
+		var addMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ socketWrapper.user ] );
+		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_JOIN, addMsg, socketWrapper );
 	}
 
 	_onClientRemoved( topic, socketWrapper, count ) {
-		console.log('CLIENT REMOVED', socketWrapper.user)
-		var rmMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_REMOVE, [ socketWrapper.user ] );
-		this._presenceRegistry.sendToSubscribers( C.TOPIC.PRESENCE, rmMsg, socketWrapper );
+		console.log('Notifying that', socketWrapper.user, 'left')
+		var rmMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ socketWrapper.user ] );
+		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_LEAVE, rmMsg, socketWrapper );
 	}
 }

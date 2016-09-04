@@ -380,9 +380,8 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( userData.clientData ) ] );
 	}
 
-	if( userData.username != 'OPEN' ) {
-		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_ADD, [ messageBuilder.typed( userData.username ) ] );
-		debugger;
+	if( userData.username && userData.username !== 'OPEN' ) {
+		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ messageBuilder.typed( userData.username ) ] );
 		setTimeout( this.onMessage( socketWrapper, msg ), 0);
 	}
 
@@ -522,7 +521,7 @@ ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
 	}
 
 	if( socketWrapper.user !== 'OPEN' ) {
-		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_REMOVE, [ messageBuilder.typed( socketWrapper.user ) ] );
+		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ messageBuilder.typed( socketWrapper.user ) ] );
 		setTimeout( this.onMessage( socketWrapper, msg ), 0);
 	}
 };
