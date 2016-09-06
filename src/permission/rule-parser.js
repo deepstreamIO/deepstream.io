@@ -3,7 +3,7 @@ var rulesMap = require( './rules-map' );
 var FUNCTION_REGEXP = /([\w]+)\(/g;
 var NEW_REGEXP = /(^|[^\w~])new[^\w~]/;
 var OLD_DATA_REGEXP = /(^|[^\w~])oldData[^\w~]/;
-var DATA_REGEXP = /(^|[^\w~])data[^\w~]/;
+var DATA_REGEXP = /(^|[^\w\.~])data($|[^\w~])/;
 var CROSS_REFERENCE_REGEXP = /(^|[^\w~])_[^\w~]/;
 
 var SUPPORTED_FUNCTIONS = [
