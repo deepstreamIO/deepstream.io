@@ -43,7 +43,7 @@ module.exports = class PresenceHandler {
 			
 		}
 		else if( message.action === C.ACTIONS.QUERY ) {	
-			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.ACK, [ C.ACTIONS.QUERY ] );
+			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.ACK, [ C.TOPIC.PRESENCE, C.ACTIONS.QUERY ] );
 			var clients = this._connectedClients.getAll();
 			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients );
 		}
