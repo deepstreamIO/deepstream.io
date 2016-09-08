@@ -9,7 +9,7 @@
 - Outgoing connections now have throttle options that allow you to configure maximum package sizes to find your personal sweet spot between latency and speed
 
 ```yaml
-# the time to wait for a buffer to fill before sending it out
+# the time (in milliseconds) to wait for a buffer to fill before sending it out
 timeBetweenSendingQueuedPackages: 1
 # the amount of messages that should fit into a buffer before sending between the time to fill
 maxMessagesPerPacket: 1000
