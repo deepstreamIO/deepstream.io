@@ -36,15 +36,11 @@ module.exports = class PresenceHandler {
 	 * @returns {void}
 	 */
 	handle( socketWrapper, message ) {
-		if( !socketWrapper.user ) {
-			return;
-		}
-
 		if ( message.action === C.ACTIONS.PRESENCE_JOIN ) {
 			this._connectedClients.add( socketWrapper.user );
 		} 
 		else if ( message.action === C.ACTIONS.PRESENCE_LEAVE ) {
-			this._connectedClients.remove( socketWrapper.user );
+			this._handleLeave( socketWrapper );
 		}
 		else if( message.action === C.ACTIONS.SUBSCRIBE ) {
 			if( message.data[ 0 ] === C.ACTIONS.PRESENCE_JOIN ) {
@@ -57,13 +53,27 @@ module.exports = class PresenceHandler {
 				//todo
 				throw new Error('Wrong action')
 			}
-			
 		}
 		else if( message.action === C.ACTIONS.QUERY ) {	
 			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.ACK, [ C.TOPIC.PRESENCE, C.ACTIONS.QUERY ] );
 			var clients = this._connectedClients.getAll();
 			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients );
 		}
+	}
+
+	/**
+	 * Removes subscriptions to presence events and removes them from the
+	 * _connectedClients list
+	 * 
+	 * @param   {Object} socketWrapper the socketWrapper of the client that left
+	 *
+	 * @public
+	 * @returns {void}
+	 */
+	_handleLeave( socketWrapper ) {
+		this._presenceRegistry.unsubscribe( C.ACTIONS.PRESENCE_JOIN, socketWrapper, true );
+		this._presenceRegistry.unsubscribe( C.ACTIONS.PRESENCE_LEAVE, socketWrapper, true );
+		this._connectedClients.remove( socketWrapper.user );
 	}
 
 	/**
@@ -89,7 +99,7 @@ module.exports = class PresenceHandler {
 	 * @public
 	 * @returns {void}
 	 */
-	_onClientRemoved( username, socketWrapper ) {
+	_onClientRemoved( username ) {
 		var rmMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ username ] );
 		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_LEAVE, rmMsg );
 	}
