@@ -19,7 +19,7 @@ var getOptions = function() {
 describe( 'deletes records - happy path', function(){
 	var recordDeletion;
 	var options = getOptions();
-	var sender = new SocketWrapper( new SocketMock() );
+	var sender = new SocketWrapper( new SocketMock(), options );
 	var successCallback = jasmine.createSpy( 'successCallback' );
 
 	it( 'creates the record deletion', function(){
@@ -50,7 +50,7 @@ describe( 'deletes records - happy path', function(){
 describe( 'encounters an error during record deletion', function(){
 	var recordDeletion;
 	var options = getOptions();
-	var sender = new SocketWrapper( new SocketMock() );
+	var sender = new SocketWrapper( new SocketMock(), options );
 	var successCallback = jasmine.createSpy( 'successCallback' );
 
 	it( 'creates the record deletion', function(){
@@ -82,7 +82,7 @@ describe( 'doesn\'t delete excluded messages from storage', function(){
 	var deletionMsg = { topic: 'R', action: 'D', data: [ 'no-storage/1' ] };
 	var options = getOptions();
 	options.storageExclusion = new RegExp( 'no-storage/' )
-	var sender = new SocketWrapper( new SocketMock() );
+	var sender = new SocketWrapper( new SocketMock(), options );
 	var successCallback = jasmine.createSpy( 'successCallback' );
 
 	it( 'creates the record deletion', function(){

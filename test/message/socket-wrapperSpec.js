@@ -10,7 +10,7 @@ describe( 'socket-wrapper creates a unified interface for sockets', function(){
 				referer: 'some-referer'
 			}
 		};
-		var socketWrapper = new SocketWrapper( socket );
+		var socketWrapper = new SocketWrapper( socket, {} );
 		expect( socketWrapper.getHandshakeData() ).toEqual({
 			headers: { referer: 'some-referer' },
 			referer: 'some-referer',

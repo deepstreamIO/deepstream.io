@@ -24,13 +24,13 @@ var listenerRegistry,
 describe('listener-registry errors', function() {
 
 	beforeEach(function() {
-		listeningSocket = new SocketWrapper(new SocketMock(), options);
+		listeningSocket = new SocketWrapper(new SocketMock(), options );
 		listenerRegistry = new ListenerRegistry('R', options, recordSubscriptionRegistryMock);
 		expect(typeof listenerRegistry.handle).toBe('function');
 	});
 
 	it('adds a listener without message data', function() {
-		var socketWrapper = new SocketWrapper(new SocketMock());
+		var socketWrapper = new SocketWrapper(new SocketMock(), options );
 		listenerRegistry.handle(socketWrapper, {
 			topic: 'R',
 			action: 'L',
@@ -41,7 +41,7 @@ describe('listener-registry errors', function() {
 	});
 
 	it('adds a listener with invalid message data message data', function() {
-		var socketWrapper = new SocketWrapper(new SocketMock());
+		var socketWrapper = new SocketWrapper( new SocketMock(), options );
 		listenerRegistry.handle(socketWrapper, {
 			topic: 'R',
 			action: 'L',
@@ -52,7 +52,7 @@ describe('listener-registry errors', function() {
 	});
 
 	it('adds a listener with an invalid regexp', function() {
-		var socketWrapper = new SocketWrapper(new SocketMock());
+		var socketWrapper = new SocketWrapper( new SocketMock(), options );
 		listenerRegistry.handle(socketWrapper, {
 			topic: 'R',
 			action: 'L',
