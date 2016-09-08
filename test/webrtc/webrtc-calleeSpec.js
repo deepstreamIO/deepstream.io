@@ -9,11 +9,11 @@ var clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 describe( 'webrtc handler', function(){
 
 	var webrtcHandler;
-	var calleeListener = new SocketWrapper( new SocketMock() );
-	var calleeListenerB = new SocketWrapper( new SocketMock() );
-	var calleeListenerC = new SocketWrapper( new SocketMock() );
-	var calleeA = new SocketWrapper( new SocketMock() );
-	var calleeB = new SocketWrapper( new SocketMock() );
+	var calleeListener = new SocketWrapper( new SocketMock(), {} );
+	var calleeListenerB = new SocketWrapper( new SocketMock(), {} );
+	var calleeListenerC = new SocketWrapper( new SocketMock(), {} );
+	var calleeA = new SocketWrapper( new SocketMock(), {} );
+	var calleeB = new SocketWrapper( new SocketMock(), {} );
 
 
 	it( 'initializes the WebRtcHandler', function(){

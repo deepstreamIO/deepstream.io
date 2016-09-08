@@ -22,7 +22,8 @@ exports.get = function() {
 		httpServer: null,
 		urlPath: '/deepstream',
 		externalUrl: null,
-
+		timeBetweenSendingQueuedPackages: 1,
+		maxMessagesPerPacket: 1000,
 
 		/*
 		 * SSL Configuration

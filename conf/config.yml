@@ -1,18 +1,34 @@
 # General
-serverName: UUID # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
-showLogo: true # Show the deepstream logo on startup (highly recommended)
-logLevel: INFO # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
-#libDir: ../lib  # Directory where all plugins reside
+# Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
+serverName: UUID
+# Show the deepstream logo on startup (highly recommended)
+showLogo: true
+# Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
+logLevel: INFO
+# Directory where all plugins reside
+#libDir: ../lib
 
 # Connectivity
-webServerEnabled: true # accept incoming HTTP long-polling and websocket connections
-tcpServerEnabled: true # accept incoming TCP connections
-port: 6020 # port for the HTTP/websocket server
-host: 0.0.0.0 # host for the HTTP/websocket server
-tcpPort: 6021 # port for the TCP server
-tcpHost: 0.0.0.0 # host for the TCP server
-urlPath: /deepstream # url path HTTP/WEBSOCKET connections connect to
-externalUrl: null # webfacing URL under which this client is reachable. Used for loadbalancing / failover
+# accept incoming HTTP long-polling and websocket connections
+webServerEnabled: true
+# accept incoming TCP connections
+tcpServerEnabled: true
+# port for the HTTP/websocket server
+port: 6020
+# host for the HTTP/websocket server
+host: 0.0.0.0
+# port for the TCP server
+tcpPort: 6021
+# host for the TCP server
+tcpHost: 0.0.0.0
+# url path HTTP/WEBSOCKET connections connect to
+urlPath: /deepstream
+# webfacing URL under which this client is reachable. Used for loadbalancing / failover
+externalUrl: null
+# the time to wait for a buffer to fill before sending it out
+timeBetweenSendingQueuedPackages: 1
+# the amount of messages that should fit into a buffer before sending between the time to fill
+maxMessagesPerPacket: 1000
 
 # SSL Configuration
 sslKey: null
@@ -25,7 +41,8 @@ sslCa: null
 #   name: default
 #    options:
 #      colors: true
-#      logLevel: INFO # value of logLevel (line 4) will always overwrite this value
+#      # value of logLevel (line 4) will always overwrite this value
+#      logLevel: INFO
 
 #   # or the winston logger
 #   name: winston
@@ -34,7 +51,8 @@ sslCa: null
 #     -
 #       type: console
 #       options:
-#         level: info # value of logLevel (line 4) will always overwrite this value
+#         # value of logLevel (line 4) will always overwrite this value
+#         level: info
 #         colorize: true
 #     -
 #       type: time
@@ -64,40 +82,56 @@ plugins:
   #     port: 28015
 
 # Storage options
-storageExclusion: null # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
+# a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
+storageExclusion: null
 
 # Security
-unauthenticatedClientTimeout: 180000 # amount of time a connection can remain open while not being logged in
-maxAuthAttempts: 3 # invalid login attempts before the connection is cut
-logInvalidAuthData: true # if true, the logs will contain the cleartext username / password of invalid login attempts
-maxMessageSize: 1048576 # maximum allowed size of an individual message in bytes
+# amount of time a connection can remain open while not being logged in
+unauthenticatedClientTimeout: 180000
+# invalid login attempts before the connection is cut
+maxAuthAttempts: 3
+# if true, the logs will contain the cleartext username / password of invalid login attempts
+logInvalidAuthData: true
+# maximum allowed size of an individual message in bytes
+maxMessageSize: 1048576
 
 #Authentication
 auth:
   type: none
 
-# # reading users and passwords from a file
+#   # reading users and passwords from a file
 #   type: file
 #   options:
-#     path: ./users.yml # Path to the user file. Can be json, js or yml
-#     hash: 'md5' # the name of a HMAC digest algorithm
-#     iterations: 100 # the number of times the algorithm should be applied
-#     keyLength: 32 # the length of the resulting key
+#     # Path to the user file. Can be json, js or yml
+#     path: ./users.yml
+#     # the name of a HMAC digest algorithm
+#     hash: 'md5'
+#     # the number of times the algorithm should be applied
+#     iterations: 100
+#     # the length of the resulting key
+#     keyLength: 32
 
-# # getting permissions from a http webhook
+#   # getting permissions from a http webhook
 #   type: http
 #   options:
-#     endpointUrl: https://someurl.com/validateLogin # a post request will be send to this url on every incoming connection
-#     permittedStatusCodes: [ 200 ] # any of these will be treated as access granted
-#     requestTimeout: 2000 # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+#     # a post request will be send to this url on every incoming connection
+#     endpointUrl: https://someurl.com/validateLogin
+#     # any of these will be treated as access granted
+#     permittedStatusCodes: [ 200 ]
+#     # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+#     requestTimeout: 2000
 
 # Permissioning
 permission:
-  type: config # Only config or custom permissionHandler at the moment
+  # Only config or custom permissionHandler at the moment
+  type: config
   options:
-    path: ./permissions.yml # Path to the permissionFile. Can be json, js or yml
-    maxRuleIterations: 3 # Amount of times nested cross-references will be loaded. Avoids endless loops
-    cacheEvacuationInterval: 60000 # PermissionResults are cached to increase performance. Lower number means more loading
+    # Path to the permissionFile. Can be json, js or yml
+    path: ./permissions.yml
+    # Amount of times nested cross-references will be loaded. Avoids endless loops
+    maxRuleIterations: 3
+    # PermissionResults are cached to increase performance. Lower number means more loading
+    cacheEvacuationInterval: 60000
 
 # Timeouts (in milliseconds)
 rpcProviderQueryTimeout: 1000

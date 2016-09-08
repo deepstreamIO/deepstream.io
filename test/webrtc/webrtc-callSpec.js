@@ -8,8 +8,8 @@ var clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
 
 describe( 'webrtc handler', function(){
 
-	var calleeA = new SocketWrapper( new SocketMock() );
-	var calleeB = new SocketWrapper( new SocketMock() );
+	var calleeA = new SocketWrapper( new SocketMock(), {} );
+	var calleeB = new SocketWrapper( new SocketMock(), {} );
 	var localId = 'localId';
 
 

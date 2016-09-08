@@ -24,6 +24,20 @@ var SocketWrapper = function( socket, options ) {
 	this.authCallBack = null;
 	this.authAttempts = 0;
 	this.setMaxListeners( 0 );
+	this.socket.setMaxListeners( 0 );
+
+	this._queuedMessages = [];
+	this._currentPacketMessageCount = 0;
+	this._sendNextPacketTimeout = null;
+	this._currentMessageResetTimeout = null;
+
+	/**
+	 * This defaults for test purposes since socket wrapper creating touches
+	 * everything
+	 */
+	if( typeof this._options.maxMessagesPerPacket === "undefined" ) {
+		this._options.maxMessagesPerPacket = 1000;
+	}
 };
 
 utils.inherits( SocketWrapper, EventEmitter );
@@ -62,7 +76,7 @@ SocketWrapper.prototype.getHandshakeData = function() {
  */
 SocketWrapper.prototype.sendError = function( topic, type, msg ) {
 	if( this.isClosed === false ) {
-		this.socket.send( messageBuilder.getErrorMsg( topic, type, msg ) );
+		this.send( messageBuilder.getErrorMsg( topic, type, msg ) );
 	}
 };
 
@@ -78,27 +92,105 @@ SocketWrapper.prototype.sendError = function( topic, type, msg ) {
  */
 SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
 	if( this.isClosed === false ) {
-		this.socket.send( messageBuilder.getMsg( topic, action, data ) );
+		this.send( messageBuilder.getMsg( topic, action, data ) );
 	}
 };
 
 /**
- * Low level send method. Sends a string to the client
+ * Main method for sending messages. Doesn't send messages instantly,
+ * but instead achieves conflation by adding them to the message
+ * buffer that will be drained on the next tick
  *
- * @param {String} msg deepstream message string
+ * @param   {String} message deepstream message
  *
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.send = function( msg ) {
-	if( msg.charAt( msg.length - 1 ) !== C.MESSAGE_SEPERATOR ) {
-		msg += C.MESSAGE_SEPERATOR;
+SocketWrapper.prototype.send = function( message ) {
+	if( message.charAt( message.length - 1 ) !== C.MESSAGE_SEPERATOR ) {
+		message += C.MESSAGE_SEPERATOR;
 	}
 
-	if( this.isClosed === false ) {
-		this.socket.send( msg );
+	if( this.isClosed === true ) {
+		return;
+	}
+
+	this._queuedMessages.push( message );
+	this._currentPacketMessageCount++;
+
+	if( this._currentMessageResetTimeout === null ) {
+		this._currentMessageResetTimeout = process.nextTick( this._resetCurrentMessageCount.bind( this ) );
+	}
+
+	if( 	this._queuedMessages.length < this._options.maxMessagesPerPacket &&
+		this._currentPacketMessageCount < this._options.maxMessagesPerPacket ) {
+		this._sendQueuedMessages();
+	}
+	else if( this._sendNextPacketTimeout === null ) {
+		this._queueNextPacket();
 	}
 };
+
+/**
+ * When the implementation tries to send a large
+ * number of messages in one execution thread, the first
+ * <maxMessagesPerPacket> are send straight away.
+ *
+ * _currentPacketMessageCount keeps track of how many messages
+ * went into that first packet. Once this number has been exceeded
+ * the remaining messages are written to a queue and this message
+ * is invoked on a timeout to reset the count.
+ *
+ * @private
+ * @returns {void}
+ */
+SocketWrapper.prototype._resetCurrentMessageCount = function() {
+	this._currentPacketMessageCount = 0;
+	this._currentMessageResetTimeout = null;
+};
+
+/**
+ * Concatenates the messages in the current message queue
+ * and sends them as a single package. This will also
+ * empty the message queue and conclude the send process.
+ *
+ * @private
+ * @returns {void}
+ */
+SocketWrapper.prototype._sendQueuedMessages = function() {
+
+	if( this._queuedMessages.length === 0 ) {
+		this._sendNextPacketTimeout = null;
+		return;
+	}
+
+	var message = this._queuedMessages.splice( 0, this._options.maxMessagesPerPacket ).join( '' );
+
+	if( this._queuedMessages.length !== 0 ) {
+		this._queueNextPacket();
+	} else {
+		this._sendNextPacketTimeout = null;
+	}
+
+        if( this.isClosed === false ) {
+                this.socket.send( message );
+        }
+
+};
+
+/**
+ * Schedules the next packet whilst the connection is under
+ * heavy load.
+ *
+ * @private
+ * @returns {void}
+ */
+SocketWrapper.prototype._queueNextPacket = function() {
+	var fn = this._sendQueuedMessages.bind( this ),
+		delay = this._options.timeBetweenSendingQueuedPackages;
+	this._sendNextPacketTimeout = setTimeout( fn, delay );
+};
+
 
 /**
  * Destroyes the socket. Removes all deepstream specific

@@ -24,7 +24,7 @@ var EventHandler = require( '../../src/event/event-handler' ),
 		});
 
 		for( i = 0; i < 3; i++ ) {
-			subscriber = new SocketWrapper( new SocketMock() );
+			subscriber = new SocketWrapper( new SocketMock(), {} );
 			subscriber.user = 'socket_' + i;
 			result.eventHandler.handle( subscriber, {
 				topic: C.TOPIC.EVENT,
