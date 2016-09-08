@@ -4,6 +4,17 @@
 
 - Fix wrong validation of valve permissions when `data` is used as a property [#346](https://github.com/deepstreamIO/deepstream.io/pull/346)
 
+### Enhancements
+
+- Outgoing connections now have throttle options that allow you to configure maximum package sizes to find your personal sweet spot between latency and speed
+
+```yaml
+# the time to wait for a buffer to fill before sending it out
+timeBetweenSendingQueuedPackages: 1
+# the amount of messages that should fit into a buffer before sending between the time to fill
+maxMessagesPerPacket: 1000
+```
+
 ### Features
 
 - Listening: Listeners have been drastically improved [https://github.com/deepstreamIO/deepstream.io/issues/211], and now:
