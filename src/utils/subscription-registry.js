@@ -46,6 +46,21 @@ class SubscriptionRegistry {
 	}
 
 	/**
+	 * Return all the servers that have this subscription excluding the current
+	 * server name
+	 *
+	 * @param  {String} subscriptionName the subscriptionName to look for
+	 *
+	 * @public
+	 * @return {Array}  An array of all the servernames with this subscription
+	 */
+	getAllRemoteServers( subscriptionName ) {
+		const serverNames = this._clusterSubscriptions.getAllServers( subscriptionName );
+		serverNames.splice( serverNames.indexOf( this._options.serverName ), 1 );
+		return serverNames;
+	}
+
+	/**
 	 * Returns a list of all the topic this registry
 	 * currently has subscribers for
 	 *

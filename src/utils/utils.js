@@ -191,3 +191,7 @@ exports.setTimeout = function( callback, timeoutDuration ) {
 		return -1;
 	}
 };
+
+exports.getRandomIntInRange = function( min, max ) {
+	return min + Math.floor( Math.random() * ( max - min ) );
+};

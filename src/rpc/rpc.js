@@ -1,4 +1,4 @@
-var C = require( '../constants/constants' ),
+ var C = require( '../constants/constants' ),
 	RpcProxy = require( './rpc-proxy' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' );
@@ -28,10 +28,43 @@ var Rpc = function( rpcHandler, requestor, provider, options, message ) {
 	this._options = options;
 	this._message = message;
 	this._isAcknowledged = false;
-	this._usedProviders = [];
+	this.isComplete = false;
 
-	this._onProviderResponseFn = this._processProviderMessage.bind( this );
 	this._setProvider( provider );
+};
+
+/**
+ * Processor for incoming messages from the RPC provider. The
+ * RPC provider is expected to send two messages,
+ *
+ * RPC|A|REQ|<rpcName>|<correlationId>
+ *
+ * and
+ *
+ * RPC|RES|<rpcName>|<correlationId|[<data>]
+ *
+ * Both of these messages will just be forwarded directly
+ * to the requestor
+ *
+ * @param   {Object} message parsed and validated provider message
+ *
+ * @private
+ * @returns {void}
+ */
+Rpc.prototype.handle = function( message ) {
+	if( message.data[ 1 ] !== this._correlationId && message.data[ 2 ] !== this._correlationId ) {
+		return;
+	}
+
+	if( message.action === C.ACTIONS.ACK ) {
+		this._handleAck( message );
+	}
+	else if( message.action === C.ACTIONS.REJECTION ) {
+		this._reroute();
+	}
+	else if( message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR ) {
+		this._handleResponse( message );
+	}
 };
 
 /**
@@ -42,19 +75,10 @@ var Rpc = function( rpcHandler, requestor, provider, options, message ) {
  * @returns {void}
  */
 Rpc.prototype.destroy = function() {
-	this._provider.removeListener( C.TOPIC.RPC, this._onProviderResponseFn );
-
-	if( this._provider instanceof RpcProxy ) {
-		this._provider.destroy();
-	}
-
-	if( this._requestor instanceof RpcProxy ) {
-		this._requestor.destroy();
-	}
-
 	clearTimeout( this._ackTimeout );
 	clearTimeout( this._responseTimeout );
 
+	this.isComplete = true;
 	this._requestor = null;
 	this._provider = null;
 	this._options = null;
@@ -80,49 +104,10 @@ Rpc.prototype._setProvider = function( provider ) {
 	clearTimeout( this._ackTimeout );
 	clearTimeout( this._responseTimeout );
 
-	if( this._provider ) {
-		this._provider.removeListener( C.TOPIC.RPC, this._onProviderResponseFn );
-	}
-
 	this._provider = provider;
 	this._ackTimeout = setTimeout( this._onAckTimeout.bind( this ), this._options.rpcAckTimeout );
 	this._responseTimeout = setTimeout( this._onResponseTimeout.bind( this ), this._options.rpcTimeout );
-	this._provider.on( C.TOPIC.RPC, this._onProviderResponseFn );
 	this._send( this._provider, this._message, this._requestor );
-};
-
-/**
- * Callback for incoming messages from the RPC provider. The
- * RPC provider is expected to send two messages,
- *
- * RPC|A|<rpcName>|<correlationId>
- *
- * and
- *
- * RPC|RES|<rpcName>|<correlationId|[<data>]
- *
- * Both of these messages will just be forwarded directly
- * to the requestor
- *
- * @param   {Object} message parsed and validated provider message
- *
- * @private
- * @returns {void}
- */
-Rpc.prototype._processProviderMessage = function( message ) {
-	if( message.data[ 1 ] !== this._correlationId && message.data[ 2 ] !== this._correlationId ) {
-		return;
-	}
-
-	if( message.action === C.ACTIONS.ACK ) {
-		this._handleAck( message );
-	}
-	else if( message.action === C.ACTIONS.REJECTION ) {
-		this._reroute();
-	}
-	else if( message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR ) {
-		this._handleResponse( message );
-	}
 };
 
 /**
@@ -174,9 +159,7 @@ Rpc.prototype._handleResponse = function( message ) {
  * @returns {void}
  */
 Rpc.prototype._reroute = function() {
-	this._usedProviders.push( this._provider );
-
-	var alternativeProvider = this._rpcHandler.getAlternativeProvider( this._rpcName, this._usedProviders, this._correlationId );
+	var alternativeProvider = this._rpcHandler.getAlternativeProvider( this._rpcName, this._correlationId );
 
 	if( alternativeProvider ) {
 		this._setProvider( alternativeProvider );
