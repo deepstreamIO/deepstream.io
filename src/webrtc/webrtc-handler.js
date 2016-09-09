@@ -41,11 +41,11 @@ var C = require( '../constants/constants' ),
  */
 var WebRtcHandler = function( options ) {
 	this._options = options;
-	this._calleeRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
+	this._calleeRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC, false );
 	this._calleeRegistry.setSubscriptionListener( this );
 
-	this._calleeListenerRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
-	this._callInitiatiorRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC );
+	this._calleeListenerRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC, false );
+	this._callInitiatiorRegistry = new SubscriptionRegistry( this._options, C.TOPIC.WEBRTC, false );
 };
 
 /**

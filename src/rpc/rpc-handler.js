@@ -220,7 +220,7 @@ module.exports = class RpcHandler {
 		}
 
 		//TODO see null
-		if( rpcData.local.length > 0 ) {
+		if( rpcData.local && rpcData.local.length > 0 ) {
 			provider = this._getNextRandomLocalProvider( correlationId );
 			rpcData.rpc = new Rpc( this, socketWrapper, provider, this._options, message );
 		}
@@ -228,7 +228,7 @@ module.exports = class RpcHandler {
 			socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ rpcName, correlationId ] );
 		}
 		else {
-			this._makeRemoteRpc( this, socketWrapper, message );
+			this._makeRemoteRpc( socketWrapper, message );
 		}
 	}
 
@@ -243,8 +243,6 @@ module.exports = class RpcHandler {
 	 *
 	 * @param   {SocketWrapper} requestor
 	 * @param   {Object} message   RPC Request message
-	 * @param   {String} error     null if remote providers are availabe, otherwise one of C.EVENT
-	 * @param   {ProviderProxy} provider
 	 *
 	 * @private
 	 * @returns {void}
@@ -254,13 +252,13 @@ module.exports = class RpcHandler {
 		const correlationId = message.data[ 1 ];
 		const rpcData = this._rpcs[ correlationId ];
 
-		if( this._remoteRPCServers[ correlationId ].length > 0 ) {
-			rpcData.rpc = new RpcProxy( this._options, this._getNextRandomServer( correlationId ), rpcName, correlationId );
-			rpcData.rpc = new Rpc( this, requestor, providerProxy, this._options, message );
+		if( rpcData.remoteServers && rpcData.remoteServers.length > 0 ) {
+			var rpcProxy = new RpcProxy( this._options, this._getNextRandomServer( correlationId ), rpcName, correlationId );
+			rpcData.rpc = new Rpc( this, requestor, rpcProxy, this._options, message );
 			return;
 		}
 
-		delete this._remoteRPCServers[ correlationId ];
+		delete this._rpcs[correlationId];
 
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.NO_RPC_PROVIDER, rpcName );
 
@@ -282,12 +280,11 @@ module.exports = class RpcHandler {
 	 * @returns {void}
 	 */
 	_onPrivateMessage( msg ) {
-
 		if( msg.originalTopic !== C.TOPIC.RPC ) {
 			return;
 		}
 
-		if( !message.data || message.data.length < 2 ) {
+		if( !msg.data || msg.data.length < 2 ) {
 			// Log an error
 			return;
 		}
@@ -298,13 +295,13 @@ module.exports = class RpcHandler {
 			const proxy = new RpcProxy(
 				this._options,
 				msg.remotePrivateTopic,
-				 msg.data[ 0 ],
+				msg.data[ 0 ],
 				msg.data[ 1 ]
 			);
 			this._makeRpc( proxy, msg, C.SOURCE_MESSAGE_CONNECTOR );
 		}
 		else {
-			this._rpcs[ correlationId ].rpc.processProviderMessage( msg );
+			this._rpcs[ msg.data[ 1 ] ].rpc.handle( msg );
 		}
 
 	}
@@ -345,6 +342,6 @@ module.exports = class RpcHandler {
 	_getNextRandomServer( correlationId ) {
 		const remoteServers = this._rpcs[ correlationId ].remoteServers;
 		const randomProviderIndex = utils.getRandomIntInRange( 0, remoteServers.length );
-		return 'PRIVATE/' + remoteServers.splice( randomProviderIndex, 1 )[ 0 ];
+		return C.TOPIC.PRIVATE + remoteServers.splice( randomProviderIndex, 1 )[ 0 ];
 	}
 }
