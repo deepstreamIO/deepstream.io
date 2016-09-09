@@ -63,11 +63,12 @@ module.exports = class RpcHandler {
 		}
 
 		else if( this._supportedSubActions.indexOf( message.action ) > -1 ) {
-			const rpcData = this._rpcs[ message.data[ 1 ] ];
+			const rpcData = this._rpcs[ message.data[ 1 ] ] || this._rpcs[ message.data[ 2 ] ];
 			if( rpcData ) {
 				rpcData.rpc.handle( message );
 				if( rpcData.rpc.isComplete ) {
 					delete this._rpcs[ message.data[ 1 ] ];
+					delete this._rpcs[ message.data[ 2 ] ];
 				}
 			}
 			else {
@@ -117,6 +118,15 @@ module.exports = class RpcHandler {
 		const localProviders = this._subscriptionRegistry.getLocalSubscribers( rpcName );
 
 		var allRemoteProviderTopics;
+
+		/*
+		 * Look within the local providers for one that hasn't been used yet
+		 */
+		if( !rpcData ) {
+			// RPC was already fufilled somehow. This is prior to 1.1.1 and
+			// hence is kept for backwards compatability
+			return null;
+		}
 
 		/*
 		 * Look within the local providers for one that hasn't been used yet
@@ -219,7 +229,6 @@ module.exports = class RpcHandler {
 			rpcData.remoteServers = serverNames;
 		}
 
-		//TODO see null
 		if( rpcData.local && rpcData.local.length > 0 ) {
 			provider = this._getNextRandomLocalProvider( correlationId );
 			rpcData.rpc = new Rpc( this, socketWrapper, provider, this._options, message );

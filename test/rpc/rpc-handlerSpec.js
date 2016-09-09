@@ -157,20 +157,19 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 		rpcHandler.handle( requestor, requestMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );
 		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|{"numA":5, "numB":7}+' ) );
-		expect( provider.listeners( 'P' ).length ).toBe( 1 );
 
 		// Return Ack
-		provider.emit( 'P', ackMessage );
+		rpcHandler.handle( provider, ackMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
 
 		// Sends error for additional acks
 		requestor.socket.lastSendMessage = null;
-		provider.emit( 'P', ackMessage );
+		rpcHandler.handle( provider, ackMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );
 		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|MULTIPLE_ACK|addTwo|1234+' ) );
 
 		// Return Response
-		provider.emit( 'P', responseMessage );
+		rpcHandler.handle( provider, responseMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|12+' ) );
 
 		// Unregister Subscriber
@@ -181,10 +180,9 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 		// Ignores additional responses
 		requestor.socket.lastSendMessage = null;
 		provider.socket.lastSendMessage = null;
-		provider.emit( 'P', additionalResponseMessage );
+		rpcHandler.handle( provider, additionalResponseMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );
-		expect( provider.socket.lastSendMessage ).toBe( null );
-		expect( provider.listeners( 'P' ).length ).toBe( 0 );
+		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|unexpected state for rpc 1234 with action RES+' ) );
 	});
 
 	it( 'executes local rpcs - error scenario', function(){
@@ -201,17 +199,16 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 		// Error Response
 		requestor.socket.lastSendMessage = null;
 
-		provider.emit( 'P', errorMessage );
+		rpcHandler.handle( provider, errorMessage );
 
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|E|ErrorOccured|addTwo|1234+' ) );
 
 		// Ignores additional responses
 		requestor.socket.lastSendMessage = null;
 		provider.socket.lastSendMessage = null;
-		provider.emit( 'P', errorMessage );
+		rpcHandler.handle( provider, errorMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( null );
-		expect( provider.socket.lastSendMessage ).toBe( null );
-		expect( provider.listeners( 'P' ).length ).toBe( 0 );
+		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action E+' ) );
 	});
 
 	it( 'supports multiple RPCs in quick succession', function(){
@@ -231,7 +228,7 @@ describe( 'the rpc handler routes remote procedure call related messages', funct
 	});
 });
 
-describe( 'rpc handler routes requests to remote providers', function(){
+xdescribe( 'rpc handler routes requests to remote providers', function(){
 	var requestor;
 
 	/*

@@ -52,6 +52,12 @@ var Rpc = function( rpcHandler, requestor, provider, options, message ) {
  * @returns {void}
  */
 Rpc.prototype.handle = function( message ) {
+	// This guard is for backwards compatability. Having multiple responses or recieving an ack
+	// prior to a response should not normally occur
+	if( this.isComplete === true ) {
+		return;
+	}
+
 	if( message.data[ 1 ] !== this._correlationId && message.data[ 2 ] !== this._correlationId ) {
 		return;
 	}
@@ -216,6 +222,7 @@ Rpc.prototype._send = function( receiver, message, sender ) {
 		data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
 		message.data[ 2 ] = messageBuilder.typed( data );
 	}
+
 	receiver.sendMessage( message.topic, message.action, message.data );
 };
 
