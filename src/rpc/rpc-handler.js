@@ -158,7 +158,7 @@ module.exports = class RpcHandler {
 		/*
 		 * Search for a remote provider that hasn't been used yet
 		 */
-		return new RpcProxy( this._options, allRemoteProviderTopics[ 0 ], rpcName, correlationId );
+		return new RpcProxy( this._options, C.TOPIC.PRIVATE + allRemoteProviderTopics[ 0 ], rpcName, correlationId );
 	}
 
 	/**
