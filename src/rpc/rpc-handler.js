@@ -28,10 +28,9 @@ module.exports = class RpcHandler {
 
 		/**
 		 * {
-		 * 	'xxx' : {
+		 * 	'correlationId' : {
 		 *		local: [],
 		 *		remoteServers: [],
-		 *		rpcProxy: null,
 		 *		rpc: null
 		 * 	}
 		 */
@@ -99,12 +98,11 @@ module.exports = class RpcHandler {
 	 *
 	 * Initially, deepstream will look for a local provider that hasn't been used by the RPC yet.
 	 * If non can be found, it will go through the currently avaiblable remote providers and try find one that
-	 * hasn't been used yet. Please note: It will not make another request for remote providers, based on
-	 * the assumption that they are still up to date from the original rpc.
+	 * hasn't been used yet.
 	 *
 	 * If a remote provider couldn't be found or all remote-providers have been tried already
 	 * this method will return null - which in turn will prompt the RPC to send a NO_RPC_PROVIDER
-	 * error to the client and destroy itself
+	 * error to the client
 	 *
 	 * @param {String} 	rpcName
 	 * @param {String}	correlationId
@@ -124,7 +122,9 @@ module.exports = class RpcHandler {
 		 */
 		if( !rpcData ) {
 			// RPC was already fufilled somehow. This is prior to 1.1.1 and
-			// hence is kept for backwards compatability
+			// hence is kept for backwards compatability.
+
+			// TODO: Log something useful here
 			return null;
 		}
 
@@ -294,7 +294,7 @@ module.exports = class RpcHandler {
 		}
 
 		if( !msg.data || msg.data.length < 2 ) {
-			// Log an error
+			socketWrapper.sendError(  C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, message.data );
 			return;
 		}
 
@@ -309,8 +309,11 @@ module.exports = class RpcHandler {
 			);
 			this._makeRpc( proxy, msg, C.SOURCE_MESSAGE_CONNECTOR );
 		}
-		else {
+		else if( this._rpcs[ msg.data[ 1 ] ] ) {
 			this._rpcs[ msg.data[ 1 ] ].rpc.handle( msg );
+		}
+		else {
+			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg );
 		}
 
 	}
@@ -337,7 +340,11 @@ module.exports = class RpcHandler {
 	}
 
 	/**
-	 * @return {[type]}
+	 * Returns the next provider that can provide the rpc.
+	 *
+	 * This can be improved by keeping track of current providers used and ignoring them
+	 * moving forward.
+	 * @return {SocketWrapper}
 	 */
 	_getNextRandomLocalProvider( correlationId ) {
 		const localProviders = this._rpcs[ correlationId ].local;
@@ -346,7 +353,11 @@ module.exports = class RpcHandler {
 	}
 
 	/**
-	 * @return {[type]}
+	 * Returns the next remote server name that can provide the rpc.
+	 *
+	 * This can be improved by keeping track of current servers used and ignoring them
+	 * moving forward.
+	 * @return {String}
 	 */
 	_getNextRandomServer( correlationId ) {
 		const remoteServers = this._rpcs[ correlationId ].remoteServers;
