@@ -74,7 +74,6 @@ exports.get = function() {
 		/*
 		 * Timeouts
 		 */
-		rpcProviderQueryTimeout: 1000,
 		rpcProviderCacheTime: 60000,
 		rpcAckTimeout: 1000,
 		rpcTimeout: 10000,

@@ -65,20 +65,6 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 		raw: _msg( 'P|REQ|substract|44|{"numA":8, "numB":3}+' ),
 		data: [ 'substract', '4', '{"numA":8, "numB":3}' ]
 	},
-	providerQueryMessage = {
-		topic: C.TOPIC.RPC,
-		action: C.ACTIONS.QUERY,
-		data: [ 'substract' ]
-	},
-	providerUpdateMessage = {
-		topic: C.TOPIC.RPC,
-		action: C.ACTIONS.PROVIDER_UPDATE,
-		data:[{
-			rpcName: 'substract',
-			numberOfProviders: 2,
-			privateTopic: 'PRIVATE/remoteTopic'
-		}]
-	},
 	privateRemoteAckMessage = {
 		topic: C.TOPIC.PRIVATE + options.serverName,
 		action: C.ACTIONS.ACK,
@@ -94,182 +80,176 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 		data: [ 'substract', '4', '5' ]
 	};
 
-describe( 'the rpc handler routes remote procedure call related messages', function(){
+describe( 'the rpc handler', () => {
+	describe( 'routes remote procedure call related messages', function(){
 
-	it( 'sends an error for subscription messages without data', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			invalidMessage = {
-				topic: C.TOPIC.RPC,
-				action: C.ACTIONS.SUBSCRIBE,
-				raw: 'rawMessageString1'
-			};
+		it( 'sends an error for subscription messages without data', function(){
+			var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+				invalidMessage = {
+					topic: C.TOPIC.RPC,
+					action: C.ACTIONS.SUBSCRIBE,
+					raw: 'rawMessageString1'
+				};
 
-		rpcHandler.handle( socketWrapper, invalidMessage );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|rawMessageString1+' ) );
+			rpcHandler.handle( socketWrapper, invalidMessage );
+			expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|rawMessageString1+' ) );
+		});
+
+		it( 'sends an error for invalid subscription messages ', function(){
+			var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+				invalidMessage = {
+					topic: C.TOPIC.RPC,
+					action: C.ACTIONS.SUBSCRIBE,
+					raw: 'rawMessageString2',
+					data: [ 1, 'a']
+				};
+
+			rpcHandler.handle( socketWrapper, invalidMessage );
+			expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|rawMessageString2+' ) );
+		});
+
+		it( 'sends an error for unknown actions', function(){
+			var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
+				invalidMessage = {
+					topic: C.TOPIC.RPC,
+					action: 'giberrish',
+					raw: 'rawMessageString2',
+					data: [ 1, 'a']
+				};
+
+			rpcHandler.handle( socketWrapper, invalidMessage );
+			expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|E|UNKNOWN_ACTION|unknown action giberrish+' ) );
+		});
+
+		it( 'routes subscription messages', function(){
+			var socketWrapper = new SocketWrapper( new SocketMock(), {} );
+			rpcHandler.handle( socketWrapper, subscriptionMessage );
+			expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|A|S|addTwo+' ) );
+
+			subscriptionMessage.action = C.ACTIONS.UNSUBSCRIBE;
+			rpcHandler.handle( socketWrapper, subscriptionMessage );
+			expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|A|US|addTwo+' ) );
+		});
+
+		it( 'executes local rpcs', function(){
+			var requestor = new SocketWrapper( new SocketMock(), {} ),
+				provider = new SocketWrapper( new SocketMock(), {} );
+
+			// Register provider
+			subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
+			rpcHandler.handle( provider, subscriptionMessage );
+			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|A|S|addTwo+' ) );
+
+			// Issue Rpc
+			rpcHandler.handle( requestor, requestMessage );
+			expect( requestor.socket.lastSendMessage ).toBeNull();
+			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|{"numA":5, "numB":7}+' ) );
+
+			// Return Ack
+			rpcHandler.handle( provider, ackMessage );
+			expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
+
+			// Sends error for additional acks
+			requestor.socket.lastSendMessage = null;
+			rpcHandler.handle( provider, ackMessage );
+			expect( requestor.socket.lastSendMessage ).toBeNull();
+			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|MULTIPLE_ACK|addTwo|1234+' ) );
+
+			// Return Response
+			rpcHandler.handle( provider, responseMessage );
+			expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|12+' ) );
+
+			// Unregister Subscriber
+			subscriptionMessage.action = C.ACTIONS.UNSUBSCRIBE;
+			rpcHandler.handle( provider, subscriptionMessage );
+			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|A|US|addTwo+' ) );
+
+			// Ignores additional responses
+			requestor.socket.lastSendMessage = null;
+			provider.socket.lastSendMessage = null;
+			rpcHandler.handle( provider, additionalResponseMessage );
+			expect( requestor.socket.lastSendMessage ).toBeNull();
+			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|unexpected state for rpc 1234 with action RES+' ) );
+		});
+
+		it( 'executes local rpcs - error scenario', function(){
+			var requestor = new SocketWrapper( new SocketMock(), {} ),
+				provider = new SocketWrapper( new SocketMock(), {} );
+
+			// Register provider
+			subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
+			rpcHandler.handle( provider, subscriptionMessage );
+
+			// Issue Rpc
+			rpcHandler.handle( requestor, requestMessage );
+
+			// Error Response
+			requestor.socket.lastSendMessage = null;
+
+			rpcHandler.handle( provider, errorMessage );
+
+			expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|E|ErrorOccured|addTwo|1234+' ) );
+
+			// Ignores additional responses
+			requestor.socket.lastSendMessage = null;
+			provider.socket.lastSendMessage = null;
+			rpcHandler.handle( provider, errorMessage );
+			expect( requestor.socket.lastSendMessage ).toBeNull();
+			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action E+' ) );
+		});
+
+		it( 'supports multiple RPCs in quick succession', function(){
+			var requestor = new SocketWrapper( new SocketMock(), {} ),
+				provider = new SocketWrapper( new SocketMock(), {} );
+
+			// Register provider
+			subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
+			rpcHandler.handle( provider, subscriptionMessage );
+			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|A|S|addTwo+' ) );
+
+			expect(function(){
+				for( var i = 0; i < 50; i++ ) {
+					rpcHandler.handle( requestor, requestMessage );
+				}
+			}).not.toThrow();
+		});
 	});
 
-	it( 'sends an error for invalid subscription messages ', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			invalidMessage = {
-				topic: C.TOPIC.RPC,
-				action: C.ACTIONS.SUBSCRIBE,
-				raw: 'rawMessageString2',
-				data: [ 1, 'a']
-			};
-
-		rpcHandler.handle( socketWrapper, invalidMessage );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|rawMessageString2+' ) );
-	});
-
-	it( 'sends an error for unknown actions', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			invalidMessage = {
-				topic: C.TOPIC.RPC,
-				action: 'giberrish',
-				raw: 'rawMessageString2',
-				data: [ 1, 'a']
-			};
-
-		rpcHandler.handle( socketWrapper, invalidMessage );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|E|UNKNOWN_ACTION|unknown action giberrish+' ) );
-	});
-
-	it( 'routes subscription messages', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
-		rpcHandler.handle( socketWrapper, subscriptionMessage );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|A|S|addTwo+' ) );
-
-		subscriptionMessage.action = C.ACTIONS.UNSUBSCRIBE;
-		rpcHandler.handle( socketWrapper, subscriptionMessage );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'P|A|US|addTwo+' ) );
-	});
-
-	it( 'executes local rpcs', function(){
-		var requestor = new SocketWrapper( new SocketMock(), {} ),
-			provider = new SocketWrapper( new SocketMock(), {} );
-
-		// Register provider
-		subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
-		rpcHandler.handle( provider, subscriptionMessage );
-		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|A|S|addTwo+' ) );
-
-		// Issue Rpc
-		rpcHandler.handle( requestor, requestMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( null );
-		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|{"numA":5, "numB":7}+' ) );
-
-		// Return Ack
-		rpcHandler.handle( provider, ackMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
-
-		// Sends error for additional acks
-		requestor.socket.lastSendMessage = null;
-		rpcHandler.handle( provider, ackMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( null );
-		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|MULTIPLE_ACK|addTwo|1234+' ) );
-
-		// Return Response
-		rpcHandler.handle( provider, responseMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|12+' ) );
-
-		// Unregister Subscriber
-		subscriptionMessage.action = C.ACTIONS.UNSUBSCRIBE;
-		rpcHandler.handle( provider, subscriptionMessage );
-		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|A|US|addTwo+' ) );
-
-		// Ignores additional responses
-		requestor.socket.lastSendMessage = null;
-		provider.socket.lastSendMessage = null;
-		rpcHandler.handle( provider, additionalResponseMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( null );
-		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|unexpected state for rpc 1234 with action RES+' ) );
-	});
-
-	it( 'executes local rpcs - error scenario', function(){
-		var requestor = new SocketWrapper( new SocketMock(), {} ),
-			provider = new SocketWrapper( new SocketMock(), {} );
-
-		// Register provider
-		subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
-		rpcHandler.handle( provider, subscriptionMessage );
-
-		// Issue Rpc
-		rpcHandler.handle( requestor, requestMessage );
-
-		// Error Response
-		requestor.socket.lastSendMessage = null;
-
-		rpcHandler.handle( provider, errorMessage );
-
-		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|E|ErrorOccured|addTwo|1234+' ) );
-
-		// Ignores additional responses
-		requestor.socket.lastSendMessage = null;
-		provider.socket.lastSendMessage = null;
-		rpcHandler.handle( provider, errorMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( null );
-		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action E+' ) );
-	});
-
-	it( 'supports multiple RPCs in quick succession', function(){
-		var requestor = new SocketWrapper( new SocketMock(), {} ),
-			provider = new SocketWrapper( new SocketMock(), {} );
-
-		// Register provider
-		subscriptionMessage.action = C.ACTIONS.SUBSCRIBE;
-		rpcHandler.handle( provider, subscriptionMessage );
-		expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|A|S|addTwo+' ) );
-
-		expect(function(){
-			for( var i = 0; i < 50; i++ ) {
-				rpcHandler.handle( requestor, requestMessage );
-			}
-		}).not.toThrow();
-	});
-});
-
-xdescribe( 'rpc handler routes requests to remote providers', function(){
-	var requestor;
-
-	/*
-	 * Running tests in a single it block now as there were numerous problems
-	 * with Jasmine's sequence
-	 */
 	it( 'executes remote rpcs', function(){
+		var requestor;
+
+		// This is terrible practice, but we don't have any means to access the object otherwise
+		rpcHandler._subscriptionRegistry.getAllRemoteServers = function( name ) {
+			return [ 'random-server-1' ];
+		}
+
 		options.messageConnector.reset();
 
 		requestor = new SocketWrapper( new SocketMock(), {} );
-		expect( options.messageConnector.lastPublishedMessage ).toBe( null );
+		expect( options.messageConnector.lastPublishedMessage ).toBeNull();
 
 		// There are no local providers for the substract rpc
 		rpcHandler.handle( requestor, remoteRequestMessage );
-		expect( options.messageConnector.lastPublishedMessage ).toEqual( providerQueryMessage );
-	//});
-
-	//it( 'forwards rpc to remote providers', function(){
-		expect( requestor.socket.lastSendMessage ).toBe( null );
-
-		options.messageConnector.simulateIncomingMessage( providerUpdateMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( null );
-		expect( options.messageConnector.lastPublishedMessage ).toEqual( privateRemoteRequestMessage );
-	//});
-
-	//it( 'forwards ack from remote provider to requestor', function(){
-		expect( requestor.socket.lastSendMessage ).toBe( null );
+		delete options.messageConnector.lastPublishedMessage.raw;
+		expect( options.messageConnector.lastPublishedMessage ).toEqual( {
+			topic: 'PRIVATE/random-server-1',
+			action: 'REQ',
+			data: [ 'substract', '4', '{"numA":8, "numB":3}' ],
+			remotePrivateTopic: 'PRIVATE/thisServer',
+			originalTopic: 'P' }
+		);
+		expect( requestor.socket.lastSendMessage ).toBeNull();
 
 		options.messageConnector.simulateIncomingMessage( privateRemoteAckMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|substract|4+') );
-	//});
 
-	//it( 'forwards response from remote provider to requestor', function(){
+		// forwards response from remote provider to requestor
 		options.messageConnector.simulateIncomingMessage( privateRemoteResponseMessage );
 		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|substract|4|5+' ) );
-	//});
 
-	//it( 'ignores subsequent responses', function(){
+		// ignores subsequent responses
 		requestor.socket.lastSendMessage = null;
 		options.messageConnector.simulateIncomingMessage( privateRemoteResponseMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( null );
+		expect( requestor.socket.lastSendMessage ).toBeNull();
 	});
 });
-
