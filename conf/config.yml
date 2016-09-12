@@ -68,7 +68,7 @@ plugins:
   #   name: redis
   #   options:
   #     host: localhost
-  #     port: 5672
+  #     port: 6379
   #
   # cache:
   #   name: memcached
