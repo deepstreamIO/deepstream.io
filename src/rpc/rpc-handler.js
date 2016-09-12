@@ -112,8 +112,7 @@ module.exports = class RpcHandler {
 	 */
 	getAlternativeProvider( rpcName, correlationId ) {
 		const rpcData = this._rpcs[ correlationId ];
-		const usedRemoteProviderTopics = [];
-		const localProviders = this._subscriptionRegistry.getLocalSubscribers( rpcName );
+		const localProviders = rpcData.local;
 
 		var allRemoteProviderTopics;
 
