@@ -112,7 +112,6 @@ module.exports = class RpcHandler {
 	 */
 	getAlternativeProvider( rpcName, correlationId ) {
 		const rpcData = this._rpcs[ correlationId ];
-		const localProviders = rpcData.local;
 
 		var allRemoteProviderTopics;
 
@@ -213,12 +212,11 @@ module.exports = class RpcHandler {
 
 		const rpcName = message.data[ 0 ];
 		const correlationId = message.data[ 1 ];
-		var	makeRemoteRpcFn, provider;
+		var	provider;
 
 		const rpcData = {
 			local: this._subscriptionRegistry.getLocalSubscribers( rpcName ),
 			remoteServers: null,
-			rpc: null,
 			rpc: null
 		};
 		this._rpcs[ correlationId ] = rpcData;
@@ -293,7 +291,7 @@ module.exports = class RpcHandler {
 		}
 
 		if( !msg.data || msg.data.length < 2 ) {
-			socketWrapper.sendError(  C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, message.data );
+			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, msg.data );
 			return;
 		}
 
