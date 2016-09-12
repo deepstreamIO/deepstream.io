@@ -129,7 +129,7 @@ module.exports = class RpcHandler {
 		/*
 		 * Look within the local providers for one that hasn't been used yet
 		 */
-		if( rpcData.local.length > 0 ) {
+		if( rpcData.local && rpcData.local.length > 0 ) {
 			return this._getNextRandomLocalProvider( correlationId );
 		}
 
