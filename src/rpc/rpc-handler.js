@@ -299,6 +299,11 @@ module.exports = class RpcHandler {
 
 		msg.topic = msg.originalTopic;
 
+		if( msg.action === C.ACTIONS.ERROR && msg.data[0] === C.EVENT.NO_RPC_PROVIDER ) {
+			msg.action = C.ACTIONS.REJECTION;
+			msg.data = msg.data[ 1 ];
+		}
+
 		if( msg.action === C.ACTIONS.REQUEST ) {
 			const proxy = new RpcProxy(
 				this._options,
