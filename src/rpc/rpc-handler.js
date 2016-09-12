@@ -144,7 +144,7 @@ module.exports = class RpcHandler {
 		 * Do any remote topics exist? If not, this is already from another
 		 * server so we shouldn't try making a remote request.
 		 */
-		if( typeof allRemoteProviderTopics === "undefined" ) {
+		if( allRemoteProviderTopics === null ) {
 			return null;
 		}
 
