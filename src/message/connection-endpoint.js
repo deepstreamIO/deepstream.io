@@ -368,8 +368,7 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 	socketWrapper.socket.removeListener( 'message', socketWrapper.authCallBack );
 	socketWrapper.socket.once( 'close', this._onSocketClose.bind( this, socketWrapper ) );
 	socketWrapper.socket.on( 'message', function( msg ){ this.onMessage( socketWrapper, msg ); }.bind( this ));
-	socketWrapper.user = userData.username || 'OPEN';
-	socketWrapper.authData = userData.serverData || null;
+	this._appendDataToSocketWrapper( socketWrapper, userData );
 	if( typeof userData.clientData === 'undefined' ) {
 		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
 	} else {
@@ -378,6 +377,21 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 
 	this._authenticatedSockets.push( socketWrapper );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user );
+};
+
+/**
+ * Append connection data to the socket wrapper
+ *
+ * @param   {SocketWrapper} socketWrapper
+ * @param   {Object} userData the data to append to the socket wrapper
+ *
+ * @private
+ *
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype._appendDataToSocketWrapper = function( socketWrapper, userData ) {
+	socketWrapper.user = userData.username || 'OPEN';
+	socketWrapper.authData = userData.serverData || null;
 };
 
 /**
