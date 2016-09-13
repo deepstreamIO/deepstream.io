@@ -130,7 +130,7 @@ module.exports = class RpcHandler {
 		 * Look within the local providers for one that hasn't been used yet
 		 */
 		if( rpcData.local && rpcData.local.length > 0 ) {
-			return this._getNextRandomLocalProvider( correlationId );
+			return utils.spliceRandomElement( rpcData.local );
 		}
 
 		/*
@@ -156,7 +156,7 @@ module.exports = class RpcHandler {
 		/*
 		 * Search for a remote provider that hasn't been used yet
 		 */
-		return new RpcProxy( this._options, this._getNextRandomServer( correlationId ), rpcName, correlationId );
+		return new RpcProxy( this._options, this._getNextRandomServer( rpcData.remoteServers ), rpcName, correlationId );
 	}
 
 	/**
@@ -227,7 +227,7 @@ module.exports = class RpcHandler {
 		}
 
 		if( rpcData.local && rpcData.local.length > 0 ) {
-			provider = this._getNextRandomLocalProvider( correlationId );
+			provider = utils.spliceRandomElement( rpcData.local );
 			rpcData.rpc = new Rpc( this, socketWrapper, provider, this._options, message );
 		}
 		else if( source === C.SOURCE_MESSAGE_CONNECTOR ) {
@@ -259,7 +259,7 @@ module.exports = class RpcHandler {
 		const rpcData = this._rpcs[ correlationId ];
 
 		if( rpcData.remoteServers && rpcData.remoteServers.length > 0 ) {
-			var rpcProxy = new RpcProxy( this._options, this._getNextRandomServer( correlationId ), rpcName, correlationId );
+			var rpcProxy = new RpcProxy( this._options, this._getNextRandomServer( rpcData.remoteServers ), rpcName, correlationId );
 			rpcData.rpc = new Rpc( this, requestor, rpcProxy, this._options, message );
 			return;
 		}
@@ -342,28 +342,11 @@ module.exports = class RpcHandler {
 	}
 
 	/**
-	 * Returns the next provider that can provide the rpc.
+	 * Returns the next (prefixed) remote server name that can provide the rpc.
 	 *
-	 * This can be improved by keeping track of current providers used and ignoring them
-	 * moving forward.
-	 * @return {SocketWrapper}
-	 */
-	_getNextRandomLocalProvider( correlationId ) {
-		const localProviders = this._rpcs[ correlationId ].local;
-		const randomProviderIndex = utils.getRandomIntInRange( 0, localProviders.length );
-		return localProviders.splice( randomProviderIndex, 1 )[ 0 ];
-	}
-
-	/**
-	 * Returns the next remote server name that can provide the rpc.
-	 *
-	 * This can be improved by keeping track of current servers used and ignoring them
-	 * moving forward.
 	 * @return {String}
 	 */
-	_getNextRandomServer( correlationId ) {
-		const remoteServers = this._rpcs[ correlationId ].remoteServers;
-		const randomProviderIndex = utils.getRandomIntInRange( 0, remoteServers.length );
-		return C.TOPIC.PRIVATE + remoteServers.splice( randomProviderIndex, 1 )[ 0 ];
+	_getNextRandomServer( remoteServers ) {
+		return C.TOPIC.PRIVATE + utils.spliceRandomElement( remoteServers );
 	}
 }
