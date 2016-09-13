@@ -14,14 +14,13 @@ var C = require( '../../src/constants/constants' ),
 describe( 'data-transforms', function(){
 
 	var dataTransforms;
-	
+
 	it( 'errors when initialised with the wrong settings', function(){
 		expect( initDataTransforms( 'a string' ) ).toBe( 'Error: option dataTransforms must be an array or null' );
 		expect( initDataTransforms( [ 'a string' ] ) ).toBe( 'Error: transformation is not a map' );
 		expect( initDataTransforms( [ {} ] ) ).toBe( 'Error: Transforms for topic undefined are not supported' );
 		expect( initDataTransforms( [ { topic: C.TOPIC.AUTH } ] ) ).toBe( 'Error: Transforms for topic A are not supported' );
 		expect( initDataTransforms( [ { topic: C.TOPIC.RECORD } ] ) ).toBe( 'Error: Transforms for action undefined are not supported for topic R' );
-		expect( initDataTransforms( [ { topic: C.TOPIC.RECORD, action: C.ACTIONS.QUERY } ] ) ).toBe( 'Error: Transforms for action Q are not supported for topic R' );
 		expect( initDataTransforms( [ { topic: C.TOPIC.RECORD, action: C.ACTIONS.READ } ] ) ).toBe( 'Error: setting.transform must be a function' );
 		expect( initDataTransforms( [ { topic: C.TOPIC.RECORD, action: C.ACTIONS.READ, transform: 'bla' } ] ) ).toBe( 'Error: setting.transform must be a function' );
 		expect( initDataTransforms( [ { topic: C.TOPIC.RECORD, action: C.ACTIONS.READ, transform: function(){} } ] ) ).toBe( null );
@@ -55,8 +54,8 @@ describe( 'data-transforms', function(){
 	});
 
 	it( 'applies a transformation', function(){
-		var data = dataTransforms.apply( 
-			C.TOPIC.RECORD, 
+		var data = dataTransforms.apply(
+			C.TOPIC.RECORD,
 			C.ACTIONS.READ,
 			{ amount: 20 },
 			{ username: 'Wolfram' }
@@ -68,8 +67,8 @@ describe( 'data-transforms', function(){
 	});
 
 	it( 'applies another transformation', function(){
-		var data = dataTransforms.apply( 
-			C.TOPIC.RPC, 
+		var data = dataTransforms.apply(
+			C.TOPIC.RPC,
 			C.ACTIONS.RESPONSE,
 			{ information: 'stuff', secretInformation: 'secretStuff' },
 			{}

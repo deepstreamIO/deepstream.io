@@ -28,6 +28,7 @@ class SubscriptionRegistry {
 			UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
 			NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
 		}
+
 		this._clusterSubscriptions = new DistributedStateRegistry( clusterTopic || `${topic}_${C.TOPIC.SUBSCRIPTIONS}`, options );
 		this._clusterSubscriptions.on( 'add', this._onClusterSubscriptionAdded.bind( this ) );
 		this._clusterSubscriptions.on( 'remove', this._onClusterSubscriptionRemoved.bind( this ) );
@@ -43,6 +44,24 @@ class SubscriptionRegistry {
 	 */
 	getAllServers( subscriptionName ) {
 		return this._clusterSubscriptions.getAllServers( subscriptionName );
+	}
+
+	/**
+	 * Return all the servers that have this subscription excluding the current
+	 * server name
+	 *
+	 * @param  {String} subscriptionName the subscriptionName to look for
+	 *
+	 * @public
+	 * @return {Array}  An array of all the servernames with this subscription
+	 */
+	getAllRemoteServers( subscriptionName ) {
+		const serverNames = this._clusterSubscriptions.getAllServers( subscriptionName );
+		const localServerIndex = serverNames.indexOf( this._options.serverName );
+		if (  localServerIndex > -1 ) {
+			serverNames.splice( serverNames.indexOf( this._options.serverName ), 1 );
+		}
+		return serverNames;
 	}
 
 	/**

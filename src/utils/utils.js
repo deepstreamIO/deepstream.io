@@ -191,3 +191,12 @@ exports.setTimeout = function( callback, timeoutDuration ) {
 		return -1;
 	}
 };
+
+exports.getRandomIntInRange = function( min, max ) {
+	return min + Math.floor( Math.random() * ( max - min ) );
+};
+
+exports.spliceRandomElement = function( array ) {
+  const randomIndex = exports.getRandomIntInRange( 0, array.length );
+  return array.splice( randomIndex, 1 )[ 0 ];
+}

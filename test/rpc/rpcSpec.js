@@ -65,13 +65,13 @@ describe( 'executes local rpc calls', function(){
 
 	it( 'forwards ack message', function(){
 		var rpc = makeRpc( requestMessage );
-		rpc.provider.emit( 'P', ackMessage );
+		rpc.localRpc.handle( ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
 	});
 
 	it( 'times out if response is not received in time', function( done ){
 		var rpc = makeRpc( requestMessage );
-		rpc.provider.emit( 'P', ackMessage );
+		rpc.localRpc.handle( ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
 		setTimeout(function(){
 			expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|E|RESPONSE_TIMEOUT|addTwo|1234+' ) );
@@ -81,34 +81,34 @@ describe( 'executes local rpc calls', function(){
 
 	it( 'forwards response message', function(){
 		var rpc = makeRpc( requestMessage );
-		rpc.provider.emit( 'P', ackMessage );
+		rpc.localRpc.handle( ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
-		rpc.provider.emit( 'P', responseMessage );
+		rpc.localRpc.handle( responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|RES|addTwo|1234|N12+' ) );
 	});
 
 	it( 'forwards error message', function(){
 		var rpc = makeRpc( requestMessage );
-		rpc.provider.emit( 'P', errorMessage );
+		rpc.localRpc.handle( errorMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|E|ErrorOccured|addTwo|1234+' ) );
 	});
 
 	it( 'ignores ack message if it arrives after response', function(){
 		var rpc = makeRpc( requestMessage );
-		rpc.provider.emit( 'P', responseMessage );
+		rpc.localRpc.handle( responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|RES|addTwo|1234|N12+' ) );
-		rpc.provider.emit( 'P', ackMessage );
+		rpc.localRpc.handle( ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|RES|addTwo|1234|N12+' ) );
 	});
 
 	it( 'sends error for multiple ack messages', function(){
 		var rpc = makeRpc( requestMessage );
 
-		rpc.provider.emit( 'P', ackMessage );
+		rpc.localRpc.handle( ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
 		expect( rpc.provider.socket.lastSendMessage ).toBe( msg( 'P|REQ|addTwo|1234|O{"numA":5, "numB":7}+' ) );
 
-		rpc.provider.emit( 'P', ackMessage );
+		rpc.localRpc.handle( ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
 		expect( rpc.provider.socket.lastSendMessage ).toBe( msg( 'P|E|MULTIPLE_ACK|addTwo|1234+' ) );
 	});
@@ -116,15 +116,15 @@ describe( 'executes local rpc calls', function(){
 	it( 'ignores multiple responses', function(){
 		var rpc = makeRpc( requestMessage );
 
-		rpc.provider.emit( 'P', ackMessage );
+		rpc.localRpc.handle( ackMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
 
-		rpc.provider.emit( 'P', responseMessage );
+		rpc.localRpc.handle( responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|RES|addTwo|1234|N12+' ) );
 
 		rpc.requestor.socket.lastSendMessage = null;
 
-		rpc.provider.emit( 'P', responseMessage );
+		rpc.localRpc.handle( responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( null );
 	});
 });
@@ -149,7 +149,7 @@ describe( 'reroutes remote rpc calls', function(){
 	});
 
 	it( 'receives a unrelated message from the provider', function(){
-		provider.emit( C.TOPIC.RPC, {
+		rpc.handle( {
 			topic: C.TOPIC.RPC,
 			action: C.ACTIONS.REQUEST,
 			raw: msg( 'P|REQ|addTwo|1234|O{"numA":5, "numB":7}+' ),
@@ -162,7 +162,7 @@ describe( 'reroutes remote rpc calls', function(){
 		spyOn( mockRpcHandler, 'getAlternativeProvider' ).and.callThrough();
 		expect( alternativeProvider.socket.lastSendMessage ).toBe( null );
 
-		provider.emit( C.TOPIC.RPC, {
+		rpc.handle( {
 			topic: C.TOPIC.RPC,
 			action: C.ACTIONS.REJECTION,
 			raw: msg( 'P|REJ|addTwo|1234|O{"numA":5, "numB":7}+' ),
@@ -178,7 +178,7 @@ describe( 'reroutes remote rpc calls', function(){
 	it( 'rejects the message again and runs out of alternative providers', function(){
 		mockRpcHandler.getAlternativeProvider = function(){ return null; };
 
-		alternativeProvider.emit( C.TOPIC.RPC, {
+		rpc.handle( {
 			topic: C.TOPIC.RPC,
 			action: C.ACTIONS.REJECTION,
 			raw: msg( 'P|REJ|addTwo|1234|O{"numA":5, "numB":7}+' ),

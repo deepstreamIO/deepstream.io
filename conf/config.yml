@@ -68,7 +68,7 @@ plugins:
   #   name: redis
   #   options:
   #     host: localhost
-  #     port: 5672
+  #     port: 6379
   #
   # cache:
   #   name: memcached
@@ -134,7 +134,6 @@ permission:
     cacheEvacuationInterval: 60000
 
 # Timeouts (in milliseconds)
-rpcProviderQueryTimeout: 1000
 rpcProviderCacheTime: 60000
 rpcAckTimeout: 1000
 rpcTimeout: 10000

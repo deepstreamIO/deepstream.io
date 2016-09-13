@@ -19,7 +19,9 @@ function stopServer() {
 	return child_process.spawnSync( 'node', ['bin/deepstream', 'stop'], execOptions );
 }
 
-xdescribe('Command Line Interface', function() {
+// Commenting out since its noisy and will most likely never be commended in due to being too complex for
+// unit tests
+/*describe('Command Line Interface', function() {
 	it( 'start, status and stop', function() {
 		child_process.exec( 'node bin/deepstream start', execOptions );
 		let output = '';
@@ -93,3 +95,4 @@ xdescribe('Command Line Interface', function() {
 	} );
 
 } );
+*/

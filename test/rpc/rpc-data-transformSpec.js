@@ -98,8 +98,8 @@ describe( 'executes local rpc calls', function(){
 
 		var rpc = makeRpc( requestMessage, settings );
 		expect( rpc.provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|O{"numA":11,"numB":7,"rpcName":"addTwo"}+' ) );
-		rpc.provider.emit( 'P', ackMessage );
-		rpc.provider.emit( 'P', responseMessage );
+		rpc.localRpc.handle( ackMessage );
+		rpc.localRpc.handle( responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|N12+' ) );
 	});
 
@@ -125,8 +125,8 @@ describe( 'executes local rpc calls', function(){
 
 		var rpc = makeRpc( requestMessage, settings );
 		expect( rpc.provider.socket.lastSendMessage ).toBe( _msg( 'P|REQ|addTwo|1234|O{"numA":11,"numB":7,"rpcName":"addTwo"}+' ) );
-		rpc.provider.emit( 'P', ackMessage );
-		rpc.provider.emit( 'P', responseMessage );
+		rpc.localRpc.handle( ackMessage );
+		rpc.localRpc.handle( responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( _msg( 'P|RES|addTwo|1234|N21+' ) );
 	});
 });
