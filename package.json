@@ -29,7 +29,7 @@
     "colors": "^1.0.3",
     "commander": "^2.9.0",
     "engine.io": "1.6.11",
-    "glob": "^7.0.5",
+    "glob": "^7.1.0",
     "js-yaml": "^3.6.1",
     "mkdirp": "^0.5.1",
     "needle": "^1.1.0"
