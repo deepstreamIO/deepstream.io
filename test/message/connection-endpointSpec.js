@@ -63,6 +63,10 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
+
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
+
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
@@ -84,6 +88,8 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
@@ -107,7 +113,7 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
 
@@ -130,6 +136,7 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
 
 		it( 'handles valid auth messages', function(){
@@ -187,8 +194,7 @@ describe( 'connection endpoint', function() {
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
-			expect( socketMock.isDisconnected ).toBe( false );
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
 
 		it( 'authenticates valid sockets', function(){
@@ -216,8 +222,7 @@ describe( 'connection endpoint', function() {
 	describe( 'forwards additional data for positive authentications', function(){
 		it( 'creates the connection endpoint', function(){
 			socketMock = engineIoMock.simulateConnection();
-			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
-			expect( socketMock.isDisconnected ).toBe( false );
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 
 			authenticationHandlerMock.reset();
 			authenticationHandlerMock.nextUserValidationResult = true;
