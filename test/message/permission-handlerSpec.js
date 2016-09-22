@@ -25,8 +25,6 @@ permissionHandler = {
     onClientDisconnect: function( username ){}
 };
 
-
-
 options = {
 	permissionHandler: permissionHandler,
 	authenticationHandler: permissionHandler,
@@ -51,8 +49,7 @@ describe( 'permissionHandler passes additional user meta data', function() {
 
 	it( 'creates the connection endpoint', function(){
 		socketMock = engineIoMock.simulateConnection();
-		expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
-		expect( socketMock.isDisconnected ).toBe( false );
+		socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 	});
 
 	it( 'sends an authentication message', function(){

@@ -65,6 +65,9 @@ describe( 'disabling tcp or webserver endpoints', function() {
 
 		it( 'simulates a client connection', function(){
 			socketMock = engineIoMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
+
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
 		});
 

@@ -268,11 +268,45 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 		socketWrapper.socket.once( 'close', clearTimeout.bind( null, disconnectTimer ) );
 	}
 
+	socketWrapper.connectionCallback = this._processConnectionMessage.bind( this, socketWrapper );
 	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper, disconnectTimer );
+	socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.CHALLENGE );
+	socket.on( 'message', socketWrapper.connectionCallback );
+};
 
-	socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.ACK );
+/**
+ * Callback for 'connection' event. Receives
+ * a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user and
+ * subscribes to authentication messages.
+ *
+ * @param {Number} endpoint
+ * @param {TCPSocket|Engine.io} socket
+ *
+ * @private
+ * @returns {void}
+ */
 
-	socket.on( 'message', socketWrapper.authCallBack );
+/**
+ * Always challenges the client that connects. This will be opened up later to allow users to put in their
+ * own challenge authentication, but requires more work on the clustering aspect first.
+ *
+ * @param  {SocketWrapper} socketWrapper Socket
+ * @param  {Message} connectionMessage Message recieved from server
+ *
+ * @private
+ * @returns {void}
+ */
+ConnectionEndpoint.prototype._processConnectionMessage = function( socketWrapper, connectionMessage ) {
+	var msg = messageParser.parse( connectionMessage )[ 0 ];
+
+	if( msg.action === C.ACTIONS.CHALLENGE_RESPONSE ) {
+		socketWrapper.socket.removeListener( 'message', socketWrapper.connectionCallback );
+		socketWrapper.socket.on( 'message', socketWrapper.authCallBack );
+		socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.ACK );
+	} else {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action );
+		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + msg.action );
+	}
 };
 
 /**
