@@ -376,7 +376,7 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( userData.clientData ) ] );
 	}
 
-	if( userData.username && userData.username !== 'OPEN' && userData.username !== 'open' ) {
+	if( userData.username && userData.username.toUpperCase() !== 'OPEN' ) {
 		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ messageBuilder.typed( userData.username ) ] );
 		process.nextTick( this.onMessage.bind( this, socketWrapper, msg ) );
 	}
@@ -516,7 +516,7 @@ ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
 		this._options.authenticationHandler.onClientDisconnect( socketWrapper.user );
 	}
 
-	if( socketWrapper.user !== 'OPEN' && socketWrapper.user !== 'open' ) {
+	if( socketWrapper.user.toUpperCase() !== 'OPEN' ) {
 		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ messageBuilder.typed( socketWrapper.user ) ] );
 		process.nextTick( this.onMessage.bind( this, socketWrapper, msg ) );
 	}

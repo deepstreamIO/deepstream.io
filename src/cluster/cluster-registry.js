@@ -27,7 +27,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
 	 */
 	constructor( options, connectionEndpoint ) {
 		super();
-		this.setMaxListeners( 20 );
+		this.setMaxListeners( 11 );
 		this._options = options;
 		this._connectionEndpoint = connectionEndpoint;
 		this._inCluster = false;
