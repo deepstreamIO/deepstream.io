@@ -43,16 +43,8 @@ module.exports = class PresenceHandler {
 			this._handleLeave( socketWrapper );
 		}
 		else if( message.action === C.ACTIONS.SUBSCRIBE ) {
-			if( message.data[ 0 ] === C.ACTIONS.PRESENCE_JOIN ) {
-				this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_JOIN, socketWrapper );
-			}
-			else if( message.data[ 0 ] === C.ACTIONS.PRESENCE_LEAVE ) {
-				this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_LEAVE, socketWrapper );
-			}
-			else {
-				//todo
-				throw new Error('Wrong action')
-			}
+			this._handleSubscribe( socketWrapper, message.data[ 0 ] );
+			
 		}
 		else if( message.action === C.ACTIONS.QUERY ) {	
 			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.ACK, [ C.TOPIC.PRESENCE, C.ACTIONS.QUERY ] );
@@ -60,6 +52,13 @@ module.exports = class PresenceHandler {
 			var index = clients.indexOf( socketWrapper.user );
 			clients.splice( index, 1 );
 			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients );
+		}
+		else {
+			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
+
+			if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+				socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
+			}
 		}
 	}
 
@@ -76,6 +75,31 @@ module.exports = class PresenceHandler {
 		this._presenceRegistry.unsubscribe( C.ACTIONS.PRESENCE_JOIN, socketWrapper, true );
 		this._presenceRegistry.unsubscribe( C.ACTIONS.PRESENCE_LEAVE, socketWrapper, true );
 		this._connectedClients.remove( socketWrapper.user );
+	}
+
+	/**
+	 * Handles subscriptions to client login and logout events
+	 * 
+	 * @param   {Object} socketWrapper the socketWrapper of the client that left
+	 * @param   {String} actions either a subscribe or unsubscribe message
+	 *
+	 * @public
+	 * @returns {void}
+	 */
+	_handleSubscribe( socketWrapper, action ) {
+		if( action === C.ACTIONS.PRESENCE_JOIN ) {
+				this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_JOIN, socketWrapper );
+		}
+		else if( action === C.ACTIONS.PRESENCE_LEAVE ) {
+			this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_LEAVE, socketWrapper );
+		}
+		else {
+			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, action );
+
+			if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+				socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, 'unknown data ' + action );
+			}
+		}
 	}
 
 	/**
