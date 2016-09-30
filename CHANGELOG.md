@@ -1,3 +1,16 @@
+## [1.1.1] - 2016-09-30
+
+### Bug Fixes
+
+- Storage connector now logs errors with the correct namepspace [@Iiridayn](@Iiridayn)
+
+### Enhancements
+
+- RPC now uses distributed state and no longer depends on custom rpc discovery logic
+- Deepstream now uses connection challenges by default rather than automatically replying with an ack
+- Upgraded to uWS 0.9.0
+
+
 ## [1.1.0] - 2016-09-08
 
 ### Bug Fixes
