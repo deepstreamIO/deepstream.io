@@ -16,6 +16,7 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	jsYamlLoader = require( './config/js-yaml-loader' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
+	PresenceHandler = require( './presence/presence-handler' ),
 	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	ClusterRegistry = require( './cluster/cluster-registry' ),
@@ -47,6 +48,7 @@ var Deepstream = function( config ) {
 	this._eventHandler = null;
 	this._rpcHandler = null;
 	this._recordHandler = null;
+	this._presenceHandler = null;
 	this._webRtcHandler = null;
 	this._plugins = [
 		'messageConnector',
@@ -307,6 +309,10 @@ Deepstream.prototype._init = function() {
 
 	this._recordHandler = new RecordHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );
+
+	this._options.connectionEndpoint = this._connectionEndpoint;
+	this._presenceHandler = new PresenceHandler( this._options );
+	this._messageDistributor.registerForTopic( C.TOPIC.PRESENCE, this._presenceHandler.handle.bind( this._presenceHandler ) );
 
 	this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind( this._messageDistributor );
 
