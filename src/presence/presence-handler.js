@@ -37,20 +37,26 @@ module.exports = class PresenceHandler {
 	 */
 	handle( socketWrapper, message ) {
 		if ( message.action === C.ACTIONS.PRESENCE_JOIN ) {
-			this._connectedClients.add( socketWrapper.user );
-		} 
+			if( socketWrapper.user !== null ) {
+				this._connectedClients.add( socketWrapper.user );
+			} else {
+				//TODO: Can this ever be reached in non test situations?
+				this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, 'missing username' );
+			}
+		}
 		else if ( message.action === C.ACTIONS.PRESENCE_LEAVE ) {
 			this._handleLeave( socketWrapper );
 		}
 		else if( message.action === C.ACTIONS.SUBSCRIBE ) {
 			this._handleSubscribe( socketWrapper, message.data[ 0 ] );
-			
 		}
-		else if( message.action === C.ACTIONS.QUERY ) {	
+		else if( message.action === C.ACTIONS.QUERY ) {
 			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.ACK, [ C.TOPIC.PRESENCE, C.ACTIONS.QUERY ] );
-			var clients = this._connectedClients.getAll();
-			var index = clients.indexOf( socketWrapper.user );
-			clients.splice( index, 1 );
+			const clients = this._connectedClients.getAll();
+			const index = clients.indexOf( socketWrapper.user );
+			if( index !== -1 ) {
+				clients.splice( index, 1 );
+			}
 			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients );
 		}
 		else {
@@ -65,7 +71,7 @@ module.exports = class PresenceHandler {
 	/**
 	 * Removes subscriptions to presence events and removes them from the
 	 * _connectedClients list
-	 * 
+	 *
 	 * @param   {Object} socketWrapper the socketWrapper of the client that left
 	 *
 	 * @public
@@ -79,7 +85,7 @@ module.exports = class PresenceHandler {
 
 	/**
 	 * Handles subscriptions to client login and logout events
-	 * 
+	 *
 	 * @param   {Object} socketWrapper the socketWrapper of the client that left
 	 * @param   {String} actions either a subscribe or unsubscribe message
 	 *
@@ -105,7 +111,7 @@ module.exports = class PresenceHandler {
 	/**
 	 * Alerts all clients who are subscribed to
 	 * PRESENCE_JOIN that a new client has been added.
-	 * 
+	 *
 	 * @param   {String} username the username of the client that joined
 	 *
 	 * @public
@@ -119,7 +125,7 @@ module.exports = class PresenceHandler {
 	/**
 	 * Alerts all clients who are subscribed to
 	 * PRESENCE_LEAVE that the client has left.
-	 * 
+	 *
 	 * @param   {String} username the username of the client that left
 	 *
 	 * @public
