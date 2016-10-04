@@ -28,6 +28,13 @@ describe('validates rule strings from permissions.json', function(){
 	it( 'rejects rules that call unsupported functions', function(){
 		expect( ruleParser.validate( 'data.lastname.toUpperCase()', 'record', 'write' ) ).toBe( true );
 		expect( ruleParser.validate( 'alert("bobo")' ) ).toBe( 'function alert is not supported' );
+		expect( ruleParser.validate( 'alert  ("whoops")' ) ).toBe( 'function alert is not supported' );
+		expect( ruleParser.validate( 'alert\t("whoops")' ) ).toBe( 'function alert is not supported' );
+		expect( ruleParser.validate( 'alert\n("whoops")' ) ).toBe( 'function alert is not supported' );
+		expect( ruleParser.validate( 'console["log"]("whoops")' ) )
+			.toBe( 'function log is not supported' );
+		expect( ruleParser.validate( 'global["con"+"sole"]["lo" + "g"]("whoops")' ) )
+			.toBe( 'function log is not supported' );
 		expect( ruleParser.validate( 'data.lastname.toUpperCase() && data.lastname.substr(0,3)', 'record', 'write' ) ).toBe( 'function substr is not supported' );
 	});
 
