@@ -33,7 +33,7 @@ const STATES = C.STATES;
  * @copyright 2016 deepstreamHub GmbH
  * @author deepstreamHub GmbH
  *
- * @param {Object} config Configuration object
+ * @param {Object} [config] Configuration object
  *
  * @constructor
  */
