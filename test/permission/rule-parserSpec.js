@@ -31,6 +31,13 @@ describe('validates rule strings from permissions.json', () => {
   it('rejects rules that call unsupported functions', () => {
     expect(ruleParser.validate('data.lastname.toUpperCase()', 'record', 'write')).toBe(true)
     expect(ruleParser.validate('alert("bobo")')).toBe('function alert is not supported')
+    expect(ruleParser.validate('alert  ("whoops")')).toBe('function alert is not supported')
+    expect(ruleParser.validate('alert\t("whoops")')).toBe('function alert is not supported')
+    expect(ruleParser.validate('alert\n("whoops")')).toBe('function alert is not supported')
+    expect(ruleParser.validate('console["log"]("whoops")'))
+      .toBe('function log is not supported')
+    expect(ruleParser.validate('global["con"+"sole"]["lo" + "g"]("whoops")'))
+      .toBe('function log is not supported')
     expect(ruleParser.validate('data.lastname.toUpperCase() && data.lastname.substr(0,3)', 'record', 'write')).toBe('function substr is not supported')
   })
 
@@ -76,7 +83,6 @@ describe('compiles rules into usable objects', () => {
   })
 
   it('creates executable functions', () => {
-    const compiledRule = ruleParser.parse('"bobo"', [])
     expect(ruleParser.parse('"bobo"', []).fn()).toBe('bobo')
     expect(ruleParser.parse('2+2', []).fn()).toBe(4)
   })
