@@ -233,15 +233,25 @@ Deepstream.prototype.convertTyped = function( value ) {
  * @returns {void}
  */
 Deepstream.prototype._loadConfig = function( config ) {
-	if ( config === null || typeof config === 'string' ) {
-		var result = jsYamlLoader.loadConfig( config );
-		this._configFile = result.file;
-		config = result.config;
-	} else {
-		var rawConfig = utils.merge( defaultOptions.get(), config );
-		config = configInitialiser.initialise( rawConfig );
+	if( !config || typeof config === 'string' ) {
+		try {
+			var result = jsYamlLoader.loadConfig( config );
+			this._configFile = result.file;
+			this._options = result.config;
+
+			return;
+		} catch ( e ) {
+			process.stdout.write( "No config file found; use default config" + EOL );
+			config = {};
+		}
 	}
-	this._options = config;
+
+	if( typeof config !== 'object' ) {
+		throw new Error( "Config must be object or path to config file" )
+	}
+
+	var rawConfig = utils.merge( defaultOptions.get(), config );
+	this._options = configInitialiser.initialise( rawConfig );
 };
 
 /**
