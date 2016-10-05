@@ -28,7 +28,7 @@
     "adm-zip": "^0.4.7",
     "colors": "^1.0.3",
     "commander": "^2.9.0",
-    "engine.io": "1.6.11",
+    "engine.io": "1.7.0",
     "glob": "^7.0.5",
     "js-yaml": "^3.6.1",
     "mkdirp": "^0.5.1",
