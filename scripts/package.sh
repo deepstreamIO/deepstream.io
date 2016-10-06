@@ -50,19 +50,8 @@ if [ $OS = "linux" ]; then
 	fpm --version
 fi
 
-echo "Patching accepts dependency of engine.io (npm-shrinkwrap)"
-rm -rf node_modules/engine.io
-rm -f npm-shrinkwrap.json
-npm install --loglevel error
-
 echo -e "\tGenerate License File using unmodified npm packages"
 ./scripts/license-aggregator.js > build/DEPENDENCIES.LICENSE
-
-npm shrinkwrap --loglevel error
-node scripts/shrinkwrap.js
-# Use versions that have been modified
-rm -rf node_modules/engine.io
-npm install --loglevel error
 
 echo "Generating meta.json"
 node scripts/details.js META
