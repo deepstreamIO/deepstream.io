@@ -4,7 +4,7 @@ var events = require( 'events' ),
 	C = require( '../constants/constants' );
 
 /**
- * This class implements the same interface as the engine.io
+ * This class implements the same interface as the WebSocket
  * socket, but for the net.Socket TCP socket
  *
  * @emits message {String} message

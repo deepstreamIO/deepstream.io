@@ -1,16 +1,18 @@
 var SocketMock = require( './socket-mock' );
 
 var i=0;
+var websocketMock = null;
 
-var EngineIoMock = function(){
+var WebsocketMock = function(){
 	this.clients = {};
 	this.clientsCount = 0;
 	this.setMaxListeners( 0 );
+	websocketMock = this;
 };
 
-require("util").inherits( EngineIoMock, require("events").EventEmitter );
+require("util").inherits( WebsocketMock, require("events").EventEmitter );
 
-EngineIoMock.prototype.simulateConnection = function() {
+WebsocketMock.prototype.simulateConnection = function() {
 	var socketMock = new SocketMock();
 	var clientIndex = i++;
 	socketMock.once( 'close', this._onClose.bind( this, clientIndex ) );
@@ -20,23 +22,19 @@ EngineIoMock.prototype.simulateConnection = function() {
 	return socketMock;
 };
 
-EngineIoMock.prototype.listen = function(){
-	return this;
+WebsocketMock.prototype.Server = function(){
+	return websocketMock;
 };
 
-EngineIoMock.prototype.attach = function( server ){
-	return this;
-};
-
-EngineIoMock.prototype._onClose = function( clientIndex ) {
+WebsocketMock.prototype._onClose = function( clientIndex ) {
 	delete this.clients[ clientIndex ];
 	this.clientsCount--;
 };
 
-EngineIoMock.prototype.close = function(){
+WebsocketMock.prototype.close = function(){
 	for( var clientIndex in this.clients ) {
 		this.clients[ clientIndex ].close();
 	}
 };
 
-module.exports = new EngineIoMock();
+module.exports = new WebsocketMock();

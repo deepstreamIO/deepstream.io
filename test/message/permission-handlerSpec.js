@@ -1,9 +1,9 @@
 var proxyquire = require( 'proxyquire' ).noCallThru(),
-	engineIoMock = require( '../mocks/engine-io-mock' ),
+	websocketMock = require( '../mocks/websocket-mock' ),
 	HttpMock = require( '../mocks/http-mock' ),
 	httpMock = new HttpMock(),
 	httpsMock = new HttpMock(),
-	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', { 'engine.io': engineIoMock, 'http': httpMock, 'https': httpsMock } ),
+	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', { 'uws': websocketMock, 'http': httpMock, 'https': httpsMock } ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	lastAuthenticatedMessage = null,
 	lastLoggedMessage = null,
@@ -48,7 +48,7 @@ describe( 'permissionHandler passes additional user meta data', function() {
 	});
 
 	it( 'creates the connection endpoint', function(){
-		socketMock = engineIoMock.simulateConnection();
+		socketMock = websocketMock.simulateConnection();
 		socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 	});
 

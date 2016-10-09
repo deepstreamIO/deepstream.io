@@ -1,12 +1,12 @@
 var proxyquire = require( 'proxyquire' ).noCallThru(),
-	engineIoMock = require( '../mocks/engine-io-mock' ),
+	websocketMock = require( '../mocks/websocket-mock' ),
 	HttpMock = require( '../mocks/http-mock' ),
 	httpMock = new HttpMock(),
 	httpsMock = new HttpMock(),
 	SocketMock = require( '../mocks/socket-mock' ),
 	TcpEndpointMock = require( '../mocks/tcp-endpoint-mock'),
 	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', {
-		'engine.io': engineIoMock,
+		'uws': websocketMock,
 		'http': httpMock,
 		'https': httpsMock,
 		'../tcp/tcp-endpoint': TcpEndpointMock
@@ -62,7 +62,7 @@ describe( 'connection endpoint', function() {
 	describe( 'the connection endpoint handles invalid auth messages', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
@@ -87,7 +87,7 @@ describe( 'connection endpoint', function() {
 	describe( 'the connection endpoint handles invalid json', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
@@ -102,9 +102,9 @@ describe( 'connection endpoint', function() {
 	});
 
 	describe( 'handles errors from the servers', function(){
-		it( 'handles errors from the engine.io server', function(){
+		it( 'handles errors from the websocket server', function(){
 			lastLoggedMessage = null;
-			engineIoMock.emit( 'error', 'bla' );
+			websocketMock.emit( 'error', 'bla' );
 			expect( lastLoggedMessage ).toBe( 'bla' );
 		});
 	});
@@ -112,7 +112,7 @@ describe( 'connection endpoint', function() {
 	describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
@@ -135,7 +135,7 @@ describe( 'connection endpoint', function() {
 	describe( 'disconnects if the number of invalid authentication attempts is exceeded', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
 
@@ -161,7 +161,7 @@ describe( 'connection endpoint', function() {
 
 		beforeAll( function() {
 			options.unauthenticatedClientTimeout = 100;
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 		} );
 
 		afterAll( function() {
@@ -180,7 +180,7 @@ describe( 'connection endpoint', function() {
 	describe( 'doesn\'t log credentials if logInvalidAuthData is set to false', function(){
 		it( 'creates the connection endpoint', function(){
 			options.logInvalidAuthData = false;
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 		});
 
 		it( 'handles valid auth messages', function(){
@@ -193,7 +193,7 @@ describe( 'connection endpoint', function() {
 	describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
 
@@ -221,7 +221,7 @@ describe( 'connection endpoint', function() {
 
 	describe( 'forwards additional data for positive authentications', function(){
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 
 			authenticationHandlerMock.reset();
@@ -240,7 +240,7 @@ describe( 'connection endpoint', function() {
 		var unclosedSocket;
 
 		it( 'calls close on connections', function() {
-			unclosedSocket = engineIoMock.simulateConnection();
+			unclosedSocket = websocketMock.simulateConnection();
 			unclosedSocket.autoClose = false;
 			connectionEndpoint.once( 'close', closeSpy );
 			connectionEndpoint.close();
@@ -258,7 +258,7 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'does not allow future connections', function() {
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 
 			expect( socketMock.lastSendMessage ).toBe( null );
 			expect( socketMock.isDisconnected ).toBe( false );

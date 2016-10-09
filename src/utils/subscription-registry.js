@@ -154,7 +154,7 @@ class SubscriptionRegistry {
 				socketWrapper: socketWrapper,
 				fn: unsubscribeAllFn
 			});
-			socketWrapper.socket.once( 'close', unsubscribeAllFn );
+			socketWrapper.once( 'close', unsubscribeAllFn );
 		}
 
 		this._subscriptions[ name ].push( socketWrapper );

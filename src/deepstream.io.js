@@ -42,7 +42,6 @@ var Deepstream = function( config ) {
 	this.constants = C;
 	this._loadConfig( config );
 	this._connectionEndpoint = null;
-	this._engineIo = null;
 	this._messageProcessor = null;
 	this._messageDistributor = null;
 	this._eventHandler = null;

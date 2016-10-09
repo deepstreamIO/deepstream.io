@@ -95,6 +95,7 @@ const ensureNotRunning = function( callback ) {
 const exit = function( err ) {
 	if ( err instanceof Error ) {
 		console.error ( colors.red( err.toString() ) );
+		console.error( err );
 		process.exit( 1 );
 	} else {
 		remove( function() {

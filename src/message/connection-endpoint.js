@@ -2,14 +2,13 @@ var C = require( '../constants/constants' ),
 	messageParser = require( './message-parser' ),
 	messageBuilder = require( './message-builder' ),
 	SocketWrapper = require( './socket-wrapper' ),
-	engine = require('engine.io'),
 	TcpEndpoint = require( '../tcp/tcp-endpoint' ),
 	fileUtils = require( '../config/file-utils' ),
 	events = require( 'events' ),
 	util = require( 'util' ),
 	https = require('https'),
 	http = require('http'),
-	ENGINE_IO = 0,
+	WS = 0,
 	TCP_ENDPOINT = 1,
 	READY_STATE_CLOSED = 'closed';
 
@@ -23,7 +22,7 @@ var C = require( '../constants/constants' ),
  * @extends events.EventEmitter
  *
  * @param {Object} options the extended default options
- * @param {Function} readyCallback will be invoked once both the engineIo and the tcp connection are established
+ * @param {Function} readyCallback will be invoked once both the ws and the tcp servers are established
  */
 var ConnectionEndpoint = function( options, readyCallback ) {
 	this._options = options;
@@ -34,15 +33,16 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	}
 	if( options.tcpServerEnabled ) {
 		// Initialise a tcp server to facilitate fast and compatible communication with backend systems
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.DEPRECATED, 'TCP communication is deprecated, please start using websockets' );
 		this._tcpEndpointReady = false;
 		this._tcpEndpoint = new TcpEndpoint( options, this._checkReady.bind( this, TCP_ENDPOINT ) );
 		this._tcpEndpoint.on( 'error', this._onError.bind( this ) );
 		this._tcpEndpoint.on( 'connection', this._onConnection.bind( this, TCP_ENDPOINT ) );
 	}
 	if( options.webServerEnabled ) {
-		// Initialise engine.io's server - a combined http and websocket server for browser connections
-		this._engineIoReady = false;
-		this._engineIoServerClosed = false;
+		// Initialise a websocket server
+		this._wsReady = false;
+		this._wsServerClosed = false;
 
 		if( this._options.httpServer ) {
 			this._server = this._options.httpServer;
@@ -50,7 +50,7 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 			this._server = this._createHttpServer();
 			this._server.listen( this._options.port, this._options.host );
 		}
-		this._engineIo = engine.attach( this._server, { path: this._options.urlPath } );
+
 		try
 		{
 			// Since uws doesn't work on windows but is required by windows
@@ -58,27 +58,23 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 			// from libs incase of a binary deployment since it's a native module
 			var req = global && global.require ? global.require : require;
 			const uws = req( fileUtils.lookupLibRequirePath( 'uws' ) );
-			if( !uws.Server ) {
-				throw '';
-			}
-			this._engineIo.ws = new ( uws.Server ) ({
-					noServer: true,
-					clientTracking: false,
-					perMessageDeflate: false
+
+			this._ws = new ( uws.Server ) ({
+				server: this._server,
+				perMessageDeflate: false
 			} );
-			this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Using uws websocket server' );
 		} catch( e ) {
-			this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Using ws websocket server' );
+			throw 'deepstream.io doesn\'t run on windows prior to node version 6.4';
 		}
 
 		if( this._server.listening === true || this._server._handle != null ) {
-			this._checkReady( ENGINE_IO );
+			this._checkReady( WS );
 		} else {
-			this._server.once( 'listening', this._checkReady.bind( this, ENGINE_IO ) );
+			this._server.once( 'listening', this._checkReady.bind( this, WS ) );
 		}
 
-		this._engineIo.on( 'error', this._onError.bind( this ) );
-		this._engineIo.on( 'connection', this._onConnection.bind( this, ENGINE_IO ) );
+		this._ws.on( 'error', this._onError.bind( this ) );
+		this._ws.on( 'connection', this._onConnection.bind( this, WS ) );
 	}
 
 
@@ -106,16 +102,16 @@ util.inherits( ConnectionEndpoint, events.EventEmitter );
 ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
 
 /**
- * Closes both the engine.io connection and the tcp connection. The ConnectionEndpoint
+ * Closes both the ws connection and the tcp connection. The ConnectionEndpoint
  * will emit a close event once both are succesfully shut down
  *
  * @public
  * @returns {void}
  */
 ConnectionEndpoint.prototype.close = function() {
-	// Close the engine.io server
-	if( this._engineIo ) {
-		this._closeEngineIoServer();
+	// Close the ws server
+	if( this._ws ) {
+		this._closeWSServer();
 	}
 
 	// Close the tcp server
@@ -149,32 +145,32 @@ ConnectionEndpoint.prototype.getTcpConnectionCount = function() {
 };
 
 /**
- * Closes the engine.io and subsequently http server
+ * Closes the ws and subsequently http server
  *
- * TODO: Make sure that engine.io and the http server's
- * clode events align and potentially don't close
+ * TODO: Make sure that ws and the http server's
+ * close events align and potentially don't close
  * the http server if it's provided as an external parameter
  * and might be used by express etc...
  *
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._closeEngineIoServer = function() {
+ConnectionEndpoint.prototype._closeWSServer = function() {
 	this._server.removeAllListeners( 'request' );
-	this._engineIo.removeAllListeners( 'connection' );
-	for( var engineIoClient in this._engineIo.clients ) {
-		if( this._engineIo.clients[ engineIoClient ].readyState !== READY_STATE_CLOSED ) {
-			this._engineIo.clients[ engineIoClient ].once( 'close', this._checkClosed.bind( this ) );
+	this._ws.removeAllListeners( 'connection' );
+	for( var wsClient in this._ws.clients ) {
+		if( this._ws.clients[ wsClient ].readyState !== READY_STATE_CLOSED ) {
+			this._ws.clients[ wsClient ].once( 'close', this._checkClosed.bind( this ) );
 		}
 	}
-	this._engineIo.close();
+	this._ws.close();
 
 	if( this._options.httpServer ) {
-		this._engineIoServerClosed = true;
+		this._wsServerClosed = true;
 		this._checkClosed();
 	} else {
 		this._server.close( function(){
-			this._engineIoServerClosed = true;
+			this._wsServerClosed = true;
 			this._checkClosed();
 		}.bind( this ) );
 	}
@@ -194,7 +190,7 @@ ConnectionEndpoint.prototype._closeTcpServer = function() {
 };
 
 /**
- * Creates an HTTP or HTTPS server for engine.io to attach itself to,
+ * Creates an HTTP or HTTPS server for ws to attach itself to,
  * depending on the options the client configured
  *
  * @private
@@ -231,7 +227,7 @@ ConnectionEndpoint.prototype._checkClosed = function() {
 		return;
 	}
 
-	if( this._engineIo && ( this._engineIo.clientsCount > 0 || this._engineIoServerClosed === false ) ) {
+	if( this._ws && ( this._ws.clientsCount > 0 || this._wsServerClosed === false ) ) {
 		return;
 	}
 
@@ -244,7 +240,7 @@ ConnectionEndpoint.prototype._checkClosed = function() {
  * subscribes to authentication messages.
  *
  * @param {Number} endpoint
- * @param {TCPSocket|Engine.io} socket
+ * @param {TCPSocket|Websocket} socket
  *
  * @private
  * @returns {void}
@@ -255,8 +251,8 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 		logMsg,
 		disconnectTimer;
 
-	if( endpoint === ENGINE_IO ) {
-		logMsg = 'from ' + handshakeData.referer + ' (' + handshakeData.remoteAddress + ')' + ' via engine.io';
+	if( endpoint === WS ) {
+		logMsg = 'from ' + handshakeData.referer + ' (' + handshakeData.remoteAddress + ')' + ' via ws';
 	} else {
 		logMsg = 'from ' + handshakeData.remoteAddress + ' via tcp';
 	}
@@ -265,7 +261,7 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 
 	if( this._options.unauthenticatedClientTimeout !== null ) {
 		disconnectTimer = setTimeout( this._processConnectionTimeout.bind( this, socketWrapper ), this._options.unauthenticatedClientTimeout );
-		socketWrapper.socket.once( 'close', clearTimeout.bind( null, disconnectTimer ) );
+		socketWrapper.once( 'close', clearTimeout.bind( null, disconnectTimer ) );
 	}
 
 	socketWrapper.connectionCallback = this._processConnectionMessage.bind( this, socketWrapper );
@@ -280,7 +276,7 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
  * subscribes to authentication messages.
  *
  * @param {Number} endpoint
- * @param {TCPSocket|Engine.io} socket
+ * @param {TCPSocket|Websocket} socket
  *
  * @private
  * @returns {void}
@@ -506,7 +502,7 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
 };
 
 /**
- * Called for the ready events of both the engine.io server and the tcp server.
+ * Called for the ready events of both the ws server and the tcp server.
  *
  * @param   {String} endpoint An endpoint constant
  *
@@ -514,12 +510,12 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
  * @returns {void}
  */
 ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
-	var msg, address, tcpEndpointReady, engineIoReady;
+	var msg, address, tcpEndpointReady, wsReady;
 
-	if( endpoint === ENGINE_IO ) {
+	if( endpoint === WS ) {
 		address = this._server.address();
 		msg = 'Listening for browser connections on ' + address.address + ':' + address.port;
-		this._engineIoReady = true;
+		this._wsReady = true;
 	}
 
 	if( endpoint === TCP_ENDPOINT ) {
@@ -530,9 +526,9 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, msg );
 
 	tcpEndpointReady = !this._tcpEndpoint || this._tcpEndpointReady === true;
-	engineIoReady = !this._engineIo || this._engineIoReady === true;
+	wsReady = !this._ws || this._wsReady === true;
 
-	if( tcpEndpointReady && engineIoReady ) {
+	if( tcpEndpointReady && wsReady ) {
 		this._readyCallback();
 	}
 };

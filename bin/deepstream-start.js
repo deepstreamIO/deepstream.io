@@ -74,7 +74,7 @@ function action() {
 			}, WAIT_FOR_ERRORS );
 		} );
 	} else {
-		// non-detach casee
+		// non-detach case
 		const Deepstream = require( '../src/deepstream.io.js' );
 		try {
 			process.on( 'uncaughtException', pidHelper.exit );
@@ -85,6 +85,7 @@ function action() {
 			ds.start();
 		} catch ( err ) {
 			console.error( err.toString() );
+			console.trace();
 			process.exit( 1 );
 		}
 		process.
