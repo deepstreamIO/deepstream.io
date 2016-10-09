@@ -19,6 +19,7 @@ exports.STATES.CLOSING = 'closing';
 exports.STATES.CLOSED = 'closed';
 
 exports.EVENT = {};
+exports.EVENT.DEPRECATED = 'DEPRECATED';
 exports.EVENT.TRIGGER_EVENT = 'TRIGGER_EVENT';
 exports.EVENT.INCOMING_CONNECTION = 'INCOMING_CONNECTION';
 exports.EVENT.INFO = 'INFO';

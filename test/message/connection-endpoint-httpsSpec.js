@@ -1,11 +1,11 @@
 var proxyquire = require( 'proxyquire' ).noCallThru(),
-	engineIoMock = require( '../mocks/engine-io-mock' ),
+	websocketMock = require( '../mocks/websocket-mock' ),
 	HttpMock = require( '../mocks/http-mock' ),
 	httpMock = new HttpMock(),
 	httpsMock = new HttpMock(),
 	TcpEndpointMock = require( '../mocks/tcp-endpoint-mock' ),
 	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', {
-		'engine.io': engineIoMock,
+		'uws': websocketMock,
 		'http': httpMock,
 		'https': httpsMock,
 		'../tcp/tcp-endpoint': TcpEndpointMock

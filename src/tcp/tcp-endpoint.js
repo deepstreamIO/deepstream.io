@@ -6,12 +6,13 @@ var net = require( 'net' ),
 
 /**
  * A faster, more low level alternative to engine.io when communicating
- * with backend systems
+ * with backend systems. Now that we are using uWS solely this is deprecated for lack
+ * of performance gains.
  *
  * @emits connection <TcpSocket>
  * @emits error <errorMessage>
  * @emits close
- * 
+ *
  * @param {Object} options deepstream options
  * @param {Function} readyCallback will be invoked once the server is listening
  *
@@ -19,7 +20,7 @@ var net = require( 'net' ),
  */
 var TcpEndpoint = function( options, readyCallback ) {
 	this.isClosed = false;
-	
+
 	this._options = options;
 	this._readyCallback = readyCallback;
 	this._sockets = [];
@@ -34,13 +35,13 @@ utils.inherits( TcpEndpoint, event.EventEmitter );
 /**
  * Closes the tcp server and removes all connections. The actual close
  * event of the TcpEndpoint will be emitted once the tcp server emits close
- * 
+ *
  * @public
  * @returns {void}
  */
 TcpEndpoint.prototype.close = function() {
 	this._server.close();
-	
+
 	for( var i = 0; i < this._sockets.length; i++ ) {
 		this._sockets[ i ].destroy();
 	}
@@ -48,15 +49,15 @@ TcpEndpoint.prototype.close = function() {
 
 /**
  * Removes a closed socket from the array of sockets
- * 
+ *
  * @param {net.Socket} socket
- * 
+ *
  * @private
  * @returns {void}
  */
 TcpEndpoint.prototype._removeSocket = function( socket ) {
 	var index = this._sockets.indexOf( socket );
-	
+
 	if( index !== -1 ) {
 		this._sockets.splice( index, 1 );
 	}
@@ -86,7 +87,7 @@ TcpEndpoint.prototype._onIncomingConnection = function( socket ) {
  *
  * @param   {String} error
  * @emits	{String} error
- * 
+ *
  * @private
  * @returns {void}
  */
@@ -98,7 +99,7 @@ TcpEndpoint.prototype._onError = function( error ) {
  * Callback for the tcp server's close event. The server will
  * only emit close once itself and all connected sockets are
  * closed
- * 
+ *
  * @private
  * @returns {void}
  */

@@ -247,7 +247,7 @@ module.exports = class ListenerRegistry {
 			pattern: message.data[ 0 ],
 			closeListener: this._removeListener.bind( this, socketWrapper, message )
 		}
-		socketWrapper.socket.once( 'close', this._locallyProvidedRecords[ subscriptionName ].closeListener );
+		socketWrapper.once( 'close', this._locallyProvidedRecords[ subscriptionName ].closeListener );
 		this._clusterProvidedRecords.add( subscriptionName );
 
 		this._stopLocalDiscoveryStage( subscriptionName );
@@ -341,7 +341,7 @@ module.exports = class ListenerRegistry {
 				provider.socketWrapper === socketWrapper &&
 				provider.pattern === pattern
 			) {
-				provider.socketWrapper.socket.removeListener( 'close', provider.closeListener );
+				provider.socketWrapper.removeListener( 'close', provider.closeListener );
 				this._removeActiveListener( subscriptionName );
 				if( this._clientRegistry.hasLocalSubscribers( subscriptionName ) ) {
 					this._startDiscoveryStage( subscriptionName );
