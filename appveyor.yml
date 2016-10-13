@@ -5,15 +5,13 @@ os:
   - Visual Studio 2015
 
 install:
-  - ps: Install-Product node 6.7
-  - npm install node-pre-gyp -g
-  - npm install --global --production windows-build-tools
+  - ps: Install-Product node 6.7 x64
   - npm install
 
 test_script:
   - node --version
   - npm --version
-  #- npm test
+  - npm test
   # Artifacts are packaged before before_deploy
   - bash scripts\package.sh
   - For /d %%d in ( build\** ) do MOVE %%d %cd%
