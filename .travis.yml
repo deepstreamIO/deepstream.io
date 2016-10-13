@@ -2,18 +2,19 @@ language: node_js
 
 before_install:
   - gem install fpm --conservative || echo "FPM install failed"
+  - npm install -g node-gyp
 
 env:
-  - CXX=g++-4.8
+  - CXX=g++-5
 
 node_js:
-  - "6" # Stated specifically for packaging
+  - "6.7" # Stated specifically for packaging
   - "5"
   - "4" 
 
 matrix:
   include:
-    - node_js: "6"
+    - node_js: "6.7"
       os: osx
 
 script:
@@ -59,5 +60,5 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - g++-4.8
+    - g++-5
     - rpm

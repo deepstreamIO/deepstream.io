@@ -22,14 +22,14 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
-    "uws": "^0.9.0",
     "adm-zip": "^0.4.7",
     "colors": "^1.0.3",
     "commander": "^2.9.0",
     "glob": "^7.0.5",
     "js-yaml": "^3.6.1",
     "mkdirp": "^0.5.1",
-    "needle": "^1.1.0"
+    "needle": "^1.1.0",
+    "uws": "^0.10.8"
   },
   "devDependencies": {
     "async": "^0.2.9",

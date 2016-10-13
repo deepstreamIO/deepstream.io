@@ -198,7 +198,7 @@ SocketWrapper.prototype._queueNextPacket = function() {
  * @returns {void}
  */
 SocketWrapper.prototype.destroy = function() {
-	this.socket.close( true );
+	this.socket.close();
 	this.socket.removeAllListeners();
 	this.authCallBack = null;
 };
