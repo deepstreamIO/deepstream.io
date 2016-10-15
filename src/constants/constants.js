@@ -87,6 +87,7 @@ exports.TOPIC.RECORD = 'R';
 exports.TOPIC.RPC = 'P';
 exports.TOPIC.WEBRTC = 'W';
 exports.TOPIC.PRESENCE = 'U';
+exports.TOPIC.ONLINE_USERS = 'O';
 exports.TOPIC.CLUSTER = 'CL';
 exports.TOPIC.LEADER = 'L';
 exports.TOPIC.LEADER_PRIVATE = 'LP_';
@@ -139,6 +140,10 @@ exports.ACTIONS.LEADER_VOTE = 'LV';
 exports.ACTIONS.LOCK_REQUEST = 'LRQ';
 exports.ACTIONS.LOCK_RESPONSE = 'LRP';
 exports.ACTIONS.LOCK_RELEASE = 'LRL';
+
+exports.ACTIONS.PRESENCE_JOIN = 'PNJ';
+exports.ACTIONS.PRESENCE_LEAVE = 'PNL';
+exports.ACTIONS.QUERY = 'Q';
 
 //WebRtc
 exports.ACTIONS.WEBRTC_REGISTER_CALLEE = 'RC';

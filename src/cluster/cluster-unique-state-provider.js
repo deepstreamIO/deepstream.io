@@ -166,7 +166,7 @@ module.exports = class UniqueRegistry {
 		if( this._clusterRegistry.isLeader() === false ) {
 			var remoteServerName = 'unknown-server'
 			if( message.data[ 0 ].responseTopic ) {
-				remoteServerName = message.data[ 0 ].responseTopic.replace( C.TOPIC.LEADER_PRIVATE, '');	
+				remoteServerName = message.data[ 0 ].responseTopic.replace( C.TOPIC.LEADER_PRIVATE, '');
 			}
 
 			this._options.logger.log(

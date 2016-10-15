@@ -27,7 +27,7 @@ module.exports = class PresenceHandler {
 
 		this._presenceRegistry = new SubscriptionRegistry( options, C.TOPIC.PRESENCE );
 
-		this._connectedClients = new DistributedStateRegistry( C.TOPIC.PRESENCE, options );
+		this._connectedClients = new DistributedStateRegistry( C.TOPIC.ONLINE_USERS, options );
 		this._connectedClients.on( 'add', this._onClientAdded.bind( this ) );
 		this._connectedClients.on( 'remove', this._onClientRemoved.bind( this ) );
 	}
