@@ -61,7 +61,8 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 
 			this._ws = new uws.Server({
 				server: this._server,
-				perMessageDeflate: false
+				perMessageDeflate: false,
+				path: this._options.urlPath
 			} );
 		} catch( e ) {
 			throw 'deepstream.io doesn\'t run on windows prior to node version 6.4';
