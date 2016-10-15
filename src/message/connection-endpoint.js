@@ -10,7 +10,8 @@ var C = require( '../constants/constants' ),
 	http = require('http'),
 	WS = 0,
 	TCP_ENDPOINT = 1,
-	READY_STATE_CLOSED = 'closed';
+	READY_STATE_CLOSED = 'closed',
+	OPEN = 'OPEN';
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -398,6 +399,10 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( userData.clientData ) ] );
 	}
 
+	if( socketWrapper.user !== OPEN ) {
+		this.emit( 'client-connected', socketWrapper );
+	}
+
 	this._authenticatedSockets.push( socketWrapper );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user );
 };
@@ -413,7 +418,7 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
  * @returns {void}
  */
 ConnectionEndpoint.prototype._appendDataToSocketWrapper = function( socketWrapper, userData ) {
-	socketWrapper.user = userData.username || 'OPEN';
+	socketWrapper.user = userData.username || OPEN;
 	socketWrapper.authData = userData.serverData || null;
 };
 
@@ -546,6 +551,10 @@ ConnectionEndpoint.prototype._onError = function( error ) {
 ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
 	if( this._options.authenticationHandler.onClientDisconnect ) {
 		this._options.authenticationHandler.onClientDisconnect( socketWrapper.user );
+	}
+
+	if( socketWrapper.user !== OPEN ) {
+		this.emit( 'client-disconnected', socketWrapper );
 	}
 };
 

@@ -40,14 +40,11 @@ describe( 'permissionHandler passes additional user meta data', function() {
 
 	var socketMock;
 
-	it( 'create a connection endpoint', function() {
+	beforeAll( function() {
 		connectionEndpoint = new ConnectionEndpoint( options, function(){} );
 		connectionEndpoint.onMessage = function( socket, message ){
 			lastAuthenticatedMessage = message;
 		};
-	});
-
-	it( 'creates the connection endpoint', function(){
 		socketMock = websocketMock.simulateConnection();
 		socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 	});

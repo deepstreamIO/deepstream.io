@@ -3,6 +3,7 @@ var AuthenticationHandlerMock = function() {
 };
 
 AuthenticationHandlerMock.prototype.reset = function() {
+	this.nextUserIsAnonymous = false;
 	this.nextUserValidationResult = true;
 	this.lastUserValidationQueryArgs = null;
 	this.sendNextValidAuthWithData = false;
@@ -17,6 +18,8 @@ AuthenticationHandlerMock.prototype.isValidUser = function( handshakeData, authD
 				username: 'test-user',
 				clientData: 'test-data'
 			});
+		} else if( this.nextUserIsAnonymous ) {
+			callback( true, {});
 		} else {
 			callback( true, { username: 'test-user' });
 		}
