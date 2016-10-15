@@ -109,7 +109,7 @@ describe( 'connection endpoint', function() {
 		});
 	});
 
-	describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
+	describe( 'the connection endpoint does not route invalid auth messages to the permissionHandler', function(){
 
 		it( 'creates the connection endpoint', function(){
 			socketMock = websocketMock.simulateConnection();
@@ -117,7 +117,7 @@ describe( 'connection endpoint', function() {
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
 
-		it( 'handles valid auth messages', function(){
+		it( 'handles invalid auth messages', function(){
 			expect( authenticationHandlerMock.lastUserValidationQueryArgs ).toBe( null );
 
 			authenticationHandlerMock.nextUserValidationResult = false;
@@ -131,6 +131,68 @@ describe( 'connection endpoint', function() {
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
 	});
+
+	describe( 'the connection endpoint emits a client events for user with name', function() {
+		beforeAll( function() {
+			authenticationHandlerMock.nextUserValidationResult = true;
+			socketMock = websocketMock.simulateConnection();
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
+		});
+
+		it( 'emits connected event for user with name', function( done ){
+			connectionEndpoint.once( 'client-connected', function( socketWrapper ) {
+				expect( socketWrapper.user ).toBe( 'test-user' );
+				done();
+			});
+
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+		});
+
+		it( 'emits disconnected event for user with name', function( done ){
+			connectionEndpoint.once( 'client-disconnected', function( socketWrapper ) {
+				expect( socketWrapper.user ).toBe( 'test-user' );
+				done();
+			});
+
+			socketMock.close();
+		});
+	});
+
+
+	describe( 'the connection endpoint deosn\'t emit client events for user without a name', function() {
+		beforeAll( function() {
+			authenticationHandlerMock.nextUserIsAnonymous = true;
+			authenticationHandlerMock.nextUserValidationResult = true;
+			socketMock = websocketMock.simulateConnection();
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
+		});
+
+		afterAll( function() {
+			authenticationHandlerMock.nextUserIsAnonymous = false;
+		})
+
+		it( 'does not emit connected event', function(){
+			authenticationHandlerMock.nextUserIsAnonymous = true;
+			var spy = jasmine.createSpy( 'client-connected' );
+
+			connectionEndpoint.once( 'client-connected', spy );
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+
+			expect( spy ).not.toHaveBeenCalled();
+		});
+
+		it( 'does not emit disconnected event', function(){
+			authenticationHandlerMock.nextUserIsAnonymous = true;
+			var spy = jasmine.createSpy( 'client-disconnected' );
+
+			connectionEndpoint.once( 'client-disconnected', spy );
+			socketMock.close();
+
+			expect( spy ).not.toHaveBeenCalled();
+		});
+
+	});
+
 
 	describe( 'disconnects if the number of invalid authentication attempts is exceeded', function(){
 
@@ -193,6 +255,7 @@ describe( 'connection endpoint', function() {
 	describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
 
 		it( 'creates the connection endpoint', function(){
+			authenticationHandlerMock.onClientDisconnectCalledWith = null;
 			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
@@ -213,7 +276,6 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'notifies the permissionHandler when a client disconnects', function(){
-			expect( authenticationHandlerMock.onClientDisconnectCalledWith ).toBe( null );
 			socketMock.close();
 			expect( authenticationHandlerMock.onClientDisconnectCalledWith ).toBe( 'test-user' );
 		});
