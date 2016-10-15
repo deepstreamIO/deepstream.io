@@ -54,15 +54,13 @@ RecordRequest.prototype._onCacheResponse = function( error, record ) {
 	else if( record ) {
 		this._onComplete( record );
 	}
-	else if( !this._options.storageExclusion || !this._options.storageExclusion.test( this._recordName ) ) {
+	else {
 		this._storageRetrievalTimeout = setTimeout(
 			this._sendError.bind( this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName ),
 			this._options.storageRetrievalTimeout
 		);
 
 		this._options.storage.get( this._recordName, this._onStorageResponse.bind( this ) );
-	} else {
-		this._onComplete( null );
 	}
 };
 

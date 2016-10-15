@@ -8,7 +8,6 @@ var EOL = require( 'os' ).EOL;
 var C = require( '../constants/constants' );
 var RecordRequest = require( '../record/record-request' );
 var messageParser = require( '../message/message-parser' );
-var JsonPath = require( '../record/json-path' );
 var utils = require( '../utils/utils' );
 
 /**
@@ -177,9 +176,6 @@ RuleApplication.prototype._destroy = function() {
  * for event publish, record update and rpc request, the data is already provided
  * in the message and doesn't need to be loaded
  *
- * for record.patch, only a delta is part of the message. For the full data, the current value
- * is loaded and the patch applied on top
- *
  * @private
  * @returns {void}
  */
@@ -199,9 +195,6 @@ RuleApplication.prototype._getCurrentData = function() {
 	}
 	else if( msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE ) {
 		data = this._getRecordUpdateData( msg );
-	}
-	else if( msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.PATCH ) {
-		data = this._getRecordPatchData( msg );
 	}
 
 	if( data instanceof Error ) {
@@ -229,43 +222,6 @@ RuleApplication.prototype._getRecordUpdateData = function( msg ) {
 	}
 
 	return data;
-};
-
-/**
- * Loads the records current data and applies the patch data onto it
- * to avoid users having to distuinguish between patches and updates
- *
- * @param   {Object} msg a deepstream message
- *
- * @private
- * @returns {Object} recordData
- */
-RuleApplication.prototype._getRecordPatchData = function( msg ) {
-	if( msg.data.length !== 4 || typeof msg.data[ 2 ] !== STRING ) {
-		return new Error( 'Invalid message data' );
-	}
-
-	var currentData = this._recordData[ this._params.name ];
-	var newData = messageParser.convertTyped( msg.data[ 3 ] );
-	var jsonPath;
-	var data;
-
-	if( newData instanceof Error ) {
-		return newData;
-	}
-
-	if( currentData === null ) {
-		return new Error( 'Tried to apply patch to non-existant record ' + msg.data[ 0 ] );
-	}
-
-	if( typeof currentData !== UNDEFINED && currentData !== LOADING ) {
-		jsonPath = new JsonPath( msg.data[ 2 ] );
-		data = JSON.parse( JSON.stringify( currentData._d ) );
-		jsonPath.setValue( data, newData );
-		return data;
-	} else {
-		this._loadRecord( this._params.name );
-	}
 };
 
 /**

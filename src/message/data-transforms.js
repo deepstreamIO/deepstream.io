@@ -30,7 +30,6 @@ var DataTransforms = function( settings ) {
 	this._transforms[ C.TOPIC.RECORD ] = {};
 	this._transforms[ C.TOPIC.RECORD ][ C.ACTIONS.READ ] = null;
 	this._transforms[ C.TOPIC.RECORD ][ C.ACTIONS.UPDATE ] = null;
-	this._transforms[ C.TOPIC.RECORD ][ C.ACTIONS.PATCH ] = null;
 
 	if( !(settings instanceof Array ) ) {
 		throw new Error( 'option dataTransforms must be an array or null' );

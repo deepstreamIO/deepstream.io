@@ -58,7 +58,7 @@ class SubscriptionRegistry {
 	getAllRemoteServers( subscriptionName ) {
 		const serverNames = this._clusterSubscriptions.getAllServers( subscriptionName );
 		const localServerIndex = serverNames.indexOf( this._options.serverName );
-		if (  localServerIndex > -1 ) {
+		if ( localServerIndex > -1 ) {
 			serverNames.splice( serverNames.indexOf( this._options.serverName ), 1 );
 		}
 		return serverNames;

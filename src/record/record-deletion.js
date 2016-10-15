@@ -3,7 +3,7 @@ var messageBuilder = require( '../message/message-builder' ),
 
 /**
  * This class represents the deletion of a single record. It handles it's removal
- * from cache and storage and handles errors and timeouts 
+ * from cache and storage and handles errors and timeouts
  *
  * @param {Object} 			options       		deepstream options
  * @param {SocketWrapper} 	socketWrapper 		the sender of the delete message
@@ -24,12 +24,8 @@ var RecordDeletion = function( options, socketWrapper, message, successCallback 
 	this._cacheTimeout = setTimeout( this._handleError.bind( this, 'cache timeout' ), this._options.cacheRetrievalTimeout );
 	this._options.cache.delete( this._recordName, this._checkIfDone.bind( this, this._cacheTimeout ) );
 
-	if( !this._options.storageExclusion || !this._options.storageExclusion.test( this._recordName ) ) {
-		this._storageTimeout = setTimeout( this._handleError.bind( this, 'storage timeout' ), this._options.storageRetrievalTimeout );
-		this._options.storage.delete(this._recordName, this._checkIfDone.bind( this, this._storageTimeout ) );
-	} else {
-		this._checkIfDone( null );
-	}
+	this._storageTimeout = setTimeout( this._handleError.bind( this, 'storage timeout' ), this._options.storageRetrievalTimeout );
+	this._options.storage.delete(this._recordName, this._checkIfDone.bind( this, this._storageTimeout ) );
 };
 
 /**

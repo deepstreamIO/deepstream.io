@@ -20,7 +20,6 @@ var RecordHandler = function( options ) {
 	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
 	this._hasReadTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
 	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
-	this._hasPatchTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.PATCH );
 	this._transitions = {};
 	this._recordRequestsInProgress = {};
 };
@@ -72,9 +71,9 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	/*
-	 * Handle complete (UPDATE) or partial (PATCH) updates
+	 * Handle complete (UPDATE)
 	 */
-	else if( message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH ) {
+	else if( message.action === C.ACTIONS.UPDATE ) {
 		this._update( socketWrapper, message );
 	}
 
@@ -207,20 +206,17 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 		if( error ) {
 			this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName );
 			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName );
-		}
-		else {
+		} else {
 			this._read( recordName, record, socketWrapper );
 		}
 	}.bind( this ));
 
-	if( !this._options.storageExclusion || !this._options.storageExclusion.test( recordName ) ) {
-		// store the record data in the persistant storage independently and don't wait for the result
-		this._options.storage.set( recordName, record, function( error ) {
-			if( error ) {
-				this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
-			}
-		}.bind( this ) );
-	}
+	// store the record data in the persistant storage independently and don't wait for the result
+	this._options.storage.set( recordName, record, function( error ) {
+		if( error ) {
+			this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
+		}
+	}.bind( this ) );
 };
 
 /**
@@ -308,11 +304,6 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	if( this._transitions[ recordName ] && this._transitions[ recordName ].hasVersion( version ) ) {
-		this._transitions[ recordName ].sendVersionExists( socketWrapper, version );
-		return;
-	}
-
 	if( !this._transitions[ recordName ] ) {
 		this._transitions[ recordName ] = new RecordTransition( recordName, this._options, this );
 	}
@@ -332,11 +323,10 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSender ) {
-	var transformUpdate = message.action === C.ACTIONS.UPDATE && this._hasUpdateTransforms,
-		transformPatch = message.action === C.ACTIONS.PATCH && this._hasPatchTransforms;
+	var transformUpdate = message.action === C.ACTIONS.UPDATE && this._hasUpdateTransforms;
 
-	if( transformUpdate || transformPatch ) {
-		this._broadcastTransformedUpdate( transformUpdate, transformPatch, name, message, originalSender );
+	if( transformUpdate ) {
+		this._broadcastTransformedUpdate( transformUpdate, name, message, originalSender );
 	} else {
 		this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
 	}
@@ -352,7 +342,6 @@ RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSen
  * so that receiver specific transforms can be applied.
  *
  * @param   {Boolean} transformUpdate is a update transform function registered that applies to this update?
- * @param   {Boolean} transformPatch  is a patch transform function registered that applies to this update?
  * @param   {String} name             the record name
  * @param   {Object} message          a parsed deepstream message object
  * @param   {SocketWrapper|String} originalSender  the original sender of the update or a string pointing at the messageBus
@@ -360,7 +349,7 @@ RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSen
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, transformPatch, name, message, originalSender ) {
+RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, name, message, originalSender ) {
 	var receivers = this._subscriptionRegistry.getLocalSubscribers( name ),
 		metaData = {
 			recordName: name,
@@ -375,27 +364,15 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 		return;
 	}
 
-	if( transformPatch ) {
-		metaData.path = message.data[ 2 ];
-	}
-
 	for( i = 0; i < receivers.length; i++ ) {
 		if( receivers[ i ] === originalSender ) {
 			continue;
 		}
 		metaData.receiver = receivers[ i ].user;
 
-		if( transformUpdate ) {
-			// UPDATE
-			data = JSON.parse( unparsedData );
-			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
-			messageData[ 2 ] = JSON.stringify( data );
-		} else {
-			// PATCH
-			data = messageParser.convertTyped( unparsedData );
-			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
-			messageData[ 3 ] = messageBuilder.typed( data );
-		}
+		data = JSON.parse( unparsedData );
+		data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
+		messageData[ 2 ] = JSON.stringify( data );
 
 		receivers[ i ].sendMessage( message.topic, message.action, messageData );
 	}

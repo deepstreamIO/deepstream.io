@@ -1,5 +1,4 @@
 var C = require( '../constants/constants' ),
-	JsonPath = require( './json-path' ),
 	RecordRequest = require( './record-request' ),
 	messageParser = require( '../message/message-parser' );
 
@@ -43,57 +42,11 @@ var RecordTransition = function( name, options, recordHandler ) {
 	this._record = null;
 	this._currentStep = null;
 	this._recordRequest = null;
-	this._sendVersionExists = [];
 	this.isDestroyed = false;
 };
 
 /**
- * Checks if a specific version number is already processed or
- * queued for processing
- *
- * @param   {Number}  version
- *
- * @returns {Boolean} hasVersion
- */
-RecordTransition.prototype.hasVersion = function( version ) {
-	var maxVersion = 0;
-
-	for( var i = 0; i < this._steps.length; i++ ) {
-		if( this._steps[ i ].version > maxVersion ) {
-			maxVersion = this._steps[ i ].version;
-		}
-	}
-
-	return version <= maxVersion;
-};
-
-/**
- * Send version exists error if the record has been already loaded, else
- * store the version exists error to send to the sockerWrapper once the 
- * record is loaded
- *
- * @param   {SocketWrapper} socketWrapper the sender
- * @param   {Number} version The version number
- *
- * @public
- */
-RecordTransition.prototype.sendVersionExists = function( socketWrapper, version ) {
-	var i, msg, conflict;
-
-	if( this._record ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, [ this._name, this._record._v, JSON.stringify( this._record._d ) ] );
-		msg = socketWrapper.user + ' tried to update record ' + this._name + ' to version ' +  version + ' but it already was ' + this._record._v;
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.VERSION_EXISTS, msg );
-	} else {
-		this._sendVersionExists.push( {
-			version: version,
-			socketWrapper: socketWrapper
-		} );
-	}
-};
-
-/**
- * Adds a new step (either an update or a patch) to the record. The step
+ * Adds a new step (update) to the record. The step
  * will be queued or executed immediatly if the queue is empty
  *
  * This method will also retrieve the current record's data when called
@@ -107,45 +60,31 @@ RecordTransition.prototype.sendVersionExists = function( socketWrapper, version 
  * @returns {void}
  */
 RecordTransition.prototype.add = function( socketWrapper, version, message ) {
-	var data,
-		update = {
-			message: message,
-			version: version,
-			sender: socketWrapper
-		};
+	var	update = {
+		message: message,
+		version: version,
+		sender: socketWrapper
+	};
 
-	if( message.action === C.ACTIONS.UPDATE ) {
-		if( message.data.length !== 3 ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
-			return;
-		}
-
-		try{
-			data = JSON.parse( message.data[ 2 ] );
-		} catch( e ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
-			return;
-		}
-
-		update.isPatch = false;
-		update.data = data;
+	if( message.action !== C.ACTIONS.UPDATE ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		return;
 	}
 
-	if( message.action === C.ACTIONS.PATCH ) {
-		if( message.data.length !== 4 ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
-			return;
-		}
-		update.isPatch = true;
-		update.data = messageParser.convertTyped( message.data[ 3 ] );
-
-		if( update.data instanceof Error ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, update.data.toString() + ':' + message.data[ 3 ] );
-			return;
-		}
-
-		update.path = message.data[ 2 ];
+	if( message.data.length !== 3 ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		return;
 	}
+
+	var data;
+	try{
+		data = JSON.parse( message.data[ 2 ] );
+	} catch( e ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		return;
+	}
+
+	update.data = data;
 
 	this._steps.push( update );
 
@@ -194,7 +133,6 @@ RecordTransition.prototype._onRecord = function( record ) {
 		this._onFatalError( 'Received update for non-existant record ' + this._name );
 	} else {
 		this._record = record;
-		this._flushVersionExists();
 		this._next();
 	}
 };
@@ -203,7 +141,7 @@ RecordTransition.prototype._onRecord = function( record ) {
  * Once the record is loaded this method is called recoursively
  * for every step in the queue of pending updates.
  *
- * It will apply every patch or update and - once done - either
+ * It will apply every update and - once done - either
  * call itself to process the next one or destroy the RecordTransition
  * of the queue has been drained
  *
@@ -222,47 +160,21 @@ RecordTransition.prototype._next = function() {
 
 	this._currentStep = this._steps.shift();
 
-	if( this._record._v !== this._currentStep.version - 1 ) {
-		this.sendVersionExists(  this._currentStep.sender, this._currentStep.version );
+	var record = {
+		_v: this._currentStep.version,
+		_d: this._currentStep.data
+	};
+
+	this._options.storage.set( this._name, record, this._onStorageResponse.bind( this ) );
+
+	if ( record._v < this._record._v ) {
 		this._next();
 		return;
 	}
 
-	this._record._v = this._currentStep.version;
+	this._options.cache.set( this._name, record, this._onCacheResponse.bind( this ) );
 
-	if( this._currentStep.isPatch ) {
-		( new JsonPath( this._currentStep.path ) ).setValue( this._record._d, this._currentStep.data );
-	} else {
-		this._record._d = this._currentStep.data;
-	}
-
-	/*
-	 * Please note: saving to storage is called first to allow for synchronous cache
-	 * responses to destroy the transition, it is however not on the critical path
-	 * and the transition will continue straight away, rather than wait for the storage response
-	 * to be returned.
-	 */
-	if( !this._options.storageExclusion || !this._options.storageExclusion.test( this._name ) ) {
-		this._options.storage.set( this._name, this._record, this._onStorageResponse.bind( this ) );
-	}
-
-	this._options.cache.set( this._name, this._record, this._onCacheResponse.bind( this ) );
-};
-
-/**
- * Send all the stored version exists errors once the record has been loaded.
- *
- * @private
- */
-RecordTransition.prototype._flushVersionExists = function() {
-	var i, conflict;
-
-	for( i=0; i < this._sendVersionExists.length; i++ ) {
-		conflict = this._sendVersionExists[ i ];
-		this.sendVersionExists( conflict.socketWrapper, conflict.version );
-	}
-
-	this._sendVersionExists = [];
+	this._record = record;
 };
 
 /**

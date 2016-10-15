@@ -10,9 +10,7 @@ function readMessage( message ) {
 
 		isCreate: message.action === ACTIONS.CREATEORREAD,
 		isRead: message.action === ACTIONS.CREATEORREAD,
-		isChange: (
-			message.action === ACTIONS.PATCH || message.action === ACTIONS.UPDATE
-		),
+		isChange: message.action === ACTIONS.UPDATE,
 		isDelete: message.action === ACTIONS.DELETE,
 
 		isAck: message.action === ACTIONS.ACK,
@@ -22,8 +20,7 @@ function readMessage( message ) {
 		isRejection: message.action === ACTIONS.REJECTION,
 
 		name: message.data[ 0 ],
-		path: message.action === ACTIONS.PATCH ? message.data[ 2 ] : undefined,
-		data: message.action === ACTIONS.PATCH ? message.data[ 3 ] : message.data[ 2 ]
+		data: message.data[ 2 ]
 	};
 }
 
