@@ -398,11 +398,6 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
 		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( userData.clientData ) ] );
 	}
 
-	if( userData.username && userData.username.toUpperCase() !== 'OPEN' ) {
-		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ messageBuilder.typed( userData.username ) ] );
-		process.nextTick( this.onMessage.bind( this, socketWrapper, msg ) );
-	}
-
 	this._authenticatedSockets.push( socketWrapper );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user );
 };
@@ -551,11 +546,6 @@ ConnectionEndpoint.prototype._onError = function( error ) {
 ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
 	if( this._options.authenticationHandler.onClientDisconnect ) {
 		this._options.authenticationHandler.onClientDisconnect( socketWrapper.user );
-	}
-
-	if( socketWrapper.user.toUpperCase() !== 'OPEN' ) {
-		var msg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ messageBuilder.typed( socketWrapper.user ) ] );
-		process.nextTick( this.onMessage.bind( this, socketWrapper, msg ) );
 	}
 };
 
