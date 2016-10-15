@@ -24,40 +24,38 @@ var PresenceHandler = require( '../../src/presence/presence-handler' ),
 	userTwo = new SocketWrapper( new SocketMock(), {} ); userTwo.user = 'Marge';
 	userThree = new SocketWrapper( new SocketMock(), {} ); userThree.user = 'Bart';
 
-describe( 'presence handler', function(){
-	describe( 'handles clients added correctly', function(){
+describe( 'presence handler handles clients added correctly', function(){
 
-		it( 'adds client and subscribes to client logins', function(){
-			presenceHandler.handle( userOne, presenceMessage );
-			var subMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [ C.ACTIONS.PRESENCE_JOIN ] }
-			presenceHandler.handle( userOne, subMsg );
-		});
-
-		it( 'adds a client and notifies original client', function(){
-			presenceHandler.handle( userTwo, presenceMessage );
-			expect( userOne.socket.lastSendMessage ).toBe( _msg( 'PN|PNJ|Marge+' ) );
-		});
-
-		it( 'add another client and only subscribed clients get notified', function() {
-			presenceHandler.handle( userThree, presenceMessage );
-			expect( userOne.socket.lastSendMessage ).toBe( _msg( 'PN|PNJ|Bart+' ) );
-			expect( userTwo.socket.lastSendMessage ).toBe( null );
-		});
-
-		it( 'client with no username doesnt notify clients', function(){
-			presenceHandler.handle( new SocketWrapper( new SocketMock(), {} ), presenceMessage );
-			expect( userOne.socket.lastSendMessage ).toBe( _msg( 'PN|PNJ|Bart+' ) );
-			expect( userTwo.socket.lastSendMessage ).toBe( null );
-			expect( userThree.socket.lastSendMessage ).toBe( null );
-		});
+	it( 'adds client and subscribes to client logins', function(){
+		presenceHandler.handle( userOne, presenceMessage );
+		var subMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [ C.ACTIONS.PRESENCE_JOIN ] }
+		presenceHandler.handle( userOne, subMsg );	
 	});
 
-	describe( 'presence handler handles queries correctly', function(){
+	it( 'adds a client and notifies original client', function(){
+		presenceHandler.handle( userTwo, presenceMessage );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'PN|PNJ|Marge+' ) );
+	});
 
-		it( 'queries for clients', function(){
-			presenceMessage.action = C.ACTIONS.QUERY;
-			presenceHandler.handle( userOne, presenceMessage );
-			expect( userOne.socket.lastSendMessage ).toBe( _msg( 'PN|Q|Marge|Bart+' ) );
-		});
+	it( 'add another client and only subscribed clients get notified', function() {
+		presenceHandler.handle( userThree, presenceMessage );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'PN|PNJ|Bart+' ) );
+		expect( userTwo.socket.lastSendMessage ).toBe( null );
+	});
+
+	it( 'client with no username doesnt notify clients', function(){
+		presenceHandler.handle( new SocketWrapper( new SocketMock(), {} ), presenceMessage );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'PN|PNJ|Bart+' ) );
+		expect( userTwo.socket.lastSendMessage ).toBe( null );
+		expect( userThree.socket.lastSendMessage ).toBe( null );
+	});
+});
+
+describe( 'presence handler handles queries correctly', function(){
+
+	it( 'queries for clients', function(){
+		presenceMessage.action = C.ACTIONS.QUERY;
+		presenceHandler.handle( userOne, presenceMessage );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'PN|Q|Homer|Marge|Bart+' ) );
 	});
 });
