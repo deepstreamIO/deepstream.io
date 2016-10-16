@@ -3,7 +3,6 @@ var C = require( '../constants/constants' ),
 	ListenerRegistry = require( '../listen/listener-registry' ),
 	RecordRequest = require( './record-request' ),
 	RecordTransition = require( './record-transition' ),
-	RecordDeletion = require( './record-deletion' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' ),
 	EventEmitter = require( 'events' ).EventEmitter;
@@ -64,24 +63,10 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	}
 
 	/*
-	 * Return a Boolean to indicate if record exists in cache or database
-	 */
-	else if( message.action === C.ACTIONS.HAS ) {
-		this._hasRecord( socketWrapper, message );
-	}
-
-	/*
 	 * Handle complete (UPDATE)
 	 */
 	else if( message.action === C.ACTIONS.UPDATE ) {
 		this._update( socketWrapper, message );
-	}
-
-	/*
-	 * Deletes the record
-	 */
-	else if( message.action === C.ACTIONS.DELETE ) {
-		this._delete( socketWrapper, message );
 	}
 
 	/*
@@ -117,29 +102,6 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 };
 
 /**
- * Tries to retrieve the record from the cache or storage. If not found in either
- * returns false, otherwise returns true.
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._hasRecord = function( socketWrapper, message ) {
-	var recordName = message.data[ 0 ],
-		onComplete = function( record ) {
-			var hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE;
-			socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.HAS, [ recordName, hasRecord ] );
-		},
-		onError = function( error ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.HAS, [ recordName, error ] );
-		};
-
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ), onError.bind( this ) );
-};
-
-/**
  * Sends the records data current data once loaded from the cache, and null otherwise
  *
  * @param {SocketWrapper} socketWrapper the socket that send the request
@@ -150,11 +112,7 @@ RecordHandler.prototype._hasRecord = function( socketWrapper, message ) {
 RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
 	var recordName = message.data[ 0 ],
 		onComplete = function( record ) {
-			if( record ) {
-				this._sendRecord( recordName, record, socketWrapper );
-			} else {
-				socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, C.EVENT.RECORD_NOT_FOUND ] );
-			}
+			this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper );
 		},
 		onError = function( error ) {
 			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
@@ -286,8 +244,8 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	var recordName = message.data[ 0 ],
-		version = parseInt( message.data[ 1 ], 10 );
+	var recordName = message.data[ 0 ];
+	var version = parseInt( message.data[ 1 ], 10 );
 
 	/*
 	 * If the update message is received from the message bus, rather than from a client,
@@ -438,57 +396,6 @@ RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
 		callback();
 	} else {
 		this._recordRequestsInProgress[ recordName ].push( callback );
-	}
-};
-
-/**
- * Deletes a record. If a transition is in progress it will be stopped. Once the
- * deletion is complete, an Ack is returned.
- *
- * If the deletion message is received from the message bus, rather than from a client,
- * we assume that the original deepstream node has already deleted the record from cache and
- * storage and we only need to broadcast the message to subscribers
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._delete = function( socketWrapper, message ) {
-	var recordName = message.data[ 0 ];
-
-	if( this._transitions[ recordName ] ) {
-		this._transitions[ recordName ].destroy();
-		delete this._transitions[ recordName ];
-	}
-
-	if( socketWrapper === C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._onDeleted( recordName, message, socketWrapper );
-	}
-	else {
-		new RecordDeletion( this._options, socketWrapper, message, this._onDeleted.bind( this ) );
-	}
-};
-
-/*
- * Callback for completed deletions. Notifies subscribers of the delete and unsubscribes them
- *
- * @param   {String} name           record name
- * @param   {Object} message        parsed and validated deepstream message
- * @param   {SocketWrapper} originalSender the socket the update message was received from
- *
- * @package private
- * @returns {void}
- */
-RecordHandler.prototype._onDeleted = function( name, message, originalSender ) {
-	var subscribers = this._subscriptionRegistry.getLocalSubscribers( name );
-	var i;
-
-	this._$broadcastUpdate( name, message, originalSender );
-
-	for( i = 0; subscribers && i < subscribers.length; i++ ) {
-		this._subscriptionRegistry.unsubscribe( name, subscribers[ i ], true );
 	}
 };
 
