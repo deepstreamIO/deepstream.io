@@ -53,51 +53,54 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	 */
 	if( message.action === C.ACTIONS.CREATEORREAD ) {
 		this._createOrRead( socketWrapper, message );
+		return;
 	}
 
 	/*
 	 * Return the current state of the record in cache or db
 	 */
-	else if( message.action === C.ACTIONS.SNAPSHOT ) {
+	if( message.action === C.ACTIONS.SNAPSHOT ) {
 		this._snapshot( socketWrapper, message );
+		return;
 	}
 
 	/*
 	 * Handle complete (UPDATE)
 	 */
-	else if( message.action === C.ACTIONS.UPDATE ) {
+	if( message.action === C.ACTIONS.UPDATE ) {
 		this._update( socketWrapper, message );
+		return;
 	}
 
 	/*
 	 * Unsubscribes (discards) a record that was previously subscribed to
 	 * using read()
 	 */
-	else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
-		this._subscriptionRegistry.unsubscribe( message.data[ 0 ], socketWrapper );
+	if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
+		this._unsubscribe( socketWrapper, message );
+		return;
 	}
 
 	/*
 	 * Listen to requests for a particular record or records
 	 * whose names match a pattern
 	 */
-	else if( message.action === C.ACTIONS.LISTEN ||
+	if( message.action === C.ACTIONS.LISTEN ||
 		message.action === C.ACTIONS.UNLISTEN ||
 		message.action === C.ACTIONS.LISTEN_ACCEPT ||
 		message.action === C.ACTIONS.LISTEN_REJECT ||
 		message.action === C.ACTIONS.LISTEN_SNAPSHOT ) {
 		this._listenerRegistry.handle( socketWrapper, message );
+		return;
 	}
 
 	/*
 	 * Default for invalid messages
 	 */
-	else {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
+	this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
 
-		if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
-		}
+	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 	}
 };
 
@@ -110,15 +113,15 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
-	var recordName = message.data[ 0 ],
-		onComplete = function( record ) {
-			this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper );
-		},
-		onError = function( error ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
-		};
+	var recordName = message.data[ 0 ];
+	var onComplete = function( record ) {
+		this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper );
+	}.bind( this );
+	var onError = function( error ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
+	}.bind( this );
 
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ), onError.bind( this ) );
+	new RecordRequest( recordName, this._options, socketWrapper, onComplete, onError );
 };
 
 /**
@@ -132,18 +135,64 @@ RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
-	var recordName = message.data[ 0 ],
-		onComplete = function( record ) {
-			if( record ) {
-				this._read( recordName, record, socketWrapper );
-			} else {
-				this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper, this._create.bind( this, recordName, socketWrapper ) );
-			}
-		};
+	var recordName = message.data[ 0 ];
+	var	onComplete = function( record ) {
+		if( record ) {
+			this._read( recordName, record, socketWrapper );
+		} else {
+			this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper, this._create.bind( this, recordName, socketWrapper ) );
+		}
+	}.bind( this );
 
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete.bind( this ) );
+	new RecordRequest( recordName, this._options, socketWrapper, onComplete );
 };
 
+ /**
+ * Applies both full and partial updates. Creates a new record transition that will live as long as updates
+ * are in flight and new updates come in
+ *
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message parsed and validated message
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._update = function( socketWrapper, message ) {
+
+	if( message.data.length < 3 ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[ 0 ] );
+		return;
+	}
+
+	var recordName = message.data[ 0 ];
+	var version = parseInt( message.data[ 1 ], 10 );
+
+	/*
+	 * If the update message is received from the message bus, rather than from a client,
+	 * assume that the original deepstream node has already updated the record in cache and
+	 * storage and only broadcast the message to subscribers
+	 */
+	if( socketWrapper === C.SOURCE_MESSAGE_CONNECTOR ) {
+		this._$broadcastUpdate( recordName, message, socketWrapper );
+		return;
+	}
+
+	if( isNaN( version ) ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [ recordName, version ] );
+		return;
+	}
+
+	if( !this._transitions[ recordName ] ) {
+		this._transitions[ recordName ] = new RecordTransition( recordName, this._options, this );
+	}
+
+	this._transitions[ recordName ].add( socketWrapper, version, message );
+};
+
+RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
+	var recordName = message.data[ 0 ];
+	this._subscriptionRegistry.unsubscribe( recordName, socketWrapper );
+}
 /**
  * Creates a new, empty record and triggers a read operation once done
  *
@@ -211,62 +260,12 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 		data = this._options.dataTransforms.apply(
 			C.TOPIC.RECORD,
 			C.ACTIONS.READ,
-
-			/*
-			 * Clone the object to make sure that the transform method doesn't accidentally
-			 * modify the object reference for other subscribers.
-			 *
-			 * JSON stringify/parse still seems to be the fastest way to achieve a deep copy.
-			 * TODO Update once native Object.clone // Object.copy becomes a thing
-			 */
 			JSON.parse( JSON.stringify( data ) ),
 			{ recordName: recordName, receiver: socketWrapper.user }
 		);
 	}
 
 	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, data ] );
-};
-
- /**
- * Applies both full and partial updates. Creates a new record transition that will live as long as updates
- * are in flight and new updates come in
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._update = function( socketWrapper, message ) {
-
-	if( message.data.length < 3 ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[ 0 ] );
-		return;
-	}
-
-	var recordName = message.data[ 0 ];
-	var version = parseInt( message.data[ 1 ], 10 );
-
-	/*
-	 * If the update message is received from the message bus, rather than from a client,
-	 * assume that the original deepstream node has already updated the record in cache and
-	 * storage and only broadcast the message to subscribers
-	 */
-	if( socketWrapper === C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._$broadcastUpdate( recordName, message, socketWrapper );
-		return;
-	}
-
-	if( isNaN( version ) ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [ recordName, version ] );
-		return;
-	}
-
-	if( !this._transitions[ recordName ] ) {
-		this._transitions[ recordName ] = new RecordTransition( recordName, this._options, this );
-	}
-
-	this._transitions[ recordName ].add( socketWrapper, version, message );
 };
 
 /**
@@ -308,28 +307,25 @@ RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSen
  * @returns {void}
  */
 RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, name, message, originalSender ) {
-	var receivers = this._subscriptionRegistry.getLocalSubscribers( name ),
-		metaData = {
-			recordName: name,
-			version: parseInt( message.data[ 1 ], 10 )
-		},
-		unparsedData = message.data[ transformUpdate ? 2 : 3 ],
-		messageData = message.data.slice( 0 ),
-		data,
-		i;
+	var receivers = this._subscriptionRegistry.getLocalSubscribers( name );
+	var metaData = {
+		recordName: name,
+		version: parseInt( message.data[ 1 ], 10 )
+	};
+	var unparsedData = message.data[ transformUpdate ? 2 : 3 ];
+	var messageData = message.data.slice( 0 );
 
 	if( !receivers ) {
 		return;
 	}
 
-	for( i = 0; i < receivers.length; i++ ) {
+	for( var i = 0; i < receivers.length; i++ ) {
 		if( receivers[ i ] === originalSender ) {
 			continue;
 		}
 		metaData.receiver = receivers[ i ].user;
 
-		data = JSON.parse( unparsedData );
-		data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
+		data = this._options.dataTransforms.apply( message.topic, message.action, JSON.parse( unparsedData ), metaData );
 		messageData[ 2 ] = JSON.stringify( data );
 
 		receivers[ i ].sendMessage( message.topic, message.action, messageData );
@@ -363,8 +359,6 @@ RecordHandler.prototype._$transitionComplete = function( recordName ) {
  * @returns {void}
  */
 RecordHandler.prototype.removeRecordRequest = function( recordName ) {
-	var callback;
-
 	if( !this._recordRequestsInProgress[ recordName ] ) {
 		return;
 	}
@@ -374,8 +368,7 @@ RecordHandler.prototype.removeRecordRequest = function( recordName ) {
 		return;
 	}
 
-	callback = this._recordRequestsInProgress[ recordName ].splice( 0, 1 )[ 0 ];
-	callback();
+	this._recordRequestsInProgress[ recordName ].splice( 0, 1 )[ 0 ]();
 };
 
 /**
