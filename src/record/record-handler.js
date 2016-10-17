@@ -186,6 +186,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		_d: json.value
 	};
 
+	// Always write to storage (even if wrong version) in order to resolve conflicts
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._options.storage.set( recordName, record, this._onStorageResponse.bind( this ) );
 	}
