@@ -424,28 +424,16 @@ RecordHandler.prototype._getRecord = function ( recordName ) {
 }
 
 RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
-	return Promise
-		.race( [
-			new Promise( ( resolve, reject ) => setTimeout( () => reject( {
-				event: C.EVENT.STORAGE_RETRIEVAL_TIMEOUT,
-				message: recordName
-			} ), this._options.storageRetrievalTimeout ) ),
-			new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
-				if ( error ) {
-					reject( {
-						event: C.EVENT.RECORD_LOAD_ERROR,
-						message: 'error while loading ' + recordName + ' from storage:' + error.toString()
-					} );
-				} else {
-					this._cache.set( recordName, record );
-					resolve( record );
-				}
-			} ) )
-		] )
-		.catch( error => {
-			this._logger.log( C.LOG_LEVEL.ERROR, error.event, error.message );
-			throw error.message;
-		} );
+	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
+		if ( error ) {
+			const message = 'error while loading ' + recordName + ' from storage:' + error.toString();
+			this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message );
+			reject( message );
+		} else {
+			this._cache.set( recordName, record );
+			resolve( record );
+		}
+	} ) );
 }
 
 /**
