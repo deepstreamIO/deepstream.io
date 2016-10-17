@@ -176,7 +176,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	var record = { _v: version };
 
 	try {
-		record._d = JSON.parse( message.data[ 2 ] );
+		record._d = typeof message.data[ 2 ] === 'string' ? JSON.parse( message.data[ 2 ] ) : message.data[ 2 ];
 	} catch( error ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 		return;
