@@ -299,7 +299,16 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
 ConnectionEndpoint.prototype._processConnectionMessage = function( socketWrapper, connectionMessage ) {
 	var msg = messageParser.parse( connectionMessage )[ 0 ];
 
-	if( msg.action === C.ACTIONS.CHALLENGE_RESPONSE ) {
+	if( msg === null ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage );
+		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage );
+		socketWrapper.destroy();
+	}
+	else if( msg.topic !== C.TOPIC.CONNECTION ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, 'invalid connection message ' + connectionMessage );
+		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message' );
+	}
+	else if( msg.action === C.ACTIONS.CHALLENGE_RESPONSE ) {
 		socketWrapper.socket.removeListener( 'message', socketWrapper.connectionCallback );
 		socketWrapper.socket.on( 'message', socketWrapper.authCallBack );
 		socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.ACK );
