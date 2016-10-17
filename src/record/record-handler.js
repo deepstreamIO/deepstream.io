@@ -123,7 +123,7 @@ RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 	this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper )
 		.then( hasPermission => hasPermission ? this._getRecord( recordName ) : undefined )
-		.then( record => this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper ) )
+		.then( record => this._sendRecord( recordName, record, socketWrapper ) )
 		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] ) );
 };
 
@@ -148,7 +148,7 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 							this._create( recordName, socketWrapper );
 						}
 					})
-		} )
+		)
 		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.CREATE, [ recordName, error ] ) );
 };
 
@@ -421,7 +421,8 @@ RecordHandler.prototype._getRecord = function ( recordName ) {
 				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message );
 				reject( message );
 			} else {
-				this._cache.set( recordName, record || Object.create( null ) );
+				record = record || { _v: 0, _d: {} };
+				this._cache.set( recordName, record );
 				resolve( record );
 			}
 		} ) );
