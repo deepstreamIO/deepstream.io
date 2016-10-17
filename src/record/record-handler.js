@@ -119,17 +119,12 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._snapshot = async function( socketWrapper, message ) {
+RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
-
-	if ( await this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper ) ) {
-		try {
-			const record = await this._getRecord( recordName );
-			this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper );
-		} catch ( error ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
-		}
-	}
+	this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper )
+		.then( hasPermission => hasPermission ? this._getRecord( recordName ) : undefined )
+		.then( record => this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper ) )
+		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] ) );
 };
 
 /**
@@ -142,20 +137,19 @@ RecordHandler.prototype._snapshot = async function( socketWrapper, message ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._createOrRead = async function( socketWrapper, message ) {
+RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
-
-	try {
-		const record = await this._getRecord( recordName );
-		if( record ) {
-			this._read( recordName, record, socketWrapper );
-		}
-		else if ( await this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper) ) {
-			this._create( recordName, socketWrapper );
-		}
-	} catch ( error ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.CREATE, [ recordName, error ] );
-	}
+	this._getRecord( recordName )
+		.then( record => record
+		 	? this._read( recordName, record, socketWrapper )
+			: this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper )
+					.then( hasPermission => {
+						if ( hasPermission ) {
+							this._create( recordName, socketWrapper );
+						}
+					})
+		} )
+		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.CREATE, [ recordName, error ] ) );
 };
 
  /**
@@ -260,11 +254,14 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._read = async function( recordName, record, socketWrapper ) {
-	if ( await this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper) ) {
-		this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-		this._sendRecord( recordName, record, socketWrapper );
-	}
+RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
+	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper)
+		.then( hasPermission => {
+			if ( hasPermission  ) {
+				this._subscriptionRegistry.subscribe( recordName, socketWrapper );
+				this._sendRecord( recordName, record, socketWrapper );
+			}
+		})
 };
 
 /**
@@ -391,7 +388,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 			data: [ recordName ]
 		};
 
-		const onResult = ( error, canPerformAction ) => {
+		const callback = ( error, canPerformAction ) => {
 			if( error !== null ) {
 				socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
 				resolve( false );
@@ -408,7 +405,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 		this._permissionHandler.canPerformAction(
 			socketWrapper.user,
 			message,
-			onResult,
+			callback,
 			socketWrapper.authData
 		);
 	})
@@ -438,19 +435,18 @@ RecordHandler.prototype._getRecord = function ( recordName ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._onStorageChange = async function( recordName, version ) {
+RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	if ( this._cache.has( recordName ) && this._cache.get( recordName )._v >= version ) {
 		return;
 	}
 
-	try {
-		const record = await this._getRecord( recordName );
-		if ( record ) {
-			this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( record ) ] } );
-		}
-	} catch ( error ) {
-		// Do nothing...
-	}
+	this._getRecord( recordName )
+		.then( record => {
+			if ( record ) {
+				this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( record ) ] } );
+			}
+		})
+		.catch( error => { /* Do nothing... */ })
 }
 
 module.exports = RecordHandler;
