@@ -149,7 +149,7 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 						}
 					})
 		)
-		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.CREATE, [ recordName, error ] ) );
+		.catch( () => { /* Do nothing... */ } );
 };
 
  /**
