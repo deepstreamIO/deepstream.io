@@ -166,22 +166,20 @@ RecordTransition.prototype._next = function() {
 		_d: this._currentStep.data
 	};
 
-	if ( this._currentStep.sender !== C.SOURCE_STORAGE_CONNECTOR ) {
+	if ( this._currentStep.sender !== C.SOURCE_STORAGE_CONNECTOR && this._currentStep.sender !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._options.storage.set( this._name, record, this._onStorageResponse.bind( this ) );
 	}
 
-	// On failed record retrieval broadcast a potentially outdated record but don't write to cache
-	if ( !this._record ) {
-		this._onUpdated();
-		return;
+	if ( this._record ) {
+		if ( record._v < this._record._v ) {
+			this._next();
+			return;
+		}
+
+		this._options.cache.set( this._name, record );
 	}
 
-	if ( record._v < this._record._v ) {
-		this._next();
-		return;
-	}
-
-	this._options.cache.set( this._name, record, this._onUpdated.bind( this ) );
+	this._onUpdated();
 
 	this._record = record;
 };
@@ -198,9 +196,6 @@ RecordTransition.prototype._next = function() {
  * @returns {void}
  */
 RecordTransition.prototype._onUpdated = function( error ) {
-	if( error ) {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.RECORD_UPDATE_ERROR, errorMessage );
-	}
 	this._recordHandler._$broadcastUpdate( this._name, this._currentStep.message, this._currentStep.sender );
 	this._next();
 };

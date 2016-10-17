@@ -5,7 +5,8 @@ var C = require( '../constants/constants' ),
 	RecordTransition = require( './record-transition' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' ),
-	EventEmitter = require( 'events' ).EventEmitter;
+	EventEmitter = require( 'events' ).EventEmitter,
+	LRU = require('lru-cache');
 
 /**
  * The entry point for record related operations
@@ -22,6 +23,7 @@ var RecordHandler = function( options ) {
 	this._transitions = {};
 	this._recordRequestsInProgress = {};
 	this._options.storage.on('change', this._onStorageChange.bind( this ) );
+	this._options.cache = new LRU({ max: 1e4 });
 };
 
 /**
@@ -168,16 +170,6 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	var recordName = message.data[ 0 ];
 	var version = parseInt( message.data[ 1 ], 10 );
 
-	/*
-	 * If the update message is received from the message bus, rather than from a client,
-	 * assume that the original deepstream node has already updated the record in cache and
-	 * storage and only broadcast the message to subscribers
-	 */
-	if( socketWrapper === C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._$broadcastUpdate( recordName, message, socketWrapper );
-		return;
-	}
-
 	if( isNaN( version ) ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [ recordName, version ] );
 		return;
@@ -209,15 +201,10 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 		_d: {}
 	};
 
-	// store the records data in the cache and wait for the result
-	this._options.cache.set( recordName, record, function( error ){
-		if( error ) {
-			this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName );
-			socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName );
-		} else {
-			this._read( recordName, record, socketWrapper );
-		}
-	}.bind( this ));
+	// store the records data in the cache
+	this._options.cache.set( recordName, record );
+
+	this._read( recordName, record, socketWrapper );
 
 	// store the record data in the persistant storage independently and don't wait for the result
 	this._options.storage.set( recordName, record, function( error ) {
@@ -416,7 +403,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 		if( error !== null ) {
 			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
 		}
-		else if( canPerformAction !== true ) {
+		else if( !canPerformAction ) {
 			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, [ recordName, action  ] );
 		}
 		else {

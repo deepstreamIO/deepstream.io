@@ -72,7 +72,6 @@ exports.get = function() {
 		rpcProviderCacheTime: 60000,
 		rpcAckTimeout: 1000,
 		rpcTimeout: 10000,
-		cacheRetrievalTimeout: 1000,
 		storageRetrievalTimeout: 2000,
 		dependencyInitialisationTimeout: 2000,
 		stateReconciliationTimeout: 500,

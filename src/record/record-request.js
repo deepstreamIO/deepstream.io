@@ -24,37 +24,9 @@ var RecordRequest = function( recordName, options, socketWrapper, onComplete, on
 	this._onError = onError;
 	this._isDestroyed = false;
 
-	this._cacheRetrievalTimeout = setTimeout(
-		this._sendError.bind( this, C.EVENT.CACHE_RETRIEVAL_TIMEOUT, this._recordName ),
-		this._options.cacheRetrievalTimeout
-	);
-
-	this._options.cache.get( this._recordName, this._onCacheResponse.bind( this ) );
-};
-
-/**
- * Callback for responses returned by the cache connector
- *
- * @param   {String} error  null if no error has occured
- * @param   {Object} record the record data structure, e.g. { _v: 33, _d: { some: 'data' } }
- *
- * @private
- * @returns {void}
- */
-RecordRequest.prototype._onCacheResponse = function( error, record ) {
-	clearTimeout( this._cacheRetrievalTimeout );
-
-	if( this._isDestroyed === true ) {
-		return;
-	}
-
-	if( error ) {
-		this._sendError( C.EVENT.RECORD_LOAD_ERROR, 'error while loading ' + this._recordName + ' from cache:' + error.toString() );
-	}
-	else if( record ) {
-		this._onComplete( record );
-	}
-	else {
+	if ( this._options.has( this._recordName ) ) {
+		this._onComplete( this._options.cache.get( this._recordName ) );
+	} else {
 		this._storageRetrievalTimeout = setTimeout(
 			this._sendError.bind( this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName ),
 			this._options.storageRetrievalTimeout
@@ -77,7 +49,7 @@ RecordRequest.prototype._onCacheResponse = function( error, record ) {
 RecordRequest.prototype._onStorageResponse = function( error, record ) {
 	clearTimeout( this._storageRetrievalTimeout );
 
-	if( this._isDestroyed === true ) {
+	if( this._isDestroyed ) {
 		return;
 	}
 
@@ -87,10 +59,7 @@ RecordRequest.prototype._onStorageResponse = function( error, record ) {
 		this._onComplete( record || null );
 
 		if( record ) {
-			/*
-			 * Load record from storage into cache
-			 */
-			this._options.cache.set( this._recordName, record, function(){});
+			this._options.cache.set( this._recordName, record );
 		}
 
 		this._destroy();
@@ -126,7 +95,6 @@ RecordRequest.prototype._sendError = function( event, message ) {
  * @returns {void}
  */
 RecordRequest.prototype._destroy = function() {
-	clearTimeout( this._cacheRetrievalTimeout );
 	clearTimeout( this._storageRetrievalTimeout );
 	this._recordName = null;
 	this._options = null;
