@@ -122,7 +122,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 	this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper )
-		.then( hasPermission => hasPermission ? this._getRecord( recordName ) : undefined )
+		.then( hasPermission => hasPermission ? this.getRecord( recordName ) : undefined )
 		.then( record => this._sendRecord( recordName, record, socketWrapper ) )
 		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] ) );
 };
@@ -139,7 +139,7 @@ RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
  */
 RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
-	this._getRecord( recordName )
+	this.getRecord( recordName )
 		.then( record => record
 		 	? this._read( recordName, record, socketWrapper )
 			: this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper )
@@ -412,7 +412,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 
 };
 
-RecordHandler.prototype._getRecord = function ( recordName ) {
+RecordHandler.prototype.getRecord = function ( recordName ) {
 	return this._cache.has( recordName )
 		? Promise.resolve( this._cache.get( recordName ) )
 		: new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
@@ -441,7 +441,7 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 		return;
 	}
 
-	this._getRecord( recordName )
+	this.getRecord( recordName )
 		.then( record => {
 			if ( record ) {
 				this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( record ) ] } );

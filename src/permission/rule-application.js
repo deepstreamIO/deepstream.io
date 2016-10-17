@@ -6,7 +6,6 @@ var STRING = 'string';
 var EOL = require( 'os' ).EOL;
 
 var C = require( '../constants/constants' );
-var RecordRequest = require( '../record/record-request' );
 var messageParser = require( '../message/message-parser' );
 var utils = require( '../utils/utils' );
 
@@ -338,15 +337,10 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 
 	this._recordData[ recordName ] = LOADING;
 
-	this._params.recordHandler.runWhenRecordStable( recordName, () => {
-		new RecordRequest(
-			recordName,
-			this._params.options,
-			null,
-			this._onLoadComplete.bind( this, recordName ),
-			this._onLoadError.bind( this, recordName )
-		);
-	});
+	this._params.recordHandler.runWhenRecordStable( recordName, () => this._params.recordHandler
+		.then( record => this._onLoadComplete( recordName, record ) )
+		.catch( error => this._onLoadError( recordName, error ))
+	);
 };
 
 /**
