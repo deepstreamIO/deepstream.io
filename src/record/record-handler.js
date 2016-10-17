@@ -142,12 +142,7 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 	this.getRecord( recordName )
 		.then( record => record
 		 	? this._read( recordName, record, socketWrapper )
-			: this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper )
-					.then( hasPermission => {
-						if ( hasPermission ) {
-							this._create( recordName, socketWrapper );
-						}
-					})
+			: this._create( recordName, socketWrapper )
 		)
 		.catch( () => { /* Do nothing... */ } );
 };
@@ -228,19 +223,25 @@ RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._create = function( recordName, socketWrapper ) {
-	const record = { _v: 0, _d: {} };
+	this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper)
+		.then( hasPermission => {
+			if ( !hasPermission ) {
+				return;
+			}
+			const record = { _v: 0, _d: {} };
 
-	// store the records data in the cache
-	this._cache.set( recordName, record );
+			// store the records data in the cache
+			this._cache.set( recordName, record );
 
-	this._read( recordName, record, socketWrapper );
+			this._read( recordName, record, socketWrapper );
 
-	// store the record data in the persistant storage independently and don't wait for the result
-	this._storage.set( recordName, record, ( error ) => {
-		if( error ) {
-			this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
-		}
-	} );
+			// store the record data in the persistant storage independently and don't wait for the result
+			this._storage.set( recordName, record, ( error ) => {
+				if( error ) {
+					this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
+				}
+			} );
+		});
 };
 
 /**
@@ -256,10 +257,11 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
 RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
 	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper)
 		.then( hasPermission => {
-			if ( hasPermission  ) {
-				this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-				this._sendRecord( recordName, record, socketWrapper );
+			if ( !hasPermission  ) {
+				return;
 			}
+			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
+			this._sendRecord( recordName, record, socketWrapper );
 		})
 };
 
