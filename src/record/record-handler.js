@@ -4,6 +4,7 @@ var C = require( '../constants/constants' ),
 	RecordRequest = require( './record-request' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' ),
+	utils = require( '../utils/utils' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	LRU = require('lru-cache');
 
@@ -173,14 +174,17 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	var record = { _v: version };
+	var json = utils.JSONParse( message.data[ 2 ] );
 
-	try {
-		record._d = JSON.parse( message.data[ 2 ] );
-	} catch( error ) {
+	if ( json.error ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 		return;
 	}
+
+	var record = {
+		_v: version,
+		_d: json.value
+	};
 
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._options.storage.set( recordName, record, this._onStorageResponse.bind( this ) );
