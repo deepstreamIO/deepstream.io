@@ -189,7 +189,7 @@ class SubscriptionRegistry {
 
 		for( i = 0; i < this._unsubscribeAllFunctions.length; i++ ) {
 			if( this._unsubscribeAllFunctions[ i ].socketWrapper === socketWrapper ) {
-				socketWrapper.socket.removeListener( 'close', this._unsubscribeAllFunctions[ i ].fn );
+				socketWrapper.removeListener( 'close', this._unsubscribeAllFunctions[ i ].fn );
 				this._unsubscribeAllFunctions.splice( i, 1 );
 				break;
 			}
