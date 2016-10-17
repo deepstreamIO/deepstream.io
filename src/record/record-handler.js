@@ -207,7 +207,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	this._cache.set( recordName, record );
 
 	if( this._hasUpdateTransforms ) {
-		this._broadcastTransformedUpdate( transformUpdate, recordName, message, socketWrapper );
+		this._broadcastTransformedUpdate( recordName, message, socketWrapper );
 	} else {
 		this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
 	}
@@ -293,7 +293,6 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
  * the message and invokes the transform function prior to sending it to every individual receiver
  * so that receiver specific transforms can be applied.
  *
- * @param   {Boolean} transformUpdate is a update transform function registered that applies to this update?
  * @param   {String} recordName       the record name
  * @param   {Object} message          a parsed deepstream message object
  * @param   {SocketWrapper|String} originalSender  the original sender of the update or a string pointing at the messageBus
@@ -301,29 +300,24 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, recordName, message, originalSender ) {
-	const receivers = this._subscriptionRegistry.getLocalSubscribers( recordName );
-	const metaData = {
-		recordName: recordName,
-		version: parseInt( message.data[ 1 ], 10 )
-	};
-	const unparsedData = message.data[ transformUpdate ? 2 : 3 ];
-	const messageData = message.data.slice( 0 );
-
-	if( !receivers ) {
-		return;
-	}
+RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, message, originalSender ) {
+	const receivers = this._subscriptionRegistry.getLocalSubscribers( recordName ) || [];
 
 	for( let i = 0; i < receivers.length; i++ ) {
-		if( receivers[ i ] === originalSender ) {
-			continue;
+		if( receivers[ i ] !== originalSender ) {
+			const metaData = {
+				recordName: recordName,
+				version: parseInt( message.data[ 1 ], 10 ),
+				receiver: receivers[ i ].user
+			};
+
+			const data = this._dataTransforms.apply( message.topic, message.action, JSON.parse( message.data[ 2 ] ), metaData );
+			receivers[ i ].sendMessage(
+				message.topic,
+				message.action,
+				[ ...message.slice(0, 2), JSON.stringify( data ) ]
+			);
 		}
-		metaData.receiver = receivers[ i ].user;
-
-		const data = this._dataTransforms.apply( message.topic, message.action, JSON.parse( unparsedData ), metaData );
-		messageData[ 2 ] = JSON.stringify( data );
-
-		receivers[ i ].sendMessage( message.topic, message.action, messageData );
 	}
 };
 
