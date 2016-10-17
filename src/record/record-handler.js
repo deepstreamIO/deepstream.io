@@ -281,9 +281,7 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
  * @returns {void}
  */
 RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSender ) {
-	var transformUpdate = message.action === C.ACTIONS.UPDATE && this._hasUpdateTransforms;
-
-	if( transformUpdate ) {
+	if( this._hasUpdateTransforms ) {
 		this._broadcastTransformedUpdate( transformUpdate, name, message, originalSender );
 	} else {
 		this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
