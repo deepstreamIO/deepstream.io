@@ -24,7 +24,7 @@ var RecordRequest = function( recordName, options, socketWrapper, onComplete, on
 	this._onError = onError;
 	this._isDestroyed = false;
 
-	if ( this._options.has( this._recordName ) ) {
+	if ( this._options.cache.has( this._recordName ) ) {
 		this._onComplete( this._options.cache.get( this._recordName ) );
 	} else {
 		this._storageRetrievalTimeout = setTimeout(

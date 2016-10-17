@@ -198,9 +198,9 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	this._options.cache.set( recordName, record );
 
 	if( this._hasUpdateTransforms ) {
-		this._broadcastTransformedUpdate( transformUpdate, name, message, socketWrapper );
+		this._broadcastTransformedUpdate( transformUpdate, recordName, message, socketWrapper );
 	} else {
-		this._subscriptionRegistry.sendToSubscribers( name, message.raw, socketWrapper );
+		this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
 	}
 
 	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR ) {
@@ -288,17 +288,17 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
  * so that receiver specific transforms can be applied.
  *
  * @param   {Boolean} transformUpdate is a update transform function registered that applies to this update?
- * @param   {String} name             the record name
+ * @param   {String} recordName       the record name
  * @param   {Object} message          a parsed deepstream message object
  * @param   {SocketWrapper|String} originalSender  the original sender of the update or a string pointing at the messageBus
  *
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, name, message, originalSender ) {
-	var receivers = this._subscriptionRegistry.getLocalSubscribers( name );
+RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, recordName, message, originalSender ) {
+	var receivers = this._subscriptionRegistry.getLocalSubscribers( recordName );
 	var metaData = {
-		recordName: name,
+		recordName: recordName,
 		version: parseInt( message.data[ 1 ], 10 )
 	};
 	var unparsedData = message.data[ transformUpdate ? 2 : 3 ];
@@ -406,6 +406,28 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 	);
 };
 
+/**
+ * Callback for responses returned by storage.set()
+ *
+ * @param   {String} error
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._onStorageResponse = function( error ) {
+	if( error ) {
+		this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
+	}
+};
+
+/**
+ * Callback for changes from storage
+ *
+ * @param   {String} error
+ *
+ * @private
+ * @returns {void}
+ */
 RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	if ( this._options.cache.has( recordName ) && this._options.cache.get( recordName )._v >= version ) {
 		return;
