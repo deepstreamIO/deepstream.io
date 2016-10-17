@@ -2,7 +2,6 @@ var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
 	ListenerRegistry = require( '../listen/listener-registry' ),
 	RecordRequest = require( './record-request' ),
-	RecordTransition = require( './record-transition' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' ),
 	EventEmitter = require( 'events' ).EventEmitter,
@@ -161,7 +160,6 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._update = function( socketWrapper, message ) {
-
 	if( message.data.length < 3 ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[ 0 ] );
 		return;
@@ -175,11 +173,26 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	if( !this._transitions[ recordName ] ) {
-		this._transitions[ recordName ] = new RecordTransition( recordName, this._options, this );
+	var record = { _v: version };
+
+	try {
+		record._d = JSON.parse( message.data[ 2 ] );
+	} catch( error ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		return;
 	}
 
-	this._transitions[ recordName ].add( socketWrapper, version, message );
+	if ( this._currentStep.sender !== C.SOURCE_STORAGE_CONNECTOR && this._currentStep.sender !== C.SOURCE_MESSAGE_CONNECTOR ) {
+		this._options.storage.set( this._name, record, this._onStorageResponse.bind( this ) );
+	}
+
+	if ( this._options.cache.has( this._name, record ) && this._options.get( this._name )._v >= record._v ) {
+		this._next();
+	}
+
+	this._options.cache.set( this._name, record );
+
+	this._recordHandler._$broadcastUpdate( this._name, this._currentStep.message, this._currentStep.sender );
 };
 
 RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
@@ -318,20 +331,6 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate,
 
 		receivers[ i ].sendMessage( message.topic, message.action, messageData );
 	}
-};
-
-/**
- * Called by a RecordTransition, either if it is complete or if an error occured. Removes
- * the transition from the registry
- *
- * @todo  refactor - this is a bit of a mess
- * @param   {String} recordName record name
- *
- * @package private
- * @returns {void}
- */
-RecordHandler.prototype._$transitionComplete = function( recordName ) {
-	delete this._transitions[ recordName ];
 };
 
 /**
