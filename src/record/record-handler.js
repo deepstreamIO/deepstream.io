@@ -121,10 +121,10 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
  */
 RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
-	this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper )
+	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper )
 		.then( hasPermission => hasPermission ? this.getRecord( recordName ) : undefined )
 		.then( record => this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper ) )
-		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] ) );
+		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, error ] ) );
 };
 
 /**
