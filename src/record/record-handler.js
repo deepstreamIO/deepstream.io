@@ -186,8 +186,8 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		this._options.storage.set( this._name, record, this._onStorageResponse.bind( this ) );
 	}
 
-	if ( this._options.cache.has( this._name, record ) && this._options.get( this._name )._v >= record._v ) {
-		this._next();
+	if ( this._options.cache.has( this._name ) && this._options.get( this._name )._v >= record._v ) {
+		return;
 	}
 
 	this._options.cache.set( this._name, record );
