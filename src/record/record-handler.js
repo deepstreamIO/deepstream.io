@@ -1,7 +1,6 @@
 var C = require( '../constants/constants' ),
 	SubscriptionRegistry = require( '../utils/subscription-registry' ),
 	ListenerRegistry = require( '../listen/listener-registry' ),
-	RecordRequest = require( './record-request' ),
 	messageParser = require( '../message/message-parser' ),
 	messageBuilder = require( '../message/message-builder' ),
 	utils = require( '../utils/utils' ),
@@ -18,12 +17,17 @@ var RecordHandler = function( options ) {
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
 	this._listenerRegistry = new ListenerRegistry( C.TOPIC.RECORD, options, this._subscriptionRegistry );
 	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
-	this._hasReadTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
-	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
+	this._dataTransforms = this._options.dataTransforms;
+	this._hasReadTransforms = this._dataTransforms && this._dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
+	this._hasUpdateTransforms = this._dataTransforms && this._dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
 	this._transitions = {};
+	this._permissionHandler = this._options.permissionHandler;
+	this._logger = this._options.logger;
 	this._recordRequestsInProgress = {};
-	this._options.storage.on('change', this._onStorageChange.bind( this ) );
-	this._options.cache = new LRU({ max: 1e4 });
+	this._messageConnector = this._options.messageConnector
+	this._storage = this._options.storage;
+	this._storage.on('change', this._onStorageChange.bind( this ) );
+	this._cache = new LRU({ max: 1e4 });
 };
 
 /**
@@ -100,7 +104,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	/*
 	 * Default for invalid messages
 	 */
-	this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
+	this._logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
 
 	if( socketWrapper.sendError ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
@@ -115,18 +119,17 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
-	this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper, function() {
-		var recordName = message.data[ 0 ];
-		var onComplete = function( record ) {
-			this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper );
-		}.bind( this );
-		var onError = function( error ) {
-			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
-		}.bind( this );
+RecordHandler.prototype._snapshot = async function( socketWrapper, message ) {
+	const recordName = message.data[ 0 ];
 
-		new RecordRequest( recordName, this._options, socketWrapper, onComplete, onError );
-	}.bind( this ) );
+	if ( await this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper ) ) {
+		try {
+			const record = await this._getRecord( recordName );
+			this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper );
+		} catch ( error ) {
+			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
+		}
+	}
 };
 
 /**
@@ -139,17 +142,20 @@ RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
-	var recordName = message.data[ 0 ];
-	var	onComplete = function( record ) {
+RecordHandler.prototype._createOrRead = async function( socketWrapper, message ) {
+	const recordName = message.data[ 0 ];
+
+	try {
+		const record = await this._getRecord( recordName );
 		if( record ) {
 			this._read( recordName, record, socketWrapper );
-		} else {
-			this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper, this._create.bind( this, recordName, socketWrapper ) );
 		}
-	}.bind( this );
-
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete );
+		else if ( await this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper) ) {
+			this._create( recordName, socketWrapper );
+		}
+	} catch ( error ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.CREATE, [ recordName, error ] );
+	}
 };
 
  /**
@@ -163,41 +169,42 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._update = function( socketWrapper, message ) {
+	const recordName = message.data[ 0 ];
+
 	if( message.data.length < 3 ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[ 0 ] );
 		return;
 	}
 
-	var recordName = message.data[ 0 ];
-	var version = parseInt( message.data[ 1 ], 10 );
+	const version = parseInt( message.data[ 1 ], 10 );
 
 	if( isNaN( version ) ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [ recordName, version ] );
 		return;
 	}
 
-	var json = utils.JSONParse( message.data[ 2 ] );
+	const json = utils.JSONParse( message.data[ 2 ] );
 
 	if ( json.error ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 		return;
 	}
 
-	var record = {
+	const record = {
 		_v: version,
 		_d: json.value
 	};
 
 	// Always write to storage (even if wrong version) in order to resolve conflicts
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._options.storage.set( recordName, record, this._onStorageResponse.bind( this ) );
+		this._storage.set( recordName, record, this._onStorageResponse.bind( this ) );
 	}
 
-	if ( this._options.cache.has( recordName ) && this._options.cache.get( recordName )._v >= record._v ) {
+	if ( this._cache.has( recordName ) && this._cache.get( recordName )._v >= record._v ) {
 		return;
 	}
 
-	this._options.cache.set( recordName, record );
+	this._cache.set( recordName, record );
 
 	if( this._hasUpdateTransforms ) {
 		this._broadcastTransformedUpdate( transformUpdate, recordName, message, socketWrapper );
@@ -206,12 +213,12 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	}
 
 	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR ) {
-		this._options.messageConnector.publish( C.TOPIC.RECORD, message );
+		this._messageConnector.publish( C.TOPIC.RECORD, message );
 	}
 };
 
 RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
-	var recordName = message.data[ 0 ];
+	const recordName = message.data[ 0 ];
 	this._subscriptionRegistry.unsubscribe( recordName, socketWrapper );
 }
 /**
@@ -224,22 +231,19 @@ RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._create = function( recordName, socketWrapper ) {
-	var record = {
-		_v: 0,
-		_d: {}
-	};
+	const record = { _v: 0, _d: {} };
 
 	// store the records data in the cache
-	this._options.cache.set( recordName, record );
+	this._cache.set( recordName, record );
 
 	this._read( recordName, record, socketWrapper );
 
 	// store the record data in the persistant storage independently and don't wait for the result
-	this._options.storage.set( recordName, record, function( error ) {
+	this._storage.set( recordName, record, ( error ) => {
 		if( error ) {
-			this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
+			this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
 		}
-	}.bind( this ) );
+	} );
 };
 
 /**
@@ -252,11 +256,11 @@ RecordHandler.prototype._create = function( recordName, socketWrapper ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
-	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper, function() {
+RecordHandler.prototype._read = async function( recordName, record, socketWrapper ) {
+	if ( await this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper) ) {
 		this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 		this._sendRecord( recordName, record, socketWrapper );
-	}.bind( this ) );
+	}
 };
 
 /**
@@ -270,10 +274,10 @@ RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
  * @returns {void}
  */
 RecordHandler.prototype._sendRecord = function( recordName, record, socketWrapper ) {
-	var data = record._d;
+	let data = record._d;
 
 	if( this._hasReadTransforms ) {
-		data = this._options.dataTransforms.apply(
+		data = this._dataTransforms.apply(
 			C.TOPIC.RECORD,
 			C.ACTIONS.READ,
 			JSON.parse( JSON.stringify( data ) ),
@@ -298,25 +302,25 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
  * @returns {void}
  */
 RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, recordName, message, originalSender ) {
-	var receivers = this._subscriptionRegistry.getLocalSubscribers( recordName );
-	var metaData = {
+	const receivers = this._subscriptionRegistry.getLocalSubscribers( recordName );
+	const metaData = {
 		recordName: recordName,
 		version: parseInt( message.data[ 1 ], 10 )
 	};
-	var unparsedData = message.data[ transformUpdate ? 2 : 3 ];
-	var messageData = message.data.slice( 0 );
+	const unparsedData = message.data[ transformUpdate ? 2 : 3 ];
+	const messageData = message.data.slice( 0 );
 
 	if( !receivers ) {
 		return;
 	}
 
-	for( var i = 0; i < receivers.length; i++ ) {
+	for( let i = 0; i < receivers.length; i++ ) {
 		if( receivers[ i ] === originalSender ) {
 			continue;
 		}
 		metaData.receiver = receivers[ i ].user;
 
-		data = this._options.dataTransforms.apply( message.topic, message.action, JSON.parse( unparsedData ), metaData );
+		const data = this._dataTransforms.apply( message.topic, message.action, JSON.parse( unparsedData ), metaData );
 		messageData[ 2 ] = JSON.stringify( data );
 
 		receivers[ i ].sendMessage( message.topic, message.action, messageData );
@@ -381,32 +385,68 @@ RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._permissionAction = function( action, recordName, socketWrapper, successCallback ) {
-	var message = {
-		topic: C.TOPIC.RECORD,
-		action: action,
-		data: [ recordName ]
-	};
+RecordHandler.prototype._permissionAction = function( action, recordName, socketWrapper ) {
+	return new Promise( ( resolve, reject ) => {
+		const message = {
+			topic: C.TOPIC.RECORD,
+			action: action,
+			data: [ recordName ]
+		};
 
-	var onResult = function( error, canPerformAction ) {
-		if( error !== null ) {
-			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
-		}
-		else if( !canPerformAction ) {
-			socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, [ recordName, action  ] );
-		}
-		else {
-			successCallback();
-		}
-	};
+		const onResult = ( error, canPerformAction ) => {
+			if( error !== null ) {
+				socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
+				resolve( false );
+			}
+			else if( !canPerformAction ) {
+				socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, [ recordName, action  ] );
+				resolve( false );
+			}
+			else {
+				resolve( true );
+			}
+		};
 
-	this._options.permissionHandler.canPerformAction(
-		socketWrapper.user,
-		message,
-		onResult,
-		socketWrapper.authData
-	);
+		this._permissionHandler.canPerformAction(
+			socketWrapper.user,
+			message,
+			onResult,
+			socketWrapper.authData
+		);
+	})
+
 };
+
+RecordHandler.prototype._getRecord = function ( recordName ) {
+	return this._cache.has( recordName )
+		? Promise.resolve( this._cache.get( recordName ) )
+		: this._getRecordFromStorage( recordName );
+}
+
+RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
+	return Promise
+		.race( [
+			new Promise( ( resolve, reject ) => setTimeout( () => reject( {
+				event: C.EVENT.STORAGE_RETRIEVAL_TIMEOUT,
+				message: recordName
+			} ), this._options.storageRetrievalTimeout ) ),
+			new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
+				if ( error ) {
+					reject( {
+						event: C.EVENT.RECORD_LOAD_ERROR,
+						message: 'error while loading ' + recordName + ' from storage:' + error.toString()
+					} );
+				} else {
+					this._cache.set( recordName, record );
+					resolve( record );
+				}
+			} ) )
+		] )
+		.catch( error => {
+			this._logger.log( C.LOG_LEVEL.ERROR, error.event, error.message );
+			throw error.message;
+		} );
+}
 
 /**
  * Callback for responses returned by storage.set()
@@ -418,7 +458,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
  */
 RecordHandler.prototype._onStorageResponse = function( error ) {
 	if( error ) {
-		this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
+		this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
 	}
 };
 
@@ -430,18 +470,19 @@ RecordHandler.prototype._onStorageResponse = function( error ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._onStorageChange = function( recordName, version ) {
-	if ( this._options.cache.has( recordName ) && this._options.cache.get( recordName )._v >= version ) {
+RecordHandler.prototype._onStorageChange = async function( recordName, version ) {
+	if ( this._cache.has( recordName ) && this._cache.get( recordName )._v >= version ) {
 		return;
 	}
 
-	var socketWrapper = C.SOURCE_STORAGE_CONNECTOR;
-
-	var onComplete = function( record ) {
-		this._update( socketWrapper, { data: [ recordName, version, JSON.stringify( record ) ] } );
-	}.bind( this );
-
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete );
+	try {
+		const record = await this._getRecord( recordName );
+		if ( record ) {
+			this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( record ) ] } );
+		}
+	} catch ( error ) {
+		// Do nothing...
+	}
 }
 
 module.exports = RecordHandler;
