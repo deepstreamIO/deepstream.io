@@ -27,7 +27,7 @@ var RecordHandler = function( options ) {
 	this._messageConnector = this._options.messageConnector
 	this._storage = this._options.storage;
 	this._storage.on('change', this._onStorageChange.bind( this ) );
-	this._cache = new LRU({ max: 1e4 });
+	this._cache = new LRU({ max: this._options.cacheSize || 1e5 });
 };
 
 /**
