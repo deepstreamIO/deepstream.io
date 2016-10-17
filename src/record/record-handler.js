@@ -197,7 +197,11 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 
 	// Always write to storage (even if wrong version) in order to resolve conflicts
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._storage.set( recordName, record, this._onStorageResponse.bind( this ) );
+		this._storage.set( recordName, record, error => {
+			if( error ) {
+				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
+			}
+		} );
 	}
 
 	if ( this._cache.has( recordName ) && this._cache.get( recordName )._v >= record._v ) {
@@ -414,35 +418,17 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 RecordHandler.prototype._getRecord = function ( recordName ) {
 	return this._cache.has( recordName )
 		? Promise.resolve( this._cache.get( recordName ) )
-		: this._getRecordFromStorage( recordName );
+		: new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
+			if ( error ) {
+				const message = 'error while loading ' + recordName + ' from storage:' + error.toString();
+				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message );
+				reject( message );
+			} else {
+				this._cache.set( recordName, record || Object.create( null ) );
+				resolve( record );
+			}
+		} ) );
 }
-
-RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
-	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
-		if ( error ) {
-			const message = 'error while loading ' + recordName + ' from storage:' + error.toString();
-			this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message );
-			reject( message );
-		} else {
-			this._cache.set( recordName, record );
-			resolve( record );
-		}
-	} ) );
-}
-
-/**
- * Callback for responses returned by storage.set()
- *
- * @param   {String} error
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._onStorageResponse = function( error ) {
-	if( error ) {
-		this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
-	}
-};
 
 /**
  * Callback for changes from storage
