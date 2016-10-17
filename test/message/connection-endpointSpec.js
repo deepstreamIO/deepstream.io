@@ -59,6 +59,27 @@ describe( 'connection endpoint', function() {
 		});
 	});
 
+	describe( 'the connection endpoint handles invalid connection messages', function(){
+
+		beforeEach( function(){
+			socketMock = websocketMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
+		});
+
+		it( 'handles gibberish messages', function(){
+			socketMock.emit( 'message', 'gibberish' );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|E|MESSAGE_PARSE_ERROR|gibberish+' ) );
+			expect( socketMock.isDisconnected ).toBe( true );
+		});
+
+		it( 'handles invalid connection topic', function(){
+			socketMock.emit( 'message', _msg( 'A|REQ|{}+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|E|INVALID_MESSAGE|invalid connection message+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
+		});
+
+	});
+
 	describe( 'the connection endpoint handles invalid auth messages', function(){
 
 		it( 'creates the connection endpoint', function(){
@@ -242,7 +263,9 @@ describe( 'connection endpoint', function() {
 	describe( 'doesn\'t log credentials if logInvalidAuthData is set to false', function(){
 		it( 'creates the connection endpoint', function(){
 			options.logInvalidAuthData = false;
+
 			socketMock = websocketMock.simulateConnection();
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
 
 		it( 'handles valid auth messages', function(){
