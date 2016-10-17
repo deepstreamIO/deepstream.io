@@ -184,25 +184,24 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	const record = {
-		_v: version,
-		_d: json.value
-	};
+	const prevRecord = this._cache.get( recordName );
+	const nextRecord = { _v: version, _d: json.value };
 
 	// Always write to storage (even if wrong version) in order to resolve conflicts
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._storage.set( recordName, record, error => {
+		this._storage.set( recordName, nextRecord, error => {
 			if( error ) {
 				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
 			}
 		} );
 	}
 
-	if ( this._cache.has( recordName ) && this._cache.get( recordName )._v >= record._v ) {
+
+	if ( prevRecord && prevRecord._v >= nextRecord._v ) {
 		return;
 	}
 
-	this._cache.set( recordName, record );
+	this._cache.set( recordName, nextRecord );
 
 	if( this._hasUpdateTransforms ) {
 		this._broadcastTransformedUpdate( recordName, message, socketWrapper );
@@ -415,17 +414,21 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 RecordHandler.prototype.getRecord = function ( recordName ) {
 	return this._cache.has( recordName )
 		? Promise.resolve( this._cache.get( recordName ) )
-		: new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
-			if ( error ) {
-				const message = 'error while loading ' + recordName + ' from storage:' + error.toString();
-				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message );
-				reject( message );
-			} else {
-				record = record || { _v: 0, _d: {} };
-				this._cache.set( recordName, record );
-				resolve( record );
-			}
-		} ) );
+		: this._getRecordFromStorage( recordName );
+}
+
+RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
+	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
+		if ( error ) {
+			const message = 'error while loading ' + recordName + ' from storage:' + error.toString();
+			this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message );
+			reject( message );
+		} else {
+			record = record || { _v: 0, _d: {} };
+			this._cache.set( recordName, record );
+			resolve( record );
+		}
+	} ) )
 }
 
 /**
@@ -437,14 +440,16 @@ RecordHandler.prototype.getRecord = function ( recordName ) {
  * @returns {void}
  */
 RecordHandler.prototype._onStorageChange = function( recordName, version ) {
-	if ( this._cache.has( recordName ) && this._cache.get( recordName )._v >= version ) {
+	const prevRecord = this._cache.get( recordName );
+
+	if ( prevRecord && prevRecord._v >= version ) {
 		return;
 	}
 
-	this.getRecord( recordName )
-		.then( record => {
-			if ( record ) {
-				this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( record ) ] } );
+	this.getRecordFromStorage( recordName )
+		.then( nextRecord => {
+			if ( nextRecord ) {
+				this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( nextRecord ) ] } );
 			}
 		})
 		.catch( error => { /* Do nothing... */ })
