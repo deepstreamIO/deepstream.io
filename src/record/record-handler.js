@@ -176,7 +176,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	var record = { _v: version };
 
 	try {
-		record._d = typeof message.data[ 2 ] === 'string' ? JSON.parse( message.data[ 2 ] ) : message.data[ 2 ];
+		record._d = JSON.parse( message.data[ 2 ] );
 	} catch( error ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 		return;
@@ -401,8 +401,18 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 	);
 };
 
-RecordHandler.prototype._onStorageChange = function( recordName, version, data ) {
-	this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, data ] } );
+RecordHandler.prototype._onStorageChange = function( recordName, version ) {
+	if ( this._options.cache.has( recordName ) && this._options.get( recordName )._v >= version ) {
+		return;
+	}
+
+	var socketWrapper = C.SOURCE_STORAGE_CONNECTOR;
+
+	var onComplete = function( record ) {
+		this._update( socketWrapper, { data: [ recordName, version, JSON.stringify( record ) ] } );
+	}.bind( this );
+
+	new RecordRequest( recordName, this._options, socketWrapper, onComplete );
 }
 
 module.exports = RecordHandler;
