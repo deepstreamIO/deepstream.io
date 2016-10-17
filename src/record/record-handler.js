@@ -186,7 +186,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		this._options.storage.set( recordName, record, this._onStorageResponse.bind( this ) );
 	}
 
-	if ( this._options.cache.has( recordName ) && this._options.get( recordName )._v >= record._v ) {
+	if ( this._options.cache.has( recordName ) && this._options.cache.get( recordName )._v >= record._v ) {
 		return;
 	}
 
@@ -402,7 +402,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 };
 
 RecordHandler.prototype._onStorageChange = function( recordName, version ) {
-	if ( this._options.cache.has( recordName ) && this._options.get( recordName )._v >= version ) {
+	if ( this._options.cache.has( recordName ) && this._options.cache.get( recordName )._v >= version ) {
 		return;
 	}
 
