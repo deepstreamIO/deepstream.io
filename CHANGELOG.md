@@ -1,3 +1,9 @@
+## [1.1.2] - 2016-10-17
+
+### Bug Fixes
+
+- Sending an invalid connection message is not caught by server [#401](https://github.com/deepstreamIO/deepstream.io/issues/401)
+
 ## [1.1.1] - 2016-09-30
 
 ### Bug Fixes
