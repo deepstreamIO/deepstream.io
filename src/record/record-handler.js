@@ -183,14 +183,14 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	}
 
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._options.storage.set( this._name, record, this._onStorageResponse.bind( this ) );
+		this._options.storage.set( recordName, record, this._onStorageResponse.bind( this ) );
 	}
 
-	if ( this._options.cache.has( this._name ) && this._options.get( this._name )._v >= record._v ) {
+	if ( this._options.cache.has( recordName ) && this._options.get( recordName )._v >= record._v ) {
 		return;
 	}
 
-	this._options.cache.set( this._name, record );
+	this._options.cache.set( recordName, record );
 
 	if( this._hasUpdateTransforms ) {
 		this._broadcastTransformedUpdate( transformUpdate, name, message, socketWrapper );
