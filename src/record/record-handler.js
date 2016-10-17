@@ -182,7 +182,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	if ( this._currentStep.sender !== C.SOURCE_STORAGE_CONNECTOR && this._currentStep.sender !== C.SOURCE_MESSAGE_CONNECTOR ) {
+	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._options.storage.set( this._name, record, this._onStorageResponse.bind( this ) );
 	}
 
@@ -192,7 +192,15 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 
 	this._options.cache.set( this._name, record );
 
-	this._recordHandler._$broadcastUpdate( this._name, this._currentStep.message, this._currentStep.sender );
+	if( this._hasUpdateTransforms ) {
+		this._broadcastTransformedUpdate( transformUpdate, name, message, socketWrapper );
+	} else {
+		this._subscriptionRegistry.sendToSubscribers( name, message.raw, socketWrapper );
+	}
+
+	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR ) {
+		this._options.messageConnector.publish( C.TOPIC.RECORD, message );
+	}
 };
 
 RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
@@ -270,30 +278,7 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 };
 
 /**
- * Invoked by RecordTransition. Notifies local subscribers and other deepstream
- * instances of record updates
- *
- * @param   {String} name           record name
- * @param   {Object} message        parsed and validated deepstream message
- * @param   {SocketWrapper} originalSender the socket the update message was received from
- *
- * @package private
- * @returns {void}
- */
-RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSender ) {
-	if( this._hasUpdateTransforms ) {
-		this._broadcastTransformedUpdate( transformUpdate, name, message, originalSender );
-	} else {
-		this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
-	}
-
-	if( originalSender !== C.SOURCE_MESSAGE_CONNECTOR && originalSender !== C.SOURCE_STORAGE_CONNECTOR ) {
-		this._options.messageConnector.publish( C.TOPIC.RECORD, message );
-	}
-};
-
-/**
- * Called by _$broadcastUpdate if registered transform functions are detected. Disassembles
+ * Called by _update if registered transform functions are detected. Disassembles
  * the message and invokes the transform function prior to sending it to every individual receiver
  * so that receiver specific transforms can be applied.
  *
