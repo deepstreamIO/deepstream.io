@@ -76,15 +76,12 @@ RecordTransition.prototype.add = function( socketWrapper, version, message ) {
 		return;
 	}
 
-	var data;
-	try{
-		data = JSON.parse( message.data[ 2 ] );
-	} catch( e ) {
+	try {
+		update.data = JSON.parse( message.data[ 2 ] );
+	} catch( error ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 		return;
 	}
-
-	update.data = data;
 
 	this._steps.push( update );
 
@@ -94,7 +91,7 @@ RecordTransition.prototype.add = function( socketWrapper, version, message ) {
 			this._options,
 			socketWrapper,
 			this._onRecord.bind( this ),
-			this._onFatalError.bind( this )
+			this._onError.bind( this )
 		);
 	}
 };
@@ -105,10 +102,7 @@ RecordTransition.prototype.add = function( socketWrapper, version, message ) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype.destroy = function() {
-	if( this.isDestroyed ) {
-		return;
-	}
+RecordTransition.prototype._destroy = function() {
 	this._recordHandler._$transitionComplete( this._name );
 	this.isDestroyed = true;
 	this._name = null;
@@ -129,12 +123,23 @@ RecordTransition.prototype.destroy = function() {
  * @returns {void}
  */
 RecordTransition.prototype._onRecord = function( record ) {
-	if( record === null ) {
-		this._onFatalError( 'Received update for non-existant record ' + this._name );
-	} else {
-		this._record = record;
-		this._next();
+	if( !record ) {
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.RECORD_UPDATE_ERROR, 'Received update for non-existant record ' + this._name );
 	}
+	this._record = record;
+	this._next();
+};
+
+/**
+ * Callback for failed record retrieval
+ *
+ * @param   {String} errorMessage
+ *
+ * @private
+ * @returns {void}
+ */
+RecordTransition.prototype._onError = function( errorMessage ) {
+	this._next();
 };
 
 /**
@@ -149,12 +154,8 @@ RecordTransition.prototype._onRecord = function( record ) {
  * @returns {void}
  */
 RecordTransition.prototype._next = function() {
-	if( this.isDestroyed === true ) {
-		return;
-	}
-
 	if( this._steps.length === 0 ) {
-		this.destroy();
+		this._destroy();
 		return;
 	}
 
@@ -165,14 +166,22 @@ RecordTransition.prototype._next = function() {
 		_d: this._currentStep.data
 	};
 
-	this._options.storage.set( this._name, record, this._onStorageResponse.bind( this ) );
+	if ( this._currentStep.sender !== C.SOURCE_STORAGE_CONNECTOR ) {
+		this._options.storage.set( this._name, record, this._onStorageResponse.bind( this ) );
+	}
+
+	// On failed record retrieval broadcast a potentially outdated record but don't write to cache
+	if ( !this._record ) {
+		this._onUpdated();
+		return;
+	}
 
 	if ( record._v < this._record._v ) {
 		this._next();
 		return;
 	}
 
-	this._options.cache.set( this._name, record, this._onCacheResponse.bind( this ) );
+	this._options.cache.set( this._name, record, this._onUpdated.bind( this ) );
 
 	this._record = record;
 };
@@ -188,13 +197,12 @@ RecordTransition.prototype._next = function() {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onCacheResponse = function( error ) {
+RecordTransition.prototype._onUpdated = function( error ) {
 	if( error ) {
-		this._onFatalError( error );
-	} else if( this.isDestroyed === false ) {
-		this._recordHandler._$broadcastUpdate( this._name, this._currentStep.message, this._currentStep.sender );
-		this._next();
+		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.RECORD_UPDATE_ERROR, errorMessage );
 	}
+	this._recordHandler._$broadcastUpdate( this._name, this._currentStep.message, this._currentStep.sender );
+	this._next();
 };
 
 /**
@@ -206,36 +214,9 @@ RecordTransition.prototype._onCacheResponse = function( error ) {
  * @returns {void}
  */
 RecordTransition.prototype._onStorageResponse = function( error ) {
-	if( error && this.isDestroyed === false ) {
+	if( error && !this.isDestroyed ) {
 		this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
 	}
-};
-
-/**
- * Generic error callback. Will destroy the queue and notify the senders of all pending
- * transitions
- *
- * @param   {String} errorMessage
- *
- * @private
- * @returns {void}
- */
-RecordTransition.prototype._onFatalError = function( errorMessage ) {
-
-	if( this.isDestroyed === true ) {
-		/* istanbul ignore next */
-		return;
-	}
-
-	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, errorMessage );
-
-	for( var i = 0; i < this._steps.length; i++ ) {
-		if( this._steps[ i ].sender !== C.SOURCE_MESSAGE_CONNECTOR ) {
-			this._steps[ i ].sender.sendError( C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, this._steps[ i ].version );
-		}
-	}
-
-	this.destroy();
 };
 
 module.exports = RecordTransition;

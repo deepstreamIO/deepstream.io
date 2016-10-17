@@ -62,7 +62,7 @@ module.exports = class PresenceHandler {
 		else {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
 
-			if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+			if( socketWrapper.sendError ) {
 				socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 			}
 		}
@@ -102,7 +102,7 @@ module.exports = class PresenceHandler {
 		else {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, action );
 
-			if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+			if( socketWrapper.sendError ) {
 				socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, 'unknown data ' + action );
 			}
 		}

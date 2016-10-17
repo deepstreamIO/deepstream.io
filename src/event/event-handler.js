@@ -57,7 +57,7 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 	else {
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
 
-		if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+		if( socketWrapper.sendError ) {
 			socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 		}
 	}
@@ -109,7 +109,7 @@ EventHandler.prototype._removeSubscriber = function( socketWrapper, message ) {
  */
 EventHandler.prototype._triggerEvent = function( messageSource, message ) {
 	if( typeof message.data[ 0 ] !== STRING ) {
-		if( messageSource !== C.SOURCE_MESSAGE_CONNECTOR ) {
+		if( messageSource.sendError ) {
 			messageSource.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
 		}
 		return;

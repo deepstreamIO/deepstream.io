@@ -109,7 +109,7 @@ RecordRequest.prototype._onStorageResponse = function( error, record ) {
  */
 RecordRequest.prototype._sendError = function( event, message ) {
 	this._options.logger.log( C.LOG_LEVEL.ERROR, event, message );
-	if( this._socketWrapper ) {
+	if( this._socketWrapper && this._socketWrapper.sendError ) {
 		this._socketWrapper.sendError( C.TOPIC.RECORD, event, message );
 	}
 	if( this._onError ) {

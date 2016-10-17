@@ -21,6 +21,7 @@ var RecordHandler = function( options ) {
 	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
 	this._transitions = {};
 	this._recordRequestsInProgress = {};
+	this._options.storage.on('change', this._onStorageChange.bind( this ) );
 };
 
 /**
@@ -99,7 +100,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	 */
 	this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
 
-	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+	if( socketWrapper.sendError ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 	}
 };
@@ -288,7 +289,7 @@ RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSen
 		this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
 	}
 
-	if( originalSender !== C.SOURCE_MESSAGE_CONNECTOR ) {
+	if( originalSender !== C.SOURCE_MESSAGE_CONNECTOR && originalSender !== C.SOURCE_STORAGE_CONNECTOR ) {
 		this._options.messageConnector.publish( C.TOPIC.RECORD, message );
 	}
 };
@@ -430,5 +431,9 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 		socketWrapper.authData
 	);
 };
+
+RecordHandler.prototype._onStorageChange = function( recordName, version, data ) {
+	this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, data ] } );
+}
 
 module.exports = RecordHandler;

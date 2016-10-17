@@ -70,7 +70,7 @@ module.exports = class RpcHandler {
 					delete this._rpcs[ message.data[ 2 ] ];
 				}
 			}
-			else {
+			else if ( socketWrapper.sendError ) {
 				// unsoliciated message
 				socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, 'unexpected state for rpc ' + message.data[ 1 ] + ' with action ' + message.action );
 			}
@@ -83,7 +83,7 @@ module.exports = class RpcHandler {
 		else {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
 
-			if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+			if( socketWrapper.sendError ) {
 				socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
 			}
 		}
