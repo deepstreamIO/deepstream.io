@@ -116,15 +116,17 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
-	var recordName = message.data[ 0 ];
-	var onComplete = function( record ) {
-		this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper );
-	}.bind( this );
-	var onError = function( error ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
-	}.bind( this );
+	this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper, function() {
+		var recordName = message.data[ 0 ];
+		var onComplete = function( record ) {
+			this._sendRecord( recordName, record || { _v: 0, _d: {}	}, socketWrapper );
+		}.bind( this );
+		var onError = function( error ) {
+			socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] );
+		}.bind( this );
 
-	new RecordRequest( recordName, this._options, socketWrapper, onComplete, onError );
+		new RecordRequest( recordName, this._options, socketWrapper, onComplete, onError );
+	}.bind( this ) );
 };
 
 /**
