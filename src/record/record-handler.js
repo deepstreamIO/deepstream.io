@@ -249,7 +249,7 @@ RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
 	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper, function() {
 		this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 		this._sendRecord( recordName, record, socketWrapper );
-	}.bind( this ));
+	}.bind( this ) );
 };
 
 /**
