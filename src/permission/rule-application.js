@@ -338,6 +338,7 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 	this._recordData[ recordName ] = LOADING;
 
 	this._params.recordHandler.runWhenRecordStable( recordName, () => this._params.recordHandler
+		.getRecord( recordName )
 		.then( record => this._onLoadComplete( recordName, record ) )
 		.catch( error => this._onLoadError( recordName, error ))
 	);

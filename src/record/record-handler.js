@@ -123,7 +123,7 @@ RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 	this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper )
 		.then( hasPermission => hasPermission ? this.getRecord( recordName ) : undefined )
-		.then( record => this._sendRecord( recordName, record, socketWrapper ) )
+		.then( record => this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper ) )
 		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] ) );
 };
 
@@ -424,7 +424,6 @@ RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
 			this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message );
 			reject( message );
 		} else {
-			record = record || { _v: 0, _d: {} };
 			this._cache.set( recordName, record );
 			resolve( record );
 		}
@@ -446,13 +445,9 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 		return;
 	}
 
-	this.getRecordFromStorage( recordName )
-		.then( nextRecord => {
-			if ( nextRecord ) {
-				this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( nextRecord ) ] } );
-			}
-		})
-		.catch( error => { /* Do nothing... */ })
+	this._getRecordFromStorage( recordName )
+		.then( nextRecord => this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( nextRecord ) ] } ) )
+		.catch( error => { /* Do nothing... */ } )
 }
 
 module.exports = RecordHandler;
