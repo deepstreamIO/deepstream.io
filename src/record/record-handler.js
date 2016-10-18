@@ -66,13 +66,13 @@ RecordHandler.prototype._read = function( socketWrapper, message ) {
 	Promise
 		.all([
 			this.getRecord( recordName ),
-			this._permissionAction( C.ACTIONS.READ, recordName )
+			this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper )
 		])
 		.then(( [ record ] ) => {
 			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 			this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
 		})
-		.catch( error => socketWrapper.sendError( R.TOPIC.RECORD, error.event, [ recordName, error.message ] ) );
+		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ] ) )
 };
 
 RecordHandler.prototype._update = function( socketWrapper, message ) {
@@ -193,7 +193,7 @@ RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
 	}
 };
 
-RecordHandler.prototype._permissionAction = function( action, recordName ) {
+RecordHandler.prototype._permissionAction = function( action, recordName, socketWrapper ) {
 	return new Promise( ( resolve, reject ) => {
 		const message = {
 			topic: C.TOPIC.RECORD,
