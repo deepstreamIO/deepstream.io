@@ -235,13 +235,9 @@ RecordHandler.prototype.getRecord = function ( recordName ) {
 RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
 	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
 		if ( error ) {
-			const message = 'error while loading ' + recordName + ' from storage:' + error.toString();
-			const event = C.EVENT.RECORD_LOAD_ERROR;
-			reject( {
-				message,
-				event,
-				toString: () => message
-			} );
+			const error = new Error('error while loading ' + recordName + ' from storage:' + error.toString());
+			error.event = C.EVENT.RECORD_LOAD_ERROR;
+			reject( error );
 		} else {
 			if ( !this._cache.has( recordName ) ) {
 				this._cache.set( recordName, record );
