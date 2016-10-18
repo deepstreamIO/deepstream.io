@@ -141,7 +141,7 @@ RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, mes
 	this._cache.set( recordName, nextRecord );
 
 	if( this._hasUpdateTransforms ) {
-		this._broadcastTransformedUpdate( recordName, record, message, socketWrapper );
+		this._broadcastTransformedUpdate( recordName, nextRecord, message, socketWrapper );
 	} else {
 		this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
 	}
