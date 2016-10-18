@@ -148,18 +148,18 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 };
 
 RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, record, message, originalSender ) {
-	const receivers = this._subscriptionRegistry.getLocalSubscribers( recordName ) || [];
+	const subscribers = this._subscriptionRegistry.getLocalSubscribers( recordName ) || [];
 
-	for( let i = 0; i < receivers.length; i++ ) {
-		if( receivers[ i ] !== originalSender ) {
+	for( let i = 0; i < subscribers.length; i++ ) {
+		if( subscribers[ i ] !== originalSender ) {
 			const metaData = {
 				recordName: recordName,
 				version: parseInt( message.data[ 1 ], 10 ),
-				receiver: receivers[ i ].user
+				receiver: subscribers[ i ].user
 			};
 
 			const data = this._dataTransforms.apply( message.topic, message.action, record, metaData );
-			receivers[ i ].sendMessage(
+			subscribers[ i ].sendMessage(
 				message.topic,
 				message.action,
 				[ ...message.slice(0, 2), JSON.stringify( data ) ]
