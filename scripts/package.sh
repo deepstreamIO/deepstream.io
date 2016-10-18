@@ -59,12 +59,14 @@ node scripts/details.js META
 if [ $OS = "win32" ]; then
 	echo "Windows icon"
 
-	echo -e "\tDownloading node src"
-	mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-	cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-	tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-	cd -
+	if ![[ -d node_modules/uws ]]; then
+		echo -e "\tDownloading node src"
+		mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+		cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+		curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+		tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+		cd -
+	fi
 
 	NAME=$PACKAGE_VERSION
 
@@ -86,14 +88,6 @@ echo "Nexe Patches for Browserify, copying stub versions of optional installs si
 echo -e "\tStubbing xml2js for needle"
 mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
 
-echo -e "\tStubbing bufferutil"
-rm -rf node_modules/bufferutil
-mkdir -p node_modules/bufferutil && echo "throw new Error()" >> node_modules/bufferutil/index.js
-
-echo -e "\tStubbing utf-8-validate"
-rm -rf node_modules/utf-8-validate
-mkdir -p node_modules/utf-8-validate && echo "throw new Error()" >> node_modules/utf-8-validate/index.js
-
 # Creatine package structure
 rm -rf build/$PACKAGE_VERSION
 mkdir -p $DEEPSTREAM_PACKAGE
@@ -101,13 +95,8 @@ mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
 mkdir $DEEPSTREAM_PACKAGE/doc
 
-if [ -d node_modules/uws ]; then
-	echo "Adding uws as thirdparty library for performance improvements"
-	cp -rf node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
-else
-	echo -e "\tAdding empty uws module"
-	mkdir -p node_modules/uws && echo "module.exports = function() {}" >> node_modules/uws/index.js
-fi
+echo "Adding uws as thirdparty library"
+cp -rf node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
 
 echo "Adding winston logger to libs"
 cd $DEEPSTREAM_PACKAGE/lib
@@ -115,6 +104,10 @@ echo '{ "name": "TEMP" }' > package.json
 npm install deepstream.io-logger-winston --loglevel error
 mv -f node_modules/deepstream.io-logger-winston ./deepstream.io-logger-winston
 rm -rf node_modules package.json
+cd -
+
+cd $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
+npm install --production --loglevel error
 cd -
 
 echo "Creating '$EXECUTABLE_NAME', this will take a while..."
@@ -131,10 +124,10 @@ done
 echo ""
 
 if wait $pid; then
-		echo -e "\tNexe Build Succeeded"
+	echo -e "\tNexe Build Succeeded"
 else
-		echo -e "\tNexe Build Failed"
-		exit 1
+	echo -e "\tNexe Build Failed"
+	exit 1
 fi
 
 echo "Adding docs"
