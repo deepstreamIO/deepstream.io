@@ -24,7 +24,7 @@ var RecordHandler = function( options ) {
 	this._permissionHandler = this._options.permissionHandler;
 	this._logger = this._options.logger;
 	this._recordRequestsInProgress = {};
-	this._messageConnector = this._options.messageConnector
+	this._messageConnector = this._options.messageConnector;
 	this._storage = this._options.storage;
 	this._storage.on('change', this._onStorageChange.bind( this ) );
 	this._cache = new LRU({ max: this._options.cacheSize || 1e5 });
