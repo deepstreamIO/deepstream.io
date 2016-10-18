@@ -70,7 +70,7 @@ RecordHandler.prototype._read = function( socketWrapper, message ) {
 		] )
 		.then( ( [ record ] ) => {
 			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-			this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
+			this._sendRecord( recordName, record, socketWrapper );
 		} )
 		.catch( error => this._sendError( error.event, [ recordName, error.message ], socketWrapper ) );
 };
@@ -83,9 +83,9 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	const version = parseInt( message.data[ 1 ], 10 );
+	const version = message.data[ 1 ];
 
-	if( isNaN( version ) ) {
+	if( !version || !version.match(/\d+-.+/) ) {
 		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
 		return;
 	}
@@ -99,7 +99,6 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 
 	const record = { _v: version, _d: json.value };
 
-	// Always write to storage (even if wrong version) in order to resolve conflicts
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._storage.set( recordName, record, error => {
 			if( error ) {
