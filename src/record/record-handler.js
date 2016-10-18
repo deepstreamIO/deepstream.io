@@ -63,16 +63,18 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 
 RecordHandler.prototype._read = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
-	this.getRecord( recordName )
-		.then( record => 	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper )
-			.then( hasPermission => {
-				if ( !hasPermission  ) {
-					return;
-				}
+	Promise
+		.all([
+			this.getRecord( recordName ),
+			this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper )
+		])
+		.then(( [ record, hasPermission ] ) => {
+			if ( hasPermission ) {
 				this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 				this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
-			}) )
-		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ] ) );
+			}
+		})
+		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );;
 };
 
 RecordHandler.prototype._update = function( socketWrapper, message ) {
