@@ -57,7 +57,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	this._logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
 
 	if( socketWrapper.sendError ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ] );
 	}
 };
 
@@ -79,7 +79,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 
 	if( message.data.length < 3 ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[ 0 ] );
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[ 0 ] ] );
 		return;
 	}
 
@@ -93,7 +93,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	const json = utils.JSONParse( message.data[ 2 ] );
 
 	if ( json.error ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ] );
 		return;
 	}
 
@@ -103,7 +103,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._storage.set( recordName, record, error => {
 			if( error ) {
-				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
+				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, [ recordName, error ] );
 			}
 		} );
 	}
