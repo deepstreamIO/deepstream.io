@@ -131,7 +131,7 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, data ] );
 };
 
-RecordHandler.prototype._broadcastUpdate = function( recordName, prevRecord, nextRecord, message, socketWrapper ) {
+RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, message, socketWrapper ) {
 	const prevRecord = this._cache.get( recordName );
 
 	if ( prevRecord && prevRecord._v >= nextRecord._v ) {
