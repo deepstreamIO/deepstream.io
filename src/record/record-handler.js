@@ -239,7 +239,9 @@ RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
 				toString: () => message
 			} );
 		} else {
-			this._cache.set( recordName, record );
+			if ( !this._cache.has( recordName ) ) {
+				this._cache.set( recordName, record );
+			}
 			resolve( record );
 		}
 	} ) );
