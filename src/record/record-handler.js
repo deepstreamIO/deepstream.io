@@ -27,22 +27,22 @@ const RecordHandler = function( options ) {
 
 RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	if( !message.data || message.data.length < 1 ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ] );
+		this._sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socketWrapper );
 		return;
 	}
 
 	if( message.action === C.ACTIONS.READ ) {
-		this._read( socketWrapper, message );
+		this._read( message, socketWrapper );
 		return;
 	}
 
 	if( message.action === C.ACTIONS.UPDATE ) {
-		this._update( socketWrapper, message );
+		this._update( message, socketWrapper );
 		return;
 	}
 
 	if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
-		this._unsubscribe( socketWrapper, message );
+		this._unsubscribe( message, socketWrapper );
 		return;
 	}
 
@@ -50,7 +50,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 		message.action === C.ACTIONS.UNLISTEN ||
 		message.action === C.ACTIONS.LISTEN_ACCEPT ||
 		message.action === C.ACTIONS.LISTEN_REJECT ) {
-		this._listenerRegistry.handle( socketWrapper, message );
+		this._listenerRegistry.handle( message, socketWrapper );
 		return;
 	}
 
@@ -58,12 +58,10 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 
 	this._logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ recordName, message.action ] );
 
-	if( socketWrapper.sendError ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ] );
-	}
+	this._sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ], socketWrapper );
 };
 
-RecordHandler.prototype._read = function( socketWrapper, message ) {
+RecordHandler.prototype._read = function( message, socketWrapper ) {
 	const recordName = message.data[ 0 ];
 	Promise
 		.all( [
@@ -74,28 +72,28 @@ RecordHandler.prototype._read = function( socketWrapper, message ) {
 			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 			this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
 		} )
-		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ] ) );
+		.catch( error => this._sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ], socketWrapper ) );
 };
 
-RecordHandler.prototype._update = function( socketWrapper, message ) {
+RecordHandler.prototype._update = function( message, socketWrapper ) {
 	const recordName = message.data[ 0 ];
 
 	if( message.data.length < 3 ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[ 0 ] ] );
+		this._sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[ 0 ] ], socketWrapper );
 		return;
 	}
 
 	const version = parseInt( message.data[ 1 ], 10 );
 
 	if( isNaN( version ) ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [ recordName, version ] );
+		this._sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
 		return;
 	}
 
 	const json = utils.JSONParse( message.data[ 2 ] );
 
 	if ( json.error ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ] );
+		this._sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ], socketWrapper );
 		return;
 	}
 
@@ -113,7 +111,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	this._broadcastUpdate( recordName, record, message, socketWrapper );
 };
 
-RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
+RecordHandler.prototype._unsubscribe = function( message, socketWrapper ) {
 	const recordName = message.data[ 0 ];
 	this._subscriptionRegistry.unsubscribe( recordName, socketWrapper );
 }
@@ -231,7 +229,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 
 };
 
-RecordHandler.prototype.getRecord = function ( recordName ) {
+RecordHandler.prototype.getRecord = function( recordName ) {
 	return this._cache.has( recordName )
 		? Promise.resolve( this._cache.get( recordName ) )
 		: this._getRecordFromStorage( recordName )
@@ -243,7 +241,15 @@ RecordHandler.prototype.getRecord = function ( recordName ) {
 				} );
 }
 
-RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
+RecordHandler.prototype._sendError = function( topic, event, message, socketWrapper ) {
+	if ( socketWrapper.sendError ) {
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message );
+	} else {
+		this._logger.log( C.LOG_LEVEL.ERROR, error.event, message );
+	}
+}
+
+RecordHandler.prototype._getRecordFromStorage = function( recordName ) {
 	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
 		if ( error ) {
 			const error = new Error('error while loading ' + recordName + ' from storage:' + error.toString());
