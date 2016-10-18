@@ -78,14 +78,20 @@ RecordHandler.prototype._read = function( socketWrapper, message ) {
 RecordHandler.prototype._update = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 
-	if( message.data.length < 3 ) {
+	if( message.data.length < 4 ) {
 		this._sendError( C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[ 0 ] ], socketWrapper );
 		return;
 	}
 
 	const version = message.data[ 1 ];
+	const parent = message.data[ 3 ];
 
-	if( version && !version.match(/\d+-.+/) ) {
+	if( !version || !version.match(/\d+-.+/) ) {
+		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
+		return;
+	}
+
+	if( parent && !parent.match(/\d+-.+/) ) {
 		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
 		return;
 	}
@@ -100,7 +106,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	const record = { _v: version, _d: json.value };
 
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._storage.set( recordName, record, error => {
+		this._storage.set( recordName, record, parent, error => {
 			if( error ) {
 				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, [ recordName, error ] );
 			}
