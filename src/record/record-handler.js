@@ -117,7 +117,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	this._cache.set( recordName, nextRecord );
 
 	if( this._hasUpdateTransforms ) {
-		this._broadcastTransformedUpdate( recordName, message, socketWrapper );
+		this._broadcastTransformedUpdate( recordName, record, message, socketWrapper );
 	} else {
 		this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
 	}
@@ -139,7 +139,7 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 		data = this._dataTransforms.apply(
 			C.TOPIC.RECORD,
 			C.ACTIONS.READ,
-			JSON.parse( JSON.stringify( data ) ),
+			data,
 			{ recordName: recordName, receiver: socketWrapper.user }
 		);
 	}
@@ -147,7 +147,7 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, data ] );
 };
 
-RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, message, originalSender ) {
+RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, record, message, originalSender ) {
 	const receivers = this._subscriptionRegistry.getLocalSubscribers( recordName ) || [];
 
 	for( let i = 0; i < receivers.length; i++ ) {
@@ -158,7 +158,7 @@ RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, mess
 				receiver: receivers[ i ].user
 			};
 
-			const data = this._dataTransforms.apply( message.topic, message.action, JSON.parse( message.data[ 2 ] ), metaData );
+			const data = this._dataTransforms.apply( message.topic, message.action, record, metaData );
 			receivers[ i ].sendMessage(
 				message.topic,
 				message.action,
