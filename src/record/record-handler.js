@@ -66,13 +66,11 @@ RecordHandler.prototype._read = function( socketWrapper, message ) {
 	Promise
 		.all([
 			this.getRecord( recordName ),
-			this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper )
+			this._permissionAction( C.ACTIONS.READ, recordName )
 		])
-		.then(( [ record, hasPermission ] ) => {
-			if ( hasPermission ) {
-				this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-				this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
-			}
+		.then(( [ record ] ) => {
+			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
+			this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
 		})
 		.catch( error => socketWrapper.sendError( R.TOPIC.RECORD, error.event, [ recordName, error.message ] ) );
 };
@@ -195,7 +193,7 @@ RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
 	}
 };
 
-RecordHandler.prototype._permissionAction = function( action, recordName, socketWrapper ) {
+RecordHandler.prototype._permissionAction = function( action, recordName ) {
 	return new Promise( ( resolve, reject ) => {
 		const message = {
 			topic: C.TOPIC.RECORD,
@@ -204,16 +202,20 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 		};
 
 		const callback = ( error, canPerformAction ) => {
-			if( error !== null ) {
-				socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString() );
-				resolve( false );
+			if( error ) {
+				reject( {
+					event: C.EVENT.MESSAGE_PERMISSION_ERROR,
+					message: error.toString()
+				} );
 			}
 			else if( !canPerformAction ) {
-				socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, [ recordName, action ] );
-				resolve( false );
+				reject( {
+					event: C.EVENT.MESSAGE_DENIED,
+					message: action
+				} );
 			}
 			else {
-				resolve( true );
+				resolve();
 			}
 		};
 
