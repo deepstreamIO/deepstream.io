@@ -11,7 +11,6 @@ var RULE_TYPES = {};
  *
  * @type {Object}
  */
-RULE_TYPES.CREATE = 	{ name: 'create', 		data: false, 	oldData: false };
 RULE_TYPES.READ = 		{ name: 'read', 		data: false, 	oldData: true };
 RULE_TYPES.WRITE = 		{ name: 'write', 		data: true, 	oldData: true };
 RULE_TYPES.DELETE = 	{ name: 'delete', 		data: false, 	oldData: true };
@@ -24,7 +23,7 @@ RULE_TYPES.REQUEST = 	{ name: 'request', 		data: true, 	oldData: false };
 /**
  * This class maps topic / action combinations to applicable
  * rules. It combines actions of a similar character (e.g. READ,
- * SNAPSHOT, HAS) into high level permissions (e.g. read)
+ * HAS) into high level permissions (e.g. read)
  *
  * Lower level permissioning on a per action basis can still be achieved
  * by virtue of using the action variable within the rule, e.g.
@@ -39,10 +38,8 @@ RULES_MAP[ C.TOPIC.RECORD ].section = 'record';
 RULES_MAP[ C.TOPIC.RECORD ].actions = {};
 RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.READ ] = RULE_TYPES.READ;
 RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.HAS ] = RULE_TYPES.READ;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.SNAPSHOT ] = RULE_TYPES.READ;
 RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.LISTEN ] = RULE_TYPES.LISTEN;
 RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.LISTEN_SNAPSHOT ] = RULE_TYPES.LISTEN;
-RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.CREATE ] = RULE_TYPES.CREATE;
 RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.UPDATE ] = RULE_TYPES.WRITE;
 RULES_MAP[ C.TOPIC.RECORD ].actions[ C.ACTIONS.DELETE ] = RULE_TYPES.DELETE;
 

@@ -33,10 +33,6 @@ var RecordHandler = function( options ) {
 /**
  * Handles incoming record requests.
  *
- * Please note that neither CREATE nor READ is supported as a
- * client send action. Instead the client sends CREATEORREAD
- * and deepstream works which one it will be
- *
  * @param   {SocketWrapper} socketWrapper the sender
  * @param   {Object} message parsed and validated deepstream message
  *
@@ -56,18 +52,9 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 
 	/*
 	 * Return the record's contents and subscribes for future updates.
-	 * Creates the record if it doesn't exist
 	 */
-	if( message.action === C.ACTIONS.CREATEORREAD ) {
-		this._createOrRead( socketWrapper, message );
-		return;
-	}
-
-	/*
-	 * Return the current state of the record in cache or db
-	 */
-	if( message.action === C.ACTIONS.SNAPSHOT ) {
-		this._snapshot( socketWrapper, message );
+	if( message.action === C.ACTIONS.READ ) {
+		this._read( socketWrapper, message );
 		return;
 	}
 
@@ -112,22 +99,6 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 };
 
 /**
- * Sends the records data current data once loaded from the cache, and null otherwise
- *
- * @param {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
-	const recordName = message.data[ 0 ];
-	this._permissionAction( C.ACTIONS.SNAPSHOT, recordName, socketWrapper )
-		.then( hasPermission => hasPermission ? this.getRecord( recordName ) : undefined )
-		.then( record => this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper ) )
-		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [ recordName, error ] ) );
-};
-
-/**
  * Tries to retrieve the record and creates it if it doesn't exist. Please
  * note that create also triggers a read once done
  *
@@ -137,13 +108,17 @@ RecordHandler.prototype._snapshot = function( socketWrapper, message ) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
+RecordHandler.prototype._read = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 	this.getRecord( recordName )
-		.then( record => record
-		 	? this._read( recordName, record, socketWrapper )
-			: this._create( recordName, socketWrapper )
-		)
+		.then( record => 	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper )
+			.then( hasPermission => {
+				if ( !hasPermission  ) {
+					return;
+				}
+				this._subscriptionRegistry.subscribe( recordName, socketWrapper );
+				this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
+			}) )
 		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ] ) );
 };
 
@@ -213,57 +188,6 @@ RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 	this._subscriptionRegistry.unsubscribe( recordName, socketWrapper );
 }
-/**
- * Creates a new, empty record and triggers a read operation once done
- *
- * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._create = function( recordName, socketWrapper ) {
-	this._permissionAction( C.ACTIONS.CREATE, recordName, socketWrapper)
-		.then( hasPermission => {
-			if ( !hasPermission ) {
-				return;
-			}
-			const record = { _v: 0, _d: {} };
-
-			// store the records data in the cache
-			this._cache.set( recordName, record );
-
-			this._read( recordName, record, socketWrapper );
-
-			// store the record data in the persistant storage independently and don't wait for the result
-			this._storage.set( recordName, record, ( error ) => {
-				if( error ) {
-					this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, 'storage:' + error );
-				}
-			} );
-		});
-};
-
-/**
- * Subscribes to updates for a record and sends its current data once done
- *
- * @param {String} recordName
- * @param {Object} record
- * @param {SocketWrapper} socketWrapper the socket that send the request
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
-	this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper)
-		.then( hasPermission => {
-			if ( !hasPermission  ) {
-				return;
-			}
-			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-			this._sendRecord( recordName, record, socketWrapper );
-		})
-};
 
 /**
  * Sends the records data current data once done
@@ -370,10 +294,9 @@ RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
 };
 
 /**
- * A secondary permissioning step that is performed once we know if the record exists (READ)
- * or if it should be created (CREATE)
+ * A secondary permissioning step that is performed once we know if the record exists (READ).
  *
- * @param   {String} action          One of C.ACTIONS, either C.ACTIONS.READ or C.ACTIONS.CREATE
+ * @param   {String} action          Action to check permissions on
  * @param   {String} recordName      The name of the record
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Function} successCallback A callback that will only be invoked if the operation was successful
@@ -395,7 +318,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 				resolve( false );
 			}
 			else if( !canPerformAction ) {
-				socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, [ recordName, action  ] );
+				socketWrapper.sendError( message.topic, C.EVENT.MESSAGE_DENIED, [ recordName, action ] );
 				resolve( false );
 			}
 			else {
@@ -422,9 +345,13 @@ RecordHandler.prototype.getRecord = function ( recordName ) {
 RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
 	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
 		if ( error ) {
-			const error = new Error( 'error while loading ' + recordName + ' from storage:' + error.toString() );
-			error.event = C.EVENT.RECORD_LOAD_ERROR;
-			reject( error );
+			const message = 'error while loading ' + recordName + ' from storage:' + error.toString();
+			const event = C.EVENT.RECORD_LOAD_ERROR;
+			reject( {
+				message,
+				event,
+				toString: () => message
+			} );
 		} else {
 			this._cache.set( recordName, record );
 			resolve( record );

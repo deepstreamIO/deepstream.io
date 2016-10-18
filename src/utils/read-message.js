@@ -8,8 +8,7 @@ function readMessage( message ) {
 		isEvent: message.topic === TOPIC.EVENT,
 		isRPC: message.topic === TOPIC.RPC,
 
-		isCreate: message.action === ACTIONS.CREATEORREAD,
-		isRead: message.action === ACTIONS.CREATEORREAD,
+		isRead: message.action === ACTIONS.READ,
 		isChange: message.action === ACTIONS.UPDATE,
 		isDelete: message.action === ACTIONS.DELETE,
 
