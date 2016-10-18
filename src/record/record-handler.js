@@ -133,7 +133,7 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, message, socketWrapper ) {
 	const prevRecord = this._cache.get( recordName );
 
-	if ( prevRecord && prevRecord._v >= nextRecord._v ) {
+	if ( prevRecord && prevRecord._v > nextRecord._v ) {
 		return;
 	}
 
@@ -152,7 +152,7 @@ RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, mes
 
 RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, record, message, socketWrapper ) {
 	const subscribers = this._subscriptionRegistry.getLocalSubscribers( recordName ) || [];
-	const version = parseInt( message.data[ 1 ], 10 )
+	const version = message.data[ 1 ]
 
 	for( let i = 0; i < subscribers.length; i++ ) {
 		if( subscribers[ i ] !== socketWrapper ) {
@@ -263,7 +263,7 @@ RecordHandler.prototype._getRecordFromStorage = function( recordName ) {
 RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	const prevRecord = this._cache.get( recordName );
 
-	if ( prevRecord && prevRecord._v >= version ) {
+	if ( prevRecord && prevRecord._v > version ) {
 		return;
 	}
 
