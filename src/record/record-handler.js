@@ -151,18 +151,17 @@ RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, mes
 	}
 };
 
-RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, record, message, originalSender ) {
+RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, record, message, socketWrapper ) {
 	const subscribers = this._subscriptionRegistry.getLocalSubscribers( recordName ) || [];
+	const version = parseInt( message.data[ 1 ], 10 )
 
 	for( let i = 0; i < subscribers.length; i++ ) {
-		if( subscribers[ i ] !== originalSender ) {
-			const metaData = {
-				recordName: recordName,
-				version: parseInt( message.data[ 1 ], 10 ),
+		if( subscribers[ i ] !== socketWrapper ) {
+			const data = this._dataTransforms.apply( message.topic, message.action, record, {
+				recordName,
+				version,
 				receiver: subscribers[ i ].user
-			};
-
-			const data = this._dataTransforms.apply( message.topic, message.action, record, metaData );
+			} );
 			subscribers[ i ].sendMessage(
 				message.topic,
 				message.action,
@@ -235,7 +234,7 @@ RecordHandler.prototype.getRecord = function ( recordName ) {
 						this._cache.set( recordName, record );
 					}
 					return record;
-				});
+				} );
 }
 
 RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
