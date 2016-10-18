@@ -49,8 +49,7 @@ EventHandler.prototype.handle = function( socketWrapper, message ) {
 	else if( message.action === C.ACTIONS.LISTEN ||
 		message.action === C.ACTIONS.UNLISTEN ||
 		message.action === C.ACTIONS.LISTEN_ACCEPT ||
-		message.action === C.ACTIONS.LISTEN_REJECT ||
-		message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
+		message.action === C.ACTIONS.LISTEN_REJECT) {
 		this._listenerRegistry.handle( socketWrapper, message );
 	}
 

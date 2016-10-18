@@ -96,7 +96,6 @@ exports.ACTIONS.READ = 'R';
 exports.ACTIONS.UPDATE = 'U';
 exports.ACTIONS.SUBSCRIBE = 'S';
 exports.ACTIONS.UNSUBSCRIBE = 'US';
-exports.ACTIONS.LISTEN_SNAPSHOT = 'LSN';
 exports.ACTIONS.LISTEN = 'L';
 exports.ACTIONS.UNLISTEN = 'UL';
 exports.ACTIONS.LISTEN_ACCEPT = 'LA';
