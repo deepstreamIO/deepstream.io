@@ -239,7 +239,7 @@ RecordHandler.prototype.getRecord = function( recordName ) {
 					}
 					return record;
 				} );
-}
+};
 
 RecordHandler.prototype._sendError = function( event, message, socketWrapper ) {
 	if ( socketWrapper && socketWrapper.sendError ) {
@@ -247,7 +247,7 @@ RecordHandler.prototype._sendError = function( event, message, socketWrapper ) {
 	} else {
 		this._logger.log( C.LOG_LEVEL.ERROR, error.event, message );
 	}
-}
+};
 
 RecordHandler.prototype._getRecordFromStorage = function( recordName ) {
 	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
@@ -259,7 +259,7 @@ RecordHandler.prototype._getRecordFromStorage = function( recordName ) {
 			resolve( record );
 		}
 	} ) );
-}
+};
 
 RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	const prevRecord = this._cache.get( recordName );
@@ -274,6 +274,6 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 			this._broadcastUpdate( recordName, record, message, C.SOURCE_STORAGE_CONNECTOR );
 		} )
 		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );
-}
+};
 
 module.exports = RecordHandler;
