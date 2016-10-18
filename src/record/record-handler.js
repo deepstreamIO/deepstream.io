@@ -1,13 +1,13 @@
-var C = require( '../constants/constants' ),
-	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	ListenerRegistry = require( '../listen/listener-registry' ),
-	messageParser = require( '../message/message-parser' ),
-	messageBuilder = require( '../message/message-builder' ),
-	utils = require( '../utils/utils' ),
-	EventEmitter = require( 'events' ).EventEmitter,
-	LRU = require('lru-cache');
+const C = require( '../constants/constants' );
+const SubscriptionRegistry = require( '../utils/subscription-registry' );
+const ListenerRegistry = require( '../listen/listener-registry' );
+const messageParser = require( '../message/message-parser' );
+const messageBuilder = require( '../message/message-builder' );
+const utils = require( '../utils/utils' );
+const EventEmitter = require( 'events' ).EventEmitter;
+const LRU = require('lru-cache');
 
-var RecordHandler = function( options ) {
+const RecordHandler = function( options ) {
 	this._options = options;
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
 	this._listenerRegistry = new ListenerRegistry( C.TOPIC.RECORD, options, this._subscriptionRegistry );
