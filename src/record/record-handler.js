@@ -27,22 +27,22 @@ const RecordHandler = function( options ) {
 
 RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	if( !message.data || message.data.length < 1 ) {
-		this._sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socketWrapper );
+		this._sendError( C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socketWrapper );
 		return;
 	}
 
 	if( message.action === C.ACTIONS.READ ) {
-		this._read( message, socketWrapper );
+		this._read( socketWrapper, message );
 		return;
 	}
 
 	if( message.action === C.ACTIONS.UPDATE ) {
-		this._update( message, socketWrapper );
+		this._update( socketWrapper, message );
 		return;
 	}
 
 	if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
-		this._unsubscribe( message, socketWrapper );
+		this._unsubscribe( socketWrapper, message );
 		return;
 	}
 
@@ -50,7 +50,7 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 		message.action === C.ACTIONS.UNLISTEN ||
 		message.action === C.ACTIONS.LISTEN_ACCEPT ||
 		message.action === C.ACTIONS.LISTEN_REJECT ) {
-		this._listenerRegistry.handle( message, socketWrapper );
+		this._listenerRegistry.handle( socketWrapper, message );
 		return;
 	}
 
@@ -58,10 +58,10 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 
 	this._logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ recordName, message.action ] );
 
-	this._sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ], socketWrapper );
+	this._sendError( C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ], socketWrapper );
 };
 
-RecordHandler.prototype._read = function( message, socketWrapper ) {
+RecordHandler.prototype._read = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 	Promise
 		.all( [
@@ -72,28 +72,28 @@ RecordHandler.prototype._read = function( message, socketWrapper ) {
 			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 			this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
 		} )
-		.catch( error => this._sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ], socketWrapper ) );
+		.catch( error => this._sendError( error.event, [ recordName, error.message ], socketWrapper ) );
 };
 
-RecordHandler.prototype._update = function( message, socketWrapper ) {
+RecordHandler.prototype._update = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 
 	if( message.data.length < 3 ) {
-		this._sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[ 0 ] ], socketWrapper );
+		this._sendError( C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[ 0 ] ], socketWrapper );
 		return;
 	}
 
 	const version = parseInt( message.data[ 1 ], 10 );
 
 	if( isNaN( version ) ) {
-		this._sendError( C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
+		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
 		return;
 	}
 
 	const json = utils.JSONParse( message.data[ 2 ] );
 
 	if ( json.error ) {
-		this._sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ], socketWrapper );
+		this._sendError( C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ], socketWrapper );
 		return;
 	}
 
@@ -111,7 +111,7 @@ RecordHandler.prototype._update = function( message, socketWrapper ) {
 	this._broadcastUpdate( recordName, record, message, socketWrapper );
 };
 
-RecordHandler.prototype._unsubscribe = function( message, socketWrapper ) {
+RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 	this._subscriptionRegistry.unsubscribe( recordName, socketWrapper );
 }
@@ -241,8 +241,8 @@ RecordHandler.prototype.getRecord = function( recordName ) {
 				} );
 }
 
-RecordHandler.prototype._sendError = function( topic, event, message, socketWrapper ) {
-	if ( socketWrapper.sendError ) {
+RecordHandler.prototype._sendError = function( event, message, socketWrapper ) {
+	if ( socketWrapper && socketWrapper.sendError ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message );
 	} else {
 		this._logger.log( C.LOG_LEVEL.ERROR, error.event, message );
