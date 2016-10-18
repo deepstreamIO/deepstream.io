@@ -27,7 +27,7 @@ const RecordHandler = function( options ) {
 
 RecordHandler.prototype.handle = function( socketWrapper, message ) {
 	if( !message.data || message.data.length < 1 ) {
-		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw );
+		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ] );
 		return;
 	}
 
@@ -54,7 +54,9 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 		return;
 	}
 
-	this._logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
+	const recordName = message.data[ 0 ];
+
+	this._logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ recordName, message.action ] );
 
 	if( socketWrapper.sendError ) {
 		socketWrapper.sendError( C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ] );
@@ -64,15 +66,15 @@ RecordHandler.prototype.handle = function( socketWrapper, message ) {
 RecordHandler.prototype._read = function( socketWrapper, message ) {
 	const recordName = message.data[ 0 ];
 	Promise
-		.all([
+		.all( [
 			this.getRecord( recordName ),
 			this._permissionAction( C.ACTIONS.READ, recordName, socketWrapper )
-		])
-		.then(( [ record ] ) => {
+		] )
+		.then( ( [ record ] ) => {
 			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
 			this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
-		})
-		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ] ) )
+		} )
+		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ] ) );
 };
 
 RecordHandler.prototype._update = function( socketWrapper, message ) {
