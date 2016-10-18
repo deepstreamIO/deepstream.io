@@ -85,7 +85,6 @@ module.exports = class ListenerRegistry {
 	 * 2) C.ACTIONS.UNLISTEN
 	 * 3) C.ACTIONS.LISTEN_ACCEPT
 	 * 4) C.ACTIONS.LISTEN_REJECT
-	 * 5) C.ACTIONS.LISTEN_SNAPSHOT
 	 *
 	 * @param   {SocketWrapper} socketWrapper the socket that send the request
 	 * @param   {Object} message parsed and validated message
