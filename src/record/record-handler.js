@@ -85,7 +85,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 
 	const version = message.data[ 1 ];
 
-	if( !version || !version.match(/\d+-.+/) ) {
+	if( version && !version.match(/\d+-.+/) ) {
 		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
 		return;
 	}
