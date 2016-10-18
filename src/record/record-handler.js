@@ -144,7 +144,7 @@ RecordHandler.prototype._createOrRead = function( socketWrapper, message ) {
 		 	? this._read( recordName, record, socketWrapper )
 			: this._create( recordName, socketWrapper )
 		)
-		.catch( () => { /* Do nothing... */ } );
+		.catch( error => socketWrapper.sendError( C.TOPIC.RECORD, error.event, [ recordName, error.message ] ) );
 };
 
  /**
@@ -422,14 +422,14 @@ RecordHandler.prototype.getRecord = function ( recordName ) {
 RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
 	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
 		if ( error ) {
-			const message = 'error while loading ' + recordName + ' from storage:' + error.toString();
-			this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message );
-			reject( message );
+			const error = new Error( 'error while loading ' + recordName + ' from storage:' + error.toString() );
+			error.event = C.EVENT.RECORD_LOAD_ERROR;
+			reject( error );
 		} else {
 			this._cache.set( recordName, record );
 			resolve( record );
 		}
-	} ) )
+	} ) );
 }
 
 /**
@@ -449,7 +449,7 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 
 	this._getRecordFromStorage( recordName )
 		.then( nextRecord => this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( nextRecord ) ] } ) )
-		.catch( error => { /* Do nothing... */ } )
+		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );
 }
 
 module.exports = RecordHandler;
