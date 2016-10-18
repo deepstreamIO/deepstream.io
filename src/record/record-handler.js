@@ -74,7 +74,7 @@ RecordHandler.prototype._read = function( socketWrapper, message ) {
 				this._sendRecord( recordName, record || { _v: 0, _d: {} }, socketWrapper );
 			}
 		})
-		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );;
+		.catch( error => socketWrapper.sendError( R.TOPIC.RECORD, error.event, [ recordName, error.message ] ) );
 };
 
 RecordHandler.prototype._update = function( socketWrapper, message ) {
