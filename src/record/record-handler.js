@@ -97,33 +97,18 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	const prevRecord = this._cache.get( recordName );
-	const nextRecord = { _v: version, _d: json.value };
+	const record = { _v: version, _d: json.value };
 
 	// Always write to storage (even if wrong version) in order to resolve conflicts
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._storage.set( recordName, nextRecord, error => {
+		this._storage.set( recordName, record, error => {
 			if( error ) {
 				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error );
 			}
 		} );
 	}
 
-	if ( prevRecord && prevRecord._v >= nextRecord._v ) {
-		return;
-	}
-
-	this._cache.set( recordName, nextRecord );
-
-	if( this._hasUpdateTransforms ) {
-		this._broadcastTransformedUpdate( recordName, record, message, socketWrapper );
-	} else {
-		this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
-	}
-
-	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR ) {
-		this._messageConnector.publish( C.TOPIC.RECORD, message );
-	}
+	this._broadcastUpdate( recordName, record, message, socketWrapper );
 };
 
 RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
@@ -144,6 +129,26 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 	}
 
 	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, data ] );
+};
+
+RecordHandler.prototype._broadcastUpdate = function( recordName, prevRecord, nextRecord, message, socketWrapper ) {
+	const prevRecord = this._cache.get( recordName );
+
+	if ( prevRecord && prevRecord._v >= nextRecord._v ) {
+		return;
+	}
+
+	this._cache.set( recordName, nextRecord );
+
+	if( this._hasUpdateTransforms ) {
+		this._broadcastTransformedUpdate( recordName, record, message, socketWrapper );
+	} else {
+		this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
+	}
+
+	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR ) {
+		this._messageConnector.publish( C.TOPIC.RECORD, message );
+	}
 };
 
 RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, record, message, originalSender ) {
@@ -254,20 +259,9 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	}
 
 	this._getRecordFromStorage( recordName )
-		.then( nextRecord => {
-			const prevRecord = this._cache.get( recordName );
-
-			if ( prevRecord && prevRecord._v >= nextRecord._v ) {
-				return;
-			}
-
-			this._cache.set( recordName, nextRecord );
-
-			if( this._hasUpdateTransforms ) {
-				this._broadcastTransformedUpdate( recordName, record, message, socketWrapper );
-			} else {
-				this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
-			}
+		.then( record => {
+			const message = messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, version, JSON.stringify( record ) ] );
+			this._broadcastUpdate( recordName, record, message, socketWrapper );
 		} )
 		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );
 }
