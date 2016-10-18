@@ -166,7 +166,6 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		} );
 	}
 
-
 	if ( prevRecord && prevRecord._v >= nextRecord._v ) {
 		return;
 	}
