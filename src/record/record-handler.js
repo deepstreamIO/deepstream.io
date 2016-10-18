@@ -255,7 +255,21 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	}
 
 	this._getRecordFromStorage( recordName )
-		.then( nextRecord => this._update( C.SOURCE_STORAGE_CONNECTOR, { data: [ recordName, version, JSON.stringify( nextRecord ) ] } ) )
+		.then( nextRecord => {
+			const prevRecord = this._cache.get( recordName );
+
+			if ( prevRecord && prevRecord._v >= nextRecord._v ) {
+				return;
+			}
+
+			this._cache.set( recordName, nextRecord );
+
+			if( this._hasUpdateTransforms ) {
+				this._broadcastTransformedUpdate( recordName, record, message, socketWrapper );
+			} else {
+				this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
+			}
+		} )
 		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );
 }
 
