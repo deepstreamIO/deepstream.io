@@ -260,7 +260,7 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	this._getRecordFromStorage( recordName )
 		.then( record => {
 			const message = messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, version, JSON.stringify( record ) ] );
-			this._broadcastUpdate( recordName, record, message, socketWrapper );
+			this._broadcastUpdate( recordName, record, message, C.SOURCE_STORAGE_CONNECTOR );
 		} )
 		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );
 }
