@@ -229,7 +229,13 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 RecordHandler.prototype.getRecord = function ( recordName ) {
 	return this._cache.has( recordName )
 		? Promise.resolve( this._cache.get( recordName ) )
-		: this._getRecordFromStorage( recordName );
+		: this._getRecordFromStorage( recordName )
+				.then( record => {
+					if ( !this._cache.has( recordName ) ) {
+						this._cache.set( recordName, record );
+					}
+					return record;
+				});
 }
 
 RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
@@ -239,9 +245,6 @@ RecordHandler.prototype._getRecordFromStorage = function ( recordName ) {
 			error.event = C.EVENT.RECORD_LOAD_ERROR;
 			reject( error );
 		} else {
-			if ( !this._cache.has( recordName ) ) {
-				this._cache.set( recordName, record );
-			}
 			resolve( record );
 		}
 	} ) );
