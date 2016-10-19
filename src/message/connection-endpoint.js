@@ -54,8 +54,7 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 
 		try
 		{
-			const uws = req( 'uws' );
-
+			const uws = require( 'uws' );
 			this._ws = new uws.Server({
 				server: this._server,
 				perMessageDeflate: false,
