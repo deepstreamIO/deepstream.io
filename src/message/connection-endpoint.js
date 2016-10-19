@@ -54,11 +54,7 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 
 		try
 		{
-			// Since uws doesn't work on windows but is required by windows
-			// we provide a fake module to patch it if necassary, and look it up
-			// from libs incase of a binary deployment since it's a native module
-			var req = global && global.require ? global.require : require;
-			const uws = req( fileUtils.lookupLibRequirePath( 'uws' ) );
+			const uws = req( 'uws' );
 
 			this._ws = new uws.Server({
 				server: this._server,

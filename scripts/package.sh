@@ -6,6 +6,7 @@ NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
+UWS_VERSION=0.10.12 #$( node scripts/details.js UWS_VERSION )
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
@@ -13,6 +14,7 @@ DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 
 NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
+UWS_SOURCE="nexe_node/uWebSockets/"
 
 EXTENSION=""
 if [ $OS = "win32" ]; then
@@ -56,17 +58,39 @@ echo -e "\tGenerate License File using unmodified npm packages"
 echo "Generating meta.json"
 node scripts/details.js META
 
+echo -e "Preparing node"
+mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+rm -rf node-$NODE_VERSION_WITHOUT_V
+if [ ! -f node-$NODE_VERSION_WITHOUT_V.tar.gz ]; then
+	echo -e "\tDownloading node src"
+	curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
+fi
+
+echo -e "\tUnpacking node"
+tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+cd -
+
+echo -e "\tAdding in UWS"
+
+echo -e "\t\tDownloading UWS"
+rm -rf nexe_node/uWebSockets
+git clone https://github.com/uWebSockets/uWebSockets.git nexe_node/uWebSockets
+cd nexe_node/uWebSockets
+git checkout v$UWS_VERSION
+cd -
+
+echo -e "\t\tAdding UWS into node"
+sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
+C_FILE_NAMES="\n        'src\/uws\/extension.cpp',\n        'src\/uws\/Extensions.cpp',\n        'src\/uws\/Group.cpp',\n        'src\/uws\/WebSocketImpl.cpp',\n        'src\/uws\/Networking.cpp',\n        'src\/uws\/Hub.cpp',\n        'src\/uws\/Node.cpp',\n        'src\/uws\/WebSocket.cpp',\n        'src\/uws\/HTTPSocket.cpp',\n        'src\/uws\/Socket.cpp',"
+sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',$C_FILE_NAMES/" $NODE_SOURCE/node.gyp
+cp -r $UWS_SOURCE/src $NODE_SOURCE/src/uws
+cp -r $UWS_SOURCE/nodejs/extension.cpp $NODE_SOURCE/src/uws
+cp -r $UWS_SOURCE/nodejs/addon.h $NODE_SOURCE/src/uws
+cp -r $UWS_SOURCE/nodejs/dist/uws.js $NODE_SOURCE/lib/uws.js
+
 if [ $OS = "win32" ]; then
 	echo "Windows icon"
-
-	if ![[ -d node_modules/uws ]]; then
-		echo -e "\tDownloading node src"
-		mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-		cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-		curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-		tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-		cd -
-	fi
 
 	NAME=$PACKAGE_VERSION
 
@@ -94,9 +118,6 @@ mkdir -p $DEEPSTREAM_PACKAGE
 mkdir $DEEPSTREAM_PACKAGE/var
 mkdir $DEEPSTREAM_PACKAGE/lib
 mkdir $DEEPSTREAM_PACKAGE/doc
-
-echo "Adding uws as thirdparty library"
-cp -rf node_modules/uws $DEEPSTREAM_PACKAGE/lib/uws
 
 echo "Adding winston logger to libs"
 cd $DEEPSTREAM_PACKAGE/lib

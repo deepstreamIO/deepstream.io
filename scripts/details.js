@@ -5,6 +5,8 @@ var pkg = require( '../package' );
 
 if( process.argv[2] === 'VERSION' ) {
 	console.log( pkg.version );
+} else if( process.argv[2] === 'UWS_VERSION' ) {
+	console.log( pkg.dependencies.uws.replace('^','') );
 } else if( process.argv[2] === 'NAME' ) {
 	console.log( pkg.name );
 } else if( process.argv[2] === 'OS' ) {
