@@ -15,7 +15,7 @@ var lastError = function() {
 
 var testPermission = function( permissions, message, username, userdata, callback ) {
 	var permissionHandler = new ConfigPermissionHandler( options, permissions );
-	permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
+	permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c( r ); }});
 	var permissionResult;
 
 	username = username || 'someUser';
@@ -260,7 +260,7 @@ describe( 'loads permissions repeatedly', function(){
 
 	it( 'creates the permissionHandler', function(){
 		permissionHandler = new ConfigPermissionHandler( options, getBasePermissions() );
-		permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c(); }});
+		permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c( r ); }});
 		expect( permissionHandler.isReady ).toBe( true );
 	});
 

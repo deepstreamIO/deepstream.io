@@ -9,7 +9,6 @@ var C = require( '../constants/constants' );
 var RecordRequest = require( '../record/record-request' );
 var messageParser = require( '../message/message-parser' );
 var JsonPath = require( '../record/json-path' );
-var utils = require( '../utils/utils' );
 
 /**
  * This class handles the evaluation of a single rule. It creates
@@ -382,16 +381,29 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 
 	this._recordData[ recordName ] = LOADING;
 
-	this._params.recordHandler.runWhenRecordStable( recordName, () => {
-		new RecordRequest(
-			recordName,
-			this._params.options,
-			null,
-			this._onLoadComplete.bind( this, recordName ),
-			this._onLoadError.bind( this, recordName )
-		);
-	});
+	this._params.recordHandler.runWhenRecordStable( recordName,
+    this._createNewRecordRequest.bind( this ) );
 };
+
+/**
+ * Load the record data from the cache for permissioning. This method should be
+ * called once the record is stable – meaning there are no remaining writes
+ * waiting to be written to the cache.
+ *
+ * @param   {String} recordName
+ *
+ * @private
+ * @returns {void}
+ */
+RuleApplication.prototype._createNewRecordRequest = function( recordName ) {
+	new RecordRequest(
+		recordName,
+		this._params.options,
+		null,
+		this._onLoadComplete.bind( this, recordName ),
+		this._onLoadError.bind( this, recordName )
+	);
+}
 
 /**
  * This method is passed to the rule function as _ to allow crossReferencing
