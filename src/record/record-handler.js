@@ -440,7 +440,7 @@ RecordHandler.prototype.removeRecordRequest = function( recordName ) {
 	}
 
 	callback = this._recordRequestsInProgress[ recordName ].splice( 0, 1 )[ 0 ];
-	callback();
+	callback( recordName );
 };
 
 /**
@@ -458,7 +458,7 @@ RecordHandler.prototype.removeRecordRequest = function( recordName ) {
 RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
 	if( !this._recordRequestsInProgress[ recordName ] ) {
 		this._recordRequestsInProgress[ recordName ] = [];
-		callback();
+		callback( recordName );
 	} else {
 		this._recordRequestsInProgress[ recordName ].push( callback );
 	}
