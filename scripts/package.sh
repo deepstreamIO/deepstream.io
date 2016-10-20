@@ -25,6 +25,9 @@ EXECUTABLE_NAME="build/deepstream$EXTENSION"
 echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
 mkdir -p build
 
+echo "Installing missing npm packages, just in case something changes"
+npm i
+
 if ! [[ $NODE_VERSION_WITHOUT_V == $LTS_VERSION* ]]; then
 	echo "Packaging only done on $LTS_VERSION.x"
 	exit
@@ -71,25 +74,29 @@ echo -e "\tUnpacking node"
 tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
 cd -
 
+echo -e "\t\tDelete node uws"
+rm -rf node_modules/uws
+
 echo -e "\tAdding in UWS"
 
 echo -e "\t\tDownloading UWS"
 rm -rf nexe_node/uWebSockets
 git clone https://github.com/uWebSockets/uWebSockets.git nexe_node/uWebSockets
 cd nexe_node/uWebSockets
-git checkout v$UWS_VERSION
+#git checkout v$UWS_VERSION
 cd -
 
 echo -e "\t\tAdding UWS into node"
 
-C_FILE_NAMES="\n        'src\/uws\/extension.cpp',\n        'src\/uws\/Extensions.cpp',\n        'src\/uws\/Group.cpp',\n        'src\/uws\/WebSocketImpl.cpp',\n        'src\/uws\/Networking.cpp',\n        'src\/uws\/Hub.cpp',\n        'src\/uws\/uws_Node.cpp',\n        'src\/uws\/WebSocket.cpp',\n        'src\/uws\/HTTPSocket.cpp',\n        'src\/uws\/Socket.cpp',"
+C_FILE_NAMES="\n'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/WebSocketImpl.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
 
 if [ $OS = "darwin" ]; then
-	sed -i '' "s@'library_files': \[@'library_files': \[\n      'lib\/uws.js',@" $NODE_SOURCE/node.gyp
+	sed -i '' "s@'library_files': \[@'library_files': \[\n      'lib\/uws.js', #Added UWS@" $NODE_SOURCE/node.gyp
 	sed -i '' "s@'src/debug-agent.cc',@'src\/debug-agent.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
 else
-	sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
+	sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js', #Added UWS/" $NODE_SOURCE/node.gyp
 	sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',$C_FILE_NAMES/" $NODE_SOURCE/node.gyp
+	sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/dist/uws.js
 fi
 
 mkdir -p $NODE_SOURCE/src/uws
