@@ -249,8 +249,8 @@ RecordHandler.prototype._sendError = function( event, message, socketWrapper ) {
 	}
 };
 
-RecordHandler.prototype._getRecordFromStorage = function( recordName ) {
-	return new Promise( ( resolve, reject ) => this._storage.get( recordName, ( error, record ) => {
+RecordHandler.prototype._getRecordFromStorage = function( recordName, version ) {
+	return new Promise( ( resolve, reject ) => this._storage.get( recordName, version, ( error, record ) => {
 		if ( error ) {
 			const error = new Error('error while loading ' + recordName + ' from storage:' + error.toString());
 			error.event = C.EVENT.RECORD_LOAD_ERROR;
