@@ -92,7 +92,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	}
 
 	if( parent && !parent.match(/\d+-.+/) ) {
-		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
+		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, parent ], socketWrapper );
 		return;
 	}
 
