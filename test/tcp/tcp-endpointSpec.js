@@ -42,7 +42,7 @@ describe( 'tcp-socket tests', function() {
 		expect( onError ).toHaveBeenCalled();
 	});
 
-	it( 'concatenates multiple incomplete messages', function( done ) {
+	xit( 'concatenates multiple incomplete messages', function( done ) {
 		setTimeout( function() {
 			tcpSocket.once( 'message', function( message ) {
 				expect( _show( message ) ).toBe( 'X|Y|2+' );
