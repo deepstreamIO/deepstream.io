@@ -88,14 +88,14 @@ cd -
 
 echo -e "\t\tAdding UWS into node"
 
-C_FILE_NAMES="\n      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/WebSocketImpl.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
+C_FILE_NAMES="      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/WebSocketImpl.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
 
 if [ $OS = "darwin" ]; then
-	sed -i '' "s@'library_files': \[@'library_files': \[\n      'lib\/uws.js',@" $NODE_SOURCE/node.gyp
+	sed -i '' "s@'library_files': \[@'library_files': \[ 'lib\/uws.js',@" $NODE_SOURCE/node.gyp
 	sed -i '' "s@'src/debug-agent.cc',@'src\/debug-agent.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
 else
 	sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
-	sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',$C_FILE_NAMES/" $NODE_SOURCE/node.gyp
+	sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',\n  $C_FILE_NAMES/" $NODE_SOURCE/node.gyp
 	sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/dist/uws.js
 fi
 
