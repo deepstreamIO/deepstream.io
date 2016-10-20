@@ -270,6 +270,12 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 
 	this._getRecordFromStorage( recordName )
 		.then( record => {
+			const prevRecord = this._cache.get( recordName );
+
+			if ( prevRecord && utils.compareVersions( prevRecord._v, record._v ) ) {
+				return;
+			}
+
 			const message = {
 				topic: C.TOPIC.RECORD,
 				action: C.ACTIONS.UPDATE,
