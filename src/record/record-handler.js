@@ -103,14 +103,10 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	const record = { _v: version, _d: json.value };
+	const record = { _v: version, _d: json.value, _p: parent };
 
 	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._storage.set( recordName, record, parent, error => {
-			if( error ) {
-				this._logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, [ recordName, error ] );
-			}
-		} );
+		this._storage.set( recordName, record );
 	}
 
 	this._broadcastUpdate( recordName, record, message, socketWrapper );
@@ -269,13 +265,19 @@ RecordHandler.prototype._getRecordFromStorage = function( recordName ) {
 RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	const prevRecord = this._cache.get( recordName );
 
-	if ( prevRecord && prevRecord._v > version ) {
+	if ( prevRecord && utils.compareVersions( prevRecord._v > version ) ) {
 		return;
 	}
 
 	this._getRecordFromStorage( recordName )
 		.then( record => {
-			const message = messageBuilder.getMsg( C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, version, JSON.stringify( record ) ] );
+			const message = {
+				topic: C.TOPIC.RECORD,
+				action: C.ACTIONS.UPDATE,
+				data: [ recordName, record._v, JSON.stringify( record._d ), record._p ]
+			};
+
+			message.raw = messageBuilder.getMsg( message.topic, message.action, message.data );
 			this._broadcastUpdate( recordName, record, message, C.SOURCE_STORAGE_CONNECTOR );
 		} )
 		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );
