@@ -381,8 +381,10 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 
 	this._recordData[ recordName ] = LOADING;
 
-	this._params.recordHandler.runWhenRecordStable( recordName,
-    this._createNewRecordRequest.bind( this ) );
+	this._params.recordHandler.runWhenRecordStable(
+		recordName,
+		this._createNewRecordRequest.bind( this )
+	);
 };
 
 /**
