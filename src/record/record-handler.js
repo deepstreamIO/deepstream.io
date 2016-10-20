@@ -135,7 +135,7 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, message, socketWrapper ) {
 	const prevRecord = this._cache.get( recordName );
 
-	if ( prevRecord && prevRecord._v > nextRecord._v ) {
+	if ( prevRecord && utils.compareVersions( prevRecord._v, nextRecord._v ) ) {
 		return;
 	}
 
