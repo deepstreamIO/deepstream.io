@@ -49,7 +49,7 @@ describe( 'tcp-socket tests', function() {
 				done();
 			} );
 			clientSocket.write( _msg( '2+' ) , 'utf8' );
-		}, 5 );
+		}, 20 );
 		clientSocket.write( _msg( 'X|Y|' ) , 'utf8' );
 	} );
 
