@@ -227,7 +227,6 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 			socketWrapper.authData
 		);
 	})
-
 };
 
 RecordHandler.prototype.getRecord = function( recordName ) {
@@ -265,7 +264,7 @@ RecordHandler.prototype._getRecordFromStorage = function( recordName ) {
 RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	const prevRecord = this._cache.get( recordName );
 
-	if ( prevRecord && utils.compareVersions( prevRecord._v > version ) ) {
+	if ( prevRecord && utils.compareVersions( prevRecord._v, version ) ) {
 		return;
 	}
 
@@ -276,7 +275,6 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 				action: C.ACTIONS.UPDATE,
 				data: [ recordName, record._v, JSON.stringify( record._d ), record._p ]
 			};
-
 			message.raw = messageBuilder.getMsg( message.topic, message.action, message.data );
 			this._broadcastUpdate( recordName, record, message, C.SOURCE_STORAGE_CONNECTOR );
 		} )
