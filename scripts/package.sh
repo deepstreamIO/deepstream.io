@@ -81,9 +81,17 @@ git checkout v$UWS_VERSION
 cd -
 
 echo -e "\t\tAdding UWS into node"
-sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
+
 C_FILE_NAMES="\n        'src\/uws\/extension.cpp',\n        'src\/uws\/Extensions.cpp',\n        'src\/uws\/Group.cpp',\n        'src\/uws\/WebSocketImpl.cpp',\n        'src\/uws\/Networking.cpp',\n        'src\/uws\/Hub.cpp',\n        'src\/uws\/uws_Node.cpp',\n        'src\/uws\/WebSocket.cpp',\n        'src\/uws\/HTTPSocket.cpp',\n        'src\/uws\/Socket.cpp',"
-sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',$C_FILE_NAMES/" $NODE_SOURCE/node.gyp
+
+if [ $OS = "darwin" ]; then
+	sed -i '' "s@'library_files': \[@'library_files': \[\n      'lib\/uws.js',@" $NODE_SOURCE/node.gyp
+	sed -i '' "s@'src/debug-agent.cc',@'src\/debug-agent.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
+else
+	sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
+	sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',$C_FILE_NAMES/" $NODE_SOURCE/node.gyp
+fi
+
 mkdir -p $NODE_SOURCE/src/uws
 cp $UWS_SOURCE/src/* $NODE_SOURCE/src/uws
 mv $NODE_SOURCE/src/uws/Node.cpp $NODE_SOURCE/src/uws/uws_Node.cpp
