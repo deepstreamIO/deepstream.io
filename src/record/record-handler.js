@@ -133,6 +133,10 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 };
 
 RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, message, socketWrapper ) {
+	if (nextRecord._v) {
+		this._cache.set( recordName + nextRecord._v, nextRecord );
+	}
+
 	const prevRecord = this._cache.get( recordName );
 
 	if ( prevRecord && utils.compareVersions( prevRecord._v, nextRecord._v ) ) {
@@ -231,7 +235,7 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 
 RecordHandler.prototype.getRecord = function( recordName, version ) {
 	const key = recordName + (version || '')
-	return this._cache.has( recordName )
+	return this._cache.has( key )
 		? Promise.resolve( this._cache.get( key ) )
 		: this._getRecordFromStorage( key, version )
 				.then( record => {
@@ -252,8 +256,8 @@ RecordHandler.prototype._sendError = function( event, message, socketWrapper ) {
 
 RecordHandler.prototype._getRecordFromStorage = function( recordName, version ) {
 	return new Promise( ( resolve, reject ) => this._storage.get( recordName, version, ( error, record ) => {
-		if ( error ) {
-			const error = new Error('error while loading ' + recordName + ' from storage:' + error.toString());
+		if ( error || !record) {
+			const error = new Error('error while loading ' + recordName + ' from storage:' + (error || 'not_found'));
 			error.event = C.EVENT.RECORD_LOAD_ERROR;
 			reject( error );
 		} else {
