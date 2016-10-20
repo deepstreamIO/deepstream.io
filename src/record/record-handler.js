@@ -229,13 +229,14 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 	})
 };
 
-RecordHandler.prototype.getRecord = function( recordName ) {
+RecordHandler.prototype.getRecord = function( recordName, version ) {
+	const key = recordName + (version || '')
 	return this._cache.has( recordName )
-		? Promise.resolve( this._cache.get( recordName ) )
-		: this._getRecordFromStorage( recordName )
+		? Promise.resolve( this._cache.get( key ) )
+		: this._getRecordFromStorage( key, version )
 				.then( record => {
-					if ( !this._cache.has( recordName ) ) {
-						this._cache.set( recordName, record );
+					if ( !this._cache.has( key ) ) {
+						this._cache.set( key, record );
 					}
 					return record;
 				} );
