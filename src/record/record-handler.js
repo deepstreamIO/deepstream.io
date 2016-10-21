@@ -133,10 +133,6 @@ RecordHandler.prototype._sendRecord = function( recordName, record, socketWrappe
 };
 
 RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, message, socketWrapper ) {
-	if (nextRecord._v) {
-		this._cache.set( recordName + nextRecord._v, nextRecord );
-	}
-
 	const prevRecord = this._cache.get( recordName );
 
 	if ( prevRecord && utils.compareVersions( prevRecord._v, nextRecord._v ) ) {
@@ -234,13 +230,12 @@ RecordHandler.prototype._permissionAction = function( action, recordName, socket
 };
 
 RecordHandler.prototype.getRecord = function( recordName, version ) {
-	const key = recordName + ( version || '' )
-	return this._cache.has( key )
-		? Promise.resolve( this._cache.get( key ) )
-		: this._getRecordFromStorage( key, version )
+	return !version && this._cache.has( recordName )
+		? Promise.resolve( this._cache.get( recordName ) )
+		: this._getRecordFromStorage( recordName, version )
 				.then( record => {
-					if ( !this._cache.has( key ) ) {
-						this._cache.set( key, record );
+					if ( !this._cache.has( recordName ) ) {
+						this._cache.set( recordName, record );
 					}
 					return record;
 				} );
