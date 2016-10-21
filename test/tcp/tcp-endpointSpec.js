@@ -15,7 +15,7 @@ var options = {
 	logger: { log: function( logLevel, event, msg ){} }
 };
 
-describe( 'tcp-socket tests', function() {
+xdescribe( 'tcp-socket tests', function() {
 
 	it( 'creates a tcp socket', function( done ) {
 		tcpEndpoint = new TCPEndpoint( options, noop );
@@ -42,7 +42,7 @@ describe( 'tcp-socket tests', function() {
 		expect( onError ).toHaveBeenCalled();
 	});
 
-	xit( 'concatenates multiple incomplete messages', function( done ) {
+	it( 'concatenates multiple incomplete messages', function( done ) {
 		setTimeout( function() {
 			tcpSocket.once( 'message', function( message ) {
 				expect( _show( message ) ).toBe( 'X|Y|2+' );
