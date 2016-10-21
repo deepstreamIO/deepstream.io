@@ -14,4 +14,4 @@ deepstream is a new type of server that syncs data and sends events across milli
 
 ### TODO
 
-- Re-implement PATCH using the parent revision.
+- Re-implement `PATCH` using the parent revision.
