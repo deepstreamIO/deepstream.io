@@ -10,7 +10,7 @@ var EventEmitter = require( 'events' ).EventEmitter;
 var realProcess;
 var emitter;
 
-describe( 'distributed-state-registry adds and removes names', function(){
+xdescribe( 'distributed-state-registry adds and removes names', function(){
 
 	var clusterRegistry;
 
