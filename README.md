@@ -11,3 +11,7 @@ deepstream is a new type of server that syncs data and sends events across milli
  - Removed *cache connector*. Instead all nodes have their own in-memory LRU cache. Configured using the `cacheSize` option (default 1e5).
  - Sync changes and conflict resolution from *storage connector* by listening on the `storage.on('change', (recordName, version, data)) => {}`.
  - Simplified code using promises instead of callbacks.
+
+### TODO
+
+- Re-implement PATCH using the parent revision.
