@@ -91,8 +91,11 @@ echo -e "\t\tAdding UWS into node"
 C_FILE_NAMES="      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/WebSocketImpl.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
 
 if [ $OS = "darwin" ]; then
+	echo -e "\t\tapplying patches only tested on darwin node v6.9.1"
 	sed -i '' "s@'library_files': \[@'library_files': \[ 'lib\/uws.js',@" $NODE_SOURCE/node.gyp
 	sed -i '' "s@'src/debug-agent.cc',@'src\/debug-agent.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
+	sed -i '' "s@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x',  # -std=gnu++0x@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x', 'CLANG_CXX_LIBRARY': 'libc++',@" $NODE_SOURCE/common.gypi
+	sed -i '' "14,18d" $NODE_SOURCE/src/util.h
 else
 	sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
 	sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',\n  $C_FILE_NAMES/" $NODE_SOURCE/node.gyp
