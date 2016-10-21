@@ -6,6 +6,8 @@ var websocketMock = null;
 var WebsocketMock = function(){
 	this.clients = {};
 	this.clientsCount = 0;
+	this.pingInterval = null;
+	this.pingMessage = null;
 	this.setMaxListeners( 0 );
 	websocketMock = this;
 };
@@ -20,6 +22,11 @@ WebsocketMock.prototype.simulateConnection = function() {
 	this.clientsCount++;
 	this.emit( 'connection', socketMock );
 	return socketMock;
+};
+
+WebsocketMock.prototype.startAutoPing = function( interval, message ){
+	this.pingInterval = interval;
+	this.pingMessage = message;
 };
 
 WebsocketMock.prototype.Server = function(){
