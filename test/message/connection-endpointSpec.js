@@ -29,7 +29,8 @@ options = {
 	logInvalidAuthData: true,
 	tcpServerEnabled: true,
 	webServerEnabled: true,
-	tcpPort: 6021
+	tcpPort: 6021,
+	heartbeatInterval: 4000
 };
 
 describe( 'connection endpoint', function() {
@@ -47,6 +48,11 @@ describe( 'connection endpoint', function() {
 	afterAll( function( done ) {
 		connectionEndpoint.once( 'close', done );
 		connectionEndpoint.close();
+	});
+
+	it( 'sets autopings on the websocket server', function(){
+		expect( websocketMock.pingInterval ).toBe( options.heartbeatInterval );
+		expect( websocketMock.pingMessage ).toBe(  _msg( 'C|P+' ) );
 	});
 
 	describe( 'the connectionEndpoint handles incoming TCP connections', function(){

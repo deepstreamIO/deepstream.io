@@ -8,6 +8,7 @@ var C = require( '../constants/constants' ),
 	util = require( 'util' ),
 	https = require('https'),
 	http = require('http'),
+	uws = require('uws'),
 	WS = 0,
 	TCP_ENDPOINT = 1,
 	READY_STATE_CLOSED = 'closed',
@@ -52,17 +53,13 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 			this._server.listen( this._options.port, this._options.host );
 		}
 
-		try
-		{
-			const uws = require( 'uws' );
-			this._ws = new uws.Server({
-				server: this._server,
-				perMessageDeflate: false,
-				path: this._options.urlPath
-			} );
-		} catch( e ) {
-			throw 'deepstream.io doesn\'t run on windows prior to node version 6.4';
-		}
+
+		this._ws = new uws.Server({
+			server: this._server,
+			perMessageDeflate: false,
+			path: this._options.urlPath
+		} );
+		this._ws.startAutoPing( this._options.heartbeatInterval, messageBuilder.getMsg( C.TOPIC.CONNECTION, C.ACTIONS.PING ) );
 
 		if( this._server.listening === true || this._server._handle != null ) {
 			this._checkReady( WS );

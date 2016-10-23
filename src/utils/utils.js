@@ -192,6 +192,24 @@ exports.setTimeout = function( callback, timeoutDuration ) {
 	}
 };
 
+/**
+ * Set Interval utility that adds support for disabling an interval
+ * by passing null
+ *
+ * @param {Function} callback        the function that will be called after the given time
+ * @param {Number}   intervalDuration the duration of the interval in milliseconds
+ *
+ * @public
+ * @returns {Number} intervalId
+ */
+exports.setInterval = function( callback, intervalDuration ) {
+	if( intervalDuration !== null ) {
+		return setInterval( callback, intervalDuration );
+	} else {
+		return -1;
+	}
+};
+
 exports.getRandomIntInRange = function( min, max ) {
 	return min + Math.floor( Math.random() * ( max - min ) );
 };

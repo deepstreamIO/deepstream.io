@@ -100,6 +100,8 @@ exports.TOPIC.SUBSCRIPTIONS = 'SUB';
 
 
 exports.ACTIONS = {};
+exports.ACTIONS.PING = 'P';
+exports.ACTIONS.PONG = 'PO';
 exports.ACTIONS.ACK = 'A';
 exports.ACTIONS.READ = 'R';
 exports.ACTIONS.CREATE = 'C';
