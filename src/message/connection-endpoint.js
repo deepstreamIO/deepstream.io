@@ -133,7 +133,7 @@ ConnectionEndpoint.prototype._checkClosed = function() {
 /**
  * Callback for 'connection' event. Receives
  * a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user and
- * subscribes to authentication messages.
+* subscribes to authentication messages.
  * @param {Websocket} socket
  *
  * @private
@@ -159,18 +159,6 @@ ConnectionEndpoint.prototype._onConnection = function( socket ) {
 };
 
 /**
- * Callback for 'connection' event. Receives
- * a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user and
- * subscribes to authentication messages.
- *
- * @param {Number} endpoint
- * @param {Websocket} socket
- *
- * @private
- * @returns {void}
- */
-
-/**
  * Always challenges the client that connects. This will be opened up later to allow users to put in their
  * own challenge authentication, but requires more work on the clustering aspect first.
  *
@@ -191,6 +179,9 @@ ConnectionEndpoint.prototype._processConnectionMessage = function( socketWrapper
 	else if( msg.topic !== C.TOPIC.CONNECTION ) {
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, 'invalid connection message ' + connectionMessage );
 		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message' );
+	}
+	else if( msg.topic === C.TOPIC.PONG ) {
+		return;
 	}
 	else if( msg.action === C.ACTIONS.CHALLENGE_RESPONSE ) {
 		socketWrapper.socket.removeListener( 'message', socketWrapper.connectionCallback );
@@ -226,6 +217,13 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 	 */
 	logMsg = socketWrapper.getHandshakeData().remoteAddress  + ': ' + authMsg;
 	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg );
+
+	/**
+	 * Ignore pong messages
+	 */
+	if( msg && msg.topic === C.TOPIC.CONNECTION && msg.action === C.ACTIONS.PONG ) {
+		return;
+	}
 
 	/**
 	 * Ensure the message is a valid authentication message
