@@ -198,6 +198,10 @@ RecordHandler.prototype._getRecordFromStorage = function( recordName ) {
 };
 
 RecordHandler.prototype._onStorageChange = function( recordName, version ) {
+	if ( !this._subscriptionRegistry.hasLocalSubscribers( recordName ) ) {
+		return;
+	}
+
 	const prevRecord = this._cache.get( recordName );
 
 	if ( prevRecord && utils.compareVersions( prevRecord._v, version ) ) {
