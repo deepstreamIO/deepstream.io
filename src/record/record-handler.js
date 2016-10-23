@@ -81,12 +81,13 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	}
 
 	const version = message.data[ 1 ];
-	const parent = message.data[ 3 ];
 
 	if( !version || !version.match(/\d+-.+/) ) {
 		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper );
 		return;
 	}
+
+	const parent = message.data[ 3 ];
 
 	if( parent && !parent.match(/\d+-.+/) ) {
 		this._sendError( C.EVENT.INVALID_VERSION, [ recordName, parent ], socketWrapper );
