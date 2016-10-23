@@ -100,21 +100,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 		return;
 	}
 
-	const record = { _v: version, _d: json.value, _p: parent };
-
-	if ( socketWrapper !== C.SOURCE_STORAGE_CONNECTOR && socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-		this._storage.set( recordName, record );
-	}
-
-	this._broadcastUpdate( recordName, record, message, socketWrapper );
-};
-
-RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
-	const recordName = message.data[ 0 ];
-	this._subscriptionRegistry.unsubscribe( recordName, socketWrapper );
-}
-
-RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, message, socketWrapper ) {
+	const nextRecord = { _v: version, _d: json.value, _p: parent };
 	const prevRecord = this._cache.get( recordName );
 
 	if ( prevRecord && utils.compareVersions( prevRecord._v, nextRecord._v ) ) {
@@ -125,10 +111,16 @@ RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, mes
 
 	this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
 
-	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR ) {
+	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+		this._storage.set( recordName, nextRecord );
 		this._messageConnector.publish( C.TOPIC.RECORD, message );
 	}
 };
+
+RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
+	const recordName = message.data[ 0 ];
+	this._subscriptionRegistry.unsubscribe( recordName, socketWrapper );
+}
 
 RecordHandler.prototype._permissionAction = function( action, recordName, socketWrapper ) {
 	return new Promise( ( resolve, reject ) => {
@@ -209,20 +201,26 @@ RecordHandler.prototype._onStorageChange = function( recordName, version ) {
 	}
 
 	this._getRecordFromStorage( recordName )
-		.then( record => {
+		.then( nextRecord => {
 			const prevRecord = this._cache.get( recordName );
 
-			if ( prevRecord && utils.compareVersions( prevRecord._v, record._v ) ) {
+			if ( prevRecord && utils.compareVersions( prevRecord._v, nextRecord._v ) ) {
 				return;
 			}
 
-			const message = {
-				topic: C.TOPIC.RECORD,
-				action: C.ACTIONS.UPDATE,
-				data: [ recordName, record._v, JSON.stringify( record._d ), record._p ]
-			};
-			message.raw = messageBuilder.getMsg( message.topic, message.action, message.data );
-			this._broadcastUpdate( recordName, record, message, C.SOURCE_STORAGE_CONNECTOR );
+			this._cache.set( recordName, nextRecord );
+
+			if ( !this._subscriptionRegistry.hasLocalSubscribers( recordName ) ) {
+				return;
+			}
+
+			const msgString = messageBuilder.getMsg(
+				C.TOPIC.RECORD,
+				C.ACTIONS.UPDATE,
+				[ recordName, nextRecord._v, JSON.stringify( nextRecord._d ), nextRecord._p ]
+			);
+
+			this._subscriptionRegistry.sendToSubscribers( recordName, msgString, C.SOURCE_STORAGE_CONNECTOR );
 		} )
 		.catch( error => this._logger.log( C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ] ) );
 };
