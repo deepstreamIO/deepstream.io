@@ -52,7 +52,7 @@ describe( 'connection endpoint', function() {
 
 	it( 'sets autopings on the websocket server', function(){
 		expect( websocketMock.pingInterval ).toBe( options.heartbeatInterval );
-		expect( websocketMock.pingMessage ).toBe(  _msg( 'C|P+' ) );
+		expect( websocketMock.pingMessage ).toBe(  _msg( 'C|PI+' ) );
 	});
 
 	describe( 'the connectionEndpoint handles incoming TCP connections', function(){
