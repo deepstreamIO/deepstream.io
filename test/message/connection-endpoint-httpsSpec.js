@@ -3,12 +3,10 @@ var proxyquire = require( 'proxyquire' ).noCallThru(),
 	HttpMock = require( '../mocks/http-mock' ),
 	httpMock = new HttpMock(),
 	httpsMock = new HttpMock(),
-	TcpEndpointMock = require( '../mocks/tcp-endpoint-mock' ),
 	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', {
 		'uws': websocketMock,
 		'http': httpMock,
-		'https': httpsMock,
-		'../tcp/tcp-endpoint': TcpEndpointMock
+		'https': httpsMock
 	} ),
 	_msg = require( '../test-helper/test-helper' ).msg,
 	permissionHandlerMock = require( '../mocks/permission-handler-mock' ),
@@ -24,10 +22,7 @@ options = {
 	permissionHandler: require( '../mocks/permission-handler-mock' ),
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
-	logInvalidAuthData: true,
-	tcpServerEnabled: true,
-	webServerEnabled: true,
-	tcpPort: 6021
+	logInvalidAuthData: true
 };
 
 describe( 'validates HTTPS server conditions', function() {
@@ -39,10 +34,7 @@ describe( 'validates HTTPS server conditions', function() {
 	beforeEach(function() {
 		sslOptions = {
 			permissionHandler: require( '../mocks/permission-handler-mock' ),
-			logger: { log: function( logLevel, event, msg ){} },
-			tcpServerEnabled: true,
-			webServerEnabled: true,
-			tcpPort: 6021
+			logger: { log: function( logLevel, event, msg ){} }
 		};
 
 		spyOn(httpMock, 'createServer').and.callThrough();

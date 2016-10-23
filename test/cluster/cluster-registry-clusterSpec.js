@@ -3,8 +3,7 @@ var C = require( '../../src/constants/constants' );
 var LocalMessageConnector = require( '../mocks/local-message-connector' );
 var messageConnector = new LocalMessageConnector();
 var connectionEndpointMock = {
-	getBrowserConnectionCount: function() { return 8; },
-	getTcpConnectionCount: function() { return 7; }
+	getConnectionCount: function() { return 8; }
 };
 
 describe( 'distributed-state-registry adds and removes names', function(){

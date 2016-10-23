@@ -18,12 +18,8 @@ module.exports = function( program ) {
 		.option( '-d, --detach', 'detach the deepstream server process' )
 
 		.option( '--server-name <name>', 'Each server within a cluster needs a unique name' )
-		.option( '--web-server-enabled [true|false]', 'Accept/Decline incoming HTTP connections', parseBoolean.bind( null, '--web-server-enabled' ) )
-		.option( '--tcp-server-enabled [true|false]', 'Accept/Decline incoming TCP connections', parseBoolean.bind( null, '--tcp-server-enabled' ) )
 		.option( '--host <host>', 'host for the HTTP/websocket server' )
 		.option( '--port <port>', 'port for the HTTP/websocket server', parseInteger.bind( null, '--port' ) )
-		.option( '--tcp-host <host>', 'host for the TCP server' )
-		.option( '--tcp-port <port>', 'tcpHost', parseInteger.bind( null, '--tcp-port' ) )
 		.option( '--disable-auth', 'Force deepstream to use "none" auth type' )
 		.option( '--disable-permissions', 'Force deepstream to use "none" permissions' )
 		.option( '--log-level <level>', 'Log messages with this level and above', parseLogLevel )
@@ -51,7 +47,7 @@ function action() {
 			args.push( this.libDir );
 		}
 		// TODO: need to pass other options as well, which are accessable directly as properties of this
-		//       but need to transform camelCase back to kebabCase, like tcpPort
+		//       but need to transform camelCase back to kebabCase, like disableAuth
 
 		// ensure there is no pid file with a running process
 		pidHelper.ensureNotRunning( function( err ) {

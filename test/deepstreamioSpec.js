@@ -102,7 +102,6 @@ describe( 'it starts and stops a configured server', function() {
 	beforeEach( function() {
 		server = new Deepstream();
 		logger = new ClosableLogger();
-		server.set( 'dataTransforms', [] );
 		server.set( 'showLogo', false );
 		server.set( 'logger', logger );
 	} );
@@ -180,7 +179,6 @@ describe( 'handle server startup without config file', function() {
 	it( 'via API', function( done ) {
 		var server = new Deepstream();
 		var logger = new ClosableLogger();
-		server.set( 'dataTransforms', [] );
 		server.set( 'showLogo', false );
 		server.set( 'logger', logger );
 		server._configFile = null;

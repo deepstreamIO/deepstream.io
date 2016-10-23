@@ -18,9 +18,6 @@ var RecordHandler = function( options ) {
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
 	this._listenerRegistry = new ListenerRegistry( C.TOPIC.RECORD, options, this._subscriptionRegistry );
 	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
-	this._hasReadTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
-	this._hasUpdateTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
-	this._hasPatchTransforms = this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.PATCH );
 	this._transitions = {};
 	this._recordRequestsInProgress = {};
 };
@@ -251,26 +248,7 @@ RecordHandler.prototype._read = function( recordName, record, socketWrapper ) {
  * @returns {void}
  */
 RecordHandler.prototype._sendRecord = function( recordName, record, socketWrapper ) {
-	var data = record._d;
-
-	if( this._hasReadTransforms ) {
-		data = this._options.dataTransforms.apply(
-			C.TOPIC.RECORD,
-			C.ACTIONS.READ,
-
-			/*
-			 * Clone the object to make sure that the transform method doesn't accidentally
-			 * modify the object reference for other subscribers.
-			 *
-			 * JSON stringify/parse still seems to be the fastest way to achieve a deep copy.
-			 * TODO Update once native Object.clone // Object.copy becomes a thing
-			 */
-			JSON.parse( JSON.stringify( data ) ),
-			{ recordName: recordName, receiver: socketWrapper.user }
-		);
-	}
-
-	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, data ] );
+	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d ] );
 };
 
  /**
@@ -332,72 +310,10 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
  * @returns {void}
  */
 RecordHandler.prototype._$broadcastUpdate = function( name, message, originalSender ) {
-	var transformUpdate = message.action === C.ACTIONS.UPDATE && this._hasUpdateTransforms,
-		transformPatch = message.action === C.ACTIONS.PATCH && this._hasPatchTransforms;
-
-	if( transformUpdate || transformPatch ) {
-		this._broadcastTransformedUpdate( transformUpdate, transformPatch, name, message, originalSender );
-	} else {
-		this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
-	}
+	this._subscriptionRegistry.sendToSubscribers( name, message.raw, originalSender );
 
 	if( originalSender !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._options.messageConnector.publish( C.TOPIC.RECORD, message );
-	}
-};
-
-/**
- * Called by _$broadcastUpdate if registered transform functions are detected. Disassembles
- * the message and invokes the transform function prior to sending it to every individual receiver
- * so that receiver specific transforms can be applied.
- *
- * @param   {Boolean} transformUpdate is a update transform function registered that applies to this update?
- * @param   {Boolean} transformPatch  is a patch transform function registered that applies to this update?
- * @param   {String} name             the record name
- * @param   {Object} message          a parsed deepstream message object
- * @param   {SocketWrapper|String} originalSender  the original sender of the update or a string pointing at the messageBus
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._broadcastTransformedUpdate = function( transformUpdate, transformPatch, name, message, originalSender ) {
-	var receivers = this._subscriptionRegistry.getLocalSubscribers( name ),
-		metaData = {
-			recordName: name,
-			version: parseInt( message.data[ 1 ], 10 )
-		},
-		unparsedData = message.data[ transformUpdate ? 2 : 3 ],
-		messageData = message.data.slice( 0 ),
-		data,
-		i;
-
-	if( !receivers ) {
-		return;
-	}
-
-	if( transformPatch ) {
-		metaData.path = message.data[ 2 ];
-	}
-
-	for( i = 0; i < receivers.length; i++ ) {
-		if( receivers[ i ] === originalSender ) {
-			continue;
-		}
-		metaData.receiver = receivers[ i ].user;
-
-		if( transformUpdate ) {
-			// UPDATE
-			data = JSON.parse( unparsedData );
-			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
-			messageData[ 2 ] = JSON.stringify( data );
-		} else {
-			// PATCH
-			data = messageParser.convertTyped( unparsedData );
-			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
-			messageData[ 3 ] = messageBuilder.typed( data );
-		}
-
-		receivers[ i ].sendMessage( message.topic, message.action, messageData );
 	}
 };
 

@@ -2,16 +2,12 @@ var C = require( '../constants/constants' ),
 	messageParser = require( './message-parser' ),
 	messageBuilder = require( './message-builder' ),
 	SocketWrapper = require( './socket-wrapper' ),
-	TcpEndpoint = require( '../tcp/tcp-endpoint' ),
 	fileUtils = require( '../config/file-utils' ),
 	events = require( 'events' ),
 	util = require( 'util' ),
-	https = require('https'),
-	http = require('http'),
+	http = require( 'http' ),
+	https = require( 'https' ),
 	uws = require('uws'),
-	WS = 0,
-	TCP_ENDPOINT = 1,
-	READY_STATE_CLOSED = 'closed',
 	OPEN = 'OPEN';
 
 /**
@@ -24,52 +20,27 @@ var C = require( '../constants/constants' ),
  * @extends events.EventEmitter
  *
  * @param {Object} options the extended default options
- * @param {Function} readyCallback will be invoked once both the ws and the tcp servers are established
+ * @param {Function} readyCallback will be invoked once both the ws is ready
  */
 var ConnectionEndpoint = function( options, readyCallback ) {
 	this._options = options;
 	this._readyCallback = readyCallback;
 
-	if( !options.webServerEnabled && !options.tcpServerEnabled ) {
-		throw new Error( 'Can\'t start deepstream with both webserver and tcp disabled' );
-	}
-	if( options.tcpServerEnabled ) {
-		// Initialise a tcp server to facilitate fast and compatible communication with backend systems
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.DEPRECATED, 'TCP communication is deprecated, please start using websockets' );
-		this._tcpEndpointReady = false;
-		this._tcpEndpoint = new TcpEndpoint( options, this._checkReady.bind( this, TCP_ENDPOINT ) );
-		this._tcpEndpoint.on( 'error', this._onError.bind( this ) );
-		this._tcpEndpoint.on( 'connection', this._onConnection.bind( this, TCP_ENDPOINT ) );
-	}
-	if( options.webServerEnabled ) {
-		// Initialise a websocket server
-		this._wsReady = false;
-		this._wsServerClosed = false;
+	this._wsReady = false;
+	this._wsServerClosed = false;
 
-		if( this._options.httpServer ) {
-			this._server = this._options.httpServer;
-		} else {
-			this._server = this._createHttpServer();
-			this._server.listen( this._options.port, this._options.host );
-		}
+	this._server = this._createHttpServer();
+	this._server.listen( this._options.port, this._options.host );
 
-
-		this._ws = new uws.Server({
-			server: this._server,
-			perMessageDeflate: false,
-			path: this._options.urlPath
-		} );
-		this._ws.startAutoPing( this._options.heartbeatInterval, messageBuilder.getMsg( C.TOPIC.CONNECTION, C.ACTIONS.PING ) );
-
-		if( this._server.listening === true || this._server._handle != null ) {
-			this._checkReady( WS );
-		} else {
-			this._server.once( 'listening', this._checkReady.bind( this, WS ) );
-		}
-
-		this._ws.on( 'error', this._onError.bind( this ) );
-		this._ws.on( 'connection', this._onConnection.bind( this, WS ) );
-	}
+	this._ws = new uws.Server({
+		server: this._server,
+		perMessageDeflate: false,
+		path: this._options.urlPath
+	} );
+	this._ws.startAutoPing( this._options.heartbeatInterval, messageBuilder.getMsg( C.TOPIC.CONNECTION, C.ACTIONS.PING ) );
+	this._server.once( 'listening', this._checkReady.bind( this ) );
+	this._ws.on( 'error', this._onError.bind( this ) );
+	this._ws.on( 'connection', this._onConnection.bind( this ) );
 
 	this._authenticatedSockets = [];
 };
@@ -93,86 +64,31 @@ util.inherits( ConnectionEndpoint, events.EventEmitter );
 ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
 
 /**
- * Closes both the ws connection and the tcp connection. The ConnectionEndpoint
- * will emit a close event once both are succesfully shut down
- *
+ * Closes the ws server connection. The ConnectionEndpoint
+ * will emit a close event once succesfully shut down
  * @public
  * @returns {void}
  */
 ConnectionEndpoint.prototype.close = function() {
-	// Close the ws server
-	if( this._ws ) {
-		this._closeWSServer();
-	}
-
-	// Close the tcp server
-	if( this._tcpEndpoint ) {
-		this._closeTcpServer();
-	}
-};
-
-/**
- * Returns the number of currently connected browsers. This is used by the
- * cluster module to determine loadbalancing endpoints
- *
- * @public
- * @returns {Number} browserConnectionCount
- */
-ConnectionEndpoint.prototype.getBrowserConnectionCount = function() {
-	// TODO
-	return 0;
-};
-
-/**
- * Returns the number of currently established TCP connections. This is used by the
- * cluster module to determine loadbalancing endpoints
- *
- * @public
- * @returns {Number} browserConnectionCount
- */
-ConnectionEndpoint.prototype.getTcpConnectionCount = function() {
-	// TODO
-	return 0;
-};
-
-/**
- * Closes the ws and subsequently http server
- *
- * TODO: Make sure that ws and the http server's
- * close events align and potentially don't close
- * the http server if it's provided as an external parameter
- * and might be used by express etc...
- *
- * @private
- * @returns {void}
- */
-ConnectionEndpoint.prototype._closeWSServer = function() {
 	this._server.removeAllListeners( 'request' );
 	this._ws.removeAllListeners( 'connection' );
 	this._ws.close();
 
-	if( this._options.httpServer ) {
+	this._server.close( function(){
 		this._wsServerClosed = true;
 		this._checkClosed();
-	} else {
-		this._server.close( function(){
-			this._wsServerClosed = true;
-			this._checkClosed();
-		}.bind( this ) );
-	}
+	}.bind( this ) );
 };
 
 /**
- * Issues a close command to the tcp server and subscribes
- * to its close event
+ * Returns the number of currently connected clients. This is used by the
+ * cluster module to determine loadbalancing endpoints
  *
- * @private
- * @returns {void}
+ * @public
+ * @returns {Number} connectionCount
  */
-ConnectionEndpoint.prototype._closeTcpServer = function() {
-	this._tcpEndpoint.removeAllListeners( 'connection' );
-	this._tcpEndpoint.on( 'close', this._checkClosed.bind( this ) );
-	this._tcpEndpoint.close();
+ConnectionEndpoint.prototype.getConnectionCount = function() {
+	return this._authenticatedSockets.length;
 };
 
 /**
@@ -184,7 +100,6 @@ ConnectionEndpoint.prototype._closeTcpServer = function() {
  */
 ConnectionEndpoint.prototype._createHttpServer = function() {
 	if( this._isHttpsServer() ) {
-
 		var httpsOptions = {
 			key: this._options.sslKey,
 			cert: this._options.sslCert
@@ -201,19 +116,14 @@ ConnectionEndpoint.prototype._createHttpServer = function() {
 };
 
 /**
- * Called whenever either the tcp server itself or one of its sockets
+ * Called whenever either the server itself or one of its sockets
  * is closed. Once everything is closed it will emit a close event
  *
  * @private
  * @returns {void}
  */
 ConnectionEndpoint.prototype._checkClosed = function() {
-
-	if( this._tcpEndpoint && this._tcpEndpoint.isClosed === false ) {
-		return;
-	}
-
-	if( this._ws && ( this._ws.clientsCount > 0 || this._wsServerClosed === false ) ) {
+	if( this._wsServerClosed === false ) {
 		return;
 	}
 
@@ -224,24 +134,16 @@ ConnectionEndpoint.prototype._checkClosed = function() {
  * Callback for 'connection' event. Receives
  * a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user and
  * subscribes to authentication messages.
- *
- * @param {Number} endpoint
- * @param {TCPSocket|Websocket} socket
+ * @param {Websocket} socket
  *
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
+ConnectionEndpoint.prototype._onConnection = function( socket ) {
 	var socketWrapper = new SocketWrapper( socket, this._options ),
 		handshakeData = socketWrapper.getHandshakeData(),
-		logMsg,
+		logMsg = 'from ' + handshakeData.referer + ' (' + handshakeData.remoteAddress + ')',
 		disconnectTimer;
-
-	if( endpoint === WS ) {
-		logMsg = 'from ' + handshakeData.referer + ' (' + handshakeData.remoteAddress + ')' + ' via ws';
-	} else {
-		logMsg = 'from ' + handshakeData.remoteAddress + ' via tcp';
-	}
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
 
@@ -262,7 +164,7 @@ ConnectionEndpoint.prototype._onConnection = function( endpoint, socket ) {
  * subscribes to authentication messages.
  *
  * @param {Number} endpoint
- * @param {TCPSocket|Websocket} socket
+ * @param {Websocket} socket
  *
  * @private
  * @returns {void}
@@ -496,7 +398,7 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
 };
 
 /**
- * Called for the ready events of both the ws server and the tcp server.
+ * Called for the ready event of the ws server.
  *
  * @param   {String} endpoint An endpoint constant
  *
@@ -504,27 +406,14 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
  * @returns {void}
  */
 ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
-	var msg, address, tcpEndpointReady, wsReady;
+	var msg, address, wsReady;
 
-	if( endpoint === WS ) {
-		address = this._server.address();
-		msg = 'Listening for browser connections on ' + address.address + ':' + address.port;
-		this._wsReady = true;
-	}
-
-	if( endpoint === TCP_ENDPOINT ) {
-		msg = 'Listening for tcp connections on ' + this._options.tcpHost + ':' + this._options.tcpPort;
-		this._tcpEndpointReady = true;
-	}
+	var address = this._server.address();
+	var msg = 'Listening for websocket connections on ' + address.address + ':' + address.port;
+	this._wsReady = true;
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, msg );
-
-	tcpEndpointReady = !this._tcpEndpoint || this._tcpEndpointReady === true;
-	wsReady = !this._ws || this._wsReady === true;
-
-	if( tcpEndpointReady && wsReady ) {
-		this._readyCallback();
-	}
+	this._readyCallback();
 };
 
 /**

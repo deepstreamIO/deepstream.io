@@ -30,10 +30,7 @@ options = {
 	authenticationHandler: permissionHandler,
 	logger: { log: function( logLevel, event, msg ){ lastLoggedMessage = msg; } },
 	maxAuthAttempts: 3,
-	logInvalidAuthData: true,
-	tcpServerEnabled: true,
-	webServerEnabled: true,
-	tcpPort: 3333
+	logInvalidAuthData: true
 };
 
 describe( 'permissionHandler passes additional user meta data', function() {

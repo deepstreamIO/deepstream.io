@@ -33,6 +33,6 @@ xdescribe( 'listener-registry-remote-load-balancing', function() {
 			// 6.   remote published match added
 			tu.remoteActiveProvidedRecordRecieved( 'server-c', 'a/1' )
 			// notify has providers
-		});
+		}).pend( 'ListenerTestUtils doesn\'t implement methods' );
 	});
-});
+});;
