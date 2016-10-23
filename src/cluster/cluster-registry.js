@@ -27,13 +27,13 @@ module.exports = class ClusterRegistry extends EventEmitter {
 	 */
 	constructor( options, connectionEndpoint ) {
 		super();
-		this.setMaxListeners( 12 );
 		this._options = options;
 		this._connectionEndpoint = connectionEndpoint;
 		this._inCluster = false;
 		this._nodes = {};
 
 		this._leaderScore = Math.random();
+		this.setMaxListeners( 12 );
 
 		this._onMessageFn = this._onMessage.bind( this );
 		this._leaveClusterFn = this.leaveCluster.bind( this );
@@ -66,7 +66,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
 		// TODO: If a message connector doesn't close this is required to avoid an error
 		// being thrown during shutdown
 		//this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
-		
+
 		process.removeListener( 'beforeExit', this._leaveClusterFn );
 		process.removeListener( 'exit', this._leaveClusterFn );
 		clearInterval( this._publishInterval );

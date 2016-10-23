@@ -345,6 +345,26 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
 };
 
 /**
+ * Load the record data from the cache for permissioning. This method should be
+ * called once the record is stable – meaning there are no remaining writes
+ * waiting to be written to the cache.
+ *
+ * @param   {String} recordName
+ *
+ * @private
+ * @returns {void}
+ */
+RuleApplication.prototype._createNewRecordRequest = function( recordName ) {
+	new RecordRequest(
+		recordName,
+		this._params.options,
+		null,
+		this._onLoadComplete.bind( this, recordName ),
+		this._onLoadError.bind( this, recordName )
+	);
+}
+
+/**
  * This method is passed to the rule function as _ to allow crossReferencing
  * of other records. Cross-references can be nested, leading to this method
  * being recoursively called until the either all cross references are loaded

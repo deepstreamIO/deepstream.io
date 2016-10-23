@@ -43,21 +43,27 @@ MessageProcessor.prototype.onAuthenticatedMessage = function( socketWrapper, mes
  */
 MessageProcessor.prototype.process = function( socketWrapper, message ) {
 	var parsedMessages = messageParser.parse( message ),
+		parsedMessage,
 		i;
 
 	var length = parsedMessages.length;
 	for( i = 0; i < length; i++ ) {
+		parsedMessage = parsedMessages[ i ];
 
-		if( parsedMessages[ i ] === null ) {
+		if( parsedMessage === null ) {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, message );
 			socketWrapper.sendError( C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, message );
 			continue;
 		}
 
+		if( parsedMessage.topic === C.TOPIC.CONNECTION && parsedMessage.action === C.ACTIONS.PONG ) {
+			continue;
+		}
+
 		this._options.permissionHandler.canPerformAction(
 			socketWrapper.user,
-			parsedMessages[ i ],
-			this._onPermissionResponse.bind( this, socketWrapper, parsedMessages[ i ] ),
+			parsedMessage,
+			this._onPermissionResponse.bind( this, socketWrapper, parsedMessage ),
 			socketWrapper.authData
 		);
 	}

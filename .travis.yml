@@ -2,18 +2,27 @@ language: node_js
 
 before_install:
   - gem install fpm --conservative || echo "FPM install failed"
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      if [ "$CC" == "gcc" ]; then
+        export CC=$(ls -t /usr/local/bin/gcc-?.?);
+      fi
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      export CXX=g++-4.8;
+    fi
 
-env:
-  - CXX=g++-4.8
+compiler:
+  - gcc
+  - clang
 
 node_js:
-  - "6" # Stated specifically for packaging
+  - "6.9"
   - "5"
-  - "4" 
+  - "4"
 
 matrix:
   include:
-    - node_js: "6"
+    - node_js: "6.9.1"
       os: osx
 
 script:

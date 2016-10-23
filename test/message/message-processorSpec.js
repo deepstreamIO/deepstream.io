@@ -26,6 +26,12 @@ describe( 'the message processor only forwards valid, authorized messages', func
 		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'X|E|MESSAGE_PARSE_ERROR|gibberish+' ) );
 	});
 
+	it( 'ignores heartbeats pongs messages', function(){
+		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
+		messageProcessor.process( socketWrapper, _msg( 'C|PO+' ) );
+		expect( socketWrapper.socket.lastSendMessage ).toBeNull();
+	});
+
 	it( 'handles permission errors', function(){
 		var socketWrapper = new SocketWrapper( new SocketMock(), {} );
 		permissionHandlerMock.nextCanPerformActionResult = 'someError';

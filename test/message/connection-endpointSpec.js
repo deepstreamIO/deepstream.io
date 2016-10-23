@@ -1,12 +1,12 @@
 var proxyquire = require( 'proxyquire' ).noCallThru(),
-	engineIoMock = require( '../mocks/engine-io-mock' ),
+	websocketMock = require( '../mocks/websocket-mock' ),
 	HttpMock = require( '../mocks/http-mock' ),
 	httpMock = new HttpMock(),
 	httpsMock = new HttpMock(),
 	SocketMock = require( '../mocks/socket-mock' ),
 	TcpEndpointMock = require( '../mocks/tcp-endpoint-mock'),
 	ConnectionEndpoint = proxyquire( '../../src/message/connection-endpoint', {
-		'engine.io': engineIoMock,
+		'uws': websocketMock,
 		'http': httpMock,
 		'https': httpsMock,
 		'../tcp/tcp-endpoint': TcpEndpointMock
@@ -29,7 +29,8 @@ options = {
 	logInvalidAuthData: true,
 	tcpServerEnabled: true,
 	webServerEnabled: true,
-	tcpPort: 6021
+	tcpPort: 6021,
+	heartbeatInterval: 4000
 };
 
 describe( 'connection endpoint', function() {
@@ -49,6 +50,11 @@ describe( 'connection endpoint', function() {
 		connectionEndpoint.close();
 	});
 
+	it( 'sets autopings on the websocket server', function(){
+		expect( websocketMock.pingInterval ).toBe( options.heartbeatInterval );
+		expect( websocketMock.pingMessage ).toBe(  _msg( 'C|PI+' ) );
+	});
+
 	describe( 'the connectionEndpoint handles incoming TCP connections', function(){
 		it( 'simulates an incoming tcp connection', function(){
 			var mockTcpSocket = new SocketMock();
@@ -59,10 +65,31 @@ describe( 'connection endpoint', function() {
 		});
 	});
 
+	describe( 'the connection endpoint handles invalid connection messages', function(){
+
+		beforeEach( function(){
+			socketMock = websocketMock.simulateConnection();
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
+		});
+
+		it( 'handles gibberish messages', function(){
+			socketMock.emit( 'message', 'gibberish' );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|E|MESSAGE_PARSE_ERROR|gibberish+' ) );
+			expect( socketMock.isDisconnected ).toBe( true );
+		});
+
+		it( 'handles invalid connection topic', function(){
+			socketMock.emit( 'message', _msg( 'A|REQ|{}+' ) );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|E|INVALID_MESSAGE|invalid connection message+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
+		});
+
+	});
+
 	describe( 'the connection endpoint handles invalid auth messages', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
@@ -87,7 +114,7 @@ describe( 'connection endpoint', function() {
 	describe( 'the connection endpoint handles invalid json', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
@@ -102,22 +129,22 @@ describe( 'connection endpoint', function() {
 	});
 
 	describe( 'handles errors from the servers', function(){
-		it( 'handles errors from the engine.io server', function(){
+		it( 'handles errors from the websocket server', function(){
 			lastLoggedMessage = null;
-			engineIoMock.emit( 'error', 'bla' );
+			websocketMock.emit( 'error', 'bla' );
 			expect( lastLoggedMessage ).toBe( 'bla' );
 		});
 	});
 
-	describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
+	describe( 'the connection endpoint does not route invalid auth messages to the permissionHandler', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 			expect( socketMock.isDisconnected ).toBe( false );
 		});
 
-		it( 'handles valid auth messages', function(){
+		it( 'handles invalid auth messages', function(){
 			expect( authenticationHandlerMock.lastUserValidationQueryArgs ).toBe( null );
 
 			authenticationHandlerMock.nextUserValidationResult = false;
@@ -132,10 +159,72 @@ describe( 'connection endpoint', function() {
 		});
 	});
 
+	describe( 'the connection endpoint emits a client events for user with name', function() {
+		beforeAll( function() {
+			authenticationHandlerMock.nextUserValidationResult = true;
+			socketMock = websocketMock.simulateConnection();
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
+		});
+
+		it( 'emits connected event for user with name', function( done ){
+			connectionEndpoint.once( 'client-connected', function( socketWrapper ) {
+				expect( socketWrapper.user ).toBe( 'test-user' );
+				done();
+			});
+
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+		});
+
+		it( 'emits disconnected event for user with name', function( done ){
+			connectionEndpoint.once( 'client-disconnected', function( socketWrapper ) {
+				expect( socketWrapper.user ).toBe( 'test-user' );
+				done();
+			});
+
+			socketMock.close();
+		});
+	});
+
+
+	describe( 'the connection endpoint deosn\'t emit client events for user without a name', function() {
+		beforeAll( function() {
+			authenticationHandlerMock.nextUserIsAnonymous = true;
+			authenticationHandlerMock.nextUserValidationResult = true;
+			socketMock = websocketMock.simulateConnection();
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
+		});
+
+		afterAll( function() {
+			authenticationHandlerMock.nextUserIsAnonymous = false;
+		})
+
+		it( 'does not emit connected event', function(){
+			authenticationHandlerMock.nextUserIsAnonymous = true;
+			var spy = jasmine.createSpy( 'client-connected' );
+
+			connectionEndpoint.once( 'client-connected', spy );
+			socketMock.emit( 'message', _msg( 'A|REQ|{"user":"wolfram"}+' ) );
+
+			expect( spy ).not.toHaveBeenCalled();
+		});
+
+		it( 'does not emit disconnected event', function(){
+			authenticationHandlerMock.nextUserIsAnonymous = true;
+			var spy = jasmine.createSpy( 'client-disconnected' );
+
+			connectionEndpoint.once( 'client-disconnected', spy );
+			socketMock.close();
+
+			expect( spy ).not.toHaveBeenCalled();
+		});
+
+	});
+
+
 	describe( 'disconnects if the number of invalid authentication attempts is exceeded', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
 
@@ -161,7 +250,7 @@ describe( 'connection endpoint', function() {
 
 		beforeAll( function() {
 			options.unauthenticatedClientTimeout = 100;
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 		} );
 
 		afterAll( function() {
@@ -180,7 +269,9 @@ describe( 'connection endpoint', function() {
 	describe( 'doesn\'t log credentials if logInvalidAuthData is set to false', function(){
 		it( 'creates the connection endpoint', function(){
 			options.logInvalidAuthData = false;
-			socketMock = engineIoMock.simulateConnection();
+
+			socketMock = websocketMock.simulateConnection();
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
 
 		it( 'handles valid auth messages', function(){
@@ -193,7 +284,8 @@ describe( 'connection endpoint', function() {
 	describe( 'the connection endpoint routes valid auth messages to the permissionHandler', function(){
 
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			authenticationHandlerMock.onClientDisconnectCalledWith = null;
+			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 		});
 
@@ -213,7 +305,6 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'notifies the permissionHandler when a client disconnects', function(){
-			expect( authenticationHandlerMock.onClientDisconnectCalledWith ).toBe( null );
 			socketMock.close();
 			expect( authenticationHandlerMock.onClientDisconnectCalledWith ).toBe( 'test-user' );
 		});
@@ -221,7 +312,7 @@ describe( 'connection endpoint', function() {
 
 	describe( 'forwards additional data for positive authentications', function(){
 		it( 'creates the connection endpoint', function(){
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
 
 			authenticationHandlerMock.reset();
@@ -240,7 +331,7 @@ describe( 'connection endpoint', function() {
 		var unclosedSocket;
 
 		it( 'calls close on connections', function() {
-			unclosedSocket = engineIoMock.simulateConnection();
+			unclosedSocket = websocketMock.simulateConnection();
 			unclosedSocket.autoClose = false;
 			connectionEndpoint.once( 'close', closeSpy );
 			connectionEndpoint.close();
@@ -258,7 +349,7 @@ describe( 'connection endpoint', function() {
 		});
 
 		it( 'does not allow future connections', function() {
-			socketMock = engineIoMock.simulateConnection();
+			socketMock = websocketMock.simulateConnection();
 
 			expect( socketMock.lastSendMessage ).toBe( null );
 			expect( socketMock.isDisconnected ).toBe( false );

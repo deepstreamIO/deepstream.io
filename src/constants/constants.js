@@ -20,6 +20,7 @@ exports.STATES.CLOSING = 'closing';
 exports.STATES.CLOSED = 'closed';
 
 exports.EVENT = {};
+exports.EVENT.DEPRECATED = 'DEPRECATED';
 exports.EVENT.TRIGGER_EVENT = 'TRIGGER_EVENT';
 exports.EVENT.INCOMING_CONNECTION = 'INCOMING_CONNECTION';
 exports.EVENT.INFO = 'INFO';
@@ -78,7 +79,8 @@ exports.TOPIC.EVENT = 'E';
 exports.TOPIC.RECORD = 'R';
 exports.TOPIC.RPC = 'P';
 exports.TOPIC.WEBRTC = 'W';
-exports.TOPIC.PRESENCE = 'PN';
+exports.TOPIC.PRESENCE = 'U';
+exports.TOPIC.ONLINE_USERS = 'O';
 exports.TOPIC.CLUSTER = 'CL';
 exports.TOPIC.LEADER = 'L';
 exports.TOPIC.LEADER_PRIVATE = 'LP_';
@@ -91,6 +93,8 @@ exports.TOPIC.SUBSCRIPTIONS = 'SUB';
 
 
 exports.ACTIONS = {};
+exports.ACTIONS.PING = 'PI';
+exports.ACTIONS.PONG = 'PO';
 exports.ACTIONS.ACK = 'A';
 exports.ACTIONS.READ = 'R';
 exports.ACTIONS.UPDATE = 'U';
@@ -118,15 +122,16 @@ exports.ACTIONS.LOCK_RESPONSE = 'LRP';
 exports.ACTIONS.LOCK_RELEASE = 'LRL';
 exports.ACTIONS.CHALLENGE = 'CH';
 exports.ACTIONS.CHALLENGE_RESPONSE = 'CHR';
-exports.ACTIONS.QUERY = 'Q';
 
 exports.ACTIONS.LEADER_REQUEST = 'LR';
 exports.ACTIONS.LEADER_VOTE = 'LV';
 exports.ACTIONS.LOCK_REQUEST = 'LRQ';
 exports.ACTIONS.LOCK_RESPONSE = 'LRP';
 exports.ACTIONS.LOCK_RELEASE = 'LRL';
+
 exports.ACTIONS.PRESENCE_JOIN = 'PNJ';
 exports.ACTIONS.PRESENCE_LEAVE = 'PNL';
+exports.ACTIONS.QUERY = 'Q';
 
 //WebRtc
 exports.ACTIONS.WEBRTC_REGISTER_CALLEE = 'RC';

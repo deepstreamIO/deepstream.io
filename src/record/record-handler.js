@@ -182,13 +182,14 @@ RecordHandler.prototype.removeRecordRequest = function( recordName ) {
 		return;
 	}
 
-	this._recordRequestsInProgress[ recordName ].splice( 0, 1 )[ 0 ]();
+	callback = this._recordRequestsInProgress[ recordName ].splice( 0, 1 )[ 0 ];
+	callback( recordName );
 };
 
 RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
 	if( !this._recordRequestsInProgress[ recordName ] ) {
 		this._recordRequestsInProgress[ recordName ] = [];
-		callback();
+		callback( recordName );
 	} else {
 		this._recordRequestsInProgress[ recordName ].push( callback );
 	}

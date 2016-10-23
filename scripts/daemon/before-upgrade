@@ -1,4 +1,3 @@
 cd /var/lib/deepstream
-rm -rf uws*
 rm -rf deepstream.io-logger-winston*
 rm -rf /etc/deepstream/conf.d

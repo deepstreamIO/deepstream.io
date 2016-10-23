@@ -4,11 +4,11 @@ var C = require( '../constants/constants' ),
 	utils = require( 'util' );
 
 /**
- * This class wraps around an engine.io or TCP socket
+ * This class wraps around a ws or TCP socket
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  *
- * @param {engine.io Socket | TcpSocket} socket
+ * @param {WebSocket | TcpSocket} socket
  * @param {Object} options
  *
  * @extends EventEmitter
@@ -24,7 +24,6 @@ var SocketWrapper = function( socket, options ) {
 	this.authCallBack = null;
 	this.authAttempts = 0;
 	this.setMaxListeners( 0 );
-	this.socket.setMaxListeners( 0 );
 
 	this._queuedMessages = [];
 	this._currentPacketMessageCount = 0;
@@ -172,10 +171,9 @@ SocketWrapper.prototype._sendQueuedMessages = function() {
 		this._sendNextPacketTimeout = null;
 	}
 
-        if( this.isClosed === false ) {
-                this.socket.send( message );
-        }
-
+    if( this.isClosed === false ) {
+        this.socket.send( message );
+    }
 };
 
 /**
@@ -200,7 +198,7 @@ SocketWrapper.prototype._queueNextPacket = function() {
  * @returns {void}
  */
 SocketWrapper.prototype.destroy = function() {
-	this.socket.close( true );
+	this.socket.close();
 	this.socket.removeAllListeners();
 	this.authCallBack = null;
 };
@@ -213,6 +211,7 @@ SocketWrapper.prototype.destroy = function() {
  */
 SocketWrapper.prototype._onSocketClose = function() {
 	this.isClosed = true;
+	this.emit( 'close' );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user );
 };
 

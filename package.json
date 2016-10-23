@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "1.1.1",
+  "version": "1.2.0-rc.1",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
   "bin": {
@@ -21,24 +21,20 @@
     "type": "git",
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
-  "optionalDependencies": {
-    "uws": "^0.10.2"
-  },
   "dependencies": {
     "adm-zip": "^0.4.7",
     "colors": "^1.0.3",
     "commander": "^2.9.0",
-    "engine.io": "1.7.0",
     "glob": "^7.0.5",
     "js-yaml": "^3.6.1",
     "lru-cache": "4.0.1",
     "mkdirp": "^0.5.1",
-    "needle": "^1.1.0"
+    "needle": "^1.1.0",
+    "uws": "^0.10.11"
   },
   "devDependencies": {
     "async": "^0.2.9",
     "coveralls": "^2.11.12",
-    "engine.io-client": "^1.6.11",
     "grunt": "^1.0.1",
     "istanbul": "^0.4.4",
     "jasmine": "^2.5.2",
@@ -46,7 +42,7 @@
     "n0p3": "^1.0.2",
     "nexe": "^1.1.2",
     "proxyquire": "1.7.10",
-    "watch": "^0.19.2"
+    "watch": "^1.0.0"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",

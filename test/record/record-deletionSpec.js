@@ -10,8 +10,8 @@ var getOptions = function() {
 	return {
 		storage: { delete: jasmine.createSpy( 'storage.delete' ) },
 		cache: { delete: jasmine.createSpy( 'storage.cache' ) },
-		cacheRetrievalTimeout: 20,
-		storageRetrievalTimeout: 20,
+		cacheRetrievalTimeout: 1000,
+		storageRetrievalTimeout: 1000,
 		logger: { log: jasmine.createSpy( 'logger.log' ) }
 	};
 };
@@ -43,7 +43,7 @@ describe( 'deletes records - happy path', function(){
 		options.storage.delete.calls.argsFor( 0 )[ 1 ]( null );
 		expect( sender.socket.lastSendMessage ).toBe( msg( 'R|A|D|someRecord+' ) );
 		expect( recordDeletion._isDestroyed ).toBe( true );
-		expect( successCallback ).toHaveBeenCalled();	
+		expect( successCallback ).toHaveBeenCalled();
 	});
 });
 
@@ -88,9 +88,9 @@ describe( 'doesn\'t delete excluded messages from storage', function(){
 	it( 'creates the record deletion', function(){
 		expect( options.cache.delete ).not.toHaveBeenCalled();
 		expect( options.storage.delete ).not.toHaveBeenCalled();
-		
+
 		recordDeletion = new RecordDeletion( options, sender, deletionMsg, successCallback );
-		
+
 		expect( options.cache.delete.calls.argsFor( 0 )[ 0 ] ).toBe( 'no-storage/1' );
 		expect( options.storage.delete ).not.toHaveBeenCalled();
 	});
@@ -101,10 +101,10 @@ describe( 'doesn\'t delete excluded messages from storage', function(){
 		expect( sender.socket.lastSendMessage ).toBe( null );
 
 		options.cache.delete.calls.argsFor( 0 )[ 1 ]( null );
-		
+
 		expect( sender.socket.lastSendMessage ).toBe( msg( 'R|A|D|no-storage/1+' ) );
 		expect( recordDeletion._isDestroyed ).toBe( true );
-		expect( successCallback ).toHaveBeenCalled();	
+		expect( successCallback ).toHaveBeenCalled();
 	});
 
 
