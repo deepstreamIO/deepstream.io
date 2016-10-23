@@ -54,10 +54,9 @@ class ListenerTestUtils {
 			listenResponseTimeout: 30
 		};
 		options.clusterRegistry = new ClusterRegistry( options, {
-			getBrowserConnectionCount: function() {},
-			getTcpConnectionCount: function() {}
+			getConnectionCount: function() {}
 		} );
-		options.uniqueRegistry = new UniqueRegistry( options, options.clusterRegistry ); 
+		options.uniqueRegistry = new UniqueRegistry( options, options.clusterRegistry );
 
 		clients = [
 			null, // to make tests start from 1

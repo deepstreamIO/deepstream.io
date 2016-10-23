@@ -120,44 +120,8 @@ EventHandler.prototype._triggerEvent = function( messageSource, message ) {
 		this._options.messageConnector.publish( C.TOPIC.EVENT, message );
 	}
 
-	if( this._options.dataTransforms && this._options.dataTransforms.has( C.TOPIC.EVENT, C.ACTIONS.EVENT ) ) {
-		var receivers = this._subscriptionRegistry.getLocalSubscribers( message.data[ 0 ] );
-
-		if( receivers ) {
-			receivers.forEach( this._sendTransformedMessage.bind( this, message, messageSource ) );
-		}
-	} else {
-		var outboundMessage = messageBuilder.getMsg( C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data );
-		this._subscriptionRegistry.sendToSubscribers( message.data[ 0 ], outboundMessage, messageSource );
-	}
-};
-
-/**
- * Applies a data-transform to each individial message before sending it out to its receiver. This method
- * parses the provided data for every client to avoid accidental manipulation of the original data object
- *
- * @param   {Object} originalMessage a deepstream event message object
- * @param   {SocketWrapper |String} messageSource   the endpoint the message was received from. Can be C.SOURCE_MESSAGE_CONNECTOR
- * @param   {SocketWrapper} receiver A socket that's subscribed to this event
- *
- * @private
- * @returns {void}
- */
-EventHandler.prototype._sendTransformedMessage = function( originalMessage, messageSource, receiver ) {
-	if( receiver === messageSource ) {
-		return;
-	}
-
-	var eventName = originalMessage.data[ 0 ],
-		metaData = {},
-		data = messageParser.convertTyped( originalMessage.data[ 1 ] );
-
-	metaData.sender = messageSource === C.SOURCE_MESSAGE_CONNECTOR ? C.SOURCE_MESSAGE_CONNECTOR : messageSource.user;
-	metaData.receiver = receiver.user;
-	metaData.eventName = eventName;
-
-	data = this._options.dataTransforms.apply( C.TOPIC.EVENT, C.ACTIONS.EVENT, data, metaData );
-	receiver.sendMessage( C.TOPIC.EVENT, C.ACTIONS.EVENT, [ eventName, messageBuilder.typed( data ) ]);
+	var outboundMessage = messageBuilder.getMsg( C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data );
+	this._subscriptionRegistry.sendToSubscribers( message.data[ 0 ], outboundMessage, messageSource );
 };
 
 /**

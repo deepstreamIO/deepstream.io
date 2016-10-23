@@ -5,8 +5,7 @@ var ClusterRegistry = require( '../../src/cluster/cluster-registry' );
 
 function createServer( serverName, clusterScore ) {
 	var connectionEndpoint = {
-			getBrowserConnectionCount: () => {},
-			getTcpConnectionCount: () => {}
+		getConnectionCount: () => {}
 	};
 
 	var options = {

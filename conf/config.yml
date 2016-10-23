@@ -9,19 +9,11 @@ logLevel: INFO
 #libDir: ../lib
 
 # Connectivity
-# accept incoming HTTP long-polling and websocket connections
-webServerEnabled: true
-# accept incoming TCP connections
-tcpServerEnabled: true
-# port for the HTTP/websocket server
+# port for the websocket server
 port: 6020
-# host for the HTTP/websocket server
+# host for the websocket server
 host: 0.0.0.0
-# port for the TCP server
-tcpPort: 6021
-# host for the TCP server
-tcpHost: 0.0.0.0
-# url path HTTP/WEBSOCKET connections connect to
+# url path websocket connections connect to
 urlPath: /deepstream
 # webfacing URL under which this client is reachable. Used for loadbalancing / failover
 externalUrl: null

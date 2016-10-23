@@ -247,7 +247,6 @@ describe( 'js-yaml-loader', function() {
 
 		beforeAll( function() {
 			global.deepstreamCLI = {
-				webServerEnabled: false,
 				port: 5555
 			};
 			configLoader = require( '../../src/config/js-yaml-loader' );
@@ -259,7 +258,6 @@ describe( 'js-yaml-loader', function() {
 
 		it( 'does environment variable substitution for yaml', function() {
 			var config = configLoader.loadConfig().config;
-			expect( config.webServerEnabled ).toBe( false );
 			expect( config.port ).toBe( 5555 );
 		} );
 

@@ -204,7 +204,7 @@ module.exports = class Rpc {
 	}
 
 	/**
-	 * Sends a message to a receiver. Applies transformations if applicable
+	 * Sends a message to a receiver.
 	 *
 	 * @param   {SocketWrapper} receiver 	the SocketWrapper that will receive the message. Can be a RpcProxy
 	 * @param   {Object} 		message 	deepstream message object
@@ -217,14 +217,6 @@ module.exports = class Rpc {
 		if( receiver instanceof RpcProxy ) {
 			receiver.send( message );
 			return;
-		}
-
-		if( this._options.dataTransforms && this._options.dataTransforms.has( message.topic, message.action ) ) {
-			var metaData = { sender: sender.user, receiver: receiver.user, rpcName: message.data[ 0 ] },
-				data = messageParser.convertTyped( message.data[ 2 ] );
-
-			data = this._options.dataTransforms.apply( message.topic, message.action, data, metaData );
-			message.data[ 2 ] = messageBuilder.typed( data );
 		}
 
 		receiver.sendMessage( message.topic, message.action, message.data );

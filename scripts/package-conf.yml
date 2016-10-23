@@ -5,12 +5,8 @@ logLevel: INFO # Log messages with this level and above. Valid levels are DEBUG,
 libDir: ../lib  # Directory where all plugins reside
 
 # Connectivity
-webServerEnabled: true # accept incoming HTTP long-polling and websocket connections
-tcpServerEnabled: true # accept incoming TCP connections
 port: 6020 # port for the HTTP/websocket server
 host: 0.0.0.0 # host for the HTTP/websocket server
-tcpPort: 6021 # port for the TCP server
-tcpHost: 0.0.0.0 # host for the TCP server
 urlPath: /deepstream # url path HTTP/WEBSOCKET connections connect to
 
 # SSL Configuration

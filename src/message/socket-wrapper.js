@@ -4,11 +4,11 @@ var C = require( '../constants/constants' ),
 	utils = require( 'util' );
 
 /**
- * This class wraps around a ws or TCP socket
+ * This class wraps around a websocket
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  *
- * @param {WebSocket | TcpSocket} socket
+ * @param {WebSocket} socket
  * @param {Object} options
  *
  * @extends EventEmitter
@@ -121,7 +121,7 @@ SocketWrapper.prototype.send = function( message ) {
 		this._currentMessageResetTimeout = process.nextTick( this._resetCurrentMessageCount.bind( this ) );
 	}
 
-	if( 	this._queuedMessages.length < this._options.maxMessagesPerPacket &&
+	if( this._queuedMessages.length < this._options.maxMessagesPerPacket &&
 		this._currentPacketMessageCount < this._options.maxMessagesPerPacket ) {
 		this._sendQueuedMessages();
 	}

@@ -13,13 +13,8 @@ exports.get = function() {
 		/*
 		 * Connectivity
 		 */
-		webServerEnabled: true,
-		tcpServerEnabled: true,
 		port: 6020,
 		host: '0.0.0.0',
-		tcpPort: 6021,
-		tcpHost: '0.0.0.0',
-		httpServer: null,
 		urlPath: '/deepstream',
 		externalUrl: null,
 		timeBetweenSendingQueuedPackages: 1,
@@ -32,11 +27,6 @@ exports.get = function() {
 		sslKey: null,
 		sslCert: null,
 		sslCa: null,
-
-		/*
-		 * Data Manipulation
-		 */
-		dataTransforms: null,
 
 		/*
 		 * Authentication

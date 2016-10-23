@@ -12,9 +12,6 @@ const RecordHandler = function( options ) {
 	this._subscriptionRegistry = new SubscriptionRegistry( options, C.TOPIC.RECORD );
 	this._listenerRegistry = new ListenerRegistry( C.TOPIC.RECORD, options, this._subscriptionRegistry );
 	this._subscriptionRegistry.setSubscriptionListener( this._listenerRegistry );
-	this._dataTransforms = this._options.dataTransforms;
-	this._hasReadTransforms = this._dataTransforms && this._dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.READ );
-	this._hasUpdateTransforms = this._dataTransforms && this._dataTransforms.has( C.TOPIC.RECORD, C.ACTIONS.UPDATE );
 	this._transitions = {};
 	this._permissionHandler = this._options.permissionHandler;
 	this._logger = this._options.logger;
@@ -70,7 +67,7 @@ RecordHandler.prototype._read = function( socketWrapper, message ) {
 		] )
 		.then( ( [ record ] ) => {
 			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-			this._sendRecord( recordName, record, socketWrapper );
+			socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d ] );
 		} )
 		.catch( error => this._sendError( error.event, [ recordName, error.message ], socketWrapper ) );
 };
@@ -117,21 +114,6 @@ RecordHandler.prototype._unsubscribe = function( socketWrapper, message ) {
 	this._subscriptionRegistry.unsubscribe( recordName, socketWrapper );
 }
 
-RecordHandler.prototype._sendRecord = function( recordName, record, socketWrapper ) {
-	let data = record._d;
-
-	if( this._hasReadTransforms ) {
-		data = this._dataTransforms.apply(
-			C.TOPIC.RECORD,
-			C.ACTIONS.READ,
-			data,
-			{ recordName: recordName, receiver: socketWrapper.user }
-		);
-	}
-
-	socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, data ] );
-};
-
 RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, message, socketWrapper ) {
 	const prevRecord = this._cache.get( recordName );
 
@@ -141,34 +123,10 @@ RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, mes
 
 	this._cache.set( recordName, nextRecord );
 
-	if( this._hasUpdateTransforms ) {
-		this._broadcastTransformedUpdate( recordName, nextRecord, message, socketWrapper );
-	} else {
-		this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
-	}
+	this._subscriptionRegistry.sendToSubscribers( recordName, message.raw, socketWrapper );
 
 	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR ) {
 		this._messageConnector.publish( C.TOPIC.RECORD, message );
-	}
-};
-
-RecordHandler.prototype._broadcastTransformedUpdate = function( recordName, record, message, socketWrapper ) {
-	const subscribers = this._subscriptionRegistry.getLocalSubscribers( recordName ) || [];
-	const version = message.data[ 1 ]
-
-	for( let i = 0; i < subscribers.length; i++ ) {
-		if( subscribers[ i ] !== socketWrapper ) {
-			const data = this._dataTransforms.apply( message.topic, message.action, record, {
-				recordName,
-				version,
-				receiver: subscribers[ i ].user
-			} );
-			subscribers[ i ].sendMessage(
-				message.topic,
-				message.action,
-				[ ...message.slice(0, 2), JSON.stringify( data ) ]
-			);
-		}
 	}
 };
 

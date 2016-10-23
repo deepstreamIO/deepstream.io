@@ -2,15 +2,14 @@ var ClusterRegistry = require( '../../src/cluster/cluster-registry' );
 var C = require( '../../src/constants/constants' );
 var MessageConnectorMock = require( '../mocks/message-connector-mock' );
 var connectionEndpointMock = {
-	getBrowserConnectionCount: function() { return 8; },
-	getTcpConnectionCount: function() { return 7; }
+	getConnectionCount: function() { return 8; },
 };
 var EventEmitter = require( 'events' ).EventEmitter;
 
 var realProcess;
 var emitter;
 
-describe( 'distributed-state-registry adds and removes names', function(){
+describe( 'cluster registry adds and removes names', function(){
 
 	var clusterRegistry;
 
@@ -37,8 +36,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		expect( msg.action ).toBe( C.ACTIONS.STATUS );
 		expect( msg.data[ 0 ].serverName ).toBe( 'server-name-a' );
 		expect( msg.data[ 0 ].externalUrl ).toBe( 'some-host:1234' );
-		expect( msg.data[ 0 ].browserConnections ).toBe( 8 );
-		expect( msg.data[ 0 ].tcpConnections ).toBe( 7 );
+		expect( msg.data[ 0 ].connections ).toBe( 8 );
 		expect( isNaN( mem ) === false && mem > 0 && mem < 1 ).toBe( true );
 		expect( options.logger.log ).toHaveBeenCalledWith( 1, 'CLUSTER_JOIN', 'server-name-a' );
 	});
@@ -67,8 +65,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 			action: C.ACTIONS.STATUS,
 			data: [{
 				serverName: 'server-name-b',
-				browserConnections: 14,
-				tcpConnections: 17,
+				websocketConnections: 14,
 				memory: 0.3,
 				externalUrl: 'external-url-b'
 			}]
@@ -84,8 +81,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 			action: C.ACTIONS.STATUS,
 			data: [{
 				serverName: 'server-name-c',
-				browserConnections: 11,
-				tcpConnections: 17,
+				websocketConnections: 11,
 				memory: 0.9,
 				externalUrl: 'external-url-c'
 			}]
@@ -126,8 +122,7 @@ describe( 'distributed-state-registry adds and removes names', function(){
 			action: C.ACTIONS.STATUS,
 			data: [{
 				serverName: 'server-name-c',
-				browserConnections: 11,
-				tcpConnections: 17,
+				websocketConnections: 11,
 				memory: 0.01,
 				externalUrl: 'external-url-c'
 			}]
@@ -175,8 +170,6 @@ describe( 'distributed-state-registry adds and removes names', function(){
 		expect( options.messageConnector.publishedMessages.length ).toBe( expectedLength );
 	});
 
-	// we can't simulate an exit via the process since it is triggered
-	// to test harness
 	xit( 'sends a remove message when the process ends', function(){
 		options.messageConnector.reset();
 		process.emit( 'exit' );
@@ -185,5 +178,5 @@ describe( 'distributed-state-registry adds and removes names', function(){
 			action: C.ACTIONS.REMOVE,
 			data: [ 'server-name-a' ]
 		}));
-	});
+	}).pend( 'W can\'t simulate an exit via the process since it exits tests' );
 });

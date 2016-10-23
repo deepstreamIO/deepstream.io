@@ -1,7 +1,6 @@
 var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	MessageProcessor = require( './message/message-processor' ),
 	MessageDistributor = require( './message/message-distributor' ),
-	DataTransforms = require( './message/data-transforms' ),
 	EventHandler = require( './event/event-handler' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	messageParser = require( './message/message-parser' ),
@@ -17,7 +16,6 @@ var ConnectionEndpoint = require( './message/connection-endpoint' ),
 	RpcHandler = require( './rpc/rpc-handler' ),
 	RecordHandler = require( './record/record-handler' ),
 	PresenceHandler = require( './presence/presence-handler' ),
-	WebRtcHandler = require( './webrtc/webrtc-handler' ),
 	DependencyInitialiser = require( './utils/dependency-initialiser' ),
 	ClusterRegistry = require( './cluster/cluster-registry' ),
 	UniqueRegistry = require( './cluster/cluster-unique-state-provider' ),
@@ -47,7 +45,6 @@ var Deepstream = function( config ) {
 	this._eventHandler = null;
 	this._rpcHandler = null;
 	this._recordHandler = null;
-	this._webRtcHandler = null;
 	this._plugins = [
 		'messageConnector',
 		'storage',
@@ -123,7 +120,7 @@ Deepstream.prototype.isRunning = function() {
  * - First of all initialise the logger and wait for it (ready event)
  * - Then initialise all other dependencies (cache connector, message connector, storage connector)
  * - Instantiate the messaging pipeline and record-, rpc- and event-handler
- * - Start TCP and HTTP server
+ * - Start WS server
  *
  * @public
  * @returns {void}
@@ -156,10 +153,6 @@ Deepstream.prototype._start = function() {
 
 	if( global.deepstreamLibDir ) {
 		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, 'library directory set to: ' + global.deepstreamLibDir );
-	}
-
-	if( this._options.dataTransforms && this._options.dataTransforms instanceof Array ) {
-		this._options.dataTransforms = new DataTransforms( this._options.dataTransforms );
 	}
 
 	var i,
@@ -301,9 +294,6 @@ Deepstream.prototype._init = function() {
 
 	this._rpcHandler = new RpcHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RPC, this._rpcHandler.handle.bind( this._rpcHandler ) );
-
-	this._webRtcHandler = new WebRtcHandler( this._options );
-	this._messageDistributor.registerForTopic( C.TOPIC.WEBRTC, this._webRtcHandler.handle.bind( this._webRtcHandler ) );
 
 	this._recordHandler = new RecordHandler( this._options );
 	this._messageDistributor.registerForTopic( C.TOPIC.RECORD, this._recordHandler.handle.bind( this._recordHandler ) );

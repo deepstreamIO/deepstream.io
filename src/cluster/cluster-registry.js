@@ -230,8 +230,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
 
 		var data = {
 			serverName: this._options.serverName,
-			browserConnections: this._connectionEndpoint.getBrowserConnectionCount(),
-			tcpConnections: this._connectionEndpoint.getTcpConnectionCount(),
+			connections: this._connectionEndpoint.getConnectionCount(),
 			memory: memoryStats.heapUsed / memoryStats.heapTotal,
 			leaderScore: this._leaderScore,
 			externalUrl: this._options.externalUrl
