@@ -130,29 +130,6 @@ RecordHandler.prototype._broadcastUpdate = function( recordName, nextRecord, mes
 	}
 };
 
-RecordHandler.prototype.removeRecordRequest = function( recordName ) {
-	if( !this._recordRequestsInProgress[ recordName ] ) {
-		return;
-	}
-
-	if( this._recordRequestsInProgress[ recordName ].length === 0 ) {
-		delete this._recordRequestsInProgress[ recordName ];
-		return;
-	}
-
-	callback = this._recordRequestsInProgress[ recordName ].splice( 0, 1 )[ 0 ];
-	callback( recordName );
-};
-
-RecordHandler.prototype.runWhenRecordStable = function( recordName, callback ) {
-	if( !this._recordRequestsInProgress[ recordName ] ) {
-		this._recordRequestsInProgress[ recordName ] = [];
-		callback( recordName );
-	} else {
-		this._recordRequestsInProgress[ recordName ].push( callback );
-	}
-};
-
 RecordHandler.prototype._permissionAction = function( action, recordName, socketWrapper ) {
 	return new Promise( ( resolve, reject ) => {
 		const message = {
