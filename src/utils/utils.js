@@ -14,7 +14,7 @@ exports.getUid = function() {
 };
 
 exports.compareVersions = function(a, b) {
-	return a && parseInt(a.split('-')[0]) >= parseInt(b.split('-')[0]) || a > b
+	return a && parseInt(a.split('-')[0]) >= b && parseInt(b.split('-')[0]) || a > b
 }
 
 /**
