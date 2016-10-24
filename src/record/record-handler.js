@@ -67,7 +67,7 @@ RecordHandler.prototype._read = function( socketWrapper, message ) {
 		] )
 		.then( ( [ record ] ) => {
 			this._subscriptionRegistry.subscribe( recordName, socketWrapper );
-			socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d ] );
+			socketWrapper.sendMessage( C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ] );
 		} )
 		.catch( error => this._sendError( error.event, [ recordName, error.message ], socketWrapper ) );
 };
