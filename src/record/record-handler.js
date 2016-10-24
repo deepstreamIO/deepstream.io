@@ -104,7 +104,7 @@ RecordHandler.prototype._update = function( socketWrapper, message ) {
 	const nextRecord = { _v: version, _d: json.value, _p: parent };
 	const prevRecord = this._cache.get( recordName );
 
-	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR ) {
+	if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
 		this._storage.set( recordName, nextRecord );
 	}
 
