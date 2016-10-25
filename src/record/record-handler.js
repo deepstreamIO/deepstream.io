@@ -157,7 +157,8 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
     return
   }
 
-  this._getRecordFromStorage(recordName)
+  this
+    ._getRecordFromStorage(recordName)
     .then(record => {
       if (!this._isWinning(recordName, record._v) || !this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
         return
