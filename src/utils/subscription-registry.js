@@ -2,6 +2,13 @@
 
 const C = require( '../constants/constants' );
 const DistributedStateRegistry = require( '../cluster/distributed-state-registry' );
+const uws = ( () => {
+	try {
+		return require( 'uws' );
+	} catch ( e ) {
+		return null;
+	}
+} )();
 
 class SubscriptionRegistry {
 
@@ -17,6 +24,8 @@ class SubscriptionRegistry {
 	 * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
 	 */
 	constructor( options, topic, clusterTopic ) {
+		this._timer = null;
+		this._delayedMessages = [];
 		this._subscriptions = {}
 		this._options = options;
 		this._topic = topic;
@@ -111,18 +120,40 @@ class SubscriptionRegistry {
 	 * @returns {void}
 	 */
 	sendToSubscribers( name, msgString, sender ) {
-		if( this._subscriptions[ name ] === undefined ) {
-			return;
+		function onTimeout( that ) {
+			for ( let key in that._delayedMessages ) {
+				let sub = that._subscriptions[ key ];
+				if ( sub ) {
+					var l = sub.length;
+					let broadcasts = that._delayedMessages[ key ];
+
+					for( let j = 0; j < l; j++ ) {
+						let cm = '';
+						for ( let i = 0; i < broadcasts.length; i++ ) {
+							if( sub[ j ] !== broadcasts[ i ][ 1 ] ) {
+								cm += broadcasts[ i ][ 0 ];
+							}
+						}
+
+						if ( cm.length ) {
+							sub[ j ].socket.send( cm );
+						}
+					}
+				}
+			}
+
+			that._delayedMessages = {};
+			that._timer = null;
 		}
 
-		var i, l = this._subscriptions[ name ].length;
+		if ( this._subscriptions[ name ] ) {
+			if ( !this._delayedMessages[ name ] ) {
+				this._delayedMessages[ name ] = [];
+			}
 
-		for( i = 0; i < l; i++ ) {
-			if( this._subscriptions[ name ] &&
-				this._subscriptions[ name ][ i ] &&
-				this._subscriptions[ name ][ i ] !== sender
-			) {
-				this._subscriptions[ name ][ i ].send( msgString );
+			this._delayedMessages[ name ].push([ msgString, sender ]);
+			if ( !this._timer ) {
+				this._timer = setTimeout( onTimeout, 5, this );
 			}
 		}
 	}
