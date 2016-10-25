@@ -171,7 +171,7 @@ RecordHandler.prototype._permissionAction = function (action, recordName, socket
 
 RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
   if (socketWrapper && socketWrapper.sendError) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message)
+    socketWrapper.sendError(C.TOPIC.RECORD, event, message)
   } else {
     this._logger.log(C.LOG_LEVEL.ERROR, event, message)
   }
