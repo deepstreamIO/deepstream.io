@@ -123,9 +123,8 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
         return
       }
 
-      this._cache.set(recordName, record)
-
       this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
+      this._cache.set(recordName, record)
 
       if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
         this._messageConnector.publish(C.TOPIC.RECORD, message)
@@ -216,8 +215,6 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
         return
       }
 
-      this._cache.set(recordName, record)
-
       const msgString = messageBuilder.getMsg(
         C.TOPIC.RECORD,
         C.ACTIONS.UPDATE,
@@ -225,6 +222,7 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
       )
 
       this._subscriptionRegistry.sendToSubscribers(recordName, msgString, C.SOURCE_STORAGE_CONNECTOR)
+      this._cache.set(recordName, record)
     })
     .catch(error => this._logger.log(C.LOG_LEVEL.ERROR, error.event, [recordName, error.message]))
 }
