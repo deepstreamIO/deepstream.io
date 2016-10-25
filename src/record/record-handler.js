@@ -194,21 +194,13 @@ RecordHandler.prototype._isNewer = function (recordName, version) {
 }
 
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
-  if (!this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
-    return
-  }
-
-  if (!this._isNewer(recordName, version)) {
+  if (!this._isNewer(recordName, version) || !this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
     return
   }
 
   this._getRecordFromStorage(recordName)
     .then(record => {
-      if (!this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
-        return
-      }
-
-      if (!this._isNewer(recordName, record._v)) {
+      if (!this._isNewer(recordName, record._v) || !this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
         return
       }
 
