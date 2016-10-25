@@ -119,7 +119,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
         this._storage.set(recordName, record)
       }
 
-      if (this._cache.get(recordName) && utils.compareVersions(this._cache.get(recordName)._v, record._v)) {
+      if (!this._isNewer(recordName, version)) {
         return
       }
 
@@ -193,12 +193,16 @@ RecordHandler.prototype._getRecordFromStorage = function (recordName) {
   }))
 }
 
+RecordHandler.prototype._isNewer = function (recordName, version) {
+  return !this._cache.get(recordName) || !utils.compareVersions(this._cache.get(recordName)._v, version)
+}
+
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
   if (!this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
     return
   }
 
-  if (this._cache.get(recordName) && utils.compareVersions(this._cache.get(recordName)._v, version)) {
+  if (!this._isNewer(recordName, version)) {
     return
   }
 
@@ -208,7 +212,7 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
         return
       }
 
-      if (this._cache.get(recordName) && utils.compareVersions(this._cache.get(recordName)._v, record._v)) {
+      if (!this._isNewer(recordName, record._v)) {
         return
       }
 
