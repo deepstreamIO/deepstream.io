@@ -68,12 +68,10 @@ RecordHandler.prototype.getRecord = function (recordName) {
 RecordHandler.prototype._read = function (socketWrapper, message) {
   const recordName = message.data[0]
 
+  this._subscriptionRegistry.subscribe(recordName, socketWrapper)
   this
     .getRecord(recordName)
-    .then(record => {
-      this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-      socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ])
-    })
+    .then(record => socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ]))
     .catch(error => this._sendError(error.event, [ recordName, error.message ], socketWrapper))
 }
 
