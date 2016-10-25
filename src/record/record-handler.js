@@ -9,12 +9,12 @@ const RecordHandler = function (options) {
   this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
   this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
   this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
-  this._permissionHandler = this.options.permissionHandler
-  this._logger = this.options.logger
-  this._messageConnector = this.options.messageConnector
-  this._storage = this.options.storage
+  this._permissionHandler = options.permissionHandler
+  this._logger = options.logger
+  this._messageConnector = options.messageConnector
+  this._storage = options.storage
   this._storage.on('change', this._onStorageChange.bind(this))
-  this._cache = new LRU({ max: this.options.cacheSize || 1e6 })
+  this._cache = new LRU({ max: options.cacheSize || 1e6 })
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
