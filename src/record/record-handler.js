@@ -67,10 +67,9 @@ RecordHandler.prototype.getRecord = function (recordName) {
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
   const recordName = message.data[0]
-  const permission = this._permissionAction(C.ACTIONS.READ, recordName, socketWrapper)
 
-  permission
-    .then(() => this.getRecord(recordName))
+  this
+    .getRecord(recordName)
     .then(record => {
       this._subscriptionRegistry.subscribe(recordName, socketWrapper)
       socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ])
@@ -80,7 +79,6 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 
 RecordHandler.prototype._update = function (socketWrapper, message) {
   const recordName = message.data[0]
-  const permission = this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper)
 
   if (message.data.length < 4) {
     this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[0] ], socketWrapper)
@@ -108,65 +106,28 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  permission
-    .then(() => {
-      const record = { _v: version, _d: json.value, _p: parent }
+  const record = { _v: version, _d: json.value, _p: parent }
 
-      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-        this._storage.set(recordName, record)
-      }
+  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+    this._storage.set(recordName, record)
+  }
 
-      if (!this._isWinning(recordName, version)) {
-        return
-      }
+  if (!this._isWinning(recordName, version)) {
+    return
+  }
 
-      this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
-      this._cache.set(recordName, record)
+  this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
+  this._cache.set(recordName, record)
 
-      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-        this._messageConnector.publish(C.TOPIC.RECORD, message)
-      }
-    })
-    .catch(error => this._sendError(error.event, [recordName, error.message], socketWrapper))
+  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+    this._messageConnector.publish(C.TOPIC.RECORD, message)
+  }
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
   const recordName = message.data[0]
 
   this._subscriptionRegistry.unsubscribe(recordName, socketWrapper)
-}
-
-RecordHandler.prototype._permissionAction = function (action, recordName, socketWrapper) {
-  const message = {
-    topic: C.TOPIC.RECORD,
-    action: action,
-    data: [recordName]
-  }
-
-  return new Promise((resolve, reject) => {
-    const callback = (error, canPerformAction) => {
-      if (error) {
-        reject({
-          event: C.EVENT.MESSAGE_PERMISSION_ERROR,
-          message: error.toString()
-        })
-      } else if (!canPerformAction) {
-        reject({
-          event: C.EVENT.MESSAGE_DENIED,
-          message: action
-        })
-      } else {
-        resolve()
-      }
-    }
-
-    this._permissionHandler.canPerformAction(
-      socketWrapper.user,
-      message,
-      callback,
-      socketWrapper.authData
-    )
-  })
 }
 
 RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
@@ -213,7 +174,7 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
       this._subscriptionRegistry.sendToSubscribers(recordName, msgString, C.SOURCE_STORAGE_CONNECTOR)
       this._cache.set(recordName, record)
     })
-    .catch(error => this._logger.log(C.LOG_LEVEL.ERROR, error.event, [recordName, error.message]))
+    .catch(error => this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ]))
 }
 
 module.exports = RecordHandler
