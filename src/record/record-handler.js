@@ -140,12 +140,12 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
 
 RecordHandler.prototype._getRecordFromStorage = function (recordName) {
   return new Promise((resolve, reject) => this._storage.get(recordName, (error, record) => {
-    if (error || !record) {
+    if (error) {
       const error = new Error('error while loading ' + recordName + ' from storage:' + (error || 'not_found'))
       error.event = C.EVENT.RECORD_LOAD_ERROR
       reject(error)
     } else {
-      resolve(record)
+      resolve(record || { _d: {} })
     }
   }))
 }
