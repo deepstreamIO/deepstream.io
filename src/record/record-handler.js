@@ -112,7 +112,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     this._storage.set(recordName, record)
   }
 
-  if (!this._isWinning(recordName, version)) {
+  if (this._isLosing(recordName, version)) {
     return
   }
 
@@ -150,19 +150,20 @@ RecordHandler.prototype._getRecordFromStorage = function (recordName) {
   }))
 }
 
-RecordHandler.prototype._isWinning = function (recordName, version) {
-  return !this._cache.get(recordName) || !utils.compareVersions(this._cache.get(recordName)._v, version)
+RecordHandler.prototype._isLosing = function (recordName, version) {
+  const record = this._cache.get(recordName)
+  return record && utils.compareVersions(record._v, version)
 }
 
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
-  if (!this._isWinning(recordName, version) || !this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
+  if (this._isLosing(recordName, version) || !this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
     return
   }
 
   this
     ._getRecordFromStorage(recordName)
     .then(record => {
-      if (!this._isWinning(recordName, record._v) || !this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
+      if (this._isLosing(recordName, record._v) || !this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
         return
       }
 
