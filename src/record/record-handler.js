@@ -4,7 +4,6 @@ const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 const LRU = require('lru-cache')
-const EMPTY_RECORD = { _d: {} }
 
 const RecordHandler = function (options) {
   this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
@@ -141,12 +140,12 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
 
 RecordHandler.prototype._getRecordFromStorage = function (recordName) {
   return new Promise((resolve, reject) => this._storage.get(recordName, (error, record) => {
-    if (error) {
+    if (error || !record) {
       const error = new Error('error while loading ' + recordName + ' from storage:' + (error || 'not_found'))
       error.event = C.EVENT.RECORD_LOAD_ERROR
       reject(error)
     } else {
-      resolve(record || EMPTY_RECORD)
+      resolve(record)
     }
   }))
 }
