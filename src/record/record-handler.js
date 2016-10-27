@@ -154,10 +154,6 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
   this
     ._getRecordFromStorage(recordName)
     .then(record => {
-      if (!this._subscriptionRegistry.hasLocalSubscribers(recordName)) {
-        return
-      }
-
       const msgString = messageBuilder.getMsg(
         C.TOPIC.RECORD,
         C.ACTIONS.UPDATE,
