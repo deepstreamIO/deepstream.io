@@ -14,7 +14,10 @@ const RecordHandler = function (options) {
   this._messageConnector = options.messageConnector
   this._storage = options.storage
   this._storage.on('change', this._onStorageChange.bind(this))
-  this._cache = new LRU({ max: options.cacheSize || 1e6 })
+  this._cache = new LRU({
+    max: (options.cacheSize || 256) * 1e6,
+    length: ({ size }, recordName) => size * 1.1 + recordName.length
+  })
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
@@ -54,8 +57,9 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
 }
 
 RecordHandler.prototype.getRecord = function (recordName, socketWrapper) {
-  return this._cache.has(recordName)
-    ? Promise.resolve(this._cache.get(recordName))
+  const entry = this._cache.get(recordName)
+  return entry
+    ? Promise.resolve(entry.record)
     : this._getRecordFromStorage(recordName)
         .then(record => this._updateCache(recordName, record, null, socketWrapper))
 }
@@ -137,10 +141,10 @@ RecordHandler.prototype._getRecordFromStorage = function (recordName) {
   }))
 }
 
-RecordHandler.prototype._onStorageChange = function (recordName, nextVersion) {
-  const prevRecord = this._cache.peek(recordName)
+RecordHandler.prototype._onStorageChange = function (recordName, version) {
+  const entry = this._cache.peek(recordName)
 
-  if (prevRecord && utils.compareVersions(prevRecord._v, nextVersion)) {
+  if (entry && utils.compareVersions(entry.record._v, version)) {
     return
   }
 
@@ -150,26 +154,26 @@ RecordHandler.prototype._onStorageChange = function (recordName, nextVersion) {
     .catch(error => this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ]))
 }
 
-RecordHandler.prototype._updateCache = function (recordName, nextRecord, msgString, socketWrapper) {
-  const prevRecord = this._cache.peek(recordName)
+RecordHandler.prototype._updateCache = function (recordName, record, msgString, socketWrapper) {
+  const entry = this._cache.peek(recordName)
 
-  if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
-    return prevRecord
+  if (entry && utils.compareVersions(entry.record._v, record._v)) {
+    return entry.record
   }
-
-  this._cache.set(recordName, nextRecord)
 
   if (!msgString) {
     msgString = messageBuilder.getMsg(
       C.TOPIC.RECORD,
       C.ACTIONS.UPDATE,
-      [ recordName, nextRecord._v, nextRecord._d, nextRecord._p ]
+      [ recordName, record._v, record._d, record._p ]
     )
   }
 
   this._subscriptionRegistry.sendToSubscribers(recordName, msgString, socketWrapper)
 
-  return nextRecord
+  this._cache.set(recordName, { record, size: msgString.length })
+
+  return record
 }
 
 module.exports = RecordHandler
