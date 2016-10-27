@@ -138,7 +138,7 @@ RecordHandler.prototype._getRecordFromStorage = function (recordName) {
 }
 
 RecordHandler.prototype._onStorageChange = function (recordName, nextVersion) {
-  const prevRecord = this._cache.get(recordName)
+  const prevRecord = this._cache.peek(recordName)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, nextVersion)) {
     return
@@ -151,7 +151,7 @@ RecordHandler.prototype._onStorageChange = function (recordName, nextVersion) {
 }
 
 RecordHandler.prototype._updateCache = function (recordName, nextRecord, msgString, socketWrapper) {
-  const prevRecord = this._cache.get(recordName)
+  const prevRecord = this._cache.peek(recordName)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
     return prevRecord
