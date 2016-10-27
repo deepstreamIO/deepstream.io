@@ -104,13 +104,10 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
 
   const record = { _v: version, _d: json.value, _p: parent }
 
-  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-    this._storage.set(recordName, record)
-  }
-
   this._updateCache(recordName, record, message.raw, socketWrapper)
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+    this._storage.set(recordName, record)
     this._messageConnector.publish(C.TOPIC.RECORD, message)
   }
 }
