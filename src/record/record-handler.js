@@ -56,13 +56,7 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
 RecordHandler.prototype.getRecord = function (recordName) {
   return this._cache.has(recordName)
     ? Promise.resolve(this._cache.get(recordName))
-    : this._getRecordFromStorage(recordName)
-        .then(record => {
-          if (!this._cache.has(recordName)) {
-            this._cache.set(recordName, record)
-          }
-          return record
-        })
+    : this._getRecordFromStorage(recordName).then(record => this._updateCache(recordName, record))
 }
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
@@ -113,7 +107,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   }
 
   this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
-  this._cache.set(recordName, record)
+  this._updateCache(recordName, record)
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
     this._messageConnector.publish(C.TOPIC.RECORD, message)
@@ -154,6 +148,10 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
   this
     ._getRecordFromStorage(recordName)
     .then(record => {
+      if (this._updateCache(recordName, record) !== record) {
+        return
+      }
+
       const msgString = messageBuilder.getMsg(
         C.TOPIC.RECORD,
         C.ACTIONS.UPDATE,
@@ -161,9 +159,20 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
       )
 
       this._subscriptionRegistry.sendToSubscribers(recordName, msgString, C.SOURCE_STORAGE_CONNECTOR)
-      this._cache.set(recordName, record)
     })
     .catch(error => this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ]))
+}
+
+RecordHandler._updateCache = function (recordName, nextRecord) {
+  const prevRecord = this._cache.get(recordName)
+
+  if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
+    return prevRecord
+  }
+
+  this._cache.set(recordName, nextRecord)
+
+  return nextRecord
 }
 
 module.exports = RecordHandler
