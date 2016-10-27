@@ -4,6 +4,7 @@ const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 const LRU = require('lru-cache')
+const EMPTY_RECORD = { _d: {} }
 
 const RecordHandler = function (options) {
   this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
@@ -145,7 +146,7 @@ RecordHandler.prototype._getRecordFromStorage = function (recordName) {
       error.event = C.EVENT.RECORD_LOAD_ERROR
       reject(error)
     } else {
-      resolve(record || { _d: {} })
+      resolve(record || EMPTY_RECORD)
     }
   }))
 }
