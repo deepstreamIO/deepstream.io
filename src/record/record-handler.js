@@ -162,7 +162,7 @@ RecordHandler.prototype._updateCache = function (recordName, nextRecord, msgStri
     msgString = messageBuilder.getMsg(
       C.TOPIC.RECORD,
       C.ACTIONS.UPDATE,
-      [ recordName, nextRecord._v, JSON.stringify(nextRecord._d), nextRecord._p ]
+      [ recordName, nextRecord._v, nextRecord._d, nextRecord._p ]
     )
   }
 
