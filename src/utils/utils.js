@@ -14,8 +14,14 @@ exports.getUid = function() {
 };
 
 exports.compareVersions = function(a, b) {
-  const [av, ar] = a ? a.split('-') : []
-  const [bv, br] = b ? b.split('-') : []
+	if (!a) {
+		return false
+	}
+	if (!b) {
+		return true
+	}
+  const [av, ar] = a.split('-')
+  const [bv, br] = b.split('-')
   return parseInt(av, 10) > parseInt(bv, 10) || (av === bv && ar >= br)
 }
 

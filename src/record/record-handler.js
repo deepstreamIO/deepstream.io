@@ -15,7 +15,6 @@ const RecordHandler = function (options) {
   this._storage = options.storage
   this._storage.on('change', this._onStorageChange.bind(this))
   this._cache = new LRU({ max: options.cacheSize || 1e6 })
-  this._versions = new LRU({ max: options.cacheSize || 1e6 })
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
@@ -139,7 +138,9 @@ RecordHandler.prototype._getRecordFromStorage = function (recordName) {
 }
 
 RecordHandler.prototype._onStorageChange = function (recordName, nextVersion) {
-  if (utils.compareVersions(this._versions.get(recordName), nextVersion)) {
+  const prevRecord = this._cache.get(recordName)
+
+  if (prevRecord && utils.compareVersions(prevRecord._v, nextVersion)) {
     return
   }
 
