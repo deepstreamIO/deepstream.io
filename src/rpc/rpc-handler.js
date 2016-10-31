@@ -62,17 +62,23 @@ module.exports = class RpcHandler {
 		}
 
 		else if( this._supportedSubActions.indexOf( message.action ) > -1 ) {
-			const rpcData = this._rpcs[ message.data[ 1 ] ] || this._rpcs[ message.data[ 2 ] ];
+			const rpcNameIndex = (message.action === C.ACTIONS.ACK
+												 || message.action === C.ACTIONS.ERROR) ? 1 : 0;
+			const correlationId = message.data[ rpcNameIndex + 1 ];
+			const rpcData = this._rpcs[ correlationId ];
 			if( rpcData ) {
 				rpcData.rpc.handle( message );
 				if( rpcData.rpc.isComplete ) {
-					delete this._rpcs[ message.data[ 1 ] ];
-					delete this._rpcs[ message.data[ 2 ] ];
+					delete this._rpcs[ correlationId ];
 				}
 			}
 			else {
 				// unsoliciated message
-				socketWrapper.sendError( C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, 'unexpected state for rpc ' + message.data[ 1 ] + ' with action ' + message.action );
+				socketWrapper.sendError(
+					C.TOPIC.RPC,
+					C.EVENT.INVALID_MESSAGE_DATA,
+					`unexpected state for rpc ${message.data[ rpcNameIndex ]} with action ${message.action}`
+				);
 			}
 		}
 
@@ -212,7 +218,6 @@ module.exports = class RpcHandler {
 
 		const rpcName = message.data[ 0 ];
 		const correlationId = message.data[ 1 ];
-		var	provider;
 
 		const rpcData = {
 			local: this._subscriptionRegistry.getLocalSubscribers( rpcName ),
@@ -227,7 +232,7 @@ module.exports = class RpcHandler {
 		}
 
 		if( rpcData.local && rpcData.local.length > 0 ) {
-			provider = utils.spliceRandomElement( rpcData.local );
+			const provider = utils.spliceRandomElement( rpcData.local );
 			rpcData.rpc = new Rpc( this, socketWrapper, provider, this._options, message );
 		}
 		else if( source === C.SOURCE_MESSAGE_CONNECTOR ) {
