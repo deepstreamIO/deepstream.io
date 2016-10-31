@@ -16,7 +16,7 @@ exports.get = function() {
 		port: 6020,
 		host: '0.0.0.0',
 		urlPath: '/deepstream',
-		healthCheckPath: '/health-check',
+		healthCheckPath: '/healthcheck',
 		externalUrl: null,
 		timeBetweenSendingQueuedPackages: 1,
 		maxMessagesPerPacket: 1000,
