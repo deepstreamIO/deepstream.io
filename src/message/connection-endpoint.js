@@ -32,8 +32,11 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._server = this._createHttpServer();
 	this._server.listen( this._options.port, this._options.host );
 	this._server.on('request', this._handleHealthCheck.bind( this ));
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,
-		'Listening for health checks on path ' + options.healthCheckPath );
+	this._options.logger.log(
+		C.LOG_LEVEL.INFO,
+		C.EVENT.INFO,
+		'Listening for health checks on path ' + options.healthCheckPath
+	);
 
 	this._ws = new uws.Server({
 		server: this._server,
@@ -118,6 +121,13 @@ ConnectionEndpoint.prototype._createHttpServer = function() {
 	}
 };
 
+/**
+ * Responds to http health checks.
+ * Responds with 200(OK) if deepstream is alive.
+ *
+ * @private
+ * @returns {void}
+ */
 ConnectionEndpoint.prototype._handleHealthCheck = function( req, res ) {
 	if ( req.method === 'GET' && req.url === this._options.healthCheckPath ) {
 		res.writeHead( 200 );
