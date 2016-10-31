@@ -31,7 +31,7 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 
 	this._server = this._createHttpServer();
 	this._server.listen( this._options.port, this._options.host );
-
+	this._server.on('request', this._handleHealthCheck.bind( this ));
 	this._ws = new uws.Server({
 		server: this._server,
 		perMessageDeflate: false,
@@ -114,6 +114,13 @@ ConnectionEndpoint.prototype._createHttpServer = function() {
 		return http.createServer();
 	}
 };
+
+ConnectionEndpoint.prototype._handleHealthCheck = function( req, res ) {
+	if ( req.method === 'GET' && req.url === this._options.healthCheckPath ) {
+		res.writeHead( 200 );
+		res.end();
+	}
+}
 
 /**
  * Called whenever either the server itself or one of its sockets
