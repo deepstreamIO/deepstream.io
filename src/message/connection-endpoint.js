@@ -427,7 +427,7 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
 	var msg, address, wsReady;
 
 	var address = this._server.address();
-	var msg = `Listening for websocket connections on ${address.address}:${address.port}${this._options.path}`;
+	var msg = `Listening for websocket connections on ${address.address}:${address.port}${this._options.urlPath}`;
 	this._wsReady = true;
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, msg );
