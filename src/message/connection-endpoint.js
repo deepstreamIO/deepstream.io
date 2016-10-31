@@ -32,6 +32,9 @@ var ConnectionEndpoint = function( options, readyCallback ) {
 	this._server = this._createHttpServer();
 	this._server.listen( this._options.port, this._options.host );
 	this._server.on('request', this._handleHealthCheck.bind( this ));
+	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO,
+		'Listening for health checks on path ' + options.healthCheckPath );
+
 	this._ws = new uws.Server({
 		server: this._server,
 		perMessageDeflate: false,
@@ -414,7 +417,8 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
 	var msg, address, wsReady;
 
 	var address = this._server.address();
-	var msg = 'Listening for websocket connections on ' + address.address + ':' + address.port;
+	var msg = 'Listening for websocket connections on ' + address.address + ':' + address.port
+		+ this._options.path;
 	this._wsReady = true;
 
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, msg );

@@ -4,6 +4,7 @@ var path = require( 'path' );
 var Deepstream = require( '../src/deepstream.io' );
 var ClosableLogger = require( './mocks/closable-logger' );
 var LoggerMock = require( './mocks/logger-mock' );
+var http = require( 'http' );
 
 describe( 'the main server class', function() {
 	it( 'exposes the message parser\'s convertTyped method', function() {
@@ -159,6 +160,21 @@ describe( 'it starts and stops a configured server', function() {
 		server.start();
 	} );
 
+	it( 'which handles health checks', function( next ) {
+		server = new Deepstream( {
+			showLogo: false,
+			permission: {type: 'none'},
+			healthCheckPath: '/health-check'
+		} )
+		server.set( 'logger', logger );
+		server.on( 'started', function() {
+			http.get({ host: 'localhost', port: 6020, path: '/health-check' }, function( res ) {
+				expect( res.statusCode ).toBe( 200 );
+				next();
+			} );
+		} );
+		server.start();
+	} );
 } );
 
 describe( 'handle server startup without config file', function() {
