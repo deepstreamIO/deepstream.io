@@ -316,6 +316,9 @@ module.exports = class RpcHandler {
 			);
 			this._makeRpc( proxy, msg, C.SOURCE_MESSAGE_CONNECTOR );
 		}
+		else if( ( msg.action === C.ACTIONS.ACK || msg.action === C.ACTIONS.ERROR ) && msg.data[ 2 ] ) {
+			this._rpcs[ msg.data[ 2 ] ].rpc.handle( msg );
+		}
 		else if( this._rpcs[ msg.data[ 1 ] ] ) {
 			this._rpcs[ msg.data[ 1 ] ].rpc.handle( msg );
 		}
