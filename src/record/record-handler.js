@@ -98,14 +98,14 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  const json = utils.JSONParse(message.data[2])
+  const data = utils.JSONParse(message.data[2])
 
-  if (json.error) {
+  if (data.error) {
     this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ], socketWrapper)
     return
   }
 
-  const record = { _v: version, _d: json.value, _p: parent }
+  const record = { _v: version, _d: data.value, _p: parent }
 
   this._updateCache(recordName, record, message.raw, socketWrapper)
 
