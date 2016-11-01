@@ -11,7 +11,7 @@ module.exports = class RpcProxy {
 
 	/**
 	 * @param {Object} options
- 	 * @param {String} receiverPrivateTopic
+	 * @param {String} receiverPrivateTopic
 	 * @return {[type]}
 	 * @constructor
 	 */
