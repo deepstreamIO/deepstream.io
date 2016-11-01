@@ -1,3 +1,24 @@
+## [2.0.0-rc.1] - 2016.11.01
+
+### Bug Fixes
+
+### Enhancements
+
+- Added heartbeats using uWS [#419](https://github.com/deepstreamIO/deepstream.io/issues/419)
+- Presence has been added to query and subscribe to who is online with the cluster
+- E2E tests refactored
+- uWS is now compiled into the deepstream binary, eliminating reliability issues caused by
+dynamic linking
+
+### Breaking Changes
+
+- Clients prior to v2.0.0 are no longer compatible
+- Changed format of RPC request ACK messages to be more consistent with the rest of the specs
+[#408](https://github.com/deepstreamIO/deepstream.io/issues/408)
+- We now depend only on uWS for websockets, removing support for TCP and engine.io
+- Support for webRTC has been removed
+- You can no longer set custom data transforms on deepstream
+
 ## [1.1.2] - 2016-10-17
 
 ### Bug Fixes
