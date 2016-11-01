@@ -1,7 +1,5 @@
 ## [2.0.0-rc.1] - 2016.11.01
 
-### Bug Fixes
-
 ### Enhancements
 
 - Added heartbeats using uWS [#419](https://github.com/deepstreamIO/deepstream.io/issues/419)
