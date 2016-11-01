@@ -20,8 +20,8 @@ var C = require( '../../src/constants/constants' ),
 	ackMessage = {
 		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.ACK,
-		raw: msg( 'P|A|addTwo|1234+' ),
-		data: [ 'addTwo', '1234' ]
+		raw: msg( 'P|A|REQ|addTwo|1234+' ),
+		data: [ 'REQ', 'addTwo', '1234' ]
 	},
 	errorMessage = {
 		topic: C.TOPIC.RPC,
@@ -66,13 +66,13 @@ describe( 'executes local rpc calls', function(){
 	it( 'forwards ack message', function(){
 		var rpc = makeRpc( requestMessage );
 		rpc.localRpc.handle( ackMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|REQ|addTwo|1234+' ) );
 	});
 
 	it( 'times out if response is not received in time', function( done ){
 		var rpc = makeRpc( requestMessage );
 		rpc.localRpc.handle( ackMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|REQ|addTwo|1234+' ) );
 		setTimeout(function(){
 			expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|E|RESPONSE_TIMEOUT|addTwo|1234+' ) );
 			done();
@@ -82,7 +82,7 @@ describe( 'executes local rpc calls', function(){
 	it( 'forwards response message', function(){
 		var rpc = makeRpc( requestMessage );
 		rpc.localRpc.handle( ackMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|REQ|addTwo|1234+' ) );
 		rpc.localRpc.handle( responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|RES|addTwo|1234|N12+' ) );
 	});
@@ -105,11 +105,11 @@ describe( 'executes local rpc calls', function(){
 		var rpc = makeRpc( requestMessage );
 
 		rpc.localRpc.handle( ackMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|REQ|addTwo|1234+' ) );
 		expect( rpc.provider.socket.lastSendMessage ).toBe( msg( 'P|REQ|addTwo|1234|O{"numA":5, "numB":7}+' ) );
 
 		rpc.localRpc.handle( ackMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|REQ|addTwo|1234+' ) );
 		expect( rpc.provider.socket.lastSendMessage ).toBe( msg( 'P|E|MULTIPLE_ACK|addTwo|1234+' ) );
 	});
 
@@ -117,7 +117,7 @@ describe( 'executes local rpc calls', function(){
 		var rpc = makeRpc( requestMessage );
 
 		rpc.localRpc.handle( ackMessage );
-		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|addTwo|1234+' ) );
+		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|A|REQ|addTwo|1234+' ) );
 
 		rpc.localRpc.handle( responseMessage );
 		expect( rpc.requestor.socket.lastSendMessage ).toBe( msg( 'P|RES|addTwo|1234|N12+' ) );

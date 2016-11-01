@@ -30,8 +30,8 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	ackMessage = {
 		topic: C.TOPIC.RPC,
 		action: C.ACTIONS.ACK,
-		raw: _msg( 'P|A|addTwo|1234+' ),
-		data: [ 'addTwo', '1234' ]
+		raw: _msg( 'P|A|REQ|addTwo|1234+' ),
+		data: [ 'REQ', 'addTwo', '1234' ]
 	},
 	errorMessage = {
 		topic: C.TOPIC.RPC,
@@ -68,9 +68,9 @@ var RpcHandler = require( '../../src/rpc/rpc-handler' ),
 	privateRemoteAckMessage = {
 		topic: C.TOPIC.PRIVATE + options.serverName,
 		action: C.ACTIONS.ACK,
-		raw: _msg( 'P|A|substract|4+'),
+		raw: _msg( 'P|A|REQ|substract|4+'),
 		originalTopic: C.TOPIC.RPC,
-		data: [ 'substract', '4' ]
+		data: [ 'REQ', 'substract', '4' ]
 	},
 	privateRemoteResponseMessage = {
 		topic: C.TOPIC.PRIVATE + options.serverName,
@@ -147,7 +147,7 @@ describe( 'the rpc handler', () => {
 
 			// Return Ack
 			rpcHandler.handle( provider, ackMessage );
-			expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|addTwo|1234+' ) );
+			expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|REQ|addTwo|1234+' ) );
 
 			// Sends error for additional acks
 			requestor.socket.lastSendMessage = null;
@@ -169,7 +169,7 @@ describe( 'the rpc handler', () => {
 			provider.socket.lastSendMessage = null;
 			rpcHandler.handle( provider, additionalResponseMessage );
 			expect( requestor.socket.lastSendMessage ).toBeNull();
-			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|unexpected state for rpc 1234 with action RES+' ) );
+			expect( provider.socket.lastSendMessage ).toBe( _msg( 'P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action RES+' ) );
 		});
 
 		it( 'executes local rpcs - error scenario', function(){
@@ -241,7 +241,7 @@ describe( 'the rpc handler', () => {
 		expect( requestor.socket.lastSendMessage ).toBeNull();
 
 		options.messageConnector.simulateIncomingMessage( privateRemoteAckMessage );
-		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|substract|4+') );
+		expect( requestor.socket.lastSendMessage ).toBe( _msg( 'P|A|REQ|substract|4+') );
 
 		// forwards response from remote provider to requestor
 		options.messageConnector.simulateIncomingMessage( privateRemoteResponseMessage );
