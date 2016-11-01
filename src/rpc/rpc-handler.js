@@ -62,8 +62,10 @@ module.exports = class RpcHandler {
 		}
 
 		else if( this._supportedSubActions.indexOf( message.action ) > -1 ) {
-			const rpcNameIndex = (message.action === C.ACTIONS.ACK
-												 || message.action === C.ACTIONS.ERROR) ? 1 : 0;
+			const rpcNameIndex = (
+				message.action === C.ACTIONS.ACK ||
+				message.action === C.ACTIONS.ERROR
+			) ? 1 : 0;
 			const correlationId = message.data[ rpcNameIndex + 1 ];
 			const rpcData = this._rpcs[ correlationId ];
 			if( rpcData ) {
