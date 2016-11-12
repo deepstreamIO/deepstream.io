@@ -11,8 +11,8 @@ const RecordHandler = function (options) {
   this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
   this._permissionHandler = options.permissionHandler
   this._logger = options.logger
-  this._messageConnector = options.messageConnector
-  this._storage = options.storage
+  this._message = options.messageConnector || options.message
+  this._storage = options.storageConnector || options.storage
   this._storage.on('change', this._onStorageChange.bind(this))
   this._cache = new LRU({
     max: (options.cacheSize || 256) * 1e6,
@@ -111,7 +111,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
     this._storage.set(recordName, record)
-    this._messageConnector.publish(C.TOPIC.RECORD, message)
+    this._message.publish(C.TOPIC.RECORD, message)
   }
 }
 
