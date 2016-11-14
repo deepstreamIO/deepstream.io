@@ -187,14 +187,6 @@ class SubscriptionRegistry {
 	unsubscribe( name, socketWrapper, silent ) {
 		var msg, i;
 
-		for( i = 0; i < this._unsubscribeAllFunctions.length; i++ ) {
-			if( this._unsubscribeAllFunctions[ i ].socketWrapper === socketWrapper ) {
-				socketWrapper.removeListener( 'close', this._unsubscribeAllFunctions[ i ].fn );
-				this._unsubscribeAllFunctions.splice( i, 1 );
-				break;
-			}
-		}
-
 		if( this._subscriptions[ name ] === undefined ||
 			this._subscriptions[ name ].indexOf( socketWrapper ) === -1 ) {
 			msg = socketWrapper.user + ' is not subscribed to ' + name;
@@ -228,6 +220,15 @@ class SubscriptionRegistry {
 			var logMsg = 'for ' + this._topic + ':' + name + ' by ' + socketWrapper.user;
 			this._options.logger.log( C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg );
 			socketWrapper.sendMessage( this._topic, C.ACTIONS.ACK, [ this._constants.UNSUBSCRIBE, name ] );
+		}
+
+		if( !this.isLocalSubscriber( socketWrapper ) ) {
+			for( i = 0; i < this._unsubscribeAllFunctions.length; i++ ) {
+				if( this._unsubscribeAllFunctions[ i ].socketWrapper === socketWrapper ) {
+					socketWrapper.removeListener( 'close', this._unsubscribeAllFunctions[ i ].fn );
+					this._unsubscribeAllFunctions.splice( i, 1 );
+				}
+			}
 		}
 	}
 
