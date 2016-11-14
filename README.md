@@ -5,6 +5,8 @@ deepstream is a new type of server that syncs data and sends events across milli
 
 ### Changes compared to http://deepstream.io/
 
+The main difference compared with the official deepstream is offline synchronization and conflict resolution supported through the storage layer using databases with eventual consistency such as CouchDB. This allows for e.g. cross datacenter replication and synchronization as well recovery from network partitions.
+
  - Removed `CREATEORREAD`, `CREATE`, `DELETE`, `HAS` and `SNAPSHOT` actions. All records "exists" in the empty form `{}`. Clients should use `READ` and `UPDATE` to achieve the same functionality.
  - Removed `PATCH` action for more robust and easier conflict management. Clients should send and listen to `UPDATE` instead.
  - Changed version format to `${version}-${uuid}` for offline conflict resolution.
