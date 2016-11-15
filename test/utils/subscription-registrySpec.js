@@ -62,7 +62,11 @@ describe( 'subscription-registry manages subscriptions', function(){
 	});
 
 	it( 'returns a random subscribed socket', function(){
-		expect( subscriptionRegistry.getLocalSubscribers( 'someName' ) ).toEqual([ socketWrapperA, socketWrapperB ]);
+		if (socketWrapperA.uuid < socketWrapperB.uuid) {
+			expect( subscriptionRegistry.getLocalSubscribers( 'someName' ) ).toEqual([ socketWrapperA, socketWrapperB ]);
+		} else {
+			expect( subscriptionRegistry.getLocalSubscribers( 'someName' ) ).toEqual([ socketWrapperB, socketWrapperA ]);
+		}
 
 		var returnedA = false,
 			returnedB = false,

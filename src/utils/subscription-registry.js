@@ -2,6 +2,7 @@
 
 const C = require( '../constants/constants' );
 const DistributedStateRegistry = require( '../cluster/distributed-state-registry' );
+const SocketWrapper = require( '../message/socket-wrapper' );
 
 class SubscriptionRegistry {
 
@@ -17,7 +18,12 @@ class SubscriptionRegistry {
 	 * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
 	 */
 	constructor( options, topic, clusterTopic ) {
-		this._subscriptions = {}
+		this._delayedBroadcasts = {};
+		this._delay = -1;
+		if (options.broadcastTimeout != undefined) {
+			this._delay = options.broadcastTimeout;
+		}
+		this._subscriptions = {};
 		this._options = options;
 		this._topic = topic;
 		this._subscriptionListener = null;
@@ -101,7 +107,76 @@ class SubscriptionRegistry {
 	}
 
 	/**
-	 * Sends a message string to all subscribers
+	 * Broadcasts the enqueued messages for the timed out subscription room.
+	 *
+	 * @param   {Object} delayedBroadcasts holds information of what messages to send and where
+	 *
+	 * @public
+	 * @returns {void}
+	 */
+	onBroadcastTimeout( delayedBroadcasts ) {
+		let sockets = this._subscriptions[ delayedBroadcasts.name ];
+		if ( sockets ) {
+			// sort vector of unique senders by uuid. doing so in combination with
+			// the sorting of the sockets in this subscription name means we can
+			// simplify comparisons
+			delayedBroadcasts.uniqueSendersVector.sort( (a, b) => {
+				if ( a.sender < b.sender ) {
+					return -1;
+				} else if ( a.sender > b.sender ) {
+					return 1;
+				} else {
+					return 0;
+				}
+			} );
+
+			// for all unique senders and their gaps, build their special messages
+			for ( let uniqueSender of delayedBroadcasts.uniqueSendersVector ) {
+				uniqueSender.message = delayedBroadcasts.sharedMessages.
+					substring( 0, uniqueSender.gaps[ 0 ].start );
+				let lastStop = uniqueSender.gaps[ 0 ].stop;
+				for ( let j = 1; j < uniqueSender.gaps.length; j++ ) {
+					uniqueSender.message += delayedBroadcasts.sharedMessages.
+						substring( lastStop, uniqueSender.gaps[ j ].start );
+					lastStop = uniqueSender.gaps[ j ].stop;
+				}
+				uniqueSender.message += delayedBroadcasts.sharedMessages.
+					substring( lastStop, delayedBroadcasts.sharedMessages.length );
+			}
+
+			// for all sockets in this subscription name, send either sharedMessage or this socket's
+			// specialized message. only sockets that sent something will have a special message, all
+			// other sockets are only listeners and receive the exact same (sharedMessage) message.
+			let preparedMessage = SocketWrapper.prepareMessage( delayedBroadcasts.sharedMessages );
+			let j = 0;
+			for ( let socket of sockets ) {
+				// since both uniqueSendersVector and sockets are sorted by uuid, we can efficiently determine
+				// if this socket is a sender in this subscription name or not as well as look up the eventual
+				// specialized message for this socket.
+				if ( j < delayedBroadcasts.uniqueSendersVector.length &&
+					delayedBroadcasts.uniqueSendersVector[ j ].sender === socket.uuid ) {
+					if ( delayedBroadcasts.uniqueSendersVector[ j ].message.length ) {
+						socket.sendNative( delayedBroadcasts.uniqueSendersVector[ j ].message );
+					}
+					j++;
+				} else {
+					// since we know when a socket is a sender and when it is a listener we can use the optimized prepared
+					// message for listeners
+					socket.sendPrepared( preparedMessage );
+				}
+			}
+			SocketWrapper.finalizeMessage( preparedMessage );
+		}
+
+		// delete this delayed broadcast
+		delete this._delayedBroadcasts[ delayedBroadcasts.name ];
+	}
+
+	/**
+	 * Enqueues a message string to be broadcast to all subscribers. Broadcasts will potentially
+	 * be reordered in relation to *other* subscription names, but never in relation to the same
+	 * subscription name. Each broadcast is given 'broadcastTimeout' ms to coalesce into one big
+	 * broadcast.
 	 *
 	 * @param   {String} name      the name/topic the subscriber was previously registered for
 	 * @param   {String} msgString the message as string
@@ -111,18 +186,54 @@ class SubscriptionRegistry {
 	 * @returns {void}
 	 */
 	sendToSubscribers( name, msgString, sender ) {
-		if( this._subscriptions[ name ] === undefined ) {
+		if (this._subscriptions[ name ] == undefined) {
 			return;
 		}
 
-		var i, l = this._subscriptions[ name ].length;
+		// not all messages are valid, this should be fixed elsewhere!
+		if( msgString.charAt( msgString.length - 1 ) !== C.MESSAGE_SEPERATOR ) {
+			msgString += C.MESSAGE_SEPERATOR;
+		}
 
-		for( i = 0; i < l; i++ ) {
-			if( this._subscriptions[ name ] &&
-				this._subscriptions[ name ][ i ] &&
-				this._subscriptions[ name ][ i ] !== sender
-			) {
-				this._subscriptions[ name ][ i ].send( msgString );
+		// if not already a delayed broadcast, create it
+		let delayedBroadcasts = this._delayedBroadcasts[ name ];
+		if ( delayedBroadcasts == undefined ) {
+			this._delayedBroadcasts[ name ] = delayedBroadcasts = {
+				uniqueSendersVector: [], uniqueSendersMap: {},
+				timer: null, name: name, sharedMessages: ''
+			};
+		}
+
+		// append this message to the sharedMessage, the message that
+		// is shared in the broadcast to every listener-only
+		let start = delayedBroadcasts.sharedMessages.length;
+		delayedBroadcasts.sharedMessages += msgString;
+		let stop = delayedBroadcasts.sharedMessages.length;
+
+		// uniqueSendersMap maps from uuid to offset in uniqueSendersVector
+		// each uniqueSender has a vector of "gaps" in relation to sharedMessage
+		// senders should not receive what they sent themselves, so a gap is inserted
+		// for every send from this sender
+		let pos;
+		if ( sender ) {
+			if ( ( pos = delayedBroadcasts.uniqueSendersMap[ sender.uuid ] ) != undefined ) {
+				delayedBroadcasts.uniqueSendersVector[ pos ].gaps.push( { start: start, stop: stop } );
+			} else {
+				pos = delayedBroadcasts.uniqueSendersVector.length;
+				delayedBroadcasts.uniqueSendersMap[ sender.uuid ] = pos;
+				delayedBroadcasts.uniqueSendersVector[ pos ] = {
+					sender: sender.uuid, message: null,
+					gaps: [ { start: start, stop: stop } ]
+				};
+			}
+		}
+
+		// reuse the same timer if already started
+		if ( !delayedBroadcasts.timer ) {
+			if ( this._delay != -1 ) {
+				delayedBroadcasts.timer = setTimeout( this.onBroadcastTimeout.bind(this), this._delay, delayedBroadcasts );
+			} else {
+				this.onBroadcastTimeout( delayedBroadcasts );
 			}
 		}
 	}
@@ -157,7 +268,15 @@ class SubscriptionRegistry {
 			socketWrapper.once( 'close', unsubscribeAllFn );
 		}
 
-		this._subscriptions[ name ].push( socketWrapper );
+		// insert socket in vector, sorted by uuid
+		let sorted = this._subscriptions[ name ];
+		let index = 0;
+		for ( ; index < sorted.length; index++ ) {
+			if ( sorted[ index ].uuid > socketWrapper.uuid ) {
+				break;
+			}
+		}
+		sorted.splice( index, 0, socketWrapper );
 
 		if( this._subscriptionListener ) {
 			this._subscriptionListener.onSubscriptionMade(

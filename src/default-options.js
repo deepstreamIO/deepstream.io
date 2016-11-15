@@ -78,7 +78,8 @@ exports.get = function() {
 		clusterNodeInactiveTimeout: 6000,
 		listenResponseTimeout: 500,
 		lockTimeout: 1000,
-		lockRequestTimeout: 1000
+		lockRequestTimeout: 1000,
+		broadcastTimeout: 0
 	};
 
 	return options;
