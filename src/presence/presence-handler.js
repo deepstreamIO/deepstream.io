@@ -98,7 +98,7 @@ module.exports = class PresenceHandler {
 	 * Handles subscriptions to client login and logout events
 	 *
 	 * @param   {Object} socketWrapper the socketWrapper of the client that left
-	 * @param   {String} actions either a subscribe or unsubscribe message
+	 * @param   {String} actions either a presence join or leave message
 	 *
 	 * @private
 	 * @returns {void}
@@ -109,6 +109,31 @@ module.exports = class PresenceHandler {
 		}
 		else if( action === C.ACTIONS.PRESENCE_LEAVE ) {
 			this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_LEAVE, socketWrapper );
+		}
+		else {
+			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, action );
+
+			if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
+				socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, 'unknown data ' + action );
+			}
+		}
+	}
+
+	/**
+	 * Handles unsubscriptions to client login and logout events
+	 *
+	 * @param   {Object} socketWrapper the socketWrapper of the client that left
+	 * @param   {String} actions either a presence leave or join message
+	 *
+	 * @private
+	 * @returns {void}
+	 */
+	_handleUnsubscribe( socketWrapper, action ) {
+		if( action === C.ACTIONS.PRESENCE_JOIN ) {
+			this._presenceRegistry.unsubscribe( C.ACTIONS.PRESENCE_JOIN, socketWrapper );
+		}
+		else if( action === C.ACTIONS.PRESENCE_LEAVE ) {
+			this._presenceRegistry.unsubscribe( C.ACTIONS.PRESENCE_LEAVE, socketWrapper );
 		}
 		else {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, action );

@@ -20,5 +20,10 @@ module.exports = {
 	rpc: {
 		provide: true,
 		request: true
+	},
+	presence: {
+		query: true,
+		logins: true,
+		logouts: true
 	}
 };
