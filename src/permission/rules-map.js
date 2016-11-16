@@ -20,6 +20,7 @@ RULE_TYPES.PUBLISH = 	{ name: 'publish', 		data: true, 	oldData: false };
 RULE_TYPES.SUBSCRIBE = 	{ name: 'subscribe', 	data: true, 	oldData: false };
 RULE_TYPES.PROVIDE = 	{ name: 'provide', 		data: false, 	oldData: false };
 RULE_TYPES.REQUEST = 	{ name: 'request', 		data: true, 	oldData: false };
+RULE_TYPES.QUERY = 		{ name: 'query', 		data: false, 	oldData: false };
 
 /**
  * This class maps topic / action combinations to applicable
@@ -59,6 +60,14 @@ RULES_MAP[ C.TOPIC.RPC ].section = 'rpc';
 RULES_MAP[ C.TOPIC.RPC ].actions = {};
 RULES_MAP[ C.TOPIC.RPC ].actions[ C.ACTIONS.SUBSCRIBE ] = RULE_TYPES.PROVIDE;
 RULES_MAP[ C.TOPIC.RPC ].actions[ C.ACTIONS.REQUEST ] = RULE_TYPES.REQUEST;
+
+RULES_MAP[ C.TOPIC.PRESENCE ] = {};
+RULES_MAP[ C.TOPIC.PRESENCE ].section = 'presence';
+RULES_MAP[ C.TOPIC.PRESENCE ].actions = {};
+RULES_MAP[ C.TOPIC.PRESENCE ].actions[ C.ACTIONS.SUBSCRIBE ] = RULE_TYPES.SUBSCRIBE;
+RULES_MAP[ C.TOPIC.PRESENCE ].actions[ C.ACTIONS.SUBSCRIBE ] = RULE_TYPES.SUBSCRIBE;
+RULES_MAP[ C.TOPIC.PRESENCE ].actions[ C.ACTIONS.QUERY ] = RULE_TYPES.QUERY;
+
 
 /**
  * Returns a map of applicable rule-types for a topic
