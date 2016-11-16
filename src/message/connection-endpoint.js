@@ -200,7 +200,7 @@ ConnectionEndpoint.prototype._processConnectionMessage = function( socketWrapper
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, 'invalid connection message ' + connectionMessage );
 		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message' );
 	}
-	else if( msg.topic === C.TOPIC.PONG ) {
+	else if( msg.action === C.ACTIONS.PONG ) {
 		return;
 	}
 	else if( msg.action === C.ACTIONS.CHALLENGE_RESPONSE ) {
