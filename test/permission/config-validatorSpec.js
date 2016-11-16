@@ -1,6 +1,12 @@
 var configValidator = require( '../../src/permission/config-validator' );
 var getConfig = function() {
 	return {
+		"presence": {
+			"*": {
+				"subscribe": true,
+				"query": true
+			}
+		},
 		"record": {
 			"*": {
 				"write": true,

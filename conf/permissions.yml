@@ -1,3 +1,7 @@
+presence:
+  "*":
+    query: false
+    subscribe: true
 record:
   "*":
     create: true

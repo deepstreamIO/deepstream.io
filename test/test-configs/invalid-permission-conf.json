@@ -1,4 +1,10 @@
 {
+	"presence": {
+		"*": {
+			"subscribe": true,
+			"query": true
+		}
+	},
 	"record": {},
 	"event": {
 		"*": {

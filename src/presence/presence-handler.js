@@ -53,6 +53,9 @@ module.exports = class PresenceHandler {
 		if( message.action === C.ACTIONS.SUBSCRIBE ) {
 			this._handleSubscribe( socketWrapper, message.data[ 0 ] );
 		}
+		else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
+			this._handleUnsubscribe( socketWrapper, message.data[ 0 ] );
+		}
 		else if( message.action === C.ACTIONS.QUERY ) {
 			const clients = this._connectedClients.getAll();
 			const index = clients.indexOf( socketWrapper.user );

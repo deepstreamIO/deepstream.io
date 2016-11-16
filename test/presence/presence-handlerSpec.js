@@ -37,11 +37,13 @@ describe( 'presence handler', function(){
 	it( 'adds client and subscribes to client logins and logouts', function(){
 		options.connectionEndpoint.emit( 'client-connected', userOne );
 
-		var subMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [ C.ACTIONS.PRESENCE_JOIN ] }
-		presenceHandler.handle( userOne, subMsg );
+		var subJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [ C.ACTIONS.PRESENCE_JOIN ] }
+		presenceHandler.handle( userOne, subJoinMsg );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|S|PNJ+' ) );
 
-		var unSubMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [ C.ACTIONS.PRESENCE_LEAVE ] }
-		presenceHandler.handle( userOne, unSubMsg );
+		var subLeaveMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [ C.ACTIONS.PRESENCE_LEAVE ] }
+		presenceHandler.handle( userOne, subLeaveMsg );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|S|PNL+' ) );
 	});
 
 	it( 'does not return own name when queried and only user', function(){
@@ -81,6 +83,24 @@ describe( 'presence handler', function(){
 		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|PNL|Bart+' ) );
 		expect( userTwo.socket.lastSendMessage ).toBeNull();
 		expect( userThree.socket.lastSendMessage ).toBeNull();
+	});
+
+	it( 'client one gets acks after unsubscribes', function(){
+		var unsubJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.UNSUBSCRIBE, data: [ C.ACTIONS.PRESENCE_JOIN ] }
+		presenceHandler.handle( userOne, unsubJoinMsg );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|US|PNJ+' ) );
+
+		var unsubLeaveMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.UNSUBSCRIBE, data: [ C.ACTIONS.PRESENCE_LEAVE ] }
+		presenceHandler.handle( userOne, unsubLeaveMsg );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|US|PNL+' ) );
+	});
+
+	it( 'client one does not get notified after unsubscribes', function(){
+		options.connectionEndpoint.emit( 'client-disconnected', userTwo );
+		expect( userOne.socket.lastSendMessage ).toBeNull();
+
+		options.connectionEndpoint.emit( 'client-connected', userThree );
+		expect( userOne.socket.lastSendMessage ).toBeNull();
 	});
 
 });

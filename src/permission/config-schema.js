@@ -23,7 +23,6 @@ module.exports = {
 	},
 	presence: {
 		query: true,
-		logins: true,
-		logouts: true
+		subscribe: true
 	}
 };
