@@ -22,7 +22,6 @@ module.exports = {
 		request: true
 	},
 	presence: {
-		query: true,
-		subscribe: true
+		allow: true
 	}
 };

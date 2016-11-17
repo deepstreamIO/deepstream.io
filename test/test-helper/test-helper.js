@@ -23,8 +23,7 @@ exports.getBasePermissions = function() {
 	return {
 		"presence": {
 			"*": {
-				"subscribe": true,
-				"query": true
+				"allow": true
 			}
 		},
 		"record": {

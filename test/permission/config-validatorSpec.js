@@ -3,8 +3,7 @@ var getConfig = function() {
 	return {
 		"presence": {
 			"*": {
-				"subscribe": true,
-				"query": true
+				"allow": true
 			}
 		},
 		"record": {
