@@ -34,7 +34,7 @@ module.exports = class PresenceHandler {
 
 	/**
 	 * The main entry point to the presence handler class.
-	 * 
+	 *
 	 * Handles subscriptions, unsubscriptions and queries
 	 *
 	 * @param   {SocketWrapper} socketWrapper the socket that send the request
@@ -115,7 +115,7 @@ module.exports = class PresenceHandler {
 	 */
 	_onClientAdded( username ) {
 		var addMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ username ] );
-		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_JOIN, addMsg );
+		this._presenceRegistry.sendToSubscribers( C.TOPIC.PRESENCE, addMsg );
 	}
 
 	/**
@@ -129,7 +129,7 @@ module.exports = class PresenceHandler {
 	 */
 	_onClientRemoved( username ) {
 		var removeMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ username ] );
-		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_LEAVE, removeMsg );
+		this._presenceRegistry.sendToSubscribers( C.TOPIC.PRESENCE, removeMsg );
 	}
 
 }

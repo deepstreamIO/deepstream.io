@@ -37,13 +37,9 @@ describe( 'presence handler', function(){
 	it( 'adds client and subscribes to client logins and logouts', function(){
 		options.connectionEndpoint.emit( 'client-connected', userOne );
 
-		var subJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [ C.ACTIONS.PRESENCE_JOIN ] }
+		var subJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [] };
 		presenceHandler.handle( userOne, subJoinMsg );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|S|PNJ+' ) );
-
-		var subLeaveMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [ C.ACTIONS.PRESENCE_LEAVE ] }
-		presenceHandler.handle( userOne, subLeaveMsg );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|S|PNL+' ) );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|S|U+' ) );
 	});
 
 	it( 'does not return own name when queried and only user', function(){
@@ -86,13 +82,9 @@ describe( 'presence handler', function(){
 	});
 
 	it( 'client one gets acks after unsubscribes', function(){
-		var unsubJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.UNSUBSCRIBE, data: [ C.ACTIONS.PRESENCE_JOIN ] }
+		var unsubJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.UNSUBSCRIBE, data: [] }
 		presenceHandler.handle( userOne, unsubJoinMsg );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|US|PNJ+' ) );
-
-		var unsubLeaveMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.UNSUBSCRIBE, data: [ C.ACTIONS.PRESENCE_LEAVE ] }
-		presenceHandler.handle( userOne, unsubLeaveMsg );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|US|PNL+' ) );
+		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|US|U+' ) );
 	});
 
 	it( 'client one does not get notified after unsubscribes', function(){
