@@ -25,6 +25,9 @@
 - Adds client heartbeats, along with configuration option`heartbeatInterval` in `config.yml`.
   If a connected client fails to send a heartbeat within this timeout, it will be
   considered to have disconnected
+- Adds healthchecks – deepstream now responds to http GET requests to path
+  `/health-check` on port 80 with code 200. This path can be configured with
+  the `healthCheckPath` option in `config.yml`
 
 ### Enhancements
 - Added heartbeats using uWS [#419](https://github.com/deepstreamIO/deepstream.io/issues/419)
