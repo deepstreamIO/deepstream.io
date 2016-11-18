@@ -149,3 +149,5 @@ listenResponseTimeout: 500
 lockTimeout: 1000
 # The amount of time a lock request waits for before it defaults to false
 lockRequestTimeout: 1000
+# The amount of time a broadcast will wait (to allow broadcast coalescing). -1 means disabled.
+broadcastTimeout: 0

@@ -1,7 +1,8 @@
 var C = require( '../constants/constants' ),
 	messageBuilder = require( './message-builder' ),
 	EventEmitter = require( 'events' ).EventEmitter,
-	utils = require( 'util' );
+	utils = require( 'util' ),
+	uws = require( 'uws' );
 
 /**
  * This class wraps around a websocket
@@ -24,6 +25,7 @@ var SocketWrapper = function( socket, options ) {
 	this.authCallBack = null;
 	this.authAttempts = 0;
 	this.setMaxListeners( 0 );
+	this.uuid = Math.random();
 
 	this._queuedMessages = [];
 	this._currentPacketMessageCount = 0;
@@ -40,6 +42,61 @@ var SocketWrapper = function( socket, options ) {
 };
 
 utils.inherits( SocketWrapper, EventEmitter );
+SocketWrapper.lastPreparedMessage = null;
+
+/**
+ * Updates lastPreparedMessage and returns the [uws] prepared message.
+ *
+ * @param {String} message the message to be prepared
+ *
+ * @public
+ * @returns {External} prepared message
+ */
+SocketWrapper.prepareMessage = function( message ) {
+	SocketWrapper.lastPreparedMessage = message;
+	return uws.native.server.prepareMessage( message, uws.OPCODE_TEXT );
+}
+
+/**
+ * Sends the [uws] prepared message, or in case of testing sends the
+ * last prepared message.
+ *
+ * @param {External} preparedMessage the prepared message
+ *
+ * @public
+ * @returns {void}
+ */
+SocketWrapper.prototype.sendPrepared = function(preparedMessage) {
+	if ( this.socket.external ) {
+		uws.native.server.sendPrepared( this.socket.external, preparedMessage );
+	} else if ( this.socket.external !== null ) {
+		this.socket.send( SocketWrapper.lastPreparedMessage );
+	}
+}
+
+/**
+ * Variant of send with no particular checks or appends of message.
+ *
+ * @param {String} message the message to send
+ *
+ * @public
+ * @returns {void}
+ */
+SocketWrapper.prototype.sendNative = function( message ) {
+	this.socket.send( message );
+}
+
+/**
+ * Finalizes the [uws] perpared message.
+ *
+ * @param {External} preparedMessage the prepared message to finalize
+ *
+ * @public
+ * @returns {void}
+ */
+SocketWrapper.finalizeMessage = function( preparedMessage ) {
+	uws.native.server.finalizeMessage( preparedMessage );
+}
 
 /**
  * Returns a map of parameters that were collected
@@ -96,9 +153,8 @@ SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
 };
 
 /**
- * Main method for sending messages. Doesn't send messages instantly,
- * but instead achieves conflation by adding them to the message
- * buffer that will be drained on the next tick
+ * Checks the passed message and appends missing end separator if
+ * needed, and then sends this message immediately.
  *
  * @param   {String} message deepstream message
  *
@@ -114,81 +170,8 @@ SocketWrapper.prototype.send = function( message ) {
 		return;
 	}
 
-	this._queuedMessages.push( message );
-	this._currentPacketMessageCount++;
-
-	if( this._currentMessageResetTimeout === null ) {
-		this._currentMessageResetTimeout = process.nextTick( this._resetCurrentMessageCount.bind( this ) );
-	}
-
-	if( this._queuedMessages.length < this._options.maxMessagesPerPacket &&
-		this._currentPacketMessageCount < this._options.maxMessagesPerPacket ) {
-		this._sendQueuedMessages();
-	}
-	else if( this._sendNextPacketTimeout === null ) {
-		this._queueNextPacket();
-	}
+	this.socket.send( message );
 };
-
-/**
- * When the implementation tries to send a large
- * number of messages in one execution thread, the first
- * <maxMessagesPerPacket> are send straight away.
- *
- * _currentPacketMessageCount keeps track of how many messages
- * went into that first packet. Once this number has been exceeded
- * the remaining messages are written to a queue and this message
- * is invoked on a timeout to reset the count.
- *
- * @private
- * @returns {void}
- */
-SocketWrapper.prototype._resetCurrentMessageCount = function() {
-	this._currentPacketMessageCount = 0;
-	this._currentMessageResetTimeout = null;
-};
-
-/**
- * Concatenates the messages in the current message queue
- * and sends them as a single package. This will also
- * empty the message queue and conclude the send process.
- *
- * @private
- * @returns {void}
- */
-SocketWrapper.prototype._sendQueuedMessages = function() {
-
-	if( this._queuedMessages.length === 0 ) {
-		this._sendNextPacketTimeout = null;
-		return;
-	}
-
-	var message = this._queuedMessages.splice( 0, this._options.maxMessagesPerPacket ).join( '' );
-
-	if( this._queuedMessages.length !== 0 ) {
-		this._queueNextPacket();
-	} else {
-		this._sendNextPacketTimeout = null;
-	}
-
-    if( this.isClosed === false ) {
-        this.socket.send( message );
-    }
-};
-
-/**
- * Schedules the next packet whilst the connection is under
- * heavy load.
- *
- * @private
- * @returns {void}
- */
-SocketWrapper.prototype._queueNextPacket = function() {
-	var fn = this._sendQueuedMessages.bind( this ),
-		delay = this._options.timeBetweenSendingQueuedPackages;
-	this._sendNextPacketTimeout = setTimeout( fn, delay );
-};
-
 
 /**
  * Destroyes the socket. Removes all deepstream specific
