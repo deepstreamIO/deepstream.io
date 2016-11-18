@@ -21,6 +21,11 @@ exports.showChars = function( input ) {
 
 exports.getBasePermissions = function() {
 	return {
+		"presence": {
+			"*": {
+				"allow": true
+			}
+		},
 		"record": {
 			"*": {
 				"write": true,

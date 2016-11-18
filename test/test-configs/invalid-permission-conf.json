@@ -1,4 +1,9 @@
 {
+	"presence": {
+		"*": {
+			"allow": true
+		}
+	},
 	"record": {},
 	"event": {
 		"*": {

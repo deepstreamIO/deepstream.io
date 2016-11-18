@@ -1,3 +1,6 @@
+presence:
+  "*":
+    allow: true
 record:
   "*":
     create: true
