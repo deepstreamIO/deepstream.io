@@ -1,3 +1,46 @@
+## [2.0.0] - 2016.11.18
+
+### Features
+- User presence has been added, enabling querying and subscription to who is
+  online within a cluster. For example:
+  ``` javascript
+  ds.presence.getAll((users) => {
+    users.forEach((username) => {
+      console.log(`${username} is online`)
+    })
+  })
+  ds.presence.subscribe((username, loggedIn) => {
+    if (loggedIn) {
+      console.log(`${username} has logged in`)
+    } else {
+      console.log(`${username} has logged out`)
+    }
+  })
+  ```
+- Introduces the configuration option `broadcastTimeout` to `config.yml` to allow coalescing of
+  broadcasts. This option can be used to improve broadcast message latency such
+  as events, data-sync and presence
+  For example, the perfomance of broadcasting 100 events to 1000 subscribers
+  was improved by a factor of 20
+- Adds client heartbeats, along with configuration option`heartbeatInterval` in `config.yml`.
+  If a connected client fails to send a heartbeat within this timeout, it will be
+  considered to have disconnected
+
+### Enhancements
+- Added heartbeats using uWS [#419](https://github.com/deepstreamIO/deepstream.io/issues/419)
+- E2E tests refactored
+- uWS is now compiled into the deepstream binary, eliminating reliability
+  issues caused by dynamic linking
+
+### Breaking Changes
+
+- Clients prior to v2.0.0 are no longer compatible
+- Changed format of RPC request ACK messages to be more consistent with the rest of the specs
+[#408](https://github.com/deepstreamIO/deepstream.io/issues/408)
+- We now depend only on uWS for websockets, removing support for TCP and engine.io
+- Support for webRTC has been removed
+- You can no longer set custom data transforms on deepstream
+
 ## [1.1.2] - 2016-10-17
 
 ### Bug Fixes
