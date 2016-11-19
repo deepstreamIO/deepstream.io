@@ -34,14 +34,8 @@ module.exports = class PresenceHandler {
 
 	/**
 	 * The main entry point to the presence handler class.
-	 * Called on any of the following actions:
 	 *
-	 * 1) C.ACTIONS.PRESENCE_JOIN
-	 * 2) C.ACTIONS.PRESENCE_LEAVE
-	 * 3) C.ACTIONS.SUBSCRIBE
-	 *		a) C.ACTIONS.PRESENCE_JOIN
-	 *		b) C.ACTIONS.PRESENCE_LEAVE
-	 * 4) C.ACTIONS.QUERY
+	 * Handles subscriptions, unsubscriptions and queries
 	 *
 	 * @param   {SocketWrapper} socketWrapper the socket that send the request
 	 * @param   {Object} message parsed and validated message
@@ -51,15 +45,13 @@ module.exports = class PresenceHandler {
 	 */
 	handle( socketWrapper, message ) {
 		if( message.action === C.ACTIONS.SUBSCRIBE ) {
-			this._handleSubscribe( socketWrapper, message.data[ 0 ] );
+			this._presenceRegistry.subscribe( C.TOPIC.PRESENCE, socketWrapper );
+		}
+		else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
+			this._presenceRegistry.unsubscribe( C.TOPIC.PRESENCE, socketWrapper );
 		}
 		else if( message.action === C.ACTIONS.QUERY ) {
-			const clients = this._connectedClients.getAll();
-			const index = clients.indexOf( socketWrapper.user );
-			if( index !== -1 ) {
-				clients.splice( index, 1 );
-			}
-			socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients );
+			this._handleQuery( socketWrapper );
 		}
 		else {
 			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
@@ -95,28 +87,21 @@ module.exports = class PresenceHandler {
 	}
 
 	/**
-	 * Handles subscriptions to client login and logout events
+	 * Handles finding clients who are connected and splicing out the client
+	 * querying for users
 	 *
-	 * @param   {Object} socketWrapper the socketWrapper of the client that left
-	 * @param   {String} actions either a subscribe or unsubscribe message
+	 * @param   {Object} socketWrapper the socketWrapper of the client that is querying
 	 *
 	 * @private
 	 * @returns {void}
 	 */
-	_handleSubscribe( socketWrapper, action ) {
-		if( action === C.ACTIONS.PRESENCE_JOIN ) {
-			this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_JOIN, socketWrapper );
+	_handleQuery( socketWrapper ) {
+		const clients = this._connectedClients.getAll();
+		const index = clients.indexOf( socketWrapper.user );
+		if( index !== -1 ) {
+			clients.splice( index, 1 );
 		}
-		else if( action === C.ACTIONS.PRESENCE_LEAVE ) {
-			this._presenceRegistry.subscribe( C.ACTIONS.PRESENCE_LEAVE, socketWrapper );
-		}
-		else {
-			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, action );
-
-			if( socketWrapper.sendError ) {
-				socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, 'unknown data ' + action );
-			}
-		}
+		socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients );
 	}
 
 	/**
@@ -130,7 +115,7 @@ module.exports = class PresenceHandler {
 	 */
 	_onClientAdded( username ) {
 		var addMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ username ] );
-		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_JOIN, addMsg );
+		this._presenceRegistry.sendToSubscribers( C.TOPIC.PRESENCE, addMsg );
 	}
 
 	/**
@@ -144,7 +129,7 @@ module.exports = class PresenceHandler {
 	 */
 	_onClientRemoved( username ) {
 		var removeMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ username ] );
-		this._presenceRegistry.sendToSubscribers( C.ACTIONS.PRESENCE_LEAVE, removeMsg );
+		this._presenceRegistry.sendToSubscribers( C.TOPIC.PRESENCE, removeMsg );
 	}
 
 }

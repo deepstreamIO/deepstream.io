@@ -130,13 +130,16 @@ permission:
     cacheEvacuationInterval: 60000
 
 # Timeouts (in milliseconds)
-rpcProviderCacheTime: 60000
+# Timeout for client RPC acknownledgement
 rpcAckTimeout: 1000
+# Timeout for actual RPC provider response
 rpcTimeout: 10000
+# Maximum time permitted to fetch from cache
 cacheRetrievalTimeout: 1000
+# Maximum time permitted to fetch from storage
 storageRetrievalTimeout: 2000
+# Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
 dependencyInitialisationTimeout: 2000
-stateReconciliationTimeout: 500
 # The interval at which a status message is sent by each node within a cluster
 clusterKeepAliveInterval: 5000
 # The interval at which all nodes within a cluster registry are checked for timeouts
@@ -149,3 +152,5 @@ listenResponseTimeout: 500
 lockTimeout: 1000
 # The amount of time a lock request waits for before it defaults to false
 lockRequestTimeout: 1000
+# The amount of time a broadcast will wait (to allow broadcast coalescing). -1 means disabled.
+broadcastTimeout: 0

@@ -61,7 +61,6 @@ exports.get = function() {
 		/*
 		 * Timeouts
 		 */
-		rpcProviderCacheTime: 60000,
 		rpcAckTimeout: 1000,
 		rpcTimeout: 10000,
 		dependencyInitialisationTimeout: 2000,
@@ -71,7 +70,8 @@ exports.get = function() {
 		clusterNodeInactiveTimeout: 6000,
 		listenResponseTimeout: 500,
 		lockTimeout: 1000,
-		lockRequestTimeout: 1000
+		lockRequestTimeout: 1000,
+		broadcastTimeout: 0
 	};
 
 	return options;

@@ -1,3 +1,36 @@
+## [2.0.0] - 2016.11.18
+
+### Features
+- User presence has been added, enabling querying and subscription to who is
+  online within a cluster
+- Introduces the configuration option `broadcastTimeout` to `config.yml` to allow coalescing of
+  broadcasts. This option can be used to improve broadcast message latency such
+  as events, data-sync and presence
+  For example, the perfomance of broadcasting 100 events to 1000 subscribers
+  was improved by a factor of 20
+- Adds client heartbeats, along with configuration option`heartbeatInterval` in `config.yml`.
+  If a connected client fails to send a heartbeat within this timeout, it will be
+  considered to have disconnected [#419](https://github.com/deepstreamIO/deepstream.io/issues/419)
+- Adds healthchecks – deepstream now responds to http GET requests to path
+  `/health-check` on port 80 with code 200. This path can be configured with
+  the `healthCheckPath` option in `config.yml`
+
+### Enhancements
+- E2E tests refactored
+- uWS is now compiled into the deepstream binary, eliminating reliability
+  issues caused by dynamic linking
+
+### Breaking Changes
+
+- Clients prior to v2.0.0 are no longer compatible
+- Changed format of RPC request ACK messages to be more consistent with the
+  rest of the specs
+  [#408](https://github.com/deepstreamIO/deepstream.io/issues/408)
+- We removed support for TCP and engine.io, providing huge perfomance gains by
+  integrating tightly with native uWS
+- Support for webRTC has been removed
+- You can no longer set custom data transforms directly on deepstream
+
 ## [1.1.2] - 2016-10-17
 
 ### Bug Fixes

@@ -1,0 +1,10 @@
+#!/bin/bash
+connections_steps=( 10 100 1000 10000 )
+publishes_steps=( 1 10 100 1000 10000 )
+for connections in "${connections_steps[@]}"
+do
+	for publishes in "${publishes_steps[@]}"
+	do
+		./eventBenchmark ${connections} ${publishes}
+	done
+done
