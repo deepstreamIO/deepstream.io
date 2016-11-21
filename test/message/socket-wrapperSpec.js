@@ -4,8 +4,8 @@ var SocketWrapper = require( '../../src/message/socket-wrapper' );
 describe( 'socket-wrapper creates a unified interface for sockets', function(){
 	it( 'creates a SocketWrapper', function(){
 		var socket = new SocketMock();
-		socket.remoteAddress = 'some-address';
-		socket.request = {
+		socket._socket.remoteAddress = 'some-address';
+		socket.upgradeReq = {
 			headers: {
 				referer: 'some-referer'
 			}
