@@ -108,12 +108,12 @@ SocketWrapper.finalizeMessage = function( preparedMessage ) {
  */
 SocketWrapper.prototype.getHandshakeData = function() {
 	var handshakeData = {
-		remoteAddress: this.socket.remoteAddress
+		remoteAddress: this.socket._socket.remoteAddress;
 	};
 
-	if( this.socket.request ) {
-		handshakeData.headers = this.socket.request.headers;
-		handshakeData.referer = this.socket.request.headers.referer;
+	if( this.socket.upgradeReq ) {
+		handshakeData.headers = this.socket.upgradeReq.headers;
+		handshakeData.referer = this.socket.upgradeReq.headers.origin;
 	}
 
 	return handshakeData;
