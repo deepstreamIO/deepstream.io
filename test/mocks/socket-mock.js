@@ -4,6 +4,7 @@ var SocketMock = function(){
 	this.sendMessages = [];
 	this.autoClose = true;
 	this.readyState = "";
+	this._socket = null
 };
 
 require("util").inherits( SocketMock, require("events").EventEmitter );
