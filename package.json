@@ -32,7 +32,7 @@
     "uws": "^0.10.11"
   },
   "devDependencies": {
-    "async": "^0.2.9",
+    "async": "^2.1.4",
     "coveralls": "^2.11.12",
     "grunt": "^1.0.1",
     "istanbul": "^0.4.4",
