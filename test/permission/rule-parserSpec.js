@@ -26,7 +26,7 @@ describe('validates rule strings from permissions.json', function(){
 		expect( ruleParser.validate( '16-new Number(3)' ) ).toBe( 'rule can\'t contain the new keyword' );
 		expect( ruleParser.validate( '~new SomeClass' ) ).toBe( 'rule can\'t contain the new keyword' );
 		expect( ruleParser.validate( '$new = "foo"' ) ).toBe( true ); // TODO also unicode in identifiers
-		expect( ruleParser.validate( 'a = "new"' ) ).toBe( true );
+		expect( ruleParser.validate( 'a == "new"' ) ).toBe( true );
 	});
 
 	it( 'rejects rules that define user functions', function(){
@@ -43,9 +43,9 @@ describe('validates rule strings from permissions.json', function(){
 		expect( ruleParser.validate( 'alert\t("whoops")' ) ).toBe( 'function alert is not supported' );
 		expect( ruleParser.validate( 'alert\n("whoops")' ) ).toBe( 'function alert is not supported' );
 		expect( ruleParser.validate( 'console["log"]("whoops")' ) )
-			.toBe( 'function log is not supported' );
-		expect( ruleParser.validate( 'global["con"+"sole"]["lo" + "g"]("whoops")' ) )
-			.toBe( 'function log is not supported' );
+			.toBe( 'function log"] is not supported' );
+		expect( ruleParser.validate( 'global["con"+"sole"]["lo" + `g`] ("whoops")' ) )
+			.toBe( 'function g`] is not supported' );
 		expect( ruleParser.validate( 'data.lastname.toUpperCase() && data.lastname.substr(0,3)', 'record', 'write' ) ).toBe( 'function substr is not supported' );
 	});
 

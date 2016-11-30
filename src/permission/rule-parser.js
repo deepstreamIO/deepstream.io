@@ -1,7 +1,7 @@
 var rulesMap = require( './rules-map' );
 
 // TODO: any of these are fine inside a string or comment context...
-var FUNCTION_REGEXP = /([\w]+)\s*\(/g;
+var FUNCTION_REGEXP = /([\w]+(?:['"`]\])?)\s*\(/g;
 var USER_FUNCTION_REGEXP = /[^\w$]function[^\w$]|=>/g;
 var NEW_REGEXP = /(^|[^\w$])new[^\w$]/;
 var OLD_DATA_REGEXP = /(^|[^\w~])oldData[^\w~]/;
