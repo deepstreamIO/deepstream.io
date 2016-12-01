@@ -498,9 +498,10 @@ ConnectionEndpoint.prototype._isHttpsServer = function( ) {
 */
 ConnectionEndpoint.prototype._getValidAuthData = function( authData ) {
 	var parsedData = JSON.parse( authData );
-	if( parsedData === null ) {
+	if( parsedData === null || parsedData === undefined ) {
 		throw new Error( 'invalid authentication data ' + authData )
 	}
+	return parsedData;
 };
 
 module.exports = ConnectionEndpoint;
