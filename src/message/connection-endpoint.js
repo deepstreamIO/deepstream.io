@@ -258,7 +258,7 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
 	 * Ensure the authentication data is valid JSON
 	 */
 	try{
-		authData = JSON.parse( msg.data[ 0 ] );
+		authData = this._getValidAuthData( msg.data[ 0 ] );
 	} catch( e ) {
 		errorMsg = 'Error parsing auth message';
 
@@ -486,6 +486,21 @@ ConnectionEndpoint.prototype._isHttpsServer = function( ) {
 		isHttps = true;
 	}
 	return isHttps;
+};
+
+/**
+* Checks for authentication data and throws if null or not well formed
+*
+* @throws Will throw an error on invalid auth data
+*
+* @private
+* @returns {void}
+*/
+ConnectionEndpoint.prototype._getValidAuthData = function( authData ) {
+	var parsedData = JSON.parse( authData );
+	if( parsedData === null ) {
+		throw new Error( 'invalid authentication data ' + authData )
+	}
 };
 
 module.exports = ConnectionEndpoint;
