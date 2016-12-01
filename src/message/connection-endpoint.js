@@ -191,7 +191,7 @@ ConnectionEndpoint.prototype._onConnection = function( socket ) {
 ConnectionEndpoint.prototype._processConnectionMessage = function( socketWrapper, connectionMessage ) {
 	var msg = messageParser.parse( connectionMessage )[ 0 ];
 
-	if( msg === null ) {
+	if( msg === null || msg === undefined ) {
 		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage );
 		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage );
 		socketWrapper.destroy();
