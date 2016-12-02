@@ -16,7 +16,7 @@ const RecordHandler = function (options) {
   this._storage.on('change', this._onStorageChange.bind(this))
   this._cache = new LRU({
     max: (options.cacheSize || 128e6),
-    length: ({ size }, recordName) => size * 1.1 + recordName.length
+    length: ({ size }, recordName) => size * 1.1 + recordName.length + 64
   })
 }
 
