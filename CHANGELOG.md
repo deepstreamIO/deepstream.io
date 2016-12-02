@@ -1,3 +1,11 @@
+## [2.0.1] - 2016.11.21
+
+### Bug Fixes
+
+- Fixed issue where connectionData was not available in auth requests
+  [#450](https://github.com/deepstreamIO/deepstream.io/issues/450)
+- Changelog of 2.0.0 mistakenly said that heartbeats were on port 80 instead of 6020
+
 ## [2.0.0] - 2016.11.18
 
 ### Features
@@ -12,7 +20,7 @@
   If a connected client fails to send a heartbeat within this timeout, it will be
   considered to have disconnected [#419](https://github.com/deepstreamIO/deepstream.io/issues/419)
 - Adds healthchecks – deepstream now responds to http GET requests to path
-  `/health-check` on port 80 with code 200. This path can be configured with
+  `/health-check` on port 6020 with code 200. This path can be configured with
   the `healthCheckPath` option in `config.yml`
 
 ### Enhancements
