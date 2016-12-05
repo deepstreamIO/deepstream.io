@@ -94,6 +94,33 @@ describe( 'connection endpoint', function() {
 			socketMock.emit( 'message', 'some more gibberish' );
 			expect( socketMock.lastSendMessage ).toBe( null );
 		});
+
+	});
+
+	describe( 'the connection endpoint handles null values', function(){
+
+		it( 'creates the connection endpoint', function(){
+			socketMock = websocketMock.simulateConnection();
+
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|CH+' ) );
+			socketMock.emit( 'message', _msg( 'C|CHR|localhost:6021+' ) );
+
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'C|A+' ) );
+			expect( socketMock.isDisconnected ).toBe( false );
+		});
+
+		it( 'handles invalid auth messages', function(){
+			socketMock.emit( 'message', 'A|REQ|null+' );
+			expect( socketMock.lastSendMessage ).toBe( _msg( 'A|E|INVALID_AUTH_MSG|invalid authentication message+' ) );
+			expect( socketMock.isDisconnected ).toBe( true );
+		});
+
+		it( 'has discarded the invalid socket', function(){
+			socketMock.lastSendMessage = null;
+			socketMock.emit( 'message', 'some more gibberish' );
+			expect( socketMock.lastSendMessage ).toBe( null );
+		});
+
 	});
 
 	describe( 'the connection endpoint handles invalid json', function(){
