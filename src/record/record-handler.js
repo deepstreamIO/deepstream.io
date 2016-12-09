@@ -57,22 +57,26 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
 
 RecordHandler.prototype.getRecord = function (recordName) {
   const record = this._recordCache.get(recordName)
-  return record ? Promise.resolve(record) : this._getRecordFromStorage(recordName).then(record => {
-    this._updateCache(recordName, record)
-    return record
-  })
+  return record ? Promise.resolve(record) : this._getRecordFromStorage(recordName).then(record => this._updateCache(recordName, record))
 }
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
   const recordName = message.data[0]
 
-  this
-    .getRecord(recordName)
-    .then(record => {
-      socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ])
-      this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-    })
-    .catch(error => this._sendError(error.event, [ recordName, error.message ], socketWrapper))
+  const record = this._recordCache.get(recordName)
+
+  if (record) {
+    socketWrapper.sendNative(messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ]))
+    this._subscriptionRegistry.subscribe(recordName, socketWrapper)
+  } else {
+    this
+      .getRecord(recordName)
+      .then(record => {
+        socketWrapper.sendNative(messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ]))
+        this._subscriptionRegistry.subscribe(recordName, socketWrapper)
+      })
+      .catch(error => this._sendError(error.event, [ recordName, error.message ], socketWrapper))
+  }
 }
 
 RecordHandler.prototype._update = function (socketWrapper, message) {
@@ -104,9 +108,9 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  const record = { _v: version, _d: data.value, _p: parent }
+  const record = { _v: version, _d: data.value, _p: parent, _s: message.data[2] }
 
-  if (!this._updateCache(recordName, record)) {
+  if (this._updateCache(recordName, record) !== record) {
     return
   }
 
@@ -164,12 +168,14 @@ RecordHandler.prototype._updateCache = function (recordName, nextRecord) {
   const prevRecord = this._recordCache.peek(recordName)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
-    return false
+    return prevRecord
   }
+
+  nextRecord._s = nextRecord._s || JSON.stringify(nextRecord._d)
 
   this._recordCache.set(recordName, nextRecord)
 
-  return true
+  return nextRecord
 }
 
 module.exports = RecordHandler
