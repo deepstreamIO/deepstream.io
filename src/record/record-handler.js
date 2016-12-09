@@ -66,13 +66,13 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
   const record = this._recordCache.get(recordName)
 
   if (record) {
-    socketWrapper.sendNative(messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ]))
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
     this._subscriptionRegistry.subscribe(recordName, socketWrapper)
   } else {
     this
       .getRecord(recordName)
       .then(record => {
-        socketWrapper.sendNative(messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ]))
+        socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
         this._subscriptionRegistry.subscribe(recordName, socketWrapper)
       })
       .catch(error => this._sendError(error.event, [ recordName, error.message ], socketWrapper))
