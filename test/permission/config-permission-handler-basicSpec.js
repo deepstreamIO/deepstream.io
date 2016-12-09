@@ -54,6 +54,22 @@ describe( 'permission handler applies basic permissions to incoming messages', f
 		expect( testPermission( permissions, message, 'userB' ) ).toBe( false );
 	});
 
+	it( 'denies snapshotting of a private record', function(){
+		var permissions = getBasePermissions();
+
+		permissions.record[ 'private/$userId' ] = {
+			'read': 'user.id === $userId'
+		};
+
+		var message = {
+			topic: C.TOPIC.RECORD,
+			action: C.ACTIONS.SNAPSHOT,
+			data: [ 'private/userA' ]
+		};
+
+		expect( testPermission( permissions, message, 'userB' ) ).toBe( false );
+	});
+
 	it( 'allows actions that dont need permissions for a private record', function(){
 		var permissions = getBasePermissions();
 
