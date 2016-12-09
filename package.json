@@ -30,7 +30,7 @@
     "lru-cache": "4.0.1",
     "mkdirp": "^0.5.1",
     "needle": "^1.1.0",
-    "uws": "^0.10.11"
+    "uws": "^0.12.0"
   },
   "devDependencies": {
     "async": "^0.2.9",
