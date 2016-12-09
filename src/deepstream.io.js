@@ -280,6 +280,10 @@ Deepstream.prototype._init = function() {
 		this._options.permissionHandler.setRecordHandler( this._recordHandler );
 	}
 
+	if( this._options.authenticationHandler.setRecordHandler ) {
+		this._options.authenticationHandler.setRecordHandler( this._recordHandler );
+	}
+
 	this._currentState = STATES.INITIALIZED;
 };
 
