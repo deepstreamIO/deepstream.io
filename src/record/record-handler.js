@@ -55,9 +55,18 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
   this._sendError(C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ], socketWrapper)
 }
 
-RecordHandler.prototype.getRecord = function (recordName) {
+RecordHandler.prototype.getRecord = function (recordName, callback) {
   const record = this._recordCache.get(recordName)
-  return record ? Promise.resolve(record) : this._getRecordFromStorage(recordName).then(record => this._updateCache(recordName, record))
+  if (record) {
+    return Promise.resolve(record)
+  }
+  return new Promise((resolve, reject) => this._getRecordFromStorage(recordName, (error, recordName, record) => {
+    if (error) {
+      reject(error)
+    } else {
+      resolve(this._updateCache(recordName, record))
+    }
+  }))
 }
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
@@ -136,16 +145,16 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
   }
 }
 
-RecordHandler.prototype._getRecordFromStorage = function (recordName) {
-  return new Promise((resolve, reject) => this._storage.get(recordName, (error, record) => {
+RecordHandler.prototype._getRecordFromStorage = function (recordName, callback) {
+  this._storage.get(recordName, (error, record) => {
     if (error || !record) {
       const error = new Error('error while loading ' + recordName + ' from storage:' + (error || 'not_found'))
       error.event = C.EVENT.RECORD_LOAD_ERROR
-      reject(error)
+      callback(error, recordName)
     } else {
-      resolve(record)
+      callback(null, recordName, record)
     }
-  }))
+  })
 }
 
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
@@ -155,13 +164,14 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
     return
   }
 
-  this
-    ._getRecordFromStorage(recordName, C.SOURCE_STORAGE_CONNECTOR)
-    .then(nextRecord => {
+  this._getRecordFromStorage(recordName, (error, recordName, nextRecord) => {
+    if (error) {
       const message = { data: [ recordName, nextRecord._v, JSON.stringify(nextRecord._d), nextRecord._p ].filter(x => x) }
       this._update(C.SOURCE_STORAGE_CONNECTOR, message)
-    })
-    .catch(error => this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ]))
+    } else {
+      this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ])
+    }
+  })
 }
 
 RecordHandler.prototype._updateCache = function (recordName, nextRecord) {
