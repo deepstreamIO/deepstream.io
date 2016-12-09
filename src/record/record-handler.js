@@ -14,8 +14,8 @@ const RecordHandler = function (options) {
   this._message = options.messageConnector || options.message
   this._storage = options.storageConnector || options.storage
   this._storage.on('change', this._onStorageChange.bind(this))
-  this._cache = new LRU({
-    max: (options.cacheSize || 1e3)
+  this._recordCache = new LRU({
+    max: (options.cacheSize || 1e4)
   })
 }
 
@@ -56,8 +56,11 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
 }
 
 RecordHandler.prototype.getRecord = function (recordName) {
-  const entry = this._cache.get(recordName)
-  return entry ? Promise.resolve(entry.record) : this._getRecordFromStorage(recordName)
+  const record = this._recordCache.get(recordName)
+  return record ? Promise.resolve(record) : this._getRecordFromStorage(recordName).then(record => {
+    this._updateCache(recordName, record)
+    return record
+  })
 }
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
@@ -103,13 +106,10 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
 
   const record = { _v: version, _d: data.value, _p: parent }
 
-  const entry = this._cache.peek(recordName)
-
-  if (entry && utils.compareVersions(entry.record._v, record._v)) {
+  if (!this._updateCache(recordName, record)) {
     return
   }
 
-  this._cache.set(recordName, { record })
   this._subscriptionRegistry.sendToSubscribers(recordName, message.raw || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, message.data), socketWrapper)
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
@@ -145,19 +145,31 @@ RecordHandler.prototype._getRecordFromStorage = function (recordName) {
 }
 
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
-  const entry = this._cache.peek(recordName)
+  const prevRecord = this._recordCache.peek(recordName)
 
-  if (entry && utils.compareVersions(entry.record._v, version)) {
+  if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
     return
   }
 
   this
     ._getRecordFromStorage(recordName, C.SOURCE_STORAGE_CONNECTOR)
-    .then(record => {
-      const message = { data: [ recordName, record._v, JSON.stringify(record._d), record._p ].filter(x => x) }
+    .then(nextRecord => {
+      const message = { data: [ recordName, nextRecord._v, JSON.stringify(nextRecord._d), nextRecord._p ].filter(x => x) }
       this._update(C.SOURCE_STORAGE_CONNECTOR, message)
     })
     .catch(error => this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ]))
+}
+
+RecordHandler.prototype._updateCache = function (recordName, nextRecord) {
+  const prevRecord = this._recordCache.peek(recordName)
+
+  if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
+    return false
+  }
+
+  this._recordCache.set(recordName, nextRecord)
+
+  return true
 }
 
 module.exports = RecordHandler
