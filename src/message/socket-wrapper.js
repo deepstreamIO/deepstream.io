@@ -175,7 +175,6 @@ SocketWrapper.prototype.send = function( message ) {
  */
 SocketWrapper.prototype.destroy = function() {
 	this.socket.close();
-	this.socket.removeAllListeners();
 	this.authCallBack = null;
 };
 
@@ -189,11 +188,12 @@ SocketWrapper.prototype._onSocketClose = function() {
 	this.isClosed = true;
 	this.emit( 'close' );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user );
+	this.socket.removeAllListeners();
 };
 
 /**
  * Initialise the handshake data from the initial connection
- * 
+ *
  * @private
  * @returns void
  */
