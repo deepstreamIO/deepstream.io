@@ -15,8 +15,7 @@ const RecordHandler = function (options) {
   this._storage = options.storageConnector || options.storage
   this._storage.on('change', this._onStorageChange.bind(this))
   this._cache = new LRU({
-    max: (options.cacheSize || 128e6),
-    length: ({ size }, recordName) => size * 1.1 + recordName.length + 64
+    max: (options.cacheSize || 1e3)
   })
 }
 
@@ -56,19 +55,16 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
   this._sendError(C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ], socketWrapper)
 }
 
-RecordHandler.prototype.getRecord = function (recordName, socketWrapper) {
+RecordHandler.prototype.getRecord = function (recordName) {
   const entry = this._cache.get(recordName)
-  return entry
-    ? Promise.resolve(entry.record)
-    : this._getRecordFromStorage(recordName)
-        .then(record => this._updateCache(recordName, record, null, socketWrapper))
+  return entry ? Promise.resolve(entry.record) : this._getRecordFromStorage(recordName)
 }
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
   const recordName = message.data[0]
 
   this
-    .getRecord(recordName, socketWrapper)
+    .getRecord(recordName)
     .then(record => {
       socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ])
       this._subscriptionRegistry.subscribe(recordName, socketWrapper)
@@ -79,7 +75,7 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 RecordHandler.prototype._update = function (socketWrapper, message) {
   const recordName = message.data[0]
 
-  if (message.data.length < 4) {
+  if (message.data.length < 3) {
     this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[0] ], socketWrapper)
     return
   }
@@ -107,9 +103,16 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
 
   const record = { _v: version, _d: data.value, _p: parent }
 
-  this._updateCache(recordName, record, message.raw, socketWrapper)
+  const entry = this._cache.peek(recordName)
 
-  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+  if (entry && utils.compareVersions(entry.record._v, record._v)) {
+    return
+  }
+
+  this._cache.set(recordName, { record })
+  this._subscriptionRegistry.sendToSubscribers(recordName, message.raw || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, message.data), socketWrapper)
+
+  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
     this._storage.set(recordName, record)
     this._message.publish(C.TOPIC.RECORD, message)
   }
@@ -149,31 +152,12 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
   }
 
   this
-    ._getRecordFromStorage(recordName)
-    .then(record => this._updateCache(recordName, record, null, C.SOURCE_STORAGE_CONNECTOR))
+    ._getRecordFromStorage(recordName, C.SOURCE_STORAGE_CONNECTOR)
+    .then(record => {
+      const message = { data: [ recordName, record._v, JSON.stringify(record._d), record._p ].filter(x => x) }
+      this._update(C.SOURCE_STORAGE_CONNECTOR, message)
+    })
     .catch(error => this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ]))
-}
-
-RecordHandler.prototype._updateCache = function (recordName, record, msgString, socketWrapper) {
-  const entry = this._cache.peek(recordName)
-
-  if (entry && utils.compareVersions(entry.record._v, record._v)) {
-    return entry.record
-  }
-
-  if (!msgString) {
-    msgString = messageBuilder.getMsg(
-      C.TOPIC.RECORD,
-      C.ACTIONS.UPDATE,
-      [ recordName, record._v, record._d, record._p ]
-    )
-  }
-
-  this._subscriptionRegistry.sendToSubscribers(recordName, msgString, socketWrapper)
-
-  this._cache.set(recordName, { record, size: msgString.length })
-
-  return record
 }
 
 module.exports = RecordHandler
