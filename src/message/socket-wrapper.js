@@ -26,6 +26,8 @@ var SocketWrapper = function( socket, options ) {
 	this.authAttempts = 0;
 	this.setMaxListeners( 0 );
 	this.uuid = Math.random();
+	this._handshakeData = null;
+	this._setUpHandshakeData();
 
 	this._queuedMessages = [];
 	this._currentPacketMessageCount = 0;
@@ -107,16 +109,7 @@ SocketWrapper.finalizeMessage = function( preparedMessage ) {
  * @returns {Object} handshakeData
  */
 SocketWrapper.prototype.getHandshakeData = function() {
-	var handshakeData = {
-		remoteAddress: this.socket._socket.remoteAddress
-	};
-
-	if( this.socket.upgradeReq ) {
-		handshakeData.headers = this.socket.upgradeReq.headers;
-		handshakeData.referer = this.socket.upgradeReq.headers.referer;
-	}
-
-	return handshakeData;
+	return this._handshakeData;
 };
 
 /**
@@ -182,7 +175,6 @@ SocketWrapper.prototype.send = function( message ) {
  */
 SocketWrapper.prototype.destroy = function() {
 	this.socket.close();
-	this.socket.removeAllListeners();
 	this.authCallBack = null;
 };
 
@@ -196,6 +188,25 @@ SocketWrapper.prototype._onSocketClose = function() {
 	this.isClosed = true;
 	this.emit( 'close' );
 	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user );
+	this.socket.removeAllListeners();
 };
+
+/**
+ * Initialise the handshake data from the initial connection
+ *
+ * @private
+ * @returns void
+ */
+SocketWrapper.prototype._setUpHandshakeData = function() {
+	this._handshakeData = {
+		remoteAddress: this.socket._socket.remoteAddress
+	};
+
+	if( this.socket.upgradeReq ) {
+		this._handshakeData.headers = this.socket.upgradeReq.headers;
+		this._handshakeData.referer = this.socket.upgradeReq.headers.referer;
+	}
+	return this._handshakeData;
+}
 
 module.exports = SocketWrapper;
