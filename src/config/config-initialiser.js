@@ -205,9 +205,7 @@ function resolvePluginClass( plugin, type ) {
  */
 function handleAuthStrategy( config ) {
 	var authStrategies = {
-		none: require( '../authentication/open-authentication-handler' ),
-		file: require( '../authentication/file-based-authentication-handler' ),
-		http: require( '../authentication/http-authentication-handler' )
+		none: require( '../authentication/open-authentication-handler' )
 	};
 
 	if( !config.auth ) {

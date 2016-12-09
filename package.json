@@ -3,46 +3,14 @@
   "version": "2.0.1",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
-  "bin": {
-    "deepstream": "./bin/deepstream"
-  },
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",
-    "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
-    "reporter": "node jasmine-runner",
-    "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
-    "test-http-server": "node test/test-helper/start-test-server.js",
-    "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
-    "adm-zip": "^0.4.7",
-    "colors": "^1.0.3",
-    "commander": "^2.9.0",
-    "glob": "^7.0.5",
     "js-yaml": "^3.6.1",
     "lru-cache": "4.0.1",
-    "mkdirp": "^0.5.1",
-    "needle": "^1.1.0",
     "uws": "^0.12.0"
-  },
-  "devDependencies": {
-    "async": "^0.2.9",
-    "coveralls": "^2.11.12",
-    "grunt": "^1.0.1",
-    "istanbul": "^0.4.4",
-    "jasmine": "^2.5.2",
-    "jasmine-spec-reporter": "^2.5.0",
-    "n0p3": "^1.0.2",
-    "nexe": "^1.1.2",
-    "proxyquire": "1.7.10",
-    "watch": "^1.0.0"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",

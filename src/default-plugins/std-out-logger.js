@@ -1,5 +1,3 @@
-require( 'colors' );
-
 var C = require( '../constants/constants' ),
 	EOL = require( 'os' ).EOL;
 
@@ -14,13 +12,6 @@ var C = require( '../constants/constants' ),
 var StdOutLogger = function( options ) {
 	this._options = options || {};
 	this.isReady = true;
-	this._$useColors = this._options.colors === undefined ? true : this._options.colors;
-	this._logLevelColors = [
-		'white',
-		'green',
-		'yellow',
-		'red'
-	];
 
 	this._currentLogLevel = C.LOG_LEVEL[ this._options.logLevel ] || C.LOG_LEVEL.DEBUG;
 };
@@ -49,11 +40,7 @@ StdOutLogger.prototype.log = function( logLevel, event, logMessage ) {
 		outputStream = 'stdout';
 	}
 
-	if( this._$useColors ) {
-		process[ outputStream ].write( msg[ this._logLevelColors[ logLevel ] ] + EOL );
-	} else {
-		process[ outputStream ].write( msg + EOL );
-	}
+	process[ outputStream ].write( msg + EOL );
 };
 
 /**

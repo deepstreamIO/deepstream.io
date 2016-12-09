@@ -130,7 +130,6 @@ Deepstream.prototype.start = function() {
 		throw new Error( `Server can only start after it stops succesfully, currently ${this._currentState}` );
 	}
 	this._currentState = STATES.STARTING;
-	this._showStartLogo();
 	var loggerInitializer = new DependencyInitialiser( this._options, 'logger' );
 	loggerInitializer.once( 'ready', this._start.bind( this ) );
 };
@@ -244,33 +243,6 @@ Deepstream.prototype._loadConfig = function( config ) {
 Deepstream.prototype._onStopped = function() {
 	this._currentState = STATES.CLOSED;
 	this.emit( 'stopped' );
-};
-
-/**
- * Shows a giant ASCII art logo which is absolutely crucial
- * for the proper functioning of the server
- *
- * @private
- * @returns {void}
- */
-Deepstream.prototype._showStartLogo = function() {
-	if( this._options.showLogo !== true ) {
-		return;
-	}
-	/* istanbul ignore next */
-	var logo;
-
-	try {
-		const nexeres = require( 'nexeres' );
-		logo = nexeres.get( 'ascii-logo.txt' ).toString( 'ascii' );
-	}
-	catch( e ) {
-		logo = fs.readFileSync( path.join(__dirname, '..', '/ascii-logo.txt'), 'utf8' );
-	}
-
-	/* istanbul ignore next */
-	process.stdout.write( logo + EOL );
-	process.stdout.write( ' =========================   starting   ==========================' + EOL );
 };
 
 /**
