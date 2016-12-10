@@ -124,10 +124,8 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     _s: message.data[2]
   }
 
-  const ack = message.data[4]
-
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
-    this._storage.set(recordName, record, ack && this._sendAck, socketWrapper)
+    this._storage.set(recordName, record, message.data[4] && this._sendAck, socketWrapper)
     this._message.publish(C.TOPIC.RECORD, message)
   }
 
