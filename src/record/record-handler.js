@@ -5,6 +5,8 @@ const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 const LRU = require('lru-cache')
 
+const REV_EXPR = /\d+-.+/
+
 const RecordHandler = function (options) {
   this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
   this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
@@ -98,14 +100,14 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
 
   const version = message.data[1]
 
-  if (!version || !version.match(/\d+-.+/)) {
+  if (!version || !version.match(REV_EXPR)) {
     this._sendError(C.EVENT.INVALID_VERSION, [ recordName, version ], socketWrapper)
     return
   }
 
   const parent = message.data[3]
 
-  if (parent && !parent.match(/\d+-.+/)) {
+  if (parent && !parent.match(REV_EXPR)) {
     this._sendError(C.EVENT.INVALID_VERSION, [ recordName, parent ], socketWrapper)
     return
   }
