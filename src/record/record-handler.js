@@ -178,7 +178,7 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
 
   this._getRecordFromStorage(recordName, (error, recordName, nextRecord) => {
     if (error) {
-      const message = { data: [ recordName, nextRecord._v, JSON.stringify(nextRecord._d), nextRecord._p ].filter(x => x) }
+      const message = { data: [ recordName, nextRecord._v, JSON.stringify(nextRecord._d), nextRecord._p ] }
       this._update(C.SOURCE_STORAGE_CONNECTOR, message)
     } else {
       this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ])
