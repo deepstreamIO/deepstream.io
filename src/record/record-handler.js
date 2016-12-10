@@ -131,11 +131,9 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     this._message.publish(C.TOPIC.RECORD, message)
   }
 
-  if (this._updateCache(recordName, record) !== record) {
-    return
+  if (this._updateCache(recordName, record) === record) {
+    this._subscriptionRegistry.sendToSubscribers(recordName, message.raw || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, message.data), socketWrapper)
   }
-
-  this._subscriptionRegistry.sendToSubscribers(recordName, message.raw || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, message.data), socketWrapper)
 }
 
 RecordHandler.prototype._sendAck = function (error, recordName, record) {
