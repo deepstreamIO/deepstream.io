@@ -79,7 +79,8 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
   const record = this._recordCache.get(recordName)
 
   if (record) {
-    this._sendRead(null, recordName, record, socketWrapper)
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
+    this._subscriptionRegistry.subscribe(recordName, socketWrapper)
   } else {
     this._storage.get(recordName, this._sendRead, socketWrapper)
   }
