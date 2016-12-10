@@ -87,13 +87,15 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 
 RecordHandler.prototype._sendRead = function (error, recordName, record, socketWrapper) {
   record = this._updateCache(recordName, record)
-  if (error) {
-    const error = new Error('error while loading ' + recordName + ' from storage:' + (error || 'not_found'))
-    error.event = C.EVENT.RECORD_LOAD_ERROR
-    this._sendError(error.event, [ recordName, error.message ], socketWrapper)
-  } else {
+
+  if (record) {
     socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ])
     this._subscriptionRegistry.subscribe(recordName, socketWrapper)
+  }
+
+  if (!record || error) {
+    const message = 'error while loading ' + recordName + ' from storage:' + (error || 'not_found')
+    this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], !record && socketWrapper)
   }
 }
 
