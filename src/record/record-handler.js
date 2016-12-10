@@ -117,18 +117,34 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  const record = { _v: version, _d: data.value, _p: parent, _s: message.data[2] }
+  const record = {
+    _v: version,
+    _d: data.value,
+    _p: parent,
+    _s: message.data[2]
+  }
+
+  const ack = message.data[4]
+
+  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
+    this._storage.set(recordName, record, ack && this._sendAck, socketWrapper)
+    this._message.publish(C.TOPIC.RECORD, message)
+  }
 
   if (this._updateCache(recordName, record) !== record) {
     return
   }
 
   this._subscriptionRegistry.sendToSubscribers(recordName, message.raw || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, message.data), socketWrapper)
+}
 
-  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
-    this._storage.set(recordName, record)
-    this._message.publish(C.TOPIC.RECORD, message)
-  }
+RecordHandler.prototype._sendAck = function (error, recordName, record) {
+  const socketWrapper = this
+  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT_ERROR, [
+    recordName,
+    record._v,
+    error ? messageBuilder.typed(error.message || error) : undefined
+  ])
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
