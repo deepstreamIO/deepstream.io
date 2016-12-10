@@ -19,6 +19,8 @@ const RecordHandler = function (options) {
   this._recordCache = new LRU({
     max: (options.cacheSize || 1e4)
   })
+  this._sendRead = this._sendRead.bind(this)
+  this._sendAck = this._sendAck.bind(this)
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
@@ -62,7 +64,7 @@ RecordHandler.prototype.getRecord = function (recordName, callback) {
   if (record) {
     return Promise.resolve(record)
   }
-  return new Promise((resolve, reject) => this._getRecordFromStorage(recordName, (error, recordName, record) => {
+  return new Promise((resolve, reject) => this._storage.get(recordName, (error, recordName, record) => {
     if (error) {
       reject(error)
     } else {
@@ -77,16 +79,21 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
   const record = this._recordCache.get(recordName)
 
   if (record) {
+    this._sendRead(null, recordName, record, socketWrapper)
+  } else {
+    this._storage.get(recordName, this._sendRead, socketWrapper)
+  }
+}
+
+RecordHandler.prototype._sendRead = function (error, recordName, record, socketWrapper) {
+  record = this._updateCache(recordName, record)
+  if (error) {
+    const error = new Error('error while loading ' + recordName + ' from storage:' + (error || 'not_found'))
+    error.event = C.EVENT.RECORD_LOAD_ERROR
+    this._sendError(error.event, [ recordName, error.message ], socketWrapper)
+  } else {
     socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
     this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-  } else {
-    this
-      .getRecord(recordName)
-      .then(record => {
-        socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
-        this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-      })
-      .catch(error => this._sendError(error.event, [ recordName, error.message ], socketWrapper))
   }
 }
 
@@ -136,8 +143,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   }
 }
 
-RecordHandler.prototype._sendAck = function (error, recordName, record) {
-  const socketWrapper = this
+RecordHandler.prototype._sendAck = function (error, recordName, record, socketWrapper) {
   socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT_ERROR, [
     recordName,
     record._v,
@@ -159,18 +165,6 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
   }
 }
 
-RecordHandler.prototype._getRecordFromStorage = function (recordName, callback) {
-  this._storage.get(recordName, (error, record) => {
-    if (error || !record) {
-      const error = new Error('error while loading ' + recordName + ' from storage:' + (error || 'not_found'))
-      error.event = C.EVENT.RECORD_LOAD_ERROR
-      callback(error, recordName)
-    } else {
-      callback(null, recordName, record)
-    }
-  })
-}
-
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
   const prevRecord = this._recordCache.peek(recordName)
 
@@ -178,7 +172,7 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
     return
   }
 
-  this._getRecordFromStorage(recordName, (error, recordName, nextRecord) => {
+  this._storage.get(recordName, (error, recordName, nextRecord) => {
     if (error) {
       this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ])
     } else {
