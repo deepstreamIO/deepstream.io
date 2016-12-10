@@ -79,8 +79,7 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
   const record = this._recordCache.get(recordName)
 
   if (record) {
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
-    this._subscriptionRegistry.subscribe(recordName, socketWrapper)
+    this._sendRead(null, recordName, record, socketWrapper)
   } else {
     this._storage.get(recordName, this._sendRead, socketWrapper)
   }
@@ -93,7 +92,7 @@ RecordHandler.prototype._sendRead = function (error, recordName, record, socketW
     error.event = C.EVENT.RECORD_LOAD_ERROR
     this._sendError(error.event, [ recordName, error.message ], socketWrapper)
   } else {
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ])
     this._subscriptionRegistry.subscribe(recordName, socketWrapper)
   }
 }
@@ -130,8 +129,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   const record = {
     _v: version,
     _d: data.value,
-    _p: parent,
-    _s: message.data[2]
+    _p: parent
   }
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
@@ -189,8 +187,6 @@ RecordHandler.prototype._updateCache = function (recordName, nextRecord) {
   if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
     return prevRecord
   }
-
-  nextRecord._s = nextRecord._s || JSON.stringify(nextRecord._d)
 
   this._recordCache.set(recordName, nextRecord)
 
