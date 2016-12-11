@@ -1,3 +1,5 @@
+'use strict'
+
 const pidHelper = require('./pid-helper')
 
 module.exports = function (program) {

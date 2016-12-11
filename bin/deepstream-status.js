@@ -1,3 +1,5 @@
+'use strict'
+
 const pidHelper = require('./pid-helper')
 
 function statusCheck(cmd, program) {

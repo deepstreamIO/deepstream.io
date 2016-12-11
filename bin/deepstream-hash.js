@@ -1,3 +1,5 @@
+'use strict'
+
 const FileAuthenticationHandler = require('../src/authentication/file-based-authentication-handler')
 const jsYamlLoader = require('../src/config/js-yaml-loader')
 

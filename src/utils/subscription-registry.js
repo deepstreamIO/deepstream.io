@@ -185,7 +185,7 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   sendToSubscribers(name, msgString, sender) {
-    if (this._subscriptions[name] == undefined) {
+    if (!this._subscriptions[name]) {
       return
     }
 
