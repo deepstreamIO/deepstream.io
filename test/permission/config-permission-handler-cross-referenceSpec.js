@@ -1,237 +1,235 @@
-var ConfigPermissionHandler = require( '../../src/permission/config-permission-handler' );
-var StorageMock = require( '../mocks/storage-mock' );
-var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissions;
-var C = require( '../../src/constants/constants' );
-var noop = function(){};
-var lastError = function() {
-	return options.logger.log.calls.mostRecent().args[ 2 ];
-};
-var options = {
-	logger: { log: jasmine.createSpy( 'log' ) },
-	cache: new StorageMock(),
-	storage: new StorageMock(),
-	cacheRetrievalTimeout: 500,
-	permission: {
-		options: {
-			cacheEvacuationInterval: 60000
-		}
-	}
-};
+const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
+const StorageMock = require('../mocks/storage-mock')
+const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
+const C = require('../../src/constants/constants')
+const noop = function () {}
+const lastError = function () {
+  return options.logger.log.calls.mostRecent().args[2]
+}
+let options = {
+  logger: { log: jasmine.createSpy('log') },
+  cache: new StorageMock(),
+  storage: new StorageMock(),
+  cacheRetrievalTimeout: 500,
+  permission: {
+    options: {
+      cacheEvacuationInterval: 60000
+    }
+  }
+}
 
 
-var testPermission = function( permissions, message, username, userdata, callback ) {
-	var permissionHandler = new ConfigPermissionHandler( options, permissions );
-	permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c( r ); }});
-	var permissionResult;
+const testPermission = function (permissions, message, username, userdata, callback) {
+  const permissionHandler = new ConfigPermissionHandler(options, permissions)
+  permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
+  let permissionResult
 
-	username = username || 'someUser';
-	userdata = userdata || {};
-	callback = callback || function( error, result ) {
-		permissionResult = result;
-	};
-	permissionHandler.canPerformAction( username, message, callback, userdata );
-	return permissionResult;
-};
+  username = username || 'someUser'
+  userdata = userdata || {}
+  callback = callback || function (error, result) {
+    permissionResult = result
+  }
+  permissionHandler.canPerformAction(username, message, callback, userdata)
+  return permissionResult
+}
 
-describe( 'permission handler loads data for cross referencing', function(){
+describe('permission handler loads data for cross referencing', () => {
+  beforeAll((next) => {
+    options.cache.set('item/doesExist', { isInStock: true }, next)
+  })
 
-	beforeAll(function( next ){
-		options.cache.set( 'item/doesExist', { isInStock: true }, next );
-	});
+  it('retrieves an existing record from a synchronous cache', (next) => {
+    const permissions = getBasePermissions()
+    options.cache.nextGetWillBeSynchronous = true
 
-	it( 'retrieves an existing record from a synchronous cache', function( next ){
-		var permissions = getBasePermissions();
-		options.cache.nextGetWillBeSynchronous = true;
+    permissions.record['purchase/$itemId'] = {
+      read: '_("item/" + $itemId).isInStock === true'
+    }
 
-		permissions.record[ 'purchase/$itemId' ] = {
-			'read': '_("item/" + $itemId).isInStock === true'
-		};
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.READ,
+      data: ['purchase/doesExist']
+    }
 
-		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.READ,
-			data: [ 'purchase/doesExist' ]
-		};
+    const onDone = function (error, result) {
+      expect(error).toBe(null)
+      expect(result).toBe(true)
+      expect(options.cache.lastRequestedKey).toBe('item/doesExist')
+      next()
+    }
 
-		var onDone = function( error, result ) {
-			expect( error ).toBe( null );
-			expect( result ).toBe( true );
-			expect( options.cache.lastRequestedKey ).toBe( 'item/doesExist' );
-			next();
-		};
+    testPermission(permissions, message, null, null, onDone)
+  })
 
-		testPermission( permissions, message, null, null, onDone );
-	});
+  it('retrieves two records from the cache for crossreferencing purposes', (next) => {
+    const permissions = getBasePermissions()
 
-	it( 'retrieves two records from the cache for crossreferencing purposes', function( next ){
-		var permissions = getBasePermissions();
+    options.cache.set('item/itemA', { isInStock: true }, noop)
+    options.cache.set('item/itemB', { isInStock: false }, noop)
 
-		options.cache.set( 'item/itemA', { isInStock: true }, noop );
-		options.cache.set( 'item/itemB', { isInStock: false }, noop );
+    options.cache.nextGetWillBeSynchronous = false
+    permissions.record['purchase/$itemId'] = {
+      read: '_("item/" + $itemId).isInStock === true && _("item/itemB").isInStock === false'
+    }
 
-		options.cache.nextGetWillBeSynchronous = false;
-		permissions.record[ 'purchase/$itemId' ] = {
-			'read': '_("item/" + $itemId).isInStock === true && _("item/itemB").isInStock === false'
-		};
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.READ,
+      data: ['purchase/itemA']
+    }
 
-		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.READ,
-			data: [ 'purchase/itemA' ]
-		};
+    const onDone = function (error, result) {
+      expect(error).toBe(null)
+      expect(result).toBe(true)
+      next()
+    }
 
-		var onDone = function( error, result ) {
-			expect( error ).toBe( null );
-			expect( result ).toBe( true );
-			next();
-		};
+    testPermission(permissions, message, null, null, onDone)
+  })
 
-		testPermission( permissions, message, null, null, onDone );
-	});
+  it('retrieves and expects a non existing record', (next) => {
+    const permissions = getBasePermissions()
 
-	it( 'retrieves and expects a non existing record', function( next ){
-		var permissions = getBasePermissions();
+    options.cache.nextGetWillBeSynchronous = false
+    permissions.record['purchase/$itemId'] = {
+      read: '_("doesNotExist") !== null && _("doesNotExist").isInStock === true'
+    }
 
-		options.cache.nextGetWillBeSynchronous = false;
-		permissions.record[ 'purchase/$itemId' ] = {
-			'read': '_("doesNotExist") !== null && _("doesNotExist").isInStock === true'
-		};
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.READ,
+      data: ['purchase/itemA']
+    }
 
-		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.READ,
-			data: [ 'purchase/itemA' ]
-		};
+    const onDone = function (error, result) {
+      expect(error).toBe(null)
+      expect(result).toBe(false)
+      next()
+    }
 
-		var onDone = function( error, result ) {
-			expect( error ).toBe( null );
-			expect( result ).toBe( false );
-			next();
-		};
+    testPermission(permissions, message, null, null, onDone)
+  })
 
-		testPermission( permissions, message, null, null, onDone );
-	});
+  it('gets a non existant record thats not expected', (next) => {
+    const permissions = getBasePermissions()
 
-	it( 'gets a non existant record thats not expected', function( next ){
-		var permissions = getBasePermissions();
+    options.cache.nextGetWillBeSynchronous = false
+    permissions.record['purchase/$itemId'] = {
+      read: '_("doesNotExist").isInStock === true'
+    }
 
-		options.cache.nextGetWillBeSynchronous = false;
-		permissions.record[ 'purchase/$itemId' ] = {
-			'read': '_("doesNotExist").isInStock === true'
-		};
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.READ,
+      data: ['purchase/itemA']
+    }
 
-		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.READ,
-			data: [ 'purchase/itemA' ]
-		};
+    const onDone = function (error, result) {
+      expect(lastError()).toContain('TypeError: Cannot read property \'isInStock\' of null')
+      expect(result).toBe(false)
+      next()
+    }
 
-		var onDone = function( error, result ) {
-			expect( lastError() ).toContain( 'TypeError: Cannot read property \'isInStock\' of null' );
-			expect( result ).toBe( false );
-			next();
-		};
+    testPermission(permissions, message, null, null, onDone)
+  })
 
-		testPermission( permissions, message, null, null, onDone );
-	});
+  it('mixes old data and cross references', (next) => {
+    const permissions = getBasePermissions()
+    options.cache.reset()
+    options.cache.set('userA', { firstname: 'Egon' }, noop)
+    options.cache.set('userB', { firstname: 'Mike' }, noop)
+    options.cache.nextGetWillBeSynchronous = false
+    permissions.record.userA = {
+      read: 'oldData.firstname === "Egon" && _("userB").firstname === "Mike"'
+    }
 
-	it( 'mixes old data and cross references', function( next ){
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.READ,
+      data: ['userA']
+    }
 
-		var permissions = getBasePermissions();
-		options.cache.reset();
-		options.cache.set( 'userA', { firstname: 'Egon' }, noop );
-		options.cache.set( 'userB', { firstname: 'Mike' }, noop );
-		options.cache.nextGetWillBeSynchronous = false;
-		permissions.record.userA = {
-			'read': 'oldData.firstname === "Egon" && _("userB").firstname === "Mike"'
-		};
+    const onDone = function (error, result) {
+      expect(error).toBe(null)
+      expect(result).toBe(true)
+      expect(options.cache.getCalls.length).toBe(2)
+      expect(options.cache.hadGetFor('userA')).toBe(true)
+      expect(options.cache.hadGetFor('userB')).toBe(true)
+      setTimeout(next, 200)
+    }
 
-		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.READ,
-			data: [ 'userA' ]
-		};
+    testPermission(permissions, message, null, null, onDone)
+  })
 
-		var onDone = function( error, result ) {
-			expect( error ).toBe( null );
-			expect( result ).toBe( true );
-			expect( options.cache.getCalls.length ).toBe( 2 );
-			expect( options.cache.hadGetFor( 'userA' ) ).toBe( true );
-			expect( options.cache.hadGetFor( 'userB' ) ).toBe( true );
-			setTimeout( next, 200 );
-		};
+  it('retrieves keys from variables', (next) => {
+    const permissions = getBasePermissions()
 
-		testPermission( permissions, message, null, null, onDone );
-	});
+    options.cache.set('userX', { firstname: 'Joe' }, noop)
 
-	it( 'retrieves keys from variables', function( next ){
-		var permissions = getBasePermissions();
+    permissions.event['some-event'] = {
+      publish: '_(data.owner).firstname === "Joe"'
+    }
 
-		options.cache.set( 'userX', { firstname: 'Joe' }, noop );
+    const message = {
+      topic: C.TOPIC.EVENT,
+      action: C.ACTIONS.EVENT,
+      data: ['some-event', 'O{"owner":"userX"}']
+    }
 
-		permissions.event[ 'some-event' ] = {
-			'publish': '_(data.owner).firstname === "Joe"'
-		};
+    const callback = function (error, result) {
+      expect(error).toBe(null)
+      expect(result).toBe(true)
+      next()
+    }
 
-		var message = {
-			topic: C.TOPIC.EVENT,
-			action: C.ACTIONS.EVENT,
-			data: [ 'some-event', 'O{"owner":"userX"}' ]
-		};
+    testPermission(permissions, message, 'username', null, callback)
+  })
 
-		var callback = function( error, result ) {
-			expect( error ).toBe( null );
-			expect( result ).toBe( true );
-			next();
-		};
+  it('retrieves keys from variables again', (next) => {
+    const permissions = getBasePermissions()
 
-		testPermission( permissions, message, 'username', null, callback );
-	});
+    options.cache.set('userX', { firstname: 'Mike' }, noop)
 
-	it( 'retrieves keys from variables again', function( next ){
-		var permissions = getBasePermissions();
+    permissions.event['some-event'] = {
+      publish: '_(data.owner).firstname === "Joe"'
+    }
 
-		options.cache.set( 'userX', { firstname: 'Mike' }, noop );
+    const message = {
+      topic: C.TOPIC.EVENT,
+      action: C.ACTIONS.EVENT,
+      data: ['some-event', 'O{"owner":"userX"}']
+    }
 
-		permissions.event[ 'some-event' ] = {
-			'publish': '_(data.owner).firstname === "Joe"'
-		};
+    const callback = function (error, result) {
+      expect(error).toBe(null)
+      expect(result).toBe(false)
+      next()
+    }
 
-		var message = {
-			topic: C.TOPIC.EVENT,
-			action: C.ACTIONS.EVENT,
-			data: [ 'some-event', 'O{"owner":"userX"}' ]
-		};
+    testPermission(permissions, message, 'username', null, callback)
+  })
 
-		var callback = function( error, result ) {
-			expect( error ).toBe( null );
-			expect( result ).toBe( false );
-			next();
-		};
+  it('handles load errors', (next) => {
+    const permissions = getBasePermissions()
 
-		testPermission( permissions, message, 'username', null, callback );
-	});
+    permissions.event['some-event'] = {
+      publish: '_("bla") < 10'
+    }
+    options.cache.nextOperationWillBeSuccessful = false
 
-	it( 'handles load errors', function( next ){
-		var permissions = getBasePermissions();
+    const message = {
+      topic: C.TOPIC.EVENT,
+      action: C.ACTIONS.EVENT,
+      data: ['some-event', 'O{"price":15}']
+    }
 
-		permissions.event[ 'some-event' ] = {
-			'publish': '_("bla") < 10'
-		};
-		options.cache.nextOperationWillBeSuccessful = false;
+    const callback = function (error, result) {
+      expect(error).toContain('RECORD_LOAD_ERROR')
+      expect(result).toBe(false)
+      next()
+    }
 
-		var message = {
-			topic: C.TOPIC.EVENT,
-			action: C.ACTIONS.EVENT,
-			data: [ 'some-event', 'O{"price":15}' ]
-		};
-
-		var callback = function( error, result ) {
-			expect( error ).toContain( 'RECORD_LOAD_ERROR' );
-			expect( result ).toBe( false );
-			next();
-		};
-
-		testPermission( permissions, message, 'username', null, callback );
-	});
-});
+    testPermission(permissions, message, 'username', null, callback)
+  })
+})

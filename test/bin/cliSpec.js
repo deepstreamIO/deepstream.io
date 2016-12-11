@@ -1,27 +1,27 @@
 /* global describe, it, expect */
 
-'use strict';
+'use strict'
 
-const os = require( 'os' );
-const fs = require( 'fs' );
-const path = require( 'path' );
-const child_process = require( 'child_process' );
-const pidHelper = require( '../../bin/pid-helper' );
+const os = require('os')
+const fs = require('fs')
+const path = require('path')
+const child_process = require('child_process')
+const pidHelper = require('../../bin/pid-helper')
 
-const IS_WIN = os.platform() === 'win32';
-const cwd = path.resolve( '.' );
-const execOptions =  {
-	cwd: cwd,
-	encoding : 'utf8'
-};
+const IS_WIN = os.platform() === 'win32'
+const cwd = path.resolve('.')
+const execOptions = {
+  cwd,
+  encoding: 'utf8'
+}
 
 function stopServer() {
-	return child_process.spawnSync( 'node', ['bin/deepstream', 'stop'], execOptions );
+  return child_process.spawnSync('node', ['bin/deepstream', 'stop'], execOptions)
 }
 
 // Commenting out since its noisy and will most likely never be commended in due to being too complex for
 // unit tests
-/*describe('Command Line Interface', function() {
+/* describe('Command Line Interface', function() {
 	it( 'start, status and stop', function() {
 		child_process.exec( 'node bin/deepstream start', execOptions );
 		let output = '';

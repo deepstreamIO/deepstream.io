@@ -1,12 +1,12 @@
-'use strict';
+'use strict'
 
-var C = require( '../constants/constants' ),
-	SubscriptionRegistry = require( '../utils/subscription-registry' ),
-	DistributedStateRegistry = require( '../cluster/distributed-state-registry' ),
-	TimeoutRegistry = require( './listener-timeout-registry' ),
-	ListenerUtils = require( './listener-utils' ),
-	messageParser = require( '../message/message-parser' ),
-	messageBuilder = require( '../message/message-builder' );
+let C = require('../constants/constants'),
+  SubscriptionRegistry = require('../utils/subscription-registry'),
+  DistributedStateRegistry = require('../cluster/distributed-state-registry'),
+  TimeoutRegistry = require('./listener-timeout-registry'),
+  ListenerUtils = require('./listener-utils'),
+  messageParser = require('../message/message-parser'),
+  messageBuilder = require('../message/message-builder')
 
 module.exports = class ListenerRegistry {
 
@@ -35,37 +35,37 @@ module.exports = class ListenerRegistry {
 	 * @param {SubscriptionRegistry} clientRegistry The SubscriptionRegistry containing the record subscriptions
 	 *                               to allow new listeners to be notified of existing subscriptions
 	 */
-	constructor( topic, options, clientRegistry ) {
-		this._topic = topic;
-		this._options = options;
-		this._clientRegistry = clientRegistry;
+  constructor(topic, options, clientRegistry) {
+    this._topic = topic
+    this._options = options
+    this._clientRegistry = clientRegistry
 
-		this._uniqueStateProvider = this._options.uniqueRegistry;
+    this._uniqueStateProvider = this._options.uniqueRegistry
 
-		this._listenerUtils = new ListenerUtils( topic, options, clientRegistry );
+    this._listenerUtils = new ListenerUtils(topic, options, clientRegistry)
 
-		this._patterns = {};
-		this._localListenInProgress = {};
-		this._listenerTimeoutRegistery = new TimeoutRegistry( topic, options );
+    this._patterns = {}
+    this._localListenInProgress = {}
+    this._listenerTimeoutRegistery = new TimeoutRegistry(topic, options)
 
-		this._providerRegistry = new SubscriptionRegistry( options, this._topic, `${topic}_${C.TOPIC.LISTEN_PATTERNS}` );
-		this._providerRegistry.setAction( 'subscribe', C.ACTIONS.LISTEN );
-		this._providerRegistry.setAction( 'unsubscribe', C.ACTIONS.UNLISTEN );
-		this._providerRegistry.setSubscriptionListener( {
-			onSubscriptionRemoved: this._removePattern.bind( this ),
-			onSubscriptionMade: this._addPattern.bind( this )
-		} );
+    this._providerRegistry = new SubscriptionRegistry(options, this._topic, `${topic}_${C.TOPIC.LISTEN_PATTERNS}`)
+    this._providerRegistry.setAction('subscribe', C.ACTIONS.LISTEN)
+    this._providerRegistry.setAction('unsubscribe', C.ACTIONS.UNLISTEN)
+    this._providerRegistry.setSubscriptionListener({
+      onSubscriptionRemoved: this._removePattern.bind(this),
+      onSubscriptionMade: this._addPattern.bind(this)
+    })
 
-		this._locallyProvidedRecords = {};
-		this._clusterProvidedRecords = new DistributedStateRegistry( `${topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`, options );
-		this._clusterProvidedRecords.on( 'add', this._onRecordStartProvided.bind( this ) );
-		this._clusterProvidedRecords.on( 'remove', this._onRecordStopProvided.bind( this ) );
+    this._locallyProvidedRecords = {}
+    this._clusterProvidedRecords = new DistributedStateRegistry(`${topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`, options)
+    this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
+    this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
 
-		this._leadListen = {};
-		this._leadingListen = {};
-		this._listenTopic = this._listenerUtils.getMessageBusTopic( this._options.serverName, this._topic );
-		this._options.messageConnector.subscribe( this._listenTopic, this._onIncomingMessage.bind( this ) );
-	}
+    this._leadListen = {}
+    this._leadingListen = {}
+    this._listenTopic = this._listenerUtils.getMessageBusTopic(this._options.serverName, this._topic)
+    this._options.messageConnector.subscribe(this._listenTopic, this._onIncomingMessage.bind(this))
+  }
 
 	/**
 	 * Used primarily for tests. Returns whether or not a provider exists for
@@ -73,9 +73,9 @@ module.exports = class ListenerRegistry {
 	 * @public
 	 * @returns {boolean}
 	 */
-	hasActiveProvider( susbcriptionName ) {
-		return this._clusterProvidedRecords.has( susbcriptionName );
-	}
+  hasActiveProvider(susbcriptionName) {
+    return this._clusterProvidedRecords.has(susbcriptionName)
+  }
 
 	/**
 	 * The main entry point to the handle class.
@@ -93,22 +93,22 @@ module.exports = class ListenerRegistry {
 	 * @public
 	 * @returns {void}
 	 */
-	handle( socketWrapper, message ) {
-		const pattern = message.data[ 0 ];
-		const subscriptionName = message.data[ 1 ];
-		if (message.action === C.ACTIONS.LISTEN ) {
-			this._addListener( socketWrapper, message );
-		} else if (message.action === C.ACTIONS.UNLISTEN ) {
-			this._providerRegistry.unsubscribe( pattern, socketWrapper );
-			this._removeListener( socketWrapper, message );
-		} else if( this._listenerTimeoutRegistery.isALateResponder( socketWrapper, message ) ) {
-			this._listenerTimeoutRegistery.handle( socketWrapper, message );
-		} else if( this._localListenInProgress[ subscriptionName ] ) {
-			this._processResponseForListenInProgress( socketWrapper, subscriptionName, message );
-		} else {
-			this._listenerUtils.onMsgDataError( socketWrapper, message.raw, C.EVENT.INVALID_MESSAGE );
-		}
-	}
+  handle(socketWrapper, message) {
+    const pattern = message.data[0]
+    const subscriptionName = message.data[1]
+    if (message.action === C.ACTIONS.LISTEN) {
+      this._addListener(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.UNLISTEN) {
+      this._providerRegistry.unsubscribe(pattern, socketWrapper)
+      this._removeListener(socketWrapper, message)
+    } else if (this._listenerTimeoutRegistery.isALateResponder(socketWrapper, message)) {
+      this._listenerTimeoutRegistery.handle(socketWrapper, message)
+    } else if (this._localListenInProgress[subscriptionName]) {
+      this._processResponseForListenInProgress(socketWrapper, subscriptionName, message)
+    } else {
+      this._listenerUtils.onMsgDataError(socketWrapper, message.raw, C.EVENT.INVALID_MESSAGE)
+    }
+  }
 
 	/**
 	 * Handle messages that arrive via the message bus
@@ -123,23 +123,23 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_onIncomingMessage( message ) {
-		if( this._options.serverName === message.data[ 0 ] ) {
-			if( message.action === C.ACTIONS.LISTEN ) {
-				this._leadListen[ message.data[ 1 ] ] = message.data[ 2 ];
-				this._startLocalDiscoveryStage( message.data[ 1 ] );
-			} else if( message.action === C.ACTIONS.ACK ) {
-				this._nextDiscoveryStage( message.data[ 1 ] );
-			} else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
-				this.onSubscriptionRemoved(
-					message.data[ 1 ],
+  _onIncomingMessage(message) {
+    if (this._options.serverName === message.data[0]) {
+      if (message.action === C.ACTIONS.LISTEN) {
+        this._leadListen[message.data[1]] = message.data[2]
+        this._startLocalDiscoveryStage(message.data[1])
+      } else if (message.action === C.ACTIONS.ACK) {
+        this._nextDiscoveryStage(message.data[1])
+      } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+        this.onSubscriptionRemoved(
+					message.data[1],
 					null,
-					this._clientRegistry.getLocalSubscribersCount( message.data[ 1 ] ),
-					this._clientRegistry.getAllServers( message.data[ 1 ] ).length - 1
-				);
-			}
-		}
-	}
+					this._clientRegistry.getLocalSubscribersCount(message.data[1]),
+					this._clientRegistry.getAllServers(message.data[1]).length - 1
+				)
+      }
+    }
+  }
 
 	/**
 	 * Process an accept or reject for a listen that is currently in progress
@@ -152,21 +152,21 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_processResponseForListenInProgress( socketWrapper, subscriptionName, message ) {
-		if (message.action === C.ACTIONS.LISTEN_ACCEPT ) {
-			this._accept( socketWrapper, message );
-			this._listenerTimeoutRegistery.rejectLateResponderThatAccepted( subscriptionName );
-			this._listenerTimeoutRegistery.clear( subscriptionName );
-		} else if (message.action === C.ACTIONS.LISTEN_REJECT ) {
-			const provider = this._listenerTimeoutRegistery.getLateResponderThatAccepted( subscriptionName );
-			if( provider ) {
-				this._accept( provider.socketWrapper, message );
-				this._listenerTimeoutRegistery.clear( subscriptionName );
-			} else {
-				this._triggerNextProvider( subscriptionName );
-			}
-		}
-	}
+  _processResponseForListenInProgress(socketWrapper, subscriptionName, message) {
+    if (message.action === C.ACTIONS.LISTEN_ACCEPT) {
+      this._accept(socketWrapper, message)
+      this._listenerTimeoutRegistery.rejectLateResponderThatAccepted(subscriptionName)
+      this._listenerTimeoutRegistery.clear(subscriptionName)
+    } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
+      const provider = this._listenerTimeoutRegistery.getLateResponderThatAccepted(subscriptionName)
+      if (provider) {
+        this._accept(provider.socketWrapper, message)
+        this._listenerTimeoutRegistery.clear(subscriptionName)
+      } else {
+        this._triggerNextProvider(subscriptionName)
+      }
+    }
+  }
 
 	/**
 	 * Called by the record subscription registry whenever the subscription count decrements.
@@ -177,18 +177,18 @@ module.exports = class ListenerRegistry {
 	 * @public
 	 * @returns {void}
 	 */
-	onSubscriptionMade( subscriptionName, socketWrapper, localCount ) {
-		if( this.hasActiveProvider( subscriptionName ) ) {
-			this._listenerUtils.sendHasProviderUpdateToSingleSubscriber( true, socketWrapper, subscriptionName );
-			return;
-		}
+  onSubscriptionMade(subscriptionName, socketWrapper, localCount) {
+    if (this.hasActiveProvider(subscriptionName)) {
+      this._listenerUtils.sendHasProviderUpdateToSingleSubscriber(true, socketWrapper, subscriptionName)
+      return
+    }
 
-		if( localCount > 1 ) {
-			return;
-		}
+    if (localCount > 1) {
+      return
+    }
 
-		this._startDiscoveryStage( subscriptionName );
-	}
+    this._startDiscoveryStage(subscriptionName)
+  }
 
 	/**
 	 * Called by the record subscription registry whenever the subscription count increments.
@@ -199,37 +199,37 @@ module.exports = class ListenerRegistry {
 	 * @public
 	 * @returns {void}
 	 */
-	onSubscriptionRemoved( subscriptionName, socketWrapper, localCount, remoteCount ) {
-		const provider = this._locallyProvidedRecords[ subscriptionName ];
+  onSubscriptionRemoved(subscriptionName, socketWrapper, localCount, remoteCount) {
+    const provider = this._locallyProvidedRecords[subscriptionName]
 
-		if( this.hasActiveProvider( subscriptionName ) && !provider ) {
-			var serverName = this._clusterProvidedRecords.getAllServers( subscriptionName )[ 0 ];
-			this._listenerUtils.sendLastSubscriberRemoved( serverName, subscriptionName );
-			return;
-		}
+    if (this.hasActiveProvider(subscriptionName) && !provider) {
+      const serverName = this._clusterProvidedRecords.getAllServers(subscriptionName)[0]
+      this._listenerUtils.sendLastSubscriberRemoved(serverName, subscriptionName)
+      return
+    }
 
-		if( !provider ) {
-			return;
-		}
+    if (!provider) {
+      return
+    }
 
-		if( localCount > 1 || remoteCount > 0 ) {
-			return;
-		}
+    if (localCount > 1 || remoteCount > 0) {
+      return
+    }
 
 		// provider discarded, but there is still another active subscriber
-		if( localCount === 1 && provider.socketWrapper === socketWrapper) {
-			return;
-		}
+    if (localCount === 1 && provider.socketWrapper === socketWrapper) {
+      return
+    }
 
 		// provider isn't a subscriber, meaning we should wait for 0
-		const subscribers = this._clientRegistry.getLocalSubscribers( subscriptionName );
-		if( localCount === 1 && subscribers.indexOf( provider.socketWrapper ) === -1 ) {
-			return;
-		}
+    const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
+    if (localCount === 1 && subscribers.indexOf(provider.socketWrapper) === -1) {
+      return
+    }
 
-		this._listenerUtils.sendSubscriptionForPatternRemoved( provider, subscriptionName );
-		this._removeActiveListener( subscriptionName, provider );
-	}
+    this._listenerUtils.sendSubscriptionForPatternRemoved(provider, subscriptionName)
+    this._removeActiveListener(subscriptionName, provider)
+  }
 
 	/**
 	 * Register callback for when the server recieves an Accept message from the client
@@ -237,21 +237,21 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_accept( socketWrapper, message ) {
-		const subscriptionName = message.data[ 1 ];
+  _accept(socketWrapper, message) {
+    const subscriptionName = message.data[1]
 
-		this._listenerTimeoutRegistery.clearTimeout( subscriptionName );
+    this._listenerTimeoutRegistery.clearTimeout(subscriptionName)
 
-		this._locallyProvidedRecords[ subscriptionName ] = {
-			socketWrapper: socketWrapper,
-			pattern: message.data[ 0 ],
-			closeListener: this._removeListener.bind( this, socketWrapper, message )
-		}
-		socketWrapper.once( 'close', this._locallyProvidedRecords[ subscriptionName ].closeListener );
-		this._clusterProvidedRecords.add( subscriptionName );
+    this._locallyProvidedRecords[subscriptionName] = {
+      socketWrapper,
+      pattern: message.data[0],
+      closeListener: this._removeListener.bind(this, socketWrapper, message)
+    }
+    socketWrapper.once('close', this._locallyProvidedRecords[subscriptionName].closeListener)
+    this._clusterProvidedRecords.add(subscriptionName)
 
-		this._stopLocalDiscoveryStage( subscriptionName );
-	}
+    this._stopLocalDiscoveryStage(subscriptionName)
+  }
 
 	/**
 	 * Register a client as a listener for record subscriptions
@@ -262,22 +262,22 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_addListener( socketWrapper, message ) {
-		const pattern = this._listenerUtils.getPattern( socketWrapper, message );
-		const regExp = this._listenerUtils.validatePattern( socketWrapper, pattern );
+  _addListener(socketWrapper, message) {
+    const pattern = this._listenerUtils.getPattern(socketWrapper, message)
+    const regExp = this._listenerUtils.validatePattern(socketWrapper, pattern)
 
-		if( !regExp ) {
-			return;
-		}
+    if (!regExp) {
+      return
+    }
 
-		const providers = this._providerRegistry.getLocalSubscribers( pattern );
-		const notInSubscriptionRegistry = !providers || providers.indexOf( socketWrapper ) === -1;
-		if( notInSubscriptionRegistry ) {
-			this._providerRegistry.subscribe( pattern, socketWrapper );
-		}
+    const providers = this._providerRegistry.getLocalSubscribers(pattern)
+    const notInSubscriptionRegistry = !providers || providers.indexOf(socketWrapper) === -1
+    if (notInSubscriptionRegistry) {
+      this._providerRegistry.subscribe(pattern, socketWrapper)
+    }
 
-		this._reconcileSubscriptionsToPatterns( regExp, pattern, socketWrapper );
-	}
+    this._reconcileSubscriptionsToPatterns(regExp, pattern, socketWrapper)
+  }
 
 	/**
 	 * Find subscriptions that match pattern, and notify them that
@@ -290,25 +290,25 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {Message}
 	 */
-	_reconcileSubscriptionsToPatterns( regExp, pattern, socketWrapper ) {
-		const existingSubscriptions = this._clientRegistry.getNames();
-		for( var i = 0; i < existingSubscriptions.length; i++ ) {
-			var subscriptionName = existingSubscriptions[ i ];
-			if( subscriptionName.match( regExp ) ) {
-				const listenInProgress = this._localListenInProgress[ subscriptionName ];
-				if( this._locallyProvidedRecords[ subscriptionName ] ) {
-					continue;
-				} else if( listenInProgress ) {
-					listenInProgress.push( {
-						socketWrapper: socketWrapper,
-						pattern: pattern
-					} );
-				} else {
-					this._startDiscoveryStage( subscriptionName )
-				}
-			}
-		}
-	}
+  _reconcileSubscriptionsToPatterns(regExp, pattern, socketWrapper) {
+    const existingSubscriptions = this._clientRegistry.getNames()
+    for (let i = 0; i < existingSubscriptions.length; i++) {
+      const subscriptionName = existingSubscriptions[i]
+      if (subscriptionName.match(regExp)) {
+        const listenInProgress = this._localListenInProgress[subscriptionName]
+        if (this._locallyProvidedRecords[subscriptionName]) {
+          continue
+        } else if (listenInProgress) {
+          listenInProgress.push({
+            socketWrapper,
+            pattern
+          })
+        } else {
+          this._startDiscoveryStage(subscriptionName)
+        }
+      }
+    }
+  }
 
 	/**
 	 * De-register a client as a listener for record subscriptions
@@ -319,12 +319,12 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_removeListener( socketWrapper, message ) {
-		const pattern = message.data[ 0 ] ;
+  _removeListener(socketWrapper, message) {
+    const pattern = message.data[0]
 
-		this._listenerUtils.removeListenerFromInProgress( this._localListenInProgress, pattern, socketWrapper );
-		this._removeListenerIfActive( pattern, socketWrapper );
-	}
+    this._listenerUtils.removeListenerFromInProgress(this._localListenInProgress, pattern, socketWrapper)
+    this._removeListenerIfActive(pattern, socketWrapper)
+  }
 
 	/**
 	 * Removes the listener if it is the currently active publisher, and retriggers
@@ -333,31 +333,33 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {Message}
 	 */
-	_removeListenerIfActive( pattern, socketWrapper ) {
-		var subscriptionName, i, listenInProgress;
-		for( var subscriptionName in this._locallyProvidedRecords ) {
-			var provider = this._locallyProvidedRecords[ subscriptionName ];
-			if(
+  _removeListenerIfActive(pattern, socketWrapper) {
+    var subscriptionName,
+      i,
+      listenInProgress
+    for (var subscriptionName in this._locallyProvidedRecords) {
+      const provider = this._locallyProvidedRecords[subscriptionName]
+      if (
 				provider.socketWrapper === socketWrapper &&
 				provider.pattern === pattern
 			) {
-				provider.socketWrapper.removeListener( 'close', provider.closeListener );
-				this._removeActiveListener( subscriptionName );
-				if( this._clientRegistry.hasLocalSubscribers( subscriptionName ) ) {
-					this._startDiscoveryStage( subscriptionName );
-				}
-			}
-		}
-	}
+        provider.socketWrapper.removeListener('close', provider.closeListener)
+        this._removeActiveListener(subscriptionName)
+        if (this._clientRegistry.hasLocalSubscribers(subscriptionName)) {
+          this._startDiscoveryStage(subscriptionName)
+        }
+      }
+    }
+  }
 
 	/**
 	 * @private
 	 * @returns {Void}
 	*/
-	_removeActiveListener( subscriptionName, provider ) {
-		delete this._locallyProvidedRecords[ subscriptionName ];
-		this._clusterProvidedRecords.remove( subscriptionName );
-	}
+  _removeActiveListener(subscriptionName, provider) {
+    delete this._locallyProvidedRecords[subscriptionName]
+    this._clusterProvidedRecords.remove(subscriptionName)
+  }
 
 	/**
 	 * Start discovery phase once a lock is obtained from the leader within
@@ -368,30 +370,29 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_startDiscoveryStage( subscriptionName ) {
-		const localListenArray = this._listenerUtils.createLocalListenArray( this._patterns, this._providerRegistry, subscriptionName );
+  _startDiscoveryStage(subscriptionName) {
+    const localListenArray = this._listenerUtils.createLocalListenArray(this._patterns, this._providerRegistry, subscriptionName)
 
-		if( localListenArray.length === 0  ) {
-			return;
-		}
+    if (localListenArray.length === 0) {
+      return
+    }
 
-		this._uniqueStateProvider.get( this._listenerUtils.getUniqueLockName( subscriptionName ), ( success ) => {
+    this._uniqueStateProvider.get(this._listenerUtils.getUniqueLockName(subscriptionName), (success) => {
+      if (success) {
+        if (this.hasActiveProvider(subscriptionName)) {
+          this._uniqueStateProvider.release(this._listenerUtils.getUniqueLockName(subscriptionName))
+          return
+        }
 
-			if( success ) {
-				if( this.hasActiveProvider( subscriptionName ) ) {
-					this._uniqueStateProvider.release(  this._listenerUtils.getUniqueLockName( subscriptionName ) );
-					return;
-				}
+        this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.LEADING_LISTEN, `started for ${this._topic}:${subscriptionName}`)
 
-				this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.LEADING_LISTEN, `started for ${this._topic}:${subscriptionName}` );
+        const remoteListenArray = this._listenerUtils.createRemoteListenArray(this._patterns, this._providerRegistry, subscriptionName)
+        this._leadingListen[subscriptionName] = remoteListenArray
 
-				const remoteListenArray = this._listenerUtils.createRemoteListenArray( this._patterns, this._providerRegistry, subscriptionName );
-				this._leadingListen[ subscriptionName ] = remoteListenArray;
-
-				this._startLocalDiscoveryStage( subscriptionName, localListenArray );
-			}
-		} );
-	}
+        this._startLocalDiscoveryStage(subscriptionName, localListenArray)
+      }
+    })
+  }
 
 	/**
 	 * called when a subscription has been provided to clear down the discovery stage, or when an ack has
@@ -403,17 +404,17 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_nextDiscoveryStage( subscriptionName ) {
-		if( this.hasActiveProvider( subscriptionName ) || this._leadingListen[ subscriptionName ].length === 0 ) {
-			this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.LEADING_LISTEN, `finished for ${this._topic}:${subscriptionName}` );
-			delete this._leadingListen[ subscriptionName ];
-			this._uniqueStateProvider.release(  this._listenerUtils.getUniqueLockName( subscriptionName ) );
-		} else {
-			const nextServerName = this._leadingListen[ subscriptionName ].shift();
-			this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.LEADING_LISTEN, `started for ${this._topic}:${subscriptionName}` );
-			this._listenerUtils.sendRemoteDiscoveryStart( nextServerName, subscriptionName );
-		}
-	}
+  _nextDiscoveryStage(subscriptionName) {
+    if (this.hasActiveProvider(subscriptionName) || this._leadingListen[subscriptionName].length === 0) {
+      this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.LEADING_LISTEN, `finished for ${this._topic}:${subscriptionName}`)
+      delete this._leadingListen[subscriptionName]
+      this._uniqueStateProvider.release(this._listenerUtils.getUniqueLockName(subscriptionName))
+    } else {
+      const nextServerName = this._leadingListen[subscriptionName].shift()
+      this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.LEADING_LISTEN, `started for ${this._topic}:${subscriptionName}`)
+      this._listenerUtils.sendRemoteDiscoveryStart(nextServerName, subscriptionName)
+    }
+  }
 
 	/**
 	 * Start discovery phase once a lock is obtained from the leader within
@@ -425,18 +426,17 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_startLocalDiscoveryStage( subscriptionName, localListenArray ) {
+  _startLocalDiscoveryStage(subscriptionName, localListenArray) {
+    if (!localListenArray) {
+      localListenArray = this._listenerUtils.createLocalListenArray(this._patterns, this._providerRegistry, subscriptionName)
+    }
 
-		if( !localListenArray ) {
-			localListenArray = this._listenerUtils.createLocalListenArray( this._patterns, this._providerRegistry, subscriptionName );
-		}
-
-		if( localListenArray.length > 0 ) {
-			this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.LOCAL_LISTEN, `started for ${this._topic}:${subscriptionName}` );
-			this._localListenInProgress[ subscriptionName ] = localListenArray;
-			this._triggerNextProvider( subscriptionName );
-		}
-	}
+    if (localListenArray.length > 0) {
+      this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.LOCAL_LISTEN, `started for ${this._topic}:${subscriptionName}`)
+      this._localListenInProgress[subscriptionName] = localListenArray
+      this._triggerNextProvider(subscriptionName)
+    }
+  }
 
 	/**
 	 * Finalises a local listener discovery stage
@@ -446,18 +446,18 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_stopLocalDiscoveryStage( subscriptionName ) {
-		delete this._localListenInProgress[ subscriptionName ];
+  _stopLocalDiscoveryStage(subscriptionName) {
+    delete this._localListenInProgress[subscriptionName]
 
-		this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.LOCAL_LISTEN, `stopped for ${this._topic}:${subscriptionName}` );
+    this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.LOCAL_LISTEN, `stopped for ${this._topic}:${subscriptionName}`)
 
-		if( this._leadingListen[ subscriptionName ] ) {
-			this._nextDiscoveryStage( subscriptionName );
-		} else {
-			this._listenerUtils.sendRemoteDiscoveryStop( this._leadListen[ subscriptionName ], subscriptionName );
-			delete this._leadListen[ subscriptionName ];
-		}
-	}
+    if (this._leadingListen[subscriptionName]) {
+      this._nextDiscoveryStage(subscriptionName)
+    } else {
+      this._listenerUtils.sendRemoteDiscoveryStop(this._leadListen[subscriptionName], subscriptionName)
+      delete this._leadListen[subscriptionName]
+    }
+  }
 
 	/**
 	 * Trigger the next provider in the map of providers capable of publishing
@@ -468,27 +468,27 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_triggerNextProvider( subscriptionName ) {
-		const listenInProgress = this._localListenInProgress[ subscriptionName ];
+  _triggerNextProvider(subscriptionName) {
+    const listenInProgress = this._localListenInProgress[subscriptionName]
 
-		if( typeof listenInProgress === 'undefined' ) {
-			return;
-		}
+    if (typeof listenInProgress === 'undefined') {
+      return
+    }
 
-		if( listenInProgress.length === 0 ) {
-			this._stopLocalDiscoveryStage( subscriptionName );
-			return;
-		}
+    if (listenInProgress.length === 0) {
+      this._stopLocalDiscoveryStage(subscriptionName)
+      return
+    }
 
-		const provider = listenInProgress.shift();
-		const subscribers = this._clientRegistry.getLocalSubscribers( subscriptionName );
-		if( subscribers && subscribers.indexOf( provider.socketWrapper ) !== -1 ) {
-			this._triggerNextProvider( subscriptionName );
-			return;
-		}
-		this._listenerTimeoutRegistery.addTimeout( subscriptionName, provider, this._triggerNextProvider.bind( this ) );
-		this._listenerUtils.sendSubscriptionForPatternFound( provider, subscriptionName );
-	}
+    const provider = listenInProgress.shift()
+    const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
+    if (subscribers && subscribers.indexOf(provider.socketWrapper) !== -1) {
+      this._triggerNextProvider(subscriptionName)
+      return
+    }
+    this._listenerTimeoutRegistery.addTimeout(subscriptionName, provider, this._triggerNextProvider.bind(this))
+    this._listenerUtils.sendSubscriptionForPatternFound(provider, subscriptionName)
+  }
 
 	/**
 	 * Triggered when a subscription is being provided by a node in the cluster
@@ -498,12 +498,12 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_onRecordStartProvided( subscriptionName ) {
-		this._listenerUtils.sendHasProviderUpdate( true, subscriptionName );
-		if( this._leadingListen[ subscriptionName ] ) {
-			this._nextDiscoveryStage( subscriptionName );
-		}
-	}
+  _onRecordStartProvided(subscriptionName) {
+    this._listenerUtils.sendHasProviderUpdate(true, subscriptionName)
+    if (this._leadingListen[subscriptionName]) {
+      this._nextDiscoveryStage(subscriptionName)
+    }
+  }
 
 	/**
 	 * Triggered when a subscription is stopped being provided by a node in the cluster
@@ -513,12 +513,12 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_onRecordStopProvided( subscriptionName ) {
-		this._listenerUtils.sendHasProviderUpdate( false, subscriptionName );
-		if( !this.hasActiveProvider( subscriptionName ) && this._clientRegistry.hasName( subscriptionName ) ) {
-			this._startDiscoveryStage( subscriptionName );
-		}
-	}
+  _onRecordStopProvided(subscriptionName) {
+    this._listenerUtils.sendHasProviderUpdate(false, subscriptionName)
+    if (!this.hasActiveProvider(subscriptionName) && this._clientRegistry.hasName(subscriptionName)) {
+      this._startDiscoveryStage(subscriptionName)
+    }
+  }
 
 	/**
 	 * Compiles a regular expression from an incoming pattern
@@ -530,11 +530,11 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_addPattern( pattern, socketWrapper, count ) {
-		if( count === 1 ) {
-			this._patterns[ pattern ] = new RegExp( pattern );
-		}
-	}
+  _addPattern(pattern, socketWrapper, count) {
+    if (count === 1) {
+      this._patterns[pattern] = new RegExp(pattern)
+    }
+  }
 
 	/**
 	 * Deletes the pattern regex when removed
@@ -546,15 +546,15 @@ module.exports = class ListenerRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_removePattern( pattern, socketWrapper, count ) {
-		if( socketWrapper ) {
-			this._listenerTimeoutRegistery.removeProvider( socketWrapper );
-			this._listenerUtils.removeListenerFromInProgress( this._localListenInProgress, pattern, socketWrapper );
-			this._removeListenerIfActive( pattern, socketWrapper );
-		}
+  _removePattern(pattern, socketWrapper, count) {
+    if (socketWrapper) {
+      this._listenerTimeoutRegistery.removeProvider(socketWrapper)
+      this._listenerUtils.removeListenerFromInProgress(this._localListenInProgress, pattern, socketWrapper)
+      this._removeListenerIfActive(pattern, socketWrapper)
+    }
 
-		if( count === 0 ) {
-			delete this._patterns[ pattern ];
-		}
-	}
+    if (count === 0) {
+      delete this._patterns[pattern]
+    }
+  }
 }

@@ -1,9 +1,9 @@
-'use strict';
+'use strict'
 
-const C = require( '../constants/constants' );
-const RpcProxy = require( './rpc-proxy' );
-const messageParser = require( '../message/message-parser' );
-const messageBuilder = require( '../message/message-builder' );
+const C = require('../constants/constants')
+const RpcProxy = require('./rpc-proxy')
+const messageParser = require('../message/message-parser')
+const messageBuilder = require('../message/message-builder')
 
 /**
  * Relays a remote procedure call from a requestor to a provider and routes
@@ -23,19 +23,19 @@ module.exports = class Rpc {
 	 *
 	 * @constructor
 	 */
-	constructor( rpcHandler, requestor, provider, options, message ) {
-		this._rpcHandler = rpcHandler;
-		this._rpcName = message.data[ 0 ];
-		this._correlationId = message.data[ 1 ];
-		this._requestor = requestor;
-		this._provider = provider;
-		this._options = options;
-		this._message = message;
-		this._isAcknowledged = false;
-		this.isComplete = false;
+  constructor(rpcHandler, requestor, provider, options, message) {
+    this._rpcHandler = rpcHandler
+    this._rpcName = message.data[0]
+    this._correlationId = message.data[1]
+    this._requestor = requestor
+    this._provider = provider
+    this._options = options
+    this._message = message
+    this._isAcknowledged = false
+    this.isComplete = false
 
-		this._setProvider( provider );
-	}
+    this._setProvider(provider)
+  }
 
 	/**
 	 * Processor for incoming messages from the RPC provider. The
@@ -55,27 +55,25 @@ module.exports = class Rpc {
 	 * @private
 	 * @returns {void}
 	 */
-	handle( message ) {
+  handle(message) {
 		// This guard is for backwards compatability. Having multiple responses or recieving an ack
 		// prior to a response should not actually occur
-		if( this.isComplete === true ) {
-			return;
-		}
+    if (this.isComplete === true) {
+      return
+    }
 
-		if( message.data[ 1 ] !== this._correlationId && message.data[ 2 ] !== this._correlationId ) {
-			return;
-		}
+    if (message.data[1] !== this._correlationId && message.data[2] !== this._correlationId) {
+      return
+    }
 
-		if( message.action === C.ACTIONS.ACK ) {
-			this._handleAck( message );
-		}
-		else if( message.action === C.ACTIONS.REJECTION ) {
-			this._reroute();
-		}
-		else if( message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR ) {
-			this._handleResponse( message );
-		}
-	}
+    if (message.action === C.ACTIONS.ACK) {
+      this._handleAck(message)
+    } else if (message.action === C.ACTIONS.REJECTION) {
+      this._reroute()
+    } else if (message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR) {
+      this._handleResponse(message)
+    }
+  }
 
 	/**
 	 * Destroyes this Rpc, either because its completed
@@ -84,16 +82,16 @@ module.exports = class Rpc {
 	 * @public
 	 * @returns {void}
 	 */
-	destroy() {
-		clearTimeout( this._ackTimeout );
-		clearTimeout( this._responseTimeout );
+  destroy() {
+    clearTimeout(this._ackTimeout)
+    clearTimeout(this._responseTimeout)
 
-		this.isComplete = true;
-		this._requestor = null;
-		this._provider = null;
-		this._options = null;
-		this._message = null;
-	}
+    this.isComplete = true
+    this._requestor = null
+    this._provider = null
+    this._options = null
+    this._message = null
+  }
 
 	/**
 	 * By default, a RPC is the communication between one requestor
@@ -110,15 +108,15 @@ module.exports = class Rpc {
 	 * @private
 	 * @returns {void}
 	 */
-	_setProvider( provider ) {
-		clearTimeout( this._ackTimeout );
-		clearTimeout( this._responseTimeout );
+  _setProvider(provider) {
+    clearTimeout(this._ackTimeout)
+    clearTimeout(this._responseTimeout)
 
-		this._provider = provider;
-		this._ackTimeout = setTimeout( this._onAckTimeout.bind( this ), this._options.rpcAckTimeout );
-		this._responseTimeout = setTimeout( this._onResponseTimeout.bind( this ), this._options.rpcTimeout );
-		this._send( this._provider, this._message, this._requestor );
-	}
+    this._provider = provider
+    this._ackTimeout = setTimeout(this._onAckTimeout.bind(this), this._options.rpcAckTimeout)
+    this._responseTimeout = setTimeout(this._onResponseTimeout.bind(this), this._options.rpcTimeout)
+    this._send(this._provider, this._message, this._requestor)
+  }
 
 	/**
 	 * Handles rpc acknowledgement messages from the provider.
@@ -130,16 +128,16 @@ module.exports = class Rpc {
 	 * @private
 	 * @returns {void}
 	 */
-	_handleAck( message ) {
-		if( this._isAcknowledged === true ) {
-			this._provider.sendError( C.TOPIC.RPC, C.EVENT.MULTIPLE_ACK, [ this._rpcName, this._correlationId ] );
-			return;
-		}
+  _handleAck(message) {
+    if (this._isAcknowledged === true) {
+      this._provider.sendError(C.TOPIC.RPC, C.EVENT.MULTIPLE_ACK, [this._rpcName, this._correlationId])
+      return
+    }
 
-		clearTimeout( this._ackTimeout );
-		this._isAcknowledged = true;
-		this._send( this._requestor, message, this._provider );
-	}
+    clearTimeout(this._ackTimeout)
+    this._isAcknowledged = true
+    this._send(this._requestor, message, this._provider)
+  }
 
 	/**
 	 * Forwards response messages from the provider. If the provider
@@ -151,11 +149,11 @@ module.exports = class Rpc {
 	 * @private
 	 * @returns {void}
 	 */
-	_handleResponse( message ) {
-		clearTimeout( this._responseTimeout );
-		this._send( this._requestor, message, this._provider );
-		this.destroy();
-	}
+  _handleResponse(message) {
+    clearTimeout(this._responseTimeout)
+    this._send(this._requestor, message, this._provider)
+    this.destroy()
+  }
 
 	/**
 	 * This method handles rejection messages from the current provider. If
@@ -168,16 +166,16 @@ module.exports = class Rpc {
 	 * @private
 	 * @returns {void}
 	 */
-	_reroute() {
-		var alternativeProvider = this._rpcHandler.getAlternativeProvider( this._rpcName, this._correlationId );
+  _reroute() {
+    const alternativeProvider = this._rpcHandler.getAlternativeProvider(this._rpcName, this._correlationId)
 
-		if( alternativeProvider ) {
-			this._setProvider( alternativeProvider );
-		} else {
-			this._requestor.sendError( C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ this._rpcName, this._correlationId ] );
-			this.destroy();
-		}
-	}
+    if (alternativeProvider) {
+      this._setProvider(alternativeProvider)
+    } else {
+      this._requestor.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [this._rpcName, this._correlationId])
+      this.destroy()
+    }
+  }
 
 	/**
 	 * Callback if the acknowledge message hasn't been returned
@@ -186,10 +184,10 @@ module.exports = class Rpc {
 	 * @private
 	 * @returns {void}
 	 */
-	_onAckTimeout() {
-		this._requestor.sendError( C.TOPIC.RPC, C.EVENT.ACK_TIMEOUT, [ this._rpcName, this._correlationId ] );
-		this.destroy();
-	}
+  _onAckTimeout() {
+    this._requestor.sendError(C.TOPIC.RPC, C.EVENT.ACK_TIMEOUT, [this._rpcName, this._correlationId])
+    this.destroy()
+  }
 
 	/**
 	 * Callback if the response message hasn't been returned
@@ -198,10 +196,10 @@ module.exports = class Rpc {
 	 * @private
 	 * @returns {void}
 	 */
-	_onResponseTimeout() {
-		this._requestor.sendError( C.TOPIC.RPC, C.EVENT.RESPONSE_TIMEOUT, [ this._rpcName, this._correlationId ] );
-		this.destroy();
-	}
+  _onResponseTimeout() {
+    this._requestor.sendError(C.TOPIC.RPC, C.EVENT.RESPONSE_TIMEOUT, [this._rpcName, this._correlationId])
+    this.destroy()
+  }
 
 	/**
 	 * Sends a message to a receiver.
@@ -213,12 +211,12 @@ module.exports = class Rpc {
 	 * @private
 	 * @returns {void}
 	 */
-	_send( receiver, message, sender ) {
-		if( receiver instanceof RpcProxy ) {
-			receiver.send( message );
-			return;
-		}
+  _send(receiver, message, sender) {
+    if (receiver instanceof RpcProxy) {
+      receiver.send(message)
+      return
+    }
 
-		receiver.sendMessage( message.topic, message.action, message.data );
-	}
+    receiver.sendMessage(message.topic, message.action, message.data)
+  }
 }

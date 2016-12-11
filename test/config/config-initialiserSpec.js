@@ -1,305 +1,297 @@
 /* globals describe, it, expect */
 
-var defaultConfig = require( '../../src/default-options' );
-var configInitialiser = require( '../../src/config/config-initialiser' );
-var path = require( 'path' );
+const defaultConfig = require('../../src/default-options')
+const configInitialiser = require('../../src/config/config-initialiser')
+const path = require('path')
 
-describe( 'config-initialiser', function() {
+describe('config-initialiser', () => {
+  beforeAll(() => {
+    global.deepstreamConfDir = null
+    global.deepstreamLibDir = null
+    global.deepstreamCLI = null
+  })
 
-	beforeAll( function() {
-		global.deepstreamConfDir = null;
-		global.deepstreamLibDir = null;
-		global.deepstreamCLI = null;
-	})
+  describe('plugins are initialised as per configuration', () => {
+    it('loads plugins from a relative path', () => {
+      const config = defaultConfig.get()
+      config.plugins = {
+        cache: {
+          path: './test/test-plugins/plugin-a',
+          options: { some: 'options' }
+        }
+      }
+      configInitialiser.initialise(config)
+      expect(config.cache.type).toBe('pluginA')
+      expect(config.cache.options).toEqual({ some: 'options' })
+    })
 
-	describe( 'plugins are initialised as per configuration', function() {
+    it('loads plugins via module names', () => {
+      const config = defaultConfig.get()
+      config.plugins = {
+        cache: {
+          path: 'n0p3',
+          options: {}
+        }
+      }
 
-		it( 'loads plugins from a relative path', function() {
-			var config = defaultConfig.get();
-			config.plugins = {
-				cache: {
-					path: './test/test-plugins/plugin-a',
-					options: { some: 'options' }
-				}
-			};
-			configInitialiser.initialise( config );
-			expect( config.cache.type ).toBe( 'pluginA' );
-			expect( config.cache.options ).toEqual( { some: 'options' } );
-		} );
+      configInitialiser.initialise(config)
+      expect(config.cache.toString()).toBe('[object Object]')
+    })
 
-		it( 'loads plugins via module names', function() {
-			var config = defaultConfig.get();
-			config.plugins = {
-				cache: {
-					path: 'n0p3',
-					options: {}
-				}
-			};
+    it('loads plugins from a relative path and lib dir', () => {
+      global.deepstreamLibDir = './test/test-plugins'
 
-			configInitialiser.initialise( config );
-			expect( config.cache.toString() ).toBe( '[object Object]' );
-		} );
+      const config = defaultConfig.get()
+      config.plugins = {
+        cache: {
+          path: './plugin-a',
+          options: { some: 'options' }
+        }
+      }
+      configInitialiser.initialise(config)
+      expect(config.cache.type).toBe('pluginA')
+      expect(config.cache.options).toEqual({ some: 'options' })
+    })
+  })
 
-		it( 'loads plugins from a relative path and lib dir', function() {
-			global.deepstreamLibDir = './test/test-plugins';
+  describe('ssl files are loaded if provided', () => {
+    it('fails with incorrect path passed in', () => {
+      ['sslKey', 'sslCert', 'sslCa'].forEach((key) => {
+        const config = defaultConfig.get()
+        config[key] = './does-not-exist'
+        expect(() => {
+          configInitialiser.initialise(config)
+        }).toThrowError()
+      })
+    })
 
-			var config = defaultConfig.get();
-			config.plugins = {
-				cache: {
-					path: './plugin-a',
-					options: { some: 'options' }
-				}
-			};
-			configInitialiser.initialise( config );
-			expect( config.cache.type ).toBe( 'pluginA' );
-			expect( config.cache.options ).toEqual({ some: 'options' } );
-		} );
-	} );
+    it('loads sslFiles from a relative path and a config prefix', () => {
+      global.deepstreamConfDir = './test/test-configs'
 
-	describe( 'ssl files are loaded if provided', function() {
+      const config = defaultConfig.get()
+      config.sslKey = './sslKey.pem'
+      configInitialiser.initialise(config)
+      expect(config.sslKey).toBe('I\'m a key')
+    })
+  })
 
-		it( 'fails with incorrect path passed in', function() {
-			[ 'sslKey', 'sslCert', 'sslCa' ].forEach( function( key ) {
-				var config = defaultConfig.get();
-				config[ key ] = './does-not-exist';
-				expect(function() {
-					configInitialiser.initialise( config );
-				} ).toThrowError();
-			} );
-		} );
+  describe('translates shortcodes into paths', () => {
+    it('translates cache', () => {
+      global.deepstreamLibDir = '/foobar'
+      const config = defaultConfig.get()
+      let errored = false
+      config.plugins = {
+        cache: {
+          name: 'blablub'
+        }
+      }
+      try {
+        configInitialiser.initialise(config)
+      } catch (e) {
+        errored = true
+        expect(e.toString()).toContain(path.join('/foobar', 'deepstream.io-cache-blablub'))
+      }
 
-		it( 'loads sslFiles from a relative path and a config prefix', function() {
-			global.deepstreamConfDir = './test/test-configs';
+      expect(errored).toBe(true)
+    })
 
-			var config = defaultConfig.get();
-			config.sslKey = './sslKey.pem';
-			configInitialiser.initialise( config );
-			expect( config.sslKey ).toBe( 'I\'m a key' );
-		} );
-	} );
+    it('translates message connectors', () => {
+      global.deepstreamLibDir = '/foobar'
+      const config = defaultConfig.get()
+      let errored = false
+      config.plugins = {
+        message: {
+          name: 'blablub'
+        }
+      }
 
-	describe( 'translates shortcodes into paths', function() {
+      try {
+        configInitialiser.initialise(config)
+      } catch (e) {
+        errored = true
+        expect(e.toString()).toContain(path.join('/foobar', 'deepstream.io-msg-blablub'))
+      }
 
-		it( 'translates cache', function() {
-			global.deepstreamLibDir = '/foobar';
-			var config = defaultConfig.get();
-			var errored = false;
-			config.plugins = {
-				cache: {
-					name: 'blablub'
-				}
-			};
-			try{
-				configInitialiser.initialise( config );
-			} catch( e ) {
-				errored = true;
-				expect( e.toString() ).toContain( path.join( '/foobar', 'deepstream.io-cache-blablub' ) );
-			}
+      expect(errored).toBe(true)
+    })
+  })
 
-			expect( errored ).toBe( true );
-		} );
+  describe('creates the right authentication handler', () => {
+    it('works for authtype: none', () => {
+      const config = defaultConfig.get()
 
-		it( 'translates message connectors', function() {
-			global.deepstreamLibDir = '/foobar';
-			var config = defaultConfig.get();
-			var errored = false;
-			config.plugins = {
-				message: {
-					name: 'blablub'
-				}
-			};
+      config.auth = {
+        type: 'none'
+      }
+      configInitialiser.initialise(config)
+      expect(config.authenticationHandler.type).toBe('none')
+    })
 
-			try{
-				configInitialiser.initialise( config );
-			} catch( e ) {
-				errored = true;
-				expect( e.toString() ).toContain( path.join( '/foobar', 'deepstream.io-msg-blablub' ) );
-			}
+    it('works for authtype: user', () => {
+      global.deepstreamConfDir = './test/test-configs'
+      const config = defaultConfig.get()
 
-			expect( errored ).toBe( true );
-		} );
-	} );
+      config.auth = {
+        type: 'file',
+        options: {
+          path: './users.json'
+        }
+      }
+      configInitialiser.initialise(config)
+      expect(config.authenticationHandler.type).toContain('file using')
+      expect(config.authenticationHandler.type).toContain(path.resolve('test/test-configs/users.json'))
+    })
 
-	describe( 'creates the right authentication handler', function() {
+    it('works for authtype: http', () => {
+      const config = defaultConfig.get()
 
-		it( 'works for authtype: none', function() {
-			var config = defaultConfig.get();
+      config.auth = {
+        type: 'http',
+        options: {
+          endpointUrl: 'http://some-url.com',
+          permittedStatusCodes: [200],
+          requestTimeout: 2000
+        }
+      }
 
-			config.auth = {
-				type: 'none'
-			};
-			configInitialiser.initialise( config );
-			expect( config.authenticationHandler.type ).toBe( 'none' );
-		} );
+      configInitialiser.initialise(config)
+      expect(config.authenticationHandler.type).toBe('http webhook to http://some-url.com')
+    })
 
-		it( 'works for authtype: user', function() {
-			global.deepstreamConfDir = './test/test-configs';
-			var config = defaultConfig.get();
+    it('fails for missing auth sections', () => {
+      const config = defaultConfig.get()
 
-			config.auth = {
-				type: 'file',
-				options: {
-					path: './users.json'
-				}
-			};
-			configInitialiser.initialise( config );
-			expect( config.authenticationHandler.type ).toContain( 'file using' );
-			expect( config.authenticationHandler.type ).toContain( path.resolve( 'test/test-configs/users.json') );
-		} );
+      delete config.auth
 
-		it( 'works for authtype: http', function() {
-			var config = defaultConfig.get();
+      expect(() => {
+        configInitialiser.initialise(config)
+      }).toThrowError('No authentication type specified')
+    })
 
-			config.auth = {
-				type: 'http',
-				options: {
-					endpointUrl: 'http://some-url.com',
-					permittedStatusCodes: [ 200 ],
-					requestTimeout: 2000
-				}
-			};
+    it('fails for unknown auth types', () => {
+      const config = defaultConfig.get()
 
-			configInitialiser.initialise( config );
-			expect( config.authenticationHandler.type ).toBe( 'http webhook to http://some-url.com' );
-		} );
+      config.auth = {
+        type: 'bla',
+        options: {}
+      }
 
-		it( 'fails for missing auth sections', function() {
-			var config = defaultConfig.get();
+      expect(() => {
+        configInitialiser.initialise(config)
+      }).toThrowError('Unknown authentication type bla')
+    })
 
-			delete config.auth;
+    it('overrides with type "none" when disableAuth is set', () => {
+      global.deepstreamCLI = { disableAuth: true }
+      const config = defaultConfig.get()
 
-			expect(function() {
-				configInitialiser.initialise( config );
-			} ).toThrowError( 'No authentication type specified' );
-		} );
+      config.auth = {
+        type: 'http',
+        options: {}
+      }
 
-		it( 'fails for unknown auth types', function() {
-			var config = defaultConfig.get();
+      configInitialiser.initialise(config)
+      expect(config.authenticationHandler.type).toBe('none')
+      delete global.deepstreamCLI
+    })
+  })
 
-			config.auth = {
-				type: 'bla',
-				options: {}
-			};
+  describe('creates the permissionHandler', () => {
+    it('creates the config permission handler', () => {
+      global.deepstreamConfDir = './test/test-configs'
+      const config = defaultConfig.get()
 
-			expect(function() {
-				configInitialiser.initialise( config );
-			} ).toThrowError( 'Unknown authentication type bla' );
-		} );
+      config.permission = {
+        type: 'config',
+        options: {
+          path: './basic-permission-config.json'
+        }
+      }
+      configInitialiser.initialise(config)
+      expect(config.permissionHandler.type).toContain('valve permissions loaded from')
+      expect(config.permissionHandler.type).toContain(path.resolve('test/test-configs/basic-permission-config.json'))
+    })
 
-		it( 'overrides with type "none" when disableAuth is set', function() {
-			global.deepstreamCLI = { disableAuth: true };
-			var config = defaultConfig.get();
+    it('fails for invalid permission types', () => {
+      const config = defaultConfig.get()
 
-			config.auth = {
-				type: 'http',
-				options: {}
-			};
+      config.permission = {
+        type: 'does-not-exist',
+        options: {
+          path: './test/test-configs/basic-permission-config.json'
+        }
+      }
+      expect(() => {
+        configInitialiser.initialise(config)
+      }).toThrowError('Unknown permission type does-not-exist')
+    })
 
-			configInitialiser.initialise( config );
-			expect( config.authenticationHandler.type ).toBe( 'none' );
-			delete global.deepstreamCLI;
-		} );
-	} );
+    it('fails for missing permission configs', () => {
+      const config = defaultConfig.get()
+      delete config.permission
 
-	describe( 'creates the permissionHandler', function() {
+      expect(() => {
+        configInitialiser.initialise(config)
+      }).toThrowError('No permission type specified')
+    })
 
-		it( 'creates the config permission handler', function() {
-			global.deepstreamConfDir = './test/test-configs';
-			var config = defaultConfig.get();
+    it('overrides with type "none" when disablePermissions is set', () => {
+      global.deepstreamCLI = { disablePermissions: true }
+      const config = defaultConfig.get()
 
-			config.permission = {
-				type: 'config',
-				options: {
-					path: './basic-permission-config.json'
-				}
-			};
-			configInitialiser.initialise( config );
-			expect( config.permissionHandler.type ).toContain( 'valve permissions loaded from' );
-			expect( config.permissionHandler.type ).toContain( path.resolve( 'test/test-configs/basic-permission-config.json') );
-		} );
+      config.permission = {
+        type: 'config',
+        options: {}
+      }
 
-		it( 'fails for invalid permission types', function() {
-			var config = defaultConfig.get();
+      configInitialiser.initialise(config)
+      expect(config.permissionHandler.type).toBe('none')
+      delete global.deepstreamCLI
+    })
+  })
 
-			config.permission = {
-				type: 'does-not-exist',
-				options: {
-					path: './test/test-configs/basic-permission-config.json'
-				}
-			};
-			expect(function() {
-				configInitialiser.initialise( config );
-			} ).toThrowError( 'Unknown permission type does-not-exist' );
+  describe('supports custom loggers', () => {
+    it('load the default logger with options', () => {
+      global.deepstreamLibDir = null
+      const config = defaultConfig.get()
 
-		} );
+      config.logger = {
+        name: 'default',
+        options: {
+          logLevel: 2
+        }
+      }
+      configInitialiser.initialise(config)
+      expect(config.logger._options).toEqual({ logLevel: 2 })
+    })
 
-		it( 'fails for missing permission configs', function() {
-			var config = defaultConfig.get();
-			delete config.permission;
+    it('load a custom logger', () => {
+      global.deepstreamLibDir = null
+      const config = defaultConfig.get()
 
-			expect(function() {
-				configInitialiser.initialise( config );
-			} ).toThrowError( 'No permission type specified' );
-		} );
+      config.logger = {
+        path: './test/test-helper/custom-logger',
+        options: {
+          a: 1
+        }
+      }
+      configInitialiser.initialise(config)
+      expect(config.logger.options).toEqual({ a: 1 })
+    })
 
-		it( 'overrides with type "none" when disablePermissions is set', function() {
-			global.deepstreamCLI = { disablePermissions: true };
-			var config = defaultConfig.get();
+    it('throw an error for a unsupported logger type', (next) => {
+      const config = defaultConfig.get()
 
-			config.permission = {
-				type: 'config',
-				options: {}
-			};
-
-			configInitialiser.initialise( config );
-			expect( config.permissionHandler.type ).toBe( 'none' );
-			delete global.deepstreamCLI;
-		} );
-	} );
-
-	describe( 'supports custom loggers', function() {
-
-		it( 'load the default logger with options', function() {
-			global.deepstreamLibDir = null;
-			var config = defaultConfig.get();
-
-			config.logger = {
-				name: 'default',
-				options: {
-					logLevel: 2
-				}
-			};
-			configInitialiser.initialise( config );
-			expect( config.logger._options ).toEqual( {logLevel: 2} );
-		} );
-
-		it( 'load a custom logger', function() {
-			global.deepstreamLibDir = null;
-			var config = defaultConfig.get();
-
-			config.logger = {
-				path: './test/test-helper/custom-logger',
-				options: {
-					a: 1
-				}
-			};
-			configInitialiser.initialise( config );
-			expect( config.logger.options ).toEqual( {a: 1} );
-		} );
-
-		it( 'throw an error for a unsupported logger type', function( next ) {
-			var config = defaultConfig.get();
-
-			config.logger = {
-				norNameNorPath: 'foo',
-			};
-			try {
-				configInitialiser.initialise( config );
-				next.fail( 'should fail' );
-			} catch ( err ) {
-				expect( err.toString() ).toContain( 'Neither name nor path property found' );
-				next();
-			}
-		} );
-	} );
-} );
+      config.logger = {
+        norNameNorPath: 'foo',
+      }
+      try {
+        configInitialiser.initialise(config)
+        next.fail('should fail')
+      } catch (err) {
+        expect(err.toString()).toContain('Neither name nor path property found')
+        next()
+      }
+    })
+  })
+})

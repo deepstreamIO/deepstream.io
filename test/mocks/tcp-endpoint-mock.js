@@ -1,17 +1,17 @@
-var EventEmitter = require('events').EventEmitter;
-var util = require('util');
+const EventEmitter = require('events').EventEmitter
+const util = require('util')
 
-var TcpEndpointMock = function() {
-	this.isClosed = false;
-};
+const TcpEndpointMock = function () {
+  this.isClosed = false
+}
 
-util.inherits( TcpEndpointMock, EventEmitter );
+util.inherits(TcpEndpointMock, EventEmitter)
 
-TcpEndpointMock.prototype.close = function() {
-	setTimeout(function(){
-		this.isClosed = true;
-		this.emit( 'close' );
-	}.bind( this ), 1);
-};
+TcpEndpointMock.prototype.close = function () {
+  setTimeout(() => {
+    this.isClosed = true
+    this.emit('close')
+  }, 1)
+}
 
-module.exports = TcpEndpointMock;
+module.exports = TcpEndpointMock

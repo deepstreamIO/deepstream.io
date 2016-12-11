@@ -1,4 +1,4 @@
-var C = require( '../constants/constants' );
+const C = require('../constants/constants')
 
 /**
  * The MessageDistributor routes valid and permissioned messages to
@@ -6,10 +6,10 @@ var C = require( '../constants/constants' );
  *
  * @param {Object} options deepstream options
  */
-var MessageDistributor = function( options ) {
-	this._callbacks = {};
-	this._options = options;
-};
+const MessageDistributor = function (options) {
+  this._callbacks = {}
+  this._options = options
+}
 
 /**
  * Accepts a socketWrapper and a parsed message as input and distributes
@@ -21,19 +21,19 @@ var MessageDistributor = function( options ) {
  * @public
  * @returns {void}
  */
-MessageDistributor.prototype.distribute = function( socketWrapper, message ) {
-	if( this._callbacks[ message.topic ] === undefined ) {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_TOPIC, message.topic );
-		socketWrapper.sendError( C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic );
-		return;
-	}
+MessageDistributor.prototype.distribute = function (socketWrapper, message) {
+  if (this._callbacks[message.topic] === undefined) {
+    this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_TOPIC, message.topic)
+    socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
+    return
+  }
 
-	socketWrapper.emit( message.topic, message );
+  socketWrapper.emit(message.topic, message)
 
-	if( message.isCompleted !== true ) {
-		this._callbacks[ message.topic ]( socketWrapper, message );
-	}
-};
+  if (message.isCompleted !== true) {
+    this._callbacks[message.topic](socketWrapper, message)
+  }
+}
 
 /**
  * Allows handlers (event, rpc, record) to register for topics. Subscribes them
@@ -48,14 +48,14 @@ MessageDistributor.prototype.distribute = function( socketWrapper, message ) {
  * @public
  * @returns {void}
  */
-MessageDistributor.prototype.registerForTopic = function( topic, callback ) {
-	if( this._callbacks[ topic ] !== undefined ) {
-		throw new Error( 'Callback already registered for topic ' + topic );
-	}
+MessageDistributor.prototype.registerForTopic = function (topic, callback) {
+  if (this._callbacks[topic] !== undefined) {
+    throw new Error(`Callback already registered for topic ${topic}`)
+  }
 
-	this._callbacks[ topic ] = callback;
-	this._options.messageConnector.subscribe( topic, this._onMessageConnectorMessage.bind( this, callback ) );
-};
+  this._callbacks[topic] = callback
+  this._options.messageConnector.subscribe(topic, this._onMessageConnectorMessage.bind(this, callback))
+}
 
 /**
  * Whenever a message from the messageConnector is received it is passed
@@ -68,8 +68,8 @@ MessageDistributor.prototype.registerForTopic = function( topic, callback ) {
  * @private
  * @returns {void}
  */
-MessageDistributor.prototype._onMessageConnectorMessage = function( callback, message ) {
-	callback( C.SOURCE_MESSAGE_CONNECTOR, message );
-};
+MessageDistributor.prototype._onMessageConnectorMessage = function (callback, message) {
+  callback(C.SOURCE_MESSAGE_CONNECTOR, message)
+}
 
-module.exports = MessageDistributor;
+module.exports = MessageDistributor

@@ -5,23 +5,23 @@
  * @type {Object}
  */
 module.exports = {
-	record: {
-		write: true,
-		read: true,
-		create: true,
-		delete: true,
-		listen: true
-	},
-	event: {
-		publish: true,
-		subscribe: true,
-		listen: true
-	},
-	rpc: {
-		provide: true,
-		request: true
-	},
-	presence: {
-		allow: true
-	}
-};
+  record: {
+    write: true,
+    read: true,
+    create: true,
+    delete: true,
+    listen: true
+  },
+  event: {
+    publish: true,
+    subscribe: true,
+    listen: true
+  },
+  rpc: {
+    provide: true,
+    request: true
+  },
+  presence: {
+    allow: true
+  }
+}

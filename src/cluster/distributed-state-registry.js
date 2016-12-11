@@ -1,13 +1,13 @@
-'use strict';
+'use strict'
 
-const EventEmitter = require( 'events' ).EventEmitter;
-const C = require( '../constants/constants' );
-const DATA_LENGTH = {};
+const EventEmitter = require('events').EventEmitter
+const C = require('../constants/constants')
+const DATA_LENGTH = {}
 
-DATA_LENGTH[ C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE ] = 1;
-DATA_LENGTH[ C.EVENT.DISTRIBUTED_STATE_FULL_STATE ] = 2;
-DATA_LENGTH[ C.EVENT.DISTRIBUTED_STATE_ADD ] = 3;
-DATA_LENGTH[ C.EVENT.DISTRIBUTED_STATE_REMOVE ] = 3;
+DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE] = 1
+DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_FULL_STATE] = 2
+DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_ADD] = 3
+DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_REMOVE] = 3
 
 /**
  * This class provides a generic mechanism that allows to maintain
@@ -25,7 +25,7 @@ DATA_LENGTH[ C.EVENT.DISTRIBUTED_STATE_REMOVE ] = 3;
  *
  * @author DeepstreamHub GmbH 2016
  */
-module.exports = class DistributedStateRegistry extends EventEmitter{
+module.exports = class DistributedStateRegistry extends EventEmitter {
 
 	/**
 	 * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
@@ -35,17 +35,17 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 *
 	 * @constructor
 	 */
-	constructor( topic, options ) {
-		super();
-		this._topic = topic;
-		this._options = options;
-		this._options.messageConnector.subscribe( topic, this._processIncomingMessage.bind( this ) );
-		this._options.clusterRegistry.on( 'remove', this.removeAll.bind( this ) );
-		this._data = {};
-		this._reconciliationTimeouts = {};
-		this._fullStateSent = false;
-		this._requestFullState( C.ALL );
-	}
+  constructor(topic, options) {
+    super()
+    this._topic = topic
+    this._options = options
+    this._options.messageConnector.subscribe(topic, this._processIncomingMessage.bind(this))
+    this._options.clusterRegistry.on('remove', this.removeAll.bind(this))
+    this._data = {}
+    this._reconciliationTimeouts = {}
+    this._fullStateSent = false
+    this._requestFullState(C.ALL)
+  }
 
 	/**
 	 * Checks if a given entry exists within the registry
@@ -55,9 +55,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @public
 	 * @returns {Boolean} exists
 	 */
-	has( name ) {
-		return !!this._data[ name ];
-	}
+  has(name) {
+    return !!this._data[name]
+  }
 
 	/**
 	 * Add a name/entry to the registry. If the entry doesn't exist yet,
@@ -68,12 +68,12 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @public
 	 * @returns {void}
 	 */
-	add( name ) {
-		if( !this._has( name, this._options.serverName ) ) {
-			this._add( name, this._options.serverName );
-			this._sendMessage( name, C.EVENT.DISTRIBUTED_STATE_ADD );
-		}
-	}
+  add(name) {
+    if (!this._has(name, this._options.serverName)) {
+      this._add(name, this._options.serverName)
+      this._sendMessage(name, C.EVENT.DISTRIBUTED_STATE_ADD)
+    }
+  }
 
 	/**
 	 * Removes a name/entry from the registry. If the entry doesn't exist,
@@ -84,12 +84,12 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @public
 	 * @returns {void}
 	 */
-	remove( name ) {
-		if( this._has( name, this._options.serverName ) ) {
-			this._remove( name, this._options.serverName );
-			this._sendMessage( name, C.EVENT.DISTRIBUTED_STATE_REMOVE );
-		}
-	}
+  remove(name) {
+    if (this._has(name, this._options.serverName)) {
+      this._remove(name, this._options.serverName)
+      this._sendMessage(name, C.EVENT.DISTRIBUTED_STATE_REMOVE)
+    }
+  }
 
 	/**
 	 * Removes all entries for a given serverName. This is intended to be called
@@ -99,14 +99,14 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 *
 	 * @returns {[type]}
 	 */
-	removeAll( serverName ) {
-		var name;
-		for( name in this._data ) {
-			if( this._data[ name ].nodes[ serverName ] ) {
-				this._remove( name, serverName );
-			}
-		}
-	}
+  removeAll(serverName) {
+    let name
+    for (name in this._data) {
+      if (this._data[name].nodes[serverName]) {
+        this._remove(name, serverName)
+      }
+    }
+  }
 
 	/**
 	 * Returns all the servers that hold a given state
@@ -114,13 +114,13 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @public
 	 * @returns {Object} entries
 	 */
-	getAllServers( name ) {
-		if( this._data[ name ] ) {
-			return Object.keys( this._data[ name ].nodes );
-		} else {
-			return [];
-		}
-	}
+  getAllServers(name) {
+    if (this._data[name]) {
+      return Object.keys(this._data[name].nodes)
+    } else {
+      return []
+    }
+  }
 
 	/**
 	 * Returns all currently registered entries
@@ -128,9 +128,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @public
 	 * @returns {Array} entries
 	 */
-	getAll() {
-		return Object.keys( this._data );
-	}
+  getAll() {
+    return Object.keys(this._data)
+  }
 
 	/**
 	 * Removes an entry for a given serverName. If the serverName
@@ -143,26 +143,27 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_remove( name, serverName ) {
-		var name, exists = false;
+  _remove(name, serverName) {
+    var name,
+      exists = false
 
-		if( !this._data[ name ] ) {
-			return;
-		}
+    if (!this._data[name]) {
+      return
+    }
 
-		delete this._data[ name ].nodes[ serverName ];
+    delete this._data[name].nodes[serverName]
 
-		for( serverName in this._data[ name ].nodes ) {
-			if( this._data[ name ].nodes[ serverName ] === true ) {
-				exists = true;
-			}
-		}
+    for (serverName in this._data[name].nodes) {
+      if (this._data[name].nodes[serverName] === true) {
+        exists = true
+      }
+    }
 
-		if( exists === false ) {
-			delete this._data[ name ];
-			this.emit( 'remove', name );
-		}
-	}
+    if (exists === false) {
+      delete this._data[name]
+      this.emit('remove', name)
+    }
+  }
 
 	/**
 	 * Adds a new entry to this registry, either as a result of a remote or
@@ -174,18 +175,17 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_add( name, serverName ) {
+  _add(name, serverName) {
+    if (!this._data[name]) {
+      this._data[name] = {
+        nodes: {},
+        checkSum: this._createCheckSum(name)
+      }
+      this.emit('add', name)
+    }
 
-		if( !this._data[ name ] ) {
-			this._data[ name ] = {
-				nodes: {},
-				checkSum: this._createCheckSum( name )
-			}
-			this.emit( 'add', name );
-		}
-
-		this._data[ name ].nodes[ serverName ] = true;
-	}
+    this._data[name].nodes[serverName] = true
+  }
 
 	/**
 	 * Checks if a given entry exists for a given serverName
@@ -196,9 +196,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {Boolean} exists
 	 */
-	_has( name, serverName ) {
-		return this._data[ name ] && this._data[ name ].nodes[ serverName ];
-	}
+  _has(name, serverName) {
+    return this._data[name] && this._data[name].nodes[serverName]
+  }
 
 	/**
 	 * Generic messaging function for add and remove messages
@@ -209,15 +209,15 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_sendMessage( name, action ) {
-		var message = {
-			topic: this._topic,
-			action: action,
-			data: [ name, this._options.serverName, this._getCheckSumTotal( this._options.serverName ) ]
-		};
+  _sendMessage(name, action) {
+    const message = {
+      topic: this._topic,
+      action,
+      data: [name, this._options.serverName, this._getCheckSumTotal(this._options.serverName)]
+    }
 
-		this._options.messageConnector.publish( this._topic, message );
-	}
+    this._options.messageConnector.publish(this._topic, message)
+  }
 
 	/**
 	 * This method calculates the total checkSum for all local entries of
@@ -228,17 +228,18 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {Number} totalCheckSum
 	 */
-	_getCheckSumTotal( serverName ) {
-		var totalCheckSum = 0, name;
+  _getCheckSumTotal(serverName) {
+    let totalCheckSum = 0,
+      name
 
-		for( name in this._data ) {
-			if( this._data[ name ].nodes[ serverName ] ) {
-				totalCheckSum += this._data[ name ].checkSum;
-			}
-		}
+    for (name in this._data) {
+      if (this._data[name].nodes[serverName]) {
+        totalCheckSum += this._data[name].checkSum
+      }
+    }
 
-		return totalCheckSum;
-	}
+    return totalCheckSum
+  }
 
 	/**
 	 * Calculates a simple checkSum for a given name. This is done up-front and cached
@@ -250,15 +251,16 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {Number} checkSum
 	 */
-	_createCheckSum( name ) {
-		var checkSum = 0, i;
+  _createCheckSum(name) {
+    let checkSum = 0,
+      i
 
-		for( i = 0; i < name.length; i++ ) {
-			checkSum = ( ( checkSum << 5 ) - checkSum ) + name.charCodeAt( i );
-		}
+    for (i = 0; i < name.length; i++) {
+      checkSum = ((checkSum << 5) - checkSum) + name.charCodeAt(i)
+    }
 
-		return checkSum;
-	}
+    return checkSum
+  }
 
 	/**
 	 * Checks a remote checkSum for a given serverName against the
@@ -277,17 +279,17 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_verifyCheckSum( serverName, remoteCheckSum ) {
-		if( this._getCheckSumTotal( serverName ) !== remoteCheckSum ) {
-			this._reconciliationTimeouts[ serverName ] = setTimeout(
-				this._requestFullState.bind( this, serverName ),
+  _verifyCheckSum(serverName, remoteCheckSum) {
+    if (this._getCheckSumTotal(serverName) !== remoteCheckSum) {
+      this._reconciliationTimeouts[serverName] = setTimeout(
+				this._requestFullState.bind(this, serverName),
 				this._options.stateReconciliationTimeout
-			);
-		} else if( this._reconciliationTimeouts[ serverName ] ) {
-			clearTimeout( this._reconciliationTimeouts[ serverName ] );
-			delete this._reconciliationTimeouts[ serverName ];
-		}
-	}
+			)
+    } else if (this._reconciliationTimeouts[serverName]) {
+      clearTimeout(this._reconciliationTimeouts[serverName])
+      delete this._reconciliationTimeouts[serverName]
+    }
+  }
 
 	/**
 	 * Sends a reconciliation request for a server with a given name (technically, its send to
@@ -300,13 +302,13 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_requestFullState( serverName ) {
-		this._options.messageConnector.publish( this._topic, {
-			topic: this._topic,
-			action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
-			data: [ serverName ]
-		});
-	}
+  _requestFullState(serverName) {
+    this._options.messageConnector.publish(this._topic, {
+      topic: this._topic,
+      action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
+      data: [serverName]
+    })
+  }
 
 	/**
 	 * Creates a full state message containing an array of all local entries that
@@ -320,24 +322,25 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_sendFullState() {
-		var localState = [], name;
+  _sendFullState() {
+    let localState = [],
+      name
 
-		for( name in this._data ) {
-			if( this._data[ name ].nodes[ this._options.serverName ] ) {
-				localState.push( name );
-			}
-		}
+    for (name in this._data) {
+      if (this._data[name].nodes[this._options.serverName]) {
+        localState.push(name)
+      }
+    }
 
-		this._options.messageConnector.publish( this._topic, {
-			topic: this._topic,
-			action: C.EVENT.DISTRIBUTED_STATE_FULL_STATE,
-			data: [ this._options.serverName, localState ]
-		});
+    this._options.messageConnector.publish(this._topic, {
+      topic: this._topic,
+      action: C.EVENT.DISTRIBUTED_STATE_FULL_STATE,
+      data: [this._options.serverName, localState]
+    })
 
-		this._fullStateSent = true;
-		setTimeout( this._resetFullStateSent.bind( this ), this._options.stateReconciliationTimeout );
-	}
+    this._fullStateSent = true
+    setTimeout(this._resetFullStateSent.bind(this), this._options.stateReconciliationTimeout)
+  }
 
 	/**
 	 * This will apply the data from an incoming full state message. Entries that are not within
@@ -350,21 +353,22 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_applyFullState( serverName, names ) {
-		var name, i;
+  _applyFullState(serverName, names) {
+    let name,
+      i
 
-		for( name in this._data ) {
+    for (name in this._data) {
 			// please note: only checking if the name exists is sufficient as the registry will just
 			// set node[serverName] to false if the entry exists, but not for the remote server.
-			if( names.indexOf( name ) === -1 ) {
-				this._remove( name, serverName );
-			}
-		}
+      if (names.indexOf(name) === -1) {
+        this._remove(name, serverName)
+      }
+    }
 
-		for( i = 0; i < names.length; i++ ) {
-			this._add( names[ i ], serverName );
-		}
-	}
+    for (i = 0; i < names.length; i++) {
+      this._add(names[i], serverName)
+    }
+  }
 
 	/**
 	 * Will be called after a full state message has been sent and
@@ -374,9 +378,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_resetFullStateSent() {
-		this._fullStateSent = false;
-	}
+  _resetFullStateSent() {
+    this._fullStateSent = false
+  }
 
 	/**
 	 * This is the main routing point for messages coming in from
@@ -387,31 +391,25 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_processIncomingMessage( message ) {
-		if( !this._isValidMessage( message ) ) {
-			return;
-		}
+  _processIncomingMessage(message) {
+    if (!this._isValidMessage(message)) {
+      return
+    }
 
-		if( message.action === C.EVENT.DISTRIBUTED_STATE_ADD ) {
-			this._add( message.data[ 0 ], message.data[ 1 ] );
-			this._verifyCheckSum( message.data[ 1 ], message.data[ 2 ] );
-		}
-
-		else if( message.action === C.EVENT.DISTRIBUTED_STATE_REMOVE ) {
-			this._remove( message.data[ 0 ], message.data[ 1 ] );
-			this._verifyCheckSum( message.data[ 1 ], message.data[ 2 ] );
-		}
-
-		else if( message.action === C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE ) {
-			if( message.data[ 0 ] === C.ALL || ( message.data[ 0 ] === this._options.serverName && this._fullStateSent === false ) ) {
-				this._sendFullState();
-			}
-		}
-
-		else if( message.action === C.EVENT.DISTRIBUTED_STATE_FULL_STATE ) {
-			this._applyFullState( message.data[ 0 ], message.data[ 1 ] );
-		}
-	}
+    if (message.action === C.EVENT.DISTRIBUTED_STATE_ADD) {
+      this._add(message.data[0], message.data[1])
+      this._verifyCheckSum(message.data[1], message.data[2])
+    } else if (message.action === C.EVENT.DISTRIBUTED_STATE_REMOVE) {
+      this._remove(message.data[0], message.data[1])
+      this._verifyCheckSum(message.data[1], message.data[2])
+    } else if (message.action === C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE) {
+      if (message.data[0] === C.ALL || (message.data[0] === this._options.serverName && this._fullStateSent === false)) {
+        this._sendFullState()
+      }
+    } else if (message.action === C.EVENT.DISTRIBUTED_STATE_FULL_STATE) {
+      this._applyFullState(message.data[0], message.data[1])
+    }
+  }
 
 	/**
 	 * Performs basic validations for incoming messages, based on action and data-length
@@ -421,17 +419,17 @@ module.exports = class DistributedStateRegistry extends EventEmitter{
 	 * @private
 	 * @returns {Boolean} isValid
 	 */
-	_isValidMessage( message ) {
-		if( DATA_LENGTH[ message.action ] === undefined ) {
-			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
-			return false;
-		}
+  _isValidMessage(message) {
+    if (DATA_LENGTH[message.action] === undefined) {
+      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
+      return false
+    }
 
-		if( message.data.length !== DATA_LENGTH[ message.action ] ) {
-			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, message.data );
-			return false;
-		}
+    if (message.data.length !== DATA_LENGTH[message.action]) {
+      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, message.data)
+      return false
+    }
 
-		return true;
-	}
+    return true
+  }
 }

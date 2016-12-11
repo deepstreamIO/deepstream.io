@@ -1,8 +1,8 @@
-'use strict';
+'use strict'
 
-module.exports = class PluginA{
-	constructor( options ) {
-		this.options = options;
-		this.type = 'pluginA';
-	}
+module.exports = class PluginA {
+  constructor(options) {
+    this.options = options
+    this.type = 'pluginA'
+  }
 }

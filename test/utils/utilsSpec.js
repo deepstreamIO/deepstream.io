@@ -1,295 +1,292 @@
 /* global describe, it, expect, jasmine */
 
-var path = require( 'path' );
-var utils = require( '../../src/utils/utils' );
-var EventEmitter = require( 'events' ).EventEmitter;
+const path = require('path')
+const utils = require('../../src/utils/utils')
+const EventEmitter = require('events').EventEmitter
 
-describe( 'utils', function(){
+describe('utils', () => {
+  it('receives a different value everytime getUid is called', () => {
+    let uidA = utils.getUid(),
+      uidB = utils.getUid(),
+      uidC = utils.getUid()
 
-   it( 'receives a different value everytime getUid is called', function() {
-		var uidA = utils.getUid(),
-			uidB = utils.getUid(),
-			uidC = utils.getUid();
+    expect(uidA).not.toBe(uidB)
+    expect(uidB).not.toBe(uidC)
+    expect(uidA).not.toBe(uidC)
+  })
 
-		expect( uidA ).not.toBe( uidB );
-		expect( uidB ).not.toBe( uidC );
-		expect( uidA ).not.toBe( uidC );
-   });
+  it('combines multiple events into one', () => {
+    let emitters = [
+        new EventEmitter(),
+        new EventEmitter(),
+        new EventEmitter()
+      ],
+      callback = jasmine.createSpy('eventCallback')
 
-   it( 'combines multiple events into one', function() {
-		var emitters = [
-			new EventEmitter(),
-			new EventEmitter(),
-			new EventEmitter()
-		],
-		callback = jasmine.createSpy( 'eventCallback' );
+    utils.combineEvents(emitters, 'someEvent', callback)
+    expect(callback).not.toHaveBeenCalled()
 
-		utils.combineEvents( emitters, 'someEvent', callback );
-		expect( callback ).not.toHaveBeenCalled();
+    emitters[0].emit('someEvent')
+    expect(callback).not.toHaveBeenCalled()
 
-		emitters[ 0 ].emit( 'someEvent' );
-		expect( callback ).not.toHaveBeenCalled();
+    emitters[1].emit('someEvent')
+    emitters[2].emit('someEvent')
+    expect(callback).toHaveBeenCalled()
+  })
 
-		emitters[ 1 ].emit( 'someEvent' );
-		emitters[ 2 ].emit( 'someEvent' );
-		expect( callback ).toHaveBeenCalled();
-   });
+  it('reverses maps', () => {
+    const user = {
+      firstname: 'Wolfram',
+      lastname: 'Hempel'
+    }
 
-   it( 'reverses maps', function(){
-		var user = {
-			firstname: 'Wolfram',
-			lastname: 'Hempel'
-		};
+    expect(utils.reverseMap(user)).toEqual({
+      Wolfram: 'firstname',
+      Hempel: 'lastname'
+    })
+  })
+})
 
-		expect( utils.reverseMap( user ) ).toEqual({
-			'Wolfram': 'firstname',
-			'Hempel': 'lastname'
-		});
-   });
-});
+describe('deepCopy', () => {
+  it('copies primitives', () => {
+    expect(utils.deepCopy('bla')).toBe('bla')
+    expect(utils.deepCopy(42)).toBe(42)
+  })
 
-describe( 'deepCopy', function(){
+  it('copies arrays', () => {
+    let original = ['a', 'b', 2],
+      copy = utils.deepCopy(original)
 
-	it( 'copies primitives', function(){
-		expect( utils.deepCopy( 'bla' ) ).toBe( 'bla' );
-		expect( utils.deepCopy( 42 ) ).toBe( 42 );
-	});
+    expect(copy).toEqual(original)
+    expect(copy).not.toBe(original)
+  })
 
-	it( 'copies arrays', function(){
-		var original = [ 'a', 'b', 2 ],
-			copy = utils.deepCopy( original );
+  it('copies objects', () => {
+    let original = { firstname: 'Wolfram', lastname: ' Hempel' },
+      copy = utils.deepCopy(original)
 
-		expect( copy ).toEqual( original );
-		expect( copy ).not.toBe( original );
-	});
+    expect(copy).toEqual(original)
+    expect(copy).not.toBe(original)
+  })
 
-	it( 'copies objects', function(){
-		var original = { firstname: 'Wolfram', lastname:' Hempel' },
-			copy = utils.deepCopy( original );
+  it('copies objects with null values', () => {
+    let original = { firstname: 'Wolfram', lastname: null },
+      copy = utils.deepCopy(original)
 
-		expect( copy ).toEqual( original );
-		expect( copy ).not.toBe( original );
-	});
+    expect(copy).toEqual(original)
+    expect(copy).not.toBe(original)
+  })
 
-	it( 'copies objects with null values', function(){
-		var original = { firstname: 'Wolfram', lastname: null },
-			copy = utils.deepCopy( original );
+  it('copies null values', () => {
+    const copy = utils.deepCopy(null)
+    expect(copy).toBeNull()
+  })
 
-		expect( copy ).toEqual( original );
-		expect( copy ).not.toBe( original );
-	});
+  it('copies nested values', () => {
+    const original = { a: { b: 'c', d: 4 } }
+    const copy = utils.deepCopy(original)
+    expect(original).toEqual(copy)
+    expect(original.a).not.toBe(copy.a)
+  })
 
-	it( 'copies null values', function(){
-		var copy = utils.deepCopy( null );
-		expect( copy ).toBeNull();
-	});
+  it('copies nested arrays', () => {
+    const original = { a: { b: 'c', d: ['a', { x: 'y' }] } }
+    const copy = utils.deepCopy(original)
+    expect(original).toEqual(copy)
+    expect(original.a.d).not.toBe(copy.a.d)
+    expect(Array.isArray(copy.a.d)).toBe(true)
+    expect(copy.a.d[1]).toEqual({ x: 'y' })
+    expect(original.a.d[1] === copy.a.d[1]).toBe(false)
+  })
 
-	it( 'copies nested values', function(){
-		var original = { a: { b: 'c', d: 4 } };
-		var copy = utils.deepCopy( original );
-		expect( original ).toEqual( copy );
-		expect( original.a ).not.toBe( copy.a );
-	});
+	// This is a JSON.stringify specific behaviour. Not too sure it's ideal,
+	// but it is something that will break behaviour when changed, so let's
+	// keep an eye on it
+  it('converts undefined', () => {
+    let copy = utils.deepCopy([undefined])
+    expect(copy[0]).toBe(null)
 
-	it( 'copies nested arrays', function(){
-		var original = { a: { b: 'c', d: [ 'a', { x: 'y' }] } };
-		var copy = utils.deepCopy( original );
-		expect( original ).toEqual( copy );
-		expect( original.a.d ).not.toBe( copy.a.d );
-		expect( Array.isArray( copy.a.d ) ).toBe( true );
-		expect( copy.a.d[ 1 ] ).toEqual( { x: 'y' });
-		expect( original.a.d[ 1 ] === copy.a.d[ 1 ] ).toBe( false );
-	});
+    copy = utils.deepCopy({ x: undefined })
+    expect(copy).toEqual({})
+  })
+})
 
-	//This is a JSON.stringify specific behaviour. Not too sure it's ideal,
-	//but it is something that will break behaviour when changed, so let's
-	//keep an eye on it
-	it( 'converts undefined', function(){
-		var copy = utils.deepCopy([ undefined ]);
-		expect( copy[ 0 ] ).toBe( null );
+describe('isOfType', () => {
+  it('checks basic types', () => {
+    expect(utils.isOfType('bla', 'string')).toBe(true)
+    expect(utils.isOfType(42, 'string')).toBe(false)
+    expect(utils.isOfType(42, 'number')).toBe(true)
+    expect(utils.isOfType(true, 'number')).toBe(false)
+    expect(utils.isOfType(true, 'boolean')).toBe(true)
+    expect(utils.isOfType({}, 'object')).toBe(true)
+    expect(utils.isOfType(null, 'object')).toBe(true)
+    expect(utils.isOfType([], 'object')).toBe(true)
+  })
 
-		copy = utils.deepCopy({ x: undefined });
-		expect( copy ).toEqual( {} );
-	});
-});
+  it('checks urls', () => {
+    expect(utils.isOfType('bla', 'url')).toBe(false)
+    expect(utils.isOfType('bla:22', 'url')).toBe(true)
+    expect(utils.isOfType('https://deepstream.io/', 'url')).toBe(true)
+  })
 
-describe( 'isOfType', function(){
-	it( 'checks basic types', function(){
-		expect( utils.isOfType( 'bla', 'string' ) ).toBe( true );
-		expect( utils.isOfType( 42, 'string' ) ).toBe( false );
-		expect( utils.isOfType( 42, 'number' ) ).toBe( true );
-		expect( utils.isOfType( true, 'number' ) ).toBe( false );
-		expect( utils.isOfType( true, 'boolean' ) ).toBe( true );
-		expect( utils.isOfType( {}, 'object' ) ).toBe( true );
-		expect( utils.isOfType( null, 'object' ) ).toBe( true );
-		expect( utils.isOfType( [], 'object' ) ).toBe( true );
-	});
+  it('checks arrays', () => {
+    expect(utils.isOfType([], 'array')).toBe(true)
+    expect(utils.isOfType({}, 'array')).toBe(false)
+  })
+})
 
-	it( 'checks urls', function(){
-		expect( utils.isOfType( 'bla', 'url' ) ).toBe( false );
-		expect( utils.isOfType( 'bla:22', 'url' ) ).toBe( true );
-		expect( utils.isOfType( 'https://deepstream.io/', 'url' ) ).toBe( true );
-	});
+describe('validateMap', () => {
+  function _map() {
+    return {
+      'a-string': 'bla',
+      'a number': 42,
+      'an array': ['yup']
+    }
+  }
 
-	it( 'checks arrays', function(){
-		expect( utils.isOfType( [], 'array' ) ).toBe( true );
-		expect( utils.isOfType( {}, 'array' ) ).toBe( false );
-	});
-});
+  function _schema() {
+    return {
+      'a-string': 'string',
+      'a number': 'number',
+      'an array': 'array'
+    }
+  }
 
-describe( 'validateMap', function(){
-	function _map() {
-		return {
-			'a-string': 'bla',
-			'a number': 42,
-			'an array': [ 'yup' ]
-		};
-	}
+  it('validates basic maps', () => {
+    const map = _map()
+    const schema = _schema()
+    expect(utils.validateMap(map, false, schema)).toBe(true)
+  })
 
-	function _schema() {
-		return {
-			'a-string': 'string',
-			'a number': 'number',
-			'an array': 'array'
-		};
-	}
+  it('fails validating an incorrect map', () => {
+    const map = _map()
+    const schema = _schema()
+    schema['an array'] = 'number'
+    const returnValue = utils.validateMap(map, false, schema)
+    expect(returnValue instanceof Error).toBe(true)
+  })
 
-	it( 'validates basic maps', function(){
-		var map = _map();
-		var schema = _schema();
-		expect( utils.validateMap( map, false, schema ) ).toBe( true );
-	});
+  it('fails validating an incomplete map', () => {
+    const map = _map()
+    const schema = _schema()
+    delete map['an array']
+    const returnValue = utils.validateMap(map, false, schema)
+    expect(returnValue instanceof Error).toBe(true)
+  })
 
-	it( 'fails validating an incorrect map', function(){
-		var map = _map();
-		var schema = _schema();
-		schema[ 'an array' ] = 'number';
-		var returnValue = utils.validateMap( map, false, schema );
-		expect( returnValue instanceof Error ).toBe( true );
-	});
+  it('throws errors', () => {
+    const map = _map()
+    const schema = _schema()
+    schema['an array'] = 'number'
+    expect(() => {
+      utils.validateMap(map, true, schema)
+    }).toThrow()
+  })
+})
 
-	it( 'fails validating an incomplete map', function(){
-		var map = _map();
-		var schema = _schema();
-		delete map[ 'an array' ];
-		var returnValue = utils.validateMap( map, false, schema );
-		expect( returnValue instanceof Error ).toBe( true );
-	});
+describe('merges recoursively', () => {
+  it('merges two simple objects', () => {
+    const objA = {
+      firstname: 'Homer',
+      lastname: 'Simpson'
+    }
 
-	it( 'throws errors', function(){
-		var map = _map();
-		var schema = _schema();
-		schema[ 'an array' ] = 'number';
-		expect(function(){
-			utils.validateMap( map, true, schema );
-		}).toThrow();
-	});
-});
+    const objB = {
+      firstname: 'Marge'
+    }
 
-describe( 'merges recoursively', function(){
-	it( 'merges two simple objects', function(){
-		var objA = {
-			firstname: 'Homer',
-			lastname: 'Simpson'
-		};
+    expect(utils.merge(objA, objB)).toEqual({
+      firstname: 'Marge',
+      lastname: 'Simpson'
+    })
+  })
 
-		var objB = {
-			firstname: 'Marge'
-		};
+  it('merges two nested objects', () => {
+    const objA = {
+      firstname: 'Homer',
+      lastname: 'Simpson',
+      children: {
+        Bart: {
+          lastname: 'Simpson'
+        }
+      }
+    }
 
-		expect( utils.merge( objA, objB ) ).toEqual({
-			firstname: 'Marge',
-			lastname: 'Simpson'
-		});
-	});
+    const objB = {
+      firstname: 'Marge',
+      children: {
+        Bart: {
+          firstname: 'Bart'
+        }
+      }
+    }
 
-	it( 'merges two nested objects', function(){
-		var objA = {
-			firstname: 'Homer',
-			lastname: 'Simpson',
-			children: {
-				'Bart': {
-					lastname: 'Simpson'
-				}
-			}
-		};
+    expect(utils.merge(objA, objB)).toEqual({
+      firstname: 'Marge',
+      lastname: 'Simpson',
+      children: {
+        Bart: {
+          firstname: 'Bart',
+          lastname: 'Simpson'
+        }
+      }
+    })
+  })
 
-		var objB = {
-			firstname: 'Marge',
-			children: {
-				'Bart': {
-					firstname: 'Bart'
-				}
-			}
-		};
+  it('merges multiple objects ', () => {
+    const objA = {
+      pets: {
+        birds: ['parrot', 'dove']
+      }
 
-		expect( utils.merge( objA, objB ) ).toEqual({
-			firstname: 'Marge',
-			lastname: 'Simpson',
-			children: {
-				'Bart': {
-					firstname: 'Bart',
-					lastname: 'Simpson'
-				}
-			}
-		});
-	});
+    }
 
-	it( 'merges multiple objects ', function(){
-		var objA = {
-			pets: {
-				birds: [ 'parrot', 'dove' ]
-			}
+    const objB = {
+      jobs: {
+        hunter: false
+      }
+    }
 
-		};
+    const objC = {
+      firstname: 'Egon'
+    }
 
-		var objB = {
-			jobs: {
-				hunter: false
-			}
-		};
+    expect(utils.merge(objA, objB, {}, objC)).toEqual({
+      pets: {
+        birds: ['parrot', 'dove']
+      },
+      jobs: {
+        hunter: false
+      },
+      firstname: 'Egon'
+    })
+  })
 
-		var objC = {
-			firstname: 'Egon'
-		};
+  it('handles null and undefined values', () => {
+    const objA = {
+      pets: {
+        dog: 1,
+        cat: 2,
+        ape: 3
+      }
 
-		expect( utils.merge( objA, objB, {}, objC ) ).toEqual({
-			pets: {
-				birds: [ 'parrot', 'dove' ]
-			},
-			jobs: {
-				hunter: false
-			},
-			firstname: 'Egon'
-		});
-	});
+    }
 
-	it( 'handles null and undefined values', function(){
-		var objA = {
-			pets: {
-				dog: 1,
-				cat: 2,
-				ape: 3
-			}
+    const objB = {
+      pets: {
+        cat: null,
+        ape: undefined,
+        zebra: 9
+      }
+    }
 
-		};
-
-		var objB = {
-			pets: {
-				cat: null,
-				ape: undefined,
-				zebra: 9
-			}
-		};
-
-		expect( utils.merge( objA, objB ) ).toEqual({
-			pets: {
-				dog: 1,
-				cat: null,
-				ape: 3,
-				zebra: 9
-			}
-		});
-
-	});
-});
+    expect(utils.merge(objA, objB)).toEqual({
+      pets: {
+        dog: 1,
+        cat: null,
+        ape: 3,
+        zebra: 9
+      }
+    })
+  })
+})

@@ -1,12 +1,12 @@
-'use strict';
-const EventEmitter = require( 'events' ).EventEmitter;
+'use strict'
+const EventEmitter = require('events').EventEmitter
 
 /**
  * Used for users that don't provide a username
  *
  * @type {String}
  */
-const OPEN = 'open';
+const OPEN = 'open'
 
 /**
  * The open authentication handler allows every client to connect.
@@ -15,16 +15,16 @@ const OPEN = 'open';
  *
  * @class OpenAuthenticationHandler
  */
-module.exports = class OpenAuthenticationHandler extends EventEmitter{
+module.exports = class OpenAuthenticationHandler extends EventEmitter {
 	/**
 	 * @param {String} type exposes the type for logging purposes. This one is called
 	 *                      none to avoid confusion with openAuth
 	 */
-	constructor() {
-		super();
-		this.type = 'none';
-		this.isReady = true;
-	}
+  constructor() {
+    super()
+    this.type = 'none'
+    this.isReady = true
+  }
 
 	/**
 	 * Grants access to any user. Registeres them with username or open
@@ -37,7 +37,7 @@ module.exports = class OpenAuthenticationHandler extends EventEmitter{
 	 * @implements {PermissionHandler.isValidUser}
 	 * @returns {void}
 	 */
-	isValidUser( connectionData, authData, callback ) {
-		callback( true, { username: authData.username || OPEN });
-	}
+  isValidUser(connectionData, authData, callback) {
+    callback(true, { username: authData.username || OPEN })
+  }
 }

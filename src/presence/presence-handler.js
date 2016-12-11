@@ -1,9 +1,9 @@
-'use strict';
+'use strict'
 
-const C = require( '../constants/constants' );
-const SubscriptionRegistry = require( '../utils/subscription-registry' );
-const DistributedStateRegistry = require( '../cluster/distributed-state-registry' );
-const messageBuilder = require( '../message/message-builder' );
+const C = require('../constants/constants')
+const SubscriptionRegistry = require('../utils/subscription-registry')
+const DistributedStateRegistry = require('../cluster/distributed-state-registry')
+const messageBuilder = require('../message/message-builder')
 
 /**
  * This class handles incoming and outgoing messages in relation
@@ -18,19 +18,19 @@ const messageBuilder = require( '../message/message-builder' );
  */
 module.exports = class PresenceHandler {
 
-	constructor( options ) {
-		this._options = options;
+  constructor(options) {
+    this._options = options
 
-		this._connectionEndpoint = options.connectionEndpoint;
-		this._connectionEndpoint.on( 'client-connected', this._handleJoin.bind( this ) );
-		this._connectionEndpoint.on( 'client-disconnected', this._handleLeave.bind( this ) );
+    this._connectionEndpoint = options.connectionEndpoint
+    this._connectionEndpoint.on('client-connected', this._handleJoin.bind(this))
+    this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
 
-		this._presenceRegistry = new SubscriptionRegistry( options, C.TOPIC.PRESENCE );
+    this._presenceRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
 
-		this._connectedClients = new DistributedStateRegistry( C.TOPIC.ONLINE_USERS, options );
-		this._connectedClients.on( 'add', this._onClientAdded.bind( this ) );
-		this._connectedClients.on( 'remove', this._onClientRemoved.bind( this ) );
-	}
+    this._connectedClients = new DistributedStateRegistry(C.TOPIC.ONLINE_USERS, options)
+    this._connectedClients.on('add', this._onClientAdded.bind(this))
+    this._connectedClients.on('remove', this._onClientRemoved.bind(this))
+  }
 
 	/**
 	 * The main entry point to the presence handler class.
@@ -43,24 +43,21 @@ module.exports = class PresenceHandler {
 	 * @public
 	 * @returns {void}
 	 */
-	handle( socketWrapper, message ) {
-		if( message.action === C.ACTIONS.SUBSCRIBE ) {
-			this._presenceRegistry.subscribe( C.TOPIC.PRESENCE, socketWrapper );
-		}
-		else if( message.action === C.ACTIONS.UNSUBSCRIBE ) {
-			this._presenceRegistry.unsubscribe( C.TOPIC.PRESENCE, socketWrapper );
-		}
-		else if( message.action === C.ACTIONS.QUERY ) {
-			this._handleQuery( socketWrapper );
-		}
-		else {
-			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
+  handle(socketWrapper, message) {
+    if (message.action === C.ACTIONS.SUBSCRIBE) {
+      this._presenceRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
+    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+      this._presenceRegistry.unsubscribe(C.TOPIC.PRESENCE, socketWrapper)
+    } else if (message.action === C.ACTIONS.QUERY) {
+      this._handleQuery(socketWrapper)
+    } else {
+      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
-			if( socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR ) {
-				socketWrapper.sendError( C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + message.action );
-			}
-		}
-	}
+      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+        socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+      }
+    }
+  }
 
 	/**
 	 * Called whenever a client has succesfully logged in with a username
@@ -70,9 +67,9 @@ module.exports = class PresenceHandler {
 	 * @private
 	 * @returns {void}
 	 */
-	_handleJoin( socketWrapper ) {
-		this._connectedClients.add( socketWrapper.user );
-	}
+  _handleJoin(socketWrapper) {
+    this._connectedClients.add(socketWrapper.user)
+  }
 
 	/**
 	 * Called whenever a client has disconnected
@@ -82,9 +79,9 @@ module.exports = class PresenceHandler {
 	 * @private
 	 * @returns {void}
 	 */
-	_handleLeave( socketWrapper ) {
-		this._connectedClients.remove( socketWrapper.user );
-	}
+  _handleLeave(socketWrapper) {
+    this._connectedClients.remove(socketWrapper.user)
+  }
 
 	/**
 	 * Handles finding clients who are connected and splicing out the client
@@ -95,14 +92,14 @@ module.exports = class PresenceHandler {
 	 * @private
 	 * @returns {void}
 	 */
-	_handleQuery( socketWrapper ) {
-		const clients = this._connectedClients.getAll();
-		const index = clients.indexOf( socketWrapper.user );
-		if( index !== -1 ) {
-			clients.splice( index, 1 );
-		}
-		socketWrapper.sendMessage( C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients );
-	}
+  _handleQuery(socketWrapper) {
+    const clients = this._connectedClients.getAll()
+    const index = clients.indexOf(socketWrapper.user)
+    if (index !== -1) {
+      clients.splice(index, 1)
+    }
+    socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients)
+  }
 
 	/**
 	 * Alerts all clients who are subscribed to
@@ -113,10 +110,10 @@ module.exports = class PresenceHandler {
 	 * @private
 	 * @returns {void}
 	 */
-	_onClientAdded( username ) {
-		var addMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ username ] );
-		this._presenceRegistry.sendToSubscribers( C.TOPIC.PRESENCE, addMsg );
-	}
+  _onClientAdded(username) {
+    const addMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [username])
+    this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
+  }
 
 	/**
 	 * Alerts all clients who are subscribed to
@@ -127,9 +124,9 @@ module.exports = class PresenceHandler {
 	 * @private
 	 * @returns {void}
 	 */
-	_onClientRemoved( username ) {
-		var removeMsg = messageBuilder.getMsg( C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ username ] );
-		this._presenceRegistry.sendToSubscribers( C.TOPIC.PRESENCE, removeMsg );
-	}
+  _onClientRemoved(username) {
+    const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
+    this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
+  }
 
 }

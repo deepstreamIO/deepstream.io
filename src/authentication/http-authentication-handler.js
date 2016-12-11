@@ -1,16 +1,16 @@
-'use strict';
+'use strict'
 
-const HttpAuthenticationRequest = require( './http-authentication-request' );
-const EventEmitter = require( 'events' ).EventEmitter;
-const utils = require( '../utils/utils' );
-const url = require( 'url' );
+const HttpAuthenticationRequest = require('./http-authentication-request')
+const EventEmitter = require('events').EventEmitter
+const utils = require('../utils/utils')
+const url = require('url')
 
 /**
  *
  * @public
  * @extends {EventEmitter}
  */
-module.exports = class HttpAuthenticationHandler extends EventEmitter{
+module.exports = class HttpAuthenticationHandler extends EventEmitter {
 
 	/**
 	 * Creates the class
@@ -25,14 +25,14 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter{
 	 * @constructor
 	 * @returns {void}
 	 */
-	constructor( settings, logger ) {
-		super();
-		this.isReady = true;
-		this.type = 'http webhook to ' + settings.endpointUrl;
-		this._settings = settings;
-		this._logger = logger;
-		this._validateSettings();
-	}
+  constructor(settings, logger) {
+    super()
+    this.isReady = true
+    this.type = `http webhook to ${settings.endpointUrl}`
+    this._settings = settings
+    this._logger = logger
+    this._validateSettings()
+  }
 
 	/**
 	 * Main interface. Authenticates incoming connections
@@ -45,14 +45,14 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter{
 	 * @implements {PermissionHandler.isValidUser}
 	 * @returns {void}
 	 */
-	isValidUser( connectionData, authData, callback ) {
-		new HttpAuthenticationRequest(
-			{ connectionData: connectionData, authData: authData },
+  isValidUser(connectionData, authData, callback) {
+    new HttpAuthenticationRequest(
+			{ connectionData, authData },
 			this._settings,
 			this._logger,
 			callback
-		);
-	}
+		)
+  }
 
 	/**
 	 * Validate the user provided settings
@@ -60,11 +60,11 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter{
 	 * @private
 	 * @returns {void}
 	 */
-	_validateSettings() {
-		utils.validateMap( this._settings, true, {
-			endpointUrl: 'url',
-			permittedStatusCodes: 'array',
-			requestTimeout: 'number'
-		});
-	}
+  _validateSettings() {
+    utils.validateMap(this._settings, true, {
+      endpointUrl: 'url',
+      permittedStatusCodes: 'array',
+      requestTimeout: 'number'
+    })
+  }
 }

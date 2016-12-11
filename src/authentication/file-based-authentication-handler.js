@@ -1,11 +1,11 @@
-'use strict';
+'use strict'
 
-const crypto = require( 'crypto' );
-const jsYamlLoader = require( '../config/js-yaml-loader' );
-const utils = require( '../utils/utils' );
-const EventEmitter = require( 'events' ).EventEmitter;
-const STRING = 'string';
-const STRING_CHARSET = 'base64';
+const crypto = require('crypto')
+const jsYamlLoader = require('../config/js-yaml-loader')
+const utils = require('../utils/utils')
+const EventEmitter = require('events').EventEmitter
+const STRING = 'string'
+const STRING_CHARSET = 'base64'
 
 /**
  * This authentication handler reads a list of users and their associated password (either
@@ -29,15 +29,15 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @constructor
 	 * @returns {void}
 	 */
-	constructor( settings ) {
-		super();
-		this.isReady = false;
-		this.type = 'file using ' + settings.path;
-		this._validateSettings( settings );
-		this._settings = settings;
-		this._base64KeyLength = 4 * Math.ceil( this._settings.keyLength / 3 );
-		jsYamlLoader.readAndParseFile( settings.path, this._onFileLoad.bind( this ) );
-	}
+  constructor(settings) {
+    super()
+    this.isReady = false
+    this.type = `file using ${settings.path}`
+    this._validateSettings(settings)
+    this._settings = settings
+    this._base64KeyLength = 4 * Math.ceil(this._settings.keyLength / 3)
+    jsYamlLoader.readAndParseFile(settings.path, this._onFileLoad.bind(this))
+  }
 
 	/**
 	 * Main interface. Authenticates incoming connections
@@ -50,36 +50,36 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @implements {PermissionHandler.isValidUser}
 	 * @returns {void}
 	 */
-	isValidUser( connectionData, authData, callback ) {
-		if( typeof authData.username !== STRING ) {
-			callback( false, { clientData: 'missing authentication parameter username' } );
-			return;
-		}
+  isValidUser(connectionData, authData, callback) {
+    if (typeof authData.username !== STRING) {
+      callback(false, { clientData: 'missing authentication parameter username' })
+      return
+    }
 
-		if( typeof authData.password !== STRING ) {
-			callback( false, { clientData: 'missing authentication parameter password' } );
-			return;
-		}
+    if (typeof authData.password !== STRING) {
+      callback(false, { clientData: 'missing authentication parameter password' })
+      return
+    }
 
-		var userData = this._data[ authData.username ];
+    const userData = this._data[authData.username]
 
-		if( !userData ) {
-			callback( false );
-			return;
-		}
+    if (!userData) {
+      callback(false)
+      return
+    }
 
-		if( this._settings.hash ) {
-			this._isValid( authData.password, userData.password, authData.username, userData.serverData, userData.clientData, callback );
-		} else if( authData.password === userData.password ) {
-			callback( true, {
-				username: authData.username,
-				serverData: typeof userData.serverData === 'undefined' ? null : userData.serverData,
-				clientData: typeof userData.clientData === 'undefined' ? null : userData.clientData
-			} );
-		} else {
-			callback( false );
-		}
-	}
+    if (this._settings.hash) {
+      this._isValid(authData.password, userData.password, authData.username, userData.serverData, userData.clientData, callback)
+    } else if (authData.password === userData.password) {
+      callback(true, {
+        username: authData.username,
+        serverData: typeof userData.serverData === 'undefined' ? null : userData.serverData,
+        clientData: typeof userData.clientData === 'undefined' ? null : userData.clientData
+      })
+    } else {
+      callback(false)
+    }
+  }
 
 	/**
 	 * Utility method for creating hashes including salts based on
@@ -93,20 +93,20 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @public
 	 * @returns {void}
 	 */
-	createHash( password, callback ) {
-		var salt = crypto.randomBytes( 16 ).toString( STRING_CHARSET );
+  createHash(password, callback) {
+    const salt = crypto.randomBytes(16).toString(STRING_CHARSET)
 
-		crypto.pbkdf2(
+    crypto.pbkdf2(
 			password,
 			salt,
 			this._settings.iterations,
 			this._settings.keyLength,
 			this._settings.hash,
-			function( err, hash ) {
-				callback( err || null, hash.toString( STRING_CHARSET ) + salt );
-			}.bind( this )
-		);
-	}
+			(err, hash) => {
+  callback(err || null, hash.toString(STRING_CHARSET) + salt)
+}
+		)
+  }
 
 	/**
 	 * Callback for loaded JSON files. Makes sure that
@@ -118,22 +118,22 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @private
 	 * @returns {void}
 	 */
-	_onFileLoad( error, data ) {
-		if( error ) {
-			this.emit( 'error', error.toString() );
-		} else {
-			this._data = data;
-		}
+  _onFileLoad(error, data) {
+    if (error) {
+      this.emit('error', error.toString())
+    } else {
+      this._data = data
+    }
 
-		for( var username in this._data ) {
-			if( typeof this._data[ username ].password !== STRING ) {
-				this.emit( 'error', 'missing password for ' + username );
-			}
-		}
+    for (const username in this._data) {
+      if (typeof this._data[username].password !== STRING) {
+        this.emit('error', `missing password for ${username}`)
+      }
+    }
 
-		this.isReady = true;
-		this.emit( 'ready' );
-	}
+    this.isReady = true
+    this.emit('ready')
+  }
 
 	/**
 	 * Called initially to validate the user provided settings
@@ -143,25 +143,25 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @private
 	 * @returns {void}
 	 */
-	_validateSettings( settings ) {
-		if( !settings.hash ) {
-			utils.validateMap( settings, true, {
-				path: 'string'
-			} );
-			return;
-		}
+  _validateSettings(settings) {
+    if (!settings.hash) {
+      utils.validateMap(settings, true, {
+        path: 'string'
+      })
+      return
+    }
 
-		utils.validateMap( settings, true, {
-			path: 'string',
-			hash: 'string',
-			iterations: 'number',
-			keyLength: 'number'
-		} );
+    utils.validateMap(settings, true, {
+      path: 'string',
+      hash: 'string',
+      iterations: 'number',
+      keyLength: 'number'
+    })
 
-		if( crypto.getHashes().indexOf( settings.hash ) === -1 ) {
-			throw new Error( 'Unknown Hash ' + settings.hash );
-		}
-	}
+    if (crypto.getHashes().indexOf(settings.hash) === -1) {
+      throw new Error(`Unknown Hash ${settings.hash}`)
+    }
+  }
 
 	/**
 	 * Extracts hash and salt from a string and runs a hasing function
@@ -177,19 +177,19 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @private
 	 * @returns {void}
 	 */
-	_isValid( password, passwordHashWithSalt, username, serverData, clientData, callback ) {
-		var expectedHash = passwordHashWithSalt.substr( 0, this._base64KeyLength );
-		var salt = passwordHashWithSalt.substr( this._base64KeyLength );
+  _isValid(password, passwordHashWithSalt, username, serverData, clientData, callback) {
+    const expectedHash = passwordHashWithSalt.substr(0, this._base64KeyLength)
+    const salt = passwordHashWithSalt.substr(this._base64KeyLength)
 
-		crypto.pbkdf2(
+    crypto.pbkdf2(
 			password,
 			salt,
 			this._settings.iterations,
 			this._settings.keyLength,
 			this._settings.hash,
-			this._compareHashResult.bind( this, expectedHash, username, serverData, clientData, callback )
-		);
-	}
+			this._compareHashResult.bind(this, expectedHash, username, serverData, clientData, callback)
+		)
+  }
 
 	/**
 	 * Callback once hashing is completed
@@ -204,16 +204,16 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 	 * @private
 	 * @returns {void}
 	 */
-	_compareHashResult( expectedHash, username, serverData, clientData, callback, error, actualHashBuffer ) {
-		if( expectedHash === actualHashBuffer.toString( STRING_CHARSET ) ) {
-			//todo log error
-			callback( true, {
-				username: username,
-				serverData: serverData || null,
-				clientData: clientData || null
-			} );
-		} else {
-			callback( false );
-		}
-	}
-};
+  _compareHashResult(expectedHash, username, serverData, clientData, callback, error, actualHashBuffer) {
+    if (expectedHash === actualHashBuffer.toString(STRING_CHARSET)) {
+			// todo log error
+      callback(true, {
+        username,
+        serverData: serverData || null,
+        clientData: clientData || null
+      })
+    } else {
+      callback(false)
+    }
+  }
+}

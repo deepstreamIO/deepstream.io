@@ -1,7 +1,7 @@
 'use strict'
 
-const messageBuilder = require( '../message/message-builder' );
-const C = require( '../constants/constants' );
+const messageBuilder = require('../message/message-builder')
+const C = require('../constants/constants')
 
 module.exports = class ListenerTimeoutRegistry {
 
@@ -15,13 +15,13 @@ module.exports = class ListenerTimeoutRegistry {
 	 *
 	 * @constructor
 	 */
-	constructor( type, options ) {
-		this._type = type;
-		this._options = options;
-		this._timeoutMap = {};
-		this._timedoutProviders = {};
-		this._acceptedProvider = {};
-	}
+  constructor(type, options) {
+    this._type = type
+    this._options = options
+    this._timeoutMap = {}
+    this._timedoutProviders = {}
+    this._acceptedProvider = {}
+  }
 
 	/**
 	* The main entry point, which takes a message from a provider
@@ -36,27 +36,27 @@ module.exports = class ListenerTimeoutRegistry {
 	* @private
 	* @returns {void}
 	*/
-	handle( socketWrapper, message ) {
-		const pattern = message.data[ 0 ];
-		const subscriptionName = message.data[ 1 ];
-		const index = this._getIndex( socketWrapper, message );
-		const provider = this._timedoutProviders[ subscriptionName ][ index ];
-		if( message.action === C.ACTIONS.LISTEN_ACCEPT ) {
-			if( !this._acceptedProvider[ subscriptionName ] ) {
-				this._acceptedProvider[ subscriptionName ] = this._timedoutProviders[ subscriptionName ][ index ];
-			} else {
-				provider.socketWrapper.send(
+  handle(socketWrapper, message) {
+    const pattern = message.data[0]
+    const subscriptionName = message.data[1]
+    const index = this._getIndex(socketWrapper, message)
+    const provider = this._timedoutProviders[subscriptionName][index]
+    if (message.action === C.ACTIONS.LISTEN_ACCEPT) {
+      if (!this._acceptedProvider[subscriptionName]) {
+        this._acceptedProvider[subscriptionName] = this._timedoutProviders[subscriptionName][index]
+      } else {
+        provider.socketWrapper.send(
 					messageBuilder.getMsg(
 						this._type,
 						C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-						[ provider.pattern, subscriptionName ]
+						[provider.pattern, subscriptionName]
 					)
 				)
-			}
-		} else if ( message.action === C.ACTIONS.LISTEN_REJECT ) {
-			this._timedoutProviders[ subscriptionName ].splice( index, 1 );
-		}
-	}
+      }
+    } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
+      this._timedoutProviders[subscriptionName].splice(index, 1)
+    }
+  }
 
 	/**
 	* Clear cache once discovery phase is complete
@@ -66,11 +66,11 @@ module.exports = class ListenerTimeoutRegistry {
 	* @public
 	* @returns {void}
 	*/
-	clear( subscriptionName ) {
-		delete this._timeoutMap[ subscriptionName ];
-		delete this._timedoutProviders[ subscriptionName ];
-		delete this._acceptedProvider[ subscriptionName ];
-	}
+  clear(subscriptionName) {
+    delete this._timeoutMap[subscriptionName]
+    delete this._timedoutProviders[subscriptionName]
+    delete this._acceptedProvider[subscriptionName]
+  }
 
 	/**
 	* Called whenever a provider closes to ensure cleanup
@@ -80,18 +80,18 @@ module.exports = class ListenerTimeoutRegistry {
 	* @private
 	* @returns {void}
 	*/
-	removeProvider( socketWrapper ) {
-		for( var acceptedProvider in this._acceptedProvider ) {
-			if( this._acceptedProvider[ acceptedProvider ].socketWrapper === socketWrapper ) {
-				delete this._acceptedProvider[ acceptedProvider ];
-			}
-		}
-		for( var subscriptionName in this._timeoutMap ) {
-			if( this._timeoutMap[ subscriptionName ] ) {
-				this.clearTimeout( subscriptionName );
-			}
-		}
-	}
+  removeProvider(socketWrapper) {
+    for (const acceptedProvider in this._acceptedProvider) {
+      if (this._acceptedProvider[acceptedProvider].socketWrapper === socketWrapper) {
+        delete this._acceptedProvider[acceptedProvider]
+      }
+    }
+    for (const subscriptionName in this._timeoutMap) {
+      if (this._timeoutMap[subscriptionName]) {
+        this.clearTimeout(subscriptionName)
+      }
+    }
+  }
 	/**
 	 * Starts a timeout for a provider. The following cases can apply
 	 *
@@ -110,16 +110,16 @@ module.exports = class ListenerTimeoutRegistry {
 	 * @public
 	 * @returns {void}
 	 */
-	addTimeout( subscriptionName, provider, callback ) {
-		var timeoutId = setTimeout( () => {
-			if (this._timedoutProviders[ subscriptionName ] == null ) {
-				this._timedoutProviders[ subscriptionName ] = [];
-			}
-			this._timedoutProviders[ subscriptionName ].push( provider );
-			callback( subscriptionName );
-		}, this._options.listenResponseTimeout );
-		this._timeoutMap[ subscriptionName ] = timeoutId;
-	}
+  addTimeout(subscriptionName, provider, callback) {
+    const timeoutId = setTimeout(() => {
+      if (this._timedoutProviders[subscriptionName] == null) {
+        this._timedoutProviders[subscriptionName] = []
+      }
+      this._timedoutProviders[subscriptionName].push(provider)
+      callback(subscriptionName)
+    }, this._options.listenResponseTimeout)
+    this._timeoutMap[subscriptionName] = timeoutId
+  }
 
 	/**
 	* Clear the timeout for a LISTEN_ACCEPT or LISTEN_REJECt recieved
@@ -127,65 +127,65 @@ module.exports = class ListenerTimeoutRegistry {
 	*
 	* @public
 	*/
-	clearTimeout( subscriptionName ) {
-		clearTimeout( this._timeoutMap[ subscriptionName ] );
-		delete this._timeoutMap[ subscriptionName ];
-	}
+  clearTimeout(subscriptionName) {
+    clearTimeout(this._timeoutMap[subscriptionName])
+    delete this._timeoutMap[subscriptionName]
+  }
 
 	/**
 	* Return if the socket is a provider that previously timeout
 	*
 	* @public
 	*/
-	isALateResponder( socketWrapper, message ) {
-		const index = this._getIndex( socketWrapper, message )
-		return this._timedoutProviders[ message.data[ 1 ] ] && index !== -1;
-	}
+  isALateResponder(socketWrapper, message) {
+    const index = this._getIndex(socketWrapper, message)
+    return this._timedoutProviders[message.data[1]] && index !== -1
+  }
 
 	/**
 	* Return if the socket is a provider that previously timeout
 	*
 	* @public
 	*/
-	rejectLateResponderThatAccepted( subscriptionName ) {
-		const provider = this._acceptedProvider[ subscriptionName ];
-		if( provider ) {
-			provider.socketWrapper.send(
+  rejectLateResponderThatAccepted(subscriptionName) {
+    const provider = this._acceptedProvider[subscriptionName]
+    if (provider) {
+      provider.socketWrapper.send(
 				messageBuilder.getMsg(
 					this._type,
 					C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-					[ provider.pattern, subscriptionName ]
+					[provider.pattern, subscriptionName]
 				)
 			)
-		}
-	}
+    }
+  }
 
 	/**
 	* Return if the socket is a provider that previously timeout
 	*
 	* @public
 	*/
-	getLateResponderThatAccepted( subscriptionName ) {
-		return this._acceptedProvider[ subscriptionName ];
-	}
+  getLateResponderThatAccepted(subscriptionName) {
+    return this._acceptedProvider[subscriptionName]
+  }
 
 	/**
 	* Return if the socket is a provider that previously timeout
 	*
 	* @private
 	*/
-	_getIndex( socketWrapper, message ) {
-		const pattern = message.data[ 0 ];
-		const subscriptionName = message.data[ 1 ];
-		const timedoutProviders = this._timedoutProviders[ subscriptionName ];
+  _getIndex(socketWrapper, message) {
+    const pattern = message.data[0]
+    const subscriptionName = message.data[1]
+    const timedoutProviders = this._timedoutProviders[subscriptionName]
 
-		for( var i=0; timedoutProviders && i < timedoutProviders.length; i++ ) {
-			if( timedoutProviders[ i ].socketWrapper === socketWrapper && timedoutProviders[ i ].pattern === pattern ) {
-				return i;
-			}
-		}
+    for (let i = 0; timedoutProviders && i < timedoutProviders.length; i++) {
+      if (timedoutProviders[i].socketWrapper === socketWrapper && timedoutProviders[i].pattern === pattern) {
+        return i
+      }
+    }
 
-		return -1;
-	}
+    return -1
+  }
 
 }

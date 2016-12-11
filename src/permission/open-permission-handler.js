@@ -1,6 +1,6 @@
-'use strict';
+'use strict'
 
-const EventEmitter = require( 'events' ).EventEmitter;
+const EventEmitter = require('events').EventEmitter
 
 /**
  * The open permission handler allows any action to occur without applying
@@ -8,15 +8,15 @@ const EventEmitter = require( 'events' ).EventEmitter;
  *
  * @class OpenPermissionHandler
  */
-module.exports = class OpenPermissionHandler extends EventEmitter{
+module.exports = class OpenPermissionHandler extends EventEmitter {
 	/**
 	 * @param {String} type exposes the type for logging purposes
 	 */
-	constructor() {
-		super();
-		this.type = 'none';
-		this.isReady = true;
-	}
+  constructor() {
+    super()
+    this.type = 'none'
+    this.isReady = true
+  }
 
 	/**
 	 * Allows any action by an user
@@ -30,7 +30,7 @@ module.exports = class OpenPermissionHandler extends EventEmitter{
 	 * @implements {PermissionHandler.isValidUser}
 	 * @returns {void}
 	 */
-	canPerformAction( username, message, callback, authData ) {
-		callback( null, true );
-	}
+  canPerformAction(username, message, callback, authData) {
+    callback(null, true)
+  }
 }

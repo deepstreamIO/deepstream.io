@@ -1,13 +1,13 @@
-'use strict';
+'use strict'
 
-const C = require( '../constants/constants' );
-const utils = require( '../utils/utils' );
-const EventEmitter = require( 'events' ).EventEmitter;
-const SUPPORTED_ACTIONS = {};
+const C = require('../constants/constants')
+const utils = require('../utils/utils')
+const EventEmitter = require('events').EventEmitter
+const SUPPORTED_ACTIONS = {}
 
-SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RESPONSE ] = true;
-SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_REQUEST ] = true;
-SUPPORTED_ACTIONS[ C.ACTIONS.LOCK_RELEASE ] = true;
+SUPPORTED_ACTIONS[C.ACTIONS.LOCK_RESPONSE] = true
+SUPPORTED_ACTIONS[C.ACTIONS.LOCK_REQUEST] = true
+SUPPORTED_ACTIONS[C.ACTIONS.LOCK_RELEASE] = true
 
 /**
  * The unique registry is responsible for maintaing a single source of truth
@@ -30,16 +30,16 @@ module.exports = class UniqueRegistry {
 	 *
 	 * @constructor
 	 */
-	constructor( options, clusterRegistry ) {
-		this._options = options;
-		this._clusterRegistry = clusterRegistry;
-		this._locks = {};
-		this._timeouts = {};
-		this._responseEventEmitter = new EventEmitter();
-		this._onPrivateMessageFn = this._onPrivateMessage.bind( this );
-		this._localTopic = this._getPrivateTopic( this._options.serverName );
-		this._options.messageConnector.subscribe( this._localTopic, this._onPrivateMessageFn );
-	}
+  constructor(options, clusterRegistry) {
+    this._options = options
+    this._clusterRegistry = clusterRegistry
+    this._locks = {}
+    this._timeouts = {}
+    this._responseEventEmitter = new EventEmitter()
+    this._onPrivateMessageFn = this._onPrivateMessage.bind(this)
+    this._localTopic = this._getPrivateTopic(this._options.serverName)
+    this._options.messageConnector.subscribe(this._localTopic, this._onPrivateMessageFn)
+  }
 
 	/**
 	 * Requests a lock, if the leader ( whether local or distributed ) has the lock availble
@@ -51,19 +51,17 @@ module.exports = class UniqueRegistry {
 	 * @public
 	 * @returns {void}
 	 */
-	get( name, callback ) {
-		var leaderServerName = this._clusterRegistry.getCurrentLeader();
+  get(name, callback) {
+    const leaderServerName = this._clusterRegistry.getCurrentLeader()
 
-		if( this._options.serverName === leaderServerName ) {
-			callback( this._getLock( name ) );
-		}
-		else if( !this._timeouts[ name ] ) {
-			this._getRemoteLock( name, leaderServerName, callback );
-		}
-		else {
-			callback( false );
-		}
-	}
+    if (this._options.serverName === leaderServerName) {
+      callback(this._getLock(name))
+    } else if (!this._timeouts[name]) {
+      this._getRemoteLock(name, leaderServerName, callback)
+    } else {
+      callback(false)
+    }
+  }
 
 	/**
 	 * Release a lock, allowing other resources to request it again
@@ -73,16 +71,15 @@ module.exports = class UniqueRegistry {
 	 * @public
 	 * @returns {void}
 	 */
-	release( name ) {
-		var leaderServerName = this._clusterRegistry.getCurrentLeader();
+  release(name) {
+    const leaderServerName = this._clusterRegistry.getCurrentLeader()
 
-		if( this._options.serverName === leaderServerName ) {
-			this._releaseLock( name );
-		}
-		else {
-			this._releaseRemoteLock( name, leaderServerName );
-		}
-	}
+    if (this._options.serverName === leaderServerName) {
+      this._releaseLock(name)
+    } else {
+      this._releaseRemoteLock(name, leaderServerName)
+    }
+  }
 
 	/**
 	 * Called when the current node is not the leader, issuing a lock request
@@ -95,26 +92,25 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_getRemoteLock( name, leaderServerName, callback ) {
-
-		this._timeouts[ name ] = utils.setTimeout(
-			this._onLockRequestTimeout.bind( this, name ),
+  _getRemoteLock(name, leaderServerName, callback) {
+    this._timeouts[name] = utils.setTimeout(
+			this._onLockRequestTimeout.bind(this, name),
 			this._options.lockRequestTimeout
-		);
+		)
 
-		this._responseEventEmitter.once( name, callback );
+    this._responseEventEmitter.once(name, callback)
 
-		var remoteTopic = this._getPrivateTopic( leaderServerName );
+    const remoteTopic = this._getPrivateTopic(leaderServerName)
 
-		this._options.messageConnector.publish( remoteTopic, {
-			topic: remoteTopic,
-			action: C.ACTIONS.LOCK_REQUEST,
-			data: [{
-				name: name,
-				responseTopic: this._localTopic
-			}]
-		});
-	}
+    this._options.messageConnector.publish(remoteTopic, {
+      topic: remoteTopic,
+      action: C.ACTIONS.LOCK_REQUEST,
+      data: [{
+        name,
+        responseTopic: this._localTopic
+      }]
+    })
+  }
 
 	/**
 	 * Notifies a remote leader keeping a lock that said lock is no longer required
@@ -125,17 +121,17 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_releaseRemoteLock( name, leaderServerName ) {
-		var remoteTopic = this._getPrivateTopic( leaderServerName );
+  _releaseRemoteLock(name, leaderServerName) {
+    const remoteTopic = this._getPrivateTopic(leaderServerName)
 
-		this._options.messageConnector.publish( remoteTopic, {
-			topic: remoteTopic,
-			action: C.ACTIONS.LOCK_RELEASE,
-			data: [{
-				name: name
-			}]
-		});
-	}
+    this._options.messageConnector.publish(remoteTopic, {
+      topic: remoteTopic,
+      action: C.ACTIONS.LOCK_RELEASE,
+      data: [{
+        name
+      }]
+    })
+  }
 
 	/**
 	 * Called when a message is recieved on the message bus.
@@ -147,44 +143,43 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_onPrivateMessage( message ) {
-		if( !SUPPORTED_ACTIONS[ message.action ] ) {
-			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action );
-			return;
-		}
+  _onPrivateMessage(message) {
+    if (!SUPPORTED_ACTIONS[message.action]) {
+      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
+      return
+    }
 
-		if( !message.data || !message.data[ 0 ] ) {
-			this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, message.data );
-			return;
-		}
+    if (!message.data || !message.data[0]) {
+      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, message.data)
+      return
+    }
 
-		if( message.action === C.ACTIONS.LOCK_RESPONSE ) {
-			this._handleRemoteLockResponse( message.data[ 0 ] );
-			return;
-		}
+    if (message.action === C.ACTIONS.LOCK_RESPONSE) {
+      this._handleRemoteLockResponse(message.data[0])
+      return
+    }
 
-		if( this._clusterRegistry.isLeader() === false ) {
-			var remoteServerName = 'unknown-server'
-			if( message.data[ 0 ].responseTopic ) {
-				remoteServerName = message.data[ 0 ].responseTopic.replace( C.TOPIC.LEADER_PRIVATE, '');
-			}
+    if (this._clusterRegistry.isLeader() === false) {
+      let remoteServerName = 'unknown-server'
+      if (message.data[0].responseTopic) {
+        remoteServerName = message.data[0].responseTopic.replace(C.TOPIC.LEADER_PRIVATE, '')
+      }
 
-			this._options.logger.log(
+      this._options.logger.log(
 				C.LOG_LEVEL.WARN,
 				C.EVENT.INVALID_LEADER_REQUEST,
 				`server ${remoteServerName} assumes this node '${this._options.serverName}' is the leader`
-			);
+			)
 
-			return;
-		}
+      return
+    }
 
-		if( message.action === C.ACTIONS.LOCK_REQUEST ) {
-			this._handleRemoteLockRequest( message.data[ 0 ] );
-		}
-		else if( message.action === C.ACTIONS.LOCK_RELEASE ) {
-			this._handleRemoteLockRelease( message.data[ 0 ] );
-		}
-	}
+    if (message.action === C.ACTIONS.LOCK_REQUEST) {
+      this._handleRemoteLockRequest(message.data[0])
+    } else if (message.action === C.ACTIONS.LOCK_RELEASE) {
+      this._handleRemoteLockRelease(message.data[0])
+    }
+  }
 
 	/**
 	 * Called when a remote lock request is received
@@ -194,16 +189,16 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_handleRemoteLockRequest( data ) {
-		this._options.messageConnector.publish( data.responseTopic, {
-			topic: data.responseTopic,
-			action: C.ACTIONS.LOCK_RESPONSE,
-			data: [{
-				name: data.name,
-				result: this._getLock( data.name )
-			}]
-		});
-	}
+  _handleRemoteLockRequest(data) {
+    this._options.messageConnector.publish(data.responseTopic, {
+      topic: data.responseTopic,
+      action: C.ACTIONS.LOCK_RESPONSE,
+      data: [{
+        name: data.name,
+        result: this._getLock(data.name)
+      }]
+    })
+  }
 
 	/**
 	 * Called when a remote lock response is received
@@ -213,11 +208,11 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_handleRemoteLockResponse( data ) {
-		clearTimeout( this._timeouts[ data.name ] );
-		delete this._timeouts[ data.name ];
-		this._responseEventEmitter.emit( data.name, data.result );
-	}
+  _handleRemoteLockResponse(data) {
+    clearTimeout(this._timeouts[data.name])
+    delete this._timeouts[data.name]
+    this._responseEventEmitter.emit(data.name, data.result)
+  }
 
 	/**
 	 * Called when a remote node notifies the cluster that a lock has been removed
@@ -227,11 +222,11 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_handleRemoteLockRelease( data ) {
-		clearTimeout( this._timeouts[ data.name ] );
-		delete this._timeouts[ data.name ];
-		delete this._locks[ data.name ];
-	}
+  _handleRemoteLockRelease(data) {
+    clearTimeout(this._timeouts[data.name])
+    delete this._timeouts[data.name]
+    delete this._locks[data.name]
+  }
 
 	/**
 	 * Generates a private topic to allow routing requests directly
@@ -242,9 +237,9 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {String} privateTopic
 	 */
-	_getPrivateTopic( serverName ) {
-		return C.TOPIC.LEADER_PRIVATE + serverName;
-	}
+  _getPrivateTopic(serverName) {
+    return C.TOPIC.LEADER_PRIVATE + serverName
+  }
 
 	/**
 	 * Returns true if reserving lock was possible otherwise returns false
@@ -254,18 +249,18 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @return {boolean}
 	 */
-	_getLock( name ) {
-		if( this._locks[ name ] === true ) {
-			return false;
-		} else {
-			this._timeouts[ name ] = utils.setTimeout(
-				this._onLockTimeout.bind( this, name ),
+  _getLock(name) {
+    if (this._locks[name] === true) {
+      return false
+    } else {
+      this._timeouts[name] = utils.setTimeout(
+				this._onLockTimeout.bind(this, name),
 				this._options.lockTimeout
-			);
-			this._locks[ name ] = true;
-			return true;
-		}
-	}
+			)
+      this._locks[name] = true
+      return true
+    }
+  }
 
 	/**
 	 * Called when a lock is no longer required and can be released. This is triggered either by
@@ -279,11 +274,11 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_releaseLock( name ) {
-		clearTimeout( this._timeouts[ name ] );
-		delete this._timeouts[ name ];
-		delete this._locks[ name ];
-	}
+  _releaseLock(name) {
+    clearTimeout(this._timeouts[name])
+    delete this._timeouts[name]
+    delete this._locks[name]
+  }
 
 	/**
 	 * Called when a timeout occurs on a lock that has been reserved for too long
@@ -293,10 +288,10 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_onLockTimeout( name ) {
-		this._releaseLock( name );
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, `lock ${name} released due to timeout` );
-	}
+  _onLockTimeout(name) {
+    this._releaseLock(name)
+    this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, `lock ${name} released due to timeout`)
+  }
 
 	/**
 	 * Called when a remote request has timed out, resulting in notifying the client that
@@ -307,8 +302,8 @@ module.exports = class UniqueRegistry {
 	 * @private
 	 * @returns {void}
 	 */
-	_onLockRequestTimeout( name ) {
-		this._handleRemoteLockResponse({ name: name, result: false });
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, `request for lock ${name} timed out` );
-	}
+  _onLockRequestTimeout(name) {
+    this._handleRemoteLockResponse({ name, result: false })
+    this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, `request for lock ${name} timed out`)
+  }
 }
