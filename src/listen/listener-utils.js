@@ -7,13 +7,13 @@ let C = require('../constants/constants'),
 
 module.exports = class ListenerUtils {
 
-    /**
-     * Construct a class with utils that can be called in from the main
-     * listener registery, but that do not actually require state.
-     * @param  {Topic} topic          the topic used to create the listen registery
-     * @param  {Object} options        the options the server was initialised with
-     * @param  {SubscriptionRegistery} clientRegistry the client registry passed into the listen registry
-     */
+  /**
+  * Construct a class with utils that can be called in from the main
+  * listener registery, but that do not actually require state.
+  * @param  {Topic} topic          the topic used to create the listen registery
+  * @param  {Object} options        the options the server was initialised with
+  * @param  {SubscriptionRegistery} clientRegistry the client registry passed into the listen registry
+  */
   constructor(topic, options, clientRegistry) {
     this._uniqueLockName = `${topic}_LISTEN_LOCK`
     this._topic = topic
@@ -21,14 +21,14 @@ module.exports = class ListenerUtils {
     this._clientRegistry = clientRegistry
   }
 
-    /**
-     * Remove provider from listen in progress map if it unlistens during
-     * discovery stage
-     *
-     * @param  {Object} listensCurrentlyInProgress the listeners currently in progress
-     * @param  {String} pattern the pattern that has been unlistened to
-     * @param  {SocketWrapper} socketWrapper the socket wrapper of the provider that unlistened
-     */
+  /**
+  * Remove provider from listen in progress map if it unlistens during
+  * discovery stage
+  *
+  * @param  {Object} listensCurrentlyInProgress the listeners currently in progress
+  * @param  {String} pattern the pattern that has been unlistened to
+  * @param  {SocketWrapper} socketWrapper the socket wrapper of the provider that unlistened
+  */
   removeListenerFromInProgress(listensCurrentlyInProgress, pattern, socketWrapper) {
     for (const subscriptionName in listensCurrentlyInProgress) {
       const listenInProgress = listensCurrentlyInProgress[subscriptionName]
@@ -43,23 +43,23 @@ module.exports = class ListenerUtils {
     }
   }
 
-    /**
-     * Sends a has provider update to a single subcriber
-     * @param  {Boolean} hasProvider      send T or F so provided status
-     * @param  {SocketWrapper}  socketWrapper    the socket wrapper to send to, if it doesn't exist then don't do anything
-     * @param  {String}  subscriptionName The subscription name which provided status changed
-     */
+  /**
+  * Sends a has provider update to a single subcriber
+  * @param  {Boolean} hasProvider      send T or F so provided status
+  * @param  {SocketWrapper}  socketWrapper    the socket wrapper to send to, if it doesn't exist then don't do anything
+  * @param  {String}  subscriptionName The subscription name which provided status changed
+  */
   sendHasProviderUpdateToSingleSubscriber(hasProvider, socketWrapper, subscriptionName) {
     if (socketWrapper && this._topic === C.TOPIC.RECORD) {
       socketWrapper.send(this._createHasProviderMessage(hasProvider, this._topic, subscriptionName))
     }
   }
 
-    /**
-     * Sends a has provider update to all subcribers
-     * @param  {Boolean} hasProvider      send T or F so provided status
-     * @param  {String}  subscriptionName The subscription name which provided status changed
-     */
+  /**
+  * Sends a has provider update to all subcribers
+  * @param  {Boolean} hasProvider      send T or F so provided status
+  * @param  {String}  subscriptionName The subscription name which provided status changed
+  */
   sendHasProviderUpdate(hasProvider, subscriptionName) {
     if (this._topic !== C.TOPIC.RECORD) {
       return
@@ -67,13 +67,13 @@ module.exports = class ListenerUtils {
     this._clientRegistry.sendToSubscribers(subscriptionName, this._createHasProviderMessage(hasProvider, this._topic, subscriptionName))
   }
 
-    /**
-     * Sent by the listen leader, and is used to inform the next server in the cluster to
-     * start a local discovery
-     *
-     * @param  {String} serverName       the name of the server to notify
-     * @param  {String} subscriptionName the subscription to find a provider for
-     */
+  /**
+  * Sent by the listen leader, and is used to inform the next server in the cluster to
+  * start a local discovery
+  *
+  * @param  {String} serverName       the name of the server to notify
+  * @param  {String} subscriptionName the subscription to find a provider for
+  */
   sendRemoteDiscoveryStart(serverName, subscriptionName) {
     const messageTopic = this.getMessageBusTopic(serverName, this._topic)
     this._options.messageConnector.publish(messageTopic, {
@@ -83,13 +83,13 @@ module.exports = class ListenerUtils {
     })
   }
 
-    /**
-     * Sent by the listen follower, and is used to inform the leader that it has
-     * complete its local discovery start
-     *
-     * @param  {String} listenLeaderServerName  the name of the listen leader
-     * @param  {String} subscriptionName the subscription to that has just finished
-     */
+  /**
+  * Sent by the listen follower, and is used to inform the leader that it has
+  * complete its local discovery start
+  *
+  * @param  {String} listenLeaderServerName  the name of the listen leader
+  * @param  {String} subscriptionName the subscription to that has just finished
+  */
   sendRemoteDiscoveryStop(listenLeaderServerName, subscriptionName) {
     const messageTopic = this.getMessageBusTopic(listenLeaderServerName, this._topic)
     this._options.messageConnector.publish(messageTopic, {
@@ -99,7 +99,7 @@ module.exports = class ListenerUtils {
     })
   }
 
-    /**
+  /**
     * Send by a node when all local subscriptions are discarded, allowing other nodes
     * to do a provider cleanup if necessary
     */
@@ -112,12 +112,12 @@ module.exports = class ListenerUtils {
     })
   }
 
-    /**
-     * Send a subscription found to a provider
-     *
-     * @param  {{patten:String, socketWrapper:SocketWrapper}} provider An object containing an provider that can provide the subscription
-     * @param  {String} subscriptionName the subscription to find a provider for
-     */
+  /**
+  * Send a subscription found to a provider
+  *
+  * @param  {{patten:String, socketWrapper:SocketWrapper}} provider An object containing an provider that can provide the subscription
+  * @param  {String} subscriptionName the subscription to find a provider for
+  */
   sendSubscriptionForPatternFound(provider, subscriptionName) {
     provider.socketWrapper.send(messageBuilder.getMsg(
             this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [provider.pattern, subscriptionName]
@@ -125,12 +125,12 @@ module.exports = class ListenerUtils {
         )
   }
 
-    /**
-     * Send a subscription removed to a provider
-     *
-     * @param  {{patten:String, socketWrapper:SocketWrapper}} provider An object containing the provider that is currently the active provider
-     * @param  {String} subscriptionName the subscription to stop providing
-     */
+  /**
+  * Send a subscription removed to a provider
+  *
+  * @param  {{patten:String, socketWrapper:SocketWrapper}} provider An object containing the provider that is currently the active provider
+  * @param  {String} subscriptionName the subscription to stop providing
+  */
   sendSubscriptionForPatternRemoved(provider, subscriptionName) {
     provider.socketWrapper.send(
             messageBuilder.getMsg(
@@ -139,13 +139,13 @@ module.exports = class ListenerUtils {
         )
   }
 
-    /**
-     * Create a map of all the listeners that patterns match the subscriptionName locally
-     * @param  {Object} patterns         All patterns currently on this deepstream node
-     * @param  {SusbcriptionRegistery} providerRegistry All the providers currently registered
-     * @param  {String} subscriptionName the subscription to find a provider for
-     * @return {Array}                  An array of all the providers that can provide the subscription
-     */
+  /**
+  * Create a map of all the listeners that patterns match the subscriptionName locally
+  * @param  {Object} patterns         All patterns currently on this deepstream node
+  * @param  {SusbcriptionRegistery} providerRegistry All the providers currently registered
+  * @param  {String} subscriptionName the subscription to find a provider for
+  * @return {Array}                  An array of all the providers that can provide the subscription
+  */
   createRemoteListenArray(patterns, providerRegistry, subscriptionName) {
     let servers = []
     const providerPatterns = providerRegistry.getNames()
@@ -167,13 +167,13 @@ module.exports = class ListenerUtils {
     return Array.from(set)
   }
 
-    /**
-     * Create a map of all the listeners that patterns match the subscriptionName locally
-     * @param  {Object} patterns         All patterns currently on this deepstream node
-     * @param  {SusbcriptionRegistery} providerRegistry All the providers currently registered
-     * @param  {String} subscriptionName the subscription to find a provider for
-     * @return {Array}                  An array of all the providers that can provide the subscription
-     */
+  /**
+  * Create a map of all the listeners that patterns match the subscriptionName locally
+  * @param  {Object} patterns         All patterns currently on this deepstream node
+  * @param  {SusbcriptionRegistery} providerRegistry All the providers currently registered
+  * @param  {String} subscriptionName the subscription to find a provider for
+  * @return {Array}                  An array of all the providers that can provide the subscription
+  */
   createLocalListenArray(patterns, providerRegistry, subscriptionName) {
     const providers = []
     for (const pattern in patterns) {
@@ -190,15 +190,15 @@ module.exports = class ListenerUtils {
     return providers
   }
 
-    /**
-     * Extracts the subscription pattern from the message and notifies the sender
-     * if something went wrong
-     *
-     * @param   {SocketWrapper} socketWrapper
-     * @param   {Object} message
-     *
-     * @returns {String}
-     */
+  /**
+  * Extracts the subscription pattern from the message and notifies the sender
+  * if something went wrong
+  *
+  * @param   {SocketWrapper} socketWrapper
+  * @param   {Object} message
+  *
+  * @returns {String}
+  */
   getPattern(socketWrapper, message) {
     if (message.data.length > 2) {
       this.onMsgDataError(socketWrapper, message.raw)
@@ -215,14 +215,14 @@ module.exports = class ListenerUtils {
     return pattern
   }
 
-    /**
-     * Validates that the pattern is not empty and is a valid regular expression
-     *
-     * @param   {SocketWrapper} socketWrapper
-     * @param   {String} pattern
-     *
-     * @returns {RegExp}
-     */
+  /**
+  * Validates that the pattern is not empty and is a valid regular expression
+  *
+  * @param   {SocketWrapper} socketWrapper
+  * @param   {String} pattern
+  *
+  * @returns {RegExp}
+  */
   validatePattern(socketWrapper, pattern) {
     if (!pattern) {
       return false
@@ -236,13 +236,13 @@ module.exports = class ListenerUtils {
     }
   }
 
-    /**
-     * Processes errors for invalid messages
-     *
-     * @param   {SocketWrapper} socketWrapper
-     * @param   {String} errorMsg
-     * @param   {Event} [errorEvent] Default to C.EVENT.INVALID_MESSAGE_DATA
-     */
+  /**
+  * Processes errors for invalid messages
+  *
+  * @param   {SocketWrapper} socketWrapper
+  * @param   {String} errorMsg
+  * @param   {Event} [errorEvent] Default to C.EVENT.INVALID_MESSAGE_DATA
+  */
   onMsgDataError(socketWrapper, errorMsg, errorEvent) {
     errorEvent = errorEvent || C.EVENT.INVALID_MESSAGE_DATA
     socketWrapper.sendError(this._topic, errorEvent, errorMsg)
@@ -250,32 +250,32 @@ module.exports = class ListenerUtils {
     this._options.logger.log(C.LOG_LEVEL.ERROR, errorEvent, errorMsg)
   }
 
-    /**
-     * Get the unique topic to use for the message bus
-     * @param  {String} serverName the name of the server
-     * @param  {Topic} topic
-     * @return {String}
-     */
+  /**
+  * Get the unique topic to use for the message bus
+  * @param  {String} serverName the name of the server
+  * @param  {Topic} topic
+  * @return {String}
+  */
   getMessageBusTopic(serverName, topic) {
     return C.TOPIC.LEADER_PRIVATE + serverName + topic + C.ACTIONS.LISTEN
   }
 
-    /**
-     * Returns the unique lock when leading a listen discovery phase
-     *
-     * @param  {String} subscriptionName the subscription to find a provider for
-     *
-     * @return {String}
-     */
+  /**
+  * Returns the unique lock when leading a listen discovery phase
+  *
+  * @param  {String} subscriptionName the subscription to find a provider for
+  *
+  * @return {String}
+  */
   getUniqueLockName(subscriptionName) {
     return `${this._uniqueLockName}_${subscriptionName}`
   }
 
-    /**
-     * Create a has provider update message
-     *
-     * @returns {Message}
-     */
+  /**
+  * Create a has provider update message
+  *
+  * @returns {Message}
+  */
   _createHasProviderMessage(hasProvider, topic, subscriptionName) {
     return messageBuilder.getMsg(
                 topic,

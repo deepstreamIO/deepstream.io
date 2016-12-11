@@ -7,11 +7,11 @@ const RpcProxy = require('./rpc-proxy')
 const utils = require('../utils/utils')
 
 module.exports = class RpcHandler {
-    /**
-    * Handles incoming messages for the RPC Topic.
-    *
-    * @param {Object} options deepstream options
-    */
+  /**
+  * Handles incoming messages for the RPC Topic.
+  *
+  * @param {Object} options deepstream options
+  */
   constructor(options) {
     this._options = options
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
@@ -37,16 +37,16 @@ module.exports = class RpcHandler {
     this._rpcs = {}
   }
 
-    /**
-     * Main interface. Handles incoming messages
-     * from the message distributor
-     *
-     * @param   {SocketWrapper} socketWrapper
-     * @param   {Object} message parsed and validated deepstream message
-     *
-     * @public
-     * @returns {void}
-     */
+  /**
+  * Main interface. Handles incoming messages
+  * from the message distributor
+  *
+  * @param   {SocketWrapper} socketWrapper
+  * @param   {Object} message parsed and validated deepstream message
+  *
+  * @public
+  * @returns {void}
+  */
   handle(socketWrapper, message) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._registerProvider(socketWrapper, message)
@@ -89,34 +89,34 @@ module.exports = class RpcHandler {
     }
   }
 
-    /**
-     * This method is called by Rpc to reroute its request
-     *
-     * If a provider is temporarily unable to service a request, it can reject it. Deepstream
-     * will then try to reroute it to an alternative provider. Finding an alternative provider
-     * happens in this method.
-     *
-     * Initially, deepstream will look for a local provider that hasn't been used by the RPC yet.
-     * If non can be found, it will go through the currently avaiblable remote providers and try find one that
-     * hasn't been used yet.
-     *
-     * If a remote provider couldn't be found or all remote-providers have been tried already
-     * this method will return null - which in turn will prompt the RPC to send a NO_RPC_PROVIDER
-     * error to the client
-     *
-     * @param {String}  rpcName
-     * @param {String}  correlationId
-     *
-     * @public
-     * @returns {SocketWrapper|RpcProxy} alternativeProvider
-     */
+  /**
+  * This method is called by Rpc to reroute its request
+  *
+  * If a provider is temporarily unable to service a request, it can reject it. Deepstream
+  * will then try to reroute it to an alternative provider. Finding an alternative provider
+  * happens in this method.
+  *
+  * Initially, deepstream will look for a local provider that hasn't been used by the RPC yet.
+  * If non can be found, it will go through the currently avaiblable remote providers and try find one that
+  * hasn't been used yet.
+  *
+  * If a remote provider couldn't be found or all remote-providers have been tried already
+  * this method will return null - which in turn will prompt the RPC to send a NO_RPC_PROVIDER
+  * error to the client
+  *
+  * @param {String}  rpcName
+  * @param {String}  correlationId
+  *
+  * @public
+  * @returns {SocketWrapper|RpcProxy} alternativeProvider
+  */
   getAlternativeProvider(rpcName, correlationId) {
     const rpcData = this._rpcs[correlationId]
 
 
     /*
-     * Look within the local providers for one that hasn't been used yet
-     */
+  * Look within the local providers for one that hasn't been used yet
+  */
     if (!rpcData) {
         // RPC was already fufilled somehow. This is prior to 1.1.1 and
         // hence is kept for backwards compatability.
@@ -133,77 +133,77 @@ module.exports = class RpcHandler {
     }
 
     /*
-     * Get a list of the private topics of all remote providers
-     */
+  * Get a list of the private topics of all remote providers
+  */
     const allRemoteProviderTopics = rpcData.remoteServers
 
-    /**
-     * Do any remote topics exist? If not, this is already from another
-     * server so we shouldn't try making a remote request.
-     */
+  /**
+  * Do any remote topics exist? If not, this is already from another
+  * server so we shouldn't try making a remote request.
+  */
     if (allRemoteProviderTopics === null) {
       return null
     }
 
-        /*
-         * No local or remote providers to service the request? Return here
-         */
+    /*
+  * No local or remote providers to service the request? Return here
+  */
     if (allRemoteProviderTopics.length === 0) {
       return null
     }
 
-        /*
-         * Search for a remote provider that hasn't been used yet
-         */
+    /*
+  * Search for a remote provider that hasn't been used yet
+  */
     return new RpcProxy(this._options, this._getNextRandomServer(rpcData.remoteServers), rpcName, correlationId)
   }
 
-    /**
-     * Callback for subscription messages. Registers
-     * a client as a provider for specific remote
-     * procedure calls as identified by <rpcName>
-     *
-     * @param   {SocketWrapper} socketWrapper
-     * @param   {Object} message parsed and validated deepstream message
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Callback for subscription messages. Registers
+  * a client as a provider for specific remote
+  * procedure calls as identified by <rpcName>
+  *
+  * @param   {SocketWrapper} socketWrapper
+  * @param   {Object} message parsed and validated deepstream message
+  *
+  * @private
+  * @returns {void}
+  */
   _registerProvider(socketWrapper, message) {
     if (this._isValidMessage(1, socketWrapper, message)) {
       this._subscriptionRegistry.subscribe(message.data[0], socketWrapper)
     }
   }
 
-    /**
-     * Callback for unsubscribe messages. Removes
-     * a client as a provider for specific remote
-     * procedure calls as identified by <rpcName>
-     *
-     * @param   {SocketWrapper} socketWrapper
-     * @param   {Object} message parsed and validated deepstream message
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Callback for unsubscribe messages. Removes
+  * a client as a provider for specific remote
+  * procedure calls as identified by <rpcName>
+  *
+  * @param   {SocketWrapper} socketWrapper
+  * @param   {Object} message parsed and validated deepstream message
+  *
+  * @private
+  * @returns {void}
+  */
   _unregisterProvider(socketWrapper, message) {
     if (this._isValidMessage(1, socketWrapper, message)) {
       this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
     }
   }
 
-    /**
-     * Executes a RPC. If there are clients connected to
-     * this deepstream instance that can provide the rpc, it
-     * will be routed to a random one of them, otherwise it will be routed
-     * to the message connector
-     *
-     * @param   {SocketWrapper} socketWrapper
-     * @param   {Object} message parsed and validated deepstream message
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Executes a RPC. If there are clients connected to
+  * this deepstream instance that can provide the rpc, it
+  * will be routed to a random one of them, otherwise it will be routed
+  * to the message connector
+  *
+  * @param   {SocketWrapper} socketWrapper
+  * @param   {Object} message parsed and validated deepstream message
+  *
+  * @private
+  * @returns {void}
+  */
   _makeRpc(socketWrapper, message, source) {
     if (!this._isValidMessage(2, socketWrapper, message)) {
       return
@@ -234,21 +234,21 @@ module.exports = class RpcHandler {
     }
   }
 
-    /**
-     * Callback to remoteProviderRegistry.getProviderProxy()
-     *
-     * If a remote provider is available this method will route the rpc to it.
-     *
-     * If no remote provider could be found this class will return a
-     * NO_RPC_PROVIDER error to the requestor. The RPC won't continue from
-     * thereon
-     *
-     * @param   {SocketWrapper} requestor
-     * @param   {Object} message   RPC Request message
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Callback to remoteProviderRegistry.getProviderProxy()
+  *
+  * If a remote provider is available this method will route the rpc to it.
+  *
+  * If no remote provider could be found this class will return a
+  * NO_RPC_PROVIDER error to the requestor. The RPC won't continue from
+  * thereon
+  *
+  * @param   {SocketWrapper} requestor
+  * @param   {Object} message   RPC Request message
+  *
+  * @private
+  * @returns {void}
+  */
   _makeRemoteRpc(requestor, message) {
     const rpcName = message.data[0]
     const correlationId = message.data[1]
@@ -269,18 +269,18 @@ module.exports = class RpcHandler {
     }
   }
 
-    /**
-     * Callback for messages that are send directly to
-     * this deepstream instance.
-     *
-     * Please note: Private messages are generic, so the RPC
-     * specific ones need to be filtered out.
-     *
-     * @param   {Object} msg
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Callback for messages that are send directly to
+  * this deepstream instance.
+  *
+  * Please note: Private messages are generic, so the RPC
+  * specific ones need to be filtered out.
+  *
+  * @param   {Object} msg
+  *
+  * @private
+  * @returns {void}
+  */
   _onPrivateMessage(msg) {
     if (msg.originalTopic !== C.TOPIC.RPC) {
       return
@@ -315,18 +315,18 @@ module.exports = class RpcHandler {
     }
   }
 
-    /**
-     * Checks if the incoming message is valid, e.g. if rpcName
-     * is present for subscribe / unsubscribe messages or if
-     * rpcName and correlationId is present for rpc calls.
-     *
-     * @param   {Number}  dataLength    The expected number of entries in the data array
-     * @param   {SocketWrapper} socketWrapper
-     * @param   {Object} message parsed and validated deepstream message
-     *
-     * @private
-     * @returns {Boolean} isValid
-     */
+  /**
+  * Checks if the incoming message is valid, e.g. if rpcName
+  * is present for subscribe / unsubscribe messages or if
+  * rpcName and correlationId is present for rpc calls.
+  *
+  * @param   {Number}  dataLength    The expected number of entries in the data array
+  * @param   {SocketWrapper} socketWrapper
+  * @param   {Object} message parsed and validated deepstream message
+  *
+  * @private
+  * @returns {Boolean} isValid
+  */
   _isValidMessage(dataLength, socketWrapper, message) {
     if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
       return true
@@ -336,11 +336,11 @@ module.exports = class RpcHandler {
     return false
   }
 
-    /**
-     * Returns the next (prefixed) remote server name that can provide the rpc.
-     *
-     * @return {String}
-     */
+  /**
+  * Returns the next (prefixed) remote server name that can provide the rpc.
+  *
+  * @return {String}
+  */
   _getNextRandomServer(remoteServers) {
     return C.TOPIC.PRIVATE + utils.spliceRandomElement(remoteServers)
   }

@@ -51,7 +51,7 @@ exports.combineEvents = function (emitters, event, callback) {
 exports.reverseMap = function (map) {
   const reversedMap = {}
 
-  for (let key in map) {
+  for (const key in map) {
     reversedMap[map[key]] = key
   }
 

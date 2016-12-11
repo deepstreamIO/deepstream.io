@@ -5,16 +5,16 @@ const C = require('../constants/constants')
 
 module.exports = class ListenerTimeoutRegistry {
 
-    /**
-     * The ListenerTimeoutRegistry is responsible for keeping track of listeners that have
-     * been asked whether they want to provide a certain subscription, but have not yet
-     * responded.
-     *
-     * @param {Topic} type
-     * @param {Map} options
-     *
-     * @constructor
-     */
+  /**
+  * The ListenerTimeoutRegistry is responsible for keeping track of listeners that have
+  * been asked whether they want to provide a certain subscription, but have not yet
+  * responded.
+  *
+  * @param {Topic} type
+  * @param {Map} options
+  *
+  * @constructor
+  */
   constructor(type, options) {
     this._type = type
     this._options = options
@@ -23,7 +23,7 @@ module.exports = class ListenerTimeoutRegistry {
     this._acceptedProvider = {}
   }
 
-    /**
+  /**
     * The main entry point, which takes a message from a provider
     * that has already timed out and does the following:
     *
@@ -57,7 +57,7 @@ module.exports = class ListenerTimeoutRegistry {
     }
   }
 
-    /**
+  /**
     * Clear cache once discovery phase is complete
     *
     * @param {String} subscriptionName the subscription that needs to be removed
@@ -71,7 +71,7 @@ module.exports = class ListenerTimeoutRegistry {
     delete this._acceptedProvider[subscriptionName]
   }
 
-    /**
+  /**
     * Called whenever a provider closes to ensure cleanup
     *
     * @param {SocketWrapper} socketWrapper the now closed connection endpoint
@@ -91,24 +91,24 @@ module.exports = class ListenerTimeoutRegistry {
       }
     }
   }
-    /**
-     * Starts a timeout for a provider. The following cases can apply
-     *
-     * Provider accepts within the timeout: We stop here
-     * Provider rejects within the timeout: We ask the next provider
-     * Provider doesn't respond within the timeout: We ask the next provider
-     *
-     * Provider accepts after the timeout:
-     *  If no other provider accepted yet, we'll wait for the current request to end and stop here
-     *  If another provider has accepted already, we'll immediatly send a SUBSCRIPTION_REMOVED message
-     *
-     * @param {String}   subscriptionName The subscription name
-     * @param {Object}   provider         The provider that may timeout
-     * @param {Function} callback         The callback if the timeout occurs
-     *
-     * @public
-     * @returns {void}
-     */
+  /**
+  * Starts a timeout for a provider. The following cases can apply
+  *
+  * Provider accepts within the timeout: We stop here
+  * Provider rejects within the timeout: We ask the next provider
+  * Provider doesn't respond within the timeout: We ask the next provider
+  *
+  * Provider accepts after the timeout:
+  *  If no other provider accepted yet, we'll wait for the current request to end and stop here
+  *  If another provider has accepted already, we'll immediatly send a SUBSCRIPTION_REMOVED message
+  *
+  * @param {String}   subscriptionName The subscription name
+  * @param {Object}   provider         The provider that may timeout
+  * @param {Function} callback         The callback if the timeout occurs
+  *
+  * @public
+  * @returns {void}
+  */
   addTimeout(subscriptionName, provider, callback) {
     const timeoutId = setTimeout(() => {
       if (this._timedoutProviders[subscriptionName] == null) {
@@ -120,7 +120,7 @@ module.exports = class ListenerTimeoutRegistry {
     this._timeoutMap[subscriptionName] = timeoutId
   }
 
-    /**
+  /**
     * Clear the timeout for a LISTEN_ACCEPT or LISTEN_REJECt recieved
     * by the listen registry
     *
@@ -131,7 +131,7 @@ module.exports = class ListenerTimeoutRegistry {
     delete this._timeoutMap[subscriptionName]
   }
 
-    /**
+  /**
     * Return if the socket is a provider that previously timeout
     *
     * @public
@@ -141,7 +141,7 @@ module.exports = class ListenerTimeoutRegistry {
     return this._timedoutProviders[message.data[1]] && index !== -1
   }
 
-    /**
+  /**
     * Return if the socket is a provider that previously timeout
     *
     * @public
@@ -159,7 +159,7 @@ module.exports = class ListenerTimeoutRegistry {
     }
   }
 
-    /**
+  /**
     * Return if the socket is a provider that previously timeout
     *
     * @public
@@ -168,7 +168,7 @@ module.exports = class ListenerTimeoutRegistry {
     return this._acceptedProvider[subscriptionName]
   }
 
-    /**
+  /**
     * Return if the socket is a provider that previously timeout
     *
     * @private

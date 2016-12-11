@@ -11,16 +11,16 @@ const RULE_TYPES = {}
  *
  * @type {Object}
  */
-RULE_TYPES.CREATE =   { name: 'create',     data: false,  oldData: false }
-RULE_TYPES.READ =     { name: 'read',     data: false,  oldData: true }
-RULE_TYPES.WRITE =    { name: 'write',    data: true,   oldData: true }
-RULE_TYPES.DELETE =   { name: 'delete',     data: false,  oldData: true }
-RULE_TYPES.LISTEN =   { name: 'listen',     data: false,  oldData: false }
-RULE_TYPES.PUBLISH =  { name: 'publish',    data: true,   oldData: false }
-RULE_TYPES.SUBSCRIBE =  { name: 'subscribe',  data: true,   oldData: false }
-RULE_TYPES.PROVIDE =  { name: 'provide',    data: false,  oldData: false }
-RULE_TYPES.REQUEST =  { name: 'request',    data: true,   oldData: false }
-RULE_TYPES.ALLOW =    { name: 'allow',    data: false,  oldData: false }
+RULE_TYPES.CREATE = { name: 'create', data: false, oldData: false }
+RULE_TYPES.READ = { name: 'read', data: false, oldData: true }
+RULE_TYPES.WRITE = { name: 'write', data: true, oldData: true }
+RULE_TYPES.DELETE = { name: 'delete', data: false, oldData: true }
+RULE_TYPES.LISTEN = { name: 'listen', data: false, oldData: false }
+RULE_TYPES.PUBLISH = { name: 'publish', data: true, oldData: false }
+RULE_TYPES.SUBSCRIBE = { name: 'subscribe', data: true, oldData: false }
+RULE_TYPES.PROVIDE = { name: 'provide', data: false, oldData: false }
+RULE_TYPES.REQUEST = { name: 'request', data: true, oldData: false }
+RULE_TYPES.ALLOW = { name: 'allow', data: false, oldData: false }
 
 /**
  * This class maps topic / action combinations to applicable

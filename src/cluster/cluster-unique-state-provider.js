@@ -21,16 +21,16 @@ SUPPORTED_ACTIONS[C.ACTIONS.LOCK_RELEASE] = true
  */
 module.exports = class UniqueRegistry {
 
-    /**
-     * The unique registry is a singleton and is only created once
-     * within deepstream.io. It is passed via
-     * via the options object.
-     *
-     * @param  {Object} options                     The options deepstream was created with
-     * @param  {ClusterRegistry} clusterRegistry    The cluster registry, used to get the cluster leader
-     *
-     * @constructor
-     */
+  /**
+  * The unique registry is a singleton and is only created once
+  * within deepstream.io. It is passed via
+  * via the options object.
+  *
+  * @param  {Object} options                     The options deepstream was created with
+  * @param  {ClusterRegistry} clusterRegistry    The cluster registry, used to get the cluster leader
+  *
+  * @constructor
+  */
   constructor(options, clusterRegistry) {
     this._options = options
     this._clusterRegistry = clusterRegistry
@@ -42,16 +42,16 @@ module.exports = class UniqueRegistry {
     this._options.messageConnector.subscribe(this._localTopic, this._onPrivateMessageFn)
   }
 
-    /**
-     * Requests a lock, if the leader ( whether local or distributed ) has the lock availble
-     * it will invoke the callback with true, otherwise false.
-     *
-     * @param  {String}   name     the lock name that is desired
-     * @param  {Function} callback the callback to be told if the lock has been reserved succesfully
-     *
-     * @public
-     * @returns {void}
-     */
+  /**
+  * Requests a lock, if the leader ( whether local or distributed ) has the lock availble
+  * it will invoke the callback with true, otherwise false.
+  *
+  * @param  {String}   name     the lock name that is desired
+  * @param  {Function} callback the callback to be told if the lock has been reserved succesfully
+  *
+  * @public
+  * @returns {void}
+  */
   get(name, callback) {
     const leaderServerName = this._clusterRegistry.getCurrentLeader()
 
@@ -64,14 +64,14 @@ module.exports = class UniqueRegistry {
     }
   }
 
-    /**
-     * Release a lock, allowing other resources to request it again
-     *
-     * @param  {String}   name     the lock name that is desired
-     *
-     * @public
-     * @returns {void}
-     */
+  /**
+  * Release a lock, allowing other resources to request it again
+  *
+  * @param  {String}   name     the lock name that is desired
+  *
+  * @public
+  * @returns {void}
+  */
   release(name) {
     const leaderServerName = this._clusterRegistry.getCurrentLeader()
 
@@ -82,17 +82,17 @@ module.exports = class UniqueRegistry {
     }
   }
 
-    /**
-     * Called when the current node is not the leader, issuing a lock request
-     * via the message bus
-     *
-     * @param  {String}   name             The lock name
-     * @param  {String}   leaderServerName The leader of the cluster
-     * @param  {Function} callback         The callback to invoke once a response
-     *                                     from the server is retrieved
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Called when the current node is not the leader, issuing a lock request
+  * via the message bus
+  *
+  * @param  {String}   name             The lock name
+  * @param  {String}   leaderServerName The leader of the cluster
+  * @param  {Function} callback         The callback to invoke once a response
+  *                                     from the server is retrieved
+  * @private
+  * @returns {void}
+  */
   _getRemoteLock(name, leaderServerName, callback) {
     this._timeouts[name] = utils.setTimeout(
             this._onLockRequestTimeout.bind(this, name),
@@ -113,15 +113,15 @@ module.exports = class UniqueRegistry {
     })
   }
 
-    /**
-     * Notifies a remote leader keeping a lock that said lock is no longer required
-     *
-     * @param  {String}   name             The lock name
-     * @param  {String}   leaderServerName The leader of the cluster
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Notifies a remote leader keeping a lock that said lock is no longer required
+  *
+  * @param  {String}   name             The lock name
+  * @param  {String}   leaderServerName The leader of the cluster
+  *
+  * @private
+  * @returns {void}
+  */
   _releaseRemoteLock(name, leaderServerName) {
     const remoteTopic = this._getPrivateTopic(leaderServerName)
 
@@ -134,16 +134,16 @@ module.exports = class UniqueRegistry {
     })
   }
 
-    /**
-     * Called when a message is recieved on the message bus.
-     * This could mean the leader responded to a request or that you're currently
-     * the leader and recieved a request.
-     *
-     * @param  {Object} message Object from message bus
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Called when a message is recieved on the message bus.
+  * This could mean the leader responded to a request or that you're currently
+  * the leader and recieved a request.
+  *
+  * @param  {Object} message Object from message bus
+  *
+  * @private
+  * @returns {void}
+  */
   _onPrivateMessage(message) {
     if (!SUPPORTED_ACTIONS[message.action]) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
@@ -182,14 +182,14 @@ module.exports = class UniqueRegistry {
     }
   }
 
-    /**
-     * Called when a remote lock request is received
-     *
-     * @param  {Object} data messageData
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Called when a remote lock request is received
+  *
+  * @param  {Object} data messageData
+  *
+  * @private
+  * @returns {void}
+  */
   _handleRemoteLockRequest(data) {
     this._options.messageConnector.publish(data.responseTopic, {
       topic: data.responseTopic,
@@ -201,55 +201,55 @@ module.exports = class UniqueRegistry {
     })
   }
 
-    /**
-     * Called when a remote lock response is received
-     *
-     * @param  {Object} data messageData
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Called when a remote lock response is received
+  *
+  * @param  {Object} data messageData
+  *
+  * @private
+  * @returns {void}
+  */
   _handleRemoteLockResponse(data) {
     clearTimeout(this._timeouts[data.name])
     delete this._timeouts[data.name]
     this._responseEventEmitter.emit(data.name, data.result)
   }
 
-    /**
-     * Called when a remote node notifies the cluster that a lock has been removed
-     *
-     * @param  {Object} data messageData
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Called when a remote node notifies the cluster that a lock has been removed
+  *
+  * @param  {Object} data messageData
+  *
+  * @private
+  * @returns {void}
+  */
   _handleRemoteLockRelease(data) {
     clearTimeout(this._timeouts[data.name])
     delete this._timeouts[data.name]
     delete this._locks[data.name]
   }
 
-    /**
-     * Generates a private topic to allow routing requests directly
-     * to this node
-     *
-     * @param  {String} serverName The server of this server
-     *
-     * @private
-     * @returns {String} privateTopic
-     */
+  /**
+  * Generates a private topic to allow routing requests directly
+  * to this node
+  *
+  * @param  {String} serverName The server of this server
+  *
+  * @private
+  * @returns {String} privateTopic
+  */
   _getPrivateTopic(serverName) {
     return C.TOPIC.LEADER_PRIVATE + serverName
   }
 
-    /**
-     * Returns true if reserving lock was possible otherwise returns false
-     *
-     * @param  {String}   name     Name of lock
-     *
-     * @private
-     * @return {boolean}
-     */
+  /**
+  * Returns true if reserving lock was possible otherwise returns false
+  *
+  * @param  {String}   name     Name of lock
+  *
+  * @private
+  * @return {boolean}
+  */
   _getLock(name) {
     if (this._locks[name] === true) {
       return false
@@ -263,46 +263,46 @@ module.exports = class UniqueRegistry {
     return true
   }
 
-    /**
-     * Called when a lock is no longer required and can be released. This is triggered either by
-     * a timeout if a remote release message wasn't received in time or when release was called locally.
-     *
-     * Important note: Anyone can release a lock. It is assumed that the cluster is trusted
-     * so maintaining who has the lock is not required. This may need to change going forward.
-     *
-     * @param  {String} name Lock name
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Called when a lock is no longer required and can be released. This is triggered either by
+  * a timeout if a remote release message wasn't received in time or when release was called locally.
+  *
+  * Important note: Anyone can release a lock. It is assumed that the cluster is trusted
+  * so maintaining who has the lock is not required. This may need to change going forward.
+  *
+  * @param  {String} name Lock name
+  *
+  * @private
+  * @returns {void}
+  */
   _releaseLock(name) {
     clearTimeout(this._timeouts[name])
     delete this._timeouts[name]
     delete this._locks[name]
   }
 
-    /**
-     * Called when a timeout occurs on a lock that has been reserved for too long
-     *
-     * @param  {String} name The lock name
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Called when a timeout occurs on a lock that has been reserved for too long
+  *
+  * @param  {String} name The lock name
+  *
+  * @private
+  * @returns {void}
+  */
   _onLockTimeout(name) {
     this._releaseLock(name)
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, `lock ${name} released due to timeout`)
   }
 
-    /**
-     * Called when a remote request has timed out, resulting in notifying the client that
-     * the lock wasn't able to be reserved
-     *
-     * @param  {String} name The lock name
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+  * Called when a remote request has timed out, resulting in notifying the client that
+  * the lock wasn't able to be reserved
+  *
+  * @param  {String} name The lock name
+  *
+  * @private
+  * @returns {void}
+  */
   _onLockRequestTimeout(name) {
     this._handleRemoteLockResponse({ name, result: false })
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, `request for lock ${name} timed out`)

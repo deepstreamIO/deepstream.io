@@ -99,8 +99,8 @@ module.exports = class ClusterRegistry extends EventEmitter {
   */
   getCurrentLeader() {
     let maxScore = 0
-    let  serverName
-    let  leader = null
+    let serverName
+    let leader = null
 
     for (serverName in this._nodes) {
       if (this._nodes[serverName].leaderScore > maxScore) {
