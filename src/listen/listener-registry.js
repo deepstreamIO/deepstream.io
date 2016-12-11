@@ -475,11 +475,6 @@ module.exports = class ListenerRegistry {
     }
 
     const provider = listenInProgress.shift()
-    const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
-    if (subscribers && subscribers.indexOf(provider.socketWrapper) !== -1) {
-      this._triggerNextProvider(subscriptionName)
-      return
-    }
     this._listenerTimeoutRegistery.addTimeout(subscriptionName, provider, this._triggerNextProvider.bind(this))
     this._listenerUtils.sendSubscriptionForPatternFound(provider, subscriptionName)
   }
