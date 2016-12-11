@@ -88,6 +88,22 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     expect(testPermission(permissions, message, 'userA')).toBe(true)
   })
+
+  it('denies snapshot of a private record', () => {
+    const permissions = getBasePermissions()
+
+    permissions.record['private/$userId'] = {
+      read: 'user.id === $userId'
+    }
+
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.SNAPSHOT,
+      data: ['private/userA']
+    }
+
+    expect(testPermission(permissions, message, 'userB')).toBe(false)
+  })
 })
 
 
