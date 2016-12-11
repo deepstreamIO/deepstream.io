@@ -61,10 +61,7 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
 
 RecordHandler.prototype.getRecord = function (recordName, callback) {
   const record = this._recordCache.get(recordName)
-  if (record) {
-    return Promise.resolve(record)
-  }
-  return new Promise((resolve, reject) => this._storage.get(recordName, (error, recordName, record) => {
+  return record ? Promise.resolve(record) : new Promise((resolve, reject) => this._storage.get(recordName, (error, recordName, record) => {
     if (error) {
       reject(error)
     } else {
