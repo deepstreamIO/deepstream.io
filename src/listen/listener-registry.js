@@ -44,7 +44,7 @@ module.exports = class ListenerRegistry {
 
     this._patterns = {}
     this._localListenInProgress = {}
-    this._listenerTimeoutRegistery = new TimeoutRegistry(topic, options)
+    this._listenerTimeoutRegistry = new TimeoutRegistry(topic, options)
 
     this._providerRegistry = new SubscriptionRegistry(options, this._topic, `${topic}_${C.TOPIC.LISTEN_PATTERNS}`)
     this._providerRegistry.setAction('subscribe', C.ACTIONS.LISTEN)
@@ -55,14 +55,29 @@ module.exports = class ListenerRegistry {
     })
 
     this._locallyProvidedRecords = {}
-    this._clusterProvidedRecords = new DistributedStateRegistry(`${topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`, options)
-    this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
-    this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
 
     this._leadListen = {}
     this._leadingListen = {}
-    this._listenTopic = this.getMessageBusTopic(this._options.serverName, this._topic)
-    this._options.messageConnector.subscribe(this._listenTopic, this._onIncomingMessage.bind(this))
+
+    this._setupRemoteComponents()
+  }
+
+  /**
+   * Setup all the remote components and actions required to deal with the subscription
+   * via the cluster.
+   */
+  _setupRemoteComponents() {
+    this._clusterProvidedRecords = new DistributedStateRegistry(
+      `${this._topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`,
+      this._options
+    )
+    this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
+    this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
+
+    this._options.messageConnector.subscribe(
+      this.getMessageBusTopic(this._options.serverName, this._topic),
+      this._onIncomingMessage.bind(this)
+    )
   }
 
   /**
@@ -99,8 +114,8 @@ module.exports = class ListenerRegistry {
     } else if (message.action === C.ACTIONS.UNLISTEN) {
       this._providerRegistry.unsubscribe(pattern, socketWrapper)
       this._removeListener(socketWrapper, message)
-    } else if (this._listenerTimeoutRegistery.isALateResponder(socketWrapper, message)) {
-      this._listenerTimeoutRegistery.handle(socketWrapper, message)
+    } else if (this._listenerTimeoutRegistry.isALateResponder(socketWrapper, message)) {
+      this._listenerTimeoutRegistry.handle(socketWrapper, message)
     } else if (this._localListenInProgress[subscriptionName]) {
       this._processResponseForListenInProgress(socketWrapper, subscriptionName, message)
     } else {
@@ -130,11 +145,11 @@ module.exports = class ListenerRegistry {
         this._nextDiscoveryStage(message.data[1])
       } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
         this.onSubscriptionRemoved(
-                    message.data[1],
-                    null,
-                    this._clientRegistry.getLocalSubscribersCount(message.data[1]),
-                    this._clientRegistry.getAllServers(message.data[1]).length - 1
-                )
+          message.data[1],
+          null,
+          this._clientRegistry.getLocalSubscribersCount(message.data[1]),
+          this._clientRegistry.getAllServers(message.data[1]).length - 1
+        )
       }
     }
   }
@@ -154,13 +169,13 @@ module.exports = class ListenerRegistry {
   _processResponseForListenInProgress(socketWrapper, subscriptionName, message) {
     if (message.action === C.ACTIONS.LISTEN_ACCEPT) {
       this._accept(socketWrapper, message)
-      this._listenerTimeoutRegistery.rejectLateResponderThatAccepted(subscriptionName)
-      this._listenerTimeoutRegistery.clear(subscriptionName)
+      this._listenerTimeoutRegistry.rejectLateResponderThatAccepted(subscriptionName)
+      this._listenerTimeoutRegistry.clear(subscriptionName)
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
-      const provider = this._listenerTimeoutRegistery.getLateResponderThatAccepted(subscriptionName)
+      const provider = this._listenerTimeoutRegistry.getLateResponderThatAccepted(subscriptionName)
       if (provider) {
         this._accept(provider.socketWrapper, message)
-        this._listenerTimeoutRegistery.clear(subscriptionName)
+        this._listenerTimeoutRegistry.clear(subscriptionName)
       } else {
         this._triggerNextProvider(subscriptionName)
       }
@@ -215,12 +230,12 @@ module.exports = class ListenerRegistry {
       return
     }
 
-        // provider discarded, but there is still another active subscriber
+    // provider discarded, but there is still another active subscriber
     if (localCount === 1 && provider.socketWrapper === socketWrapper) {
       return
     }
 
-        // provider isn't a subscriber, meaning we should wait for 0
+    // provider isn't a subscriber, meaning we should wait for 0
     const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
     if (localCount === 1 && subscribers.indexOf(provider.socketWrapper) === -1) {
       return
@@ -231,7 +246,7 @@ module.exports = class ListenerRegistry {
   }
 
   /**
-  * Register callback for when the server recieves an Accept message from the client
+  * Register callback for when the server recieves an accept message from the client
   *
   * @private
   * @returns {void}
@@ -239,7 +254,7 @@ module.exports = class ListenerRegistry {
   _accept(socketWrapper, message) {
     const subscriptionName = message.data[1]
 
-    this._listenerTimeoutRegistery.clearTimeout(subscriptionName)
+    this._listenerTimeoutRegistry.clearTimeout(subscriptionName)
 
     this._locallyProvidedRecords[subscriptionName] = {
       socketWrapper,
@@ -338,9 +353,9 @@ module.exports = class ListenerRegistry {
     for (subscriptionName in this._locallyProvidedRecords) {
       const provider = this._locallyProvidedRecords[subscriptionName]
       if (
-                provider.socketWrapper === socketWrapper &&
-                provider.pattern === pattern
-            ) {
+        provider.socketWrapper === socketWrapper &&
+        provider.pattern === pattern
+      ) {
         provider.socketWrapper.removeListener('close', provider.closeListener)
         this._removeActiveListener(subscriptionName)
         if (this._clientRegistry.hasLocalSubscribers(subscriptionName)) {
@@ -511,12 +526,7 @@ module.exports = class ListenerRegistry {
     }
 
     const provider = listenInProgress.shift()
-    const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
-    if (subscribers && subscribers.indexOf(provider.socketWrapper) !== -1) {
-      this._triggerNextProvider(subscriptionName)
-      return
-    }
-    this._listenerTimeoutRegistery.addTimeout(
+    this._listenerTimeoutRegistry.addTimeout(
       subscriptionName,
       provider,
       this._triggerNextProvider.bind(this)
@@ -585,7 +595,7 @@ module.exports = class ListenerRegistry {
   */
   _removePattern(pattern, socketWrapper, count) {
     if (socketWrapper) {
-      this._listenerTimeoutRegistery.removeProvider(socketWrapper)
+      this._listenerTimeoutRegistry.removeProvider(socketWrapper)
       this.removeListenerFromInProgress(this._localListenInProgress, pattern, socketWrapper)
       this._removeListenerIfActive(pattern, socketWrapper)
     }
@@ -608,9 +618,9 @@ module.exports = class ListenerRegistry {
       const listenInProgress = listensCurrentlyInProgress[subscriptionName]
       for (let i = 0; i < listenInProgress.length; i++) {
         if (
-                    listenInProgress[i].socketWrapper === socketWrapper &&
-                    listenInProgress[i].pattern === pattern
-                ) {
+          listenInProgress[i].socketWrapper === socketWrapper &&
+          listenInProgress[i].pattern === pattern
+        ) {
           listenInProgress.splice(i, 1)
         }
       }
@@ -700,10 +710,10 @@ module.exports = class ListenerRegistry {
   sendSubscriptionForPatternFound(provider, subscriptionName) {
     provider.socketWrapper.send(
       messageBuilder.getMsg(
-            this._topic,
-            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-            [provider.pattern, subscriptionName]
-        )
+        this._topic,
+        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+        [provider.pattern, subscriptionName]
+      )
     )
   }
 
@@ -728,7 +738,7 @@ module.exports = class ListenerRegistry {
   /**
   * Create a map of all the listeners that patterns match the subscriptionName locally
   * @param  {Object} patterns         All patterns currently on this deepstream node
-  * @param  {SusbcriptionRegistery} providerRegistry All the providers currently registered
+  * @param  {SusbcriptionRegistry} providerRegistry All the providers currently registered
   * @param  {String} subscriptionName the subscription to find a provider for
   * @return {Array}                  An array of all the providers that can provide the subscription
   */
@@ -740,7 +750,7 @@ module.exports = class ListenerRegistry {
       const pattern = providerPatterns[i]
       const p = patterns[pattern]
       if (p == null) {
-        this._options.logger.log(C.LOG_LEVEL.WARN, '', `canot handle pattern${pattern}`)
+        this._options.logger.log(C.LOG_LEVEL.WARN, '', `can't handle pattern ${pattern}`)
         return null
       }
       if (p.test(subscriptionName)) {
@@ -756,7 +766,7 @@ module.exports = class ListenerRegistry {
   /**
   * Create a map of all the listeners that patterns match the subscriptionName locally
   * @param  {Object} patterns         All patterns currently on this deepstream node
-  * @param  {SusbcriptionRegistery} providerRegistry All the providers currently registered
+  * @param  {SusbcriptionRegistry} providerRegistry All the providers currently registered
   * @param  {String} subscriptionName the subscription to find a provider for
   * @return {Array}                  An array of all the providers that can provide the subscription
   */
@@ -864,9 +874,9 @@ module.exports = class ListenerRegistry {
   */
   _createHasProviderMessage(hasProvider, topic, subscriptionName) {
     return messageBuilder.getMsg(
-                topic,
-                C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-                [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
-            )
+      topic,
+      C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+      [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
+    )
   }
 }
