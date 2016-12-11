@@ -1,8 +1,9 @@
-var C = require( '../constants/constants' ),
-	messageBuilder = require( './message-builder' ),
-	EventEmitter = require( 'events' ).EventEmitter,
-	utils = require( 'util' ),
-	uws = require( 'uws' );
+const C = require('../constants/constants')
+const messageBuilder = require('./message-builder')
+const utils = require('util')
+const uws = require('uws')
+
+const EventEmitter = require('events').EventEmitter
 
 /**
  * This class wraps around a websocket
@@ -16,35 +17,35 @@ var C = require( '../constants/constants' ),
  *
  * @constructor
  */
-var SocketWrapper = function( socket, options ) {
-	this.socket = socket;
-	this.isClosed = false;
-	this.socket.once( 'close', this._onSocketClose.bind( this ) );
-	this._options = options;
-	this.user = null;
-	this.authCallBack = null;
-	this.authAttempts = 0;
-	this.setMaxListeners( 0 );
-	this.uuid = Math.random();
-	this._handshakeData = null;
-	this._setUpHandshakeData();
+const SocketWrapper = function (socket, options) {
+  this.socket = socket
+  this.isClosed = false
+  this.socket.once('close', this._onSocketClose.bind(this))
+  this._options = options
+  this.user = null
+  this.authCallBack = null
+  this.authAttempts = 0
+  this.setMaxListeners(0)
+  this.uuid = Math.random()
+  this._handshakeData = null
+  this._setUpHandshakeData()
 
-	this._queuedMessages = [];
-	this._currentPacketMessageCount = 0;
-	this._sendNextPacketTimeout = null;
-	this._currentMessageResetTimeout = null;
+  this._queuedMessages = []
+  this._currentPacketMessageCount = 0
+  this._sendNextPacketTimeout = null
+  this._currentMessageResetTimeout = null
 
-	/**
-	 * This defaults for test purposes since socket wrapper creating touches
-	 * everything
-	 */
-	if( typeof this._options.maxMessagesPerPacket === "undefined" ) {
-		this._options.maxMessagesPerPacket = 1000;
-	}
-};
+  /**
+   * This defaults for test purposes since socket wrapper creating touches
+   * everything
+   */
+  if (typeof this._options.maxMessagesPerPacket === 'undefined') {
+    this._options.maxMessagesPerPacket = 1000
+  }
+}
 
-utils.inherits( SocketWrapper, EventEmitter );
-SocketWrapper.lastPreparedMessage = null;
+utils.inherits(SocketWrapper, EventEmitter)
+SocketWrapper.lastPreparedMessage = null
 
 /**
  * Updates lastPreparedMessage and returns the [uws] prepared message.
@@ -54,9 +55,9 @@ SocketWrapper.lastPreparedMessage = null;
  * @public
  * @returns {External} prepared message
  */
-SocketWrapper.prepareMessage = function( message ) {
-	SocketWrapper.lastPreparedMessage = message;
-	return uws.native.server.prepareMessage( message, uws.OPCODE_TEXT );
+SocketWrapper.prepareMessage = function (message) {
+  SocketWrapper.lastPreparedMessage = message
+  return uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
 }
 
 /**
@@ -68,12 +69,12 @@ SocketWrapper.prepareMessage = function( message ) {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.sendPrepared = function(preparedMessage) {
-	if ( this.socket.external ) {
-		uws.native.server.sendPrepared( this.socket.external, preparedMessage );
-	} else if ( this.socket.external !== null ) {
-		this.socket.send( SocketWrapper.lastPreparedMessage );
-	}
+SocketWrapper.prototype.sendPrepared = function (preparedMessage) {
+  if (this.socket.external) {
+    uws.native.server.sendPrepared(this.socket.external, preparedMessage)
+  } else if (this.socket.external !== null) {
+    this.socket.send(SocketWrapper.lastPreparedMessage)
+  }
 }
 
 /**
@@ -84,8 +85,8 @@ SocketWrapper.prototype.sendPrepared = function(preparedMessage) {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.sendNative = function( message ) {
-	this.socket.send( message );
+SocketWrapper.prototype.sendNative = function (message) {
+  this.socket.send(message)
 }
 
 /**
@@ -96,8 +97,8 @@ SocketWrapper.prototype.sendNative = function( message ) {
  * @public
  * @returns {void}
  */
-SocketWrapper.finalizeMessage = function( preparedMessage ) {
-	uws.native.server.finalizeMessage( preparedMessage );
+SocketWrapper.finalizeMessage = function (preparedMessage) {
+  uws.native.server.finalizeMessage(preparedMessage)
 }
 
 /**
@@ -108,9 +109,9 @@ SocketWrapper.finalizeMessage = function( preparedMessage ) {
  * @public
  * @returns {Object} handshakeData
  */
-SocketWrapper.prototype.getHandshakeData = function() {
-	return this._handshakeData;
-};
+SocketWrapper.prototype.getHandshakeData = function () {
+  return this._handshakeData
+}
 
 /**
  * Sends an error on the specified topic. The
@@ -123,11 +124,11 @@ SocketWrapper.prototype.getHandshakeData = function() {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.sendError = function( topic, type, msg ) {
-	if( this.isClosed === false ) {
-		this.send( messageBuilder.getErrorMsg( topic, type, msg ) );
-	}
-};
+SocketWrapper.prototype.sendError = function (topic, type, msg) {
+  if (this.isClosed === false) {
+    this.send(messageBuilder.getErrorMsg(topic, type, msg))
+  }
+}
 
 /**
  * Sends a message based on the provided action and topic
@@ -139,11 +140,11 @@ SocketWrapper.prototype.sendError = function( topic, type, msg ) {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
-	if( this.isClosed === false ) {
-		this.send( messageBuilder.getMsg( topic, action, data ) );
-	}
-};
+SocketWrapper.prototype.sendMessage = function (topic, action, data) {
+  if (this.isClosed === false) {
+    this.send(messageBuilder.getMsg(topic, action, data))
+  }
+}
 
 /**
  * Checks the passed message and appends missing end separator if
@@ -154,17 +155,17 @@ SocketWrapper.prototype.sendMessage = function( topic, action, data ) {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.send = function( message ) {
-	if( message.charAt( message.length - 1 ) !== C.MESSAGE_SEPERATOR ) {
-		message += C.MESSAGE_SEPERATOR;
-	}
+SocketWrapper.prototype.send = function (message) {
+  if (message.charAt(message.length - 1) !== C.MESSAGE_SEPERATOR) {
+    message += C.MESSAGE_SEPERATOR
+  }
 
-	if( this.isClosed === true ) {
-		return;
-	}
+  if (this.isClosed === true) {
+    return
+  }
 
-	this.socket.send( message );
-};
+  this.socket.send(message)
+}
 
 /**
  * Destroyes the socket. Removes all deepstream specific
@@ -173,10 +174,10 @@ SocketWrapper.prototype.send = function( message ) {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.destroy = function() {
-	this.socket.close();
-	this.authCallBack = null;
-};
+SocketWrapper.prototype.destroy = function () {
+  this.socket.close()
+  this.authCallBack = null
+}
 
 /**
  * Callback for closed sockets
@@ -184,12 +185,12 @@ SocketWrapper.prototype.destroy = function() {
  * @private
  * @returns {void}
  */
-SocketWrapper.prototype._onSocketClose = function() {
-	this.isClosed = true;
-	this.emit( 'close' );
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user );
-	this.socket.removeAllListeners();
-};
+SocketWrapper.prototype._onSocketClose = function () {
+  this.isClosed = true
+  this.emit('close')
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
+  this.socket.removeAllListeners()
+}
 
 /**
  * Initialise the handshake data from the initial connection
@@ -197,16 +198,16 @@ SocketWrapper.prototype._onSocketClose = function() {
  * @private
  * @returns void
  */
-SocketWrapper.prototype._setUpHandshakeData = function() {
-	this._handshakeData = {
-		remoteAddress: this.socket._socket.remoteAddress
-	};
+SocketWrapper.prototype._setUpHandshakeData = function () {
+  this._handshakeData = {
+    remoteAddress: this.socket._socket.remoteAddress
+  }
 
-	if( this.socket.upgradeReq ) {
-		this._handshakeData.headers = this.socket.upgradeReq.headers;
-		this._handshakeData.referer = this.socket.upgradeReq.headers.referer;
-	}
-	return this._handshakeData;
+  if (this.socket.upgradeReq) {
+    this._handshakeData.headers = this.socket.upgradeReq.headers
+    this._handshakeData.referer = this.socket.upgradeReq.headers.referer
+  }
+  return this._handshakeData
 }
 
-module.exports = SocketWrapper;
+module.exports = SocketWrapper

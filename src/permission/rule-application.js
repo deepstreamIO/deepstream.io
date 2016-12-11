@@ -1,13 +1,12 @@
-var OPEN = 'open';
-var UNDEFINED = 'undefined';
-var LOADING = 'loading';
-var ERROR = 'error';
-var STRING = 'string';
-var EOL = require( 'os' ).EOL;
+const OPEN = 'open'
+const UNDEFINED = 'undefined'
+const LOADING = 'loading'
+const ERROR = 'error'
+const STRING = 'string'
+const EOL = require('os').EOL
 
-var C = require( '../constants/constants' );
-var messageParser = require( '../message/message-parser' );
-var utils = require( '../utils/utils' );
+const C = require('../constants/constants')
+const messageParser = require('../message/message-parser')
 
 /**
  * This class handles the evaluation of a single rule. It creates
@@ -32,19 +31,19 @@ var utils = require( '../utils/utils' );
  * callback: <Function>,
  * options: <Object>
  */
-var RuleApplication = function( params ) {
-	this._params = params;
-	this._isDestroyed = false;
-	this._runScheduled = false;
-	this._maxIterationCount = this._params.permissionOptions.maxRuleIterations;
-	this._crossReferenceFn = this._crossReference.bind( this );
-	this._pathVars = this._getPathVars();
-	this._user = this._getUser();
-	this._recordData = {};
-	this._id = Math.random().toString();
-	this._iterations = 0;
-	this._run();
-};
+const RuleApplication = function (params) {
+  this._params = params
+  this._isDestroyed = false
+  this._runScheduled = false
+  this._maxIterationCount = this._params.permissionOptions.maxRuleIterations
+  this._crossReferenceFn = this._crossReference.bind(this)
+  this._pathVars = this._getPathVars()
+  this._user = this._getUser()
+  this._recordData = {}
+  this._id = Math.random().toString()
+  this._iterations = 0
+  this._run()
+}
 
 /**
  * Runs the rule function. This method is initially called when this class
@@ -54,40 +53,40 @@ var RuleApplication = function( params ) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._run = function() {
-	this._runScheduled = false;
-	this._iterations++;
-	/* istanbul ignore next */
-	if( this._isDestroyed === true ) {
-		return;
-	}
+RuleApplication.prototype._run = function () {
+  this._runScheduled = false
+  this._iterations++
+  /* istanbul ignore next */
+  if (this._isDestroyed === true) {
+    return
+  }
 
-	if( this._iterations > this._maxIterationCount ) {
-		this._onRuleError( 'Exceeded max iteration count' );
-		return;
-	}
+  if (this._iterations > this._maxIterationCount) {
+    this._onRuleError('Exceeded max iteration count')
+    return
+  }
 
-	var args = this._getArguments();
-	var result;
+  const args = this._getArguments()
+  let result
 
-	if( this._isDestroyed === true ) {
-		return;
-	}
+  if (this._isDestroyed === true) {
+    return
+  }
 
-	try{
-		result = this._params.rule.fn.apply( {}, args );
-	}catch( error ) {
-		if( this._isReady() ) {
-			this._onRuleError( error );
-			return;
-		}
-	}
+  try {
+    result = this._params.rule.fn.apply({}, args)
+  } catch (error) {
+    if (this._isReady()) {
+      this._onRuleError(error)
+      return
+    }
+  }
 
-	if( this._isReady() ) {
-		this._params.callback( null, result );
-		this._destroy();
-	}
-};
+  if (this._isReady()) {
+    this._params.callback(null, result)
+    this._destroy()
+  }
+}
 
 /**
  * Callback if a rule has irrecoverably errored. Rule errors due to unresolved
@@ -98,16 +97,16 @@ RuleApplication.prototype._run = function() {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._onRuleError = function( error ) {
-	if( this._isDestroyed === true ) {
-		return;
-	}
-	var errorMsg = 'error when executing ' + this._params.rule.fn.toString() + EOL +
-				   'for ' + this._params.path + ': ' + error.toString();
-	this._params.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, errorMsg );
-	this._params.callback( C.EVENT.MESSAGE_PERMISSION_ERROR, false );
-	this._destroy();
-};
+RuleApplication.prototype._onRuleError = function (error) {
+  if (this._isDestroyed === true) {
+    return
+  }
+  const errorMsg = `error when executing ${this._params.rule.fn.toString()}${EOL
+           }for ${this._params.path}: ${error.toString()}`
+  this._params.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, errorMsg)
+  this._params.callback(C.EVENT.MESSAGE_PERMISSION_ERROR, false)
+  this._destroy()
+}
 
 /**
  * Called either asynchronously when data is successfully retrieved from the
@@ -119,14 +118,14 @@ RuleApplication.prototype._onRuleError = function( error ) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._onLoadComplete = function( recordName, data ) {
-	this._recordData[ recordName ] = data;
+RuleApplication.prototype._onLoadComplete = function (recordName, data) {
+  this._recordData[recordName] = data
 
-	if( this._isReady() ) {
-		this._runScheduled = true;
-		process.nextTick( this._run.bind( this ) );
-	}
-};
+  if (this._isReady()) {
+    this._runScheduled = true
+    process.nextTick(this._run.bind(this))
+  }
+}
 
 /**
  * Called whenever a storage or cache retrieval fails. Any kind of error during the
@@ -138,13 +137,13 @@ RuleApplication.prototype._onLoadComplete = function( recordName, data ) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._onLoadError = function( recordName, error ) {
-	this._recordData[ recordName ] = ERROR;
-	var errorMsg = 'failed to load record ' + this._params.name + ' for permissioning:' + error.toString();
-	this._params.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, errorMsg );
-	this._params.callback( C.EVENT.RECORD_LOAD_ERROR, false );
-	this._destroy();
-};
+RuleApplication.prototype._onLoadError = function (recordName, error) {
+  this._recordData[recordName] = ERROR
+  const errorMsg = `failed to load record ${this._params.name} for permissioning:${error.toString()}`
+  this._params.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, errorMsg)
+  this._params.callback(C.EVENT.RECORD_LOAD_ERROR, false)
+  this._destroy()
+}
 
 /**
  * Destroys this class and nulls down values to avoid
@@ -153,16 +152,17 @@ RuleApplication.prototype._onLoadError = function( recordName, error ) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._destroy = function() {
-	this._isDestroyed = true;
-	this._runScheduled = false;
-	this._params = null;
-	this._crossReferenceFn = null;
-	this._pathVars = null;
-	this._user = null;
-	this._recordData = null;
-	this._currentData = null;
-};
+RuleApplication.prototype._destroy = function () {
+  this._params.recordHandler.removeRecordRequest(this._params.name)
+  this._isDestroyed = true
+  this._runScheduled = false
+  this._params = null
+  this._crossReferenceFn = null
+  this._pathVars = null
+  this._user = null
+  this._recordData = null
+  this._currentData = null
+}
 
 /**
  * If data.someValue is used in the rule, this method retrieves or loads the
@@ -174,33 +174,34 @@ RuleApplication.prototype._destroy = function() {
  * for event publish, record update and rpc request, the data is already provided
  * in the message and doesn't need to be loaded
  *
+ * for record.patch, only a delta is part of the message. For the full data, the current value
+ * is loaded and the patch applied on top
+ *
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._getCurrentData = function() {
-	if( this._params.rule.hasData === false ) {
-		return null;
-	}
+RuleApplication.prototype._getCurrentData = function () {
+  if (this._params.rule.hasData === false) {
+    return null
+  }
 
-	var msg = this._params.message;
-	var data;
+  const msg = this._params.message
+  let data
 
-	if( msg.topic === C.TOPIC.EVENT ) {
-		data = messageParser.convertTyped( msg.data[ 1 ] );
-	}
-	else if( msg.topic === C.TOPIC.RPC ) {
-		data = messageParser.convertTyped( msg.data[ 2 ] );
-	}
-	else if( msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE ) {
-		data = this._getRecordUpdateData( msg );
-	}
+  if (msg.topic === C.TOPIC.EVENT) {
+    data = messageParser.convertTyped(msg.data[1])
+  } else if (msg.topic === C.TOPIC.RPC) {
+    data = messageParser.convertTyped(msg.data[2])
+  } else if (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE) {
+    data = this._getRecordUpdateData(msg)
+  }
 
-	if( data instanceof Error ) {
-		this._onRuleError( 'error when converting message data ' + data.toString() );
-	} else {
-		return data;
-	}
-};
+  if (data instanceof Error) {
+    this._onRuleError(`error when converting message data ${data.toString()}`)
+  } else {
+    return data
+  }
+}
 
 /**
  * Extracts the data from record update messages
@@ -210,17 +211,17 @@ RuleApplication.prototype._getCurrentData = function() {
  * @private
  * @returns {Object} recordData
  */
-RuleApplication.prototype._getRecordUpdateData = function( msg ) {
-	var data;
+RuleApplication.prototype._getRecordUpdateData = function (msg) {
+  let data
 
-	try{
-		data = JSON.parse( msg.data[ 2 ] );
-	} catch( error ) {
-		return error;
-	}
+  try {
+    data = JSON.parse(msg.data[2])
+  } catch (error) {
+    return error
+  }
 
-	return data;
-};
+  return data
+}
 
 /**
  * Returns or loads the record's previous value. Only supported for record
@@ -232,15 +233,15 @@ RuleApplication.prototype._getRecordUpdateData = function( msg ) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._getOldData = function() {
-	if( this._isDestroyed === true || this._params.rule.hasOldData === false ) {
-		return null;
-	} else if( this._recordData[ this._params.name ] ) {
-		return this._recordData[ this._params.name ]._d;
-	} else {
-		this._loadRecord( this._params.name );
-	}
-};
+RuleApplication.prototype._getOldData = function () {
+  if (this._isDestroyed === true || this._params.rule.hasOldData === false) {
+    return null
+  } else if (this._recordData[this._params.name]) {
+    return this._recordData[this._params.name]._d
+  } else {
+    this._loadRecord(this._params.name)
+  }
+}
 
 /**
  * Compile the list of arguments that will be injected
@@ -251,16 +252,16 @@ RuleApplication.prototype._getOldData = function() {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._getArguments = function() {
-	return [
-		this._crossReferenceFn,
-		this._user,
-		this._getCurrentData(),
-		this._getOldData(),
-		Date.now(),
-		this._params ? this._params.action : null
-	].concat( this._pathVars );
-};
+RuleApplication.prototype._getArguments = function () {
+  return [
+    this._crossReferenceFn,
+    this._user,
+    this._getCurrentData(),
+    this._getOldData(),
+    Date.now(),
+    this._params ? this._params.action : null
+  ].concat(this._pathVars)
+}
 
 /**
  * Returns the data for the user variable. This is only done once
@@ -269,13 +270,13 @@ RuleApplication.prototype._getArguments = function() {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._getUser = function() {
-	return {
-		isAuthenticated: this._params.username !== OPEN,
-		id: this._params.username,
-		data: this._params.authData
-	};
-};
+RuleApplication.prototype._getUser = function () {
+  return {
+    isAuthenticated: this._params.username !== OPEN,
+    id: this._params.username,
+    data: this._params.authData
+  }
+}
 
 /**
  * Applies the compiled regexp for the path and extracts
@@ -288,9 +289,9 @@ RuleApplication.prototype._getUser = function() {
  * @private
  * @returns {Array} pathVars
  */
-RuleApplication.prototype._getPathVars = function() {
-	return this._params.name.match( this._params.regexp ).slice( 1 );
-};
+RuleApplication.prototype._getPathVars = function () {
+  return this._params.name.match(this._params.regexp).slice(1)
+}
 
 /**
  * Returns true if all loading operations that are in progress have finished
@@ -299,17 +300,17 @@ RuleApplication.prototype._getPathVars = function() {
  * @private
  * @returns {Boolean}
  */
-RuleApplication.prototype._isReady = function() {
-	var isLoading = false;
+RuleApplication.prototype._isReady = function () {
+  let isLoading = false
 
-	for( var key in this._recordData ) {
-		if( this._recordData[ key ] === LOADING ) {
-			isLoading = true;
-		}
-	}
+  for (const key in this._recordData) {
+    if (this._recordData[key] === LOADING) {
+      isLoading = true
+    }
+  }
 
-	return isLoading === false && this._runScheduled === false;
-};
+  return isLoading === false && this._runScheduled === false
+}
 
 /**
  * Loads a record with a given name. This will either result in
@@ -322,25 +323,24 @@ RuleApplication.prototype._isReady = function() {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._loadRecord = function( recordName ) {
+RuleApplication.prototype._loadRecord = function (recordName) {
+  /* istanbul ignore next */
+  if (this._recordData[recordName] === LOADING) {
+    return
+  }
+  /* istanbul ignore next */
+  if (typeof this._recordData[recordName] !== UNDEFINED) {
+    this._onLoadComplete(recordName, this._recordData[recordName])
+    return
+  }
 
-	/* istanbul ignore next */
-	if( this._recordData[ recordName ] === LOADING ) {
-		return;
-	}
-	/* istanbul ignore next */
-	if( typeof this._recordData[ recordName ] !== UNDEFINED ) {
-		this._onLoadComplete( recordName, this._recordData[ recordName ] );
-		return;
-	}
+  this._recordData[recordName] = LOADING
 
-	this._recordData[ recordName ] = LOADING;
-
-	this._params.recordHandler
-		.getRecord( recordName )
-		.then( record => this._onLoadComplete( recordName, record ) )
-		.catch( error => this._onLoadError( recordName, error ))
-};
+  this._params.recordHandler
+    .getRecord(recordName)
+    .then(record => this._onLoadComplete(recordName, record))
+    .catch(error => this._onLoadError(recordName, error))
+}
 
 /**
  * This method is passed to the rule function as _ to allow crossReferencing
@@ -353,27 +353,22 @@ RuleApplication.prototype._loadRecord = function( recordName ) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._crossReference = function( recordName ) {
-	var type = typeof recordName;
+RuleApplication.prototype._crossReference = function (recordName) {
+  const type = typeof recordName
 
-	if( type !== UNDEFINED && type !== STRING ) {
-		this._onRuleError( 'crossreference got unsupported type ' + type );
-	}
-	else if( type === UNDEFINED || recordName.indexOf( UNDEFINED ) !== -1 ) {
-		return;
-	}
-	else if( this._recordData[ recordName ] === LOADING ) {
-		return;
-	}
-	else if( this._recordData[ recordName ] === null ) {
-		return null;
-	}
-	else if( typeof this._recordData[ recordName ] === UNDEFINED ) {
-		this._loadRecord( recordName );
-	} else {
-		return this._recordData[ recordName ]._d;
-	}
-};
+  if (type !== UNDEFINED && type !== STRING) {
+    this._onRuleError(`crossreference got unsupported type ${type}`)
+  } else if (type === UNDEFINED || recordName.indexOf(UNDEFINED) !== -1) {
+    return
+  } else if (this._recordData[recordName] === LOADING) {
+    return
+  } else if (this._recordData[recordName] === null) {
+    return null
+  } else if (typeof this._recordData[recordName] === UNDEFINED) {
+    this._loadRecord(recordName)
+  } else {
+    return this._recordData[recordName]._d
+  }
+}
 
-
-module.exports = RuleApplication;
+module.exports = RuleApplication

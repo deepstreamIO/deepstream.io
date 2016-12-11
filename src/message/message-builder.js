@@ -1,5 +1,6 @@
-var C = require( '../constants/constants' ),
-	SEP = C.MESSAGE_PART_SEPERATOR;
+const C = require('../constants/constants')
+
+const SEP = C.MESSAGE_PART_SEPERATOR
 
 /**
  * Creates a deepstream message string, based on the
@@ -11,22 +12,21 @@ var C = require( '../constants/constants' ),
  *
  * @returns {String} deepstream message string
  */
-exports.getMsg = function( topic, action, data ) {
-	var sendData = [ topic, action ],
-		i;
+exports.getMsg = function (topic, action, data) {
+  const sendData = [topic, action]
 
-	if( data ) {
-		for( i = 0; i < data.length; i++ ) {
-			if( typeof data[ i ] === 'object' ) {
-				sendData.push( JSON.stringify( data[ i ] ) );
-			} else {
-				sendData.push( data[ i ] );
-			}
-		}
-	}
+  if (data) {
+    for (let i = 0; i < data.length; i++) {
+      if (typeof data[i] === 'object') {
+        sendData.push(JSON.stringify(data[i]))
+      } else {
+        sendData.push(data[i])
+      }
+    }
+  }
 
-	return sendData.join( SEP ) + C.MESSAGE_SEPERATOR;
-};
+  return sendData.join(SEP) + C.MESSAGE_SEPERATOR
+}
 
 /**
  * Creates a deepstream error message string based on the provided
@@ -40,14 +40,13 @@ exports.getMsg = function( topic, action, data ) {
  *
  * @returns {String } deepstream error message string
  */
-exports.getErrorMsg = function( topic, type, message ) {
-	if( message instanceof Array ) {
-		return topic + SEP + 'E' + SEP + type + SEP + message.join( SEP ) + C.MESSAGE_SEPERATOR;
-	}
-	else {
-		return topic + SEP + 'E' + SEP + type + SEP + message + C.MESSAGE_SEPERATOR;
-	}
-};
+exports.getErrorMsg = function (topic, type, message) {
+  if (message instanceof Array) {
+    return `${topic + SEP}E${SEP}${type}${SEP}${message.join(SEP)}${C.MESSAGE_SEPERATOR}`
+  }
+
+  return `${topic + SEP}E${SEP}${type}${SEP}${message}${C.MESSAGE_SEPERATOR}`
+}
 
 /**
  * Converts a serializable value into its string-representation and adds
@@ -60,36 +59,36 @@ exports.getErrorMsg = function( topic, type, message ) {
  * @public
  * @returns {String} string representation of the value
  */
-exports.typed = function( value ) {
-	var type = typeof value;
+exports.typed = function (value) {
+  const type = typeof value
 
-	if( type === 'string' ) {
-		return C.TYPES.STRING + value;
-	}
+  if (type === 'string') {
+    return C.TYPES.STRING + value
+  }
 
-	if( value === null ) {
-		return C.TYPES.NULL;
-	}
+  if (value === null) {
+    return C.TYPES.NULL
+  }
 
-	if( type === 'object' ) {
-		return C.TYPES.OBJECT + JSON.stringify( value );
-	}
+  if (type === 'object') {
+    return C.TYPES.OBJECT + JSON.stringify(value)
+  }
 
-	if( type === 'number' ) {
-		return C.TYPES.NUMBER + value.toString();
-	}
+  if (type === 'number') {
+    return C.TYPES.NUMBER + value.toString()
+  }
 
-	if( value === true ) {
-		return C.TYPES.TRUE;
-	}
+  if (value === true) {
+    return C.TYPES.TRUE
+  }
 
-	if( value === false ) {
-		return C.TYPES.FALSE;
-	}
+  if (value === false) {
+    return C.TYPES.FALSE
+  }
 
-	if( value === undefined ) {
-		return C.TYPES.UNDEFINED;
-	}
+  if (value === undefined) {
+    return C.TYPES.UNDEFINED
+  }
 
-	throw new Error( 'Can\'t serialize type ' + value );
-};
+  throw new Error(`Can't serialize type ${value}`)
+}

@@ -5,11 +5,11 @@
  * @constructor
  * @param {Object} options deepstream options
  */
-var RuleCache = function( options ) {
-	this._options = options;
-	this._data = {};
-	setInterval( this._purge.bind( this ), options.cacheEvacuationInterval );
-};
+const RuleCache = function (options) {
+  this._options = options
+  this._data = {}
+  setInterval(this._purge.bind(this), options.cacheEvacuationInterval)
+}
 
 /**
  * Empties the rulecache completely
@@ -17,9 +17,9 @@ var RuleCache = function( options ) {
  * @public
  * @returns {void}
  */
-RuleCache.prototype.reset = function() {
-	this._data = {};
-};
+RuleCache.prototype.reset = function () {
+  this._data = {}
+}
 
 /**
  * Checks if an entry for a specific rule in a specific section is
@@ -27,63 +27,62 @@ RuleCache.prototype.reset = function() {
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
- * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
+ * @param   {String}  type    the type of the action, e.g. read, write, subscribe
  *
  * @public
  * @returns {Boolean}
  */
-RuleCache.prototype.has = function( section, name, type ) {
-	return !!this._data[ this._toKey( section, name, type ) ];
-};
+RuleCache.prototype.has = function (section, name, type) {
+  return !!this._data[this._toKey(section, name, type)]
+}
 
 /**
  * Resets the usage flag and returns an entry from the cache
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
- * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
+ * @param   {String}  type    the type of the action, e.g. read, write, subscribe
  *
  * @public
  * @returns {Object} rule
  */
-RuleCache.prototype.get = function( section, name, type ) {
-	var key = this._toKey( section, name, type );
-	this._data[ key ].isUsed = true;
-	return this._data[ key ].rule;
-};
-
+RuleCache.prototype.get = function (section, name, type) {
+  const key = this._toKey(section, name, type)
+  this._data[key].isUsed = true
+  return this._data[key].rule
+}
 
 /**
  * Adds an entry to the cache
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
- * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
- * @param 	{Object}  rule the result of a rule lookup
+ * @param   {String}  type    the type of the action, e.g. read, write, subscribe
+ * @param   {Object}  rule the result of a rule lookup
  *
  * @public
  * @returns {Object} rule
  */
-RuleCache.prototype.set = function( section, name, type, rule ) {
-	this._data[ this._toKey( section, name, type ) ] = {
-		rule: rule,
-		isUsed: true
-	};
-};
+RuleCache.prototype.set = function (section, name, type, rule) {
+  this._data[this._toKey(section, name, type)] = {
+    rule,
+    isUsed: true
+  }
+}
 
 /**
  * Creates a key from the various set parameters
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
- * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
+ * @param   {String}  type    the type of the action, e.g. read, write, subscribe
  *
  * @public
  * @returns {String} key
  */
-RuleCache.prototype._toKey = function( section, name, type ) {
-	return section + '_' + name + '_' + type;
-};
+RuleCache.prototype._toKey = function (section, name, type) {
+  return `${section}_${name}_${type}`
+}
 
 /**
  * This method is called repeatedly on an interval, defined by
@@ -96,14 +95,14 @@ RuleCache.prototype._toKey = function( section, name, type ) {
  * @private
  * @returns {void}
  */
-RuleCache.prototype._purge = function() {
-	for( var key in this._data ) {
-		if( this._data[ key ].isUsed === true ) {
-			this._data[ key ].isUsed = false;
-		} else {
-			delete this._data[ key ];
-		}
-	}
-};
+RuleCache.prototype._purge = function () {
+  for (const key in this._data) {
+    if (this._data[key].isUsed === true) {
+      this._data[key].isUsed = false
+    } else {
+      delete this._data[key]
+    }
+  }
+}
 
-module.exports = RuleCache;
+module.exports = RuleCache

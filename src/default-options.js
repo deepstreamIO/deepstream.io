@@ -1,78 +1,78 @@
-var utils = require( './utils/utils' ),
-	C = require( './constants/constants' );
+const utils = require('./utils/utils')
+const C = require('./constants/constants')
 
-exports.get = function() {
-	var options = {
-		/*
-		 * General
-		 */
-		serverName: utils.getUid(),
-		showLogo: true,
-		logLevel: C.LOG_LEVEL.INFO,
+exports.get = function () {
+  var options = {
+    /*
+     * General
+     */
+    serverName: utils.getUid(),
+    showLogo: true,
+    logLevel: C.LOG_LEVEL.INFO,
 
-		/*
-		 * Connectivity
-		 */
-		port: 6020,
-		host: '0.0.0.0',
-		urlPath: '/deepstream',
-		healthCheckPath: '/healthcheck',
-		externalUrl: null,
-		timeBetweenSendingQueuedPackages: 1,
-		maxMessagesPerPacket: 1000,
-		heartbeatInterval: 30000,
+    /*
+     * Connectivity
+     */
+    port: 6020,
+    host: '0.0.0.0',
+    urlPath: '/deepstream',
+    healthCheckPath: '/healthcheck',
+    externalUrl: null,
+    timeBetweenSendingQueuedPackages: 1,
+    maxMessagesPerPacket: 1000,
+    heartbeatInterval: 30000,
 
-		/*
-		 * SSL Configuration
-		 */
-		sslKey: null,
-		sslCert: null,
-		sslCa: null,
+    /*
+     * SSL Configuration
+     */
+    sslKey: null,
+    sslCert: null,
+    sslCa: null,
 
-		/*
-		 * Authentication
-		 */
-		auth: {
-			type: 'none'
-		},
+    /*
+     * Authentication
+     */
+    auth: {
+      type: 'none'
+    },
 
-		/*
-		 * Permissioning
-		 */
-		permission: {
-			type: 'none'
-		},
+    /*
+     * Permissioning
+     */
+    permission: {
+      type: 'none'
+    },
 
-		/*
-		 * Default Plugins
-		 */
-		messageConnector: require( './default-plugins/noop-message-connector' ),
-		cache: require( './default-plugins/local-cache' ),
-		storage: require( './default-plugins/noop-storage' ),
+    /*
+     * Default Plugins
+     */
+    messageConnector: require('./default-plugins/noop-message-connector'),
+    cache: require('./default-plugins/local-cache'),
+    storage: require('./default-plugins/noop-storage'),
 
-		/*
-		 * Security
-		 */
-		unauthenticatedClientTimeout: 180000,
-		maxAuthAttempts: 3,
-		logInvalidAuthData: true,
-		maxMessageSize: 1048576,
+    /*
+     * Security
+     */
+    unauthenticatedClientTimeout: 180000,
+    maxAuthAttempts: 3,
+    logInvalidAuthData: true,
+    maxMessageSize: 1048576,
 
-		/*
-		 * Timeouts
-		 */
-		rpcAckTimeout: 1000,
-		rpcTimeout: 10000,
-		dependencyInitialisationTimeout: 2000,
-		stateReconciliationTimeout: 500,
-		clusterKeepAliveInterval: 5000,
-		clusterActiveCheckInterval: 1000,
-		clusterNodeInactiveTimeout: 6000,
-		listenResponseTimeout: 500,
-		lockTimeout: 1000,
-		lockRequestTimeout: 1000,
-		broadcastTimeout: 0
-	};
+    /*
+     * Timeouts
+     */
+    rpcAckTimeout: 1000,
+    rpcTimeout: 10000,
+    dependencyInitialisationTimeout: 2000,
+    stateReconciliationTimeout: 500,
+    clusterKeepAliveInterval: 5000,
+    clusterActiveCheckInterval: 1000,
+    clusterNodeInactiveTimeout: 6000,
+    listenResponseTimeout: 500,
+    lockTimeout: 1000,
+    lockRequestTimeout: 1000,
+    broadcastTimeout: 0
+  }
 
-	return options;
-};
+  return options
+}

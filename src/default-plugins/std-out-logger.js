@@ -1,5 +1,5 @@
-var C = require( '../constants/constants' ),
-	EOL = require( 'os' ).EOL;
+const C = require('../constants/constants')
+const EOL = require('os').EOL
 
 /**
  * Logs to the operatingsystem's standard-out and standard-error streams.
@@ -9,12 +9,12 @@ var C = require( '../constants/constants' ),
  *
  * @constructor
  */
-var StdOutLogger = function( options ) {
-	this._options = options || {};
-	this.isReady = true;
+const StdOutLogger = function (options) {
+  this._options = options || {}
+  this.isReady = true
 
-	this._currentLogLevel = C.LOG_LEVEL[ this._options.logLevel ] || C.LOG_LEVEL.DEBUG;
-};
+  this._currentLogLevel = C.LOG_LEVEL[ this._options.logLevel ] || C.LOG_LEVEL.DEBUG
+}
 
 /**
  * Logs a line
@@ -26,22 +26,21 @@ var StdOutLogger = function( options ) {
  * @public
  * @returns {void}
  */
-StdOutLogger.prototype.log = function( logLevel, event, logMessage ) {
-	if( logLevel < this._currentLogLevel ) {
-		return;
-	}
+StdOutLogger.prototype.log = function (logLevel, event, logMessage) {
+  if (logLevel < this._currentLogLevel) {
+    return
+  }
 
-	var msg = event + ' | ' + logMessage,
-		outputStream;
+  let outputStream
 
-	if( logLevel === C.LOG_LEVEL.ERROR || logLevel === C.LOG_LEVEL.WARN ) {
-		outputStream = 'stderr';
-	} else {
-		outputStream = 'stdout';
-	}
+  if (logLevel === C.LOG_LEVEL.ERROR || logLevel === C.LOG_LEVEL.WARN) {
+    outputStream = 'stderr'
+  } else {
+    outputStream = 'stdout'
+  }
 
-	process[ outputStream ].write( msg + EOL );
-};
+  process[outputStream].write(event + ' | ' + logMessage + EOL)
+}
 
 /**
  * Sets the log-level. This can be called at runtime.
@@ -51,8 +50,8 @@ StdOutLogger.prototype.log = function( logLevel, event, logMessage ) {
  * @public
  * @returns {void}
  */
-StdOutLogger.prototype.setLogLevel = function( logLevel ) {
-	this._currentLogLevel = logLevel;
-};
+StdOutLogger.prototype.setLogLevel = function (logLevel) {
+  this._currentLogLevel = logLevel
+}
 
-module.exports = StdOutLogger;
+module.exports = StdOutLogger
