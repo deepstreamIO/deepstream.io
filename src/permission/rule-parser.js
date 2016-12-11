@@ -8,7 +8,6 @@ const USER_FUNCTION_REGEXP = /[^\w$]function[^\w$]|=>/g
 const NEW_REGEXP = /(^|[^\w$])new[^\w$]/
 const OLD_DATA_REGEXP = /(^|[^\w~])oldData[^\w~]/
 const DATA_REGEXP = /(^|[^\w\.~])data($|[^\w~])/
-// var CROSS_REFERENCE_REGEXP = /(^|[^\w~])_[^\w~]/;
 
 const SUPPORTED_FUNCTIONS = [
   '_',
