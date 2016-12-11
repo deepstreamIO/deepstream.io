@@ -14,9 +14,6 @@ describe('permission handler is initialised correctly', () => {
         }
       }
     })
-    permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-    expect(permissionHandler.isReady).toBe(false)
-    permissionHandler.init()
     permissionHandler.on('error', (error) => {
       expect(`it should not have had this ${error}`).toBe(true)
       next()
@@ -25,6 +22,9 @@ describe('permission handler is initialised correctly', () => {
       expect(permissionHandler.isReady).toBe(true)
       next()
     })
+    permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
+    expect(permissionHandler.isReady).toBe(false)
+    permissionHandler.init()
   })
 
   it('fails to load a non existant config file upon initialisation', (next) => {
