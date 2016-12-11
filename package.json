@@ -10,16 +10,12 @@
   "dependencies": {
     "js-yaml": "^3.6.1",
     "lru-cache": "4.0.1",
-    "uws": "^0.12.0",
-    "eslint-config-deepstream": ">=0.1.0"
+    "uws": "^0.12.0"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",
   "bugs": {
     "url": "https://github.com/deepstreamIO/deepstream.io/issues"
   },
-  "homepage": "http://deepstream.io",
-  "eslintConfig": {
-    "extends": "deepstream"
-  }
+  "homepage": "http://deepstream.io"
 }
