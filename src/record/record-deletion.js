@@ -1,14 +1,14 @@
-let messageBuilder = require('../message/message-builder'),
-  C = require('../constants/constants')
+const messageBuilder = require('../message/message-builder')
+const C = require('../constants/constants')
 
 /**
  * This class represents the deletion of a single record. It handles it's removal
  * from cache and storage and handles errors and timeouts
  *
- * @param {Object} 			options       		deepstream options
- * @param {SocketWrapper} 	socketWrapper 		the sender of the delete message
- * @param {Object} 			message       		parsed and validated deletion message
- * @param {Function} 		successCallback 	callback for succesful deletions
+ * @param {Object}      options           deepstream options
+ * @param {SocketWrapper}   socketWrapper     the sender of the delete message
+ * @param {Object}      message           parsed and validated deletion message
+ * @param {Function}    successCallback   callback for succesful deletions
  *
  * @constructor
  */

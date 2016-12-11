@@ -5,8 +5,8 @@ const RuleApplication = require('./rule-application')
 const RuleCache = require('./rule-cache')
 const events = require('events')
 const utils = require('util')
-const fs = require('fs')
 const jsYamlLoader = require('../config/js-yaml-loader')
+
 const STRING = 'string'
 const UNDEFINED = 'undefined'
 
@@ -144,14 +144,13 @@ ConfigPermissionHandler.prototype.canPerformAction = function (username, message
 
   const ruleSpecification = rulesMap.getRulesForMessage(message)
   const name = message.data[0]
-  let ruleData
 
   if (ruleSpecification === null) {
     callback(null, true)
     return
   }
 
-  ruleData = this._getCompiledRulesForName(name, ruleSpecification)
+  const ruleData = this._getCompiledRulesForName(name, ruleSpecification)
 
   new RuleApplication({
     recordHandler: this._recordHandler,
@@ -194,10 +193,10 @@ ConfigPermissionHandler.prototype._getCompiledRulesForName = function (name, rul
 
   for (i; i < section.length; i++) {
     if (
-			typeof section[i].rules[ruleSpecification.type] !== UNDEFINED &&
-			section[i].path.length >= pathLength &&
-			section[i].regexp.test(name)
-		) {
+      typeof section[i].rules[ruleSpecification.type] !== UNDEFINED &&
+      section[i].path.length >= pathLength &&
+      section[i].regexp.test(name)
+    ) {
       pathLength = section[i].path.length
       result = {
         path: section[i].path,

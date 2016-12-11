@@ -1,5 +1,5 @@
-let messageParser = require('./message-parser'),
-  C = require('../constants/constants')
+const messageParser = require('./message-parser')
+const C = require('../constants/constants')
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -42,12 +42,11 @@ MessageProcessor.prototype.onAuthenticatedMessage = function (socketWrapper, mes
  * @returns {void}
  */
 MessageProcessor.prototype.process = function (socketWrapper, message) {
-  let parsedMessages = messageParser.parse(message),
-    parsedMessage,
-    i
+  const parsedMessages = messageParser.parse(message)
+  let parsedMessage
 
   const length = parsedMessages.length
-  for (i = 0; i < length; i++) {
+  for (let i = 0; i < length; i++) {
     parsedMessage = parsedMessages[i]
 
     if (parsedMessage === null) {
@@ -61,22 +60,22 @@ MessageProcessor.prototype.process = function (socketWrapper, message) {
     }
 
     this._options.permissionHandler.canPerformAction(
-			socketWrapper.user,
-			parsedMessage,
-			this._onPermissionResponse.bind(this, socketWrapper, parsedMessage),
-			socketWrapper.authData
-		)
+      socketWrapper.user,
+      parsedMessage,
+      this._onPermissionResponse.bind(this, socketWrapper, parsedMessage),
+      socketWrapper.authData
+    )
   }
 }
 
 /**
  * Processes the response that's returned by the permissionHandler.
  *
- * @param   {SocketWrapper} 	socketWrapper
- * @param   {Object} message 	parsed message - might have been manipulated
- *                            	by the permissionHandler
- * @param   {Error} error 		error or null if no error. Denied permissions will be expressed
- *                          	by setting result to false
+ * @param   {SocketWrapper}   socketWrapper
+ * @param   {Object} message  parsed message - might have been manipulated
+ *                              by the permissionHandler
+ * @param   {Error} error     error or null if no error. Denied permissions will be expressed
+ *                            by setting result to false
  * @param   {Boolean} result    true if permissioned
  *
  * @returns {void}
@@ -99,8 +98,8 @@ MessageProcessor.prototype._onPermissionResponse = function (socketWrapper, mess
 /**
  * Create data in the correct format expected in a MESSAGE_DENIED or MESSAGE_PERMISSION_ERROR
  *
- * @param   {Object} message 	parsed message - might have been manipulated
- *                            	by the permissionHandler
+ * @param   {Object} message  parsed message - might have been manipulated
+ *                              by the permissionHandler
  * @returns {Object}
  */
 MessageProcessor.prototype._getPermissionErrorData = function (message) {

@@ -1,14 +1,14 @@
-let C = require('../constants/constants'),
-  messageParser = require('./message-parser'),
-  messageBuilder = require('./message-builder'),
-  SocketWrapper = require('./socket-wrapper'),
-  fileUtils = require('../config/file-utils'),
-  events = require('events'),
-  util = require('util'),
-  http = require('http'),
-  https = require('https'),
-  uws = require('uws'),
-  OPEN = 'OPEN'
+const C = require('../constants/constants')
+const messageParser = require('./message-parser')
+const messageBuilder = require('./message-builder')
+const SocketWrapper = require('./socket-wrapper')
+const events = require('events')
+const util = require('util')
+const http = require('http')
+const https = require('https')
+const uws = require('uws')
+
+const OPEN = 'OPEN'
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -33,10 +33,10 @@ const ConnectionEndpoint = function (options, readyCallback) {
   this._server.listen(this._options.port, this._options.host)
   this._server.on('request', this._handleHealthCheck.bind(this))
   this._options.logger.log(
-		C.LOG_LEVEL.INFO,
-		C.EVENT.INFO,
-		`Listening for health checks on path ${options.healthCheckPath}`
-	)
+    C.LOG_LEVEL.INFO,
+    C.EVENT.INFO,
+    `Listening for health checks on path ${options.healthCheckPath}`
+  )
 
   this._ws = new uws.Server({
     server: this._server,
@@ -116,9 +116,9 @@ ConnectionEndpoint.prototype._createHttpServer = function () {
     }
 
     return https.createServer(httpsOptions)
-  } else {
-    return http.createServer()
   }
+
+  return http.createServer()
 }
 
 /**
@@ -160,10 +160,10 @@ ConnectionEndpoint.prototype._checkClosed = function () {
  * @returns {void}
  */
 ConnectionEndpoint.prototype._onConnection = function (socket) {
-  let socketWrapper = new SocketWrapper(socket, this._options),
-    handshakeData = socketWrapper.getHandshakeData(),
-    logMsg = `from ${handshakeData.referer} (${handshakeData.remoteAddress})`,
-    disconnectTimer
+  const socketWrapper = new SocketWrapper(socket, this._options)
+  const handshakeData = socketWrapper.getHandshakeData()
+  const logMsg = `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
+  let disconnectTimer
 
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg)
 
@@ -224,36 +224,35 @@ ConnectionEndpoint.prototype._processConnectionMessage = function (socketWrapper
  * @returns {void}
  */
 ConnectionEndpoint.prototype._authenticateConnection = function (socketWrapper, disconnectTimeout, authMsg) {
-  let msg = messageParser.parse(authMsg)[0],
-    logMsg,
-    authData,
-    errorMsg
+  const msg = messageParser.parse(authMsg)[0]
+  let authData
+  let errorMsg
 
-	/**
-	 * Log the authentication attempt
-	 */
-  logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
+  /**
+   * Log the authentication attempt
+   */
+  const logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
   this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
 
-	/**
-	 * Ignore pong messages
-	 */
+  /**
+   * Ignore pong messages
+   */
   if (msg && msg.topic === C.TOPIC.CONNECTION && msg.action === C.ACTIONS.PONG) {
     return
   }
 
-	/**
-	 * Ensure the message is a valid authentication message
-	 */
+  /**
+   * Ensure the message is a valid authentication message
+   */
   if (!msg || msg.topic !== C.TOPIC.AUTH || msg.action !== C.ACTIONS.REQUEST || msg.data.length !== 1) {
     errorMsg = this._options.logInvalidAuthData === true ? authMsg : ''
     this._sendInvalidAuthMsg(socketWrapper, errorMsg)
     return
   }
 
-	/**
-	 * Ensure the authentication data is valid JSON
-	 */
+  /**
+   * Ensure the authentication data is valid JSON
+   */
   try {
     authData = this._getValidAuthData(msg.data[0])
   } catch (e) {
@@ -267,14 +266,14 @@ ConnectionEndpoint.prototype._authenticateConnection = function (socketWrapper, 
     return
   }
 
-	/**
-	 * Forward for authentication
-	 */
+  /**
+   * Forward for authentication
+   */
   this._options.authenticationHandler.isValidUser(
-		socketWrapper.getHandshakeData(),
-		authData,
-		this._processAuthResult.bind(this, authData, socketWrapper, disconnectTimeout)
-	)
+    socketWrapper.getHandshakeData(),
+    authData,
+    this._processAuthResult.bind(this, authData, socketWrapper, disconnectTimeout)
+  )
 }
 
 /**
@@ -421,12 +420,8 @@ ConnectionEndpoint.prototype._processAuthResult = function (authData, socketWrap
  * @returns {void}
  */
 ConnectionEndpoint.prototype._checkReady = function (endpoint) {
-  var msg,
-    address,
-    wsReady
-
-  var address = this._server.address()
-  var msg = `Listening for websocket connections on ${address.address}:${address.port}${this._options.urlPath}`
+  const address = this._server.address()
+  const msg = `Listening for websocket connections on ${address.address}:${address.port}${this._options.urlPath}`
   this._wsReady = true
 
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, msg)

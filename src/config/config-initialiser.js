@@ -56,9 +56,9 @@ function handleUUIDProperty(config) {
  */
 function handleSSLProperties(config) {
   const sslFiles = ['sslKey', 'sslCert', 'sslCa']
-  let key,
-    resolvedFilePath,
-    filePath
+  let key
+  let resolvedFilePath
+  let filePath
   for (let i = 0; i < sslFiles.length; i++) {
     key = sslFiles[i]
     filePath = config[key]
@@ -93,8 +93,8 @@ function handleLogger(config) {
   }
 
   if (configOptions instanceof Array) {
-		// Note: This will not work on options without filename, and
-		// is biased against for the winston logger
+    // Note: This will not work on options without filename, and
+    // is biased against for the winston logger
     let options
     for (let i = 0; i < configOptions.length; i++) {
       options = configOptions[i].options
@@ -106,8 +106,8 @@ function handleLogger(config) {
 
   config.logger = new Logger(configOptions)
   if (LOG_LEVEL_KEYS.indexOf(config.logLevel) !== -1) {
-		// NOTE: config.logLevel has highest priority, compare to the level defined
-		// in the nested logger object
+    // NOTE: config.logLevel has highest priority, compare to the level defined
+    // in the nested logger object
     config.logLevel = C.LOG_LEVEL[config.logLevel]
     config.logger.setLogLevel(config.logLevel)
   }
@@ -133,15 +133,15 @@ function handlePlugins(config) {
   if (config.plugins == null) {
     return
   }
-	// mappnig between the root properties which contains the plugin instance
-	// and the plugin configuration objects
+  // mappnig between the root properties which contains the plugin instance
+  // and the plugin configuration objects
   const connectorMap = {
     messageConnector: 'message',
     cache: 'cache',
     storage: 'storage'
   }
-	// mapping between the plugin configuration properties and the npm module
-	// name resolution
+  // mapping between the plugin configuration properties and the npm module
+  // name resolution
   const typeMap = {
     message: 'msg',
     cache: 'cache',
@@ -156,8 +156,8 @@ function handlePlugins(config) {
   for (const key in plugins) {
     const plugin = plugins[key]
     if (plugin != null) {
-      const pluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
-      config[key] = new pluginConstructor(plugin.options)
+      const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
+      config[key] = new PluginConstructor(plugin.options)
     }
   }
 }
@@ -175,8 +175,8 @@ function handlePlugins(config) {
  * @returns {Function} Instance return be the plugin constructor
  */
 function resolvePluginClass(plugin, type) {
-	// nexe needs *global.require* for __dynamic__ modules
-	// but browserify and proxyquire can't handle *global.require*
+  // nexe needs *global.require* for __dynamic__ modules
+  // but browserify and proxyquire can't handle *global.require*
   const req = global && global.require ? global.require : require
   let requirePath
   let pluginConstructor

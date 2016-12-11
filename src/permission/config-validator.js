@@ -1,7 +1,8 @@
 const pathParser = require('./path-parser')
 const ruleParser = require('./rule-parser')
-const validationSteps = {}
 const SCHEMA = require('./config-schema')
+
+const validationSteps = {}
 
 /**
  * Validates a configuration object. This method runs through multiple
@@ -39,9 +40,9 @@ exports.validate = function (config) {
 validationSteps.isValidType = function (config) {
   if (typeof config === 'object') {
     return true
-  } else {
-    return `config should be an object literal, but was of type ${typeof config}`
   }
+
+  return `config should be an object literal, but was of type ${typeof config}`
 }
 
 /**
@@ -89,17 +90,17 @@ validationSteps.doesNotHaveAdditionalTopLevelKeys = function (config) {
  * @returns {Boolean}
  */
 validationSteps.doesOnlyContainValidPaths = function (config) {
-  let key,
-    path,
-    result
+  let key
+  let path
+  let result
 
   for (key in SCHEMA) {
-		// Check empty
+    // Check empty
     if (Object.keys(config[key]).length === 0) {
       return `empty section "${key}"`
     }
 
-		// Check valid
+    // Check valid
     for (path in config[key]) {
       result = pathParser.validate(path)
       if (result !== true) {
@@ -141,11 +142,10 @@ validationSteps.doesHaveRootEntries = function (config) {
  * @returns {Boolean}
  */
 validationSteps.hasValidRules = function (config) {
-  let key,
-    path,
-    ruleType,
-    section,
-    validationResult
+  let path
+  let ruleType
+  let section
+  let validationResult
 
   for (section in config) {
     for (path in config[section]) {

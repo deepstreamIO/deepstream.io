@@ -11,8 +11,8 @@ function readMessage(message) {
     isCreate: message.action === ACTIONS.CREATEORREAD,
     isRead: message.action === ACTIONS.CREATEORREAD,
     isChange: (
-			message.action === ACTIONS.PATCH || message.action === ACTIONS.UPDATE
-		),
+      message.action === ACTIONS.PATCH || message.action === ACTIONS.UPDATE
+    ),
     isDelete: message.action === ACTIONS.DELETE,
 
     isAck: message.action === ACTIONS.ACK,

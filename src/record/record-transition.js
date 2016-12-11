@@ -1,7 +1,7 @@
-let C = require('../constants/constants'),
-  JsonPath = require('./json-path'),
-  RecordRequest = require('./record-request'),
-  messageParser = require('../message/message-parser')
+const C = require('../constants/constants')
+const JsonPath = require('./json-path')
+const RecordRequest = require('./record-request')
+const messageParser = require('../message/message-parser')
 
 /**
  * This class manages one or more simultanious updates to the data of a record.
@@ -78,9 +78,9 @@ RecordTransition.prototype.hasVersion = function (version) {
  * @public
  */
 RecordTransition.prototype.sendVersionExists = function (socketWrapper, version) {
-  let i,
-    msg,
-    conflict
+  let i
+  let msg
+  let conflict
 
   if (this._record) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, [this._name, this._record._v, JSON.stringify(this._record._d)])
@@ -109,12 +109,12 @@ RecordTransition.prototype.sendVersionExists = function (socketWrapper, version)
  * @returns {void}
  */
 RecordTransition.prototype.add = function (socketWrapper, version, message) {
-  let data,
-    update = {
-      message,
-      version,
-      sender: socketWrapper
-    }
+  let data
+  const update = {
+    message,
+    version,
+    sender: socketWrapper
+  }
 
   if (message.action === C.ACTIONS.UPDATE) {
     if (message.data.length !== 3) {
@@ -153,12 +153,12 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
 
   if (this._recordRequest === null) {
     this._recordRequest = new RecordRequest(
-			this._name,
-			this._options,
-			socketWrapper,
-			this._onRecord.bind(this),
-			this._onFatalError.bind(this)
-		)
+      this._name,
+      this._options,
+      socketWrapper,
+      this._onRecord.bind(this),
+      this._onFatalError.bind(this)
+    )
   }
 }
 
@@ -238,12 +238,12 @@ RecordTransition.prototype._next = function () {
     this._record._d = this._currentStep.data
   }
 
-	/*
-	 * Please note: saving to storage is called first to allow for synchronous cache
-	 * responses to destroy the transition, it is however not on the critical path
-	 * and the transition will continue straight away, rather than wait for the storage response
-	 * to be returned.
-	 */
+  /*
+   * Please note: saving to storage is called first to allow for synchronous cache
+   * responses to destroy the transition, it is however not on the critical path
+   * and the transition will continue straight away, rather than wait for the storage response
+   * to be returned.
+   */
   if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._name)) {
     this._options.storage.set(this._name, this._record, this._onStorageResponse.bind(this))
   }
@@ -257,8 +257,8 @@ RecordTransition.prototype._next = function () {
  * @private
  */
 RecordTransition.prototype._flushVersionExists = function () {
-  let i,
-    conflict
+  let i
+  let conflict
 
   for (i = 0; i < this._sendVersionExists.length; i++) {
     conflict = this._sendVersionExists[i]
@@ -313,7 +313,7 @@ RecordTransition.prototype._onStorageResponse = function (error) {
  */
 RecordTransition.prototype._onFatalError = function (errorMessage) {
   if (this.isDestroyed === true) {
-		/* istanbul ignore next */
+    /* istanbul ignore next */
     return
   }
 

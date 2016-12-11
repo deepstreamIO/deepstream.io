@@ -7,11 +7,11 @@ const C = require('../constants/constants')
  *
  * It also handles all the timeout and destruction steps around this operation
  *
- * @param {String} recordName 			the unique name of the record
- * @param {Object} options 				deepstream options
+ * @param {String} recordName       the unique name of the record
+ * @param {Object} options        deepstream options
  * @param {SocketWrapper} socketWrapper the sender whos message initiated the recordRequest
- * @param {Function} onComplete    		callback for successful requests (even if the record wasn't found)
- * @param {[Function]} onError       		callback for errors
+ * @param {Function} onComplete       callback for successful requests (even if the record wasn't found)
+ * @param {[Function]} onError          callback for errors
  *
  * @constructor
  */
@@ -25,9 +25,9 @@ const RecordRequest = function (recordName, options, socketWrapper, onComplete, 
   this._isDestroyed = false
 
   this._cacheRetrievalTimeout = setTimeout(
-		this._sendError.bind(this, C.EVENT.CACHE_RETRIEVAL_TIMEOUT, this._recordName),
-		this._options.cacheRetrievalTimeout
-	)
+    this._sendError.bind(this, C.EVENT.CACHE_RETRIEVAL_TIMEOUT, this._recordName),
+    this._options.cacheRetrievalTimeout
+  )
 
   this._options.cache.get(this._recordName, this._onCacheResponse.bind(this))
 }
@@ -54,9 +54,9 @@ RecordRequest.prototype._onCacheResponse = function (error, record) {
     this._onComplete(record)
   } else if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._recordName)) {
     this._storageRetrievalTimeout = setTimeout(
-			this._sendError.bind(this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName),
-			this._options.storageRetrievalTimeout
-		)
+      this._sendError.bind(this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName),
+      this._options.storageRetrievalTimeout
+    )
 
     this._options.storage.get(this._recordName, this._onStorageResponse.bind(this))
   } else {
@@ -87,9 +87,9 @@ RecordRequest.prototype._onStorageResponse = function (error, record) {
     this._onComplete(record || null)
 
     if (record) {
-			/*
-			 * Load record from storage into cache
-			 */
+      /*
+       * Load record from storage into cache
+       */
       this._options.cache.set(this._recordName, record, () => {})
     }
 
@@ -101,8 +101,8 @@ RecordRequest.prototype._onStorageResponse = function (error, record) {
  * Sends an error to the socketWrapper that requested the
  * record
  *
- * @param   {String} event   		Error event
- * @param   {String} message 		Error message
+ * @param   {String} event      Error event
+ * @param   {String} message    Error message
  *
  * @private
  * @returns {void}

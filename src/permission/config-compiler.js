@@ -12,9 +12,9 @@ const ruleParser = require('./rule-parser')
  */
 exports.compile = function (config) {
   const compiledConfig = {}
-  let compiledRuleset,
-    section,
-    path
+  let compiledRuleset
+  let section
+  let path
 
   for (section in config) {
     compiledConfig[section] = []
@@ -44,8 +44,8 @@ function compileRuleset(path, rules) {
 
   for (const ruleType in rules) {
     ruleset.rules[ruleType] = ruleParser.parse(
-			rules[ruleType], ruleset.variables
-		)
+      rules[ruleType], ruleset.variables
+    )
   }
 
   return ruleset

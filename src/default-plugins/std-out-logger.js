@@ -1,7 +1,7 @@
 require('colors')
+const C = require('../constants/constants')
 
-let C = require('../constants/constants'),
-  EOL = require('os').EOL
+const EOL = require('os').EOL
 
 /**
  * Logs to the operatingsystem's standard-out and standard-error streams.
@@ -40,8 +40,8 @@ StdOutLogger.prototype.log = function (logLevel, event, logMessage) {
     return
   }
 
-  let msg = `${event} | ${logMessage}`,
-    outputStream
+  const msg = `${event} | ${logMessage}`
+  let outputStream
 
   if (logLevel === C.LOG_LEVEL.ERROR || logLevel === C.LOG_LEVEL.WARN) {
     outputStream = 'stderr'

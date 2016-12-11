@@ -119,10 +119,10 @@ module.exports.loadConfig = function (filePath, /* test only */ args) {
 */
 function setGlobalConfigDirectory(argv, filePath) {
   const customConfigPath =
-			argv.c ||
-			argv.config ||
-			filePath ||
-			process.env.DEEPSTREAM_CONFIG_DIRECTORY
+      argv.c ||
+      argv.config ||
+      filePath ||
+      process.env.DEEPSTREAM_CONFIG_DIRECTORY
   const configPath = customConfigPath ? verifyCustomConfigPath(customConfigPath) : getDefaultConfigPath()
   global.deepstreamConfDir = path.dirname(configPath)
   return configPath
@@ -134,10 +134,10 @@ function setGlobalConfigDirectory(argv, filePath) {
 */
 function setGlobalLibDirectory(argv, config) {
   const libDir =
-			argv.l ||
-			argv.libDir ||
-			(config.libDir && fileUtils.lookupConfRequirePath(config.libDir)) ||
-			process.env.DEEPSTREAM_LIBRARY_DIRECTORY
+      argv.l ||
+      argv.libDir ||
+      (config.libDir && fileUtils.lookupConfRequirePath(config.libDir)) ||
+      process.env.DEEPSTREAM_LIBRARY_DIRECTORY
   global.deepstreamLibDir = libDir
 }
 
@@ -174,9 +174,9 @@ function extendConfig(config, argv) {
 function verifyCustomConfigPath(configPath) {
   if (fileUtils.fileExistsSync(configPath)) {
     return configPath
-  } else {
-    throw new Error(`Configuration file not found at: ${configPath}`)
   }
+
+  throw new Error(`Configuration file not found at: ${configPath}`)
 }
 
 /**
@@ -186,9 +186,9 @@ function verifyCustomConfigPath(configPath) {
  * @returns {String} filePath
  */
 function getDefaultConfigPath() {
-  let filePath,
-    i,
-    k
+  let filePath
+  let i
+  let k
 
   for (k = 0; k < DEFAULT_CONFIG_DIRS.length; k++) {
     for (i = 0; i < SUPPORTED_EXTENSIONS.length; i++) {

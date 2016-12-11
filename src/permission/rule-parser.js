@@ -24,8 +24,8 @@ const SUPPORTED_FUNCTIONS = [
  * and that it can be compiled into a javascript function
  *
  * @param   {String|Boolean} rule the rule as read from permissions.json
- * @param 	{String} section record, event or rpc
- * @param 	{String} type read, write, publish, subscribe etc...
+ * @param   {String} section record, event or rpc
+ * @param   {String} type read, write, publish, subscribe etc...
  *
  * @public
  * @returns {Boolean} isValid
@@ -51,7 +51,7 @@ exports.validate = function (rule, section, type) {
   let functionName
   let i
 
-	// TODO _ cross references are only supported for section record
+  // TODO _ cross references are only supported for section record
   if (functions) {
     for (i = 0; i < functions.length; i++) {
       functionName = functions[i].replace('(', '')

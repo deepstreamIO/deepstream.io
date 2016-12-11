@@ -1,8 +1,9 @@
-let C = require('../constants/constants'),
-  messageBuilder = require('./message-builder'),
-  EventEmitter = require('events').EventEmitter,
-  utils = require('util'),
-  uws = require('uws')
+const C = require('../constants/constants')
+const messageBuilder = require('./message-builder')
+const utils = require('util')
+const uws = require('uws')
+
+const EventEmitter = require('events').EventEmitter
 
 /**
  * This class wraps around a websocket
@@ -34,10 +35,10 @@ const SocketWrapper = function (socket, options) {
   this._sendNextPacketTimeout = null
   this._currentMessageResetTimeout = null
 
-	/**
-	 * This defaults for test purposes since socket wrapper creating touches
-	 * everything
-	 */
+  /**
+   * This defaults for test purposes since socket wrapper creating touches
+   * everything
+   */
   if (typeof this._options.maxMessagesPerPacket === 'undefined') {
     this._options.maxMessagesPerPacket = 1000
   }

@@ -48,24 +48,24 @@ exports.lookupConfRequirePath = function (filePath) {
  * @returns {String} file path with the prefix
  */
 exports.lookupRequirePath = function (filePath, prefix) {
+  // filePath is absolute
   if (path.parse(filePath).root !== '') {
-		// filePath is absolute
     return filePath
-  } else if (filePath[0] !== '.') {
-		// filePath is not relative (and not absolute)
+  }
+
+  // filePath is not relative (and not absolute)
+  if (filePath[0] !== '.') {
     if (prefix == null) {
       return filePath
-    } else {
-      return resolvePrefixAndFile(filePath, prefix)
     }
-  } else {
-		// filePath is relative, starts with .
-    if (prefix == null) {
-      return path.resolve(process.cwd(), filePath)
-    } else {
-      return resolvePrefixAndFile(filePath, prefix)
-    }
+    return resolvePrefixAndFile(filePath, prefix)
   }
+
+  // filePath is relative, starts with .
+  if (prefix == null) {
+    return path.resolve(process.cwd(), filePath)
+  }
+  return resolvePrefixAndFile(filePath, prefix)
 }
 
 /**
@@ -96,11 +96,11 @@ exports.fileExistsSync = function (filePath) {
 * @returns {String} resolvedPath
 */
 function resolvePrefixAndFile(nonAbsoluteFilePath, prefix) {
+  // prefix is not absolute
   if (path.parse(prefix).root === '') {
-		// prefix is not absolute
     return path.resolve(process.cwd(), prefix, nonAbsoluteFilePath)
-  } else {
-		// prefix is absolute
-    return path.resolve(prefix, nonAbsoluteFilePath)
   }
+
+  // prefix is absolute
+  return path.resolve(prefix, nonAbsoluteFilePath)
 }

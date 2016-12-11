@@ -23,18 +23,17 @@ const MessageParser = function () {
  * @returns {Array} array of parsed message objects
  *                  following the format
  *                  {
- *                  	raw: <original message string>
- *                  	topic: <string>
- *                  	action: <string - shortcode>
- *                  	data: <array of strings>
+ *                    raw: <original message string>
+ *                    topic: <string>
+ *                    action: <string - shortcode>
+ *                    data: <array of strings>
  *                  }
  */
 MessageParser.prototype.parse = function (message) {
-  let parsedMessages = [],
-    rawMessages = message.split(C.MESSAGE_SEPERATOR),
-    i
+  const parsedMessages = []
+  const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
-  for (i = 0; i < rawMessages.length; i++) {
+  for (let i = 0; i < rawMessages.length; i++) {
     if (rawMessages[i].length > 2) {
       parsedMessages.push(this._parseMessage(rawMessages[i]))
     }

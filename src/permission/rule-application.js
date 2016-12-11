@@ -58,7 +58,7 @@ const RuleApplication = function (params) {
 RuleApplication.prototype._run = function () {
   this._runScheduled = false
   this._iterations++
-	/* istanbul ignore next */
+  /* istanbul ignore next */
   if (this._isDestroyed === true) {
     return
   }
@@ -104,7 +104,7 @@ RuleApplication.prototype._onRuleError = function (error) {
     return
   }
   const errorMsg = `error when executing ${this._params.rule.fn.toString()}${EOL
-				   }for ${this._params.path}: ${error.toString()}`
+           }for ${this._params.path}: ${error.toString()}`
   this._params.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, errorMsg)
   this._params.callback(C.EVENT.MESSAGE_PERMISSION_ERROR, false)
   this._destroy()
@@ -365,11 +365,11 @@ RuleApplication.prototype._isReady = function () {
  * @returns {void}
  */
 RuleApplication.prototype._loadRecord = function (recordName) {
-	/* istanbul ignore next */
+  /* istanbul ignore next */
   if (this._recordData[recordName] === LOADING) {
     return
   }
-	/* istanbul ignore next */
+  /* istanbul ignore next */
   if (typeof this._recordData[recordName] !== UNDEFINED) {
     this._onLoadComplete(recordName, this._recordData[recordName])
     return
@@ -378,9 +378,9 @@ RuleApplication.prototype._loadRecord = function (recordName) {
   this._recordData[recordName] = LOADING
 
   this._params.recordHandler.runWhenRecordStable(
-		recordName,
-		this._createNewRecordRequest.bind(this)
-	)
+    recordName,
+    this._createNewRecordRequest.bind(this)
+  )
 }
 
 /**
@@ -395,12 +395,12 @@ RuleApplication.prototype._loadRecord = function (recordName) {
  */
 RuleApplication.prototype._createNewRecordRequest = function (recordName) {
   new RecordRequest(
-		recordName,
-		this._params.options,
-		null,
-		this._onLoadComplete.bind(this, recordName),
-		this._onLoadError.bind(this, recordName)
-	)
+    recordName,
+    this._params.options,
+    null,
+    this._onLoadComplete.bind(this, recordName),
+    this._onLoadError.bind(this, recordName)
+  )
 }
 
 /**

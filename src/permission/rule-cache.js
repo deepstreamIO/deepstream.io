@@ -27,7 +27,7 @@ RuleCache.prototype.reset = function () {
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
- * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
+ * @param   {String}  type    the type of the action, e.g. read, write, subscribe
  *
  * @public
  * @returns {Boolean}
@@ -41,7 +41,7 @@ RuleCache.prototype.has = function (section, name, type) {
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
- * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
+ * @param   {String}  type    the type of the action, e.g. read, write, subscribe
  *
  * @public
  * @returns {Object} rule
@@ -58,8 +58,8 @@ RuleCache.prototype.get = function (section, name, type) {
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
- * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
- * @param 	{Object}  rule the result of a rule lookup
+ * @param   {String}  type    the type of the action, e.g. read, write, subscribe
+ * @param   {Object}  rule the result of a rule lookup
  *
  * @public
  * @returns {Object} rule
@@ -76,7 +76,7 @@ RuleCache.prototype.set = function (section, name, type, rule) {
  *
  * @param   {String}  section e.g. record, event or rpc
  * @param   {String}  name    the name of the record, event or rpc
- * @param 	{String}  type 	  the type of the action, e.g. read, write, subscribe
+ * @param   {String}  type    the type of the action, e.g. read, write, subscribe
  *
  * @public
  * @returns {String} key

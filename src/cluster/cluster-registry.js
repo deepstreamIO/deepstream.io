@@ -15,16 +15,16 @@ const EventEmitter = require('events').EventEmitter
  */
 module.exports = class ClusterRegistry extends EventEmitter {
 
-	/**
-	 * Creates the class, initialises all intervals and publishes the
-	 * initial status message that notifies other nodes within this
-	 * cluster of its presence.
-	 *
-	 * @param   {Object} options            deepstream options
-	 * @param   {ConnectionEndpoint}		connectionEndpoint deepstream connection endpoint
-	 *
-	 * @constructor
-	 */
+  /**
+   * Creates the class, initialises all intervals and publishes the
+   * initial status message that notifies other nodes within this
+   * cluster of its presence.
+   *
+   * @param   {Object} options            deepstream options
+   * @param   {ConnectionEndpoint}    connectionEndpoint deepstream connection endpoint
+   *
+   * @constructor
+   */
   constructor(options, connectionEndpoint) {
     super()
     this._options = options
@@ -45,13 +45,13 @@ module.exports = class ClusterRegistry extends EventEmitter {
     process.on('exit', this._leaveClusterFn)
   }
 
-	/**
-	 * Prompts this node to leave the cluster, either as a result of a server.close() call or due to the process exiting.
-	 * This sends out a leave message to all other nodes and destroys this class.
-	 *
-	 * @public
-	 * @returns {[type]}
-	 */
+  /**
+   * Prompts this node to leave the cluster, either as a result of a server.close() call or due to the process exiting.
+   * This sends out a leave message to all other nodes and destroys this class.
+   *
+   * @public
+   * @returns {[type]}
+   */
   leaveCluster() {
     if (this._inCluster === false) {
       return
@@ -63,9 +63,9 @@ module.exports = class ClusterRegistry extends EventEmitter {
       data: [this._options.serverName]
     })
 
-		// TODO: If a message connector doesn't close this is required to avoid an error
-		// being thrown during shutdown
-		// this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
+    // TODO: If a message connector doesn't close this is required to avoid an error
+    // being thrown during shutdown
+    // this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
 
     process.removeListener('beforeExit', this._leaveClusterFn)
     process.removeListener('exit', this._leaveClusterFn)
@@ -75,32 +75,32 @@ module.exports = class ClusterRegistry extends EventEmitter {
     this._inCluster = false
   }
 
-	/**
-	 * Returns the serverNames of all nodes currently present within the cluster
-	 *
-	 * @public
-	 * @returns {Array} serverNames
-	 */
+  /**
+   * Returns the serverNames of all nodes currently present within the cluster
+   *
+   * @public
+   * @returns {Array} serverNames
+   */
   getAll() {
     return Object.keys(this._nodes)
   }
 
-	/**
-	 * Returns true if this node is the cluster leader
-	 * @return {Boolean} [description]
-	 */
+  /**
+   * Returns true if this node is the cluster leader
+   * @return {Boolean} [description]
+   */
   isLeader() {
     return this._options.serverName === this.getCurrentLeader()
   }
 
-	/**
-	* Returns the name of the current leader
-	* @return {String}
-	*/
+  /**
+  * Returns the name of the current leader
+  * @return {String}
+  */
   getCurrentLeader() {
-    let maxScore = 0,
-      serverName,
-      leader = null
+    let maxScore = 0
+    let  serverName
+    let  leader = null
 
     for (serverName in this._nodes) {
       if (this._nodes[serverName].leaderScore > maxScore) {
@@ -112,19 +112,19 @@ module.exports = class ClusterRegistry extends EventEmitter {
     return leader
   }
 
-	/**
-	 * Returns the public url of the least utilized node within the cluster.
-	 *
-	 * @todo this currently only takes memory usage into account, but ignores the
-	 *       amount of connections. Improve?
-	 *
-	 * @public
-	 * @returns {String} public URL
-	 */
+  /**
+   * Returns the public url of the least utilized node within the cluster.
+   *
+   * @todo this currently only takes memory usage into account, but ignores the
+   *       amount of connections. Improve?
+   *
+   * @public
+   * @returns {String} public URL
+   */
   getLeastUtilizedExternalUrl() {
-    let minMemory = Infinity,
-      serverName,
-      minNode
+    let minMemory = Infinity
+    let serverName
+    let minNode
 
     for (serverName in this._nodes) {
       if (this._nodes[serverName].memory < minMemory) {
@@ -136,14 +136,14 @@ module.exports = class ClusterRegistry extends EventEmitter {
     return minNode.externalUrl
   }
 
-	/**
-	 * Distributes incoming messages on the cluster topic
-	 *
-	 * @param   {Object} message parsed deepstream message object
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+  /**
+   * Distributes incoming messages on the cluster topic
+   *
+   * @param   {Object} message parsed deepstream message object
+   *
+   * @private
+   * @returns {void}
+   */
   _onMessage(message) {
     const data = message.data[0]
 
@@ -158,19 +158,19 @@ module.exports = class ClusterRegistry extends EventEmitter {
     }
   }
 
-	/**
-	 * Called on an interval defined by clusterActiveCheckInterval to check if all nodes
-	 * within the cluster are still alive.
-	 *
-	 * Being alive is defined as having received a status message from that node less than <clusterNodeInactiveTimeout>
-	 * milliseconds ago.
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+  /**
+   * Called on an interval defined by clusterActiveCheckInterval to check if all nodes
+   * within the cluster are still alive.
+   *
+   * Being alive is defined as having received a status message from that node less than <clusterNodeInactiveTimeout>
+   * milliseconds ago.
+   *
+   * @private
+   * @returns {void}
+   */
   _checkNodes() {
-    let now = Date.now(),
-      serverName
+    const now = Date.now()
+    let serverName
 
     for (serverName in this._nodes) {
       if (now - this._nodes[serverName].lastStatusTime > this._options.clusterNodeInactiveTimeout) {
@@ -179,16 +179,16 @@ module.exports = class ClusterRegistry extends EventEmitter {
     }
   }
 
-	/**
-	 * Updates the status of a node with incoming status data and resets its lastStatusTime.
-	 *
-	 * If the remote node doesn't exist yet, it is added and an add event is emitted / logged
-	 *
-	 * @param   {Object} data node status data as generated by _publishStatus
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+  /**
+   * Updates the status of a node with incoming status data and resets its lastStatusTime.
+   *
+   * If the remote node doesn't exist yet, it is added and an add event is emitted / logged
+   *
+   * @param   {Object} data node status data as generated by _publishStatus
+   *
+   * @private
+   * @returns {void}
+   */
   _updateNode(data) {
     const isNew = !this._nodes[data.serverName]
     this._nodes[data.serverName] = data
@@ -199,16 +199,16 @@ module.exports = class ClusterRegistry extends EventEmitter {
     }
   }
 
-	/**
-	 * Removes a remote node from this registry if it exists.
-	 *
-	 * Logs/emits remove
-	 *
-	 * @param   {String} serverName
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+  /**
+   * Removes a remote node from this registry if it exists.
+   *
+   * Logs/emits remove
+   *
+   * @param   {String} serverName
+   *
+   * @private
+   * @returns {void}
+   */
   _removeNode(serverName) {
     if (this._nodes[serverName]) {
       delete this._nodes[serverName]
@@ -217,12 +217,12 @@ module.exports = class ClusterRegistry extends EventEmitter {
     }
   }
 
-	/**
-	 * Publishes this node's status on the message bus
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+  /**
+   * Publishes this node's status on the message bus
+   *
+   * @private
+   * @returns {void}
+   */
   _publishStatus() {
     this._inCluster = true
     const memoryStats = process.memoryUsage()

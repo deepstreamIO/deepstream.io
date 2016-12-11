@@ -1,18 +1,18 @@
-let utils = require('./utils/utils'),
-  C = require('./constants/constants')
+const utils = require('./utils/utils')
+const C = require('./constants/constants')
 
 exports.get = function () {
   const options = {
-		/*
-		 * General
-		 */
+        /*
+         * General
+         */
     serverName: utils.getUid(),
     showLogo: true,
     logLevel: C.LOG_LEVEL.INFO,
 
-		/*
-		 * Connectivity
-		 */
+        /*
+         * Connectivity
+         */
     port: 6020,
     host: '0.0.0.0',
     urlPath: '/deepstream',
@@ -22,50 +22,50 @@ exports.get = function () {
     maxMessagesPerPacket: 1000,
     heartbeatInterval: 30000,
 
-		/*
-		 * SSL Configuration
-		 */
+        /*
+         * SSL Configuration
+         */
     sslKey: null,
     sslCert: null,
     sslCa: null,
 
-		/*
-		 * Authentication
-		 */
+        /*
+         * Authentication
+         */
     auth: {
       type: 'none'
     },
 
-		/*
-		 * Permissioning
-		 */
+        /*
+         * Permissioning
+         */
     permission: {
       type: 'none'
     },
 
-		/*
-		 * Default Plugins
-		 */
+        /*
+         * Default Plugins
+         */
     messageConnector: require('./default-plugins/noop-message-connector'),
     cache: require('./default-plugins/local-cache'),
     storage: require('./default-plugins/noop-storage'),
 
-		/*
-		 * Storage options
-		 */
+        /*
+         * Storage options
+         */
     storageExclusion: null,
 
-		/*
-		 * Security
-		 */
+        /*
+         * Security
+         */
     unauthenticatedClientTimeout: 180000,
     maxAuthAttempts: 3,
     logInvalidAuthData: true,
     maxMessageSize: 1048576,
 
-		/*
-		 * Timeouts
-		 */
+        /*
+         * Timeouts
+         */
     rpcAckTimeout: 1000,
     rpcTimeout: 10000,
     cacheRetrievalTimeout: 1000,

@@ -49,10 +49,9 @@ exports.combineEvents = function (emitters, event, callback) {
  * @return {Object} reversed map
  */
 exports.reverseMap = function (map) {
-  let reversedMap = {},
-    key
+  const reversedMap = {}
 
-  for (key in map) {
+  for (let key in map) {
     reversedMap[map[key]] = key
   }
 
@@ -74,9 +73,8 @@ exports.isOfType = function (input, expectedType) {
     return Array.isArray(input)
   } else if (expectedType === 'url') {
     return !!url.parse(input).host
-  } else {
-    return typeof input === expectedType
   }
+  return typeof input === expectedType
 }
 
 /**
@@ -91,8 +89,8 @@ exports.isOfType = function (input, expectedType) {
  * @returns {Boolean|Error}
  */
 exports.validateMap = function (map, throwError, schema) {
-  let error,
-    key
+  let error
+  let key
 
   for (key in schema) {
     if (typeof map[key] === 'undefined') {
@@ -138,9 +136,8 @@ exports.validateMap = function (map, throwError, schema) {
 exports.deepCopy = function (obj) {
   if (typeof obj === OBJECT) {
     return JSON.parse(JSON.stringify(obj))
-  } else {
-    return obj
   }
+  return obj
 }
 
 /**
@@ -189,9 +186,8 @@ exports.merge = function () {
 exports.setTimeout = function (callback, timeoutDuration) {
   if (timeoutDuration !== null) {
     return setTimeout(callback, timeoutDuration)
-  } else {
-    return -1
   }
+  return -1
 }
 
 /**
@@ -207,9 +203,8 @@ exports.setTimeout = function (callback, timeoutDuration) {
 exports.setInterval = function (callback, intervalDuration) {
   if (intervalDuration !== null) {
     return setInterval(callback, intervalDuration)
-  } else {
-    return -1
   }
+  return -1
 }
 
 exports.getRandomIntInRange = function (min, max) {

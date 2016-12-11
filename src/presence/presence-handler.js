@@ -32,17 +32,17 @@ module.exports = class PresenceHandler {
     this._connectedClients.on('remove', this._onClientRemoved.bind(this))
   }
 
-	/**
-	 * The main entry point to the presence handler class.
-	 *
-	 * Handles subscriptions, unsubscriptions and queries
-	 *
-	 * @param   {SocketWrapper} socketWrapper the socket that send the request
-	 * @param   {Object} message parsed and validated message
-	 *
-	 * @public
-	 * @returns {void}
-	 */
+    /**
+     * The main entry point to the presence handler class.
+     *
+     * Handles subscriptions, unsubscriptions and queries
+     *
+     * @param   {SocketWrapper} socketWrapper the socket that send the request
+     * @param   {Object} message parsed and validated message
+     *
+     * @public
+     * @returns {void}
+     */
   handle(socketWrapper, message) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._presenceRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
@@ -59,39 +59,39 @@ module.exports = class PresenceHandler {
     }
   }
 
-	/**
-	 * Called whenever a client has succesfully logged in with a username
-	 *
-	 * @param   {Object} socketWrapper the socketWrapper of the client that logged in
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+    /**
+     * Called whenever a client has succesfully logged in with a username
+     *
+     * @param   {Object} socketWrapper the socketWrapper of the client that logged in
+     *
+     * @private
+     * @returns {void}
+     */
   _handleJoin(socketWrapper) {
     this._connectedClients.add(socketWrapper.user)
   }
 
-	/**
-	 * Called whenever a client has disconnected
-	 *
-	 * @param   {Object} socketWrapper the socketWrapper of the client that disconnected
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+    /**
+     * Called whenever a client has disconnected
+     *
+     * @param   {Object} socketWrapper the socketWrapper of the client that disconnected
+     *
+     * @private
+     * @returns {void}
+     */
   _handleLeave(socketWrapper) {
     this._connectedClients.remove(socketWrapper.user)
   }
 
-	/**
-	 * Handles finding clients who are connected and splicing out the client
-	 * querying for users
-	 *
-	 * @param   {Object} socketWrapper the socketWrapper of the client that is querying
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+    /**
+     * Handles finding clients who are connected and splicing out the client
+     * querying for users
+     *
+     * @param   {Object} socketWrapper the socketWrapper of the client that is querying
+     *
+     * @private
+     * @returns {void}
+     */
   _handleQuery(socketWrapper) {
     const clients = this._connectedClients.getAll()
     const index = clients.indexOf(socketWrapper.user)
@@ -101,29 +101,29 @@ module.exports = class PresenceHandler {
     socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients)
   }
 
-	/**
-	 * Alerts all clients who are subscribed to
-	 * PRESENCE_JOIN that a new client has been added.
-	 *
-	 * @param   {String} username the username of the client that joined
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+    /**
+     * Alerts all clients who are subscribed to
+     * PRESENCE_JOIN that a new client has been added.
+     *
+     * @param   {String} username the username of the client that joined
+     *
+     * @private
+     * @returns {void}
+     */
   _onClientAdded(username) {
     const addMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [username])
     this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
   }
 
-	/**
-	 * Alerts all clients who are subscribed to
-	 * PRESENCE_LEAVE that the client has left.
-	 *
-	 * @param   {String} username the username of the client that left
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+    /**
+     * Alerts all clients who are subscribed to
+     * PRESENCE_LEAVE that the client has left.
+     *
+     * @param   {String} username the username of the client that left
+     *
+     * @private
+     * @returns {void}
+     */
   _onClientRemoved(username) {
     const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
     this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)

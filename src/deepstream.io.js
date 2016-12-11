@@ -1,26 +1,27 @@
-let ConnectionEndpoint = require('./message/connection-endpoint'),
-  MessageProcessor = require('./message/message-processor'),
-  MessageDistributor = require('./message/message-distributor'),
-  EventHandler = require('./event/event-handler'),
-  EventEmitter = require('events').EventEmitter,
-  messageParser = require('./message/message-parser'),
-  readMessage = require('./utils/read-message'),
-  EOL = require('os').EOL,
-  fs = require('fs'),
-  path = require('path'),
-  util = require('util'),
-  utils = require('./utils/utils'),
-  defaultOptions = require('./default-options'),
-  configInitialiser = require('./config/config-initialiser'),
-  jsYamlLoader = require('./config/js-yaml-loader'),
-  RpcHandler = require('./rpc/rpc-handler'),
-  RecordHandler = require('./record/record-handler'),
-  PresenceHandler = require('./presence/presence-handler'),
-  DependencyInitialiser = require('./utils/dependency-initialiser'),
-  ClusterRegistry = require('./cluster/cluster-registry'),
-  UniqueRegistry = require('./cluster/cluster-unique-state-provider'),
-  C = require('./constants/constants'),
-  pkg = require('../package.json')
+const ConnectionEndpoint = require('./message/connection-endpoint')
+const MessageProcessor = require('./message/message-processor')
+const MessageDistributor = require('./message/message-distributor')
+const EventHandler = require('./event/event-handler')
+const messageParser = require('./message/message-parser')
+const readMessage = require('./utils/read-message')
+const fs = require('fs')
+const path = require('path')
+const util = require('util')
+const utils = require('./utils/utils')
+const defaultOptions = require('./default-options')
+const configInitialiser = require('./config/config-initialiser')
+const jsYamlLoader = require('./config/js-yaml-loader')
+const RpcHandler = require('./rpc/rpc-handler')
+const RecordHandler = require('./record/record-handler')
+const PresenceHandler = require('./presence/presence-handler')
+const DependencyInitialiser = require('./utils/dependency-initialiser')
+const ClusterRegistry = require('./cluster/cluster-registry')
+const UniqueRegistry = require('./cluster/cluster-unique-state-provider')
+const C = require('./constants/constants')
+const pkg = require('../package.json')
+
+const EventEmitter = require('events').EventEmitter
+const EOL = require('os').EOL
 
 const STATES = C.STATES
 
@@ -145,7 +146,7 @@ Deepstream.prototype.start = function () {
 Deepstream.prototype._start = function () {
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `deepstream version: ${pkg.version}`)
 
-	// otherwise (no configFile) deepstream was invoked by API
+  // otherwise (no configFile) deepstream was invoked by API
   if (this._configFile != null) {
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `configuration file loaded from ${this._configFile}`)
   }
@@ -154,8 +155,8 @@ Deepstream.prototype._start = function () {
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `library directory set to: ${global.deepstreamLibDir}`)
   }
 
-  let i,
-    initialiser
+  let i
+  let initialiser
 
   for (i = 0; i < this._plugins.length; i++) {
     initialiser = new DependencyInitialiser(this._options, this._plugins[i])
@@ -177,9 +178,9 @@ Deepstream.prototype.stop = function () {
   }
   this._currentState = STATES.CLOSING
 
-  let i,
-    plugin,
-    closables = [this._connectionEndpoint]
+  let i
+  let plugin
+  const closables = [this._connectionEndpoint]
 
   if (typeof this._options.logger.close === 'function') {
     closables.push(this._options.logger)
@@ -256,7 +257,7 @@ Deepstream.prototype._showStartLogo = function () {
   if (this._options.showLogo !== true) {
     return
   }
-	/* istanbul ignore next */
+  /* istanbul ignore next */
   let logo
 
   try {
@@ -266,7 +267,7 @@ Deepstream.prototype._showStartLogo = function () {
     logo = fs.readFileSync(path.join(__dirname, '..', '/ascii-logo.txt'), 'utf8')
   }
 
-	/* istanbul ignore next */
+  /* istanbul ignore next */
   process.stdout.write(logo + EOL)
   process.stdout.write(` =========================   starting   ==========================${EOL}`)
 }

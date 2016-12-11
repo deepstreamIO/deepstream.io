@@ -26,7 +26,9 @@ const JsonPath = function (path) {
  * @returns {void}
  */
 JsonPath.prototype.setValue = function (node, value) {
-  for (var i = 0; i < this._tokens.length - 1; i++) {
+  let i = 0
+
+  for (i = 0; i < this._tokens.length - 1; i++) {
     if (node[this._tokens[i]] !== undefined) {
       node = node[this._tokens[i]]
     } else if (this._tokens[i + 1] && !isNaN(this._tokens[i + 1])) {
@@ -47,9 +49,9 @@ JsonPath.prototype.setValue = function (node, value) {
  * @returns {void}
  */
 JsonPath.prototype._tokenize = function () {
-  let parts = this._path.split(SPLIT_REG_EXP),
-    part,
-    i
+  const parts = this._path.split(SPLIT_REG_EXP)
+  let part
+  let i
 
   for (i = 0; i < parts.length; i++) {
     part = parts[i].trim()

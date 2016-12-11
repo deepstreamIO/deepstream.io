@@ -1,5 +1,6 @@
-let C = require('../constants/constants'),
-  SEP = C.MESSAGE_PART_SEPERATOR
+const C = require('../constants/constants')
+
+const SEP = C.MESSAGE_PART_SEPERATOR
 
 /**
  * Creates a deepstream message string, based on the
@@ -12,11 +13,10 @@ let C = require('../constants/constants'),
  * @returns {String} deepstream message string
  */
 exports.getMsg = function (topic, action, data) {
-  let sendData = [topic, action],
-    i
+  const sendData = [topic, action]
 
   if (data) {
-    for (i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
       if (typeof data[i] === 'object') {
         sendData.push(JSON.stringify(data[i]))
       } else {
@@ -43,9 +43,9 @@ exports.getMsg = function (topic, action, data) {
 exports.getErrorMsg = function (topic, type, message) {
   if (message instanceof Array) {
     return `${topic + SEP}E${SEP}${type}${SEP}${message.join(SEP)}${C.MESSAGE_SEPERATOR}`
-  } else {
-    return `${topic + SEP}E${SEP}${type}${SEP}${message}${C.MESSAGE_SEPERATOR}`
   }
+
+  return `${topic + SEP}E${SEP}${type}${SEP}${message}${C.MESSAGE_SEPERATOR}`
 }
 
 /**

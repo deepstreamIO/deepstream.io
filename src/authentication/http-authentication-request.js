@@ -9,17 +9,17 @@ const C = require('../constants/constants')
  */
 module.exports = class HttpAuthenticationRequest {
 
-	/**
-	 * Creates and issues the request and starts the timeout
-	 *
-	 * @param   {Object}   data           Map with authData and connectionData
-	 * @param   {Object}   settings       contains requestTimeout and permittedStatusCodes
-	 * @param   {Function} callback       Called with error, isAuthenticated, userData
-	 * @param 	{Logger}   logger
-	 *
-	 * @constructor
-	 * @returns {void}
-	 */
+  /**
+   * Creates and issues the request and starts the timeout
+   *
+   * @param   {Object}   data           Map with authData and connectionData
+   * @param   {Object}   settings       contains requestTimeout and permittedStatusCodes
+   * @param   {Function} callback       Called with error, isAuthenticated, userData
+   * @param   {Logger}   logger
+   *
+   * @constructor
+   * @returns {void}
+   */
   constructor(data, settings, logger, callback) {
     this._settings = settings
     this._callback = callback
@@ -36,16 +36,16 @@ module.exports = class HttpAuthenticationRequest {
     needle.post(settings.endpointUrl, data, options, this._onComplete.bind(this))
   }
 
-	/**
-	 * Invoked for completed responses, whether succesful
-	 * or erroures
-	 *
-	 * @param {Error} error HTTP Error
-	 * @param {http.Response} response
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+  /**
+   * Invoked for completed responses, whether succesful
+   * or erroures
+   *
+   * @param {Error} error HTTP Error
+   * @param {http.Response} response
+   *
+   * @private
+   * @returns {void}
+   */
   _onComplete(error, response) {
     if (error) {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.AUTH_ERROR, `http auth error: ${error}`)
@@ -69,12 +69,12 @@ module.exports = class HttpAuthenticationRequest {
     this._destroy()
   }
 
-	/**
-	 * Destroys the class
-	 *
-	 * @private
-	 * @returns {void}
-	 */
+  /**
+   * Destroys the class
+   *
+   * @private
+   * @returns {void}
+   */
   _destroy() {
     this._callback = null
     this._settings = null

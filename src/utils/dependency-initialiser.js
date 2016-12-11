@@ -1,6 +1,7 @@
-let C = require('../constants/constants'),
-  EventEmitter = require('events').EventEmitter,
-  utils = require('util')
+const C = require('../constants/constants')
+const utils = require('util')
+
+const EventEmitter = require('events').EventEmitter
 
 /**
  * This class is used to track the initialisation of

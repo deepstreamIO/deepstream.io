@@ -1,9 +1,9 @@
-let C = require('../constants/constants'),
-  SubscriptionRegistry = require('../utils/subscription-registry'),
-  ListenerRegistry = require('../listen/listener-registry'),
-  messageParser = require('../message/message-parser'),
-  messageBuilder = require('../message/message-builder'),
-  STRING = 'string'
+const C = require('../constants/constants')
+const SubscriptionRegistry = require('../utils/subscription-registry')
+const ListenerRegistry = require('../listen/listener-registry')
+const messageBuilder = require('../message/message-builder')
+
+const STRING = 'string'
 
 /**
  * Handles incoming and outgoing messages for the EVENT topic.
@@ -38,15 +38,15 @@ EventHandler.prototype.handle = function (socketWrapper, message) {
     this._triggerEvent(socketWrapper, message)
   }
 
-	/*
-	 * Listen to requests for a particular event or events
-	 * whose names match a pattern
-	 */
+  /*
+   * Listen to requests for a particular event or events
+   * whose names match a pattern
+   */
   else if (message.action === C.ACTIONS.LISTEN ||
-		message.action === C.ACTIONS.UNLISTEN ||
-		message.action === C.ACTIONS.LISTEN_ACCEPT ||
-		message.action === C.ACTIONS.LISTEN_REJECT ||
-		message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
+    message.action === C.ACTIONS.UNLISTEN ||
+    message.action === C.ACTIONS.LISTEN_ACCEPT ||
+    message.action === C.ACTIONS.LISTEN_REJECT ||
+    message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
     this._listenerRegistry.handle(socketWrapper, message)
   } else {
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
@@ -94,7 +94,7 @@ EventHandler.prototype._removeSubscriber = function (socketWrapper, message) {
  * be triggered by messages coming in from both clients and the message connector.
  *
  * @param {String|SocketWrapper} messageSource If messageSource is the constant SOURCE_MESSAGE_CONNECTOR
- * 												the message was received from the message connector
+ *                        the message was received from the message connector
  *
  * @param {Object} message parsed and permissioned deepstream message
  *
@@ -132,10 +132,10 @@ EventHandler.prototype._triggerEvent = function (messageSource, message) {
 EventHandler.prototype._validateSubscriptionMessage = function (socketWrapper, message) {
   if (message.data && message.data.length === 1 && typeof message.data[0] === STRING) {
     return true
-  } else {
-    socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-    return false
   }
+
+  socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+  return false
 }
 
 module.exports = EventHandler
