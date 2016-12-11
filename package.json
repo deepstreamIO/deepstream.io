@@ -10,6 +10,7 @@
     "test": "test"
   },
   "scripts": {
+    "lint": "node_modules/.bin/eslint src/",
     "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "node jasmine-runner",
@@ -41,12 +42,16 @@
     "n0p3": "^1.0.2",
     "nexe": "^1.1.2",
     "proxyquire": "1.7.10",
-    "watch": "^1.0.0"
+    "watch": "^1.0.0",
+    "eslint-config-deepstream": ">=0.1.0"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",
   "bugs": {
     "url": "https://github.com/deepstreamIO/deepstream.io/issues"
   },
-  "homepage": "http://deepstream.io"
+  "homepage": "http://deepstream.io",
+  "eslintConfig": {
+    "extends": "deepstream"
+  }
 }

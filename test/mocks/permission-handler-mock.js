@@ -1,19 +1,22 @@
-var PermissionHandlerMock = function() {
-	this.reset();
-};
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-PermissionHandlerMock.prototype.reset = function() {
-	this.nextCanPerformActionResult = true;
-	this.lastCanPerformActionQueryArgs = null;
-};
+const PermissionHandlerMock = function () {
+  this.reset()
+}
 
-PermissionHandlerMock.prototype.canPerformAction = function( username, message, callback) {
-	this.lastCanPerformActionQueryArgs = arguments;
-	if( typeof this.nextCanPerformActionResult === 'string' ) {
-		callback( this.nextCanPerformActionResult );
-	} else {
-		callback( null, this.nextCanPerformActionResult );
-	}
-};
+PermissionHandlerMock.prototype.reset = function () {
+  this.nextCanPerformActionResult = true
+  this.lastCanPerformActionQueryArgs = null
+}
 
-module.exports = new PermissionHandlerMock();
+PermissionHandlerMock.prototype.canPerformAction = function (username, message, callback) {
+  this.lastCanPerformActionQueryArgs = arguments
+  if (typeof this.nextCanPerformActionResult === 'string') {
+    callback(this.nextCanPerformActionResult)
+  } else {
+    callback(null, this.nextCanPerformActionResult)
+  }
+}
+
+module.exports = new PermissionHandlerMock()

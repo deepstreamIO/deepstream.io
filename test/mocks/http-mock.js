@@ -1,46 +1,49 @@
-var EventEmitter = require('events').EventEmitter;
-var util = require('util');
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-var HttpServerMock = function() {
-	EventEmitter.call(this);
-	this.listening = false;
-	this.closed = false;
-};
+const EventEmitter = require('events').EventEmitter
+const util = require('util')
 
-util.inherits(HttpServerMock, EventEmitter);
+const HttpServerMock = function () {
+  EventEmitter.call(this)
+  this.listening = false
+  this.closed = false
+}
 
-HttpServerMock.prototype.listen = function ( port, host, callback ) {
-	this._port = port;
-	this._host = host;
-	var server = this;
-	process.nextTick( function() {
-		server.listening = true;
-		server.emit('listening');
-		callback && callback();
-	});
-};
+util.inherits(HttpServerMock, EventEmitter)
 
-HttpServerMock.prototype.close = function( callback ) {
-	this.closed = true;
-	this.emit('close');
-	callback && callback();
-};
+HttpServerMock.prototype.listen = function (port, host, callback) {
+  this._port = port
+  this._host = host
+  const server = this
+  process.nextTick(() => {
+    server.listening = true
+    server.emit('listening')
+    callback && callback()
+  })
+}
 
-HttpServerMock.prototype.address = function() {
-	return {
-		address: this._host,
-		port: this._port
-	};
-};
+HttpServerMock.prototype.close = function (callback) {
+  this.closed = true
+  this.emit('close')
+  callback && callback()
+}
 
-var HttpMock = function(){
-	this.nextServerIsListening = false;
-};
+HttpServerMock.prototype.address = function () {
+  return {
+    address: this._host,
+    port: this._port
+  }
+}
 
-HttpMock.prototype.createServer = function() {
-	var server = new HttpServerMock();
-	server.listening = this.nextServerIsListening;
-	return server;
-};
+const HttpMock = function () {
+  this.nextServerIsListening = false
+}
 
-module.exports = HttpMock;
+HttpMock.prototype.createServer = function () {
+  const server = new HttpServerMock()
+  server.listening = this.nextServerIsListening
+  return server
+}
+
+module.exports = HttpMock

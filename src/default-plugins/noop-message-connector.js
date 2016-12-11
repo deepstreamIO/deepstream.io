@@ -1,6 +1,8 @@
-var noop = function(){};
+'use strict'
 
-exports.subscribe = noop;
-exports.publish = noop;
-exports.unsubscribe = noop;
-exports.isReady = true;
+const noop = function () {}
+
+exports.subscribe = noop
+exports.publish = noop
+exports.unsubscribe = noop
+exports.isReady = true

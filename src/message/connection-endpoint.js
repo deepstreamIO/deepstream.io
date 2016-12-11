@@ -1,14 +1,16 @@
-var C = require( '../constants/constants' ),
-	messageParser = require( './message-parser' ),
-	messageBuilder = require( './message-builder' ),
-	SocketWrapper = require( './socket-wrapper' ),
-	fileUtils = require( '../config/file-utils' ),
-	events = require( 'events' ),
-	util = require( 'util' ),
-	http = require( 'http' ),
-	https = require( 'https' ),
-	uws = require('uws'),
-	OPEN = 'OPEN';
+'use strict'
+
+const C = require('../constants/constants')
+const messageParser = require('./message-parser')
+const messageBuilder = require('./message-builder')
+const SocketWrapper = require('./socket-wrapper')
+const events = require('events')
+const util = require('util')
+const http = require('http')
+const https = require('https')
+const uws = require('uws')
+
+const OPEN = 'OPEN'
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -22,36 +24,36 @@ var C = require( '../constants/constants' ),
  * @param {Object} options the extended default options
  * @param {Function} readyCallback will be invoked once both the ws is ready
  */
-var ConnectionEndpoint = function( options, readyCallback ) {
-	this._options = options;
-	this._readyCallback = readyCallback;
+const ConnectionEndpoint = function (options, readyCallback) {
+  this._options = options
+  this._readyCallback = readyCallback
 
-	this._wsReady = false;
-	this._wsServerClosed = false;
+  this._wsReady = false
+  this._wsServerClosed = false
 
-	this._server = this._createHttpServer();
-	this._server.listen( this._options.port, this._options.host );
-	this._server.on('request', this._handleHealthCheck.bind( this ));
-	this._options.logger.log(
-		C.LOG_LEVEL.INFO,
-		C.EVENT.INFO,
-		'Listening for health checks on path ' + options.healthCheckPath
-	);
+  this._server = this._createHttpServer()
+  this._server.listen(this._options.port, this._options.host)
+  this._server.on('request', this._handleHealthCheck.bind(this))
+  this._options.logger.log(
+    C.LOG_LEVEL.INFO,
+    C.EVENT.INFO,
+    `Listening for health checks on path ${options.healthCheckPath}`
+  )
 
-	this._ws = new uws.Server({
-		server: this._server,
-		perMessageDeflate: false,
-		path: this._options.urlPath
-	} );
-	this._ws.startAutoPing( this._options.heartbeatInterval, messageBuilder.getMsg( C.TOPIC.CONNECTION, C.ACTIONS.PING ) );
-	this._server.once( 'listening', this._checkReady.bind( this ) );
-	this._ws.on( 'error', this._onError.bind( this ) );
-	this._ws.on( 'connection', this._onConnection.bind( this ) );
+  this._ws = new uws.Server({
+    server: this._server,
+    perMessageDeflate: false,
+    path: this._options.urlPath
+  })
+  this._ws.startAutoPing(this._options.heartbeatInterval, messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING))
+  this._server.once('listening', this._checkReady.bind(this))
+  this._ws.on('error', this._onError.bind(this))
+  this._ws.on('connection', this._onConnection.bind(this))
 
-	this._authenticatedSockets = [];
-};
+  this._authenticatedSockets = []
+}
 
-util.inherits( ConnectionEndpoint, events.EventEmitter );
+util.inherits(ConnectionEndpoint, events.EventEmitter)
 
 /**
  * Called for every message that's received
@@ -67,7 +69,7 @@ util.inherits( ConnectionEndpoint, events.EventEmitter );
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
+ConnectionEndpoint.prototype.onMessage = function (socketWrapper, message) {}
 
 /**
  * Closes the ws server connection. The ConnectionEndpoint
@@ -75,16 +77,16 @@ ConnectionEndpoint.prototype.onMessage = function( socketWrapper, message ) {};
  * @public
  * @returns {void}
  */
-ConnectionEndpoint.prototype.close = function() {
-	this._server.removeAllListeners( 'request' );
-	this._ws.removeAllListeners( 'connection' );
-	this._ws.close();
+ConnectionEndpoint.prototype.close = function () {
+  this._server.removeAllListeners('request')
+  this._ws.removeAllListeners('connection')
+  this._ws.close()
 
-	this._server.close( function(){
-		this._wsServerClosed = true;
-		this._checkClosed();
-	}.bind( this ) );
-};
+  this._server.close(() => {
+    this._wsServerClosed = true
+    this._checkClosed()
+  })
+}
 
 /**
  * Returns the number of currently connected clients. This is used by the
@@ -93,9 +95,9 @@ ConnectionEndpoint.prototype.close = function() {
  * @public
  * @returns {Number} connectionCount
  */
-ConnectionEndpoint.prototype.getConnectionCount = function() {
-	return this._authenticatedSockets.length;
-};
+ConnectionEndpoint.prototype.getConnectionCount = function () {
+  return this._authenticatedSockets.length
+}
 
 /**
  * Creates an HTTP or HTTPS server for ws to attach itself to,
@@ -104,22 +106,22 @@ ConnectionEndpoint.prototype.getConnectionCount = function() {
  * @private
  * @returns {http.HttpServer | http.HttpsServer}
  */
-ConnectionEndpoint.prototype._createHttpServer = function() {
-	if( this._isHttpsServer() ) {
-		var httpsOptions = {
-			key: this._options.sslKey,
-			cert: this._options.sslCert
-		};
+ConnectionEndpoint.prototype._createHttpServer = function () {
+  if (this._isHttpsServer()) {
+    const httpsOptions = {
+      key: this._options.sslKey,
+      cert: this._options.sslCert
+    }
 
-		if ( this._options.sslCa ) {
-			httpsOptions.ca = this._options.sslCa;
-		}
+    if (this._options.sslCa) {
+      httpsOptions.ca = this._options.sslCa
+    }
 
-		return https.createServer( httpsOptions );
-	} else {
-		return http.createServer();
-	}
-};
+    return https.createServer(httpsOptions)
+  }
+
+  return http.createServer()
+}
 
 /**
  * Responds to http health checks.
@@ -128,11 +130,11 @@ ConnectionEndpoint.prototype._createHttpServer = function() {
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._handleHealthCheck = function( req, res ) {
-	if ( req.method === 'GET' && req.url === this._options.healthCheckPath ) {
-		res.writeHead( 200 );
-		res.end();
-	}
+ConnectionEndpoint.prototype._handleHealthCheck = function (req, res) {
+  if (req.method === 'GET' && req.url === this._options.healthCheckPath) {
+    res.writeHead(200)
+    res.end()
+  }
 }
 
 /**
@@ -142,13 +144,13 @@ ConnectionEndpoint.prototype._handleHealthCheck = function( req, res ) {
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._checkClosed = function() {
-	if( this._wsServerClosed === false ) {
-		return;
-	}
+ConnectionEndpoint.prototype._checkClosed = function () {
+  if (this._wsServerClosed === false) {
+    return
+  }
 
-	this.emit( 'close' );
-};
+  this.emit('close')
+}
 
 /**
  * Callback for 'connection' event. Receives
@@ -159,24 +161,24 @@ ConnectionEndpoint.prototype._checkClosed = function() {
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._onConnection = function( socket ) {
-	var socketWrapper = new SocketWrapper( socket, this._options ),
-		handshakeData = socketWrapper.getHandshakeData(),
-		logMsg = 'from ' + handshakeData.referer + ' (' + handshakeData.remoteAddress + ')',
-		disconnectTimer;
+ConnectionEndpoint.prototype._onConnection = function (socket) {
+  const socketWrapper = new SocketWrapper(socket, this._options)
+  const handshakeData = socketWrapper.getHandshakeData()
+  const logMsg = `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
+  let disconnectTimer
 
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg );
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg)
 
-	if( this._options.unauthenticatedClientTimeout !== null ) {
-		disconnectTimer = setTimeout( this._processConnectionTimeout.bind( this, socketWrapper ), this._options.unauthenticatedClientTimeout );
-		socketWrapper.once( 'close', clearTimeout.bind( null, disconnectTimer ) );
-	}
+  if (this._options.unauthenticatedClientTimeout !== null) {
+    disconnectTimer = setTimeout(this._processConnectionTimeout.bind(this, socketWrapper), this._options.unauthenticatedClientTimeout)
+    socketWrapper.once('close', clearTimeout.bind(null, disconnectTimer))
+  }
 
-	socketWrapper.connectionCallback = this._processConnectionMessage.bind( this, socketWrapper );
-	socketWrapper.authCallBack = this._authenticateConnection.bind( this, socketWrapper, disconnectTimer );
-	socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.CHALLENGE );
-	socket.on( 'message', socketWrapper.connectionCallback );
-};
+  socketWrapper.connectionCallback = this._processConnectionMessage.bind(this, socketWrapper)
+  socketWrapper.authCallBack = this._authenticateConnection.bind(this, socketWrapper, disconnectTimer)
+  socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.CHALLENGE)
+  socket.on('message', socketWrapper.connectionCallback)
+}
 
 /**
  * Always challenges the client that connects. This will be opened up later to allow users to put in their
@@ -188,30 +190,27 @@ ConnectionEndpoint.prototype._onConnection = function( socket ) {
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processConnectionMessage = function( socketWrapper, connectionMessage ) {
-	var msg = messageParser.parse( connectionMessage )[ 0 ];
+ConnectionEndpoint.prototype._processConnectionMessage = function (socketWrapper, connectionMessage) {
+  const msg = messageParser.parse(connectionMessage)[0]
 
-	if( msg === null || msg === undefined ) {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage );
-		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage );
-		socketWrapper.destroy();
-	}
-	else if( msg.topic !== C.TOPIC.CONNECTION ) {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, 'invalid connection message ' + connectionMessage );
-		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message' );
-	}
-	else if( msg.action === C.ACTIONS.PONG ) {
-		return;
-	}
-	else if( msg.action === C.ACTIONS.CHALLENGE_RESPONSE ) {
-		socketWrapper.socket.removeListener( 'message', socketWrapper.connectionCallback );
-		socketWrapper.socket.on( 'message', socketWrapper.authCallBack );
-		socketWrapper.sendMessage( C.TOPIC.CONNECTION, C.ACTIONS.ACK );
-	} else {
-		this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action );
-		socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, 'unknown action ' + msg.action );
-	}
-};
+  if (msg === null || msg === undefined) {
+    this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
+    socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
+    socketWrapper.destroy()
+  } else if (msg.topic !== C.TOPIC.CONNECTION) {
+    this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
+    socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message')
+  } else if (msg.action === C.ACTIONS.PONG) {
+    return
+  } else if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
+    socketWrapper.socket.removeListener('message', socketWrapper.connectionCallback)
+    socketWrapper.socket.on('message', socketWrapper.authCallBack)
+    socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.ACK)
+  } else {
+    this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action)
+    socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, `unknown action ${msg.action}`)
+  }
+}
 
 /**
  * Callback for the first message that's received from the socket.
@@ -226,59 +225,58 @@ ConnectionEndpoint.prototype._processConnectionMessage = function( socketWrapper
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, disconnectTimeout, authMsg ) {
-	var msg = messageParser.parse( authMsg )[ 0 ],
-		logMsg,
-		authData,
-		errorMsg;
+ConnectionEndpoint.prototype._authenticateConnection = function (socketWrapper, disconnectTimeout, authMsg) {
+  const msg = messageParser.parse(authMsg)[0]
+  let authData
+  let errorMsg
 
-	/**
-	 * Log the authentication attempt
-	 */
-	logMsg = socketWrapper.getHandshakeData().remoteAddress  + ': ' + authMsg;
-	this._options.logger.log( C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg );
+  /**
+   * Log the authentication attempt
+   */
+  const logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
+  this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
 
-	/**
-	 * Ignore pong messages
-	 */
-	if( msg && msg.topic === C.TOPIC.CONNECTION && msg.action === C.ACTIONS.PONG ) {
-		return;
-	}
+  /**
+   * Ignore pong messages
+   */
+  if (msg && msg.topic === C.TOPIC.CONNECTION && msg.action === C.ACTIONS.PONG) {
+    return
+  }
 
-	/**
-	 * Ensure the message is a valid authentication message
-	 */
-	if( !msg || msg.topic !== C.TOPIC.AUTH || msg.action !== C.ACTIONS.REQUEST || msg.data.length !== 1 ) {
-		errorMsg = this._options.logInvalidAuthData === true ? authMsg : '';
-		this._sendInvalidAuthMsg( socketWrapper, errorMsg );
-		return;
-	}
+  /**
+   * Ensure the message is a valid authentication message
+   */
+  if (!msg || msg.topic !== C.TOPIC.AUTH || msg.action !== C.ACTIONS.REQUEST || msg.data.length !== 1) {
+    errorMsg = this._options.logInvalidAuthData === true ? authMsg : ''
+    this._sendInvalidAuthMsg(socketWrapper, errorMsg)
+    return
+  }
 
-	/**
-	 * Ensure the authentication data is valid JSON
-	 */
-	try{
-		authData = this._getValidAuthData( msg.data[ 0 ] );
-	} catch( e ) {
-		errorMsg = 'Error parsing auth message';
+  /**
+   * Ensure the authentication data is valid JSON
+   */
+  try {
+    authData = this._getValidAuthData(msg.data[0])
+  } catch (e) {
+    errorMsg = 'Error parsing auth message'
 
-		if( this._options.logInvalidAuthData === true ) {
-			errorMsg += ' "' + authMsg + '": ' + e.toString();
-		}
+    if (this._options.logInvalidAuthData === true) {
+      errorMsg += ` "${authMsg}": ${e.toString()}`
+    }
 
-		this._sendInvalidAuthMsg( socketWrapper, errorMsg );
-		return;
-	}
+    this._sendInvalidAuthMsg(socketWrapper, errorMsg)
+    return
+  }
 
-	/**
-	 * Forward for authentication
-	 */
-	this._options.authenticationHandler.isValidUser(
-		socketWrapper.getHandshakeData(),
-		authData,
-		this._processAuthResult.bind( this, authData, socketWrapper, disconnectTimeout )
-	);
-};
+  /**
+   * Forward for authentication
+   */
+  this._options.authenticationHandler.isValidUser(
+    socketWrapper.getHandshakeData(),
+    authData,
+    this._processAuthResult.bind(this, authData, socketWrapper, disconnectTimeout)
+  )
+}
 
 /**
  * Will be called for syntactically incorrect auth messages. Logs
@@ -291,11 +289,11 @@ ConnectionEndpoint.prototype._authenticateConnection = function( socketWrapper, 
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._sendInvalidAuthMsg = function( socketWrapper, msg ) {
-	this._options.logger.log( C.LOG_LEVEL.WARN, C.EVENT.INVALID_AUTH_MSG, this._options.logInvalidAuthData ? msg : '' );
-	socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_MSG, 'invalid authentication message' );
-	socketWrapper.destroy();
-};
+ConnectionEndpoint.prototype._sendInvalidAuthMsg = function (socketWrapper, msg) {
+  this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_AUTH_MSG, this._options.logInvalidAuthData ? msg : '')
+  socketWrapper.sendError(C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_MSG, 'invalid authentication message')
+  socketWrapper.destroy()
+}
 
 /**
  * Callback for succesfully validated sockets. Removes
@@ -309,24 +307,24 @@ ConnectionEndpoint.prototype._sendInvalidAuthMsg = function( socketWrapper, msg 
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWrapper, userData ) {
-	socketWrapper.socket.removeListener( 'message', socketWrapper.authCallBack );
-	socketWrapper.once( 'close', this._onSocketClose.bind( this, socketWrapper ) );
-	socketWrapper.socket.on( 'message', function( msg ){ this.onMessage( socketWrapper, msg ); }.bind( this ));
-	this._appendDataToSocketWrapper( socketWrapper, userData );
-	if( typeof userData.clientData === 'undefined' ) {
-		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK );
-	} else {
-		socketWrapper.sendMessage( C.TOPIC.AUTH, C.ACTIONS.ACK, [ messageBuilder.typed( userData.clientData ) ] );
-	}
+ConnectionEndpoint.prototype._registerAuthenticatedSocket = function (socketWrapper, userData) {
+  socketWrapper.socket.removeListener('message', socketWrapper.authCallBack)
+  socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
+  socketWrapper.socket.on('message', (msg) => { this.onMessage(socketWrapper, msg) })
+  this._appendDataToSocketWrapper(socketWrapper, userData)
+  if (typeof userData.clientData === 'undefined') {
+    socketWrapper.sendMessage(C.TOPIC.AUTH, C.ACTIONS.ACK)
+  } else {
+    socketWrapper.sendMessage(C.TOPIC.AUTH, C.ACTIONS.ACK, [messageBuilder.typed(userData.clientData)])
+  }
 
-	if( socketWrapper.user !== OPEN ) {
-		this.emit( 'client-connected', socketWrapper );
-	}
+  if (socketWrapper.user !== OPEN) {
+    this.emit('client-connected', socketWrapper)
+  }
 
-	this._authenticatedSockets.push( socketWrapper );
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user );
-};
+  this._authenticatedSockets.push(socketWrapper)
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user)
+}
 
 /**
  * Append connection data to the socket wrapper
@@ -338,10 +336,10 @@ ConnectionEndpoint.prototype._registerAuthenticatedSocket  = function( socketWra
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._appendDataToSocketWrapper = function( socketWrapper, userData ) {
-	socketWrapper.user = userData.username || OPEN;
-	socketWrapper.authData = userData.serverData || null;
-};
+ConnectionEndpoint.prototype._appendDataToSocketWrapper = function (socketWrapper, userData) {
+  socketWrapper.user = userData.username || OPEN
+  socketWrapper.authData = userData.serverData || null
+}
 
 /**
  * Callback for invalid credentials. Will notify the client
@@ -356,23 +354,23 @@ ConnectionEndpoint.prototype._appendDataToSocketWrapper = function( socketWrappe
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processInvalidAuth = function( clientData, authData, socketWrapper ) {
-	var logMsg = 'invalid authentication data';
+ConnectionEndpoint.prototype._processInvalidAuth = function (clientData, authData, socketWrapper) {
+  let logMsg = 'invalid authentication data'
 
-	if( this._options.logInvalidAuthData === true ) {
-		logMsg += ': ' + JSON.stringify( authData );
-	}
+  if (this._options.logInvalidAuthData === true) {
+    logMsg += `: ${JSON.stringify(authData)}`
+  }
 
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INVALID_AUTH_DATA, logMsg );
-	socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_DATA, messageBuilder.typed( clientData ) );
-	socketWrapper.authAttempts++;
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INVALID_AUTH_DATA, logMsg)
+  socketWrapper.sendError(C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_DATA, messageBuilder.typed(clientData))
+  socketWrapper.authAttempts++
 
-	if( socketWrapper.authAttempts >= this._options.maxAuthAttempts ) {
-		this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts' );
-		socketWrapper.sendError( C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, messageBuilder.typed( 'too many authentication attempts' ) );
-		socketWrapper.destroy();
-	}
-};
+  if (socketWrapper.authAttempts >= this._options.maxAuthAttempts) {
+    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts')
+    socketWrapper.sendError(C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, messageBuilder.typed('too many authentication attempts'))
+    socketWrapper.destroy()
+  }
+}
 
 /**
  * Callback for connections that have not authenticated succesfully within
@@ -384,12 +382,12 @@ ConnectionEndpoint.prototype._processInvalidAuth = function( clientData, authDat
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processConnectionTimeout = function( socketWrapper ) {
-	var log = 'connection has not authenticated successfully in the expected time';
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log );
-	socketWrapper.sendError( C.TOPIC.CONNECTION, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, messageBuilder.typed( log ) );
-	socketWrapper.destroy();
-};
+ConnectionEndpoint.prototype._processConnectionTimeout = function (socketWrapper) {
+  const log = 'connection has not authenticated successfully in the expected time'
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log)
+  socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, messageBuilder.typed(log))
+  socketWrapper.destroy()
+}
 
 /**
  * Callback for the results returned by the permissionHandler
@@ -403,17 +401,17 @@ ConnectionEndpoint.prototype._processConnectionTimeout = function( socketWrapper
  *
  * @returns {void}
  */
-ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrapper, disconnectTimeout, isAllowed, userData ) {
-	userData = userData || {};
+ConnectionEndpoint.prototype._processAuthResult = function (authData, socketWrapper, disconnectTimeout, isAllowed, userData) {
+  userData = userData || {}
 
-	clearTimeout( disconnectTimeout );
+  clearTimeout(disconnectTimeout)
 
-	if( isAllowed === true ) {
-		this._registerAuthenticatedSocket( socketWrapper, userData );
-	} else {
-		this._processInvalidAuth( userData.clientData, authData, socketWrapper );//todo
-	}
-};
+  if (isAllowed === true) {
+    this._registerAuthenticatedSocket(socketWrapper, userData)
+  } else {
+    this._processInvalidAuth(userData.clientData, authData, socketWrapper)// todo
+  }
+}
 
 /**
  * Called for the ready event of the ws server.
@@ -423,16 +421,14 @@ ConnectionEndpoint.prototype._processAuthResult = function( authData, socketWrap
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
-	var msg, address, wsReady;
+ConnectionEndpoint.prototype._checkReady = function (endpoint) {
+  const address = this._server.address()
+  const msg = `Listening for websocket connections on ${address.address}:${address.port}${this._options.urlPath}`
+  this._wsReady = true
 
-	var address = this._server.address();
-	var msg = `Listening for websocket connections on ${address.address}:${address.port}${this._options.urlPath}`;
-	this._wsReady = true;
-
-	this._options.logger.log( C.LOG_LEVEL.INFO, C.EVENT.INFO, msg );
-	this._readyCallback();
-};
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, msg)
+  this._readyCallback()
+}
 
 /**
  * Generic callback for connection errors. This will most often be called
@@ -443,9 +439,9 @@ ConnectionEndpoint.prototype._checkReady = function( endpoint ) {
  * @private
  * @returns {void}
  */
-ConnectionEndpoint.prototype._onError = function( error ) {
-	this._options.logger.log( C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error );
-};
+ConnectionEndpoint.prototype._onError = function (error) {
+  this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error)
+}
 
 /**
 * Notifies the (optional) onClientDisconnect method of the permissionHandler
@@ -456,15 +452,15 @@ ConnectionEndpoint.prototype._onError = function( error ) {
 * @private
 * @returns {void}
 */
-ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
-	if( this._options.authenticationHandler.onClientDisconnect ) {
-		this._options.authenticationHandler.onClientDisconnect( socketWrapper.user );
-	}
+ConnectionEndpoint.prototype._onSocketClose = function (socketWrapper) {
+  if (this._options.authenticationHandler.onClientDisconnect) {
+    this._options.authenticationHandler.onClientDisconnect(socketWrapper.user)
+  }
 
-	if( socketWrapper.user !== OPEN ) {
-		this.emit( 'client-disconnected', socketWrapper );
-	}
-};
+  if (socketWrapper.user !== OPEN) {
+    this.emit('client-disconnected', socketWrapper)
+  }
+}
 
 /**
 * Returns whether or not sslKey and sslCert have been set to start a https server.
@@ -474,19 +470,19 @@ ConnectionEndpoint.prototype._onSocketClose = function( socketWrapper ) {
 * @private
 * @returns {boolean}
 */
-ConnectionEndpoint.prototype._isHttpsServer = function( ) {
-	var isHttps = false;
-	if( this._options.sslKey || this._options.sslCert ) {
-		if( !this._options.sslKey ) {
-			throw new Error( 'Must also include sslKey in order to use HTTPS' );
-		}
-		if( !this._options.sslCert ) {
-			throw new Error( 'Must also include sslCert in order to use HTTPS' );
-		}
-		isHttps = true;
-	}
-	return isHttps;
-};
+ConnectionEndpoint.prototype._isHttpsServer = function () {
+  let isHttps = false
+  if (this._options.sslKey || this._options.sslCert) {
+    if (!this._options.sslKey) {
+      throw new Error('Must also include sslKey in order to use HTTPS')
+    }
+    if (!this._options.sslCert) {
+      throw new Error('Must also include sslCert in order to use HTTPS')
+    }
+    isHttps = true
+  }
+  return isHttps
+}
 
 /**
 * Checks for authentication data and throws if null or not well formed
@@ -496,12 +492,12 @@ ConnectionEndpoint.prototype._isHttpsServer = function( ) {
 * @private
 * @returns {void}
 */
-ConnectionEndpoint.prototype._getValidAuthData = function( authData ) {
-	var parsedData = JSON.parse( authData );
-	if( parsedData === null || parsedData === undefined || typeof parsedData !== 'object' ) {
-		throw new Error( 'invalid authentication data ' + authData )
-	}
-	return parsedData;
-};
+ConnectionEndpoint.prototype._getValidAuthData = function (authData) {
+  const parsedData = JSON.parse(authData)
+  if (parsedData === null || parsedData === undefined || typeof parsedData !== 'object') {
+    throw new Error(`invalid authentication data ${authData}`)
+  }
+  return parsedData
+}
 
-module.exports = ConnectionEndpoint;
+module.exports = ConnectionEndpoint

@@ -1,111 +1,111 @@
-/* global it, describe, expect, jasmine */
-var proxyquire = require( 'proxyquire' ),
-	RecordDeletion = require( '../../src/record/record-deletion' ),
-	SocketWrapper = require( '../../src/message/socket-wrapper' ),
-	SocketMock = require( '../mocks/socket-mock' ),
-	msg = require( '../test-helper/test-helper' ).msg,
-	deletionMsg = { topic: 'R', action: 'D', data: [ 'someRecord' ] };
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-var getOptions = function() {
-	return {
-		storage: { delete: jasmine.createSpy( 'storage.delete' ) },
-		cache: { delete: jasmine.createSpy( 'storage.cache' ) },
-		cacheRetrievalTimeout: 1000,
-		storageRetrievalTimeout: 1000,
-		logger: { log: jasmine.createSpy( 'logger.log' ) }
-	};
-};
+let proxyquire = require('proxyquire'),
+  RecordDeletion = require('../../src/record/record-deletion'),
+  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketMock = require('../mocks/socket-mock'),
+  msg = require('../test-helper/test-helper').msg,
+  deletionMsg = { topic: 'R', action: 'D', data: ['someRecord'] }
 
-describe( 'deletes records - happy path', function(){
-	var recordDeletion;
-	var options = getOptions();
-	var sender = new SocketWrapper( new SocketMock(), options );
-	var successCallback = jasmine.createSpy( 'successCallback' );
+const getOptions = function () {
+  return {
+    storage: { delete: jasmine.createSpy('storage.delete') },
+    cache: { delete: jasmine.createSpy('storage.cache') },
+    cacheRetrievalTimeout: 1000,
+    storageRetrievalTimeout: 1000,
+    logger: { log: jasmine.createSpy('logger.log') }
+  }
+}
 
-	it( 'creates the record deletion', function(){
-		expect( options.cache.delete ).not.toHaveBeenCalled();
-		expect( options.storage.delete ).not.toHaveBeenCalled();
-		recordDeletion = new RecordDeletion( options, sender, deletionMsg, successCallback );
-		expect( options.cache.delete.calls.argsFor( 0 )[ 0 ] ).toBe( 'someRecord' );
-		expect( options.storage.delete.calls.argsFor( 0 )[ 0 ] ).toBe( 'someRecord' );
-	});
+describe('deletes records - happy path', () => {
+  let recordDeletion
+  const options = getOptions()
+  const sender = new SocketWrapper(new SocketMock(), options)
+  const successCallback = jasmine.createSpy('successCallback')
 
-	it( 'receives a synchronous response from cache', function(){
-		expect( recordDeletion._isDestroyed ).toBe( false );
-		expect( successCallback ).not.toHaveBeenCalled();
-		options.cache.delete.calls.argsFor( 0 )[ 1 ]( null );
-	});
+  it('creates the record deletion', () => {
+    expect(options.cache.delete).not.toHaveBeenCalled()
+    expect(options.storage.delete).not.toHaveBeenCalled()
+    recordDeletion = new RecordDeletion(options, sender, deletionMsg, successCallback)
+    expect(options.cache.delete.calls.argsFor(0)[0]).toBe('someRecord')
+    expect(options.storage.delete.calls.argsFor(0)[0]).toBe('someRecord')
+  })
 
-	it( 'receives a synchronous response from storage that completes the recordDeletion', function(){
-		expect( recordDeletion._isDestroyed ).toBe( false );
-		expect( successCallback ).not.toHaveBeenCalled();
-		expect( sender.socket.lastSendMessage ).toBe( null );
-		options.storage.delete.calls.argsFor( 0 )[ 1 ]( null );
-		expect( sender.socket.lastSendMessage ).toBe( msg( 'R|A|D|someRecord+' ) );
-		expect( recordDeletion._isDestroyed ).toBe( true );
-		expect( successCallback ).toHaveBeenCalled();
-	});
-});
+  it('receives a synchronous response from cache', () => {
+    expect(recordDeletion._isDestroyed).toBe(false)
+    expect(successCallback).not.toHaveBeenCalled()
+    options.cache.delete.calls.argsFor(0)[1](null)
+  })
 
-describe( 'encounters an error during record deletion', function(){
-	var recordDeletion;
-	var options = getOptions();
-	var sender = new SocketWrapper( new SocketMock(), options );
-	var successCallback = jasmine.createSpy( 'successCallback' );
+  it('receives a synchronous response from storage that completes the recordDeletion', () => {
+    expect(recordDeletion._isDestroyed).toBe(false)
+    expect(successCallback).not.toHaveBeenCalled()
+    expect(sender.socket.lastSendMessage).toBe(null)
+    options.storage.delete.calls.argsFor(0)[1](null)
+    expect(sender.socket.lastSendMessage).toBe(msg('R|A|D|someRecord+'))
+    expect(recordDeletion._isDestroyed).toBe(true)
+    expect(successCallback).toHaveBeenCalled()
+  })
+})
 
-	it( 'creates the record deletion', function(){
-		expect( options.cache.delete ).not.toHaveBeenCalled();
-		expect( options.storage.delete ).not.toHaveBeenCalled();
-		recordDeletion = new RecordDeletion( options, sender, deletionMsg, successCallback );
-		expect( options.cache.delete.calls.argsFor( 0 )[ 0 ] ).toBe( 'someRecord' );
-		expect( options.storage.delete.calls.argsFor( 0 )[ 0 ] ).toBe( 'someRecord' );
-	});
+describe('encounters an error during record deletion', () => {
+  let recordDeletion
+  const options = getOptions()
+  const sender = new SocketWrapper(new SocketMock(), options)
+  const successCallback = jasmine.createSpy('successCallback')
 
-	it( 'receives an error from the cache', function(){
-		expect( recordDeletion._isDestroyed ).toBe( false );
-		expect( successCallback ).not.toHaveBeenCalled();
-		options.cache.delete.calls.argsFor( 0 )[ 1 ]( 'an error' );
-		expect( recordDeletion._isDestroyed ).toBe( true );
-		expect( successCallback ).not.toHaveBeenCalled();
-		expect( sender.socket.lastSendMessage ).toBe( msg( 'R|E|RECORD_DELETE_ERROR|an error+' ) );
-		expect( options.logger.log.calls.argsFor( 0 )).toEqual([ 3, 'RECORD_DELETE_ERROR', 'an error' ]);
-	});
+  it('creates the record deletion', () => {
+    expect(options.cache.delete).not.toHaveBeenCalled()
+    expect(options.storage.delete).not.toHaveBeenCalled()
+    recordDeletion = new RecordDeletion(options, sender, deletionMsg, successCallback)
+    expect(options.cache.delete.calls.argsFor(0)[0]).toBe('someRecord')
+    expect(options.storage.delete.calls.argsFor(0)[0]).toBe('someRecord')
+  })
 
-	it( 'receives a confirmation from storage after an error has occured', function(){
-		expect( recordDeletion._isDestroyed ).toBe( true );
-		options.storage.delete.calls.argsFor( 0 )[ 1 ]( null );
-	});
-});
+  it('receives an error from the cache', () => {
+    expect(recordDeletion._isDestroyed).toBe(false)
+    expect(successCallback).not.toHaveBeenCalled()
+    options.cache.delete.calls.argsFor(0)[1]('an error')
+    expect(recordDeletion._isDestroyed).toBe(true)
+    expect(successCallback).not.toHaveBeenCalled()
+    expect(sender.socket.lastSendMessage).toBe(msg('R|E|RECORD_DELETE_ERROR|an error+'))
+    expect(options.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'an error'])
+  })
 
-describe( 'doesn\'t delete excluded messages from storage', function(){
-	var recordDeletion;
-	var deletionMsg = { topic: 'R', action: 'D', data: [ 'no-storage/1' ] };
-	var options = getOptions();
-	options.storageExclusion = new RegExp( 'no-storage/' )
-	var sender = new SocketWrapper( new SocketMock(), options );
-	var successCallback = jasmine.createSpy( 'successCallback' );
+  it('receives a confirmation from storage after an error has occured', () => {
+    expect(recordDeletion._isDestroyed).toBe(true)
+    options.storage.delete.calls.argsFor(0)[1](null)
+  })
+})
 
-	it( 'creates the record deletion', function(){
-		expect( options.cache.delete ).not.toHaveBeenCalled();
-		expect( options.storage.delete ).not.toHaveBeenCalled();
+describe('doesn\'t delete excluded messages from storage', () => {
+  let recordDeletion
+  const deletionMsg = { topic: 'R', action: 'D', data: ['no-storage/1'] }
+  const options = getOptions()
+  options.storageExclusion = new RegExp('no-storage/')
+  const sender = new SocketWrapper(new SocketMock(), options)
+  const successCallback = jasmine.createSpy('successCallback')
 
-		recordDeletion = new RecordDeletion( options, sender, deletionMsg, successCallback );
+  it('creates the record deletion', () => {
+    expect(options.cache.delete).not.toHaveBeenCalled()
+    expect(options.storage.delete).not.toHaveBeenCalled()
 
-		expect( options.cache.delete.calls.argsFor( 0 )[ 0 ] ).toBe( 'no-storage/1' );
-		expect( options.storage.delete ).not.toHaveBeenCalled();
-	});
+    recordDeletion = new RecordDeletion(options, sender, deletionMsg, successCallback)
 
-	it( 'receives a response from cache that completes the recordDeletion', function(){
-		expect( recordDeletion._isDestroyed ).toBe( false );
-		expect( successCallback ).not.toHaveBeenCalled();
-		expect( sender.socket.lastSendMessage ).toBe( null );
+    expect(options.cache.delete.calls.argsFor(0)[0]).toBe('no-storage/1')
+    expect(options.storage.delete).not.toHaveBeenCalled()
+  })
 
-		options.cache.delete.calls.argsFor( 0 )[ 1 ]( null );
+  it('receives a response from cache that completes the recordDeletion', () => {
+    expect(recordDeletion._isDestroyed).toBe(false)
+    expect(successCallback).not.toHaveBeenCalled()
+    expect(sender.socket.lastSendMessage).toBe(null)
 
-		expect( sender.socket.lastSendMessage ).toBe( msg( 'R|A|D|no-storage/1+' ) );
-		expect( recordDeletion._isDestroyed ).toBe( true );
-		expect( successCallback ).toHaveBeenCalled();
-	});
+    options.cache.delete.calls.argsFor(0)[1](null)
 
-
-});
+    expect(sender.socket.lastSendMessage).toBe(msg('R|A|D|no-storage/1+'))
+    expect(recordDeletion._isDestroyed).toBe(true)
+    expect(successCallback).toHaveBeenCalled()
+  })
+})

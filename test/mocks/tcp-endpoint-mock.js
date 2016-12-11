@@ -1,17 +1,20 @@
-var EventEmitter = require('events').EventEmitter;
-var util = require('util');
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-var TcpEndpointMock = function() {
-	this.isClosed = false;
-};
+const EventEmitter = require('events').EventEmitter
+const util = require('util')
 
-util.inherits( TcpEndpointMock, EventEmitter );
+const TcpEndpointMock = function () {
+  this.isClosed = false
+}
 
-TcpEndpointMock.prototype.close = function() {
-	setTimeout(function(){
-		this.isClosed = true;
-		this.emit( 'close' );
-	}.bind( this ), 1);
-};
+util.inherits(TcpEndpointMock, EventEmitter)
 
-module.exports = TcpEndpointMock;
+TcpEndpointMock.prototype.close = function () {
+  setTimeout(() => {
+    this.isClosed = true
+    this.emit('close')
+  }, 1)
+}
+
+module.exports = TcpEndpointMock

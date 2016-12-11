@@ -1,98 +1,100 @@
-var EventEmitter = require( 'events' ).EventEmitter,
-	PresenceHandler = require( '../../src/presence/presence-handler' ),
-	SocketWrapper = require( '../../src/message/socket-wrapper' ),
-	C = require( '../../src/constants/constants' ),
-	_msg = require( '../test-helper/test-helper' ).msg,
-	SocketMock = require( '../mocks/socket-mock' ),
-	messageConnectorMock = new (require( '../mocks/message-connector-mock' ))(),
-	clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))(),
-	LoggerMock = require( '../mocks/logger-mock' ),
-	options = {
-		clusterRegistry: clusterRegistryMock,
-		serverName: 'server-name-a',
-		stateReconciliationTimeout: 10,
-		messageConnector: messageConnectorMock,
-		logger: new LoggerMock(),
-		connectionEndpoint: new EventEmitter()
-	},
-	queryMessage = {
-			 topic: C.TOPIC.PRESENCE,
-			 action: C.ACTIONS.QUERY,
-			 data: null
-	},
-	presenceHandler = new PresenceHandler( options );
-	userOne = new SocketWrapper( new SocketMock(), {} ); userOne.user = 'Homer';
-	userTwo = new SocketWrapper( new SocketMock(), {} ); userTwo.user = 'Marge';
-	userTwoAgain = new SocketWrapper( new SocketMock(), {} ); userTwoAgain.user = 'Marge';
-	userThree = new SocketWrapper( new SocketMock(), {} ); userThree.user = 'Bart';
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-describe( 'presence handler', function(){
+let EventEmitter = require('events').EventEmitter
+const PresenceHandler = require('../../src/presence/presence-handler')
+const SocketWrapper = require('../../src/message/socket-wrapper')
+const C = require('../../src/constants/constants')
+const _msg = require('../test-helper/test-helper').msg
+const SocketMock = require('../mocks/socket-mock')
+const messageConnectorMock = new (require('../mocks/message-connector-mock'))()
+const clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
+const LoggerMock = require('../mocks/logger-mock')
+const options = {
+  clusterRegistry: clusterRegistryMock,
+  serverName: 'server-name-a',
+  stateReconciliationTimeout: 10,
+  messageConnector: messageConnectorMock,
+  logger: new LoggerMock(),
+  connectionEndpoint: new EventEmitter()
+}
+const queryMessage = {
+  topic: C.TOPIC.PRESENCE,
+  action: C.ACTIONS.QUERY,
+  data: null
+}
+const presenceHandler = new PresenceHandler(options)
 
-	beforeEach( function() {
-		userOne.socket.lastSendMessage = null;
-		userTwo.socket.lastSendMessage = null;
-		userThree.socket.lastSendMessage = null;
-	});
+const userOne = new SocketWrapper(new SocketMock(), {}); userOne.user = 'Homer'
+const userTwo = new SocketWrapper(new SocketMock(), {}); userTwo.user = 'Marge'
+const userTwoAgain = new SocketWrapper(new SocketMock(), {}); userTwoAgain.user = 'Marge'
+const userThree = new SocketWrapper(new SocketMock(), {}); userThree.user = 'Bart'
 
-	it( 'adds client and subscribes to client logins and logouts', function(){
-		options.connectionEndpoint.emit( 'client-connected', userOne );
+describe('presence handler', () => {
+  beforeEach(() => {
+    userOne.socket.lastSendMessage = null
+    userTwo.socket.lastSendMessage = null
+    userThree.socket.lastSendMessage = null
+  })
 
-		var subJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [] };
-		presenceHandler.handle( userOne, subJoinMsg );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|S|U+' ) );
-	});
+  it('adds client and subscribes to client logins and logouts', () => {
+    options.connectionEndpoint.emit('client-connected', userOne)
 
-	it( 'does not return own name when queried and only user', function(){
-		presenceHandler.handle( userOne, queryMessage );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|Q+' ) );
-	});
+    const subJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [] }
+    presenceHandler.handle(userOne, subJoinMsg)
+    expect(userOne.socket.lastSendMessage).toBe(_msg('U|A|S|U+'))
+  })
 
-	it( 'adds a client and notifies original client', function(){
-		options.connectionEndpoint.emit( 'client-connected', userTwo );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|PNJ|Marge+' ) );
-	});
+  it('does not return own name when queried and only user', () => {
+    presenceHandler.handle(userOne, queryMessage)
+    expect(userOne.socket.lastSendMessage).toBe(_msg('U|Q+'))
+  })
 
-	it( 'returns one user when queried', function(){
-		presenceHandler.handle( userOne, queryMessage );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|Q|Marge+' ) );
-	});
+  it('adds a client and notifies original client', () => {
+    options.connectionEndpoint.emit('client-connected', userTwo)
+    expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNJ|Marge+'))
+  })
 
-	it( 'same username having another connection does not send an update', function(){
-		options.connectionEndpoint.emit( 'client-connected', userTwoAgain );
-		expect( userOne.socket.lastSendMessage ).toBeNull();
-	});
+  it('returns one user when queried', () => {
+    presenceHandler.handle(userOne, queryMessage)
+    expect(userOne.socket.lastSendMessage).toBe(_msg('U|Q|Marge+'))
+  })
 
-	it( 'add another client and only subscribed clients get notified', function() {
-		options.connectionEndpoint.emit( 'client-connected', userThree );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|PNJ|Bart+' ) );
-		expect( userTwo.socket.lastSendMessage ).toBeNull();
-		expect( userThree.socket.lastSendMessage ).toBeNull();
-	});
+  it('same username having another connection does not send an update', () => {
+    options.connectionEndpoint.emit('client-connected', userTwoAgain)
+    expect(userOne.socket.lastSendMessage).toBeNull()
+  })
 
-	it( 'returns multiple uses when queried', function(){
-		presenceHandler.handle( userOne, queryMessage );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|Q|Marge|Bart+' ) );
-	});
+  it('add another client and only subscribed clients get notified', () => {
+    options.connectionEndpoint.emit('client-connected', userThree)
+    expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNJ|Bart+'))
+    expect(userTwo.socket.lastSendMessage).toBeNull()
+    expect(userThree.socket.lastSendMessage).toBeNull()
+  })
 
-	it( 'client three disconnects', function(){
-		options.connectionEndpoint.emit( 'client-disconnected', userThree );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|PNL|Bart+' ) );
-		expect( userTwo.socket.lastSendMessage ).toBeNull();
-		expect( userThree.socket.lastSendMessage ).toBeNull();
-	});
+  it('returns multiple uses when queried', () => {
+    presenceHandler.handle(userOne, queryMessage)
+    expect(userOne.socket.lastSendMessage).toBe(_msg('U|Q|Marge|Bart+'))
+  })
 
-	it( 'client one gets acks after unsubscribes', function(){
-		var unsubJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.UNSUBSCRIBE, data: [] }
-		presenceHandler.handle( userOne, unsubJoinMsg );
-		expect( userOne.socket.lastSendMessage ).toBe( _msg( 'U|A|US|U+' ) );
-	});
+  it('client three disconnects', () => {
+    options.connectionEndpoint.emit('client-disconnected', userThree)
+    expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNL|Bart+'))
+    expect(userTwo.socket.lastSendMessage).toBeNull()
+    expect(userThree.socket.lastSendMessage).toBeNull()
+  })
 
-	it( 'client one does not get notified after unsubscribes', function(){
-		options.connectionEndpoint.emit( 'client-disconnected', userTwo );
-		expect( userOne.socket.lastSendMessage ).toBeNull();
+  it('client one gets acks after unsubscribes', () => {
+    const unsubJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.UNSUBSCRIBE, data: [] }
+    presenceHandler.handle(userOne, unsubJoinMsg)
+    expect(userOne.socket.lastSendMessage).toBe(_msg('U|A|US|U+'))
+  })
 
-		options.connectionEndpoint.emit( 'client-connected', userThree );
-		expect( userOne.socket.lastSendMessage ).toBeNull();
-	});
+  it('client one does not get notified after unsubscribes', () => {
+    options.connectionEndpoint.emit('client-disconnected', userTwo)
+    expect(userOne.socket.lastSendMessage).toBeNull()
 
-});
+    options.connectionEndpoint.emit('client-connected', userThree)
+    expect(userOne.socket.lastSendMessage).toBeNull()
+  })
+})

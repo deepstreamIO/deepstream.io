@@ -1,146 +1,149 @@
-var AuthenticationHandler = require( '../../src/authentication/http-authentication-handler' );
-var TestHttpServer = require( '../test-helper/test-http-server' );
+/* global describe, it, expect */
+'use strict'
 
-describe( 'it forwards authentication attempts as http post requests to a specified endpoint', function(){
-	var authenticationHandler;
-	var server;
-	var port = TestHttpServer.getRandomPort();
-	var logger = { log: jasmine.createSpy( 'log' ) };
+const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')
+const TestHttpServer = require('../test-helper/test-http-server')
 
-	beforeAll(function( done ){
-		server = new TestHttpServer( port, done );
-	});
+describe('it forwards authentication attempts as http post requests to a specified endpoint', () => {
+  let authenticationHandler
+  let server
+  const port = TestHttpServer.getRandomPort()
+  const logger = { log: jasmine.createSpy('log') }
 
-	afterAll( function( done ){
-		server.close( done );
-	});
+  beforeAll((done) => {
+    server = new TestHttpServer(port, done)
+  })
 
-	it( 'creates the authentication handler', function(){
-		var endpointUrl = 'http://localhost:' + port;
+  afterAll((done) => {
+    server.close(done)
+  })
 
-		authenticationHandler = new AuthenticationHandler({
-			endpointUrl: endpointUrl,
-			permittedStatusCodes: [ 200 ],
-			requestTimeout: 60,
-		}, logger );
-		expect( authenticationHandler.type ).toBe( 'http webhook to ' + endpointUrl );
-	});
+  it('creates the authentication handler', () => {
+    const endpointUrl = `http://localhost:${port}`
 
-	it( 'issues a request when isValidUser is called and receives 200 in return', function( done ){
-		var connectionData = { 'connection': 'data' };
-		var authData = { 'username': 'userA' };
+    authenticationHandler = new AuthenticationHandler({
+      endpointUrl,
+      permittedStatusCodes: [200],
+      requestTimeout: 60,
+    }, logger)
+    expect(authenticationHandler.type).toBe(`http webhook to ${endpointUrl}`)
+  })
 
-		server.once( 'request-received', function(){
-			expect( server.lastRequestData ).toEqual({
-				connectionData: { 'connection': 'data' },
-				authData: { 'username': 'userA' }
-			});
-			expect( server.lastRequestMethod ).toBe( 'POST' );
-			expect( server.lastRequestHeaders[ 'content-type' ] ).toContain( 'application/json' );
-			server.respondWith( 200, { authData: { 'extra': 'data' } } );
-		});
+  it('issues a request when isValidUser is called and receives 200 in return', (done) => {
+    const connectionData = { connection: 'data' }
+    const authData = { username: 'userA' }
 
-		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
-			expect( result ).toBe( true );
-			expect( data ).toEqual( { authData: { 'extra': 'data' } } );
-			done();
-		});
-	});
+    server.once('request-received', () => {
+      expect(server.lastRequestData).toEqual({
+        connectionData: { connection: 'data' },
+        authData: { username: 'userA' }
+      })
+      expect(server.lastRequestMethod).toBe('POST')
+      expect(server.lastRequestHeaders['content-type']).toContain('application/json')
+      server.respondWith(200, { authData: { extra: 'data' } })
+    })
 
-	it( 'issues a request when isValidUser is called and receives 401 (denied) in return', function( done ){
-		var connectionData = { 'connection': 'data' };
-		var authData = { 'username': 'userA' };
+    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+      expect(result).toBe(true)
+      expect(data).toEqual({ authData: { extra: 'data' } })
+      done()
+    })
+  })
 
-		server.once( 'request-received', function(){
-			expect( server.lastRequestData ).toEqual({
-				connectionData: { 'connection': 'data' },
-				authData: { 'username': 'userA' }
-			});
-			expect( server.lastRequestMethod ).toBe( 'POST' );
-			expect( server.lastRequestHeaders[ 'content-type' ] ).toContain( 'application/json' );
-			server.respondWith( 401 );
-		});
+  it('issues a request when isValidUser is called and receives 401 (denied) in return', (done) => {
+    const connectionData = { connection: 'data' }
+    const authData = { username: 'userA' }
 
-		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
-			expect( result ).toBe( false );
-			expect( data ).toBe( null );
-			expect( logger.log.calls.count() ).toBe( 0 );
-			done();
-		});
-	});
+    server.once('request-received', () => {
+      expect(server.lastRequestData).toEqual({
+        connectionData: { connection: 'data' },
+        authData: { username: 'userA' }
+      })
+      expect(server.lastRequestMethod).toBe('POST')
+      expect(server.lastRequestHeaders['content-type']).toContain('application/json')
+      server.respondWith(401)
+    })
 
-	it( 'receives a positive response without data', function( done ){
-		var connectionData = { 'connection': 'data' };
-		var authData = { 'username': 'userA' };
+    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+      expect(result).toBe(false)
+      expect(data).toBe(null)
+      expect(logger.log.calls.count()).toBe(0)
+      done()
+    })
+  })
 
-		server.once( 'request-received', function(){
-			expect( server.lastRequestData ).toEqual({
-				connectionData: { 'connection': 'data' },
-				authData: { 'username': 'userA' }
-			});
-			expect( server.lastRequestMethod ).toBe( 'POST' );
-			expect( server.lastRequestHeaders[ 'content-type' ] ).toContain( 'application/json' );
-			server.respondWith( 200, '' );
-		});
+  it('receives a positive response without data', (done) => {
+    const connectionData = { connection: 'data' }
+    const authData = { username: 'userA' }
 
-		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
-			expect( result ).toBe( true );
-			expect( data ).toBe( null );
-			done();
-		});
-	});
+    server.once('request-received', () => {
+      expect(server.lastRequestData).toEqual({
+        connectionData: { connection: 'data' },
+        authData: { username: 'userA' }
+      })
+      expect(server.lastRequestMethod).toBe('POST')
+      expect(server.lastRequestHeaders['content-type']).toContain('application/json')
+      server.respondWith(200, '')
+    })
 
-	it( 'receives a positive response with only a string', function( done ){
-		var connectionData = { 'connection': 'data' };
-		var authData = { 'username': 'userA' };
+    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+      expect(result).toBe(true)
+      expect(data).toBe(null)
+      done()
+    })
+  })
 
-		server.once( 'request-received', function(){
-			expect( server.lastRequestData ).toEqual({
-				connectionData: { 'connection': 'data' },
-				authData: { 'username': 'userA' }
-			});
-			expect( server.lastRequestMethod ).toBe( 'POST' );
-			expect( server.lastRequestHeaders[ 'content-type' ] ).toContain( 'application/json' );
-			server.respondWith( 200, 'userA' );
-		});
+  it('receives a positive response with only a string', (done) => {
+    const connectionData = { connection: 'data' }
+    const authData = { username: 'userA' }
 
-		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
-			expect( result ).toBe( true );
-			expect( data ).toEqual({ username: 'userA' });
-			done();
-		});
-	});
+    server.once('request-received', () => {
+      expect(server.lastRequestData).toEqual({
+        connectionData: { connection: 'data' },
+        authData: { username: 'userA' }
+      })
+      expect(server.lastRequestMethod).toBe('POST')
+      expect(server.lastRequestHeaders['content-type']).toContain('application/json')
+      server.respondWith(200, 'userA')
+    })
 
-	it( 'receives a server error as response', function( done ){
-		var connectionData = { 'connection': 'data' };
-		var authData = { 'username': 'userA' };
+    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+      expect(result).toBe(true)
+      expect(data).toEqual({ username: 'userA' })
+      done()
+    })
+  })
 
-		server.once( 'request-received', function(){
-			server.respondWith( 500, 'oh dear' );
-		});
+  it('receives a server error as response', (done) => {
+    const connectionData = { connection: 'data' }
+    const authData = { username: 'userA' }
 
-		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
-			expect( result ).toBe( false );
-			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR',  'http auth server error: oh dear' );
-			done();
-		});
-	});
+    server.once('request-received', () => {
+      server.respondWith(500, 'oh dear')
+    })
 
-	it( 'times out', function( done ){
-		var connectionData = { 'connection': 'data' };
-		var authData = { 'username': 'userA' };
+    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+      expect(result).toBe(false)
+      expect(logger.log).toHaveBeenCalledWith(2, 'AUTH_ERROR', 'http auth server error: oh dear')
+      done()
+    })
+  })
 
-		server.once( 'request-received', function(){
-			//don't respond
-		});
+  it('times out', (done) => {
+    const connectionData = { connection: 'data' }
+    const authData = { username: 'userA' }
 
-		logger.log.calls.reset();
+    server.once('request-received', () => {
+			// don't respond
+    })
 
-		authenticationHandler.isValidUser( connectionData, authData, function( result, data ){
-			expect( result ).toBe( false );
-			expect( logger.log ).toHaveBeenCalledWith( 2, 'AUTH_ERROR', 'http auth error: Error: socket hang up' );
-			server.respondWith( 200 );
-			done();
-		});
-	});
-});
+    logger.log.calls.reset()
+
+    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+      expect(result).toBe(false)
+      expect(logger.log).toHaveBeenCalledWith(2, 'AUTH_ERROR', 'http auth error: Error: socket hang up')
+      server.respondWith(200)
+      done()
+    })
+  })
+})

@@ -1,69 +1,72 @@
-var SocketMock = require( '../mocks/socket-mock' ),
-	SocketWrapper = require( '../../src/message/socket-wrapper' ),
-	LoggerMock = require( '../mocks/logger-mock' ),
-	messageConnectorMock = new (require( '../mocks/message-connector-mock' ))(),
-	MessageDistributor = require( '../../src/message/message-distributor' ),
-	_msg = require( '../test-helper/test-helper' ).msg;
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-describe( 'message connector distributes messages to callbacks', function(){
-	var messageDistributor,
-		testCallback = jasmine.createSpy( 'testCallback' );
+let SocketMock = require('../mocks/socket-mock'),
+  SocketWrapper = require('../../src/message/socket-wrapper'),
+  LoggerMock = require('../mocks/logger-mock'),
+  messageConnectorMock = new (require('../mocks/message-connector-mock'))(),
+  MessageDistributor = require('../../src/message/message-distributor'),
+  _msg = require('../test-helper/test-helper').msg
 
-	it( 'creates the message distributor', function(){
-		messageDistributor = new MessageDistributor({
-			messageConnector: messageConnectorMock,
-			logger: new LoggerMock()
-		});
-	});
+describe('message connector distributes messages to callbacks', () => {
+  let messageDistributor,
+    testCallback = jasmine.createSpy('testCallback')
 
-	it( 'routes topics to subscribers', function(){
-		expect( testCallback ).not.toHaveBeenCalled();
-		expect( messageConnectorMock.lastSubscribedTopic ).toBe( null );
-		messageDistributor.registerForTopic( 'someTopic', testCallback );
-		expect( messageConnectorMock.lastSubscribedTopic ).toBe( 'someTopic' );
-		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			msg = { 'topic': 'someTopic' };
+  it('creates the message distributor', () => {
+    messageDistributor = new MessageDistributor({
+      messageConnector: messageConnectorMock,
+      logger: new LoggerMock()
+    })
+  })
 
-		messageDistributor.distribute( socketWrapper, msg );
-		expect( testCallback.calls.count() ).toEqual( 1 );
-	});
+  it('routes topics to subscribers', () => {
+    expect(testCallback).not.toHaveBeenCalled()
+    expect(messageConnectorMock.lastSubscribedTopic).toBe(null)
+    messageDistributor.registerForTopic('someTopic', testCallback)
+    expect(messageConnectorMock.lastSubscribedTopic).toBe('someTopic')
+    let socketWrapper = new SocketWrapper(new SocketMock(), {}),
+      msg = { topic: 'someTopic' }
 
-	it( 'routes messages from the message connector', function(){
-		var cb = jasmine.createSpy( 'callback' );
-		messageDistributor.registerForTopic( 'topicB', cb );
-		expect( messageConnectorMock.lastSubscribedTopic ).toBe( 'topicB' );
-		expect( cb ).not.toHaveBeenCalled();
-		messageConnectorMock.simulateIncomingMessage({ topic: 'topicB' });
-		expect( cb ).toHaveBeenCalled();
-	});
+    messageDistributor.distribute(socketWrapper, msg)
+    expect(testCallback.calls.count()).toEqual(1)
+  })
 
-	it( 'only routes matching topics', function(){
-		expect( testCallback.calls.count() ).toEqual( 1 );
+  it('routes messages from the message connector', () => {
+    const cb = jasmine.createSpy('callback')
+    messageDistributor.registerForTopic('topicB', cb)
+    expect(messageConnectorMock.lastSubscribedTopic).toBe('topicB')
+    expect(cb).not.toHaveBeenCalled()
+    messageConnectorMock.simulateIncomingMessage({ topic: 'topicB' })
+    expect(cb).toHaveBeenCalled()
+  })
 
-		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			msg = { 'topic': 'someOtherTopic' };
+  it('only routes matching topics', () => {
+    expect(testCallback.calls.count()).toEqual(1)
 
-		messageDistributor.distribute( socketWrapper, msg );
-		expect( testCallback.calls.count() ).toEqual( 1 );
-	});
+    let socketWrapper = new SocketWrapper(new SocketMock(), {}),
+      msg = { topic: 'someOtherTopic' }
 
-	it( 'throws an error for multiple registrations to the same topic', function(){
-		var hasErrored = false;
+    messageDistributor.distribute(socketWrapper, msg)
+    expect(testCallback.calls.count()).toEqual(1)
+  })
 
-		try{
-			messageDistributor.registerForTopic( 'someTopic', testCallback );
-		} catch( e ) {
-			hasErrored = true;
-		}
+  it('throws an error for multiple registrations to the same topic', () => {
+    let hasErrored = false
 
-		expect( hasErrored ).toBe( true );
-	});
+    try {
+      messageDistributor.registerForTopic('someTopic', testCallback)
+    } catch (e) {
+      hasErrored = true
+    }
 
-	it( 'sends errors for messages to unknown topics', function(){
-		var socketWrapper = new SocketWrapper( new SocketMock(), {} ),
-			msg = { 'topic': 'gibberish' };
-		expect( socketWrapper.socket.lastSendMessage ).toBe( null );
-		messageDistributor.distribute( socketWrapper, msg );
-		expect( socketWrapper.socket.lastSendMessage ).toBe( _msg( 'X|E|UNKNOWN_TOPIC|gibberish+' ) );
-	});
-});
+    expect(hasErrored).toBe(true)
+  })
+
+  it('sends errors for messages to unknown topics', () => {
+    let socketWrapper = new SocketWrapper(new SocketMock(), {}),
+      msg = { topic: 'gibberish' }
+    expect(socketWrapper.socket.lastSendMessage).toBe(null)
+    messageDistributor.distribute(socketWrapper, msg)
+    expect(socketWrapper.socket.lastSendMessage).toBe(_msg('X|E|UNKNOWN_TOPIC|gibberish+'))
+  })
+})
