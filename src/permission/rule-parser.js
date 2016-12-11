@@ -1,10 +1,12 @@
 var rulesMap = require( './rules-map' );
 
-var FUNCTION_REGEXP = /([\w]+)\(/g;
-var NEW_REGEXP = /(^|[^\w~])new[^\w~]/;
+// TODO: any of these are fine inside a string or comment context...
+var FUNCTION_REGEXP = /([\w]+(?:['"`]\])?)\s*\(/g;
+var USER_FUNCTION_REGEXP = /[^\w$]function[^\w$]|=>/g;
+var NEW_REGEXP = /(^|[^\w$])new[^\w$]/;
 var OLD_DATA_REGEXP = /(^|[^\w~])oldData[^\w~]/;
 var DATA_REGEXP = /(^|[^\w\.~])data($|[^\w~])/;
-var CROSS_REFERENCE_REGEXP = /(^|[^\w~])_[^\w~]/;
+//var CROSS_REFERENCE_REGEXP = /(^|[^\w~])_[^\w~]/;
 
 var SUPPORTED_FUNCTIONS = [
 	'_',
@@ -47,6 +49,10 @@ exports.validate = function( rule, section, type ) {
 		return 'rule can\'t contain the new keyword';
 	}
 
+	if( rule.match( USER_FUNCTION_REGEXP ) ) {
+		return 'rule can\'t contain user functions';
+	}
+
 	var functions = rule.match( FUNCTION_REGEXP );
 	var functionName;
 	var i;
@@ -54,7 +60,7 @@ exports.validate = function( rule, section, type ) {
 	//TODO _ cross references are only supported for section record
 	if( functions ) {
 		for( i = 0; i < functions.length; i++ ) {
-			functionName = functions[ i ].replace('(', '');
+			functionName = functions[ i ].replace(/\s*\($/, '');
 			if( SUPPORTED_FUNCTIONS.indexOf( functionName ) === -1 ) {
 				return 'function ' + functionName + ' is not supported';
 			}
