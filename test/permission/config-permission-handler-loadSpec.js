@@ -37,8 +37,6 @@ describe('permission handler is initialised correctly', () => {
       }
     })
     permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-    expect(permissionHandler.isReady).toBe(false)
-    permissionHandler.init()
     permissionHandler.on('error', (error) => {
       expect(error).toContain('ENOENT')
       next()
@@ -47,6 +45,8 @@ describe('permission handler is initialised correctly', () => {
       expect('should not have gotten here').toBe(true)
       next()
     })
+    expect(permissionHandler.isReady).toBe(false)
+    permissionHandler.init()
   })
 
   it('fails when loading a broken config file upon initialisation', (next) => {
@@ -59,8 +59,6 @@ describe('permission handler is initialised correctly', () => {
       }
     })
     permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-    expect(permissionHandler.isReady).toBe(false)
-    permissionHandler.init()
     permissionHandler.on('error', (error) => {
       expect(error).toContain('SyntaxError')
       next()
@@ -69,6 +67,8 @@ describe('permission handler is initialised correctly', () => {
       expect('should not have gotten here').toBe(true)
       next()
     })
+    expect(permissionHandler.isReady).toBe(false)
+    permissionHandler.init()
   })
 
   it('fails when loading an invalid config file upon initialisation', (next) => {
@@ -81,8 +81,6 @@ describe('permission handler is initialised correctly', () => {
       }
     })
     permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-    expect(permissionHandler.isReady).toBe(false)
-    permissionHandler.init()
     permissionHandler.on('error', (error) => {
       expect(error).toBe('invalid permission config - empty section "record"')
       next()
@@ -91,6 +89,8 @@ describe('permission handler is initialised correctly', () => {
       expect('should not have gotten here').toBe(true)
       next()
     })
+    expect(permissionHandler.isReady).toBe(false)
+    permissionHandler.init()
   })
 })
 
@@ -108,9 +108,7 @@ describe('it loads a new config during runtime', () => {
       }
     })
     permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-    permissionHandler.init()
     permissionHandler.on('error', onError)
-    expect(permissionHandler.isReady).toBe(false)
     permissionHandler.on('error', (error) => {
       expect(`it should not have had this ${error}`).toBe(true)
       next()
@@ -119,6 +117,8 @@ describe('it loads a new config during runtime', () => {
       expect(permissionHandler.isReady).toBe(true)
       next()
     })
+    expect(permissionHandler.isReady).toBe(false)
+    permissionHandler.init()
   })
 
   it('allows publishing of a private event', (next) => {
