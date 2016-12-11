@@ -1,3 +1,5 @@
+'use strict'
+
 /**
  * This cache stores rules that are frequently used. It removes
  * unused rules after a preset interval

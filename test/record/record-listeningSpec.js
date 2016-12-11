@@ -1,4 +1,6 @@
-/* global describe, expect, it, jasmine */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let RecordHandler = require('../../src/record/record-handler'),
   msg = require('../test-helper/test-helper').msg,
   StorageMock = require('../mocks/storage-mock'),

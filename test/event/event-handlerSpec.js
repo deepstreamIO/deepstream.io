@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let EventHandler = require('../../src/event/event-handler'),
   SocketWrapper = require('../../src/message/socket-wrapper'),
   C = require('../../src/constants/constants'),

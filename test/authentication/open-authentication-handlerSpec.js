@@ -1,3 +1,6 @@
+/* global describe, it, expect */
+'use strict'
+
 const AuthenticationHandler = require('../../src/authentication/open-authentication-handler')
 
 describe('open authentication handler', () => {

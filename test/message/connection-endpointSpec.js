@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let proxyquire = require('proxyquire').noCallThru(),
   websocketMock = require('../mocks/websocket-mock'),
   HttpMock = require('../mocks/http-mock'),

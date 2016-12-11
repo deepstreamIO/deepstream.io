@@ -1,3 +1,5 @@
+'use strict'
+
 const SPLIT_REG_EXP = /[\.\[\]]/g
 
 /**

@@ -1,4 +1,6 @@
-/* global jasmine, beforeAll, afterAll, expect, describe, it */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const child_process = require('child_process')
 const path = require('path')
 const Deepstream = require('../src/deepstream.io')

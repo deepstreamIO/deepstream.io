@@ -1,3 +1,5 @@
+'use strict'
+
 const rulesMap = require('./rules-map')
 
 const FUNCTION_REGEXP = /([\w]+)\(/g

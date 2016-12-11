@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let messageBuilder = require('../../src/message/message-builder'),
   messageParser = require('../../src/message/message-parser')
 

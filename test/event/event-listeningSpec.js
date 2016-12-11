@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 /* global describe, expect, it, jasmine */
 let EventHandler = require('../../src/event/event-handler'),
   msg = require('../test-helper/test-helper').msg,

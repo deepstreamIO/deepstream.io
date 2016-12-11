@@ -1,5 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-/* global it, describe, expect, jasmine */
 let proxyquire = require('proxyquire'),
   RecordRequestMock = require('../mocks/record-request-mock'),
   RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': RecordRequestMock }),

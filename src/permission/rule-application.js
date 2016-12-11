@@ -1,3 +1,5 @@
+'use strict'
+
 const OPEN = 'open'
 const UNDEFINED = 'undefined'
 const LOADING = 'loading'

@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
 const C = require('../../src/constants/constants')
 

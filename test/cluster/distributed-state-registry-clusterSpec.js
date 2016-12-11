@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const DistributedStateRegistry = require('../../src/cluster/distributed-state-registry')
 const LocalMessageConnector = require('../mocks/local-message-connector')
 const clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()

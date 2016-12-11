@@ -1,4 +1,6 @@
-/* global describe, expect, it, jasmine */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let ListenerRegistry = require('../../src/listen/listener-registry'),
   msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),
@@ -23,7 +25,6 @@ let listenerRegistry,
 
 describe('listener-registry errors', () => {
   beforeEach(() => {
-    listeningSocket = new SocketWrapper(new SocketMock(), options)
     listenerRegistry = new ListenerRegistry('R', options, recordSubscriptionRegistryMock)
     expect(typeof listenerRegistry.handle).toBe('function')
   })

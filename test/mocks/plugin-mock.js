@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let EventEmitter = require('events').EventEmitter,
   util = require('util')
 

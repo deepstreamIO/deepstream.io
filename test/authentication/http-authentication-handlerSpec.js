@@ -1,3 +1,6 @@
+/* global describe, it, expect */
+'use strict'
+
 const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')
 const TestHttpServer = require('../test-helper/test-http-server')
 

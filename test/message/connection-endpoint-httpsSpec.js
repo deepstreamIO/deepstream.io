@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let proxyquire = require('proxyquire').noCallThru(),
   websocketMock = require('../mocks/websocket-mock'),
   HttpMock = require('../mocks/http-mock'),
@@ -13,12 +16,12 @@ let proxyquire = require('proxyquire').noCallThru(),
   lastAuthenticatedMessage = null,
   lastLoggedMessage = null,
   socketMock,
-  options,
   onReady = function () { ready = true },
   connectionEndpoint,
-  ready = false
+  ready = false,
+  sslOptions
 
-options = {
+let options = {
   permissionHandler: require('../mocks/permission-handler-mock'),
   logger: { log(logLevel, event, msg) { lastLoggedMessage = msg } },
   maxAuthAttempts: 3,

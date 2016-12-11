@@ -1,3 +1,5 @@
+'use strict'
+
 const C = require('../constants/constants')
 const utils = require('util')
 

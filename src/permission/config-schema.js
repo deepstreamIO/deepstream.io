@@ -1,3 +1,5 @@
+'use strict'
+
 /**
  * A basic schema for permission.json files that
  * the config validater uses

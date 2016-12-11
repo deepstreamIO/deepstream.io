@@ -1,3 +1,5 @@
+'use strict'
+
 const C = require('../../src/constants/constants')
 
 exports.msg = function (input) {

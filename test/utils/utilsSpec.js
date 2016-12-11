@@ -1,4 +1,5 @@
-/* global describe, it, expect, jasmine */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
 const path = require('path')
 const utils = require('../../src/utils/utils')

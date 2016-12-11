@@ -1,3 +1,5 @@
+'use strict'
+
 const pathParser = require('./path-parser')
 const ruleParser = require('./rule-parser')
 

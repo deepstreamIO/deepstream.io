@@ -1,30 +1,34 @@
-let EventEmitter = require('events').EventEmitter,
-  PresenceHandler = require('../../src/presence/presence-handler'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
-  C = require('../../src/constants/constants'),
-  _msg = require('../test-helper/test-helper').msg,
-  SocketMock = require('../mocks/socket-mock'),
-  messageConnectorMock = new (require('../mocks/message-connector-mock'))(),
-  clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))(),
-  LoggerMock = require('../mocks/logger-mock'),
-  options = {
-    clusterRegistry: clusterRegistryMock,
-    serverName: 'server-name-a',
-    stateReconciliationTimeout: 10,
-    messageConnector: messageConnectorMock,
-    logger: new LoggerMock(),
-    connectionEndpoint: new EventEmitter()
-  },
-  queryMessage = {
-			 topic: C.TOPIC.PRESENCE,
-			 action: C.ACTIONS.QUERY,
-			 data: null
-  },
-  presenceHandler = new PresenceHandler(options)
-userOne = new SocketWrapper(new SocketMock(), {}); userOne.user = 'Homer'
-userTwo = new SocketWrapper(new SocketMock(), {}); userTwo.user = 'Marge'
-userTwoAgain = new SocketWrapper(new SocketMock(), {}); userTwoAgain.user = 'Marge'
-userThree = new SocketWrapper(new SocketMock(), {}); userThree.user = 'Bart'
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
+let EventEmitter = require('events').EventEmitter
+const PresenceHandler = require('../../src/presence/presence-handler')
+const SocketWrapper = require('../../src/message/socket-wrapper')
+const C = require('../../src/constants/constants')
+const _msg = require('../test-helper/test-helper').msg
+const SocketMock = require('../mocks/socket-mock')
+const messageConnectorMock = new (require('../mocks/message-connector-mock'))()
+const clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
+const LoggerMock = require('../mocks/logger-mock')
+const options = {
+  clusterRegistry: clusterRegistryMock,
+  serverName: 'server-name-a',
+  stateReconciliationTimeout: 10,
+  messageConnector: messageConnectorMock,
+  logger: new LoggerMock(),
+  connectionEndpoint: new EventEmitter()
+}
+const queryMessage = {
+  topic: C.TOPIC.PRESENCE,
+  action: C.ACTIONS.QUERY,
+  data: null
+}
+const presenceHandler = new PresenceHandler(options)
+
+const userOne = new SocketWrapper(new SocketMock(), {}); userOne.user = 'Homer'
+const userTwo = new SocketWrapper(new SocketMock(), {}); userTwo.user = 'Marge'
+const userTwoAgain = new SocketWrapper(new SocketMock(), {}); userTwoAgain.user = 'Marge'
+const userThree = new SocketWrapper(new SocketMock(), {}); userThree.user = 'Bart'
 
 describe('presence handler', () => {
   beforeEach(() => {

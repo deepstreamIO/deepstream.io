@@ -1,3 +1,5 @@
+'use strict'
+
 exports.get = function (key, callback) {
   callback(null, null)
 }

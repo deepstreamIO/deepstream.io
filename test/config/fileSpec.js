@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const fileUtils = require('../../src/config/file-utils')
 const path = require('path')
 

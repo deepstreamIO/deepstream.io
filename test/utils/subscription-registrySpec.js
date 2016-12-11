@@ -1,4 +1,6 @@
-/* global it, expect, describe, jasmine */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let SubscriptionRegistry = require('../../src/utils/subscription-registry'),
   SocketMock = require('../mocks/socket-mock'),
   SocketWrapper = require('../../src/message/socket-wrapper'),

@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let RpcProxy = require('../../src/rpc/rpc-proxy'),
   C = require('../../src/constants/constants'),
   messageConnector = new (require('../mocks/message-connector-mock'))(),

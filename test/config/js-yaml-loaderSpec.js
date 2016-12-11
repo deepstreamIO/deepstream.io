@@ -1,5 +1,5 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
-/* global jasmine, spyOn, describe, it, expect */
 
 const proxyquire = require('proxyquire')
 const defaultOptions = require('../../src/default-options')

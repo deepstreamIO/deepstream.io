@@ -1,3 +1,5 @@
+'use strict'
+
 require('colors')
 const C = require('../constants/constants')
 

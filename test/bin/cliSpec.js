@@ -1,5 +1,4 @@
 /* global describe, it, expect */
-
 'use strict'
 
 const os = require('os')

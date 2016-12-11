@@ -1,3 +1,5 @@
+'use strict'
+
 const LocalCache = function () {
   this.isReady = true
   this._data = {}

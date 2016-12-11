@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let SocketMock = require('../mocks/socket-mock'),
   SocketWrapper = require('../../src/message/socket-wrapper'),
   LoggerMock = require('../mocks/logger-mock'),

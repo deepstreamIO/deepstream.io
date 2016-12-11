@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const LoggerMock = function () {
   this.isReady = true
   this.lastLogLevel = null

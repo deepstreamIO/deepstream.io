@@ -1,3 +1,5 @@
+'use strict'
+
 const configValidator = require('./config-validator')
 const configCompiler = require('./config-compiler')
 const rulesMap = require('./rules-map')

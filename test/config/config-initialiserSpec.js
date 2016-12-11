@@ -1,4 +1,5 @@
-/* globals describe, it, expect */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
 const defaultConfig = require('../../src/default-options')
 const configInitialiser = require('../../src/config/config-initialiser')

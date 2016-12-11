@@ -1,4 +1,6 @@
-/* global describe, it, expect, jasmine */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let RecordRequest = require('../../src/record/record-request'),
   SocketWrapper = require('../../src/message/socket-wrapper'),
   SocketMock = require('../mocks/socket-mock'),

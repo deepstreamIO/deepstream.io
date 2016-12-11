@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
 const StorageMock = require('../mocks/storage-mock')
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions

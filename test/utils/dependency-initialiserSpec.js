@@ -1,4 +1,6 @@
-/* global describe, it, expect, jasmine */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let C = require('../../src/constants/constants'),
   DependencyInitialiser = require('../../src/utils/dependency-initialiser'),
   PluginMock = require('../mocks/plugin-mock'),

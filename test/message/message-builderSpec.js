@@ -1,3 +1,5 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
 let C = require('../../src/constants/constants'),
   _msg = require('../test-helper/test-helper').msg,

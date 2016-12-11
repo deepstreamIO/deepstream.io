@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const ClusterUniqueStateProvider = require('../../src/cluster/cluster-unique-state-provider')
 const C = require('../../src/constants/constants')
 const LocalMessageConnector = new (require('../mocks/local-message-connector'))()

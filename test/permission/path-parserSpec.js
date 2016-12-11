@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const pathParser = require('../../src/permission/path-parser')
 const isRegExp = function (val) {
   return typeof val === 'object' && typeof val.test === 'function'

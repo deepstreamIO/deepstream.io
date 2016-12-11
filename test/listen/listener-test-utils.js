@@ -1,3 +1,4 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 let ListenerRegistry = require('../../src/listen/listener-registry'),

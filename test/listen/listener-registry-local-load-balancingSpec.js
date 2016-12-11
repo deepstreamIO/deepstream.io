@@ -1,4 +1,6 @@
-/* global describe, expect, it, jasmine */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const ListenerTestUtils = require('./listener-test-utils')
 let tu
 

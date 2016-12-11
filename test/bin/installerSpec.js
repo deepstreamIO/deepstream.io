@@ -1,5 +1,5 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
-/* global jasmine, spyOn, describe, it, expect */
 
 const path = require('path')
 const pj = path.join

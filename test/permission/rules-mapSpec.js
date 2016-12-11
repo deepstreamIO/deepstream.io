@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const rulesMap = require('../../src/permission/rules-map')
 const C = require('../../src/constants/constants')
 

@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const SocketMock = function () {
   this.lastSendMessage = null
   this.isDisconnected = false

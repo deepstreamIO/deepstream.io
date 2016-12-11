@@ -1,3 +1,5 @@
+'use strict'
+
 const ConnectionEndpoint = require('./message/connection-endpoint')
 const MessageProcessor = require('./message/message-processor')
 const MessageDistributor = require('./message/message-distributor')

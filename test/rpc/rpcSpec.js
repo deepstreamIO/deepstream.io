@@ -1,11 +1,14 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let C = require('../../src/constants/constants'),
   Rpc = require('../../src/rpc/rpc'),
   msg = require('../test-helper/test-helper').msg,
   SocketWrapper = require('../../src/message/socket-wrapper'),
   SocketMock = require('../mocks/socket-mock'),
   RpcProxy = require('../../src/rpc/rpc-proxy'),
-  alternativeProvider = new SocketWrapper(new SocketMock(), {})
-mockRpcHandler = { getAlternativeProvider() { return alternativeProvider } },
+  alternativeProvider = new SocketWrapper(new SocketMock(), {}),
+  mockRpcHandler = { getAlternativeProvider() { return alternativeProvider } },
 	mockMessageConnector = new (require('../mocks/message-connector-mock'))(),
 	options = {
   rpcAckTimeout: 5,

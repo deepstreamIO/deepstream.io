@@ -1,3 +1,5 @@
+'use strict'
+
 const WILDCARD_REGEXP = /\*/g
 const WILDCARD_STRING = '.*'
 const VARIABLE_REGEXP = /(\$[a-zA-Z0-9]+)/g

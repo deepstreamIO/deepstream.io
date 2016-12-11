@@ -1,9 +1,7 @@
 'use strict'
 
-let C = require('../constants/constants'),
-  messageParser = require('../message/message-parser'),
-  messageBuilder = require('../message/message-builder'),
-  utils = require('../utils/utils')
+const C = require('../constants/constants')
+const messageBuilder = require('../message/message-builder')
 
 module.exports = class ListenerUtils {
 
@@ -133,10 +131,10 @@ module.exports = class ListenerUtils {
   */
   sendSubscriptionForPatternRemoved(provider, subscriptionName) {
     provider.socketWrapper.send(
-            messageBuilder.getMsg(
-                this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [provider.pattern, subscriptionName]
-            )
-        )
+      messageBuilder.getMsg(
+        this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [provider.pattern, subscriptionName]
+      )
+    )
   }
 
   /**

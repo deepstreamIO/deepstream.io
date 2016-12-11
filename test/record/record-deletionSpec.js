@@ -1,4 +1,6 @@
-/* global it, describe, expect, jasmine */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let proxyquire = require('proxyquire'),
   RecordDeletion = require('../../src/record/record-deletion'),
   SocketWrapper = require('../../src/message/socket-wrapper'),

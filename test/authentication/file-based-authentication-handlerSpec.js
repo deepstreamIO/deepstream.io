@@ -1,3 +1,6 @@
+/* global describe, it, expect */
+'use strict'
+
 const AuthenticationHandler = require('../../src/authentication/file-based-authentication-handler')
 
 const testAuthentication = function (settings) {

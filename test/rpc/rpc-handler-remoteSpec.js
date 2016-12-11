@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 let RpcHandler = require('../../src/rpc/rpc-handler'),
   RpcProxy = require('../../src/rpc/rpc-proxy'),
   SocketWrapper = require('../../src/message/socket-wrapper'),

@@ -1,4 +1,6 @@
-/* global describe, it, expect */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const messageParser = require('../../src/message/message-parser')
 
 describe('message parser processes raw messages correctly', () => {

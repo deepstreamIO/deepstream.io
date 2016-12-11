@@ -1,3 +1,6 @@
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 const configValidator = require('../../src/permission/config-validator')
 const getConfig = function () {
   return {

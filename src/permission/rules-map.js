@@ -1,5 +1,8 @@
+'use strict'
+
 const C = require('../constants/constants')
 const utils = require('../utils/utils')
+
 const actionToKey = utils.reverseMap(C.ACTIONS)
 const RULES_MAP = {}
 const RULE_TYPES = {}
