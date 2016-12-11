@@ -79,25 +79,22 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
   const record = this._recordCache.get(recordName)
 
   if (record) {
-    this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ])
+    this._sendRead(recordName, record, socketWrapper)
   } else {
-    this._storage.get(recordName, this._sendRead, socketWrapper)
+    this._storage.get(recordName, (error, recordName, record, socketWrapper) => {
+      if (error || !record) {
+        const message = 'error while loading ' + recordName + ' from storage:' + (error || 'not_found')
+        this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], !record && socketWrapper)
+      } else {
+        this._sendRead(recordName, this._updateCache(recordName, record), socketWrapper)
+      }
+    }, socketWrapper)
   }
 }
 
-RecordHandler.prototype._sendRead = function (error, recordName, record, socketWrapper) {
-  record = this._updateCache(recordName, record)
-
-  if (record) {
-    this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._d, record._p ])
-  }
-
-  if (!record || error) {
-    const message = 'error while loading ' + recordName + ' from storage:' + (error || 'not_found')
-    this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], !record && socketWrapper)
-  }
+RecordHandler.prototype._sendRead = function (recordName, record, socketWrapper) {
+  this._subscriptionRegistry.subscribe(recordName, socketWrapper)
+  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, utils.stringifyImmutable(record._d), record._p ])
 }
 
 RecordHandler.prototype._update = function (socketWrapper, message) {
@@ -134,6 +131,8 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     _d: data.value,
     _p: parent
   }
+
+  utils.stringifyImmutable(record._d, message.data[2])
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
     this._storage.set(recordName, record, message.data[4] && this._sendAck, socketWrapper)
@@ -181,7 +180,7 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
     if (error) {
       this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ])
     } else {
-      const message = { data: [ recordName, nextRecord._v, JSON.stringify(nextRecord._d), nextRecord._p ] }
+      const message = { data: [ recordName, nextRecord._v, utils.stringifyImmutable(nextRecord._d), nextRecord._p ] }
       this._update(C.SOURCE_STORAGE_CONNECTOR, message)
     }
   })
