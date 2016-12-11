@@ -4,7 +4,7 @@
 const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
 const C = require('../../src/constants/constants')
 
-describe('permission handler is initialised correctly', () => {
+xdescribe('permission handler is initialised correctly', () => {
   it('loads a valid config file upon initialisation', (next) => {
     const permissionHandler = new ConfigPermissionHandler({
       permission: {
