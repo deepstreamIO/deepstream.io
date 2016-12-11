@@ -1,47 +1,50 @@
-var SocketMock = require( './socket-mock' );
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-var i=0;
-var websocketMock = null;
+const SocketMock = require('./socket-mock')
 
-var WebsocketMock = function(){
-	this.clients = {};
-	this.clientsCount = 0;
-	this.pingInterval = null;
-	this.pingMessage = null;
-	this.setMaxListeners( 0 );
-	websocketMock = this;
-};
+let i = 0
+let websocketMock = null
 
-require("util").inherits( WebsocketMock, require("events").EventEmitter );
+const WebsocketMock = function () {
+  this.clients = {}
+  this.clientsCount = 0
+  this.pingInterval = null
+  this.pingMessage = null
+  this.setMaxListeners(0)
+  websocketMock = this
+}
 
-WebsocketMock.prototype.simulateConnection = function() {
-	var socketMock = new SocketMock();
-	var clientIndex = i++;
-	socketMock.once( 'close', this._onClose.bind( this, clientIndex ) );
-	this.clients[ clientIndex ] = socketMock;
-	this.clientsCount++;
-	this.emit( 'connection', socketMock );
-	return socketMock;
-};
+require('util').inherits(WebsocketMock, require('events').EventEmitter)
 
-WebsocketMock.prototype.startAutoPing = function( interval, message ){
-	this.pingInterval = interval;
-	this.pingMessage = message;
-};
+WebsocketMock.prototype.simulateConnection = function () {
+  const socketMock = new SocketMock()
+  const clientIndex = i++
+  socketMock.once('close', this._onClose.bind(this, clientIndex))
+  this.clients[clientIndex] = socketMock
+  this.clientsCount++
+  this.emit('connection', socketMock)
+  return socketMock
+}
 
-WebsocketMock.prototype.Server = function(){
-	return websocketMock;
-};
+WebsocketMock.prototype.startAutoPing = function (interval, message) {
+  this.pingInterval = interval
+  this.pingMessage = message
+}
 
-WebsocketMock.prototype._onClose = function( clientIndex ) {
-	delete this.clients[ clientIndex ];
-	this.clientsCount--;
-};
+WebsocketMock.prototype.Server = function () {
+  return websocketMock
+}
 
-WebsocketMock.prototype.close = function(){
-	for( var clientIndex in this.clients ) {
-		this.clients[ clientIndex ].close();
-	}
-};
+WebsocketMock.prototype._onClose = function (clientIndex) {
+  delete this.clients[clientIndex]
+  this.clientsCount--
+}
 
-module.exports = new WebsocketMock();
+WebsocketMock.prototype.close = function () {
+  for (const clientIndex in this.clients) {
+    this.clients[clientIndex].close()
+  }
+}
+
+module.exports = new WebsocketMock()

@@ -1,5 +1,7 @@
-var pathParser = require( './path-parser' );
-var ruleParser = require( './rule-parser' );
+'use strict'
+
+const pathParser = require('./path-parser')
+const ruleParser = require('./rule-parser')
 
 /**
  * Compiles a pre-validated config into a format that allows for quicker access
@@ -10,22 +12,23 @@ var ruleParser = require( './rule-parser' );
  * @public
  * @returns {Object} compiledConfig
  */
-exports.compile = function( config ) {
-	var compiledConfig = {};
-	var compiledRuleset, section, path;
+exports.compile = function (config) {
+  const compiledConfig = {}
+  let compiledRuleset
+  let section
+  let path
 
-	for( section in config ) {
+  for (section in config) {
+    compiledConfig[section] = []
 
-		compiledConfig[ section ] = [];
+    for (path in config[section]) {
+      compiledRuleset = compileRuleset(path, config[section][path])
+      compiledConfig[section].push(compiledRuleset)
+    }
+  }
 
-		for( path in config[ section ] ) {
-			compiledRuleset = compileRuleset( path, config[ section ][ path ] );
-			compiledConfig[ section ].push( compiledRuleset );
-		}
-	}
-
-	return compiledConfig;
-};
+  return compiledConfig
+}
 
 /**
  * Compiles an individual ruleset
@@ -36,16 +39,16 @@ exports.compile = function( config ) {
  * @private
  * @returns {Object} compiledRuleset
  */
-function compileRuleset( path, rules ) {
-	var ruleset = pathParser.parse( path );
+function compileRuleset(path, rules) {
+  const ruleset = pathParser.parse(path)
 
-	ruleset.rules = {};
+  ruleset.rules = {}
 
-	for( var ruleType in rules ) {
-		ruleset.rules[ ruleType ] = ruleParser.parse(
-			rules[ ruleType ], ruleset.variables
-		);
-	}
+  for (const ruleType in rules) {
+    ruleset.rules[ruleType] = ruleParser.parse(
+      rules[ruleType], ruleset.variables
+    )
+  }
 
-	return ruleset;
+  return ruleset
 }

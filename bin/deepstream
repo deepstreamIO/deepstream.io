@@ -1,31 +1,31 @@
 #!/usr/bin/env node
-'use strict';
-require( 'colors' );
+'use strict'
+require('colors')
 
-const pgk = require( '../package.json' );
+const pgk = require('../package.json')
 
-const Command = require( 'commander' ).Command;
-const install = require( './deepstream-install' );
-const start = require( './deepstream-start' );
-const status = require( './deepstream-status' );
-const stop = require( './deepstream-stop' );
-const info = require( './deepstream-info' );
-const hash = require( './deepstream-hash' );
+const Command = require('commander').Command
+const install = require('./deepstream-install')
+const start = require('./deepstream-start')
+const status = require('./deepstream-status')
+const stop = require('./deepstream-stop')
+const info = require('./deepstream-info')
+const hash = require('./deepstream-hash')
 
-var program = new Command( 'deepstream' );
+const program = new Command('deepstream')
 program
-	.usage( '[command]' )
-	.version( pgk.version );
+	.usage('[command]')
+	.version(pgk.version)
 
-start( program );
-stop( program );
-status( program );
-install( program );
-info( program );
-hash( program );
+start(program)
+stop(program)
+status(program)
+install(program)
+info(program)
+hash(program)
 
-program.parse( process.argv );
+program.parse(process.argv)
 
-if ( program.args.length === 0 ) {
-	program.emit( 'start' );
+if (program.args.length === 0) {
+  program.emit('start')
 }

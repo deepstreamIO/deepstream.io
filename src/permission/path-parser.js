@@ -1,8 +1,10 @@
-var WILDCARD_REGEXP = /\*/g;
-var WILDCARD_STRING = '.*';
-var VARIABLE_REGEXP = /(\$[a-zA-Z0-9]+)/g;
-var VARIABLE_STRING = '([^\/]+)';
-var INVALID_VARIABLE_REGEXP = /(\$[^a-zA-Z0-9])/;
+'use strict'
+
+const WILDCARD_REGEXP = /\*/g
+const WILDCARD_STRING = '.*'
+const VARIABLE_REGEXP = /(\$[a-zA-Z0-9]+)/g
+const VARIABLE_STRING = '([^\/]+)'
+const INVALID_VARIABLE_REGEXP = /(\$[^a-zA-Z0-9])/
 
 /**
  * Checks a path for type and basic syntax errors
@@ -12,27 +14,27 @@ var INVALID_VARIABLE_REGEXP = /(\$[^a-zA-Z0-9])/;
  * @public
  * @returns {String|Boolean} true if path is valid, string error message if not
  */
-exports.validate = function( path ) {
-	if( typeof path !== 'string' ) {
-		return 'path must be a string';
-	}
+exports.validate = function (path) {
+  if (typeof path !== 'string') {
+    return 'path must be a string'
+  }
 
-	if( path.length === 0 ) {
-		return 'path can\'t be empty';
-	}
+  if (path.length === 0) {
+    return 'path can\'t be empty'
+  }
 
-	if( path[ 0 ] === '/' ){
-		return 'path can\'t start with /';
-	}
+  if (path[0] === '/') {
+    return 'path can\'t start with /'
+  }
 
-	var invalidVariableNames = path.match( INVALID_VARIABLE_REGEXP );
+  const invalidVariableNames = path.match(INVALID_VARIABLE_REGEXP)
 
-	if( invalidVariableNames !== null ) {
-		return 'invalid variable name ' + invalidVariableNames[ 0 ];
-	}
+  if (invalidVariableNames !== null) {
+    return `invalid variable name ${invalidVariableNames[0]}`
+  }
 
-	return true;
-};
+  return true
+}
 
 /**
  * Parses a path and returns a regexp matcher with capture groups for
@@ -44,18 +46,18 @@ exports.validate = function( path ) {
  * @public
  * @returns {Object} { variables: <String variableNames>[], regexp: <RegExp>}
  */
-exports.parse = function( path ) {
-	var variables = [];
-	var regExp = path.replace( WILDCARD_REGEXP, WILDCARD_STRING );
+exports.parse = function (path) {
+  const variables = []
+  let regExp = path.replace(WILDCARD_REGEXP, WILDCARD_STRING)
 
-	regExp = regExp.replace( VARIABLE_REGEXP, function( variableName ){
-		variables.push( variableName );
-		return VARIABLE_STRING;
-	});
+  regExp = regExp.replace(VARIABLE_REGEXP, (variableName) => {
+    variables.push(variableName)
+    return VARIABLE_STRING
+  })
 
-	return {
-		variables: variables,
-		path: path,
-		regexp: new RegExp( '^' + regExp + '$' )
-	};
-};
+  return {
+    variables,
+    path,
+    regexp: new RegExp(`^${regExp}$`)
+  }
+}

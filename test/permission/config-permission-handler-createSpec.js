@@ -1,76 +1,79 @@
-var ConfigPermissionHandler = require( '../../src/permission/config-permission-handler' );
-var getBasePermissions = require( '../test-helper/test-helper' ).getBasePermissions;
-var C = require( '../../src/constants/constants' );
-var StorageMock = require( '../mocks/storage-mock' );
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-var options = {
-	logger: { log: jasmine.createSpy( 'log' ) },
-	cache: new StorageMock(),
-	storage: new StorageMock(),
-	permission: {
-		options: {
-			cacheEvacuationInterval: 60000
-		}
-	}
-};
-var testPermission = function( permissions, message, username, userdata, callback ) {
-	var permissionHandler = new ConfigPermissionHandler( options, permissions );
-	permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: ( r, c ) => { c( r ); }});
-	var permissionResult;
+const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
+const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
+const C = require('../../src/constants/constants')
+const StorageMock = require('../mocks/storage-mock')
 
-	username = username || 'someUser';
-	userdata = userdata || {};
-	callback = callback || function( error, result ) {
-		permissionResult = result;
-	};
-	permissionHandler.canPerformAction( username, message, callback, userdata );
-	return permissionResult;
-};
+const options = {
+  logger: { log: jasmine.createSpy('log') },
+  cache: new StorageMock(),
+  storage: new StorageMock(),
+  permission: {
+    options: {
+      cacheEvacuationInterval: 60000
+    }
+  }
+}
+const testPermission = function (permissions, message, username, userdata, callback) {
+  const permissionHandler = new ConfigPermissionHandler(options, permissions)
+  permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
+  let permissionResult
 
-describe( 'allows to create a record without providing data, but denies updating it', function(){
-	var permissions = getBasePermissions();
-	permissions.record[ 'some/*' ] = {
-		write: 'data.name === "Wolfram"'
-	};
+  username = username || 'someUser'
+  userdata = userdata || {}
+  callback = callback || function (error, result) {
+    permissionResult = result
+  }
+  permissionHandler.canPerformAction(username, message, callback, userdata)
+  return permissionResult
+}
 
-	it( 'allows creating the record', function(){
-		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.CREATEORREAD,
-			data: [ 'some/tests' ]
-		};
+describe('allows to create a record without providing data, but denies updating it', () => {
+  const permissions = getBasePermissions()
+  permissions.record['some/*'] = {
+    write: 'data.name === "Wolfram"'
+  }
 
-		expect( testPermission( permissions, message ) ).toBe( true );
-		options.cache.set( 'some/tests', {}, function(){} );
-	});
+  it('allows creating the record', () => {
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.CREATEORREAD,
+      data: ['some/tests']
+    }
 
-	it( 'denies update', function(){
-		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.UPDATE,
-			data: [ 'some/tests', 2, '{"other":"data"}' ]
-		};
+    expect(testPermission(permissions, message)).toBe(true)
+    options.cache.set('some/tests', {}, () => {})
+  })
 
-		var callback = function( error, result ) {
-			expect( error ).toBeNull();
-			expect( result ).toBe( false );
-		};
+  it('denies update', () => {
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.UPDATE,
+      data: ['some/tests', 2, '{"other":"data"}']
+    }
 
-		testPermission( permissions, message, 'some-user', null, callback );
-	});
+    const callback = function (error, result) {
+      expect(error).toBeNull()
+      expect(result).toBe(false)
+    }
 
-	it( 'denies patch', function(){
-		var message = {
-			topic: C.TOPIC.RECORD,
-			action: C.ACTIONS.PATCH,
-			data: [ 'some/tests', 2, 'apath', 'SaValue' ]
-		};
+    testPermission(permissions, message, 'some-user', null, callback)
+  })
 
-		var callback = function( error, result ) {
-			expect( error ).toBeNull();
-			expect( result ).toBe( false );
-		};
+  it('denies patch', () => {
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.PATCH,
+      data: ['some/tests', 2, 'apath', 'SaValue']
+    }
 
-		testPermission( permissions, message, 'some-user', null, callback );
-	});
-});
+    const callback = function (error, result) {
+      expect(error).toBeNull()
+      expect(result).toBe(false)
+    }
+
+    testPermission(permissions, message, 'some-user', null, callback)
+  })
+})

@@ -1,4 +1,6 @@
-var SPLIT_REG_EXP = /[\.\[\]]/g;
+'use strict'
+
+const SPLIT_REG_EXP = /[\.\[\]]/g
 
 /**
  * This class allows to set or get specific
@@ -9,11 +11,11 @@ var SPLIT_REG_EXP = /[\.\[\]]/g;
  *
  * @constructor
  */
-var JsonPath = function( path ) {
-	this._path = path;
-	this._tokens = [];
-	this._tokenize();
-};
+const JsonPath = function (path) {
+  this._path = path
+  this._tokens = []
+  this._tokenize()
+}
 
 /**
  * Sets the value of the path. If the path (or parts
@@ -25,21 +27,21 @@ var JsonPath = function( path ) {
  * @public
  * @returns {void}
  */
-JsonPath.prototype.setValue = function( node, value ) {
-	for( var i = 0; i < this._tokens.length - 1; i++ ) {
-		if( node[ this._tokens[ i ] ] !== undefined ) {
-			node = node[ this._tokens[ i ] ];
-		}
-		else if( this._tokens[ i + 1 ] && !isNaN( this._tokens[ i + 1 ] ) ){
-			node = node[ this._tokens[ i ] ] = [];
-		}
-		else {
-			node = node[ this._tokens[ i ] ] = {};
-		}
-	}
+JsonPath.prototype.setValue = function (node, value) {
+  let i = 0
 
-	node[ this._tokens[ i ] ] = value;
-};
+  for (i = 0; i < this._tokens.length - 1; i++) {
+    if (node[this._tokens[i]] !== undefined) {
+      node = node[this._tokens[i]]
+    } else if (this._tokens[i + 1] && !isNaN(this._tokens[i + 1])) {
+      node = node[this._tokens[i]] = []
+    } else {
+      node = node[this._tokens[i]] = {}
+    }
+  }
+
+  node[this._tokens[i]] = value
+}
 
 /**
  * Parses the path. Splits it into
@@ -48,25 +50,25 @@ JsonPath.prototype.setValue = function( node, value ) {
  * @private
  * @returns {void}
  */
-JsonPath.prototype._tokenize = function() {
-	var parts = this._path.split( SPLIT_REG_EXP ),
-		part,
-		i;
+JsonPath.prototype._tokenize = function () {
+  const parts = this._path.split(SPLIT_REG_EXP)
+  let part
+  let i
 
-	for( i = 0; i < parts.length; i++ ) {
-		part = parts[ i ].trim();
+  for (i = 0; i < parts.length; i++) {
+    part = parts[i].trim()
 
-		if( part.length === 0 ) {
-			continue;
-		}
+    if (part.length === 0) {
+      continue
+    }
 
-		if( !isNaN( part ) ) {
-			this._tokens.push( parseInt( part, 10 ) );
-			continue;
-		}
+    if (!isNaN(part)) {
+      this._tokens.push(parseInt(part, 10))
+      continue
+    }
 
-		this._tokens.push( part );
-	}
-};
+    this._tokens.push(part)
+  }
+}
 
-module.exports = JsonPath;
+module.exports = JsonPath

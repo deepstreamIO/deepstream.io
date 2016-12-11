@@ -1,23 +1,26 @@
-var AuthenticationHandler = require( '../../src/authentication/open-authentication-handler' );
+/* global describe, it, expect */
+'use strict'
 
-describe( 'open authentication handler', function(){
-	var authenticationHandler;
+const AuthenticationHandler = require('../../src/authentication/open-authentication-handler')
 
-	it( 'creates the handler', function(){
-		authenticationHandler = new AuthenticationHandler();
-		expect( typeof authenticationHandler.isValidUser ).toBe( 'function' );
-		expect( authenticationHandler.type ).toBe( 'none' );
-	});
+describe('open authentication handler', () => {
+  let authenticationHandler
 
-	it( 'permissions users without auth data', function(){
-		var callback = jasmine.createSpy( 'callback' );
-		authenticationHandler.isValidUser( null, {}, callback );
-		expect( callback ).toHaveBeenCalledWith( true, {username: 'open'});
-	});
+  it('creates the handler', () => {
+    authenticationHandler = new AuthenticationHandler()
+    expect(typeof authenticationHandler.isValidUser).toBe('function')
+    expect(authenticationHandler.type).toBe('none')
+  })
 
-	it( 'permissions users with a username', function(){
-		var callback = jasmine.createSpy( 'callback' );
-		authenticationHandler.isValidUser( null, { username: 'Wolfram' }, callback );
-		expect( callback ).toHaveBeenCalledWith( true, {username: 'Wolfram' });
-	});
-});
+  it('permissions users without auth data', () => {
+    const callback = jasmine.createSpy('callback')
+    authenticationHandler.isValidUser(null, {}, callback)
+    expect(callback).toHaveBeenCalledWith(true, { username: 'open' })
+  })
+
+  it('permissions users with a username', () => {
+    const callback = jasmine.createSpy('callback')
+    authenticationHandler.isValidUser(null, { username: 'Wolfram' }, callback)
+    expect(callback).toHaveBeenCalledWith(true, { username: 'Wolfram' })
+  })
+})

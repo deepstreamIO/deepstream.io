@@ -1,17 +1,20 @@
-var LoggerMock = function() {
-		this.isReady = true;
-		this.lastLogLevel = null;
-		this.lastLogEvent = null;
-		this.lastLogMessage = null;
-};
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-LoggerMock.prototype.log = function( level, event, message ) {
-		this.lastLogLevel = level;
-		this.lastLogEvent = event;
-		this.lastLogMessage = message;
-};
+const LoggerMock = function () {
+  this.isReady = true
+  this.lastLogLevel = null
+  this.lastLogEvent = null
+  this.lastLogMessage = null
+}
 
-LoggerMock.prototype.setLogLevel = function( level ) {
-};
+LoggerMock.prototype.log = function (level, event, message) {
+  this.lastLogLevel = level
+  this.lastLogEvent = event
+  this.lastLogMessage = message
+}
 
-module.exports = LoggerMock;
+LoggerMock.prototype.setLogLevel = function (level) {
+}
+
+module.exports = LoggerMock

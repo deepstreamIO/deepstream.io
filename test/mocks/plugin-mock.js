@@ -1,16 +1,19 @@
-var EventEmitter = require( 'events' ).EventEmitter,
-	util = require( 'util' );
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-var PluginMock = function( name ) {
-	this.isReady = false;
-	this.name = name;
-};
+let EventEmitter = require('events').EventEmitter,
+  util = require('util')
 
-util.inherits( PluginMock, EventEmitter );
+const PluginMock = function (name) {
+  this.isReady = false
+  this.name = name
+}
 
-PluginMock.prototype.setReady = function() {
-	this.isReady = true;
-	this.emit( 'ready' );
-};
+util.inherits(PluginMock, EventEmitter)
 
-module.exports = PluginMock;
+PluginMock.prototype.setReady = function () {
+  this.isReady = true
+  this.emit('ready')
+}
+
+module.exports = PluginMock

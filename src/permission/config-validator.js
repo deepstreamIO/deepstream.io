@@ -1,7 +1,10 @@
-var pathParser = require( './path-parser' );
-var ruleParser = require( './rule-parser' );
-var validationSteps = {};
-var SCHEMA = require( './config-schema' );
+'use strict'
+
+const pathParser = require('./path-parser')
+const ruleParser = require('./rule-parser')
+const SCHEMA = require('./config-schema')
+
+const validationSteps = {}
 
 /**
  * Validates a configuration object. This method runs through multiple
@@ -13,20 +16,20 @@ var SCHEMA = require( './config-schema' );
  * @public
  * @returns {Boolean|String} validationResult Only true is treated as pass.
  */
-exports.validate = function( config ) {
-	var validationStepResult;
-	var key;
+exports.validate = function (config) {
+  let validationStepResult
+  let key
 
-	for( key in validationSteps ) {
-		validationStepResult = validationSteps[ key ]( config );
+  for (key in validationSteps) {
+    validationStepResult = validationSteps[key](config)
 
-		if( validationStepResult !== true ) {
-			return validationStepResult;
-		}
-	}
+    if (validationStepResult !== true) {
+      return validationStepResult
+    }
+  }
 
-	return true;
-};
+  return true
+}
 
 /**
  * Checks if the configuration is an object
@@ -36,13 +39,13 @@ exports.validate = function( config ) {
  * @private
  * @returns {Boolean}
  */
-validationSteps.isValidType = function( config ) {
-	if( typeof config === 'object' ) {
-		return true;
-	} else {
-		return 'config should be an object literal, but was of type ' + ( typeof config );
-	}
-};
+validationSteps.isValidType = function (config) {
+  if (typeof config === 'object') {
+    return true
+  }
+
+  return `config should be an object literal, but was of type ${typeof config}`
+}
 
 /**
  * Makes sure all sections (record, event, rpc) are present
@@ -52,15 +55,15 @@ validationSteps.isValidType = function( config ) {
  * @private
  * @returns {Boolean}
  */
-validationSteps.hasRequiredTopLevelKeys = function( config ) {
-	for( var key in SCHEMA ) {
-		if( typeof config[ key ] !== 'object' ) {
-			return 'missing configuration section "' + key + '"';
-		}
-	}
+validationSteps.hasRequiredTopLevelKeys = function (config) {
+  for (const key in SCHEMA) {
+    if (typeof config[key] !== 'object') {
+      return `missing configuration section "${key}"`
+    }
+  }
 
-	return true;
-};
+  return true
+}
 
 /**
  * Makes sure no unsupported sections were added
@@ -70,15 +73,15 @@ validationSteps.hasRequiredTopLevelKeys = function( config ) {
  * @private
  * @returns {Boolean}
  */
-validationSteps.doesNotHaveAdditionalTopLevelKeys = function( config ) {
-	for( var key in config ) {
-		if( typeof SCHEMA[ key ] === 'undefined' ) {
-			return 'unexpected configuration section "' + key + '"';
-		}
-	}
+validationSteps.doesNotHaveAdditionalTopLevelKeys = function (config) {
+  for (const key in config) {
+    if (typeof SCHEMA[key] === 'undefined') {
+      return `unexpected configuration section "${key}"`
+    }
+  }
 
-	return true;
-};
+  return true
+}
 
 /**
  * Checks if the configuration contains valid path definitions
@@ -88,27 +91,28 @@ validationSteps.doesNotHaveAdditionalTopLevelKeys = function( config ) {
  * @private
  * @returns {Boolean}
  */
-validationSteps.doesOnlyContainValidPaths = function( config ) {
-	var key, path, result;
+validationSteps.doesOnlyContainValidPaths = function (config) {
+  let key
+  let path
+  let result
 
-	for( key in SCHEMA ) {
+  for (key in SCHEMA) {
+    // Check empty
+    if (Object.keys(config[key]).length === 0) {
+      return `empty section "${key}"`
+    }
 
-		// Check empty
-		if( Object.keys( config[ key ] ).length === 0 ) {
-			return 'empty section "' + key + '"';
-		}
+    // Check valid
+    for (path in config[key]) {
+      result = pathParser.validate(path)
+      if (result !== true) {
+        return `${result} for path ${path} in section ${key}`
+      }
+    }
+  }
 
-		// Check valid
-		for( path in config[ key ] ) {
-			result = pathParser.validate( path );
-			if( result !== true ) {
-				return result + ' for path ' + path + ' in section ' + key;
-			}
-		}
-	}
-
-	return true;
-};
+  return true
+}
 
 /**
  * Each section must specify a generic permission ("*") that
@@ -119,17 +123,17 @@ validationSteps.doesOnlyContainValidPaths = function( config ) {
  * @private
  * @returns {Boolean}
  */
-validationSteps.doesHaveRootEntries = function( config ) {
-	var sectionName;
+validationSteps.doesHaveRootEntries = function (config) {
+  let sectionName
 
-	for( sectionName in SCHEMA ) {
-		if( !config[ sectionName ][ '*' ] ) {
-			return 'missing root entry "*" for section ' + sectionName;
-		}
-	}
+  for (sectionName in SCHEMA) {
+    if (!config[sectionName]['*']) {
+      return `missing root entry "*" for section ${sectionName}`
+    }
+  }
 
-	return true;
-};
+  return true
+}
 
 /**
  * Runs the rule validator against every rule in each section
@@ -139,23 +143,26 @@ validationSteps.doesHaveRootEntries = function( config ) {
  * @private
  * @returns {Boolean}
  */
-validationSteps.hasValidRules = function( config ) {
-	var key, path, ruleType, section, validationResult;
+validationSteps.hasValidRules = function (config) {
+  let path
+  let ruleType
+  let section
+  let validationResult
 
-	for( section in config ) {
-		for( path in config[ section ] ) {
-			for( ruleType in config[ section ][ path ] ) {
-				if( SCHEMA[ section ][ ruleType ] !== true ) {
-					return 'unknown rule type ' + ruleType + ' in section ' + section;
-				}
+  for (section in config) {
+    for (path in config[section]) {
+      for (ruleType in config[section][path]) {
+        if (SCHEMA[section][ruleType] !== true) {
+          return `unknown rule type ${ruleType} in section ${section}`
+        }
 
-				validationResult = ruleParser.validate( config[ section ][ path ][ ruleType ], section, ruleType );
-				if( validationResult !== true ) {
-					return validationResult;
-				}
-			}
-		}
-	}
+        validationResult = ruleParser.validate(config[section][path][ruleType], section, ruleType)
+        if (validationResult !== true) {
+          return validationResult
+        }
+      }
+    }
+  }
 
-	return true;
-};
+  return true
+}

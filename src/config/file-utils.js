@@ -1,5 +1,7 @@
-const fs = require( 'fs' );
-const path = require( 'path' );
+'use strict'
+
+const fs = require('fs')
+const path = require('path')
 
 /**
 * Append the global library directory as the prefix to any path
@@ -10,9 +12,9 @@ const path = require( 'path' );
 * @private
 * @returns {String} file path with the library prefix used
 */
-exports.lookupLibRequirePath = function( filePath ) {
-	return exports.lookupRequirePath( filePath, global.deepstreamLibDir );
-};
+exports.lookupLibRequirePath = function (filePath) {
+  return exports.lookupRequirePath(filePath, global.deepstreamLibDir)
+}
 
 /**
 * Append the global configuration directory as the prefix to any path
@@ -23,9 +25,9 @@ exports.lookupLibRequirePath = function( filePath ) {
 * @private
 * @returns {String} file path with the configuration prefix used
 */
-exports.lookupConfRequirePath = function( filePath ) {
-	return exports.lookupRequirePath( filePath, global.deepstreamConfDir );
-};
+exports.lookupConfRequirePath = function (filePath) {
+  return exports.lookupRequirePath(filePath, global.deepstreamConfDir)
+}
 
 /**
  * Resolve a path which will be passed to *require*.
@@ -47,26 +49,26 @@ exports.lookupConfRequirePath = function( filePath ) {
  * @private
  * @returns {String} file path with the prefix
  */
-exports.lookupRequirePath = function( filePath, prefix ) {
-	if ( path.parse( filePath ).root !== '' ) {
-		// filePath is absolute
-		return filePath;
-	} else if ( filePath[0] !== '.' ) {
-		// filePath is not relative (and not absolute)
-		if ( prefix == null ) {
-			return filePath;
-		} else {
-			return resolvePrefixAndFile( filePath, prefix );
-		}
-	} else {
-		// filePath is relative, starts with .
-		if ( prefix == null ) {
-			return path.resolve( process.cwd(), filePath );
-		} else {
-			return resolvePrefixAndFile( filePath, prefix );
-		}
-	}
-};
+exports.lookupRequirePath = function (filePath, prefix) {
+  // filePath is absolute
+  if (path.parse(filePath).root !== '') {
+    return filePath
+  }
+
+  // filePath is not relative (and not absolute)
+  if (filePath[0] !== '.') {
+    if (prefix == null) {
+      return filePath
+    }
+    return resolvePrefixAndFile(filePath, prefix)
+  }
+
+  // filePath is relative, starts with .
+  if (prefix == null) {
+    return path.resolve(process.cwd(), filePath)
+  }
+  return resolvePrefixAndFile(filePath, prefix)
+}
 
 /**
  * Returns true if a file exists for a given path
@@ -76,14 +78,14 @@ exports.lookupRequirePath = function( filePath, prefix ) {
  * @private
  * @returns {Boolean} exists
  */
-exports.fileExistsSync = function( filePath ) {
-	try{
-		fs.lstatSync( filePath );
-		return true;
-	} catch( e ) {
-		return false;
-	}
-};
+exports.fileExistsSync = function (filePath) {
+  try {
+    fs.lstatSync(filePath)
+    return true
+  } catch (e) {
+    return false
+  }
+}
 
 /**
 * Append the prefix to the current working directory,
@@ -95,12 +97,12 @@ exports.fileExistsSync = function( filePath ) {
 * @private
 * @returns {String} resolvedPath
 */
-function resolvePrefixAndFile( nonAbsoluteFilePath, prefix ) {
-	if ( path.parse( prefix ).root === '' ) {
-		// prefix is not absolute
-		return path.resolve( process.cwd(), prefix, nonAbsoluteFilePath );
-	} else {
-		// prefix is absolute
-		return path.resolve( prefix, nonAbsoluteFilePath );
-	}
+function resolvePrefixAndFile(nonAbsoluteFilePath, prefix) {
+  // prefix is not absolute
+  if (path.parse(prefix).root === '') {
+    return path.resolve(process.cwd(), prefix, nonAbsoluteFilePath)
+  }
+
+  // prefix is absolute
+  return path.resolve(prefix, nonAbsoluteFilePath)
 }

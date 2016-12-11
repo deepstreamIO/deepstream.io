@@ -1,97 +1,100 @@
-var Deepstream = require( '../../src/deepstream.io' );
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-describe( 'parses low level authData to simpler output', function() {
-	var message;
-	var parsedMessage;
+const Deepstream = require('../../src/deepstream.io')
 
-	beforeEach( function() {
-		message = {
-			topic: 'R',
-			action: 'CR',
-			data: [ 'RecordName', 1, 'data' ]
-		};
+describe('parses low level authData to simpler output', () => {
+  let message
+  let parsedMessage
 
-		parsedMessage = {
-			isRecord: false,
-			isEvent: false,
-			isRPC: false,
+  beforeEach(() => {
+    message = {
+      topic: 'R',
+      action: 'CR',
+      data: ['RecordName', 1, 'data']
+    }
 
-			isCreate: false,
-			isRead: false,
-			isChange: false,
-			isDelete: false,
+    parsedMessage = {
+      isRecord: false,
+      isEvent: false,
+      isRPC: false,
 
-			isAck: false, 
-			isSubscribe: false, 
-			isUnsubscribe: false, 
-			isRequest: false, 
-			isRejection: false,
+      isCreate: false,
+      isRead: false,
+      isChange: false,
+      isDelete: false,
 
-			name: 'RecordName',
-			path: undefined,
-			data: 'data'
-		};
-	});
+      isAck: false,
+      isSubscribe: false,
+      isUnsubscribe: false,
+      isRequest: false,
+      isRejection: false,
 
-	it( 'parses RPC message correctly', function() {
-		message.topic = 'P';
-		message.action = '';
+      name: 'RecordName',
+      path: undefined,
+      data: 'data'
+    }
+  })
 
-		parsedMessage.isRPC = true;
+  it('parses RPC message correctly', () => {
+    message.topic = 'P'
+    message.action = ''
 
-		expect( Deepstream.readMessage( message ) ).toEqual( parsedMessage );
-	});
+    parsedMessage.isRPC = true
 
-	it( 'parses Event message correctly', function() {
-		message.topic = 'E';
-		message.action = '';
+    expect(Deepstream.readMessage(message)).toEqual(parsedMessage)
+  })
 
-		parsedMessage.isEvent = true;
+  it('parses Event message correctly', () => {
+    message.topic = 'E'
+    message.action = ''
 
-		expect( Deepstream.readMessage( message ) ).toEqual( parsedMessage );
-	});
+    parsedMessage.isEvent = true
 
-	describe( 'when a record is recieved', function() {
-		beforeEach( function() {
-			parsedMessage.isRecord = true;
-		});
+    expect(Deepstream.readMessage(message)).toEqual(parsedMessage)
+  })
 
-		it( 'parses read/create message correctly', function() {
-			message.action = 'CR';
-			message.data = [ 'RecordName', 1, 'data' ];
+  describe('when a record is recieved', () => {
+    beforeEach(() => {
+      parsedMessage.isRecord = true
+    })
 
-			parsedMessage.isCreate = true;
-			parsedMessage.isRead = true;
+    it('parses read/create message correctly', () => {
+      message.action = 'CR'
+      message.data = ['RecordName', 1, 'data']
 
-			expect( Deepstream.readMessage( message ) ).toEqual( parsedMessage );
-		});
+      parsedMessage.isCreate = true
+      parsedMessage.isRead = true
 
-		it( 'parses patch message correctly', function() {
-			message.action = 'P';
-			message.data = [ 'RecordName', 1, 'path', 'data' ];
+      expect(Deepstream.readMessage(message)).toEqual(parsedMessage)
+    })
 
-			parsedMessage.isChange = true;
-			parsedMessage.path = 'path';
-			parsedMessage.data = 'data';
+    it('parses patch message correctly', () => {
+      message.action = 'P'
+      message.data = ['RecordName', 1, 'path', 'data']
 
-			expect( Deepstream.readMessage( message ) ).toEqual( parsedMessage );
-		});
+      parsedMessage.isChange = true
+      parsedMessage.path = 'path'
+      parsedMessage.data = 'data'
 
-		it( 'returns record gets changed via update', function() {
-			message.action = 'U';
-			message.data = [ 'RecordName', 1, 'data' ];
+      expect(Deepstream.readMessage(message)).toEqual(parsedMessage)
+    })
 
-			parsedMessage.isChange = true;
-			parsedMessage.data = 'data';
+    it('returns record gets changed via update', () => {
+      message.action = 'U'
+      message.data = ['RecordName', 1, 'data']
 
-			expect( Deepstream.readMessage( message ) ).toEqual( parsedMessage );
-		});
+      parsedMessage.isChange = true
+      parsedMessage.data = 'data'
 
-		it( 'returns record gets deleted', function() {
-			message.action = 'D';
-			parsedMessage.isDelete = true;
+      expect(Deepstream.readMessage(message)).toEqual(parsedMessage)
+    })
 
-			expect( Deepstream.readMessage( message ) ).toEqual( parsedMessage );
-		});
-	});
-});
+    it('returns record gets deleted', () => {
+      message.action = 'D'
+      parsedMessage.isDelete = true
+
+      expect(Deepstream.readMessage(message)).toEqual(parsedMessage)
+    })
+  })
+})

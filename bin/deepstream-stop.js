@@ -1,8 +1,10 @@
-const pidHelper = require( './pid-helper' );
+'use strict'
 
-module.exports = function( program ) {
-	program
-		.command( 'stop' )
-		.description( 'stop a running deepstream server' )
-		.action( pidHelper.stop );
+const pidHelper = require('./pid-helper')
+
+module.exports = function (program) {
+  program
+		.command('stop')
+		.description('stop a running deepstream server')
+		.action(pidHelper.stop)
 }

@@ -1,7 +1,9 @@
-require( 'colors' );
+'use strict'
 
-var C = require( '../constants/constants' ),
-	EOL = require( 'os' ).EOL;
+require('colors')
+const C = require('../constants/constants')
+
+const EOL = require('os').EOL
 
 /**
  * Logs to the operatingsystem's standard-out and standard-error streams.
@@ -11,19 +13,19 @@ var C = require( '../constants/constants' ),
  *
  * @constructor
  */
-var StdOutLogger = function( options ) {
-	this._options = options || {};
-	this.isReady = true;
-	this._$useColors = this._options.colors === undefined ? true : this._options.colors;
-	this._logLevelColors = [
-		'white',
-		'green',
-		'yellow',
-		'red'
-	];
+const StdOutLogger = function (options) {
+  this._options = options || {}
+  this.isReady = true
+  this._$useColors = this._options.colors === undefined ? true : this._options.colors
+  this._logLevelColors = [
+    'white',
+    'green',
+    'yellow',
+    'red'
+  ]
 
-	this._currentLogLevel = C.LOG_LEVEL[ this._options.logLevel ] || C.LOG_LEVEL.DEBUG;
-};
+  this._currentLogLevel = C.LOG_LEVEL[this._options.logLevel] || C.LOG_LEVEL.DEBUG
+}
 
 /**
  * Logs a line
@@ -35,26 +37,26 @@ var StdOutLogger = function( options ) {
  * @public
  * @returns {void}
  */
-StdOutLogger.prototype.log = function( logLevel, event, logMessage ) {
-	if( logLevel < this._currentLogLevel ) {
-		return;
-	}
+StdOutLogger.prototype.log = function (logLevel, event, logMessage) {
+  if (logLevel < this._currentLogLevel) {
+    return
+  }
 
-	var msg = event + ' | ' + logMessage,
-		outputStream;
+  const msg = `${event} | ${logMessage}`
+  let outputStream
 
-	if( logLevel === C.LOG_LEVEL.ERROR || logLevel === C.LOG_LEVEL.WARN ) {
-		outputStream = 'stderr';
-	} else {
-		outputStream = 'stdout';
-	}
+  if (logLevel === C.LOG_LEVEL.ERROR || logLevel === C.LOG_LEVEL.WARN) {
+    outputStream = 'stderr'
+  } else {
+    outputStream = 'stdout'
+  }
 
-	if( this._$useColors ) {
-		process[ outputStream ].write( msg[ this._logLevelColors[ logLevel ] ] + EOL );
-	} else {
-		process[ outputStream ].write( msg + EOL );
-	}
-};
+  if (this._$useColors) {
+    process[outputStream].write(msg[this._logLevelColors[logLevel]] + EOL)
+  } else {
+    process[outputStream].write(msg + EOL)
+  }
+}
 
 /**
  * Sets the log-level. This can be called at runtime.
@@ -64,8 +66,8 @@ StdOutLogger.prototype.log = function( logLevel, event, logMessage ) {
  * @public
  * @returns {void}
  */
-StdOutLogger.prototype.setLogLevel = function( logLevel ) {
-	this._currentLogLevel = logLevel;
-};
+StdOutLogger.prototype.setLogLevel = function (logLevel) {
+  this._currentLogLevel = logLevel
+}
 
-module.exports = StdOutLogger;
+module.exports = StdOutLogger

@@ -1,17 +1,17 @@
-'use strict';
+'use strict'
 
-const path = require( 'path' );
-const url = require( 'url' );
-const OBJECT = 'object';
+const path = require('path')
+const url = require('url')
+const OBJECT = 'object'
 
 /**
  * Returns a unique identifier
  *
  * @returns {String} uid
  */
-exports.getUid = function() {
-	return Date.now().toString( 36 ) + '-' + ( Math.random() * 10000000000000000000 ).toString( 36 );
-};
+exports.getUid = function () {
+  return `${Date.now().toString(36)}-${(Math.random() * 10000000000000000000).toString(36)}`
+}
 
 /**
  * Calls <callback> once all <emitters> have emitted <event>
@@ -23,21 +23,21 @@ exports.getUid = function() {
  * @public
  * @returns {void}
  */
-exports.combineEvents = function( emitters, event, callback ) {
-	var i;
-	var count = 0;
-	var increment = function() {
-		count++;
+exports.combineEvents = function (emitters, event, callback) {
+  let i
+  let count = 0
+  const increment = function () {
+    count++
 
-		if( count === emitters.length ) {
-			callback();
-		}
-	};
+    if (count === emitters.length) {
+      callback()
+    }
+  }
 
-	for( i = 0; i < emitters.length; i++ ) {
-			emitters[ i ].once( event, increment );
-	}
-};
+  for (i = 0; i < emitters.length; i++) {
+    emitters[i].once(event, increment)
+  }
+}
 
 /**
  * Takes a key-value map and returns
@@ -48,15 +48,15 @@ exports.combineEvents = function( emitters, event, callback ) {
  * @public
  * @return {Object} reversed map
  */
-exports.reverseMap = function( map ) {
-	var reversedMap = {}, key;
+exports.reverseMap = function (map) {
+  const reversedMap = {}
 
-	for( key in map ) {
-		reversedMap[ map[ key ] ] = key;
-	}
+  for (const key in map) {
+    reversedMap[map[key]] = key
+  }
 
-	return reversedMap;
-};
+  return reversedMap
+}
 
 /**
  * Extended version of the typeof operator. Also supports 'array'
@@ -68,15 +68,14 @@ exports.reverseMap = function( map ) {
  * @public
  * @returns {Boolean}
  */
-exports.isOfType = function( input, expectedType ) {
-	if( expectedType === 'array' ) {
-		return Array.isArray( input );
-	} else if( expectedType === 'url' ) {
-		return !!url.parse( input ).host;
-	} else {
-		return typeof input === expectedType;
-	}
-};
+exports.isOfType = function (input, expectedType) {
+  if (expectedType === 'array') {
+    return Array.isArray(input)
+  } else if (expectedType === 'url') {
+    return !!url.parse(input).host
+  }
+  return typeof input === expectedType
+}
 
 /**
  * Takes a map and validates it against a basic
@@ -89,31 +88,32 @@ exports.isOfType = function( input, expectedType ) {
  * @public
  * @returns {Boolean|Error}
  */
-exports.validateMap = function( map, throwError, schema ) {
-	var error, key;
+exports.validateMap = function (map, throwError, schema) {
+  let error
+  let key
 
-	for( key in schema ) {
-		if( typeof map[ key ] === 'undefined' ) {
-			error = new Error( 'Missing key ' + key );
-			break;
-		}
+  for (key in schema) {
+    if (typeof map[key] === 'undefined') {
+      error = new Error(`Missing key ${key}`)
+      break
+    }
 
-		if( !exports.isOfType( map[ key ], schema[ key ] ) ) {
-			error = new Error( 'Invalid type ' + typeof map[ key ] + ' for ' + key );
-			break;
-		}
-	}
+    if (!exports.isOfType(map[key], schema[key])) {
+      error = new Error(`Invalid type ${typeof map[key]} for ${key}`)
+      break
+    }
+  }
 
-	if( error ) {
-		if( throwError ) {
-			throw error;
-		} else {
-			return error;
-		}
-	} else {
-		return true;
-	}
-};
+  if (error) {
+    if (throwError) {
+      throw error
+    } else {
+      return error
+    }
+  } else {
+    return true
+  }
+}
 
 /**
  * Tests have shown that JSON stringify outperforms any attempt of
@@ -133,13 +133,12 @@ exports.validateMap = function( map, throwError, schema ) {
  * @public
  * @returns {Mixed} clone
  */
-exports.deepCopy = function( obj ) {
-	if( typeof obj === OBJECT ) {
-		return JSON.parse( JSON.stringify( obj ) );
-	} else {
-		return obj;
-	}
-};
+exports.deepCopy = function (obj) {
+  if (typeof obj === OBJECT) {
+    return JSON.parse(JSON.stringify(obj))
+  }
+  return obj
+}
 
 /**
  * Multi Object recoursive merge
@@ -149,30 +148,30 @@ exports.deepCopy = function( obj ) {
  * @public
  * @returns {Object} merged result
  */
-exports.merge = function() {
-	var result = {};
-	var objs = Array.prototype.slice.apply( arguments );
-	var i;
+exports.merge = function () {
+  const result = {}
+  const objs = Array.prototype.slice.apply(arguments)
+  let i
 
-	var _merge = ( objA, objB ) => {
-		var key;
+  const _merge = (objA, objB) => {
+    let key
 
-		for( key in objB ) {
-			if( objB[ key ] && objB[ key ].constructor === Object ) {
-				objA[ key ] = objA[ key ] || {};
-				_merge( objA[ key ], objB[ key ] );
-			} else if( objB[ key ] !== undefined ) {
-				objA[ key ] = objB[ key ];
-			}
-		}
-	};
+    for (key in objB) {
+      if (objB[key] && objB[key].constructor === Object) {
+        objA[key] = objA[key] || {}
+        _merge(objA[key], objB[key])
+      } else if (objB[key] !== undefined) {
+        objA[key] = objB[key]
+      }
+    }
+  }
 
-	for( i = 0; i < objs.length; i++ ) {
-		_merge( result, objs[ i ] );
-	}
+  for (i = 0; i < objs.length; i++) {
+    _merge(result, objs[i])
+  }
 
-	return result;
-};
+  return result
+}
 
 /**
  * Set timeout utility that adds support for disabling a timeout
@@ -184,13 +183,12 @@ exports.merge = function() {
  * @public
  * @returns {Number} timeoutId
  */
-exports.setTimeout = function( callback, timeoutDuration ) {
-	if( timeoutDuration !== null ) {
-		return setTimeout( callback, timeoutDuration );
-	} else {
-		return -1;
-	}
-};
+exports.setTimeout = function (callback, timeoutDuration) {
+  if (timeoutDuration !== null) {
+    return setTimeout(callback, timeoutDuration)
+  }
+  return -1
+}
 
 /**
  * Set Interval utility that adds support for disabling an interval
@@ -202,19 +200,18 @@ exports.setTimeout = function( callback, timeoutDuration ) {
  * @public
  * @returns {Number} intervalId
  */
-exports.setInterval = function( callback, intervalDuration ) {
-	if( intervalDuration !== null ) {
-		return setInterval( callback, intervalDuration );
-	} else {
-		return -1;
-	}
-};
+exports.setInterval = function (callback, intervalDuration) {
+  if (intervalDuration !== null) {
+    return setInterval(callback, intervalDuration)
+  }
+  return -1
+}
 
-exports.getRandomIntInRange = function( min, max ) {
-	return min + Math.floor( Math.random() * ( max - min ) );
-};
+exports.getRandomIntInRange = function (min, max) {
+  return min + Math.floor(Math.random() * (max - min))
+}
 
-exports.spliceRandomElement = function( array ) {
-  const randomIndex = exports.getRandomIntInRange( 0, array.length );
-  return array.splice( randomIndex, 1 )[ 0 ];
+exports.spliceRandomElement = function (array) {
+  const randomIndex = exports.getRandomIntInRange(0, array.length)
+  return array.splice(randomIndex, 1)[0]
 }

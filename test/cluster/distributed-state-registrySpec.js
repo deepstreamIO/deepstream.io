@@ -1,318 +1,321 @@
-var DistributedStateRegistry = require( '../../src/cluster/distributed-state-registry' );
-var MessageConnectorMock = require( '../mocks/message-connector-mock' );
-var clusterRegistryMock = new (require( '../mocks/cluster-registry-mock' ))();
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-describe( 'distributed-state-registry local', function(){
-	describe( 'adds and removes names', function(){
-		var registry;
+const DistributedStateRegistry = require('../../src/cluster/distributed-state-registry')
+const MessageConnectorMock = require('../mocks/message-connector-mock')
+const clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
 
-		var options = {
-			clusterRegistry: clusterRegistryMock,
-			serverName: 'server-name-a',
-			stateReconciliationTimeout: 10,
-			messageConnector: new MessageConnectorMock()
-		};
+describe('distributed-state-registry local', () => {
+  describe('adds and removes names', () => {
+    let registry
 
-		it( 'creates the registry', function(){
-			registry = new DistributedStateRegistry( 'TEST_TOPIC', options );
-			expect( typeof registry.add ).toBe( 'function' );
-		});
+    const options = {
+      clusterRegistry: clusterRegistryMock,
+      serverName: 'server-name-a',
+      stateReconciliationTimeout: 10,
+      messageConnector: new MessageConnectorMock()
+    }
 
-		it( 'adds a new local name', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'add', callback );
-			registry.add( 'test-name-a' );
+    it('creates the registry', () => {
+      registry = new DistributedStateRegistry('TEST_TOPIC', options)
+      expect(typeof registry.add).toBe('function')
+    })
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( 'TEST_TOPIC' );
-			expect( options.messageConnector.lastPublishedMessage ).toEqual({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_ADD',
-				data: [ 'test-name-a', 'server-name-a', 2467841850 ]
-			});
+    it('adds a new local name', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('add', callback)
+      registry.add('test-name-a')
 
-			expect( callback ).toHaveBeenCalledWith( 'test-name-a' );
-			expect( registry.getAll() ).toEqual([ 'test-name-a' ]);
-		});
+      expect(options.messageConnector.lastPublishedTopic).toBe('TEST_TOPIC')
+      expect(options.messageConnector.lastPublishedMessage).toEqual({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_ADD',
+        data: ['test-name-a', 'server-name-a', 2467841850]
+      })
 
-		it( 'adds another new local name', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'add', callback );
-			registry.add( 'test-name-b' );
+      expect(callback).toHaveBeenCalledWith('test-name-a')
+      expect(registry.getAll()).toEqual(['test-name-a'])
+    })
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( 'TEST_TOPIC' );
-			expect( options.messageConnector.lastPublishedMessage ).toEqual({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_ADD',
-				data: [ 'test-name-b', 'server-name-a', 4935683701 ]
-			});
+    it('adds another new local name', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('add', callback)
+      registry.add('test-name-b')
 
-			expect( callback ).toHaveBeenCalledWith( 'test-name-b' );
-			expect( registry.getAll() ).toEqual([ 'test-name-a', 'test-name-b' ]);
-		});
+      expect(options.messageConnector.lastPublishedTopic).toBe('TEST_TOPIC')
+      expect(options.messageConnector.lastPublishedMessage).toEqual({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_ADD',
+        data: ['test-name-b', 'server-name-a', 4935683701]
+      })
 
-		it( 'adds an existing local name', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
+      expect(callback).toHaveBeenCalledWith('test-name-b')
+      expect(registry.getAll()).toEqual(['test-name-a', 'test-name-b'])
+    })
 
-			registry.once( 'add', callback );
-			registry.add( 'test-name-b' );
+    it('adds an existing local name', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).not.toHaveBeenCalled();
-			expect( registry.getAll() ).toEqual([ 'test-name-a', 'test-name-b' ]);
-		});
+      registry.once('add', callback)
+      registry.add('test-name-b')
 
-		it( 'adds a new remote name', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'add', callback );
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).not.toHaveBeenCalled()
+      expect(registry.getAll()).toEqual(['test-name-a', 'test-name-b'])
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_ADD',
-				data: [ 'test-name-c', 'server-name-b', 2467841852 ]
-			});
+    it('adds a new remote name', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('add', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).toHaveBeenCalledWith( 'test-name-c' );
-			expect( registry.getAll() ).toEqual([ 'test-name-a', 'test-name-b', 'test-name-c' ]);
-		});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_ADD',
+        data: ['test-name-c', 'server-name-b', 2467841852]
+      })
 
-		it( 'adds another new remote name', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'add', callback );
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).toHaveBeenCalledWith('test-name-c')
+      expect(registry.getAll()).toEqual(['test-name-a', 'test-name-b', 'test-name-c'])
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_ADD',
-				data: [ 'test-name-d', 'server-name-b', 4935683705 ]
-			});
+    it('adds another new remote name', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('add', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).toHaveBeenCalledWith( 'test-name-d' );
-			expect( registry.getAll() ).toEqual([ 'test-name-a', 'test-name-b', 'test-name-c', 'test-name-d' ]);
-		});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_ADD',
+        data: ['test-name-d', 'server-name-b', 4935683705]
+      })
 
-		it( 'adds an existing remote name', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'add', callback );
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).toHaveBeenCalledWith('test-name-d')
+      expect(registry.getAll()).toEqual(['test-name-a', 'test-name-b', 'test-name-c', 'test-name-d'])
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_ADD',
-				data: [ 'test-name-c', 'server-name-c', 2467841852 ]
-			});
+    it('adds an existing remote name', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('add', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).not.toHaveBeenCalled();
-			expect( registry.getAll() ).toEqual([ 'test-name-a', 'test-name-b', 'test-name-c', 'test-name-d' ]);
-			expect( registry.has( 'test-name-a' ) ).toBe( true );
-		});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_ADD',
+        data: ['test-name-c', 'server-name-c', 2467841852]
+      })
 
-		it( 'removes a name that exists once locally', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'remove', callback );
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).not.toHaveBeenCalled()
+      expect(registry.getAll()).toEqual(['test-name-a', 'test-name-b', 'test-name-c', 'test-name-d'])
+      expect(registry.has('test-name-a')).toBe(true)
+    })
 
-			registry.remove( 'test-name-a' );
+    it('removes a name that exists once locally', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('remove', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( 'TEST_TOPIC' );
-			expect( options.messageConnector.lastPublishedMessage ).toEqual({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_REMOVE',
-				data: [ 'test-name-a', 'server-name-a', 2467841851 ]
-			});
-			expect( callback ).toHaveBeenCalledWith( 'test-name-a' );
-			expect( registry.getAll() ).toEqual([ 'test-name-b', 'test-name-c', 'test-name-d' ]);
-			expect( registry.has( 'test-name-a' ) ).toBe( false );
-		});
+      registry.remove('test-name-a')
 
-		it( 'removes a remote name that exists once', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'remove', callback );
+      expect(options.messageConnector.lastPublishedTopic).toBe('TEST_TOPIC')
+      expect(options.messageConnector.lastPublishedMessage).toEqual({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_REMOVE',
+        data: ['test-name-a', 'server-name-a', 2467841851]
+      })
+      expect(callback).toHaveBeenCalledWith('test-name-a')
+      expect(registry.getAll()).toEqual(['test-name-b', 'test-name-c', 'test-name-d'])
+      expect(registry.has('test-name-a')).toBe(false)
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_REMOVE',
-				data: [ 'test-name-d', 'server-name-b', 2467841852 ]
-			});
+    it('removes a remote name that exists once', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('remove', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).toHaveBeenCalledWith( 'test-name-d' );
-			expect( registry.getAll() ).toEqual([ 'test-name-b', 'test-name-c' ]);
-		});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_REMOVE',
+        data: ['test-name-d', 'server-name-b', 2467841852]
+      })
 
-		it( 'doesnt remove a remote name that exists for another node', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'remove', callback );
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).toHaveBeenCalledWith('test-name-d')
+      expect(registry.getAll()).toEqual(['test-name-b', 'test-name-c'])
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_REMOVE',
-				data: [ 'test-name-c', 'server-name-b', 0 ]
-			});
+    it('doesnt remove a remote name that exists for another node', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('remove', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).not.toHaveBeenCalled();
-			expect( registry.getAll() ).toEqual([ 'test-name-b', 'test-name-c' ]);
-		});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_REMOVE',
+        data: ['test-name-c', 'server-name-b', 0]
+      })
 
-		it( 'removes a remote name once the last node is removed', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'remove', callback );
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).not.toHaveBeenCalled()
+      expect(registry.getAll()).toEqual(['test-name-b', 'test-name-c'])
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_REMOVE',
-				data: [ 'test-name-c', 'server-name-c', 0 ]
-			});
+    it('removes a remote name once the last node is removed', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('remove', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).toHaveBeenCalledWith( 'test-name-c' );
-			expect( registry.getAll() ).toEqual([ 'test-name-b' ]);
-		});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_REMOVE',
+        data: ['test-name-c', 'server-name-c', 0]
+      })
 
-		it( 'ensures that no reconciliation messages where pending', function( done ){
-			options.messageConnector.reset();
-			setTimeout(function(){
-				expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-				expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-				done();
-			}, 50 );
-		});
-	});
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).toHaveBeenCalledWith('test-name-c')
+      expect(registry.getAll()).toEqual(['test-name-b'])
+    })
 
-	describe( 'reconciles states', function(){
-		var registry;
+    it('ensures that no reconciliation messages where pending', (done) => {
+      options.messageConnector.reset()
+      setTimeout(() => {
+        expect(options.messageConnector.lastPublishedTopic).toBe(null)
+        expect(options.messageConnector.lastPublishedMessage).toBe(null)
+        done()
+      }, 50)
+    })
+  })
 
-		var options = {
-			clusterRegistry: clusterRegistryMock,
-			serverName: 'server-name-a',
-			stateReconciliationTimeout: 10,
-			logger: { log: function(){ console.log( arguments ); }},
-			messageConnector: new MessageConnectorMock()
-		};
+  describe('reconciles states', () => {
+    let registry
 
-		it( 'creates the registry', function(){
-			registry = new DistributedStateRegistry( 'TEST_TOPIC', options );
-			expect( typeof registry.add ).toBe( 'function' );
-		});
+    const options = {
+      clusterRegistry: clusterRegistryMock,
+      serverName: 'server-name-a',
+      stateReconciliationTimeout: 10,
+      logger: { log() { console.log(arguments) } },
+      messageConnector: new MessageConnectorMock()
+    }
 
-		it( 'adds a remote name with invalid checksum', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'add', callback );
+    it('creates the registry', () => {
+      registry = new DistributedStateRegistry('TEST_TOPIC', options)
+      expect(typeof registry.add).toBe('function')
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_ADD',
-				data: [ 'test-name-z', 'server-name-b', 666 ] // should be 2467841875
-			});
+    it('adds a remote name with invalid checksum', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('add', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).toHaveBeenCalledWith( 'test-name-z' );
-			expect( registry.getAll() ).toEqual([ 'test-name-z' ]);
-		});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_ADD',
+        data: ['test-name-z', 'server-name-b', 666] // should be 2467841875
+      })
 
-		it( 'adds a remote name with invalid checksum', function( done ){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'add', callback );
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).toHaveBeenCalledWith('test-name-z')
+      expect(registry.getAll()).toEqual(['test-name-z'])
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_ADD',
-				data: [ 'test-name-c', 'server-name-b', 666 ] // should be 1054
-			});
+    it('adds a remote name with invalid checksum', (done) => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('add', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).toHaveBeenCalledWith( 'test-name-c' );
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_ADD',
+        data: ['test-name-c', 'server-name-b', 666] // should be 1054
+      })
 
-			setTimeout(function(){
-				expect( options.messageConnector.lastPublishedTopic ).toBe( 'TEST_TOPIC' );
-				expect( options.messageConnector.lastPublishedMessage ).toEqual({
-					topic: 'TEST_TOPIC',
-					action: 'DISTRIBUTED_STATE_REQUEST_FULL_STATE',
-					data: [ 'server-name-b' ]
-				});
-				expect( registry.getAll() ).toEqual([ 'test-name-z', 'test-name-c' ]);
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).toHaveBeenCalledWith('test-name-c')
 
-				done();
-			}, 30 );
-		});
+      setTimeout(() => {
+        expect(options.messageConnector.lastPublishedTopic).toBe('TEST_TOPIC')
+        expect(options.messageConnector.lastPublishedMessage).toEqual({
+          topic: 'TEST_TOPIC',
+          action: 'DISTRIBUTED_STATE_REQUEST_FULL_STATE',
+          data: ['server-name-b']
+        })
+        expect(registry.getAll()).toEqual(['test-name-z', 'test-name-c'])
 
-		it( 'receives a full state update', function(){
-			options.messageConnector.reset();
-			var callback = jasmine.createSpy( 'callback' );
-			registry.once( 'add', callback );
+        done()
+      }, 30)
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_FULL_STATE',
-				data: [ 'server-name-b', [ 'test-name-x', 'test-name-c' ] ]
-			});
+    it('receives a full state update', () => {
+      options.messageConnector.reset()
+      const callback = jasmine.createSpy('callback')
+      registry.once('add', callback)
 
-			expect( options.messageConnector.lastPublishedTopic ).toBe( null );
-			expect( options.messageConnector.lastPublishedMessage ).toBe( null );
-			expect( callback ).toHaveBeenCalledWith( 'test-name-x' );
-			expect( registry.getAll() ).toEqual([ 'test-name-c', 'test-name-x' ]);
-		});
-	});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_FULL_STATE',
+        data: ['server-name-b', ['test-name-x', 'test-name-c']]
+      })
 
-	describe( 'invalid messages', function(){
-		var registry;
+      expect(options.messageConnector.lastPublishedTopic).toBe(null)
+      expect(options.messageConnector.lastPublishedMessage).toBe(null)
+      expect(callback).toHaveBeenCalledWith('test-name-x')
+      expect(registry.getAll()).toEqual(['test-name-c', 'test-name-x'])
+    })
+  })
 
-		var options = {
-			clusterRegistry: clusterRegistryMock,
-			serverName: 'server-name-a',
-			stateReconciliationTimeout: 10,
-			logger: { log: jasmine.createSpy( 'log' ) },
-			messageConnector: new MessageConnectorMock()
-		};
+  describe('invalid messages', () => {
+    let registry
 
-		it( 'creates the registry', function(){
-			registry = new DistributedStateRegistry( 'TEST_TOPIC', options );
-			expect( typeof registry.add ).toBe( 'function' );
-		});
+    const options = {
+      clusterRegistry: clusterRegistryMock,
+      serverName: 'server-name-a',
+      stateReconciliationTimeout: 10,
+      logger: { log: jasmine.createSpy('log') },
+      messageConnector: new MessageConnectorMock()
+    }
 
-		it( 'recieves an invalid length', function(){
-			options.messageConnector.reset();
+    it('creates the registry', () => {
+      registry = new DistributedStateRegistry('TEST_TOPIC', options)
+      expect(typeof registry.add).toBe('function')
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'DISTRIBUTED_STATE_FULL_STATE',
-				data: [ 'server-name-b' ]
-			});
+    it('recieves an invalid length', () => {
+      options.messageConnector.reset()
 
-			expect( options.logger.log ).toHaveBeenCalledWith( 2, 'INVALID_MESSAGE_DATA', [ 'server-name-b' ] );
-		});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'DISTRIBUTED_STATE_FULL_STATE',
+        data: ['server-name-b']
+      })
 
-		it( 'recieves an unknown action', function(){
-			options.messageConnector.reset();
+      expect(options.logger.log).toHaveBeenCalledWith(2, 'INVALID_MESSAGE_DATA', ['server-name-b'])
+    })
 
-			options.messageConnector.simulateIncomingMessage({
-				topic: 'TEST_TOPIC',
-				action: 'ACTION_X',
-				data: []
-			});
+    it('recieves an unknown action', () => {
+      options.messageConnector.reset()
 
-			expect( options.logger.log ).toHaveBeenCalledWith( 2, 'UNKNOWN_ACTION', 'ACTION_X' );
-		});
-	});
-});
+      options.messageConnector.simulateIncomingMessage({
+        topic: 'TEST_TOPIC',
+        action: 'ACTION_X',
+        data: []
+      })
+
+      expect(options.logger.log).toHaveBeenCalledWith(2, 'UNKNOWN_ACTION', 'ACTION_X')
+    })
+  })
+})

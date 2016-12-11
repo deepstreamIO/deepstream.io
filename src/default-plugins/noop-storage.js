@@ -1,7 +1,9 @@
-exports.get = function( key, callback ) {
-	callback( null, null );
-};
+'use strict'
 
-exports.set = function(){};
-exports.delete = function( key, callback ){ callback( null ); };
-exports.isReady = true;
+exports.get = function (key, callback) {
+  callback(null, null)
+}
+
+exports.set = function () {}
+exports.delete = function (key, callback) { callback(null) }
+exports.isReady = true

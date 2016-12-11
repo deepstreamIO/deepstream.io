@@ -1,3 +1,5 @@
-var TestServer = require( './test-http-server' );
+'use strict'
 
-new TestServer( 6004, true );
+const TestServer = require('./test-http-server')
+
+new TestServer(6004, true)

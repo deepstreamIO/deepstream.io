@@ -1,102 +1,102 @@
-/* global describe, it, expect, jasmine */
-var C = require( '../../src/constants/constants' ),
-  DependencyInitialiser = require( '../../src/utils/dependency-initialiser' ),
-	PluginMock = require( '../mocks/plugin-mock' ),
-	LoggerMock = require( '../mocks/logger-mock' ),
-	EventEmitter = require( 'events' ).EventEmitter;
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
 
-describe( 'dependency-initialiser', function(){
-	var dependencyInitialiser;
-	var dependencyBInitialiser;
+let C = require('../../src/constants/constants'),
+  DependencyInitialiser = require('../../src/utils/dependency-initialiser'),
+  PluginMock = require('../mocks/plugin-mock'),
+  LoggerMock = require('../mocks/logger-mock'),
+  EventEmitter = require('events').EventEmitter
 
-	var options = {
-		pluginA: new PluginMock( 'A' ),
-		pluginB: new PluginMock( 'B' ),
-		pluginC: new PluginMock( 'C' ),
-		brokenPlugin: {},
-		logger: new LoggerMock(),
-		dependencyInitialisationTimeout: 10
-	};
+describe('dependency-initialiser', () => {
+  let dependencyInitialiser
+  let dependencyBInitialiser
 
-	it( 'throws an error if dependency doesnt implement emitter or has isReady', function(){
-		expect(function(){
-			new DependencyInitialiser( options, 'brokenPlugin' );
-		}).toThrow();
-		expect( options.logger.lastLogEvent ).toBe( C.EVENT.PLUGIN_INITIALIZATION_ERROR );
-	});
+  const options = {
+    pluginA: new PluginMock('A'),
+    pluginB: new PluginMock('B'),
+    pluginC: new PluginMock('C'),
+    brokenPlugin: {},
+    logger: new LoggerMock(),
+    dependencyInitialisationTimeout: 10
+  }
 
-	it( 'selects the correct plugin', function(){
-		options.logger.lastLogEvent = null;
-		dependencyBInitialiser = new DependencyInitialiser( options, 'pluginB' );
-		expect( dependencyBInitialiser.getDependency().name ).toBe( 'B' );
-		expect( options.logger.lastLogEvent ).toBe( null );
-	});
+  it('throws an error if dependency doesnt implement emitter or has isReady', () => {
+    expect(() => {
+      new DependencyInitialiser(options, 'brokenPlugin')
+    }).toThrow()
+    expect(options.logger.lastLogEvent).toBe(C.EVENT.PLUGIN_INITIALIZATION_ERROR)
+  })
 
-	it( 'notifies when the plugin is ready', function( done ){
-		var readySpy = jasmine.createSpy();
-		dependencyBInitialiser.on( 'ready', readySpy );
+  it('selects the correct plugin', () => {
+    options.logger.lastLogEvent = null
+    dependencyBInitialiser = new DependencyInitialiser(options, 'pluginB')
+    expect(dependencyBInitialiser.getDependency().name).toBe('B')
+    expect(options.logger.lastLogEvent).toBe(null)
+  })
 
-		options.pluginB.setReady();
+  it('notifies when the plugin is ready', (done) => {
+    const readySpy = jasmine.createSpy()
+    dependencyBInitialiser.on('ready', readySpy)
 
-		setTimeout( function() {
-			expect( options.logger.lastLogEvent ).toBe( 'INFO' );
-			expect( readySpy.calls.count() ).toBe( 1 );
-			done();
-		}, 5 );
-	});
-});
+    options.pluginB.setReady()
 
-describe( 'encounters timeouts and errors during dependency initialisations', function(){
-	var dependencyInitialiser;
-	var readySpy;
-	var onReady = jasmine.createSpy( 'onReady' );
-	var exit = jasmine.createSpy( 'exit');
-	var log = jasmine.createSpy( 'log' );
-	var originalConsoleLog = console.log;
-	var options = {
-		plugin: new PluginMock( 'A' ),
-		logger: { log: jasmine.createSpy( 'log' ), isReady: true },
-		dependencyInitialisationTimeout: 1
-	};
+    setTimeout(() => {
+      expect(options.logger.lastLogEvent).toBe('INFO')
+      expect(readySpy.calls.count()).toBe(1)
+      done()
+    }, 5)
+  })
+})
 
-	it( 'disables console.error', function(){
+describe('encounters timeouts and errors during dependency initialisations', () => {
+  let dependencyInitialiser
+  let readySpy
+  const onReady = jasmine.createSpy('onReady')
+  const exit = jasmine.createSpy('exit')
+  const log = jasmine.createSpy('log')
+  const originalConsoleLog = console.log
+  const options = {
+    plugin: new PluginMock('A'),
+    logger: { log: jasmine.createSpy('log'), isReady: true },
+    dependencyInitialisationTimeout: 1
+  }
 
-		Object.defineProperty( console, 'error', {
-			value: log
-		});
-	});
+  it('disables console.error', () => {
+    Object.defineProperty(console, 'error', {
+      value: log
+    })
+  })
 
-	it( 'creates a depdendency initialiser and doesnt initialise a plugin in time', function( next ){
-		dependencyInitialiser = new DependencyInitialiser( options, 'plugin' );
-		dependencyInitialiser.on( 'ready', onReady );
-		expect( options.plugin.isReady ).toBe( false );
-		process.once( 'uncaughtException', function() {
-			expect( options.logger.log ).toHaveBeenCalledWith(  3, 'PLUGIN_ERROR', 'plugin wasn\'t initialised in time' );
-			next();
-		} );
-		expect( onReady ).not.toHaveBeenCalled();
+  it('creates a depdendency initialiser and doesnt initialise a plugin in time', (next) => {
+    dependencyInitialiser = new DependencyInitialiser(options, 'plugin')
+    dependencyInitialiser.on('ready', onReady)
+    expect(options.plugin.isReady).toBe(false)
+    process.once('uncaughtException', () => {
+      expect(options.logger.log).toHaveBeenCalledWith(3, 'PLUGIN_ERROR', 'plugin wasn\'t initialised in time')
+      next()
+    })
+    expect(onReady).not.toHaveBeenCalled()
+  })
 
-	});
+  it('creates another depdendency initialiser with a plugin error', (next) => {
+    process.once('uncaughtException', (err) => {
+      expect(onReady).not.toHaveBeenCalled()
+      expect(log).toHaveBeenCalledWith('Error while initialising dependency')
+      expect(log).toHaveBeenCalledWith('Error while initialising plugin: something went wrong')
+      next()
+    })
+    dependencyInitialiser = new DependencyInitialiser(options, 'plugin')
+    dependencyInitialiser.on('ready', onReady)
+    options.logger.isReady = false
+    try {
+      options.plugin.emit('error', 'something went wrong')
+      next.fail()
+    } catch (_err) {}
+  })
 
-	it( 'creates another depdendency initialiser with a plugin error', function( next ){
-		process.once( 'uncaughtException', function(err) {
-			expect( onReady ).not.toHaveBeenCalled();
-			expect( log ).toHaveBeenCalledWith(  'Error while initialising dependency' );
-			expect( log ).toHaveBeenCalledWith(  'Error while initialising plugin: something went wrong' );
-			next();
-		} );
-		dependencyInitialiser = new DependencyInitialiser( options, 'plugin' );
-		dependencyInitialiser.on( 'ready', onReady );
-		options.logger.isReady = false;
-		try {
-			options.plugin.emit( 'error', 'something went wrong' );
-			next.fail();
-		} catch (_err) {}
-	});
-
-	it( 'enable console.error', function(){
-		Object.defineProperty( console, 'error', {
-			value: originalConsoleLog
-		});
-	});
-});
+  it('enable console.error', () => {
+    Object.defineProperty(console, 'error', {
+      value: originalConsoleLog
+    })
+  })
+})
