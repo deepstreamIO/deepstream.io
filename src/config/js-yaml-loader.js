@@ -23,8 +23,10 @@ const DEFAULT_CONFIG_DIRS = [path.join('.', 'conf', 'config'), '/etc/deepstream/
  * @returns {void}
  */
 exports.readAndParseFile = function (filePath, callback) {
+  console.log(1)
   try {
     fs.readFile(filePath, 'utf8', (error, fileContent) => {
+      console.log(2, error)
       if (error) {
         return callback(error)
       }
@@ -37,6 +39,7 @@ exports.readAndParseFile = function (filePath, callback) {
       }
     })
   } catch (error) {
+    console.log(3, error);
     callback(error)
   }
 }
