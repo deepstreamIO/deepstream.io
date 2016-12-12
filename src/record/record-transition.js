@@ -1,7 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
-const  JsonPath = require('./json-path')
+const JsonPath = require('./json-path')
 const RecordRequest = require('./record-request')
 const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
@@ -193,7 +193,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       socketWrapper,
       this._onRecord.bind(this),
       this._onFatalError.bind(this)
-		)
+    )
   }
 }
 
@@ -401,7 +401,7 @@ RecordTransition.prototype._sendUpdateSuccess = function (errorMessage) {
  */
 RecordTransition.prototype._onFatalError = function (errorMessage) {
   if (this.isDestroyed === true) {
-		/* istanbul ignore next */
+    /* istanbul ignore next */
     return
   }
   this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, errorMessage)

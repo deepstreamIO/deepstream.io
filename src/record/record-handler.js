@@ -38,7 +38,6 @@ const RecordHandler = function (options) {
  * @returns {void}
  */
 RecordHandler.prototype.handle = function (socketWrapper, message) {
-
   /*
    * All messages have to provide at least the name of the record they relate to
    * or a pattern in case of listen
@@ -263,7 +262,6 @@ RecordHandler.prototype._sendRecord = function (recordName, record, socketWrappe
  * @returns {void}
  */
 RecordHandler.prototype._update = function (socketWrapper, message) {
-
   if (message.data.length < 3) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
     return
