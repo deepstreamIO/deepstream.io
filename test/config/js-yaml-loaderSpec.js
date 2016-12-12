@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const proxyquire = require('proxyquire')
+const proxyquire = require('proxyquire').preserveCache()
 const defaultOptions = require('../../src/default-options')
 const utils = require('../../src/utils/utils')
 const C = require('../../src/constants/constants')
