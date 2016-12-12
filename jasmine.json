@@ -11,6 +11,8 @@
     "records/*[sS]pec.js",
     "utils/*[sS]pec.js",
     "bin/*[sS]pec.js",
+    "config/*[sS]pec.js",
+    "default-plugins/*[sS]pec.js",
     "rpc/*[sS]pec.js"
   ],
   "helpers": [
