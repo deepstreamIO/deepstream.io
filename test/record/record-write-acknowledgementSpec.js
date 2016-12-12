@@ -1,3 +1,5 @@
+'use strict'
+
 /* global it, describe, expect, jasmine */
 let proxyquire = require('proxyquire'),
   RecordRequestMock = require('../mocks/record-request-mock'),
