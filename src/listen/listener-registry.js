@@ -147,7 +147,7 @@ module.exports = class ListenerRegistry {
         this.onSubscriptionRemoved(
           message.data[1],
           null,
-          this._clientRegistry.getLocalSubscribersCount(message.data[1]),
+          this._clientRegistry.getLocalSubscribers(message.data[1]).length,
           this._clientRegistry.getAllServers(message.data[1]).length - 1
         )
       }
@@ -285,7 +285,7 @@ module.exports = class ListenerRegistry {
     }
 
     const providers = this._providerRegistry.getLocalSubscribers(pattern)
-    const notInSubscriptionRegistry = !providers || providers.indexOf(socketWrapper) === -1
+    const notInSubscriptionRegistry = providers.indexOf(socketWrapper) === -1
     if (notInSubscriptionRegistry) {
       this._providerRegistry.subscribe(pattern, socketWrapper)
     }
@@ -775,7 +775,7 @@ module.exports = class ListenerRegistry {
     for (const pattern in patterns) {
       if (patterns[pattern].test(subscriptionName)) {
         const providersForPattern = providerRegistry.getLocalSubscribers(pattern)
-        for (let i = 0; providersForPattern && i < providersForPattern.length; i++) {
+        for (let i = 0; i < providersForPattern.length; i++) {
           providers.push({
             pattern,
             socketWrapper: providersForPattern[i]
