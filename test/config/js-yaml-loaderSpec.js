@@ -60,6 +60,7 @@ describe('js-yaml-loader', () => {
     })
 
     it('successfully loads and parses a valid JSON file', (done) => {
+      console.log('here', jsonLoader.load)
       jsonLoader.load('./test/test-configs/basic-valid-json.json', (err, result) => {
         expect(err).toBe(null)
         expect(result).toEqual({ pet: 'pug' })
