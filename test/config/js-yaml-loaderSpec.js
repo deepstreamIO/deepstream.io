@@ -27,6 +27,7 @@ function setUpStub(fileExists, fileContent) {
   })
   spyOn(fileMock, 'fileExistsSync').and.callThrough()
   spyOn(fsMock, 'readFileSync').and.callThrough()
+  spyOn(fsMock, 'readFile').and.callThrough()
   return {
     configLoader,
     fileMock,
