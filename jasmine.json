@@ -9,6 +9,8 @@
     "presence/*[sS]pec.js",
     "message/*[sS]pec.js",
     "records/*[sS]pec.js",
+    "utils/*[sS]pec.js",
+    "bin/*[sS]pec.js",
     "rpc/*[sS]pec.js"
   ],
   "helpers": [
