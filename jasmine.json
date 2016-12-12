@@ -8,6 +8,7 @@
     "listen/*[sS]pec.js",
     "presence/*[sS]pec.js",
     "message/*[sS]pec.js",
+    "records/*[sS]pec.js",
     "rpc/*[sS]pec.js"
   ],
   "helpers": [
