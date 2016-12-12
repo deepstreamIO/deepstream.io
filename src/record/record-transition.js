@@ -1,10 +1,10 @@
 'use strict'
 
-const C = require('../constants/constants');
-const  JsonPath = require('./json-path');
-const RecordRequest = require('./record-request');
-const messageParser = require('../message/message-parser');
-const messageBuilder = require('../message/message-builder');
+const C = require('../constants/constants')
+const  JsonPath = require('./json-path')
+const RecordRequest = require('./record-request')
+const messageParser = require('../message/message-parser')
+const messageBuilder = require('../message/message-builder')
 
 
 /**
@@ -188,11 +188,11 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
 
   if (this._recordRequest === null) {
     this._recordRequest = new RecordRequest(
-			this._name,
-			this._options,
-			socketWrapper,
-			this._onRecord.bind(this),
-			this._onFatalError.bind(this)
+      this._name,
+      this._options,
+      socketWrapper,
+      this._onRecord.bind(this),
+      this._onFatalError.bind(this)
 		)
   }
 }

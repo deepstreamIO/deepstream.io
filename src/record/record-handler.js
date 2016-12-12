@@ -39,74 +39,74 @@ const RecordHandler = function (options) {
  */
 RecordHandler.prototype.handle = function (socketWrapper, message) {
 
-	/*
-	 * All messages have to provide at least the name of the record they relate to
-	 * or a pattern in case of listen
-	 */
+  /*
+   * All messages have to provide at least the name of the record they relate to
+   * or a pattern in case of listen
+   */
   if (!message.data || message.data.length < 1) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
     return
   }
 
-	/*
-	 * Return the record's contents and subscribes for future updates.
-	 * Creates the record if it doesn't exist
-	 */
+  /*
+   * Return the record's contents and subscribes for future updates.
+   * Creates the record if it doesn't exist
+   */
   if (message.action === C.ACTIONS.CREATEORREAD) {
     this._createOrRead(socketWrapper, message)
   }
 
-	/*
-	 * Return the current state of the record in cache or db
-	 */
+  /*
+   * Return the current state of the record in cache or db
+   */
   else if (message.action === C.ACTIONS.SNAPSHOT) {
     this._snapshot(socketWrapper, message)
   }
 
-	/*
-	 * Return a Boolean to indicate if record exists in cache or database
-	 */
+  /*
+   * Return a Boolean to indicate if record exists in cache or database
+   */
   else if (message.action === C.ACTIONS.HAS) {
     this._hasRecord(socketWrapper, message)
   }
 
-	/*
-	 * Handle complete (UPDATE) or partial (PATCH) updates
-	 */
+  /*
+   * Handle complete (UPDATE) or partial (PATCH) updates
+   */
   else if (message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH) {
     this._update(socketWrapper, message)
   }
 
-	/*
-	 * Deletes the record
-	 */
+  /*
+   * Deletes the record
+   */
   else if (message.action === C.ACTIONS.DELETE) {
     this._delete(socketWrapper, message)
   }
 
-	/*
-	 * Unsubscribes (discards) a record that was previously subscribed to
-	 * using read()
-	 */
+  /*
+   * Unsubscribes (discards) a record that was previously subscribed to
+   * using read()
+   */
   else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
     this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
   }
 
-	/*
-	 * Listen to requests for a particular record or records
-	 * whose names match a pattern
-	 */
+  /*
+   * Listen to requests for a particular record or records
+   * whose names match a pattern
+   */
   else if (message.action === C.ACTIONS.LISTEN ||
-		message.action === C.ACTIONS.UNLISTEN ||
-		message.action === C.ACTIONS.LISTEN_ACCEPT ||
-		message.action === C.ACTIONS.LISTEN_REJECT ||
-		message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
+    message.action === C.ACTIONS.UNLISTEN ||
+    message.action === C.ACTIONS.LISTEN_ACCEPT ||
+    message.action === C.ACTIONS.LISTEN_REJECT ||
+    message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
     this._listenerRegistry.handle(socketWrapper, message)
   }
 
-	/*
-	 * Default for invalid messages
-	 */
+  /*
+   * Default for invalid messages
+   */
   else {
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
@@ -201,7 +201,7 @@ RecordHandler.prototype._create = function (recordName, socketWrapper) {
     _d: {}
   }
 
-	// store the records data in the cache and wait for the result
+  // store the records data in the cache and wait for the result
   this._options.cache.set(recordName, record, (error) => {
     if (error) {
       this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName)
@@ -212,7 +212,7 @@ RecordHandler.prototype._create = function (recordName, socketWrapper) {
   })
 
   if (!this._options.storageExclusion || !this._options.storageExclusion.test(recordName)) {
-		// store the record data in the persistant storage independently and don't wait for the result
+    // store the record data in the persistant storage independently and don't wait for the result
     this._options.storage.set(recordName, record, (error) => {
       if (error) {
         this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, `storage:${error}`)
@@ -272,11 +272,11 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   let recordName = message.data[0],
     version = parseInt(message.data[1], 10)
 
-	/*
-	 * If the update message is received from the message bus, rather than from a client,
-	 * assume that the original deepstream node has already updated the record in cache and
-	 * storage and only broadcast the message to subscribers
-	 */
+  /*
+   * If the update message is received from the message bus, rather than from a client,
+   * assume that the original deepstream node has already updated the record in cache and
+   * storage and only broadcast the message to subscribers
+   */
   if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
     this._$broadcastUpdate(recordName, message, socketWrapper)
     return
@@ -466,10 +466,10 @@ RecordHandler.prototype._permissionAction = function (action, recordName, socket
   }
 
   this._options.permissionHandler.canPerformAction(
-		socketWrapper.user,
-		message,
-		onResult,
-		socketWrapper.authData
+    socketWrapper.user,
+    message,
+    onResult,
+    socketWrapper.authData
 	)
 }
 
