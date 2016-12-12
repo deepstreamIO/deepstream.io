@@ -20,7 +20,6 @@ const RecordHandler = function (options) {
     max: (options.cacheSize || 1e4)
   })
   this._sendRead = this._sendRead.bind(this)
-  this._sendAck = this._sendAck.bind(this)
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
@@ -132,7 +131,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   utils.stringifyImmutable(record._d, message.data[2])
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
-    this._storage.set(recordName, record, message.data[4] && this._sendAck, socketWrapper)
+    this._storage.set(recordName, record, undefined, socketWrapper)
   }
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
@@ -142,14 +141,6 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   if (this._updateCache(recordName, record) === record) {
     this._subscriptionRegistry.sendToSubscribers(recordName, message.raw || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, message.data), socketWrapper)
   }
-}
-
-RecordHandler.prototype._sendAck = function (error, recordName, record, socketWrapper) {
-  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT_ERROR, [
-    recordName,
-    record._v,
-    error ? messageBuilder.typed(error.message || error) : undefined
-  ])
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
