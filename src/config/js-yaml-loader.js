@@ -24,8 +24,11 @@ const DEFAULT_CONFIG_DIRS = [path.join('.', 'conf', 'config'), path.join(__dirna
  */
 exports.readAndParseFile = function (filePath, callback) {
   console.log(1)
+  console.log(fs.readFile.toString())
+  console.log(fs.readFileSync.toString())
   try {
     fs.readFile(filePath, 'utf8', (error, fileContent) => {
+      
       console.log(2, error)
       if (error) {
         return callback(error)

@@ -20,11 +20,10 @@ function setUpStub(fileExists, fileContent) {
       return fileContent
     }
   }
-  const configLoader = require('../../src/config/js-yaml-loader')
-  // const configLoader = proxyquire('../../src/config/js-yaml-loader', {
-  //   './file-utils': fileMock,
-  //   fs: fsMock
-  // })
+  const configLoader = proxyquire('../../src/config/js-yaml-loader', {
+    './file-utils': fileMock,
+    fs: fsMock
+  })
   spyOn(fileMock, 'fileExistsSync').and.callThrough()
   spyOn(fsMock, 'readFileSync').and.callThrough()
   spyOn(fsMock, 'readFile').and.callThrough()
