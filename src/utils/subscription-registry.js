@@ -20,7 +20,7 @@ class SubscriptionRegistry {
   constructor(options, topic, clusterTopic) {
     this._delayedBroadcasts = {}
     this._delay = -1
-    if (options.broadcastTimeout != undefined) {
+    if (options.broadcastTimeout !== undefined) {
       this._delay = options.broadcastTimeout
     }
     this._subscriptions = {}
@@ -35,7 +35,15 @@ class SubscriptionRegistry {
       NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
     }
 
-    this._clusterSubscriptions = new DistributedStateRegistry(clusterTopic || `${topic}_${C.TOPIC.SUBSCRIPTIONS}`, options)
+    this._setupRemoteComponents(clusterTopic)
+  }
+
+  /**
+   * Setup all the remote components and actions required to deal with the subscription
+   * via the cluster.
+   */
+  _setupRemoteComponents(clusterTopic) {
+    this._clusterSubscriptions = new DistributedStateRegistry(clusterTopic || `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`, this._options)
     this._clusterSubscriptions.on('add', this._onClusterSubscriptionAdded.bind(this))
     this._clusterSubscriptions.on('remove', this._onClusterSubscriptionRemoved.bind(this))
   }

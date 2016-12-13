@@ -45,12 +45,12 @@ module.exports = class ListenerTimeoutRegistry {
         this._acceptedProvider[subscriptionName] = this._timedoutProviders[subscriptionName][index]
       } else {
         provider.socketWrapper.send(
-                    messageBuilder.getMsg(
-                        this._type,
-                        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-                        [provider.pattern, subscriptionName]
-                    )
-                )
+          messageBuilder.getMsg(
+            this._type,
+            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+            [provider.pattern, subscriptionName]
+          )
+        )
       }
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
       this._timedoutProviders[subscriptionName].splice(index, 1)
