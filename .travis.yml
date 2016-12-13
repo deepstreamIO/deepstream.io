@@ -16,7 +16,7 @@ compiler:
   - clang
 
 node_js:
-  - "6.9"
+  - "6.9.1"
 
 script:
   - npm run coverage
