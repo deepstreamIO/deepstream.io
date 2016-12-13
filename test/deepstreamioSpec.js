@@ -183,8 +183,10 @@ describe('handle server startup without config file', () => {
   const cwd = path.resolve('./bin')
   const execOptions = {
     cwd,
-    stdio: ['ignore', 'ignore', 'pipe']
+    stdio: ['ignore', 'ignore', 'pipe'],
+    env: { configDirs: ['nonExistantDir'] }
   }
+
   it('via CLI', (done) => {
     try {
       child_process.execSync('node deepstream start', execOptions)
