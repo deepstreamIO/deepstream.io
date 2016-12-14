@@ -49,7 +49,7 @@ const RecordTransition = function (name, options, recordHandler) {
   this._recordRequest = null
   this._sendVersionExists = []
   this.isDestroyed = false
-  this._subscribedClients = []
+  this._pendingUpdates = {}
   this._ending = false
   this._storageResponses = 0
   this._cacheResponses = 0
@@ -217,7 +217,7 @@ RecordTransition.prototype.destroy = function (errorMessage) {
   this._steps = null
   this._currentStep = null
   this._recordRequest = null
-  this._subscribedClients = null
+  this._pendingUpdates = null
   this._lastVersion = null
   this._cacheResponses = 0
   this._storageResponses = 0
@@ -236,10 +236,15 @@ RecordTransition.prototype.destroy = function (errorMessage) {
 RecordTransition.prototype._applyConfig = function (step, config) {
   config = JSON.parse(config)
   if (config.writeSuccess) {
-    this._subscribedClients.push({
-      socketWrapper: step.sender,
-      expectedVersion: step.version
-    })
+    if(this._pendingUpdates[step.sender.uuid] === undefined) {
+      this._pendingUpdates[step.sender.uuid] = {
+        socketWrapper: step.sender,
+        versions: [step.version]
+      } 
+    } else {
+      const update = this._pendingUpdates[step.sender.uuid]
+      update.versions.push(step.version)
+    }
   }
 }
 
@@ -377,14 +382,14 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
 
 RecordTransition.prototype._sendUpdateSuccess = function (errorMessage) {
   errorMessage = errorMessage === undefined ? null : errorMessage
-
-  for (let i = 0; i < this._subscribedClients.length; i++) {
-    let socketWrapper = this._subscribedClients[i].socketWrapper,
-      expectedVersion = this._subscribedClients[i].expectedVersion
+  for(let uid in this._pendingUpdates) {
+    const update = this._pendingUpdates[uid]
+    const versions = update.versions
+    const socketWrapper = update.socketWrapper
 
     socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT_ERROR, [
       this._name,
-      expectedVersion,
+      messageBuilder.typed(versions),
       messageBuilder.typed(errorMessage)
     ])
   }
