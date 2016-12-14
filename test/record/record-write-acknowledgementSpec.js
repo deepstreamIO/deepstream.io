@@ -40,7 +40,7 @@ describe('record write acknowledgement', () => {
     })
 
     it('sends write success to socket', () => {
-      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WS|someRecord|1|L+'))
+      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WS|someRecord|O[1]|L+'))
     })
   })
 
@@ -74,7 +74,7 @@ describe('record write acknowledgement', () => {
     })
 
     it('sends write failure to socket', () => {
-      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WS|someRecord|1|SstorageError+'))
+      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WS|someRecord|O[1]|SstorageError+'))
     })
   })
 
@@ -165,8 +165,8 @@ describe('record write acknowledgement', () => {
     })
 
     it('sent write acknowledgement to each client', () => {
-      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WS|someRecord|3|L+'))
-      expect(socketWrapper2.socket.lastSendMessage).toBe(msg('R|WS|someRecord|2|L+'))
+      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WS|someRecord|O[1,3]|L+'))
+      expect(socketWrapper2.socket.lastSendMessage).toBe(msg('R|WS|someRecord|O[2]|L+'))
     })
 
   })
