@@ -139,5 +139,4 @@ module.exports = class PresenceHandler {
     const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
     this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
   }
-
 }
