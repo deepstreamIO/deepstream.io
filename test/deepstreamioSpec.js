@@ -184,7 +184,7 @@ describe('handle server startup without config file', () => {
   const execOptions = {
     cwd,
     //stdio: ['ignore', 'ignore', 'pipe'],
-    env: { configDirs: [path.join('..', '/', '..', '/', '..')] }
+    env: { configDirs: [path.join('..', '/', '..')] }
   }
 
   it('via CLI', (done) => {
