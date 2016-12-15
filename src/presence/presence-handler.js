@@ -20,7 +20,7 @@ module.exports = class PresenceHandler {
 
   constructor(options) {
     this._options = options
-
+    this._localClients = {}
     this._connectionEndpoint = options.connectionEndpoint
     this._connectionEndpoint.on('client-connected', this._handleJoin.bind(this))
     this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
@@ -68,7 +68,13 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleJoin(socketWrapper) {
-    this._connectedClients.add(socketWrapper.user)
+    if(this._connectedClients.has(socketWrapper.user)) {
+      this._localClients[socketWrapper.user]++
+    } else {
+      this._connectedClients.add(socketWrapper.user)
+      this._localClients[socketWrapper.user] = 1
+    }
+    
   }
 
   /**
@@ -80,7 +86,12 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleLeave(socketWrapper) {
-    this._connectedClients.remove(socketWrapper.user)
+    if(this._localClients[socketWrapper.user] === 1) {
+      this._localClients[socketWrapper.user]--
+      this._connectedClients.remove(socketWrapper.user)
+    } else {
+      this._localClients[socketWrapper.user]--
+    }
   }
 
   /**
