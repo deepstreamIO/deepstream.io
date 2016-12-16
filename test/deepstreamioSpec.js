@@ -183,9 +183,9 @@ describe('handle server startup without config file', () => {
   const cwd = path.resolve('./bin')
   const execOptions = {
     cwd,
-    stdio:['pipe', 'pipe', 'pipe']
+    stdio:['pipe', 'pipe', 'pipe'],
     //stdio: ['ignore', 'ignore', 'pipe']
-    //env: { configDirs: [path.join('.', 'conf', 'config'), '/etc/deepstream/config', '/usr/local/etc/deepstream/config'] }
+    env: { configDirs: [path.join('.', 'conf', 'config'), '/etc/deepstream/config', '/usr/local/etc/deepstream/config'] }
   }
 
   it('via CLI', (done) => {
