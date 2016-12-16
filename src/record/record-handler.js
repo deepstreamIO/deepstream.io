@@ -130,21 +130,18 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
 
   utils.stringifyImmutable(record._d, message.data[2])
 
-  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
+  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
     this._storage.set(recordName, record, error => {
       if (error) {
         const message = 'error while writing ' + recordName + ' to storage.'
         this._sendError(C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ], !record && socketWrapper)
       }
     }, socketWrapper)
-  }
-
-  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
     this._message.publish(C.TOPIC.RECORD, message)
   }
 
   if (this._updateCache(recordName, record) === record) {
-    this._subscriptionRegistry.sendToSubscribers(recordName, message.raw || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, message.data), socketWrapper)
+    this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
   }
 }
 
@@ -163,6 +160,11 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
 }
 
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
+  if (this.getLocalSubscribersCount(recordName) === 0) {
+    this._recordCache.delete(recordName)
+    return
+  }
+
   const prevRecord = this._recordCache.peek(recordName)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
@@ -172,9 +174,12 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
   this._storage.get(recordName, (error, recordName, nextRecord) => {
     if (error) {
       this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ])
-    } else {
-      const message = { data: [ recordName, nextRecord._v, utils.stringifyImmutable(nextRecord._d), nextRecord._p ] }
-      this._update(C.SOURCE_STORAGE_CONNECTOR, message)
+    } else if (this._updateCache(recordName, nextRecord) === nextRecord) {
+      this._subscriptionRegistry.sendToSubscribers(
+        recordName,
+        messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, nextRecord._v, utils.stringifyImmutable(nextRecord._d), nextRecord._p ]),
+        C.SOURCE_STORAGE_CONNECTOR
+      )
     }
   })
 }
