@@ -183,7 +183,8 @@ describe('handle server startup without config file', () => {
   const cwd = path.resolve('./bin')
   const execOptions = {
     cwd,
-    stdio: ['ignore', 'ignore', 'pipe']
+    stdio:['pipe', 'pipe', 'pipe']
+    //stdio: ['ignore', 'ignore', 'pipe']
     //env: { configDirs: [path.join('.', 'conf', 'config'), '/etc/deepstream/config', '/usr/local/etc/deepstream/config'] }
   }
 
@@ -192,6 +193,8 @@ describe('handle server startup without config file', () => {
       console.log(execOptions)
       child_process.execSync('node deepstream start', execOptions)
     } catch (err) {
+      console.log('here')
+      console.log(err)
       const stderr = err.stderr.toString()
       expect(stderr).toContain('No config file found')
       done()

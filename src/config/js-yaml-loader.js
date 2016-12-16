@@ -199,12 +199,13 @@ function getDefaultConfigPath() {
   for (k = 0; k < configDirs.length; k++) {
     for (i = 0; i < SUPPORTED_EXTENSIONS.length; i++) {
       filePath = configDirs[k] + SUPPORTED_EXTENSIONS[i]
+      console.log('Looking at', filePath)
       if (fileUtils.fileExistsSync(filePath)) {
         return filePath
       }
     }
   }
-
+  console.log('Throwing here here')
   throw new Error('No config file found')
 }
 
