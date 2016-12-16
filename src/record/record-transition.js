@@ -334,14 +334,10 @@ RecordTransition.prototype._next = function () {
  * @private
  */
 RecordTransition.prototype._flushVersionExists = function () {
-  let i,
-    conflict
-
-  for (i = 0; i < this._sendVersionExists.length; i++) {
-    conflict = this._sendVersionExists[i]
+  for (let i = 0; i < this._sendVersionExists.length; i++) {
+    const conflict = this._sendVersionExists[i]
     this.sendVersionExists(conflict)
   }
-
   this._sendVersionExists = []
 }
 
