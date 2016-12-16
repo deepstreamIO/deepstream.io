@@ -127,18 +127,16 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     }
 
   if (message.action === C.ACTIONS.UPDATE) {
-    if (!(message.data.length === 4 || message.data.length === 3)) {
+    if (message.data.length !== 4 && message.data.length !== 3) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
 
-    if (message.data.length === 4) {
-      try {
-        this._applyConfig(update, message.data[3])
-      } catch (e) {
-        update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', config)
-        return
-      }
+    try {
+      this._applyConfig(update, message)
+    } catch (e) {
+      update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', config)
+      return
     }
 
     try {
@@ -157,13 +155,12 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
-    if (message.data.length === 5) {
-      try {
-        this._applyConfig(update, message.data[4])
-      } catch (e) {
-        update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', config)
-        return
-      }
+
+    try {
+      this._applyConfig(update, message)
+    } catch (e) {
+      update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', config)
+      return
     }
 
     update.isPatch = true
@@ -207,7 +204,8 @@ RecordTransition.prototype.destroy = function (errorMessage) {
   if (this.isDestroyed) {
     return
   }
-  this._sendUpdateSuccess(errorMessage || this._writeError)
+  this._sendWriteAcknowledgements
+(errorMessage || this._writeError)
   this._recordHandler._$transitionComplete(this._name)
   this.isDestroyed = true
   this._options = null
@@ -227,13 +225,26 @@ RecordTransition.prototype.destroy = function (errorMessage) {
  * Tries to apply config given from a socketWrapper on an
  * incoming message
  *
- * @param 	{Object} the current step of the transition
- * @param 	{String} the config from the message
+ * @param 	{Object} step the current step of the transition
+ * @param 	{String} message
  *
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._applyConfig = function (step, config) {
+RecordTransition.prototype._applyConfig = function (step, message) {
+  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
+    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
+      return
+  }
+
+  let config
+  if (message.action === C.ACTIONS.PATCH && message.data.length === 4) {
+    config = message.data[3]
+  } 
+  else if(message.action === C.ACTIONS.UPDATE && message.data.length === 5) {
+    config = message.data[4]
+  }
+
   config = JSON.parse(config)
   if (config.writeSuccess) {
     if(this._pendingUpdates[step.sender.uuid] === undefined) {
@@ -310,6 +321,9 @@ RecordTransition.prototype._next = function () {
 	 * responses to destroy the transition, it is however not on the critical path
 	 * and the transition will continue straight away, rather than wait for the storage response
 	 * to be returned.
+   * 
+   * If the storage response is asynchronous and write acknowledgement is enabled, the transition
+   * will not be destroyed until writing to storage is finished
 	 */
   if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._name)) {
     this._storageResponses++
@@ -350,7 +364,7 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
   this._cacheResponses--
   this._writeError = this._writeError || error
   if (error) {
-    this._onFatalError('cacheError')
+    this._onFatalError(error)
   } else if (this.isDestroyed === false) {
     this._recordHandler._$broadcastUpdate(this._name, this._currentStep.message, this._currentStep.sender)
     this._next()
@@ -371,7 +385,7 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
   this._storageResponses--
   this._writeError = this._writeError || error
   if (error) {
-    this._onFatalError('storageError')
+    this._onFatalError(error)
   } else if (this.isDestroyed) {
     this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error)
   } else if (this._cacheResponses === 0 && this._storageResponses === 0) {
@@ -380,16 +394,16 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
 
 }
 
-RecordTransition.prototype._sendUpdateSuccess = function (errorMessage) {
+RecordTransition.prototype._sendWriteAcknowledgements = function (errorMessage) {
   errorMessage = errorMessage === undefined ? null : errorMessage
   for(let uid in this._pendingUpdates) {
     const update = this._pendingUpdates[uid]
     const versions = update.versions
     const socketWrapper = update.socketWrapper
 
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT_ERROR, [
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
       this._name,
-      messageBuilder.typed(versions),
+      versions,
       messageBuilder.typed(errorMessage)
     ])
   }
