@@ -2,13 +2,10 @@
 
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
-const	ListenerRegistry = require('../listen/listener-registry')
-const	RecordRequest = require('./record-request')
-const	RecordTransition = require('./record-transition')
-const	RecordDeletion = require('./record-deletion')
-const	messageParser = require('../message/message-parser')
-const	messageBuilder = require('../message/message-builder')
-const	EventEmitter = require('events').EventEmitter
+const ListenerRegistry = require('../listen/listener-registry')
+const RecordRequest = require('./record-request')
+const RecordTransition = require('./record-transition')
+const RecordDeletion = require('./record-deletion')
 
 /**
  * The entry point for record related operations
@@ -126,16 +123,22 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._hasRecord = function (socketWrapper, message) {
-  let recordName = message.data[0],
-    onComplete = function (record) {
-      const hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE
-      socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
-    },
-    onError = function (error) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, error])
-    }
+  const recordName = message.data[0]
 
-  new RecordRequest(recordName, this._options, socketWrapper, onComplete.bind(this), onError.bind(this))
+  const onComplete = function (record) {
+    const hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
+  }
+  const onError = function (error) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, error])
+  }
+
+  new RecordRequest(recordName,
+    this._options,
+    socketWrapper,
+    onComplete.bind(this),
+    onError.bind(this)
+  )
 }
 
 /**
@@ -147,8 +150,9 @@ RecordHandler.prototype._hasRecord = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._snapshot = function (socketWrapper, message) {
-  let recordName = message.data[0],
-    onComplete = function (record) {
+  const recordName = message.data[0]
+
+  const onComplete = function (record) {
       if (record) {
         this._sendRecord(recordName, record, socketWrapper)
       } else {
@@ -173,14 +177,15 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
-  let recordName = message.data[0],
-    onComplete = function (record) {
-      if (record) {
-        this._read(recordName, record, socketWrapper)
-      } else {
-        this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, this._create.bind(this, recordName, socketWrapper))
-      }
+  const recordName = message.data[0]
+  
+  const onComplete = function (record) {
+    if (record) {
+      this._read(recordName, record, socketWrapper)
+    } else {
+      this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, this._create.bind(this, recordName, socketWrapper))
     }
+  }
 
   new RecordRequest(recordName, this._options, socketWrapper, onComplete.bind(this))
 }
