@@ -237,10 +237,10 @@ RecordTransition.prototype._applyConfig = function (step, message) {
   }
 
   let config
-  if (message.action === C.ACTIONS.PATCH && message.data.length === 4) {
-    config = message.data[3]
-  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 5) {
+  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
     config = message.data[4]
+  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
+    config = message.data[3]
   }
 
   config = JSON.parse(config)
