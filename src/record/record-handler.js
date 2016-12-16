@@ -19,7 +19,6 @@ const RecordHandler = function (options) {
   this._recordCache = new LRU({
     max: (options.cacheSize || 1e4)
   })
-  this._sendRead = this._sendRead.bind(this)
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
