@@ -204,8 +204,7 @@ RecordTransition.prototype.destroy = function (errorMessage) {
   if (this.isDestroyed) {
     return
   }
-  this._sendWriteAcknowledgements
-(errorMessage || this._writeError)
+  this._sendWriteAcknowledgements(errorMessage || this._writeError)
   this._recordHandler._$transitionComplete(this._name)
   this.isDestroyed = true
   this._options = null
@@ -234,24 +233,23 @@ RecordTransition.prototype.destroy = function (errorMessage) {
 RecordTransition.prototype._applyConfig = function (step, message) {
   if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
     (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
-      return
+    return
   }
 
   let config
   if (message.action === C.ACTIONS.PATCH && message.data.length === 4) {
     config = message.data[3]
-  } 
-  else if(message.action === C.ACTIONS.UPDATE && message.data.length === 5) {
+  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 5) {
     config = message.data[4]
   }
 
   config = JSON.parse(config)
   if (config.writeSuccess) {
-    if(this._pendingUpdates[step.sender.uuid] === undefined) {
+    if (this._pendingUpdates[step.sender.uuid] === undefined) {
       this._pendingUpdates[step.sender.uuid] = {
         socketWrapper: step.sender,
         versions: [step.version]
-      } 
+      }
     } else {
       const update = this._pendingUpdates[step.sender.uuid]
       update.versions.push(step.version)
@@ -321,7 +319,7 @@ RecordTransition.prototype._next = function () {
 	 * responses to destroy the transition, it is however not on the critical path
 	 * and the transition will continue straight away, rather than wait for the storage response
 	 * to be returned.
-   * 
+   *
    * If the storage response is asynchronous and write acknowledgement is enabled, the transition
    * will not be destroyed until writing to storage is finished
 	 */
@@ -396,7 +394,7 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
 
 RecordTransition.prototype._sendWriteAcknowledgements = function (errorMessage) {
   errorMessage = errorMessage === undefined ? null : errorMessage
-  for(let uid in this._pendingUpdates) {
+  for (const uid in this._pendingUpdates) {
     const update = this._pendingUpdates[uid]
     const versions = update.versions
     const socketWrapper = update.socketWrapper

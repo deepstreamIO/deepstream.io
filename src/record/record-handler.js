@@ -153,15 +153,15 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
   const recordName = message.data[0]
 
   const onComplete = function (record) {
-      if (record) {
-        this._sendRecord(recordName, record, socketWrapper)
-      } else {
-        socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, C.EVENT.RECORD_NOT_FOUND])
-      }
-    },
-    onError = function (error) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, error])
+    if (record) {
+      this._sendRecord(recordName, record, socketWrapper)
+    } else {
+      socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, C.EVENT.RECORD_NOT_FOUND])
     }
+  }
+  const onError = function (error) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, error])
+  }
 
   new RecordRequest(recordName, this._options, socketWrapper, onComplete.bind(this), onError.bind(this))
 }
@@ -291,11 +291,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   }
 
   if (this._transitions[recordName] && this._transitions[recordName].hasVersion(version)) {
-    const tempUpdate = {
-      message,
-      version,
-      sender: socketWrapper
-    }
+    const tempUpdate = { message, version, sender: socketWrapper }
     this._transitions[recordName].sendVersionExists(tempUpdate)
     return
   }
@@ -353,8 +349,6 @@ RecordHandler.prototype._$transitionComplete = function (recordName) {
  * @returns {void}
  */
 RecordHandler.prototype.removeRecordRequest = function (recordName) {
-  let callback
-
   if (!this._recordRequestsInProgress[recordName]) {
     return
   }
@@ -364,7 +358,7 @@ RecordHandler.prototype.removeRecordRequest = function (recordName) {
     return
   }
 
-  callback = this._recordRequestsInProgress[recordName].splice(0, 1)[0]
+  const callback = this._recordRequestsInProgress[recordName].splice(0, 1)[0]
   callback(recordName)
 }
 
@@ -430,11 +424,10 @@ RecordHandler.prototype._delete = function (socketWrapper, message) {
  */
 RecordHandler.prototype._onDeleted = function (name, message, originalSender) {
   const subscribers = this._subscriptionRegistry.getLocalSubscribers(name)
-  let i
 
   this._$broadcastUpdate(name, message, originalSender)
 
-  for (i = 0; subscribers && i < subscribers.length; i++) {
+  for (let i = 0; subscribers && i < subscribers.length; i++) {
     this._subscriptionRegistry.unsubscribe(name, subscribers[i], true)
   }
 }
