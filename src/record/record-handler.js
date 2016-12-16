@@ -129,12 +129,16 @@ RecordHandler.prototype._hasRecord = function (socketWrapper, message) {
     const hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE
     socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
   }
-
   const onError = function (error) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, error])
   }
 
-  new RecordRequest(recordName, this._options, socketWrapper, onComplete.bind(this), onError.bind(this))
+  new RecordRequest(recordName,
+    this._options,
+    socketWrapper,
+    onComplete.bind(this),
+    onError.bind(this)
+  )
 }
 
 /**
@@ -155,7 +159,6 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, C.EVENT.RECORD_NOT_FOUND])
     }
   }
-
   const onError = function (error) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, error])
   }
@@ -288,7 +291,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   }
 
   if (this._transitions[recordName] && this._transitions[recordName].hasVersion(version)) {
-    this._transitions[recordName].sendVersionExists(socketWrapper, version)
+    this._transitions[recordName].sendVersionExists({ message, version, sender: socketWrapper })
     return
   }
 

@@ -1,6 +1,6 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
+/* global it, describe, expect, jasmine */
 let proxyquire = require('proxyquire'),
   RecordRequestMock = require('../mocks/record-request-mock'),
   RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': RecordRequestMock }),
@@ -10,7 +10,9 @@ let proxyquire = require('proxyquire'),
   StorageMock = require('../mocks/storage-mock')
 
 describe('record transitions', () => {
+
   describe('happy path', () => {
+
     let recordTransition,
       socketWrapper = new SocketWrapper(new SocketMock(), {}),
       patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
@@ -265,7 +267,7 @@ describe('record transitions', () => {
       socketWrapper = new SocketWrapper(new SocketMock(), {}),
       patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
       recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      options = { cache: new StorageMock(), storage: new StorageMock() }
+      options = { cache: new StorageMock(), storage: new StorageMock(), logger: { log: jasmine.createSpy('log') } }
 
     options.cache.nextOperationWillBeSynchronous = false
 
@@ -334,6 +336,8 @@ describe('record transitions', () => {
       expect(logSpy).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'errorMsg')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_UPDATE_ERROR|1+'))
     })
+
+
   })
 
   describe('recordRequest returns null', () => {
@@ -422,6 +426,7 @@ describe('record transitions', () => {
   })
 
   describe('transition version conflicts', () => {
+
     let recordTransition,
       socketMock1 = new SocketMock(),
       socketMock2 = new SocketMock(),
@@ -452,8 +457,8 @@ describe('record transitions', () => {
     })
 
     it('gets a version exist error on two seperate updates but does not send error', () => {
-      recordTransition.sendVersionExists(socketWrapper1, 1)
-      recordTransition.sendVersionExists(socketWrapper2, 1)
+      recordTransition.sendVersionExists({ sender: socketWrapper1, version: 1, message: patchMessage1 })
+      recordTransition.sendVersionExists({ sender: socketWrapper2, version: 1, message: patchMessage2 })
 
       expect(socketMock1.lastSendMessage).toBeNull()
       expect(socketMock2.lastSendMessage).toBeNull()
@@ -473,7 +478,7 @@ describe('record transitions', () => {
       socketMock2.lastSendMessage = null
       socketMock3.lastSendMessage = null
 
-      recordTransition.sendVersionExists(socketWrapper3, 1)
+      recordTransition.sendVersionExists({ sender: socketWrapper3, version: 1, message: patchMessage1 })
 
       expect(socketMock1.lastSendMessage).toBeNull()
       expect(socketMock2.lastSendMessage).toBeNull()
@@ -491,4 +496,5 @@ describe('record transitions', () => {
       }, 50)
     })
   })
+
 })
