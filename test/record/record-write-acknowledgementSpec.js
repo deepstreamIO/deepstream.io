@@ -1,13 +1,13 @@
 'use strict'
 
 /* global it, describe, expect, jasmine */
-let proxyquire = require('proxyquire'),
-  RecordRequestMock = require('../mocks/record-request-mock'),
-  RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': RecordRequestMock }),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
-  SocketMock = require('../mocks/socket-mock'),
-  msg = require('../test-helper/test-helper').msg,
-  StorageMock = require('../mocks/storage-mock')
+const proxyquire = require('proxyquire')
+const RecordRequestMock = require('../mocks/record-request-mock')
+const RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': RecordRequestMock })
+const SocketWrapper = require('../../src/message/socket-wrapper')
+const SocketMock = require('../mocks/socket-mock')
+const msg = require('../test-helper/test-helper').msg
+const StorageMock = require('../mocks/storage-mock')
 
 describe('record write acknowledgement', () => {
 

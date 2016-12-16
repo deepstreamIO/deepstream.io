@@ -291,8 +291,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   }
 
   if (this._transitions[recordName] && this._transitions[recordName].hasVersion(version)) {
-    const tempUpdate = { message, version, sender: socketWrapper }
-    this._transitions[recordName].sendVersionExists(tempUpdate)
+    this._transitions[recordName].sendVersionExists({ message, version, sender: socketWrapper })
     return
   }
 

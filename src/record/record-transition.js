@@ -80,10 +80,9 @@ RecordTransition.prototype.hasVersion = function (version) {
  * @public
  */
 RecordTransition.prototype.sendVersionExists = function (step) {
-  let socketWrapper = step.sender,
-    version = step.version,
-    config = step.message.data[4],
-    msg
+  const socketWrapper = step.sender
+  const version = step.version
+  const config = step.message.data[4]
 
   if (this._record) {
     const data = config === undefined ?
@@ -91,7 +90,7 @@ RecordTransition.prototype.sendVersionExists = function (step) {
 		[this._name, this._record._v, JSON.stringify(this._record._d), config]
     socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, data)
 
-    msg = `${socketWrapper.user} tried to update record ${this._name} to version ${version} but it already was ${this._record._v}`
+    const msg = `${socketWrapper.user} tried to update record ${this._name} to version ${version} but it already was ${this._record._v}`
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.VERSION_EXISTS, msg)
   } else {
     this._sendVersionExists.push({
@@ -118,13 +117,12 @@ RecordTransition.prototype.sendVersionExists = function (step) {
  * @returns {void}
  */
 RecordTransition.prototype.add = function (socketWrapper, version, message) {
-  let data,
-    config,
-    update = {
+  const update = {
       message,
       version,
       sender: socketWrapper
     }
+  let data
 
   if (message.action === C.ACTIONS.UPDATE) {
     if (message.data.length !== 4 && message.data.length !== 3) {
@@ -135,7 +133,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     try {
       this._applyConfig(update, message)
     } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', config)
+      update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', message.data[ 3 ])
       return
     }
 
@@ -151,7 +149,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
   }
 
   if (message.action === C.ACTIONS.PATCH) {
-    if (!(message.data.length === 5 || message.data.length === 4)) {
+    if (message.data.length !== 5 && message.data.length !== 4) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
@@ -159,7 +157,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     try {
       this._applyConfig(update, message)
     } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', config)
+      update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', message.data[ 4 ])
       return
     }
 
