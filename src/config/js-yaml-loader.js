@@ -11,7 +11,12 @@ const configInitialiser = require('./config-initialiser')
 const fileUtils = require('./file-utils')
 
 const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js'];
-const DEFAULT_CONFIG_DIRS = [path.join('.', 'conf', 'config'), path.join(__dirname, '../..', 'conf', 'config'), '/etc/deepstream/config', '/usr/local/etc/deepstream/config']
+const DEFAULT_CONFIG_DIRS = [
+  path.join('.', 'conf', 'config'), 
+  //path.join(__dirname, '../..', 'conf', 'config'), 
+  '/etc/deepstream/config', 
+  '/usr/local/etc/deepstream/config'
+  ]
 
 /**
  * Reads and parse a general configuration file content.
