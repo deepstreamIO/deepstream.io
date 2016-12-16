@@ -72,6 +72,13 @@ describe('presence handler', () => {
     expect(userThree.socket.lastSendMessage).toBeNull()
   })
 
+  it('a duplicate client logs out and subscribed clients are not notified', () => {
+    options.connectionEndpoint.emit('client-disconnected', userTwoAgain)
+    expect(userOne.socket.lastSendMessage).toBeNull()
+    expect(userTwo.socket.lastSendMessage).toBeNull()
+    expect(userThree.socket.lastSendMessage).toBeNull()
+  })
+
   it('returns multiple uses when queried', () => {
     presenceHandler.handle(userOne, queryMessage)
     expect(userOne.socket.lastSendMessage).toBe(_msg('U|Q|Marge|Bart+'))
