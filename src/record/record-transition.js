@@ -312,15 +312,15 @@ RecordTransition.prototype._next = function () {
   }
 
   this._cacheResponses++
-	/*
-	 * Please note: saving to storage is called first to allow for synchronous cache
-	 * responses to destroy the transition, it is however not on the critical path
-	 * and the transition will continue straight away, rather than wait for the storage response
-	 * to be returned.
+  /*
+   * Please note: saving to storage is called first to allow for synchronous cache
+   * responses to destroy the transition, it is however not on the critical path
+   * and the transition will continue straight away, rather than wait for the storage response
+   * to be returned.
    *
    * If the storage response is asynchronous and write acknowledgement is enabled, the transition
    * will not be destroyed until writing to storage is finished
-	 */
+   */
   if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._name)) {
     this._storageResponses++
     this._options.storage.set(this._name, this._record, this._onStorageResponse.bind(this, this._currentStep))
@@ -390,16 +390,23 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
 
 }
 
+/**
+ * Sends all write acknowledgement messages at the end of a transition
+ *
+ * @param   {String} error any error message that occurred while storing the 
+ *                         record data
+ *
+ * @private
+ * @returns {void}
+ */
 RecordTransition.prototype._sendWriteAcknowledgements = function (errorMessage) {
   errorMessage = errorMessage === undefined ? null : errorMessage
   for (const uid in this._pendingUpdates) {
     const update = this._pendingUpdates[uid]
-    const versions = update.versions
-    const socketWrapper = update.socketWrapper
 
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
+    update.socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
       this._name,
-      versions,
+      update.versions,
       messageBuilder.typed(errorMessage)
     ])
   }
