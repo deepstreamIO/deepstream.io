@@ -19,12 +19,18 @@ const RecordHandler = function (options) {
   this._recordCache = new LRU({
     max: (options.cacheSize || 1e4)
   })
-  this._sendRead = this._sendRead.bind(this)
+  this._writing = new WeakMap()
+  this._flushing = new WeakMap()
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
   if (!message.data || message.data.length < 1) {
     this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [undefined, message.raw], socketWrapper)
+    return
+  }
+
+  if (message.action === C.ACTIONS.FLUSH) {
+    this._flush(socketWrapper, message)
     return
   }
 
@@ -67,6 +73,25 @@ RecordHandler.prototype.getRecord = function (recordName, callback) {
       resolve(this._updateCache(recordName, record))
     }
   }))
+}
+
+RecordHandler.prototype._flush = function (socketWrapper, message) {
+  const flushId = message[0]
+  const writing = this._writing.get(socketWrapper)
+  if (writing.size === 0) {
+    this._sendFlushed(socketWrapper)
+  } else {
+    let flushing = this._flushing.get(socketWrapper)
+    if (!flushing) {
+      flushing = []
+      this._flushing.set(socketWrapper, flushing)
+    }
+    flushing.push([ flushId, new Set(writing) ])
+  }
+}
+
+RecordHandler.prototype._sendFlushed = function (flushId, socketWrapper) {
+  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.FLUSH_ACK, [ flushId ])
 }
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
@@ -131,7 +156,36 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   utils.stringifyImmutable(record._d, message.data[2])
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
-    this._storage.set(recordName, record, undefined, socketWrapper)
+    const key = recordName + record._v
+
+    let writing = this._writing.get(socketWrapper)
+    if (!writing) {
+      writing = new Set()
+      this._writing.set(socketWrapper, writing)
+    }
+    writing.add(key)
+
+    this._storage.set(recordName, record, (error, recordName, record, [socketWrapper, writing, key]) => {
+      if (error) {
+        const message = 'error while updating ' + recordName + ' to storage:' + error
+        socketWrapper.sendError(C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ])
+      }
+
+      writing.delete(key)
+
+      const flushing = this._flushing.get(socketWrapper)
+
+      if (flushing && flushing.size > 0) {
+        for (const [ flushId, writing ] of flushing) {
+          writing.delete(key)
+          if (writing.size === 0) {
+            this._sendFlushed(flushId, socketWrapper)
+          }
+        }
+
+        this._flushing.set(socketWrapper, flushing.filter(([ , writing ]) => writing.size > 0))
+      }
+    }, [socketWrapper, writing, key])
   }
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
