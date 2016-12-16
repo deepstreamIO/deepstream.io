@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 
-const DEFAULT_PID_FILE = path.join(os.tmpDir(), 'deepstream.pid')
+const DEFAULT_PID_FILE = path.join(os.tmpdir(), 'deepstream.pid')
 const PID_FILE = process.env.DEEPSTREAM_PID_FILE || DEFAULT_PID_FILE
 
 /**
