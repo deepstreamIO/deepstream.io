@@ -78,9 +78,9 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
     this._sendRead(recordName, record, socketWrapper)
   } else {
     this._storage.get(recordName, (error, recordName, record, socketWrapper) => {
-      if (error || !record) {
-        const message = 'error while loading ' + recordName + ' from storage:' + (error || 'not_found')
-        this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], !record && socketWrapper)
+      if (error) {
+        const message = 'error while loading ' + recordName + ' from storage'
+        this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], socketWrapper)
       } else {
         this._sendRead(recordName, this._updateCache(recordName, record), socketWrapper)
       }
@@ -131,7 +131,12 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   utils.stringifyImmutable(record._d, message.data[2])
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
-    this._storage.set(recordName, record, undefined, socketWrapper)
+    this._storage.set(recordName, record, error => {
+      if (error) {
+        const message = 'error while writing ' + recordName + ' to storage.'
+        this._sendError(C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ], !record && socketWrapper)
+      }
+    }, socketWrapper)
   }
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
