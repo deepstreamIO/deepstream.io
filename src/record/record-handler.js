@@ -78,7 +78,7 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
   } else {
     this._storage.get(recordName, (error, recordName, record, socketWrapper) => {
       if (error) {
-        const message = 'error while loading ' + recordName + ' from storage'
+        const message = 'error while reading ' + recordName + ' from storage'
         this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], socketWrapper)
       } else {
         this._sendRead(recordName, this._updateCache(recordName, record), socketWrapper)
