@@ -178,7 +178,7 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
  */
 RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
   const recordName = message.data[0]
-  
+
   const onComplete = function (record) {
     if (record) {
       this._read(recordName, record, socketWrapper)
@@ -272,8 +272,8 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  let recordName = message.data[0],
-    version = parseInt(message.data[1], 10)
+  const recordName = message.data[0]
+  const version = parseInt(message.data[1], 10)
 
   /*
    * If the update message is received from the message bus, rather than from a client,
@@ -473,7 +473,7 @@ RecordHandler.prototype._permissionAction = function (action, recordName, socket
     message,
     onResult,
     socketWrapper.authData
-	)
+  )
 }
 
 module.exports = RecordHandler
