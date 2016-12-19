@@ -41,6 +41,7 @@ module.exports = class ListenerRegistry {
     this._uniqueLockName = `${topic}_LISTEN_LOCK`
 
     this._uniqueStateProvider = this._options.uniqueRegistry
+    this._messageConnector = this._options.messageConnector
 
     this._patterns = {}
     this._localListenInProgress = {}
@@ -81,7 +82,7 @@ module.exports = class ListenerRegistry {
     this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
     this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
 
-    this._options.messageConnector.subscribe(
+    this._messageConnector.subscribe(
       this._getMessageBusTopic(this._options.serverName, this._topic),
       this._onIncomingMessage.bind(this)
     )
@@ -538,6 +539,7 @@ module.exports = class ListenerRegistry {
       provider,
       this._triggerNextProvider.bind(this)
     )
+
     this._sendSubscriptionForPatternFound(provider, subscriptionName)
   }
 
@@ -671,7 +673,7 @@ module.exports = class ListenerRegistry {
   */
   _sendRemoteDiscoveryStart(serverName, subscriptionName) {
     const messageTopic = this._getMessageBusTopic(serverName, this._topic)
-    this._options.messageConnector.publish(messageTopic, {
+    this._messageConnector.publish(messageTopic, {
       topic: messageTopic,
       action: C.ACTIONS.LISTEN,
       data: [serverName, subscriptionName, this._options.serverName]
@@ -687,7 +689,7 @@ module.exports = class ListenerRegistry {
   */
   _sendRemoteDiscoveryStop(listenLeaderServerName, subscriptionName) {
     const messageTopic = this._getMessageBusTopic(listenLeaderServerName, this._topic)
-    this._options.messageConnector.publish(messageTopic, {
+    this._messageConnector.publish(messageTopic, {
       topic: messageTopic,
       action: C.ACTIONS.ACK,
       data: [listenLeaderServerName, subscriptionName]
@@ -700,7 +702,7 @@ module.exports = class ListenerRegistry {
     */
   _sendLastSubscriberRemoved(serverName, subscriptionName) {
     const messageTopic = this._getMessageBusTopic(serverName, this._topic)
-    this._options.messageConnector.publish(messageTopic, {
+    this._messageConnector.publish(messageTopic, {
       topic: messageTopic,
       action: C.ACTIONS.UNSUBSCRIBE,
       data: [serverName, subscriptionName]
