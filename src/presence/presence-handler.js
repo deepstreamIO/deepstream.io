@@ -68,10 +68,10 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleJoin(socketWrapper) {
-    this._connectedClients.add(socketWrapper.user)
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === undefined) {
       this._localClients.set(socketWrapper.user, 1)
+      this._connectedClients.add(socketWrapper.user)
     } else {
       currentCount++
       this._localClients.set(socketWrapper.user, currentCount)
