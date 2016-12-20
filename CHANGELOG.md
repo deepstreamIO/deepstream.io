@@ -1,3 +1,22 @@
+## [2.1.0] - 2016.12.15
+
+### Features
+
+- Record write acknowledgement. Records are now able to be set with an optional callback which will be called with any errors from storing the record in cache/storage [#472](https://github.com/deepstreamIO/deepstream.io/pull/472)
+
+### Enhancements
+
+- Applying an ESLint rule set to the repo [#482](https://github.com/deepstreamIO/deepstream.io/pull/482)
+- Stricter valve permissioning language checks [#486](https://github.com/deepstreamIO/deepstream.io/pull/486) by [@Iiridayn](https://github.com/Iiridayn)
+
+### Bug fixes
+
+- Better handling of auth data when clients login [#463](https://github.com/deepstreamIO/deepstream.io/issues/463)
+- Properly returning handshake data (headers) from SocketWrapper [#450](https://github.com/deepstreamIO/deepstream.io/issues/450)
+- Fix case where CLIENT_DISCONNECTED is not sent from SocketWrapper [#470](https://github.com/deepstreamIO/deepstream.io/issues/470)
+- Fixed issue where listen does not recover from server restart [#476](https://github.com/deepstreamIO/deepstream.io/issues/476)
+- Handling presence events properly. Now when a user logs in, subscribed clients are only notified the first time the user logs in, and the last time they log out [#499](https://github.com/deepstreamIO/deepstream.io/pull/499)
+
 ## [2.0.1] - 2016.11.21
 
 ### Bug Fixes
