@@ -20,7 +20,7 @@ module.exports = class PresenceHandler {
 
   constructor(options) {
     this._options = options
-    this._localClients = {}
+    this._localClients = new Map()
     this._connectionEndpoint = options.connectionEndpoint
     this._connectionEndpoint.on('client-connected', this._handleJoin.bind(this))
     this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
@@ -68,13 +68,14 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleJoin(socketWrapper) {
-    if(this._connectedClients.has(socketWrapper.user)) {
-      this._localClients[socketWrapper.user]++
-    } else {
+    let currentCount = this._localClients.get(socketWrapper.user)
+    if (currentCount === undefined) {
+      this._localClients.set(socketWrapper.user, 1)
       this._connectedClients.add(socketWrapper.user)
-      this._localClients[socketWrapper.user] = 1
+    } else {
+      currentCount++
+      this._localClients.set(socketWrapper.user, currentCount)
     }
-    
   }
 
   /**
@@ -86,11 +87,13 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleLeave(socketWrapper) {
-    if(this._localClients[socketWrapper.user] === 1) {
-      this._localClients[socketWrapper.user]--
+    let currentCount = this._localClients.get(socketWrapper.user)
+    if (currentCount === 1) {
+      this._localClients.delete(socketWrapper.user)
       this._connectedClients.remove(socketWrapper.user)
     } else {
-      this._localClients[socketWrapper.user]--
+      currentCount--
+      this._localClients.set(socketWrapper.user, currentCount)
     }
   }
 
