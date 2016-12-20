@@ -8,7 +8,7 @@
 
 - Applying an ESLint rule set to the repo [#482](https://github.com/deepstreamIO/deepstream.io/pull/482)
 - Stricter valve permissioning language checks [#486](https://github.com/deepstreamIO/deepstream.io/pull/486) by [@Iiridayn](https://github.com/Iiridayn)
-- Update uWS version to 0.12, commit [0a60ab](https://github.com/deepstreamIO/deepstream.io/commit/d1d5eecf355c50beab64a8655e01c2ff540a60ab)
+- Update uWS version to 0.12 
 
 ### Bug fixes
 
