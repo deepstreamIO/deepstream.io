@@ -68,15 +68,14 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleJoin(socketWrapper) {
-    if(this._connectedClients.has(socketWrapper.user)) {
-      let currentCount = this._localClients.get(socketWrapper.user)
+    this._connectedClients.add(socketWrapper.user)
+    let currentCount = this._localClients.get(socketWrapper.user)
+    if (currentCount === undefined) {
+      this._localClients.set(socketWrapper.user, 1)
+    } else {
       currentCount++
       this._localClients.set(socketWrapper.user, currentCount)
-    } else {
-      this._connectedClients.add(socketWrapper.user)
-      this._localClients.set(socketWrapper.user, 1)
     }
-    
   }
 
   /**
@@ -88,11 +87,11 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleLeave(socketWrapper) {
-    if(this._localClients.get(socketWrapper.user) === 1) {
+    let currentCount = this._localClients.get(socketWrapper.user)
+    if (currentCount === 1) {
       this._localClients.delete(socketWrapper.user)
       this._connectedClients.remove(socketWrapper.user)
     } else {
-      let currentCount = this._localClients.get(socketWrapper.user)
       currentCount--
       this._localClients.set(socketWrapper.user, currentCount)
     }
