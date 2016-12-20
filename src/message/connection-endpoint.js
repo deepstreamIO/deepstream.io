@@ -243,17 +243,17 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     let errorMsg
 
     /**
-     * Log the authentication attempt
-     */
-    const logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
-    this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
-
-    /**
      * Ignore pong messages
      */
     if (msg && msg.topic === C.TOPIC.CONNECTION && msg.action === C.ACTIONS.PONG) {
       return
     }
+
+    /**
+     * Log the authentication attempt
+     */
+    const logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
+    this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
 
     /**
      * Ensure the message is a valid authentication message
