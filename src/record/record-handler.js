@@ -159,7 +159,7 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
 }
 
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
-  if (this.getLocalSubscribersCount(recordName) === 0) {
+  if (this._subscriptionRegistry.getLocalSubscribersCount(recordName) === 0) {
     this._recordCache.delete(recordName)
     return
   }
