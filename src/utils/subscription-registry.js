@@ -1,3 +1,5 @@
+'use strict'
+
 const C = require('../constants/constants')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const SocketWrapper = require('../message/socket-wrapper')
@@ -15,7 +17,7 @@ class SubscriptionRegistry {
    * @param {String} topic one of C.TOPIC
    * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
    */
-  constructor (options, topic, clusterTopic) {
+  constructor(options, topic, clusterTopic) {
     this._delayedBroadcasts = {}
     this._delay = -1
     if (options.broadcastTimeout !== undefined) {
@@ -33,7 +35,15 @@ class SubscriptionRegistry {
       NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
     }
 
-    this._clusterSubscriptions = new DistributedStateRegistry(clusterTopic || `${topic}_${C.TOPIC.SUBSCRIPTIONS}`, options)
+    this._setupRemoteComponents(clusterTopic)
+  }
+
+  /**
+   * Setup all the remote components and actions required to deal with the subscription
+   * via the cluster.
+   */
+  _setupRemoteComponents(clusterTopic) {
+    this._clusterSubscriptions = new DistributedStateRegistry(clusterTopic || `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`, this._options)
     this._clusterSubscriptions.on('add', this._onClusterSubscriptionAdded.bind(this))
     this._clusterSubscriptions.on('remove', this._onClusterSubscriptionRemoved.bind(this))
   }
@@ -46,7 +56,7 @@ class SubscriptionRegistry {
    * @public
    * @return {Array}  An array of all the servernames with this subscription
    */
-  getAllServers (subscriptionName) {
+  getAllServers(subscriptionName) {
     return this._clusterSubscriptions.getAllServers(subscriptionName)
   }
 
@@ -59,7 +69,7 @@ class SubscriptionRegistry {
    * @public
    * @return {Array}  An array of all the servernames with this subscription
    */
-  getAllRemoteServers (subscriptionName) {
+  getAllRemoteServers(subscriptionName) {
     const serverNames = this._clusterSubscriptions.getAllServers(subscriptionName)
     const localServerIndex = serverNames.indexOf(this._options.serverName)
     if (localServerIndex > -1) {
@@ -75,7 +85,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {Array} names
    */
-  getNames () {
+  getNames() {
     return this._clusterSubscriptions.getAll()
   }
 
@@ -86,7 +96,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {Array} names
    */
-  hasName (subscriptionName) {
+  hasName(subscriptionName) {
     return this._clusterSubscriptions.getAll().indexOf(subscriptionName) !== -1
   }
 
@@ -100,7 +110,7 @@ class SubscriptionRegistry {
   * @public
   * @returns {void}
   */
-  setAction (name, value) {
+  setAction(name, value) {
     this._constants[name.toUpperCase()] = value
   }
 
@@ -112,7 +122,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  onBroadcastTimeout (delayedBroadcasts) {
+  onBroadcastTimeout(delayedBroadcasts) {
     const sockets = this._subscriptions[delayedBroadcasts.name]
     if (sockets) {
       // sort vector of unique senders by uuid. doing so in combination with
@@ -182,7 +192,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  sendToSubscribers (name, msgString, sender) {
+  sendToSubscribers(name, msgString, sender) {
     if (!this._subscriptions[name]) {
       return
     }
@@ -249,7 +259,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  subscribe (name, socketWrapper) {
+  subscribe(name, socketWrapper) {
     if (this._subscriptions[name] === undefined) {
       this._subscriptions[name] = []
     }
@@ -305,7 +315,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  unsubscribe (name, socketWrapper, silent) {
+  unsubscribe(name, socketWrapper, silent) {
     let msg
     let i
 
@@ -363,7 +373,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  unsubscribeAll (socketWrapper) {
+  unsubscribeAll(socketWrapper) {
     let name
     let index
 
@@ -385,7 +395,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {Boolean} isLocalSubscriber
    */
-  isLocalSubscriber (socketWrapper) {
+  isLocalSubscriber(socketWrapper) {
     for (const name in this._subscriptions) {
       if (this._subscriptions[name].indexOf(socketWrapper) !== -1) {
         return true
@@ -393,22 +403,6 @@ class SubscriptionRegistry {
     }
 
     return false
-  }
-
-  /**
-   * Returns the amount of local subscribers to a specific subscription
-   *
-   * @param   {String} name
-   *
-   * @public
-   * @returns {Number}
-   */
-  getLocalSubscribersCount (name) {
-    const subscriptions = this._subscriptions[name]
-    if (subscriptions) {
-      return subscriptions.length
-    }
-    return 0
   }
 
   /**
@@ -420,11 +414,8 @@ class SubscriptionRegistry {
    * @public
    * @returns {Array} SocketWrapper[]
    */
-  getLocalSubscribers (name) {
-    if (this.hasLocalSubscribers(name)) {
-      return this._subscriptions[name].slice()
-    }
-    return null
+  getLocalSubscribers(name) {
+    return this._subscriptions[name] || []
   }
 
   /**
@@ -436,10 +427,10 @@ class SubscriptionRegistry {
    * @public
    * @returns {SocketWrapper}
    */
-  getRandomLocalSubscriber (name) {
+  getRandomLocalSubscriber(name) {
     const subscribers = this.getLocalSubscribers(name)
 
-    if (subscribers) {
+    if (subscribers.length > 0) {
       return subscribers[Math.floor(Math.random() * subscribers.length)]
     }
     return null
@@ -455,7 +446,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {Boolean} hasLocalSubscribers
    */
-  hasLocalSubscribers (name) {
+  hasLocalSubscribers(name) {
     const subscriptions = this._subscriptions[name]
     return !!subscriptions && subscriptions.length !== 0
   }
@@ -468,7 +459,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  setSubscriptionListener (subscriptionListener) {
+  setSubscriptionListener(subscriptionListener) {
     this._subscriptionListener = subscriptionListener
   }
 
@@ -479,7 +470,7 @@ class SubscriptionRegistry {
    * call done from subscribe
    * @param  {String} name the name that was added
    */
-  _onClusterSubscriptionAdded (name) {
+  _onClusterSubscriptionAdded(name) {
     if (this._subscriptionListener && !this._subscriptions[name]) {
       this._subscriptionListener.onSubscriptionMade(name, null, 1)
     }
@@ -492,7 +483,7 @@ class SubscriptionRegistry {
    * call done from unsubscribe
    * @param  {String} name the name that was removed
    */
-  _onClusterSubscriptionRemoved (name) {
+  _onClusterSubscriptionRemoved(name) {
     if (this._subscriptionListener && !this._subscriptions[name]) {
       this._subscriptionListener.onSubscriptionRemoved(name, null, 0, 0)
     }

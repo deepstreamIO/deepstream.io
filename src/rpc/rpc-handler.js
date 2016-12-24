@@ -204,7 +204,7 @@ module.exports = class RpcHandler {
     const correlationId = message.data[1]
 
     const rpcData = {
-      local: this._subscriptionRegistry.getLocalSubscribers(rpcName),
+      local: this._subscriptionRegistry.getLocalSubscribers(rpcName).slice(),
       remoteServers: null,
       rpc: null
     }
