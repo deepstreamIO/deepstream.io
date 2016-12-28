@@ -133,7 +133,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     try {
       this._applyConfig(update, message)
     } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', message.data[ 3 ])
+      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 3 ])
       return
     }
 
@@ -157,7 +157,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     try {
       this._applyConfig(update, message)
     } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, 'INVALID_CONFIG_DATA', message.data[ 4 ])
+      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 4 ])
       return
     }
 
@@ -179,6 +179,8 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
 
   this._lastVersion = version
 
+  this._cacheResponses++
+
   this._steps.push(update)
 
   if (this._recordRequest === null) {
@@ -189,6 +191,8 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       this._onRecord.bind(this),
       this._onFatalError.bind(this)
     )
+  } else if (this._steps.length === 1 && this._cacheResponses === 1) {
+    this._next()
   }
 }
 
@@ -202,6 +206,7 @@ RecordTransition.prototype.destroy = function (errorMessage) {
   if (this.isDestroyed) {
     return
   }
+
   this._sendWriteAcknowledgements(errorMessage || this._writeError)
   this._recordHandler._$transitionComplete(this._name)
   this.isDestroyed = true
@@ -311,7 +316,6 @@ RecordTransition.prototype._next = function () {
     this._record._d = this._currentStep.data
   }
 
-  this._cacheResponses++
   /*
    * Please note: saving to storage is called first to allow for synchronous cache
    * responses to destroy the transition, it is however not on the critical path
@@ -360,7 +364,9 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
   } else if (this.isDestroyed === false) {
     this._recordHandler._$broadcastUpdate(this._name, this._currentStep.message, this._currentStep.sender)
     this._next()
-  } else if (this._cacheResponses === 0 && this._storageResponses === 0) {
+  } else if (this._cacheResponses === 0 
+      && this._storageResponses === 0
+      && this._steps.length === 0) {
     this.destroy()
   }
 }
@@ -380,10 +386,11 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
     this._onFatalError(error)
   } else if (this.isDestroyed) {
     this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error)
-  } else if (this._cacheResponses === 0 && this._storageResponses === 0) {
+  } else if (this._cacheResponses === 0 
+      && this._storageResponses === 0
+      && this._steps.length === 0) {
     this.destroy()
   }
-
 }
 
 /**

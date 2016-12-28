@@ -9,9 +9,9 @@ let proxyquire = require('proxyquire'),
   msg = require('../test-helper/test-helper').msg,
   StorageMock = require('../mocks/storage-mock')
 
-describe('record transitions', () => {
+fdescribe('record transitions', () => {
 
-  describe('happy path', () => {
+  xdescribe('happy path', () => {
 
     let recordTransition,
       socketWrapper = new SocketWrapper(new SocketMock(), {}),
@@ -134,6 +134,7 @@ describe('record transitions', () => {
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 2) {
           expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', updateMessage, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalledWith('someRecord', patchMessage2, socketWrapper)
           expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
           expect(recordTransition._record).toEqual({ _v: 3, _d: { firstname: 'Lana', lastname: 'Peterson' } })
           clearInterval(check)
