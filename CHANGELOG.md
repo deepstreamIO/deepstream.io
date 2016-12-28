@@ -1,3 +1,9 @@
+## [2.1.1] - 2016.12.28
+
+### Bug fixes
+
+- Valve cross referencing in both a create and read results in a ack timeout [#514](https://github.com/deepstreamIO/deepstream.io/issues/514)
+
 ## [2.1.0] - 2016.12.20
 
 ### Features
