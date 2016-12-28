@@ -178,11 +178,9 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
   }
 
   this._lastVersion = version
-
   this._cacheResponses++
 
   this._steps.push(update)
-
   if (this._recordRequest === null) {
     this._recordRequest = new RecordRequest(
       this._name,
@@ -303,6 +301,7 @@ RecordTransition.prototype._next = function () {
 
   this._currentStep = this._steps.shift()
   if (this._record._v !== this._currentStep.version - 1) {
+    this._cacheResponses--
     this.sendVersionExists(this._currentStep)
     this._next()
     return

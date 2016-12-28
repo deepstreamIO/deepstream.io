@@ -9,9 +9,9 @@ let proxyquire = require('proxyquire'),
   msg = require('../test-helper/test-helper').msg,
   StorageMock = require('../mocks/storage-mock')
 
-fdescribe('record transitions', () => {
+describe('record transitions', () => {
 
-  xdescribe('happy path', () => {
+  describe('happy path', () => {
 
     let recordTransition,
       socketWrapper = new SocketWrapper(new SocketMock(), {}),
