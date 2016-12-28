@@ -265,7 +265,6 @@ describe('record handler handles messages', () => {
 
   it('rejects updates for existing versions', () => {
     clientA.user = 'someUser'
-
     recordHandler.handle(clientA, {
       raw: msg('R|U|existingRecord|5|{"name":"Kowalski"}'),
       topic: 'R',
@@ -304,7 +303,6 @@ describe('record handler handles messages', () => {
     options.cache.nextGetWillBeSynchronous = false
     clientA.socket.lastSendMessage = null
     clientB.socket.lastSendMessage = null
-
     recordHandler.handle(clientA, {
       raw: msg('R|U|existingRecord|6|{"name":"Kowalski"}'),
       topic: 'R',
