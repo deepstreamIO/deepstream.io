@@ -202,6 +202,7 @@ RecordTransition.prototype.destroy = function (errorMessage) {
   if (this.isDestroyed) {
     return
   }
+
   this._sendWriteAcknowledgements(errorMessage || this._writeError)
   this._recordHandler._$transitionComplete(this._name)
   this.isDestroyed = true
@@ -360,8 +361,12 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
   } else if (this.isDestroyed === false) {
     this._recordHandler._$broadcastUpdate(this._name, this._currentStep.message, this._currentStep.sender)
     this._next()
-  } else if (this._cacheResponses === 0 && this._storageResponses === 0) {
+  } else if (this._cacheResponses === 0 
+      && this._storageResponses === 0
+      && this._steps.length === 0) {
     this.destroy()
+  } else {
+    this._next()
   }
 }
 
@@ -380,8 +385,12 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
     this._onFatalError(error)
   } else if (this.isDestroyed) {
     this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error)
-  } else if (this._cacheResponses === 0 && this._storageResponses === 0) {
+  } else if (this._cacheResponses === 0 
+      && this._storageResponses === 0
+      && this._steps.length === 0) {
     this.destroy()
+  } else {
+    this._next()
   }
 
 }
