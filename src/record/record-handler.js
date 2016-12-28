@@ -374,7 +374,7 @@ RecordHandler.prototype.removeRecordRequest = function (recordName) {
  * @returns {void}
  */
 RecordHandler.prototype.runWhenRecordStable = function (recordName, callback) {
-  if (!this._recordRequestsInProgress[recordName]) {
+  if (!this._recordRequestsInProgress[recordName] || this._recordRequestsInProgress[recordName].length === 0) {
     this._recordRequestsInProgress[recordName] = []
     callback(recordName)
   } else {
