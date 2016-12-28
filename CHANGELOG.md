@@ -1,3 +1,9 @@
+## [2.1.2] - 2016.12.28
+
+### Bug fixes
+
+- Fixing write error where only initial value is written to storage [#517](https://github.com/deepstreamIO/deepstream.io/issues/517)
+
 ## [2.1.1] - 2016.12.28
 
 ### Bug fixes
