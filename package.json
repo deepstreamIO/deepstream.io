@@ -38,7 +38,7 @@
     "grunt": "^1.0.1",
     "istanbul": "^0.4.4",
     "jasmine": "^2.5.2",
-    "jasmine-spec-reporter": "^2.5.0",
+    "jasmine-spec-reporter": "^3.0.0",
     "n0p3": "^1.0.2",
     "nexe": "^1.1.2",
     "proxyquire": "1.7.10",
