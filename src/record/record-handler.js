@@ -160,7 +160,7 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
 
 RecordHandler.prototype._onStorageChange = function (recordName, version) {
   if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
-    this._recordCache.delete(recordName)
+    this._recordCache.del(recordName)
     return
   }
 
