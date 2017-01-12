@@ -7,7 +7,7 @@ exports.getUid = function () {
   return Date.now().toString(36) + '-' + (Math.random() * 10000000000000000000).toString(36)
 }
 
-exports.stringifyImmutable = (data, str = stringifyCache.get(data) || JSON.stringify(data)) => {
+exports.stringifyImmutable = function (data, str = stringifyCache.get(data) || JSON.stringify(data)) {
   stringifyCache.set(data, str)
   return str
 }
