@@ -411,21 +411,30 @@ RecordHandler.prototype._delete = function (socketWrapper, message) {
   }
 }
 
-/*
- * Callback for completed deletions. Notifies subscribers of the delete and unsubscribes them
+/**
+ * Callback for completed deletions. Notifies subscribers of the delete
  *
  * @param   {String} name           record name
  * @param   {Object} message        parsed and validated deepstream message
  * @param   {SocketWrapper} originalSender the socket the update message was received from
  *
- * @package private
+ * @private
  * @returns {void}
  */
 RecordHandler.prototype._onDeleted = function (name, message, originalSender) {
+  this._$broadcastUpdate(name, message, originalSender, this._onDeletedMessageSent.bind(this, name))
+}
+
+/**
+ * Callback for completed deletions notifications. Unsubscribes subscribers
+ *
+ * @param   {String} name           record name
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._onDeletedMessageSent = function (name) {
   const subscribers = this._subscriptionRegistry.getLocalSubscribers(name)
-
-  this._$broadcastUpdate(name, message, originalSender)
-
   for (let i = 0; subscribers && i < subscribers.length; i++) {
     this._subscriptionRegistry.unsubscribe(name, subscribers[i], true)
   }

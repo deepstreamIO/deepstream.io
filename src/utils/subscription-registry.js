@@ -175,6 +175,9 @@ class SubscriptionRegistry {
       SocketWrapper.finalizeMessage(preparedMessage)
     }
 
+    for (let i = 0, il = delayedBroadcasts.callbacks.length; i < il; i++)
+      delayedBroadcasts.callbacks[i]();
+
     // delete this delayed broadcast
     delete this._delayedBroadcasts[delayedBroadcasts.name]
   }
@@ -188,11 +191,12 @@ class SubscriptionRegistry {
    * @param   {String} name      the name/topic the subscriber was previously registered for
    * @param   {String} msgString the message as string
    * @param   {[SocketWrapper]} sender an optional socketWrapper that shouldn't receive the message
+   * @param   {Function} callback the callback to call on successful message send
    *
    * @public
    * @returns {void}
    */
-  sendToSubscribers(name, msgString, sender) {
+  sendToSubscribers(name, msgString, sender, callback) {
     if (!this._subscriptions[name]) {
       return
     }
@@ -208,6 +212,7 @@ class SubscriptionRegistry {
       this._delayedBroadcasts[name] = delayedBroadcasts = {
         uniqueSendersVector: [],
         uniqueSendersMap: {},
+        callbacks: [],
         timer: null,
         name,
         sharedMessages: ''
@@ -239,6 +244,9 @@ class SubscriptionRegistry {
         }
       }
     }
+
+    if (callback)
+      delayedBroadcasts.callbacks.push(callback);
 
     // reuse the same timer if already started
     if (!delayedBroadcasts.timer) {
