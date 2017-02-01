@@ -1,15 +1,8 @@
 const url = require('url')
 const OBJECT = 'object'
 
-const stringifyCache = new WeakMap()
-
 exports.getUid = function () {
   return Date.now().toString(36) + '-' + (Math.random() * 10000000000000000000).toString(36)
-}
-
-exports.stringifyImmutable = function (data, str = stringifyCache.get(data) || JSON.stringify(data)) {
-  stringifyCache.set(data, str)
-  return str
 }
 
 exports.compareVersions = function (a, b) {
