@@ -178,7 +178,8 @@ RecordHandler.prototype._refresh = function (recordName, version) {
 
   this._storage.get(recordName, (error, recordName, nextRecord) => {
     if (error) {
-      this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ])
+      const message = 'error while reading ' + recordName + ' from storage'
+      this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], C.SOURCE_STORAGE_CONNECTOR)
       return
     }
 
