@@ -89,7 +89,7 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 
 RecordHandler.prototype._sendRead = function (recordName, record, socketWrapper) {
   this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-  this._record._s = this._record._s || JSON.stringify(record._d)
+  record._s = record._s || JSON.stringify(record._d)
   socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
 }
 
