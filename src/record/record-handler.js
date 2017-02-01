@@ -15,7 +15,7 @@ const RecordHandler = function (options) {
   this._logger = options.logger
   this._message = options.messageConnector || options.message
   this._storage = options.storageConnector || options.storage
-  this._storage.on('change', this._onStorageChange.bind(this))
+  this._storage.on('change', this._refresh.bind(this))
   this._recordCache = new LRU({
     max: (options.cacheSize || 1e4)
   })
@@ -89,7 +89,8 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 
 RecordHandler.prototype._sendRead = function (recordName, record, socketWrapper) {
   this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, utils.stringifyImmutable(record._d), record._p ])
+  record._s = record._s || JSON.stringify(record._d)
+  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
 }
 
 RecordHandler.prototype._update = function (socketWrapper, message) {
@@ -114,34 +115,39 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  const data = utils.JSONParse(message.data[2])
+  const record = {
+    _v: version,
+    _p: parent,
+    _s: message.data[2]
+  }
 
-  if (data.error) {
-    this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ], socketWrapper)
+  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+    const data = utils.JSONParse(message.data[2])
+
+    if (data.error) {
+      this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ], socketWrapper)
+      return
+    }
+
+    record._d = data.value
+
+    this._storage.set(recordName, record, (error, recordName, record, socketWrapper) => {
+      if (error) {
+        const message = 'error while writing ' + recordName + ' to storage.'
+        this._sendError(C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ], socketWrapper)
+      }
+    }, socketWrapper)
+  }
+
+  if (this._updateCache(recordName, record) !== record) {
     return
   }
 
-  const record = {
-    _v: version,
-    _d: data.value,
-    _p: parent
-  }
-
-  utils.stringifyImmutable(record._d, message.data[2])
-
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-    this._storage.set(recordName, record, error => {
-      if (error) {
-        const message = 'error while writing ' + recordName + ' to storage.'
-        this._sendError(C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ], !record && socketWrapper)
-      }
-    }, socketWrapper)
     this._message.publish(C.TOPIC.RECORD, message)
   }
 
-  if (this._updateCache(recordName, record) === record) {
-    this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
-  }
+  this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
@@ -158,7 +164,7 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
   }
 }
 
-RecordHandler.prototype._onStorageChange = function (recordName, version) {
+RecordHandler.prototype._refresh = function (recordName, version) {
   if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
     this._recordCache.del(recordName)
     return
@@ -173,13 +179,20 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
   this._storage.get(recordName, (error, recordName, nextRecord) => {
     if (error) {
       this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ])
-    } else if (this._updateCache(recordName, nextRecord) === nextRecord) {
-      this._subscriptionRegistry.sendToSubscribers(
-        recordName,
-        messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, nextRecord._v, utils.stringifyImmutable(nextRecord._d), nextRecord._p ]),
-        C.SOURCE_STORAGE_CONNECTOR
-      )
+      return
     }
+
+    if (this._updateCache(recordName, nextRecord) !== nextRecord) {
+      return
+    }
+
+    nextRecord._s = nextRecord._s || JSON.stringify(nextRecord._d)
+
+    this._subscriptionRegistry.sendToSubscribers(
+      recordName,
+      messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, nextRecord._v, nextRecord._s, nextRecord._p ]),
+      C.SOURCE_STORAGE_CONNECTOR
+    )
   })
 }
 
