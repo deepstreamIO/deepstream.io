@@ -15,7 +15,7 @@ const RecordHandler = function (options) {
   this._logger = options.logger
   this._message = options.messageConnector || options.message
   this._storage = options.storageConnector || options.storage
-  this._storage.on('change', this._onStorageChange.bind(this))
+  this._storage.on('change', this._refresh.bind(this))
   this._recordCache = new LRU({
     max: (options.cacheSize || 1e6)
   })
@@ -131,18 +131,23 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
 
     record._d = data.value
 
-    this._storage.set(recordName, record, error => {
+    this._storage.set(recordName, record, (error, recordName, record, socketWrapper) => {
       if (error) {
         const message = 'error while writing ' + recordName + ' to storage.'
-        this._sendError(C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ], !record && socketWrapper)
+        this._sendError(C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ], socketWrapper)
       }
     }, socketWrapper)
+  }
+
+  if (this._updateCache(recordName, record) !== record) {
+    return
+  }
+
+  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
     this._message.publish(C.TOPIC.RECORD, message)
   }
 
-  if (this._updateCache(recordName, record) === record) {
-    this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
-  }
+  this._subscriptionRegistry.sendToSubscribers(recordName, message.raw, socketWrapper)
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
@@ -159,7 +164,7 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
   }
 }
 
-RecordHandler.prototype._onStorageChange = function (recordName, version) {
+RecordHandler.prototype._refresh = function (recordName, version) {
   if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
     this._recordCache.del(recordName)
     return
@@ -174,14 +179,20 @@ RecordHandler.prototype._onStorageChange = function (recordName, version) {
   this._storage.get(recordName, (error, recordName, nextRecord) => {
     if (error) {
       this._logger.log(C.LOG_LEVEL.ERROR, error.event, [ recordName, error.message ])
-    } else if (this._updateCache(recordName, nextRecord) === nextRecord) {
-      nextRecord._s = nextRecord._s || JSON.stringify(nextRecord._d)
-      this._subscriptionRegistry.sendToSubscribers(
-        recordName,
-        messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, nextRecord._v, nextRecord._s, nextRecord._p ]),
-        C.SOURCE_STORAGE_CONNECTOR
-      )
+      return
     }
+
+    if (this._updateCache(recordName, nextRecord) !== nextRecord) {
+      return
+    }
+
+    nextRecord._s = nextRecord._s || JSON.stringify(nextRecord._d)
+
+    this._subscriptionRegistry.sendToSubscribers(
+      recordName,
+      messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, nextRecord._v, nextRecord._s, nextRecord._p ]),
+      C.SOURCE_STORAGE_CONNECTOR
+    )
   })
 }
 
