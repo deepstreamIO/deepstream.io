@@ -118,6 +118,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   const record = {
     _v: version,
     _p: parent,
+    _d: undefined,
     _s: message.data[2]
   }
 
