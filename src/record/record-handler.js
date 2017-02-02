@@ -76,22 +76,27 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
   const record = this._recordCache.get(recordName)
 
   if (record) {
-    this._sendRead(recordName, record, socketWrapper)
+    this._sendUpdate(recordName, record, socketWrapper)
   } else {
     this._storage.get(recordName, (error, recordName, record, socketWrapper) => {
       if (error) {
         const message = 'error while reading ' + recordName + ' from storage'
         this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], socketWrapper)
-      } else {
-        this._sendRead(recordName, this._updateCache(recordName, record), socketWrapper)
+        return
       }
+
+      if (this._updateCache(recordName, record) !== record) {
+        return
+      }
+
+      this._sendUpdate(recordName, record, socketWrapper)
     }, socketWrapper)
   }
 }
 
-RecordHandler.prototype._sendRead = function (recordName, record, socketWrapper) {
+RecordHandler.prototype._sendUpdate = function (recordName, record, socketWrapper) {
   record._s = record._s || JSON.stringify(record._d)
-  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [ recordName, record._v, record._s, record._p ])
+  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, record._v, record._s, record._p ])
 }
 
 RecordHandler.prototype._update = function (socketWrapper, message) {
