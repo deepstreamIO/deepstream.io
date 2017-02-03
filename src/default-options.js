@@ -19,7 +19,6 @@ exports.get = function () {
     healthCheckPath: '/healthcheck',
     externalUrl: null,
     timeBetweenSendingQueuedPackages: 1,
-    maxMessagesPerPacket: 1000,
     heartbeatInterval: 30000,
 
     /*
