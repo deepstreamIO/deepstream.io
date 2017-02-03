@@ -124,7 +124,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   invariant(typeof recordName === 'string', `invalid argument: message. Missing recordName, ${message}`)
 
   if (message.data.length < 3) {
-    this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data[0] ])
+    this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
     return
   }
 
@@ -153,7 +153,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     const data = utils.JSONParse(message.data[2])
 
     if (data.error) {
-      this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.raw ])
+      this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
       return
     }
 
