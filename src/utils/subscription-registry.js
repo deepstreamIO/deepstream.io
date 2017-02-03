@@ -255,11 +255,12 @@ class SubscriptionRegistry {
    *
    * @param   {String} name
    * @param   {SocketWrapper} socketWrapper
+   * @param   {Boolean} silent supresses logs and unsubscribe ACK messages
    *
    * @public
    * @returns {void}
    */
-  subscribe(name, socketWrapper) {
+  subscribe(name, socketWrapper, silent) {
     if (this._subscriptions[name] === undefined) {
       this._subscriptions[name] = []
     }
@@ -300,8 +301,11 @@ class SubscriptionRegistry {
 
     this._clusterSubscriptions.add(name)
 
-    const logMsg = `for ${this._topic}:${name} by ${socketWrapper.user}`
-    this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg)
+    if (!silent) {
+      const logMsg = `for ${this._topic}:${name} by ${socketWrapper.user}`
+      this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg)
+      socketWrapper.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name])
+    }
   }
 
   /**
@@ -309,7 +313,7 @@ class SubscriptionRegistry {
    *
    * @param   {String} name
    * @param   {SocketWrapper} socketWrapper
-   * @param   {Boolean} silent supresses logs
+   * @param   {Boolean} silent supresses logs and unsubscribe ACK messages
    * @public
    * @returns {void}
    */
@@ -349,6 +353,7 @@ class SubscriptionRegistry {
     if (!silent) {
       const logMsg = `for ${this._topic}:${name} by ${socketWrapper.user}`
       this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg)
+      socketWrapper.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name])
     }
 
     if (!this.isLocalSubscriber(socketWrapper)) {
