@@ -15,7 +15,7 @@ const RecordHandler = function (options) {
   this._logger = options.logger
   this._message = options.messageConnector || options.message
   this._storage = options.storageConnector || options.storage
-  this._storage.on('change', this._refresh.bind(this))
+  this._storage.on('change', this._invalidate.bind(this))
   this._recordCache = new LRU({
     max: (options.cacheSize || 1e4)
   })
@@ -75,28 +75,16 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 
   const record = this._recordCache.get(recordName)
 
-  if (record) {
-    this._sendUpdate(recordName, record, socketWrapper)
+  if (!record) {
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
+      recordName,
+      record._v,
+      record._s = record._s || JSON.stringify(record._d),
+      record._p ]
+    )
   } else {
-    this._storage.get(recordName, (error, recordName, record, socketWrapper) => {
-      if (error) {
-        const message = 'error while reading ' + recordName + ' from storage'
-        this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], socketWrapper)
-        return
-      }
-
-      if (this._updateCache(recordName, record) !== record) {
-        return
-      }
-
-      this._sendUpdate(recordName, record, socketWrapper)
-    }, socketWrapper)
+    this._refresh(recordName)
   }
-}
-
-RecordHandler.prototype._sendUpdate = function (recordName, record, socketWrapper) {
-  record._s = record._s || JSON.stringify(record._d)
-  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, record._v, record._s, record._p ])
 }
 
 RecordHandler.prototype._update = function (socketWrapper, message) {
@@ -171,7 +159,7 @@ RecordHandler.prototype._sendError = function (event, message, socketWrapper) {
   }
 }
 
-RecordHandler.prototype._refresh = function (recordName, version) {
+RecordHandler.prototype._invalidate = function (recordName, version) {
   if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
     this._recordCache.del(recordName)
     return
@@ -183,10 +171,14 @@ RecordHandler.prototype._refresh = function (recordName, version) {
     return
   }
 
+  this._refresh(recordName)
+}
+
+RecordHandler.prototype._refresh = function (recordName, socketWrapper) {
   this._storage.get(recordName, (error, recordName, nextRecord) => {
     if (error) {
       const message = 'error while reading ' + recordName + ' from storage'
-      this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], C.SOURCE_STORAGE_CONNECTOR)
+      this._sendError(C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ], socketWrapper)
       return
     }
 
@@ -194,13 +186,18 @@ RecordHandler.prototype._refresh = function (recordName, version) {
       return
     }
 
-    nextRecord._s = nextRecord._s || JSON.stringify(nextRecord._d)
+    if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
+      return
+    }
 
-    this._subscriptionRegistry.sendToSubscribers(
+    const message = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
       recordName,
-      messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, nextRecord._v, nextRecord._s, nextRecord._p ]),
-      C.SOURCE_STORAGE_CONNECTOR
-    )
+      nextRecord._v,
+      nextRecord._s = nextRecord._s || JSON.stringify(nextRecord._d),
+      nextRecord._p
+    ])
+
+    this._subscriptionRegistry.sendToSubscribers(recordName, message)
   })
 }
 
