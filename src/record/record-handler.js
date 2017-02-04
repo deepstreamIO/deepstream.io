@@ -198,16 +198,17 @@ RecordHandler.prototype._invalidate = function (recordName, version) {
   invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
   invariant(typeof version === 'string' && version.match(REV_EXPR), `invalid argument: version, ${version}`)
 
-  if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
-    this._recordCache.del(recordName)
-    return
-  }
-
   const prevRecord = this._recordCache.peek(recordName)
 
   invariant(!this._recordCache.has(recordName) || typeof prevRecord === 'object', `invalid record found in cache, ${prevRecord}`)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
+    return
+  }
+
+  this._recordCache.del(recordName)
+
+  if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
     return
   }
 
