@@ -18,7 +18,7 @@ const RecordHandler = function (options) {
   this._storage = options.storageConnector || options.storage
   this._storage.on('change', this._invalidate.bind(this))
   this._recordCache = new LRU({
-    max: (options.cacheSize || 1e4)
+    max: options.cacheSize || 1e4
   })
 }
 
