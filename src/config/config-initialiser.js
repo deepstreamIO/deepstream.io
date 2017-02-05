@@ -240,7 +240,6 @@ function handleAuthStrategy (config) {
  */
 function handlePermissionStrategy (config) {
   const permissionStrategies = {
-    config: require('../permission/config-permission-handler'),
     none: require('../permission/open-permission-handler')
   }
 
