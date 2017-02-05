@@ -305,7 +305,7 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
   this._recordCache.set(recordName, nextRecord)
 
   if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0 &&
-      (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR || socketWrapper.C.SOURCE_STORAGE_CONNECTOR)) {
+      (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR || socketWrapper === C.SOURCE_STORAGE_CONNECTOR)) {
     return nextRecord
   }
 
