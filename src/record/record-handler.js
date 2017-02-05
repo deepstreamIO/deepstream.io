@@ -9,16 +9,16 @@ const lz = require('lz-string')
 
 const REV_EXPR = /\d+-.+/
 
-const Record = function (version, parent, raw, data) {
+const Record = function (version, parent, raw, data, size) {
   invariant(!version || version.match(REV_EXPR), `invalid argument: version, ${version}`)
   invariant(!parent || parent.match(REV_EXPR), `invalid argument: parent, ${parent}`)
-  invariant(typeof raw === 'string', `invalid argument: raw, ${raw}`)
-  invariant(typeof data === 'object', `invalid argument: data, ${data}`)
 
-  this._v = version
-  this._p = parent
+  this._v = version || ''
+  this._p = parent || ''
   this._s = raw
   this._d = data
+
+  this.size = this._v.length + this._p.length + this._s.length + size + 64
 }
 
 const RecordHandler = function (options) {
@@ -31,7 +31,10 @@ const RecordHandler = function (options) {
   this._storage = options.storageConnector || options.storage
   this._storage.on('change', this._invalidate.bind(this))
   this._recordCache = new LRU({
-    max: options.cacheSize || 1e4
+    max: options.cacheSize || 128e6,
+    length (record, recordName) {
+      return record.size
+    }
   })
 }
 
@@ -39,14 +42,30 @@ RecordHandler.prototype.getRecord = function (recordName) {
   invariant(arguments.length === 1, 'invalid number of arguments')
   invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
 
-  const record = this._recordCache.get(recordName)
-  return record
-    ? Promise.resolve(record)
-    : new Promise((resolve, reject) =>
-      this._refresh(null, recordName, (error, recordName, record) =>
-        error ? reject(error) : resolve(record)
-      )
+  let record = this._recordCache.get(recordName)
+
+  const promise = record ? Promise.resolve(record) : new Promise((resolve, reject) =>
+    this._refresh(null, recordName, (error, recordName, record) =>
+      error ? reject(error) : resolve(record)
     )
+  )
+
+  return promise
+    .then(record => {
+      if (record._d) {
+        return record
+      }
+      const json = lz.decompressFromUTF16(record._s)
+      record = new Record(
+        record._v,
+        record._p,
+        record._s,
+        JSON.parse(json),
+        Math.floor(json.length * 1.2)
+      )
+      this._recordCache.set(recordName, record)
+      return record
+    })
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
@@ -157,30 +176,39 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  const json = lz.decompressFromUTF16(message.data[2])
-  const data = utils.JSONParse(json)
-
-  if (data.error) {
-    this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
-    return
-  }
-
-  invariant(data.value && typeof data.value === 'object', `invalid data, ${json}, ${message.data[2]}`)
-
-  const record = new Record(
-    version,
-    parent,
-    message.data[2],
-    data.value
-  )
+  let record
 
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+    const json = lz.decompressFromUTF16(message.data[2])
+    const data = utils.JSONParse(json)
+
+    if (data.error) {
+      this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
+      return
+    }
+
+    invariant(data.value && typeof data.value === 'object', `invalid data, ${json}, ${message.data[2]}`)
+
+    record = new Record(
+      version,
+      parent,
+      message.data[2],
+      data.value,
+      Math.floor(json.length * 1.2)
+    )
+
     this._storage.set(recordName, record, (error, recordName, record, socketWrapper) => {
       if (error) {
         const message = 'error while writing ' + recordName + ' to storage.'
         this._sendError(socketWrapper, C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ])
       }
     }, socketWrapper)
+  } else {
+    record = new Record(
+      version,
+      parent,
+      message.data[2]
+    )
   }
 
   this._broadcast(socketWrapper, recordName, record)
@@ -246,12 +274,16 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
       return
     }
 
-    record = this._broadcast(null, recordName, new Record(
+    const json = JSON.stringify(record._d)
+    record = new Record(
       record._v,
       record._p,
-      record._s || lz.compressToUTF16(JSON.stringify(record._d)),
-      record._d
-    ))
+      record._s || lz.compressToUTF16(json),
+      record._d,
+      Math.floor(json.length * 1.2)
+    )
+
+    record = this._broadcast(null, recordName, record)
 
     callback && callback(null, recordName, record)
   })
