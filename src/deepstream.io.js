@@ -85,10 +85,6 @@ Deepstream.readMessage = readMessage
  * @returns {void}
  */
 Deepstream.prototype.set = function (key, value) {
-  if (key === 'message') {
-    key = 'messageConnector'
-  }
-
   if (this._options[key] === undefined && this._plugins.indexOf(key) === -1) {
     throw new Error(`Unknown option "${key}"`)
   }
