@@ -7,7 +7,6 @@ const readMessage = require('./utils/read-message')
 const util = require('util')
 const utils = require('./utils/utils')
 const defaultOptions = require('./default-options')
-const configInitialiser = require('./config/config-initialiser')
 const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
@@ -44,8 +43,7 @@ const Deepstream = function (config) {
   this._recordHandler = null
   this._plugins = [
     'messageConnector',
-    'storage',
-    'cache',
+    'storageConnector',
     'authenticationHandler',
     'permissionHandler'
   ]
@@ -218,9 +216,7 @@ Deepstream.prototype.convertTyped = function (value) {
  * @returns {void}
  */
 Deepstream.prototype._loadConfig = function (config) {
-  const rawConfig = utils.merge(defaultOptions.get(), config)
-  config = configInitialiser.initialise(rawConfig)
-  this._options = config
+  this._options = utils.merge(defaultOptions.get(), config)
 }
 
 /**

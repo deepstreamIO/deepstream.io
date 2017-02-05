@@ -25,8 +25,8 @@ const RecordHandler = function (options) {
   this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
   this._permissionHandler = options.permissionHandler
   this._logger = options.logger
-  this._message = options.messageConnector || options.message
-  this._storage = options.storageConnector || options.storage
+  this._message = options.messageConnector
+  this._storage = options.storageConnector
   this._storage.on('change', this._invalidate.bind(this))
   this._recordCache = new LRU({
     max: options.cacheSize || 128e6,

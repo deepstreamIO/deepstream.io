@@ -7,7 +7,6 @@ exports.get = function () {
      * General
      */
     serverName: utils.getUid(),
-    showLogo: true,
     logLevel: C.LOG_LEVEL.INFO,
 
     /*
@@ -20,34 +19,6 @@ exports.get = function () {
     externalUrl: null,
     timeBetweenSendingQueuedPackages: 1,
     heartbeatInterval: 30000,
-
-    /*
-     * SSL Configuration
-     */
-    sslKey: null,
-    sslCert: null,
-    sslCa: null,
-
-    /*
-     * Authentication
-     */
-    auth: {
-      type: 'none'
-    },
-
-    /*
-     * Permissioning
-     */
-    permission: {
-      type: 'none'
-    },
-
-    /*
-     * Default Plugins
-     */
-    messageConnector: require('./default-plugins/noop-message-connector'),
-    cache: require('./default-plugins/local-cache'),
-    storage: require('./default-plugins/noop-storage'),
 
     /*
      * Security
