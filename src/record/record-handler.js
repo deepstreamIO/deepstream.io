@@ -9,14 +9,14 @@ const lz = require('lz-string')
 
 const REV_EXPR = /\d+-.+/
 
-const Record = function (version, parent, data) {
+const Record = function (version, parent, body) {
   invariant(!version || version.match(REV_EXPR), `invalid argument: version, ${version}`)
   invariant(!parent || parent.match(REV_EXPR), `invalid argument: parent, ${parent}`)
-  invariant(typeof data === 'string', `invalid argument: data, ${data}`)
+  invariant(typeof body === 'string', `invalid argument: body, ${body}`)
 
   this._v = version || ''
   this._p = parent || ''
-  this._s = data
+  this._s = body
 }
 
 const RecordHandler = function (options) {
@@ -115,38 +115,30 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   invariant(arguments.length === 2, 'invalid number of arguments')
   invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
 
-  const recordName = message.data[0]
+  const [ recordName, version, body, parent ] = message.data
+
+  this._broadcast(socketWrapper, recordName, new Record(version, parent, body))
+
+  if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
+    return
+  }
 
   if (message.data.length < 3) {
     this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
     return
   }
 
-  const version = message.data[1]
-
   if (!version || !version.match(REV_EXPR)) {
-    this._sendError(socketWrapper, C.EVENT.INVALID_VERSION, [ recordName, version ])
+    this._sendError(socketWrapper, C.EVENT.INVALID_VERSION, [ recordName, message.data ])
     return
   }
-
-  const parent = message.data[3]
 
   if (parent && !parent.match(REV_EXPR)) {
-    this._sendError(socketWrapper, C.EVENT.INVALID_VERSION, [ recordName, parent ])
+    this._sendError(socketWrapper, C.EVENT.INVALID_PARENT, [ recordName, message.data ])
     return
   }
 
-  this._broadcast(socketWrapper, recordName, new Record(
-    version,
-    parent,
-    message.data[2]
-  ))
-
-  if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
-    return
-  }
-
-  const json = lz.decompressFromUTF16(message.data[2])
+  const json = lz.decompressFromUTF16(body)
   const data = utils.JSONParse(json)
 
   if (data.error) {
