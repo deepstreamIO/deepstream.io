@@ -200,11 +200,10 @@ RecordHandler.prototype._invalidate = function (recordName, version) {
   this._refresh(C.SOURCE_STORAGE_CONNECTOR, recordName)
 }
 
-RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback) {
+RecordHandler.prototype._refresh = function (socketWrapper, recordName) {
   invariant(arguments.length === 3, 'invalid number of arguments')
   invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
   invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-  invariant(!callback || typeof callback === 'function', `invalid_argument: callback, ${callback}`)
 
   this._storage.get(recordName, (error, recordName, record) => {
     invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
@@ -214,7 +213,6 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
     if (error) {
       const message = 'error while reading ' + recordName + ' from storage'
       this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
-      callback && callback(error, recordName)
       return
     }
 
@@ -225,8 +223,6 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
     )
 
     record = this._broadcast(null, recordName, record)
-
-    callback && callback(null, recordName, record)
   })
 }
 
