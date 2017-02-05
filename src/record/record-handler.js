@@ -31,7 +31,7 @@ const RecordHandler = function (options) {
   this._recordCache = new LRU({
     max: options.cacheSize || 128e6,
     length (record, recordName) {
-      return record._v.length + record._p.length + record._s.length + 64
+      return recordName.length + record._v.length + record._p.length + record._s.length + 64
     }
   })
 }
