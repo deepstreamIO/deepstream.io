@@ -99,9 +99,7 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 
   invariant(typeof recordName === 'string', `invalid argument: message. Missing recordName`)
 
-  if (message.data[1] === undefined || message.data[1] === 'true') {
-    this._subscriptionRegistry.subscribe(recordName, socketWrapper, true)
-  }
+  this._subscriptionRegistry.subscribe(recordName, socketWrapper, true)
 
   const record = this._recordCache.get(recordName)
 
