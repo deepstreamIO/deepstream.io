@@ -9,7 +9,7 @@ const lz = require('lz-string')
 
 const REV_EXPR = /\d+-.+/
 
-const Record = function (version, parent, raw, data, size) {
+const Record = function (version, parent, raw, data, dataSize) {
   invariant(!version || version.match(REV_EXPR), `invalid argument: version, ${version}`)
   invariant(!parent || parent.match(REV_EXPR), `invalid argument: parent, ${parent}`)
   invariant(typeof raw === 'string', `invalid argument: raw, ${raw}`)
@@ -19,7 +19,7 @@ const Record = function (version, parent, raw, data, size) {
   this._s = raw
   this._d = data
 
-  this.size = this._v.length + this._p.length + this._s.length + size + 64
+  this.size = this._v.length + this._p.length + this._s.length + dataSize + 64
 }
 
 const RecordHandler = function (options) {
