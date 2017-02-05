@@ -162,7 +162,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  invariant(data.value && typeof data.value === 'object', `invalid data, ${json}, ${message.data[2]}`)
+  invariant(data.value && typeof data.value === 'object', `invalid data, ${json}`)
 
   this._storage.set(recordName, {
     _v: version,
