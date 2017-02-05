@@ -28,11 +28,13 @@ RecordHandler.prototype.getRecord = function (recordName) {
   invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
 
   const record = this._recordCache.get(recordName)
-  return record ? Promise.resolve(record) : new Promise((resolve, reject) =>
-    this._refresh(recordName, null, (error, recordName, record) =>
-      error ? reject(error) : resolve(record)
+  return record
+    ? Promise.resolve(record)
+    : new Promise((resolve, reject) =>
+      this._refresh(null, recordName, (error, recordName, record) =>
+        error ? reject(error) : resolve(record)
+      )
     )
-  )
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
@@ -212,7 +214,7 @@ RecordHandler.prototype._invalidate = function (recordName, version) {
     return
   }
 
-  this._refresh(recordName)
+  this._refresh(C.SOURCE_STORAGE_CONNECTOR, recordName)
 }
 
 RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback) {
@@ -256,7 +258,7 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
   this._recordCache.set(recordName, nextRecord)
 
   if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0 &&
-      socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
+      (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR || socketWrapper.C.SOURCE_STORAGE_CONNECTOR)) {
     return nextRecord
   }
 
@@ -267,7 +269,7 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
     nextRecord._p
   ])
 
-  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
     this._message.publish(C.TOPIC.RECORD, message)
   }
 
