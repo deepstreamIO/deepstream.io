@@ -97,8 +97,6 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 
   const recordName = message.data[0]
 
-  invariant(typeof recordName === 'string', `invalid argument: message. Missing recordName`)
-
   this._subscriptionRegistry.subscribe(recordName, socketWrapper, true)
 
   const record = this._recordCache.get(recordName)
@@ -120,8 +118,6 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
 
   const recordName = message.data[0]
-
-  invariant(typeof recordName === 'string', `invalid argument: message. Missing recordName, ${message}`)
 
   if (message.data.length < 3) {
     this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
@@ -179,8 +175,6 @@ RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
   invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
 
   const recordName = message.data[0]
-
-  invariant(typeof recordName === 'string', `invalid argument: message. Missing recordName`)
 
   this._subscriptionRegistry.unsubscribe(recordName, socketWrapper, true)
 }
