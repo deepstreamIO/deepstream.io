@@ -8,7 +8,6 @@ const util = require('util')
 const utils = require('./utils/utils')
 const defaultOptions = require('./default-options')
 const configInitialiser = require('./config/config-initialiser')
-const jsYamlLoader = require('./config/js-yaml-loader')
 const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
@@ -219,14 +218,8 @@ Deepstream.prototype.convertTyped = function (value) {
  * @returns {void}
  */
 Deepstream.prototype._loadConfig = function (config) {
-  if (config === null || typeof config === 'string') {
-    const result = jsYamlLoader.loadConfig(config)
-    this._configFile = result.file
-    config = result.config
-  } else {
-    const rawConfig = utils.merge(defaultOptions.get(), config)
-    config = configInitialiser.initialise(rawConfig)
-  }
+  const rawConfig = utils.merge(defaultOptions.get(), config)
+  config = configInitialiser.initialise(rawConfig)
   this._options = config
 }
 
