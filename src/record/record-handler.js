@@ -271,7 +271,7 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
     this._message.publish(C.TOPIC.RECORD, message)
   }
 
-  this._subscriptionRegistry.sendToSubscribers(recordName, message)
+  this._subscriptionRegistry.sendToSubscribers(recordName, message, socketWrapper)
 
   return nextRecord
 }
