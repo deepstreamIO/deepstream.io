@@ -5,6 +5,7 @@ const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 const LRU = require('lru-cache')
 const invariant = require('invariant')
+const lz = require('lz-string')
 
 const REV_EXPR = /\d+-.+/
 
@@ -156,7 +157,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  const data = utils.JSONParse(message.data[2])
+  const data = utils.JSONParse(lz.decompress(message.data[2]))
 
   if (data.error) {
     this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
@@ -244,7 +245,7 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
     record = this._broadcast(null, recordName, new Record(
       record._v,
       record._p,
-      record._s || JSON.stringify(record._d),
+      record._s || lz.compress(JSON.stringify(record._d)),
       record._d
     ))
 
