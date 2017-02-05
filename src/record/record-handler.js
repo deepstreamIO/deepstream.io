@@ -9,14 +9,14 @@ const lz = require('lz-string')
 
 const REV_EXPR = /\d+-.+/
 
-const Record = function (version, parent, json) {
+const Record = function (version, parent, data) {
   invariant(!version || version.match(REV_EXPR), `invalid argument: version, ${version}`)
   invariant(!parent || parent.match(REV_EXPR), `invalid argument: parent, ${parent}`)
-  invariant(typeof json === 'string', `invalid argument: json, ${json}`)
+  invariant(typeof data === 'string', `invalid argument: data, ${data}`)
 
   this._v = version || ''
   this._p = parent || ''
-  this._s = json
+  this._s = data
 }
 
 const RecordHandler = function (options) {
