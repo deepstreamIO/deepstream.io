@@ -296,7 +296,7 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
   invariant(nextRecord instanceof Record, `invalid argument: nextRecord, ${nextRecord}`)
   invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
 
-  const prevRecord = this._recordCache.peek(recordName)
+  const prevRecord = this._recordCache.get(recordName)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
     return prevRecord
