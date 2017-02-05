@@ -110,7 +110,7 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
     socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
       recordName,
       record._v,
-      record._s = record._s || JSON.stringify(record._d),
+      record._s,
       record._p ]
     )
   } else {
@@ -145,13 +145,6 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  const record = {
-    _v: version,
-    _p: parent,
-    _d: undefined,
-    _s: message.data[2]
-  }
-
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
     const data = utils.JSONParse(message.data[2])
 
@@ -160,7 +153,12 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
       return
     }
 
-    record._d = data.value
+    const record = {
+      _v: version,
+      _p: parent,
+      _d: data.value,
+      _s: message.data[2]
+    }
 
     this._storage.set(recordName, record, (error, recordName, record, socketWrapper) => {
       if (error) {
@@ -170,7 +168,12 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     }, socketWrapper)
   }
 
-  this._broadcast(socketWrapper, recordName, record)
+  this._broadcast(socketWrapper, recordName, {
+    _v: version,
+    _p: parent,
+    _d: undefined,
+    _s: message.data[2]
+  })
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
@@ -202,8 +205,6 @@ RecordHandler.prototype._invalidate = function (recordName, version) {
 
   const prevRecord = this._recordCache.peek(recordName)
 
-  invariant(!this._recordCache.has(recordName) || typeof prevRecord === 'object', `invalid record found in cache, ${prevRecord}`)
-
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
     return
   }
@@ -234,6 +235,9 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
       return
     }
 
+    record._s = record._s || JSON.stringify(record._d)
+    record._d = undefined
+
     record = this._broadcast(null, recordName, record)
 
     callback && callback(null, recordName, record)
@@ -249,8 +253,6 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
 
   const prevRecord = this._recordCache.peek(recordName)
 
-  invariant(!this._recordCache.has(recordName) || typeof prevRecord === 'object', `invalid record found in cache, ${prevRecord}`)
-
   if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
     return prevRecord
   }
@@ -265,7 +267,7 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
   const message = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
     recordName,
     nextRecord._v,
-    nextRecord._s = nextRecord._s || JSON.stringify(nextRecord._d),
+    nextRecord._s,
     nextRecord._p
   ])
 
