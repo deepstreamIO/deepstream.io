@@ -17,8 +17,6 @@ const Record = function (version, parent, json) {
   this._v = version || ''
   this._p = parent || ''
   this._s = json
-
-  this.size = this._v.length + this._p.length + this._s.length + 64
 }
 
 const RecordHandler = function (options) {
@@ -33,7 +31,7 @@ const RecordHandler = function (options) {
   this._recordCache = new LRU({
     max: options.cacheSize || 128e6,
     length (record, recordName) {
-      return record.size
+      return record._v.length + record._p.length + record._s.length + 64
     }
   })
 }
@@ -238,13 +236,10 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
       return
     }
 
-    const json = JSON.stringify(record._d)
     record = new Record(
       record._v,
       record._p,
-      record._s || lz.compressToUTF16(json),
-      record._d,
-      Math.floor(json.length * 1.2)
+      lz.compressToUTF16(JSON.stringify(record._d))
     )
 
     record = this._broadcast(null, recordName, record)
