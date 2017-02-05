@@ -12,6 +12,7 @@ const REV_EXPR = /\d+-.+/
 const Record = function (version, parent, raw, data, size) {
   invariant(!version || version.match(REV_EXPR), `invalid argument: version, ${version}`)
   invariant(!parent || parent.match(REV_EXPR), `invalid argument: parent, ${parent}`)
+  invariant(typeof raw === 'string', `invalid argument: raw, ${raw}`)
 
   this._v = version || ''
   this._p = parent || ''
