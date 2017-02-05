@@ -136,9 +136,9 @@ exports.JSONParse = function (text, reviver) {
     return {
       value: JSON.parse(text, reviver)
     }
-  } catch (ex) {
+  } catch (err) {
     return {
-      error: ex
+      error: err
     }
   }
 }
