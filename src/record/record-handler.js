@@ -157,12 +157,15 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  const data = utils.JSONParse(lz.decompress(message.data[2]))
+  const json = lz.decompressFromUTF16(message.data[2])
+  const data = utils.JSONParse(json)
 
   if (data.error) {
     this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
     return
   }
+
+  invariant(data.value && typeof data.value === 'object', `invalid data, ${json}, ${message.data[2]}`)
 
   const record = new Record(
     version,
@@ -234,6 +237,7 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
   this._storage.get(recordName, (error, recordName, record) => {
     invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
     invariant(typeof record === 'object', `invalid argument: record, ${record}`)
+    invariant(typeof record._d === 'object', `invalid argument: record, ${record}`)
 
     if (error) {
       const message = 'error while reading ' + recordName + ' from storage'
@@ -245,7 +249,7 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
     record = this._broadcast(null, recordName, new Record(
       record._v,
       record._p,
-      record._s || lz.compress(JSON.stringify(record._d)),
+      record._s || lz.compressToUTF16(JSON.stringify(record._d)),
       record._d
     ))
 
