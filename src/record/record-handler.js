@@ -8,6 +8,18 @@ const invariant = require('invariant')
 
 const REV_EXPR = /\d+-.+/
 
+const Record = function (version, parent, raw, data) {
+  invariant(!version || version.match(REV_EXPR), `invalid argument: version, ${version}`)
+  invariant(!parent || parent.match(REV_EXPR), `invalid argument: parent, ${parent}`)
+  invariant(typeof raw === 'string', `invalid argument: raw, ${raw}`)
+  invariant(typeof data === 'object', `invalid argument: data, ${data}`)
+
+  this._v = version
+  this._p = parent
+  this._s = raw
+  this._d = data
+}
+
 const RecordHandler = function (options) {
   this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
   this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
@@ -111,8 +123,8 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
       recordName,
       record._v,
       record._s,
-      record._p ]
-    )
+      record._p
+    ])
   } else {
     this._refresh(socketWrapper, recordName, null)
   }
@@ -145,21 +157,21 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
+  const data = utils.JSONParse(message.data[2])
+
+  if (data.error) {
+    this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
+    return
+  }
+
+  const record = new Record(
+    version,
+    parent,
+    message.data[2],
+    data.value
+  )
+
   if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-    const data = utils.JSONParse(message.data[2])
-
-    if (data.error) {
-      this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
-      return
-    }
-
-    const record = {
-      _v: version,
-      _p: parent,
-      _d: data.value,
-      _s: message.data[2]
-    }
-
     this._storage.set(recordName, record, (error, recordName, record, socketWrapper) => {
       if (error) {
         const message = 'error while writing ' + recordName + ' to storage.'
@@ -168,12 +180,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     }, socketWrapper)
   }
 
-  this._broadcast(socketWrapper, recordName, {
-    _v: version,
-    _p: parent,
-    _d: undefined,
-    _s: message.data[2]
-  })
+  this._broadcast(socketWrapper, recordName, record)
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
@@ -235,10 +242,12 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
       return
     }
 
-    record._s = record._s || JSON.stringify(record._d)
-    record._d = undefined
-
-    record = this._broadcast(null, recordName, record)
+    record = this._broadcast(null, recordName, new Record(
+      record._v,
+      record._p,
+      record._s || JSON.stringify(record._d),
+      record._d
+    ))
 
     callback && callback(null, recordName, record)
   })
@@ -247,8 +256,7 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName, callback
 RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRecord) {
   invariant(arguments.length === 3, 'invalid number of arguments')
   invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
-  invariant(typeof nextRecord === 'object', `invalid argument: nextRecord, ${nextRecord}`)
-  invariant(!nextRecord._v || nextRecord._v.match(REV_EXPR), `invalid argument: nextRecord, ${nextRecord._v}`)
+  invariant(nextRecord instanceof Record, `invalid argument: nextRecord, ${nextRecord}`)
   invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
 
   const prevRecord = this._recordCache.peek(recordName)
