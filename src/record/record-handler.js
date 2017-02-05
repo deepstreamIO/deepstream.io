@@ -86,8 +86,6 @@ RecordHandler.prototype._subscribe = function (socketWrapper, message) {
 
   const recordName = message.data[0]
 
-  invariant(typeof recordName === 'string', `invalid argument: message. Missing recordName`)
-
   this._subscriptionRegistry.subscribe(recordName, socketWrapper, true)
 }
 
