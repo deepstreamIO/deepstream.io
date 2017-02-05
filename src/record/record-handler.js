@@ -9,17 +9,16 @@ const lz = require('lz-string')
 
 const REV_EXPR = /\d+-.+/
 
-const Record = function (version, parent, raw, data, dataSize) {
+const Record = function (version, parent, json) {
   invariant(!version || version.match(REV_EXPR), `invalid argument: version, ${version}`)
   invariant(!parent || parent.match(REV_EXPR), `invalid argument: parent, ${parent}`)
-  invariant(typeof raw === 'string', `invalid argument: raw, ${raw}`)
+  invariant(typeof json === 'string', `invalid argument: json, ${json}`)
 
   this._v = version || ''
   this._p = parent || ''
-  this._s = raw
-  this._d = data
+  this._s = json
 
-  this.size = this._v.length + this._p.length + this._s.length + dataSize + 64
+  this.size = this._v.length + this._p.length + this._s.length + 64
 }
 
 const RecordHandler = function (options) {
@@ -37,36 +36,6 @@ const RecordHandler = function (options) {
       return record.size
     }
   })
-}
-
-RecordHandler.prototype.getRecord = function (recordName) {
-  invariant(arguments.length === 1, 'invalid number of arguments')
-  invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
-
-  let record = this._recordCache.get(recordName)
-
-  const promise = record ? Promise.resolve(record) : new Promise((resolve, reject) =>
-    this._refresh(null, recordName, (error, recordName, record) =>
-      error ? reject(error) : resolve(record)
-    )
-  )
-
-  return promise
-    .then(record => {
-      if (record._d) {
-        return record
-      }
-      const json = lz.decompressFromUTF16(record._s)
-      record = new Record(
-        record._v,
-        record._p,
-        record._s,
-        JSON.parse(json),
-        Math.floor(json.length * 1.2)
-      )
-      this._recordCache.set(recordName, record)
-      return record
-    })
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
@@ -177,42 +146,36 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  let record
+  this._broadcast(socketWrapper, recordName, new Record(
+    version,
+    parent,
+    message.data[2]
+  ))
 
-  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-    const json = lz.decompressFromUTF16(message.data[2])
-    const data = utils.JSONParse(json)
-
-    if (data.error) {
-      this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
-      return
-    }
-
-    invariant(data.value && typeof data.value === 'object', `invalid data, ${json}, ${message.data[2]}`)
-
-    record = new Record(
-      version,
-      parent,
-      message.data[2],
-      data.value,
-      Math.floor(json.length * 1.2)
-    )
-
-    this._storage.set(recordName, record, (error, recordName, record, socketWrapper) => {
-      if (error) {
-        const message = 'error while writing ' + recordName + ' to storage.'
-        this._sendError(socketWrapper, C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ])
-      }
-    }, socketWrapper)
-  } else {
-    record = new Record(
-      version,
-      parent,
-      message.data[2]
-    )
+  if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
+    return
   }
 
-  this._broadcast(socketWrapper, recordName, record)
+  const json = lz.decompressFromUTF16(message.data[2])
+  const data = utils.JSONParse(json)
+
+  if (data.error) {
+    this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
+    return
+  }
+
+  invariant(data.value && typeof data.value === 'object', `invalid data, ${json}, ${message.data[2]}`)
+
+  this._storage.set(recordName, {
+    _v: version,
+    _p: parent,
+    _d: data.value
+  }, (error, recordName, record, socketWrapper) => {
+    if (error) {
+      const message = 'error while writing ' + recordName + ' to storage.'
+      this._sendError(socketWrapper, C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ])
+    }
+  }, socketWrapper)
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
