@@ -89,7 +89,7 @@ Deepstream.prototype.set = function (key, value) {
     key = 'messageConnector'
   }
 
-  if (this._options[key] === undefined) {
+  if (this._options[key] === undefined && this._plugins.indexOf(key) === -1) {
     throw new Error(`Unknown option "${key}"`)
   }
 
