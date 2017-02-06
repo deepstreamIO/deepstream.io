@@ -92,7 +92,6 @@ Queue.prototype._next = function () {
  */
 const MessageProcessor = function (options) {
   this._options = options
-  this._queues = new Map()
 }
 
 /**
@@ -123,13 +122,10 @@ MessageProcessor.prototype.onAuthenticatedMessage = function (socketWrapper, mes
  * @returns {void}
  */
 MessageProcessor.prototype.process = function (socketWrapper, message) {
-  let queue = this._queues.get(socketWrapper)
-  if (!queue) {
-    queue = new Queue(this, socketWrapper)
-    this._queues.set(socketWrapper, queue)
-    socketWrapper.on('close', () => this._queues.delete(socketWrapper))
+  if (!socketWrapper.__messageProcessorQueue) {
+    socketWrapper.__messageProcessorQueue = new Queue(this, socketWrapper)
   }
-  queue.process(message)
+  socketWrapper.__messageProcessorQueue.process(message)
 }
 
 /**
