@@ -73,7 +73,7 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
       return
     }
 
-    if (record) {
+    if (record && record._v) {
       socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, record._v, record._s, record._p ])
     } else {
       this._refresh(socketWrapper, recordName, null)
@@ -148,35 +148,23 @@ RecordHandler.prototype._sendError = function (socketWrapper, event, message) {
 RecordHandler.prototype._invalidate = function (recordName, version) {
   const socketWrapper = C.SOURCE_STORAGE_CONNECTOR
 
-  this._cache.get(recordName, (error, recordName, prevRecord) => {
+  this._cache.set(recordName, new Record(null, version, null), (error, recordName, record, socketWrapper) => {
+    if (error === 'conflict') {
+      return
+    }
+
     if (error) {
-      const message = 'error while reading ' + recordName + ' from cache'
+      const message = 'error while writing ' + recordName + ' to cache'
       this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
       return
     }
 
-    if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
+    if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
       return
     }
 
-    this._cache.set(recordName, new Record(null, prevRecord._v, null), (error, recordName, record, socketWrapper) => {
-      if (error) {
-        const message = 'error while writing ' + recordName + ' to cache'
-        this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
-        return
-      }
-
-      if (!record) {
-        return
-      }
-
-      if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
-        return
-      }
-
-      this._refresh(socketWrapper, recordName)
-    }, socketWrapper)
-  })
+    this._refresh(socketWrapper, recordName)
+  }, socketWrapper)
 }
 
 RecordHandler.prototype._refresh = function (socketWrapper, recordName) {
@@ -199,49 +187,30 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName) {
 }
 
 RecordHandler.prototype._broadcast = function (socketWrapper, recordName, version, parent, body, callback) {
-  this._cache.get(recordName, (error, recordName, prevRecord) => {
+  this._cache.set(recordName, new Record(version, parent, body), (error, recordName, record, socketWrapper) => {
+    if (error === 'conflict') {
+      return
+    }
+
     if (error) {
-      const message = 'error while reading ' + recordName + ' from cache'
+      const message = 'error while writing ' + recordName + ' to cache'
       this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
       return
     }
 
-    if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
-      return
+    const message = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
+      recordName,
+      record._v,
+      record._s,
+      record._p
+    ])
+
+    if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+      this._message.publish(C.TOPIC.RECORD, message)
     }
 
-    const nextRecord = new Record(version, parent, body)
-
-    this._cache.set(recordName, nextRecord, (error, recordName, record, socketWrapper) => {
-      if (error) {
-        const message = 'error while writing ' + recordName + ' to cache'
-        this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
-        return
-      }
-
-      if (!record) {
-        return
-      }
-
-      if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0 &&
-          (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR || socketWrapper === C.SOURCE_STORAGE_CONNECTOR)) {
-        return
-      }
-
-      const message = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
-        recordName,
-        nextRecord._v,
-        nextRecord._s,
-        nextRecord._p
-      ])
-
-      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
-        this._message.publish(C.TOPIC.RECORD, message)
-      }
-
-      callback(recordName, message, socketWrapper)
-    }, socketWrapper)
-  })
+    callback(recordName, message, socketWrapper)
+  }, socketWrapper)
 }
 
 module.exports = RecordHandler

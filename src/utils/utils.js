@@ -5,18 +5,6 @@ exports.getUid = function () {
   return Date.now().toString(36) + '-' + (Math.random() * 10000000000000000000).toString(36)
 }
 
-exports.compareVersions = function (a, b) {
-  if (!a) {
-    return false
-  }
-  if (!b) {
-    return true
-  }
-  const [av, ar] = a.split('-')
-  const [bv, br] = b.split('-')
-  return parseInt(av, 10) > parseInt(bv, 10) || (av === bv && ar >= br)
-}
-
 exports.combineEvents = function (emitters, event, callback) {
   let count = 0
   const increment = function () {
