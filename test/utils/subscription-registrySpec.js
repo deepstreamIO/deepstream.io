@@ -102,9 +102,6 @@ describe('subscription-registry manages subscriptions', () => {
     subscriptionRegistry.sendToSubscribers('someName', _msg('msg5+'))
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg5+'))
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
-
-    expect(subscriptionRegistry.isLocalSubscriber(socketWrapperA)).toBe(true)
-    expect(subscriptionRegistry.isLocalSubscriber(socketWrapperB)).toBe(false)
   })
 
   it('handles unsubscribes for non existant topics', () => {
@@ -137,9 +134,6 @@ describe('subscription-registry manages subscriptions', () => {
 
     subscriptionRegistry.sendToSubscribers('someOtherName', _msg('msg9+'))
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg9+'))
-
-    expect(subscriptionRegistry.isLocalSubscriber(socketWrapperA)).toBe(true)
-    expect(subscriptionRegistry.isLocalSubscriber(socketWrapperB)).toBe(false)
   })
 
   it('removes all subscriptions on socket.close', () => {
@@ -159,8 +153,6 @@ describe('subscription-registry manages subscriptions', () => {
 
     subscriptionRegistry.sendToSubscribers('nameB', _msg('msgD+'))
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msgB+'))
-
-    expect(subscriptionRegistry.isLocalSubscriber(socketWrapperA)).toBe(false)
   })
 })
 
