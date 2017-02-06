@@ -8,6 +8,9 @@ const Queue = function (parent, socketWrapper) {
   this.socketWrapper = socketWrapper
   this.messages = []
   this.running = false
+  this.start = 0
+  this.end = 0
+  this.counter = 0
 
   this._next = this._next.bind(this)
 }
@@ -15,7 +18,7 @@ const Queue = function (parent, socketWrapper) {
 Queue.prototype.process = function (message) {
   for (const parsedMessage of messageParser.parse(message)) {
     if (parsedMessage === null) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, message)
+      this.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, message)
       this.socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, message)
       continue
     }
@@ -24,43 +27,58 @@ Queue.prototype.process = function (message) {
       continue
     }
 
-    this.messages.push(parsedMessage)
+    this.messages[this.end] = parsedMessage
+    this.end += 1
   }
 
   this._next()
 }
 
-Queue.prototype._next = function (recursive) {
-  if (this.running || this.messages.length === 0) {
+Queue.prototype._next = function () {
+  if (this.running) {
     return
   }
 
+  if (this.end === this.start) {
+    this.start = 0
+    this.end = 0
+    return
+  }
+
+  // Avoid stack overflow from synchronous callbacks
+  if (this.counter > 128) {
+    this.counter = 0
+    return process.nextTick(this._next)
+  }
+
   this.running = true
+  this.counter += 1
   this.permissionHandler.canPerformAction(
     this.socketWrapper.user,
-    this.messages[0],
+    this.messages[this.start],
     (error, result) => {
       this.running = false
 
-      const parsedMessage = this.messages.shift()
+      const parsedMessage = this.messages[this.start]
+      this.messages[this.start] = undefined
+      this.start += 1
 
-      if (error !== null) {
+      if (error) {
         this.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
         this.socketWrapper.sendError(parsedMessage.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, getPermissionErrorData(parsedMessage))
-        return process.nextTick(this._next)
-      }
-
-      if (result !== true) {
+      } else if (!result) {
         this.socketWrapper.sendError(parsedMessage.topic, C.EVENT.MESSAGE_DENIED, getPermissionErrorData(parsedMessage))
-        return process.nextTick(this._next)
       }
 
-      this.onAuthenticatedMessage(this.socketWrapper, parsedMessage)
+      if (!error && result) {
+        this.onAuthenticatedMessage(this.socketWrapper, parsedMessage)
+      }
 
-      return process.nextTick(this._next)
+      this._next()
     },
     this.socketWrapper.authData
   )
+  this.counter -= 1
 }
 
 /**
