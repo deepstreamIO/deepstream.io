@@ -18,37 +18,36 @@ const RecordHandler = function (options) {
   this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
   this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
   this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
-  this._permissionHandler = options.permissionHandler
   this._logger = options.logger
   this._message = options.messageConnector
   this._storage = options.storageConnector
   this._storage.on('change', this._invalidate.bind(this))
-  this._recordCache = new LRU({
+  this._cache = new LRU({
     max: options.cacheSize || 128e6,
-    length (record, recordName) {
-      return recordName.length + record._v.length + record._p.length + record._s.length + 64
+    length (record, name) {
+      return name.length + record._v.length + record._p.length + record._s.length + 64
     }
   })
 }
 
-RecordHandler.prototype.handle = function (socketWrapper, message) {
+RecordHandler.prototype.handle = function (socket, message) {
   if (!message.data || message.data.length < 1) {
-    this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [undefined, message.raw], socketWrapper)
+    this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [undefined, message.raw], socket)
     return
   }
 
   if (message.action === C.ACTIONS.READ) {
-    this._read(socketWrapper, message)
+    this._read(socket, message)
     return
   }
 
   if (message.action === C.ACTIONS.UPDATE) {
-    this._update(socketWrapper, message)
+    this._update(socket, message)
     return
   }
 
   if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-    this._unsubscribe(socketWrapper, message)
+    this._unsubscribe(socket, message)
     return
   }
 
@@ -56,59 +55,59 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
     message.action === C.ACTIONS.UNLISTEN ||
     message.action === C.ACTIONS.LISTEN_ACCEPT ||
     message.action === C.ACTIONS.LISTEN_REJECT) {
-    this._listenerRegistry.handle(socketWrapper, message)
+    this._listenerRegistry.handle(socket, message)
     return
   }
 
-  const recordName = message.data[0]
+  const name = message.data[0]
 
-  this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ recordName, message.action ])
+  this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ name, message.action ])
 
-  this._sendError(socketWrapper, C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ])
+  this._sendError(socket, C.EVENT.UNKNOWN_ACTION, [ name, 'unknown action ' + message.action ])
 }
 
-RecordHandler.prototype._read = function (socketWrapper, message) {
-  const recordName = message.data[0]
+RecordHandler.prototype._read = function (socket, message) {
+  const name = message.data[0]
 
-  this._subscriptionRegistry.subscribe(recordName, socketWrapper, true)
+  this._subscriptionRegistry.subscribe(name, socket, true)
 
-  const record = this._recordCache.get(recordName)
+  const record = this._cache.get(name)
 
   if (record) {
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, record._v, record._s, record._p ])
+    socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ name, record._v, record._s, record._p ])
   } else {
-    this._refresh(socketWrapper, recordName, null)
+    this._refresh(socket, name, null)
   }
 }
 
-RecordHandler.prototype._update = function (socketWrapper, message) {
-  const [ recordName, version, body, parent ] = message.data
+RecordHandler.prototype._update = function (socket, message) {
+  const [ name, version, body, parent ] = message.data
 
   this._broadcast(
-    socketWrapper,
-    recordName,
+    socket,
+    name,
     version,
     parent,
     body,
-    (recordName, message, socketWrapper) => this._subscriptionRegistry.sendToSubscribers(recordName, message, socketWrapper)
+    (name, message, socket) => this._subscriptionRegistry.sendToSubscribers(name, message, socket)
   )
 
-  if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
+  if (socket === C.SOURCE_MESSAGE_CONNECTOR) {
     return
   }
 
   if (message.data.length < 3) {
-    this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
+    this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
     return
   }
 
   if (!version || !REV_EXPR.test(version)) {
-    this._sendError(socketWrapper, C.EVENT.INVALID_VERSION, [ recordName, message.data ])
+    this._sendError(socket, C.EVENT.INVALID_VERSION, [ name, message.data ])
     return
   }
 
   if (parent && !REV_EXPR.test(parent)) {
-    this._sendError(socketWrapper, C.EVENT.INVALID_PARENT, [ recordName, message.data ])
+    this._sendError(socket, C.EVENT.INVALID_PARENT, [ name, message.data ])
     return
   }
 
@@ -116,72 +115,72 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
   const data = utils.JSONParse(json)
 
   if (data.error) {
-    this._sendError(socketWrapper, C.EVENT.INVALID_MESSAGE_DATA, [ recordName, message.data ])
+    this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
     return
   }
 
-  this._storage.set(recordName, {
+  this._storage.set(name, {
     _v: version,
     _p: parent,
     _d: data.value
-  }, (error, recordName, record, socketWrapper) => {
+  }, (error, name, record, socket) => {
     if (error) {
-      const message = 'error while writing ' + recordName + ' to storage.'
-      this._sendError(socketWrapper, C.EVENT.RECORD_UPDATE_ERROR, [ recordName, message ])
+      const message = 'error while writing ' + name + ' to storage.'
+      this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
     }
-  }, socketWrapper)
+  }, socket)
 }
 
-RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
-  const recordName = message.data[0]
-  this._subscriptionRegistry.unsubscribe(recordName, socketWrapper, true)
+RecordHandler.prototype._unsubscribe = function (socket, message) {
+  const name = message.data[0]
+  this._subscriptionRegistry.unsubscribe(name, socket, true)
 }
 
-RecordHandler.prototype._sendError = function (socketWrapper, event, message) {
-  if (socketWrapper && socketWrapper.sendError) {
-    socketWrapper.sendError(C.TOPIC.RECORD, event, message)
+RecordHandler.prototype._sendError = function (socket, event, message) {
+  if (socket && socket.sendError) {
+    socket.sendError(C.TOPIC.RECORD, event, message)
   } else {
     this._logger.log(C.LOG_LEVEL.ERROR, event, message)
   }
 }
 
-RecordHandler.prototype._invalidate = function (recordName, version) {
-  const prevRecord = this._recordCache.peek(recordName)
+RecordHandler.prototype._invalidate = function (name, version) {
+  const prevRecord = this._cache.peek(name)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
     return
   }
 
-  this._recordCache.del(recordName)
+  this._cache.del(name)
 
-  if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0) {
+  if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
     return
   }
 
-  this._refresh(C.SOURCE_STORAGE_CONNECTOR, recordName)
+  this._refresh(C.SOURCE_STORAGE_CONNECTOR, name)
 }
 
-RecordHandler.prototype._refresh = function (socketWrapper, recordName) {
-  this._storage.get(recordName, (error, recordName, record) => {
+RecordHandler.prototype._refresh = function (socket, name) {
+  this._storage.get(name, (error, name, record) => {
     if (error) {
-      const message = 'error while reading ' + recordName + ' from storage'
-      this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
+      const message = 'error while reading ' + name + ' from storage'
+      this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, message ])
       return
     }
 
     this._broadcast(
-      socketWrapper,
-      recordName,
+      socket,
+      name,
       record._v,
       record._p,
       record._d,
-      (recordName, message, socketWrapper) => this._subscriptionRegistry.sendToSubscribers(recordName, message)
+      (name, message, socket) => this._subscriptionRegistry.sendToSubscribers(name, message)
     )
   })
 }
 
-RecordHandler.prototype._broadcast = function (socketWrapper, recordName, version, parent, body, callback) {
-  const prevRecord = this._recordCache.get(recordName)
+RecordHandler.prototype._broadcast = function (socket, name, version, parent, body, callback) {
+  const prevRecord = this._cache.get(name)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
     return
@@ -189,20 +188,20 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, versio
 
   const nextRecord = new Record(version, parent, body)
 
-  this._recordCache.set(recordName, nextRecord)
+  this._cache.set(name, nextRecord)
 
   const message = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
-    recordName,
+    name,
     nextRecord._v,
     nextRecord._s,
     nextRecord._p
   ])
 
-  if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
+  if (socket !== C.SOURCE_MESSAGE_CONNECTOR && socket !== C.SOURCE_STORAGE_CONNECTOR) {
     this._message.publish(C.TOPIC.RECORD, message)
   }
 
-  callback(recordName, message, socketWrapper)
+  callback(name, message, socket)
 }
 
 module.exports = RecordHandler
