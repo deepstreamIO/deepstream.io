@@ -159,10 +159,14 @@ RecordHandler.prototype._invalidate = function (recordName, version) {
       return
     }
 
-    this._cache.set(recordName, undefined, (error, recordName) => {
+    this._cache.set(recordName, new Record(null, prevRecord._v, null), (error, recordName, record, socketWrapper) => {
       if (error) {
         const message = 'error while writing ' + recordName + ' to cache'
         this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
+        return
+      }
+
+      if (!record) {
         return
       }
 
@@ -171,7 +175,7 @@ RecordHandler.prototype._invalidate = function (recordName, version) {
       }
 
       this._refresh(socketWrapper, recordName)
-    })
+    }, socketWrapper)
   })
 }
 
@@ -208,31 +212,35 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, versio
 
     const nextRecord = new Record(version, parent, body)
 
-    this._cache.set(recordName, nextRecord, (error, recordName) => {
+    this._cache.set(recordName, nextRecord, (error, recordName, record, socketWrapper) => {
       if (error) {
         const message = 'error while writing ' + recordName + ' to cache'
         this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
         return
       }
-    })
 
-    if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0 &&
-        (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR || socketWrapper === C.SOURCE_STORAGE_CONNECTOR)) {
-      return
-    }
+      if (!record) {
+        return
+      }
 
-    const message = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
-      recordName,
-      nextRecord._v,
-      nextRecord._s,
-      nextRecord._p
-    ])
+      if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0 &&
+          (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR || socketWrapper === C.SOURCE_STORAGE_CONNECTOR)) {
+        return
+      }
 
-    if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
-      this._message.publish(C.TOPIC.RECORD, message)
-    }
+      const message = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
+        recordName,
+        nextRecord._v,
+        nextRecord._s,
+        nextRecord._p
+      ])
 
-    callback(recordName, message, socketWrapper)
+      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR && socketWrapper !== C.SOURCE_STORAGE_CONNECTOR) {
+        this._message.publish(C.TOPIC.RECORD, message)
+      }
+
+      callback(recordName, message, socketWrapper)
+    }, socketWrapper)
   })
 }
 
