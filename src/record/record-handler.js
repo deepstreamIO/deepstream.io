@@ -11,7 +11,7 @@ const REV_EXPR = /\d+-.+/
 const Record = function (version, parent, body) {
   this._v = version || ''
   this._p = parent || ''
-  this._s = body
+  this._s = typeof body === 'string' ? body : lz.compressToUTF16(JSON.stringify(body))
 }
 
 const RecordHandler = function (options) {
@@ -173,9 +173,7 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName) {
       return
     }
 
-    const body = lz.compressToUTF16(JSON.stringify(record._d))
-
-    this._broadcast(socketWrapper, recordName, new Record(record._v, record._p, body))
+    this._broadcast(socketWrapper, recordName, new Record(record._v, record._p, record._d))
   })
 }
 
