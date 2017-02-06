@@ -18,3 +18,4 @@ The main difference compared with the official deepstream is offline synchroniza
 ### TODO
 
 - Re-implement `PATCH` using the parent revision.
+- Re-implement shared cache through *cache connector*.
