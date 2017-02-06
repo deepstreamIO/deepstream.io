@@ -4,16 +4,11 @@ const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 const LRU = require('lru-cache')
-const invariant = require('invariant')
 const lz = require('lz-string')
 
 const REV_EXPR = /\d+-.+/
 
 const Record = function (version, parent, body) {
-  invariant(!version || version.match(REV_EXPR), `invalid argument: version, ${version}`)
-  invariant(!parent || parent.match(REV_EXPR), `invalid argument: parent, ${parent}`)
-  invariant(typeof body === 'string', `invalid argument: body, ${body}`)
-
   this._v = version || ''
   this._p = parent || ''
   this._s = body
@@ -37,9 +32,6 @@ const RecordHandler = function (options) {
 }
 
 RecordHandler.prototype.handle = function (socketWrapper, message) {
-  invariant(arguments.length === 2, 'invalid number of arguments')
-  invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-
   if (!message.data || message.data.length < 1) {
     this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [undefined, message.raw], socketWrapper)
     return
@@ -81,18 +73,12 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
 }
 
 RecordHandler.prototype._subscribe = function (socketWrapper, message) {
-  invariant(arguments.length === 2, 'invalid number of arguments')
-  invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-
   const recordName = message.data[0]
 
   this._subscriptionRegistry.subscribe(recordName, socketWrapper, true)
 }
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
-  invariant(arguments.length === 2, 'invalid number of arguments')
-  invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-
   const recordName = message.data[0]
 
   this._subscriptionRegistry.subscribe(recordName, socketWrapper, true)
@@ -100,21 +86,13 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
   const record = this._recordCache.get(recordName)
 
   if (record) {
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
-      recordName,
-      record._v,
-      record._s,
-      record._p
-    ])
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ recordName, record._v, record._s, record._p ])
   } else {
     this._refresh(socketWrapper, recordName, null)
   }
 }
 
 RecordHandler.prototype._update = function (socketWrapper, message) {
-  invariant(arguments.length === 2, 'invalid number of arguments')
-  invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-
   const [ recordName, version, body, parent ] = message.data
 
   this._broadcast(socketWrapper, recordName, new Record(version, parent, body))
@@ -146,8 +124,6 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  invariant(data.value && typeof data.value === 'object', `invalid data, ${json}`)
-
   this._storage.set(recordName, {
     _v: version,
     _p: parent,
@@ -161,18 +137,11 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
 }
 
 RecordHandler.prototype._unsubscribe = function (socketWrapper, message) {
-  invariant(arguments.length === 2, 'invalid number of arguments')
-  invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-
   const recordName = message.data[0]
-
   this._subscriptionRegistry.unsubscribe(recordName, socketWrapper, true)
 }
 
 RecordHandler.prototype._sendError = function (socketWrapper, event, message) {
-  invariant(arguments.length === 3, 'invalid number of arguments')
-  invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-
   if (socketWrapper && socketWrapper.sendError) {
     socketWrapper.sendError(C.TOPIC.RECORD, event, message)
   } else {
@@ -181,10 +150,6 @@ RecordHandler.prototype._sendError = function (socketWrapper, event, message) {
 }
 
 RecordHandler.prototype._invalidate = function (recordName, version) {
-  invariant(arguments.length === 2, 'invalid number of arguments')
-  invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
-  invariant(typeof version === 'string' && version.match(REV_EXPR), `invalid argument: version, ${version}`)
-
   const prevRecord = this._recordCache.peek(recordName)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
@@ -201,48 +166,31 @@ RecordHandler.prototype._invalidate = function (recordName, version) {
 }
 
 RecordHandler.prototype._refresh = function (socketWrapper, recordName) {
-  invariant(arguments.length === 3, 'invalid number of arguments')
-  invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
-  invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-
   this._storage.get(recordName, (error, recordName, record) => {
-    invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
-    invariant(typeof record === 'object', `invalid argument: record, ${record}`)
-    invariant(typeof record._d === 'object', `invalid argument: record, ${record}`)
-
     if (error) {
       const message = 'error while reading ' + recordName + ' from storage'
       this._sendError(socketWrapper, C.EVENT.RECORD_LOAD_ERROR, [ recordName, message ])
       return
     }
 
-    record = new Record(
-      record._v,
-      record._p,
-      lz.compressToUTF16(JSON.stringify(record._d))
-    )
+    const body = lz.compressToUTF16(JSON.stringify(record._d))
 
-    record = this._broadcast(null, recordName, record)
+    this._broadcast(null, recordName, new Record(record._v, record._p, body))
   })
 }
 
 RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRecord) {
-  invariant(arguments.length === 3, 'invalid number of arguments')
-  invariant(typeof recordName === 'string', `invalid argument: recordName, ${recordName}`)
-  invariant(nextRecord instanceof Record, `invalid argument: nextRecord, ${nextRecord}`)
-  invariant(!socketWrapper || typeof socketWrapper === 'string' || socketWrapper.sendError, `invalid argument: socketWrapper, ${socketWrapper}`)
-
   const prevRecord = this._recordCache.get(recordName)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
-    return prevRecord
+    return
   }
 
   this._recordCache.set(recordName, nextRecord)
 
   if (this._subscriptionRegistry.getLocalSubscribers(recordName).length === 0 &&
       (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR || socketWrapper === C.SOURCE_STORAGE_CONNECTOR)) {
-    return nextRecord
+    return
   }
 
   const message = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
@@ -257,8 +205,6 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
   }
 
   this._subscriptionRegistry.sendToSubscribers(recordName, message, socketWrapper)
-
-  return nextRecord
 }
 
 module.exports = RecordHandler
