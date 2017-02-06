@@ -181,7 +181,7 @@ SocketWrapper.prototype.destroy = function () {
  */
 SocketWrapper.prototype._onSocketClose = function () {
   this.isClosed = true
-  this.emit('close')
+  this.emit('close', this)
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
   this.socket.removeAllListeners()
 }
