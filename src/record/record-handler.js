@@ -106,12 +106,12 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  if (!version || !version.match(REV_EXPR)) {
+  if (!version || !REV_EXPR.test(version)) {
     this._sendError(socketWrapper, C.EVENT.INVALID_VERSION, [ recordName, message.data ])
     return
   }
 
-  if (parent && !parent.match(REV_EXPR)) {
+  if (parent && !REV_EXPR.test(parent)) {
     this._sendError(socketWrapper, C.EVENT.INVALID_PARENT, [ recordName, message.data ])
     return
   }
