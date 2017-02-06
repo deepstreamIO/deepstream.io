@@ -37,11 +37,6 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
     return
   }
 
-  if (message.action === C.ACTIONS.SUBSCRIBE) {
-    this._subscribe(socketWrapper, message)
-    return
-  }
-
   if (message.action === C.ACTIONS.READ) {
     this._read(socketWrapper, message)
     return
@@ -70,12 +65,6 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
   this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ recordName, message.action ])
 
   this._sendError(socketWrapper, C.EVENT.UNKNOWN_ACTION, [ recordName, 'unknown action ' + message.action ])
-}
-
-RecordHandler.prototype._subscribe = function (socketWrapper, message) {
-  const recordName = message.data[0]
-
-  this._subscriptionRegistry.subscribe(recordName, socketWrapper, true)
 }
 
 RecordHandler.prototype._read = function (socketWrapper, message) {
