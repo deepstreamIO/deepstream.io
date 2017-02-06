@@ -44,6 +44,7 @@ const Deepstream = function (config) {
   this._plugins = [
     'messageConnector',
     'storageConnector',
+    'cacheConnector',
     'authenticationHandler',
     'permissionHandler'
   ]
