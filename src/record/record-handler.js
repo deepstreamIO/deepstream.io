@@ -84,7 +84,14 @@ RecordHandler.prototype._read = function (socketWrapper, message) {
 RecordHandler.prototype._update = function (socketWrapper, message) {
   const [ recordName, version, body, parent ] = message.data
 
-  this._broadcast(socketWrapper, recordName, new Record(version, parent, body))
+  this._broadcast(
+    socketWrapper,
+    recordName,
+    version,
+    parent,
+    body,
+    (recordName, message, socketWrapper) => this._subscriptionRegistry.sendToSubscribers(recordName, message, socketWrapper)
+  )
 
   if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
     return
@@ -176,11 +183,18 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName) {
       return
     }
 
-    this._broadcast(socketWrapper, recordName, new Record(record._v, record._p, record._d))
+    this._broadcast(
+      socketWrapper,
+      recordName,
+      record._v,
+      record._p,
+      record._d,
+      (recordName, message, socketWrapper) => this._subscriptionRegistry.sendToSubscribers(recordName, message)
+    )
   })
 }
 
-RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRecord) {
+RecordHandler.prototype._broadcast = function (socketWrapper, recordName, version, parent, body, callback) {
   this._cache.get(recordName, (error, recordName, prevRecord) => {
     if (error) {
       const message = 'error while reading ' + recordName + ' from cache'
@@ -188,9 +202,11 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
       return
     }
 
-    if (prevRecord && utils.compareVersions(prevRecord._v, nextRecord._v)) {
+    if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
       return
     }
+
+    const nextRecord = new Record(version, parent, body)
 
     this._cache.set(recordName, nextRecord, (error, recordName) => {
       if (error) {
@@ -216,7 +232,7 @@ RecordHandler.prototype._broadcast = function (socketWrapper, recordName, nextRe
       this._message.publish(C.TOPIC.RECORD, message)
     }
 
-    this._subscriptionRegistry.sendToSubscribers(recordName, message, socketWrapper)
+    callback(recordName, message, socketWrapper)
   })
 }
 
