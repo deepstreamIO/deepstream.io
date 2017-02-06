@@ -175,7 +175,7 @@ RecordHandler.prototype._refresh = function (socketWrapper, recordName) {
 
     const body = lz.compressToUTF16(JSON.stringify(record._d))
 
-    this._broadcast(null, recordName, new Record(record._v, record._p, body))
+    this._broadcast(socketWrapper, recordName, new Record(record._v, record._p, body))
   })
 }
 
