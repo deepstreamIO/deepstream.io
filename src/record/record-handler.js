@@ -32,7 +32,7 @@ const RecordHandler = function (options) {
 
 RecordHandler.prototype.getRecord = function (name, callback) {
   const record = this._cache.get(name)
-  record ? callback(null, record) : this._refresh(null, name, callback)
+  record ? callback(null, name, record) : this._refresh(null, name, callback)
 }
 
 RecordHandler.prototype.handle = function (socket, message) {
@@ -170,7 +170,7 @@ RecordHandler.prototype._refresh = function (socket, name, callback) {
     if (error) {
       const message = 'error while reading ' + name + ' from storage'
       this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, message ])
-      return callback && callback(error)
+      return callback && callback(error, name)
     }
 
     record = this._broadcast(
@@ -182,7 +182,7 @@ RecordHandler.prototype._refresh = function (socket, name, callback) {
       (name, message) => this._subscriptionRegistry.sendToSubscribers(name, message)
     )
 
-    callback && callback(null, record)
+    callback && callback(null, name, record)
   })
 }
 
