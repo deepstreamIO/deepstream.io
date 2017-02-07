@@ -23,11 +23,16 @@ const RecordHandler = function (options) {
   this._storage = options.storageConnector
   this._storage.on('change', this._invalidate.bind(this))
   this._cache = new LRU({
-    max: options.cacheSize || 128e6,
+    max: options.cacheSize || (128 * 1024 * 1024),
     length (record, name) {
       return name.length + record._v.length + record._p.length + record._s.length + 64
     }
   })
+}
+
+RecordHandler.prototype.getRecord = function (name, callback) {
+  const record = this._cache.get(name)
+  record ? callback(null, record) : this._refresh(null, name, callback)
 }
 
 RecordHandler.prototype.handle = function (socket, message) {
@@ -76,7 +81,7 @@ RecordHandler.prototype._read = function (socket, message) {
   if (record) {
     socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [ name, record._v, record._s, record._p ])
   } else {
-    this._refresh(socket, name, null)
+    this._refresh(socket, name)
   }
 }
 
@@ -160,22 +165,24 @@ RecordHandler.prototype._invalidate = function (name, version) {
   this._refresh(C.SOURCE_STORAGE_CONNECTOR, name)
 }
 
-RecordHandler.prototype._refresh = function (socket, name) {
+RecordHandler.prototype._refresh = function (socket, name, callback) {
   this._storage.get(name, (error, name, record) => {
     if (error) {
       const message = 'error while reading ' + name + ' from storage'
       this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, message ])
-      return
+      return callback && callback(error)
     }
 
-    this._broadcast(
+    record = this._broadcast(
       socket,
       name,
       record._v,
       record._p,
       record._d,
-      (name, message, socket) => this._subscriptionRegistry.sendToSubscribers(name, message)
+      (name, message) => this._subscriptionRegistry.sendToSubscribers(name, message)
     )
+
+    callback && callback(null, record)
   })
 }
 
@@ -183,7 +190,7 @@ RecordHandler.prototype._broadcast = function (socket, name, version, parent, bo
   const prevRecord = this._cache.get(name)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
-    return
+    return prevRecord
   }
 
   const nextRecord = new Record(version, parent, body)
@@ -202,6 +209,8 @@ RecordHandler.prototype._broadcast = function (socket, name, version, parent, bo
   }
 
   callback(name, message, socket)
+
+  return nextRecord
 }
 
 module.exports = RecordHandler
