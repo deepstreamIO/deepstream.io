@@ -6,7 +6,6 @@ const messageBuilder = require('./message-builder')
 const SocketWrapper = require('./socket-wrapper')
 const events = require('events')
 const http = require('http')
-const https = require('https')
 const uws = require('uws')
 
 const OPEN = 'OPEN'
@@ -33,7 +32,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     this._wsReady = false
     this._wsServerClosed = false
 
-    this._server = this._createHttpServer()
+    this._server = http.createServer()
     this._server.listen(this._options.port, this._options.host)
     this._server.on('request', this._handleHealthCheck.bind(this))
     this._options.logger.log(
@@ -101,30 +100,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    */
   getConnectionCount () {
     return this._authenticatedSockets.length
-  }
-
-  /**
-   * Creates an HTTP or HTTPS server for ws to attach itself to,
-   * depending on the options the client configured
-   *
-   * @private
-   * @returns {http.HttpServer | http.HttpsServer}
-   */
-  _createHttpServer () {
-    if (this._isHttpsServer()) {
-      const httpsOptions = {
-        key: this._options.sslKey,
-        cert: this._options.sslCert
-      }
-
-      if (this._options.sslCa) {
-        httpsOptions.ca = this._options.sslCa
-      }
-
-      return https.createServer(httpsOptions)
-    }
-
-    return http.createServer()
   }
 
   /**
@@ -486,28 +461,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     if (socketWrapper.user !== OPEN) {
       this.emit('client-disconnected', socketWrapper)
     }
-  }
-
-  /**
-  * Returns whether or not sslKey and sslCert have been set to start a https server.
-  *
-  * @throws Will throw an error if only sslKey or sslCert have been specified
-  *
-  * @private
-  * @returns {boolean}
-  */
-  _isHttpsServer () {
-    let isHttps = false
-    if (this._options.sslKey || this._options.sslCert) {
-      if (!this._options.sslKey) {
-        throw new Error('Must also include sslKey in order to use HTTPS')
-      }
-      if (!this._options.sslCert) {
-        throw new Error('Must also include sslCert in order to use HTTPS')
-      }
-      isHttps = true
-    }
-    return isHttps
   }
 
   /**
