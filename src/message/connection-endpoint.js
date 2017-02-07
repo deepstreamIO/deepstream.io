@@ -25,7 +25,7 @@ const OPEN = 'OPEN'
  */
 module.exports = class ConnectionEndpoint extends events.EventEmitter {
 
-  constructor(options, readyCallback) {
+  constructor (options, readyCallback) {
     super()
     this._options = options
     this._readyCallback = readyCallback
@@ -72,7 +72,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  onMessage(socketWrapper, message) {
+  onMessage (socketWrapper, message) {
   }
 
   /**
@@ -81,7 +81,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @public
    * @returns {void}
    */
-  close() {
+  close () {
     this._server.removeAllListeners('request')
     this._ws.removeAllListeners('connection')
     this._ws.close()
@@ -99,7 +99,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @public
    * @returns {Number} connectionCount
    */
-  getConnectionCount() {
+  getConnectionCount () {
     return this._authenticatedSockets.length
   }
 
@@ -110,7 +110,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {http.HttpServer | http.HttpsServer}
    */
-  _createHttpServer() {
+  _createHttpServer () {
     if (this._isHttpsServer()) {
       const httpsOptions = {
         key: this._options.sslKey,
@@ -134,7 +134,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {void}
    */
-  _handleHealthCheck(req, res) {
+  _handleHealthCheck (req, res) {
     if (req.method === 'GET' && req.url === this._options.healthCheckPath) {
       res.writeHead(200)
       res.end()
@@ -148,7 +148,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {void}
    */
-  _checkClosed() {
+  _checkClosed () {
     if (this._wsServerClosed === false) {
       return
     }
@@ -165,7 +165,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {void}
    */
-  _onConnection(socket) {
+  _onConnection (socket) {
     const socketWrapper = new SocketWrapper(socket, this._options)
     const handshakeData = socketWrapper.getHandshakeData()
     const logMsg = `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
@@ -202,7 +202,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {void}
    */
-  _processConnectionMessage(socketWrapper, connectionMessage) {
+  _processConnectionMessage (socketWrapper, connectionMessage) {
     const msg = messageParser.parse(connectionMessage)[0]
 
     if (msg === null || msg === undefined) {
@@ -237,7 +237,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _authenticateConnection(socketWrapper, disconnectTimeout, authMsg) {
+  _authenticateConnection (socketWrapper, disconnectTimeout, authMsg) {
     const msg = messageParser.parse(authMsg)[0]
     let authData
     let errorMsg
@@ -305,7 +305,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _sendInvalidAuthMsg(socketWrapper, msg) {
+  _sendInvalidAuthMsg (socketWrapper, msg) {
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_AUTH_MSG, this._options.logInvalidAuthData ? msg : '')
     socketWrapper.sendError(C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_MSG, 'invalid authentication message')
     socketWrapper.destroy()
@@ -323,7 +323,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _registerAuthenticatedSocket(socketWrapper, userData) {
+  _registerAuthenticatedSocket (socketWrapper, userData) {
     socketWrapper.socket.removeListener('message', socketWrapper.authCallBack)
     socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
     socketWrapper.socket.on('message', (msg) => { this.onMessage(socketWrapper, msg) })
@@ -356,7 +356,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _appendDataToSocketWrapper(socketWrapper, userData) {
+  _appendDataToSocketWrapper (socketWrapper, userData) {
     socketWrapper.user = userData.username || OPEN
     socketWrapper.authData = userData.serverData || null
   }
@@ -374,7 +374,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _processInvalidAuth(clientData, authData, socketWrapper) {
+  _processInvalidAuth (clientData, authData, socketWrapper) {
     let logMsg = 'invalid authentication data'
 
     if (this._options.logInvalidAuthData === true) {
@@ -406,7 +406,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _processConnectionTimeout(socketWrapper) {
+  _processConnectionTimeout (socketWrapper) {
     const log = 'connection has not authenticated successfully in the expected time'
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log)
     socketWrapper.sendError(
@@ -429,7 +429,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _processAuthResult(authData, socketWrapper, disconnectTimeout, isAllowed, userData) {
+  _processAuthResult (authData, socketWrapper, disconnectTimeout, isAllowed, userData) {
     userData = userData || {}
 
     clearTimeout(disconnectTimeout)
@@ -447,7 +447,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {void}
    */
-  _checkReady() {
+  _checkReady () {
     const address = this._server.address()
     const msg = `Listening for websocket connections on ${address.address}:${address.port}${this._options.urlPath}`
     this._wsReady = true
@@ -465,7 +465,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {void}
    */
-  _onError(error) {
+  _onError (error) {
     this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error)
   }
 
@@ -478,7 +478,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   * @private
   * @returns {void}
   */
-  _onSocketClose(socketWrapper) {
+  _onSocketClose (socketWrapper) {
     if (this._options.authenticationHandler.onClientDisconnect) {
       this._options.authenticationHandler.onClientDisconnect(socketWrapper.user)
     }
@@ -496,7 +496,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   * @private
   * @returns {boolean}
   */
-  _isHttpsServer() {
+  _isHttpsServer () {
     let isHttps = false
     if (this._options.sslKey || this._options.sslCert) {
       if (!this._options.sslKey) {
@@ -518,7 +518,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   * @private
   * @returns {void}
   */
-  _getValidAuthData(authData) {
+  _getValidAuthData (authData) {
     const parsedData = JSON.parse(authData)
     if (parsedData === null || parsedData === undefined || typeof parsedData !== 'object') {
       throw new Error(`invalid authentication data ${authData}`)

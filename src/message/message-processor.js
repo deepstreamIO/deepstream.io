@@ -14,7 +14,7 @@ const C = require('../constants/constants')
  */
 module.exports = class MessageProcessor {
 
-  constructor(options) {
+  constructor (options) {
     this._options = options
   }
 
@@ -30,7 +30,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  onAuthenticatedMessage(socketWrapper, message) {
+  onAuthenticatedMessage (socketWrapper, message) {
   }
 
   /**
@@ -46,7 +46,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  process(socketWrapper, message) {
+  process (socketWrapper, message) {
     const parsedMessages = messageParser.parse(message)
     let parsedMessage
 
@@ -85,7 +85,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  _onPermissionResponse(socketWrapper, message, error, result) {
+  _onPermissionResponse (socketWrapper, message, error, result) {
     if (error !== null) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
       socketWrapper.sendError(
@@ -115,7 +115,7 @@ module.exports = class MessageProcessor {
    *                              by the permissionHandler
    * @returns {Object}
    */
-  _getPermissionErrorData(message) {
+  _getPermissionErrorData (message) {
     let data = [message.data[0], message.action]
     if (message.data.length > 1) {
       data = data.concat(message.data.slice(1))
