@@ -39,6 +39,14 @@ exports.combineEvents = function (emitters, event, callback) {
   }
 }
 
+exports.tryParseJson = function (str) {
+  try {
+    return JSON.parse(str)
+  } catch (err) {
+    return err
+  }
+}
+
 /**
  * Takes a key-value map and returns
  * a map with { value: key } of the old map

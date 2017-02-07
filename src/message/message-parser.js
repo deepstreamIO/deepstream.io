@@ -1,6 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
+const utils = require('../utils/utils')
 
 /**
  * Turns the ACTION:SHORTCODE constants map
@@ -87,11 +88,7 @@ module.exports = class MessageParser {
     }
 
     if (type === C.TYPES.OBJECT) {
-      try {
-        return JSON.parse(value.substr(1))
-      } catch (e) {
-        return e
-      }
+      return utils.tryParseJson(value.substr(1))
     }
 
     if (type === C.TYPES.NUMBER) {
