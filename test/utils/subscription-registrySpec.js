@@ -62,28 +62,6 @@ describe('subscription-registry manages subscriptions', () => {
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg2+'))
   })
 
-  it('returns a random subscribed socket', () => {
-    if (socketWrapperA.uuid < socketWrapperB.uuid) {
-      expect(subscriptionRegistry.getLocalSubscribers('someName')).toEqual([socketWrapperA, socketWrapperB])
-    } else {
-      expect(subscriptionRegistry.getLocalSubscribers('someName')).toEqual([socketWrapperB, socketWrapperA])
-    }
-
-    let returnedA = false,
-      returnedB = false,
-      randomSubscriber,
-      i
-
-    for (i = 0; i < 100; i++) {
-      randomSubscriber = subscriptionRegistry.getRandomLocalSubscriber('someName')
-      if (randomSubscriber === socketWrapperA) returnedA = true
-      if (randomSubscriber === socketWrapperB) returnedB = true
-    }
-
-    expect(returnedA).toBe(true)
-    expect(returnedB).toBe(true)
-  })
-
   it('doesn\'t send message to sender', () => {
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg2+'))
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg2+'))
@@ -200,13 +178,5 @@ describe('subscription-registry unbinds all events on unsubscribe', () => {
       subscriptionRegistry.subscribe('repeated-test', socketWrapper)
       subscriptionRegistry.unsubscribe('repeated-test', socketWrapper)
     }
-  })
-})
-
-describe('subscription-registry handles empty states', () => {
-  const subscriptionRegistry = new SubscriptionRegistry(options, 'E')
-
-  it('returns null if no subscriber is registered', () => {
-    expect(subscriptionRegistry.getRandomLocalSubscriber()).toBe(null)
   })
 })
