@@ -17,7 +17,6 @@ exports.get = function () {
     urlPath: '/deepstream',
     healthCheckPath: '/healthcheck',
     externalUrl: null,
-    timeBetweenSendingQueuedPackages: 1,
     heartbeatInterval: 30000,
 
     /*
