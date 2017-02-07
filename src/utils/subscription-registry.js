@@ -19,11 +19,8 @@ class SubscriptionRegistry {
    * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
    */
   constructor(options, topic, clusterTopic) {
-    this._delayedBroadcasts = {}
-    this._delay = -1
-    if (options.broadcastTimeout !== undefined) {
-      this._delay = options.broadcastTimeout
-    }
+    this._delayedBroadcasts = new Map()
+    this._broadcastTimeout = options.broadcastTimeout
     this._subscriptions = new Map()
     this._sockets = new Map()
     this._options = options
@@ -35,6 +32,7 @@ class SubscriptionRegistry {
       UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
       NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
     }
+    this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
 
     this._setupRemoteComponents(clusterTopic)
   }
@@ -123,61 +121,50 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  onBroadcastTimeout(delayedBroadcasts) {
-    const sockets = this._subscriptions.get(delayedBroadcasts.name)
-    if (sockets) {
-      // sort vector of unique senders by uuid. doing so in combination with
-      // the sorting of the sockets in this subscription name means we can
-      // simplify comparisons
-      delayedBroadcasts.uniqueSendersVector.sort((a, b) => {
-        if (a.sender < b.sender) {
-          return -1
-        } else if (a.sender > b.sender) {
-          return 1
-        }
-        return 0
-      })
+  _onBroadcastTimeout(delayedBroadcasts, sockets) {
+    // delete this delayed broadcast
+    this._delayedBroadcasts.delete(delayedBroadcasts.name)
 
-      // for all unique senders and their gaps, build their special messages
-      for (const uniqueSender of delayedBroadcasts.uniqueSendersVector) {
-        uniqueSender.message = delayedBroadcasts.sharedMessages
-          .substring(0, uniqueSender.gaps[0].start)
-        let lastStop = uniqueSender.gaps[0].stop
-        for (let j = 1; j < uniqueSender.gaps.length; j++) {
-          uniqueSender.message += delayedBroadcasts.sharedMessages
-            .substring(lastStop, uniqueSender.gaps[j].start)
-          lastStop = uniqueSender.gaps[j].stop
-        }
-        uniqueSender.message += delayedBroadcasts.sharedMessages
-          .substring(lastStop, delayedBroadcasts.sharedMessages.length)
-      }
-
-      // for all sockets in this subscription name, send either sharedMessage or this socket's
-      // specialized message. only sockets that sent something will have a special message, all
-      // other sockets are only listeners and receive the exact same (sharedMessage) message.
-      const preparedMessage = SocketWrapper.prepareMessage(delayedBroadcasts.sharedMessages)
-      let j = 0
-      for (const socket of sockets) {
-        // since both uniqueSendersVector and sockets are sorted by uuid, we can efficiently determine
-        // if this socket is a sender in this subscription name or not as well as look up the eventual
-        // specialized message for this socket.
-        if (j < delayedBroadcasts.uniqueSendersVector.length &&
-          delayedBroadcasts.uniqueSendersVector[j].sender === socket.uuid) {
-          if (delayedBroadcasts.uniqueSendersVector[j].message.length) {
-            socket.sendNative(delayedBroadcasts.uniqueSendersVector[j].message)
-          }
-          j++
-        } else {
-          // since we know when a socket is a sender and when it is a listener we can use the optimized prepared
-          // message for listeners
-          socket.sendPrepared(preparedMessage)
-        }
-      }
-      SocketWrapper.finalizeMessage(preparedMessage)
+    if (sockets.length === 0) {
+      return
     }
 
-    // delete this delayed broadcast
-    delete this._delayedBroadcasts[delayedBroadcasts.name]
+    // for all unique senders and their gaps, build their special messages
+    for (const uniqueSender of delayedBroadcasts.uniqueSenders) {
+      uniqueSender.message = delayedBroadcasts.sharedMessages
+        .substring(0, uniqueSender.gaps[0].start)
+      let lastStop = uniqueSender.gaps[0].stop
+      for (let j = 1; j < uniqueSender.gaps.length; j++) {
+        uniqueSender.message += delayedBroadcasts.sharedMessages
+          .substring(lastStop, uniqueSender.gaps[j].start)
+        lastStop = uniqueSender.gaps[j].stop
+      }
+      uniqueSender.message += delayedBroadcasts.sharedMessages
+        .substring(lastStop, delayedBroadcasts.sharedMessages.length)
+    }
+
+    // for all sockets in this subscription name, send either sharedMessage or this socket's
+    // specialized message. only sockets that sent something will have a special message, all
+    // other sockets are only listeners and receive the exact same (sharedMessage) message.
+    const preparedMessage = SocketWrapper.prepareMessage(delayedBroadcasts.sharedMessages)
+    let j = 0
+    for (const socket of sockets) {
+      // since both uniqueSenders and sockets are sorted by uuid, we can efficiently determine
+      // if this socket is a sender in this subscription name or not as well as look up the eventual
+      // specialized message for this socket.
+      if (j < delayedBroadcasts.uniqueSenders.length &&
+        delayedBroadcasts.uniqueSenders[j].sender === socket.uuid) {
+        if (delayedBroadcasts.uniqueSenders[j].message.length) {
+          socket.sendNative(delayedBroadcasts.uniqueSenders[j].message)
+        }
+        j++
+      } else {
+        // since we know when a socket is a sender and when it is a listener we can use the optimized prepared
+        // message for listeners
+        socket.sendPrepared(preparedMessage)
+      }
+    }
+    SocketWrapper.finalizeMessage(preparedMessage)
   }
 
   /**
@@ -194,7 +181,8 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   sendToSubscribers(name, msgString, sender) {
-    if (!this._subscriptions.has(name)) {
+    const sockets = this._subscriptions.get(name)
+    if (!sockets) {
       return
     }
 
@@ -204,15 +192,15 @@ class SubscriptionRegistry {
     }
 
     // if not already a delayed broadcast, create it
-    let delayedBroadcasts = this._delayedBroadcasts[name]
-    if (delayedBroadcasts === undefined) {
-      this._delayedBroadcasts[name] = delayedBroadcasts = {
-        uniqueSendersVector: [],
-        uniqueSendersMap: {},
+    let delayedBroadcasts = this._delayedBroadcasts.get(name)
+    if (!delayedBroadcasts) {
+      delayedBroadcasts = {
+        uniqueSenders: [],
         timer: null,
         name,
         sharedMessages: ''
       }
+      this._delayedBroadcasts.set(name, delayedBroadcasts)
     }
 
     // append this message to the sharedMessage, the message that
@@ -221,31 +209,31 @@ class SubscriptionRegistry {
     delayedBroadcasts.sharedMessages += msgString
     const stop = delayedBroadcasts.sharedMessages.length
 
-    // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
     // each uniqueSender has a vector of "gaps" in relation to sharedMessage
     // senders should not receive what they sent themselves, so a gap is inserted
     // for every send from this sender
     if (sender) {
-      let pos = delayedBroadcasts.uniqueSendersMap[sender.uuid]
-      if (pos !== undefined) {
-        delayedBroadcasts.uniqueSendersVector[pos].gaps.push({ start, stop })
-      } else {
-        pos = delayedBroadcasts.uniqueSendersVector.length
-        delayedBroadcasts.uniqueSendersMap[sender.uuid] = pos
-        delayedBroadcasts.uniqueSendersVector[pos] = {
+      const uniqueSenders = delayedBroadcasts.uniqueSenders
+
+      const index = utils.sortedIndexBy(uniqueSenders, sender, 'uuid')
+
+      if (uniqueSenders[index] !== sender) {
+        uniqueSenders.splice(index, 0, {
           sender: sender.uuid,
           message: null,
-          gaps: [{ start, stop }]
-        }
+          gaps: []
+        })
       }
+
+      uniqueSenders[index].gaps.push({ start, stop })
     }
 
     // reuse the same timer if already started
     if (!delayedBroadcasts.timer) {
-      if (this._delay !== -1) {
-        delayedBroadcasts.timer = setTimeout(this.onBroadcastTimeout.bind(this), this._delay, delayedBroadcasts)
+      if (this._broadcastTimeout) {
+        delayedBroadcasts.timer = setTimeout(this._onBroadcastTimeout, this._broadcastTimeout, delayedBroadcasts, sockets)
       } else {
-        this.onBroadcastTimeout(delayedBroadcasts)
+        this._onBroadcastTimeout(delayedBroadcasts, sockets)
       }
     }
   }
@@ -339,16 +327,11 @@ class SubscriptionRegistry {
     }
 
     if (this._subscriptionListener) {
-      const allServerNames = this._clusterSubscriptions.getAllServers(name)
-      const indexOfCurrentNode = allServerNames.indexOf(this._options.serverName)
-      if (indexOfCurrentNode > -1) {
-        allServerNames.splice(indexOfCurrentNode, 1)
-      }
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socketWrapper,
         sockets.length,
-        allServerNames.length
+        this.getAllRemoteServers(name).length
       )
     }
 
