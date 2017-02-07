@@ -132,33 +132,33 @@ class SubscriptionRegistry {
       return
     }
 
+    const uniqueSenders = delayedBroadcasts.uniqueSenders
+    const sharedMessages = delayedBroadcasts.sharedMessages
+
     // for all unique senders and their gaps, build their special messages
-    for (const uniqueSender of delayedBroadcasts.uniqueSenders) {
-      uniqueSender.message = delayedBroadcasts.sharedMessages
-        .substring(0, uniqueSender.gaps[0].start)
+    for (const uniqueSender of uniqueSenders) {
+      uniqueSender.message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
       let lastStop = uniqueSender.gaps[0].stop
       for (let j = 1; j < uniqueSender.gaps.length; j++) {
-        uniqueSender.message += delayedBroadcasts.sharedMessages
-          .substring(lastStop, uniqueSender.gaps[j].start)
+        uniqueSender.message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
         lastStop = uniqueSender.gaps[j].stop
       }
-      uniqueSender.message += delayedBroadcasts.sharedMessages
-        .substring(lastStop, delayedBroadcasts.sharedMessages.length)
+      uniqueSender.message += sharedMessages.substring(lastStop, sharedMessages.length)
     }
 
     // for all sockets in this subscription name, send either sharedMessage or this socket's
     // specialized message. only sockets that sent something will have a special message, all
     // other sockets are only listeners and receive the exact same (sharedMessage) message.
-    const preparedMessage = SocketWrapper.prepareMessage(delayedBroadcasts.sharedMessages)
+    const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
     let j = 0
     for (const socket of sockets) {
       // since both uniqueSenders and sockets are sorted by uuid, we can efficiently determine
       // if this socket is a sender in this subscription name or not as well as look up the eventual
       // specialized message for this socket.
-      if (j < delayedBroadcasts.uniqueSenders.length &&
-        delayedBroadcasts.uniqueSenders[j].uuid === socket.uuid) {
-        if (delayedBroadcasts.uniqueSenders[j].message.length) {
-          socket.sendNative(delayedBroadcasts.uniqueSenders[j].message)
+      if (j < uniqueSenders.length &&
+        uniqueSenders[j].uuid === socket.uuid) {
+        if (uniqueSenders[j].message.length) {
+          socket.sendNative(uniqueSenders[j].message)
         }
         j++
       } else {
@@ -362,23 +362,6 @@ class SubscriptionRegistry {
    */
   getLocalSubscribers(name) {
     return this._subscriptions.get(name) || []
-  }
-
-  /**
-   * Returns a random SocketWrapper out of the array
-   * of SocketWrappers that are subscribed to <name>
-   *
-   * @param   {String} name
-   *
-   * @public
-   * @returns {SocketWrapper}
-   */
-  getRandomLocalSubscriber(name) {
-    const subscribers = this.getLocalSubscribers(name)
-    if (subscribers.length > 0) {
-      return subscribers[Math.floor(Math.random() * subscribers.length)]
-    }
-    return null
   }
 
   /**
