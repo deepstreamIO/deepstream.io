@@ -15,19 +15,19 @@ const SEP = C.MESSAGE_PART_SEPERATOR
  * @returns {String} deepstream message string
  */
 exports.getMsg = function (topic, action, data) {
-  const sendData = [topic, action]
+  let msg = topic + SEP + action
 
   if (data) {
     for (let i = 0; i < data.length; i++) {
       if (typeof data[i] === 'object') {
-        sendData.push(JSON.stringify(data[i]))
+        msg += SEP + JSON.stringify(data[i])
       } else {
-        sendData.push(data[i])
+        msg += SEP + data[i]
       }
     }
   }
 
-  return sendData.join(SEP) + C.MESSAGE_SEPERATOR
+  return msg + C.MESSAGE_SEPERATOR
 }
 
 /**

@@ -12,11 +12,11 @@ const utils = require('../utils/utils')
  * @returns {Object} actions
 */
 const actions = (function getActions() {
-  const result = {}
+  const result = new Map()
   let key
 
   for (key in C.ACTIONS) {
-    result[C.ACTIONS[key]] = key
+    result.set(C.ACTIONS[key], key)
   }
 
   return result
@@ -52,7 +52,7 @@ module.exports = class MessageParser {
   static parse(message) {
     const parsedMessages = []
 
-    let i = 3
+    let i = 2
     let k = 0
     while (i < message.length) {
       if (message[i] === C.MESSAGE_SEPERATOR) {
@@ -125,8 +125,8 @@ module.exports = class MessageParser {
    * @returns {Object} parsedMessage
    */
   static parseMessage(message) {
-    const parts = message.split(C.MESSAGE_PART_SEPERATOR)
-    return actions[parts[1]] === undefined ? null : {
+    const parts = message.split(C.MESSAGE_PART_SEPERATOR, 4)
+    return !actions.has(parts[1]) ? null : {
       raw: message,
       topic: parts[0],
       action: parts[1],
