@@ -356,23 +356,6 @@ class SubscriptionRegistry {
   }
 
   /**
-   * Returns a random SocketWrapper out of the array
-   * of SocketWrappers that are subscribed to <name>
-   *
-   * @param   {String} name
-   *
-   * @public
-   * @returns {SocketWrapper}
-   */
-  getRandomLocalSubscriber(name) {
-    const subscribers = this.getLocalSubscribers(name)
-    if (subscribers.length > 0) {
-      return subscribers[Math.floor(Math.random() * subscribers.length)]
-    }
-    return null
-  }
-
-  /**
    * Returns true if there are SocketWrappers that
    * are subscribed to <name> or false if there
    * aren't any subscribers
