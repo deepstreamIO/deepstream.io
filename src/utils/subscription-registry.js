@@ -98,7 +98,7 @@ class SubscriptionRegistry {
    * @returns {Array} names
    */
   hasName(subscriptionName) {
-    return this._clusterSubscriptions.getAll().indexOf(subscriptionName) !== -1
+    return this._clusterSubscriptions.has(subscriptionName)
   }
 
   /**
