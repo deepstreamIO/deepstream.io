@@ -126,7 +126,6 @@ class SubscriptionRegistry {
     for (const entry of this._delayedBroadcasts) {
       const name = entry[0]
       const delayedBroadcast = entry[1]
-      const sockets = this._subscriptions.get(name) || []
       const uniqueSenders = delayedBroadcast.uniqueSenders
       const sharedMessages = delayedBroadcast.sharedMessages
 
@@ -135,30 +134,27 @@ class SubscriptionRegistry {
         continue
       }
 
-      // for all unique senders and their gaps, build their special messages
-      for (const uniqueSender of uniqueSenders) {
-        uniqueSender.message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
-        let lastStop = uniqueSender.gaps[0].stop
-        for (let j = 1; j < uniqueSender.gaps.length; j++) {
-          uniqueSender.message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
-          lastStop = uniqueSender.gaps[j].stop
-        }
-        uniqueSender.message += sharedMessages.substring(lastStop, sharedMessages.length)
-      }
-
       // for all sockets in this subscription name, send either sharedMessage or this socket's
       // specialized message. only sockets that sent something will have a special message, all
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
 
+      // for all unique senders and their gaps, build and send their special messages
       for (const uniqueSender of uniqueSenders) {
-        if (uniqueSender.message) {
-          uniqueSender.socket.sendNative(uniqueSender.message)
+        let message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
+        let lastStop = uniqueSender.gaps[0].stop
+        for (let j = 1; j < uniqueSender.gaps.length; j++) {
+          message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
+          lastStop = uniqueSender.gaps[j].stop
+        }
+        message += sharedMessages.substring(lastStop, sharedMessages.length)
+        if (message) {
+          uniqueSender.socket.sendNative(message)
         }
       }
 
       const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
       let j = 0
-      for (const socket of sockets) {
+      for (const socket of this._subscriptions.get(name) || []) {
         if (j < uniqueSenders.length && uniqueSenders[j].uuid === socket.uuid) {
           j += 1
         } else {
@@ -235,7 +231,6 @@ class SubscriptionRegistry {
         uniqueSenders.splice(index, 0, {
           uuid: sender.uuid,
           socket: sender,
-          message: null,
           gaps: []
         })
       }
