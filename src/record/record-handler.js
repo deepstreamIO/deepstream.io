@@ -104,8 +104,7 @@ RecordHandler.prototype._update = function (socket, message) {
       return
     }
 
-    const json = lz.decompressFromUTF16(body)
-    const data = utils.JSONParse(json)
+    const data = utils.JSONParse(lz.decompressFromUTF16(body))
 
     if (data.error) {
       this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
