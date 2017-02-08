@@ -127,11 +127,11 @@ class SubscriptionRegistry {
     for (const entry of this._delayedBroadcasts) {
       const name = entry[0]
       const delayedBroadcast = entry[1]
-      const sockets = this._subscriptions.get(name)
+      const sockets = this._subscriptions.get(name) || []
       const uniqueSenders = delayedBroadcast.uniqueSenders
       const sharedMessages = delayedBroadcast.sharedMessages
 
-      if (!sockets || sockets.length === 0 || sharedMessages.length === 0) {
+      if (sharedMessages.length === 0) {
         this._delayedBroadcasts.delete(name)
         continue
       }
@@ -150,16 +150,17 @@ class SubscriptionRegistry {
       // for all sockets in this subscription name, send either sharedMessage or this socket's
       // specialized message. only sockets that sent something will have a special message, all
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
+
+      for (const uniqueSender of uniqueSenders) {
+        if (uniqueSender.message) {
+          uniqueSender.socket.sendNative(uniqueSender.message)
+        }
+      }
+
       const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
       let j = 0
       for (const socket of sockets) {
-        // since both uniqueSenders and sockets are sorted by uuid, we can efficiently determine
-        // if this socket is a sender in this subscription name or not as well as look up the
-        // eventual specialized message for this socket.
         if (j < uniqueSenders.length && uniqueSenders[j].uuid === socket.uuid) {
-          if (uniqueSenders[j].message.length) {
-            socket.sendNative(uniqueSenders[j].message)
-          }
           j += 1
         } else {
           // since we know when a socket is a sender and when it is a listener we can use the
@@ -226,6 +227,7 @@ class SubscriptionRegistry {
       if (uniqueSenders[index] !== sender) {
         uniqueSenders.splice(index, 0, {
           uuid: sender.uuid,
+          socket: sender,
           message: null,
           gaps: []
         })
