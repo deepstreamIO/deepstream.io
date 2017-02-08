@@ -88,6 +88,42 @@ RecordHandler.prototype._read = function (socket, message) {
 RecordHandler.prototype._update = function (socket, message) {
   const [ name, version, body, parent ] = message.data
 
+  if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
+    if (message.data.length < 3) {
+      this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
+      return
+    }
+
+    if (!version || !REV_EXPR.test(version)) {
+      this._sendError(socket, C.EVENT.INVALID_VERSION, [ name, message.data ])
+      return
+    }
+
+    if (parent && !REV_EXPR.test(parent)) {
+      this._sendError(socket, C.EVENT.INVALID_PARENT, [ name, message.data ])
+      return
+    }
+
+    const json = lz.decompressFromUTF16(body)
+    const data = utils.JSONParse(json)
+
+    if (data.error) {
+      this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
+      return
+    }
+
+    this._storage.set(name, {
+      _v: version,
+      _p: parent,
+      _d: data.value
+    }, (error, name, record, socket) => {
+      if (error) {
+        const message = 'error while writing ' + name + ' to storage.'
+        this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
+      }
+    }, socket)
+  }
+
   this._broadcast(
     socket,
     name,
@@ -97,44 +133,6 @@ RecordHandler.prototype._update = function (socket, message) {
     body,
     (name, message, socket) => this._subscriptionRegistry.sendToSubscribers(name, message, socket)
   )
-
-  if (socket === C.SOURCE_MESSAGE_CONNECTOR) {
-    return
-  }
-
-  if (message.data.length < 3) {
-    this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
-    return
-  }
-
-  if (!version || !REV_EXPR.test(version)) {
-    this._sendError(socket, C.EVENT.INVALID_VERSION, [ name, message.data ])
-    return
-  }
-
-  if (parent && !REV_EXPR.test(parent)) {
-    this._sendError(socket, C.EVENT.INVALID_PARENT, [ name, message.data ])
-    return
-  }
-
-  const json = lz.decompressFromUTF16(body)
-  const data = utils.JSONParse(json)
-
-  if (data.error) {
-    this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
-    return
-  }
-
-  this._storage.set(name, {
-    _v: version,
-    _p: parent,
-    _d: data.value
-  }, (error, name, record, socket) => {
-    if (error) {
-      const message = 'error while writing ' + name + ' to storage.'
-      this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
-    }
-  }, socket)
 }
 
 RecordHandler.prototype._unsubscribe = function (socket, message) {
