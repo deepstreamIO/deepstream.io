@@ -218,7 +218,7 @@ class SubscriptionRegistry {
     // each uniqueSender has a vector of "gaps" in relation to sharedMessage
     // senders should not receive what they sent themselves, so a gap is inserted
     // for every send from this sender
-    if (sender) {
+    if (sender && sender.uuid !== undefined) {
       const uniqueSenders = delayedBroadcasts.uniqueSenders
 
       const index = utils.sortedIndexBy(uniqueSenders, sender, 'uuid')
