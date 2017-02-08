@@ -128,8 +128,11 @@ class SubscriptionRegistry {
       const uniqueSenders = delayedBroadcast.uniqueSenders
       const sharedMessages = delayedBroadcast.sharedMessages
 
-      if (sharedMessages.length === 0) {
+      if (!this._subscriptions.has(name)) {
         this._delayedBroadcasts.delete(name)
+      }
+
+      if (sharedMessages.length === 0) {
         continue
       }
 
@@ -139,7 +142,7 @@ class SubscriptionRegistry {
 
       // for all unique senders and their gaps, build and send their special messages
       for (const uniqueSender of uniqueSenders) {
-        if (!uniqueSender) {
+        if (!uniqueSender || uniqueSender.gaps.length === 0) {
           continue
         }
         let message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
@@ -158,7 +161,7 @@ class SubscriptionRegistry {
       const sockets = this._subscriptions.get(name)
       if (sockets) {
         for (const socket of sockets.items) {
-          if (!uniqueSenders[socket.id]) {
+          if (!uniqueSenders[socket.id] || uniqueSenders[socket.id].gaps.length === 0) {
             // since we know when a socket is a sender and when it is a listener we can use the
             // optimized prepared message for listeners
             socket.sendPrepared(preparedMessage)
@@ -167,10 +170,14 @@ class SubscriptionRegistry {
       }
       SocketWrapper.finalizeMessage(preparedMessage)
 
-      delayedBroadcast.uniqueSenders = []
+      for (const uniqueSender of uniqueSenders) {
+        if (uniqueSender) {
+          uniqueSender.gaps.splice(0, uniqueSender.gaps.length)
+        }
+      }
+
       delayedBroadcast.sharedMessages = ''
     }
-
   }
 
   _onSocketClose (socketWrapper) {
@@ -207,15 +214,7 @@ class SubscriptionRegistry {
       msgString += C.MESSAGE_SEPERATOR
     }
 
-    // if not already a delayed broadcast, create it
-    let delayedBroadcasts = this._delayedBroadcasts.get(name)
-    if (!delayedBroadcasts) {
-      delayedBroadcasts = {
-        uniqueSenders: [],
-        sharedMessages: ''
-      }
-      this._delayedBroadcasts.set(name, delayedBroadcasts)
-    }
+    const delayedBroadcasts = this._delayedBroadcasts.get(name)
 
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
@@ -261,6 +260,10 @@ class SubscriptionRegistry {
         indices: []
       }
       this._subscriptions.set(name, sockets)
+      this._delayedBroadcasts.set(name, {
+        uniqueSenders: [],
+        sharedMessages: ''
+      })
     }
 
     if (sockets.indices[socketWrapper.id] !== undefined) {
