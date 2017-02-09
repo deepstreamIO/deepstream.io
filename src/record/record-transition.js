@@ -49,7 +49,7 @@ const RecordTransition = function (name, options, recordHandler) {
   this._recordRequest = null
   this._sendVersionExists = []
   this.isDestroyed = false
-  this._pendingUpdates = {}
+  this._pendingUpdates = new Map()
   this._ending = false
   this._storageResponses = 0
   this._cacheResponses = 0
@@ -246,14 +246,11 @@ RecordTransition.prototype._applyConfig = function (step, message) {
 
   config = JSON.parse(config)
   if (config.writeSuccess) {
-    if (this._pendingUpdates[step.sender.uuid] === undefined) {
-      this._pendingUpdates[step.sender.uuid] = {
-        socketWrapper: step.sender,
-        versions: [step.version]
-      }
+    const versions = this._pendingUpdates.get(step.sender)
+    if (!versions) {
+      this._pendingUpdates.set(step.sender, [step.version])
     } else {
-      const update = this._pendingUpdates[step.sender.uuid]
-      update.versions.push(step.version)
+      versions.push(step.version)
     }
   }
 }
@@ -363,7 +360,7 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
   } else if (this.isDestroyed === false) {
     this._recordHandler._$broadcastUpdate(this._name, this._currentStep.message, this._currentStep.sender)
     this._next()
-  } else if (this._cacheResponses === 0 
+  } else if (this._cacheResponses === 0
       && this._storageResponses === 0
       && this._steps.length === 0) {
     this.destroy()
@@ -385,7 +382,7 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
     this._onFatalError(error)
   } else if (this.isDestroyed) {
     this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error)
-  } else if (this._cacheResponses === 0 
+  } else if (this._cacheResponses === 0
       && this._storageResponses === 0
       && this._steps.length === 0) {
     this.destroy()
@@ -395,7 +392,7 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
 /**
  * Sends all write acknowledgement messages at the end of a transition
  *
- * @param   {String} error any error message that occurred while storing the 
+ * @param   {String} error any error message that occurred while storing the
  *                         record data
  *
  * @private
@@ -403,12 +400,12 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
  */
 RecordTransition.prototype._sendWriteAcknowledgements = function (errorMessage) {
   errorMessage = errorMessage === undefined ? null : errorMessage
-  for (const uid in this._pendingUpdates) {
-    const update = this._pendingUpdates[uid]
-
-    update.socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
+  for (const entry of this._pendingUpdates) {
+    const socketWrapper = entry[0]
+    const versions = entry[1]
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
       this._name,
-      update.versions,
+      versions,
       messageBuilder.typed(errorMessage)
     ])
   }

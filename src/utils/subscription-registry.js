@@ -3,7 +3,6 @@
 const C = require('../constants/constants')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const SocketWrapper = require('../message/socket-wrapper')
-const utils = require('./utils')
 
 class SubscriptionRegistry {
 
@@ -140,6 +139,9 @@ class SubscriptionRegistry {
 
       // for all unique senders and their gaps, build and send their special messages
       for (const uniqueSender of uniqueSenders) {
+        if (!uniqueSender) {
+          continue
+        }
         let message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
         let lastStop = uniqueSender.gaps[0].stop
         for (let j = 1; j < uniqueSender.gaps.length; j++) {
@@ -153,19 +155,19 @@ class SubscriptionRegistry {
       }
 
       const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
-      let j = 0
-      for (const socket of this._subscriptions.get(name) || []) {
-        if (j < uniqueSenders.length && uniqueSenders[j].uuid === socket.uuid) {
-          j += 1
-        } else {
-          // since we know when a socket is a sender and when it is a listener we can use the
-          // optimized prepared message for listeners
-          socket.sendPrepared(preparedMessage)
+      const sockets = this._subscriptions.get(name)
+      if (sockets) {
+        for (const socket of sockets.items) {
+          if (!uniqueSenders[socket.id]) {
+            // since we know when a socket is a sender and when it is a listener we can use the
+            // optimized prepared message for listeners
+            socket.sendPrepared(preparedMessage)
+          }
         }
       }
       SocketWrapper.finalizeMessage(preparedMessage)
 
-      delayedBroadcast.uniqueSenders.splice(0, delayedBroadcast.uniqueSenders.length)
+      delayedBroadcast.uniqueSenders = []
       delayedBroadcast.sharedMessages = ''
     }
 
@@ -173,9 +175,12 @@ class SubscriptionRegistry {
 
   _onSocketClose (socketWrapper) {
     for (const entry of this._subscriptions) {
-      if (entry[1][utils.sortedIndexBy(entry[1], socketWrapper, 'uuid')] === socketWrapper) {
-        this.unsubscribe(entry[0], socketWrapper)
+      const name = entry[0]
+      const subscription = entry[1]
+      if (subscription.indices[socketWrapper.id] !== undefined) {
+        this.unsubscribe(name, socketWrapper)
       }
+      subscription.uniqueSenders[socketWrapper.id] = undefined
     }
   }
 
@@ -187,14 +192,13 @@ class SubscriptionRegistry {
    *
    * @param   {String} name      the name/topic the subscriber was previously registered for
    * @param   {String} msgString the message as string
-   * @param   {[SocketWrapper]} sender an optional socketWrapper that shouldn't receive the message
+   * @param   {[SocketWrapper]} socket an optional socketWrapper that shouldn't receive the message
    *
    * @public
    * @returns {void}
    */
-  sendToSubscribers(name, msgString, sender) {
-    const sockets = this._subscriptions.get(name)
-    if (!sockets) {
+  sendToSubscribers(name, msgString, socket) {
+    if (!this._subscriptions.has(name)) {
       return
     }
 
@@ -220,22 +224,15 @@ class SubscriptionRegistry {
     const stop = delayedBroadcasts.sharedMessages.length
 
     // each uniqueSender has a vector of "gaps" in relation to sharedMessage
-    // senders should not receive what they sent themselves, so a gap is inserted
-    // for every send from this sender
-    if (sender && sender.uuid !== undefined) {
+    // sockets should not receive what they sent themselves, so a gap is inserted
+    // for every send from this socket
+    if (socket && socket.id !== undefined) {
       const uniqueSenders = delayedBroadcasts.uniqueSenders
-
-      const index = utils.sortedIndexBy(uniqueSenders, sender, 'uuid')
-
-      if (uniqueSenders[index] !== sender) {
-        uniqueSenders.splice(index, 0, {
-          uuid: sender.uuid,
-          socket: sender,
-          gaps: []
-        })
-      }
-
-      uniqueSenders[index].gaps.push({ start, stop })
+      const uniqueSender = uniqueSenders[socket.id] || (uniqueSenders[socket.id] = {
+        socket,
+        gaps: []
+      })
+      uniqueSender.gaps.push({ start, stop })
     }
 
     if (this._broadcastTimeout) {
@@ -259,20 +256,22 @@ class SubscriptionRegistry {
     let sockets = this._subscriptions.get(name)
 
     if (!sockets) {
-      sockets = []
+      sockets = {
+        items: [],
+        indices: []
+      }
       this._subscriptions.set(name, sockets)
     }
 
-    const index = utils.sortedIndexBy(sockets, socketWrapper, 'uuid')
-
-    if (sockets[index] === socketWrapper) {
+    if (sockets.indices[socketWrapper.id] !== undefined) {
       const msg = `repeat supscription to "${name}" by ${socketWrapper.user}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
       socketWrapper.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
-    sockets.splice(index, 0, socketWrapper)
+    sockets.indices[socketWrapper.id] = sockets.items.length
+    sockets.items.push(socketWrapper)
 
     if (socketWrapper.listeners('close').indexOf(this._onSocketClose) === -1) {
       socketWrapper.once('close', this._onSocketClose)
@@ -282,7 +281,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionMade(
         name,
         socketWrapper,
-        sockets.length
+        sockets.items.length
       )
     }
 
@@ -306,18 +305,22 @@ class SubscriptionRegistry {
   unsubscribe(name, socketWrapper, silent) {
     const sockets = this._subscriptions.get(name)
 
-    const index = utils.sortedIndexBy(sockets, socketWrapper, 'uuid')
-
-    if (!sockets || sockets[index] !== socketWrapper) {
+    if (!sockets || sockets.indices[socketWrapper.id] === undefined) {
       const msg = `${socketWrapper.user} is not subscribed to ${name}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg)
       socketWrapper.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)
       return
     }
 
-    sockets.splice(index, 1)
+    // Instead of slicing sockets.items, swap position with last item and pop.
+    const lastSocketWrapper = sockets.items.pop()
+    if (lastSocketWrapper !== socketWrapper) {
+      sockets.items[sockets.indices[socketWrapper.id]] = lastSocketWrapper
+      sockets.indices[lastSocketWrapper.id] = sockets.indices[socketWrapper.id]
+    }
+    sockets.indices[socketWrapper.id] = undefined
 
-    if (sockets.length === 0) {
+    if (sockets.items.length === 0) {
       this._clusterSubscriptions.remove(name)
       this._subscriptions.delete(name)
     }
@@ -326,7 +329,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socketWrapper,
-        sockets.length,
+        sockets.items.length,
         this.getAllRemoteServers(name).length
       )
     }
@@ -348,7 +351,8 @@ class SubscriptionRegistry {
    * @returns {Array} SocketWrapper[]
    */
   getLocalSubscribers(name) {
-    return this._subscriptions.get(name) || []
+    const sockets = this._subscriptions.get(name)
+    return sockets ? sockets.items : []
   }
 
   /**
@@ -362,7 +366,8 @@ class SubscriptionRegistry {
    * @returns {Boolean} hasLocalSubscribers
    */
   hasLocalSubscribers(name) {
-    return this._subscriptions.has(name)
+    const sockets = this._subscriptions.get(name)
+    return sockets ? sockets.items.length > 0 : false
   }
 
   /**

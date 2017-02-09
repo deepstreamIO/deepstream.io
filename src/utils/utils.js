@@ -216,25 +216,6 @@ exports.spliceRandomElement = function (array) {
   return array.splice(randomIndex, 1)[0]
 }
 
-exports.sortedIndexBy = function (array, value, prop) {
-  value = value[prop]
-
-  let low = 0
-  let high = array ? array.length : 0
-
-  while (low < high) {
-    const mid = (low + high) >> 1
-
-    if (array[mid][prop] < value) {
-      low = mid + 1
-    } else {
-      high = mid
-    }
-  }
-
-  return high
-}
-
 exports.sortedIndex = function (array, value) {
   let low = 0
   let high = array ? array.length : 0
