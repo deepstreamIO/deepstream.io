@@ -18,7 +18,6 @@ class SubscriptionRegistry {
    * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
    */
   constructor(options, topic, clusterTopic) {
-    this._delayedBroadcasts = new Map()
     this._broadcastTimeout = options.broadcastTimeout
     this._broadcastTimer = null
     this._subscriptions = new Map()
@@ -122,14 +121,14 @@ class SubscriptionRegistry {
    */
   _onBroadcastTimeout() {
     this._broadcastTimer = null
-    for (const entry of this._delayedBroadcasts) {
+    for (const entry of this._subscriptions) {
       const name = entry[0]
-      const delayedBroadcast = entry[1]
-      const uniqueSenders = delayedBroadcast.uniqueSenders
-      const sharedMessages = delayedBroadcast.sharedMessages
+      const subscription = entry[1]
+      const uniqueSenders = subscription.uniqueSenders
+      const sharedMessages = subscription.sharedMessages
 
-      if (!this._subscriptions.has(name)) {
-        this._delayedBroadcasts.delete(name)
+      if (subscription.items.length === 0) {
+        this._subscriptions.delete(name)
       }
 
       if (sharedMessages.length === 0) {
@@ -158,14 +157,11 @@ class SubscriptionRegistry {
       }
 
       const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
-      const sockets = this._subscriptions.get(name)
-      if (sockets) {
-        for (const socket of sockets.items) {
-          if (!uniqueSenders[socket.id] || uniqueSenders[socket.id].gaps.length === 0) {
-            // since we know when a socket is a sender and when it is a listener we can use the
-            // optimized prepared message for listeners
-            socket.sendPrepared(preparedMessage)
-          }
+      for (const socket of subscription.items) {
+        if (!uniqueSenders[socket.id] || uniqueSenders[socket.id].gaps.length === 0) {
+          // since we know when a socket is a sender and when it is a listener we can use the
+          // optimized prepared message for listeners
+          socket.sendPrepared(preparedMessage)
         }
       }
       SocketWrapper.finalizeMessage(preparedMessage)
@@ -176,7 +172,7 @@ class SubscriptionRegistry {
         }
       }
 
-      delayedBroadcast.sharedMessages = ''
+      subscription.sharedMessages = ''
     }
   }
 
@@ -205,7 +201,9 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   sendToSubscribers(name, msgString, socket) {
-    if (!this._subscriptions.has(name)) {
+    const subscription = this._subscriptions.get(name)
+
+    if (!subscription || subscription.items.length === 0) {
       return
     }
 
@@ -214,19 +212,17 @@ class SubscriptionRegistry {
       msgString += C.MESSAGE_SEPERATOR
     }
 
-    const delayedBroadcasts = this._delayedBroadcasts.get(name)
-
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
-    const start = delayedBroadcasts.sharedMessages.length
-    delayedBroadcasts.sharedMessages += msgString
-    const stop = delayedBroadcasts.sharedMessages.length
+    const start = subscription.sharedMessages.length
+    subscription.sharedMessages += msgString
+    const stop = subscription.sharedMessages.length
 
     // each uniqueSender has a vector of "gaps" in relation to sharedMessage
     // sockets should not receive what they sent themselves, so a gap is inserted
     // for every send from this socket
     if (socket && socket.id !== undefined) {
-      const uniqueSenders = delayedBroadcasts.uniqueSenders
+      const uniqueSenders = subscription.uniqueSenders
       const uniqueSender = uniqueSenders[socket.id] || (uniqueSenders[socket.id] = {
         socket,
         gaps: []
@@ -257,13 +253,11 @@ class SubscriptionRegistry {
     if (!sockets) {
       sockets = {
         items: [],
-        indices: []
-      }
-      this._subscriptions.set(name, sockets)
-      this._delayedBroadcasts.set(name, {
+        indices: [],
         uniqueSenders: [],
         sharedMessages: ''
-      })
+      }
+      this._subscriptions.set(name, sockets)
     }
 
     if (sockets.indices[socketWrapper.id] !== undefined) {
@@ -325,7 +319,6 @@ class SubscriptionRegistry {
 
     if (sockets.items.length === 0) {
       this._clusterSubscriptions.remove(name)
-      this._subscriptions.delete(name)
     }
 
     if (this._subscriptionListener) {
