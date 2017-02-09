@@ -21,7 +21,9 @@ const RecordHandler = function (options) {
   this._logger = options.logger
   this._message = options.messageConnector
   this._storage = options.storageConnector
-  this._storage.on('change', this._invalidate.bind(this))
+  this._storage.on('change', (name, version) =>
+    this._invalidate(C.SOURCE_STORAGE_CONNECTOR, { data: [ name, version ] })
+  )
   this._cache = new LRU({
     max: options.cache && options.cache.size || (128 * 1024 * 1024),
     length (record, name) {
@@ -48,6 +50,11 @@ RecordHandler.prototype.handle = function (socket, message) {
 
   if (message.action === C.ACTIONS.UPDATE) {
     this._update(socket, message)
+    return
+  }
+
+  if (message.action === C.ACTIONS.INVALIDATE) {
+    this._invalidate(socket, message)
     return
   }
 
@@ -147,7 +154,9 @@ RecordHandler.prototype._sendError = function (socket, event, message) {
   }
 }
 
-RecordHandler.prototype._invalidate = function (name, version) {
+RecordHandler.prototype._invalidate = function (socket, message) {
+  const name = message.data[0]
+  const version = message.data[1]
   const prevRecord = this._cache.peek(name)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
@@ -160,7 +169,7 @@ RecordHandler.prototype._invalidate = function (name, version) {
     return
   }
 
-  this._refresh(C.SOURCE_STORAGE_CONNECTOR, name)
+  this._refresh(socket, name)
 }
 
 RecordHandler.prototype._refresh = function (socket, name, callback) {
@@ -196,18 +205,19 @@ RecordHandler.prototype._broadcast = function (socket, name, message, version, p
 
   this._cache.set(name, nextRecord)
 
-  message = message || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
+  if (socket !== C.SOURCE_MESSAGE_CONNECTOR && socket !== C.SOURCE_STORAGE_CONNECTOR) {
+    this._message.publish(C.TOPIC.RECORD, messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.INVALIDATE, [
+      name,
+      nextRecord._v
+    ]))
+  }
+
+  callback(name, message || messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, [
     name,
     nextRecord._v,
     nextRecord._s,
     nextRecord._p
-  ])
-
-  if (socket !== C.SOURCE_MESSAGE_CONNECTOR && socket !== C.SOURCE_STORAGE_CONNECTOR) {
-    this._message.publish(C.TOPIC.RECORD, message)
-  }
-
-  callback(name, message, socket)
+  ]), socket)
 
   return nextRecord
 }
