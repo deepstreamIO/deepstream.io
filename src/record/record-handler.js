@@ -6,8 +6,6 @@ const utils = require('../utils/utils')
 const LRU = require('lru-cache')
 const lz = require('lz-string')
 
-const REV_EXPR = /\d+-.+/
-
 const Record = function (version, parent, body) {
   this._v = version || ''
   this._p = parent || ''
@@ -94,33 +92,7 @@ RecordHandler.prototype._update = function (socket, message) {
   const [ name, version, body, parent ] = message.data
 
   if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
-    if (message.data.length < 3) {
-      this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
-      return
-    }
-
-    if (!version || !REV_EXPR.test(version)) {
-      this._sendError(socket, C.EVENT.INVALID_VERSION, [ name, message.data ])
-      return
-    }
-
-    if (parent && !REV_EXPR.test(parent)) {
-      this._sendError(socket, C.EVENT.INVALID_PARENT, [ name, message.data ])
-      return
-    }
-
-    const data = utils.JSONParse(lz.decompressFromUTF16(body))
-
-    if (data.error) {
-      this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, [ name, message.data ])
-      return
-    }
-
-    this._storage.set(name, {
-      _v: version,
-      _p: parent,
-      _d: data.value
-    }, (error, name, record, socket) => {
+    this._storage.set(name, version, parent, body, (error, name, socket) => {
       if (error) {
         const message = 'error while writing ' + name + ' to storage.'
         this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
