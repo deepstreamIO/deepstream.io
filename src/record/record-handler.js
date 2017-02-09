@@ -23,7 +23,7 @@ const RecordHandler = function (options) {
   this._storage = options.storageConnector
   this._storage.on('change', this._invalidate.bind(this))
   this._cache = new LRU({
-    max: options.cacheSize || (128 * 1024 * 1024),
+    max: options.cache && options.cache.size || (128 * 1024 * 1024),
     length (record, name) {
       return name.length + record._v.length + record._p.length + record._s.length + 64
     }
