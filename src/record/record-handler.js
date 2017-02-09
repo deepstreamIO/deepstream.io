@@ -21,9 +21,7 @@ const RecordHandler = function (options) {
   this._logger = options.logger
   this._message = options.messageConnector
   this._storage = options.storageConnector
-  this._storage.on('change', (name, version) =>
-    this._invalidate(C.SOURCE_STORAGE_CONNECTOR, { data: [ name, version ] })
-  )
+  this._storage.changes((name, version) => this._invalidate(C.SOURCE_STORAGE_CONNECTOR, { data: [ name, version ] }))
   this._cache = new LRU({
     max: options.cache && options.cache.size || (128 * 1024 * 1024),
     length (record, name) {
