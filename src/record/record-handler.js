@@ -102,8 +102,8 @@ RecordHandler.prototype._update = function (socket, message) {
 
   this._broadcast(
     socket,
-    name,
     message.raw,
+    name,
     version,
     parent,
     body,
@@ -152,8 +152,8 @@ RecordHandler.prototype._refresh = function (socket, name, callback) {
 
     record = this._broadcast(
       socket,
-      name,
       null,
+      name,
       record._v,
       record._p,
       record._d,
@@ -164,7 +164,7 @@ RecordHandler.prototype._refresh = function (socket, name, callback) {
   }, [ socket, callback ])
 }
 
-RecordHandler.prototype._broadcast = function (socket, name, message, version, parent, body, callback) {
+RecordHandler.prototype._broadcast = function (socket, message, name, version, parent, body, callback) {
   const prevRecord = this._cache.get(name)
 
   if (prevRecord && utils.compareVersions(prevRecord._v, version)) {
