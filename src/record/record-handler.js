@@ -171,7 +171,7 @@ RecordHandler.prototype._invalidate = function (socket, message) {
 }
 
 RecordHandler.prototype._refresh = function (socket, name, callback) {
-  this._storage.get(name, (error, name, record) => {
+  this._storage.get(name, (error, name, record, [ socket, callback ]) => {
     if (error) {
       const message = 'error while reading ' + name + ' from storage'
       this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, message ])
@@ -189,7 +189,7 @@ RecordHandler.prototype._refresh = function (socket, name, callback) {
     )
 
     callback && callback(null, name, record)
-  })
+  }, [ socket, callback ])
 }
 
 RecordHandler.prototype._broadcast = function (socket, name, message, version, parent, body, callback) {
