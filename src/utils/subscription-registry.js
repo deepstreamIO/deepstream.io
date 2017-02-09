@@ -124,14 +124,12 @@ class SubscriptionRegistry {
     for (const entry of this._subscriptions) {
       const name = entry[0]
       const subscription = entry[1]
-      const uniqueSenders = subscription.uniqueSenders
-      const sharedMessages = subscription.sharedMessages
 
-      if (subscription.items.length === 0) {
+      if (subscription.sockets.length === 0) {
         this._subscriptions.delete(name)
       }
 
-      if (sharedMessages.length === 0) {
+      if (subscription.message.length === 0) {
         continue
       }
 
@@ -140,25 +138,25 @@ class SubscriptionRegistry {
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
 
       // for all unique senders and their gaps, build and send their special messages
-      for (const uniqueSender of uniqueSenders) {
-        if (!uniqueSender || uniqueSender.gaps.length === 0) {
+      for (const sender of subscription.senders) {
+        if (!sender || sender.gaps.length === 0) {
           continue
         }
-        let message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
-        let lastStop = uniqueSender.gaps[0].stop
-        for (let j = 1; j < uniqueSender.gaps.length; j++) {
-          message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
-          lastStop = uniqueSender.gaps[j].stop
+        let message = subscription.message.substring(0, sender.gaps[0].start)
+        let lastStop = sender.gaps[0].stop
+        for (let j = 1; j < sender.gaps.length; j++) {
+          message += subscription.message.substring(lastStop, sender.gaps[j].start)
+          lastStop = sender.gaps[j].stop
         }
-        message += sharedMessages.substring(lastStop, sharedMessages.length)
+        message += subscription.message.substring(lastStop, subscription.message.length)
         if (message) {
-          uniqueSender.socket.sendNative(message)
+          sender.socket.sendNative(message)
         }
       }
 
-      const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
-      for (const socket of subscription.items) {
-        if (!uniqueSenders[socket.id] || uniqueSenders[socket.id].gaps.length === 0) {
+      const preparedMessage = SocketWrapper.prepareMessage(subscription.message)
+      for (const socket of subscription.sockets) {
+        if (!subscription.senders[socket.id] || subscription.senders[socket.id].gaps.length === 0) {
           // since we know when a socket is a sender and when it is a listener we can use the
           // optimized prepared message for listeners
           socket.sendPrepared(preparedMessage)
@@ -166,13 +164,12 @@ class SubscriptionRegistry {
       }
       SocketWrapper.finalizeMessage(preparedMessage)
 
-      for (const uniqueSender of uniqueSenders) {
-        if (uniqueSender) {
-          uniqueSender.gaps.splice(0, uniqueSender.gaps.length)
+      for (const sender of subscription.senders) {
+        if (sender) {
+          sender.gaps.splice(0, sender.gaps.length)
         }
       }
-
-      subscription.sharedMessages = ''
+      subscription.message = ''
     }
   }
 
@@ -183,7 +180,7 @@ class SubscriptionRegistry {
       if (subscription.indices[socketWrapper.id] !== undefined) {
         this.unsubscribe(name, socketWrapper)
       }
-      subscription.uniqueSenders[socketWrapper.id] = undefined
+      subscription.senders[socketWrapper.id] = undefined
     }
   }
 
@@ -203,7 +200,7 @@ class SubscriptionRegistry {
   sendToSubscribers(name, msgString, socket) {
     const subscription = this._subscriptions.get(name)
 
-    if (!subscription || subscription.items.length === 0) {
+    if (!subscription || subscription.sockets.length === 0) {
       return
     }
 
@@ -214,20 +211,20 @@ class SubscriptionRegistry {
 
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
-    const start = subscription.sharedMessages.length
-    subscription.sharedMessages += msgString
-    const stop = subscription.sharedMessages.length
+    const start = subscription.message.length
+    subscription.message += msgString
+    const stop = subscription.message.length
 
-    // each uniqueSender has a vector of "gaps" in relation to sharedMessage
+    // each sender has a vector of "gaps" in relation to sharedMessage
     // sockets should not receive what they sent themselves, so a gap is inserted
     // for every send from this socket
     if (socket && socket.id !== undefined) {
-      const uniqueSenders = subscription.uniqueSenders
-      const uniqueSender = uniqueSenders[socket.id] || (uniqueSenders[socket.id] = {
+      const senders = subscription.senders
+      const sender = senders[socket.id] || (senders[socket.id] = {
         socket,
         gaps: []
       })
-      uniqueSender.gaps.push({ start, stop })
+      sender.gaps.push({ start, stop })
     }
 
     if (this._broadcastTimeout) {
@@ -248,27 +245,27 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   subscribe(name, socketWrapper) {
-    let sockets = this._subscriptions.get(name)
+    let subscription = this._subscriptions.get(name)
 
-    if (!sockets) {
-      sockets = {
-        items: [],
+    if (!subscription) {
+      subscription = {
+        sockets: [],
         indices: [],
-        uniqueSenders: [],
-        sharedMessages: ''
+        senders: [],
+        message: ''
       }
-      this._subscriptions.set(name, sockets)
+      this._subscriptions.set(name, subscription)
     }
 
-    if (sockets.indices[socketWrapper.id] !== undefined) {
+    if (subscription.indices[socketWrapper.id] !== undefined) {
       const msg = `repeat supscription to "${name}" by ${socketWrapper.user}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
       socketWrapper.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
-    sockets.indices[socketWrapper.id] = sockets.items.length
-    sockets.items.push(socketWrapper)
+    subscription.indices[socketWrapper.id] = subscription.sockets.length
+    subscription.sockets.push(socketWrapper)
 
     if (socketWrapper.listeners('close').indexOf(this._onSocketClose) === -1) {
       socketWrapper.once('close', this._onSocketClose)
@@ -278,7 +275,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionMade(
         name,
         socketWrapper,
-        sockets.items.length
+        subscription.sockets.length
       )
     }
 
@@ -300,24 +297,24 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   unsubscribe(name, socketWrapper, silent) {
-    const sockets = this._subscriptions.get(name)
+    const subscription = this._subscriptions.get(name)
 
-    if (!sockets || sockets.indices[socketWrapper.id] === undefined) {
+    if (!subscription || subscription.indices[socketWrapper.id] === undefined) {
       const msg = `${socketWrapper.user} is not subscribed to ${name}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg)
       socketWrapper.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)
       return
     }
 
-    // Instead of slicing sockets.items, swap position with last item and pop.
-    const lastSocketWrapper = sockets.items.pop()
+    // Instead of slicing subscription.sockets, swap position with last item and pop.
+    const lastSocketWrapper = subscription.sockets.pop()
     if (lastSocketWrapper !== socketWrapper) {
-      sockets.items[sockets.indices[socketWrapper.id]] = lastSocketWrapper
-      sockets.indices[lastSocketWrapper.id] = sockets.indices[socketWrapper.id]
+      subscription.sockets[subscription.indices[socketWrapper.id]] = lastSocketWrapper
+      subscription.indices[lastSocketWrapper.id] = subscription.indices[socketWrapper.id]
     }
-    sockets.indices[socketWrapper.id] = undefined
+    subscription.indices[socketWrapper.id] = undefined
 
-    if (sockets.items.length === 0) {
+    if (subscription.sockets.length === 0) {
       this._clusterSubscriptions.remove(name)
     }
 
@@ -325,7 +322,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socketWrapper,
-        sockets.items.length,
+        subscription.sockets.length,
         this.getAllRemoteServers(name).length
       )
     }
@@ -347,8 +344,8 @@ class SubscriptionRegistry {
    * @returns {Array} SocketWrapper[]
    */
   getLocalSubscribers(name) {
-    const sockets = this._subscriptions.get(name)
-    return sockets ? sockets.items : []
+    const subscription = this._subscriptions.get(name)
+    return subscription ? subscription.sockets : []
   }
 
   /**
@@ -362,8 +359,8 @@ class SubscriptionRegistry {
    * @returns {Boolean} hasLocalSubscribers
    */
   hasLocalSubscribers(name) {
-    const sockets = this._subscriptions.get(name)
-    return sockets ? sockets.items.length > 0 : false
+    const subscription = this._subscriptions.get(name)
+    return subscription ? subscription.sockets.length > 0 : false
   }
 
   /**
