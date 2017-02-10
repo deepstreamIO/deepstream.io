@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "lru-cache": "^4.0.2",
-    "lz-string": "^1.4.4",
     "uws": "^0.12.0"
   },
   "author": "deepstreamHub GmbH",

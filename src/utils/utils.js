@@ -5,6 +5,14 @@ exports.getUid = function () {
   return Date.now().toString(36) + '-' + (Math.random() * 10000000000000000000).toString(36)
 }
 
+exports.splitRev = function (s) {
+  if (!s) {
+    return []
+  }
+  const i = s.indexOf('-')
+  return [ s.slice(0, i), s.slice(i + 1) ]
+}
+
 exports.compareVersions = function (a, b) {
   if (!a) {
     return false
@@ -12,8 +20,8 @@ exports.compareVersions = function (a, b) {
   if (!b) {
     return true
   }
-  const [av, ar] = a.split('-')
-  const [bv, br] = b.split('-')
+  const [av, ar] = exports.splitRev(a)
+  const [bv, br] = exports.splitRev(b)
   return parseInt(av, 10) > parseInt(bv, 10) || (av === bv && ar >= br)
 }
 
