@@ -124,8 +124,10 @@ class SubscriptionRegistry {
     for (const entry of this._subscriptions) {
       const name = entry[0]
       const subscription = entry[1]
+      const senders = subscription.senders
+      const sockets = subscription.sockets
 
-      if (subscription.sockets.length === 0) {
+      if (sockets.length === 0) {
         this._subscriptions.delete(name)
       }
 
@@ -135,40 +137,39 @@ class SubscriptionRegistry {
 
       // for all sockets in this subscription name, send either sharedMessage or this socket's
       // specialized message. only sockets that sent something will have a special message, all
-      // other sockets are only listeners and receive the exact same (sharedMessage) message.
+      // other sockets are only listeners and receive the exact same shared message.
+
+      if (sockets.length > 0) {
+        const preparedMessage = SocketWrapper.prepareMessage(subscription.message)
+        for (let n = 0, l = sockets.length; n < l; ++n) {
+          if (!senders[sockets[n].id] || senders[sockets[n].id].length === 1) {
+            // since we know when a socket is a sender and when it is a listener we can use the
+            // optimized prepared message for listeners
+            sockets[n].sendPrepared(preparedMessage)
+          }
+        }
+        SocketWrapper.finalizeMessage(preparedMessage)
+      }
 
       // for all unique senders and their gaps, build and send their special messages
-      for (const sender of subscription.senders) {
-        if (!sender || sender.gaps.length === 0) {
+      for (let n = 0, l = senders.length; n < l; ++n) {
+        if (!senders[n] || senders[n].length === 1) {
           continue
         }
-        let message = subscription.message.substring(0, sender.gaps[0].start)
-        let lastStop = sender.gaps[0].stop
-        for (let j = 1; j < sender.gaps.length; j++) {
-          message += subscription.message.substring(lastStop, sender.gaps[j].start)
-          lastStop = sender.gaps[j].stop
+        let j = 1
+        let message = subscription.message.substring(0, senders[n][j++])
+        let lastStop = senders[n][j++]
+        while (j < senders[n].length) {
+          message += subscription.message.substring(lastStop, senders[n][j++])
+          lastStop = senders[n][j++]
         }
         message += subscription.message.substring(lastStop, subscription.message.length)
         if (message) {
-          sender.socket.sendNative(message)
+          senders[n][0].sendNative(message)
         }
+        senders[n].splice(1)
       }
 
-      const preparedMessage = SocketWrapper.prepareMessage(subscription.message)
-      for (const socket of subscription.sockets) {
-        if (!subscription.senders[socket.id] || subscription.senders[socket.id].gaps.length === 0) {
-          // since we know when a socket is a sender and when it is a listener we can use the
-          // optimized prepared message for listeners
-          socket.sendPrepared(preparedMessage)
-        }
-      }
-      SocketWrapper.finalizeMessage(preparedMessage)
-
-      for (const sender of subscription.senders) {
-        if (sender) {
-          sender.gaps.splice(0, sender.gaps.length)
-        }
-      }
       subscription.message = ''
     }
   }
@@ -219,12 +220,12 @@ class SubscriptionRegistry {
     // sockets should not receive what they sent themselves, so a gap is inserted
     // for every send from this socket
     if (socket && socket.id !== undefined) {
-      const senders = subscription.senders
-      const sender = senders[socket.id] || (senders[socket.id] = {
-        socket,
-        gaps: []
-      })
-      sender.gaps.push({ start, stop })
+      const sender = subscription.senders[socket.id]
+      if (!sender) {
+        subscription.senders[socket.id] = [ socket, start, stop ]
+      } else {
+        sender.push(start, stop)
+      }
     }
 
     if (this._broadcastTimeout) {
