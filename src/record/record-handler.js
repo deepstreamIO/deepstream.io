@@ -98,13 +98,6 @@ module.exports = class RecordHandler {
       this._cache.set(nextRecord[0], nextRecord)
     }
 
-    const pending = this._pending.get(nextRecord[0])
-
-    if (pending && utils.compareVersions(nextRecord[1], pending.version)) {
-      clearTimeout(pending.timeout)
-      this._pending.delete(nextRecord[0])
-    }
-
     this._subscriptionRegistry.sendToSubscribers(
       nextRecord[0],
       messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
@@ -119,7 +112,7 @@ module.exports = class RecordHandler {
   _read (prevRecord) {
     const nextRecord = this._cache.get(prevRecord[1])
 
-    if (utils.compareVersions(prevRecord[1], nextRecord[1])) {
+    if (utils.compareVersions(prevRecord[1], nextRecord && nextRecord[1])) {
       return
     }
 
@@ -131,11 +124,13 @@ module.exports = class RecordHandler {
 
     const pending = this._pending.get(record[0])
     if (!pending) {
-      this._pending.set(record[0], {
+      const pending = {
+        name: record[0],
         version: record[1],
-        sockets: [ socket ],
-        timeout: setTimeout(this._fetch, 200)
-      })
+        sockets: [ socket ]
+      }
+      this._pending.set(record[0], pending)
+      setTimeout(this._fetch, 200, pending)
     } else {
       pending.sockets.push(socket)
       pending.version = utils.compareVersions(record[1], pending.version)
@@ -144,26 +139,25 @@ module.exports = class RecordHandler {
     }
   }
 
-  _fetch () {
-    for (const [ name, { version, sockets } ] of this._pending) {
-      const prevRecord = this._cache.get(name)
+  _fetch ({ name, version, sockets }) {
+    this._pending.delete(name)
 
-      if (utils.compareVersions(prevRecord && prevRecord[1], version)) {
-        continue
-      }
+    const prevRecord = this._cache.get(name)
 
-      this._storage.get(name, (error, record, sockets) => {
-        if (error) {
-          const message = 'error while reading ' + record[0] + ' from storage'
-          for (const socket of sockets) {
-            this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ record[0], message ])
-          }
-        } else {
-          this._broadcast(record, C.SOURCE_STORAGE_CONNECTOR)
-        }
-      }, sockets)
+    if (utils.compareVersions(prevRecord && prevRecord[1], version)) {
+      return
     }
-    this._pending.clear()
+
+    this._storage.get(name, (error, record, sockets) => {
+      if (error) {
+        const message = 'error while reading ' + record[0] + ' from storage'
+        for (const socket of sockets) {
+          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ record[0], message ])
+        }
+      } else {
+        this._broadcast(record, C.SOURCE_STORAGE_CONNECTOR)
+      }
+    }, sockets)
   }
 
   _invalidate (nextRecord) {
