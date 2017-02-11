@@ -24,14 +24,14 @@ module.exports = class RpcHandler {
       C.ACTIONS.ERROR
     ]
 
-        /**
-         * {
-         *  'correlationId' : {
-         *      local: [],
-         *      remoteServers: [],
-         *      rpc: null
-         *  }
-         */
+    /**
+     * {
+     *  'correlationId' : {
+     *      local: [],
+     *      remoteServers: [],
+     *      rpc: null
+     *  }
+     */
     this._rpcs = {}
   }
 
@@ -73,6 +73,10 @@ module.exports = class RpcHandler {
                 )
       }
     } else {
+      /*
+       * RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
+       * by the Rpc class directly
+       */
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
       if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
@@ -105,33 +109,33 @@ module.exports = class RpcHandler {
   getAlternativeProvider (rpcName, correlationId) {
     const rpcData = this._rpcs[correlationId]
 
-    /*
-  * Look within the local providers for one that hasn't been used yet
-  */
     if (!rpcData) {
-        // RPC was already fufilled somehow. This is prior to 1.1.1 and
-        // hence is kept for backwards compatability.
+      // RPC was already fufilled somehow. This is prior to 1.1.1 and
+      // hence is kept for backwards compatability.
 
-        // TODO: Log something useful here
+      // TODO: Log something useful here
       return null
     }
 
-        /*
-         * Look within the local providers for one that hasn't been used yet
-         */
-    if (rpcData.local && rpcData.local.length > 0) {
-      return utils.spliceRandomElement(rpcData.local)
+    const subscribers = this._subscriptionRegistry.getLocalSubscribers(rpcName)
+    let index = Math.round(Math.random() * (subscribers.length - 1))
+    for (let n = 0; n < subscribers.length; ++n) {
+      if (!rpcData.providers.has(subscribers[index])) {
+        rpcData.providers.add(subscribers[index])
+        return subscribers[index]
+      }
+      index = (index + 1) % subscribers.length
     }
 
     /*
-  * Get a list of the private topics of all remote providers
-  */
+     * Get a list of the private topics of all remote providers
+     */
     const allRemoteProviderTopics = rpcData.remoteServers
 
-  /**
-  * Do any remote topics exist? If not, this is already from another
-  * server so we shouldn't try making a remote request.
-  */
+    /**
+    * Do any remote topics exist? If not, this is already from another
+    * server so we shouldn't try making a remote request.
+    */
     if (allRemoteProviderTopics === null) {
       return null
     }
@@ -144,8 +148,8 @@ module.exports = class RpcHandler {
     }
 
     /*
-  * Search for a remote provider that hasn't been used yet
-  */
+     * Search for a remote provider that hasn't been used yet
+     */
     return new RpcProxy(this._options, this._getNextRandomServer(rpcData.remoteServers), rpcName, correlationId)
   }
 
@@ -204,7 +208,7 @@ module.exports = class RpcHandler {
     const correlationId = message.data[1]
 
     const rpcData = {
-      local: this._subscriptionRegistry.getLocalSubscribers(rpcName).slice(),
+      providers: new Set(),
       remoteServers: null,
       rpc: null
     }
@@ -215,8 +219,11 @@ module.exports = class RpcHandler {
       rpcData.remoteServers = serverNames
     }
 
-    if (rpcData.local && rpcData.local.length > 0) {
-      const provider = utils.spliceRandomElement(rpcData.local)
+    const subscribers = this._subscriptionRegistry.getLocalSubscribers(rpcName)
+    const provider = subscribers[Math.round(Math.random() * (subscribers.length - 1))]
+
+    if (provider) {
+      rpcData.providers.add(provider)
       rpcData.rpc = new Rpc(this, socketWrapper, provider, this._options, message)
     } else if (source === C.SOURCE_MESSAGE_CONNECTOR) {
       socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [rpcName, correlationId])
