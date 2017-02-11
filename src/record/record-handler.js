@@ -116,7 +116,7 @@ module.exports = class RecordHandler {
       sender
     )
 
-    if (sender !== C.SOURCE_MESSAGE_CONNECTOR && sender !== C.SOURCE_STORAGE_CONNECTOR) {
+    if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
       this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, record.slice(1, 3))
     }
   }
