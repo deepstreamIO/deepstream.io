@@ -150,7 +150,7 @@ module.exports = class RecordHandler {
       if (error) {
         const message = 'error while reading ' + name + ' from storage'
         for (const socket of sockets) {
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, message ])
+          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, version, message ])
         }
       } else {
         this._broadcast([ name, version, body ], C.SOURCE_STORAGE_CONNECTOR)
