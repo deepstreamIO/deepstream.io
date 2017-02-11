@@ -8,11 +8,6 @@ const LRU = require('lru-cache')
 module.exports = class RecordHandler {
 
   constructor (options) {
-    this._onRead = this._onRead.bind(this)
-    this._onUpdate = this._onUpdate.bind(this)
-    this._onAdded = this._onAdded.bind(this)
-    this._onRemoved = this._onRemoved.bind(this)
-
     this._broadcast = this._broadcast.bind(this)
     this._refresh = this._refresh.bind(this)
     this._fetch = this._fetch.bind(this)
@@ -21,11 +16,12 @@ module.exports = class RecordHandler {
     this._message = options.messageConnector
     this._storage = options.storageConnector
 
+    this._listeners = new Map()
     this._pending = new Map()
     this._cache = new LRU({
       max: 128e6,
       length: ([ name, version, body ]) => name.length + version.length + body.length + 64,
-      dispose: (name) => this._onRemoved(name)
+      dispose: (name) => this._unsubscribeMessage(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`)
     })
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
@@ -33,13 +29,15 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionMade: (name, socketWrapper, localCount) => {
         if (localCount === 1) {
-          this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, null, this._onUpdate)
+          this._subscribeMessage(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, ([ version, body ]) => {
+            this._broadcast([ name, version, body ], C.SOURCE_MESSAGE_CONNECTOR)
+          })
         }
         this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount)
       },
       onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
         if (localCount === 0) {
-          this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, null, this._onUpdate)
+          this._unsubscribeMessage(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`)
         }
         this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
       }
@@ -85,25 +83,6 @@ module.exports = class RecordHandler {
     }
   }
 
-  _onUpdate ([ , , , name ], [ version, body ]) {
-    this._broadcast([ name, version, body ], C.SOURCE_MESSAGE_CONNECTOR)
-  }
-
-  _onRead ([ , , , name ], [ version ]) {
-    const record = this._cache.get(name)
-    if (this._compare(record, version)) {
-      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, record.slice(1, 3))
-    }
-  }
-
-  _onAdded (name) {
-    this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, { queue: C.ACTIONS.READ }, this._onRead)
-  }
-
-  _onRemoved (name) {
-    this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead)
-  }
-
   _broadcast ([ name, version, body ], sender) {
     const record = this._cache.get(name)
 
@@ -116,8 +95,14 @@ module.exports = class RecordHandler {
       record[1] = version
       record[2] = body
     } else {
-      this._onAdded(name)
       this._cache.set(name, [ name, version, body ])
+      this._subscribeMessage(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, ([ version ]) => {
+        const record = this._cache.get(name)
+        if (this._compare(record, version)) {
+          const topic = `${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`
+          this._message.publish(topic, record.slice(1, 3))
+        }
+      }, { queue: `${C.TOPIC.RECORD}.${C.ACTIONS.READ}` })
     }
 
     this._subscriptionRegistry.sendToSubscribers(
@@ -150,7 +135,7 @@ module.exports = class RecordHandler {
       setTimeout(this._fetch, 200, pending)
     } else {
       pending.sockets.push(socket)
-      pending.version = utils.compareVersions(version, pending.version) ? version : pending.version
+      pending.version = this._compare(version, pending.version) ? version : pending.version
     }
   }
 
@@ -181,7 +166,21 @@ module.exports = class RecordHandler {
     }
   }
 
-  _compare (record, version) {
-    return utils.compareVersions(record && record[1], version)
+  _subscribeMessage (topic, listener, options) {
+    this._listeners.set(topic, listener)
+    this._message.subscribe(topic, listener, options)
+  }
+
+  _unsubscribeMessage (topic, listener = this._listeners.get(topic)) {
+    if (listener) {
+      this._message.unsubscribe(topic, listener)
+    }
+  }
+
+  _compare (a, b) {
+    return utils.compareVersions(
+      typeof a === 'string' ? a : (a && a[1]),
+      typeof b === 'string' ? b : (b && b[1])
+    )
   }
 }
