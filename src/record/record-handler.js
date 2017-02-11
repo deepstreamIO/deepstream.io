@@ -10,6 +10,9 @@ module.exports = class RecordHandler {
   constructor (options) {
     this._onRead = this._onRead.bind(this)
     this._onUpdate = this._onUpdate.bind(this)
+    this._onAdded = this._onAdded.bind(this)
+    this._onRemoved = this._onRemoved.bind(this)
+
     this._broadcast = this._broadcast.bind(this)
     this._refresh = this._refresh.bind(this)
     this._fetch = this._fetch.bind(this)
@@ -22,7 +25,7 @@ module.exports = class RecordHandler {
     this._cache = new LRU({
       max: 128e6,
       length: ([ name, version, body ]) => name.length + version.length + body.length + 64,
-      dispose: (name) => this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead)
+      dispose: (name) => this._onRemoved(name)
     })
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
@@ -93,6 +96,14 @@ module.exports = class RecordHandler {
     }
   }
 
+  _onAdded (name) {
+    this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, { queue: C.ACTIONS.READ }, this._onRead)
+  }
+
+  _onRemoved (name) {
+    this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead)
+  }
+
   _broadcast ([ name, version, body ], sender) {
     const record = this._cache.get(name)
 
@@ -105,7 +116,7 @@ module.exports = class RecordHandler {
       record[1] = version
       record[2] = body
     } else {
-      this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, { queue: C.ACTIONS.READ }, this._onRead)
+      this._onAdded(name)
       this._cache.set(name, [ name, version, body ])
     }
 
