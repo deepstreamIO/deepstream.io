@@ -10,8 +10,10 @@ const C = require('../constants/constants')
  */
 module.exports = class MessageDistributor {
   constructor(options) {
-    this._callbacks = {}
+    this._callbacks = new Map()
     this._options = options
+    this._message = options.messageConnector
+    this._logger = options.logger
   }
 
   /**
@@ -25,8 +27,8 @@ module.exports = class MessageDistributor {
    * @returns {void}
    */
   distribute(socketWrapper, message) {
-    if (this._callbacks[message.topic] === undefined) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_TOPIC, message.topic)
+    if (!this._callbacks.has(message.topic)) {
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_TOPIC, message.topic)
       socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
       return
     }
@@ -34,7 +36,7 @@ module.exports = class MessageDistributor {
     socketWrapper.emit(message.topic, message)
 
     if (message.isCompleted !== true) {
-      this._callbacks[message.topic](socketWrapper, message)
+      this._callbacks.get(message.topic)(socketWrapper, message)
     }
   }
 
@@ -52,29 +54,11 @@ module.exports = class MessageDistributor {
    * @returns {void}
    */
   registerForTopic(topic, callback) {
-    if (this._callbacks[topic] !== undefined) {
+    if (this._callbacks.has(topic)) {
       throw new Error(`Callback already registered for topic ${topic}`)
     }
 
-    this._callbacks[topic] = callback
-    this._options.messageConnector.subscribe(
-      topic,
-      this._onMessageConnectorMessage.bind(this, callback)
-    )
-  }
-
-  /**
-   * Whenever a message from the messageConnector is received it is passed
-   * to the relevant handler, but with SOURCE_MESSAGE_CONNECTOR instead of
-   * a socketWrapper as sender
-   *
-   * @param   {Function} callback the handler callback
-   * @param   {Object}   message  the already parsed and validated message
-   *
-   * @private
-   * @returns {void}
-   */
-  _onMessageConnectorMessage(callback, message) {
-    callback(C.SOURCE_MESSAGE_CONNECTOR, message)
+    this._callbacks.set(topic, callback)
+    this._message.subscribe(topic, (message) => callback(C.SOURCE_MESSAGE_CONNECTOR, message))
   }
 }
