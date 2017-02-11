@@ -22,7 +22,7 @@ module.exports = class RecordHandler {
     this._cache = new LRU({
       max: 128e6,
       length: ([ name, version, body ]) => name.length + version.length + body.length + 64,
-      dispose: (name) => this.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead)
+      dispose: (name) => this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead)
     })
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
@@ -41,8 +41,6 @@ module.exports = class RecordHandler {
         this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
       }
     })
-
-    this._storage.changes(([ name, version ]) => this._refresh([ name, version ]))
   }
 
   handle (socket, message) {
@@ -108,7 +106,7 @@ module.exports = class RecordHandler {
       record[2] = body
     } else {
       this._cache.set(name, [ name, version, body ])
-      this.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead, { queue: C.ACTIONS.READ })
+      this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead, { queue: C.ACTIONS.READ })
     }
 
     this._subscriptionRegistry.sendToSubscribers(
