@@ -2,7 +2,6 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
-const utils = require('../utils/utils')
 const LRU = require('lru-cache')
 
 module.exports = class RecordHandler {
@@ -178,9 +177,29 @@ module.exports = class RecordHandler {
   }
 
   _compare (a, b) {
-    return utils.compareVersions(
+    return this._compareVersions(
       typeof a === 'string' ? a : (a && a[1]),
       typeof b === 'string' ? b : (b && b[1])
     )
+  }
+
+  _compareVersions (a, b) {
+    if (!a) {
+      return false
+    }
+    if (!b) {
+      return true
+    }
+    const [av, ar] = this._splitRev(a)
+    const [bv, br] = this._splitRev(b)
+    return parseInt(av, 10) > parseInt(bv, 10) || (av === bv && ar >= br)
+  }
+
+  _splitRev (s) {
+    if (!s) {
+      return []
+    }
+    const i = s.indexOf('-')
+    return [ s.slice(0, i), s.slice(i + 1) ]
   }
 }
