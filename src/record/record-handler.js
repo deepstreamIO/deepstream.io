@@ -27,7 +27,7 @@ module.exports = class RecordHandler {
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
 
     this._subscriptionRegistry.setSubscriptionListener((() => {
-      const broadcast = record => this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)
+      const broadcast = record => this._broadcast(record)
       return {
         onSubscriptionMade: (name, socketWrapper, localCount) => {
           if (localCount === 1) {
@@ -104,7 +104,7 @@ module.exports = class RecordHandler {
       sender
     )
 
-    if (sender) {
+    if (!sender) {
       this._message.publish(buildTopic(C.ACTIONS.UPDATE, nextRecord[0]), nextRecord)
     }
   }
@@ -155,7 +155,7 @@ module.exports = class RecordHandler {
           this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ record[0], message ])
         }
       } else {
-        this._broadcast(record, C.SOURCE_STORAGE_CONNECTOR)
+        this._broadcast(record)
       }
     }, sockets)
   }
