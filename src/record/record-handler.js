@@ -98,6 +98,13 @@ module.exports = class RecordHandler {
       this._cache.set(nextRecord[0], nextRecord)
     }
 
+    const pending = this._pending.get(nextRecord[0])
+
+    if (pending && utils.compareVersions(nextRecord[1], pending.version)) {
+      clearTimeout(pending.timeout)
+      this._pending.delete(nextRecord[0])
+    }
+
     this._subscriptionRegistry.sendToSubscribers(
       nextRecord[0],
       messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
@@ -131,9 +138,9 @@ module.exports = class RecordHandler {
       })
     } else {
       pending.sockets.push(socket)
-      if (!utils.compareVersions(record[1], pending.version)) {
-        pending.version = record[1]
-      }
+      pending.version = utils.compareVersions(record[1], pending.version)
+        ? record[1]
+        : pending.version
     }
   }
 
