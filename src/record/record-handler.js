@@ -36,7 +36,7 @@ module.exports = class RecordHandler {
       },
       onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
         if (localCount === 0) {
-          this._unsubscribeMessage(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`)
+          this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, this._onUpdate)
         }
         this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
       }
@@ -94,7 +94,7 @@ module.exports = class RecordHandler {
   }
 
   _broadcast ([ name, version, body ], sender) {
-    const record = this._cache.get(name)
+    let record = this._cache.get(name)
 
     if (this._compare(record, version)) {
       return
@@ -105,7 +105,8 @@ module.exports = class RecordHandler {
       record[1] = version
       record[2] = body
     } else {
-      this._cache.set(name, [ name, version, body ])
+      record = [ name, version, body ]
+      this._cache.set(name, record)
       this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead, { queue: C.ACTIONS.READ })
     }
 
