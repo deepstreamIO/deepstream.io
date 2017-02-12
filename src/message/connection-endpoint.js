@@ -466,7 +466,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onError(error) {
-    this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error)
+    this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error.toString())
   }
 
   /**
