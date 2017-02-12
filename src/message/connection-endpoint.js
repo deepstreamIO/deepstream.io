@@ -178,6 +178,20 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _processConnectionMessage (socketWrapper, connectionMessage) {
+    if (typeof connectionMessage !== 'string') {
+      this._options.logger.log(
+        C.LOG_LEVEL.WARN,
+        C.EVENT.INVALID_MESSAGE,
+        connectionMessage.toString()
+      )
+      socketWrapper.sendError(
+        C.TOPIC.CONNECTION,
+        C.EVENT.INVALID_MESSAGE,
+        'invalid connection message'
+      )
+      return
+    }
+
     const msg = messageParser.parse(connectionMessage)[0]
 
     if (msg === null || msg === undefined) {
@@ -213,6 +227,20 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _authenticateConnection (socketWrapper, disconnectTimeout, authMsg) {
+    if (typeof authMsg !== 'string') {
+      this._options.logger.log(
+        C.LOG_LEVEL.WARN,
+        C.EVENT.INVALID_AUTH_MSG,
+        authMsg.toString()
+      )
+      socketWrapper.sendError(
+        C.TOPIC.AUTH,
+        C.EVENT.INVALID_AUTH_MSG,
+        'invalid authentication message'
+      )
+      return
+    }
+
     const msg = messageParser.parse(authMsg)[0]
     let authData
     let errorMsg
