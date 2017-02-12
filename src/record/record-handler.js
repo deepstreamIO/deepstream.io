@@ -93,7 +93,7 @@ module.exports = class RecordHandler {
     }
   }
 
-  _onRead ([ name, version, inbox = `${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}` ], topic) {
+  _onRead ([ name, version, inbox ], topic) {
     const record = this._cache.peek(name)
     if (this._compare(record, version)) {
       this._message.publish(inbox, record.slice(1, 3))
@@ -173,7 +173,7 @@ module.exports = class RecordHandler {
           this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, version, message ])
         }
       } else {
-        this._broadcast([ name, version, body ], C.SOURCE_STORAGE_CONNECTOR)
+        this._broadcast([ name, version, body ])
       }
     }, sockets)
   }
