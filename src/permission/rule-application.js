@@ -192,7 +192,7 @@ RuleApplication.prototype._getCurrentData = function () {
   const msg = this._params.message
   let data
 
-  if (msg.topic === C.TOPIC.EVENT) {
+  if (msg.topic === C.TOPIC.EVENT && msg.data[1]) {
     data = messageParser.convertTyped(msg.data[1])
   } else if (msg.topic === C.TOPIC.RPC) {
     data = messageParser.convertTyped(msg.data[2])
