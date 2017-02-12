@@ -3,7 +3,7 @@ const { EventEmitter } = require('events')
 
 module.exports = class RecordCache extends EventEmitter {
 
-  constructor ({ size = 128e6 }) {
+  constructor ({ size = 128e6 } = {}) {
     super()
     this._map = new Map()
     this._list = new List()

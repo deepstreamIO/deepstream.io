@@ -84,8 +84,7 @@ module.exports = class RecordHandler {
     }
   }
 
-  _onUpdate ([ version, body ], topic) {
-    const name = topic.slice(topic.lastIndexOf('.') + 1)
+  _onUpdate ([ name, version, body ], topic) {
     if (!body) {
       this._refresh([ name, version ], C.SOURCE_MESSAGE_CONNECTOR)
     } else {
@@ -96,7 +95,7 @@ module.exports = class RecordHandler {
   _onRead ([ name, version, inbox ], topic) {
     const record = this._cache.peek(name)
     if (this._compare(record, version)) {
-      this._message.publish(inbox, record.slice(1, 3))
+      this._message.publish(inbox, record)
     }
   }
 
@@ -118,12 +117,12 @@ module.exports = class RecordHandler {
 
     this._subscriptionRegistry.sendToSubscribers(
       name,
-      messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record.slice(0, 3)),
+      messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record),
       sender
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, record.slice(1, 3))
+      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, record)
     }
   }
 
