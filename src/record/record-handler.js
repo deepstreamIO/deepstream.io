@@ -193,9 +193,6 @@ module.exports = class RecordHandler {
   }
 
   _splitRev (s) {
-    if (!s) {
-      return []
-    }
     const i = s.indexOf('-')
     return [ s.slice(0, i), s.slice(i + 1) ]
   }
