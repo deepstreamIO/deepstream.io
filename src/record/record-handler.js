@@ -3,6 +3,7 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
 const RecordCache = require('./record-cache')
+const xuid = require('xuid')
 
 module.exports = class RecordHandler {
 
@@ -92,11 +93,11 @@ module.exports = class RecordHandler {
     }
   }
 
-  _onRead ([ version ], topic) {
+  _onRead ([ version, inbox = `${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}` ], topic) {
     const name = topic.slice(topic.lastIndexOf('.') + 1)
     const record = this._cache.peek(name)
     if (this._compare(record, version)) {
-      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, record.slice(1, 3))
+      this._message.publish(inbox, record.slice(1, 3))
     }
   }
 
@@ -137,11 +138,18 @@ module.exports = class RecordHandler {
       return
     }
 
-    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, [ name, version ])
+    const inbox = xuid()
+    this._message.subscribe(inbox, this._onUpdate)
+    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, [ version, inbox ])
 
     const pending = this._pending.get(name)
     if (!pending) {
-      const pending = { name, version, sockets: [ socket ] }
+      const pending = {
+        inbox,
+        name,
+        version,
+        sockets: [ socket ]
+      }
       this._pending.set(name, pending)
       setTimeout(this._fetch, 200, pending)
     } else {
@@ -150,8 +158,10 @@ module.exports = class RecordHandler {
     }
   }
 
-  _fetch ({ name, version, sockets }) {
+  _fetch ({ name, version, sockets, inbox }) {
     this._pending.delete(name)
+
+    this._message.unsubscribe(inbox, this._onUpdate)
 
     if (this._compare(this._cache.peek(name), version)) {
       return
