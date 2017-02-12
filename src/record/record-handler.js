@@ -84,7 +84,7 @@ module.exports = class RecordHandler {
     }
   }
 
-  _onUpdate ([ name, version, body ], topic) {
+  _onUpdate ([ name, version, body ]) {
     if (!body) {
       if (this._compare(this._cache.peek(name), version)) {
         return
@@ -101,7 +101,7 @@ module.exports = class RecordHandler {
     }
   }
 
-  _onRead ([ name, version, inbox ], topic) {
+  _onRead ([ name, version, inbox ]) {
     const record = this._cache.peek(name)
     if (this._compare(record, version)) {
       this._message.publish(inbox, record)
