@@ -38,12 +38,12 @@ module.exports = class RecordHandler {
       }
     })
 
-    this._cache.onAdded = (name) => {
+    this._cache.on('added', (name) => {
       this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead, { queue: C.ACTIONS.READ })
-    }
-    this._cache.onRemoved = (name) => {
+    })
+    this._cache.on('removed', (name) => {
       this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead)
-    }
+    })
   }
 
   handle (socket, message) {

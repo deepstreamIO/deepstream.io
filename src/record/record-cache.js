@@ -1,19 +1,13 @@
 const List = require('yallist')
+const { EventEmitter } = require('events')
 
-module.exports = class RecordCache {
+module.exports = class RecordCache extends EventEmitter {
 
   constructor ({ size = 128e6 }) {
+    super()
     this._map = new Map()
     this._list = new List()
     this._space = size
-  }
-
-  onAdded (name) {
-
-  }
-
-  onRemoved (name) {
-
   }
 
   set (name, record) {
@@ -32,7 +26,7 @@ module.exports = class RecordCache {
     } else {
       this._list.unshift(value)
       this._map.set(name, this._list.head)
-      this.onAdded(name)
+      this.emit('added', name)
     }
 
     while (this._space < 0) {
@@ -71,7 +65,7 @@ module.exports = class RecordCache {
       this._space += node.value.size
       this._map.delete(name)
       this._list.removeNode(node)
-      this.onRemoved(name)
+      this.emit('removed', name)
     }
   }
 
