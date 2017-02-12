@@ -261,6 +261,30 @@ describe('errors for invalid configs', () => {
       done()
     })
   })
+
+  it('loads a user config without without blank user file', (done) => {
+    const authenticationHandler = new AuthenticationHandler({
+      path: './test/test-configs/blank-config.json',
+      hash: false
+    })
+
+    authenticationHandler.on('error', (error) => {
+      expect(error).toBe('Error loading file ./test/test-configs/blank-config.json: SyntaxError: Unexpected end of JSON input')
+      done()
+    })
+  })
+
+  it('loads a user config without without no users', (done) => {
+    const authenticationHandler = new AuthenticationHandler({
+      path: './test/test-configs/empty-map-config.json',
+      hash: false
+    })
+
+    authenticationHandler.on('error', (error) => {
+      expect(error).toBe('no users present in user file')
+      done()
+    })
+  })
 })
 
 describe('errors for invalid auth-data', () => {

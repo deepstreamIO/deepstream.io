@@ -71,7 +71,14 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
     }
 
     if (this._settings.hash) {
-      this._isValid(authData.password, userData.password, authData.username, userData.serverData, userData.clientData, callback)
+      this._isValid(
+        authData.password,
+        userData.password,
+        authData.username,
+        userData.serverData,
+        userData.clientData,
+        callback
+      )
     } else if (authData.password === userData.password) {
       callback(true, {
         username: authData.username,
@@ -122,9 +129,15 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   */
   _onFileLoad(error, data) {
     if (error) {
-      this.emit('error', error.toString())
-    } else {
-      this._data = data
+      this.emit('error', `Error loading file ${this._settings.path}: ${error.toString()}`)
+      return
+    }
+
+    this._data = data
+
+    if (Object.keys(data).length === 0) {
+      this.emit('error', 'no users present in user file')
+      return
     }
 
     for (const username in this._data) {
@@ -184,13 +197,13 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
     const salt = passwordHashWithSalt.substr(this._base64KeyLength)
 
     crypto.pbkdf2(
-            password,
-            salt,
-            this._settings.iterations,
-            this._settings.keyLength,
-            this._settings.hash,
-            this._compareHashResult.bind(this, expectedHash, username, serverData, clientData, callback)
-        )
+      password,
+      salt,
+      this._settings.iterations,
+      this._settings.keyLength,
+      this._settings.hash,
+      this._compareHashResult.bind(this, expectedHash, username, serverData, clientData, callback)
+    )
   }
 
   /**
@@ -208,7 +221,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   */
   _compareHashResult(expectedHash, username, serverData, clientData, callback, error, actualHashBuffer) {
     if (expectedHash === actualHashBuffer.toString(STRING_CHARSET)) {
-            // todo log error
+      // todo log error
       callback(true, {
         username,
         serverData: serverData || null,
