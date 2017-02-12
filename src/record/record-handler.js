@@ -85,7 +85,11 @@ module.exports = class RecordHandler {
 
   _onUpdate ([ version, body ], topic) {
     const name = topic.slice(topic.lastIndexOf('.') + 1)
-    this._broadcast([ name, version, body ], C.SOURCE_MESSAGE_CONNECTOR)
+    if (!body) {
+      this._refresh([ name, version ], C.SOURCE_MESSAGE_CONNECTOR)
+    } else {
+      this._broadcast([ name, version, body ], C.SOURCE_MESSAGE_CONNECTOR)
+    }
   }
 
   _onRead ([ version ], topic) {
@@ -124,12 +128,12 @@ module.exports = class RecordHandler {
   }
 
   _refresh ([ name, version ], socket) {
-    if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
-      this._cache.del(name)
+    if (this._compare(this._cache.peek(name), version)) {
       return
     }
 
-    if (this._compare(this._cache.peek(name), version)) {
+    if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
+      this._cache.del(name)
       return
     }
 
