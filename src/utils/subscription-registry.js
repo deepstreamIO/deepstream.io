@@ -225,7 +225,7 @@ class SubscriptionRegistry {
     // senders should not receive what they sent themselves, so a gap is inserted
     // for every send from this sender
     let pos
-    if (sender) {
+    if (sender && sender.uuid !== undefined) {
       pos = delayedBroadcasts.uniqueSendersMap[sender.uuid]
       if (pos !== undefined) {
         delayedBroadcasts.uniqueSendersVector[pos].gaps.push({ start, stop })
