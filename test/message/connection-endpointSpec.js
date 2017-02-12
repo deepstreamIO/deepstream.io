@@ -138,8 +138,8 @@ describe('connection endpoint', () => {
   describe('handles errors from the servers', () => {
     it('handles errors from the websocket server', () => {
       lastLoggedMessage = null
-      websocketMock.emit('error', 'bla')
-      expect(lastLoggedMessage).toBe('bla')
+      websocketMock.emit('error', new Error('bla'))
+      expect(lastLoggedMessage).toBe('Error: bla')
     })
   })
 
