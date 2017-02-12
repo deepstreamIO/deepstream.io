@@ -47,6 +47,20 @@ module.exports = class MessageProcessor {
    * @returns {void}
    */
   process(socketWrapper, message) {
+    if (typeof message !== 'string') {
+      this._options.logger.log(
+        C.LOG_LEVEL.WARN,
+        C.EVENT.INVALID_MESSAGE,
+        'non text based message recieved'
+      )
+      socketWrapper.sendError(
+        C.TOPIC.ERROR,
+        C.EVENT.MESSAGE_PARSE_ERROR,
+        'non text based message recieved'
+      )
+      return
+    }
+
     const parsedMessages = messageParser.parse(message)
     let parsedMessage
 

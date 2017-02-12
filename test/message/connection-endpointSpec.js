@@ -69,6 +69,12 @@ describe('connection endpoint', () => {
       expect(socketMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
       expect(socketMock.isDisconnected).toBe(false)
     })
+
+    it('handles non text based connection messages', () => {
+      socketMock.emit('message', [])
+      expect(socketMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
+      expect(socketMock.isDisconnected).toBe(false)
+    })
   })
 
   describe('the connection endpoint handles invalid auth messages', () => {
@@ -84,6 +90,12 @@ describe('connection endpoint', () => {
 
     it('handles invalid auth messages', () => {
       socketMock.emit('message', 'gibberish')
+      expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
+      expect(socketMock.isDisconnected).toBe(true)
+    })
+
+    it('handles non text based auth messages', () => {
+      socketMock.emit('message', [])
       expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
       expect(socketMock.isDisconnected).toBe(true)
     })
