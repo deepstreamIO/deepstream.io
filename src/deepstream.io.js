@@ -3,7 +3,6 @@ const MessageProcessor = require('./message/message-processor')
 const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')
 const messageParser = require('./message/message-parser')
-const readMessage = require('./utils/read-message')
 const util = require('util')
 const utils = require('./utils/utils')
 const defaultOptions = require('./default-options')
@@ -65,14 +64,6 @@ process.title = 'deepstream server'
  *
 */
 Deepstream.constants = C
-
-/**
- * Utility method to return a helper object to simplify permissions assertions
- *
- * @param  {object} message description
- * @return {object}         description
- */
-Deepstream.readMessage = readMessage
 
 /**
  * Set a deepstream option. For a list of all available options

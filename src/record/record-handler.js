@@ -93,8 +93,7 @@ module.exports = class RecordHandler {
     }
   }
 
-  _onRead ([ version, inbox = `${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}` ], topic) {
-    const name = topic.slice(topic.lastIndexOf('.') + 1)
+  _onRead ([ name, version, inbox = `${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}` ], topic) {
     const record = this._cache.peek(name)
     if (this._compare(record, version)) {
       this._message.publish(inbox, record.slice(1, 3))
@@ -140,7 +139,7 @@ module.exports = class RecordHandler {
 
     const inbox = xuid()
     this._message.subscribe(inbox, this._onUpdate)
-    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, [ version, inbox ])
+    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, [ name, version, inbox ])
 
     const pending = this._pending.get(name)
     if (!pending) {
