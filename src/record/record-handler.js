@@ -9,7 +9,7 @@ module.exports = class RecordHandler {
 
   constructor (options) {
     this._broadcast = this._broadcast.bind(this)
-    this._refresh = this._refresh.bind(this)
+    this._read = this._read.bind(this)
     this._fetch = this._fetch.bind(this)
 
     this._onUpdate = this._onUpdate.bind(this)
@@ -59,7 +59,7 @@ module.exports = class RecordHandler {
       if (this._cache.has(name)) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, this._cache.get(name))
       } else {
-        this._refresh([ name ], socket)
+        this._read([ name, version ], socket)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       this._broadcast([ name, version, body ], socket)
@@ -86,7 +86,16 @@ module.exports = class RecordHandler {
 
   _onUpdate ([ name, version, body ], topic) {
     if (!body) {
-      this._refresh([ name, version ], C.SOURCE_MESSAGE_CONNECTOR)
+      if (this._compare(this._cache.peek(name), version)) {
+        return
+      }
+
+      if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
+        this._cache.del(name)
+        return
+      }
+
+      this._read([ name, version ], C.SOURCE_MESSAGE_CONNECTOR)
     } else {
       this._broadcast([ name, version, body ], C.SOURCE_MESSAGE_CONNECTOR)
     }
@@ -126,16 +135,7 @@ module.exports = class RecordHandler {
     }
   }
 
-  _refresh ([ name, version ], socket) {
-    if (this._compare(this._cache.peek(name), version)) {
-      return
-    }
-
-    if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
-      this._cache.del(name)
-      return
-    }
-
+  _read ([ name, version ], socket) {
     const inbox = xuid()
     this._message.subscribe(inbox, this._onUpdate)
     this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, [ name, version, inbox ])
