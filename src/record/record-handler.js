@@ -66,7 +66,7 @@ module.exports = class RecordHandler {
       this._storage.set([ name, version, body, parent ], (error, [ name ]) => {
         if (error) {
           const message = 'error while writing ' + name + ' to storage.'
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, message ])
+          this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
         }
       })
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
