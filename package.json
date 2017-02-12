@@ -8,8 +8,8 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
-    "lru-cache": "^4.0.2",
-    "uws": "^0.12.0"
+    "uws": "^0.12.0",
+    "yallist": "^2.0.0"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",

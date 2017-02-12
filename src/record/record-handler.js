@@ -2,7 +2,7 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
-const LRU = require('lru-cache')
+const RecordCache = require('./record-cache')
 
 module.exports = class RecordHandler {
 
@@ -19,11 +19,7 @@ module.exports = class RecordHandler {
     this._storage = options.storageConnector
 
     this._pending = new Map()
-    this._cache = new LRU({
-      max: 128e6,
-      length: ([ name, version, body ]) => name.length + version.length + body.length + 64,
-      dispose: (name) => this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead)
-    })
+    this._cache = new RecordCache()
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
 
@@ -41,6 +37,13 @@ module.exports = class RecordHandler {
         this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
       }
     })
+
+    this._cache.onAdded = (name) => {
+      this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead, { queue: C.ACTIONS.READ })
+    }
+    this._cache.onRemoved = (name) => {
+      this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead)
+    }
   }
 
   handle (socket, message) {
@@ -87,7 +90,7 @@ module.exports = class RecordHandler {
 
   _onRead ([ version ], topic) {
     const name = topic.slice(topic.lastIndexOf('.') + 1)
-    const record = this._cache.get(name)
+    const record = this._cache.peek(name)
     if (this._compare(record, version)) {
       this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, record.slice(1, 3))
     }
@@ -107,7 +110,6 @@ module.exports = class RecordHandler {
     } else {
       record = [ name, version, body ]
       this._cache.set(name, record)
-      this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, this._onRead, { queue: C.ACTIONS.READ })
     }
 
     this._subscriptionRegistry.sendToSubscribers(
@@ -127,7 +129,7 @@ module.exports = class RecordHandler {
       return
     }
 
-    if (this._compare(this._cache.get(name), version)) {
+    if (this._compare(this._cache.peek(name), version)) {
       return
     }
 
@@ -147,7 +149,7 @@ module.exports = class RecordHandler {
   _fetch ({ name, version, sockets }) {
     this._pending.delete(name)
 
-    if (this._compare(this._cache.get(name), version)) {
+    if (this._compare(this._cache.peek(name), version)) {
       return
     }
 
