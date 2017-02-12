@@ -1,7 +1,4 @@
 #!/usr/bin/env node
-
-'use strict'
-
 const path = require('path')
 const fs = require('fs')
 const child_process = require('child_process')
@@ -14,7 +11,7 @@ maintained libraries.
 
 The externally maintained libraries used by deepstream.io are:
 `
-const emptyState  = "see MISSING LICENSES at the bottom of this file";
+const emptyState  = "see MISSING LICENSES at the bottom of this file"
 
 
 if (path.basename(process.cwd()) === 'scripts') {
@@ -60,36 +57,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-var projPath = path.resolve(process.argv[2] || '.');
-console.error('Project Path', projPath);
-var topPkg = require(path.join(projPath, 'package.json'));
+var projPath = path.resolve(process.argv[2] || '.')
+console.error('Project Path', projPath)
+var topPkg = require(path.join(projPath, 'package.json'))
 
-var modules = [];
-var count = 0;
+var modules = []
+var count = 0
 
-doLevel(projPath);
+doLevel(projPath)
 
 
 function doLevel(nodePath) {
-  var pkg = require(path.join(nodePath, 'package.json'));
+  var pkg = require(path.join(nodePath, 'package.json'))
   if (topPkg.name !== pkg.name && moduleNames.indexOf(pkg.name) === -1) {
     return
   }
-  var nodeModulesPath = path.join(nodePath, 'node_modules');
-  count ++;
+  var nodeModulesPath = path.join(nodePath, 'node_modules')
+  count ++
 
-  //console.error('package.json license', pkg.license);
+  //console.error('package.json license', pkg.license)
 
   fs.exists(nodeModulesPath, function (dirExists) {
     if (dirExists) {
       fs.readdir(nodeModulesPath, function (err, files) {
-        if (err) throw err;
-        var directories = [];
-        files = files.map(function (f) { return path.join(nodeModulesPath, f); })
-        async.filter(files, isModuleDirectory, function(directories){
-          // console.error('module directories', directories);
-          directories.forEach(doLevel);
-        });
+        if (err) throw err
+        files = files.map(function (f) { return path.join(nodeModulesPath, f) })
+        async.filter(files, isModuleDirectory, (err, directories) => {
+          directories.forEach(doLevel)
+        })
       })
     }
   })
@@ -115,17 +110,17 @@ function doLevel(nodePath) {
         pkgLicense: licenceProperty,
         licenceUrl: licenceUrl,
         license: license
-      });
+      })
     }
-    count--;
+    count--
 
     if (count == 0) {
-      var noLicenseFile = modules.filter(function (m) { return m.license === emptyState });
-      var andNoPkgJsonLicense = noLicenseFile.filter(function (m) { return !m.pkgLicense });
+      var noLicenseFile = modules.filter(function (m) { return m.license === emptyState })
+      var andNoPkgJsonLicense = noLicenseFile.filter(function (m) { return !m.pkgLicense })
 
       // Status report
       // Write to StdErr
-      console.error('LICENSE FILE REPORT FOR ', topPkg.name);
+      console.error('LICENSE FILE REPORT FOR ', topPkg.name)
       console.error(modules.length + ' nested dependencies')
       console.error(noLicenseFile.length +  ' without identifiable license text')
       console.error(andNoPkgJsonLicense.length +  ' without even a package.json license declaration', '\n\n')
@@ -135,15 +130,15 @@ function doLevel(nodePath) {
       console.log('')
       console.log(HEADER)
       modules.forEach(function(m) {
-        console.log((modules.indexOf(m)+1) + ' ----------------------------------------------------------------------------');
-        console.log(m.name + '@' + m.version);
-        console.log(m.url);
-        console.log(m.localPath);
-        if (m.pkgLicense) console.log('From package.json license property:', JSON.stringify(m.pkgLicense));
-        if (m.licenceUrl) console.log('From package.json url property:', JSON.stringify(m.licenceUrl));
-        console.log('');
-        console.log(m.license);
-        console.log('');
+        console.log((modules.indexOf(m)+1) + ' ----------------------------------------------------------------------------')
+        console.log(m.name + '@' + m.version)
+        console.log(m.url)
+        console.log(m.localPath)
+        if (m.pkgLicense) console.log('From package.json license property:', JSON.stringify(m.pkgLicense))
+        if (m.licenceUrl) console.log('From package.json url property:', JSON.stringify(m.licenceUrl))
+        console.log('')
+        console.log(m.license)
+        console.log('')
       })
     }
   })
@@ -162,60 +157,62 @@ function licenseText (nodePath, cb) {
     path.join(nodePath, 'Readme.md'),
     path.join(nodePath, 'README.md'),
     path.join(nodePath, 'README.markdown')
-  ];
+  ]
 
   async.reduceRight(possibleLicensePaths, emptyState, function (state, licensePath, reduceCb) {
-    var isAReadme = (licensePath.toLowerCase().indexOf('/readme') > 0);
+    var isAReadme = (licensePath.toLowerCase().indexOf('/readme') > 0)
 
     // if we already found a licnese, don't bother looking at READMEs
-    if (state !== emptyState && isAReadme) return reduceCb (null, state);
+    if (state !== emptyState && isAReadme) return reduceCb (null, state)
 
     fs.exists(licensePath, function (exists) {
-      if (!exists) return reduceCb(null, state);
+      if (!exists) return reduceCb(null, state)
       fs.readFile(licensePath, { encoding: 'utf8' }, function (err, text) {
-        if (err) return logError(err, reduceCb)(err, state);
+        if (err) return logError(err, reduceCb)(err, state)
 
         if (isAReadme) {
-          var match = text.match(/\n[# ]*license[ \t]*\n/i);
+          var match = text.match(/\n[# ]*license[ \t]*\n/i)
           if (match) {
             //console.log(match.input.substring(match.index))
-            return reduceCb (null, 'FROM README:\n' + match.input.substring(match.index));
+            return reduceCb (null, 'FROM README:\n' + match.input.substring(match.index))
           }
           else {
-            return reduceCb(null, state);
+            return reduceCb(null, state)
           }
         }
         else {
-          return reduceCb (null, text);
+          return reduceCb (null, text)
         }
 
 
-        return reduceCb (null, text);
+        return reduceCb (null, text)
       })
 
-    });
+    })
   }, function (err, license) {
-    if (err) return cb('ERROR FINDING LICENSE FILE ' + err );
-    cb (license);
-  });
+    if (err) return cb('ERROR FINDING LICENSE FILE ' + err )
+    cb (license)
+  })
 }
 
 function isModuleDirectory (dirPath, cb) {
-  var pkgPath = path.join(dirPath, 'package.json');
+  var pkgPath = path.join(dirPath, 'package.json')
   fs.stat(dirPath, function (err, stat) {
-    if (err) return logError(err, cb)(false);
+    if (err) return logError(err, cb)(false)
 
-    var isdir = stat.isDirectory();
+    var isdir = stat.isDirectory()
     if (isdir) {
-      fs.exists(pkgPath, cb);
+      fs.access(pkgPath, (err) => {
+        cb(null, !err)
+      })
     }
     else {
-      cb(false);
+      cb(false)
     }
-  });
+  })
 }
 
 function logError(err, cb) {
-  console.error('ERROR', err);
+  console.error('ERROR', err)
   return cb
 }
