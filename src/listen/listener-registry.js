@@ -538,7 +538,11 @@ module.exports = class ListenerRegistry {
     const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
 
     if (subscribers && subscribers.indexOf(provider.socketWrapper) !== -1) {
-      this._clientRegistry.unsubscribe(subscriptionName, provider.socketWrapper, true)
+      this._clientRegistry.unsubscribe(
+        subscriptionName,
+        provider.socketWrapper,
+        this._topic !== C.TOPIC.RECORD
+      )
       if (subscribers.length === 1) {
         this._stopLocalDiscoveryStage(subscriptionName)
         return
