@@ -8,8 +8,7 @@ const options = {
   logger: { log: jasmine.createSpy('log') },
   permission: {
     options: {
-      cacheEvacuationInterval: 60000,
-      maxRuleIterations: 3,
+      cacheEvacuationInterval: 60000
     }
   }
 }
