@@ -149,7 +149,7 @@ module.exports = class RecordHandler {
         sockets: [ socket ]
       }
       this._pending.set(name, pending)
-      setTimeout(this._fetch, 200, pending)
+      setTimeout(this._fetch, 100, pending)
     } else {
       pending.sockets.push(socket)
       pending.version = this._compare(version, pending.version) ? version : pending.version
