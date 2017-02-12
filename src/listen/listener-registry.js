@@ -205,11 +205,9 @@ module.exports = class ListenerRegistry {
       this._sendHasProviderUpdateToSingleSubscriber(true, socketWrapper, subscriptionName)
       return
     }
-
     if (localCount > 1) {
       return
     }
-
     this._startDiscoveryStage(subscriptionName)
   }
 
@@ -537,6 +535,20 @@ module.exports = class ListenerRegistry {
     }
 
     const provider = listenInProgress.shift()
+    const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
+
+    if (subscribers && subscribers.indexOf(provider.socketWrapper) !== -1) {
+      this._clientRegistry.unsubscribe(
+        subscriptionName,
+        provider.socketWrapper,
+        this._topic !== C.TOPIC.RECORD
+      )
+      if (subscribers.length === 1) {
+        this._stopLocalDiscoveryStage(subscriptionName)
+        return
+      }
+    }
+
     this._listenerTimeoutRegistry.addTimeout(
       subscriptionName,
       provider,
