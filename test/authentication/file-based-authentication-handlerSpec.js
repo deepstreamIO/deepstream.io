@@ -269,7 +269,7 @@ describe('errors for invalid configs', () => {
     })
 
     authenticationHandler.on('error', (error) => {
-      expect(error).toBe('Error loading file ./test/test-configs/blank-config.json: SyntaxError: Unexpected end of JSON input')
+      expect(error).toContain('Error loading file ./test/test-configs/blank-config.json')
       done()
     })
   })
