@@ -30,9 +30,10 @@ module.exports = class RecordCache extends EventEmitter {
     }
 
     while (this._space < 0) {
-      const { size, name } = this._list.pop()
-      this._space += size
-      this._map.delete(name)
+      const value = this._list.pop()
+      this._space += value.size
+      this._map.delete(value.name)
+      this.emit('removed', value.name)
     }
   }
 
@@ -63,8 +64,8 @@ module.exports = class RecordCache extends EventEmitter {
     const node = this._map.get(name)
     if (node) {
       this._space += node.value.size
-      this._map.delete(name)
       this._list.removeNode(node)
+      this._map.delete(name)
       this.emit('removed', name)
     }
   }
