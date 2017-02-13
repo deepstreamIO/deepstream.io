@@ -367,6 +367,8 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
       && this._storageResponses === 0
       && this._steps.length === 0) {
     this.destroy()
+  } else {
+    this._next()
   }
 }
 
@@ -389,6 +391,8 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
       && this._storageResponses === 0
       && this._steps.length === 0) {
     this.destroy()
+  } else {
+    this._next()
   }
 }
 
