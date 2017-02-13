@@ -4,6 +4,7 @@ const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
 const RecordCache = require('./record-cache')
 const xuid = require('xuid')
+const base32 = require('base32')
 
 module.exports = class RecordHandler {
 
@@ -27,13 +28,13 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionMade: (name, socketWrapper, localCount) => {
         if (localCount === 1) {
-          this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, this._onUpdate)
+          this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${base32.encode(name)}`, this._onUpdate)
         }
         this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount)
       },
       onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
         if (localCount === 0) {
-          this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, this._onUpdate)
+          this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${base32.encode(name)}`, this._onUpdate)
         }
         this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
       }
@@ -136,14 +137,14 @@ module.exports = class RecordHandler {
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${name}`, record)
+      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${base32.encode(name)}`, record)
     }
   }
 
   _read ([ name, version ], socket) {
-    const inbox = `${C.TOPIC.PRIVATE}${xuid()}`
+    const inbox = `${C.TOPIC.PRIVATE}${base32.encode(xuid())}`
     this._message.subscribe(inbox, this._onUpdate)
-    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${name}`, [ name, version, inbox ])
+    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${base32.encode(name)}`, [ name, version, inbox ])
 
     const pending = this._pending.get(name)
     if (!pending) {
