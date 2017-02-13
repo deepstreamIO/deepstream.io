@@ -8,7 +8,8 @@ const options = {
   logger: { log: jasmine.createSpy('log') },
   permission: {
     options: {
-      cacheEvacuationInterval: 60000
+      cacheEvacuationInterval: 60000,
+      maxRuleIterations: 3
     }
   }
 }
@@ -126,6 +127,19 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.ACTIONS.EVENT,
       data: ['some-event', 'O{"price":5}']
     })).toBe(true)
+  })
+
+  it('can reference data for events without a payload and fail normally', () => {
+    const permissions = getBasePermissions()
+    permissions.event['some-event'] = {
+      publish: 'data.price < 10'
+    }
+
+    expect(testPermission(permissions, {
+      topic: C.TOPIC.EVENT,
+      action: C.ACTIONS.EVENT,
+      data: ['some-event']
+    })).toBe(false)
   })
 
   it('checks incoming data against a value for rpcs', () => {

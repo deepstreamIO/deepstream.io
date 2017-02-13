@@ -39,8 +39,13 @@ const ConfigPermissionHandler = function (options, config) {
   this._recordHandler = null
   this.isReady = false
   this.type = `valve permissions loaded from ${this._permissionOptions.path}`
+  this._optionsValid = true
 
-  if (config) {
+  const maxRuleIterations = options.permission.options.maxRuleIterations
+  if (maxRuleIterations !== undefined && maxRuleIterations < 1) {
+    this._optionsValid = false
+    process.nextTick(() => this.emit('error', 'Maximum rule iteration has to be at least one '))
+  } else if (config) {
     this.useConfig(config)
   }
 }
@@ -68,7 +73,7 @@ ConfigPermissionHandler.prototype.setRecordHandler = function (recordHandler) {
  * @returns {void}
  */
 ConfigPermissionHandler.prototype.init = function () {
-  if (this._config === null) {
+  if (this._config === null && this._optionsValid) {
     this.loadConfig(this._permissionOptions.path)
   }
 }

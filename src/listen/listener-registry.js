@@ -537,6 +537,13 @@ module.exports = class ListenerRegistry {
     }
 
     const provider = listenInProgress.shift()
+    const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
+
+    if (subscribers && subscribers.indexOf(provider.socketWrapper) !== -1) {
+      this._stopLocalDiscoveryStage(subscriptionName)
+      return
+    }
+
     this._listenerTimeoutRegistry.addTimeout(
       subscriptionName,
       provider,

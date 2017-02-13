@@ -363,7 +363,7 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
   } else if (this.isDestroyed === false) {
     this._recordHandler._$broadcastUpdate(this._name, this._currentStep.message, this._currentStep.sender)
     this._next()
-  } else if (this._cacheResponses === 0 
+  } else if (this._cacheResponses === 0
       && this._storageResponses === 0
       && this._steps.length === 0) {
     this.destroy()
@@ -383,9 +383,7 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
   this._writeError = this._writeError || error
   if (error) {
     this._onFatalError(error)
-  } else if (this.isDestroyed) {
-    this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error)
-  } else if (this._cacheResponses === 0 
+  } else if (this._cacheResponses === 0
       && this._storageResponses === 0
       && this._steps.length === 0) {
     this.destroy()
@@ -395,7 +393,7 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
 /**
  * Sends all write acknowledgement messages at the end of a transition
  *
- * @param   {String} error any error message that occurred while storing the 
+ * @param   {String} error any error message that occurred while storing the
  *                         record data
  *
  * @private
