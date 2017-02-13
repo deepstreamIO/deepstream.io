@@ -5,6 +5,7 @@ const messageBuilder = require('../message/message-builder')
 const RecordCache = require('./record-cache')
 const xuid = require('xuid')
 const base32 = require('base32')
+const utf8 = require('utf8')
 
 module.exports = class RecordHandler {
 
@@ -28,13 +29,13 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionMade: (name, socketWrapper, localCount) => {
         if (localCount === 1) {
-          this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${base32.encode(name)}`, this._onUpdate)
+          this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${this._encode(name)}`, this._onUpdate)
         }
         this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount)
       },
       onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
         if (localCount === 0) {
-          this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${base32.encode(name)}`, this._onUpdate)
+          this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${this._encode(name)}`, this._onUpdate)
         }
         this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
       }
@@ -137,14 +138,14 @@ module.exports = class RecordHandler {
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${base32.encode(name)}`, record)
+      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${this._encode(name)}`, record)
     }
   }
 
   _read ([ name, version ], socket) {
-    const inbox = `${C.TOPIC.PRIVATE}${base32.encode(xuid())}`
+    const inbox = `${C.TOPIC.PRIVATE}${this._encode(xuid())}`
     this._message.subscribe(inbox, this._onUpdate)
-    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${base32.encode(name)}`, [ name, version, inbox ])
+    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${this._encode(name)}`, [ name, version, inbox ])
 
     const pending = this._pending.get(name)
     if (!pending) {
@@ -213,5 +214,9 @@ module.exports = class RecordHandler {
   _splitRev (s) {
     const i = s.indexOf('-')
     return [ s.slice(0, i), s.slice(i + 1) ]
+  }
+
+  _encode (name) {
+    return base32.encode(utf8.encode(name))
   }
 }
