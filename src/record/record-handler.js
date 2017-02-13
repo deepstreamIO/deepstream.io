@@ -48,28 +48,32 @@ module.exports = class RecordHandler {
   }
 
   handle (socket, message) {
-    const [ name ] = message && message.data || []
-    if (!name) {
+    if (!message && message.data[0]) {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
     } else if (message.action === C.ACTIONS.SUBSCRIBE) {
+      const [ name ] = message.data
       this._subscriptionRegistry.subscribe(name, socket)
     } else if (message.action === C.ACTIONS.READ) {
+      const [ name, version ] = message.data
+
       this._subscriptionRegistry.subscribe(name, socket)
 
       if (this._cache.has(name)) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, this._cache.get(name))
       } else {
-        this._read(message.data.slice(0, 2), socket)
+        this._read([ name, version ], socket)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
-      this._broadcast(message.data.slice(0, 3), socket)
-      this._storage.set(message.data.slice(0, 4), (error, [ name ]) => {
+      const [ name, version, body, parent ] = message.data
+      this._broadcast([ name, version, body ], socket)
+      this._storage.set([ name, version, body, parent ], (error, [ name ]) => {
         if (error) {
           const message = 'error while writing ' + name + ' to storage.'
           this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
         }
       })
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+      const [ name ] = message.data
       this._subscriptionRegistry.unsubscribe(name, socket)
     } else if (
       message.action === C.ACTIONS.LISTEN ||
@@ -79,6 +83,7 @@ module.exports = class RecordHandler {
     ) {
       this._listenerRegistry.handle(socket, message)
     } else {
+      const [ name ] = message.data
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ name, message.action ])
       this._sendError(socket, C.EVENT.UNKNOWN_ACTION, [ name, 'unknown action ' + message.action ])
     }
