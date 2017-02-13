@@ -98,7 +98,6 @@ DependencyInitialiser.prototype._onError = function (error) {
   if (this.isReady !== true) {
     this._logError(`Error while initialising ${this._name}: ${error.toString()}`)
     error.code = C.EVENT.PLUGIN_INITIALIZATION_ERROR
-    throw error
   }
 }
 
