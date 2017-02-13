@@ -48,7 +48,7 @@ module.exports = class RecordHandler {
   }
 
   handle (socket, message) {
-    const [ name, version, body, parent ] = message && message.data || []
+    const [ name ] = message && message.data || []
     if (!name) {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
     } else if (message.action === C.ACTIONS.SUBSCRIBE) {
@@ -59,11 +59,11 @@ module.exports = class RecordHandler {
       if (this._cache.has(name)) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, this._cache.get(name))
       } else {
-        this._read([ name, version ], socket)
+        this._read(message.data.slice(0, 2), socket)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
-      this._broadcast([ name, version, body ], socket)
-      this._storage.set([ name, version, body, parent ], (error, [ name ]) => {
+      this._broadcast(message.data.slice(0, 3), socket)
+      this._storage.set(message.data.slice(0, 4), (error, [ name ]) => {
         if (error) {
           const message = 'error while writing ' + name + ' to storage.'
           this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
