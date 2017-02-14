@@ -92,20 +92,21 @@ module.exports = class RecordHandler {
   }
 
   _onUpdate ([ name, version, body ]) {
-    if (!body) {
-      if (this._compare(this._cache.peek(name), version)) {
-        return
-      }
-
-      if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
-        this._cache.del(name)
-        return
-      }
-
-      this._read([ name, version ], C.SOURCE_MESSAGE_CONNECTOR)
-    } else {
+    if (body) {
       this._broadcast([ name, version, body ], C.SOURCE_MESSAGE_CONNECTOR)
+      return
     }
+
+    if (this._compare(this._cache.peek(name), version)) {
+      return
+    }
+
+    if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
+      this._cache.del(name)
+      return
+    }
+
+    this._read([ name, version ], C.SOURCE_MESSAGE_CONNECTOR)
   }
 
   _onRead ([ name, version, inbox ]) {
