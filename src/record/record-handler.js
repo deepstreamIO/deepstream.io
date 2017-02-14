@@ -59,8 +59,9 @@ module.exports = class RecordHandler {
 
       this._subscriptionRegistry.subscribe(name, socket)
 
-      if (this._cache.has(name)) {
-        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, this._cache.get(name))
+      const record = this._cache.get(name)
+      if (record) {
+        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
       } else {
         this._read([ name, version ], socket)
       }
