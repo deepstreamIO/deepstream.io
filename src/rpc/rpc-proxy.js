@@ -16,7 +16,7 @@ module.exports = class RpcProxy {
   constructor (options, receiverPrivateTopic) {
     this._options = options
     this._receiverPrivateTopic = receiverPrivateTopic
-    this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
+    this._privateTopic = `${C.TOPIC.PRIVATE}.${this._options.serverName}`
   }
 
   /**

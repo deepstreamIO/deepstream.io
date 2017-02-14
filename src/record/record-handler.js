@@ -144,7 +144,7 @@ module.exports = class RecordHandler {
   }
 
   _read ([ name, version ], socket) {
-    const inbox = `${C.TOPIC.PRIVATE}${Base64.encode(xuid())}`
+    const inbox = `${C.TOPIC.PRIVATE}.${Base64.encode(xuid())}`
     this._message.subscribe(inbox, this._onUpdate)
     this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${Base64.encode(name)}`, [ name, version, inbox ])
 
@@ -157,7 +157,7 @@ module.exports = class RecordHandler {
         sockets: [ socket ]
       }
       this._pending.set(name, pending)
-      setTimeout(this._fetch, 100, pending)
+      setTimeout(this._fetch, 200, pending)
     } else {
       pending.sockets.push(socket)
       pending.version = this._compare(version, pending.version) ? version : pending.version

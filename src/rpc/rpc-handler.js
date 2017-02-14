@@ -14,7 +14,7 @@ module.exports = class RpcHandler {
     this._options = options
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
-    this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
+    this._privateTopic = `${C.TOPIC.PRIVATE}.${this._options.serverName}`
     this._options.messageConnector.subscribe(this._privateTopic, this._onPrivateMessage.bind(this))
 
     this._supportedSubActions = [
@@ -340,6 +340,6 @@ module.exports = class RpcHandler {
   * @return {String}
   */
   _getNextRandomServer (remoteServers) {
-    return C.TOPIC.PRIVATE + utils.spliceRandomElement(remoteServers)
+    return `${C.TOPIC.PRIVATE}.${utils.spliceRandomElement(remoteServers)}`
   }
 }
