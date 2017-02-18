@@ -120,11 +120,15 @@ describe('js-yaml-loader', () => {
         stub.configLoader.loadConfig()
       }).toThrow()
 
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(12)
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(16)
 
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.js'))
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.json'))
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.yml'))
+
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/usr/local/etc/deepstream/config.js')
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/usr/local/etc/deepstream/config.json')
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/usr/local/etc/deepstream/config.yml') 
 
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/config.js')
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/config.json')

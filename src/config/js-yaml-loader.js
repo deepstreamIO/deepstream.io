@@ -10,8 +10,13 @@ const utils = require('../utils/utils')
 const configInitialiser = require('./config-initialiser')
 const fileUtils = require('./file-utils')
 
-const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js']; path.join('.', 'conf', 'config')
-const DEFAULT_CONFIG_DIRS = [path.join('.', 'conf', 'config'), '/etc/deepstream/config', '/usr/local/etc/deepstream/config']
+const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js'];
+const DEFAULT_CONFIG_DIRS = [
+  path.join('.', 'conf', 'config'), 
+  path.join(__dirname, '../..', 'conf', 'config'), 
+  '/etc/deepstream/config', 
+  '/usr/local/etc/deepstream/config'
+  ]
 
 /**
  * Reads and parse a general configuration file content.
@@ -189,16 +194,18 @@ function getDefaultConfigPath() {
   let filePath
   let i
   let k
-
-  for (k = 0; k < DEFAULT_CONFIG_DIRS.length; k++) {
+  const configDirs = process.env.configDirs || DEFAULT_CONFIG_DIRS
+  
+  for (k = 0; k < configDirs.length; k++) {
     for (i = 0; i < SUPPORTED_EXTENSIONS.length; i++) {
-      filePath = DEFAULT_CONFIG_DIRS[k] + SUPPORTED_EXTENSIONS[i]
+      filePath = configDirs[k] + SUPPORTED_EXTENSIONS[i]
+      console.log('Looking at', filePath)
       if (fileUtils.fileExistsSync(filePath)) {
         return filePath
       }
     }
   }
-
+  console.log('Throwing here here')
   throw new Error('No config file found')
 }
 
