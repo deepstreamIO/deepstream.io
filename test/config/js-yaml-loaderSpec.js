@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const proxyquire = require('proxyquire')
+const proxyquire = require('proxyquire').noPreserveCache()
 const defaultOptions = require('../../src/default-options')
 const utils = require('../../src/utils/utils')
 const C = require('../../src/constants/constants')
@@ -20,13 +20,13 @@ function setUpStub(fileExists, fileContent) {
       return fileContent
     }
   }
-
   const configLoader = proxyquire('../../src/config/js-yaml-loader', {
     './file-utils': fileMock,
     fs: fsMock
   })
   spyOn(fileMock, 'fileExistsSync').and.callThrough()
   spyOn(fsMock, 'readFileSync').and.callThrough()
+  spyOn(fsMock, 'readFile').and.callThrough()
   return {
     configLoader,
     fileMock,
@@ -49,10 +49,13 @@ describe('js-yaml-loader', () => {
     }
 
     it('initialises the loader', () => {
+      console.log(1)
       expect(typeof jsonLoader.load).toBe('function')
     })
 
     it('errors if invoked with an invalid path', (done) => {
+      console.log('2');
+      
       jsonLoader.load(null, (err, result) => {
         expect(err.toString()).toContain('path must be a string')
         done()
@@ -68,6 +71,8 @@ describe('js-yaml-loader', () => {
     })
 
     it('errors when trying to load non existant file', (done) => {
+      console.log('4');
+      
       jsonLoader.load('./test/test-configs/does-not-exist.json', (err, result) => {
         expect(err.toString()).toContain('no such file or directory')
         done()
@@ -75,6 +80,8 @@ describe('js-yaml-loader', () => {
     })
 
     it('errors when trying to load invalid json', (done) => {
+      console.log('5');
+      
       jsonLoader.load('./test/test-configs/broken-json-config.json', (err, result) => {
         expect(err.toString()).toContain('Unexpected token')
         done()
@@ -111,6 +118,8 @@ describe('js-yaml-loader', () => {
 			// console.log(JSON.stringify(defaultYamlConfig, null, 1))
 			// console.log(JSON.stringify(defaultConfig, null, 1))
       expect(defaultYamlConfig).toEqual(defaultConfig)
+      console.log('6');
+      
     })
 
     it('tries to load yaml, js and json file and then default', () => {
@@ -119,16 +128,16 @@ describe('js-yaml-loader', () => {
       expect(() => {
         stub.configLoader.loadConfig()
       }).toThrow()
-
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(12)
-
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(16)
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.js'))
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.json'))
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.yml'))
 
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/config.js')
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/config.json')
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/config.yml')
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/conf.js')
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/conf.json')
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/conf.yml')
+      console.log('7');
+      
     })
 
     it('load a custom yml file path', () => {
@@ -144,6 +153,8 @@ describe('js-yaml-loader', () => {
       expect(config.colors).toEqual(false)
       expect(config.showLogo).toEqual(false)
       expect(config.logLevel).toEqual(C.LOG_LEVEL.ERROR)
+      console.log('8');
+      
     })
 
     it('loads a missing custom yml file path', () => {
@@ -151,6 +162,8 @@ describe('js-yaml-loader', () => {
       expect(() => {
         stub.configLoader.loadConfig(null, { config: './test/test-configs/does-not-exist.yml' })
       }).toThrowError('Configuration file not found at: ./test/test-configs/does-not-exist.yml')
+      console.log('9');
+      
     })
 
     it('load a custom json file path', () => {
@@ -159,6 +172,8 @@ describe('js-yaml-loader', () => {
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(1)
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('./foo.json')
       expect(config.port).toEqual(1001)
+      console.log('10');
+      
     })
 
     it('load a custom js file path', () => {
@@ -173,6 +188,8 @@ describe('js-yaml-loader', () => {
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(2)
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join(process.cwd(), 'test/test-configs/config.js'))
       expect(config.port).toEqual(1002)
+      console.log('11');
+      
     })
 
     it('fails if the custom file format is not supported', () => {
@@ -180,6 +197,8 @@ describe('js-yaml-loader', () => {
       expect(() => {
         stub.configLoader.loadConfig(null, { config: './config.foo' }).config
       }).toThrowError('.foo is not supported as configuration file')
+      console.log('12');
+      
     })
 
     it('fails if the custom file was not found', () => {
@@ -189,6 +208,7 @@ describe('js-yaml-loader', () => {
       }).toThrowError('Configuration file not found at: ./not-existing-config')
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(1)
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('./not-existing-config')
+      console.log('13');
     })
 
     it('fails if the yaml file is invalid', () => {
@@ -198,6 +218,7 @@ describe('js-yaml-loader', () => {
       }).toThrowError(/asdsad: ooops/)
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(1)
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('./test/test-configs/config-broken.yml')
+      console.log('14');
     })
 
     it('fails if the js file is invalid', () => {
@@ -207,6 +228,7 @@ describe('js-yaml-loader', () => {
       }).toThrowError(/foobarBreaksIt is not defined/)
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(1)
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('./test/test-configs/config-broken.js')
+      console.log('15');
     })
   })
 
@@ -227,6 +249,7 @@ describe('js-yaml-loader', () => {
       expect(config.another.environmentvariable).toBe('another_environment_variable_value')
       expect(config.thisenvironmentdoesntexist).toBe('DOESNT_EXIST')
       expect(config.multipleenvs).toBe('host:1234')
+      console.log('16');
     })
 
     it('does environment variable substitution for json', () => {
@@ -235,6 +258,7 @@ describe('js-yaml-loader', () => {
       expect(config.another.environmentvariable).toBe('another_environment_variable_value')
       expect(config.thisenvironmentdoesntexist).toBe('DOESNT_EXIST')
       expect(config.multipleenvs).toBe('host:1234')
+      console.log('17');
     })
   })
 
@@ -255,6 +279,7 @@ describe('js-yaml-loader', () => {
     it('does environment variable substitution for yaml', () => {
       const config = configLoader.loadConfig().config
       expect(config.port).toBe(5555)
+      console.log('18');
     })
   })
 
@@ -302,6 +327,7 @@ describe('js-yaml-loader', () => {
 
     it('load plugins', () => {
       expect(config.messageConnector.options).toEqual({ foo: 3, bar: 4 })
+      console.log('19');
     })
   })
 
@@ -344,6 +370,7 @@ describe('js-yaml-loader', () => {
 
     it('load plugins', () => {
       expect(config.cache.options).toEqual({ foo: 3, bar: 4 })
+      console.log('20');
     })
   })
 
@@ -399,6 +426,7 @@ describe('js-yaml-loader', () => {
     it('load plugins', () => {
       expect(config.messageConnector.options).toEqual({ foo: 5, bar: 6 })
       expect(config.storage.options).toEqual({ foo: 7, bar: 8 })
+      console.log('21');
     })
   })
 
@@ -455,6 +483,8 @@ describe('js-yaml-loader', () => {
     it('load plugins', () => {
       expect(config.messageConnector.options).toEqual({ foo: -1, bar: -2 })
       expect(config.storage.options).toEqual({ foo: -3, bar: -4 })
+      console.log('22');
+
     })
   })
 
@@ -511,6 +541,8 @@ describe('js-yaml-loader', () => {
     it('load plugins', () => {
       expect(config.messageConnector.options).toEqual({ foo: -1, bar: -2 })
       expect(config.storage.options).toEqual({ foo: -3, bar: -4 })
+            console.log('23');
+
     })
   })
 })

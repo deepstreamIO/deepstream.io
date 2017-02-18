@@ -1,8 +1,20 @@
 {
   "spec_dir": "test",
   "spec_files": [
-    "**/*[sS]pec.js",
-    "*[sS]pec.js"
+
+    "permission/*[sS]pec.js",
+    "authentication/*[sS]pec.js",
+    "cluster/*[sS]pec.js",
+    "event/*[sS]pec.js",
+    "listen/*[sS]pec.js",
+    "presence/*[sS]pec.js",
+    "message/*[sS]pec.js",
+    "records/*[sS]pec.js",
+    "utils/*[sS]pec.js",
+    "bin/*[sS]pec.js",
+    "config/*[sS]pec.js",
+    "default-plugins/*[sS]pec.js",
+    "rpc/*[sS]pec.js"
   ],
   "helpers": [
   ],

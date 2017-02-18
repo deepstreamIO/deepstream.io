@@ -16,14 +16,7 @@ compiler:
   - clang
 
 node_js:
-  - "6.9"
-  - "5"
-  - "4"
-
-matrix:
-  include:
-    - node_js: "6.9.1"
-      os: osx
+  - "6.9.1"
 
 script:
   - npm run coverage
