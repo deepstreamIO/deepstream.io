@@ -61,6 +61,7 @@ module.exports = class ListenerRegistry {
 
     if (patterns.has(pattern)) {
       socket.sendError(this._topic, C.EVENT.MULTIPLE_LISTENERS, [ pattern ])
+      return
     }
 
     patterns.add(pattern)
@@ -73,6 +74,7 @@ module.exports = class ListenerRegistry {
 
     if (!patterns.has(pattern)) {
       socket.sendError(this._topic, C.EVENT.NOT_LISTENING, [ pattern ])
+      return
     }
 
     patterns.delete(pattern)
