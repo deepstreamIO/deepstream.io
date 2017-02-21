@@ -69,6 +69,7 @@ module.exports = class RecordCache extends EventEmitter {
 
   unlock (name) {
     this._locks.delete(name)
+    this.prune()
   }
 
   get (name) {
