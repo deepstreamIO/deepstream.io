@@ -30,18 +30,22 @@ module.exports = class RecordCache extends EventEmitter {
       this.emit('added', name)
     }
 
-    let it = this._list.tail
-    while (this._space < 0 && it !== this._list.head) {
-      if (!this._locks.has(it.value.name)) {
-        this._space += it.value.size
-        this._map.delete(it.value.name)
-        this.emit('removed', it.value.name)
+    this.prune()
+  }
 
-        it = it.prev
-        this._list.removeNode(it)
+  prune () {
+    let node = this._list.tail
+    while (this._space < 0 && node !== this._list.head) {
+      if (!this._locks.has(node.value.name)) {
+        this._space += node.value.size
+        this._map.delete(node.value.name)
+        this.emit('removed', node.value.name)
+
+        node = node.prev
+        this._list.removeNode(node)
       } else {
-        this._list.unshiftNode(it)
-        it = it.prev
+        this._list.unshiftNode(node)
+        node = node.prev
       }
     }
   }
