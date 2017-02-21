@@ -44,8 +44,8 @@ module.exports = class RecordCache extends EventEmitter {
         node = node.prev
         this._list.removeNode(node)
       } else {
-        this._list.unshiftNode(node)
         node = node.prev
+        this._list.unshiftNode(node)
       }
     }
   }
