@@ -29,12 +29,14 @@ module.exports = class RecordHandler {
       onSubscriptionMade: (name, socketWrapper, localCount) => {
         if (localCount === 1) {
           this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${Base64.encode(name)}`, this._onUpdate)
+          this._cache.lock(name)
         }
         this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount)
       },
       onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
         if (localCount === 0) {
           this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${Base64.encode(name)}`, this._onUpdate)
+          this._cache.unlock(name)
         }
         this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
       }
