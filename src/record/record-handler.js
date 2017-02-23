@@ -128,14 +128,9 @@ module.exports = class RecordHandler {
       return
     }
 
-    if (record) {
-      record[0] = name
-      record[1] = version
-      record[2] = body
-    } else {
-      record = [ name, version, body ]
-      this._cache.set(name, record)
-    }
+    record = [ name, version, body ]
+
+    this._cache.set(name, record)
 
     this._subscriptionRegistry.sendToSubscribers(
       name,
