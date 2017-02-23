@@ -36,17 +36,16 @@ module.exports = class RecordCache extends EventEmitter {
   prune () {
     let node = this._list.tail
     while (this._space < 0 && node !== this._list.head) {
+      const prev = node.prev
       if (!this._locks.has(node.value.name)) {
         this._space += node.value.size
         this._map.delete(node.value.name)
         this.emit('removed', node.value.name)
-
-        node = node.prev
         this._list.removeNode(node)
       } else {
-        node = node.prev
         this._list.unshiftNode(node)
       }
+      node = prev
     }
   }
 
