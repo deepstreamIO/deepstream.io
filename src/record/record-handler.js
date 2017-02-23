@@ -146,7 +146,7 @@ module.exports = class RecordHandler {
   }
 
   _read ([ name, version ], socket) {
-    const inbox = `${C.TOPIC.PRIVATE}.${Base64.encode(xuid())}`
+    const inbox = xuid()
     this._message.subscribe(inbox, this._onUpdate)
     this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${Base64.encode(name)}`, [ name, version, inbox ])
 
