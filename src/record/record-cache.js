@@ -35,7 +35,7 @@ module.exports = class RecordCache extends EventEmitter {
 
   prune () {
     let node = this._list.tail
-    while (this._space < 0 && node !== this._list.head) {
+    while (node && this._space < 0) {
       const prev = node.prev
       if (!this._locks.has(node.value.name)) {
         this._space += node.value.size
