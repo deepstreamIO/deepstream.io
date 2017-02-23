@@ -55,11 +55,7 @@ module.exports = class RecordCache extends EventEmitter {
 
   peek (name) {
     const node = this._map.get(name)
-    if (node) {
-      return node.value.record
-    } else {
-      return undefined
-    }
+    return node ? node.value.record : undefined
   }
 
   lock (name) {
