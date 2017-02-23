@@ -19,6 +19,7 @@ module.exports = class RecordHandler {
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
+    this._inbox = xuid()
 
     this._pending = new Map()
     this._cache = new RecordCache()
@@ -48,6 +49,8 @@ module.exports = class RecordHandler {
     this._cache.on('removed', (name) => {
       this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${Base64.encode(name)}`, this._onRead)
     })
+
+    this._message.subscribe(this._inbox, this._onUpdate)
   }
 
   handle (socket, message) {
@@ -146,30 +149,26 @@ module.exports = class RecordHandler {
   }
 
   _read ([ name, version ], socket) {
-    const inbox = xuid()
-    this._message.subscribe(inbox, this._onUpdate)
-    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${Base64.encode(name)}`, [ name, version, inbox ])
+    let pending = this._pending.get(name)
 
-    const pending = this._pending.get(name)
-    if (!pending) {
-      const pending = {
-        inbox,
-        name,
-        version,
-        sockets: [ socket ]
-      }
-      this._pending.set(name, pending)
-      setTimeout(this._fetch, 200, pending)
+    if (pending && this._compare(pending.version, version)) {
+      return
+    } else if (pending) {
+      clearTimeout(pending.timeout)
     } else {
-      pending.sockets.push(socket)
-      pending.version = this._compare(version, pending.version) ? version : pending.version
+      pending = { name, sockets: [] }
+      this._pending.set(name, pending)
     }
+
+    pending.sockets.push(socket)
+    pending.version = version
+    pending.timeout = setTimeout(this._fetch, 100, pending)
+
+    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${Base64.encode(name)}`, [ name, version, this._inbox ])
   }
 
-  _fetch ({ name, version, sockets, inbox }) {
+  _fetch ({ name, version, sockets }) {
     this._pending.delete(name)
-
-    this._message.unsubscribe(inbox, this._onUpdate)
 
     if (this._compare(this._cache.peek(name), version)) {
       return
