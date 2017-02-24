@@ -122,7 +122,7 @@ module.exports = class RecordHandler {
   }
 
   _broadcast ([ name, version, body ], sender) {
-    let record = this._cache.get(name)
+    let record = this._cache.peek(name)
 
     if (this._compare(record, version)) {
       return
