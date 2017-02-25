@@ -16,8 +16,8 @@ compiler:
   - clang
 
 node_js:
+  - "7"
   - "6.10.0"
-  - "5"
   - "4"
 
 matrix:
