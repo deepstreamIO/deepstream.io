@@ -2,55 +2,40 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
-const RecordCache = require('./record-cache')
-const xuid = require('xuid')
-const Base64 = require('js-base64').Base64
+const LRU = require('lru-cache')
 
 module.exports = class RecordHandler {
 
   constructor (options) {
-    this._broadcast = this._broadcast.bind(this)
-    this._read = this._read.bind(this)
-    this._fetch = this._fetch.bind(this)
-
-    this._onUpdate = this._onUpdate.bind(this)
-    this._onRead = this._onRead.bind(this)
-
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
-    this._inbox = xuid()
+    this._cache = new LRU({
+      max: 128e6,
+      length: record => record[0].length + record[1].length + record[2].length + 64
+    })
 
-    this._pending = new Map()
-    this._cache = new RecordCache()
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
+    this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
 
-    this._subscriptionRegistry.setSubscriptionListener({
-      onSubscriptionMade: (name, socketWrapper, localCount) => {
-        if (localCount === 1) {
-          this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${Base64.encode(name)}`, this._onUpdate)
-          this._cache.lock(name)
-        }
-        this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount)
-      },
-      onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
-        if (localCount === 0) {
-          this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${Base64.encode(name)}`, this._onUpdate)
-          this._cache.unlock(name)
-        }
-        this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
+    this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}`, record => {
+      if (record[2]) {
+        this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)
+        return
       }
-    })
 
-    this._cache.on('added', (name) => {
-      this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${Base64.encode(name)}`, this._onRead, { queue: C.ACTIONS.READ })
-    })
-    this._cache.on('removed', (name) => {
-      this._message.unsubscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${Base64.encode(name)}`, this._onRead)
-    })
+      if (this._compare(this._cache.peek(record[0]), record)) {
+        return
+      }
 
-    this._message.subscribe(this._inbox, this._onUpdate)
+      if (this._subscriptionRegistry.getLocalSubscribers(record[0]).length === 0) {
+        this._cache.del(record[0])
+        return
+      }
+
+      this._read(record, C.SOURCE_MESSAGE_CONNECTOR)
+    })
   }
 
   handle (socket, message) {
@@ -73,13 +58,10 @@ module.exports = class RecordHandler {
     } else if (message.action === C.ACTIONS.UPDATE) {
       const [ name, version, body, parent ] = message.data
       this._broadcast([ name, version, body ], socket)
-      this._cache.lock(name)
       this._storage.set([ name, version, body, parent ], (error, [ name ]) => {
         if (error) {
           const message = 'error while writing ' + name + ' to storage.'
           this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
-        } else {
-          this._cache.unlock(name)
         }
       })
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
@@ -99,94 +81,36 @@ module.exports = class RecordHandler {
     }
   }
 
-  _onUpdate ([ name, version, body ]) {
-    if (body) {
-      this._broadcast([ name, version, body ], C.SOURCE_MESSAGE_CONNECTOR)
+  _broadcast (record, sender) {
+    if (this._compare(this._cache.peek(record[0]), record)) {
       return
     }
 
-    if (this._compare(this._cache.peek(name), version)) {
-      return
-    }
-
-    if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
-      this._cache.del(name)
-      return
-    }
-
-    this._read([ name, version ], C.SOURCE_MESSAGE_CONNECTOR)
-  }
-
-  _onRead ([ name, version, inbox ]) {
-    const record = this._cache.peek(name)
-    if (this._compare(record, version)) {
-      this._message.publish(inbox, record)
-    }
-  }
-
-  _broadcast ([ name, version, body ], sender) {
-    let record = this._cache.peek(name)
-
-    if (this._compare(record, version)) {
-      return
-    }
-
-    record = [ name, version, body ]
-
-    this._cache.set(name, record)
+    this._cache.set(record[0], record)
 
     this._subscriptionRegistry.sendToSubscribers(
-      name,
+      record[0],
       messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record),
       sender
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}.${Base64.encode(name)}`, record)
+      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}`, record)
     }
   }
 
-  _read ([ name, version ], socket) {
-    let pending = this._pending.get(name)
-
-    if (pending && this._compare(pending.version, version)) {
-      return
-    } else if (pending) {
-      clearTimeout(pending.timeout)
-    } else {
-      pending = { name, sockets: [] }
-      this._pending.set(name, pending)
-    }
-
-    pending.sockets.push(socket)
-    pending.version = version
-    pending.timeout = setTimeout(this._fetch, 100, pending)
-
-    this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.READ}.${Base64.encode(name)}`, [ name, version, this._inbox ])
-  }
-
-  _fetch ({ name, version, sockets }) {
-    this._pending.delete(name)
-
-    if (this._compare(this._cache.peek(name), version)) {
-      return
-    }
-
-    this._storage.get(name, (error, record, sockets) => {
+  _read (record, socket) {
+    this._storage.get(record[0], (error, record, [ version, socket ]) => {
       if (error) {
         const message = `error while reading ${record[0]} from storage`
-        for (const socket of sockets) {
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-        }
+        this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
       } else if (this._compare(record, version)) {
         this._broadcast(record)
       } else {
         const message = `error while reading revision ${record[1]} of ${record[0]} from storage`
-        for (const socket of sockets) {
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-        }
+        this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
       }
-    }, sockets)
+    }, [ record[1], socket ])
   }
 
   _sendError (socket, event, message) {
@@ -204,11 +128,11 @@ module.exports = class RecordHandler {
   }
 
   _compareVersions (a, b) {
-    if (!a) {
-      return false
-    }
     if (!b) {
       return true
+    }
+    if (!a) {
+      return false
     }
     const [av, ar] = this._splitRev(a)
     const [bv, br] = this._splitRev(b)
