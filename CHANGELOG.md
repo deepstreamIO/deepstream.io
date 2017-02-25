@@ -1,3 +1,23 @@
+## [2.1.3] - 2016.12.28
+
+### Bug Fixes
+
+- Unsolicitated message in Listening when all clients unsubscribe [#531]
+- Handle Non text based websocket frame [#538]
+- Aligning binary config with node [#488]
+- Event subscription data mishandled in Valve [#510]
+- Logging after logger is destroyed [#527]
+- Deepstream crash on empty users file [#512]
+- Logging error object instead of name in connection error [#420]
+
+### Enhancements
+
+- maxRuleIterations must be 1 or higher [#498]
+- Ignore sender in subscriptionRegistry if messagebus [#473]
+- Removing dead config options [#599]
+- getAlternativeProvider in RPC Handler deals with more edge cases [#566]
+- Update UWS build version to 0.12
+
 ## [2.1.2] - 2016.12.28
 
 ### Bug fixes
