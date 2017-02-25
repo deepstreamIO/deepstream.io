@@ -104,7 +104,7 @@ module.exports = class RecordHandler {
       if (error) {
         const message = `error while reading ${record[0]} from storage`
         this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-      } else if (this._compare(record, version)) {
+      } else if (!this._compare(version, record)) {
         this._broadcast(record)
       } else {
         const message = `error while reading revision ${record[1]} of ${record[0]} from storage`
@@ -128,11 +128,11 @@ module.exports = class RecordHandler {
   }
 
   _compareVersions (a, b) {
-    if (!b) {
-      return true
-    }
     if (!a) {
       return false
+    }
+    if (!b) {
+      return true
     }
     const [av, ar] = this._splitRev(a)
     const [bv, br] = this._splitRev(b)
