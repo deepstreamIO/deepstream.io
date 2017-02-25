@@ -380,8 +380,6 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
   this._writeError = this._writeError || error
   if (error) {
     this._onFatalError(error)
-  } else if (this.isDestroyed) {
-    this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error)
   } else if (this._cacheResponses === 0
       && this._storageResponses === 0
       && this._steps.length === 0) {

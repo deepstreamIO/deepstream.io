@@ -48,14 +48,6 @@ const SocketWrapper = function (socket, options) {
   this._currentPacketMessageCount = 0
   this._sendNextPacketTimeout = null
   this._currentMessageResetTimeout = null
-
-  /**
-   * This defaults for test purposes since socket wrapper creating touches
-   * everything
-   */
-  if (typeof this._options.maxMessagesPerPacket === 'undefined') {
-    this._options.maxMessagesPerPacket = 1000
-  }
 }
 
 util.inherits(SocketWrapper, EventEmitter)
