@@ -192,9 +192,8 @@ module.exports = class RecordHandler {
   _sendError (socket, event, message) {
     if (socket && socket.sendError) {
       socket.sendError(C.TOPIC.RECORD, event, message)
-    } else {
-      this._logger.log(C.LOG_LEVEL.ERROR, event, message)
     }
+    this._logger.log(C.LOG_LEVEL.ERROR, event, message)
   }
 
   _compare (a, b) {
