@@ -172,14 +172,19 @@ module.exports = class RecordHandler {
       return
     }
 
-    this._storage.get(name, (error, [ name, version, body ], sockets) => {
+    this._storage.get(name, (error, record, sockets) => {
       if (error) {
-        const message = 'error while reading ' + name + ' from storage'
+        const message = `error while reading ${record[0]} from storage`
         for (const socket of sockets) {
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ name, version, message ])
+          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
         }
+      } else if (this._compare(record, version)) {
+        this._broadcast(record)
       } else {
-        this._broadcast([ name, version, body ])
+        const message = `error while reading revision ${record[1]} of ${record[0]} from storage`
+        for (const socket of sockets) {
+          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+        }
       }
     }, sockets)
   }
