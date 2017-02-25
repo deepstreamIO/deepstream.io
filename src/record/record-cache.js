@@ -6,7 +6,7 @@ module.exports = class RecordCache extends EventEmitter {
   constructor ({ size = 128e6 } = {}) {
     super()
     this._map = new Map()
-    this._locks = new Set()
+    this._locks = new Map()
     this._list = new List()
     this._space = size
   }
@@ -59,12 +59,18 @@ module.exports = class RecordCache extends EventEmitter {
   }
 
   lock (name) {
-    this._locks.add(name)
+    const refs = (this._locks.get(name) || 0)
+    this._locks.set(name, refs + 1)
   }
 
   unlock (name) {
-    this._locks.delete(name)
-    this.prune()
+    const refs = this._locks.get(name)
+    if (refs === 1) {
+      this._locks.delete(name)
+      this.prune()
+    } else {
+      this._locks.set(name, refs - 1)
+    }
   }
 
   get (name) {
