@@ -19,22 +19,17 @@ module.exports = class RecordHandler {
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
 
-    this._message.subscribe(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}`, record => {
-      if (record[2]) {
-        this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)
+    this._message.subscribe('RH.I', ([ name, version ]) => {
+      if (this._compare(this._cache.peek(name), version)) {
         return
       }
 
-      if (this._compare(this._cache.peek(record[0]), record)) {
+      if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
+        this._cache.del(name)
         return
       }
 
-      if (this._subscriptionRegistry.getLocalSubscribers(record[0]).length === 0) {
-        this._cache.del(record[0])
-        return
-      }
-
-      this._read(record, C.SOURCE_MESSAGE_CONNECTOR)
+      this._read([ name, version ])
     })
   }
 
@@ -93,24 +88,17 @@ module.exports = class RecordHandler {
       messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record),
       sender
     )
-
-    if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`${C.TOPIC.RECORD}.${C.ACTIONS.UPDATE}`, record)
-    }
   }
 
   _read (record, socket) {
-    this._storage.get(record[0], (error, record, [ version, socket ]) => {
+    this._storage.get(record[0], (error, record) => {
       if (error) {
         const message = `error while reading ${record[0]} from storage`
         this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-      } else if (!this._compare(version, record)) {
-        this._broadcast(record)
       } else {
-        const message = `error while reading revision ${record[1]} of ${record[0]} from storage`
-        this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+        this._broadcast(record)
       }
-    }, [ record[1], socket ])
+    })
   }
 
   _sendError (socket, event, message) {
