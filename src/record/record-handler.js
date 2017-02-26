@@ -3,6 +3,7 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
 const LRU = require('lru-cache')
+const xuid = require('xuid')
 
 module.exports = class RecordHandler {
 
@@ -14,12 +15,14 @@ module.exports = class RecordHandler {
       max: 128e6,
       length: record => record[0].length + record[1].length + record[2].length + 64
     })
+    this._inbox = xuid()
+    this._outbox = xuid()
 
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
 
-    this._message.subscribe('RH.I', ([ name, version ]) => {
+    this._message.subscribe('RH.I', ([ name, version, outbox ]) => {
       if (this._compare(this._cache.peek(name), version)) {
         return
       }
@@ -29,8 +32,19 @@ module.exports = class RecordHandler {
         return
       }
 
-      this._read([ name, version ])
+      if (outbox) {
+        this._message.publish(outbox, [ name, version, this._inbox ])
+      } else {
+        this._read([ name, version ])
+      }
     })
+    this._message.subscribe(this._outbox, ([ name, version, inbox ]) => {
+      const record = this._cache.peek(name)
+      if (this._compare(record, version)) {
+        this._message.publish(inbox, record)
+      }
+    })
+    this._message.subscribe(this._inbox, record => this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR))
   }
 
   handle (socket, message) {
@@ -89,11 +103,12 @@ module.exports = class RecordHandler {
       sender
     )
 
-    // TODO: Send invalidate to other nodes.
+    if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
+      this._message.publish('RH.I', [ ...record.slice(0, 2), this._outbox ])
+    }
   }
 
   _read (record, socket) {
-    // TODO: Try to read from other nodes.
     this._storage.get(record[0], (error, record) => {
       if (error) {
         const message = `error while reading ${record[0]} from storage`
