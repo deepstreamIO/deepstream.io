@@ -88,9 +88,12 @@ module.exports = class RecordHandler {
       messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record),
       sender
     )
+
+    // TODO: Send invalidate to other nodes.
   }
 
   _read (record, socket) {
+    // TODO: Try to read from other nodes.
     this._storage.get(record[0], (error, record) => {
       if (error) {
         const message = `error while reading ${record[0]} from storage`
