@@ -12,7 +12,7 @@ module.exports = class RecordHandler {
     this._message = options.messageConnector
     this._storage = options.storageConnector
     this._cache = new LRU({
-      max: 128e6,
+      max: options.cacheSize || 256e6,
       length: record => record[0].length + record[1].length + record[2].length + 64
     })
     this._inbox = xuid()
