@@ -327,8 +327,9 @@ class SubscriptionRegistry {
       return
     }
 
+    this._clusterSubscriptions.remove(name)
+
     if (this._subscriptions[name].length === 1) {
-      this._clusterSubscriptions.remove(name)
       delete this._subscriptions[name]
     } else {
       this._subscriptions[name].splice(this._subscriptions[name].indexOf(socketWrapper), 1)
