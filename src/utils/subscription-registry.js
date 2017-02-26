@@ -315,9 +315,7 @@ class SubscriptionRegistry {
     }
     subscription.indices[socketWrapper.id] = undefined
 
-    if (subscription.sockets.length === 0) {
-      this._clusterSubscriptions.remove(name)
-    }
+    this._clusterSubscriptions.remove(name)
 
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionRemoved(
