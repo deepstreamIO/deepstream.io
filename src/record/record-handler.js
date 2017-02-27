@@ -115,6 +115,7 @@ module.exports = class RecordHandler {
           const message = `error while reading ${record[0]} from storage`
           this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
         } else {
+          // TODO: Check version
           this._broadcast(record)
         }
       })
