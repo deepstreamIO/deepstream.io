@@ -8,6 +8,9 @@ const xuid = require('xuid')
 module.exports = class RecordHandler {
 
   constructor (options) {
+    this._onInvalidate = this._onInvalidate.bind(this)
+    this._onRead = this._onRead.bind(this)
+
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
@@ -17,34 +20,34 @@ module.exports = class RecordHandler {
     })
     this._inbox = xuid()
     this._outbox = xuid()
-
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
 
-    this._message.subscribe('RH.I', ([ name, version, outbox ]) => {
-      if (this._compare(this._cache.peek(name), version)) {
-        return
-      }
-
-      if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
-        this._cache.del(name)
-        return
-      }
-
-      if (outbox) {
-        this._message.publish(outbox, [ name, version, this._inbox ])
-      } else {
-        this._read([ name ])
-      }
-    })
-    this._message.subscribe(this._outbox, ([ name, version, inbox ]) => {
-      const record = this._cache.peek(name)
-      if (this._compare(record, version)) {
-        this._message.publish(inbox, record)
-      }
-    })
+    this._message.subscribe('RH.I', this._onInvalidate)
+    this._message.subscribe(`RH.R`, this._onRead)
+    this._message.subscribe(this._outbox, this._onRead)
     this._message.subscribe(this._inbox, record => this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR))
+  }
+
+  _onInvalidate ([ name, version, outbox ]) {
+    if (this._compare(this._cache.peek(name), version)) {
+      return
+    }
+
+    if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
+      this._cache.del(name)
+      return
+    }
+
+    this._read([ name, version, outbox ])
+  }
+
+  _onRead ([ name, version, inbox ]) {
+    const record = this._cache.peek(name)
+    if (this._compare(record, version)) {
+      this._message.publish(inbox, record)
+    }
   }
 
   handle (socket, message) {
@@ -59,11 +62,11 @@ module.exports = class RecordHandler {
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
       } else {
-        this._read(data, socket)
+        this._read(data.slice(0, 2), socket)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       this._broadcast(data.slice(0, 3), socket)
-      this._storage.set(data, (error, record) => {
+      this._storage.set(data.slice(0, 4), (error, record) => {
         if (error) {
           const message = `error while writing ${record[0]} to storage`
           this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ ...record, message ])
@@ -98,19 +101,24 @@ module.exports = class RecordHandler {
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish('RH.I', [ ...record, this._outbox ])
+      this._message.publish('RH.I', [ record[0], record[1], this._outbox ])
     }
   }
 
-  _read (record, socket) {
-    this._storage.get(record[0], (error, record) => {
-      if (error) {
-        const message = `error while reading ${record[0]} from storage`
-        this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-      } else {
-        this._broadcast(record)
-      }
-    })
+  _read ([ name, version, outbox ], socket) {
+    if (outbox) {
+      this._message.publish(outbox, [ name, version, this._inbox ])
+    } else {
+      this._message.publish(`RH.R`, [ name, version, this._inbox ])
+      this._storage.get(name, (error, record) => {
+        if (error) {
+          const message = `error while reading ${record[0]} from storage`
+          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+        } else {
+          this._broadcast(record)
+        }
+      })
+    }
   }
 
   _sendError (socket, event, message) {
