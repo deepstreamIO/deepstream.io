@@ -1,9 +1,9 @@
-const C = require('../constants/constants')
-const SubscriptionRegistry = require('../utils/subscription-registry')
-const ListenerRegistry = require('../listen/listener-registry')
-const messageBuilder = require('../message/message-builder')
-const LRU = require('lru-cache')
-const xuid = require('xuid')
+const C = require(`../constants/constants`)
+const SubscriptionRegistry = require(`../utils/subscription-registry`)
+const ListenerRegistry = require(`../listen/listener-registry`)
+const messageBuilder = require(`../message/message-builder`)
+const LRU = require(`lru-cache`)
+const xuid = require(`xuid`)
 
 module.exports = class RecordHandler {
 
@@ -25,7 +25,7 @@ module.exports = class RecordHandler {
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
 
-    this._message.subscribe('RH.I', this._onInvalidate)
+    this._message.subscribe(`RH.I`, this._onInvalidate)
     this._message.subscribe(`RH.R`, this._onRead)
     this._message.subscribe(`RH.U`, this._onUpdate)
     this._message.subscribe(this._outbox, this._onRead)
@@ -89,7 +89,7 @@ module.exports = class RecordHandler {
       this._listenerRegistry.handle(socket, message)
     } else {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ ...data, message.action ])
-      this._sendError(socket, C.EVENT.UNKNOWN_ACTION, [ ...data, 'unknown action ' + message.action ])
+      this._sendError(socket, C.EVENT.UNKNOWN_ACTION, [ ...data, `unknown action ${message.action}` ])
     }
   }
 
@@ -107,7 +107,7 @@ module.exports = class RecordHandler {
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish('RH.I', [ record[0], record[1], this._outbox ])
+      this._message.publish(`RH.I`, [ record[0], record[1], this._outbox ])
     }
   }
 
@@ -137,8 +137,8 @@ module.exports = class RecordHandler {
 
   _compare (a, b) {
     return this._compareVersions(
-      typeof a === 'string' ? a : (a && a[1]),
-      typeof b === 'string' ? b : (b && b[1])
+      typeof a === `string` ? a : (a && a[1]),
+      typeof b === `string` ? b : (b && b[1])
     )
   }
 
@@ -155,7 +155,7 @@ module.exports = class RecordHandler {
   }
 
   _splitRev (s) {
-    const i = s.indexOf('-')
+    const i = s.indexOf(`-`)
     return [ s.slice(0, i), s.slice(i + 1) ]
   }
 
