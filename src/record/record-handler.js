@@ -35,7 +35,7 @@ module.exports = class RecordHandler {
       if (outbox) {
         this._message.publish(outbox, [ name, version, this._inbox ])
       } else {
-        this._read([ name, version ])
+        this._read([ name ])
       }
     })
     this._message.subscribe(this._outbox, ([ name, version, inbox ]) => {
@@ -48,34 +48,29 @@ module.exports = class RecordHandler {
   }
 
   handle (socket, message) {
-    if (!message && message.data[0]) {
+    const data = message && message.data
+    if (!data[0]) {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
     } else if (message.action === C.ACTIONS.SUBSCRIBE) {
-      const [ name ] = message.data
-      this._subscriptionRegistry.subscribe(name, socket)
+      this._subscriptionRegistry.subscribe(data[0], socket)
     } else if (message.action === C.ACTIONS.READ) {
-      const [ name, version ] = message.data
-
-      this._subscriptionRegistry.subscribe(name, socket)
-
-      const record = this._cache.get(name)
+      this._subscriptionRegistry.subscribe(data[0], socket)
+      const record = this._cache.get(data[0])
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
       } else {
-        this._read([ name, version ], socket)
+        this._read(data, socket)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
-      const [ name, version, body, parent ] = message.data
-      this._broadcast([ name, version, body ], socket)
-      this._storage.set([ name, version, body, parent ], (error, [ name ]) => {
+      this._broadcast(data.slice(0, 3), socket)
+      this._storage.set(data, (error, record) => {
         if (error) {
-          const message = 'error while writing ' + name + ' to storage.'
-          this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ name, message ])
+          const message = `error while writing ${record[0]} to storage`
+          this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ ...record, message ])
         }
       })
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      const [ name ] = message.data
-      this._subscriptionRegistry.unsubscribe(name, socket)
+      this._subscriptionRegistry.unsubscribe(data[0], socket)
     } else if (
       message.action === C.ACTIONS.LISTEN ||
       message.action === C.ACTIONS.UNLISTEN ||
@@ -84,9 +79,8 @@ module.exports = class RecordHandler {
     ) {
       this._listenerRegistry.handle(socket, message)
     } else {
-      const [ name ] = message.data
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ name, message.action ])
-      this._sendError(socket, C.EVENT.UNKNOWN_ACTION, [ name, 'unknown action ' + message.action ])
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ ...data, message.action ])
+      this._sendError(socket, C.EVENT.UNKNOWN_ACTION, [ ...data, 'unknown action ' + message.action ])
     }
   }
 
@@ -104,7 +98,7 @@ module.exports = class RecordHandler {
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish('RH.I', [ ...record.slice(0, 2), this._outbox ])
+      this._message.publish('RH.I', [ ...record, this._outbox ])
     }
   }
 
