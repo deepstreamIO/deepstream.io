@@ -10,6 +10,7 @@ module.exports = class RecordHandler {
   constructor (options) {
     this._onInvalidate = this._onInvalidate.bind(this)
     this._onRead = this._onRead.bind(this)
+    this._onUpdate = this._onUpdate.bind(this)
 
     this._logger = options.logger
     this._message = options.messageConnector
@@ -26,8 +27,9 @@ module.exports = class RecordHandler {
 
     this._message.subscribe('RH.I', this._onInvalidate)
     this._message.subscribe(`RH.R`, this._onRead)
+    this._message.subscribe(`RH.U`, this._onUpdate)
     this._message.subscribe(this._outbox, this._onRead)
-    this._message.subscribe(this._inbox, record => this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR))
+    this._message.subscribe(this._inbox, this._onUpdate)
   }
 
   _onInvalidate ([ name, version, outbox ]) {
@@ -48,6 +50,10 @@ module.exports = class RecordHandler {
     if (this._compare(record, version)) {
       this._message.publish(inbox, record)
     }
+  }
+
+  _onUpdate (record) {
+    this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)
   }
 
   handle (socket, message) {
