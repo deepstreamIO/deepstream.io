@@ -17,19 +17,9 @@ pseudomap@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/pseudomap/-/pseudomap-1.0.2.tgz#f052a28da70e618917ef0a8ac34c1ae5a68286b3"
 
-randombytes@2.0.3:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/randombytes/-/randombytes-2.0.3.tgz#674c99760901c3c4112771a31e521dc349cc09ec"
-
 uws@^0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/uws/-/uws-0.12.0.tgz#07163ea6e687d9731e66821107b5fdf1ee644cbd"
-
-xuid@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/xuid/-/xuid-1.0.2.tgz#5c3fdefe8c827e0f7397c8610a15514d7e89f08e"
-  dependencies:
-    randombytes "2.0.3"
 
 yallist@^2.0.0:
   version "2.0.0"

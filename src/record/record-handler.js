@@ -3,15 +3,11 @@ const SubscriptionRegistry = require(`../utils/subscription-registry`)
 const ListenerRegistry = require(`../listen/listener-registry`)
 const messageBuilder = require(`../message/message-builder`)
 const LRU = require(`lru-cache`)
-const xuid = require(`xuid`)
+const utils = require(`../utils/utils`)
 
 module.exports = class RecordHandler {
 
   constructor (options) {
-    this._onInvalidate = this._onInvalidate.bind(this)
-    this._onRead = this._onRead.bind(this)
-    this._onUpdate = this._onUpdate.bind(this)
-
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
@@ -19,41 +15,28 @@ module.exports = class RecordHandler {
       max: options.cacheSize || 256e6,
       length: record => record[0].length + record[1].length + record[2].length + 64
     })
-    this._inbox = xuid()
-    this._outbox = xuid()
+    this._outbox = `RH.R.${options.serverName}`
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
 
-    this._message.subscribe(`RH.I`, this._onInvalidate)
-    this._message.subscribe(`RH.R`, this._onRead)
-    this._message.subscribe(`RH.U`, this._onUpdate)
-    this._message.subscribe(this._outbox, this._onRead)
-    this._message.subscribe(this._inbox, this._onUpdate)
-  }
+    this._message.subscribe(`RH.I`, ([ name, version, outbox ]) => {
+      if (this._compare(this._cache.peek(name), version)) {
+        return
+      }
 
-  _onInvalidate ([ name, version, outbox ]) {
-    if (this._compare(this._cache.peek(name), version)) {
-      return
-    }
+      if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
+        this._cache.del(name)
+        return
+      }
 
-    if (this._subscriptionRegistry.getLocalSubscribers(name).length === 0) {
-      this._cache.del(name)
-      return
-    }
+      this._read([ name, version, outbox ])
+    })
 
-    this._read([ name, version, outbox ])
-  }
-
-  _onRead ([ name, version, inbox ]) {
-    const record = this._cache.peek(name)
-    if (this._compare(record, version)) {
-      this._message.publish(inbox, record)
-    }
-  }
-
-  _onUpdate (record) {
-    this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)
+    this._message.subscribe(this._outbox, ([ name, version, inbox ]) => {
+      const record = this._cache.peek(name)
+      this._message.publish(inbox, this._compare(record, version) ? record : [ name, version ])
+    })
   }
 
   handle (socket, message) {
@@ -94,8 +77,8 @@ module.exports = class RecordHandler {
   }
 
   _broadcast (record, sender) {
-    if (this._compare(this._cache.peek(record[0]), record)) {
-      return
+    if (!record || !record[2] || this._compare(this._cache.peek(record[0]), record)) {
+      return false
     }
 
     this._cache.set(record[0], record)
@@ -109,23 +92,42 @@ module.exports = class RecordHandler {
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
       this._message.publish(`RH.I`, [ record[0], record[1], this._outbox ])
     }
+
+    return true
   }
 
   _read ([ name, version, outbox ], socket) {
-    if (outbox) {
-      this._message.publish(outbox, [ name, version, this._inbox ])
-    } else {
-      this._message.publish(`RH.R`, [ name, version, this._inbox ])
-      this._storage.get(name, (error, record) => {
-        if (error) {
-          const message = `error while reading ${record[0]} from storage`
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-        } else {
-          // TODO: Check version
-          this._broadcast(record)
-        }
-      })
+    const inbox = `RH.U.${utils.getUid()}`
+    const outboxes = outbox
+      ? [ outbox ]
+      : utils.shuffle(this._subscriptionRegistry.getAllRemoteServers().map(serverName => `RH.R.${serverName}`))
+
+    let timeout
+    const next = (record) => {
+      clearTimeout(timeout)
+      // TODO: Check version
+      if (this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)) {
+        this._message.unsubscribe(inbox, next)
+      } else if (outboxes.length > 0) {
+        this._message.publish(outboxes.shift(), [ name, version, inbox ])
+        timeout = setTimeout(next, 50)
+      } else {
+        this._storage.get(name, (error, record) => {
+          this._message.unsubscribe(inbox, next)
+          if (error) {
+            const message = `error while reading ${record[0]} from storage`
+            this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+          } else {
+            // TODO: Check version
+            this._broadcast(record)
+          }
+        })
+      }
     }
+
+    this._message.subscribe(inbox, next)
+
+    next()
   }
 
   _sendError (socket, event, message) {
