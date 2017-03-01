@@ -112,7 +112,7 @@ module.exports = class RecordHandler {
         this._message.unsubscribe(inbox, next)
       } else if (outboxes.length > 0) {
         this._message.publish(outboxes.shift(), [ name, version, inbox ])
-        timeout = setTimeout(next, 50)
+        timeout = setTimeout(next, 20)
       } else {
         this._storage.get(name, (error, record) => {
           this._message.unsubscribe(inbox, next)
