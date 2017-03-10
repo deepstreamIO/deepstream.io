@@ -108,7 +108,7 @@ module.exports = class RecordHandler {
   }
 
   _read ([ name, version, outbox ], socket) {
-    // TODO: Optimize by keep track of pending reads.
+    // TODO: Optimize by keeping track of pending reads.
 
     const inbox = `RH.U.${utils.getUid()}`
     const outboxes = outbox
