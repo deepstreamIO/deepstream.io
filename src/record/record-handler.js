@@ -37,6 +37,7 @@ module.exports = class RecordHandler {
             const message = `error while reading ${record[0]} from storage`
             this._sendError(C.SOURCE_MESSAGE_CONNECTOR, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
           } else {
+            // TODO: Check version
             this._broadcast(record)
           }
         })
@@ -117,7 +118,6 @@ module.exports = class RecordHandler {
     let timeout
     const next = (record) => {
       clearTimeout(timeout)
-      // TODO: Check version
       if (this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)) {
         this._message.unsubscribe(inbox, next)
       } else if (outboxes.length > 0) {
