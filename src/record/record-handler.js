@@ -6,7 +6,6 @@ const LRU = require(`lru-cache`)
 const utils = require(`../utils/utils`)
 
 module.exports = class RecordHandler {
-
   constructor (options) {
     this._logger = options.logger
     this._message = options.messageConnector
@@ -30,7 +29,19 @@ module.exports = class RecordHandler {
         return
       }
 
-      this._read([ name, version, outbox ])
+      if (outbox) {
+        this._read([ name, version, outbox ])
+      } else {
+        this._storage.get(name, (error, record) => {
+          if (error) {
+            const message = `error while reading ${record[0]} from storage`
+            this._sendError(C.SOURCE_MESSAGE_CONNECTOR, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+          } else {
+            // TODO: Check version
+            this._broadcast(record)
+          }
+        })
+      }
     })
 
     this._message.subscribe(this._outbox, ([ name, version, inbox ]) => {
@@ -162,5 +173,4 @@ module.exports = class RecordHandler {
     const i = s.indexOf(`-`)
     return [ s.slice(0, i), s.slice(i + 1) ]
   }
-
 }
