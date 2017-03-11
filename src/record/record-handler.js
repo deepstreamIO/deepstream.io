@@ -7,7 +7,6 @@ const utils = require(`../utils/utils`)
 
 module.exports = class RecordHandler {
   constructor (options) {
-    this._serverName = options.serverName
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
@@ -30,32 +29,32 @@ module.exports = class RecordHandler {
       }
 
       if (data[2]) {
-        const inbox = `RH.U.${data[0]}-${data[1]}`
+        const inbox = `RH.U.${data[0]}.${data[1]}`
 
         let timeout = null
         const next = (record) => {
           clearTimeout(timeout)
           this._message.unsubscribe(inbox, next)
 
-          if (this._compare(this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR), data)) {
+          if (record && this._compare(this._broadcast(record), data)) {
             return
           }
 
-          this._refresh(data, [ C.SOURCE_MESSAGE_CONNECTOR ])
+          this._refresh(data)
         }
 
         this._message.subscribe(inbox, next)
         this._message.publish(data[2], [ data[0], data[1], inbox ])
         timeout = setTimeout(next, 100)
       } else {
-        this._refresh(data, [ C.SOURCE_MESSAGE_CONNECTOR ])
+        this._refresh(data)
       }
     })
 
     // [ name, version, inbox, ... ]
     this._message.subscribe(this._outbox, data => {
       const record = this._cache.peek(data[0])
-      this._message.publish(data[2], this._compare(record, data[1]) ? record : record.slice(0, 2))
+      this._message.publish(data[2], this._compare(record, data) ? record : record.slice(0, 2))
     })
   }
 
@@ -100,7 +99,7 @@ module.exports = class RecordHandler {
   }
 
   // [ name, version, ... ]
-  _refresh (data, sockets) {
+  _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ]) {
     this._storage.get(data[0], (error, record, [ data, sockets ]) => {
       if (error) {
         const message = `error while reading ${record[0]} from storage`
@@ -120,7 +119,7 @@ module.exports = class RecordHandler {
   }
 
   // [ name, version, body, ... ]
-  _broadcast (nextRecord, sender) {
+  _broadcast (nextRecord, sender = C.SOURCE_MESSAGE_CONNECTOR) {
     const prevRecord = this._cache.peek(nextRecord[0])
 
     if (this._compare(prevRecord, nextRecord)) {
@@ -142,7 +141,7 @@ module.exports = class RecordHandler {
     return nextRecord
   }
 
-  // [ name, ... ]
+  // [ name, version, ... ]
   _read (data, socket) {
     let sockets = this._pending.get(data[0])
 
@@ -152,20 +151,17 @@ module.exports = class RecordHandler {
     }
 
     sockets = new Set([ socket ])
+    this._pending.set(data[0], sockets)
 
-    const inbox = `RH.U.${data[0]}`
-    const serverNames = utils.shuffle(this._subscriptionRegistry.getAllServers())
+    const inbox = `RH.U.${data[0]}.${data[1]}`
+    const serverNames = utils.shuffle(this._subscriptionRegistry.getAllRemoteServers().slice(0))
 
     let i = 0
     let timeout = null
     const next = (record) => {
       clearTimeout(timeout)
 
-      if (serverNames[i] === this._serverName) {
-        i++
-      }
-
-      if (this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)) {
+      if (record && this._compare(this._broadcast(record), data)) {
         this._pending.delete(data[0])
         this._message.unsubscribe(inbox, next)
       } else if (i < serverNames.length) {
@@ -191,10 +187,7 @@ module.exports = class RecordHandler {
   }
 
   _compare (a, b) {
-    return this._compareVersions(
-      typeof a === `string` ? a : (a && a[1]),
-      typeof b === `string` ? b : (b && b[1])
-    )
+    return this._compareVersions(a && a[1], b && b[1])
   }
 
   _compareVersions (a, b) {
