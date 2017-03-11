@@ -215,3 +215,20 @@ exports.spliceRandomElement = function (array) {
   const randomIndex = exports.getRandomIntInRange(0, array.length)
   return array.splice(randomIndex, 1)[0]
 }
+
+exports.sortedIndex = function (array, value) {
+  let low = 0
+  let high = array ? array.length : 0
+
+  while (low < high) {
+    const mid = (low + high) >> 1
+
+    if (array[mid] < value) {
+      low = mid + 1
+    } else {
+      high = mid
+    }
+  }
+
+  return high
+}

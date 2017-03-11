@@ -2,10 +2,22 @@
 
 const C = require('../constants/constants')
 const messageBuilder = require('./message-builder')
-const utils = require('util')
+const util = require('util')
+const utils = require('../utils/utils')
 const uws = require('uws')
 
 const EventEmitter = require('events').EventEmitter
+
+const pool = {
+  ids: [],
+  max: 0,
+  acquire() {
+    return this.ids.length === 0 ? this.max++ : this.ids.shift()
+  },
+  release(id) {
+    this.ids.splice(utils.sortedIndex(this.ids, id), 0, id)
+  }
+}
 
 /**
  * This class wraps around a websocket
@@ -28,9 +40,9 @@ const SocketWrapper = function (socket, options) {
   this.authCallBack = null
   this.authAttempts = 0
   this.setMaxListeners(0)
-  this.uuid = Math.random()
   this._handshakeData = null
   this._setUpHandshakeData()
+  this.id = pool.acquire()
 
   this._queuedMessages = []
   this._currentPacketMessageCount = 0
@@ -38,7 +50,7 @@ const SocketWrapper = function (socket, options) {
   this._currentMessageResetTimeout = null
 }
 
-utils.inherits(SocketWrapper, EventEmitter)
+util.inherits(SocketWrapper, EventEmitter)
 SocketWrapper.lastPreparedMessage = null
 
 /**
@@ -181,9 +193,10 @@ SocketWrapper.prototype.destroy = function () {
  */
 SocketWrapper.prototype._onSocketClose = function () {
   this.isClosed = true
-  this.emit('close')
+  this.emit('close', this)
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
   this.socket.removeAllListeners()
+  pool.release(this.id)
 }
 
 /**

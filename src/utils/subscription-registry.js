@@ -18,23 +18,20 @@ class SubscriptionRegistry {
    * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
    */
   constructor(options, topic, clusterTopic) {
-    this._delayedBroadcasts = {}
-    this._delay = -1
-    if (options.broadcastTimeout !== undefined) {
-      this._delay = options.broadcastTimeout
-    }
-    this._subscriptions = {}
+    this._broadcastTimeout = options.broadcastTimeout
+    this._broadcastTimer = null
+    this._subscriptions = new Map()
     this._options = options
     this._topic = topic
     this._subscriptionListener = null
-    this._unsubscribeAllFunctions = []
     this._constants = {
       MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
       SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
       UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
       NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
     }
-
+    this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
+    this._onSocketClose = this._onSocketClose.bind(this)
     this._setupRemoteComponents(clusterTopic)
   }
 
@@ -97,7 +94,7 @@ class SubscriptionRegistry {
    * @returns {Array} names
    */
   hasName(subscriptionName) {
-    return this._clusterSubscriptions.getAll().indexOf(subscriptionName) !== -1
+    return this._clusterSubscriptions.has(subscriptionName)
   }
 
   /**
@@ -122,61 +119,70 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  onBroadcastTimeout(delayedBroadcasts) {
-    const sockets = this._subscriptions[delayedBroadcasts.name]
-    if (sockets) {
-      // sort vector of unique senders by uuid. doing so in combination with
-      // the sorting of the sockets in this subscription name means we can
-      // simplify comparisons
-      delayedBroadcasts.uniqueSendersVector.sort((a, b) => {
-        if (a.sender < b.sender) {
-          return -1
-        } else if (a.sender > b.sender) {
-          return 1
-        }
-        return 0
-      })
+  _onBroadcastTimeout() {
+    this._broadcastTimer = null
+    for (const entry of this._subscriptions) {
+      const name = entry[0]
+      const subscription = entry[1]
+      const senders = subscription.senders
+      const sockets = subscription.sockets
 
-      // for all unique senders and their gaps, build their special messages
-      for (const uniqueSender of delayedBroadcasts.uniqueSendersVector) {
-        uniqueSender.message = delayedBroadcasts.sharedMessages
-          .substring(0, uniqueSender.gaps[0].start)
-        let lastStop = uniqueSender.gaps[0].stop
-        for (let j = 1; j < uniqueSender.gaps.length; j++) {
-          uniqueSender.message += delayedBroadcasts.sharedMessages
-            .substring(lastStop, uniqueSender.gaps[j].start)
-          lastStop = uniqueSender.gaps[j].stop
-        }
-        uniqueSender.message += delayedBroadcasts.sharedMessages
-          .substring(lastStop, delayedBroadcasts.sharedMessages.length)
+      if (sockets.length === 0) {
+        this._subscriptions.delete(name)
+      }
+
+      if (subscription.message.length === 0) {
+        continue
       }
 
       // for all sockets in this subscription name, send either sharedMessage or this socket's
       // specialized message. only sockets that sent something will have a special message, all
-      // other sockets are only listeners and receive the exact same (sharedMessage) message.
-      const preparedMessage = SocketWrapper.prepareMessage(delayedBroadcasts.sharedMessages)
-      let j = 0
-      for (const socket of sockets) {
-        // since both uniqueSendersVector and sockets are sorted by uuid, we can efficiently determine
-        // if this socket is a sender in this subscription name or not as well as look up the eventual
-        // specialized message for this socket.
-        if (j < delayedBroadcasts.uniqueSendersVector.length &&
-          delayedBroadcasts.uniqueSendersVector[j].sender === socket.uuid) {
-          if (delayedBroadcasts.uniqueSendersVector[j].message.length) {
-            socket.sendNative(delayedBroadcasts.uniqueSendersVector[j].message)
-          }
-          j++
-        } else {
-          // since we know when a socket is a sender and when it is a listener we can use the optimized prepared
-          // message for listeners
-          socket.sendPrepared(preparedMessage)
-        }
-      }
-      SocketWrapper.finalizeMessage(preparedMessage)
-    }
+      // other sockets are only listeners and receive the exact same shared message.
 
-    // delete this delayed broadcast
-    delete this._delayedBroadcasts[delayedBroadcasts.name]
+      if (sockets.length > 0) {
+        const preparedMessage = SocketWrapper.prepareMessage(subscription.message)
+        for (let n = 0, l = sockets.length; n < l; ++n) {
+          if (!senders[sockets[n].id] || senders[sockets[n].id].length === 1) {
+            // since we know when a socket is a sender and when it is a listener we can use the
+            // optimized prepared message for listeners
+            sockets[n].sendPrepared(preparedMessage)
+          }
+        }
+        SocketWrapper.finalizeMessage(preparedMessage)
+      }
+
+      // for all unique senders and their gaps, build and send their special messages
+      for (let n = 0, l = senders.length; n < l; ++n) {
+        if (!senders[n] || senders[n].length === 1) {
+          continue
+        }
+        let j = 1
+        let message = subscription.message.substring(0, senders[n][j++])
+        let lastStop = senders[n][j++]
+        while (j < senders[n].length) {
+          message += subscription.message.substring(lastStop, senders[n][j++])
+          lastStop = senders[n][j++]
+        }
+        message += subscription.message.substring(lastStop, subscription.message.length)
+        if (message) {
+          senders[n][0].sendNative(message)
+        }
+        senders[n].splice(1)
+      }
+
+      subscription.message = ''
+    }
+  }
+
+  _onSocketClose (socketWrapper) {
+    for (const entry of this._subscriptions) {
+      const name = entry[0]
+      const subscription = entry[1]
+      if (subscription.indices[socketWrapper.id] !== undefined) {
+        this.unsubscribe(name, socketWrapper)
+      }
+      subscription.senders[socketWrapper.id] = undefined
+    }
   }
 
   /**
@@ -187,13 +193,15 @@ class SubscriptionRegistry {
    *
    * @param   {String} name      the name/topic the subscriber was previously registered for
    * @param   {String} msgString the message as string
-   * @param   {[SocketWrapper]} sender an optional socketWrapper that shouldn't receive the message
+   * @param   {[SocketWrapper]} socket an optional socketWrapper that shouldn't receive the message
    *
    * @public
    * @returns {void}
    */
-  sendToSubscribers(name, msgString, sender) {
-    if (!this._subscriptions[name]) {
+  sendToSubscribers(name, msgString, socket) {
+    const subscription = this._subscriptions.get(name)
+
+    if (!subscription || subscription.sockets.length === 0) {
       return
     }
 
@@ -202,51 +210,29 @@ class SubscriptionRegistry {
       msgString += C.MESSAGE_SEPERATOR
     }
 
-    // if not already a delayed broadcast, create it
-    let delayedBroadcasts = this._delayedBroadcasts[name]
-    if (delayedBroadcasts === undefined) {
-      this._delayedBroadcasts[name] = delayedBroadcasts = {
-        uniqueSendersVector: [],
-        uniqueSendersMap: {},
-        timer: null,
-        name,
-        sharedMessages: ''
-      }
-    }
-
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
-    const start = delayedBroadcasts.sharedMessages.length
-    delayedBroadcasts.sharedMessages += msgString
-    const stop = delayedBroadcasts.sharedMessages.length
+    const start = subscription.message.length
+    subscription.message += msgString
+    const stop = subscription.message.length
 
-    // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
-    // each uniqueSender has a vector of "gaps" in relation to sharedMessage
-    // senders should not receive what they sent themselves, so a gap is inserted
-    // for every send from this sender
-    let pos
-    if (sender && sender.uuid !== undefined) {
-      pos = delayedBroadcasts.uniqueSendersMap[sender.uuid]
-      if (pos !== undefined) {
-        delayedBroadcasts.uniqueSendersVector[pos].gaps.push({ start, stop })
+    // each sender has a vector of "gaps" in relation to sharedMessage
+    // sockets should not receive what they sent themselves, so a gap is inserted
+    // for every send from this socket
+    if (socket && socket.id !== undefined) {
+      const sender = subscription.senders[socket.id]
+      if (!sender) {
+        subscription.senders[socket.id] = [ socket, start, stop ]
       } else {
-        pos = delayedBroadcasts.uniqueSendersVector.length
-        delayedBroadcasts.uniqueSendersMap[sender.uuid] = pos
-        delayedBroadcasts.uniqueSendersVector[pos] = {
-          sender: sender.uuid,
-          message: null,
-          gaps: [{ start, stop }]
-        }
+        sender.push(start, stop)
       }
     }
 
-    // reuse the same timer if already started
-    if (!delayedBroadcasts.timer) {
-      if (this._delay !== -1) {
-        delayedBroadcasts.timer = setTimeout(this.onBroadcastTimeout.bind(this), this._delay, delayedBroadcasts)
-      } else {
-        this.onBroadcastTimeout(delayedBroadcasts)
-      }
+    if (this._broadcastTimeout) {
+      // reuse the same timer if already started
+      this._broadcastTimer = this._broadcastTimer || setTimeout(this._onBroadcastTimeout, this._broadcastTimeout)
+    } else {
+      this._onBroadcastTimeout()
     }
   }
 
@@ -260,41 +246,37 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   subscribe(name, socketWrapper) {
-    if (this._subscriptions[name] === undefined) {
-      this._subscriptions[name] = []
+    let subscription = this._subscriptions.get(name)
+
+    if (!subscription) {
+      subscription = {
+        sockets: [],
+        indices: [],
+        senders: [],
+        message: ''
+      }
+      this._subscriptions.set(name, subscription)
     }
 
-    if (this._subscriptions[name].indexOf(socketWrapper) !== -1) {
+    if (subscription.indices[socketWrapper.id] !== undefined) {
       const msg = `repeat supscription to "${name}" by ${socketWrapper.user}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
       socketWrapper.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
-    if (!this.isLocalSubscriber(socketWrapper)) {
-      const unsubscribeAllFn = this.unsubscribeAll.bind(this, socketWrapper)
-      this._unsubscribeAllFunctions.push({
-        socketWrapper,
-        fn: unsubscribeAllFn
-      })
-      socketWrapper.once('close', unsubscribeAllFn)
-    }
+    subscription.indices[socketWrapper.id] = subscription.sockets.length
+    subscription.sockets.push(socketWrapper)
 
-    // insert socket in vector, sorted by uuid
-    const sorted = this._subscriptions[name]
-    let index = 0
-    for (; index < sorted.length; index++) {
-      if (sorted[index].uuid > socketWrapper.uuid) {
-        break
-      }
+    if (socketWrapper.listeners('close').indexOf(this._onSocketClose) === -1) {
+      socketWrapper.once('close', this._onSocketClose)
     }
-    sorted.splice(index, 0, socketWrapper)
 
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionMade(
         name,
         socketWrapper,
-        this._subscriptions[name].length
+        subscription.sockets.length
       )
     }
 
@@ -316,36 +298,31 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   unsubscribe(name, socketWrapper, silent) {
-    let msg
-    let i
+    const subscription = this._subscriptions.get(name)
 
-    if (this._subscriptions[name] === undefined ||
-      this._subscriptions[name].indexOf(socketWrapper) === -1) {
-      msg = `${socketWrapper.user} is not subscribed to ${name}`
+    if (!subscription || subscription.indices[socketWrapper.id] === undefined) {
+      const msg = `${socketWrapper.user} is not subscribed to ${name}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg)
       socketWrapper.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)
       return
     }
 
+    // Instead of slicing subscription.sockets, swap position with last item and pop.
+    const lastSocketWrapper = subscription.sockets.pop()
+    if (lastSocketWrapper !== socketWrapper) {
+      subscription.sockets[subscription.indices[socketWrapper.id]] = lastSocketWrapper
+      subscription.indices[lastSocketWrapper.id] = subscription.indices[socketWrapper.id]
+    }
+    subscription.indices[socketWrapper.id] = undefined
+
     this._clusterSubscriptions.remove(name)
 
-    if (this._subscriptions[name].length === 1) {
-      delete this._subscriptions[name]
-    } else {
-      this._subscriptions[name].splice(this._subscriptions[name].indexOf(socketWrapper), 1)
-    }
-
     if (this._subscriptionListener) {
-      const allServerNames = this._clusterSubscriptions.getAllServers(name)
-      const indexOfCurrentNode = allServerNames.indexOf(this._options.serverName)
-      if (indexOfCurrentNode > -1) {
-        allServerNames.splice(indexOfCurrentNode, 1)
-      }
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socketWrapper,
-        this._subscriptions[name] ? this._subscriptions[name].length : 0,
-        allServerNames.length
+        subscription.sockets.length,
+        this.getAllRemoteServers(name).length
       )
     }
 
@@ -354,56 +331,6 @@ class SubscriptionRegistry {
       this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg)
       socketWrapper.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name])
     }
-
-    if (!this.isLocalSubscriber(socketWrapper)) {
-      for (i = 0; i < this._unsubscribeAllFunctions.length; i++) {
-        if (this._unsubscribeAllFunctions[i].socketWrapper === socketWrapper) {
-          socketWrapper.removeListener('close', this._unsubscribeAllFunctions[i].fn)
-          this._unsubscribeAllFunctions.splice(i, 1)
-        }
-      }
-    }
-  }
-
-  /**
-   * Removes the SocketWrapper from all subscriptions. This is also called
-   * when the socket closes
-   *
-   * @param   {SocketWrapper} socketWrapper
-   *
-   * @public
-   * @returns {void}
-   */
-  unsubscribeAll(socketWrapper) {
-    let name
-    let index
-
-    for (name in this._subscriptions) {
-      index = this._subscriptions[name].indexOf(socketWrapper)
-
-      if (index !== -1) {
-        this.unsubscribe(name, socketWrapper)
-      }
-    }
-  }
-
-  /**
-   * Returns true if socketWrapper is subscribed to any of the events in
-   * this registry. This is useful to bind events on close only once
-   *
-   * @param {SocketWrapper} socketWrapper
-   *
-   * @public
-   * @returns {Boolean} isLocalSubscriber
-   */
-  isLocalSubscriber(socketWrapper) {
-    for (const name in this._subscriptions) {
-      if (this._subscriptions[name].indexOf(socketWrapper) !== -1) {
-        return true
-      }
-    }
-
-    return false
   }
 
   /**
@@ -416,25 +343,8 @@ class SubscriptionRegistry {
    * @returns {Array} SocketWrapper[]
    */
   getLocalSubscribers(name) {
-    return this._subscriptions[name] || []
-  }
-
-  /**
-   * Returns a random SocketWrapper out of the array
-   * of SocketWrappers that are subscribed to <name>
-   *
-   * @param   {String} name
-   *
-   * @public
-   * @returns {SocketWrapper}
-   */
-  getRandomLocalSubscriber(name) {
-    const subscribers = this.getLocalSubscribers(name)
-
-    if (subscribers.length > 0) {
-      return subscribers[Math.floor(Math.random() * subscribers.length)]
-    }
-    return null
+    const subscription = this._subscriptions.get(name)
+    return subscription ? subscription.sockets : []
   }
 
   /**
@@ -448,8 +358,8 @@ class SubscriptionRegistry {
    * @returns {Boolean} hasLocalSubscribers
    */
   hasLocalSubscribers(name) {
-    const subscriptions = this._subscriptions[name]
-    return !!subscriptions && subscriptions.length !== 0
+    const subscription = this._subscriptions.get(name)
+    return subscription ? subscription.sockets.length > 0 : false
   }
 
   /**
@@ -472,7 +382,7 @@ class SubscriptionRegistry {
    * @param  {String} name the name that was added
    */
   _onClusterSubscriptionAdded(name) {
-    if (this._subscriptionListener && !this._subscriptions[name]) {
+    if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
       this._subscriptionListener.onSubscriptionMade(name, null, 1)
     }
   }
@@ -485,7 +395,7 @@ class SubscriptionRegistry {
    * @param  {String} name the name that was removed
    */
   _onClusterSubscriptionRemoved(name) {
-    if (this._subscriptionListener && !this._subscriptions[name]) {
+    if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
       this._subscriptionListener.onSubscriptionRemoved(name, null, 0, 0)
     }
   }

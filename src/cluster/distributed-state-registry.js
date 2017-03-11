@@ -101,8 +101,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @returns {[type]}
   */
   removeAll(serverName) {
-    let name
-    for (name in this._data) {
+    for (const name in this._data) {
       if (this._data[name].nodes[serverName]) {
         this._remove(name, serverName)
       }
@@ -116,11 +115,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @returns {Object} entries
   */
   getAllServers(name) {
-    if (this._data[name]) {
-      return Object.keys(this._data[name].nodes)
-    }
-
-    return []
+    return this._data[name] ? Object.keys(this._data[name].nodes) : []
   }
 
   /**
@@ -253,9 +248,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   */
   _createCheckSum(name) {
     let checkSum = 0
-    let i
 
-    for (i = 0; i < name.length; i++) {
+    for (let i = 0; i < name.length; i++) {
       checkSum = ((checkSum << 5) - checkSum) + name.charCodeAt(i)
     }
 
@@ -324,9 +318,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   */
   _sendFullState() {
     const localState = []
-    let name
 
-    for (name in this._data) {
+    for (const name in this._data) {
       if (this._data[name].nodes[this._options.serverName]) {
         localState.push(name)
       }
@@ -354,18 +347,15 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @returns {void}
   */
   _applyFullState(serverName, names) {
-    let name
-    let i
-
-    for (name in this._data) {
-            // please note: only checking if the name exists is sufficient as the registry will just
-            // set node[serverName] to false if the entry exists, but not for the remote server.
+    for (const name in this._data) {
+      // Note: only checking if the name exists is sufficient as the registry will just
+      // set node[serverName] to false if the entry exists, but not for the remote server.
       if (names.indexOf(name) === -1) {
         this._remove(name, serverName)
       }
     }
 
-    for (i = 0; i < names.length; i++) {
+    for (let i = 0; i < names.length; i++) {
       this._add(names[i], serverName)
     }
   }
