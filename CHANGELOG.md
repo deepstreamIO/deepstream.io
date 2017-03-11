@@ -1,4 +1,4 @@
-## [2.1.3] - 2016.12.28
+## [2.1.3] - 2017.02.25
 
 ### Bug Fixes
 
@@ -17,6 +17,7 @@
 - Removing dead config options [#599]
 - getAlternativeProvider in RPC Handler deals with more edge cases [#566]
 - Update UWS build version to 0.12
+- Packages built against node 6.10
 
 ## [2.1.2] - 2016.12.28
 
