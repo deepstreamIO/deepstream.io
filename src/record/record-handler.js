@@ -76,8 +76,8 @@ module.exports = class RecordHandler {
         this._read(data, socket)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
-      this._broadcast(data, socket)
       this._cache.lock(data[0])
+      this._broadcast(data, socket)
       this._storage.set(data, (error, record) => {
         if (error) {
           const message = `error while writing ${record[0]} to storage`
