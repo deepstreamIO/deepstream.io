@@ -109,7 +109,9 @@ module.exports = class RecordHandler {
         return
       }
 
-      if (!data[1] || this._compare(this._broadcast(record), data)) {
+      record = this._broadcast(record)
+
+      if (!data[1] || this._compare(record, data)) {
         return
       }
 
