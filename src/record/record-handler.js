@@ -36,7 +36,7 @@ module.exports = class RecordHandler {
           clearTimeout(timeout)
           this._message.unsubscribe(inbox, next)
 
-          if (record && this._compare(this._broadcast(record), data)) {
+          if (record && record[2] && this._compare(this._broadcast(record), data)) {
             return
           }
 
@@ -54,7 +54,10 @@ module.exports = class RecordHandler {
     // [ name, version, inbox, ... ]
     this._message.subscribe(this._outbox, data => {
       const record = this._cache.peek(data[0])
-      this._message.publish(data[2], this._compare(record, data) ? record : record.slice(0, 2))
+      this._message.publish(data[2], this._compare(record, data)
+        ? record
+        : (record ? record.slice(0, 2) : data.slice(0, 1))
+      )
     })
   }
 
@@ -111,7 +114,7 @@ module.exports = class RecordHandler {
 
       record = this._broadcast(record)
 
-      if (!data[1] || this._compare(record, data)) {
+      if (this._compare(record, data)) {
         return
       }
 
@@ -121,6 +124,10 @@ module.exports = class RecordHandler {
 
   // [ name, version, body, ... ]
   _broadcast (nextRecord, sender = C.SOURCE_MESSAGE_CONNECTOR) {
+    if (!nextRecord || !nextRecord[2]) {
+      return null
+    }
+
     const prevRecord = this._cache.peek(nextRecord[0])
 
     if (this._compare(prevRecord, nextRecord)) {
@@ -142,7 +149,7 @@ module.exports = class RecordHandler {
     return nextRecord
   }
 
-  // [ name, version, ... ]
+  // [ name, ... ]
   _read (data, socket) {
     let sockets = this._pending.get(data[0])
 
@@ -162,7 +169,7 @@ module.exports = class RecordHandler {
     const next = (record) => {
       clearTimeout(timeout)
 
-      if (record && this._compare(this._broadcast(record), data)) {
+      if (this._broadcast(record)) {
         this._pending.delete(data[0])
         this._message.unsubscribe(inbox, next)
       } else if (i < serverNames.length) {
