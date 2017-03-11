@@ -99,23 +99,22 @@ module.exports = class RecordHandler {
   }
 
   // [ name, version, ... ]
-  _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ]) {
+  _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ], tries = 30) {
     this._storage.get(data[0], (error, record, [ data, sockets ]) => {
-      if (error) {
-        const message = `error while reading ${record[0]} from storage`
+      if (error || tries === 0) {
+        const message = `error while reading ${data[0]} version ${data[1]} from storage`
         for (const socket of sockets) {
           this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
         }
         return
       }
 
-      if (this._compare(this._broadcast(record), data)) {
+      if (!data[1] || this._compare(this._broadcast(record), data)) {
         return
       }
 
-      // TODO: Avoid infinite loop
-      setTimeout(() => this._refresh(data, sockets), 1000)
-    }, [ data, sockets ])
+      setTimeout(() => this._refresh(data, sockets, tries - 1), 1000)
+    }, [ data, sockets, tries ])
   }
 
   // [ name, version, body, ... ]
