@@ -2,7 +2,7 @@ const C = require(`../constants/constants`)
 const SubscriptionRegistry = require(`../utils/subscription-registry`)
 const ListenerRegistry = require(`../listen/listener-registry`)
 const messageBuilder = require(`../message/message-builder`)
-const LRU = require(`lru-cache`)
+const RecordCache = require(`./record-cache`)
 const utils = require(`../utils/utils`)
 
 module.exports = class RecordHandler {
@@ -10,10 +10,7 @@ module.exports = class RecordHandler {
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
-    this._cache = new LRU({
-      max: options.cacheSize || 512e6,
-      length: record => record[0].length + record[1].length + record[2].length + 64
-    })
+    this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
     this._outbox = `RH.R.${options.serverName}`
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
@@ -37,7 +34,6 @@ module.exports = class RecordHandler {
             const message = `error while reading ${record[0]} from storage`
             this._sendError(C.SOURCE_MESSAGE_CONNECTOR, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
           } else {
-            // TODO: Check version
             this._broadcast(record)
           }
         })
@@ -66,10 +62,13 @@ module.exports = class RecordHandler {
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       this._broadcast(data.slice(0, 3), socket)
+      this._cache.lock(data[0])
       this._storage.set(data.slice(0, 4), (error, record) => {
         if (error) {
           const message = `error while writing ${record[0]} to storage`
           this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ ...record, message ])
+        } else {
+          this._cache.unlock(record[0])
         }
       })
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
@@ -130,8 +129,7 @@ module.exports = class RecordHandler {
             const message = `error while reading ${record[0]} from storage`
             this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
           } else {
-            // TODO: Check version
-            this._broadcast(record)
+            this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)
           }
         })
       }
