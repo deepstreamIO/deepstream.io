@@ -103,7 +103,7 @@ module.exports = class RecordHandler {
 
   // [ name, version, ... ]
   _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ], tries = 30) {
-    this._storage.get(data[0], (error, record, [ data, sockets ]) => {
+    this._storage.get(data[0], (error, record, [ data, sockets, tries ]) => {
       if (error || tries === 0) {
         const message = `error while reading ${data[0]} version ${data[1]} from storage`
         for (const socket of sockets) {
