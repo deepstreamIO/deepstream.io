@@ -11,6 +11,7 @@ module.exports = class RecordHandler {
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
+    this._pending = new Map()
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
     this._outbox = `RH.R.${options.serverName}`
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
@@ -40,14 +41,14 @@ module.exports = class RecordHandler {
             return
           }
 
-          this._refresh(data, C.SOURCE_MESSAGE_CONNECTOR)
+          this._refresh(data, [ C.SOURCE_MESSAGE_CONNECTOR ])
         }
 
         this._message.subscribe(inbox, next)
         this._message.publish(data[2], [ data[0], data[1], inbox ])
         timeout = setTimeout(next, 100)
       } else {
-        this._refresh(data, C.SOURCE_MESSAGE_CONNECTOR)
+        this._refresh(data, [ C.SOURCE_MESSAGE_CONNECTOR ])
       }
     })
 
@@ -99,11 +100,13 @@ module.exports = class RecordHandler {
   }
 
   // [ name, version, ... ]
-  _refresh (data, socket) {
-    this._storage.get(data[0], (error, record, [ data, socket ]) => {
+  _refresh (data, sockets) {
+    this._storage.get(data[0], (error, record, [ data, sockets ]) => {
       if (error) {
         const message = `error while reading ${record[0]} from storage`
-        this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+        for (const socket of sockets) {
+          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+        }
         return
       }
 
@@ -112,8 +115,8 @@ module.exports = class RecordHandler {
       }
 
       // TODO: Avoid infinite loop
-      setTimeout(() => this._refresh(data, socket), 1000)
-    }, [ data, socket ])
+      setTimeout(() => this._refresh(data, sockets), 1000)
+    }, [ data, sockets ])
   }
 
   // [ name, version, body, ... ]
@@ -141,7 +144,14 @@ module.exports = class RecordHandler {
 
   // [ name, ... ]
   _read (data, socket) {
-    // TODO: Optimize by keeping track of pending reads.
+    let sockets = this._pending.get(data[0])
+
+    if (sockets) {
+      sockets.add(socket)
+      return
+    }
+
+    sockets = new Set([ socket ])
 
     const inbox = `RH.U.${data[0]}`
     const serverNames = utils.shuffle(this._subscriptionRegistry.getAllServers())
@@ -156,13 +166,15 @@ module.exports = class RecordHandler {
       }
 
       if (this._broadcast(record, C.SOURCE_MESSAGE_CONNECTOR)) {
+        this._pending.delete(data[0])
         this._message.unsubscribe(inbox, next)
       } else if (i < serverNames.length) {
         this._message.publish(`RH.R.${serverNames[i++]}`, [ data[0], null, inbox ])
         timeout = setTimeout(next, 40)
       } else {
+        this._pending.delete(data[0])
         this._message.unsubscribe(inbox, next)
-        this._refresh(data, socket)
+        this._refresh(data, sockets)
       }
     }
 
