@@ -32,20 +32,21 @@ module.exports = class RecordHandler {
       if (data[2]) {
         let timeout = null
         const next = (record) => {
-          this._broadcast(record)
+          record = this._broadcast(record)
 
-          if (record && (record[0] !== data[0] || !this._compare(record, data))) {
+          if (record && record[0] !== data[0]) {
             return
           }
+
+          this._message.unsubscribe(`RH.U`, next)
 
           if (!record) {
             this._cache.del(data[0])
             const message = `error while reading ${data[0]} version ${data[1]} from outbox (${data[2]})`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+          } else if (this._compare(record, data)) {
+            clearTimeout(timeout)
           }
-
-          clearTimeout(timeout)
-          this._message.unsubscribe(`RH.U`, next)
         }
 
         this._message.subscribe(`RH.U`, next)
@@ -56,6 +57,7 @@ module.exports = class RecordHandler {
       }
     })
 
+    // [ name, version, inbox, ... ]
     const onRead = data => {
       const record = this._cache.peek(data[0])
       const reply = this._compare(record, data)
@@ -66,7 +68,6 @@ module.exports = class RecordHandler {
       this._message.publish('RH.U', reply)
     }
 
-    // [ name, version, inbox, ... ]
     this._message.subscribe(`RH.R.${this._serverName}`, onRead)
     this._message.subscribe(`RH.R`, onRead)
   }
@@ -190,15 +191,14 @@ module.exports = class RecordHandler {
     let i = 0
     let timeout = null
     const next = (record) => {
-      this._broadcast(record)
+      record = this._broadcast(record)
 
       if (record && record[0] !== data[0]) {
         return
       }
 
-      clearTimeout(timeout)
-
-      if (this._broadcast(record)) {
+      if (record) {
+        clearTimeout(timeout)
         this._pending.delete(data[0])
         this._message.unsubscribe(`RH.U`, next)
       } else if (i <= serverNames.length) {
