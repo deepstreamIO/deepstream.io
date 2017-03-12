@@ -6,6 +6,8 @@ const RecordCache = require(`./record-cache`)
 
 module.exports = class RecordHandler {
   constructor (options) {
+    this._broadcast = this._broadcast.bind(this)
+
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
@@ -19,12 +21,14 @@ module.exports = class RecordHandler {
         this._listenerRegistry.onSubscriptionMade(subscriptionName, socketWrapper, localCount)
         if (socketWrapper && localCount === 1) {
           this._cache.lock(subscriptionName)
+          this._message.subscribe(`RH.U.${subscriptionName}`, this._broadcast)
         }
       },
       onSubscriptionRemoved: (subscriptionName, socketWrapper, localCount, remoteCount) => {
         this._listenerRegistry.onSubscriptionRemoved(subscriptionName, socketWrapper, localCount, remoteCount)
         if (socketWrapper && localCount === 0) {
           this._cache.unlock(subscriptionName)
+          this._message.unsubscribe(`RH.U.${subscriptionName}`, this._broadcast)
         }
       }
     })
@@ -35,30 +39,8 @@ module.exports = class RecordHandler {
         return
       }
 
-      if (this._subscriptionRegistry.getLocalSubscribers(data[0]).length === 0) {
+      if (!this._subscriptionRegistry.hasLocalSubscribers(data[0])) {
         this._cache.del(data[0])
-        return
-      }
-
-      if (data[2]) {
-        let inbox = `RH.U.${data[0]}`
-        let timeout = null
-        let next = (record) => {
-          this._message.unsubscribe(inbox, next)
-
-          if (!record) {
-            this._cache.del(data[0])
-            const message = `error while reading ${data[0]} version ${data[1]} from outbox (${data[2]})`
-            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-          } else if (this._compare(record, data)) {
-            this._broadcast(record)
-            clearTimeout(timeout)
-          }
-        }
-
-        this._message.subscribe(inbox, next)
-        this._message.publish(data[2], [ data[0], data[1], inbox ])
-        timeout = setTimeout(next, 10000)
       } else {
         this._refresh(data)
       }
@@ -116,26 +98,22 @@ module.exports = class RecordHandler {
   }
 
   // [ name, version, ... ]
-  _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ], tries = 30) {
+  _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ]) {
     this._storage.get(data[0], (error, record) => {
       const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
 
-      if (error || tries === 0) {
+      if (error) {
         for (const socket of sockets) {
           this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
         }
         return
       }
 
-      record = this._broadcast(record)
-
-      if (this._compare(record, data)) {
+      if (this._compare(this._broadcast(record), data)) {
         return
       }
 
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
-
-      setTimeout(() => this._refresh(data, sockets, tries - 1), 1000)
     })
   }
 
@@ -151,7 +129,9 @@ module.exports = class RecordHandler {
       return prevRecord
     }
 
-    this._cache.set(nextRecord[0], nextRecord.slice(0, 3))
+    nextRecord = nextRecord.slice(0, 3)
+
+    this._cache.set(nextRecord[0], nextRecord)
 
     this._subscriptionRegistry.sendToSubscribers(
       nextRecord[0],
@@ -160,7 +140,7 @@ module.exports = class RecordHandler {
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`RH.I`, [ nextRecord[0], nextRecord[1], `RH.R` ])
+      this._message.publish(`RH.U.${nextRecord[0]}`, nextRecord)
     }
 
     return nextRecord
@@ -178,34 +158,26 @@ module.exports = class RecordHandler {
     sockets = new Set([ socket ])
     this._pending.set(data[0], sockets)
 
-    let inbox = `RH.U.${data[0]}`
-    let timeout
-    let next = record => {
-      if (record) {
-        clearTimeout(timeout)
-        this._pending.delete(data[0])
-        this._message.unsubscribe(inbox, next)
-        this._broadcast(record)
-      } else {
-        this._storage.get(data[0], (error, record) => {
-          this._pending.delete(data[0])
-          this._message.unsubscribe(inbox, next)
+    const inbox = `RH.U.${data[0]}`
 
-          if (error) {
-            const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
-            for (const socket of sockets) {
-              this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-            }
-          } else {
-            this._broadcast(record)
-          }
-        })
-      }
+    const onRecord = record => {
+      this._pending.delete(record[0])
+      this._message.unsubscribe(inbox, onRecord)
+      this._broadcast(record)
     }
 
-    this._message.subscribe(inbox, next)
+    this._message.subscribe(inbox, onRecord)
     this._message.publish(`RH.R`, [ data[0], null, inbox ])
-    timeout = setTimeout(next, 200)
+    this._storage.get(data[0], (error, record) => {
+      if (error) {
+        const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
+        for (const socket of sockets) {
+          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+        }
+      } else {
+        onRecord(record)
+      }
+    })
   }
 
   _sendError (socket, event, message) {
