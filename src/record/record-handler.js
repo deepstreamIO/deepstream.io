@@ -100,20 +100,15 @@ module.exports = class RecordHandler {
   // [ name, version, ... ]
   _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ]) {
     this._storage.get(data[0], (error, record) => {
-      const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
-
       if (error) {
+        const message = `error while reading ${data[0]} from storage ${error}`
         for (const socket of sockets) {
           this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
         }
-        return
+      } else if (!this._compare(this._broadcast(record), data)) {
+        const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
+        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
       }
-
-      if (this._compare(this._broadcast(record), data)) {
-        return
-      }
-
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
     })
   }
 
