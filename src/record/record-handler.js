@@ -105,7 +105,7 @@ module.exports = class RecordHandler {
   _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ], tries = 30) {
     this._storage.get(data[0], (error, record) => {
       if (error || tries === 0) {
-        const message = `error while reading ${data[0]} version ${data[1]} from storage`
+        const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
         for (const socket of sockets) {
           this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
         }
@@ -195,18 +195,20 @@ module.exports = class RecordHandler {
   }
 
   _compare (a, b) {
-    return this._compareVersions(a && a[1], b && b[1])
-  }
-
-  _compareVersions (a, b) {
-    if (!a) {
-      return false
-    }
     if (!b) {
       return true
     }
-    const [av, ar] = this._splitRev(a)
-    const [bv, br] = this._splitRev(b)
+    if (!a) {
+      return false
+    }
+    if (!b[1]) {
+      return true
+    }
+    if (!a[1]) {
+      return false
+    }
+    const [av, ar] = this._splitRev(a[1])
+    const [bv, br] = this._splitRev(b[1])
     return parseInt(av, 10) > parseInt(bv, 10) || (av === bv && ar >= br)
   }
 
