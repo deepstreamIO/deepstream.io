@@ -7,6 +7,7 @@ const RecordCache = require(`./record-cache`)
 module.exports = class RecordHandler {
   constructor (options) {
     this._update = this._update.bind(this)
+    this._read = this._read.bind(this)
 
     this._pending = new Map()
     this._logger = options.logger
@@ -37,19 +38,7 @@ module.exports = class RecordHandler {
       }
     })
 
-    // [ name, version, inbox, ... ]
-    this._message.subscribe(`RH.R`, name => {
-      const record = this._cache.peek(name)
-      if (!record) {
-        return
-      }
-
-      if (!this._subscriptionRegistry.hasLocalSubscribers(name)) {
-        this._cache.del(name)
-      }
-
-      this._message.publish(`RH.U.${name}`, record)
-    })
+    this._message.subscribe(`RH.R`, this._read)
   }
 
   handle (socket, message) {
@@ -90,6 +79,21 @@ module.exports = class RecordHandler {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ ...data, message.action ])
       this._sendError(socket, C.EVENT.UNKNOWN_ACTION, [ ...data, `unknown action ${message.action}` ])
     }
+  }
+
+  // [ name, version, inbox, ... ]
+  _read (name) {
+    const record = this._cache.peek(name)
+
+    if (!record) {
+      return
+    }
+
+    if (!this._subscriptionRegistry.hasLocalSubscribers(name)) {
+      this._cache.del(name)
+    }
+
+    this._message.publish(`RH.U.${name}`, record)
   }
 
   // [ name, version, ?body ]
