@@ -7,7 +7,9 @@ const RecordCache = require(`./record-cache`)
 module.exports = class RecordHandler {
   constructor (options) {
     this._broadcast = this._broadcast.bind(this)
+    this._dispatch = this._dispatch.bind(this)
 
+    this._pending = new Map()
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
@@ -49,9 +51,15 @@ module.exports = class RecordHandler {
     // [ name, version, inbox, ... ]
     this._message.subscribe(`RH.R`, name => {
       const record = this._cache.peek(name)
-      if (record) {
-        this._message.publish(`RH.U.${name}`, record)
+      if (!record) {
+        return
       }
+
+      if (!this._subscriptionRegistry.hasLocalSubscribers(name)) {
+        this._cache.del(name)
+      }
+
+      this._message.publish(`RH.U.${name}`, record)
     })
   }
 
@@ -67,7 +75,15 @@ module.exports = class RecordHandler {
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
       } else {
-        this._refresh(data, socket)
+        const sockets = this._pending.get(data[0])
+        if (!sockets) {
+          this._pending.set(data[0], [ socket ])
+        } else {
+          sockets.push(socket)
+        }
+        if (this._pending.size === 1) {
+          setTimeout(this._dispatch, 200)
+        }
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       this._broadcast(data, socket)
@@ -97,12 +113,23 @@ module.exports = class RecordHandler {
     }
   }
 
+  _dispatch () {
+    for (const [ name, sockets ] of this._pending) {
+      if (!this._cache.has(name) && this._subscriptionRegistry.hasLocalSubscribers(name)) {
+        this._refresh([ name ], sockets)
+      }
+    }
+    this._pending.clear()
+  }
+
   // [ name, version, ... ]
-  _refresh (data, socket = C.SOURCE_MESSAGE_CONNECTOR) {
+  _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ]) {
     this._storage.get(data[0], (error, record) => {
       if (error) {
         const message = `error while reading ${data[0]} from storage ${error}`
-        this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+        for (const socket of sockets) {
+          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+        }
       } else if (!this._compare(this._broadcast(record), data)) {
         const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
         this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
