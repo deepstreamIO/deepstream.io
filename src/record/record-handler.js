@@ -192,6 +192,10 @@ module.exports = class RecordHandler {
     let i = 0
     let timeout = null
     const next = (record) => {
+      if (!record) {
+        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, `cache timeout`)
+      }
+
       record = this._broadcast(record)
 
       if (record && record[0] !== data[0]) {
