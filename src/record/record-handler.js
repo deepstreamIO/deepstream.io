@@ -16,7 +16,20 @@ module.exports = class RecordHandler {
     this._serverName = options.serverName
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
-    this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
+    this._subscriptionRegistry.setSubscriptionListener({
+      onSubscriptionMade: (subscriptionName, socketWrapper, localCount) => {
+        this._listenerRegistry.onSubscriptionMade(subscriptionName, socketWrapper, localCount)
+        if (socketWrapper && localCount === 1) {
+          this._cache.lock(subscriptionName)
+        }
+      },
+      onSubscriptionRemoved: (subscriptionName, socketWrapper, localCount, remoteCount) => {
+        this._listenerRegistry.onSubscriptionRemoved(subscriptionName, socketWrapper, localCount, remoteCount)
+        if (socketWrapper && localCount === 0) {
+          this._cache.unlock(subscriptionName)
+        }
+      }
+    })
 
     // [ name, version, outbox, ... ]
     this._message.subscribe(`RH.I`, data => {
@@ -78,10 +91,8 @@ module.exports = class RecordHandler {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
     } else if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._subscriptionRegistry.subscribe(data[0], socket)
-      this._cache.lock(data[0])
     } else if (message.action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(data[0], socket)
-      this._cache.lock(data[0])
       const record = this._cache.get(data[0])
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
@@ -103,7 +114,6 @@ module.exports = class RecordHandler {
       }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(data[0], socket)
-      this._cache.unlock(data[0])
     } else if (
       message.action === C.ACTIONS.LISTEN ||
       message.action === C.ACTIONS.UNLISTEN ||
