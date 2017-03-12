@@ -11,7 +11,6 @@ module.exports = class RecordHandler {
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
-    this._pending = new Map()
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
     this._recordExclusion = options.recordExclusion
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
@@ -22,6 +21,9 @@ module.exports = class RecordHandler {
         if (socketWrapper && localCount === 1) {
           this._cache.lock(subscriptionName)
           this._message.subscribe(`RH.U.${subscriptionName}`, this._broadcast)
+          if (!this._cache.has(subscriptionName)) {
+            this._message.publish(`RH.R`, subscriptionName)
+          }
         }
       },
       onSubscriptionRemoved: (subscriptionName, socketWrapper, localCount, remoteCount) => {
@@ -67,7 +69,7 @@ module.exports = class RecordHandler {
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
       } else {
-        this._read(data, socket)
+        this._refresh(data, socket)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       this._broadcast(data, socket)
@@ -98,13 +100,11 @@ module.exports = class RecordHandler {
   }
 
   // [ name, version, ... ]
-  _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ]) {
+  _refresh (data, socket = C.SOURCE_MESSAGE_CONNECTOR) {
     this._storage.get(data[0], (error, record) => {
       if (error) {
         const message = `error while reading ${data[0]} from storage ${error}`
-        for (const socket of sockets) {
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-        }
+        this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
       } else if (!this._compare(this._broadcast(record), data)) {
         const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
         this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
@@ -114,10 +114,6 @@ module.exports = class RecordHandler {
 
   // [ name, version, body, ... ]
   _broadcast (nextRecord, sender = C.SOURCE_MESSAGE_CONNECTOR) {
-    if (!nextRecord || !nextRecord[2]) {
-      return null
-    }
-
     const prevRecord = this._cache.peek(nextRecord[0])
 
     if (this._compare(prevRecord, nextRecord)) {
@@ -139,30 +135,6 @@ module.exports = class RecordHandler {
     }
 
     return nextRecord
-  }
-
-  // [ name, ... ]
-  _read (data, socket) {
-    let sockets = this._pending.get(data[0])
-    if (sockets) {
-      sockets.add(socket)
-    } else {
-      sockets = new Set([ socket ])
-      this._pending.set(data[0], sockets)
-
-      this._message.publish(`RH.R`, data[0])
-      this._storage.get(data[0], (error, record) => {
-        if (error) {
-          const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
-          for (const socket of sockets) {
-            this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-          }
-        } else {
-          this._pending.delete(record[0])
-          this._broadcast(record)
-        }
-      })
-    }
   }
 
   _sendError (socket, event, message) {
