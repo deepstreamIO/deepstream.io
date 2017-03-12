@@ -6,8 +6,7 @@ const RecordCache = require(`./record-cache`)
 
 module.exports = class RecordHandler {
   constructor (options) {
-    this._broadcast = this._broadcast.bind(this)
-    this._dispatch = this._dispatch.bind(this)
+    this._update = this._update.bind(this)
 
     this._pending = new Map()
     this._logger = options.logger
@@ -22,29 +21,19 @@ module.exports = class RecordHandler {
         this._listenerRegistry.onSubscriptionMade(subscriptionName, socketWrapper, localCount)
         if (socketWrapper && localCount === 1) {
           this._cache.lock(subscriptionName)
-          this._message.subscribe(`RH.U.${subscriptionName}`, this._broadcast)
+          this._message.subscribe(`RH.U.${subscriptionName}`, this._update)
           this._message.publish(`RH.R`, subscriptionName)
+          if (!this._cache.has(subscriptionName)) {
+            this._refresh([ subscriptionName ])
+          }
         }
       },
       onSubscriptionRemoved: (subscriptionName, socketWrapper, localCount, remoteCount) => {
         this._listenerRegistry.onSubscriptionRemoved(subscriptionName, socketWrapper, localCount, remoteCount)
         if (socketWrapper && localCount === 0) {
           this._cache.unlock(subscriptionName)
-          this._message.unsubscribe(`RH.U.${subscriptionName}`, this._broadcast)
+          this._message.unsubscribe(`RH.U.${subscriptionName}`, this._update)
         }
-      }
-    })
-
-    // [ name, version, outbox, ... ]
-    this._message.subscribe(`RH.I`, data => {
-      if (this._compare(this._cache.peek(data[0]), data)) {
-        return
-      }
-
-      if (!this._subscriptionRegistry.hasLocalSubscribers(data[0])) {
-        this._cache.del(data[0])
-      } else {
-        this._refresh(data)
       }
     })
 
@@ -74,16 +63,6 @@ module.exports = class RecordHandler {
       const record = this._cache.get(data[0])
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
-      } else {
-        const sockets = this._pending.get(data[0])
-        if (!sockets) {
-          this._pending.set(data[0], [ socket ])
-        } else {
-          sockets.push(socket)
-        }
-        if (this._pending.size === 1) {
-          setTimeout(this._dispatch, 200)
-        }
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       this._broadcast(data, socket)
@@ -113,23 +92,23 @@ module.exports = class RecordHandler {
     }
   }
 
-  _dispatch () {
-    for (const [ name, sockets ] of this._pending) {
-      if (!this._cache.has(name) && this._subscriptionRegistry.hasLocalSubscribers(name)) {
-        this._refresh([ name ], sockets)
-      }
+  // [ name, version, ?body ]
+  _update (record) {
+    if (record[2]) {
+      this._broadcast(record)
+    } else if (this._subscriptionRegistry.hasLocalSubscribers(record[0])) {
+      this._refresh(record)
+    } else {
+      this._cache.del(record[0])
     }
-    this._pending.clear()
   }
 
-  // [ name, version, ... ]
-  _refresh (data, sockets = [ C.SOURCE_MESSAGE_CONNECTOR ]) {
+  // [ name, ?version, ... ]
+  _refresh (data) {
     this._storage.get(data[0], (error, record) => {
       if (error) {
         const message = `error while reading ${data[0]} from storage ${error}`
-        for (const socket of sockets) {
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
-        }
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
       } else if (!this._compare(this._broadcast(record), data)) {
         const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
         this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
