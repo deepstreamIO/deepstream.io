@@ -47,10 +47,10 @@ module.exports = class RecordHandler {
     })
 
     // [ name, version, inbox, ... ]
-    this._message.subscribe(`RH.R`, data => {
-      const record = this._cache.peek(data[0])
-      if (this._compare(record, data)) {
-        this._message.publish(data[2], record)
+    this._message.subscribe(`RH.R`, name => {
+      const record = this._cache.peek(name)
+      if (record) {
+        this._message.publish(`RH.U.${name}`, record)
       }
     })
   }
@@ -149,35 +149,25 @@ module.exports = class RecordHandler {
   // [ name, ... ]
   _read (data, socket) {
     let sockets = this._pending.get(data[0])
-
     if (sockets) {
       sockets.add(socket)
-      return
-    }
+    } else {
+      sockets = new Set([ socket ])
+      this._pending.set(data[0], sockets)
 
-    sockets = new Set([ socket ])
-    this._pending.set(data[0], sockets)
-
-    const inbox = `RH.U.${data[0]}`
-
-    const onRecord = record => {
-      this._pending.delete(record[0])
-      this._message.unsubscribe(inbox, onRecord)
-      this._broadcast(record)
-    }
-
-    this._message.subscribe(inbox, onRecord)
-    this._message.publish(`RH.R`, [ data[0], null, inbox ])
-    this._storage.get(data[0], (error, record) => {
-      if (error) {
-        const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
-        for (const socket of sockets) {
-          this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+      this._message.publish(`RH.R`, data[0])
+      this._storage.get(data[0], (error, record) => {
+        if (error) {
+          const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
+          for (const socket of sockets) {
+            this._sendError(socket, C.EVENT.RECORD_LOAD_ERROR, [ ...record, message ])
+          }
+        } else {
+          this._pending.delete(record[0])
+          this._broadcast(record)
         }
-      } else {
-        onRecord(record)
-      }
-    })
+      })
+    }
   }
 
   _sendError (socket, event, message) {
