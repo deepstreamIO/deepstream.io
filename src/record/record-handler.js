@@ -71,7 +71,7 @@ module.exports = class RecordHandler {
     })
 
     // [ name, version, inbox, ... ]
-    const onRead = data => {
+    this._message.subscribe(`RH.R.${this._serverName}`, data => {
       const record = this._cache.peek(data[0])
       const reply = this._compare(record, data)
         ? record
@@ -79,10 +79,7 @@ module.exports = class RecordHandler {
 
       this._message.publish(data[2], reply)
       this._message.publish('RH.U', reply)
-    }
-
-    this._message.subscribe(`RH.R.${this._serverName}`, onRead)
-    this._message.subscribe(`RH.R`, onRead)
+    })
   }
 
   handle (socket, message) {
