@@ -21,9 +21,7 @@ module.exports = class RecordHandler {
         if (socketWrapper && localCount === 1) {
           this._cache.lock(subscriptionName)
           this._message.subscribe(`RH.U.${subscriptionName}`, this._broadcast)
-          if (!this._cache.has(subscriptionName)) {
-            this._message.publish(`RH.R`, subscriptionName)
-          }
+          this._message.publish(`RH.R`, subscriptionName)
         }
       },
       onSubscriptionRemoved: (subscriptionName, socketWrapper, localCount, remoteCount) => {
