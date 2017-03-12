@@ -78,14 +78,10 @@ module.exports = class RecordHandler {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
     } else if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._subscriptionRegistry.subscribe(data[0], socket)
-      if (this._recordExclusion.test(data[0])) {
-        this._cache.lock(data[0])
-      }
+      this._cache.lock(data[0])
     } else if (message.action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(data[0], socket)
-      if (this._recordExclusion.test(data[0])) {
-        this._cache.lock(data[0])
-      }
+      this._cache.lock(data[0])
       const record = this._cache.get(data[0])
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
@@ -107,9 +103,7 @@ module.exports = class RecordHandler {
       }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(data[0], socket)
-      if (this._recordExclusion.test(data[0])) {
-        this._cache.unlock(data[0])
-      }
+      this._cache.unlock(data[0])
     } else if (
       message.action === C.ACTIONS.LISTEN ||
       message.action === C.ACTIONS.UNLISTEN ||
