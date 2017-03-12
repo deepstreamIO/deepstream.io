@@ -32,9 +32,7 @@ module.exports = class RecordHandler {
       if (data[2]) {
         let timeout = null
         const next = (record) => {
-          if (record) {
-            this._broadcast(record)
-          }
+          this._broadcast(record)
 
           if (record && (record[0] !== data[0] || !this._compare(record, data))) {
             return
@@ -192,9 +190,7 @@ module.exports = class RecordHandler {
     let i = 0
     let timeout = null
     const next = (record) => {
-      if (record) {
-        this._broadcast(record)
-      }
+      this._broadcast(record)
 
       if (record && record[0] !== data[0]) {
         return
