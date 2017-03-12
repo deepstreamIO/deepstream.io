@@ -54,7 +54,7 @@ module.exports = class RecordCache {
   }
 
   lock (name) {
-    const refs = (this._locks.get(name) || 0)
+    const refs = this._locks.get(name) || 0
     this._locks.set(name, refs + 1)
   }
 
