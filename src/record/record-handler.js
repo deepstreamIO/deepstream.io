@@ -9,7 +9,6 @@ module.exports = class RecordHandler {
     this._update = this._update.bind(this)
     this._read = this._read.bind(this)
 
-    this._pending = new Map()
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
