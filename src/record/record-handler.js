@@ -84,7 +84,7 @@ module.exports = class RecordHandler {
     }
   }
 
-  // [ name, version, inbox, ... ]
+  // [ name, ?version, ... ]
   _read (data) {
     const record = this._cache.peek(data[0])
 
