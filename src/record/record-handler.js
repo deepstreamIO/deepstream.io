@@ -18,22 +18,25 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
-      onSubscriptionMade: (subscriptionName, socketWrapper, localCount) => {
-        this._listenerRegistry.onSubscriptionMade(subscriptionName, socketWrapper, localCount)
+      onSubscriptionMade: (name, socketWrapper, localCount) => {
+        this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount)
         if (socketWrapper && localCount === 1) {
-          this._cache.lock(subscriptionName)
-          this._message.subscribe(`RH.U.${subscriptionName}`, this._update)
-          this._message.publish(`RH.R`, subscriptionName)
-          if (!this._cache.has(subscriptionName)) {
-            this._refresh([ subscriptionName ])
+          this._cache.lock(name)
+          this._message.subscribe(`RH.U.${name}`, this._update)
+
+          const record = this._cache.peek(name)
+          if (!record) {
+            this._refresh([ name ])
           }
+
+          this._message.publish(`RH.R`, [ name, record ? record[1] : null ])
         }
       },
-      onSubscriptionRemoved: (subscriptionName, socketWrapper, localCount, remoteCount) => {
-        this._listenerRegistry.onSubscriptionRemoved(subscriptionName, socketWrapper, localCount, remoteCount)
+      onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
+        this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
         if (socketWrapper && localCount === 0) {
-          this._cache.unlock(subscriptionName)
-          this._message.unsubscribe(`RH.U.${subscriptionName}`, this._update)
+          this._cache.unlock(name)
+          this._message.unsubscribe(`RH.U.${name}`, this._update)
         }
       }
     })
@@ -82,18 +85,16 @@ module.exports = class RecordHandler {
   }
 
   // [ name, version, inbox, ... ]
-  _read (name) {
-    const record = this._cache.peek(name)
+  _read (data) {
+    const record = this._cache.peek(data[0])
 
-    if (!record) {
-      return
+    if (!this._subscriptionRegistry.hasLocalSubscribers(data[0])) {
+      this._cache.del(data[0])
     }
 
-    if (!this._subscriptionRegistry.hasLocalSubscribers(name)) {
-      this._cache.del(name)
+    if (!this._compare(data, record)) {
+      this._message.publish(`RH.U.${data[0]}`, record)
     }
-
-    this._message.publish(`RH.U.${name}`, record)
   }
 
   // [ name, version, ?body ]
