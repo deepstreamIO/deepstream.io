@@ -12,7 +12,7 @@ module.exports = class RecordHandler {
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
-    this._pending = new Map()
+    this._pending = []
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
     this._recordExclusion = options.recordExclusion
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
@@ -111,33 +111,33 @@ module.exports = class RecordHandler {
 
   // [ name, ?version, ... ]
   _refresh (next) {
-    const version = this._pending.get(next[0])
+    this._pending.push(next)
 
-    if (version && this._compare([ next[0], version ], next)) {
+    if (this._pending.length > 1) {
       return
     }
 
-    if (this._pending.size === 0) {
-      setTimeout(() => {
-        for (const data of this._pending) {
-          if (this._compare(this._cache.peek(data[0]), data)) {
-            continue
-          }
-          this._storage.get(data[0], (error, record) => {
-            if (error) {
-              const message = `error while reading ${data[0]} from storage ${error}`
-              this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-            } else if (!this._compare(this._broadcast(record), data)) {
-              const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
-              this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
-            }
-          })
-        }
-        this._pending.clear()
-      }, 100)
-    }
+    setTimeout(() => {
+      for (let n = 0; n < this._pending.length; ++n) {
+        const data = this._pending[n]
 
-    this._pending.set(next[0], next[1])
+        if (this._compare(this._cache.peek(data[0]), data)) {
+          continue
+        }
+
+        this._storage.get(data[0], (error, record) => {
+          if (error) {
+            const message = `error while reading ${data[0]} from storage ${error}`
+            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
+          } else if (!this._compare(this._broadcast(record), data)) {
+            const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
+            this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
+          }
+        })
+      }
+
+      this._pending = []
+    }, 100)
   }
 
   // [ name, version, body, ... ]
