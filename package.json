@@ -10,7 +10,7 @@
   "dependencies": {
     "js-base64": "^2.1.9",
     "uws": "^0.12.0",
-    "yallist": "^2.0.1"
+    "yallist": "^2.1.0"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",
