@@ -111,9 +111,9 @@ module.exports = class RecordHandler {
 
   // [ name, ?version, ... ]
   _refresh (next) {
-    const prev = this._pending.get(next[0])
+    const version = this._pending.get(next[0])
 
-    if (prev && this._compare([ next[0], prev ], next)) {
+    if (version && this._compare([ next[0], version ], next)) {
       return
     }
 
