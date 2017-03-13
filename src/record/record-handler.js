@@ -49,8 +49,6 @@ module.exports = class RecordHandler {
     const data = message && message.data
     if (!data[0]) {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
-    } else if (message.action === C.ACTIONS.SUBSCRIBE) {
-      this._subscriptionRegistry.subscribe(data[0], socket)
     } else if (message.action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(data[0], socket)
       const record = this._cache.get(data[0])
