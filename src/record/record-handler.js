@@ -134,7 +134,7 @@ module.exports = class RecordHandler {
           })
         }
         this._pending.clear()
-      }, 200)
+      }, 100)
     }
 
     this._pending.set(next[0], next[1])
