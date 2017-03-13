@@ -12,6 +12,7 @@ module.exports = class RecordHandler {
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
+    this._pending = new Set()
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
     this._recordExclusion = options.recordExclusion
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
@@ -25,7 +26,17 @@ module.exports = class RecordHandler {
 
           const record = this._cache.peek(name)
           if (!record) {
-            this._refresh([ name ])
+            if (this._pending.size === 0) {
+              setTimeout(() => {
+                for (const name of this._pending) {
+                  if (!this._cache.has(name)) {
+                    this._refresh([ name ])
+                  }
+                }
+                this._pending.clear()
+              }, 200)
+            }
+            this._pending.add(name)
           }
 
           this._message.publish(`RH.R`, [ name, record ? record[1] : null ])
