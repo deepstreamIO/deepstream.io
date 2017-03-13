@@ -12,7 +12,7 @@ module.exports = class RecordHandler {
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
-    this._pending = new Set()
+    this._pending = new Map()
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
     this._recordExclusion = options.recordExclusion
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
@@ -25,18 +25,9 @@ module.exports = class RecordHandler {
           this._message.subscribe(`RH.U.${name}`, this._update)
 
           const record = this._cache.peek(name)
+
           if (!record) {
-            if (this._pending.size === 0) {
-              setTimeout(() => {
-                for (const name of this._pending) {
-                  if (!this._cache.has(name)) {
-                    this._refresh([ name ])
-                  }
-                }
-                this._pending.clear()
-              }, 200)
-            }
-            this._pending.add(name)
+            this._refresh([ name ])
           }
 
           this._message.publish(`RH.R`, [ name, record ? record[1] : null ])
@@ -119,16 +110,34 @@ module.exports = class RecordHandler {
   }
 
   // [ name, ?version, ... ]
-  _refresh (data) {
-    this._storage.get(data[0], (error, record) => {
-      if (error) {
-        const message = `error while reading ${data[0]} from storage ${error}`
-        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-      } else if (!this._compare(this._broadcast(record), data)) {
-        const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
-        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
-      }
-    })
+  _refresh (next) {
+    const prev = this._pending.get(next[0])
+
+    if (prev && this._compare([ next[0], prev ], next)) {
+      return
+    }
+
+    if (this._pending.size === 0) {
+      setTimeout(() => {
+        for (const data of this._pending) {
+          if (this._compare(this._cache.peek(data[0]), data)) {
+            continue
+          }
+          this._storage.get(data[0], (error, record) => {
+            if (error) {
+              const message = `error while reading ${data[0]} from storage ${error}`
+              this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
+            } else if (!this._compare(this._broadcast(record), data)) {
+              const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
+              this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
+            }
+          })
+        }
+        this._pending.clear()
+      }, 200)
+    }
+
+    this._pending.set(next[0], next[1])
   }
 
   // [ name, version, body, ... ]
