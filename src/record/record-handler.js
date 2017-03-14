@@ -24,13 +24,8 @@ module.exports = class RecordHandler {
           this._cache.lock(name)
           this._message.subscribe(`RH.U.${name}`, this._update)
 
-          const record = this._cache.peek(name)
-
-          if (!record) {
-            this._refresh([ name ])
-          }
-
-          this._message.publish(`RH.R`, [ name, record ? record[1] : null ])
+          const [ version ] = this._cache.peek(name) || []
+          this._message.publish(`RH.R`, [ name, version ])
         }
       },
       onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
@@ -54,9 +49,10 @@ module.exports = class RecordHandler {
       const record = this._cache.get(data[0])
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
+      } else {
+        this._refresh(data)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
-      this._broadcast(data, socket)
       if (!this._recordExclusion.test(data[0])) {
         this._cache.lock(data[0])
         this._storage.set(data, (error, data) => {
@@ -68,6 +64,7 @@ module.exports = class RecordHandler {
           }
         }, data)
       }
+      this._broadcast(data, socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(data[0], socket)
     } else if (
@@ -84,14 +81,14 @@ module.exports = class RecordHandler {
   }
 
   // [ name, ?version, ... ]
-  _read (data) {
-    const record = this._cache.del(data[0])
+  _read ([ name, version ]) {
+    const record = this._cache.del(name)
 
-    if (!record || this._compare(record, data)) {
+    if (isSameOrNewer(version, record && record[1])) {
       return
     }
 
-    this._message.publish(`RH.U.${data[0]}`, record)
+    this._message.publish(`RH.U.${name}`, record)
   }
 
   // [ name, version, ?body ]
@@ -115,21 +112,27 @@ module.exports = class RecordHandler {
 
     setTimeout(() => {
       for (let n = 0; n < this._pending.length; ++n) {
-        const data = this._pending[n]
+        const [ name, version ] = this._pending[n]
 
-        if (this._compare(this._cache.peek(data[0]), data)) {
+        const record = this._cache.peek(name)
+
+        if (isSameOrNewer(record && record[1], version)) {
           continue
         }
 
-        this._storage.get(data[0], (error, record) => {
+        this._storage.get(name, (error, record, version) => {
           if (error) {
-            const message = `error while reading ${data[0]} from storage ${error}`
+            const message = `error while reading ${record[0]} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-          } else if (!this._compare(this._broadcast(record), data)) {
-            const message = `error while reading ${data[0]} version ${data[1]} from storage ${error}`
+          }
+
+          record = this._broadcast(record)
+
+          if (!isSameOrNewer(record && record[0], version)) {
+            const message = `error while reading ${record[0]} version ${version} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
           }
-        })
+        }, version)
       }
 
       this._pending = []
@@ -140,7 +143,7 @@ module.exports = class RecordHandler {
   _broadcast (nextRecord, sender = C.SOURCE_MESSAGE_CONNECTOR) {
     const prevRecord = this._cache.peek(nextRecord[0])
 
-    if (this._compare(prevRecord, nextRecord)) {
+    if (isSameOrNewer(prevRecord && prevRecord[1], nextRecord[1])) {
       return prevRecord
     }
 
@@ -167,27 +170,15 @@ module.exports = class RecordHandler {
     }
     this._logger.log(C.LOG_LEVEL.ERROR, event, message)
   }
+}
 
-  _compare (a, b) {
-    if (!b) {
-      return true
-    }
-    if (!a) {
-      return false
-    }
-    if (!b[1]) {
-      return true
-    }
-    if (!a[1]) {
-      return false
-    }
-    const [av, ar] = this._splitRev(a[1])
-    const [bv, br] = this._splitRev(b[1])
-    return parseInt(av, 10) > parseInt(bv, 10) || (av === bv && ar >= br)
-  }
+function isSameOrNewer (a, b) {
+  const [av, ar] = splitRev(a || '0-00000000000000')
+  const [bv, br] = splitRev(b || '0-00000000000000')
+  return parseInt(av, 10) > parseInt(bv, 10) || (av === bv && ar >= br)
+}
 
-  _splitRev (s) {
-    const i = s.indexOf(`-`)
-    return [ s.slice(0, i), s.slice(i + 1) ]
-  }
+function splitRev (s) {
+  const i = s.indexOf(`-`)
+  return [ s.slice(0, i), s.slice(i + 1) ]
 }
