@@ -14,7 +14,7 @@ module.exports = class RecordHandler {
     this._storage = options.storageConnector
     this._pending = []
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
-    this._recordExclusion = options.recordExclusion
+    this._storageExclusion = options.storageExclusion
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
@@ -53,7 +53,7 @@ module.exports = class RecordHandler {
         this._refresh(data)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
-      if (!this._recordExclusion.test(data[0])) {
+      if (!this._storageExclusion.test(data[0])) {
         this._cache.lock(data[0])
         this._storage.set(data, (error, data) => {
           if (error) {
