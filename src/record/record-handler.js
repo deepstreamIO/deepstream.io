@@ -66,7 +66,7 @@ module.exports = class RecordHandler {
           } else {
             this._cache.unlock(record[0])
           }
-        })
+        }, data)
       }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(data[0], socket)
