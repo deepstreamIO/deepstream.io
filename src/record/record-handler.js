@@ -24,8 +24,8 @@ module.exports = class RecordHandler {
           this._cache.lock(name)
           this._message.subscribe(`RH.U.${name}`, this._update)
 
-          const [ version ] = this._cache.peek(name) || []
-          this._message.publish(`RH.R`, [ name, version ])
+          const prevRecord = this._cache.peek(name)
+          this._message.publish(`RH.R`, [ name, prevRecord ? prevRecord[1] : undefined ])
         }
       },
       onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
