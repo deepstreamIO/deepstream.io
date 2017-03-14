@@ -46,9 +46,9 @@ module.exports = class RecordHandler {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
     } else if (message.action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(data[0], socket)
-      const record = this._cache.get(data[0])
-      if (record) {
-        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
+      const prevRecord = this._cache.get(data[0])
+      if (prevRecord) {
+        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, prevRecord)
       } else {
         this._refresh(data)
       }
@@ -82,13 +82,13 @@ module.exports = class RecordHandler {
 
   // [ name, ?version, ... ]
   _read ([ name, version ]) {
-    const record = this._cache.del(name)
+    const prevRecord = this._cache.del(name)
 
-    if (isSameOrNewer(version, record && record[1])) {
+    if (!prevRecord || isSameOrNewer(version, prevRecord[1])) {
       return
     }
 
-    this._message.publish(`RH.U.${name}`, record)
+    this._message.publish(`RH.U.${name}`, prevRecord)
   }
 
   // [ name, version, ?body ]
@@ -114,23 +114,23 @@ module.exports = class RecordHandler {
       for (let n = 0; n < this._pending.length; ++n) {
         const [ name, version ] = this._pending[n]
 
-        const record = this._cache.peek(name)
+        const prevRecord = this._cache.peek(name)
 
-        if (isSameOrNewer(record && record[1], version)) {
+        if (prevRecord && isSameOrNewer(prevRecord[1], version)) {
           continue
         }
 
-        this._storage.get(name, (error, record, version) => {
+        this._storage.get(name, (error, nextRecord, version) => {
           if (error) {
-            const message = `error while reading ${record[0]} from storage ${error}`
+            const message = `error while reading ${nextRecord[0]} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
           }
 
-          record = this._broadcast(record)
-
-          if (!isSameOrNewer(record && record[0], version)) {
-            const message = `error while reading ${record[0]} version ${version} from storage ${error}`
-            this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, message)
+          if (isSameOrNewer(nextRecord[1], version)) {
+            this._broadcast(nextRecord)
+          } else {
+            const message = `error while reading ${nextRecord[0]} version ${version} from storage ${error}`
+            this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, [ ...nextRecord, message ])
           }
         }, version)
       }
@@ -143,8 +143,8 @@ module.exports = class RecordHandler {
   _broadcast (nextRecord, sender = C.SOURCE_MESSAGE_CONNECTOR) {
     const prevRecord = this._cache.peek(nextRecord[0])
 
-    if (isSameOrNewer(prevRecord && prevRecord[1], nextRecord[1])) {
-      return prevRecord
+    if (prevRecord && isSameOrNewer(prevRecord[1], nextRecord[1])) {
+      return
     }
 
     nextRecord = nextRecord.slice(0, 3)
@@ -160,8 +160,6 @@ module.exports = class RecordHandler {
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
       this._message.publish(`RH.U.${nextRecord[0]}`, nextRecord)
     }
-
-    return nextRecord
   }
 
   _sendError (socket, event, message) {
