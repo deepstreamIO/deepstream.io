@@ -85,15 +85,13 @@ module.exports = class RecordHandler {
 
   // [ name, ?version, ... ]
   _read (data) {
-    const record = this._cache.peek(data[0])
+    const record = this._cache.del(data[0])
 
-    if (!this._subscriptionRegistry.hasLocalSubscribers(data[0])) {
-      this._cache.del(data[0])
+    if (!record || this._compare(record, data)) {
+      return
     }
 
-    if (!this._compare(data, record)) {
-      this._message.publish(`RH.U.${data[0]}`, record)
-    }
+    this._message.publish(`RH.U.${data[0]}`, record)
   }
 
   // [ name, version, ?body ]

@@ -9,20 +9,17 @@ module.exports = class RecordCache {
   }
 
   set (name, record) {
-    const value = {
-      name,
-      record,
-      size: record[0].length + record[1].length + record[2].length + 64
-    }
+    const size = record[0].length + record[1].length + record[2].length + 64
 
-    this._space -= value.size
+    this._space -= size
 
     const node = this._map.get(name)
     if (node) {
       this._space += node.value.size
-      node.value = value
+      node.value.size = size
+      node.value.record = record
     } else {
-      this._list.unshift(value)
+      this._list.unshift({ name, size, record })
       this._map.set(name, this._list.head)
     }
 
@@ -54,36 +51,47 @@ module.exports = class RecordCache {
   }
 
   lock (name) {
-    const refs = this._locks.get(name) || 0
-    this._locks.set(name, refs + 1)
+    const lock = this._locks.get(name)
+    if (lock) {
+      lock.refs++
+    } else {
+      this._locks.set(name, { refs: 1 })
+    }
   }
 
   unlock (name) {
-    const refs = this._locks.get(name)
-    if (refs === 1) {
+    const lock = this._locks.get(name)
+    if (--lock.refs === 0) {
       this._locks.delete(name)
       this.prune()
-    } else {
-      this._locks.set(name, refs - 1)
     }
   }
 
   get (name) {
     const node = this._map.get(name)
-    if (node) {
-      this._list.unshiftNode(node)
-      return node.value.record
-    } else {
-      return undefined
+    if (!node) {
+      return
     }
+
+    this._list.unshiftNode(node)
+
+    return node.value.record
   }
 
   del (name) {
     const node = this._map.get(name)
-    if (node) {
+    if (!node) {
+      return
+    }
+
+    const record = node.value.record
+
+    if (!this._locks.has(name)) {
       this._space += node.value.size
       this._map.delete(name)
       this._list.removeNode(node)
     }
+
+    return record
   }
 }
