@@ -93,6 +93,8 @@ module.exports = class RecordCache {
       this._space += node.value.size
       this._map.delete(name)
       this._list.removeNode(node)
+    } else {
+      this._list.unshiftNode(node)
     }
 
     return record
