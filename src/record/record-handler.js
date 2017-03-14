@@ -59,12 +59,12 @@ module.exports = class RecordHandler {
       this._broadcast(data, socket)
       if (!this._recordExclusion.test(data[0])) {
         this._cache.lock(data[0])
-        this._storage.set(data, (error, record) => {
+        this._storage.set(data, (error, data) => {
           if (error) {
-            const message = `error while writing ${record[0]} to storage`
-            this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ ...record, message ])
+            const message = `error while writing ${data[0]} to storage`
+            this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ ...data, message ])
           } else {
-            this._cache.unlock(record[0])
+            this._cache.unlock(data[0])
           }
         }, data)
       }
