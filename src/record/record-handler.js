@@ -126,9 +126,9 @@ module.exports = class RecordHandler {
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
           }
 
-          if (isSameOrNewer(nextRecord[1], version)) {
-            this._broadcast(nextRecord)
-          } else {
+          this._broadcast(nextRecord)
+
+          if (!isSameOrNewer(nextRecord[1], version)) {
             const message = `error while reading ${nextRecord[0]} version ${version} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, [ ...nextRecord, message ])
           }
