@@ -53,9 +53,10 @@ module.exports = class RecordCache {
   lock (name) {
     const lock = this._locks.get(name)
     if (lock) {
-      lock.refs++
+      return ++lock.refs
     } else {
       this._locks.set(name, { refs: 1 })
+      return 1
     }
   }
 
@@ -65,6 +66,8 @@ module.exports = class RecordCache {
       this._locks.delete(name)
       this.prune()
     }
+
+    return lock.refs
   }
 
   get (name) {
