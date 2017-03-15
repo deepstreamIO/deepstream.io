@@ -59,6 +59,7 @@ module.exports = class RecordHandler {
         const prevRecord = this._cache.get(data[0])
         data[1] = `${(prevRecord ? parseInt(splitRev(prevRecord[1])[0]) : 0) + 1}-${rev}`
       } else if (!this._storageExclusion || !this._storageExclusion.test(data[0])) {
+        // TODO: Remove storage exclusion
         this._cache.lock(data[0])
         this._storage.set(data, (error, data) => {
           if (error) {
