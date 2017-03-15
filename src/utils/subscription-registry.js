@@ -5,7 +5,6 @@ const DistributedStateRegistry = require('../cluster/distributed-state-registry'
 const SocketWrapper = require('../message/socket-wrapper')
 
 class SubscriptionRegistry {
-
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
    * A bit like an event-hub, only that it registers SocketWrappers rather
@@ -255,12 +254,11 @@ class SubscriptionRegistry {
    *
    * @param   {String} name
    * @param   {SocketWrapper} socketWrapper
-   * @param   {Boolean} silent supresses logs and unsubscribe ACK messages
    *
    * @public
    * @returns {void}
    */
-  subscribe (name, socketWrapper, silent) {
+  subscribe (name, socketWrapper) {
     if (this._subscriptions[name] === undefined) {
       this._subscriptions[name] = []
     }
@@ -301,11 +299,9 @@ class SubscriptionRegistry {
 
     this._clusterSubscriptions.add(name)
 
-    if (!silent) {
-      const logMsg = `for ${this._topic}:${name} by ${socketWrapper.user}`
-      this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg)
-      socketWrapper.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name])
-    }
+    const logMsg = `for ${this._topic}:${name} by ${socketWrapper.user}`
+    this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg)
+    socketWrapper.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name])
   }
 
   /**
@@ -314,6 +310,7 @@ class SubscriptionRegistry {
    * @param   {String} name
    * @param   {SocketWrapper} socketWrapper
    * @param   {Boolean} silent supresses logs and unsubscribe ACK messages
+   *
    * @public
    * @returns {void}
    */
@@ -329,8 +326,9 @@ class SubscriptionRegistry {
       return
     }
 
+    this._clusterSubscriptions.remove(name)
+
     if (this._subscriptions[name].length === 1) {
-      this._clusterSubscriptions.remove(name)
       delete this._subscriptions[name]
     } else {
       this._subscriptions[name].splice(this._subscriptions[name].indexOf(socketWrapper), 1)
@@ -490,7 +488,6 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionRemoved(name, null, 0, 0)
     }
   }
-
 }
 
 module.exports = SubscriptionRegistry
