@@ -53,7 +53,12 @@ module.exports = class RecordHandler {
         this._refresh(data)
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
-      if (!this._storageExclusion || !this._storageExclusion.test(data[0])) {
+      const [ start, rev ] = splitRev(data[1]) || []
+
+      if (start === '0') {
+        const prevRecord = this._cache.get(data[0])
+        data[1] = `${(prevRecord ? parseInt(splitRev(prevRecord[1])[0]) : 0) + 1}-${rev}`
+      } else if (!this._storageExclusion || !this._storageExclusion.test(data[0])) {
         this._cache.lock(data[0])
         this._storage.set(data, (error, data) => {
           if (error) {
