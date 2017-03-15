@@ -21,10 +21,9 @@ module.exports = class RecordHandler {
       onSubscriptionMade: (name, socketWrapper, localCount) => {
         this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount)
         if (socketWrapper && localCount === 1) {
-          this._cache.lock(name)
           this._message.subscribe(`RH.U.${name}`, this._update)
 
-          const prevRecord = this._cache.peek(name)
+          const prevRecord = this._cache.lock(name)
           this._message.publish(`RH.R`, [ name, prevRecord ? prevRecord[1] : undefined ])
         }
       },
@@ -109,8 +108,8 @@ module.exports = class RecordHandler {
   }
 
   // [ name, ?version, ... ]
-  _refresh (next) {
-    this._pending.push(next)
+  _refresh (record) {
+    this._pending.push(record)
 
     if (this._pending.length > 1) {
       return
