@@ -10,6 +10,6 @@ uws@^0.12.0:
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/uws/-/uws-0.12.0.tgz#07163ea6e687d9731e66821107b5fdf1ee644cbd"
 
-yallist@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/yallist/-/yallist-2.1.0.tgz#3a0f3b45f42cb60f822c92f69ade2bb88beb1ae0"
+yallist@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/yallist/-/yallist-3.0.1.tgz#4affa89763ea5c2aeb9e2ed98387ceada34f4c4d"
