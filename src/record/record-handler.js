@@ -41,7 +41,7 @@ module.exports = class RecordHandler {
 
   handle (socket, message) {
     const data = message && message.data
-    if (!data[0]) {
+    if (!data || !data[0]) {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
     } else if (message.action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(data[0], socket)
@@ -65,7 +65,7 @@ module.exports = class RecordHandler {
           }
         }, data)
       }
-      this._broadcast(data, socket)
+      this._broadcast(data.slice(0, 3), socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(data[0], socket)
     } else if (
@@ -147,8 +147,6 @@ module.exports = class RecordHandler {
     if (prevRecord && isSameOrNewer(prevRecord[1], nextRecord[1])) {
       return
     }
-
-    nextRecord = nextRecord.slice(0, 3)
 
     this._cache.set(nextRecord[0], nextRecord)
 
