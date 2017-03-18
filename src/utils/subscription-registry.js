@@ -149,24 +149,21 @@ class SubscriptionRegistry {
         uniqueSender.message += sharedMessages.substring(lastStop, sharedMessages.length)
       }
 
+      for (const uniqueSender of uniqueSenders) {
+        if (uniqueSender.message) {
+          uniqueSender.socket.sendNative(uniqueSender.message)
+        }
+      }
+
       // for all sockets in this subscription name, send either sharedMessage or this socket's
       // specialized message. only sockets that sent something will have a special message, all
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
       const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
       let j = 0
       for (const socket of sockets) {
-        // since both uniqueSenders and sockets are sorted by uuid, we can efficiently determine
-        // if this socket is a sender in this subscription name or not as well as look up the eventual
-        // specialized message for this socket.
-        if (j < uniqueSenders.length &&
-          uniqueSenders[j].uuid === socket.uuid) {
-          if (uniqueSenders[j].message.length) {
-            socket.sendNative(uniqueSenders[j].message)
-          }
+        if (j < uniqueSenders.length && uniqueSenders[j].uuid === socket.uuid) {
           j++
         } else {
-          // since we know when a socket is a sender and when it is a listener we can use the optimized prepared
-          // message for listeners
           socket.sendPrepared(preparedMessage)
         }
       }
