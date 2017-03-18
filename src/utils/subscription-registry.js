@@ -25,7 +25,6 @@ class SubscriptionRegistry {
       this._delay = options.broadcastTimeout
     }
     this._subscriptions = new Map()
-    this._sockets = new Map()
     this._options = options
     this._topic = topic
     this._subscriptionListener = null
@@ -36,6 +35,7 @@ class SubscriptionRegistry {
       NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
     }
     this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
+    this._onSocketClose = this._onSocketClose.bind(this)
 
     this._setupRemoteComponents(clusterTopic)
   }
@@ -114,6 +114,14 @@ class SubscriptionRegistry {
   */
   setAction(name, value) {
     this._constants[name.toUpperCase()] = value
+  }
+
+  _onSocketClose (socketWrapper) {
+    for (const entry of this._subscriptions) {
+      if (entry[1][utils.sortedIndexBy(entry[1], socketWrapper, 'uuid')] === socketWrapper) {
+        this.unsubscribe(entry[0], socketWrapper)
+      }
+    }
   }
 
   /**
@@ -270,18 +278,9 @@ class SubscriptionRegistry {
 
     sockets.splice(index, 0, socketWrapper)
 
-    let names = this._sockets.get(socketWrapper)
-    if (!names) {
-      this._sockets.set(socketWrapper, names = [])
-      socketWrapper.once('close', (socketWrapper) => {
-        for (let n = names.length - 1; n >= 0; --n) {
-          this.unsubscribe(names[n], socketWrapper)
-        }
-        this._sockets.delete(name)
-      })
+    if (socketWrapper.listeners('close').indexOf(this._onSocketClose) === -1) {
+      socketWrapper.once('close', this._onSocketClose)
     }
-
-    names.splice(utils.sortedIndex(names, name), 0, name)
 
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionMade(
@@ -321,9 +320,6 @@ class SubscriptionRegistry {
     }
 
     sockets.splice(index, 1)
-
-    const names = this._sockets.get(socketWrapper)
-    names.splice(utils.sortedIndex(names, name), 1)
 
     if (sockets.length === 0) {
       this._subscriptions.delete(name)
