@@ -315,8 +315,9 @@ class SubscriptionRegistry {
 
     sockets.splice(index, 1)
 
+    this._clusterSubscriptions.remove(name)
+
     if (sockets.length === 0) {
-      this._clusterSubscriptions.remove(name)
       this._subscriptions.delete(name)
     }
 
@@ -333,8 +334,6 @@ class SubscriptionRegistry {
         allServerNames.length
       )
     }
-
-    this._clusterSubscriptions.remove(name)
 
     if (!silent) {
       const logMsg = `for ${this._topic}:${name} by ${socketWrapper.user}`
