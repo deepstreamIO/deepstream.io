@@ -339,16 +339,11 @@ class SubscriptionRegistry {
     }
 
     if (this._subscriptionListener) {
-      const allServerNames = this._clusterSubscriptions.getAllServers(name)
-      const indexOfCurrentNode = allServerNames.indexOf(this._options.serverName)
-      if (indexOfCurrentNode > -1) {
-        allServerNames.splice(indexOfCurrentNode, 1)
-      }
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socketWrapper,
         sockets.length,
-        allServerNames.length
+        this.getAllRemoteServers(name).length
       )
     }
 
