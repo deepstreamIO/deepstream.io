@@ -136,30 +136,27 @@ class SubscriptionRegistry {
     this._delayedBroadcastsTimer = null
     for (const entry of this._delayedBroadcasts) {
       const name = entry[0]
-      const sockets = this._subscriptions.get(name)
       const delayedBroadcasts = entry[1]
       const uniqueSenders = delayedBroadcasts.uniqueSenders
       const sharedMessages = delayedBroadcasts.sharedMessages
 
-      if (!sockets || sockets.length === 0 || sharedMessages.length === 0) {
+      if (sharedMessages.length === 0) {
         this._delayedBroadcasts.delete(name)
         continue
       }
 
       // for all unique senders and their gaps, build their special messages
       for (const uniqueSender of uniqueSenders) {
-        uniqueSender.message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
+        let message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
         let lastStop = uniqueSender.gaps[0].stop
         for (let j = 1; j < uniqueSender.gaps.length; j++) {
-          uniqueSender.message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
+          message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
           lastStop = uniqueSender.gaps[j].stop
         }
-        uniqueSender.message += sharedMessages.substring(lastStop, sharedMessages.length)
-      }
+        message += sharedMessages.substring(lastStop, sharedMessages.length)
 
-      for (const uniqueSender of uniqueSenders) {
-        if (uniqueSender.message) {
-          uniqueSender.socket.sendNative(uniqueSender.message)
+        if (message) {
+          uniqueSender.socket.sendNative(message)
         }
       }
 
@@ -168,7 +165,7 @@ class SubscriptionRegistry {
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
       const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
       let j = 0
-      for (const socket of sockets) {
+      for (const socket of this._subscriptions.get(name) || []) {
         if (j < uniqueSenders.length && uniqueSenders[j].uuid === socket.uuid) {
           j++
         } else {
@@ -232,7 +229,6 @@ class SubscriptionRegistry {
       if (uniqueSenders[index] !== sender) {
         uniqueSenders.splice(index, 0, {
           uuid: sender.uuid,
-          message: null,
           gaps: []
         })
       }
