@@ -128,14 +128,15 @@ class SubscriptionRegistry {
     this._delayedBroadcastsTimer = null
     for (const entry of this._delayedBroadcasts) {
       const name = entry[0]
-
       const sockets = this._subscriptions.get(name)
-      if (!sockets) {
+      const delayedBroadcasts = entry[1]
+      const uniqueSenders = delayedBroadcasts.uniqueSenders
+      const sharedMessages = delayedBroadcasts.sharedMessages
+
+      if (!sockets || sockets.length === 0 || sharedMessages.length === 0) {
+        this._delayedBroadcasts.delete(name)
         continue
       }
-
-      const uniqueSenders = entry[1].uniqueSenders
-      const sharedMessages = entry[1].sharedMessages
 
       // for all unique senders and their gaps, build their special messages
       for (const uniqueSender of uniqueSenders) {
@@ -170,8 +171,10 @@ class SubscriptionRegistry {
         }
       }
       SocketWrapper.finalizeMessage(preparedMessage)
+
+      delayedBroadcasts.uniqueSenders.splice(0, delayedBroadcasts.uniqueSenders.length)
+      delayedBroadcasts.sharedMessages = ''
     }
-    this._delayedBroadcasts.clear()
   }
 
   /**
