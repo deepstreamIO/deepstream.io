@@ -19,7 +19,7 @@ class SubscriptionRegistry {
    * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
    */
   constructor(options, topic, clusterTopic) {
-    this._delayedBroadcasts = {}
+    this._delayedBroadcasts = new Map()
     this._delay = -1
     if (options.broadcastTimeout !== undefined) {
       this._delay = options.broadcastTimeout
@@ -177,7 +177,7 @@ class SubscriptionRegistry {
     }
 
     // delete this delayed broadcast
-    delete this._delayedBroadcasts[delayedBroadcasts.name]
+    this._delayedBroadcasts.delete(delayedBroadcasts.name)
   }
 
   /**
@@ -204,15 +204,16 @@ class SubscriptionRegistry {
     }
 
     // if not already a delayed broadcast, create it
-    let delayedBroadcasts = this._delayedBroadcasts[name]
+    let delayedBroadcasts = this._delayedBroadcasts.get(name)
     if (delayedBroadcasts === undefined) {
-      this._delayedBroadcasts[name] = delayedBroadcasts = {
+      delayedBroadcasts = {
         uniqueSendersVector: [],
         uniqueSendersMap: {},
         timer: null,
         name,
         sharedMessages: ''
       }
+      this._delayedBroadcasts.set(name, delayedBroadcasts)
     }
 
     // append this message to the sharedMessage, the message that
