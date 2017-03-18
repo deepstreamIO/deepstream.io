@@ -124,50 +124,54 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  _onBroadcastTimeout(delayedBroadcasts) {
-    this._delayedBroadcasts.delete(delayedBroadcasts.name)
+  _onBroadcastTimeout() {
+    this._delayedBroadcastsTimer = null
+    for (const entry of this._delayedBroadcasts) {
+      const name = entry[0]
 
-    const sockets = this._subscriptions.get(delayedBroadcasts.name)
-    if (!sockets) {
-      return
-    }
-
-    const uniqueSenders = delayedBroadcasts.uniqueSenders
-    const sharedMessages = delayedBroadcasts.sharedMessages
-
-    // for all unique senders and their gaps, build their special messages
-    for (const uniqueSender of uniqueSenders) {
-      uniqueSender.message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
-      let lastStop = uniqueSender.gaps[0].stop
-      for (let j = 1; j < uniqueSender.gaps.length; j++) {
-        uniqueSender.message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
-        lastStop = uniqueSender.gaps[j].stop
+      const sockets = this._subscriptions.get(name)
+      if (!sockets) {
+        continue
       }
-      uniqueSender.message += sharedMessages.substring(lastStop, sharedMessages.length)
-    }
 
-    // for all sockets in this subscription name, send either sharedMessage or this socket's
-    // specialized message. only sockets that sent something will have a special message, all
-    // other sockets are only listeners and receive the exact same (sharedMessage) message.
-    const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
-    let j = 0
-    for (const socket of sockets) {
-      // since both uniqueSenders and sockets are sorted by uuid, we can efficiently determine
-      // if this socket is a sender in this subscription name or not as well as look up the eventual
-      // specialized message for this socket.
-      if (j < uniqueSenders.length &&
-        uniqueSenders[j].uuid === socket.uuid) {
-        if (uniqueSenders[j].message.length) {
-          socket.sendNative(uniqueSenders[j].message)
+      const uniqueSenders = entry[1].uniqueSenders
+      const sharedMessages = entry[1].sharedMessages
+
+      // for all unique senders and their gaps, build their special messages
+      for (const uniqueSender of uniqueSenders) {
+        uniqueSender.message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
+        let lastStop = uniqueSender.gaps[0].stop
+        for (let j = 1; j < uniqueSender.gaps.length; j++) {
+          uniqueSender.message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
+          lastStop = uniqueSender.gaps[j].stop
         }
-        j++
-      } else {
-        // since we know when a socket is a sender and when it is a listener we can use the optimized prepared
-        // message for listeners
-        socket.sendPrepared(preparedMessage)
+        uniqueSender.message += sharedMessages.substring(lastStop, sharedMessages.length)
       }
+
+      // for all sockets in this subscription name, send either sharedMessage or this socket's
+      // specialized message. only sockets that sent something will have a special message, all
+      // other sockets are only listeners and receive the exact same (sharedMessage) message.
+      const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
+      let j = 0
+      for (const socket of sockets) {
+        // since both uniqueSenders and sockets are sorted by uuid, we can efficiently determine
+        // if this socket is a sender in this subscription name or not as well as look up the eventual
+        // specialized message for this socket.
+        if (j < uniqueSenders.length &&
+          uniqueSenders[j].uuid === socket.uuid) {
+          if (uniqueSenders[j].message.length) {
+            socket.sendNative(uniqueSenders[j].message)
+          }
+          j++
+        } else {
+          // since we know when a socket is a sender and when it is a listener we can use the optimized prepared
+          // message for listeners
+          socket.sendPrepared(preparedMessage)
+        }
+      }
+      SocketWrapper.finalizeMessage(preparedMessage)
     }
-    SocketWrapper.finalizeMessage(preparedMessage)
+    this._delayedBroadcasts.clear()
   }
 
   /**
@@ -198,8 +202,6 @@ class SubscriptionRegistry {
     if (delayedBroadcasts === undefined) {
       delayedBroadcasts = {
         uniqueSenders: [],
-        timer: null,
-        name,
         sharedMessages: ''
       }
       this._delayedBroadcasts.set(name, delayedBroadcasts)
@@ -231,11 +233,11 @@ class SubscriptionRegistry {
     }
 
     // reuse the same timer if already started
-    if (!delayedBroadcasts.timer) {
+    if (!this._delayedBroadcastsTimer) {
       if (this._delay !== -1) {
-        delayedBroadcasts.timer = setTimeout(this._onBroadcastTimeout, this._delay, delayedBroadcasts)
+        this._delayedBroadcastsTimer = setTimeout(this._onBroadcastTimeout, this._delay)
       } else {
-        this.onBroadcastTimeout(delayedBroadcasts)
+        this._onBroadcastTimeout()
       }
     }
   }
