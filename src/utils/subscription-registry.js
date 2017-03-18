@@ -146,17 +146,18 @@ class SubscriptionRegistry {
       }
 
       // for all unique senders and their gaps, build their special messages
+      let i = 1
       for (const uniqueSender of uniqueSenders) {
-        let message = sharedMessages.substring(0, uniqueSender.gaps[0].start)
-        let lastStop = uniqueSender.gaps[0].stop
-        for (let j = 1; j < uniqueSender.gaps.length; j++) {
-          message += sharedMessages.substring(lastStop, uniqueSender.gaps[j].start)
-          lastStop = uniqueSender.gaps[j].stop
+        let message = sharedMessages.substring(0, uniqueSender[i++])
+        let lastStop = uniqueSender[i++]
+        while (i < uniqueSender.length) {
+          message += sharedMessages.substring(lastStop, uniqueSender[i++])
+          lastStop = uniqueSender[i++]
         }
         message += sharedMessages.substring(lastStop, sharedMessages.length)
 
         if (message) {
-          uniqueSender.socket.sendNative(message)
+          uniqueSender[0].sendNative(message)
         }
       }
 
@@ -166,7 +167,7 @@ class SubscriptionRegistry {
       const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
       let j = 0
       for (const socket of this._subscriptions.get(name) || []) {
-        if (j < uniqueSenders.length && uniqueSenders[j].uuid === socket.uuid) {
+        if (j < uniqueSenders.length && uniqueSenders[j][0] === socket) {
           j++
         } else {
           socket.sendPrepared(preparedMessage)
@@ -227,13 +228,10 @@ class SubscriptionRegistry {
       const index = utils.sortedIndexBy(uniqueSenders, sender, 'uuid')
 
       if (uniqueSenders[index] !== sender) {
-        uniqueSenders.splice(index, 0, {
-          uuid: sender.uuid,
-          gaps: []
-        })
+        uniqueSenders.splice(index, 0, [ sender ])
       }
 
-      uniqueSenders[index].gaps.push({ start, stop })
+      uniqueSenders[index].push(start, stop)
     }
 
     // reuse the same timer if already started
