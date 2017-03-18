@@ -35,6 +35,7 @@ class SubscriptionRegistry {
       UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
       NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
     }
+    this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
 
     this._setupRemoteComponents(clusterTopic)
   }
@@ -244,9 +245,9 @@ class SubscriptionRegistry {
     // reuse the same timer if already started
     if (!delayedBroadcasts.timer) {
       if (this._delay !== -1) {
-        delayedBroadcasts.timer = setTimeout(this.onBroadcastTimeout.bind(this), this._delay, delayedBroadcasts)
+        delayedBroadcasts.timer = setTimeout(this._onBroadcastTimeout, this._delay, delayedBroadcasts)
       } else {
-        this.onBroadcastTimeout(delayedBroadcasts)
+        this._onBroadcastTimeout(delayedBroadcasts)
       }
     }
   }
