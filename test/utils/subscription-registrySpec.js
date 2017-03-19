@@ -47,7 +47,7 @@ describe('subscription-registry manages subscriptions', () => {
   })
 
   it('returns the subscribed socket', () => {
-    expect(subscriptionRegistry.getLocalSubscribers('someName')).toEqual([socketWrapperA])
+    expect(subscriptionRegistry.getLocalSubscribers('someName')).toEqual(new Set([socketWrapperA]))
   })
 
   it('determines if it has subscriptions', () => {
