@@ -116,8 +116,9 @@ class SubscriptionRegistry {
   }
 
   _onSocketClose (socket) {
-    for (const name of this._names.get(socket) || []) {
-      this.unsubscribe(name, socket)
+    const names = this._names.get(socket) || new Set()
+    for (const name of names) {
+      this.unsubscribe(name, socket, true)
     }
   }
 
