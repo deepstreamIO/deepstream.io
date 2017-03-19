@@ -146,8 +146,8 @@ class SubscriptionRegistry {
       }
 
       // for all unique senders and their gaps, build their special messages
-      let i = 1
       for (const uniqueSender of uniqueSenders) {
+        let i = 1
         let message = sharedMessages.substring(0, uniqueSender[i++])
         let lastStop = uniqueSender[i++]
         while (i < uniqueSender.length) {
