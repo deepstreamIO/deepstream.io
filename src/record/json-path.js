@@ -1,6 +1,6 @@
 'use strict'
-
-const SPLIT_REG_EXP = /[\.\[\]]/g
+/* eslint-disable no-param-reassign */
+const SPLIT_REG_EXP = /[.[\]]/g
 
 /**
  * This class allows to set or get specific

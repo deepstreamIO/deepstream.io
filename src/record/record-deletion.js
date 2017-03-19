@@ -23,12 +23,24 @@ const RecordDeletion = function (options, socketWrapper, message, successCallbac
   this._completed = 0
   this._isDestroyed = false
 
-  this._cacheTimeout = setTimeout(this._handleError.bind(this, 'cache timeout'), this._options.cacheRetrievalTimeout)
-  this._options.cache.delete(this._recordName, this._checkIfDone.bind(this, this._cacheTimeout))
+  this._cacheTimeout = setTimeout(
+    this._handleError.bind(this, 'cache timeout'),
+    this._options.cacheRetrievalTimeout
+  )
+  this._options.cache.delete(
+    this._recordName,
+    this._checkIfDone.bind(this, this._cacheTimeout)
+  )
 
   if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._recordName)) {
-    this._storageTimeout = setTimeout(this._handleError.bind(this, 'storage timeout'), this._options.storageRetrievalTimeout)
-    this._options.storage.delete(this._recordName, this._checkIfDone.bind(this, this._storageTimeout))
+    this._storageTimeout = setTimeout(
+      this._handleError.bind(this, 'storage timeout'),
+      this._options.storageRetrievalTimeout
+    )
+    this._options.storage.delete(
+      this._recordName,
+      this._checkIfDone.bind(this, this._storageTimeout)
+    )
   } else {
     this._checkIfDone(null)
   }

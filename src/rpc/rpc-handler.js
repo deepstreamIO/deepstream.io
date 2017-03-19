@@ -12,7 +12,7 @@ module.exports = class RpcHandler {
   *
   * @param {Object} options deepstream options
   */
-  constructor(options) {
+  constructor (options) {
     this._options = options
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
@@ -47,7 +47,7 @@ module.exports = class RpcHandler {
   * @public
   * @returns {void}
   */
-  handle(socketWrapper, message) {
+  handle (socketWrapper, message) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._registerProvider(socketWrapper, message)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
@@ -67,19 +67,18 @@ module.exports = class RpcHandler {
           delete this._rpcs[correlationId]
         }
       } else {
-                // unsoliciated message
+        // unsoliciated message
         socketWrapper.sendError(
-                    C.TOPIC.RPC,
-                    C.EVENT.INVALID_MESSAGE_DATA,
-                    `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
-                )
+          C.TOPIC.RPC,
+          C.EVENT.INVALID_MESSAGE_DATA,
+          `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
+        )
       }
-    }
-    /*
-     * RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
-     * by the Rpc class directly
-     */
-    else {
+    } else {
+      /*
+       * RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
+       * by the Rpc class directly
+       */
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
       if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
@@ -96,8 +95,8 @@ module.exports = class RpcHandler {
   * happens in this method.
   *
   * Initially, deepstream will look for a local provider that hasn't been used by the RPC yet.
-  * If non can be found, it will go through the currently avaiblable remote providers and try find one that
-  * hasn't been used yet.
+  * If non can be found, it will go through the currently avaiblable remote providers and try
+  * find one that hasn't been used yet.
   *
   * If a remote provider couldn't be found or all remote-providers have been tried already
   * this method will return null - which in turn will prompt the RPC to send a NO_RPC_PROVIDER
@@ -109,7 +108,7 @@ module.exports = class RpcHandler {
   * @public
   * @returns {SocketWrapper|RpcProxy} alternativeProvider
   */
-  getAlternativeProvider(rpcName, correlationId) {
+  getAlternativeProvider (rpcName, correlationId) {
     const rpcData = this._rpcs[correlationId]
 
     if (!rpcData) {
@@ -153,7 +152,10 @@ module.exports = class RpcHandler {
     /*
      * Search for a remote provider that hasn't been used yet
      */
-    return new RpcProxy(this._options, this._getNextRandomServer(rpcData.remoteServers), rpcName, correlationId)
+    return new RpcProxy(
+      this._options,
+      this._getNextRandomServer(rpcData.remoteServers), rpcName, correlationId
+    )
   }
 
   /**
@@ -167,7 +169,7 @@ module.exports = class RpcHandler {
   * @private
   * @returns {void}
   */
-  _registerProvider(socketWrapper, message) {
+  _registerProvider (socketWrapper, message) {
     if (this._isValidMessage(1, socketWrapper, message)) {
       this._subscriptionRegistry.subscribe(message.data[0], socketWrapper)
     }
@@ -184,7 +186,7 @@ module.exports = class RpcHandler {
   * @private
   * @returns {void}
   */
-  _unregisterProvider(socketWrapper, message) {
+  _unregisterProvider (socketWrapper, message) {
     if (this._isValidMessage(1, socketWrapper, message)) {
       this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
     }
@@ -202,7 +204,7 @@ module.exports = class RpcHandler {
   * @private
   * @returns {void}
   */
-  _makeRpc(socketWrapper, message, source) {
+  _makeRpc (socketWrapper, message, source) {
     if (!this._isValidMessage(2, socketWrapper, message)) {
       return
     }
@@ -250,13 +252,16 @@ module.exports = class RpcHandler {
   * @private
   * @returns {void}
   */
-  _makeRemoteRpc(requestor, message) {
+  _makeRemoteRpc (requestor, message) {
     const rpcName = message.data[0]
     const correlationId = message.data[1]
     const rpcData = this._rpcs[correlationId]
 
     if (rpcData.remoteServers && rpcData.remoteServers.length > 0) {
-      const rpcProxy = new RpcProxy(this._options, this._getNextRandomServer(rpcData.remoteServers), rpcName, correlationId)
+      const rpcProxy = new RpcProxy(
+        this._options,
+        this._getNextRandomServer(rpcData.remoteServers), rpcName, correlationId
+      )
       rpcData.rpc = new Rpc(this, requestor, rpcProxy, this._options, message)
       return
     }
@@ -282,7 +287,7 @@ module.exports = class RpcHandler {
   * @private
   * @returns {void}
   */
-  _onPrivateMessage(msg) {
+  _onPrivateMessage (msg) {
     if (msg.originalTopic !== C.TOPIC.RPC) {
       return
     }
@@ -328,7 +333,7 @@ module.exports = class RpcHandler {
   * @private
   * @returns {Boolean} isValid
   */
-  _isValidMessage(dataLength, socketWrapper, message) {
+  _isValidMessage (dataLength, socketWrapper, message) { // eslint-disable-line
     if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
       return true
     }
@@ -342,7 +347,7 @@ module.exports = class RpcHandler {
   *
   * @return {String}
   */
-  _getNextRandomServer(remoteServers) {
+  _getNextRandomServer (remoteServers) { // eslint-disable-line
     return C.TOPIC.PRIVATE + utils.spliceRandomElement(remoteServers)
   }
 }

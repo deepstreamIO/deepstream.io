@@ -1,5 +1,5 @@
 'use strict'
-
+/* eslint-disable valid-typeof */
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
@@ -38,16 +38,14 @@ EventHandler.prototype.handle = function (socketWrapper, message) {
     this._removeSubscriber(socketWrapper, message)
   } else if (message.action === C.ACTIONS.EVENT) {
     this._triggerEvent(socketWrapper, message)
-  }
-
-  /*
-   * Listen to requests for a particular event or events
-   * whose names match a pattern
-   */
-  else if (message.action === C.ACTIONS.LISTEN ||
+  } else if (message.action === C.ACTIONS.LISTEN ||
     message.action === C.ACTIONS.UNLISTEN ||
     message.action === C.ACTIONS.LISTEN_ACCEPT ||
     message.action === C.ACTIONS.LISTEN_REJECT ||
+    /*
+     * Listen to requests for a particular event or events
+     * whose names match a pattern
+     */
     message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
     this._listenerRegistry.handle(socketWrapper, message)
   } else {
@@ -95,8 +93,9 @@ EventHandler.prototype._removeSubscriber = function (socketWrapper, message) {
  * Notifies subscribers of events. This method is invoked for the EVENT action. It can
  * be triggered by messages coming in from both clients and the message connector.
  *
- * @param {String|SocketWrapper} messageSource If messageSource is the constant SOURCE_MESSAGE_CONNECTOR
- *                        the message was received from the message connector
+ * @param {String|SocketWrapper} messageSource If messageSource is the constant
+ *                                             SOURCE_MESSAGE_CONNECTOR the message was
+ *                                             received from the message connector
  *
  * @param {Object} message parsed and permissioned deepstream message
  *
