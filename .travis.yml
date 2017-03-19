@@ -26,7 +26,7 @@ matrix:
       os: osx
 
 script:
-  - npm install -g eslint
+  - npm install -g eslint eslint-config-deepstream
   - npm run lint
   - npm run coverage
   # This has to happen here and not in before_deploy to be put in travis cache
