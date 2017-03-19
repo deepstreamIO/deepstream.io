@@ -354,7 +354,7 @@ class SubscriptionRegistry {
    */
   getLocalSubscribers(name) {
     const sockets = this._subscriptions.get(name)
-    return sockets ? Array.from(sockets) : []
+    return sockets ? sockets : new Set()
   }
 
   /**
