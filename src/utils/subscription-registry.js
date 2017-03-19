@@ -22,6 +22,7 @@ class SubscriptionRegistry {
     if (options.broadcastTimeout !== undefined) {
       this._delay = options.broadcastTimeout
     }
+    this._names = new Map()
     this._subscriptions = new Map()
     this._options = options
     this._topic = topic
@@ -115,12 +116,8 @@ class SubscriptionRegistry {
   }
 
   _onSocketClose (socket) {
-    for (const entry of this._subscriptions) {
-      const name = entry[0]
-      const sockets = entry[1]
-      if (sockets.has(socket)) {
-        this.unsubscribe(name, socket)
-      }
+    for (const name of this._names.get(socket) || []) {
+      this.unsubscribe(name, socket)
     }
   }
 
@@ -274,6 +271,12 @@ class SubscriptionRegistry {
       socket.once('close', this._onSocketClose)
     }
 
+    const names = this._names.get(socket) || new Set()
+    if (names.size === 0) {
+      this._names.set(socket, names)
+    }
+    names.add(name)
+
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionMade(
         name,
@@ -315,6 +318,13 @@ class SubscriptionRegistry {
 
     if (sockets.size === 0) {
       this._subscriptions.delete(name)
+    }
+
+    const names = this._names.get(socket)
+    names.delete(name)
+
+    if (names.size === 0) {
+      this._names.delete(socket)
     }
 
     if (this._subscriptionListener) {
