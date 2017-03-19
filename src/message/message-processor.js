@@ -1,6 +1,6 @@
 'use strict'
 
-const messageParser = require('./message-parser')
+const MessageQueue = require('./message-queue')
 const C = require('../constants/constants')
 
 /**
@@ -13,9 +13,9 @@ const C = require('../constants/constants')
  * @param {Object} options deepstream options
  */
 module.exports = class MessageProcessor {
-
   constructor (options) {
     this._options = options
+    this._queues = new Map()
   }
 
   /**
@@ -56,84 +56,18 @@ module.exports = class MessageProcessor {
       socketWrapper.sendError(
         C.TOPIC.ERROR,
         C.EVENT.MESSAGE_PARSE_ERROR,
-        'non text based message recieved'
+       'non text based message recieved'
       )
       return
     }
 
-    const parsedMessages = messageParser.parse(message)
-    let parsedMessage
-
-    const length = parsedMessages.length
-    for (let i = 0; i < length; i++) {
-      parsedMessage = parsedMessages[i]
-
-      if (parsedMessage === null) {
-        this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, message)
-        socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, message)
-        continue
-      }
-
-      if (parsedMessage.topic === C.TOPIC.CONNECTION && parsedMessage.action === C.ACTIONS.PONG) {
-        continue
-      }
-
-      this._options.permissionHandler.canPerformAction(
-        socketWrapper.user,
-        parsedMessage,
-        this._onPermissionResponse.bind(this, socketWrapper, parsedMessage),
-        socketWrapper.authData
-      )
+    let queue = this._queues.get(socketWrapper)
+    if (!queue) {
+      queue = new MessageQueue(this._options, socketWrapper)
+      queue.onAuthenticatedMessage = this.onAuthenticatedMessage
+      socketWrapper.once('close', (socketWrapper) => this._queues.delete(socketWrapper))
+      this._queues.set(socketWrapper, queue)
     }
-  }
-
-  /**
-   * Processes the response that's returned by the permissionHandler.
-   *
-   * @param   {SocketWrapper}   socketWrapper
-   * @param   {Object} message  parsed message - might have been manipulated
-   *                              by the permissionHandler
-   * @param   {Error} error     error or null if no error. Denied permissions will be expressed
-   *                            by setting result to false
-   * @param   {Boolean} result    true if permissioned
-   *
-   * @returns {void}
-   */
-  _onPermissionResponse (socketWrapper, message, error, result) {
-    if (error !== null) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-      socketWrapper.sendError(
-        message.topic,
-        C.EVENT.MESSAGE_PERMISSION_ERROR,
-        this._getPermissionErrorData(message)
-      )
-      return
-    }
-
-    if (result !== true) {
-      socketWrapper.sendError(
-        message.topic,
-        C.EVENT.MESSAGE_DENIED,
-        this._getPermissionErrorData(message)
-      )
-      return
-    }
-
-    this.onAuthenticatedMessage(socketWrapper, message)
-  }
-
-  /**
-   * Create data in the correct format expected in a MESSAGE_DENIED or MESSAGE_PERMISSION_ERROR
-   *
-   * @param   {Object} message  parsed message - might have been manipulated
-   *                              by the permissionHandler
-   * @returns {Object}
-   */
-  _getPermissionErrorData (message) {
-    let data = [message.data[0], message.action]
-    if (message.data.length > 1) {
-      data = data.concat(message.data.slice(1))
-    }
-    return data
+    queue.process(message)
   }
 }

@@ -1,3 +1,5 @@
+'use strict'
+
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const Rpc = require('./rpc')
@@ -14,7 +16,7 @@ module.exports = class RpcHandler {
     this._options = options
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
-    this._privateTopic = `${C.TOPIC.PRIVATE}.${this._options.serverName}`
+    this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
     this._options.messageConnector.subscribe(this._privateTopic, this._onPrivateMessage.bind(this))
 
     this._supportedSubActions = [
@@ -72,11 +74,12 @@ module.exports = class RpcHandler {
                     `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
                 )
       }
-    } else {
-      /*
-       * RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
-       * by the Rpc class directly
-       */
+    }
+    /*
+     * RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
+     * by the Rpc class directly
+     */
+    else {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
       if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
@@ -117,8 +120,8 @@ module.exports = class RpcHandler {
       return null
     }
 
-    const subscribers = this._subscriptionRegistry.getLocalSubscribers(rpcName)
-    let index = Math.round(Math.random() * (subscribers.length - 1))
+    const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
+    let index = Math.floor(Math.random() * subscribers.length)
     for (let n = 0; n < subscribers.length; ++n) {
       if (!rpcData.providers.has(subscribers[index])) {
         rpcData.providers.add(subscribers[index])
@@ -219,8 +222,8 @@ module.exports = class RpcHandler {
       rpcData.remoteServers = serverNames
     }
 
-    const subscribers = this._subscriptionRegistry.getLocalSubscribers(rpcName)
-    const provider = subscribers[Math.round(Math.random() * (subscribers.length - 1))]
+    const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
+    const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
 
     if (provider) {
       rpcData.providers.add(provider)
@@ -340,6 +343,6 @@ module.exports = class RpcHandler {
   * @return {String}
   */
   _getNextRandomServer (remoteServers) {
-    return `${C.TOPIC.PRIVATE}.${utils.spliceRandomElement(remoteServers)}`
+    return C.TOPIC.PRIVATE + utils.spliceRandomElement(remoteServers)
   }
 }
