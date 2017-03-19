@@ -187,12 +187,12 @@ class SubscriptionRegistry {
    *
    * @param   {String} name      the name/topic the subscriber was previously registered for
    * @param   {String} msgString the message as string
-   * @param   {[SocketWrapper]} sender an optional socketWrapper that shouldn't receive the message
+   * @param   {[SocketWrapper]} socket an optional socketWrapper that shouldn't receive the message
    *
    * @public
    * @returns {void}
    */
-  sendToSubscribers(name, msgString, sender) {
+  sendToSubscribers(name, msgString, socket) {
     if (!this._subscriptions.has(name)) {
       return
     }
@@ -220,15 +220,15 @@ class SubscriptionRegistry {
 
     // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
     // each uniqueSender has a vector of "gaps" in relation to sharedMessage
-    // senders should not receive what they sent themselves, so a gap is inserted
-    // for every send from this sender
-    if (sender && sender.uuid !== undefined) {
+    // sockets should not receive what they sent themselves, so a gap is inserted
+    // for every send from this socket
+    if (socket && socket.uuid !== undefined) {
       let uniqueSenders = delayedBroadcasts.uniqueSenders
-      let gaps = uniqueSenders.get(sender)
+      let gaps = uniqueSenders.get(socket)
 
       if (!gaps) {
         gaps = []
-        uniqueSenders.set(sender, gaps)
+        uniqueSenders.set(socket, gaps)
       }
 
       gaps.push(start, stop)
