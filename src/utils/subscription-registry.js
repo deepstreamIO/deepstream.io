@@ -218,11 +218,7 @@ class SubscriptionRegistry {
     delayedBroadcasts.sharedMessages += msgString
     const stop = delayedBroadcasts.sharedMessages.length
 
-    // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
-    // each uniqueSender has a vector of "gaps" in relation to sharedMessage
-    // sockets should not receive what they sent themselves, so a gap is inserted
-    // for every send from this socket
-    if (socket && socket.uuid !== undefined) {
+    if (socket && socket.sendNative) {
       let uniqueSenders = delayedBroadcasts.uniqueSenders
       let gaps = uniqueSenders.get(socket)
 
