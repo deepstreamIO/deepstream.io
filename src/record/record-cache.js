@@ -59,6 +59,7 @@ module.exports = class RecordCache {
       this._list.unshift({ name, size: 0, record: undefined, refs: 1 })
       this._map.set(name, this._list.head)
     }
+    return node.value.record
   }
 
   unlock (name) {
