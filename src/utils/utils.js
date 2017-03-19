@@ -1,48 +1,10 @@
+'use strict'
+
 const url = require('url')
-const OBJECT = 'object'
+const xuid = require('xuid')
 
 exports.getUid = function () {
-  return Date.now().toString(36) + '-' + (Math.random() * 10000000000000000000).toString(36)
-}
-
-exports.combineEvents = function (emitters, event, callback) {
-  let count = 0
-  const increment = function () {
-    count++
-    if (count === emitters.length) {
-      callback()
-    }
-  }
-
-  for (let i = 0; i < emitters.length; i++) {
-    emitters[i].once(event, increment)
-  }
-}
-
-exports.shuffle = function (array) {
-  let currentIndex = array.length
-  let temporaryValue
-  let randomIndex
-
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex)
-    currentIndex -= 1
-    temporaryValue = array[currentIndex]
-    array[currentIndex] = array[randomIndex]
-    array[randomIndex] = temporaryValue
-  }
-
-  return array
-}
-
-exports.reverseMap = function (map) {
-  let reversedMap = {}
-
-  for (let key in map) {
-    reversedMap[map[key]] = key
-  }
-
-  return reversedMap
+  return xuid()
 }
 
 exports.isOfType = function (input, expectedType) {
@@ -51,63 +13,8 @@ exports.isOfType = function (input, expectedType) {
   } else if (expectedType === 'url') {
     return !!url.parse(input).host
   } else {
-    return typeof input === expectedType
+    return typeof input === expectedType // eslint-disable-line
   }
-}
-
-exports.validateMap = function (map, throwError, schema) {
-  let error
-  for (let key in schema) {
-    if (typeof map[ key ] === 'undefined') {
-      error = new Error('Missing key ' + key)
-      break
-    }
-
-    if (!exports.isOfType(map[ key ], schema[ key ])) {
-      error = new Error('Invalid type ' + typeof map[ key ] + ' for ' + key)
-      break
-    }
-  }
-
-  if (error) {
-    if (throwError) {
-      throw error
-    } else {
-      return error
-    }
-  } else {
-    return true
-  }
-}
-
-exports.deepCopy = function (obj) {
-  if (typeof obj === OBJECT) {
-    return JSON.parse(JSON.stringify(obj))
-  } else {
-    return obj
-  }
-}
-
-exports.merge = function () {
-  const result = {}
-  const objs = Array.prototype.slice.apply(arguments)
-
-  const _merge = (objA, objB) => {
-    for (let key in objB) {
-      if (objB[ key ] && objB[ key ].constructor === Object) {
-        objA[ key ] = objA[ key ] || {}
-        _merge(objA[ key ], objB[ key ])
-      } else if (objB[ key ] !== undefined) {
-        objA[ key ] = objB[ key ]
-      }
-    }
-  }
-
-  for (let i = 0; i < objs.length; i++) {
-    _merge(result, objs[ i ])
-  }
-
-  return result
 }
 
 exports.setTimeout = function (callback, timeoutDuration) {
@@ -124,15 +31,6 @@ exports.setInterval = function (callback, intervalDuration) {
   } else {
     return -1
   }
-}
-
-exports.getRandomIntInRange = function (min, max) {
-  return min + Math.floor(Math.random() * (max - min))
-}
-
-exports.spliceRandomElement = function (array) {
-  const randomIndex = exports.getRandomIntInRange(0, array.length)
-  return array.splice(randomIndex, 1)[ 0 ]
 }
 
 exports.JSONParse = function (text, reviver) {

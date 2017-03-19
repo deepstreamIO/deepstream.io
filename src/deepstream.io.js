@@ -4,7 +4,6 @@ const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')
 const messageParser = require('./message/message-parser')
 const util = require('util')
-const utils = require('./utils/utils')
 const defaultOptions = require('./default-options')
 const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
@@ -174,7 +173,14 @@ Deepstream.prototype.stop = function () {
     }
   }
 
-  utils.combineEvents(closables, 'close', this._onStopped.bind(this))
+  for (const closable of closables) {
+    closable.on('close', () => {
+      closables.splice(closables.indexOf(closable), 1)
+      if (closables.length === 0) {
+        this._onStopped()
+      }
+    })
+  }
   this._options.clusterRegistry.leaveCluster()
   this._connectionEndpoint.close()
 }
@@ -203,7 +209,7 @@ Deepstream.prototype.convertTyped = function (value) {
  * @returns {void}
  */
 Deepstream.prototype._loadConfig = function (config) {
-  this._options = utils.merge(defaultOptions.get(), config)
+  this._options = Object.assign(defaultOptions.get(), config)
 }
 
 /**

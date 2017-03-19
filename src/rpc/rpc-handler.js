@@ -4,7 +4,6 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const Rpc = require('./rpc')
 const RpcProxy = require('./rpc-proxy')
-const utils = require('../utils/utils')
 
 module.exports = class RpcHandler {
   /**
@@ -74,12 +73,11 @@ module.exports = class RpcHandler {
                     `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
                 )
       }
-    }
-    /*
-     * RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
-     * by the Rpc class directly
-     */
-    else {
+    } else {
+      /*
+       * RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
+       * by the Rpc class directly
+       */
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
       if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
@@ -343,6 +341,6 @@ module.exports = class RpcHandler {
   * @return {String}
   */
   _getNextRandomServer (remoteServers) {
-    return C.TOPIC.PRIVATE + utils.spliceRandomElement(remoteServers)
+    return C.TOPIC.PRIVATE + remoteServers[Math.floor(Math.random() * remoteServers.length)]
   }
 }

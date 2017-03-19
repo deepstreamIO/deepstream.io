@@ -10,6 +10,7 @@
   "dependencies": {
     "js-base64": "^2.1.9",
     "uws": "^0.12.0",
+    "xuid": "^1.2.0",
     "yallist": "^3.0.1"
   },
   "author": "deepstreamHub GmbH",
