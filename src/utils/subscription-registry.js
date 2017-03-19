@@ -116,10 +116,12 @@ class SubscriptionRegistry {
     this._constants[name.toUpperCase()] = value
   }
 
-  _onSocketClose (socketWrapper) {
+  _onSocketClose (socket) {
     for (const entry of this._subscriptions) {
-      if (entry[1][utils.sortedIndexBy(entry[1], socketWrapper, 'uuid')] === socketWrapper) {
-        this.unsubscribe(entry[0], socketWrapper)
+      const name = entry[0]
+      const sockets = entry[1]
+      if (sockets.has(socket)) {
+        this.unsubscribe(name, socket)
       }
     }
   }
@@ -166,13 +168,16 @@ class SubscriptionRegistry {
       // for all sockets in this subscription name, send either sharedMessage or this socket's
       // specialized message. only sockets that sent something will have a special message, all
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
-      const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
-      for (const socket of this._subscriptions.get(name) || []) {
-        if (!uniqueSenders.has(socket)) {
-          socket.sendPrepared(preparedMessage)
+      const sockets = this._subscriptions.get(name)
+      if (sockets) {
+        const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
+        for (const socket of sockets) {
+          if (!uniqueSenders.has(socket)) {
+            socket.sendPrepared(preparedMessage)
+          }
         }
+        SocketWrapper.finalizeMessage(preparedMessage)
       }
-      SocketWrapper.finalizeMessage(preparedMessage)
 
       delayedBroadcasts.uniqueSenders.clear()
       delayedBroadcasts.sharedMessages = ''
@@ -187,7 +192,7 @@ class SubscriptionRegistry {
    *
    * @param   {String} name      the name/topic the subscriber was previously registered for
    * @param   {String} msgString the message as string
-   * @param   {[SocketWrapper]} socket an optional socketWrapper that shouldn't receive the message
+   * @param   {[SocketWrapper]} socket an optional socket that shouldn't receive the message
    *
    * @public
    * @returns {void}
@@ -248,76 +253,69 @@ class SubscriptionRegistry {
    * Adds a SocketWrapper as a subscriber to a topic
    *
    * @param   {String} name
-   * @param   {SocketWrapper} socketWrapper
+   * @param   {SocketWrapper} socket
    *
    * @public
    * @returns {void}
    */
-  subscribe(name, socketWrapper) {
-    let sockets = this._subscriptions.get(name)
+  subscribe(name, socket) {
+    let sockets = this._subscriptions.get(name) || new Set()
 
-    if (!sockets) {
-      sockets = []
+    if (sockets.size === 0) {
       this._subscriptions.set(name, sockets)
-    }
-
-    const index = utils.sortedIndexBy(sockets, socketWrapper, 'uuid')
-
-    if (sockets[index] === socketWrapper) {
-      const msg = `repeat supscription to "${name}" by ${socketWrapper.user}`
+    } else if (sockets.has(socket)) {
+      const msg = `repeat supscription to "${name}" by ${socket.user}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
-      socketWrapper.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
+      socket.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
-    sockets.splice(index, 0, socketWrapper)
+    sockets.add(socket)
 
-    if (socketWrapper.listeners('close').indexOf(this._onSocketClose) === -1) {
-      socketWrapper.once('close', this._onSocketClose)
+    if (socket.listeners('close').indexOf(this._onSocketClose) === -1) {
+      socket.once('close', this._onSocketClose)
     }
 
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionMade(
         name,
-        socketWrapper,
-        sockets.length
+        socket,
+        sockets.size
       )
     }
 
     this._clusterSubscriptions.add(name)
 
-    const logMsg = `for ${this._topic}:${name} by ${socketWrapper.user}`
+    const logMsg = `for ${this._topic}:${name} by ${socket.user}`
     this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg)
-    socketWrapper.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name])
+    socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name])
   }
 
   /**
    * Removes a SocketWrapper from the list of subscriptions for a topic
    *
    * @param   {String} name
-   * @param   {SocketWrapper} socketWrapper
+   * @param   {SocketWrapper} socket
    * @param   {Boolean} silent supresses logs and unsubscribe ACK messages
    *
    * @public
    * @returns {void}
    */
-  unsubscribe(name, socketWrapper, silent) {
+  unsubscribe(name, socket, silent) {
     const sockets = this._subscriptions.get(name)
 
-    const index = utils.sortedIndexBy(sockets, socketWrapper, 'uuid')
-
-    if (!sockets || sockets[index] !== socketWrapper) {
-      const msg = `${socketWrapper.user} is not subscribed to ${name}`
+    if (!sockets || !sockets.has(socket)) {
+      const msg = `${socket.user} is not subscribed to ${name}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg)
-      socketWrapper.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)
+      socket.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)
       return
     }
 
-    sockets.splice(index, 1)
+    sockets.delete(socket)
 
     this._clusterSubscriptions.remove(name)
 
-    if (sockets.length === 0) {
+    if (sockets.size === 0) {
       this._subscriptions.delete(name)
     }
 
@@ -329,16 +327,16 @@ class SubscriptionRegistry {
       }
       this._subscriptionListener.onSubscriptionRemoved(
         name,
-        socketWrapper,
-        sockets.length,
+        socket,
+        sockets.size,
         allServerNames.length
       )
     }
 
     if (!silent) {
-      const logMsg = `for ${this._topic}:${name} by ${socketWrapper.user}`
+      const logMsg = `for ${this._topic}:${name} by ${socket.user}`
       this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg)
-      socketWrapper.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name])
+      socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name])
     }
   }
 
@@ -352,7 +350,8 @@ class SubscriptionRegistry {
    * @returns {Array} SocketWrapper[]
    */
   getLocalSubscribers(name) {
-    return this._subscriptions.get(name) || []
+    const sockets = this._subscriptions.get(name)
+    return sockets ? Array.from(sockets) : []
   }
 
   /**
