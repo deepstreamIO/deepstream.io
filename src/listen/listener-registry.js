@@ -157,7 +157,7 @@ module.exports = class ListenerRegistry {
       this.onSubscriptionRemoved(
         message.data[1],
         null,
-        this._clientRegistry.getLocalSubscribers(message.data[1]).length,
+        this._clientRegistry.getLocalSubscribers(message.data[1]).size,
         this._clientRegistry.getAllServers(message.data[1]).length - 1
       )
     }
@@ -246,7 +246,7 @@ module.exports = class ListenerRegistry {
 
     // provider isn't a subscriber, meaning we should wait for 0
     const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
-    if (localCount === 1 && subscribers.indexOf(provider.socketWrapper) === -1) {
+    if (localCount === 1 && !subscribers.has(provider.socketWrapper)) {
       return
     }
 
@@ -293,7 +293,7 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    if (this._providerRegistry.getLocalSubscribers(pattern).indexOf(socketWrapper) === -1) {
+    if (!this._providerRegistry.getLocalSubscribers(pattern).has(socketWrapper)) {
       this._providerRegistry.subscribe(pattern, socketWrapper)
     }
 
@@ -539,7 +539,7 @@ module.exports = class ListenerRegistry {
     const provider = listenInProgress.shift()
     const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
 
-    if (subscribers && subscribers.indexOf(provider.socketWrapper) !== -1) {
+    if (subscribers && subscribers.has(provider.socketWrapper)) {
       this._stopLocalDiscoveryStage(subscriptionName)
       return
     }
@@ -793,12 +793,8 @@ module.exports = class ListenerRegistry {
     const providers = []
     for (const pattern in patterns) {
       if (patterns[pattern].test(subscriptionName)) {
-        const providersForPattern = providerRegistry.getLocalSubscribers(pattern)
-        for (let i = 0; i < providersForPattern.length; i++) {
-          providers.push({
-            pattern,
-            socketWrapper: providersForPattern[i]
-          })
+        for (const socketWrapper of providerRegistry.getLocalSubscribers(pattern)) {
+          providers.push({ pattern, socketWrapper })
         }
       }
     }
