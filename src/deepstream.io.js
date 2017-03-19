@@ -43,7 +43,8 @@ const Deepstream = function (config) {
     'messageConnector',
     'storageConnector',
     'authenticationHandler',
-    'permissionHandler'
+    'permissionHandler',
+    'stateConnector'
   ]
 }
 
