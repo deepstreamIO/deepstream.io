@@ -353,8 +353,7 @@ class SubscriptionRegistry {
    * @returns {Array} SocketWrapper[]
    */
   getLocalSubscribers(name) {
-    const sockets = this._subscriptions.get(name)
-    return sockets ? sockets : new Set()
+    return this._subscriptions.get(name) || new Set()
   }
 
   /**
