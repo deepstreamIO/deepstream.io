@@ -146,18 +146,20 @@ class SubscriptionRegistry {
       }
 
       // for all unique senders and their gaps, build their special messages
-      for (const uniqueSender of uniqueSenders) {
-        let i = 1
-        let message = sharedMessages.substring(0, uniqueSender[i++])
-        let lastStop = uniqueSender[i++]
-        while (i < uniqueSender.length) {
-          message += sharedMessages.substring(lastStop, uniqueSender[i++])
-          lastStop = uniqueSender[i++]
+      for (const entry of uniqueSenders) {
+        let socket = entry[0]
+        let gaps = entry[1]
+        let i = 0
+        let message = sharedMessages.substring(0, gaps[i++])
+        let lastStop = gaps[i++]
+        while (i < gaps.length) {
+          message += sharedMessages.substring(lastStop, gaps[i++])
+          lastStop = gaps[i++]
         }
         message += sharedMessages.substring(lastStop, sharedMessages.length)
 
         if (message) {
-          uniqueSender[0].sendNative(message)
+          socket.sendNative(message)
         }
       }
 
@@ -165,17 +167,14 @@ class SubscriptionRegistry {
       // specialized message. only sockets that sent something will have a special message, all
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
       const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
-      let j = 0
       for (const socket of this._subscriptions.get(name) || []) {
-        if (j < uniqueSenders.length && uniqueSenders[j][0] === socket) {
-          j++
-        } else {
+        if (!uniqueSenders.has(socket)) {
           socket.sendPrepared(preparedMessage)
         }
       }
       SocketWrapper.finalizeMessage(preparedMessage)
 
-      delayedBroadcasts.uniqueSenders.splice(0, delayedBroadcasts.uniqueSenders.length)
+      delayedBroadcasts.uniqueSenders.clear()
       delayedBroadcasts.sharedMessages = ''
     }
   }
@@ -207,7 +206,7 @@ class SubscriptionRegistry {
     let delayedBroadcasts = this._delayedBroadcasts.get(name)
     if (delayedBroadcasts === undefined) {
       delayedBroadcasts = {
-        uniqueSenders: [],
+        uniqueSenders: new Map(),
         sharedMessages: ''
       }
       this._delayedBroadcasts.set(name, delayedBroadcasts)
@@ -224,14 +223,15 @@ class SubscriptionRegistry {
     // senders should not receive what they sent themselves, so a gap is inserted
     // for every send from this sender
     if (sender && sender.uuid !== undefined) {
-      const uniqueSenders = delayedBroadcasts.uniqueSenders
-      const index = utils.sortedIndexBy(uniqueSenders, sender, 'uuid')
+      let uniqueSenders = delayedBroadcasts.uniqueSenders
+      let gaps = uniqueSenders.get(sender)
 
-      if (uniqueSenders[index] !== sender) {
-        uniqueSenders.splice(index, 0, [ sender ])
+      if (!gaps) {
+        gaps = []
+        uniqueSenders.set(sender, gaps)
       }
 
-      uniqueSenders[index].push(start, stop)
+      gaps.push(start, stop)
     }
 
     // reuse the same timer if already started
