@@ -3,10 +3,8 @@
 const C = require('../constants/constants')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const SocketWrapper = require('../message/socket-wrapper')
-const utils = require('./utils')
 
 class SubscriptionRegistry {
-
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
    * A bit like an event-hub, only that it registers SocketWrappers rather
@@ -320,16 +318,11 @@ class SubscriptionRegistry {
     }
 
     if (this._subscriptionListener) {
-      const allServerNames = this._clusterSubscriptions.getAllServers(name)
-      const indexOfCurrentNode = allServerNames.indexOf(this._options.serverName)
-      if (indexOfCurrentNode > -1) {
-        allServerNames.splice(indexOfCurrentNode, 1)
-      }
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socket,
         sockets.size,
-        allServerNames.length
+        this.getAllRemoteServers(name).length
       )
     }
 
@@ -405,7 +398,6 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionRemoved(name, null, 0, 0)
     }
   }
-
 }
 
 module.exports = SubscriptionRegistry
