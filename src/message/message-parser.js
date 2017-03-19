@@ -48,17 +48,14 @@ module.exports = class MessageParser {
    *                    data: <array of strings>
    *                  }
    */
-  static parse(message) {
-    const parsedMessages = []
+  static parse(message, callback) {
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
     for (let i = 0; i < rawMessages.length; i++) {
       if (rawMessages[i].length > 2) {
-        parsedMessages.push(this.parseMessage(rawMessages[i]))
+        callback(this.parseMessage(rawMessages[i]), message)
       }
     }
-
-    return parsedMessages
   }
 
   /**
