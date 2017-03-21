@@ -56,7 +56,7 @@ module.exports = class RecordHandler {
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       const [ start ] = splitRev(data[1])
-      if (start < Number.Infinity && (!this._storageExclusion || !this._storageExclusion.test(data[0]))) {
+      if (start > 0 && start < Number.Infinity && (!this._storageExclusion || !this._storageExclusion.test(data[0]))) {
         // TODO: Remove storage exclusion
         this._cache.lock(data[0])
         this._storage.set(data, (error, data) => {
@@ -173,8 +173,8 @@ module.exports = class RecordHandler {
 }
 
 function isSameOrNewer (a, b) {
-  const [ av, ar ] = a ? exports.splitRev(a) : [ 0, '00000000000000' ]
-  const [ bv, br ] = b ? exports.splitRev(b) : [ 0, '00000000000000' ]
+  const [ av, ar ] = a ? splitRev(a) : [ 0, '00000000000000' ]
+  const [ bv, br ] = b ? splitRev(b) : [ 0, '00000000000000' ]
   return av > bv || (av === bv && ar >= br)
 }
 
