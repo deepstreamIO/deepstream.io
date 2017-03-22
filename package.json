@@ -10,6 +10,7 @@
     "test": "test"
   },
   "scripts": {
+    "precommit": "npm run lint",
     "lint": "node_modules/.bin/eslint src/",
     "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
