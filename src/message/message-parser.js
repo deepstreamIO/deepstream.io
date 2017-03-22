@@ -1,6 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
+const utils = require('../utils/utils')
 
 /**
  * Turns the ACTION:SHORTCODE constants map
@@ -11,11 +12,11 @@ const C = require('../constants/constants')
  * @returns {Object} actions
 */
 const actions = (function getActions() {
-  const result = {}
+  const result = new Map()
   let key
 
   for (key in C.ACTIONS) {
-    result[C.ACTIONS[key]] = key
+    result.set(C.ACTIONS[key], key)
   }
 
   return result
@@ -50,12 +51,21 @@ module.exports = class MessageParser {
    */
   static parse(message) {
     const parsedMessages = []
-    const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
-    for (let i = 0; i < rawMessages.length; i++) {
-      if (rawMessages[i].length > 2) {
-        parsedMessages.push(this.parseMessage(rawMessages[i]))
+    let i = 2
+    let k = 0
+    while (i < message.length) {
+      if (message[i] === C.MESSAGE_SEPERATOR) {
+        parsedMessages.push(this.parseMessage(message.slice(k, i)))
+        k = i + 1
+        i = i + 3
+      } else {
+        i = i + 1
       }
+    }
+
+    if (i <= message.length) {
+      parsedMessages.push(this.parseMessage(message.slice(k, i)))
     }
 
     return parsedMessages
@@ -78,11 +88,7 @@ module.exports = class MessageParser {
     }
 
     if (type === C.TYPES.OBJECT) {
-      try {
-        return JSON.parse(value.substr(1))
-      } catch (e) {
-        return e
-      }
+      return utils.tryParseJson(value.substr(1))
     }
 
     if (type === C.TYPES.NUMBER) {
@@ -119,22 +125,12 @@ module.exports = class MessageParser {
    * @returns {Object} parsedMessage
    */
   static parseMessage(message) {
-    const parts = message.split(C.MESSAGE_PART_SEPERATOR)
-    const messageObject = {}
-
-    if (parts.length < 2) {
-      return null
+    const parts = message.split(C.MESSAGE_PART_SEPERATOR, 4)
+    return !actions.has(parts[1]) ? null : {
+      raw: message,
+      topic: parts[0],
+      action: parts[1],
+      data: parts.splice(2)
     }
-
-    if (actions[parts[1]] === undefined) {
-      return null
-    }
-
-    messageObject.raw = message
-    messageObject.topic = parts[0]
-    messageObject.action = parts[1]
-    messageObject.data = parts.splice(2)
-
-    return messageObject
   }
 }
