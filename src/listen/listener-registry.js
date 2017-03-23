@@ -234,12 +234,16 @@ module.exports = class ListenerRegistry {
         }
       })
       .then(([ next, prev ]) => {
-        if (!next || !next.uuid) {
+        if (!next) {
           return
         }
 
         if (prev.uuid) {
           this._sendHasProviderUpdate(false, name)
+        }
+      
+        if (!next.uuid) {
+          return
         }
 
         const listener = this._listeners.get(next.uuid)
