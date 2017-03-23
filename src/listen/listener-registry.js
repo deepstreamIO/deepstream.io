@@ -54,22 +54,24 @@ module.exports = class ListenerRegistry {
       return
     }
 
+    let expr = null
+
     try {
-      RegExp(pattern)
+      expr = RegExp(pattern)
     } catch (err) {
       socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
       return
     }
 
-    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Set() }
+    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Map() }
 
     if (listener.patterns.size === 0) {
       this._listeners.set(socket.uuid, listener)
     }
 
-    listener.patterns.add(pattern)
+    listener.patterns.set(pattern, expr)
 
-    this._reconcilePattern(pattern)
+    this._reconcilePattern(expr)
   }
 
   onListenRemoved (pattern, socket, localCount) {
@@ -79,13 +81,14 @@ module.exports = class ListenerRegistry {
 
     const listener = this._listeners.get(socket.uuid)
 
+    const expr = listener.patterns.get(pattern)
     listener.patterns.delete(pattern)
 
     if (listener.patterns.size === 0) {
       this._listeners.delete(socket.uuid)
     }
 
-    this._reconcilePattern(pattern)
+    this._reconcilePattern(expr)
   }
 
   onSubscriptionMade (name, socket, localCount) {
@@ -158,9 +161,9 @@ module.exports = class ListenerRegistry {
     this._logger.log(C.LOG_LEVEL.ERROR, err.message)
   }
 
-  _reconcilePattern (pattern) {
+  _reconcilePattern (expr) {
     for (const name of this._subscriptionRegistry.getNames()) {
-      if (name.match(pattern)) {
+      if (expr.test(name)) {
         this._reconcile(name)
       }
     }
@@ -196,8 +199,8 @@ module.exports = class ListenerRegistry {
   _match (name) {
     const matches = []
     for (const { socket, patterns } of this._listeners.values()) {
-      for (const pattern of patterns) {
-        if (name.match(pattern)) {
+      for (const [ pattern, expr ] of patterns) {
+        if (expr.test(name)) {
           matches.push({ id: socket.uuid + SEP + pattern, socket, pattern })
         }
       }
