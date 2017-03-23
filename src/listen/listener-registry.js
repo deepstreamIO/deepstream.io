@@ -53,10 +53,9 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    let listener = this._listeners.get(socket.uuid)
+    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Set() }
 
-    if (!listener) {
-      listener = { socket, patterns: new Set() }
+    if (listener.patterns.size === 0) {
       this._listeners.set(socket.uuid, listener)
     }
 
@@ -118,8 +117,13 @@ module.exports = class ListenerRegistry {
     this._timeouts.delete(name)
 
     this._providers
-      .upsert(name, prev => prev.uuid === socket.uuid && prev.pattern === pattern
-        ? Object.assign({}, prev, { deadline: null }) : null
+      .upsert(name, prev => prev.deadline
+        ? {
+          uuid: socket.uuid,
+          pattern: pattern,
+          serverName: this._serverName,
+          deadline: null
+        } : null
       )
       .then(([ next, prev ]) => {
         if (!next) {
