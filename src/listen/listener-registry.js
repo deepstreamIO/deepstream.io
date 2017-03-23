@@ -54,17 +54,17 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Set() }
-
-    if (listener.patterns.size === 0) {
-      this._listeners.set(socket.uuid, listener)
-    }
-
     try {
       RegExp(pattern)
     } catch (err) {
       socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
       return
+    }
+
+    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Set() }
+
+    if (listener.patterns.size === 0) {
+      this._listeners.set(socket.uuid, listener)
     }
 
     listener.patterns.add(pattern)
