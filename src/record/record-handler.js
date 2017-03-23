@@ -422,12 +422,10 @@ RecordHandler.prototype._delete = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._onDeleted = function (name, message, originalSender) {
-  const subscribers = this._subscriptionRegistry.getLocalSubscribers(name)
-
   this._$broadcastUpdate(name, message, originalSender)
 
-  for (let i = 0; subscribers && i < subscribers.length; i++) {
-    this._subscriptionRegistry.unsubscribe(name, subscribers[i], true)
+  for (const subscriber of this._subscriptionRegistry.getLocalSubscribers(name)) {
+    this._subscriptionRegistry.unsubscribe(name, subscriber, true)
   }
 }
 

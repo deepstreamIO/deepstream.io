@@ -120,8 +120,8 @@ module.exports = class RpcHandler {
       return null
     }
 
-    const subscribers = this._subscriptionRegistry.getLocalSubscribers(rpcName)
-    let index = Math.round(Math.random() * (subscribers.length - 1))
+    const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
+    let index = Math.floor(Math.random() * subscribers.length)
     for (let n = 0; n < subscribers.length; ++n) {
       if (!rpcData.providers.has(subscribers[index])) {
         rpcData.providers.add(subscribers[index])
@@ -222,8 +222,8 @@ module.exports = class RpcHandler {
       rpcData.remoteServers = serverNames
     }
 
-    const subscribers = this._subscriptionRegistry.getLocalSubscribers(rpcName)
-    const provider = subscribers[Math.round(Math.random() * (subscribers.length - 1))]
+    const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
+    const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
 
     if (provider) {
       rpcData.providers.add(provider)

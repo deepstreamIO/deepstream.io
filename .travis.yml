@@ -26,6 +26,7 @@ matrix:
       os: osx
 
 script:
+  - npm install -g eslint
   - npm run coverage
   # This has to happen here and not in before_deploy to be put in travis cache
   - chmod 555 scripts/package.sh
