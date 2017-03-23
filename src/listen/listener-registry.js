@@ -10,6 +10,7 @@ module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._reconcile = this._reconcile.bind(this)
     this._dispatch = this._dispatch.bind(this)
+    this._onError = this._onError.bind(this)
 
     this._pending = new Set()
     this._listeners = new Map()
@@ -97,7 +98,7 @@ module.exports = class ListenerRegistry {
               this._sendHasProviderUpdate(true, name, socket)
             }
           })
-          .catch(err => this._logger.log(C.LOG_LEVEL.ERROR, err.message))
+          .catch(this._onError)
       } else {
         this._reconcile(name)
       }
@@ -132,7 +133,7 @@ module.exports = class ListenerRegistry {
           this._sendHasProviderUpdate(true, name)
         }
       })
-      .catch(err => this._logger.log(C.LOG_LEVEL.ERROR, err.message))
+      .catch(this._onError)
   }
 
   _reject (socket, [ pattern, name ]) {
@@ -148,7 +149,17 @@ module.exports = class ListenerRegistry {
           this._reconcile(name)
         }
       })
-      .catch(err => this._logger.log(C.LOG_LEVEL.ERROR, err.message))
+      .catch(this._onError)
+  }
+
+  _onError (err) {
+    this._errorTimeout = setTimeout(() => {
+      this._errorTimeout = null
+      for (const name of this._subscriptionRegistry.getNames()) {
+        this._reconcile(name)
+      }
+    }, 10000)
+    this._logger.log(C.LOG_LEVEL.ERROR, err.message)
   }
 
   _reconcilePattern (pattern) {
@@ -178,7 +189,7 @@ module.exports = class ListenerRegistry {
       } else {
         promise = this._tryRemove(name)
       }
-      promises.push(promise.catch(err => this._logger.log(C.LOG_LEVEL.ERROR, err.message)))
+      promises.push(promise.catch(this._onError))
     }
 
     this._pending.clear()
