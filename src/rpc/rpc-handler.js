@@ -121,7 +121,8 @@ module.exports = class RpcHandler {
     }
 
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
-    let index = Math.floor(Math.random() * subscribers.length)
+    let index = utils.getRandomIntInRange(0, subscribers.length)
+
     for (let n = 0; n < subscribers.length; ++n) {
       if (!rpcData.providers.has(subscribers[index])) {
         rpcData.providers.add(subscribers[index])
@@ -130,30 +131,21 @@ module.exports = class RpcHandler {
       index = (index + 1) % subscribers.length
     }
 
-    /*
-     * Get a list of the private topics of all remote providers
-     */
-    const allRemoteProviderTopics = rpcData.remoteServers
-
-    /**
-    * Do any remote topics exist? If not, this is already from another
-    * server so we shouldn't try making a remote request.
-    */
-    if (allRemoteProviderTopics === null) {
+    if (!rpcData.servers) {
       return null
     }
 
-    /*
-  * No local or remote providers to service the request? Return here
-  */
-    if (allRemoteProviderTopics.length === 0) {
-      return null
+    const servers = this._subscriptionRegistry.getAllRemoteServers(rpcName)
+    index = utils.getRandomIntInRange(0, servers.length)
+    for (let n = 0; n < servers.length; ++n) {
+      if (!rpcData.servers.has(servers[index])) {
+        rpcData.servers.add(servers[index])
+        return new RpcProxy(this._options, C.TOPIC.PRIVATE + servers[index], rpcName, correlationId)
+      }
+      index = (index + 1) % servers.length
     }
 
-    /*
-     * Search for a remote provider that hasn't been used yet
-     */
-    return new RpcProxy(this._options, this._getNextRandomServer(rpcData.remoteServers), rpcName, correlationId)
+    return null
   }
 
   /**
@@ -212,18 +204,13 @@ module.exports = class RpcHandler {
 
     const rpcData = {
       providers: new Set(),
-      remoteServers: null,
+      servers: source !== C.SOURCE_MESSAGE_CONNECTOR ? new Set() : null,
       rpc: null
     }
     this._rpcs[correlationId] = rpcData
 
-    if (source !== C.SOURCE_MESSAGE_CONNECTOR) {
-      const serverNames = this._subscriptionRegistry.getAllRemoteServers(rpcName)
-      rpcData.remoteServers = serverNames
-    }
-
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
-    const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
+    const provider = subscribers[utils.getRandomIntInRange(0, subscribers.length)]
 
     if (provider) {
       rpcData.providers.add(provider)
@@ -255,8 +242,11 @@ module.exports = class RpcHandler {
     const correlationId = message.data[1]
     const rpcData = this._rpcs[correlationId]
 
-    if (rpcData.remoteServers && rpcData.remoteServers.length > 0) {
-      const rpcProxy = new RpcProxy(this._options, this._getNextRandomServer(rpcData.remoteServers), rpcName, correlationId)
+    const servers = this._subscriptionRegistry.getAllRemoteServers(rpcName)
+    const server = servers[Math.round(Math.random() * (servers.length - 1))]
+
+    if (server) {
+      const rpcProxy = new RpcProxy(this._options, C.TOPIC.PRIVATE + server, rpcName, correlationId)
       rpcData.rpc = new Rpc(this, requestor, rpcProxy, this._options, message)
       return
     }
