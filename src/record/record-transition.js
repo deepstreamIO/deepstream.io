@@ -131,7 +131,8 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     }
 
     try {
-      this._applyConfig(update, message)
+      const config = this._validateConfig(message)
+      this._applyConfig(config, update)
     } catch (e) {
       update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 3 ])
       return
@@ -155,7 +156,8 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     }
 
     try {
-      this._applyConfig(update, message)
+      const config = this._validateConfig(message)
+      this._applyConfig(config, update)
     } catch (e) {
       update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 4 ])
       return
@@ -222,29 +224,19 @@ RecordTransition.prototype.destroy = function (errorMessage) {
 }
 
 /**
- * Tries to apply config given from a socketWrapper on an
- * incoming message
+ * Tries to apply the given config on the step of a transition
  *
- * @param 	{Object} step the current step of the transition
- * @param 	{String} message
+ * @param 	{Object} config
+ * @param   {Object} step the current step of the transition
  *
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._applyConfig = function (step, message) {
-  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
-    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
+RecordTransition.prototype._applyConfig = function (config, step) {
+  if (!config) {
     return
   }
 
-  let config
-  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
-    config = message.data[4]
-  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
-    config = message.data[3]
-  }
-
-  config = JSON.parse(config)
   if (config.writeSuccess) {
     if (this._pendingUpdates[step.sender.uuid] === undefined) {
       this._pendingUpdates[step.sender.uuid] = {
@@ -256,6 +248,31 @@ RecordTransition.prototype._applyConfig = function (step, message) {
       update.versions.push(step.version)
     }
   }
+}
+
+/**
+ * Validates the config from an incoming message
+ *
+ * @param   {String} message
+ *
+ * @private
+ * @throws {SyntaxError } If config not valid
+ * @returns null or the given config
+ */
+RecordTransition.prototype._validateConfig = function (message) {
+  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
+    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
+    return null
+  }
+
+  let config
+  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
+    config = message.data[4]
+  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
+    config = message.data[3]
+  }
+
+  return JSON.parse(config)
 }
 
 /**
