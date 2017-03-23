@@ -182,12 +182,9 @@ module.exports = class ListenerRegistry {
 
     const promises = []
     for (const name of this._pending) {
-      let promise
-      if (this._subscriptionRegistry.hasName(name)) {
-        promise = this._tryAdd(name)
-      } else {
-        promise = this._tryRemove(name)
-      }
+      const promise = this._subscriptionRegistry.hasName(name)
+        ? this._tryAdd(name)
+        : this._tryRemove(name)
       promises.push(promise.catch(this._onError))
     }
 
