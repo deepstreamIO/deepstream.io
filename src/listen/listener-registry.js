@@ -238,6 +238,10 @@ module.exports = class ListenerRegistry {
           return
         }
 
+        if (prev.uuid) {
+          this._sendHasProviderUpdate(false, name)
+        }
+
         const listener = this._listeners.get(next.uuid)
 
         if (listener) {
@@ -264,8 +268,6 @@ module.exports = class ListenerRegistry {
         if (!next) {
           return
         }
-
-        this._sendHasProviderUpdate(false, name)
 
         const listener = this._listeners.get(prev.uuid)
 
