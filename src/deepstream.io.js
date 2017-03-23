@@ -10,7 +10,6 @@ const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
 const DependencyInitialiser = require('./utils/dependency-initialiser')
 const ClusterRegistry = require('./cluster/cluster-registry')
-const UniqueRegistry = require('./cluster/cluster-unique-state-provider')
 const C = require('./constants/constants')
 const pkg = require('../package.json')
 
@@ -43,7 +42,8 @@ const Deepstream = function (config) {
     'messageConnector',
     'storageConnector',
     'authenticationHandler',
-    'permissionHandler'
+    'permissionHandler',
+    'stateConnector'
   ]
 }
 
@@ -237,7 +237,6 @@ Deepstream.prototype._init = function () {
   this._connectionEndpoint.onMessage = this._messageProcessor.process.bind(this._messageProcessor)
 
   this._options.clusterRegistry = new ClusterRegistry(this._options, this._connectionEndpoint)
-  this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
 
   this._eventHandler = new EventHandler(this._options)
   this._messageDistributor.registerForTopic(C.TOPIC.EVENT, this._eventHandler.handle.bind(this._eventHandler))
