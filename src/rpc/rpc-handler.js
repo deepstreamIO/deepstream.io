@@ -98,14 +98,6 @@ module.exports = class RpcHandler {
   getAlternativeProvider (rpcName, correlationId) {
     const rpcData = this._rpcs.get(correlationId)
 
-    if (!rpcData) {
-      // RPC was already fufilled somehow. This is prior to 1.1.1 and
-      // hence is kept for backwards compatability.
-
-      // TODO: Log something useful here
-      return null
-    }
-
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
     let index = utils.getRandomIntInRange(0, subscribers.length)
 
