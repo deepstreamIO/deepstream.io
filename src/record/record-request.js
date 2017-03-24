@@ -31,7 +31,7 @@ const RecordRequest = function (recordName, options, socketWrapper, onComplete, 
     this._options.cacheRetrievalTimeout
   )
 
-  this._options.cache.get(this._recordName, this._onCacheResponse.bind(this))
+  this._options.cache.get(this._recordName, this._onCacheResponse.bind(this, socketWrapper))
 }
 
 /**
@@ -43,7 +43,7 @@ const RecordRequest = function (recordName, options, socketWrapper, onComplete, 
  * @private
  * @returns {void}
  */
-RecordRequest.prototype._onCacheResponse = function (error, record) {
+RecordRequest.prototype._onCacheResponse = function (socketWrapper, error, record) {
   clearTimeout(this._cacheRetrievalTimeout)
 
   if (this._isDestroyed === true) {
@@ -53,16 +53,16 @@ RecordRequest.prototype._onCacheResponse = function (error, record) {
   if (error) {
     this._sendError(C.EVENT.RECORD_LOAD_ERROR, `error while loading ${this._recordName} from cache:${error.toString()}`)
   } else if (record) {
-    this._onComplete(record)
+    this._onComplete(record, socketWrapper)
   } else if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._recordName)) {
     this._storageRetrievalTimeout = setTimeout(
       this._sendError.bind(this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName),
       this._options.storageRetrievalTimeout
     )
 
-    this._options.storage.get(this._recordName, this._onStorageResponse.bind(this))
+    this._options.storage.get(this._recordName, this._onStorageResponse.bind(this, socketWrapper))
   } else {
-    this._onComplete(null)
+    this._onComplete(null, socketWrapper)
   }
 }
 
@@ -76,7 +76,7 @@ RecordRequest.prototype._onCacheResponse = function (error, record) {
  * @private
  * @returns {void}
  */
-RecordRequest.prototype._onStorageResponse = function (error, record) {
+RecordRequest.prototype._onStorageResponse = function (socketWrapper, error, record) {
   clearTimeout(this._storageRetrievalTimeout)
 
   if (this._isDestroyed === true) {
@@ -86,7 +86,7 @@ RecordRequest.prototype._onStorageResponse = function (error, record) {
   if (error) {
     this._sendError(C.EVENT.RECORD_LOAD_ERROR, `error while loading ${this._recordName} from storage:${error.toString()}`)
   } else {
-    this._onComplete(record || null)
+    this._onComplete(record || null, socketWrapper)
 
     if (record) {
       /*
