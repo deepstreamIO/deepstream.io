@@ -4,6 +4,7 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 const LRU = require('lru-cache')
+const xuid = require('xuid')
 
 const SEP = String.fromCharCode(30)
 
@@ -66,7 +67,7 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Map() }
+    const listener = this._listeners.get(socket.uuid) || { id: xuid(), socket, patterns: new Map() }
 
     if (listener.patterns.size === 0) {
       this._listeners.set(socket.uuid, listener)
@@ -201,10 +202,10 @@ module.exports = class ListenerRegistry {
 
   _match (name) {
     const matches = []
-    for (const { socket, patterns } of this._listeners.values()) {
+    for (const { id, socket, patterns } of this._listeners.values()) {
       for (const [ pattern, expr ] of patterns) {
         if (expr.test(name)) {
-          matches.push({ id: socket.uuid + SEP + pattern, socket, pattern })
+          matches.push({ id: id + SEP + socket.uuid + SEP + pattern, socket, pattern })
         }
       }
     }
