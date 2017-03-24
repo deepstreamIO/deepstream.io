@@ -17,10 +17,7 @@ module.exports = class RpcHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
     this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
-    this._options.messageConnector.subscribe(
-      this._privateTopic,
-      this._onPrivateMessage.bind(this)
-    )
+    this._options.messageConnector.subscribe(this._privateTopic, this._onPrivateMessage.bind(this))
 
     this._rpcs = new Map()
   }
@@ -48,10 +45,8 @@ module.exports = class RpcHandler {
       message.action === C.ACTIONS.REJECTION ||
       message.action === C.ACTIONS.ERROR
     ) {
-      const rpcNameIndex = (
-                message.action === C.ACTIONS.ACK ||
-                message.action === C.ACTIONS.ERROR
-            ) ? 1 : 0
+      const rpcNameIndex = (message.action === C.ACTIONS.ACK || message.action === C.ACTIONS.ERROR)
+        ? 1 : 0
       const correlationId = message.data[rpcNameIndex + 1]
       const rpcData = this._rpcs.get(correlationId)
       if (rpcData) {
@@ -60,12 +55,11 @@ module.exports = class RpcHandler {
           this._rpcs.delete(correlationId)
         }
       } else {
-                // unsoliciated message
         socketWrapper.sendError(
-                    C.TOPIC.RPC,
-                    C.EVENT.INVALID_MESSAGE_DATA,
-                    `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
-                )
+          C.TOPIC.RPC,
+          C.EVENT.INVALID_MESSAGE_DATA,
+          `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
+        )
       }
     } else {
       /*
@@ -282,12 +276,7 @@ module.exports = class RpcHandler {
     }
 
     if (msg.action === C.ACTIONS.REQUEST) {
-      const proxy = new RpcProxy(
-                this._options,
-                msg.remotePrivateTopic,
-                msg.data[0],
-                msg.data[1]
-            )
+      const proxy = new RpcProxy(this._options, msg.remotePrivateTopic, msg.data[0], msg.data[1])
       this._makeRpc(proxy, msg, C.SOURCE_MESSAGE_CONNECTOR)
     } else if ((msg.action === C.ACTIONS.ACK || msg.action === C.ACTIONS.ERROR) && msg.data[2]) {
       this._rpcs.get(msg.data[2]).rpc.handle(msg)
@@ -317,6 +306,7 @@ module.exports = class RpcHandler {
     }
 
     socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+
     return false
   }
 
