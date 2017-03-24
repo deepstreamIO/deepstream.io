@@ -3,6 +3,7 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
+const LRU = require('lru-cache')
 
 const SEP = String.fromCharCode(30)
 
@@ -15,6 +16,7 @@ module.exports = class ListenerRegistry {
     this._pending = new Set()
     this._listeners = new Map()
     this._timeouts = new Map()
+    this._patterns = new LRU({ max: 1e3 })
 
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
@@ -49,7 +51,7 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onListenMade (pattern, socket, localCount) {
+  onListenMade (pattern, socket) {
     if (!socket) {
       return
     }
@@ -57,7 +59,7 @@ module.exports = class ListenerRegistry {
     let expr = null
 
     try {
-      expr = RegExp(pattern)
+      expr = this._compile(pattern)
     } catch (err) {
       socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
       return
@@ -74,7 +76,7 @@ module.exports = class ListenerRegistry {
     this._reconcilePattern(expr)
   }
 
-  onListenRemoved (pattern, socket, localCount) {
+  onListenRemoved (pattern, socket) {
     if (!socket) {
       return
     }
@@ -110,6 +112,16 @@ module.exports = class ListenerRegistry {
     if (localCount + remoteCount === 0) {
       this._reconcile(name)
     }
+  }
+
+  _compile (pattern) {
+    let expr = this._patterns.get(pattern)
+    if (expr) {
+      return expr
+    }
+    expr = new RegExp(pattern)
+    this._patterns.set(pattern, expr)
+    return expr
   }
 
   _accept (socket, [ pattern, name ]) {
