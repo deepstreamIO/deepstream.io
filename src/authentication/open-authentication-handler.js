@@ -21,7 +21,7 @@ module.exports = class OpenAuthenticationHandler extends EventEmitter {
   * @param {String} type exposes the type for logging purposes. This one is called
   *                      none to avoid confusion with openAuth
   */
-  constructor() {
+  constructor () {
     super()
     this.type = 'none'
     this.isReady = true
@@ -38,7 +38,7 @@ module.exports = class OpenAuthenticationHandler extends EventEmitter {
   * @implements {PermissionHandler.isValidUser}
   * @returns {void}
   */
-  isValidUser(connectionData, authData, callback) {
+  isValidUser (connectionData, authData, callback) { // eslint-disable-line
     callback(true, { username: authData.username || OPEN })
   }
 }

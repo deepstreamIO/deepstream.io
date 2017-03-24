@@ -18,7 +18,7 @@ const messageBuilder = require('../message/message-builder')
  */
 module.exports = class PresenceHandler {
 
-  constructor(options) {
+  constructor (options) {
     this._options = options
     this._localClients = new Map()
     this._connectionEndpoint = options.connectionEndpoint
@@ -43,7 +43,7 @@ module.exports = class PresenceHandler {
   * @public
   * @returns {void}
   */
-  handle(socketWrapper, message) {
+  handle (socketWrapper, message) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._presenceRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
@@ -67,7 +67,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleJoin(socketWrapper) {
+  _handleJoin (socketWrapper) {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === undefined) {
       this._localClients.set(socketWrapper.user, 1)
@@ -86,7 +86,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleLeave(socketWrapper) {
+  _handleLeave (socketWrapper) {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === 1) {
       this._localClients.delete(socketWrapper.user)
@@ -106,7 +106,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleQuery(socketWrapper) {
+  _handleQuery (socketWrapper) {
     const clients = this._connectedClients.getAll()
     const index = clients.indexOf(socketWrapper.user)
     if (index !== -1) {
@@ -124,7 +124,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _onClientAdded(username) {
+  _onClientAdded (username) {
     const addMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [username])
     this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
   }
@@ -138,7 +138,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _onClientRemoved(username) {
+  _onClientRemoved (username) {
     const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
     this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
   }

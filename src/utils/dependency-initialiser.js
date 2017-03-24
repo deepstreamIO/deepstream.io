@@ -34,7 +34,10 @@ const DependencyInitialiser = function (options, name) {
   if (this._dependency.isReady) {
     this._onReady()
   } else {
-    this._timeout = setTimeout(this._onTimeout.bind(this), this._options.dependencyInitialisationTimeout)
+    this._timeout = setTimeout(
+      this._onTimeout.bind(this),
+      this._options.dependencyInitialisationTimeout
+    )
     this._dependency.once('ready', this._onReady.bind(this))
     this._dependency.on('error', this._onError.bind(this))
 
