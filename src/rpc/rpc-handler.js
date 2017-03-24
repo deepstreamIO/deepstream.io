@@ -22,13 +22,6 @@ module.exports = class RpcHandler {
       this._onPrivateMessage.bind(this)
     )
 
-    this._supportedSubActions = [
-      C.ACTIONS.RESPONSE,
-      C.ACTIONS.ACK,
-      C.ACTIONS.REJECTION,
-      C.ACTIONS.ERROR
-    ]
-
     this._rpcs = new Map()
   }
 
@@ -49,7 +42,12 @@ module.exports = class RpcHandler {
       this._unregisterProvider(socketWrapper, message)
     } else if (message.action === C.ACTIONS.REQUEST) {
       this._makeRpc(socketWrapper, message)
-    } else if (this._supportedSubActions.indexOf(message.action) > -1) {
+    } else if (
+      message.action === C.ACTIONS.RESPONSE ||
+      message.action === C.ACTIONS.ACK ||
+      message.action === C.ACTIONS.REJECTION ||
+      message.action === C.ACTIONS.ERROR
+    ) {
       const rpcNameIndex = (
                 message.action === C.ACTIONS.ACK ||
                 message.action === C.ACTIONS.ERROR
