@@ -95,7 +95,7 @@ Deepstream.readMessage = readMessage
  */
 Deepstream.prototype.set = function (key, value) {
   if (key === 'message') {
-    key = 'messageConnector'
+    key = 'messageConnector' // eslint-disable-line
   }
 
   if (this._options[key] === undefined) {
@@ -229,10 +229,10 @@ Deepstream.prototype._loadConfig = function (config) {
   if (config === null || typeof config === 'string') {
     const result = jsYamlLoader.loadConfig(config)
     this._configFile = result.file
-    config = result.config
+    config = result.config // eslint-disable-line
   } else {
     const rawConfig = utils.merge(defaultOptions.get(), config)
-    config = configInitialiser.initialise(rawConfig)
+    config = configInitialiser.initialise(rawConfig) // eslint-disable-line
   }
   this._options = config
 }
@@ -263,7 +263,7 @@ Deepstream.prototype._showStartLogo = function () {
   let logo
 
   try {
-    const nexeres = require('nexeres')
+    const nexeres = require('nexeres') // eslint-disable-line
     logo = nexeres.get('ascii-logo.txt').toString('ascii')
   } catch (e) {
     logo = fs.readFileSync(path.join(__dirname, '..', '/ascii-logo.txt'), 'utf8')
@@ -275,7 +275,8 @@ Deepstream.prototype._showStartLogo = function () {
 }
 
 /**
- * Invoked once all dependencies are initialised. Instantiates the messaging pipeline and the various handlers.
+ * Invoked once all dependencies are initialised. Instantiates the messaging pipeline and
+ * the various handlers.
  * The startup sequence will be complete once the connection endpoint is started and listening
  *
  * @private
@@ -291,19 +292,32 @@ Deepstream.prototype._init = function () {
   this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
 
   this._eventHandler = new EventHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.EVENT, this._eventHandler.handle.bind(this._eventHandler))
+  this._messageDistributor.registerForTopic(
+    C.TOPIC.EVENT,
+    this._eventHandler.handle.bind(this._eventHandler)
+  )
 
   this._rpcHandler = new RpcHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.RPC, this._rpcHandler.handle.bind(this._rpcHandler))
+  this._messageDistributor.registerForTopic(
+    C.TOPIC.RPC,
+    this._rpcHandler.handle.bind(this._rpcHandler)
+  )
 
   this._recordHandler = new RecordHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.RECORD, this._recordHandler.handle.bind(this._recordHandler))
+  this._messageDistributor.registerForTopic(
+    C.TOPIC.RECORD,
+    this._recordHandler.handle.bind(this._recordHandler)
+  )
 
   this._options.connectionEndpoint = this._connectionEndpoint
   this._presenceHandler = new PresenceHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.PRESENCE, this._presenceHandler.handle.bind(this._presenceHandler))
+  this._messageDistributor.registerForTopic(
+    C.TOPIC.PRESENCE,
+    this._presenceHandler.handle.bind(this._presenceHandler)
+  )
 
-  this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind(this._messageDistributor)
+  this._messageProcessor.onAuthenticatedMessage =
+      this._messageDistributor.distribute.bind(this._messageDistributor)
 
   if (this._options.permissionHandler.setRecordHandler) {
     this._options.permissionHandler.setRecordHandler(this._recordHandler)

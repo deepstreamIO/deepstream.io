@@ -1,9 +1,9 @@
 'use strict'
+/* eslint-disable valid-typeof */
 
 const crypto = require('crypto')
 const jsYamlLoader = require('../config/js-yaml-loader')
 const utils = require('../utils/utils')
-
 const EventEmitter = require('events').EventEmitter
 
 const STRING = 'string'
@@ -18,7 +18,6 @@ const STRING_CHARSET = 'base64'
  * @extends {EventEmitter}
  */
 module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
-
   /**
   * Creates the class, reads and validates the users.json file
   *
@@ -31,7 +30,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @constructor
   * @returns {void}
   */
-  constructor(settings) {
+  constructor (settings) {
     super()
     this.isReady = false
     this.type = `file using ${settings.path}`
@@ -52,7 +51,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @implements {PermissionHandler.isValidUser}
   * @returns {void}
   */
-  isValidUser(connectionData, authData, callback) {
+  isValidUser (connectionData, authData, callback) {
     if (typeof authData.username !== STRING) {
       callback(false, { clientData: 'missing authentication parameter username' })
       return
@@ -102,7 +101,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @public
   * @returns {void}
   */
-  createHash(password, callback) {
+  createHash (password, callback) {
     const salt = crypto.randomBytes(16).toString(STRING_CHARSET)
 
     crypto.pbkdf2(
@@ -127,7 +126,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _onFileLoad(error, data) {
+  _onFileLoad (error, data) {
     if (error) {
       this.emit('error', `Error loading file ${this._settings.path}: ${error.toString()}`)
       return
@@ -158,7 +157,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _validateSettings(settings) {
+  _validateSettings (settings) { // eslint-disable-line
     if (!settings.hash) {
       utils.validateMap(settings, true, {
         path: 'string'
@@ -185,14 +184,16 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @param   {String}   password             the cleartext password the user provided
   * @param   {String}   passwordHashWithSalt the hash+salt combination from the users.json file
   * @param   {String}   username             as provided by user
-  * @param   {Object}   serverData           arbitrary authentication data that will be passed on to the permission handler
-  * @param   {Object}   clientData           arbitrary authentication data that will be passed on to the client
+  * @param   {Object}   serverData           arbitrary authentication data that will be passed on
+  *                                          to the permission handler
+  * @param   {Object}   clientData           arbitrary authentication data that will be passed on
+  *                                          to the client
   * @param   {Function} callback             callback that will be invoked once hash is created
   *
   * @private
   * @returns {void}
   */
-  _isValid(password, passwordHashWithSalt, username, serverData, clientData, callback) {
+  _isValid (password, passwordHashWithSalt, username, serverData, clientData, callback) {
     const expectedHash = passwordHashWithSalt.substr(0, this._base64KeyLength)
     const salt = passwordHashWithSalt.substr(this._base64KeyLength)
 
@@ -210,8 +211,10 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * Callback once hashing is completed
   *
   * @param   {String}   expectedHash     has as retrieved from users.json
-  * @param   {Object}   serverData       arbitrary authentication data that will be passed on to the permission handler
-  * @param   {Object}   clientData       arbitrary authentication data that will be passed on to the client
+  * @param   {Object}   serverData       arbitrary authentication data that will be passed on to the
+  *                                      permission handler
+  * @param   {Object}   clientData       arbitrary authentication data that will be passed on to the
+  *                                      client
   * @param   {Function} callback         callback from isValidUser
   * @param   {Error}    error            error that occured during hashing
   * @param   {Buffer}   actualHashBuffer the buffer containing the bytes for the new hash
@@ -219,7 +222,10 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _compareHashResult(expectedHash, username, serverData, clientData, callback, error, actualHashBuffer) {
+  // eslint-disable-next-line
+  _compareHashResult (
+    expectedHash, username, serverData, clientData, callback, error, actualHashBuffer
+  ) {
     if (expectedHash === actualHashBuffer.toString(STRING_CHARSET)) {
       // todo log error
       callback(true, {
