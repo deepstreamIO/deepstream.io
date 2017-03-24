@@ -29,15 +29,7 @@ module.exports = class RpcHandler {
       C.ACTIONS.ERROR
     ]
 
-    /**
-     * {
-     *  'correlationId' : {
-     *      local: [],
-     *      remoteServers: [],
-     *      rpc: null
-     *  }
-     */
-    this._rpcs = {}
+    this._rpcs = new Map()
   }
 
   /**
@@ -63,11 +55,11 @@ module.exports = class RpcHandler {
                 message.action === C.ACTIONS.ERROR
             ) ? 1 : 0
       const correlationId = message.data[rpcNameIndex + 1]
-      const rpcData = this._rpcs[correlationId]
+      const rpcData = this._rpcs.get(correlationId)
       if (rpcData) {
         rpcData.rpc.handle(message)
         if (rpcData.rpc.isComplete) {
-          delete this._rpcs[correlationId]
+          this._rpcs.delete(correlationId)
         }
       } else {
                 // unsoliciated message
@@ -112,7 +104,7 @@ module.exports = class RpcHandler {
   * @returns {SocketWrapper|RpcProxy} alternativeProvider
   */
   getAlternativeProvider (rpcName, correlationId) {
-    const rpcData = this._rpcs[correlationId]
+    const rpcData = this._rpcs.get(correlationId)
 
     if (!rpcData) {
       // RPC was already fufilled somehow. This is prior to 1.1.1 and
@@ -209,7 +201,7 @@ module.exports = class RpcHandler {
       servers: source !== C.SOURCE_MESSAGE_CONNECTOR ? new Set() : null,
       rpc: null
     }
-    this._rpcs[correlationId] = rpcData
+    this._rpcs.set(correlationId, rpcData)
 
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
     const provider = subscribers[utils.getRandomIntInRange(0, subscribers.length)]
@@ -242,7 +234,7 @@ module.exports = class RpcHandler {
   _makeRemoteRpc (requestor, message) {
     const rpcName = message.data[0]
     const correlationId = message.data[1]
-    const rpcData = this._rpcs[correlationId]
+    const rpcData = this._rpcs.get(correlationId)
 
     const servers = this._subscriptionRegistry.getAllRemoteServers(rpcName)
     const server = servers[Math.round(Math.random() * (servers.length - 1))]
@@ -253,7 +245,7 @@ module.exports = class RpcHandler {
       return
     }
 
-    delete this._rpcs[correlationId]
+    this._rpcs.delete(correlationId)
 
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.NO_RPC_PROVIDER, rpcName)
 
@@ -300,9 +292,9 @@ module.exports = class RpcHandler {
             )
       this._makeRpc(proxy, msg, C.SOURCE_MESSAGE_CONNECTOR)
     } else if ((msg.action === C.ACTIONS.ACK || msg.action === C.ACTIONS.ERROR) && msg.data[2]) {
-      this._rpcs[msg.data[2]].rpc.handle(msg)
-    } else if (this._rpcs[msg.data[1]]) {
-      this._rpcs[msg.data[1]].rpc.handle(msg)
+      this._rpcs.get(msg.data[2]).rpc.handle(msg)
+    } else if (this._rpcs.get(msg.data[1])) {
+      this._rpcs.get(msg.data[1]).rpc.handle(msg)
     } else {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg)
     }
