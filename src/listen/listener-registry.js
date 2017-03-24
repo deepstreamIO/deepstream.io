@@ -17,6 +17,7 @@ module.exports = class ListenerRegistry {
     this._listeners = new Map()
     this._timeouts = new Map()
     this._patterns = new LRU({ max: 1e3 })
+    this._provided = new Set()
 
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
@@ -140,8 +141,6 @@ module.exports = class ListenerRegistry {
       .then(([ next, prev ]) => {
         if (!next) {
           socket.sendMessage(this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ pattern, name ])
-        } else {
-          this._sendHasProviderUpdate(true, name)
         }
       })
       .catch(this._onError)
@@ -215,6 +214,15 @@ module.exports = class ListenerRegistry {
   _tryAdd (name) {
     return this._providers
       .upsert(name, prev => {
+        if (!prev.deadline && this._isAlive(prev)) {
+          if (!this._provided.has(name)) {
+            this._sendHasProviderUpdate(true, name)
+            this._provided.add(name)
+          }
+        } else if (this._provided.delete(name)) {
+          this._sendHasProviderUpdate(false, name)
+        }
+
         if (this._isAlive(prev)) {
           return
         }
@@ -237,15 +245,7 @@ module.exports = class ListenerRegistry {
         }
       })
       .then(([ next, prev ]) => {
-        if (!next) {
-          return
-        }
-
-        if (prev.uuid) {
-          this._sendHasProviderUpdate(false, name)
-        }
-
-        if (!next.uuid) {
+        if (!next || !next.uuid) {
           return
         }
 
