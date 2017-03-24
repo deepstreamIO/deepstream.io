@@ -259,8 +259,6 @@ module.exports = class ListenerRegistry {
           )
 
           this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
-        } else {
-          this._reconcile(name)
         }
       })
   }
