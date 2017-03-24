@@ -95,8 +95,10 @@ module.exports = class ListenerRegistry {
     this._reconcilePattern(expr)
   }
 
-  onSubscriptionMade (name, socket, localCount, remoteCount) {
-    this._reconcile(name)
+  onSubscriptionMade (name, socket, localCount) {
+    if (localCount === 1) {
+      this._reconcile(name)
+    }
 
     if (socket && this._provided.has(name)) {
       this._sendHasProviderUpdate(true, name, socket)
@@ -104,7 +106,9 @@ module.exports = class ListenerRegistry {
   }
 
   onSubscriptionRemoved (name, socket, localCount, remoteCount) {
-    this._reconcile(name)
+    if (localCount + remoteCount === 0) {
+      this._reconcile(name)
+    }
   }
 
   _compile (pattern) {

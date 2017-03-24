@@ -278,8 +278,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionMade(
         name,
         socket,
-        sockets.size,
-        this.getAllRemoteServers(name).length
+        sockets.size
       )
     }
 
