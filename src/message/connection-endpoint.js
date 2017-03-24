@@ -456,7 +456,8 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _processAuthResult (authData, socketWrapper, disconnectTimeout, isAllowed, userData = {}) {
+  _processAuthResult (authData, socketWrapper, disconnectTimeout, isAllowed, userData) {
+    userData = userData || {} // eslint-disable-line
     clearTimeout(disconnectTimeout)
 
     if (isAllowed === true) {
