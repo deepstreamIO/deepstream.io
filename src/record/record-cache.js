@@ -10,7 +10,7 @@ module.exports = class RecordCache {
   }
 
   set (name, record) {
-    const size = record[0].length + record[1].length + record[2].length + 64
+    const size = record[0].length + record[1].length + record[2].length + 32
 
     this._space -= size
 
@@ -56,7 +56,7 @@ module.exports = class RecordCache {
     if (node) {
       ++node.value.refs
     } else {
-      const size = 64
+      const size = 32
       this._space -= size
       this._list.unshift({ name, size, record: undefined, refs: 1 })
       this._map.set(name, this._list.head)
