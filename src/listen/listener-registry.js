@@ -155,11 +155,6 @@ module.exports = class ListenerRegistry {
       .upsert(name, prev => prev.uuid === socket.uuid && prev.pattern === pattern
         ? { history: prev.history } : null
       )
-      .then(([ next, prev ]) => {
-        if (!next) {
-          this._reconcile(name)
-        }
-      })
       .catch(this._onError)
   }
 
