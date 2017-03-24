@@ -46,10 +46,8 @@ module.exports = class RpcHandler {
     } else if (message.action === C.ACTIONS.REQUEST) {
       this._makeRpc(socketWrapper, message)
     } else if (this._supportedSubActions.indexOf(message.action) > -1) {
-      const rpcNameIndex = (
-                message.action === C.ACTIONS.ACK ||
-                message.action === C.ACTIONS.ERROR
-            ) ? 1 : 0
+      const rpcNameIndex = (message.action === C.ACTIONS.ACK || message.action === C.ACTIONS.ERROR)
+        ? 1 : 0
       const correlationId = message.data[rpcNameIndex + 1]
       const rpcData = this._rpcs.get(correlationId)
       if (rpcData) {
@@ -272,12 +270,7 @@ module.exports = class RpcHandler {
     }
 
     if (msg.action === C.ACTIONS.REQUEST) {
-      const proxy = new RpcProxy(
-                this._options,
-                msg.remotePrivateTopic,
-                msg.data[0],
-                msg.data[1]
-            )
+      const proxy = new RpcProxy(this._options, msg.remotePrivateTopic, msg.data[0], msg.data[1])
       this._makeRpc(proxy, msg, C.SOURCE_MESSAGE_CONNECTOR)
     } else if ((msg.action === C.ACTIONS.ACK || msg.action === C.ACTIONS.ERROR) && msg.data[2]) {
       this._rpcs.get(msg.data[2]).rpc.handle(msg)

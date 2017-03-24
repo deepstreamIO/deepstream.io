@@ -6,7 +6,6 @@ const C = require('../constants/constants')
  * infact relays calls from and to the message connector - sneaky.
  */
 module.exports = class RpcProxy {
-
   /**
   * @param {Object} options
   * @param {String} receiverPrivateTopic
