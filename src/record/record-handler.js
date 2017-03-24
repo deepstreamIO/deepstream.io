@@ -20,9 +20,9 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
-      onSubscriptionMade: (name, socketWrapper, localCount, remoteCount) => {
-        this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount, remoteCount)
-        if (socketWrapper && localCount === 1) {
+      onSubscriptionMade: (name, socket, localCount, remoteCount) => {
+        this._listenerRegistry.onSubscriptionMade(name, socket, localCount, remoteCount)
+        if (socket && localCount === 1) {
           this._message.subscribe(`RH.U.${name}`, this._update)
           this._cache.lock(name)
 
@@ -30,9 +30,9 @@ module.exports = class RecordHandler {
           this._message.publish(`RH.R`, [ name, prevRecord ? prevRecord[1] : undefined ])
         }
       },
-      onSubscriptionRemoved: (name, socketWrapper, localCount, remoteCount) => {
-        this._listenerRegistry.onSubscriptionRemoved(name, socketWrapper, localCount, remoteCount)
-        if (socketWrapper && localCount === 0) {
+      onSubscriptionRemoved: (name, socket, localCount, remoteCount) => {
+        this._listenerRegistry.onSubscriptionRemoved(name, socket, localCount, remoteCount)
+        if (socket && localCount === 0) {
           this._cache.unlock(name)
           this._message.unsubscribe(`RH.U.${name}`, this._update)
         }
