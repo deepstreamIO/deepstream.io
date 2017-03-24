@@ -56,7 +56,9 @@ module.exports = class RecordCache {
     if (node) {
       ++node.value.refs
     } else {
-      this._list.unshift({ name, size: 0, record: undefined, refs: 1 })
+      const size = 64
+      this._space -= size
+      this._list.unshift({ name, size, record: undefined, refs: 1 })
       this._map.set(name, this._list.head)
     }
   }
