@@ -3,6 +3,7 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
+const LRU = require('lru-cache')
 
 const SEP = String.fromCharCode(30)
 
@@ -15,6 +16,8 @@ module.exports = class ListenerRegistry {
     this._pending = new Set()
     this._listeners = new Map()
     this._timeouts = new Map()
+    this._patterns = new LRU({ max: 1e3 })
+    this._provided = new Set()
 
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
@@ -49,47 +52,52 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onListenMade (pattern, socket, localCount) {
+  onListenMade (pattern, socket) {
     if (!socket) {
       return
     }
 
-    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Set() }
-
-    if (listener.patterns.size === 0) {
-      this._listeners.set(socket.uuid, listener)
-    }
+    let expr = null
 
     try {
-      RegExp(pattern)
+      expr = this._compile(pattern)
     } catch (err) {
       socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
       return
     }
 
-    listener.patterns.add(pattern)
+    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Map() }
 
-    this._reconcilePattern(pattern)
+    if (listener.patterns.size === 0) {
+      this._listeners.set(socket.uuid, listener)
+    }
+
+    listener.patterns.set(pattern, expr)
+
+    this._reconcilePattern(expr)
   }
 
-  onListenRemoved (pattern, socket, localCount) {
+  onListenRemoved (pattern, socket) {
     if (!socket) {
       return
     }
 
     const listener = this._listeners.get(socket.uuid)
 
+    const expr = listener.patterns.get(pattern)
     listener.patterns.delete(pattern)
 
     if (listener.patterns.size === 0) {
       this._listeners.delete(socket.uuid)
     }
 
-    this._reconcilePattern(pattern)
+    this._reconcilePattern(expr)
   }
 
-  onSubscriptionMade (name, socket, localCount) {
-    if (socket && localCount > 1) {
+  onSubscriptionMade (name, socket, localCount, remoteCount) {
+    if (localCount + remoteCount === 1) {
+      this._reconcile(name)
+    } else if (socket) {
       this._providers
         .get(name)
         .then(provider => {
@@ -98,8 +106,6 @@ module.exports = class ListenerRegistry {
           }
         })
         .catch(this._onError)
-    } else {
-      this._reconcile(name)
     }
   }
 
@@ -107,6 +113,16 @@ module.exports = class ListenerRegistry {
     if (localCount + remoteCount === 0) {
       this._reconcile(name)
     }
+  }
+
+  _compile (pattern) {
+    let expr = this._patterns.get(pattern)
+    if (expr) {
+      return expr
+    }
+    expr = new RegExp(pattern)
+    this._patterns.set(pattern, expr)
+    return expr
   }
 
   _accept (socket, [ pattern, name ]) {
@@ -125,8 +141,6 @@ module.exports = class ListenerRegistry {
       .then(([ next, prev ]) => {
         if (!next) {
           socket.sendMessage(this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ pattern, name ])
-        } else {
-          this._sendHasProviderUpdate(true, name)
         }
       })
       .catch(this._onError)
@@ -140,11 +154,6 @@ module.exports = class ListenerRegistry {
       .upsert(name, prev => prev.uuid === socket.uuid && prev.pattern === pattern
         ? { history: prev.history } : null
       )
-      .then(([ next, prev ]) => {
-        if (!next) {
-          this._reconcile(name)
-        }
-      })
       .catch(this._onError)
   }
 
@@ -158,9 +167,9 @@ module.exports = class ListenerRegistry {
     this._logger.log(C.LOG_LEVEL.ERROR, err.message)
   }
 
-  _reconcilePattern (pattern) {
+  _reconcilePattern (expr) {
     for (const name of this._subscriptionRegistry.getNames()) {
-      if (name.match(pattern)) {
+      if (expr.test(name)) {
         this._reconcile(name)
       }
     }
@@ -168,7 +177,7 @@ module.exports = class ListenerRegistry {
 
   _reconcile (name) {
     this._pending.add(name)
-    this._dispatching = this._dispatching || setTimeout(this._dispatch, 10)
+    this._dispatching = this._dispatching || setTimeout(this._dispatch, 100)
   }
 
   _dispatch () {
@@ -179,12 +188,9 @@ module.exports = class ListenerRegistry {
 
     const promises = []
     for (const name of this._pending) {
-      let promise
-      if (this._subscriptionRegistry.hasName(name)) {
-        promise = this._tryAdd(name)
-      } else {
-        promise = this._tryRemove(name)
-      }
+      const promise = this._subscriptionRegistry.hasName(name)
+        ? this._tryAdd(name)
+        : this._tryRemove(name)
       promises.push(promise.catch(this._onError))
     }
 
@@ -196,8 +202,8 @@ module.exports = class ListenerRegistry {
   _match (name) {
     const matches = []
     for (const { socket, patterns } of this._listeners.values()) {
-      for (const pattern of patterns) {
-        if (name.match(pattern)) {
+      for (const [ pattern, expr ] of patterns) {
+        if (expr.test(name)) {
           matches.push({ id: socket.uuid + SEP + pattern, socket, pattern })
         }
       }
@@ -208,6 +214,15 @@ module.exports = class ListenerRegistry {
   _tryAdd (name) {
     return this._providers
       .upsert(name, prev => {
+        if (!prev.deadline && this._isAlive(prev)) {
+          if (!this._provided.has(name)) {
+            this._sendHasProviderUpdate(true, name)
+            this._provided.add(name)
+          }
+        } else if (this._provided.delete(name)) {
+          this._sendHasProviderUpdate(false, name)
+        }
+
         if (this._isAlive(prev)) {
           return
         }
@@ -230,15 +245,7 @@ module.exports = class ListenerRegistry {
         }
       })
       .then(([ next, prev ]) => {
-        if (!next) {
-          return
-        }
-
-        if (prev.uuid) {
-          this._sendHasProviderUpdate(false, name)
-        }
-
-        if (!next.uuid) {
+        if (!next || !next.uuid) {
           return
         }
 
@@ -252,8 +259,6 @@ module.exports = class ListenerRegistry {
           )
 
           this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
-        } else {
-          this._reconcile(name)
         }
       })
   }
