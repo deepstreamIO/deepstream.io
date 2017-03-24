@@ -858,7 +858,8 @@ module.exports = class ListenerRegistry {
   * @param   {String} errorMsg
   * @param   {Event} [errorEvent] Default to C.EVENT.INVALID_MESSAGE_DATA
   */
-  _onMsgDataError (socketWrapper, errorMsg, errorEvent = C.EVENT.INVALID_MESSAGE_DATA) {
+  _onMsgDataError (socketWrapper, errorMsg, errorEvent) {
+    errorEvent = errorEvent || C.EVENT.INVALID_MESSAGE_DATA // eslint-disable-line
     socketWrapper.sendError(this._topic, errorEvent, errorMsg)
     // TODO: This isn't a CRITICAL error, would we say its an info
     this._options.logger.log(C.LOG_LEVEL.ERROR, errorEvent, errorMsg)
