@@ -116,11 +116,10 @@ module.exports = class ListenerRegistry {
 
   _compile (pattern) {
     let expr = this._patterns.get(pattern)
-    if (expr) {
-      return expr
+    if (!expr) {
+      expr = new RegExp(pattern)
+      this._patterns.set(pattern, expr)
     }
-    expr = new RegExp(pattern)
-    this._patterns.set(pattern, expr)
     return expr
   }
 
