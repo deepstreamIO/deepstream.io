@@ -291,7 +291,6 @@ module.exports = class RpcHandler {
   * @private
   * @returns {Boolean} isValid
   */
- // eslint-disable-next-line
   _isValidMessage (dataLength, socketWrapper, message) {
     if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
       return true
@@ -307,7 +306,6 @@ module.exports = class RpcHandler {
   *
   * @return {String}
   */
- // eslint-disable-next-line
   _getNextRandomServer (remoteServers) {
     return C.TOPIC.PRIVATE + utils.spliceRandomElement(remoteServers)
   }
