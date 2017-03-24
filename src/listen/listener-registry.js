@@ -91,7 +91,7 @@ module.exports = class ListenerRegistry {
     this._reconcilePattern(expr)
   }
 
-  onSubscriptionMade (name, socket, localCount) {
+  onSubscriptionMade (name, socket, localCount, remoteCount) {
     if (socket && localCount > 1) {
       this._providers
         .get(name)
@@ -101,7 +101,9 @@ module.exports = class ListenerRegistry {
           }
         })
         .catch(this._onError)
-    } else {
+    }
+
+    if (localCount + remoteCount === 1) {
       this._reconcile(name)
     }
   }

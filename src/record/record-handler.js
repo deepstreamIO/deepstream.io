@@ -20,8 +20,8 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
-      onSubscriptionMade: (name, socketWrapper, localCount) => {
-        this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount)
+      onSubscriptionMade: (name, socketWrapper, localCount, remoteCount) => {
+        this._listenerRegistry.onSubscriptionMade(name, socketWrapper, localCount, remoteCount)
         if (socketWrapper && localCount === 1) {
           this._message.subscribe(`RH.U.${name}`, this._update)
           this._cache.lock(name)
