@@ -4,6 +4,7 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 const LRU = require('lru-cache')
+const xuid = require('xuid')
 
 const SEP = String.fromCharCode(30)
 
@@ -66,7 +67,7 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    const listener = this._listeners.get(socket.uuid) || { socket, patterns: new Map() }
+    const listener = this._listeners.get(socket.uuid) || { id: xuid(), socket, patterns: new Map() }
 
     if (listener.patterns.size === 0) {
       this._listeners.set(socket.uuid, listener)
@@ -95,33 +96,23 @@ module.exports = class ListenerRegistry {
   }
 
   onSubscriptionMade (name, socket, localCount, remoteCount) {
-    if (localCount + remoteCount === 1) {
-      this._reconcile(name)
-    } else if (socket) {
-      this._providers
-        .get(name)
-        .then(provider => {
-          if (!provider.deadline && this._isAlive(provider)) {
-            this._sendHasProviderUpdate(true, name, socket)
-          }
-        })
-        .catch(this._onError)
+    this._reconcile(name)
+
+    if (socket && this._provided.has(name)) {
+      this._sendHasProviderUpdate(true, name, socket)
     }
   }
 
   onSubscriptionRemoved (name, socket, localCount, remoteCount) {
-    if (localCount + remoteCount === 0) {
-      this._reconcile(name)
-    }
+    this._reconcile(name)
   }
 
   _compile (pattern) {
     let expr = this._patterns.get(pattern)
-    if (expr) {
-      return expr
+    if (!expr) {
+      expr = new RegExp(pattern)
+      this._patterns.set(pattern, expr)
     }
-    expr = new RegExp(pattern)
-    this._patterns.set(pattern, expr)
     return expr
   }
 
@@ -201,10 +192,10 @@ module.exports = class ListenerRegistry {
 
   _match (name) {
     const matches = []
-    for (const { socket, patterns } of this._listeners.values()) {
+    for (const { id, socket, patterns } of this._listeners.values()) {
       for (const [ pattern, expr ] of patterns) {
         if (expr.test(name)) {
-          matches.push({ id: socket.uuid + SEP + pattern, socket, pattern })
+          matches.push({ id: id + SEP + socket.uuid + SEP + pattern, socket, pattern })
         }
       }
     }
