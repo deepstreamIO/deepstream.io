@@ -98,15 +98,8 @@ module.exports = class ListenerRegistry {
   onSubscriptionMade (name, socket, localCount, remoteCount) {
     this._reconcile(name)
 
-    if (socket) {
-      this._providers
-        .get(name)
-        .then(provider => {
-          if (!provider.deadline && this._isAlive(provider)) {
-            this._sendHasProviderUpdate(true, name, socket)
-          }
-        })
-        .catch(this._onError)
+    if (socket && this._provided.has(name)) {
+      this._sendHasProviderUpdate(true, name, socket)
     }
   }
 
