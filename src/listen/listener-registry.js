@@ -232,15 +232,17 @@ module.exports = class ListenerRegistry {
         const listener = this._listeners.get(next.pattern)
         const { socket } = (listener && listener.sockets.get(next.uuid)) || {}
 
-        if (socket) {
-          socket.sendMessage(
-            this._topic,
-            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-            [ next.pattern, name ]
-          )
-
-          this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
+        if (!socket) {
+          return
         }
+
+        this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
+
+        socket.sendMessage(
+          this._topic,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+          [ next.pattern, name ]
+        )
       })
   }
 
@@ -258,13 +260,15 @@ module.exports = class ListenerRegistry {
         const listener = this._listeners.get(prev.pattern)
         const { socket } = (listener && listener.sockets.get(prev.uuid)) || {}
 
-        if (socket) {
-          socket.sendMessage(
-            this._topic,
-            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-            [ prev.pattern, name ]
-          )
+        if (!socket) {
+          return
         }
+
+        socket.sendMessage(
+          this._topic,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+          [ prev.pattern, name ]
+        )
       })
   }
 
