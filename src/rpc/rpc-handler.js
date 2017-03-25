@@ -141,7 +141,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _registerProvider (socketWrapper, message) {
-    if (this._isValidMessage(1, socketWrapper, message)) {
+    if (isValidMessage(1, socketWrapper, message)) {
       this._subscriptionRegistry.subscribe(message.data[0], socketWrapper)
     }
   }
@@ -158,7 +158,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _unregisterProvider (socketWrapper, message) {
-    if (this._isValidMessage(1, socketWrapper, message)) {
+    if (isValidMessage(1, socketWrapper, message)) {
       this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
     }
   }
@@ -176,7 +176,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _makeRpc (socketWrapper, message, source) {
-    if (!this._isValidMessage(2, socketWrapper, message)) {
+    if (!isValidMessage(2, socketWrapper, message)) {
       return
     }
 
@@ -282,34 +282,27 @@ module.exports = class RpcHandler {
     }
   }
 
-  /**
-  * Checks if the incoming message is valid, e.g. if rpcName
-  * is present for subscribe / unsubscribe messages or if
-  * rpcName and correlationId is present for rpc calls.
-  *
-  * @param   {Number}  dataLength    The expected number of entries in the data array
-  * @param   {SocketWrapper} socketWrapper
-  * @param   {Object} message parsed and validated deepstream message
-  *
-  * @private
-  * @returns {Boolean} isValid
-  */
-  _isValidMessage (dataLength, socketWrapper, message) {
-    if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
-      return true
-    }
 
-    socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+}
 
-    return false
+/**
+* Checks if the incoming message is valid, e.g. if rpcName
+* is present for subscribe / unsubscribe messages or if
+* rpcName and correlationId is present for rpc calls.
+*
+* @param   {Number}  dataLength    The expected number of entries in the data array
+* @param   {SocketWrapper} socketWrapper
+* @param   {Object} message parsed and validated deepstream message
+*
+* @private
+* @returns {Boolean} isValid
+*/
+function isValidMessage (dataLength, socketWrapper, message) {
+  if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
+    return true
   }
 
-  /**
-  * Returns the next (prefixed) remote server name that can provide the rpc.
-  *
-  * @return {String}
-  */
-  _getNextRandomServer (remoteServers) {
-    return C.TOPIC.PRIVATE + utils.spliceRandomElement(remoteServers)
-  }
+  socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+
+  return false
 }
