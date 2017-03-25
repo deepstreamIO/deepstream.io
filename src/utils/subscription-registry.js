@@ -278,7 +278,8 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionMade(
         name,
         socket,
-        sockets.size
+        sockets.size,
+        this.getAllRemoteServers(name).length ? 1 : 0
       )
     }
 
@@ -329,7 +330,7 @@ class SubscriptionRegistry {
         name,
         socket,
         sockets.size,
-        this.getAllRemoteServers(name).length
+        this.getAllRemoteServers(name).length ? 1 : 0
       )
     }
 
@@ -388,7 +389,7 @@ class SubscriptionRegistry {
    */
   _onClusterSubscriptionAdded (name) {
     if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
-      this._subscriptionListener.onSubscriptionMade(name, null, 1)
+      this._subscriptionListener.onSubscriptionMade(name, null, 0, 1)
     }
   }
 

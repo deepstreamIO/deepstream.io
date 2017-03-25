@@ -89,8 +89,8 @@ module.exports = class ListenerRegistry {
     this._reconcilePattern(listener.expr)
   }
 
-  onSubscriptionMade (name, socket, localCount) {
-    if (localCount === 1) {
+  onSubscriptionMade (name, socket, localCount, remoteCount) {
+    if (localCount + remoteCount === 1) {
       this._reconcile(name)
     }
 
