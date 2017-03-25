@@ -148,7 +148,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       return
     }
 
-    if(!utils.isOfType(data, 'object') && !utils.isOfType(data, 'array')) {
+    if (!utils.isOfType(data, 'object') && !utils.isOfType(data, 'array')) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
