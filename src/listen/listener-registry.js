@@ -155,7 +155,7 @@ module.exports = class ListenerRegistry {
 
   _reconcile (name) {
     this._pending.add(name)
-    this._dispatching = this._dispatching || setTimeout(this._dispatch, 100)
+    this._dispatching = this._dispatching || setTimeout(this._dispatch, 10)
   }
 
   _dispatch () {
