@@ -183,8 +183,8 @@ module.exports = class ListenerRegistry {
     const matches = []
     for (const [ pattern, { expr, sockets } ] of this._listeners) {
       if (expr.test(name)) {
-        for (const { id, socket } of sockets.values()) {
-          matches.push({ id: id + SEP + socket.uuid + SEP + pattern, socket, pattern })
+        for (const [ uuid, { id, socket } ] of sockets) {
+          matches.push({ id: id + SEP + uuid + SEP + pattern, socket, pattern })
         }
       }
     }
