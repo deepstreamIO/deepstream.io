@@ -5,6 +5,7 @@ const JsonPath = require('./json-path')
 const RecordRequest = require('./record-request')
 const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
+const utils = require('../utils/utils')
 
 /**
  * This class manages one or more simultanious updates to the data of a record.
@@ -143,6 +144,11 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     try {
       data = JSON.parse(message.data[2])
     } catch (e) {
+      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+      return
+    }
+
+    if(!utils.isOfType(data, 'object') || utils.isOfType(data, 'array')) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
