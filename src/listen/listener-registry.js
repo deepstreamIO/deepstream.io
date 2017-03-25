@@ -3,7 +3,6 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
-const LRU = require('lru-cache')
 const xuid = require('xuid')
 
 const SEP = String.fromCharCode(30)
@@ -17,7 +16,6 @@ module.exports = class ListenerRegistry {
     this._pending = new Set()
     this._listeners = new Map()
     this._timeouts = new Map()
-    this._patterns = new LRU({ max: 1e3 })
     this._provided = new Set()
 
     this._topic = topic
@@ -58,24 +56,21 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    let expr = null
+    let listener = this._listeners.get(pattern)
 
-    try {
-      expr = this._compile(pattern)
-    } catch (err) {
-      socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
-      return
+    if (!listener) {
+      try {
+        listener = { expr: new RegExp(pattern), sockets: new Map() }
+      } catch (err) {
+        socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
+        return
+      }
+      this._listeners.set(pattern, listener)
     }
 
-    const listener = this._listeners.get(socket.uuid) || { id: xuid(), socket, patterns: new Map() }
+    listener.sockets.set(socket.uuid, { id: xuid(), socket })
 
-    if (listener.patterns.size === 0) {
-      this._listeners.set(socket.uuid, listener)
-    }
-
-    listener.patterns.set(pattern, expr)
-
-    this._reconcilePattern(expr)
+    this._reconcilePattern(listener.expr)
   }
 
   onListenRemoved (pattern, socket) {
@@ -83,20 +78,21 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    const listener = this._listeners.get(socket.uuid)
+    const listener = this._listeners.get(pattern)
 
-    const expr = listener.patterns.get(pattern)
-    listener.patterns.delete(pattern)
+    listener.sockets.delete(socket.uuid)
 
-    if (listener.patterns.size === 0) {
-      this._listeners.delete(socket.uuid)
+    if (listener.sockets.size === 0) {
+      this._listeners.delete(pattern)
     }
 
-    this._reconcilePattern(expr)
+    this._reconcilePattern(listener.expr)
   }
 
-  onSubscriptionMade (name, socket, localCount, remoteCount) {
-    this._reconcile(name)
+  onSubscriptionMade (name, socket, localCount) {
+    if (localCount === 1) {
+      this._reconcile(name)
+    }
 
     if (socket && this._provided.has(name)) {
       this._sendHasProviderUpdate(true, name, socket)
@@ -104,16 +100,9 @@ module.exports = class ListenerRegistry {
   }
 
   onSubscriptionRemoved (name, socket, localCount, remoteCount) {
-    this._reconcile(name)
-  }
-
-  _compile (pattern) {
-    let expr = this._patterns.get(pattern)
-    if (!expr) {
-      expr = new RegExp(pattern)
-      this._patterns.set(pattern, expr)
+    if (localCount + remoteCount === 0) {
+      this._reconcile(name)
     }
-    return expr
   }
 
   _accept (socket, [ pattern, name ]) {
@@ -192,9 +181,9 @@ module.exports = class ListenerRegistry {
 
   _match (name) {
     const matches = []
-    for (const { id, socket, patterns } of this._listeners.values()) {
-      for (const [ pattern, expr ] of patterns) {
-        if (expr.test(name)) {
+    for (const [ pattern, { expr, sockets } ] of this._listeners) {
+      if (expr.test(name)) {
+        for (const { id, socket } of sockets.values()) {
           matches.push({ id: id + SEP + socket.uuid + SEP + pattern, socket, pattern })
         }
       }
@@ -240,17 +229,20 @@ module.exports = class ListenerRegistry {
           return
         }
 
-        const listener = this._listeners.get(next.uuid)
+        const listener = this._listeners.get(next.pattern)
+        const { socket } = (listener && listener.sockets.get(next.uuid)) || {}
 
-        if (listener) {
-          listener.socket.sendMessage(
-            this._topic,
-            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-            [ next.pattern, name ]
-          )
-
-          this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
+        if (!socket) {
+          return
         }
+
+        this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
+
+        socket.sendMessage(
+          this._topic,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+          [ next.pattern, name ]
+        )
       })
   }
 
@@ -265,15 +257,18 @@ module.exports = class ListenerRegistry {
           return
         }
 
-        const listener = this._listeners.get(prev.uuid)
+        const listener = this._listeners.get(prev.pattern)
+        const { socket } = (listener && listener.sockets.get(prev.uuid)) || {}
 
-        if (listener) {
-          listener.socket.sendMessage(
-            this._topic,
-            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-            [ prev.pattern, name ]
-          )
+        if (!socket) {
+          return
         }
+
+        socket.sendMessage(
+          this._topic,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+          [ prev.pattern, name ]
+        )
       })
   }
 
@@ -295,8 +290,8 @@ module.exports = class ListenerRegistry {
     if (!provider) {
       return false
     } else if (this._isLocal(provider)) {
-      const listener = this._listeners.get(provider.uuid)
-      return listener && listener.patterns.has(provider.pattern)
+      const listener = this._listeners.get(provider.pattern)
+      return listener && listener.sockets.has(provider.uuid)
     } else {
       return this._isRemote(provider)
     }
