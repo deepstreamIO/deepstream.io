@@ -22,22 +22,7 @@ module.exports = class RpcHandler {
       this._onPrivateMessage.bind(this)
     )
 
-    this._supportedSubActions = [
-      C.ACTIONS.RESPONSE,
-      C.ACTIONS.ACK,
-      C.ACTIONS.REJECTION,
-      C.ACTIONS.ERROR
-    ]
-
-    /**
-     * {
-     *  'correlationId' : {
-     *      local: [],
-     *      remoteServers: [],
-     *      rpc: null
-     *  }
-     */
-    this._rpcs = {}
+    this._rpcs = new Map()
   }
 
   /**
@@ -57,25 +42,27 @@ module.exports = class RpcHandler {
       this._unregisterProvider(socketWrapper, message)
     } else if (message.action === C.ACTIONS.REQUEST) {
       this._makeRpc(socketWrapper, message)
-    } else if (this._supportedSubActions.indexOf(message.action) > -1) {
-      const rpcNameIndex = (
-                message.action === C.ACTIONS.ACK ||
-                message.action === C.ACTIONS.ERROR
-            ) ? 1 : 0
+    } else if (
+      message.action === C.ACTIONS.RESPONSE ||
+      message.action === C.ACTIONS.ACK ||
+      message.action === C.ACTIONS.REJECTION ||
+      message.action === C.ACTIONS.ERROR
+    ) {
+      const rpcNameIndex = (message.action === C.ACTIONS.ACK || message.action === C.ACTIONS.ERROR)
+        ? 1 : 0
       const correlationId = message.data[rpcNameIndex + 1]
-      const rpcData = this._rpcs[correlationId]
+      const rpcData = this._rpcs.get(correlationId)
       if (rpcData) {
         rpcData.rpc.handle(message)
         if (rpcData.rpc.isComplete) {
-          delete this._rpcs[correlationId]
+          this._rpcs.delete(correlationId)
         }
       } else {
-                // unsoliciated message
         socketWrapper.sendError(
-                    C.TOPIC.RPC,
-                    C.EVENT.INVALID_MESSAGE_DATA,
-                    `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
-                )
+          C.TOPIC.RPC,
+          C.EVENT.INVALID_MESSAGE_DATA,
+          `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
+        )
       }
     } else {
       /*
@@ -112,15 +99,7 @@ module.exports = class RpcHandler {
   * @returns {SocketWrapper|RpcProxy} alternativeProvider
   */
   getAlternativeProvider (rpcName, correlationId) {
-    const rpcData = this._rpcs[correlationId]
-
-    if (!rpcData) {
-      // RPC was already fufilled somehow. This is prior to 1.1.1 and
-      // hence is kept for backwards compatability.
-
-      // TODO: Log something useful here
-      return null
-    }
+    const rpcData = this._rpcs.get(correlationId)
 
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
     let index = utils.getRandomIntInRange(0, subscribers.length)
@@ -209,7 +188,7 @@ module.exports = class RpcHandler {
       servers: source !== C.SOURCE_MESSAGE_CONNECTOR ? new Set() : null,
       rpc: null
     }
-    this._rpcs[correlationId] = rpcData
+    this._rpcs.set(correlationId, rpcData)
 
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
     const provider = subscribers[utils.getRandomIntInRange(0, subscribers.length)]
@@ -242,7 +221,7 @@ module.exports = class RpcHandler {
   _makeRemoteRpc (requestor, message) {
     const rpcName = message.data[0]
     const correlationId = message.data[1]
-    const rpcData = this._rpcs[correlationId]
+    const rpcData = this._rpcs.get(correlationId)
 
     const servers = this._subscriptionRegistry.getAllRemoteServers(rpcName)
     const server = servers[Math.round(Math.random() * (servers.length - 1))]
@@ -253,7 +232,7 @@ module.exports = class RpcHandler {
       return
     }
 
-    delete this._rpcs[correlationId]
+    this._rpcs.delete(correlationId)
 
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.NO_RPC_PROVIDER, rpcName)
 
@@ -292,17 +271,12 @@ module.exports = class RpcHandler {
     }
 
     if (msg.action === C.ACTIONS.REQUEST) {
-      const proxy = new RpcProxy(
-                this._options,
-                msg.remotePrivateTopic,
-                msg.data[0],
-                msg.data[1]
-            )
+      const proxy = new RpcProxy(this._options, msg.remotePrivateTopic, msg.data[0], msg.data[1])
       this._makeRpc(proxy, msg, C.SOURCE_MESSAGE_CONNECTOR)
     } else if ((msg.action === C.ACTIONS.ACK || msg.action === C.ACTIONS.ERROR) && msg.data[2]) {
-      this._rpcs[msg.data[2]].rpc.handle(msg)
-    } else if (this._rpcs[msg.data[1]]) {
-      this._rpcs[msg.data[1]].rpc.handle(msg)
+      this._rpcs.get(msg.data[2]).rpc.handle(msg)
+    } else if (this._rpcs.get(msg.data[1])) {
+      this._rpcs.get(msg.data[1]).rpc.handle(msg)
     } else {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg)
     }
@@ -320,13 +294,13 @@ module.exports = class RpcHandler {
   * @private
   * @returns {Boolean} isValid
   */
- // eslint-disable-next-line
   _isValidMessage (dataLength, socketWrapper, message) {
     if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
       return true
     }
 
     socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+
     return false
   }
 
@@ -335,7 +309,6 @@ module.exports = class RpcHandler {
   *
   * @return {String}
   */
- // eslint-disable-next-line
   _getNextRandomServer (remoteServers) {
     return C.TOPIC.PRIVATE + utils.spliceRandomElement(remoteServers)
   }
