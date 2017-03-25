@@ -69,11 +69,13 @@ exports.reverseMap = function (map) {
  * @returns {Boolean}
  */
 exports.isOfType = function (input, expectedType) {
-  if (expectedType === 'array') {
+  if(input === null) {
+    return 'null' === expectedType
+  } else if (expectedType === 'array') {
     return Array.isArray(input)
   } else if (expectedType === 'url') {
     return !!url.parse(input).host
-  }
+  } 
   return typeof input === expectedType
 }
 
