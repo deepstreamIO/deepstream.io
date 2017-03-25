@@ -271,6 +271,7 @@ module.exports = class ListenerRegistry {
   _isLocal (provider) {
     return (
       provider &&
+      provider.uuid &&
       provider.serverName === this._serverName
     )
   }
@@ -278,12 +279,13 @@ module.exports = class ListenerRegistry {
   _isRemote (provider) {
     return (
       provider &&
+      provider.uuid &&
       this._subscriptionRegistry.getAllRemoteServers().indexOf(provider.serverName) !== -1
     )
   }
 
   _isConnected (provider) {
-    if (!provider) {
+    if (!provider || !provider.uuid) {
       return false
     } else if (this._isLocal(provider)) {
       const listener = this._listeners.get(provider.pattern)
