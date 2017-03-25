@@ -20,6 +20,9 @@ node_js:
   - "6.10.0"
   - "4"
 
+env:
+  - DEFAULT_DELAY: 50
+
 matrix:
   include:
     - node_js: "6.10.0"
