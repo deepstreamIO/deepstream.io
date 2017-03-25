@@ -19,10 +19,6 @@ urlPath: /deepstream
 healthCheckPath: /health-check
 # webfacing URL under which this client is reachable. Used for loadbalancing / failover
 externalUrl: null
-# the time to wait for a buffer to fill before sending it out
-timeBetweenSendingQueuedPackages: 1
-# the amount of messages that should fit into a buffer before sending between the time to fill
-maxMessagesPerPacket: 1000
 # the amount of milliseconds between each heartbeat
 heartbeatInterval: 30000
 

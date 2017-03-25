@@ -1,5 +1,5 @@
 'use strict'
-
+/* eslint-disable global-require */
 const utils = require('./utils/utils')
 const C = require('./constants/constants')
 
@@ -20,8 +20,6 @@ exports.get = function () {
     urlPath: '/deepstream',
     healthCheckPath: '/health-check',
     externalUrl: null,
-    timeBetweenSendingQueuedPackages: 1,
-    maxMessagesPerPacket: 1000,
     heartbeatInterval: 30000,
 
     /*

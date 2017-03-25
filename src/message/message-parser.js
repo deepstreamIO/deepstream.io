@@ -10,7 +10,7 @@ const C = require('../constants/constants')
  *
  * @returns {Object} actions
 */
-const actions = (function getActions() {
+const actions = (function getActions () {
   const result = {}
   let key
 
@@ -28,7 +28,6 @@ const actions = (function getActions() {
  * @constructor
  */
 module.exports = class MessageParser {
-
   /**
    * Main interface method. Receives a raw message
    * string, containing one or more messages
@@ -36,7 +35,7 @@ module.exports = class MessageParser {
    * or null for invalid messages
    *
    * @param   {String} message raw message
-   *
+   * @param   {Function} callback callback for each parsed message
    * @public
    *
    * @returns {Array} array of parsed message objects
@@ -48,7 +47,7 @@ module.exports = class MessageParser {
    *                    data: <array of strings>
    *                  }
    */
-  static parse(message, callback) {
+  static parse (message, callback) {
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
     for (let i = 0; i < rawMessages.length; i++) {
@@ -67,7 +66,7 @@ module.exports = class MessageParser {
    * @public
    * @returns {Mixed} original value
    */
-  static convertTyped(value) {
+  static convertTyped (value) {
     const type = value.charAt(0)
 
     if (type === C.TYPES.STRING) {
@@ -115,7 +114,7 @@ module.exports = class MessageParser {
    *
    * @returns {Object} parsedMessage
    */
-  static parseMessage(message) {
+  static parseMessage (message) {
     const parts = message.split(C.MESSAGE_PART_SEPERATOR)
     const messageObject = {}
 

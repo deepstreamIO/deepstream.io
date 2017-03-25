@@ -20,7 +20,7 @@ module.exports = class HttpAuthenticationRequest {
    * @constructor
    * @returns {void}
    */
-  constructor(data, settings, logger, callback) {
+  constructor (data, settings, logger, callback) {
     this._settings = settings
     this._callback = callback
     this._logger = logger
@@ -46,7 +46,7 @@ module.exports = class HttpAuthenticationRequest {
    * @private
    * @returns {void}
    */
-  _onComplete(error, response) {
+  _onComplete (error, response) {
     if (error) {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.AUTH_ERROR, `http auth error: ${error}`)
       this._callback(false, null)
@@ -75,7 +75,7 @@ module.exports = class HttpAuthenticationRequest {
    * @private
    * @returns {void}
    */
-  _destroy() {
+  _destroy () {
     this._callback = null
     this._settings = null
     this._logger = null

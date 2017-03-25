@@ -12,7 +12,7 @@ module.exports = class OpenPermissionHandler extends EventEmitter {
   /**
   * @param {String} type exposes the type for logging purposes
   */
-  constructor() {
+  constructor () {
     super()
     this.type = 'none'
     this.isReady = true
@@ -30,7 +30,7 @@ module.exports = class OpenPermissionHandler extends EventEmitter {
   * @implements {PermissionHandler.isValidUser}
   * @returns {void}
   */
-  canPerformAction(username, message, callback, authData) {
+  canPerformAction (username, message, callback, authData) { // eslint-disable-line
     callback(null, true)
   }
 }

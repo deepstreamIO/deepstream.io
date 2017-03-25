@@ -1,5 +1,5 @@
 'use strict'
-
+/* eslint-disable consistent-return */
 const OPEN = 'open'
 const UNDEFINED = 'undefined'
 const LOADING = 'loading'
@@ -192,7 +192,7 @@ RuleApplication.prototype._getCurrentData = function () {
   const msg = this._params.message
   let data
 
-  if (msg.topic === C.TOPIC.EVENT) {
+  if (msg.topic === C.TOPIC.EVENT && msg.data[1]) {
     data = messageParser.convertTyped(msg.data[1])
   } else if (msg.topic === C.TOPIC.RPC) {
     data = messageParser.convertTyped(msg.data[2])
@@ -261,9 +261,8 @@ RuleApplication.prototype._getRecordPatchData = function (msg) {
     data = JSON.parse(JSON.stringify(currentData._d))
     jsonPath.setValue(data, newData)
     return data
-  } else {
-    this._loadRecord(this._params.name)
   }
+  this._loadRecord(this._params.name)
 }
 
 /**
@@ -281,9 +280,8 @@ RuleApplication.prototype._getOldData = function () {
     return null
   } else if (this._recordData[this._params.name]) {
     return this._recordData[this._params.name]._d
-  } else {
-    this._loadRecord(this._params.name)
   }
+  this._loadRecord(this._params.name)
 }
 
 /**
@@ -396,6 +394,7 @@ RuleApplication.prototype._loadRecord = function (recordName) {
  * @returns {void}
  */
 RuleApplication.prototype._createNewRecordRequest = function (recordName) {
+  // eslint-disable-next-line
   new RecordRequest(
     recordName,
     this._params.options,
@@ -433,6 +432,5 @@ RuleApplication.prototype._crossReference = function (recordName) {
     return this._recordData[recordName]._d
   }
 }
-
 
 module.exports = RuleApplication

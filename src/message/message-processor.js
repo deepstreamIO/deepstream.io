@@ -12,8 +12,7 @@ const MessageQueue = require('./message-queue')
  * @param {Object} options deepstream options
  */
 module.exports = class MessageProcessor {
-
-  constructor(options) {
+  constructor (options) {
     this._options = options
     this._queues = new Map()
   }
@@ -30,7 +29,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  onAuthenticatedMessage(socketWrapper, message) {
+  onAuthenticatedMessage (socketWrapper, message) { // eslint-disable-line
   }
 
   /**
@@ -57,4 +56,18 @@ module.exports = class MessageProcessor {
     queue.process(message)
   }
 
+  /**
+   * Create data in the correct format expected in a MESSAGE_DENIED or MESSAGE_PERMISSION_ERROR
+   *
+   * @param   {Object} message  parsed message - might have been manipulated
+   *                              by the permissionHandler
+   * @returns {Object}
+   */
+  _getPermissionErrorData (message) { // eslint-disable-line
+    let data = [message.data[0], message.action]
+    if (message.data.length > 1) {
+      data = data.concat(message.data.slice(1))
+    }
+    return data
+  }
 }

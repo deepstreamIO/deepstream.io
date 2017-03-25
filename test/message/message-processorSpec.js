@@ -28,6 +28,12 @@ describe('the message processor only forwards valid, authorized messages', () =>
     expect(socketWrapper.socket.lastSendMessage).toBe(_msg('X|E|MESSAGE_PARSE_ERROR|gibberish+'))
   })
 
+  it('rejects non text based messages messages', () => {
+    const socketWrapper = new SocketWrapper(new SocketMock(), {})
+    messageProcessor.process(socketWrapper, [{}])
+    expect(socketWrapper.socket.lastSendMessage).toBe(_msg('X|E|MESSAGE_PARSE_ERROR|non text based message recieved+'))
+  })
+
   it('ignores heartbeats pongs messages', () => {
     const socketWrapper = new SocketWrapper(new SocketMock(), {})
     messageProcessor.process(socketWrapper, _msg('C|PO+'))

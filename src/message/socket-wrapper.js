@@ -36,14 +36,6 @@ const SocketWrapper = function (socket, options) {
   this._currentPacketMessageCount = 0
   this._sendNextPacketTimeout = null
   this._currentMessageResetTimeout = null
-
-  /**
-   * This defaults for test purposes since socket wrapper creating touches
-   * everything
-   */
-  if (typeof this._options.maxMessagesPerPacket === 'undefined') {
-    this._options.maxMessagesPerPacket = 1000
-  }
 }
 
 utils.inherits(SocketWrapper, EventEmitter)
@@ -159,7 +151,7 @@ SocketWrapper.prototype.sendMessage = function (topic, action, data) {
  */
 SocketWrapper.prototype.send = function (message) {
   if (message.charAt(message.length - 1) !== C.MESSAGE_SEPERATOR) {
-    message += C.MESSAGE_SEPERATOR
+    message += C.MESSAGE_SEPERATOR // eslint-disable-line
   }
 
   if (this.isClosed === true) {

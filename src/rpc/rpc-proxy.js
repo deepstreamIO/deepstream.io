@@ -15,7 +15,7 @@ module.exports = class RpcProxy {
   * @return {[type]}
   * @constructor
   */
-  constructor(options, receiverPrivateTopic) {
+  constructor (options, receiverPrivateTopic) {
     this._options = options
     this._receiverPrivateTopic = receiverPrivateTopic
     this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
@@ -33,7 +33,7 @@ module.exports = class RpcProxy {
   * @public
   * @returns {void}
   */
-  send(message) {
+  send (message) {
     message.remotePrivateTopic = this._privateTopic
     message.topic = this._receiverPrivateTopic
     message.originalTopic = C.TOPIC.RPC
@@ -53,7 +53,7 @@ module.exports = class RpcProxy {
   * @public
   * @returns {void}
   */
-  sendError(topic, type, msg) {
+  sendError (topic, type, msg) {
     this._options.messageConnector.publish(this._receiverPrivateTopic, {
       topic: this._receiverPrivateTopic,
       originalTopic: C.TOPIC.RPC,
