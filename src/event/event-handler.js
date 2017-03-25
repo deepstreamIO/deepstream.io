@@ -3,8 +3,6 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
 
-const STRING = 'string'
-
 /**
  * Handles incoming and outgoing messages for the EVENT topic.
  *
@@ -95,7 +93,7 @@ EventHandler.prototype._removeSubscriber = function (socketWrapper, message) {
  * @returns {void}
  */
 EventHandler.prototype._triggerEvent = function (messageSource, message) {
-  if (typeof message.data[0] !== STRING) {
+  if (typeof message.data[0] !== 'string') {
     if (messageSource !== C.SOURCE_MESSAGE_CONNECTOR) {
       messageSource.sendError(C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
     }
@@ -123,11 +121,12 @@ EventHandler.prototype._triggerEvent = function (messageSource, message) {
  * @returns {Boolean} is valid subscription message
  */
 EventHandler.prototype._validateSubscriptionMessage = function (socketWrapper, message) {
-  if (message.data && message.data.length === 1 && typeof message.data[0] === STRING) {
+  if (message.data && message.data.length === 1 && typeof message.data[0] === 'string') {
     return true
   }
 
   socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+
   return false
 }
 
