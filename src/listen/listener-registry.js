@@ -66,7 +66,7 @@ module.exports = class ListenerRegistry {
       this._listeners.set(pattern, listener)
     }
 
-    listener.sockets.set(socket.uuid, { id: xuid(), socket })
+    listener.sockets.set(socket.uuid, { id: xuid(), socket, pattern })
 
     this._reconcilePattern(listener.expr)
   }
@@ -179,11 +179,9 @@ module.exports = class ListenerRegistry {
 
   _match (name) {
     const matches = []
-    for (const [ pattern, { expr, sockets } ] of this._listeners) {
+    for (const { expr, sockets } of this._listeners.values()) {
       if (expr.test(name)) {
-        for (const { id, socket } of sockets.values()) {
-          matches.push({ id, socket, pattern })
-        }
+        matches.push(...sockets.values())
       }
     }
     return matches
