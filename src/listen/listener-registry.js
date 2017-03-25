@@ -203,13 +203,13 @@ module.exports = class ListenerRegistry {
   * @public
   * @returns {void}
   */
-  onSubscriptionMade (subscriptionName, socketWrapper, localCount, remoteCount) {
+  onSubscriptionMade (subscriptionName, socketWrapper, localCount) {
     if (this.hasActiveProvider(subscriptionName)) {
       this._sendHasProviderUpdateToSingleSubscriber(true, socketWrapper, subscriptionName)
       return
     }
 
-    if (localCount + remoteCount > 1) {
+    if (localCount > 1) {
       return
     }
 
