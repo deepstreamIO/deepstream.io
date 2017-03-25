@@ -596,8 +596,8 @@ module.exports = class ListenerRegistry {
   * @private
   * @returns {void}
   */
-  _addPattern(pattern, socketWrapper, count) {
-    if (count === 1) {
+  _addPattern(pattern, socketWrapper, localCount, remoteCount) {
+    if (localCount + remoteCount === 1) {
       this._patterns[pattern] = new RegExp(pattern)
     }
   }
