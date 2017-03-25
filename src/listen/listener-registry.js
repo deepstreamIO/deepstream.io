@@ -211,7 +211,7 @@ module.exports = class ListenerRegistry {
         const matches = this._match(name).filter(match => !history.includes(match.id))
 
         if (matches.length === 0) {
-          return { history }
+          return history.length ? { history } : {}
         }
 
         const match = matches[Math.floor(Math.random() * matches.length)]
