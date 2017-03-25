@@ -33,6 +33,10 @@ exports.setInterval = function (callback, intervalDuration) {
   }
 }
 
+exports.getRandomIntInRange = function (min, max) {
+  return min + Math.floor(Math.random() * (max - min))
+}
+
 exports.JSONParse = function (text, reviver) {
   try {
     return {

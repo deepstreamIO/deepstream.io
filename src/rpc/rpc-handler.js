@@ -4,6 +4,7 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const Rpc = require('./rpc')
 const RpcProxy = require('./rpc-proxy')
+const utils = require('../utils/utils')
 
 module.exports = class RpcHandler {
   /**
@@ -16,7 +17,10 @@ module.exports = class RpcHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
     this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
-    this._options.messageConnector.subscribe(this._privateTopic, this._onPrivateMessage.bind(this))
+    this._options.messageConnector.subscribe(
+      this._privateTopic,
+      this._onPrivateMessage.bind(this)
+    )
 
     this._rpcs = new Map()
   }
@@ -62,9 +66,9 @@ module.exports = class RpcHandler {
       }
     } else {
       /*
-       * RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
-       * by the Rpc class directly
-       */
+      *  RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
+      * by the Rpc class directly
+      */
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
       if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
@@ -81,8 +85,8 @@ module.exports = class RpcHandler {
   * happens in this method.
   *
   * Initially, deepstream will look for a local provider that hasn't been used by the RPC yet.
-  * If non can be found, it will go through the currently avaiblable remote providers and try find one that
-  * hasn't been used yet.
+  * If non can be found, it will go through the currently avaiblable remote providers and try
+  * find one that hasn't been used yet.
   *
   * If a remote provider couldn't be found or all remote-providers have been tried already
   * this method will return null - which in turn will prompt the RPC to send a NO_RPC_PROVIDER
@@ -98,7 +102,8 @@ module.exports = class RpcHandler {
     const rpcData = this._rpcs.get(correlationId)
 
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
-    let index = Math.floor(Math.random() * subscribers.length)
+    let index = utils.getRandomIntInRange(0, subscribers.length)
+
     for (let n = 0; n < subscribers.length; ++n) {
       if (!rpcData.providers.has(subscribers[index])) {
         rpcData.providers.add(subscribers[index])
@@ -112,8 +117,7 @@ module.exports = class RpcHandler {
     }
 
     const servers = this._subscriptionRegistry.getAllRemoteServers(rpcName)
-
-    index = Math.round(Math.random() * (servers.length - 1))
+    index = utils.getRandomIntInRange(0, servers.length)
     for (let n = 0; n < servers.length; ++n) {
       if (!rpcData.servers.has(servers[index])) {
         rpcData.servers.add(servers[index])
@@ -137,7 +141,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _registerProvider (socketWrapper, message) {
-    if (this._isValidMessage(1, socketWrapper, message)) {
+    if (isValidMessage(1, socketWrapper, message)) {
       this._subscriptionRegistry.subscribe(message.data[0], socketWrapper)
     }
   }
@@ -154,7 +158,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _unregisterProvider (socketWrapper, message) {
-    if (this._isValidMessage(1, socketWrapper, message)) {
+    if (isValidMessage(1, socketWrapper, message)) {
       this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
     }
   }
@@ -172,7 +176,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _makeRpc (socketWrapper, message, source) {
-    if (!this._isValidMessage(2, socketWrapper, message)) {
+    if (!isValidMessage(2, socketWrapper, message)) {
       return
     }
 
@@ -187,7 +191,7 @@ module.exports = class RpcHandler {
     this._rpcs.set(correlationId, rpcData)
 
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
-    const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
+    const provider = subscribers[utils.getRandomIntInRange(0, subscribers.length)]
 
     if (provider) {
       rpcData.providers.add(provider)
@@ -277,35 +281,26 @@ module.exports = class RpcHandler {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg)
     }
   }
+}
 
-  /**
-  * Checks if the incoming message is valid, e.g. if rpcName
-  * is present for subscribe / unsubscribe messages or if
-  * rpcName and correlationId is present for rpc calls.
-  *
-  * @param   {Number}  dataLength    The expected number of entries in the data array
-  * @param   {SocketWrapper} socketWrapper
-  * @param   {Object} message parsed and validated deepstream message
-  *
-  * @private
-  * @returns {Boolean} isValid
-  */
-  _isValidMessage (dataLength, socketWrapper, message) {
-    if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
-      return true
-    }
-
-    socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-
-    return false
+/**
+* Checks if the incoming message is valid, e.g. if rpcName
+* is present for subscribe / unsubscribe messages or if
+* rpcName and correlationId is present for rpc calls.
+*
+* @param   {Number}  dataLength    The expected number of entries in the data array
+* @param   {SocketWrapper} socketWrapper
+* @param   {Object} message parsed and validated deepstream message
+*
+* @private
+* @returns {Boolean} isValid
+*/
+function isValidMessage (dataLength, socketWrapper, message) {
+  if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
+    return true
   }
 
-  /**
-  * Returns the next (prefixed) remote server name that can provide the rpc.
-  *
-  * @return {String}
-  */
-  _getNextRandomServer (remoteServers) {
-    return C.TOPIC.PRIVATE + remoteServers[Math.floor(Math.random() * remoteServers.length)]
-  }
+  socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+
+  return false
 }
