@@ -130,17 +130,6 @@ describe('record transitions', () => {
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
     })
 
-    it('adds a message with array data to the queue', () => {
-      socketWrapper.socket.lastSendMessage = null
-      recordTransition.add(socketWrapper, 3, {
-        topic: 'RECORD',
-        action: 'U',
-        data: ['someRecord', 3, '[100,"some string"]']
-      })
-      expect(recordTransition._steps.length).toBe(2)
-      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
-    })
-
     it('retrieves the empty record', (done) => {
       expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalled()
       expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
