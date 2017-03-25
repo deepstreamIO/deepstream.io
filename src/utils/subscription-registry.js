@@ -14,9 +14,10 @@ class SubscriptionRegistry {
    *
    * @param {Object} options deepstream options
    * @param {String} topic one of C.TOPIC
-   * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
+   * @param {[String]} clusterTopic A unique cluster topic, if not created uses format:
+   *                                topic_SUBSCRIPTIONS
    */
-  constructor(options, topic, clusterTopic) {
+  constructor (options, topic, clusterTopic) {
     this._delayedBroadcasts = new Map()
     this._delay = -1
     if (options.broadcastTimeout !== undefined) {
@@ -43,8 +44,12 @@ class SubscriptionRegistry {
    * Setup all the remote components and actions required to deal with the subscription
    * via the cluster.
    */
-  _setupRemoteComponents(clusterTopic) {
-    this._clusterSubscriptions = new DistributedStateRegistry(clusterTopic || `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`, this._options)
+  _setupRemoteComponents (clusterTopic) {
+    this._clusterSubscriptions = new DistributedStateRegistry(
+      clusterTopic ||
+      `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`,
+      this._options
+    )
     this._clusterSubscriptions.on('add', this._onClusterSubscriptionAdded.bind(this))
     this._clusterSubscriptions.on('remove', this._onClusterSubscriptionRemoved.bind(this))
   }
@@ -57,7 +62,7 @@ class SubscriptionRegistry {
    * @public
    * @return {Array}  An array of all the servernames with this subscription
    */
-  getAllServers(subscriptionName) {
+  getAllServers (subscriptionName) {
     return this._clusterSubscriptions.getAllServers(subscriptionName)
   }
 
@@ -70,7 +75,7 @@ class SubscriptionRegistry {
    * @public
    * @return {Array}  An array of all the servernames with this subscription
    */
-  getAllRemoteServers(subscriptionName) {
+  getAllRemoteServers (subscriptionName) {
     const serverNames = this._clusterSubscriptions.getAllServers(subscriptionName)
     const localServerIndex = serverNames.indexOf(this._options.serverName)
     if (localServerIndex > -1) {
@@ -86,7 +91,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {Array} names
    */
-  getNames() {
+  getNames () {
     return this._clusterSubscriptions.getAll()
   }
 
@@ -97,21 +102,25 @@ class SubscriptionRegistry {
    * @public
    * @returns {Array} names
    */
-  hasName(subscriptionName) {
+  hasName (subscriptionName) {
     return this._clusterSubscriptions.has(subscriptionName)
   }
 
   /**
-  * This method allows you to customise the SubscriptionRegistry so that it can send custom events and ack messages back.
-  * For example, when using the C.ACTIONS.LISTEN, you would override SUBSCRIBE with C.ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
+  * This method allows you to customise the SubscriptionRegistry so that it can send
+  * custom events and ack messages back.
+  * For example, when using the C.ACTIONS.LISTEN, you would override SUBSCRIBE with
+  * C.ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
   *
-  * @param {string} name The name of the the variable to override. This can be either MULTIPLE_SUBSCRIPTIONS, SUBSCRIBE, UNSUBSCRIBE, NOT_SUBSCRIBED
+  * @param {string} name The name of the the variable to override. This can be either
+  * MULTIPLE_SUBSCRIPTIONS, SUBSCRIBE, UNSUBSCRIBE, NOT_SUBSCRIBED
+  *
   * @param {string} value The value to override with.
   *
   * @public
   * @returns {void}
   */
-  setAction(name, value) {
+  setAction (name, value) {
     this._constants[name.toUpperCase()] = value
   }
 
@@ -130,7 +139,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  _onBroadcastTimeout() {
+  _onBroadcastTimeout () {
     this._delayedBroadcastsTimer = null
     for (const entry of this._delayedBroadcasts) {
       const name = entry[0]
@@ -144,9 +153,9 @@ class SubscriptionRegistry {
       }
 
       // for all unique senders and their gaps, build their special messages
-      for (const entry of uniqueSenders) {
-        let socket = entry[0]
-        let gaps = entry[1]
+      for (const uniqueSender of uniqueSenders) {
+        const socket = uniqueSender[0]
+        const gaps = uniqueSender[1]
         let i = 0
         let message = sharedMessages.substring(0, gaps[i++])
         let lastStop = gaps[i++]
@@ -193,14 +202,14 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  sendToSubscribers(name, msgString, socket) {
+  sendToSubscribers (name, msgString, socket) {
     if (!this._subscriptions.has(name)) {
       return
     }
 
     // not all messages are valid, this should be fixed elsewhere!
     if (msgString.charAt(msgString.length - 1) !== C.MESSAGE_SEPERATOR) {
-      msgString += C.MESSAGE_SEPERATOR
+      msgString += C.MESSAGE_SEPERATOR // eslint-disable-line
     }
 
     // if not already a delayed broadcast, create it
@@ -224,7 +233,7 @@ class SubscriptionRegistry {
     // sockets should not receive what they sent themselves, so a gap is inserted
     // for every send from this socket
     if (socket && socket.uuid !== undefined) {
-      let uniqueSenders = delayedBroadcasts.uniqueSenders
+      const uniqueSenders = delayedBroadcasts.uniqueSenders
       let gaps = uniqueSenders.get(socket)
 
       if (!gaps) {
@@ -254,8 +263,8 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  subscribe(name, socket) {
-    let sockets = this._subscriptions.get(name) || new Set()
+  subscribe (name, socket) {
+    const sockets = this._subscriptions.get(name) || new Set()
 
     if (sockets.size === 0) {
       this._subscriptions.set(name, sockets)
@@ -304,7 +313,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  unsubscribe(name, socket, silent) {
+  unsubscribe (name, socket, silent) {
     const sockets = this._subscriptions.get(name)
 
     if (!sockets || !sockets.has(socket)) {
@@ -354,7 +363,7 @@ class SubscriptionRegistry {
    * @public
    * @returns {Array} SocketWrapper[]
    */
-  getLocalSubscribers(name) {
+  getLocalSubscribers (name) {
     return this._subscriptions.get(name) || new Set()
   }
 
@@ -368,19 +377,20 @@ class SubscriptionRegistry {
    * @public
    * @returns {Boolean} hasLocalSubscribers
    */
-  hasLocalSubscribers(name) {
+  hasLocalSubscribers (name) {
     return this._subscriptions.has(name)
   }
 
   /**
    * Allows to set a subscriptionListener after the class had been instantiated
    *
-   * @param {SubscriptionListener} subscriptionListener - a class exposing a onSubscriptionMade and onSubscriptionRemoved method
+   * @param {SubscriptionListener} subscriptionListener a class exposing a onSubscriptionMade
+   *                                                    and onSubscriptionRemoved method
    *
    * @public
    * @returns {void}
    */
-  setSubscriptionListener(subscriptionListener) {
+  setSubscriptionListener (subscriptionListener) {
     this._subscriptionListener = subscriptionListener
   }
 
@@ -391,7 +401,7 @@ class SubscriptionRegistry {
    * call done from subscribe
    * @param  {String} name the name that was added
    */
-  _onClusterSubscriptionAdded(name) {
+  _onClusterSubscriptionAdded (name) {
     if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
       this._subscriptionListener.onSubscriptionMade(name, null, 0, 1)
     }
@@ -404,7 +414,7 @@ class SubscriptionRegistry {
    * call done from unsubscribe
    * @param  {String} name the name that was removed
    */
-  _onClusterSubscriptionRemoved(name) {
+  _onClusterSubscriptionRemoved (name) {
     if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
       this._subscriptionListener.onSubscriptionRemoved(name, null, 0, 0)
     }

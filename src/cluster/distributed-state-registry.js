@@ -1,10 +1,9 @@
 'use strict'
 
 const C = require('../constants/constants')
-
 const EventEmitter = require('events').EventEmitter
-const DATA_LENGTH = {}
 
+const DATA_LENGTH = {}
 DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE] = 1
 DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_FULL_STATE] = 2
 DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_ADD] = 3
@@ -36,7 +35,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   *
   * @constructor
   */
-  constructor(topic, options) {
+  constructor (topic, options) {
     super()
     this._topic = topic
     this._options = options
@@ -56,7 +55,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @public
   * @returns {Boolean} exists
   */
-  has(name) {
+  has (name) {
     return !!this._data[name]
   }
 
@@ -69,7 +68,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @public
   * @returns {void}
   */
-  add(name) {
+  add (name) {
     if (!this._has(name, this._options.serverName)) {
       this._add(name, this._options.serverName)
       this._sendMessage(name, C.EVENT.DISTRIBUTED_STATE_ADD)
@@ -85,7 +84,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @public
   * @returns {void}
   */
-  remove(name) {
+  remove (name) {
     if (this._has(name, this._options.serverName)) {
       this._remove(name, this._options.serverName)
       this._sendMessage(name, C.EVENT.DISTRIBUTED_STATE_REMOVE)
@@ -100,7 +99,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   *
   * @returns {[type]}
   */
-  removeAll(serverName) {
+  removeAll (serverName) {
     let name
     for (name in this._data) {
       if (this._data[name].nodes[serverName]) {
@@ -115,7 +114,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @public
   * @returns {Object} entries
   */
-  getAllServers(name) {
+  getAllServers (name) {
     if (this._data[name]) {
       return Object.keys(this._data[name].nodes)
     }
@@ -129,7 +128,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @public
   * @returns {Array} entries
   */
-  getAll() {
+  getAll () {
     return Object.keys(this._data)
   }
 
@@ -144,7 +143,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _remove(name, serverName) {
+  _remove (name, serverName) {
     let exists = false
 
     if (!this._data[name]) {
@@ -175,7 +174,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _add(name, serverName) {
+  _add (name, serverName) {
     if (!this._data[name]) {
       this._data[name] = {
         nodes: {},
@@ -196,7 +195,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {Boolean} exists
   */
-  _has(name, serverName) {
+  _has (name, serverName) {
     return this._data[name] && this._data[name].nodes[serverName]
   }
 
@@ -209,7 +208,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _sendMessage(name, action) {
+  _sendMessage (name, action) {
     const message = {
       topic: this._topic,
       action,
@@ -228,7 +227,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {Number} totalCheckSum
   */
-  _getCheckSumTotal(serverName) {
+  _getCheckSumTotal (serverName) {
     let totalCheckSum = 0
     let name
 
@@ -251,12 +250,12 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {Number} checkSum
   */
-  _createCheckSum(name) {
+  _createCheckSum (name) { // eslint-disable-line
     let checkSum = 0
     let i
 
     for (i = 0; i < name.length; i++) {
-      checkSum = ((checkSum << 5) - checkSum) + name.charCodeAt(i)
+      checkSum = ((checkSum << 5) - checkSum) + name.charCodeAt(i) // eslint-disable-line
     }
 
     return checkSum
@@ -273,13 +272,15 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   *   another message from the remote server arrives before the reconciliation request
   *   is send, it will be cancelled.
   *
-  * @param   {String} serverName     the name of the remote server for which the checkSum should be calculated
-  * @param   {Number} remoteCheckSum The checksum the remote server has calculated for all its local entries
+  * @param   {String} serverName     the name of the remote server for which the checkSum
+  *                                  should be calculated
+  * @param   {Number} remoteCheckSum The checksum the remote server has calculated for all
+  *                                  its local entries
   *
   * @private
   * @returns {void}
   */
-  _verifyCheckSum(serverName, remoteCheckSum) {
+  _verifyCheckSum (serverName, remoteCheckSum) {
     if (this._getCheckSumTotal(serverName) !== remoteCheckSum) {
       this._reconciliationTimeouts[serverName] = setTimeout(
                 this._requestFullState.bind(this, serverName),
@@ -302,7 +303,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _requestFullState(serverName) {
+  _requestFullState (serverName) {
     this._options.messageConnector.publish(this._topic, {
       topic: this._topic,
       action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
@@ -316,13 +317,13 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * for new nodes that joined the cluster
   *
   * When a state gets compromised, more than one remote registry might request a full state update.
-  * This method will  schedule a timeout in which no additional full state messages are sent to make sure
-  * only a single full state message is sent in reply.
+  * This method will  schedule a timeout in which no additional full state messages are sent to
+  * make sure only a single full state message is sent in reply.
   *
   * @private
   * @returns {void}
   */
-  _sendFullState() {
+  _sendFullState () {
     const localState = []
     let name
 
@@ -353,7 +354,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _applyFullState(serverName, names) {
+  _applyFullState (serverName, names) {
     let name
     let i
 
@@ -378,7 +379,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _resetFullStateSent() {
+  _resetFullStateSent () {
     this._fullStateSent = false
   }
 
@@ -391,7 +392,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _processIncomingMessage(message) {
+  _processIncomingMessage (message) {
     if (!this._isValidMessage(message)) {
       return
     }
@@ -403,7 +404,10 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       this._remove(message.data[0], message.data[1])
       this._verifyCheckSum(message.data[1], message.data[2])
     } else if (message.action === C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE) {
-      if (message.data[0] === C.ALL || (message.data[0] === this._options.serverName && this._fullStateSent === false)) {
+      if (
+        message.data[0] === C.ALL ||
+        (message.data[0] === this._options.serverName && this._fullStateSent === false)
+      ) {
         this._sendFullState()
       }
     } else if (message.action === C.EVENT.DISTRIBUTED_STATE_FULL_STATE) {
@@ -419,7 +423,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {Boolean} isValid
   */
-  _isValidMessage(message) {
+  _isValidMessage (message) {
     if (DATA_LENGTH[message.action] === undefined) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
       return false
