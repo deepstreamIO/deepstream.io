@@ -27,10 +27,12 @@ matrix:
 
 script:
   # This fails on node 4
-  # - npm run lint
+  - if [ "$TRAVIS_NODE_VERSION" == "6.10.0" ]; then
+      npm run lint;
+    fi
   - npm run coverage
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sh scripts/run-e2e.sh
+      sh scripts/run-e2e.sh;
     fi
   # This has to happen here and not in before_deploy to be put in travis cache
   - chmod 555 scripts/package.sh
