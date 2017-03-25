@@ -201,8 +201,8 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {void}
    */
-  _processConnectionMessage(socketWrapper, connectionMessage) {
-    messageParser.parse(connectionMessage, msg => {
+  _processConnectionMessage (socketWrapper, rawMessage) {
+    messageParser.parse(rawMessage, (msg, connectionMessage) => {
       if (msg === null || msg === undefined) {
         this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
         socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
@@ -236,8 +236,8 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _authenticateConnection(socketWrapper, disconnectTimeout, authMsg) {
-    messageParser.parse(authMsg, msg => {
+  _authenticateConnection (socketWrapper, disconnectTimeout, authMsg) {
+    messageParser.parse(authMsg, (msg) => {
       let authData
       let errorMsg
 

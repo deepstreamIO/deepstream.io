@@ -48,6 +48,11 @@ module.exports = class MessageParser {
    *                  }
    */
   static parse (message, callback) {
+    if (typeof message !== 'string') {
+      callback(null, 'non text based message recieved')
+      return
+    }
+
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
     for (let i = 0; i < rawMessages.length; i++) {
