@@ -44,66 +44,52 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
     return
   }
 
-  /*
-   * Return the record's contents and subscribes for future updates.
-   * Creates the record if it doesn't exist
-   */
   if (message.action === C.ACTIONS.CREATEORREAD) {
+    /*
+     * Return the record's contents and subscribes for future updates.
+     * Creates the record if it doesn't exist
+     */
     this._createOrRead(socketWrapper, message)
-  }
-
-  /*
-   * Return the current state of the record in cache or db
-   */
-  else if (message.action === C.ACTIONS.SNAPSHOT) {
+  } else if (message.action === C.ACTIONS.SNAPSHOT) {
+    /*
+     * Return the current state of the record in cache or db
+     */
     this._snapshot(socketWrapper, message)
-  }
-
-  /*
-   * Return a Boolean to indicate if record exists in cache or database
-   */
-  else if (message.action === C.ACTIONS.HAS) {
+  } else if (message.action === C.ACTIONS.HAS) {
+    /*
+     * Return a Boolean to indicate if record exists in cache or database
+     */
     this._hasRecord(socketWrapper, message)
-  }
-
-  /*
-   * Handle complete (UPDATE) or partial (PATCH) updates
-   */
-  else if (message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH) {
+  } else if (message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH) {
+    /*
+     * Handle complete (UPDATE) or partial (PATCH) updates
+     */
     this._update(socketWrapper, message)
-  }
-
-  /*
-   * Deletes the record
-   */
-  else if (message.action === C.ACTIONS.DELETE) {
+  } else if (message.action === C.ACTIONS.DELETE) {
+    /*
+     * Deletes the record
+     */
     this._delete(socketWrapper, message)
-  }
-
+  } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
   /*
    * Unsubscribes (discards) a record that was previously subscribed to
    * using read()
    */
-  else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
     this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
-  }
-
+  } else if (message.action === C.ACTIONS.LISTEN ||
   /*
    * Listen to requests for a particular record or records
    * whose names match a pattern
    */
-  else if (message.action === C.ACTIONS.LISTEN ||
     message.action === C.ACTIONS.UNLISTEN ||
     message.action === C.ACTIONS.LISTEN_ACCEPT ||
     message.action === C.ACTIONS.LISTEN_REJECT ||
     message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
     this._listenerRegistry.handle(socketWrapper, message)
-  }
-
+  } else {
   /*
    * Default for invalid messages
    */
-  else {
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
     if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
@@ -133,6 +119,7 @@ RecordHandler.prototype._hasRecord = function (socketWrapper, message) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, error])
   }
 
+  // eslint-disable-next-line
   new RecordRequest(recordName,
     this._options,
     socketWrapper,
@@ -156,14 +143,25 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
     if (record) {
       this._sendRecord(recordName, record, socketWrapper)
     } else {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, C.EVENT.RECORD_NOT_FOUND])
+      socketWrapper.sendError(
+        C.TOPIC.RECORD,
+        C.ACTIONS.SNAPSHOT,
+        [recordName, C.EVENT.RECORD_NOT_FOUND]
+      )
     }
   }
   const onError = function (error) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, error])
   }
 
-  new RecordRequest(recordName, this._options, socketWrapper, onComplete.bind(this), onError.bind(this))
+  // eslint-disable-next-line
+  new RecordRequest(
+    recordName,
+    this._options,
+    socketWrapper,
+    onComplete.bind(this),
+    onError.bind(this)
+  )
 }
 
 /**
@@ -183,11 +181,22 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
     if (record) {
       this._read(recordName, record, socketWrapper)
     } else {
-      this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, this._create.bind(this, recordName, socketWrapper))
+      this._permissionAction(
+        C.ACTIONS.CREATE,
+        recordName,
+        socketWrapper,
+        this._create.bind(this, recordName, socketWrapper)
+      )
     }
   }
 
-  new RecordRequest(recordName, this._options, socketWrapper, onComplete.bind(this))
+  // eslint-disable-next-line
+  new RecordRequest(
+    recordName,
+    this._options,
+    socketWrapper,
+    onComplete.bind(this)
+  )
 }
 
 /**
@@ -257,8 +266,8 @@ RecordHandler.prototype._sendRecord = function (recordName, record, socketWrappe
 }
 
  /**
- * Applies both full and partial updates. Creates a new record transition that will live as long as updates
- * are in flight and new updates come in
+ * Applies both full and partial updates. Creates a new record transition that will live as
+ * long as updates are in flight and new updates come in
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
@@ -368,13 +377,17 @@ RecordHandler.prototype.removeRecordRequest = function (recordName) {
  * verified it has the latest version
  *
  * @param   {String}   recordName the name of the record
- * @param   {Function} callback   function to be executed once all writes to this record are complete
+ * @param   {Function} callback   function to be executed once all writes to this record
+ *                                are complete
  *
  * @public
  * @returns {void}
  */
 RecordHandler.prototype.runWhenRecordStable = function (recordName, callback) {
-  if (!this._recordRequestsInProgress[recordName] || this._recordRequestsInProgress[recordName].length === 0) {
+  if (
+    !this._recordRequestsInProgress[recordName] ||
+    this._recordRequestsInProgress[recordName].length === 0
+  ) {
     this._recordRequestsInProgress[recordName] = []
     callback(recordName)
   } else {
@@ -407,6 +420,7 @@ RecordHandler.prototype._delete = function (socketWrapper, message) {
   if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
     this._onDeleted(recordName, message, socketWrapper)
   } else {
+    // eslint-disable-next-line
     new RecordDeletion(this._options, socketWrapper, message, this._onDeleted.bind(this))
   }
 }
@@ -436,12 +450,15 @@ RecordHandler.prototype._onDeleted = function (name, message, originalSender) {
  * @param   {String} action          One of C.ACTIONS, either C.ACTIONS.READ or C.ACTIONS.CREATE
  * @param   {String} recordName      The name of the record
  * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Function} successCallback A callback that will only be invoked if the operation was successful
+ * @param   {Function} successCallback A callback that will only be invoked if the operation was
+ *                                     successful
  *
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._permissionAction = function (action, recordName, socketWrapper, successCallback) {
+RecordHandler.prototype._permissionAction = function (
+  action, recordName, socketWrapper, successCallback
+  ) {
   const message = {
     topic: C.TOPIC.RECORD,
     action,

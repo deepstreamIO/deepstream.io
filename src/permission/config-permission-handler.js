@@ -1,5 +1,5 @@
 'use strict'
-
+/* eslint-disable valid-typeof */
 const configValidator = require('./config-validator')
 const configCompiler = require('./config-compiler')
 const rulesMap = require('./rules-map')
@@ -28,7 +28,8 @@ const UNDEFINED = 'undefined'
  * @extends {EventEmitter}
  *
  * @param {Object} options deepstream options
- * @param {[Object]} config  Optional config. If no config is provided, the ConfigPermissionHandler will attempt
+ * @param {[Object]} config  Optional config. If no config is provided, the
+ *                           ConfigPermissionHandler will attempt
  *                           to load it from the path provided in options.path.
  */
 const ConfigPermissionHandler = function (options, config) {
@@ -143,7 +144,8 @@ ConfigPermissionHandler.prototype.useConfig = function (config) {
  * @interface
  * @returns {void}
  */
-ConfigPermissionHandler.prototype.canPerformAction = function (username, message, callback, authData) {
+ConfigPermissionHandler.prototype.canPerformAction = function (
+  username, message, callback, authData) {
   if (typeof message.data[0] !== STRING) {
     callback('invalid message', false)
     return
@@ -159,6 +161,7 @@ ConfigPermissionHandler.prototype.canPerformAction = function (username, message
 
   const ruleData = this._getCompiledRulesForName(name, ruleSpecification)
 
+  // eslint-disable-next-line
   new RuleApplication({
     recordHandler: this._recordHandler,
     username,

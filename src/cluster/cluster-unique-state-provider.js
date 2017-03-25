@@ -2,10 +2,9 @@
 
 const C = require('../constants/constants')
 const utils = require('../utils/utils')
-
-const SUPPORTED_ACTIONS = {}
 const EventEmitter = require('events').EventEmitter
 
+const SUPPORTED_ACTIONS = {}
 SUPPORTED_ACTIONS[C.ACTIONS.LOCK_RESPONSE] = true
 SUPPORTED_ACTIONS[C.ACTIONS.LOCK_REQUEST] = true
 SUPPORTED_ACTIONS[C.ACTIONS.LOCK_RELEASE] = true
@@ -20,18 +19,18 @@ SUPPORTED_ACTIONS[C.ACTIONS.LOCK_RELEASE] = true
  *
  */
 module.exports = class UniqueRegistry {
-
   /**
   * The unique registry is a singleton and is only created once
   * within deepstream.io. It is passed via
   * via the options object.
   *
   * @param  {Object} options                     The options deepstream was created with
-  * @param  {ClusterRegistry} clusterRegistry    The cluster registry, used to get the cluster leader
+  * @param  {ClusterRegistry} clusterRegistry    The cluster registry, used to get the
+  *                                              cluster leader
   *
   * @constructor
   */
-  constructor(options, clusterRegistry) {
+  constructor (options, clusterRegistry) {
     this._options = options
     this._clusterRegistry = clusterRegistry
     this._locks = {}
@@ -52,7 +51,7 @@ module.exports = class UniqueRegistry {
   * @public
   * @returns {void}
   */
-  get(name, callback) {
+  get (name, callback) {
     const leaderServerName = this._clusterRegistry.getCurrentLeader()
 
     if (this._options.serverName === leaderServerName) {
@@ -72,7 +71,7 @@ module.exports = class UniqueRegistry {
   * @public
   * @returns {void}
   */
-  release(name) {
+  release (name) {
     const leaderServerName = this._clusterRegistry.getCurrentLeader()
 
     if (this._options.serverName === leaderServerName) {
@@ -93,7 +92,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _getRemoteLock(name, leaderServerName, callback) {
+  _getRemoteLock (name, leaderServerName, callback) {
     this._timeouts[name] = utils.setTimeout(
             this._onLockRequestTimeout.bind(this, name),
             this._options.lockRequestTimeout
@@ -122,7 +121,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _releaseRemoteLock(name, leaderServerName) {
+  _releaseRemoteLock (name, leaderServerName) {
     const remoteTopic = this._getPrivateTopic(leaderServerName)
 
     this._options.messageConnector.publish(remoteTopic, {
@@ -144,7 +143,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _onPrivateMessage(message) {
+  _onPrivateMessage (message) {
     if (!SUPPORTED_ACTIONS[message.action]) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
       return
@@ -190,7 +189,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _handleRemoteLockRequest(data) {
+  _handleRemoteLockRequest (data) {
     this._options.messageConnector.publish(data.responseTopic, {
       topic: data.responseTopic,
       action: C.ACTIONS.LOCK_RESPONSE,
@@ -209,7 +208,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _handleRemoteLockResponse(data) {
+  _handleRemoteLockResponse (data) {
     clearTimeout(this._timeouts[data.name])
     delete this._timeouts[data.name]
     this._responseEventEmitter.emit(data.name, data.result)
@@ -223,7 +222,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _handleRemoteLockRelease(data) {
+  _handleRemoteLockRelease (data) {
     clearTimeout(this._timeouts[data.name])
     delete this._timeouts[data.name]
     delete this._locks[data.name]
@@ -238,7 +237,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {String} privateTopic
   */
-  _getPrivateTopic(serverName) {
+  _getPrivateTopic (serverName) { // eslint-disable-line
     return C.TOPIC.LEADER_PRIVATE + serverName
   }
 
@@ -250,7 +249,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @return {boolean}
   */
-  _getLock(name) {
+  _getLock (name) {
     if (this._locks[name] === true) {
       return false
     }
@@ -265,7 +264,8 @@ module.exports = class UniqueRegistry {
 
   /**
   * Called when a lock is no longer required and can be released. This is triggered either by
-  * a timeout if a remote release message wasn't received in time or when release was called locally.
+  * a timeout if a remote release message wasn't received in time or when release was called
+  * locally.
   *
   * Important note: Anyone can release a lock. It is assumed that the cluster is trusted
   * so maintaining who has the lock is not required. This may need to change going forward.
@@ -275,7 +275,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _releaseLock(name) {
+  _releaseLock (name) {
     clearTimeout(this._timeouts[name])
     delete this._timeouts[name]
     delete this._locks[name]
@@ -289,7 +289,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _onLockTimeout(name) {
+  _onLockTimeout (name) {
     this._releaseLock(name)
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, `lock ${name} released due to timeout`)
   }
@@ -303,7 +303,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _onLockRequestTimeout(name) {
+  _onLockRequestTimeout (name) {
     this._handleRemoteLockResponse({ name, result: false })
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, `request for lock ${name} timed out`)
   }

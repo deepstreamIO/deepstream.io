@@ -14,7 +14,6 @@ const EventEmitter = require('events').EventEmitter
  * @emits remove <serverName>
  */
 module.exports = class ClusterRegistry extends EventEmitter {
-
   /**
    * Creates the class, initialises all intervals and publishes the
    * initial status message that notifies other nodes within this
@@ -25,7 +24,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
    *
    * @constructor
    */
-  constructor(options, connectionEndpoint) {
+  constructor (options, connectionEndpoint) {
     super()
     this._options = options
     this._connectionEndpoint = connectionEndpoint
@@ -39,20 +38,27 @@ module.exports = class ClusterRegistry extends EventEmitter {
     this._leaveClusterFn = this.leaveCluster.bind(this)
     this._options.messageConnector.subscribe(C.TOPIC.CLUSTER, this._onMessageFn)
     this._publishStatus()
-    this._publishInterval = setInterval(this._publishStatus.bind(this), this._options.clusterKeepAliveInterval)
-    this._checkInterval = setInterval(this._checkNodes.bind(this), this._options.clusterActiveCheckInterval)
+    this._publishInterval = setInterval(
+      this._publishStatus.bind(this),
+      this._options.clusterKeepAliveInterval
+    )
+    this._checkInterval = setInterval(
+      this._checkNodes.bind(this),
+      this._options.clusterActiveCheckInterval
+    )
     process.on('beforeExit', this._leaveClusterFn)
     process.on('exit', this._leaveClusterFn)
   }
 
   /**
-   * Prompts this node to leave the cluster, either as a result of a server.close() call or due to the process exiting.
+   * Prompts this node to leave the cluster, either as a result of a server.close()
+   * call or due to the process exiting.
    * This sends out a leave message to all other nodes and destroys this class.
    *
    * @public
    * @returns {[type]}
    */
-  leaveCluster() {
+  leaveCluster () {
     if (this._inCluster === false) {
       return
     }
@@ -81,7 +87,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * @public
    * @returns {Array} serverNames
    */
-  getAll() {
+  getAll () {
     return Object.keys(this._nodes)
   }
 
@@ -89,7 +95,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * Returns true if this node is the cluster leader
    * @return {Boolean} [description]
    */
-  isLeader() {
+  isLeader () {
     return this._options.serverName === this.getCurrentLeader()
   }
 
@@ -97,7 +103,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
   * Returns the name of the current leader
   * @return {String}
   */
-  getCurrentLeader() {
+  getCurrentLeader () {
     let maxScore = 0
     let serverName
     let leader = null
@@ -121,7 +127,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * @public
    * @returns {String} public URL
    */
-  getLeastUtilizedExternalUrl() {
+  getLeastUtilizedExternalUrl () {
     let minMemory = Infinity
     let serverName
     let minNode
@@ -144,7 +150,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * @private
    * @returns {void}
    */
-  _onMessage(message) {
+  _onMessage (message) {
     const data = message.data[0]
 
     if (!data) {
@@ -162,13 +168,13 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * Called on an interval defined by clusterActiveCheckInterval to check if all nodes
    * within the cluster are still alive.
    *
-   * Being alive is defined as having received a status message from that node less than <clusterNodeInactiveTimeout>
-   * milliseconds ago.
+   * Being alive is defined as having received a status message from that node less than
+   * <clusterNodeInactiveTimeout> milliseconds ago.
    *
    * @private
    * @returns {void}
    */
-  _checkNodes() {
+  _checkNodes () {
     const now = Date.now()
     let serverName
 
@@ -189,7 +195,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * @private
    * @returns {void}
    */
-  _updateNode(data) {
+  _updateNode (data) {
     const isNew = !this._nodes[data.serverName]
     this._nodes[data.serverName] = data
     this._nodes[data.serverName].lastStatusTime = Date.now()
@@ -209,7 +215,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * @private
    * @returns {void}
    */
-  _removeNode(serverName) {
+  _removeNode (serverName) {
     if (this._nodes[serverName]) {
       delete this._nodes[serverName]
       this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLUSTER_LEAVE, serverName)
@@ -223,7 +229,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * @private
    * @returns {void}
    */
-  _publishStatus() {
+  _publishStatus () {
     this._inCluster = true
     const memoryStats = process.memoryUsage()
 
