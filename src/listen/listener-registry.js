@@ -3,6 +3,7 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
+const xuid = require('xuid')
 
 const SEP = String.fromCharCode(30)
 
@@ -12,7 +13,6 @@ module.exports = class ListenerRegistry {
     this._dispatch = this._dispatch.bind(this)
     this._onError = this._onError.bind(this)
 
-    this._counter = 0
     this._pending = new Set()
     this._listeners = new Map()
     this._timeouts = new Map()
@@ -68,7 +68,7 @@ module.exports = class ListenerRegistry {
       this._listeners.set(pattern, listener)
     }
 
-    listener.sockets.set(socket.uuid, { id: (this._counter += 1).toString(32), socket })
+    listener.sockets.set(socket.uuid, { id: xuid(), socket })
 
     this._reconcilePattern(listener.expr)
   }
