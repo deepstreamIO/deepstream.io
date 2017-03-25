@@ -17,7 +17,10 @@ module.exports = class RpcHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
     this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
-    this._options.messageConnector.subscribe(this._privateTopic, this._onPrivateMessage.bind(this))
+    this._options.messageConnector.subscribe(
+      this._privateTopic,
+      this._onPrivateMessage.bind(this)
+    )
 
     this._rpcs = new Map()
   }
