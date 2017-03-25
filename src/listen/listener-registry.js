@@ -54,11 +54,11 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    let listener = this._listeners.get(pattern)
+    const listener = this._listeners.get(pattern) || { expr: null, sockets: new Map() }
 
-    if (!listener) {
+    if (!listener.expr) {
       try {
-        listener = { expr: new RegExp(pattern), sockets: new Map() }
+        listener.expr = new RegExp(pattern)
       } catch (err) {
         socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
         return
