@@ -5,8 +5,6 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 const xuid = require('xuid')
 
-const SEP = String.fromCharCode(30)
-
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._reconcile = this._reconcile.bind(this)
@@ -183,8 +181,8 @@ module.exports = class ListenerRegistry {
     const matches = []
     for (const [ pattern, { expr, sockets } ] of this._listeners) {
       if (expr.test(name)) {
-        for (const [ uuid, { id, socket } ] of sockets) {
-          matches.push({ id: id + SEP + uuid + SEP + pattern, socket, pattern })
+        for (const { id, socket } of sockets.values()) {
+          matches.push({ id, socket, pattern })
         }
       }
     }
