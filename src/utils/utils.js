@@ -8,7 +8,9 @@ exports.getUid = function () {
 }
 
 exports.isOfType = function (input, expectedType) {
-  if (expectedType === 'array') {
+  if (input === null) {
+    return expectedType === 'null'
+  } else if (expectedType === 'array') {
     return Array.isArray(input)
   } else if (expectedType === 'url') {
     return !!url.parse(input).host
