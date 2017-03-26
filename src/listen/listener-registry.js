@@ -30,8 +30,8 @@ module.exports = class ListenerRegistry {
     this._providerRegistry.setAction('subscribe', C.ACTIONS.LISTEN)
     this._providerRegistry.setAction('unsubscribe', C.ACTIONS.UNLISTEN)
     this._providerRegistry.setSubscriptionListener({
-      onSubscriptionRemoved: this.onListenRemoved.bind(this),
-      onSubscriptionMade: this.onListenMade.bind(this)
+      onSubscriptionAdded: this.onListenAdded.bind(this),
+      onSubscriptionRemoved: this.onListenRemoved.bind(this)
     })
   }
 
@@ -49,11 +49,7 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onListenMade (pattern, socket) {
-    if (!socket) {
-      return
-    }
-
+  onListenAdded (pattern, socket) {
     const listener = this._listeners.get(pattern) || { expr: null, sockets: new Map() }
 
     if (!listener.expr) {
@@ -66,28 +62,28 @@ module.exports = class ListenerRegistry {
       this._listeners.set(pattern, listener)
     }
 
-    listener.sockets.set(socket.uuid, { id: xuid(), socket, pattern })
+    if (socket) {
+      listener.sockets.set(socket.uuid, { id: xuid(), socket, pattern })
+    }
 
     this._reconcilePattern(listener.expr)
   }
 
   onListenRemoved (pattern, socket) {
-    if (!socket) {
-      return
-    }
-
     const listener = this._listeners.get(pattern)
 
-    listener.sockets.delete(socket.uuid)
+    if (socket) {
+      listener.sockets.delete(socket.uuid)
 
-    if (listener.sockets.size === 0) {
-      this._listeners.delete(pattern)
+      if (listener.sockets.size === 0) {
+        this._listeners.delete(pattern)
+      }
     }
 
     this._reconcilePattern(listener.expr)
   }
 
-  onSubscriptionMade (name, socket, localCount, remoteCount) {
+  onSubscriptionAdded (name, socket, localCount, remoteCount) {
     if (localCount + remoteCount === 1) {
       this._reconcile(name)
     }

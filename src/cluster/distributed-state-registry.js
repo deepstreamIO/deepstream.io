@@ -158,8 +158,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
 
     if (exists === false) {
       delete this._data[name]
-      this.emit('remove', name)
     }
+
+    this.emit('remove', name, serverName)
   }
 
   /**
@@ -178,10 +179,15 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
         nodes: {},
         checkSum: this._createCheckSum(name)
       }
-      this.emit('add', name)
     }
 
+    const exists = this._data[name].nodes[serverName]
+
     this._data[name].nodes[serverName] = true
+
+    if (!exists) {
+      this.emit('add', name, serverName)
+    }
   }
 
   /**

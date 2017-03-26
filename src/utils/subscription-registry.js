@@ -27,6 +27,7 @@ class SubscriptionRegistry {
     this._options = options
     this._topic = topic
     this._subscriptionListener = null
+    this._serverName = options.serverName
     this._constants = {
       MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
       SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
@@ -72,9 +73,9 @@ class SubscriptionRegistry {
    */
   getAllRemoteServers (subscriptionName) {
     const serverNames = this._clusterSubscriptions.getAllServers(subscriptionName)
-    const localServerIndex = serverNames.indexOf(this._options.serverName)
+    const localServerIndex = serverNames.indexOf(this._serverName)
     if (localServerIndex > -1) {
-      serverNames.splice(serverNames.indexOf(this._options.serverName), 1)
+      serverNames.splice(serverNames.indexOf(this._serverName), 1)
     }
     return serverNames
   }
@@ -275,11 +276,11 @@ class SubscriptionRegistry {
     names.add(name)
 
     if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionMade(
+      this._subscriptionListener.onSubscriptionAdded(
         name,
         socket,
         sockets.size,
-        this.getAllRemoteServers(name).length ? 1 : 0
+        this.getAllRemoteServers(name).length
       )
     }
 
@@ -330,7 +331,7 @@ class SubscriptionRegistry {
         name,
         socket,
         sockets.size,
-        this.getAllRemoteServers(name).length ? 1 : 0
+        this.getAllRemoteServers(name).length
       )
     }
 
@@ -371,7 +372,7 @@ class SubscriptionRegistry {
   /**
    * Allows to set a subscriptionListener after the class had been instantiated
    *
-   * @param {SubscriptionListener} subscriptionListener - a class exposing a onSubscriptionMade and onSubscriptionRemoved method
+   * @param {SubscriptionListener} subscriptionListener - a class exposing a onSubscriptionAdded and onSubscriptionRemoved method
    *
    * @public
    * @returns {void}
@@ -380,29 +381,27 @@ class SubscriptionRegistry {
     this._subscriptionListener = subscriptionListener
   }
 
-  /**
-   * Called when a subscription has been added to the cluster
-   * This can be invoked locally or remotely, so we check if it
-   * is a local invocation and ignore it if so in favour of the
-   * call done from subscribe
-   * @param  {String} name the name that was added
-   */
-  _onClusterSubscriptionAdded (name) {
-    if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
-      this._subscriptionListener.onSubscriptionMade(name, null, 0, 1)
+  _onClusterSubscriptionAdded (name, serverName) {
+    if (this._subscriptionListener && serverName !== this._serverName) {
+      const sockets = this._subscriptions.get(name)
+      this._subscriptionListener.onSubscriptionAdded(
+        name,
+        null,
+        sockets ? sockets.size : 0,
+        this.getAllRemoteServers(name).length
+      )
     }
   }
 
-  /**
-   * Called when a subscription has been removed from the cluster
-   * This can be invoked locally or remotely, so we check if it
-   * is a local invocation and ignore it if so in favour of the
-   * call done from unsubscribe
-   * @param  {String} name the name that was removed
-   */
-  _onClusterSubscriptionRemoved (name) {
-    if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
-      this._subscriptionListener.onSubscriptionRemoved(name, null, 0, 0)
+  _onClusterSubscriptionRemoved (name, serverName) {
+    if (this._subscriptionListener && serverName !== this._serverName) {
+      const sockets = this._subscriptions.get(name)
+      this._subscriptionListener.onSubscriptionRemoved(
+        name,
+        null,
+        sockets ? sockets.size : 0,
+        this.getAllRemoteServers(name).length
+      )
     }
   }
 }
