@@ -28,6 +28,7 @@ class SubscriptionRegistry {
     this._options = options
     this._topic = topic
     this._subscriptionListener = null
+    this._serverName = options.serverName
     this._constants = {
       MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
       SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
@@ -291,7 +292,8 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionMade(
         name,
         socket,
-        sockets.size
+        sockets.size,
+        this.getAllRemoteServers(name).length
       )
     }
 
@@ -400,9 +402,15 @@ class SubscriptionRegistry {
    * call done from subscribe
    * @param  {String} name the name that was added
    */
-  _onClusterSubscriptionAdded (name) {
-    if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
-      this._subscriptionListener.onSubscriptionMade(name, null, 1)
+  _onClusterSubscriptionAdded (name, serverName) {
+    if (this._subscriptionListener && serverName !== this._serverName) {
+      const sockets = this._subscriptions.get(name) || new Set()
+      this._subscriptionListener.onSubscriptionMade(
+        name,
+        null,
+        sockets.size,
+        this.getAllRemoteServers(name).length
+      )
     }
   }
 
@@ -413,9 +421,15 @@ class SubscriptionRegistry {
    * call done from unsubscribe
    * @param  {String} name the name that was removed
    */
-  _onClusterSubscriptionRemoved (name) {
-    if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
-      this._subscriptionListener.onSubscriptionRemoved(name, null, 0, 0)
+  _onClusterSubscriptionRemoved (name, serverName) {
+    if (this._subscriptionListener && serverName !== this._serverName) {
+      const sockets = this._subscriptions.get(name) || new Set()
+      this._subscriptionListener.onSubscriptionRemoved(
+        name,
+        null,
+        sockets.size,
+        this.getAllRemoteServers(name).length
+      )
     }
   }
 }

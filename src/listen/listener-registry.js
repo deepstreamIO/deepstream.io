@@ -203,13 +203,13 @@ module.exports = class ListenerRegistry {
   * @public
   * @returns {void}
   */
-  onSubscriptionMade (subscriptionName, socketWrapper, localCount) {
+  onSubscriptionMade (subscriptionName, socketWrapper, localCount, remoteCount) {
     if (this.hasActiveProvider(subscriptionName)) {
       this._sendHasProviderUpdateToSingleSubscriber(true, socketWrapper, subscriptionName)
       return
     }
 
-    if (localCount > 1) {
+    if (localCount + remoteCount > 1) {
       return
     }
 
@@ -600,8 +600,8 @@ module.exports = class ListenerRegistry {
   * @private
   * @returns {void}
   */
-  _addPattern (pattern, socketWrapper, count) {
-    if (count === 1) {
+  _addPattern (pattern, socketWrapper, localCount, remoteCount) {
+    if (localCount + remoteCount === 1) {
       this._patterns[pattern] = new RegExp(pattern)
     }
   }
