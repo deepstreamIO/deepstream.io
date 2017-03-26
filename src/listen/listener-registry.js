@@ -5,8 +5,6 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 const xuid = require('xuid')
 
-const SEP = String.fromCharCode(30)
-
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._reconcile = this._reconcile.bind(this)
@@ -32,8 +30,8 @@ module.exports = class ListenerRegistry {
     this._providerRegistry.setAction('subscribe', C.ACTIONS.LISTEN)
     this._providerRegistry.setAction('unsubscribe', C.ACTIONS.UNLISTEN)
     this._providerRegistry.setSubscriptionListener({
-      onSubscriptionRemoved: this.onListenRemoved.bind(this),
-      onSubscriptionMade: this.onListenMade.bind(this)
+      onSubscriptionAdded: this.onListenAdded.bind(this),
+      onSubscriptionRemoved: this.onListenRemoved.bind(this)
     })
   }
 
@@ -51,16 +49,12 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onListenMade (pattern, socket) {
-    if (!socket) {
-      return
-    }
+  onListenAdded (pattern, socket) {
+    const listener = this._listeners.get(pattern) || { expr: null, sockets: new Map() }
 
-    let listener = this._listeners.get(pattern)
-
-    if (!listener) {
+    if (!listener.expr) {
       try {
-        listener = { expr: new RegExp(pattern), sockets: new Map() }
+        listener.expr = new RegExp(pattern)
       } catch (err) {
         socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
         return
@@ -68,29 +62,29 @@ module.exports = class ListenerRegistry {
       this._listeners.set(pattern, listener)
     }
 
-    listener.sockets.set(socket.uuid, { id: xuid(), socket })
+    if (socket) {
+      listener.sockets.set(socket.uuid, { id: xuid(), socket, pattern })
+    }
 
     this._reconcilePattern(listener.expr)
   }
 
   onListenRemoved (pattern, socket) {
-    if (!socket) {
-      return
-    }
-
     const listener = this._listeners.get(pattern)
 
-    listener.sockets.delete(socket.uuid)
+    if (socket) {
+      listener.sockets.delete(socket.uuid)
 
-    if (listener.sockets.size === 0) {
-      this._listeners.delete(pattern)
+      if (listener.sockets.size === 0) {
+        this._listeners.delete(pattern)
+      }
     }
 
     this._reconcilePattern(listener.expr)
   }
 
-  onSubscriptionMade (name, socket, localCount) {
-    if (localCount === 1) {
+  onSubscriptionAdded (name, socket, localCount, remoteCount) {
+    if (localCount + remoteCount === 1) {
       this._reconcile(name)
     }
 
@@ -157,7 +151,7 @@ module.exports = class ListenerRegistry {
 
   _reconcile (name) {
     this._pending.add(name)
-    this._dispatching = this._dispatching || setTimeout(this._dispatch, 100)
+    this._dispatching = this._dispatching || setTimeout(this._dispatch, 10)
   }
 
   _dispatch () {
@@ -181,11 +175,9 @@ module.exports = class ListenerRegistry {
 
   _match (name) {
     const matches = []
-    for (const [ pattern, { expr, sockets } ] of this._listeners) {
+    for (const { expr, sockets } of this._listeners.values()) {
       if (expr.test(name)) {
-        for (const { id, socket } of sockets.values()) {
-          matches.push({ id: id + SEP + socket.uuid + SEP + pattern, socket, pattern })
-        }
+        matches.push(...sockets.values())
       }
     }
     return matches
@@ -211,7 +203,7 @@ module.exports = class ListenerRegistry {
         const matches = this._match(name).filter(match => !history.includes(match.id))
 
         if (matches.length === 0) {
-          return { history }
+          return history.length ? { history } : {}
         }
 
         const match = matches[Math.floor(Math.random() * matches.length)]
@@ -275,6 +267,7 @@ module.exports = class ListenerRegistry {
   _isLocal (provider) {
     return (
       provider &&
+      provider.uuid &&
       provider.serverName === this._serverName
     )
   }
@@ -282,12 +275,13 @@ module.exports = class ListenerRegistry {
   _isRemote (provider) {
     return (
       provider &&
+      provider.uuid &&
       this._subscriptionRegistry.getAllRemoteServers().indexOf(provider.serverName) !== -1
     )
   }
 
   _isConnected (provider) {
-    if (!provider) {
+    if (!provider || !provider.uuid) {
       return false
     } else if (this._isLocal(provider)) {
       const listener = this._listeners.get(provider.pattern)
