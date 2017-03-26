@@ -26,7 +26,6 @@ DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_REMOVE] = 3
  * @author DeepstreamHub GmbH 2016
  */
 module.exports = class DistributedStateRegistry extends EventEmitter {
-
   /**
   * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
   *
@@ -160,8 +159,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
 
     if (exists === false) {
       delete this._data[name]
-      this.emit('remove', name)
     }
+
+    this.emit('remove', name, serverName)
   }
 
   /**
@@ -180,10 +180,15 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
         nodes: {},
         checkSum: this._createCheckSum(name)
       }
-      this.emit('add', name)
     }
 
+    const exists = this._data[name].nodes[serverName]
+
     this._data[name].nodes[serverName] = true
+
+    if (exists) {
+      this.emit('add', name, serverName)
+    }
   }
 
   /**
