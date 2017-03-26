@@ -10,16 +10,7 @@ const C = require('../constants/constants')
  *
  * @returns {Object} actions
 */
-const actions = (function getActions () {
-  const result = {}
-  let key
-
-  for (key in C.ACTIONS) {
-    result[C.ACTIONS[key]] = key
-  }
-
-  return result
-}())
+const actions = new Set(Object.keys(C.ACTIONS).map(key => C.ACTIONS[key]))
 
 /**
  * Parses ASCII control character seperated
@@ -28,7 +19,6 @@ const actions = (function getActions () {
  * @constructor
  */
 module.exports = class MessageParser {
-
   /**
    * Main interface method. Receives a raw message
    * string, containing one or more messages
@@ -126,7 +116,7 @@ module.exports = class MessageParser {
       return null
     }
 
-    if (actions[parts[1]] === undefined) {
+    if (!actions.has(parts[1])) {
       return null
     }
 
