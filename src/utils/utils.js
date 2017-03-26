@@ -217,3 +217,15 @@ exports.spliceRandomElement = function (array) {
   const randomIndex = exports.getRandomIntInRange(0, array.length)
   return array.splice(randomIndex, 1)[0]
 }
+
+exports.JSONParse = function (text, reviver) {
+  try {
+    return {
+      value: JSON.parse(text, reviver)
+    }
+  } catch (err) {
+    return {
+      error: err
+    }
+  }
+}
