@@ -3,16 +3,6 @@
 const C = require('../constants/constants')
 
 /**
- * Turns the ACTION:SHORTCODE constants map
- * around to facilitate shortcode lookup
- *
- * @private
- *
- * @returns {Object} actions
-*/
-const actions = new Set(Object.keys(C.ACTIONS).map(key => C.ACTIONS[key]))
-
-/**
  * Parses ASCII control character seperated
  * message strings into digestable maps
  *
@@ -45,9 +35,8 @@ module.exports = class MessageParser {
       if (rawMessages[i].length < 3) {
         continue
       }
-
       const parts = rawMessages[i].split(C.MESSAGE_PART_SEPERATOR)
-      callback(parts.length < 2 || !actions.has(parts[1]) ? null : {
+      callback(parts.length < 2 ? null : {
         raw: rawMessages[i],
         topic: parts[0],
         action: parts[1],
