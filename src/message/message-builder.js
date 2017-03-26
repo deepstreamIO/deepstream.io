@@ -54,8 +54,6 @@ exports.getErrorMsg = function (topic, type, message) {
  * Converts a serializable value into its string-representation and adds
  * a flag that provides instructions on how to deserialize it.
  *
- * Please see messageParser.convertTyped for the counterpart of this method
- *
  * @param {Mixed} value
  *
  * @public

@@ -1,7 +1,6 @@
 'use strict'
 
 const C = require('../constants/constants')
-const utils = require('../utils/utils')
 
 /**
  * Turns the ACTION:SHORTCODE constants map
@@ -47,54 +46,6 @@ module.exports = class MessageParser {
         callback(this.parseMessage(rawMessages[i]), message)
       }
     }
-  }
-
-  /**
-   * Deserializes values created by MessageBuilder.typed to
-   * their original format
-   *
-   * @param {String} value
-   *
-   * @public
-   * @returns {Mixed} original value
-   */
-  static convertTyped (value) {
-    const type = value.charAt(0)
-
-    if (type === C.TYPES.STRING) {
-      return value.substr(1)
-    }
-
-    if (type === C.TYPES.OBJECT) {
-      const result = utils.JSONParse(value.substr(1))
-      if (result.value) {
-        return result.value
-      } else {
-        return result.error
-      }
-    }
-
-    if (type === C.TYPES.NUMBER) {
-      return parseFloat(value.substr(1))
-    }
-
-    if (type === C.TYPES.NULL) {
-      return null
-    }
-
-    if (type === C.TYPES.TRUE) {
-      return true
-    }
-
-    if (type === C.TYPES.FALSE) {
-      return false
-    }
-
-    if (type === C.TYPES.UNDEFINED) {
-      return undefined
-    }
-
-    return new Error('Unknown type')
   }
 
   /**

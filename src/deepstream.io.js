@@ -186,19 +186,6 @@ Deepstream.prototype.stop = function () {
 }
 
 /**
- * Expose the message-parser's convertTyped method
- * so that it can be used within permissionHandlers
- *
- * @param   {String} value A String starting with a type identifier (see C.TYPES)
- *
- * @public
- * @returns {mixed} the converted value
- */
-Deepstream.prototype.convertTyped = function (value) {
-  return messageParser.convertTyped(value)
-}
-
-/**
  * Synchronously loads a configuration file
  * Initialization of plugins and logger will be triggered by the
  * configInitialiser, but it should not block. Instead the ready events of
