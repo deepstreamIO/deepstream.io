@@ -233,3 +233,23 @@ exports.shuffleArray = function (array) {
   }
   return array
 }
+
+/**
+ * This method tries to parse a value, and returns
+ * an object containing the value or error.
+ *
+ * This is an optimization to avoid doing try/catch
+ * inline since it incurs a massive performance hit
+ * in most versions of node.
+ */
+exports.JSONParse = function (text, reviver) {
+  try {
+    return {
+      value: JSON.parse(text, reviver)
+    }
+  } catch (err) {
+    return {
+      error: err
+    }
+  }
+}

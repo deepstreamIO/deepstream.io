@@ -1,6 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
+const utils = require('../utils/utils')
 
 /**
  * Turns the ACTION:SHORTCODE constants map
@@ -68,10 +69,11 @@ module.exports = class MessageParser {
     }
 
     if (type === C.TYPES.OBJECT) {
-      try {
-        return JSON.parse(value.substr(1))
-      } catch (e) {
-        return e
+      const result = utils.JSONParse(value.substr(1))
+      if (result.value) {
+        return result.value
+      } else {
+        return result.error
       }
     }
 
@@ -110,7 +112,6 @@ module.exports = class MessageParser {
    */
   static parseMessage (message) {
     const parts = message.split(C.MESSAGE_PART_SEPERATOR)
-    const messageObject = {}
 
     if (parts.length < 2) {
       return null
@@ -120,11 +121,11 @@ module.exports = class MessageParser {
       return null
     }
 
-    messageObject.raw = message
-    messageObject.topic = parts[0]
-    messageObject.action = parts[1]
-    messageObject.data = parts.splice(2)
-
-    return messageObject
+    return {
+      raw: message,
+      topic: parts[0],
+      action: parts[1],
+      data: parts.splice(2)
+    }
   }
 }
