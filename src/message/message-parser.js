@@ -44,9 +44,17 @@ module.exports = class MessageParser {
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
     for (let i = 0; i < rawMessages.length; i++) {
-      if (rawMessages[i].length > 2) {
-        parsedMessages.push(this.parseMessage(rawMessages[i]))
+      if (rawMessages[i].length < 3) {
+        continue
       }
+
+      const parts = rawMessages[i].split(C.MESSAGE_PART_SEPERATOR)
+      parsedMessages.push(parts.length < 2 || !actions.has(parts[1]) ? null : {
+        raw: rawMessages[i],
+        topic: parts[0],
+        action: parts[1],
+        data: parts.splice(2)
+      })
     }
 
     return parsedMessages
@@ -98,34 +106,5 @@ module.exports = class MessageParser {
     }
 
     return new Error('Unknown type')
-  }
-
-  /**
-   * Parses an individual message (as oposed to a
-   * block of multiple messages as is processed by .parse())
-   *
-   * @param   {String} message
-   *
-   * @private
-   *
-   * @returns {Object} parsedMessage
-   */
-  static parseMessage (message) {
-    const parts = message.split(C.MESSAGE_PART_SEPERATOR)
-
-    if (parts.length < 2) {
-      return null
-    }
-
-    if (!actions.has(parts[1])) {
-      return null
-    }
-
-    return {
-      raw: message,
-      topic: parts[0],
-      action: parts[1],
-      data: parts.splice(2)
-    }
   }
 }
