@@ -17,7 +17,6 @@ const messageBuilder = require('../message/message-builder')
  * @constructor
  */
 module.exports = class PresenceHandler {
-
   constructor (options) {
     this._options = options
     this._localClients = new Map()

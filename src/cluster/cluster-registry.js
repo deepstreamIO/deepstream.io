@@ -12,7 +12,6 @@ const EventEmitter = require('events').EventEmitter
  * @emits remove <serverName>
  */
 module.exports = class ClusterRegistry extends EventEmitter {
-
   /**
    * Creates the class, initialises all intervals and publishes the
    * initial status message that notifies other nodes within this

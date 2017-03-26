@@ -25,7 +25,6 @@ DATA_LENGTH[C.EVENT.DISTRIBUTED_STATE_REMOVE] = 3
  * @author DeepstreamHub GmbH 2016
  */
 module.exports = class DistributedStateRegistry extends EventEmitter {
-
   /**
   * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
   *
