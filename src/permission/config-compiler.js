@@ -39,7 +39,7 @@ exports.compile = function (config) {
  * @private
  * @returns {Object} compiledRuleset
  */
-function compileRuleset(path, rules) {
+function compileRuleset (path, rules) {
   const ruleset = pathParser.parse(path)
 
   ruleset.rules = {}

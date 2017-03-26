@@ -9,7 +9,7 @@ const C = require('../constants/constants')
  * @param {Object} options deepstream options
  */
 module.exports = class MessageDistributor {
-  constructor(options) {
+  constructor (options) {
     this._callbacks = {}
     this._options = options
   }
@@ -24,7 +24,7 @@ module.exports = class MessageDistributor {
    * @public
    * @returns {void}
    */
-  distribute(socketWrapper, message) {
+  distribute (socketWrapper, message) {
     if (this._callbacks[message.topic] === undefined) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_TOPIC, message.topic)
       socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
@@ -51,7 +51,7 @@ module.exports = class MessageDistributor {
    * @public
    * @returns {void}
    */
-  registerForTopic(topic, callback) {
+  registerForTopic (topic, callback) {
     if (this._callbacks[topic] !== undefined) {
       throw new Error(`Callback already registered for topic ${topic}`)
     }
@@ -74,7 +74,7 @@ module.exports = class MessageDistributor {
    * @private
    * @returns {void}
    */
-  _onMessageConnectorMessage(callback, message) {
+  _onMessageConnectorMessage (callback, message) { // eslint-disable-line
     callback(C.SOURCE_MESSAGE_CONNECTOR, message)
   }
 }
