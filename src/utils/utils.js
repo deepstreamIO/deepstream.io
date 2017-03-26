@@ -50,3 +50,15 @@ exports.JSONParse = function (text, reviver) {
     }
   }
 }
+
+exports.JSONParse = function (text, reviver) {
+  try {
+    return {
+      value: JSON.parse(text, reviver)
+    }
+  } catch (err) {
+    return {
+      error: err
+    }
+  }
+}
