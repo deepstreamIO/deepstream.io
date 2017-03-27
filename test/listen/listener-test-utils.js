@@ -52,7 +52,8 @@ class ListenerTestUtils {
       stateReconciliationTimeout: 10,
       messageConnector: new LocalMessageConnector(),
       logger: new LoggerMock(),
-      listenResponseTimeout: 30
+      listenResponseTimeout: 30,
+      shuffleListenProviders: false
     }
     options.clusterRegistry = new ClusterRegistry(options, {
       getConnectionCount() {}
