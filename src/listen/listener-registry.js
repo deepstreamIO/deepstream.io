@@ -600,8 +600,8 @@ module.exports = class ListenerRegistry {
   * @private
   * @returns {void}
   */
-  _addPattern (pattern, socketWrapper, count) {
-    if (count === 1) {
+  _addPattern (pattern /* , socketWrapper, count */) {
+    if (!this._patterns[pattern]) {
       this._patterns[pattern] = new RegExp(pattern)
     }
   }
