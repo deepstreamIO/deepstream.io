@@ -772,11 +772,11 @@ module.exports = class ListenerRegistry {
 
     for (let i = 0; i < providerPatterns.length; i++) {
       const pattern = providerPatterns[i]
-      const p = patterns[pattern]
+      let p = patterns[pattern]
       if (p == null) {
         this._options.logger.log(C.LOG_LEVEL.WARN, '', `can't handle pattern ${pattern}`)
         this._addPattern(pattern)
-        p = patterns[pattern] // eslint-disable-line
+        p = patterns[pattern]
       }
       if (p.test(subscriptionName)) {
         servers = servers.concat(providerRegistry.getAllServers(pattern))
