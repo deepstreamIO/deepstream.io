@@ -775,7 +775,8 @@ module.exports = class ListenerRegistry {
       const p = patterns[pattern]
       if (p == null) {
         this._options.logger.log(C.LOG_LEVEL.WARN, '', `can't handle pattern ${pattern}`)
-        return null
+        this._addPattern(pattern)
+        p = patterns[pattern] // eslint-disable-line
       }
       if (p.test(subscriptionName)) {
         servers = servers.concat(providerRegistry.getAllServers(pattern))
