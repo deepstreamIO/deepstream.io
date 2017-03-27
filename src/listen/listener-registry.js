@@ -107,6 +107,7 @@ module.exports = class ListenerRegistry {
       .upsert(name, prev => prev.deadline
         ? {
           uuid: socket.uuid,
+          history: prev.history,
           pattern: pattern,
           serverName: this._serverName,
           deadline: null
