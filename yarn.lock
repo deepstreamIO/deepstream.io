@@ -15,8 +15,8 @@ uws@^0.12.0:
   resolved "https://registry.yarnpkg.com/uws/-/uws-0.12.0.tgz#07163ea6e687d9731e66821107b5fdf1ee644cbd"
 
 xuid@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/xuid/-/xuid-1.2.0.tgz#c54d2d415d220f41efa35b7763f109392f3dbd02"
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/xuid/-/xuid-1.2.1.tgz#e0ab30f802670e874596e38e782b8edc18faccef"
   dependencies:
     randombytes "2.0.3"
 
