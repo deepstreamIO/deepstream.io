@@ -5,7 +5,6 @@ const JsonPath = require('./json-path')
 const RecordRequest = require('./record-request')
 const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
-const utils = require('../utils/utils')
 
 
 /**
@@ -132,7 +131,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     }
 
     try {
-      const config = utils.getRecordConfig(message)
+      const config = RecordTransition._getRecordConfig(message)
       this._applyConfig(config, update)
     } catch (e) {
       update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 3 ])
@@ -157,7 +156,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     }
 
     try {
-      const config = utils.getRecordConfig(message)
+      const config = RecordTransition._getRecordConfig(message)
       this._applyConfig(config, update)
     } catch (e) {
       update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 4 ])
@@ -249,6 +248,31 @@ RecordTransition.prototype._applyConfig = function (config, step) {
       update.versions.push(step.version)
     }
   }
+}
+
+/**
+ * Gets the config from an incoming Record message
+ *
+ * @param   {String} message
+ *
+ * @private
+ * @throws {SyntaxError } If config not valid
+ * @returns null or the given config
+ */
+RecordTransition._getRecordConfig = function (message) {
+  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
+    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
+    return null
+  }
+
+  let config
+  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
+    config = message.data[4]
+  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
+    config = message.data[3]
+  }
+
+  return JSON.parse(config)
 }
 
 /**

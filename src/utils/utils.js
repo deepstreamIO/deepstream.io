@@ -216,28 +216,3 @@ exports.spliceRandomElement = function (array) {
   const randomIndex = exports.getRandomIntInRange(0, array.length)
   return array.splice(randomIndex, 1)[0]
 }
-
-/**
- * Gets the config from an incoming Record message
- *
- * @param   {String} message
- *
- * @private
- * @throws {SyntaxError } If config not valid
- * @returns null or the given config
- */
-exports.getRecordConfig = function (message) {
-  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
-    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
-    return null
-  }
-
-  let config
-  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
-    config = message.data[4]
-  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
-    config = message.data[3]
-  }
-
-  return JSON.parse(config)
-}
