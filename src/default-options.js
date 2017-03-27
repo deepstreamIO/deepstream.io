@@ -1,5 +1,5 @@
 'use strict'
-
+/* eslint-disable global-require */
 const utils = require('./utils/utils')
 const C = require('./constants/constants')
 

@@ -5,7 +5,7 @@ const JsonPath = require('./json-path')
 const RecordRequest = require('./record-request')
 const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
-
+const utils = require('../utils/utils')
 
 /**
  * This class manages one or more simultanious updates to the data of a record.
@@ -16,19 +16,23 @@ const messageBuilder = require('../message/message-builder')
  * build an app that allows many users to collaboratively edit the same dataset, sooner or later
  * two of them will do so at the same time and clash.
  *
- * Every deepstream record therefor has a version number that's incremented with every change. Every client
- * sends this version number along with the changed data. If no other update has been received for the same version
- * in the meantime, the update is accepted and not much more happens.
+ * Every deepstream record therefor has a version number that's incremented with every change.
+ * Every client sends this version number along with the changed data. If no other update has
+ * been received for the same version in the meantime, the update is accepted and not much more
+ * happens.
  *
- * If, however, another clients was able to send its updated version before this update was processed, the second
- * (later) update for the same version number is rejected and the issuing client is notified of the change.
+ * If, however, another clients was able to send its updated version before this update was
+ * processed, the second (later) update for the same version number is rejected and the issuing
+ * client is notified of the change.
  *
- * The client is then expected to merge its changes on top of the new version and re-issue the update message.
+ * The client is then expected to merge its changes on top of the new version and re-issue the
+ * update message.
  *
  * Please note: For performance reasons, succesful updates are not explicitly acknowledged.
  *
- * It's this class' responsibility to manage this. It will be created when an update arrives and only exist as
- * long as it takes to apply it and make sure that no subsequent updates for the same version are requested.
+ * It's this class' responsibility to manage this. It will be created when an update arrives and
+ * only exist as long as it takes to apply it and make sure that no subsequent updates for the
+ * same version are requested.
  *
  * Once the update is applied it will notify the record-handler to broadcast the
  * update and delete the instance of this class.
@@ -85,9 +89,9 @@ RecordTransition.prototype.sendVersionExists = function (step) {
   const config = step.message.data[4]
 
   if (this._record) {
-    const data = config === undefined ?
-		[this._name, this._record._v, JSON.stringify(this._record._d)] :
-		[this._name, this._record._v, JSON.stringify(this._record._d), config]
+    const data = config === undefined
+    ? [this._name, this._record._v, JSON.stringify(this._record._d)]
+    : [this._name, this._record._v, JSON.stringify(this._record._d), config]
     socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, data)
 
     const msg = `${socketWrapper.user} tried to update record ${this._name} to version ${version} but it already was ${this._record._v}`
@@ -118,10 +122,10 @@ RecordTransition.prototype.sendVersionExists = function (step) {
  */
 RecordTransition.prototype.add = function (socketWrapper, version, message) {
   const update = {
-      message,
-      version,
-      sender: socketWrapper
-    }
+    message,
+    version,
+    sender: socketWrapper
+  }
   let data
 
   if (message.action === C.ACTIONS.UPDATE) {
@@ -134,13 +138,18 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       const config = RecordTransition._getRecordConfig(message)
       this._applyConfig(config, update)
     } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 3 ])
+      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[3])
       return
     }
 
     try {
       data = JSON.parse(message.data[2])
     } catch (e) {
+      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+      return
+    }
+
+    if (!utils.isOfType(data, 'object') && !utils.isOfType(data, 'array')) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
@@ -159,7 +168,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       const config = RecordTransition._getRecordConfig(message)
       this._applyConfig(config, update)
     } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 4 ])
+      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[4])
       return
     }
 
@@ -343,9 +352,17 @@ RecordTransition.prototype._next = function () {
    */
   if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._name)) {
     this._storageResponses++
-    this._options.storage.set(this._name, this._record, this._onStorageResponse.bind(this, this._currentStep))
+    this._options.storage.set(
+      this._name,
+      this._record,
+      this._onStorageResponse.bind(this, this._currentStep)
+    )
   }
-  this._options.cache.set(this._name, this._record, this._onCacheResponse.bind(this, this._currentStep))
+  this._options.cache.set(
+    this._name,
+    this._record,
+    this._onCacheResponse.bind(this, this._currentStep)
+  )
 }
 
 /**
@@ -378,11 +395,17 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
   if (error) {
     this._onFatalError(error)
   } else if (this.isDestroyed === false) {
-    this._recordHandler._$broadcastUpdate(this._name, this._currentStep.message, this._currentStep.sender)
+    this._recordHandler._$broadcastUpdate(
+      this._name,
+      this._currentStep.message,
+      this._currentStep.sender
+    )
     this._next()
-  } else if (this._cacheResponses === 0
-      && this._storageResponses === 0
-      && this._steps.length === 0) {
+  } else if (
+      this._cacheResponses === 0 &&
+      this._storageResponses === 0 &&
+      this._steps.length === 0
+    ) {
     this.destroy()
   }
 }
@@ -400,9 +423,11 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
   this._writeError = this._writeError || error
   if (error) {
     this._onFatalError(error)
-  } else if (this._cacheResponses === 0
-      && this._storageResponses === 0
-      && this._steps.length === 0) {
+  } else if (
+      this._cacheResponses === 0 &&
+      this._storageResponses === 0 &&
+      this._steps.length === 0
+    ) {
     this.destroy()
   }
 }
@@ -417,7 +442,7 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
  * @returns {void}
  */
 RecordTransition.prototype._sendWriteAcknowledgements = function (errorMessage) {
-  errorMessage = errorMessage === undefined ? null : errorMessage
+  errorMessage = errorMessage === undefined ? null : errorMessage // eslint-disable-line
   for (const uid in this._pendingUpdates) {
     const update = this._pendingUpdates[uid]
 
@@ -447,7 +472,11 @@ RecordTransition.prototype._onFatalError = function (errorMessage) {
 
   for (let i = 0; i < this._steps.length; i++) {
     if (this._steps[i].sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._steps[i].sender.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, this._steps[i].version)
+      this._steps[i].sender.sendError(
+        C.TOPIC.RECORD,
+        C.EVENT.RECORD_UPDATE_ERROR,
+        this._steps[i].version
+      )
     }
   }
 

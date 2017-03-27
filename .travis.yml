@@ -20,13 +20,23 @@ node_js:
   - "6.10.0"
   - "4"
 
+env:
+  - DEFAULT_DELAY: 50
+
 matrix:
   include:
     - node_js: "6.10.0"
       os: osx
 
 script:
+  # This fails on node 4
+  - if [ "$TRAVIS_NODE_VERSION" == "6.10.0" ]; then
+      npm run lint;
+    fi
   - npm run coverage
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      sh scripts/run-e2e.sh;
+    fi
   # This has to happen here and not in before_deploy to be put in travis cache
   - chmod 555 scripts/package.sh
   - ./scripts/package.sh
@@ -62,6 +72,9 @@ deploy:
       - "build/*.zip"
     on:
       tags: true
+
+services:
+  - redis-server
 
 addons:
   apt:

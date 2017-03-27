@@ -1,7 +1,7 @@
 'use strict'
-
-const path = require('path')
+/* eslint-disable valid-typeof */
 const url = require('url')
+
 const OBJECT = 'object'
 const C = require('../constants/constants')
 
@@ -70,7 +70,9 @@ exports.reverseMap = function (map) {
  * @returns {Boolean}
  */
 exports.isOfType = function (input, expectedType) {
-  if (expectedType === 'array') {
+  if (input === null) {
+    return expectedType === 'null'
+  } else if (expectedType === 'array') {
     return Array.isArray(input)
   } else if (expectedType === 'url') {
     return !!url.parse(input).host
@@ -118,12 +120,12 @@ exports.validateMap = function (map, throwError, schema) {
 
 /**
  * Tests have shown that JSON stringify outperforms any attempt of
- * a code based implementation by 50% - 100% whilst also handling edge-cases and keeping implementation
- * complexity low.
+ * a code based implementation by 50% - 100% whilst also handling edge-cases and keeping
+ * implementation complexity low.
  *
- * If ES6/7 ever decides to implement deep copying natively (what happened to Object.clone? that was briefly
- * a thing...), let's switch it for the native implementation. For now though, even Object.assign({}, obj) only
- * provides a shallow copy.
+ * If ES6/7 ever decides to implement deep copying natively (what happened to Object.clone?
+ * that was briefly a thing...), let's switch it for the native implementation. For now though,
+ * even Object.assign({}, obj) only provides a shallow copy.
  *
  * Please find performance test results backing these statements here:
  *
@@ -151,7 +153,7 @@ exports.deepCopy = function (obj) {
  */
 exports.merge = function () {
   const result = {}
-  const objs = Array.prototype.slice.apply(arguments)
+  const objs = Array.prototype.slice.apply(arguments) // eslint-disable-line
   let i
 
   const _merge = (objA, objB) => {

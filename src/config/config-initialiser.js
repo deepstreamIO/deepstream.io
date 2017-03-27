@@ -39,7 +39,7 @@ exports.initialise = function (config) {
  * @private
  * @returns {void}
  */
-function handleUUIDProperty(config) {
+function handleUUIDProperty (config) {
   if (config.serverName === 'UUID') {
     config.serverName = utils.getUid()
   }
@@ -54,7 +54,7 @@ function handleUUIDProperty(config) {
  * @private
  * @returns {void}
  */
-function handleSSLProperties(config) {
+function handleSSLProperties (config) {
   const sslFiles = ['sslKey', 'sslCert', 'sslCa']
   let key
   let resolvedFilePath
@@ -83,7 +83,7 @@ function handleSSLProperties(config) {
  * @private
  * @returns {void}
  */
-function handleLogger(config) {
+function handleLogger (config) {
   const configOptions = (config.logger || {}).options
   let Logger
   if (config.logger == null || config.logger.name === 'default') {
@@ -129,7 +129,7 @@ function handleLogger(config) {
  * @private
  * @returns {void}
  */
-function handlePlugins(config) {
+function handlePlugins (config) {
   if (config.plugins == null) {
     return
   }
@@ -174,7 +174,7 @@ function handlePlugins(config) {
  * @private
  * @returns {Function} Instance return be the plugin constructor
  */
-function resolvePluginClass(plugin, type) {
+function resolvePluginClass (plugin, type) {
   // nexe needs *global.require* for __dynamic__ modules
   // but browserify and proxyquire can't handle *global.require*
   const req = global && global.require ? global.require : require
@@ -205,11 +205,11 @@ function resolvePluginClass(plugin, type) {
  * @private
  * @returns {void}
  */
-function handleAuthStrategy(config) {
+function handleAuthStrategy (config) {
   const authStrategies = {
-    none: require('../authentication/open-authentication-handler'),
-    file: require('../authentication/file-based-authentication-handler'),
-    http: require('../authentication/http-authentication-handler')
+    none: require('../authentication/open-authentication-handler'), // eslint-disable-line
+    file: require('../authentication/file-based-authentication-handler'), // eslint-disable-line
+    http: require('../authentication/http-authentication-handler') // eslint-disable-line
   }
 
   if (!config.auth) {
@@ -229,7 +229,8 @@ function handleAuthStrategy(config) {
     config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
   }
 
-  config.authenticationHandler = new (authStrategies[config.auth.type])(config.auth.options, config.logger)
+  config.authenticationHandler =
+    new (authStrategies[config.auth.type])(config.auth.options, config.logger)
 }
 
 /**
@@ -242,10 +243,10 @@ function handleAuthStrategy(config) {
  * @private
  * @returns {void}
  */
-function handlePermissionStrategy(config) {
+function handlePermissionStrategy (config) {
   const permissionStrategies = {
-    config: require('../permission/config-permission-handler'),
-    none: require('../permission/open-permission-handler')
+    config: require('../permission/config-permission-handler'), // eslint-disable-line
+    none: require('../permission/open-permission-handler') // eslint-disable-line
   }
 
   if (!config.permission) {

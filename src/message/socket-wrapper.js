@@ -151,7 +151,7 @@ SocketWrapper.prototype.sendMessage = function (topic, action, data) {
  */
 SocketWrapper.prototype.send = function (message) {
   if (message.charAt(message.length - 1) !== C.MESSAGE_SEPERATOR) {
-    message += C.MESSAGE_SEPERATOR
+    message += C.MESSAGE_SEPERATOR // eslint-disable-line
   }
 
   if (this.isClosed === true) {
@@ -181,7 +181,7 @@ SocketWrapper.prototype.destroy = function () {
  */
 SocketWrapper.prototype._onSocketClose = function () {
   this.isClosed = true
-  this.emit('close')
+  this.emit('close', this)
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
   this.socket.removeAllListeners()
 }

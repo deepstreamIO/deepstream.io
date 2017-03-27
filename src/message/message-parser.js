@@ -10,7 +10,7 @@ const C = require('../constants/constants')
  *
  * @returns {Object} actions
 */
-const actions = (function getActions() {
+const actions = (function getActions () {
   const result = {}
   let key
 
@@ -48,7 +48,7 @@ module.exports = class MessageParser {
    *                    data: <array of strings>
    *                  }
    */
-  static parse(message) {
+  static parse (message) {
     const parsedMessages = []
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
@@ -70,7 +70,7 @@ module.exports = class MessageParser {
    * @public
    * @returns {Mixed} original value
    */
-  static convertTyped(value) {
+  static convertTyped (value) {
     const type = value.charAt(0)
 
     if (type === C.TYPES.STRING) {
@@ -118,7 +118,7 @@ module.exports = class MessageParser {
    *
    * @returns {Object} parsedMessage
    */
-  static parseMessage(message) {
+  static parseMessage (message) {
     const parts = message.split(C.MESSAGE_PART_SEPERATOR)
     const messageObject = {}
 
