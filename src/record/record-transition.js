@@ -233,20 +233,11 @@ RecordTransition.prototype.destroy = function (errorMessage) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._applyConfig = function (step, message) {
-  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
-    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
+RecordTransition.prototype._applyConfig = function (config, step) {
+  if (!config) {
     return
   }
 
-  let config
-  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
-    config = message.data[4]
-  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
-    config = message.data[3]
-  }
-
-  config = JSON.parse(config)
   if (config.writeSuccess) {
     if (this._pendingUpdates[step.sender.uuid] === undefined) {
       this._pendingUpdates[step.sender.uuid] = {
