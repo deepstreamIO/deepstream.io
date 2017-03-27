@@ -5,6 +5,7 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const TimeoutRegistry = require('./listener-timeout-registry')
 const messageBuilder = require('../message/message-builder')
+const utils = require('../utils/utils')
 
 module.exports = class ListenerRegistry {
   /**
@@ -783,7 +784,11 @@ module.exports = class ListenerRegistry {
 
     const set = new Set(servers)
     set.delete(this._options.serverName)
-    return Array.from(set)
+
+    if (!this._options.shuffleListenProviders) {
+      return Array.from(set)
+    }
+    return utils.shuffleArray(Array.from(set))
   }
 
   /**
@@ -802,7 +807,11 @@ module.exports = class ListenerRegistry {
         }
       }
     }
-    return providers
+
+    if (!this._options.shuffleListenProviders) {
+      return providers
+    }
+    return utils.shuffleArray(providers)
   }
 
   /**
