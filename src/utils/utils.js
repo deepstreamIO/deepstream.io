@@ -3,6 +3,7 @@
 const url = require('url')
 
 const OBJECT = 'object'
+const C = require('../constants/constants')
 
 /**
  * Returns a unique identifier
