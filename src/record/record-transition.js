@@ -70,7 +70,7 @@ const RecordTransition = function (name, options, recordHandler) {
  * @returns {Boolean} hasVersion
  */
 RecordTransition.prototype.hasVersion = function (version) {
-  return version <= this._lastVersion
+  return version != -1 && version <= this._lastVersion
 }
 
 /**
@@ -186,7 +186,9 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     return
   }
 
-  this._lastVersion = version
+  if(version !== -1) {
+    this._lastVersion = version
+  }
   this._cacheResponses++
 
   this._steps.push(update)
