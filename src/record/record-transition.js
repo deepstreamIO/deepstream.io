@@ -70,7 +70,7 @@ const RecordTransition = function (name, options, recordHandler) {
  * @returns {Boolean} hasVersion
  */
 RecordTransition.prototype.hasVersion = function (version) {
-  return version != -1 && version <= this._lastVersion
+  return version !== -1 && version <= this._lastVersion
 }
 
 /**
@@ -120,7 +120,7 @@ RecordTransition.prototype.sendVersionExists = function (step) {
  * @public
  * @returns {void}
  */
-RecordTransition.prototype.add = function (socketWrapper, version, message) {   
+RecordTransition.prototype.add = function (socketWrapper, version, message) {
   const update = {
     message,
     version,
@@ -180,13 +180,13 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
 
     update.path = message.data[2]
   }
-  
+
   if (this._lastVersion !== null && this._lastVersion !== version - 1) {
     this.sendVersionExists(update)
     return
   }
 
-  if(version !== -1) {
+  if (version !== -1) {
     this._lastVersion = version
   }
   this._cacheResponses++
@@ -311,9 +311,9 @@ RecordTransition.prototype._next = function () {
   }
 
   this._currentStep = this._steps.shift()
-  if(this._currentStep.version === -1) {
-    let message = this._currentStep.message
-    let version = this._record._v + 1
+  if (this._currentStep.version === -1) {
+    const message = this._currentStep.message
+    const version = this._record._v + 1
     this._currentStep.version = message.data[1] = version
     // Raw message is rebroadcast, needs to be rebuilt with new version number
     message.raw = messageBuilder.getMsg(message.topic, message.action, message.data)
