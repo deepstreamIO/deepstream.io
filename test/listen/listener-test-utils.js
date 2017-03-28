@@ -13,7 +13,7 @@ let ListenerRegistry = require('../../src/listen/listener-registry'),
 
 let topic,
   subscribedTopics,
-  subscribers = [],
+  subscribers = new Set(),
   sendToSubscribersMock,
   providers,
   clients,
@@ -39,7 +39,7 @@ class ListenerTestUtils {
         return subscribers
       },
       hasLocalSubscribers() {
-        return subscribers.length > 0
+        return subscribers.size > 0
       },
       sendToSubscribers: sendToSubscribersMock
     }
@@ -52,7 +52,8 @@ class ListenerTestUtils {
       stateReconciliationTimeout: 10,
       messageConnector: new LocalMessageConnector(),
       logger: new LoggerMock(),
-      listenResponseTimeout: 30
+      listenResponseTimeout: 30,
+      shuffleListenProviders: false
     }
     options.clusterRegistry = new ClusterRegistry(options, {
       getConnectionCount() {}
@@ -144,13 +145,13 @@ class ListenerTestUtils {
   providerSubscribesTo(provider, subscriptionName) {
     listenerRegistry.onSubscriptionMade(subscriptionName, providers[provider], undefined)
     subscribedTopics.push(subscriptionName)
-    subscribers.push(providers[provider])
+    subscribers.add(providers[provider])
   }
 
   providerUnsubscribesTo(provider, subscriptionName, subscriptionCount) {
     listenerRegistry.onSubscriptionRemoved(subscriptionName, providers[provider], subscriptionCount || 0)
     subscribedTopics.splice(subscribedTopics.indexOf(subscriptionName), 1)
-    subscribers.splice(subscribers.indexOf(providers[provider]), 1)
+    subscribers.delete(providers[provider])
   }
 
   providerRecievedNoNewMessages(provider) {

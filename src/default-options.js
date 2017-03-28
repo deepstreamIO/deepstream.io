@@ -1,5 +1,5 @@
 'use strict'
-
+/* eslint-disable global-require */
 const utils = require('./utils/utils')
 const C = require('./constants/constants')
 
@@ -62,6 +62,11 @@ exports.get = function () {
     maxAuthAttempts: 3,
     logInvalidAuthData: true,
     maxMessageSize: 1048576,
+
+    /**
+     * Listening
+     */
+    shuffleListenProviders: true,
 
     /*
     * Timeouts

@@ -13,8 +13,7 @@ const C = require('../constants/constants')
  * @param {Object} options deepstream options
  */
 module.exports = class MessageProcessor {
-
-  constructor(options) {
+  constructor (options) {
     this._options = options
   }
 
@@ -30,7 +29,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  onAuthenticatedMessage(socketWrapper, message) {
+  onAuthenticatedMessage (socketWrapper, message) { // eslint-disable-line
   }
 
   /**
@@ -46,7 +45,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  process(socketWrapper, message) {
+  process (socketWrapper, message) {
     if (typeof message !== 'string') {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
@@ -99,7 +98,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  _onPermissionResponse(socketWrapper, message, error, result) {
+  _onPermissionResponse (socketWrapper, message, error, result) {
     if (error !== null) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
       socketWrapper.sendError(
@@ -129,7 +128,7 @@ module.exports = class MessageProcessor {
    *                              by the permissionHandler
    * @returns {Object}
    */
-  _getPermissionErrorData(message) {
+  _getPermissionErrorData (message) { // eslint-disable-line
     let data = [message.data[0], message.action]
     if (message.data.length > 1) {
       data = data.concat(message.data.slice(1))

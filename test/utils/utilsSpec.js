@@ -120,7 +120,8 @@ describe('isOfType', () => {
     expect(utils.isOfType(true, 'number')).toBe(false)
     expect(utils.isOfType(true, 'boolean')).toBe(true)
     expect(utils.isOfType({}, 'object')).toBe(true)
-    expect(utils.isOfType(null, 'object')).toBe(true)
+    expect(utils.isOfType(null, 'null')).toBe(true)
+    expect(utils.isOfType(null, 'object')).toBe(false)
     expect(utils.isOfType([], 'object')).toBe(true)
   })
 
