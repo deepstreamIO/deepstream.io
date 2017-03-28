@@ -299,7 +299,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  if (this._transitions[recordName] && this._transitions[recordName].hasVersion(version)) {
+  if (this._transitions[recordName] && this._transitions[recordName].hasVersion(version) && version !== -1) {
     this._transitions[recordName].sendVersionExists({ message, version, sender: socketWrapper })
     return
   }
