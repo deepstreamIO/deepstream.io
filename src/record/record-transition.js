@@ -124,17 +124,21 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     }
   let data
 
+  try {
+    const config = RecordTransition._getRecordConfig(message)
+    this._applyConfig(config, update)
+  } catch (e) {
+    update.sender.sendError(
+      C.TOPIC.RECORD,
+      C.EVENT.INVALID_CONFIG_DATA,
+      message.data[4] || message.data[3]
+    )
+    return
+  }
+
   if (message.action === C.ACTIONS.UPDATE) {
     if (message.data.length !== 4 && message.data.length !== 3) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
-    try {
-      const config = RecordTransition._getRecordConfig(message)
-      this._applyConfig(config, update)
-    } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 3 ])
       return
     }
 
@@ -152,14 +156,6 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
   if (message.action === C.ACTIONS.PATCH) {
     if (message.data.length !== 5 && message.data.length !== 4) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
-    try {
-      const config = RecordTransition._getRecordConfig(message)
-      this._applyConfig(config, update)
-    } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 4 ])
       return
     }
 
@@ -181,8 +177,8 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
 
   this._lastVersion = version
   this._cacheResponses++
-
   this._steps.push(update)
+
   if (this._recordRequest === null) {
     this._recordRequest = new RecordRequest(
       this._name,
@@ -261,16 +257,15 @@ RecordTransition.prototype._applyConfig = function (config, step) {
  * @returns null or the given config
  */
 RecordTransition._getRecordConfig = function (message) {
-  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
-    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
-    return null
-  }
-
   let config
   if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
     config = message.data[4]
   } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
     config = message.data[3]
+  }
+
+  if (!config) {
+    return null
   }
 
   return JSON.parse(config)
