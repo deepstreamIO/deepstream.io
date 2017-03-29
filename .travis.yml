@@ -17,12 +17,12 @@ compiler:
 
 node_js:
   - "7"
-  - "6.10.0"
+  - "6.10.1"
   - "4"
 
 matrix:
   include:
-    - node_js: "6.10.0"
+    - node_js: "6.10.1"
       os: osx
 
 script:

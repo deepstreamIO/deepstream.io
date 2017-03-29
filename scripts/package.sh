@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="6.10.0"
+LTS_VERSION="6.10.1"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
@@ -81,10 +81,8 @@ echo -e "\tAdding in UWS"
 
 echo -e "\t\tDownloading UWS"
 rm -rf nexe_node/uWebSockets
-git clone https://github.com/uWebSockets/uWebSockets.git nexe_node/uWebSockets
-cd nexe_node/uWebSockets
-git checkout v$UWS_VERSION
-cd -
+mkdir -p nexe_node/uWebSockets
+cp -R uws-dependency nexe_node/uWebSockets
 
 echo -e "\t\tAdding UWS into node"
 
