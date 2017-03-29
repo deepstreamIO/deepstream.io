@@ -289,13 +289,13 @@ describe('record handler handles messages', () => {
 
   it('handles invalid patch messages', () => {
     recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|6|bla'),
+      raw: msg('R|P|existingRecord|6|bla'),
       topic: 'R',
       action: 'P',
       data: ['existingRecord', 6, 'bla']
     })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|R|U|existingRecord|6|bla+'))
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|R|P|existingRecord|6|bla+'))
   })
 
   it('updates a record via same client to the same version', (done) => {

@@ -128,16 +128,21 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
   }
   let data
 
+  try {
+    const config = RecordTransition._getRecordConfig(message)
+    this._applyConfig(config, update)
+  } catch (e) {
+    update.sender.sendError(
+      C.TOPIC.RECORD,
+      C.EVENT.INVALID_CONFIG_DATA,
+      message.data[4] || message.data[3]
+    )
+    return
+  }
+
   if (message.action === C.ACTIONS.UPDATE) {
     if (message.data.length !== 4 && message.data.length !== 3) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
-    try {
-      this._applyConfig(update, message)
-    } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[3])
       return
     }
 
@@ -163,13 +168,6 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       return
     }
 
-    try {
-      this._applyConfig(update, message)
-    } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[4])
-      return
-    }
-
     update.isPatch = true
     update.data = messageParser.convertTyped(message.data[3])
 
@@ -188,8 +186,8 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
 
   this._lastVersion = version
   this._cacheResponses++
-
   this._steps.push(update)
+
   if (this._recordRequest === null) {
     this._recordRequest = new RecordRequest(
       this._name,
@@ -240,20 +238,11 @@ RecordTransition.prototype.destroy = function (errorMessage) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._applyConfig = function (step, message) {
-  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
-    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
+RecordTransition.prototype._applyConfig = function (config, step) {
+  if (!config) {
     return
   }
 
-  let config
-  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
-    config = message.data[4]
-  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
-    config = message.data[3]
-  }
-
-  config = JSON.parse(config)
   if (config.writeSuccess) {
     if (this._pendingUpdates[step.sender.uuid] === undefined) {
       this._pendingUpdates[step.sender.uuid] = {
@@ -265,6 +254,30 @@ RecordTransition.prototype._applyConfig = function (step, message) {
       update.versions.push(step.version)
     }
   }
+}
+
+/**
+ * Gets the config from an incoming Record message
+ *
+ * @param   {String} message
+ *
+ * @private
+ * @throws {SyntaxError } If config not valid
+ * @returns null or the given config
+ */
+RecordTransition._getRecordConfig = function (message) {
+  let config
+  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
+    config = message.data[4]
+  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
+    config = message.data[3]
+  }
+
+  if (!config) {
+    return null
+  }
+
+  return JSON.parse(config)
 }
 
 /**
