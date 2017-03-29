@@ -30,7 +30,7 @@
     "js-yaml": "^3.8.1",
     "mkdirp": "^0.5.1",
     "needle": "^1.4.5",
-    "uws": "file:uws-dependency"
+    "uws": "https://github.com/deepstreamIO/uws-dependency.git"
   },
   "devDependencies": {
     "async": "^2.1.4",
@@ -53,8 +53,5 @@
   "homepage": "http://deepstream.io",
   "eslintConfig": {
     "extends": "deepstream"
-  },
-  "files": [
-    "uws-dependency"
-  ]
+  }
 }

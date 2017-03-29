@@ -1,13 +1,14 @@
-## [2.1.4] - 2017.03.29
+## [2.1.6] - 2017.03.29
 
 ### Miscellaneous
 
-- Due to uws releases being pulled from NPM, we're now using uws as a local file dependency
+- Due to uws releases being pulled from NPM, we're now using uws from a git repo
 - Created a separate repo [uws-dependency](https://github.com/deepstreamIO/uws-dependency) with binaries.
 
-### Side notes
+## [2.1.4 - 2.1.5]
 
-- When installing deepstream.io from GitHub directly, a `git submodule init` and `git submodule update` is now required.
+- Due to problems with build resulting from uws unpublishing, these two npm packages
+  have been unpublished (noop)
 
 ## [2.1.3] - 2017.02.25
 
