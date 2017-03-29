@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="6.10.0"
+LTS_VERSION="6.10.1"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
-UWS_VERSION=$( node scripts/details.js UWS_VERSION )
+UWS_VERSION=0.12.0
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
@@ -81,7 +81,7 @@ echo -e "\tAdding in UWS"
 
 echo -e "\t\tDownloading UWS"
 rm -rf nexe_node/uWebSockets
-git clone https://github.com/uWebSockets/uWebSockets.git nexe_node/uWebSockets
+git clone https://github.com/mkozjak/uWebSockets.git nexe_node/uWebSockets
 cd nexe_node/uWebSockets
 git checkout v$UWS_VERSION
 cd -

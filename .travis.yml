@@ -17,19 +17,19 @@ compiler:
 
 node_js:
   - "7"
-  - "6.10.0"
+  - "6.10.1"
   - "4"
 
 matrix:
   include:
-    - node_js: "6.10.0"
+    - node_js: "6.10.1"
       os: osx
 
 script:
   - npm run coverage
   # This has to happen here and not in before_deploy to be put in travis cache
   - chmod 555 scripts/package.sh
-  - ./scripts/package.sh
+  - ./scripts/package.sh true
 
 cache:
   directories:
