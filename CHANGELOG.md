@@ -1,3 +1,15 @@
+## [2.1.6] - 2017.03.29
+
+### Miscellaneous
+
+- Due to uws releases being pulled from NPM, we're now using uws from a git repo
+- Created a separate repo [uws-dependency](https://github.com/deepstreamIO/uws-dependency) with binaries.
+
+## [2.1.4 - 2.1.5]
+
+- Due to problems with build resulting from uws unpublishing, these two npm packages
+  have been unpublished (noop)
+
 ## [2.1.3] - 2017.02.25
 
 ### Bug Fixes
