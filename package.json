@@ -31,7 +31,7 @@
     "js-yaml": "^3.8.1",
     "mkdirp": "^0.5.1",
     "needle": "^1.4.5",
-    "uws": "^0.12.0"
+    "uws": "^0.14.0"
   },
   "devDependencies": {
     "async": "^2.1.4",
