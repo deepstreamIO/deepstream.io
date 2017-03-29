@@ -53,5 +53,8 @@
   "homepage": "http://deepstream.io",
   "eslintConfig": {
     "extends": "deepstream"
-  }
+  },
+  "files": [
+    "uws-dependency"
+  ]
 }
