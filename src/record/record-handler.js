@@ -55,6 +55,11 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
      * Return the current state of the record in cache or db
      */
     this._snapshot(socketWrapper, message)
+  } else if (message.action === C.ACTIONS.HEAD) {
+    /*
+     * Return the current state of the record in cache or db
+     */
+    this._head(socketWrapper, message)
   } else if (message.action === C.ACTIONS.HAS) {
     /*
      * Return a Boolean to indicate if record exists in cache or database
@@ -163,6 +168,43 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
     onError.bind(this)
   )
 }
+
+/**
+ * Similar to snapshot, but will only return the current version number
+ *
+ * @param {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message parsed and validated message
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._head = function (socketWrapper, message) {
+  const recordName = message.data[0]
+
+  const onComplete = function (record) {
+    if (record) {
+      socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, record._v])
+    } else {
+      socketWrapper.sendError(
+        C.TOPIC.RECORD,
+        C.ACTIONS.HEAD,
+        [recordName, C.EVENT.RECORD_NOT_FOUND]
+      )
+    }
+  }
+  const onError = function (error) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, error])
+  }
+
+  // eslint-disable-next-line
+  new RecordRequest(
+    recordName,
+    this._options,
+    socketWrapper,
+    onComplete.bind(this),
+    onError.bind(this)
+  )
+}
+
 
 /**
  * Tries to retrieve the record and creates it if it doesn't exist. Please

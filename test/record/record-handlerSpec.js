@@ -196,6 +196,45 @@ describe('record handler handles messages', () => {
     options.cache.nextOperationWillBeSuccessful = true
   })
 
+
+  it('returns a version of the data that exists with version number', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|existingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['existingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|HD|existingRecord|3+'))
+  })
+
+
+  it('returns an error for a head request of data that doesn\'t exists', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|nonExistingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['nonExistingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|HD|nonExistingRecord|RECORD_NOT_FOUND+'))
+  })
+
+  it('returns an error for a version if message error occurs with record retrieval', () => {
+    options.cache.nextOperationWillBeSuccessful = false
+
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|existingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['existingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|HD|existingRecord|RECORD_LOAD_ERROR+'))
+
+    options.cache.nextOperationWillBeSuccessful = true
+  })
+
   it('patches a record', () => {
     recordHandler.handle(clientB, {
       raw: msg('R|P|existingRecord|4|lastname|SEgon'),
