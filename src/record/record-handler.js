@@ -16,6 +16,7 @@ module.exports = class RecordHandler {
     this._storage = options.storageConnector
     this._pending = []
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
+    this._inbox = `RH.U.${options.serverName}`
     this._storageExclusion = options.storageExclusion
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
@@ -23,22 +24,22 @@ module.exports = class RecordHandler {
       onSubscriptionAdded: (name, socket, localCount, remoteCount) => {
         this._listenerRegistry.onSubscriptionAdded(name, socket, localCount, remoteCount)
         if (socket && localCount === 1) {
-          this._message.subscribe(`RH.U.${name}`, this._update)
           this._cache.lock(name)
 
-          const prevRecord = this._cache.peek(name)
-          this._message.publish(`RH.R`, [ name, prevRecord ? prevRecord[1] : undefined ])
+          const record = this._cache.peek(name)
+          this._message.publish(`RH.R`, [ name, record ? record[1] : undefined, this._inbox ])
         }
       },
       onSubscriptionRemoved: (name, socket, localCount, remoteCount) => {
         this._listenerRegistry.onSubscriptionRemoved(name, socket, localCount, remoteCount)
         if (socket && localCount === 0) {
           this._cache.unlock(name)
-          this._message.unsubscribe(`RH.U.${name}`, this._update)
         }
       }
     })
 
+    this._message.subscribe(`RH.U`, this._update)
+    this._message.subscribe(this._inbox, this._update)
     this._message.subscribe(`RH.R`, this._read)
   }
 
@@ -48,9 +49,9 @@ module.exports = class RecordHandler {
       this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
     } else if (message.action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(data[0], socket)
-      const prevRecord = this._cache.get(data[0])
-      if (prevRecord) {
-        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, prevRecord)
+      const record = this._cache.get(data[0])
+      if (record) {
+        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
       } else {
         this._refresh(data)
       }
@@ -84,15 +85,15 @@ module.exports = class RecordHandler {
     }
   }
 
-  // [ name, ?version, ... ]
-  _read ([ name, version ]) {
-    const prevRecord = this._cache.del(name)
+  // [ name, ?version, inbox ]
+  _read ([ name, version, inbox = `RH.U` ]) {
+    const record = this._cache.del(name)
 
-    if (!prevRecord || isSameOrNewer(version, prevRecord[1])) {
+    if (!record || isSameOrNewer(version, record[1])) {
       return
     }
 
-    this._message.publish(`RH.U.${name}`, prevRecord)
+    this._message.publish(inbox, record)
   }
 
   // [ name, version, ?body ]
@@ -106,7 +107,7 @@ module.exports = class RecordHandler {
     }
   }
 
-  // [ name, ?version, ... ]
+  // [ name, ?version ]
   _refresh (record) {
     this._pending.push(record)
 
@@ -143,7 +144,7 @@ module.exports = class RecordHandler {
     }, 100)
   }
 
-  // [ name, version, body, ... ]
+  // [ name, version, body ]
   _broadcast (nextRecord, sender = C.SOURCE_MESSAGE_CONNECTOR) {
     const prevRecord = this._cache.peek(nextRecord[0])
 
@@ -160,7 +161,7 @@ module.exports = class RecordHandler {
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`RH.U.${nextRecord[0]}`, nextRecord)
+      this._message.publish(`RH.U`, nextRecord)
     }
   }
 
