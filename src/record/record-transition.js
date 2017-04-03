@@ -124,6 +124,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
   const update = {
     message,
     version,
+    upsert: false,
     sender: socketWrapper
   }
   let data
@@ -197,7 +198,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       this._name,
       this._options,
       socketWrapper,
-      this._onRecord.bind(this),
+      this._onRecord.bind(this, update),
       this._onFatalError.bind(this)
     )
   } else if (this._steps.length === 1 && this._cacheResponses === 1) {
@@ -267,6 +268,10 @@ RecordTransition.prototype._applyConfig = function (step, message) {
       update.versions.push(step.version)
     }
   }
+
+  if(config.upsert) {
+    step.upsert = true;
+  }
 }
 
 /**
@@ -277,15 +282,40 @@ RecordTransition.prototype._applyConfig = function (step, message) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onRecord = function (record) {
-  if (record === null) {
+RecordTransition.prototype._onRecord = function (step, record) {
+  if (record === null && !step.upsert) {
     this._onFatalError(`Received update for non-existant record ${this._name}`)
+  } else if (record === null && step.upsert) {
+    const record = {
+      _v: 0,
+      _d: {}
+    }
+
+    this._recordHandler._permissionAction(
+      C.ACTIONS.CREATE,
+      this._name,
+      step.sender,
+      this._processRecord.bind(this, record)
+    )
   } else {
-    this._record = record
-    this._flushVersionExists()
-    this._next()
+    this._processRecord(record)
   }
 }
+
+/**
+ * Callback used to process next update after record successfully returned or permissiom check passed
+ * 
+ * @param   {Object} record
+ * 
+ * @private
+ * @returns {void}
+ */
+RecordTransition.prototype._processRecord = function (record) {
+  this._record = record
+  this._flushVersionExists()
+  this._next()
+}
+
 
 /**
  * Once the record is loaded this method is called recoursively

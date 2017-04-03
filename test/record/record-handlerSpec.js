@@ -503,6 +503,23 @@ describe('record handler handles messages', () => {
       expect(record).toEqual({ _v: 2, _d: { name: 'Tom' } })
     })
   })
+
+  it('It upserts a record with update', () => {
+    options.cache.nextGetWillBeSynchronous = true
+    clientA.socket.lastSendMessage = null
+    clientB.socket.lastSendMessage = null
+  
+    recordHandler.handle(clientB, {
+      raw: msg('R|U|upsertedRecord|-1|{"name":"Tom"}|{"upsert": true}'),
+      topic: 'R',
+      action: 'U',
+      data: ['upsertedRecord', -1, '{"name":"Tom"}','{"upsert": true}']
+    })
+    
+    options.cache.get('upsertedRecord', (error, record) => {
+      expect(record).toEqual({ _v: 1, _d: { name: 'Tom' } })
+    })
+  })
 })
 
 describe('record handler handles messages', () => {
