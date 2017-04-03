@@ -269,8 +269,8 @@ RecordTransition.prototype._applyConfig = function (step, message) {
     }
   }
 
-  if(config.upsert) {
-    step.upsert = true;
+  if (config.upsert) {
+    step.upsert = true
   }
 }
 
@@ -286,7 +286,7 @@ RecordTransition.prototype._onRecord = function (step, record) {
   if (record === null && !step.upsert) {
     this._onFatalError(`Received update for non-existant record ${this._name}`)
   } else if (record === null && step.upsert) {
-    const record = {
+    const emptyRecord = {
       _v: 0,
       _d: {}
     }
@@ -295,7 +295,7 @@ RecordTransition.prototype._onRecord = function (step, record) {
       C.ACTIONS.CREATE,
       this._name,
       step.sender,
-      this._processRecord.bind(this, record)
+      this._processRecord.bind(this, emptyRecord)
     )
   } else {
     this._processRecord(record)
@@ -303,10 +303,11 @@ RecordTransition.prototype._onRecord = function (step, record) {
 }
 
 /**
- * Callback used to process next update after record successfully returned or permissiom check passed
- * 
+ * Callback used to process next update after record successfully returned or permissiom
+ * check passed
+ *
  * @param   {Object} record
- * 
+ *
  * @private
  * @returns {void}
  */
