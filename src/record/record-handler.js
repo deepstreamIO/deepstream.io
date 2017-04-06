@@ -290,7 +290,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
    * storage and only broadcast the message to subscribers
    */
   if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
-    this._$broadcastUpdate(recordName, message, socketWrapper)
+    this._$broadcastUpdate(recordName, message, false, socketWrapper)
     return
   }
 
@@ -317,13 +317,14 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
  *
  * @param   {String} name           record name
  * @param   {Object} message        parsed and validated deepstream message
+ * @param   {Boolean} noDelay       Flag as to wether event allows delay
  * @param   {SocketWrapper} originalSender the socket the update message was received from
  *
  * @package private
  * @returns {void}
  */
-RecordHandler.prototype._$broadcastUpdate = function (name, message, originalSender) {
-  this._subscriptionRegistry.sendToSubscribers(name, message.raw, originalSender)
+RecordHandler.prototype._$broadcastUpdate = function (name, message, noDelay, originalSender) {
+  this._subscriptionRegistry.sendToSubscribers(name, message.raw, noDelay, originalSender)
 
   if (originalSender !== C.SOURCE_MESSAGE_CONNECTOR) {
     this._options.messageConnector.publish(C.TOPIC.RECORD, message)
@@ -436,7 +437,7 @@ RecordHandler.prototype._delete = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._onDeleted = function (name, message, originalSender) {
-  this._$broadcastUpdate(name, message, originalSender)
+  this._$broadcastUpdate(name, message, true, originalSender)
 
   for (const subscriber of this._subscriptionRegistry.getLocalSubscribers(name)) {
     this._subscriptionRegistry.unsubscribe(name, subscriber, true)

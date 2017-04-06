@@ -36,7 +36,7 @@ describe('record transitions', () => {
       expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalled()
       expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
       recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
-      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, socketWrapper)
+      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, false, socketWrapper)
       expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('someRecord')
     })
   })
@@ -140,7 +140,7 @@ describe('record transitions', () => {
       expect(options.cache.completedSetOperations).toBe(0)
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 1) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, false, socketWrapper)
           expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
           expect(recordTransition._record).toEqual({ _v: 2, _d: { lastname: 'Peterson' } })
           clearInterval(check)
@@ -166,8 +166,8 @@ describe('record transitions', () => {
     it('processes the next step in the queue', (done) => {
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 2) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', updateMessage, socketWrapper)
-          expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalledWith('someRecord', patchMessage2, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', updateMessage, false, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalledWith('someRecord', patchMessage2, false, socketWrapper)
           expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
           expect(recordTransition._record).toEqual({ _v: 3, _d: { firstname: 'Lana', lastname: 'Peterson' } })
           clearInterval(check)
@@ -179,7 +179,7 @@ describe('record transitions', () => {
     it('processes the final step in the queue', (done) => {
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 3) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage2, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage2, false, socketWrapper)
           expect(recordHandlerMock._$transitionComplete).toHaveBeenCalled()
           clearInterval(check)
           done()
@@ -220,7 +220,7 @@ describe('record transitions', () => {
       expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalled()
       expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
       recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
-      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('no-storage/1', patchMessage, socketWrapper)
+      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('no-storage/1', patchMessage, false, socketWrapper)
       expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('no-storage/1')
     })
 
