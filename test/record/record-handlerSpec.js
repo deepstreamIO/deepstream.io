@@ -196,6 +196,45 @@ describe('record handler handles messages', () => {
     options.cache.nextOperationWillBeSuccessful = true
   })
 
+
+  it('returns a version of the data that exists with version number', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|existingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['existingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|HD|existingRecord|3+'))
+  })
+
+
+  it('returns an error for a head request of data that doesn\'t exists', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|nonExistingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['nonExistingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|HD|nonExistingRecord|RECORD_NOT_FOUND+'))
+  })
+
+  it('returns an error for a version if message error occurs with record retrieval', () => {
+    options.cache.nextOperationWillBeSuccessful = false
+
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|existingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['existingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|HD|existingRecord|RECORD_LOAD_ERROR+'))
+
+    options.cache.nextOperationWillBeSuccessful = true
+  })
+
   it('patches a record', () => {
     recordHandler.handle(clientB, {
       raw: msg('R|P|existingRecord|4|lastname|SEgon'),
@@ -413,8 +452,75 @@ describe('record handler handles messages', () => {
 
     expect(clientA.socket.lastSendMessage).toBe(msg('R|D|anotherRecord+'))
   })
-})
 
+  it('creates another record', () => {
+    options.cache.nextGetWillBeSynchronous = true
+    recordHandler.handle(clientA, {
+      topic: 'R',
+      action: 'CR',
+      data: ['overrideRecord']
+    })
+
+    expect(options.cache.lastSetKey).toBe('overrideRecord')
+    expect(options.cache.lastSetValue).toEqual({ _v: 0, _d: { } })
+
+    expect(options.storage.lastSetKey).toBe('overrideRecord')
+    expect(options.storage.lastSetValue).toEqual({ _v: 0, _d: { } })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|overrideRecord|0|{}+'))
+  })
+
+
+  it('updates a record with an -1 version number', () => {
+    options.cache.nextGetWillBeSynchronous = true
+    clientA.socket.lastSendMessage = null
+    clientB.socket.lastSendMessage = null
+
+    recordHandler.handle(clientB, {
+      raw: msg('R|U|overrideRecord|-1|{"name":"Johansson"}'),
+      topic: 'R',
+      action: 'U',
+      data: ['overrideRecord', -1, '{"name":"Johansson"}']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|U|overrideRecord|1|{"name":"Johansson"}+'))
+    options.cache.get('overrideRecord', (error, record) => {
+      expect(record).toEqual({ _v: 1, _d: { name: 'Johansson' } })
+    })
+  })
+
+  it('updates a record again with an -1 version number', () => {
+  
+    recordHandler.handle(clientB, {
+      raw: msg('R|U|overrideRecord|-1|{"name":"Tom"}'),
+      topic: 'R',
+      action: 'U',
+      data: ['overrideRecord', -1, '{"name":"Tom"}']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|U|overrideRecord|2|{"name":"Tom"}+'))
+    options.cache.get('overrideRecord', (error, record) => {
+      expect(record).toEqual({ _v: 2, _d: { name: 'Tom' } })
+    })
+  })
+
+  it('It upserts a record with update', () => {
+    options.cache.nextGetWillBeSynchronous = true
+    clientA.socket.lastSendMessage = null
+    clientB.socket.lastSendMessage = null
+  
+    recordHandler.handle(clientB, {
+      raw: msg('R|U|upsertedRecord|-1|{"name":"Tom"}|{"upsert": true}'),
+      topic: 'R',
+      action: 'U',
+      data: ['upsertedRecord', -1, '{"name":"Tom"}','{"upsert": true}']
+    })
+    
+    options.cache.get('upsertedRecord', (error, record) => {
+      expect(record).toEqual({ _v: 1, _d: { name: 'Tom' } })
+    })
+  })
+})
 
 describe('record handler handles messages', () => {
   let recordHandler,
