@@ -463,6 +463,7 @@ describe('record handler handles messages', () => {
     expect(clientA.socket.lastSendMessage).toBe(msg('R|A|D|test+'))
   })
 
+
   it('creates record test', () => {
     clientA.socket.sendMessages = []
     recordHandler.handle(clientA, {
@@ -474,5 +475,38 @@ describe('record handler handles messages', () => {
 
     expect(clientA.socket.sendMessages[0]).not.toContain('MULTIPLE_SUBSCRIPTIONS')
     expect(clientA.socket.lastSendMessage).toBe(msg('R|R|test|0|{}+'))
+  })
+
+  it('creates record deleteEvent', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|CR|deleteEvent'),
+      topic: 'R',
+      action: 'CR',
+      data: ['deleteEvent']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|deleteEvent|0|{}+'))
+  })
+
+  it('subscribes record deleteEvent', () => {
+    recordHandler.handle(clientB, {
+      raw: msg('R|CR|deleteEvent'),
+      topic: 'R',
+      action: 'CR',
+      data: ['deleteEvent']
+    })
+
+    expect(clientB.socket.lastSendMessage).toBe(msg('R|R|deleteEvent|0|{}+'))
+  })
+
+  it('deletes record deleteEvent and receives event', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|D|deleteEvent'),
+      topic: 'R',
+      action: 'D',
+      data: ['deleteEvent']
+    })
+
+    expect(clientB.socket.lastSendMessage).toBe(msg('R|A|D|deleteEvent+'))
   })
 })
