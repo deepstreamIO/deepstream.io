@@ -107,6 +107,7 @@ EventHandler.prototype._triggerEvent = function (socket, message) {
   this._subscriptionRegistry.sendToSubscribers(
     message.data[0],
     messageBuilder.getMsg(C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data),
+    false,
     socket
   )
 }

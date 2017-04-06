@@ -394,6 +394,7 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
     this._recordHandler._$broadcastUpdate(
       this._name,
       this._currentStep.message,
+      false,
       this._currentStep.sender
     )
     this._next()

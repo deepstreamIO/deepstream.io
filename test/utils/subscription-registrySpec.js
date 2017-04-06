@@ -65,7 +65,7 @@ describe('subscription-registry manages subscriptions', () => {
   it('doesn\'t send message to sender', () => {
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg2+'))
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg2+'))
-    subscriptionRegistry.sendToSubscribers('someName', _msg('msg3+'), socketWrapperA)
+    subscriptionRegistry.sendToSubscribers('someName', _msg('msg3+'), false, socketWrapperA)
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg2+'))
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg3+'))
   })
