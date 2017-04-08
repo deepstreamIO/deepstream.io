@@ -37,7 +37,6 @@
     "async": "^2.1.4",
     "coveralls": "^2.11.16",
     "eslint-config-deepstream": "^2.2.0",
-    "grunt": "^1.0.1",
     "istanbul": "^0.4.5",
     "jasmine": "^2.5.3",
     "jasmine-spec-reporter": "^3.2.0",
