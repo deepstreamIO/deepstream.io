@@ -218,6 +218,17 @@ exports.spliceRandomElement = function (array) {
   return array.splice(randomIndex, 1)[0]
 }
 
+exports.JSONParse = function (text, reviver) {
+  try {
+    return {
+      value: JSON.parse(text, reviver)
+    }
+  } catch (err) {
+    return {
+      error: err
+    }
+  }
+
 /**
  * Randomize array element order in-place.
  * Using Durstenfeld shuffle algorithm.
