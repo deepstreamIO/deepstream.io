@@ -1,3 +1,20 @@
+## [2.2.0] - 2017.04.08
+
+### Enhancements
+
+- Records now can be set with a version -1, which ignores version conflicts by [datasage](datasage)
+- Delete events are now propogated in the correct order by [datasage](datasage)
+- You can now request the HEAD of a record to retrieve just its version number by [datasage](datasage)
+- Providers for listeners are now by default selected randomly instead of in order of subscription
+- Ensure record updates are not scalar values before trying to save them in cache by [datasage](datasage)
+- Long lived RPC requests now use dynamic lookups for providers rather than building the Set upfront by [ronag]{ronag}
+- Huge optimization to subscription registry, where the time for registering a subscriber has been reduced from n^2 to O(n log n)
+
+### Miscellaneous
+
+- Deleting grunt since everything is script based
+
+
 ## [2.1.6] - 2017.03.29
 
 ### Miscellaneous
