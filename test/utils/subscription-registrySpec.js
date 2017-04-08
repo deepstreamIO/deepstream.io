@@ -32,7 +32,7 @@ describe('subscription-registry manages subscriptions', () => {
     expect(socketWrapperA.socket.lastSendMessage).toBe(null)
 
     subscriptionRegistry.subscribe('someName', socketWrapperA)
-    expect(subscriptionListenerMock.onSubscriptionMade).toHaveBeenCalledWith('someName', socketWrapperA, 1, 0)
+    expect(subscriptionListenerMock.onSubscriptionMade).toHaveBeenCalledWith('someName', socketWrapperA, 1)
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|S|someName+'))
     subscriptionRegistry.sendToSubscribers('someName', _msg('someMessage+'))
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('someMessage+'))
@@ -65,7 +65,7 @@ describe('subscription-registry manages subscriptions', () => {
   it('doesn\'t send message to sender', () => {
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg2+'))
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg2+'))
-    subscriptionRegistry.sendToSubscribers('someName', _msg('msg3+'), socketWrapperA)
+    subscriptionRegistry.sendToSubscribers('someName', _msg('msg3+'), false, socketWrapperA)
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg2+'))
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg3+'))
   })

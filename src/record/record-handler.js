@@ -55,6 +55,11 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
      * Return the current state of the record in cache or db
      */
     this._snapshot(socketWrapper, message)
+  } else if (message.action === C.ACTIONS.HEAD) {
+    /*
+     * Return the current state of the record in cache or db
+     */
+    this._head(socketWrapper, message)
   } else if (message.action === C.ACTIONS.HAS) {
     /*
      * Return a Boolean to indicate if record exists in cache or database
@@ -163,6 +168,43 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
     onError.bind(this)
   )
 }
+
+/**
+ * Similar to snapshot, but will only return the current version number
+ *
+ * @param {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message parsed and validated message
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._head = function (socketWrapper, message) {
+  const recordName = message.data[0]
+
+  const onComplete = function (record) {
+    if (record) {
+      socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, record._v])
+    } else {
+      socketWrapper.sendError(
+        C.TOPIC.RECORD,
+        C.ACTIONS.HEAD,
+        [recordName, C.EVENT.RECORD_NOT_FOUND]
+      )
+    }
+  }
+  const onError = function (error) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, error])
+  }
+
+  // eslint-disable-next-line
+  new RecordRequest(
+    recordName,
+    this._options,
+    socketWrapper,
+    onComplete.bind(this),
+    onError.bind(this)
+  )
+}
+
 
 /**
  * Tries to retrieve the record and creates it if it doesn't exist. Please
@@ -290,7 +332,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
    * storage and only broadcast the message to subscribers
    */
   if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
-    this._$broadcastUpdate(recordName, message, socketWrapper)
+    this._$broadcastUpdate(recordName, message, false, socketWrapper)
     return
   }
 
@@ -317,13 +359,14 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
  *
  * @param   {String} name           record name
  * @param   {Object} message        parsed and validated deepstream message
+ * @param   {Boolean} noDelay       Flag as to wether event allows delay
  * @param   {SocketWrapper} originalSender the socket the update message was received from
  *
  * @package private
  * @returns {void}
  */
-RecordHandler.prototype._$broadcastUpdate = function (name, message, originalSender) {
-  this._subscriptionRegistry.sendToSubscribers(name, message.raw, originalSender)
+RecordHandler.prototype._$broadcastUpdate = function (name, message, noDelay, originalSender) {
+  this._subscriptionRegistry.sendToSubscribers(name, message.raw, noDelay, originalSender)
 
   if (originalSender !== C.SOURCE_MESSAGE_CONNECTOR) {
     this._options.messageConnector.publish(C.TOPIC.RECORD, message)
@@ -436,7 +479,7 @@ RecordHandler.prototype._delete = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._onDeleted = function (name, message, originalSender) {
-  this._$broadcastUpdate(name, message, originalSender)
+  this._$broadcastUpdate(name, message, true, originalSender)
 
   for (const subscriber of this._subscriptionRegistry.getLocalSubscribers(name)) {
     this._subscriptionRegistry.unsubscribe(name, subscriber, true)

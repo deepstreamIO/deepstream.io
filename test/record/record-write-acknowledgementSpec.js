@@ -35,7 +35,7 @@ describe('record write acknowledgement', () => {
       expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalled()
       expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
       recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
-      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, socketWrapper)
+      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, false, socketWrapper)
       expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('someRecord')
     })
 
@@ -69,7 +69,7 @@ describe('record write acknowledgement', () => {
       expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalled()
       expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
       recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
-      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, socketWrapper)
+      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, false, socketWrapper)
       expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('someRecord')
     })
 
@@ -136,7 +136,7 @@ describe('record write acknowledgement', () => {
     it('processes the next step in the queue', (done) => {
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 2) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage2, socketWrapper2)
+          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage2, false, socketWrapper2)
           expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
           expect(recordTransition._record).toEqual({ _v: 3, _d: { firstname: 'Lana', lastname: 'Kowalski' } })
           clearInterval(check)
@@ -148,7 +148,7 @@ describe('record write acknowledgement', () => {
     it('processes the final step in the queue', (done) => {
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 3) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage3, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage3, false, socketWrapper)
           expect(recordHandlerMock._$transitionComplete).toHaveBeenCalled()
           clearInterval(check)
           done()

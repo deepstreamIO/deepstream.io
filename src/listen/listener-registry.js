@@ -5,6 +5,7 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const TimeoutRegistry = require('./listener-timeout-registry')
 const messageBuilder = require('../message/message-builder')
+const utils = require('../utils/utils')
 
 module.exports = class ListenerRegistry {
   /**
@@ -203,13 +204,13 @@ module.exports = class ListenerRegistry {
   * @public
   * @returns {void}
   */
-  onSubscriptionMade (subscriptionName, socketWrapper, localCount, remoteCount) {
+  onSubscriptionMade (subscriptionName, socketWrapper, localCount) {
     if (this.hasActiveProvider(subscriptionName)) {
       this._sendHasProviderUpdateToSingleSubscriber(true, socketWrapper, subscriptionName)
       return
     }
 
-    if (localCount + remoteCount > 1) {
+    if (localCount > 1) {
       return
     }
 
@@ -600,8 +601,8 @@ module.exports = class ListenerRegistry {
   * @private
   * @returns {void}
   */
-  _addPattern (pattern, socketWrapper, count) {
-    if (count === 1) {
+  _addPattern (pattern /* , socketWrapper, count */) {
+    if (!this._patterns[pattern]) {
       this._patterns[pattern] = new RegExp(pattern)
     }
   }
@@ -771,10 +772,11 @@ module.exports = class ListenerRegistry {
 
     for (let i = 0; i < providerPatterns.length; i++) {
       const pattern = providerPatterns[i]
-      const p = patterns[pattern]
+      let p = patterns[pattern]
       if (p == null) {
         this._options.logger.log(C.LOG_LEVEL.WARN, '', `can't handle pattern ${pattern}`)
-        return null
+        this._addPattern(pattern)
+        p = patterns[pattern]
       }
       if (p.test(subscriptionName)) {
         servers = servers.concat(providerRegistry.getAllServers(pattern))
@@ -783,7 +785,11 @@ module.exports = class ListenerRegistry {
 
     const set = new Set(servers)
     set.delete(this._options.serverName)
-    return Array.from(set)
+
+    if (!this._options.shuffleListenProviders) {
+      return Array.from(set)
+    }
+    return utils.shuffleArray(Array.from(set))
   }
 
   /**
@@ -802,7 +808,11 @@ module.exports = class ListenerRegistry {
         }
       }
     }
-    return providers
+
+    if (!this._options.shuffleListenProviders) {
+      return providers
+    }
+    return utils.shuffleArray(providers)
   }
 
   /**

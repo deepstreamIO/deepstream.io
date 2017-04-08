@@ -5,7 +5,8 @@ os:
   - Visual Studio 2015
 
 install:
-  - ps: Install-Product node 6.10.0 x64
+  - ps: Install-Product node 6.10.1 x64
+  - git submodule update --init --recursive
   - npm install
 
 test_script:

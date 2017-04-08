@@ -69,7 +69,9 @@ exports.reverseMap = function (map) {
  * @returns {Boolean}
  */
 exports.isOfType = function (input, expectedType) {
-  if (expectedType === 'array') {
+  if (input === null) {
+    return expectedType === 'null'
+  } else if (expectedType === 'array') {
     return Array.isArray(input)
   } else if (expectedType === 'url') {
     return !!url.parse(input).host
@@ -214,4 +216,40 @@ exports.getRandomIntInRange = function (min, max) {
 exports.spliceRandomElement = function (array) {
   const randomIndex = exports.getRandomIntInRange(0, array.length)
   return array.splice(randomIndex, 1)[0]
+}
+
+/**
+ * Randomize array element order in-place.
+ * Using Durstenfeld shuffle algorithm.
+ *
+ * @param  {Array} array The array to shuffle
+ */
+exports.shuffleArray = function (array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const temp = array[i]
+    array[i] = array[j]
+    array[j] = temp
+  }
+  return array
+}
+
+/**
+ * This method tries to parse a value, and returns
+ * an object containing the value or error.
+ *
+ * This is an optimization to avoid doing try/catch
+ * inline since it incurs a massive performance hit
+ * in most versions of node.
+ */
+exports.parseJSON = function (text, reviver) {
+  try {
+    return {
+      value: JSON.parse(text, reviver)
+    }
+  } catch (err) {
+    return {
+      error: err
+    }
+  }
 }
