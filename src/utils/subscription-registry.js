@@ -197,12 +197,13 @@ class SubscriptionRegistry {
    *
    * @param   {String} name      the name/topic the subscriber was previously registered for
    * @param   {String} msgString the message as string
+   * @param   {Boolean} noDelay flay to disable broadcast delay for message
    * @param   {[SocketWrapper]} socket an optional socket that shouldn't receive the message
    *
    * @public
    * @returns {void}
    */
-  sendToSubscribers (name, msgString, socket) {
+  sendToSubscribers (name, msgString, noDelay, socket) {
     if (!this._subscriptions.has(name)) {
       return
     }
@@ -246,7 +247,7 @@ class SubscriptionRegistry {
 
     // reuse the same timer if already started
     if (!this._delayedBroadcastsTimer) {
-      if (this._delay !== -1) {
+      if (this._delay !== -1 && !noDelay) {
         this._delayedBroadcastsTimer = setTimeout(this._onBroadcastTimeout, this._delay)
       } else {
         this._onBroadcastTimeout()

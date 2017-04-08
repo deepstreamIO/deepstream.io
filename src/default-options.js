@@ -63,6 +63,11 @@ exports.get = function () {
     logInvalidAuthData: true,
     maxMessageSize: 1048576,
 
+    /**
+     * Listening
+     */
+    shuffleListenProviders: true,
+
     /*
     * Timeouts
     */
