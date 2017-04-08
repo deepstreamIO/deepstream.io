@@ -242,7 +242,7 @@ exports.shuffleArray = function (array) {
  * inline since it incurs a massive performance hit
  * in most versions of node.
  */
-exports.JSONParse = function (text, reviver) {
+exports.parseJSON = function (text, reviver) {
   try {
     return {
       value: JSON.parse(text, reviver)

@@ -77,12 +77,11 @@ module.exports = class MessageParser {
     }
 
     if (type === C.TYPES.OBJECT) {
-      const result = utils.JSONParse(value.substr(1))
+      const result = utils.parseJSON(value.substr(1))
       if (result.value) {
         return result.value
-      } else {
-        return result.error
       }
+      return result.error
     }
 
     if (type === C.TYPES.NUMBER) {
