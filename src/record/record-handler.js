@@ -341,6 +341,10 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
+  if (this._transitions[recordName] && this._transitions[recordName].isDestroyed) {
+    delete this._transitions[recordName];
+  }
+
   if (this._transitions[recordName] && this._transitions[recordName].hasVersion(version)) {
     this._transitions[recordName].sendVersionExists({ message, version, sender: socketWrapper })
     return
