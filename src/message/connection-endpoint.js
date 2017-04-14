@@ -369,7 +369,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
       this.emit('client-connected', socketWrapper)
     }
 
-    this._authenticatedSocketsCounter++;
+    this._authenticatedSocketsCounter++
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user)
   }
 
