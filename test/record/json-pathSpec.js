@@ -133,15 +133,43 @@ describe('objects are created from paths and their value is set correctly', () =
 
   it('extends existing arrays', () => {
     let record = {
-        firstname: 'Wolfram',
-        animals: ['Bear', 'Cow', 'Ostrich']
-      },
+      firstname: 'Wolfram',
+      animals: ['Bear', 'Cow', 'Ostrich']
+    },
       jsonPath = new JsonPath('animals[ 1 ]')
     jsonPath.setValue(record, 'Emu')
 
     expect(record).toEqual({
       firstname: 'Wolfram',
       animals: ['Bear', 'Emu', 'Ostrich']
+    })
+  })
+
+  it('extends existing arrays with empty slot assigned a primitive', () => {
+    let record = {
+      firstname: 'Wolfram',
+      animals: [undefined, 'Cow', 'Ostrich']
+    },
+      jsonPath = new JsonPath('animals[0]')
+    jsonPath.setValue(record, 'Emu')
+
+    expect(record).toEqual({
+      firstname: 'Wolfram',
+      animals: ['Emu', 'Cow', 'Ostrich']
+    })
+  })
+
+it('extends existing arrays with objects', () => {
+    let record = {
+        firstname: 'Wolfram',
+        animals: [undefined, 'Cow', 'Ostrich']
+    },
+      jsonPath = new JsonPath('animals[0].xxx')
+    jsonPath.setValue(record, 'Emu')
+
+    expect(record).toEqual({
+      firstname: 'Wolfram',
+      animals: [{ xxx: 'Emu'}, 'Cow', 'Ostrich']
     })
   })
 })
