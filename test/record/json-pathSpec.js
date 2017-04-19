@@ -24,6 +24,87 @@ describe('objects are created from paths and their value is set correctly', () =
     })
   })
 
+  it('sets values for nested objects with numeric field names', () => {
+    let record = {},
+      jsonPath = new JsonPath('address.street.1')
+    jsonPath.setValue(record, 'someStreet')
+
+    expect(record).toEqual({
+      address: {
+          street: {
+              1: 'someStreet'
+          }
+      }
+    })
+  })
+
+
+  it('sets values for nested objects with multiple numeric field names', () => {
+    let record = {},
+      jsonPath = new JsonPath('address.99.street.1')
+    jsonPath.setValue(record, 'someStreet')
+
+    expect(record).toEqual({
+      address: {
+        99 : {
+          street: {
+            1: 'someStreet'
+          }
+        }
+      }
+    })
+  })
+
+
+  it('sets values for nested objects with multiple mixed array and numeric field names', () => {
+    let record = {},
+      jsonPath = new JsonPath('address[2].99.street[2].1')
+    jsonPath.setValue(record, 'someStreet')
+
+    expect(record).toEqual({
+      address: [
+          undefined,
+          undefined,
+          {
+              99 : {
+                  street: [
+                      undefined,
+                      undefined,
+                      {
+                          1: 'someStreet'
+                      }
+                  ]
+              }
+          }
+        ]
+    })
+  })
+
+  it('sets first value of array', () => {
+    let record = {},
+      jsonPath = new JsonPath('items[0]')
+    jsonPath.setValue(record, 51)
+
+    expect(JSON.stringify(record)).toEqual(JSON.stringify({
+        items: [
+            51
+        ]
+    }))
+  })
+
+  it('sets numeric obj member name of 0 (zero)', () => {
+    let record = {},
+      jsonPath = new JsonPath('items.0')
+    jsonPath.setValue(record, 51)
+
+    expect(JSON.stringify(record)).toEqual(JSON.stringify({
+      items: {
+        0 : 51
+      }
+    }))
+  })
+
+
   it('sets values for arrays', () => {
     let record = {},
       jsonPath = new JsonPath('pastAddresses[1].street')
@@ -34,7 +115,8 @@ describe('objects are created from paths and their value is set correctly', () =
         undefined,
         {
           street: 'someStreet'
-        }]
+        }
+      ]
     }))
   })
 

@@ -33,14 +33,45 @@ JsonPath.prototype.setValue = function (node, value) {
   for (i = 0; i < this._tokens.length - 1; i++) {
     if (node[this._tokens[i]] !== undefined) {
       node = node[this._tokens[i]]
-    } else if (this._tokens[i + 1] && !isNaN(this._tokens[i + 1])) {
-      node = node[this._tokens[i]] = []
+    } else if (this._tokens[i].indexOf('=') > 0) {
+      const arrParts = this._tokens[i].split('=')
+      const token = arrParts[0]
+      const idx = parseInt(arrParts[1], 10)
+
+      if (node[token] !== undefined) {
+        node = node[token]
+      } else {
+        node = node[token] = []
+      }
+
+      if (node[idx] !== undefined) {
+        if (node[idx] instanceof Object || node[idx] instanceof Array) {
+          node = node[idx]
+        }
+      } else if (this._tokens[i + 1].indexOf('=') > 0) {
+        node = node[idx] = []
+      } else {
+        node = node[idx] = {}
+      }
     } else {
       node = node[this._tokens[i]] = {}
     }
   }
 
-  node[this._tokens[i]] = value
+  if (this._tokens[i].indexOf('=') > 0) {
+    const arrParts = this._tokens[i].split('=')
+    const token = arrParts[0]
+    const idx = parseInt(arrParts[1], 10)
+
+    if (node[token] !== undefined) {
+      node = node[token]
+    } else {
+      node = node[token] = []
+    }
+    node[idx] = value
+  } else {
+    node[this._tokens[i]] = value
+  }
 }
 
 /**
@@ -51,19 +82,22 @@ JsonPath.prototype.setValue = function (node, value) {
  * @returns {void}
  */
 JsonPath.prototype._tokenize = function () {
-  const parts = this._path.split(SPLIT_REG_EXP)
+
+  // makes json path array items a single 'part' value of parts below
+  // 'arrayProp[#]' members transform to 'arrayProp=#' now instead of 'arrayProp.#' previously
+  // see setValue fnc above for special handling of array item parsing vs numeric obj member name
+  // e.g. 'object.1' parsing. this allows for support of parsing and differentiating object
+  // member names that are also numeric values
+  let str = this._path.replace(/\s/g, '')
+  str = str.replace(/\[(.*?)\]/g, '=$1')
+  const parts = str.split(SPLIT_REG_EXP)
   let part
   let i
 
   for (i = 0; i < parts.length; i++) {
     part = parts[i].trim()
 
-    if (part.length === 0) {
-      continue
-    }
-
-    if (!isNaN(part)) {
-      this._tokens.push(parseInt(part, 10))
+    if (part === undefined || part.length === 0) {
       continue
     }
 
