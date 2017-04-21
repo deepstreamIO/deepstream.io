@@ -31,7 +31,6 @@ module.exports = class Rpc {
     this._options = options
     this._message = message
     this._isAcknowledged = false
-    this.isComplete = false
 
     this._setProvider(provider)
   }
@@ -85,11 +84,7 @@ module.exports = class Rpc {
     clearTimeout(this._ackTimeout)
     clearTimeout(this._responseTimeout)
 
-    this.isComplete = true
-    this._requestor = null
-    this._provider = null
-    this._options = null
-    this._message = null
+    this._rpcHandler._$onDestroy(this._correlationId)
   }
 
   /**
@@ -149,7 +144,6 @@ module.exports = class Rpc {
   * @returns {void}
   */
   _handleResponse (message) {
-    clearTimeout(this._responseTimeout)
     this._send(this._requestor, message, this._provider)
     this.destroy()
   }
