@@ -54,9 +54,6 @@ module.exports = class RpcHandler {
       const rpcData = this._rpcs.get(correlationId)
       if (rpcData) {
         rpcData.rpc.handle(message)
-        if (rpcData.rpc.isComplete) {
-          this._rpcs.delete(correlationId)
-        }
       } else {
         socketWrapper.sendError(
           C.TOPIC.RPC,
@@ -282,7 +279,9 @@ module.exports = class RpcHandler {
     }
   }
 
-
+  _$onDestroy (correlationId) {
+    this._rpcs.delete(correlationId)
+  }
 }
 
 /**
