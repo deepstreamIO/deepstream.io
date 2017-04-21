@@ -33,9 +33,9 @@ const UNDEFINED = 'undefined'
  *                           to load it from the path provided in options.path.
  */
 const ConfigPermissionHandler = function (options, config) {
-  this._ruleCache = new RuleCache(options)
   this._options = options
   this._permissionOptions = options.permission.options
+  this._ruleCache = new RuleCache(this._permissionOptions)
   this._config = null
   this._recordHandler = null
   this.isReady = false
