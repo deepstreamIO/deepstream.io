@@ -54,9 +54,6 @@ module.exports = class RpcHandler {
       const rpcData = this._rpcs.get(correlationId)
       if (rpcData) {
         rpcData.rpc.handle(message)
-        if (rpcData.rpc.isComplete) {
-          this._rpcs.delete(correlationId)
-        }
       } else {
         socketWrapper.sendError(
           C.TOPIC.RPC,
@@ -280,6 +277,10 @@ module.exports = class RpcHandler {
     } else {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg)
     }
+  }
+
+  _$onDestroy (correlationId) {
+    this._rpcs.delete(correlationId)
   }
 }
 
