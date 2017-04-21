@@ -10,7 +10,7 @@
 const RuleCache = function (options) {
   this._options = options
   this._data = {}
-  setInterval(this._purge.bind(this), options.cacheEvacuationInterval)
+  this._interval = setInterval(this._purge.bind(this), options.cacheEvacuationInterval)
 }
 
 /**
