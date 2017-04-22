@@ -54,12 +54,6 @@ module.exports = class Rpc {
   * @returns {void}
   */
   handle (message) {
-        // This guard is for backwards compatability. Having multiple responses or recieving an ack
-        // prior to a response should not actually occur
-    if (this.isComplete === true) {
-      return
-    }
-
     if (message.data[1] !== this._correlationId && message.data[2] !== this._correlationId) {
       return
     }
