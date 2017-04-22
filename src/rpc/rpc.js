@@ -31,7 +31,6 @@ module.exports = class Rpc {
     this._options = options
     this._message = message
     this._isAcknowledged = false
-    this.isComplete = false
 
     this._setProvider(provider)
   }
@@ -55,12 +54,6 @@ module.exports = class Rpc {
   * @returns {void}
   */
   handle (message) {
-        // This guard is for backwards compatability. Having multiple responses or recieving an ack
-        // prior to a response should not actually occur
-    if (this.isComplete === true) {
-      return
-    }
-
     if (message.data[1] !== this._correlationId && message.data[2] !== this._correlationId) {
       return
     }
@@ -85,11 +78,7 @@ module.exports = class Rpc {
     clearTimeout(this._ackTimeout)
     clearTimeout(this._responseTimeout)
 
-    this.isComplete = true
-    this._requestor = null
-    this._provider = null
-    this._options = null
-    this._message = null
+    this._rpcHandler._$onDestroy(this._correlationId)
   }
 
   /**
@@ -149,7 +138,6 @@ module.exports = class Rpc {
   * @returns {void}
   */
   _handleResponse (message) {
-    clearTimeout(this._responseTimeout)
     this._send(this._requestor, message, this._provider)
     this.destroy()
   }
