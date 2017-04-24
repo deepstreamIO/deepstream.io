@@ -85,6 +85,7 @@ let RpcHandler = require('../../src/rpc/rpc-handler'),
 
 describe('the rpc handler', () => {
   describe('routes remote procedure call related messages', () => {
+
     it('sends an error for subscription messages without data', () => {
       let socketWrapper = new SocketWrapper(new SocketMock(), {}),
         invalidMessage = {
@@ -228,8 +229,6 @@ describe('the rpc handler', () => {
 
       // Issue Rpc
       rpcHandler.handle(requestor, requestMessage)
-      expect(requestor.socket.lastSendMessage).toBeNull()
-      expect(provider.socket.lastSendMessage).toBe(_msg('P|REQ|addTwo|1234|{"numA":5, "numB":7}+'))
 
       // Response
       rpcHandler.handle(provider, responseMessage)
@@ -251,8 +250,6 @@ describe('the rpc handler', () => {
 
       // Issue Rpc
       rpcHandler.handle(requestor, requestMessage)
-      expect(requestor.socket.lastSendMessage).toBeNull()
-      expect(provider.socket.lastSendMessage).toBe(_msg('P|REQ|addTwo|1234|{"numA":5, "numB":7}+'))
 
       // Response
       rpcHandler.handle(provider, responseMessage)
@@ -264,7 +261,7 @@ describe('the rpc handler', () => {
       expect(requestor.socket.lastSendMessage).toBe(null)
   })
 
-  fit('doesn\'t throw error on response after timeout', (done) => {
+  it('doesn\'t throw error on response after timeout', (done) => {
     let requestor = new SocketWrapper(new SocketMock(), {}),
         provider = new SocketWrapper(new SocketMock(), {})
 
@@ -275,8 +272,6 @@ describe('the rpc handler', () => {
 
       // Issue Rpc
       rpcHandler.handle(requestor, requestMessage)
-      expect(requestor.socket.lastSendMessage).toBeNull()
-      expect(provider.socket.lastSendMessage).toBe(_msg('P|REQ|addTwo|1234|{"numA":5, "numB":7}+'))
 
       // Ack
       rpcHandler.handle(provider, ackMessage)
