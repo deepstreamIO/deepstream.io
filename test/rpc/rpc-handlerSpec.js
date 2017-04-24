@@ -172,7 +172,7 @@ describe('the rpc handler', () => {
       provider.socket.lastSendMessage = null
       rpcHandler.handle(provider, additionalResponseMessage)
       expect(requestor.socket.lastSendMessage).toBeNull()
-      expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action RES+'))
+      expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_RPC_CORRELATION_ID|unexpected state for rpc addTwo with action RES+'))
     })
 
     it('executes local rpcs - error scenario', () => {
@@ -198,7 +198,7 @@ describe('the rpc handler', () => {
       provider.socket.lastSendMessage = null
       rpcHandler.handle(provider, errorMessage)
       expect(requestor.socket.lastSendMessage).toBeNull()
-      expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action E+'))
+      expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_RPC_CORRELATION_ID|unexpected state for rpc addTwo with action E+'))
     })
 
     it('supports multiple RPCs in quick succession', () => {
@@ -279,7 +279,7 @@ describe('the rpc handler', () => {
       // Response timeout
       setTimeout(() => {
         rpcHandler.handle(provider, responseMessage)
-        expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action RES+'))
+        expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_RPC_CORRELATION_ID|unexpected state for rpc addTwo with action RES+'))
         done()
       }, 10)
   })
