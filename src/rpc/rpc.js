@@ -31,6 +31,7 @@ module.exports = class Rpc {
     this._options = options
     this._message = message
     this._isAcknowledged = false
+    this._isComplete = false
 
     this._setProvider(provider)
   }
@@ -54,6 +55,10 @@ module.exports = class Rpc {
   * @returns {void}
   */
   handle (message) {
+    if (this._isComplete) {
+      return
+    }
+
     if (message.data[1] !== this._correlationId && message.data[2] !== this._correlationId) {
       return
     }
@@ -138,6 +143,7 @@ module.exports = class Rpc {
   * @returns {void}
   */
   _handleResponse (message) {
+    this._isComplete = true
     this._send(this._requestor, message, this._provider)
     this.destroy()
   }
@@ -184,6 +190,7 @@ module.exports = class Rpc {
   * @returns {void}
   */
   _onResponseTimeout () {
+    this._isComplete = true
     this._requestor.sendError(C.TOPIC.RPC, C.EVENT.RESPONSE_TIMEOUT, [this._rpcName, this._correlationId])
     this.destroy()
   }
