@@ -1,3 +1,14 @@
+## [2.2.1] - 2017.04.24
+
+### Enhancements
+
+- Unsolicited RPCs now get a `INVALID_RPC_CORRELATION_ID` message
+
+### Fixes
+
+- RPC lifecycles have been improved and don't throw exceptions on response after a timeout by [ronag](ronag)
+- Correct options now being passed into the `RuleCache`, courtesy of [ralphtheninja](ralphtheninja)
+
 ## [2.2.0] - 2017.04.08
 
 ### Enhancements
