@@ -279,6 +279,15 @@ module.exports = class RpcHandler {
     }
   }
 
+  /**
+   * Called by the RPC with correlationId to destroy itself
+   * when lifecycle is over.
+   *
+   * @param  {String} correlationId id of the RPC
+   *
+   * @private
+   * @returns {void}
+   */
   _$onDestroy (correlationId) {
     this._rpcs.delete(correlationId)
   }
