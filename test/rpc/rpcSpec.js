@@ -95,13 +95,13 @@ describe('executes local rpc calls', () => {
     expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|E|ErrorOccured|addTwo|1234+'))
   })
 
-  // it('ignores ack message if it arrives after response', () => {
-  //   const rpc = makeRpc(requestMessage)
-  //   rpc.localRpc.handle(responseMessage)
-  //   expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
-  //   rpc.localRpc.handle(ackMessage)
-  //   expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
-  // })
+  it('ignores ack message if it arrives after response', () => {
+    const rpc = makeRpc(requestMessage)
+    rpc.localRpc.handle(responseMessage)
+    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
+    rpc.localRpc.handle(ackMessage)
+    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
+  })
 
   it('sends error for multiple ack messages', () => {
     const rpc = makeRpc(requestMessage)
@@ -115,20 +115,33 @@ describe('executes local rpc calls', () => {
     expect(rpc.provider.socket.lastSendMessage).toBe(msg('P|E|MULTIPLE_ACK|addTwo|1234+'))
   })
 
-  // it('ignores multiple responses', () => {
-  //   const rpc = makeRpc(requestMessage)
-  //
-  //   rpc.localRpc.handle(ackMessage)
-  //   expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
-  //
-  //   rpc.localRpc.handle(responseMessage)
-  //   expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
-  //
-  //   rpc.requestor.socket.lastSendMessage = null
-  //
-  //   rpc.localRpc.handle(responseMessage)
-  //   expect(rpc.requestor.socket.lastSendMessage).toBe(null)
-  // })
+  it('ignores multiple responses', () => {
+    const rpc = makeRpc(requestMessage)
+
+    rpc.localRpc.handle(ackMessage)
+    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
+
+    rpc.localRpc.handle(responseMessage)
+    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
+
+    rpc.requestor.socket.lastSendMessage = null
+
+    rpc.localRpc.handle(responseMessage)
+    expect(rpc.requestor.socket.lastSendMessage).toBe(null)
+  })
+
+  it('doesn\'t throw exception on response after timeout', (done) => {
+    const rpc = makeRpc(requestMessage)
+
+    rpc.localRpc.handle(ackMessage)
+    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
+
+    setTimeout(() => {
+      rpc.localRpc.handle(responseMessage)
+      expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|E|RESPONSE_TIMEOUT|addTwo|1234+'))
+      done()
+    }, 10)
+  })
 })
 
 describe('reroutes remote rpc calls', () => {
