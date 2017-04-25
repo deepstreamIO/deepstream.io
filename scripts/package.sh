@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="6.10.1"
+LTS_VERSION="6.10"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
