@@ -54,7 +54,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     this._ws.on('error', this._onError.bind(this))
     this._ws.on('connection', this._onConnection.bind(this))
 
-    this._authenticatedSocketsCounter = 0
+    this._authenticatedSockets = new Set()
   }
 
   /**
@@ -99,7 +99,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {Number} connectionCount
    */
   getConnectionCount () {
-    return this._authenticatedSocketsCounter
+    return this._authenticatedSockets.length
   }
 
   /**
@@ -369,7 +369,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
       this.emit('client-connected', socketWrapper)
     }
 
-    this._authenticatedSocketsCounter++
+    this._authenticatedSockets.add(socketWrapper)
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user)
   }
 
@@ -513,7 +513,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
       this.emit('client-disconnected', socketWrapper)
     }
 
-    this._authenticatedSocketsCounter--
+    this._authenticatedSockets.delete(socketWrapper)
   }
 
   /**
