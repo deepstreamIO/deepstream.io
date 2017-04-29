@@ -317,6 +317,12 @@ Deepstream.prototype._init = function () {
     this._options.permissionHandler.setRecordHandler(this._recordHandler)
   }
 
+  this._options.pluginTypes.forEach((pluginType) => {
+    if (this._options[pluginType].setDeepstream instanceof Function) {
+      this._options[pluginType].setDeepstream(this)
+    }
+  })
+
   this._currentState = STATES.INITIALIZED
 }
 
