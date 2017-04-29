@@ -124,6 +124,10 @@ class SubscriptionRegistry {
     this._constants[name.toUpperCase()] = value
   }
 
+  /**
+  * Called whenever a socket closes to remove all of its subscriptions
+  * @param {SockerWrapper} the socket that closed
+  */
   _onSocketClose (socket) {
     const names = this._names.get(socket) || new Set()
     for (const name of names) {
@@ -325,10 +329,9 @@ class SubscriptionRegistry {
 
     sockets.delete(socket)
 
-    this._clusterSubscriptions.remove(name)
-
     if (sockets.size === 0) {
       this._subscriptions.delete(name)
+      this._clusterSubscriptions.remove(name)
     }
 
     const names = this._names.get(socket)
