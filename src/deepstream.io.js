@@ -48,13 +48,6 @@ const Deepstream = function (config) {
   this._eventHandler = null
   this._rpcHandler = null
   this._recordHandler = null
-  this._plugins = [
-    'messageConnector',
-    'storage',
-    'cache',
-    'authenticationHandler',
-    'permissionHandler'
-  ]
 }
 
 util.inherits(Deepstream, EventEmitter)
@@ -160,10 +153,11 @@ Deepstream.prototype._start = function () {
   let i
   let initialiser
 
-  for (i = 0; i < this._plugins.length; i++) {
-    initialiser = new DependencyInitialiser(this._options, this._plugins[i])
-    initialiser.once('ready', this._checkReady.bind(this, this._plugins[i], initialiser.getDependency()))
-  }
+  this._options.pluginTypes.forEach((pluginType) => {
+    initialiser = new DependencyInitialiser(this._options, pluginType)
+    initialiser.once('ready', this._checkReady.bind(this, pluginType, initialiser.getDependency()))
+  })
+
   this._checkReady('logger', this._options.logger)
 }
 
@@ -189,13 +183,13 @@ Deepstream.prototype.stop = function () {
     setTimeout(this._options.logger.close.bind(this._options.logger))
   }
 
-  for (i = 0; i < this._plugins.length; i++) {
-    plugin = this._options[this._plugins[i]]
+  this._options.pluginTypes.forEach((pluginType) => {
+    plugin = this._options[pluginType]
     if (typeof plugin.close === 'function') {
       closables.push(plugin)
       setTimeout(plugin.close.bind(plugin))
     }
-  }
+  })
 
   utils.combineEvents(closables, 'close', this._onStopped.bind(this))
   this._options.clusterRegistry.leaveCluster()
@@ -338,13 +332,11 @@ Deepstream.prototype._checkReady = function (pluginName, plugin) {
     plugin.on('error', this._onPluginError.bind(this, pluginName))
   }
 
-  for (let i = 0; i < this._plugins.length; i++) {
-    if (this._options[this._plugins[i]].isReady !== true) {
-      return
-    }
-  }
+  const isReady = this._options.pluginTypes.every((pluginType) => {
+    return this._options[pluginType].isReady
+  })
 
-  if (this._currentState === STATES.STARTING) {
+  if (isReady && this._currentState === STATES.STARTING) {
     this._init()
   }
 }

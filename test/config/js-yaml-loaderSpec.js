@@ -106,7 +106,8 @@ describe('js-yaml-loader', () => {
         authenticationHandler: null,
         plugins: null,
         serverName: null,
-        logger: null
+        logger: null,
+        pluginTypes: [ 'messageConnector', 'storage', 'cache', 'authenticationHandler', 'permissionHandler' ]
       })
 			// console.log(JSON.stringify(defaultYamlConfig, null, 1))
 			// console.log(JSON.stringify(defaultConfig, null, 1))
