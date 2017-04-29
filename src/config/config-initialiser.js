@@ -133,7 +133,7 @@ function handlePlugins (config) {
   if (config.plugins == null) {
     return
   }
-  // mappnig between the root properties which contains the plugin instance
+  // mapping between the root properties which contains the plugin instance
   // and the plugin configuration objects
   const connectorMap = {
     messageConnector: 'message',
@@ -216,13 +216,13 @@ function handleAuthStrategy (config) {
     throw new Error('No authentication type specified')
   }
 
-  if (!authStrategies[config.auth.type]) {
-    throw new Error(`Unknown authentication type ${config.auth.type}`)
-  }
-
   if (commandLineArguments.disableAuth) {
     config.auth.type = 'none'
     config.auth.options = {}
+  }
+
+  if (!authStrategies[config.auth.type] && !config.auth.path) {
+    throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
 
   if (config.auth.options && config.auth.options.path) {
@@ -253,13 +253,13 @@ function handlePermissionStrategy (config) {
     throw new Error('No permission type specified')
   }
 
-  if (!permissionStrategies[config.permission.type]) {
-    throw new Error(`Unknown permission type ${config.permission.type}`)
-  }
-
   if (commandLineArguments.disablePermissions) {
     config.permission.type = 'none'
     config.permission.options = {}
+  }
+
+  if (!permissionStrategies[config.permission.type] && !config.permission.path) {
+    throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 
   if (config.permission.options && config.permission.options.path) {
