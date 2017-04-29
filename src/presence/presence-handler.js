@@ -25,7 +25,7 @@ module.exports = class PresenceHandler {
     this._connectionEndpoint.on('client-connected', this._handleJoin.bind(this))
     this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
 
-    this._presenceRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
+    this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
 
     this._connectedClients = new DistributedStateRegistry(C.TOPIC.ONLINE_USERS, options)
     this._connectedClients.on('add', this._onClientAdded.bind(this))
@@ -45,9 +45,9 @@ module.exports = class PresenceHandler {
   */
   handle (socketWrapper, message) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
-      this._presenceRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
+      this._subscriptionRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._presenceRegistry.unsubscribe(C.TOPIC.PRESENCE, socketWrapper)
+      this._subscriptionRegistry.unsubscribe(C.TOPIC.PRESENCE, socketWrapper)
     } else if (message.action === C.ACTIONS.QUERY) {
       this._handleQuery(socketWrapper)
     } else {
@@ -126,7 +126,7 @@ module.exports = class PresenceHandler {
   */
   _onClientAdded (username) {
     const addMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [username])
-    this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
+    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
   }
 
   /**
@@ -140,6 +140,6 @@ module.exports = class PresenceHandler {
   */
   _onClientRemoved (username) {
     const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
-    this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
+    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
   }
 }
