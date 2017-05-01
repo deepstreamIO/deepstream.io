@@ -31,6 +31,7 @@ module.exports = class MessageDistributor {
       return
     }
 
+    // TODO: Can we remove this? A general emit is quite expensive
     socketWrapper.emit(message.topic, message)
 
     if (message.isCompleted !== true) {
