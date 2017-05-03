@@ -174,7 +174,6 @@ Deepstream.prototype.stop = function () {
   }
   this._currentState = STATES.CLOSING
 
-  let i
   let plugin
   const closables = [this._connectionEndpoint]
 

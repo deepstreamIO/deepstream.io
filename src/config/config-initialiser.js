@@ -166,7 +166,9 @@ function handlePlugins (config) {
     if (plugin) {
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
       config[key] = new PluginConstructor(plugin.options)
-      config.pluginTypes.push(key)
+      if(config.pluginTypes.indexOf(key) === -1) {
+        config.pluginTypes.push(key)
+      }
     }
   }
 }
