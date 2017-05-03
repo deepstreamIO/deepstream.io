@@ -1,3 +1,12 @@
+## [2.2.2] - 2017.05.03
+
+### Enhancements
+- Adds support for custom authentication and permissioning plugins.
+- Adds support for generic plugins.
+
+### Fixes
+- Added check to ensure subscriptions are not removed from distributed state registry prematurely.
+
 ## [2.2.1] - 2017.04.24
 
 ### Enhancements
@@ -14,7 +23,7 @@
 ### Enhancements
 
 - Records now can be set with a version -1, which ignores version conflicts by [datasage](datasage)
-- Delete events are now propogated in the correct order by [datasage](datasage)
+- Delete events are now propagated in the correct order by [datasage](datasage)
 - You can now request the HEAD of a record to retrieve just its version number by [datasage](datasage)
 - Providers for listeners are now by default selected randomly instead of in order of subscription
 - Ensure record updates are not scalar values before trying to save them in cache by [datasage](datasage)
@@ -42,7 +51,7 @@
 
 ### Bug Fixes
 
-- Unsolicitated message in Listening when all clients unsubscribe [#531]
+- Unsolicited message in Listening when all clients unsubscribe [#531]
 - Handle Non text based websocket frame [#538]
 - Aligning binary config with node [#488]
 - Event subscription data mishandled in Valve [#510]
@@ -107,7 +116,7 @@
 - Introduces the configuration option `broadcastTimeout` to `config.yml` to allow coalescing of
   broadcasts. This option can be used to improve broadcast message latency such
   as events, data-sync and presence
-  For example, the perfomance of broadcasting 100 events to 1000 subscribers
+  For example, the performance of broadcasting 100 events to 1000 subscribers
   was improved by a factor of 20
 - Adds client heartbeats, along with configuration option`heartbeatInterval` in `config.yml`.
   If a connected client fails to send a heartbeat within this timeout, it will be
@@ -127,7 +136,7 @@
 - Changed format of RPC request ACK messages to be more consistent with the
   rest of the specs
   [#408](https://github.com/deepstreamIO/deepstream.io/issues/408)
-- We removed support for TCP and engine.io, providing huge perfomance gains by
+- We removed support for TCP and engine.io, providing huge performance gains by
   integrating tightly with native uWS
 - Support for webRTC has been removed
 - You can no longer set custom data transforms directly on deepstream
