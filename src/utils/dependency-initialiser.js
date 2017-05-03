@@ -70,7 +70,8 @@ DependencyInitialiser.prototype._onReady = function () {
     clearTimeout(this._timeout)
   }
 
-  const dependencyType = this._dependency.type ? `: ${this._dependency.type}` : ''
+  this._dependency.type = this._dependency.description || this._dependency.type
+  const dependencyType = this._dependency.type ? `: ${this._dependency.type}` : ': no dependency description provided'
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `${this._name} ready${dependencyType}`)
   process.nextTick(this._emitReady.bind(this))
 }

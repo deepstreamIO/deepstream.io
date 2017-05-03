@@ -3,6 +3,7 @@
 const LocalCache = function () {
   this.isReady = true
   this._data = {}
+  this.type = 'local cache'
 }
 
 LocalCache.prototype.set = function (key, value, callback) {
