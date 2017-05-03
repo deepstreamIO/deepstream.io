@@ -71,6 +71,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
     dependencyInitialiser = new DependencyInitialiser(options, 'plugin')
     dependencyInitialiser.on('ready', onReady)
     expect(options.plugin.isReady).toBe(false)
+    process.removeAllListeners('uncaughtException')
     process.once('uncaughtException', () => {
       expect(options.logger.log).toHaveBeenCalledWith(3, 'PLUGIN_ERROR', 'plugin wasn\'t initialised in time')
       next()
