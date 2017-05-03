@@ -15,8 +15,8 @@ const options = {
   messageConnector: new MessageConnectorMock(),
   logger: { log: jasmine.createSpy('log') },
   serverName: 'thisServer',
-  rpcAckTimeout: 5,
-  rpcTimeout: 5
+  rpcAckTimeout: 50,
+  rpcTimeout: 50
 }
 
 describe('rpc handler returns alternative providers for the same rpc', () => {
@@ -64,7 +64,7 @@ describe('rpc handler returns alternative providers for the same rpc', () => {
       data: ['rpcB']
     })
 
-		// This is terrible practice, but we don't have any means to access the object otherwise
+    // This is terrible practice, but we don't have any means to access the object otherwise
     rpcHandler._subscriptionRegistry.getAllRemoteServers = function (name) {
       if (name === 'rpcA') {
         return ['random-server-1', 'random-server-2']
