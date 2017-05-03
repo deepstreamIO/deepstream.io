@@ -330,8 +330,8 @@ class SubscriptionRegistry {
     sockets.delete(socket)
 
     if (sockets.size === 0) {
-      this._subscriptions.delete(name)
       this._clusterSubscriptions.remove(name)
+      this._subscriptions.delete(name)
     }
 
     const names = this._names.get(socket)
