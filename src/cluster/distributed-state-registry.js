@@ -283,9 +283,9 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   _verifyCheckSum (serverName, remoteCheckSum) {
     if (this._getCheckSumTotal(serverName) !== remoteCheckSum) {
       this._reconciliationTimeouts[serverName] = setTimeout(
-                this._requestFullState.bind(this, serverName),
-                this._options.stateReconciliationTimeout
-            )
+        this._requestFullState.bind(this, serverName),
+        this._options.stateReconciliationTimeout
+      )
     } else if (this._reconciliationTimeouts[serverName]) {
       clearTimeout(this._reconciliationTimeouts[serverName])
       delete this._reconciliationTimeouts[serverName]
@@ -359,8 +359,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     let i
 
     for (name in this._data) {
-            // please note: only checking if the name exists is sufficient as the registry will just
-            // set node[serverName] to false if the entry exists, but not for the remote server.
+      // please note: only checking if the name exists is sufficient as the registry will just
+      // set node[serverName] to false if the entry exists, but not for the remote server.
       if (names.indexOf(name) === -1) {
         this._remove(name, serverName)
       }

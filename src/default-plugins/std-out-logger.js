@@ -25,6 +25,7 @@ const StdOutLogger = function (options) {
   ]
 
   this._currentLogLevel = C.LOG_LEVEL[this._options.logLevel] || C.LOG_LEVEL.DEBUG
+  this.description = 'std out/err'
 }
 
 /**
