@@ -41,8 +41,8 @@ describe('permissionHandler passes additional user meta data', () => {
 
   beforeAll(() => {
     connectionEndpoint = new ConnectionEndpoint(options, () => {})
-    connectionEndpoint.onMessage = function (socket, message) {
-      lastAuthenticatedMessage = message
+    connectionEndpoint.onMessages = function (socket, messages) {
+      lastAuthenticatedMessage = messages[messages.length - 1]
     }
     socketMock = websocketMock.simulateConnection()
     socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
@@ -57,9 +57,9 @@ describe('permissionHandler passes additional user meta data', () => {
   })
 
   it('sends a record read message', () => {
-    spyOn(connectionEndpoint, 'onMessage')
+    spyOn(connectionEndpoint, 'onMessages')
     socketMock.emit('message', _msg('R|CR|someRecord+'))
-    expect(connectionEndpoint.onMessage).toHaveBeenCalled()
-    expect(connectionEndpoint.onMessage.calls.mostRecent().args[0].authData).toEqual({ role: 'admin' })
+    expect(connectionEndpoint.onMessages).toHaveBeenCalled()
+    expect(connectionEndpoint.onMessages.calls.mostRecent().args[0].authData).toEqual({ role: 'admin' })
   })
 })

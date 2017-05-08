@@ -65,13 +65,13 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * of an event emitter to improve the performance of the messaging pipeline
    *
    * @param   {SocketWrapper} socketWrapper
-   * @param   {String} message the raw message as sent by the client
+   * @param   {Array} messages the parsed messages as sent by the client
    *
    * @public
    *
    * @returns {void}
    */
-  onMessage (socketWrapper, message) { // eslint-disable-line
+  onMessages (socketWrapper, messages) { // eslint-disable-line
   }
 
   /**
@@ -353,7 +353,10 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   _registerAuthenticatedSocket (socketWrapper, userData) {
     socketWrapper.socket.removeListener('message', socketWrapper.authCallBack)
     socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
-    socketWrapper.socket.on('message', (msg) => { this.onMessage(socketWrapper, msg) })
+    socketWrapper.socket.on('message', (msg) => {
+      const parsedMessages = messageParser.parse(msg)
+      this.onMessages(socketWrapper, parsedMessages)
+    })
     this._appendDataToSocketWrapper(socketWrapper, userData)
     if (typeof userData.clientData === 'undefined') {
       socketWrapper.sendMessage(C.TOPIC.AUTH, C.ACTIONS.ACK)

@@ -36,9 +36,9 @@ describe('connection endpoint', () => {
     authenticationHandlerMock.reset()
 
     connectionEndpoint = new ConnectionEndpoint(options, () => {})
-    connectionEndpoint.onMessage()
-    connectionEndpoint.onMessage = function (socket, message) {
-      lastAuthenticatedMessage = message
+    connectionEndpoint.onMessages()
+    connectionEndpoint.onMessages = function (socket, messages) {
+      lastAuthenticatedMessage = messages[messages.length - 1]
     }
   })
 
@@ -314,8 +314,8 @@ describe('connection endpoint', () => {
 
     it('forwards messages from authenticated sockets', () => {
       expect(lastAuthenticatedMessage).toBe(null)
-      socketMock.emit('message', 'testMsg')
-      expect(lastAuthenticatedMessage).toBe('testMsg')
+      socketMock.emit('message', _msg('E|EVT|testMsg+'))
+      expect(lastAuthenticatedMessage).toEqual({ raw: _msg('E|EVT|testMsg'), topic: 'E', action: 'EVT', data: ['testMsg'] })
     })
 
     it('notifies the permissionHandler when a client disconnects', () => {

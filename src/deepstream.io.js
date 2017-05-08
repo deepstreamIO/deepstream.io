@@ -279,7 +279,7 @@ Deepstream.prototype._init = function () {
   this._connectionEndpoint = new ConnectionEndpoint(this._options, this._onStarted.bind(this))
   this._messageProcessor = new MessageProcessor(this._options)
   this._messageDistributor = new MessageDistributor(this._options)
-  this._connectionEndpoint.onMessage = this._messageProcessor.process.bind(this._messageProcessor)
+  this._connectionEndpoint.onMessages = this._messageProcessor.process.bind(this._messageProcessor)
 
   this._options.clusterRegistry = new ClusterRegistry(this._options, this._connectionEndpoint)
   this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
