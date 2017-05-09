@@ -39,19 +39,12 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
       C.EVENT.INFO,
       `Listening for health checks on path ${options.healthCheckPath}`
     )
-
-    // this._ws = new uws.Server({
-    //   server: this._server,
-    //   perMessageDeflate: false,
-    //   path: this._options.urlPath
-    // })
     // this._ws.startAutoPing(
     //   this._options.heartbeatInterval,
     //   messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
     // )
     this._server.once('listening', this._checkReady.bind(this))
     // this._ws.on('error', this._onError.bind(this))
-    // this._ws.on('connection', this._onConnection.bind(this))
 
     this._authenticatedSockets = new Set()
 
@@ -75,22 +68,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   onMessages (socketWrapper, messages) { // eslint-disable-line
   }
 
-  /**
-   * Closes the ws server connection. The ConnectionEndpoint
-   * will emit a close event once succesfully shut down
-   * @public
-   * @returns {void}
-   */
-  close () {
-    this._server.removeAllListeners('request')
-    this._ws.removeAllListeners('connection')
-    this._ws.close()
 
-    this._server.close(() => {
-      this._wsServerClosed = true
-      this._checkClosed()
-    })
-  }
 
   /**
    * Returns the number of currently connected clients. This is used by the
@@ -101,6 +79,14 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    */
   getConnectionCount () {
     return this._authenticatedSockets.length
+    //   get clients() {
+    //   if (this.serverGroup) {
+    //     return {
+    //       length: native.server.group.getSize(this.serverGroup),
+    //       forEach: ((cb) => {native.server.group.forEach(this.serverGroup, cb)})
+    //     };
+    //   }
+    // }
   }
 
   /**
@@ -189,7 +175,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     )
 
     socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.CHALLENGE)
-    socketWrapper.onMessage = socketWrapper.connectionCallback
+    socketWrapper.onMessage = this._processConnectionMessage.bind(this, socketWrapper)
   }
 
   /**
@@ -230,7 +216,8 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     } else if (msg.action === C.ACTIONS.PONG) {
       // do nothing
     } else if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
-      socketWrapper.onMesssage = socketWrapper.authCallBack
+      delete socketWrapper.connectionCallback
+      socketWrapper.onMessage = socketWrapper.authCallBack
       socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.ACK)
     } else {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action)
@@ -252,7 +239,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _authenticateConnection (socketWrapper, disconnectTimeout, authMsg) {
-    console.log('_authenticateConnection', authMsg)
     if (typeof authMsg !== 'string') {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
@@ -353,12 +339,11 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _registerAuthenticatedSocket (socketWrapper, userData) {
-    socketWrapper.socket.removeListener('message', socketWrapper.authCallBack)
-    socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
-    socketWrapper.socket.on('message', (msg) => {
-      const parsedMessages = messageParser.parse(msg)
+    delete socketWrapper.authCallBack
+    socketWrapper.onMessage = (message) => {
+      const parsedMessages = messageParser.parse(message)
       this.onMessages(socketWrapper, parsedMessages)
-    })
+    }
     this._appendDataToSocketWrapper(socketWrapper, userData)
     if (typeof userData.clientData === 'undefined') {
       socketWrapper.sendMessage(C.TOPIC.AUTH, C.ACTIONS.ACK)
@@ -518,6 +503,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
       this.emit('client-disconnected', socketWrapper)
     }
 
+    uws.native.clearUserData(socketWrapper._external)
     this._authenticatedSockets.delete(socketWrapper)
   }
 
@@ -562,102 +548,84 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   _initialise () {
     this.serverGroup = uws.native.server.group.create(
       0,
-      this._options.maxPayload === undefined ? 1048576 : this._options.maxPayload)
+      this._options.maxPayload === undefined ? 1048576 : this._options.maxPayload
+    )
 
     // can these be made private?
     this._upgradeCallback = () => {}
-    this._upgradeListener = null;
-    this._noDelay = this._options.noDelay === undefined ? true : this._options.noDelay;
-    this._lastUpgradeListener = true;
+    this._upgradeListener = null
+    this._noDelay = this._options.noDelay === undefined ? true : this._options.noDelay
+    this._lastUpgradeListener = true
     this._passedHttpServer = this._options.server;
 
-    if (!this._options.noServer) {
-      if (this._options.path && (!this._options.path.length || this._options.path[0] !== '/')) {
-        this._options.path = '/' + this._options.path;
-      }
+    this._server.on('upgrade', this._upgradeListener = ((request, socket, head) => {
+      if (!this._options.path || this._options.path === request.url.split('?')[0].split('#')[0]) {
+        if (this._options.verifyClient) {
+          const info = {
+            origin: request.headers.origin,
+            secure: request.connection.authorized !== undefined || request.connection.encrypted !== undefined,
+            req: request
+          }
 
-      this._server.on('upgrade', this._upgradeListener = ((request, socket, head) => {
-        console.log('upgrade')
-        if (!this._options.path || this._options.path === request.url.split('?')[0].split('#')[0]) {
-          if (this._options.verifyClient) {
-            const info = {
-              origin: request.headers.origin,
-              secure: request.connection.authorized !== undefined || request.connection.encrypted !== undefined,
-              req: request
-            };
-
-            if (this._options.verifyClient.length === 2) {
-              this._options.verifyClient(info, (result, code, name) => {
-                if (result) {
-                  this.handleUpgrade(request, socket, head, emitConnection);
-                } else {
-                  abortConnection(socket, code, name);
-                }
-              });
-            } else {
-              if (this._options.verifyClient(info)) {
-                this.handleUpgrade(request, socket, head, emitConnection);
+          if (this._options.verifyClient.length === 2) {
+            this._options.verifyClient(info, (result, code, name) => {
+              if (result) {
+                this.handleUpgrade(request, socket, head, websocket => this._onConnection(websocket, request))
               } else {
-                abortConnection(socket, 400, 'Client verification failed');
+                abortConnection(socket, code, name);
               }
-            }
+            })
           } else {
-            this.handleUpgrade(request, socket, head, websocket => this._onConnection(websocket, request))
+            if (this._options.verifyClient(info)) {
+              this.handleUpgrade(request, socket, head, websocket => this._onConnection(websocket, request))
+            } else {
+              abortConnection(socket, 400, 'Client verification failed');
+            }
           }
         } else {
-          if (this._lastUpgradeListener) {
-            abortConnection(socket, 400, 'URL not supported');
-          }
+          this.handleUpgrade(request, socket, head, websocket => this._onConnection(websocket, request))
         }
-      }))
+      } else {
+        if (this._lastUpgradeListener) {
+          abortConnection(socket, 400, 'URL not supported');
+        }
+      }
+    }))
 
-      this._server.on('newListener', (eventName, listener) => {
-        if (eventName === 'upgrade') {
-          this._lastUpgradeListener = false;
-        }
-      })
-    }
+    this._server.on('newListener', (eventName, listener) => {
+      if (eventName === 'upgrade') {
+        this._lastUpgradeListener = false;
+      }
+    })
 
     uws.native.server.group.onDisconnection(
       this.serverGroup,
-      (external, code, message, webSocket) => {
-        console.log('onDisconnection', external, code, message, webSocket)
-        webSocket.external = null;
-        process.nextTick(() => {
-          webSocket.internalOnClose(code, message);
-        })
-        uws.native.clearUserData(external);
+      (external, code, message, socketWrapper) => {
+        this._onSocketClose(socketWrapper)
       }
     )
 
     uws.native.server.group.onMessage(this.serverGroup, (message, socketWrapper) => {
+      console.log('SERVER receiving:', message)
       socketWrapper.onMessage(message)
-      console.log('onMessage')
     })
 
     uws.native.server.group.onPing(this.serverGroup, (message, webSocket) => {
-      webSocket.onping(message);
-    });
+      webSocket.onping(message)
+    })
 
     uws.native.server.group.onPong(this.serverGroup, (message, webSocket) => {
-      webSocket.onpong(message);
-    });
+      webSocket.onpong(message)
+    })
 
     uws.native.server.group.onConnection(this.serverGroup, (external) => {
-      console.log('onConnection', external)
       const webSocket = new SocketWrapper(external, this._options)
       uws.native.setUserData(external, webSocket);
       this._upgradeCallback(webSocket);
       const _upgradeReq = null;
-    });
+    })
 
-    if (this._options.port) {
-      if (this._options.host) {
-        this._server.listen(this._options.port, this._options.host, () => console.log('here'));
-      } else {
-        this._server.listen(this._options.port, () => console.log('here'));
-      }
-    }
+    this._server.listen(this._options.port, this._options.host)
   }
 
   handleUpgrade (request, socket, upgradeHead, callback) {
@@ -669,7 +637,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
       const ticket = uws.native.transfer(socketHandle.fd === -1 ? socketHandle : socketHandle.fd, sslState)
       socket.on('close', (error) => {
         if (this.serverGroup) {
-          const _upgradeReq = request;
+          const _upgradeReq = request
           this._upgradeCallback = callback ? callback : noop
           uws.native.upgrade(
             this.serverGroup,
@@ -680,41 +648,37 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
         }
       })
     }
-    socket.destroy();
+    socket.destroy()
   }
 
-  broadcast(message, options) {
+  broadcast (message, options) {
     if (this.serverGroup) {
       native.server.group.broadcast(this.serverGroup, message, options && options.binary || false);
     }
   }
 
-  startAutoPing(interval, userMessage) {
+  startAutoPing (interval, userMessage) {
     if (this.serverGroup) {
       native.server.group.startAutoPing(this.serverGroup, interval, userMessage);
     }
   }
 
-  close() {
-    if (this._upgradeListener && this.httpServer) {
-      this.httpServer.removeListener('upgrade', this._upgradeListener);
-      if (!this._passedHttpServer) {
-        this.httpServer.close();
-      }
-    }
+  /**
+   * Closes the ws server connection. The ConnectionEndpoint
+   * will emit a close event once succesfully shut down
+   * @public
+   * @returns {void}
+   */
+  close () {
+    console.log('close')
+    this._server.removeAllListeners('request')
+    this._server.removeAllListeners('upgrade')
+    uws.native.server.group.close(this.serverGroup)
+    this.serverGroup = null
 
-    if (this.serverGroup) {
-      native.server.group.close(this.serverGroup);
-      this.serverGroup = null;
-    }
-  }
-
-  get clients() {
-    if (this.serverGroup) {
-      return {
-        length: native.server.group.getSize(this.serverGroup),
-        forEach: ((cb) => {native.server.group.forEach(this.serverGroup, cb)})
-      };
-    }
+    this._server.close(() => {
+      this._wsServerClosed = true
+      this._checkClosed()
+    })
   }
 }

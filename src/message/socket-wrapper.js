@@ -48,7 +48,7 @@ class SocketWrapper extends EventEmitter {
    * @returns {External} prepared message
    */
   static prepareMessage (message) {
-    UWSSocketWrapper.lastPreparedMessage = message
+    SocketWrapper.lastPreparedMessage = message
     return uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
   }
 
@@ -62,11 +62,9 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   sendPrepared (preparedMessage) {
-    if (this.socket.external) {
-      uws.native.server.sendPrepared(this.socket.external, preparedMessage)
-    } else if (this.socket.external !== null) {
-      this.socket.send(UWSSocketWrapper.lastPreparedMessage)
-    }
+    console.log(this._external, preparedMessage)
+    uws.native.server.sendPrepared(this._external, preparedMessage)
+    console.log('a')
   }
 
   /**
@@ -78,7 +76,8 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   sendNative (message) {
-    this.socket.send(message)
+    console.log('===')
+    uws.native.server.send(this._external, message)
   }
 
   /**
@@ -90,6 +89,7 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   static finalizeMessage (preparedMessage) {
+    console.log(preparedMessage)
     uws.native.server.finalizeMessage(preparedMessage)
   }
 
@@ -158,8 +158,7 @@ class SocketWrapper extends EventEmitter {
     if (this.isClosed === true) {
       return
     }
-
-    console.log(this._external, message, uws.OPCODE_TEXT)
+    console.log('SERVER sending:', message)
     uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
   }
 
@@ -171,7 +170,7 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   destroy () {
-    this.socket.close()
+    uws.native.server.terminate(this._external)
     this.authCallBack = null
   }
 
@@ -182,6 +181,7 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   _onSocketClose () {
+    console.log('_onSocketClose')
     this.isClosed = true
     this.emit('close', this)
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
