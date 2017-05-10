@@ -496,7 +496,7 @@ RecordHandler.prototype._onPermissionResponse = function (
     socketWrapper.sendError(message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
   } else if (canPerformAction !== true) {
     socketWrapper.sendError(
-      message.topic, C.EVENT.MESSAGE_DENIED, [message.data[0], message.data[1]]
+      message.topic, C.EVENT.MESSAGE_DENIED, [message.data[0], message.action]
     )
   } else {
     successCallback()
