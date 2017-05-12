@@ -20,14 +20,12 @@ module.exports = class ClusterRegistry extends EventEmitter {
    * cluster of its presence.
    *
    * @param   {Object} options            deepstream options
-   * @param   {ConnectionEndpoint}    connectionEndpoint deepstream connection endpoint
    *
    * @constructor
    */
-  constructor (options, connectionEndpoint) {
+  constructor (options) {
     super()
     this._options = options
-    this._connectionEndpoint = connectionEndpoint
     this._inCluster = false
     this._nodes = {}
 
@@ -235,7 +233,6 @@ module.exports = class ClusterRegistry extends EventEmitter {
 
     const data = {
       serverName: this._options.serverName,
-      connections: this._connectionEndpoint.getConnectionCount(),
       memory: memoryStats.heapUsed / memoryStats.heapTotal,
       leaderScore: this._leaderScore,
       externalUrl: this._options.externalUrl
