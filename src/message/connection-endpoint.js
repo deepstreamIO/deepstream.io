@@ -201,40 +201,26 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {void}
    */
-  _processConnectionMessage (socketWrapper, connectionMessage) {
-    if (typeof connectionMessage !== 'string') {
-      this._options.logger.log(
-        C.LOG_LEVEL.WARN,
-        C.EVENT.INVALID_MESSAGE,
-        connectionMessage.toString()
-      )
-      socketWrapper.sendError(
-        C.TOPIC.CONNECTION,
-        C.EVENT.INVALID_MESSAGE,
-        'invalid connection message'
-      )
-      return
-    }
-
-    const msg = messageParser.parse(connectionMessage)[0]
-
-    if (msg === null || msg === undefined) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
-      socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
-      socketWrapper.destroy()
-    } else if (msg.topic !== C.TOPIC.CONNECTION) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
-      socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message')
-    } else if (msg.action === C.ACTIONS.PONG) {
-      // do nothing
-    } else if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
-      socketWrapper.socket.removeListener('message', socketWrapper.connectionCallback)
-      socketWrapper.socket.on('message', socketWrapper.authCallBack)
-      socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.ACK)
-    } else {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action)
-      socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, `unknown action ${msg.action}`)
-    }
+  _processConnectionMessage (socketWrapper, rawMessage) {
+    messageParser.parse(rawMessage, (msg, connectionMessage) => {
+      if (msg === null || msg === undefined) {
+        this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
+        socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
+        socketWrapper.destroy()
+      } else if (msg.topic !== C.TOPIC.CONNECTION) {
+        this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
+        socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message')
+      } else if (msg.action === C.ACTIONS.PONG) {
+        return
+      } else if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
+        socketWrapper.socket.removeListener('message', socketWrapper.connectionCallback)
+        socketWrapper.socket.on('message', socketWrapper.authCallBack)
+        socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.ACK)
+      } else {
+        this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action)
+        socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, `unknown action ${msg.action}`)
+      }
+    })
   }
 
   /**
@@ -251,74 +237,61 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _authenticateConnection (socketWrapper, disconnectTimeout, authMsg) {
-    if (typeof authMsg !== 'string') {
-      this._options.logger.log(
-        C.LOG_LEVEL.WARN,
-        C.EVENT.INVALID_AUTH_MSG,
-        authMsg.toString()
-      )
-      socketWrapper.sendError(
-        C.TOPIC.AUTH,
-        C.EVENT.INVALID_AUTH_MSG,
-        'invalid authentication message'
-      )
-      return
-    }
+    messageParser.parse(authMsg, (msg) => {
+      let authData
+      let errorMsg
 
-    const msg = messageParser.parse(authMsg)[0]
-    let authData
-    let errorMsg
-
-    /**
-     * Ignore pong messages
-     */
-    if (msg && msg.topic === C.TOPIC.CONNECTION && msg.action === C.ACTIONS.PONG) {
-      return
-    }
-
-    /**
-     * Log the authentication attempt
-     */
-    const logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
-    this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
-
-    /**
-     * Ensure the message is a valid authentication message
-     */
-    if (!msg ||
-        msg.topic !== C.TOPIC.AUTH ||
-        msg.action !== C.ACTIONS.REQUEST ||
-        msg.data.length !== 1
-      ) {
-      errorMsg = this._options.logInvalidAuthData === true ? authMsg : ''
-      this._sendInvalidAuthMsg(socketWrapper, errorMsg)
-      return
-    }
-
-    /**
-     * Ensure the authentication data is valid JSON
-     */
-    try {
-      authData = this._getValidAuthData(msg.data[0])
-    } catch (e) {
-      errorMsg = 'Error parsing auth message'
-
-      if (this._options.logInvalidAuthData === true) {
-        errorMsg += ` "${authMsg}": ${e.toString()}`
+      /**
+       * Ignore pong messages
+       */
+      if (msg && msg.topic === C.TOPIC.CONNECTION && msg.action === C.ACTIONS.PONG) {
+        return
       }
 
-      this._sendInvalidAuthMsg(socketWrapper, errorMsg)
-      return
-    }
+      /**
+       * Log the authentication attempt
+       */
+      const logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
+      this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
 
-    /**
-     * Forward for authentication
-     */
-    this._options.authenticationHandler.isValidUser(
-      socketWrapper.getHandshakeData(),
-      authData,
-      this._processAuthResult.bind(this, authData, socketWrapper, disconnectTimeout)
-    )
+      /**
+       * Ensure the message is a valid authentication message
+       */
+      if (!msg ||
+          msg.topic !== C.TOPIC.AUTH ||
+          msg.action !== C.ACTIONS.REQUEST ||
+          msg.data.length !== 1
+        ) {
+        errorMsg = this._options.logInvalidAuthData === true ? authMsg : ''
+        this._sendInvalidAuthMsg(socketWrapper, errorMsg)
+        return
+      }
+
+      /**
+       * Ensure the authentication data is valid JSON
+       */
+      try {
+        authData = this._getValidAuthData(msg.data[0])
+      } catch (e) {
+        errorMsg = 'Error parsing auth message'
+
+        if (this._options.logInvalidAuthData === true) {
+          errorMsg += ` "${authMsg}": ${e.toString()}`
+        }
+
+        this._sendInvalidAuthMsg(socketWrapper, errorMsg)
+        return
+      }
+
+      /**
+       * Forward for authentication
+       */
+      this._options.authenticationHandler.isValidUser(
+        socketWrapper.getHandshakeData(),
+        authData,
+        this._processAuthResult.bind(this, authData, socketWrapper, disconnectTimeout)
+      )
+    })
   }
 
   /**

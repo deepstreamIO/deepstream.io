@@ -27,7 +27,7 @@ module.exports = class MessageParser {
    * or null for invalid messages
    *
    * @param   {String} message raw message
-   *
+   * @param   {Function} callback callback for each parsed message
    * @public
    *
    * @returns {Array} array of parsed message objects
@@ -39,13 +39,17 @@ module.exports = class MessageParser {
    *                    data: <array of strings>
    *                  }
    */
-  static parse (message) {
-    const parsedMessages = []
+  static parse (message, callback) {
+    if (typeof message !== 'string') {
+      callback(null, 'non text based message recieved')
+      return
+    }
+
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
     for (let i = 0; i < rawMessages.length; i++) {
-      if (rawMessages[i].length < 3) {
-        continue
+      if (rawMessages[i].length > 2) {
+        callback(this.parseMessage(rawMessages[i]), message)
       }
 
       const parts = rawMessages[i].split(C.MESSAGE_PART_SEPERATOR)
@@ -56,8 +60,6 @@ module.exports = class MessageParser {
         data: parts.splice(2)
       })
     }
-
-    return parsedMessages
   }
 
   /**

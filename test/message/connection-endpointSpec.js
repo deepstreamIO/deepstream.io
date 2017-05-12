@@ -72,8 +72,8 @@ describe('connection endpoint', () => {
 
     it('handles non text based connection messages', () => {
       socketMock.emit('message', [])
-      expect(socketMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      expect(socketMock.lastSendMessage).toBe(_msg('C|E|MESSAGE_PARSE_ERROR|non text based message recieved+'))
+      expect(socketMock.isDisconnected).toBe(true)
     })
   })
 
