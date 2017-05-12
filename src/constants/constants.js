@@ -14,11 +14,16 @@ exports.LOG_LEVEL.ERROR = 3
 exports.LOG_LEVEL.OFF = 100
 
 exports.STATES = {}
-exports.STATES.STARTING = 'starting'
-exports.STATES.INITIALIZED = 'initialized'
-exports.STATES.IS_RUNNING = 'is-running'
-exports.STATES.CLOSING = 'closing'
-exports.STATES.CLOSED = 'closed'
+exports.STATES.STOPPED = 'Stopped'
+exports.STATES.LOGGER_INIT = 'LoggerInit'
+exports.STATES.PLUGIN_INIT = 'PluginInit'
+exports.STATES.SERVICE_INIT = 'ServiceInit'
+exports.STATES.CONNECTION_ENDPOINT_INIT = 'ConnectionEndpointInit'
+exports.STATES.RUNNING = 'Running'
+exports.STATES.CONNECTION_ENDPOINT_SHUTDOWN = 'ConnectionEndpointShutdown'
+exports.STATES.SERVICE_SHUTDOWN = 'ServiceShutdown'
+exports.STATES.PLUGIN_SHUTDOWN = 'PluginShutdown'
+exports.STATES.LOGGER_SHUTDOWN = 'LoggerShutdown'
 
 exports.EVENT = {}
 exports.EVENT.DEPRECATED = 'DEPRECATED'

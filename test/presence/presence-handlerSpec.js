@@ -15,8 +15,7 @@ const options = {
   serverName: 'server-name-a',
   stateReconciliationTimeout: 10,
   messageConnector: messageConnectorMock,
-  logger: new LoggerMock(),
-  connectionEndpoint: new EventEmitter()
+  logger: new LoggerMock()
 }
 const queryMessage = {
   topic: C.TOPIC.PRESENCE,
@@ -38,7 +37,7 @@ describe('presence handler', () => {
   })
 
   it('adds client and subscribes to client logins and logouts', () => {
-    options.connectionEndpoint.emit('client-connected', userOne)
+    presenceHandler.handleJoin(userOne)
 
     const subJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [] }
     presenceHandler.handle(userOne, subJoinMsg)
@@ -51,7 +50,7 @@ describe('presence handler', () => {
   })
 
   it('adds a client and notifies original client', () => {
-    options.connectionEndpoint.emit('client-connected', userTwo)
+    presenceHandler.handleJoin(userTwo)
     expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNJ|Marge+'))
   })
 
@@ -61,19 +60,19 @@ describe('presence handler', () => {
   })
 
   it('same username having another connection does not send an update', () => {
-    options.connectionEndpoint.emit('client-connected', userTwoAgain)
+    presenceHandler.handleJoin(userTwoAgain)
     expect(userOne.socket.lastSendMessage).toBeNull()
   })
 
   it('add another client and only subscribed clients get notified', () => {
-    options.connectionEndpoint.emit('client-connected', userThree)
+    presenceHandler.handleJoin(userThree)
     expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNJ|Bart+'))
     expect(userTwo.socket.lastSendMessage).toBeNull()
     expect(userThree.socket.lastSendMessage).toBeNull()
   })
 
   it('a duplicate client logs out and subscribed clients are not notified', () => {
-    options.connectionEndpoint.emit('client-disconnected', userTwoAgain)
+    presenceHandler.handleLeave(userTwoAgain)
     expect(userOne.socket.lastSendMessage).toBeNull()
     expect(userTwo.socket.lastSendMessage).toBeNull()
     expect(userThree.socket.lastSendMessage).toBeNull()
@@ -85,7 +84,7 @@ describe('presence handler', () => {
   })
 
   it('client three disconnects', () => {
-    options.connectionEndpoint.emit('client-disconnected', userThree)
+    presenceHandler.handleLeave(userThree)
     expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNL|Bart+'))
     expect(userTwo.socket.lastSendMessage).toBeNull()
     expect(userThree.socket.lastSendMessage).toBeNull()
@@ -98,10 +97,10 @@ describe('presence handler', () => {
   })
 
   it('client one does not get notified after unsubscribes', () => {
-    options.connectionEndpoint.emit('client-disconnected', userTwo)
+    presenceHandler.handleLeave(userTwo)
     expect(userOne.socket.lastSendMessage).toBeNull()
 
-    options.connectionEndpoint.emit('client-connected', userThree)
+    presenceHandler.handleJoin(userThree)
     expect(userOne.socket.lastSendMessage).toBeNull()
   })
 })
