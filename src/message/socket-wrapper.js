@@ -62,11 +62,7 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   sendPrepared (preparedMessage) {
-    console.log(this._external, preparedMessage)
-    console.log(this.uuid, this.user)
-    console.log(9)
     uws.native.server.sendPrepared(this._external, preparedMessage)
-    console.log('a')
   }
 
   /**
@@ -78,8 +74,6 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   sendNative (message) {
-    console.log('===')
-    console.log(10)
     uws.native.server.send(this._external, message)
   }
 
@@ -92,7 +86,6 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   static finalizeMessage (preparedMessage) {
-    console.log(preparedMessage)
     uws.native.server.finalizeMessage(preparedMessage)
   }
 
@@ -161,7 +154,6 @@ class SocketWrapper extends EventEmitter {
     if (this.isClosed === true) {
       return
     }
-    console.log('SERVER sending:', message)
     uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
   }
 
@@ -173,7 +165,6 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   destroy () {
-    console.log('SocketWrapper destroy()')
     uws.native.server.terminate(this._external)
   }
 
