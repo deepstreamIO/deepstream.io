@@ -63,6 +63,8 @@ class SocketWrapper extends EventEmitter {
    */
   sendPrepared (preparedMessage) {
     console.log(this._external, preparedMessage)
+    console.log(this.uuid, this.user)
+    console.log(9)
     uws.native.server.sendPrepared(this._external, preparedMessage)
     console.log('a')
   }
@@ -77,6 +79,7 @@ class SocketWrapper extends EventEmitter {
    */
   sendNative (message) {
     console.log('===')
+    console.log(10)
     uws.native.server.send(this._external, message)
   }
 
@@ -170,22 +173,16 @@ class SocketWrapper extends EventEmitter {
    * @returns {void}
    */
   destroy () {
+    console.log('SocketWrapper destroy()')
     uws.native.server.terminate(this._external)
-    this.authCallBack = null
   }
 
-  /**
-   * Callback for closed sockets
-   *
-   * @private
-   * @returns {void}
-   */
-  _onSocketClose () {
-    console.log('_onSocketClose')
+  close () {
     this.isClosed = true
+    delete this.authCallBack
     this.emit('close', this)
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
-    this.socket.removeAllListeners()
+    this.removeAllListeners()
   }
 
   /**

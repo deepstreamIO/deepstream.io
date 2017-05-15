@@ -179,6 +179,7 @@ class SubscriptionRegistry {
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
       const sockets = this._subscriptions.get(name)
       if (sockets) {
+        console.log('sending preparedMessage', sharedMessages)
         const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
         for (const socket of sockets) {
           if (!uniqueSenders.has(socket)) {
@@ -281,7 +282,7 @@ class SubscriptionRegistry {
     }
 
     sockets.add(socket)
-
+    console.log('subscribing', socket.user, 'to', name)
     if (socket.listeners('close').indexOf(this._onSocketClose) === -1) {
       socket.once('close', this._onSocketClose)
     }
