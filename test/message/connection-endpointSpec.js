@@ -7,7 +7,7 @@ let proxyquire = require('proxyquire').noCallThru(),
   httpMock = new HttpMock(),
   httpsMock = new HttpMock(),
   SocketMock = require('../mocks/socket-mock'),
-  ConnectionEndpoint = proxyquire('../../src/message/connection-endpoint', {
+  ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', {
     uws: websocketMock,
     http: httpMock,
     https: httpsMock

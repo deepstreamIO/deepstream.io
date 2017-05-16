@@ -2,9 +2,9 @@
 'use strict'
 
 const SocketMock = require('../mocks/socket-mock')
-const SocketWrapper = require('../../src/message/socket-wrapper')
+const SocketWrapper = require('../../src/message/uws-socket-wrapper')
 
-describe('socket-wrapper creates a unified interface for sockets', () => {
+describe('uws-socket-wrapper creates a unified interface for sockets', () => {
   let socket = new SocketMock(),
     socketWrapper
   socket._socket.remoteAddress = 'some-address'

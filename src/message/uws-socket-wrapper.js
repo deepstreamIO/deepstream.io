@@ -19,7 +19,7 @@ const EventEmitter = require('events').EventEmitter
  *
  * @constructor
  */
-class SocketWrapper extends EventEmitter {
+class UwsSocketWrapper extends EventEmitter {
 
   constructor (external, options) {
     super()
@@ -48,7 +48,7 @@ class SocketWrapper extends EventEmitter {
    * @returns {External} prepared message
    */
   static prepareMessage (message) {
-    SocketWrapper.lastPreparedMessage = message
+    UwsSocketWrapper.lastPreparedMessage = message
     return uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
   }
 
@@ -187,5 +187,5 @@ class SocketWrapper extends EventEmitter {
   }
 }
 
-SocketWrapper.lastPreparedMessage = null
-module.exports = SocketWrapper
+UwsSocketWrapper.lastPreparedMessage = null
+module.exports = UwsSocketWrapper

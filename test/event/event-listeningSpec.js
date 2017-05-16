@@ -5,7 +5,7 @@
 let EventHandler = require('../../src/event/event-handler'),
   msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
   LoggerMock = require('../mocks/logger-mock'),
   noopMessageConnector = require('../../src/default-plugins/noop-message-connector'),
   clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))(),

@@ -5,7 +5,7 @@ let RecordHandler = require('../../src/record/record-handler'),
   msg = require('../test-helper/test-helper').msg,
   StorageMock = require('../mocks/storage-mock'),
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
   LoggerMock = require('../mocks/logger-mock'),
   noopMessageConnector = require('../../src/default-plugins/noop-message-connector'),
   clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
@@ -490,7 +490,7 @@ describe('record handler handles messages', () => {
   })
 
   it('updates a record again with an -1 version number', () => {
-  
+
     recordHandler.handle(clientB, {
       raw: msg('R|U|overrideRecord|-1|{"name":"Tom"}'),
       topic: 'R',
@@ -508,14 +508,14 @@ describe('record handler handles messages', () => {
     options.cache.nextGetWillBeSynchronous = true
     clientA.socket.lastSendMessage = null
     clientB.socket.lastSendMessage = null
-  
+
     recordHandler.handle(clientB, {
       raw: msg('R|U|upsertedRecord|-1|{"name":"Tom"}|{"upsert": true}'),
       topic: 'R',
       action: 'U',
       data: ['upsertedRecord', -1, '{"name":"Tom"}','{"upsert": true}']
     })
-    
+
     options.cache.get('upsertedRecord', (error, record) => {
       expect(record).toEqual({ _v: 1, _d: { name: 'Tom' } })
     })

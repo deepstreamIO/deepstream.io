@@ -3,7 +3,7 @@
 
 let SubscriptionRegistry = require('../../src/utils/subscription-registry'),
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
   lastLogEvent = null,
   socketWrapperOptions = { logger: { log() {} } },
   _msg = require('../test-helper/test-helper').msg,

@@ -3,7 +3,7 @@
 
 let proxyquire = require('proxyquire'),
   RecordDeletion = require('../../src/record/record-deletion'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
   SocketMock = require('../mocks/socket-mock'),
   msg = require('../test-helper/test-helper').msg,
   deletionMsg = { topic: 'R', action: 'D', data: ['someRecord'] }

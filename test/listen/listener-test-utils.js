@@ -4,7 +4,7 @@
 let ListenerRegistry = require('../../src/listen/listener-registry'),
   msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
   LoggerMock = require('../mocks/logger-mock'),
   LocalMessageConnector = require('../mocks/local-message-connector'),
   ClusterRegistry = require('../../src/cluster/cluster-registry'),

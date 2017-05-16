@@ -1,6 +1,6 @@
 'use strict'
 
-const ConnectionEndpoint = require('./message/connection-endpoint')
+const ConnectionEndpoint = require('./message/uws-connection-endpoint')
 const MessageProcessor = require('./message/message-processor')
 const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')

@@ -3,7 +3,7 @@
 const C = require('../constants/constants')
 const messageParser = require('./message-parser')
 const messageBuilder = require('./message-builder')
-const SocketWrapper = require('./socket-wrapper')
+const SocketWrapper = require('./uws-socket-wrapper')
 const events = require('events')
 const http = require('http')
 const https = require('https')
@@ -23,7 +23,7 @@ const OPEN = 'OPEN'
  * @param {Object} options the extended default options
  * @param {Function} readyCallback will be invoked once both the ws is ready
  */
-module.exports = class ConnectionEndpoint extends events.EventEmitter {
+module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
   constructor (options, readyCallback) {
     super()
     this._options = options
@@ -603,7 +603,9 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     uws.native.server.group.onDisconnection(
       this._serverGroup,
       (external, code, message, socketWrapper) => {
-        socketWrapper.close()
+        if (socketWrapper) {
+          socketWrapper.close()
+        }
       }
     )
 

@@ -4,7 +4,7 @@
 const proxyquire = require('proxyquire')
 const RecordRequestMock = require('../mocks/record-request-mock')
 const RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': RecordRequestMock })
-const SocketWrapper = require('../../src/message/socket-wrapper')
+const SocketWrapper = require('../../src/message/uws-socket-wrapper')
 const SocketMock = require('../mocks/socket-mock')
 const msg = require('../test-helper/test-helper').msg
 const StorageMock = require('../mocks/storage-mock')

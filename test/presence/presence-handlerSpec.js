@@ -3,7 +3,7 @@
 
 let EventEmitter = require('events').EventEmitter
 const PresenceHandler = require('../../src/presence/presence-handler')
-const SocketWrapper = require('../../src/message/socket-wrapper')
+const SocketWrapper = require('../../src/message/uws-socket-wrapper')
 const C = require('../../src/constants/constants')
 const _msg = require('../test-helper/test-helper').msg
 const SocketMock = require('../mocks/socket-mock')

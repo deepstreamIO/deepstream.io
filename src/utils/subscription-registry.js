@@ -2,7 +2,7 @@
 
 const C = require('../constants/constants')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
-const SocketWrapper = require('../message/socket-wrapper')
+const SocketWrapper = require('../message/uws-socket-wrapper')
 
 class SubscriptionRegistry {
   /**

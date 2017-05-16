@@ -2,7 +2,7 @@
 'use strict'
 
 let EventHandler = require('../../src/event/event-handler'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
   C = require('../../src/constants/constants'),
   _msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),
