@@ -84,9 +84,7 @@ module.exports = class ListenerRegistry {
   }
 
   onSubscriptionAdded (name, socket, localCount, remoteCount) {
-    if (localCount + remoteCount === 1) {
-      this._reconcile(name)
-    }
+    this._reconcile(name)
 
     if (socket && this._provided.has(name)) {
       this._sendHasProviderUpdate(true, name, socket)
@@ -94,9 +92,7 @@ module.exports = class ListenerRegistry {
   }
 
   onSubscriptionRemoved (name, socket, localCount, remoteCount) {
-    if (localCount + remoteCount === 0) {
-      this._reconcile(name)
-    }
+    this._reconcile(name)
   }
 
   _accept (socket, [ pattern, name ]) {
@@ -171,7 +167,10 @@ module.exports = class ListenerRegistry {
 
     this._pending.clear()
 
-    Promise.all(promises).then(this._dispatch)
+    Promise
+      .all(promises)
+      .catch(this._onError)
+      .then(this._dispatch)
   }
 
   _match (name) {
