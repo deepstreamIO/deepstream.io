@@ -129,7 +129,7 @@ module.exports = class ListenerRegistry {
   }
 
   _onError (err) {
-    this._errorTimeout = setTimeout(() => {
+    this._errorTimeout = this._errorTimeout || setTimeout(() => {
       this._errorTimeout = null
       for (const name of this._subscriptionRegistry.getNames()) {
         this._reconcile(name)
