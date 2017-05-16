@@ -26,7 +26,7 @@ describe('records are requested from cache and storage sequentially', () => {
     options.cache.nextOperationWillBeSynchronous = true
     recordRequest = new RecordRequest('existingRecord', options, socketWrapper, completeCallback)
     expect(options.cache.lastRequestedKey).toBe('existingRecord')
-    expect(completeCallback).toHaveBeenCalledWith({ _v: 1, _d: {} })
+    expect(completeCallback).toHaveBeenCalledWith({ _v: 1, _d: {} }, socketWrapper)
     expect(options.storage.lastRequestedKey).toBe(null)
   })
 
