@@ -5,6 +5,7 @@ const MessageProcessor = require('./message/message-processor')
 const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')
 const messageParser = require('./message/message-parser')
+const messageBuilder = require('./message/message-builder')
 const readMessage = require('./utils/read-message')
 const fs = require('fs')
 const path = require('path')
@@ -48,6 +49,7 @@ const Deepstream = function (config) {
   this._eventHandler = null
   this._rpcHandler = null
   this._recordHandler = null
+  this._messageBuilder = messageBuilder
 
   const state = {
     init: STATES.STOPPED,
@@ -116,15 +118,18 @@ Deepstream.readMessage = readMessage
  * @returns {void}
  */
 Deepstream.prototype.set = function (key, value) {
+  let optionName
   if (key === 'message') {
-    key = 'messageConnector' // eslint-disable-line
+    optionName = 'messageConnector'
+  } else {
+    optionName = key
   }
 
-  if (this._options[key] === undefined) {
-    throw new Error(`Unknown option "${key}"`)
+  if (this._options[optionName] === undefined) {
+    throw new Error(`Unknown option "${optionName}"`)
   }
 
-  this._options[key] = value
+  this._options[optionName] = value
   return this
 }
 
@@ -185,17 +190,29 @@ Deepstream.prototype.stop = function () {
 }
 
 /**
- * Expose the message-parser's convertTyped method
- * so that it can be used within permissionHandlers
+ * Expose the message-parser's convertTyped method for use within plugins
  *
  * @param   {String} value A String starting with a type identifier (see C.TYPES)
  *
  * @public
- * @returns {mixed} the converted value
+ * @returns {JSValue} the converted value
  */
 Deepstream.prototype.convertTyped = function (value) {
   return messageParser.convertTyped(value)
 }
+
+/**
+ * Expose the message-builder's typed method for use within plugins
+ *
+ * @param   {JSValue} value A javascript value
+ *
+ * @public
+ * @returns {String} A type-prefixed string
+ */
+Deepstream.prototype.toTyped = function (value) {
+  return messageBuilder.typed(value)
+}
+
 
 /* ======================================================================= *
  * ========================== State Transitions ========================== *
@@ -440,12 +457,11 @@ Deepstream.prototype._loadConfig = function (config) {
   if (config === null || typeof config === 'string') {
     const result = jsYamlLoader.loadConfig(config)
     this._configFile = result.file
-    config = result.config // eslint-disable-line
+    this._options = result.config
   } else {
     const rawConfig = utils.merge(defaultOptions.get(), config)
-    config = configInitialiser.initialise(rawConfig) // eslint-disable-line
+    this._options = configInitialiser.initialise(rawConfig)
   }
-  this._options = config
 }
 
 /**
