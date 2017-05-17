@@ -21,9 +21,6 @@ module.exports = class PresenceHandler {
   constructor (options) {
     this._options = options
     this._localClients = new Map()
-    this._connectionEndpoint = options.connectionEndpoint
-    this._connectionEndpoint.on('client-connected', this._handleJoin.bind(this))
-    this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
 
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
 
@@ -67,7 +64,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleJoin (socketWrapper) {
+  handleJoin (socketWrapper) {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === undefined) {
       this._localClients.set(socketWrapper.user, 1)
@@ -86,7 +83,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleLeave (socketWrapper) {
+  handleLeave (socketWrapper) {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === 1) {
       this._localClients.delete(socketWrapper.user)

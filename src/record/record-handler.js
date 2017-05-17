@@ -486,6 +486,23 @@ RecordHandler.prototype._onDeleted = function (name, message, originalSender) {
   }
 }
 
+/*
+ * Callback for complete permissions. Notifies socket if permission has failed
+ */
+RecordHandler.prototype._onPermissionResponse = function (
+  socketWrapper, message, successCallback, error, canPerformAction
+) {
+  if (error !== null) {
+    socketWrapper.sendError(message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
+  } else if (canPerformAction !== true) {
+    socketWrapper.sendError(
+      message.topic, C.EVENT.MESSAGE_DENIED, [message.data[0], message.action]
+    )
+  } else {
+    successCallback()
+  }
+}
+
 /**
  * A secondary permissioning step that is performed once we know if the record exists (READ)
  * or if it should be created (CREATE)
@@ -508,20 +525,10 @@ RecordHandler.prototype._permissionAction = function (
     data: [recordName]
   }
 
-  const onResult = function (error, canPerformAction) {
-    if (error !== null) {
-      socketWrapper.sendError(message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-    } else if (canPerformAction !== true) {
-      socketWrapper.sendError(message.topic, C.EVENT.MESSAGE_DENIED, [recordName, action])
-    } else {
-      successCallback()
-    }
-  }
-
   this._options.permissionHandler.canPerformAction(
     socketWrapper.user,
     message,
-    onResult,
+    this._onPermissionResponse.bind(null, socketWrapper, message, successCallback),
     socketWrapper.authData
   )
 }
