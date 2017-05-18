@@ -137,22 +137,27 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
   }
 
   /**
-   * Callback for 'connection' event. Receives
-   * a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user and
-  * subscribes to authentication messages.
+   * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
+   * and subscribes to authentication messages.
    * @param {Websocket} socket
    *
    * @private
    * @returns {void}
    */
-  _onConnection (socketWrapper, request) {
-    socketWrapper.setHandshakeData(request.headers)
-    const handshakeData = socketWrapper.getHandshakeData()
-    const logMsg = `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
+  _onConnection (external) {
+    const handshakeData = this._upgradeRequest.headers
+    this._upgradeRequest = null
+
+    const socketWrapper = new SocketWrapper(external, handshakeData, this._options)
+    uws.native.setUserData(external, socketWrapper)
+
+    this._options.logger.log(
+      C.LOG_LEVEL.INFO,
+      C.EVENT.INCOMING_CONNECTION,
+      `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
+    )
+
     let disconnectTimer
-
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg)
-
     if (this._options.unauthenticatedClientTimeout !== null) {
       disconnectTimer = setTimeout(
         this._processConnectionTimeout.bind(this, socketWrapper),
@@ -161,7 +166,6 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
       socketWrapper.once('close', clearTimeout.bind(null, disconnectTimer))
     }
 
-    socketWrapper.connectionCallback = this._processConnectionMessage.bind(this, socketWrapper)
     socketWrapper.authCallBack = this._authenticateConnection.bind(
       this,
       socketWrapper,
@@ -210,7 +214,6 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
     } else if (msg.action === C.ACTIONS.PONG) {
       // do nothing
     } else if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
-      delete socketWrapper.connectionCallback
       socketWrapper.onMessage = socketWrapper.authCallBack
       socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.ACK)
     } else {
@@ -569,24 +572,18 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
           if (this._options.verifyClient.length === 2) {
             this._options.verifyClient(info, (result, code, name) => {
               if (result) {
-                this._handleUpgrade(request, socket, head, (websocket) => {
-                  this._onConnection(websocket, request)
-                })
+                this._handleUpgrade(request, socket)
               } else {
                 this._terminateSocket(socket, code, name)
               }
             })
           } else if (this._options.verifyClient(info)) {
-            this._handleUpgrade(request, socket, head, (websocket) => {
-              this._onConnection(websocket, request)
-            })
+            this._handleUpgrade(request, socket)
           } else {
             this._terminateSocket(socket, 400, 'Client verification failed')
           }
         } else {
-          this._handleUpgrade(request, socket, head, (websocket) => {
-            this._onConnection(websocket, request)
-          })
+          this._handleUpgrade(request, socket)
         }
       }
       if (this._lastUpgradeListener) {
@@ -621,16 +618,12 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
       webSocket.onpong(message)
     })
 
-    uws.native.server.group.onConnection(this._serverGroup, (external) => {
-      const socketWrapper = new SocketWrapper(external, this._options)
-      uws.native.setUserData(external, socketWrapper)
-      this._upgradeCallback(socketWrapper)
-    })
+    uws.native.server.group.onConnection(this._serverGroup, this._onConnection.bind(this))
 
     this._server.listen(this._options.port, this._options.host)
   }
 
-  _handleUpgrade (request, socket, upgradeHead, callback) {
+  _handleUpgrade (request, socket) {
     const secKey = request.headers['sec-websocket-key']
     const socketHandle = socket.ssl ? socket._parent._handle : socket._handle
     const sslState = socket.ssl ? socket.ssl._external : null
@@ -639,7 +632,7 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
       const ticket = uws.native.transfer(socketHandle.fd === -1 ? socketHandle : socketHandle.fd, sslState)
       socket.on('close', () => {
         if (this._serverGroup) {
-          this._upgradeCallback = callback
+          this._upgradeRequest = request
           uws.native.upgrade(
             this._serverGroup,
             ticket, secKey,

@@ -2,7 +2,6 @@
 
 const C = require('../constants/constants')
 const messageBuilder = require('./message-builder')
-const utils = require('util')
 const uws = require('uws')
 
 const EventEmitter = require('events').EventEmitter
@@ -21,7 +20,7 @@ const EventEmitter = require('events').EventEmitter
  */
 class UwsSocketWrapper extends EventEmitter {
 
-  constructor (external, options) {
+  constructor (external, handshakeData, options) {
     super()
     this.isClosed = false
     this._options = options
@@ -30,7 +29,7 @@ class UwsSocketWrapper extends EventEmitter {
     this.authAttempts = 0
     this.setMaxListeners(0)
     this.uuid = Math.random()
-    this._handshakeData = null
+    this._handshakeData = handshakeData
     this._external = external
 
     this._queuedMessages = []
@@ -90,18 +89,6 @@ class UwsSocketWrapper extends EventEmitter {
   }
 
   /**
-   * Returns a map of parameters that were collected
-   * during the initial http request that established the
-   * connection
-   *
-   * @public
-   * @returns {Object} handshakeData
-   */
-  getHandshakeData () {
-    return this._handshakeData
-  }
-
-  /**
    * Sends an error on the specified topic. The
    * action will automatically be set to C.ACTION.ERROR
    *
@@ -158,7 +145,7 @@ class UwsSocketWrapper extends EventEmitter {
   }
 
   /**
-   * Destroyes the socket. Removes all deepstream specific
+   * Destroys the socket. Removes all deepstream specific
    * logic and closes the connection
    *
    * @public
@@ -177,13 +164,15 @@ class UwsSocketWrapper extends EventEmitter {
   }
 
   /**
-   * Initialise the handshake data from the initial connection
+   * Returns a map of parameters that were collected
+   * during the initial http request that established the
+   * connection
    *
-   * @private
-   * @returns void
+   * @public
+   * @returns {Object} handshakeData
    */
-  setHandshakeData (data) {
-    this._handshakeData = data
+  getHandshakeData () {
+    return this._handshakeData
   }
 }
 
