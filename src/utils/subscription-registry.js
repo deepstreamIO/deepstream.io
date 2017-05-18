@@ -275,6 +275,8 @@ class SubscriptionRegistry {
     }
     names.add(name)
 
+    this._clusterSubscriptions.add(name)
+
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionAdded(
         name,
@@ -283,8 +285,6 @@ class SubscriptionRegistry {
         this.getAllRemoteServers(name).length
       )
     }
-
-    this._clusterSubscriptions.add(name)
 
     const logMsg = `for ${this._topic}:${name} by ${socket.user}`
     this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg)
@@ -313,8 +313,6 @@ class SubscriptionRegistry {
 
     sockets.delete(socket)
 
-    this._clusterSubscriptions.remove(name)
-
     if (sockets.size === 0) {
       this._subscriptions.delete(name)
     }
@@ -325,6 +323,8 @@ class SubscriptionRegistry {
     if (names.size === 0) {
       this._names.delete(socket)
     }
+
+    this._clusterSubscriptions.remove(name)
 
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionRemoved(
