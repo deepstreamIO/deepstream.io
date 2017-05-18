@@ -1,9 +1,14 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let EventEmitter = require('events').EventEmitter
-const PresenceHandler = require('../../src/presence/presence-handler')
-const SocketWrapper = require('../../src/message/uws-socket-wrapper')
+const proxyquire = require('proxyquire').noCallThru()
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const SubscriptionRegistry = proxyquire('../../src/utils/subscription-registry', {
+  '../message/uws-socket-wrapper': SocketWrapper
+})
+const PresenceHandler = proxyquire('../../src/presence/presence-handler', {
+  '../utils/subscription-registry': SubscriptionRegistry
+})
 const C = require('../../src/constants/constants')
 const _msg = require('../test-helper/test-helper').msg
 const SocketMock = require('../mocks/socket-mock')

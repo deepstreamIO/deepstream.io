@@ -2,22 +2,24 @@
 'use strict'
 
 let proxyquire = require('proxyquire').noCallThru(),
-  websocketMock = require('../mocks/websocket-mock'),
+  uwsMock = require('../mocks/uws-mock'),
   HttpMock = require('../mocks/http-mock'),
   httpMock = new HttpMock(),
   httpsMock = new HttpMock(),
   SocketMock = require('../mocks/socket-mock'),
+  SocketWrapperMock = require('../mocks/socket-wrapper-mock'),
   ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', {
-    uws: websocketMock,
+    uws: uwsMock,
     http: httpMock,
-    https: httpsMock
+    https: httpsMock,
+    './uws-socket-wrapper': SocketWrapperMock
   }),
   _msg = require('../test-helper/test-helper').msg,
   permissionHandlerMock = require('../mocks/permission-handler-mock'),
   authenticationHandlerMock = require('../mocks/authentication-handler-mock'),
   lastAuthenticatedMessage = null,
   lastLoggedMessage = null,
-  socketMock,
+  socketWrapperMock,
   options,
   connectionEndpoint
 
@@ -48,118 +50,116 @@ describe('connection endpoint', () => {
   })
 
   it('sets autopings on the websocket server', () => {
-    expect(websocketMock.pingInterval).toBe(options.heartbeatInterval)
-    expect(websocketMock.pingMessage).toBe(_msg('C|PI+'))
+    expect(uwsMock.pingInterval).toBe(options.heartbeatInterval)
+    expect(uwsMock.pingMessage).toBe(_msg('C|PI+'))
   })
 
   describe('the connection endpoint handles invalid connection messages', () => {
     beforeEach(() => {
-      socketMock = websocketMock.simulateConnection()
-      expect(socketMock.lastSendMessage).toBe(_msg('C|CH+'))
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      expect(uwsMock._lastUserData).not.toBe(null)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|CH+'))
     })
 
     it('handles gibberish messages', () => {
-      socketMock.emit('message', 'gibberish')
-      expect(socketMock.lastSendMessage).toBe(_msg('C|E|MESSAGE_PARSE_ERROR|gibberish+'))
-      expect(socketMock.isDisconnected).toBe(true)
+      uwsMock._messageHandler('gibberish', socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|E|MESSAGE_PARSE_ERROR|gibberish+'))
+      expect(socketWrapperMock.isClosed).toBe(true)
     })
 
     it('handles invalid connection topic', () => {
-      socketMock.emit('message', _msg('A|REQ|{}+'))
-      expect(socketMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      uwsMock._messageHandler(_msg('A|REQ|{}+'), socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
 
     it('handles non text based connection messages', () => {
-      socketMock.emit('message', [])
-      expect(socketMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      uwsMock._messageHandler([], socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
   })
 
   describe('the connection endpoint handles invalid auth messages', () => {
     it('creates the connection endpoint', () => {
-      socketMock = websocketMock.simulateConnection()
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
 
-      expect(socketMock.lastSendMessage).toBe(_msg('C|CH+'))
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|CH+'))
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
 
-      expect(socketMock.lastSendMessage).toBe(_msg('C|A+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|A+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
 
     it('handles invalid auth messages', () => {
-      socketMock.emit('message', 'gibberish')
-      expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
-      expect(socketMock.isDisconnected).toBe(true)
+      uwsMock._messageHandler('gibberish', socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
+      expect(socketWrapperMock.isClosed).toBe(true)
     })
 
     it('handles non text based auth messages', () => {
-      socketMock.emit('message', [])
-      expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
-      expect(socketMock.isDisconnected).toBe(true)
+      uwsMock._messageHandler([], socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
+      expect(socketWrapperMock.isClosed).toBe(true)
     })
 
     it('has discarded the invalid socket', () => {
-      socketMock.lastSendMessage = null
-      socketMock.emit('message', 'some more gibberish')
-      expect(socketMock.lastSendMessage).toBe(null)
+      socketWrapperMock.lastSendMessage = null
+      uwsMock._messageHandler('some more gibberish', socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(null)
     })
   })
 
   describe('the connection endpoint handles null values', () => {
     it('creates the connection endpoint', () => {
-      socketMock = websocketMock.simulateConnection()
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
 
-      expect(socketMock.lastSendMessage).toBe(_msg('C|CH+'))
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|CH+'))
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
 
-      expect(socketMock.lastSendMessage).toBe(_msg('C|A+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|A+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
 
     it('handles invalid auth messages', () => {
-      socketMock.emit('message', 'A|REQ|null+')
-      expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
-      expect(socketMock.isDisconnected).toBe(true)
+      uwsMock._messageHandler('A|REQ|null+', socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
+      expect(socketWrapperMock.isClosed).toBe(true)
     })
 
     it('has discarded the invalid socket', () => {
-      socketMock.lastSendMessage = null
-      socketMock.emit('message', 'some more gibberish')
-      expect(socketMock.lastSendMessage).toBe(null)
+      socketWrapperMock.lastSendMessage = null
+      uwsMock._messageHandler('some more gibberish', socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(null)
     })
   })
 
   describe('the connection endpoint handles invalid json', () => {
     it('creates the connection endpoint', () => {
-      socketMock = websocketMock.simulateConnection()
-      expect(socketMock.lastSendMessage).toBe(_msg('C|CH+'))
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
-      expect(socketMock.lastSendMessage).toBe(_msg('C|A+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|CH+'))
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|A+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
 
     it('handles invalid json messages', () => {
-      socketMock.emit('message', _msg('A|REQ|{"a":"b}+'))
-      expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
-      expect(socketMock.isDisconnected).toBe(true)
-    })
-  })
-
-  describe('handles errors from the servers', () => {
-    it('handles errors from the websocket server', () => {
-      lastLoggedMessage = null
-      websocketMock.emit('error', new Error('bla'))
-      expect(lastLoggedMessage).toBe('Error: bla')
+      uwsMock._messageHandler(_msg('A|REQ|{"a":"b}+'), socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
+      expect(socketWrapperMock.isClosed).toBe(true)
     })
   })
 
   describe('the connection endpoint does not route invalid auth messages to the permissionHandler', () => {
     it('creates the connection endpoint', () => {
-      socketMock = websocketMock.simulateConnection()
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
 
     it('handles invalid auth messages', () => {
@@ -167,21 +167,22 @@ describe('connection endpoint', () => {
 
       authenticationHandlerMock.nextUserValidationResult = false
 
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
 
       expect(authenticationHandlerMock.lastUserValidationQueryArgs.length).toBe(3)
       expect(authenticationHandlerMock.lastUserValidationQueryArgs[1].user).toBe('wolfram')
       expect(lastLoggedMessage.indexOf('wolfram')).not.toBe(-1)
-      expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
   })
 
   describe('the connection endpoint emits a client events for user with name', () => {
     beforeAll(() => {
       authenticationHandlerMock.nextUserValidationResult = true
-      socketMock = websocketMock.simulateConnection()
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
     })
 
     it('emits connected event for user with name', (done) => {
@@ -190,7 +191,7 @@ describe('connection endpoint', () => {
         done()
       })
 
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
     })
 
     it('emits disconnected event for user with name', (done) => {
@@ -199,7 +200,7 @@ describe('connection endpoint', () => {
         done()
       })
 
-      socketMock.close()
+      socketWrapperMock.socket.close()
     })
   })
 
@@ -208,8 +209,9 @@ describe('connection endpoint', () => {
     beforeAll(() => {
       authenticationHandlerMock.nextUserIsAnonymous = true
       authenticationHandlerMock.nextUserValidationResult = true
-      socketMock = websocketMock.simulateConnection()
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
     })
 
     afterAll(() => {
@@ -221,7 +223,7 @@ describe('connection endpoint', () => {
       const spy = jasmine.createSpy('client-connected')
 
       connectionEndpoint.once('client-connected', spy)
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
 
       expect(spy).not.toHaveBeenCalled()
     })
@@ -231,7 +233,7 @@ describe('connection endpoint', () => {
       const spy = jasmine.createSpy('client-disconnected')
 
       connectionEndpoint.once('client-disconnected', spy)
-      socketMock.close()
+      socketWrapperMock.socket.close()
 
       expect(spy).not.toHaveBeenCalled()
     })
@@ -240,32 +242,34 @@ describe('connection endpoint', () => {
 
   describe('disconnects if the number of invalid authentication attempts is exceeded', () => {
     it('creates the connection endpoint', () => {
-      socketMock = websocketMock.simulateConnection()
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
     })
 
     it('handles valid auth messages', () => {
       authenticationHandlerMock.nextUserValidationResult = false
       options.maxAuthAttempts = 3
 
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
-      expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
 
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
-      expect(socketMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
 
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
-      expect(socketMock.lastSendMessage).toBe(_msg('A|E|TOO_MANY_AUTH_ATTEMPTS|Stoo many authentication attempts+'))
-      expect(socketMock.isDisconnected).toBe(true)
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|TOO_MANY_AUTH_ATTEMPTS|Stoo many authentication attempts+'))
+      expect(socketWrapperMock.isClosed).toBe(true)
     })
   })
 
   describe('disconnects client if authentication timeout is exceeded', () => {
     beforeAll(() => {
       options.unauthenticatedClientTimeout = 100
-      socketMock = websocketMock.simulateConnection()
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
     })
 
     afterAll(() => {
@@ -274,8 +278,8 @@ describe('connection endpoint', () => {
 
     it('disconnects client after timeout and sends force close', (done) => {
       setTimeout(() => {
-        expect(socketMock.lastSendMessage).toBe(_msg('C|E|CONNECTION_AUTHENTICATION_TIMEOUT|Sconnection has not authenticated successfully in the expected time+'))
-        expect(socketMock.isDisconnected).toBe(true)
+        expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|E|CONNECTION_AUTHENTICATION_TIMEOUT|Sconnection has not authenticated successfully in the expected time+'))
+        expect(socketWrapperMock.isClosed).toBe(true)
         done()
       }, 150)
     })
@@ -285,13 +289,14 @@ describe('connection endpoint', () => {
     it('creates the connection endpoint', () => {
       options.logInvalidAuthData = false
 
-      socketMock = websocketMock.simulateConnection()
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
     })
 
     it('handles valid auth messages', () => {
       authenticationHandlerMock.nextUserValidationResult = false
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
       expect(lastLoggedMessage.indexOf('wolfram')).toBe(-1)
     })
   })
@@ -299,35 +304,37 @@ describe('connection endpoint', () => {
   describe('the connection endpoint routes valid auth messages to the permissionHandler', () => {
     it('creates the connection endpoint', () => {
       authenticationHandlerMock.onClientDisconnectCalledWith = null
-      socketMock = websocketMock.simulateConnection()
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
     })
 
     it('authenticates valid sockets', () => {
       authenticationHandlerMock.nextUserValidationResult = true
 
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
 
-      expect(socketMock.lastSendMessage).toBe(_msg('A|A+'))
-      expect(socketMock.isDisconnected).toBe(false)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|A+'))
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
 
     it('forwards messages from authenticated sockets', () => {
       expect(lastAuthenticatedMessage).toBe(null)
-      socketMock.emit('message', _msg('E|EVT|testMsg+'))
+      uwsMock._messageHandler(_msg('E|EVT|testMsg+'), socketWrapperMock)
       expect(lastAuthenticatedMessage).toEqual({ raw: _msg('E|EVT|testMsg'), topic: 'E', action: 'EVT', data: ['testMsg'] })
     })
 
     it('notifies the permissionHandler when a client disconnects', () => {
-      socketMock.close()
+      socketWrapperMock.socket.close()
       expect(authenticationHandlerMock.onClientDisconnectCalledWith).toBe('test-user')
     })
   })
 
   describe('forwards additional data for positive authentications', () => {
     it('creates the connection endpoint', () => {
-      socketMock = websocketMock.simulateConnection()
-      socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
+      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
 
       authenticationHandlerMock.reset()
       authenticationHandlerMock.nextUserValidationResult = true
@@ -335,8 +342,8 @@ describe('connection endpoint', () => {
     })
 
     it('authenticates valid sockets', () => {
-      socketMock.emit('message', _msg('A|REQ|{"user":"wolfram"}+'))
-      expect(socketMock.lastSendMessage).toBe(_msg('A|A|Stest-data+'))
+      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
+      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|A|Stest-data+'))
     })
   })
 
@@ -346,7 +353,8 @@ describe('connection endpoint', () => {
     let unclosedSocket
 
     beforeAll(() => {
-      unclosedSocket = websocketMock.simulateConnection()
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
       unclosedSocket.autoClose = false
       connectionEndpoint.once('close', closeSpy)
       connectionEndpoint.close()
@@ -367,15 +375,16 @@ describe('connection endpoint', () => {
     })
 
     it('does not allow future connections', () => {
-      socketMock = websocketMock.simulateConnection()
+      connectionEndpoint._server._simulateUpgrade(new SocketMock())
+      socketWrapperMock = uwsMock.simulateConnection()
 
-      expect(socketMock.lastSendMessage).toBe(null)
-      expect(socketMock.isDisconnected).toBe(false)
+      expect(socketWrapperMock.lastSendMessage).toBe(null)
+      expect(socketWrapperMock.isClosed).toBe(false)
 
-      socketMock.emit('message', 'gibberish')
+      uwsMock._messageHandler('gibberish', socketWrapperMock)
 
-      expect(socketMock.lastSendMessage).toBe(null)
-      expect(socketMock.isDisconnected).toBe(false)
+      expect(socketWrapperMock.lastSendMessage).toBe(null)
+      expect(socketWrapperMock.isClosed).toBe(false)
     })
   })
 })

@@ -2,7 +2,7 @@
 'use strict'
 
 let RpcHandler = require('../../src/rpc/rpc-handler'),
-  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
   C = require('../../src/constants/constants'),
   _msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),

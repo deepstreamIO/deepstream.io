@@ -2,11 +2,18 @@
 'use strict'
 
 let proxyquire = require('proxyquire').noCallThru(),
-  websocketMock = require('../mocks/websocket-mock'),
+  uwsMock = require('../mocks/uws-mock'),
   HttpMock = require('../mocks/http-mock'),
   httpMock = new HttpMock(),
   httpsMock = new HttpMock(),
-  ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', { uws: websocketMock, http: httpMock, https: httpsMock }),
+  SocketWrapperMock = require('../mocks/socket-wrapper-mock'),
+  ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', {
+    uws: uwsMock,
+    http: httpMock,
+    https: httpsMock,
+    './uws-socket-wrapper': SocketWrapperMock
+  }),
+  SocketMock = require('../mocks/socket-mock'),
   _msg = require('../test-helper/test-helper').msg,
   lastAuthenticatedMessage = null,
   lastLoggedMessage = null,
@@ -37,28 +44,29 @@ options = {
 }
 
 describe('permissionHandler passes additional user meta data', () => {
-  let socketMock
+  let socketWrapperMock
 
   beforeAll(() => {
     connectionEndpoint = new ConnectionEndpoint(options, () => {})
     connectionEndpoint.onMessages = function (socket, messages) {
       lastAuthenticatedMessage = messages[messages.length - 1]
     }
-    socketMock = websocketMock.simulateConnection()
-    socketMock.emit('message', _msg('C|CHR|localhost:6021+'))
+    connectionEndpoint._server._simulateUpgrade(new SocketMock())
+    socketWrapperMock = uwsMock.simulateConnection()
+    uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
   })
 
   it('sends an authentication message', () => {
     spyOn(permissionHandler, 'isValidUser').and.callThrough()
-    socketMock.emit('message', _msg('A|REQ|{"role": "admin"}+'))
+    uwsMock._messageHandler(_msg('A|REQ|{"role": "admin"}+'), socketWrapperMock)
     expect(permissionHandler.isValidUser).toHaveBeenCalled()
     expect(permissionHandler.isValidUser.calls.mostRecent().args[1]).toEqual({ role: 'admin' })
-    expect(socketMock.lastSendMessage).toBe(_msg('A|A|O{"firstname":"Wolfram"}+'))
+    expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|A|O{"firstname":"Wolfram"}+'))
   })
 
   it('sends a record read message', () => {
     spyOn(connectionEndpoint, 'onMessages')
-    socketMock.emit('message', _msg('R|CR|someRecord+'))
+    uwsMock._messageHandler(_msg('R|CR|someRecord+'), socketWrapperMock)
     expect(connectionEndpoint.onMessages).toHaveBeenCalled()
     expect(connectionEndpoint.onMessages.calls.mostRecent().args[0].authData).toEqual({ role: 'admin' })
   })

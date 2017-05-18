@@ -36,6 +36,21 @@ HttpServerMock.prototype.address = function () {
   }
 }
 
+HttpServerMock.prototype._simulateUpgrade = function (socket) {
+  const head = {}
+  const request = {
+    url: 'https://deepstream.io/?ds=foo',
+    headers: {
+      origin: '',
+      'sec-websocket-key': 'xxxxxxxxxxxxxxxxxxxxxxxx'
+    },
+    connection: {
+      authorized: true
+    }
+  }
+  this.emit('upgrade', request, socket, head)
+}
+
 const HttpMock = function () {
   this.nextServerIsListening = false
 }

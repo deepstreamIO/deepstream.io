@@ -1,9 +1,12 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let SubscriptionRegistry = require('../../src/utils/subscription-registry'),
+let proxyquire = require('proxyquire').noCallThru(),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
+  SubscriptionRegistry = proxyquire('../../src/utils/subscription-registry', {
+    '../message/uws-socket-wrapper': SocketWrapper
+  }),
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
   lastLogEvent = null,
   socketWrapperOptions = { logger: { log() {} } },
   _msg = require('../test-helper/test-helper').msg,

@@ -1,12 +1,11 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let proxyquire = require('proxyquire'),
-  RecordDeletion = require('../../src/record/record-deletion'),
-  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
-  SocketMock = require('../mocks/socket-mock'),
-  msg = require('../test-helper/test-helper').msg,
-  deletionMsg = { topic: 'R', action: 'D', data: ['someRecord'] }
+const RecordDeletion = require('../../src/record/record-deletion')
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const SocketMock = require('../mocks/socket-mock')
+const msg = require('../test-helper/test-helper').msg
+const deletionMsg = { topic: 'R', action: 'D', data: ['someRecord'] }
 
 const getOptions = function () {
   return {

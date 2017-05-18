@@ -3,7 +3,7 @@
 
 let RpcHandler = require('../../src/rpc/rpc-handler'),
   RpcProxy = require('../../src/rpc/rpc-proxy'),
-  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
   C = require('../../src/constants/constants'),
   msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),

@@ -2,7 +2,7 @@
 'use strict'
 
 let SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
   permissionHandlerMock = require('../mocks/permission-handler-mock'),
   MessageProcessor = require('../../src/message/message-processor'),
   _msg = require('../test-helper/test-helper').msg,

@@ -2,12 +2,12 @@
 'use strict'
 
 let proxyquire = require('proxyquire').noCallThru(),
-  websocketMock = require('../mocks/websocket-mock'),
+  uwsMock = require('../mocks/uws-mock'),
   HttpMock = require('../mocks/http-mock'),
   httpMock = new HttpMock(),
   httpsMock = new HttpMock(),
   ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', {
-    uws: websocketMock,
+    uws: uwsMock,
     http: httpMock,
     https: httpsMock
   }),
@@ -28,7 +28,7 @@ let options = {
   logInvalidAuthData: true
 }
 
-fdescribe('validates HTTPS server conditions', () => {
+describe('validates HTTPS server conditions', () => {
   const options = null
   let error = null
   let connectionEndpointValidation = null

@@ -1,11 +1,17 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let RecordHandler = require('../../src/record/record-handler'),
+let proxyquire = require('proxyquire').noCallThru(),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
+  SubscriptionRegistry = proxyquire('../../src/utils/subscription-registry', {
+    '../message/uws-socket-wrapper': SocketWrapper
+  }),
+  RecordHandler = proxyquire('../../src/record/record-handler', {
+    '../utils/subscription-registry': SubscriptionRegistry
+  }),
   msg = require('../test-helper/test-helper').msg,
   StorageMock = require('../mocks/storage-mock'),
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/uws-socket-wrapper'),
   LoggerMock = require('../mocks/logger-mock'),
   MessageConnectorMock = require('../mocks/message-connector-mock.js'),
   clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
