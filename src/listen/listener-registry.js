@@ -16,6 +16,7 @@ module.exports = class ListenerRegistry {
     this._timeouts = new Map()
     this._provided = new Set()
 
+    this._isDispatching = false
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
     this._serverName = options.serverName
@@ -152,12 +153,19 @@ module.exports = class ListenerRegistry {
 
   _reconcile (name) {
     this._pending.add(name)
-    this._dispatching = this._dispatching || setTimeout(this._dispatch, 10)
+
+    if (this._isDispatching) {
+      return
+    }
+
+    this._isDispatching = true
+
+    process.nextTick(this._dispatch)
   }
 
   _dispatch () {
     if (this._pending.size === 0) {
-      this._dispatching = null
+      this._isDispatching = false
       return
     }
 
