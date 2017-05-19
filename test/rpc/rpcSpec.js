@@ -11,8 +11,8 @@ let C = require('../../src/constants/constants'),
   mockRpcHandler = { getAlternativeProvider() { return alternativeProvider }, _$onDestroy () {} },
 	mockMessageConnector = new (require('../mocks/message-connector-mock'))(),
 	options = {
-  rpcAckTimeout: 5,
-  rpcTimeout: 5
+  rpcAckTimeout: 15,
+  rpcTimeout: 15
 },
 	requestMessage = {
   topic: C.TOPIC.RPC,
@@ -108,7 +108,7 @@ describe('executes local rpc calls', () => {
   })
 })
 
-describe('reroutes remote rpc calls', () => {
+fdescribe('reroutes remote rpc calls', () => {
   let rpc
   let provider
   let requestor
