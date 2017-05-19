@@ -277,6 +277,7 @@ module.exports = class ListenerRegistry {
     return (
       provider &&
       provider.uuid &&
+      provider.serverName !== this._serverName &&
       this._subscriptionRegistry.getAllRemoteServers().indexOf(provider.serverName) !== -1
     )
   }
