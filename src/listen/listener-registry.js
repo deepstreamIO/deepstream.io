@@ -660,7 +660,11 @@ module.exports = class ListenerRegistry {
   */
   _sendHasProviderUpdateToSingleSubscriber (hasProvider, socketWrapper, subscriptionName) {
     if (socketWrapper && this._topic === C.TOPIC.RECORD) {
-      socketWrapper.send(this._createHasProviderMessage(hasProvider, this._topic, subscriptionName))
+      socketWrapper.sendMessage(
+        this._topic,
+        C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+        [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
+      )
     }
   }
 
@@ -673,10 +677,12 @@ module.exports = class ListenerRegistry {
     if (this._topic !== C.TOPIC.RECORD) {
       return
     }
-    this._clientRegistry.sendToSubscribers(
-      subscriptionName,
-      this._createHasProviderMessage(hasProvider, this._topic, subscriptionName)
+    const message = messageBuilder.getMsg(
+      this._topic,
+      C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+      [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
     )
+    this._clientRegistry.sendToSubscribers(subscriptionName, message)
   }
 
   /**
@@ -894,18 +900,5 @@ module.exports = class ListenerRegistry {
   */
   _getUniqueLockName (subscriptionName) {
     return `${this._uniqueLockName}_${subscriptionName}`
-  }
-
-  /**
-  * Create a has provider update message
-  *
-  * @returns {Message}
-  */
-  _createHasProviderMessage (hasProvider, topic, subscriptionName) { // eslint-disable-line
-    return messageBuilder.getMsg(
-      topic,
-      C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-      [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
-    )
   }
 }
