@@ -140,10 +140,9 @@ module.exports = class ListenerRegistry {
 
   _reconcilePattern (expr) {
     // TODO: Optimize
-    const names = this._subscriptionRegistry.getNames()
-    for (let n = 0; n < names.length; ++n) {
-      if (!expr || expr.test(names[n])) {
-        this._reconcile(names[n])
+    for (const name of this._subscriptionRegistry.getNames()) {
+      if (!expr || expr.test(name)) {
+        this._reconcile(name)
       }
     }
   }
