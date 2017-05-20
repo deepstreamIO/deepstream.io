@@ -112,7 +112,7 @@ module.exports = class ListenerRegistry {
         } : null
       )
       .then(([ next, prev ]) => {
-        if (!next) {
+        if (!next && prev.uuid !== socket.uuid) {
           socket.sendMessage(this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ pattern, name ])
         }
       })
