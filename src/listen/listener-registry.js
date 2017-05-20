@@ -8,7 +8,6 @@ const xuid = require('xuid')
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._reconcile = this._reconcile.bind(this)
-    this._dispatch = this._dispatch.bind(this)
     this._onError = this._onError.bind(this)
 
     this._listeners = new Map()
@@ -84,7 +83,7 @@ module.exports = class ListenerRegistry {
 
   onSubscriptionAdded (name, socket, localCount, remoteCount) {
     if (localCount + remoteCount === 1) {
-      this._reconcile([ name ])
+      this._reconcile(name)
     }
 
     if (socket && this._provided.has(name)) {
@@ -94,7 +93,7 @@ module.exports = class ListenerRegistry {
 
   onSubscriptionRemoved (name, socket, localCount, remoteCount) {
     if (localCount + remoteCount === 0) {
-      this._reconcile([ name ])
+      this._reconcile(name)
     }
   }
 
@@ -134,25 +133,22 @@ module.exports = class ListenerRegistry {
   _onError (err) {
     this._errorTimeout = this._errorTimeout || setTimeout(() => {
       this._errorTimeout = null
-      this._reconcile(this._subscriptionRegistry.getNames())
+      this._reconcilePattern()
     }, 10000)
     this._logger.log(C.LOG_LEVEL.ERROR, err.message)
   }
 
   _reconcilePattern (expr) {
-    this._reconcile(this._subscriptionRegistry
-      .getNames()
-      .filter(name => expr.test(name))
-    )
-  }
-
-  _reconcile (names) {
-    for (const name of names) {
-      this._reconcileName(name).catch(this._onError())
+    // TODO: Optimize
+    const names = this._subscriptionRegistry.getNames()
+    for (let n = 0; n < names.length; ++n) {
+      if (!expr || expr.test(names[n])) {
+        this._reconcile(names[n])
+      }
     }
   }
 
-  _reconcileName (name) {
+  _reconcile (name) {
     return this._providers
       .upsert(name, prev => {
         if (!prev.deadline && this._isAlive(prev)) {
@@ -224,9 +220,11 @@ module.exports = class ListenerRegistry {
           )
         }
       })
+      .catch(this._onError)
   }
 
   _match (name) {
+    // TODO: Optimize
     const matches = []
     for (const { expr, sockets } of this._listeners.values()) {
       if (expr.test(name)) {
