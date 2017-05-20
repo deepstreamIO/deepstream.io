@@ -11,12 +11,10 @@ module.exports = class ListenerRegistry {
     this._dispatch = this._dispatch.bind(this)
     this._onError = this._onError.bind(this)
 
-    this._pending = new Set()
     this._listeners = new Map()
     this._timeouts = new Map()
     this._provided = new Set()
 
-    this._isDispatching = false
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
     this._serverName = options.serverName
@@ -86,7 +84,7 @@ module.exports = class ListenerRegistry {
 
   onSubscriptionAdded (name, socket, localCount, remoteCount) {
     if (localCount + remoteCount === 1) {
-      this._reconcile(name)
+      this._reconcile([ name ])
     }
 
     if (socket && this._provided.has(name)) {
@@ -96,7 +94,7 @@ module.exports = class ListenerRegistry {
 
   onSubscriptionRemoved (name, socket, localCount, remoteCount) {
     if (localCount + remoteCount === 0) {
-      this._reconcile(name)
+      this._reconcile([ name ])
     }
   }
 
@@ -136,63 +134,25 @@ module.exports = class ListenerRegistry {
   _onError (err) {
     this._errorTimeout = this._errorTimeout || setTimeout(() => {
       this._errorTimeout = null
-      for (const name of this._subscriptionRegistry.getNames()) {
-        this._reconcile(name)
-      }
+      this._reconcile(this._subscriptionRegistry.getNames())
     }, 10000)
     this._logger.log(C.LOG_LEVEL.ERROR, err.message)
   }
 
   _reconcilePattern (expr) {
-    for (const name of this._subscriptionRegistry.getNames()) {
-      if (expr.test(name)) {
-        this._reconcile(name)
-      }
+    this._reconcile(this._subscriptionRegistry
+      .getNames()
+      .filter(name => expr.test(name))
+    )
+  }
+
+  _reconcile (names) {
+    for (const name of names) {
+      this._reconcileName(name).catch(this._onError())
     }
   }
 
-  _reconcile (name) {
-    this._pending.add(name)
-
-    if (this._isDispatching) {
-      return
-    }
-
-    this._isDispatching = true
-
-    process.nextTick(this._dispatch)
-  }
-
-  _dispatch () {
-    if (this._pending.size === 0) {
-      this._isDispatching = false
-      return
-    }
-
-    const promises = []
-    for (const name of this._pending) {
-      const promise = this._subscriptionRegistry.hasName(name)
-        ? this._tryAdd(name)
-        : this._tryRemove(name)
-      promises.push(promise.catch(this._onError))
-    }
-
-    this._pending.clear()
-
-    Promise.all(promises).then(this._dispatch)
-  }
-
-  _match (name) {
-    const matches = []
-    for (const { expr, sockets } of this._listeners.values()) {
-      if (expr.test(name)) {
-        matches.push(...sockets.values())
-      }
-    }
-    return matches
-  }
-
-  _tryAdd (name) {
+  _reconcileName (name) {
     return this._providers
       .upsert(name, prev => {
         if (!prev.deadline && this._isAlive(prev)) {
@@ -204,73 +164,76 @@ module.exports = class ListenerRegistry {
           this._sendHasProviderUpdate(false, name)
         }
 
-        if (this._isAlive(prev)) {
-          return
-        }
+        if (this._subscriptionRegistry.hasName(name)) {
+          if (this._isAlive(prev)) {
+            return
+          }
 
-        const history = prev.history || []
-        const matches = this._match(name).filter(match => !history.includes(match.id))
+          const history = prev.history || []
+          const matches = this._match(name).filter(match => !history.includes(match.id))
 
-        if (matches.length === 0) {
-          return history.length ? { history } : {}
-        }
+          if (matches.length === 0) {
+            return history.length ? { history } : {}
+          }
 
-        const match = matches[Math.floor(Math.random() * matches.length)]
+          const match = matches[Math.floor(Math.random() * matches.length)]
 
-        return {
-          history: history.concat(match.id),
-          uuid: match.socket.uuid,
-          pattern: match.pattern,
-          serverName: this._serverName,
-          deadline: Date.now() + this._listenResponseTimeout
+          return {
+            history: history.concat(match.id),
+            uuid: match.socket.uuid,
+            pattern: match.pattern,
+            serverName: this._serverName,
+            deadline: Date.now() + this._listenResponseTimeout
+          }
+        } else {
+          return prev.uuid && (this._isLocal(prev) || !this._isRemote(prev)) ? {} : null
         }
       })
-      .then(([ next, prev ]) => {
-        if (!next || !next.uuid) {
-          return
-        }
-
-        const listener = this._listeners.get(next.pattern)
-        const { socket } = (listener && listener.sockets.get(next.uuid)) || {}
-
-        if (!socket) {
-          return
-        }
-
-        this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
-
-        socket.sendMessage(
-          this._topic,
-          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-          [ next.pattern, name ]
-        )
-      })
-  }
-
-  _tryRemove (name) {
-    return this._providers
-      .upsert(name, prev => prev.uuid && (this._isLocal(prev) || !this._isRemote(prev))
-        ? {}
-        : null
-      )
       .then(([ next, prev ]) => {
         if (!next) {
           return
         }
 
-        const listener = this._listeners.get(prev.pattern)
-        const { socket } = (listener && listener.sockets.get(prev.uuid)) || {}
+        if (next.uuid) {
+          const listener = this._listeners.get(next.pattern)
+          const { socket } = (listener && listener.sockets.get(next.uuid)) || {}
 
-        if (!socket) {
-          return
+          if (!socket) {
+            return
+          }
+
+          this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
+
+          socket.sendMessage(
+            this._topic,
+            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+            [ next.pattern, name ]
+          )
+        } else if (prev.uuid) {
+          const listener = this._listeners.get(prev.pattern)
+          const { socket } = (listener && listener.sockets.get(prev.uuid)) || {}
+
+          if (!socket) {
+            return
+          }
+
+          socket.sendMessage(
+            this._topic,
+            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+            [ prev.pattern, name ]
+          )
         }
-
-        socket.sendMessage(
-          this._topic,
-          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-          [ prev.pattern, name ]
-        )
       })
+  }
+
+  _match (name) {
+    const matches = []
+    for (const { expr, sockets } of this._listeners.values()) {
+      if (expr.test(name)) {
+        matches.push(...sockets.values())
+      }
+    }
+    return matches
   }
 
   _isLocal (provider) {
