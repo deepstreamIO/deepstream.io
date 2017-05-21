@@ -109,7 +109,8 @@ module.exports = class ListenerRegistry {
           pattern: pattern,
           serverName: this._serverName,
           deadline: null
-        } : null
+        }
+        : null
       )
       .then(([ next, prev ]) => {
         if (!next && prev.uuid !== socket.uuid) {
@@ -125,7 +126,8 @@ module.exports = class ListenerRegistry {
 
     this._providers
       .upsert(name, prev => prev.uuid === socket.uuid && prev.pattern === pattern
-        ? { history: prev.history } : null
+        ? { history: prev.history }
+        : null
       )
       .catch(this._onError)
   }
@@ -190,9 +192,7 @@ module.exports = class ListenerRegistry {
         }
 
         if (next.uuid) {
-          const listener = this._listeners.get(next.pattern)
-          const { socket } = (listener && listener.sockets.get(next.uuid)) || {}
-
+          const socket = this._socket(next)
           if (!socket) {
             return
           }
@@ -205,9 +205,7 @@ module.exports = class ListenerRegistry {
             [ next.pattern, name ]
           )
         } else if (prev.uuid) {
-          const listener = this._listeners.get(prev.pattern)
-          const { socket } = (listener && listener.sockets.get(prev.uuid)) || {}
-
+          const socket = this._socket(prev)
           if (!socket) {
             return
           }
@@ -220,6 +218,12 @@ module.exports = class ListenerRegistry {
         }
       })
       .catch(this._onError)
+  }
+
+  _socket (provider) {
+    const listener = this._listeners.get(provider.pattern)
+    const { socket } = (listener && listener.sockets.get(provider.uuid)) || {}
+    return socket
   }
 
   _match (name) {
@@ -254,8 +258,7 @@ module.exports = class ListenerRegistry {
     if (!provider || !provider.uuid) {
       return false
     } else if (this._isLocal(provider)) {
-      const listener = this._listeners.get(provider.pattern)
-      return listener && listener.sockets.has(provider.uuid)
+      return !!this._socket(provider)
     } else {
       return this._isRemote(provider)
     }
