@@ -11,8 +11,9 @@ const EventEmitter = require('events').EventEmitter
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  *
- * @param {WebSocket} socket
- * @param {Object} options
+ * @param {WebSocket} external    uws native websocket
+ * @param {Object} handshakeData  headers from the websocket http handshake
+ * @param {Object} options        configuration options
  *
  * @extends EventEmitter
  *
@@ -46,7 +47,8 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {External} prepared message
    */
-  static prepareMessage (message) {
+  // eslint-disable-next-line class-methods-use-this
+  prepareMessage (message) {
     UwsSocketWrapper.lastPreparedMessage = message
     return uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
   }
@@ -65,6 +67,19 @@ class UwsSocketWrapper extends EventEmitter {
   }
 
   /**
+   * Finalizes the [uws] prepared message.
+   *
+   * @param {External} preparedMessage the prepared message to finalize
+   *
+   * @public
+   * @returns {void}
+   */
+  // eslint-disable-next-line class-methods-use-this
+  finalizeMessage (preparedMessage) {
+    uws.native.server.finalizeMessage(preparedMessage)
+  }
+
+  /**
    * Variant of send with no particular checks or appends of message.
    *
    * @param {String} message the message to send
@@ -74,18 +89,6 @@ class UwsSocketWrapper extends EventEmitter {
    */
   sendNative (message) {
     uws.native.server.send(this._external, message)
-  }
-
-  /**
-   * Finalizes the [uws] perpared message.
-   *
-   * @param {External} preparedMessage the prepared message to finalize
-   *
-   * @public
-   * @returns {void}
-   */
-  static finalizeMessage (preparedMessage) {
-    uws.native.server.finalizeMessage(preparedMessage)
   }
 
   /**
@@ -101,10 +104,11 @@ class UwsSocketWrapper extends EventEmitter {
    */
   sendError (topic, type, msg) {
     if (this.isClosed === false) {
-      this.send(messageBuilder.getErrorMsg(topic, type, msg))
+      this._send(messageBuilder.getErrorMsg(topic, type, msg))
     }
   }
 
+  // eslint-disable-next-line class-methods-use-this
   onMessage () {
   }
 
@@ -120,7 +124,7 @@ class UwsSocketWrapper extends EventEmitter {
    */
   sendMessage (topic, action, data) {
     if (this.isClosed === false) {
-      this.send(messageBuilder.getMsg(topic, action, data))
+      this._send(messageBuilder.getMsg(topic, action, data))
     }
   }
 
@@ -133,7 +137,7 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  send (message) {
+  _send (message) {
     if (message.charAt(message.length - 1) !== C.MESSAGE_SEPERATOR) {
       message += C.MESSAGE_SEPERATOR // eslint-disable-line
     }

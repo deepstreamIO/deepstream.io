@@ -62,7 +62,7 @@ describe('executes local rpc calls', () => {
     setTimeout(() => {
       expect(requestor.socket.lastSendMessage).toBe(msg('P|E|ACK_TIMEOUT|addTwo|1234+'))
       done()
-    }, 7)
+    }, options.rpcAckTimeout + 2)
   })
 
   it('forwards ack message', () => {
@@ -78,7 +78,7 @@ describe('executes local rpc calls', () => {
     setTimeout(() => {
       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|E|RESPONSE_TIMEOUT|addTwo|1234+'))
       done()
-    }, 8)
+    }, options.rpcTimeout + 2)
   })
 
   it('forwards response message', () => {
@@ -108,7 +108,7 @@ describe('executes local rpc calls', () => {
   })
 })
 
-fdescribe('reroutes remote rpc calls', () => {
+describe('reroutes remote rpc calls', () => {
   let rpc
   let provider
   let requestor

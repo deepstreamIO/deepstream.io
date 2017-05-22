@@ -1,6 +1,5 @@
 'use strict'
 
-const messageBuilder = require('../message/message-builder')
 const C = require('../constants/constants')
 
 module.exports = class ListenerTimeoutRegistry {
@@ -44,12 +43,10 @@ module.exports = class ListenerTimeoutRegistry {
       if (!this._acceptedProvider[subscriptionName]) {
         this._acceptedProvider[subscriptionName] = this._timedoutProviders[subscriptionName][index]
       } else {
-        provider.socketWrapper.send(
-          messageBuilder.getMsg(
-            this._type,
-            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-            [provider.pattern, subscriptionName]
-          )
+        provider.socketWrapper.sendMessage(
+          this._type,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+          [provider.pattern, subscriptionName]
         )
       }
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
@@ -149,13 +146,11 @@ module.exports = class ListenerTimeoutRegistry {
   rejectLateResponderThatAccepted (subscriptionName) {
     const provider = this._acceptedProvider[subscriptionName]
     if (provider) {
-      provider.socketWrapper.send(
-                messageBuilder.getMsg(
-                    this._type,
-                    C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-                    [provider.pattern, subscriptionName]
-                )
-            )
+      provider.socketWrapper.sendMessage(
+        this._type,
+        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+        [provider.pattern, subscriptionName]
+      )
     }
   }
 

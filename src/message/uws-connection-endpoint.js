@@ -23,7 +23,7 @@ const OPEN = 'OPEN'
  * @param {Object} options the extended default options
  * @param {Function} readyCallback will be invoked once both the ws is ready
  */
-module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
+module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
   constructor (options, readyCallback) {
     super()
     this._options = options
@@ -43,8 +43,50 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
     this._serverGroup = null
     this._server.once('listening', this._checkReady.bind(this))
     this._server.on('error', this._onError.bind(this))
+    this._server.on('upgrade', this._onUpgradeRequest.bind(this))
+
     this._authenticatedSockets = new Set()
-    this._initialise()
+    this._uwsInit()
+
+    this._server.listen(this._options.port, this._options.host)
+  }
+
+  /**
+   * Initialize the uws endpoint, setup callbacks etc.
+   *
+   * @private
+   * @returns {void}
+   */
+  _uwsInit () {
+    this._serverGroup = uws.native.server.group.create(
+      0,
+      this._options.maxPayload === undefined ? 1048576 : this._options.maxPayload
+    )
+
+    uws.native.server.group.startAutoPing(
+      this._serverGroup,
+      this._options.heartbeatInterval,
+      messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
+    )
+
+    this._noDelay = this._options.noDelay === undefined ? true : this._options.noDelay
+
+    uws.native.server.group.onDisconnection(
+      this._serverGroup,
+      (external, code, message, socketWrapper) => {
+        if (socketWrapper) {
+          socketWrapper.close()
+        }
+      }
+    )
+
+    uws.native.server.group.onMessage(this._serverGroup, (message, socketWrapper) => {
+      socketWrapper.onMessage(message)
+    })
+
+    uws.native.server.group.onPing(this._serverGroup, () => {})
+    uws.native.server.group.onPong(this._serverGroup, () => {})
+    uws.native.server.group.onConnection(this._serverGroup, this._onConnection.bind(this))
   }
 
   /**
@@ -62,25 +104,6 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   onMessages (socketWrapper, messages) { // eslint-disable-line
-  }
-
-  /**
-   * Returns the number of currently connected clients. This is used by the
-   * cluster module to determine loadbalancing endpoints
-   *
-   * @public
-   * @returns {Number} connectionCount
-   */
-  getConnectionCount () {
-    return this._authenticatedSockets.length
-    //   get clients() {
-    //   if (this.serverGroup) {
-    //     return {
-    //       length: native.server.group.getSize(this.serverGroup),
-    //       forEach: ((cb) => {native.server.group.forEach(this.serverGroup, cb)})
-    //     };
-    //   }
-    // }
   }
 
   /**
@@ -140,6 +163,8 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
    * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
    * and subscribes to authentication messages.
    * @param {Websocket} socket
+   *
+   * @param {WebSocket} external    uws native websocket
    *
    * @private
    * @returns {void}
@@ -528,13 +553,13 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
   }
 
   /**
-  * Checks for authentication data and throws if null or not well formed
-  *
-  * @throws Will throw an error on invalid auth data
-  *
-  * @private
-  * @returns {void}
-  */
+   * Checks for authentication data and throws if null or not well formed
+   *
+   * @throws Will throw an error on invalid auth data
+   *
+   * @private
+   * @returns {void}
+   */
   _getValidAuthData (authData) { // eslint-disable-line
     const parsedData = JSON.parse(authData)
     if (parsedData === null || parsedData === undefined || typeof parsedData !== 'object') {
@@ -543,93 +568,78 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
     return parsedData
   }
 
-  _initialise () {
-    this._serverGroup = uws.native.server.group.create(
-      0,
-      this._options.maxPayload === undefined ? 1048576 : this._options.maxPayload
-    )
+  /**
+   * HTTP upgrade request listener
+   *
+   * @param {Request} request
+   * @param {Socket}  socket
+   *
+   * @private
+   * @returns {void}
+   */
+  _onUpgradeRequest (request, socket) {
+    if (!this._options.path || this._options.path === request.url.split('?')[0].split('#')[0]) {
+      if (this._options.verifyClient) {
+        const info = {
+          origin: request.headers.origin,
+          secure: request.connection.authorized !== undefined ||
+          request.connection.encrypted !== undefined,
+          req: request
+        }
 
-    uws.native.server.group.startAutoPing(
-      this._serverGroup,
-      this._options.heartbeatInterval,
-      messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
-    )
-
-    this._upgradeListener = null
-    this._noDelay = this._options.noDelay === undefined ? true : this._options.noDelay
-    this._lastUpgradeListener = true
-
-    this._server.on('upgrade', this._upgradeListener = ((request, socket, head) => {
-      if (!this._options.path || this._options.path === request.url.split('?')[0].split('#')[0]) {
-        if (this._options.verifyClient) {
-          const info = {
-            origin: request.headers.origin,
-            secure: request.connection.authorized !== undefined ||
-              request.connection.encrypted !== undefined,
-            req: request
-          }
-
-          if (this._options.verifyClient.length === 2) {
-            this._options.verifyClient(info, (result, code, name) => {
-              if (result) {
-                this._handleUpgrade(request, socket)
-              } else {
-                this._terminateSocket(socket, code, name)
-              }
-            })
-          } else if (this._options.verifyClient(info)) {
-            this._handleUpgrade(request, socket)
-          } else {
-            this._terminateSocket(socket, 400, 'Client verification failed')
-          }
-        } else {
+        if (this._options.verifyClient.length === 2) {
+          this._options.verifyClient(info, (result, code, name) => {
+            if (result) {
+              this._handleUpgrade(request, socket)
+            } else {
+              UWSConnectionEndpoint._terminateSocket(socket, code, name)
+            }
+          })
+        } else if (this._options.verifyClient(info)) {
           this._handleUpgrade(request, socket)
+        } else {
+          UWSConnectionEndpoint._terminateSocket(socket, 400, 'Client verification failed')
         }
+      } else {
+        this._handleUpgrade(request, socket)
       }
-      if (this._lastUpgradeListener) {
-        this._terminateSocket(socket, 400, 'URL not supported')
-      }
-    }))
-
-    this._server.on('newListener', (eventName) => {
-      if (eventName === 'upgrade') {
-        this._lastUpgradeListener = false
-      }
-    })
-
-    uws.native.server.group.onDisconnection(
-      this._serverGroup,
-      (external, code, message, socketWrapper) => {
-        if (socketWrapper) {
-          socketWrapper.close()
-        }
-      }
-    )
-
-    uws.native.server.group.onMessage(this._serverGroup, (message, socketWrapper) => {
-      socketWrapper.onMessage(message)
-    })
-
-    uws.native.server.group.onPing(this._serverGroup, (message, webSocket) => {
-      webSocket.onping(message)
-    })
-
-    uws.native.server.group.onPong(this._serverGroup, (message, webSocket) => {
-      webSocket.onpong(message)
-    })
-
-    uws.native.server.group.onConnection(this._serverGroup, this._onConnection.bind(this))
-
-    this._server.listen(this._options.port, this._options.host)
+    }
+    UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
   }
 
+  /**
+   * Terminate an HTTP socket with some error code and error message
+   *
+   * @param {Socket}  socket
+   * @param {Number}  code
+   * @param {String}  name
+   *
+   * @private
+   * @returns {void}
+   */
+  static _terminateSocket (socket, code, name) {
+    socket.end(`HTTP/1.1 ${code}  ${name}\r\n\r\n`)
+  }
+
+  /**
+   * Process websocket upgrade
+   *
+   * @param {Request} request
+   * @param {Socket}  socket
+   *
+   * @private
+   * @returns {void}
+   */
   _handleUpgrade (request, socket) {
     const secKey = request.headers['sec-websocket-key']
     const socketHandle = socket.ssl ? socket._parent._handle : socket._handle
     const sslState = socket.ssl ? socket.ssl._external : null
     if (secKey && secKey.length === 24) {
       socket.setNoDelay(this._noDelay)
-      const ticket = uws.native.transfer(socketHandle.fd === -1 ? socketHandle : socketHandle.fd, sslState)
+      const ticket = uws.native.transfer(
+        socketHandle.fd === -1 ? socketHandle : socketHandle.fd,
+        sslState
+      )
       socket.on('close', () => {
         if (this._serverGroup) {
           this._upgradeRequest = request
@@ -643,16 +653,6 @@ module.exports = class UwsConnectionEndpoint extends events.EventEmitter {
       })
     }
     socket.destroy()
-  }
-
-  broadcast (message, options) {
-    if (this._serverGroup) {
-      uws.native.server.group.broadcast(this._serverGroup, message, options && options.binary || false);
-    }
-  }
-
-  _terminateSocket (socket, code, name) { // eslint-disable-line
-    socket.end(`HTTP/1.1 ${code}  ${name}\r\n\r\n`)
   }
 
   /**

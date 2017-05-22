@@ -10,6 +10,7 @@ let proxyquire = require('proxyquire').noCallThru(),
   lastLogEvent = null,
   socketWrapperOptions = { logger: { log() {} } },
   _msg = require('../test-helper/test-helper').msg,
+  messageParser = require('../../src/message/message-parser'),
   LocalMessageConnector = require('../mocks/local-message-connector'),
   clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))(),
   options = {
@@ -31,14 +32,17 @@ describe('subscription-registry manages subscriptions', () => {
   let socketWrapperA = new SocketWrapper(new SocketMock(), socketWrapperOptions),
     socketWrapperB = new SocketWrapper(new SocketMock(), socketWrapperOptions)
 
+  const fakeEvent = (name, data) => ({ topic: 'E', action: 'EVT', data: [name, data] })
+
   it('subscribes to names', () => {
     expect(socketWrapperA.socket.lastSendMessage).toBe(null)
+    const someMessage = { topic: 'E', action: 'EVT', data: ['someName', 'SsomeString'] }
 
     subscriptionRegistry.subscribe('someName', socketWrapperA)
     expect(subscriptionListenerMock.onSubscriptionMade).toHaveBeenCalledWith('someName', socketWrapperA, 1)
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|S|someName+'))
-    subscriptionRegistry.sendToSubscribers('someName', _msg('someMessage+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('someMessage+'))
+    subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'SsomeString'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|SsomeString+'))
   })
 
   it('doesn\'t subscribe twice to the same name', () => {
@@ -60,28 +64,27 @@ describe('subscription-registry manages subscriptions', () => {
 
   it('distributes messages to multiple subscribers', () => {
     subscriptionRegistry.subscribe('someName', socketWrapperB)
-    subscriptionRegistry.sendToSubscribers('someName', _msg('msg2+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg2+'))
-    expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg2+'))
+    subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg2'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg2+'))
+    expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg2+'))
   })
 
   it('doesn\'t send message to sender', () => {
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg2+'))
-    expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg2+'))
-    subscriptionRegistry.sendToSubscribers('someName', _msg('msg3+'), false, socketWrapperA)
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg2+'))
-    expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg3+'))
+    const message = fakeEvent('someName', 'msg3')
+    subscriptionRegistry.sendToSubscribers('someName', message, false, socketWrapperA)
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg2+'))
+    expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg3+'))
   })
 
   it('unsubscribes', () => {
-    subscriptionRegistry.sendToSubscribers('someName', _msg('msg4+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg4+'))
-    expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('msg4+'))
+    subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg4'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg4+'))
+    expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg4+'))
 
     subscriptionRegistry.unsubscribe('someName', socketWrapperB)
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
-    subscriptionRegistry.sendToSubscribers('someName', _msg('msg5+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg5+'))
+    subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg5'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg5+'))
     expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
   })
 
@@ -100,40 +103,40 @@ describe('subscription-registry manages subscriptions', () => {
     subscriptionListenerMock.onSubscriptionRemoved.calls.reset()
 
     subscriptionRegistry.subscribe('someOtherName', socketWrapperA)
-    subscriptionRegistry.sendToSubscribers('someOtherName', _msg('msg6+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg6+'))
+    subscriptionRegistry.sendToSubscribers('someOtherName', fakeEvent('someOtherName', 'msg6'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someOtherName|msg6+'))
 
-    subscriptionRegistry.sendToSubscribers('someName', _msg('msg7+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg7+'))
+    subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg7'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg7+'))
 
     expect(subscriptionListenerMock.onSubscriptionRemoved).not.toHaveBeenCalled()
     subscriptionRegistry.unsubscribe('someName', socketWrapperA)
     expect(subscriptionListenerMock.onSubscriptionRemoved).toHaveBeenCalledWith('someName', socketWrapperA, 0, 0)
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
-    subscriptionRegistry.sendToSubscribers('someName', _msg('msg8+'))
+    subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg8'))
     expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
 
-    subscriptionRegistry.sendToSubscribers('someOtherName', _msg('msg9+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msg9+'))
+    subscriptionRegistry.sendToSubscribers('someOtherName', fakeEvent('someOtherName', 'msg9'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someOtherName|msg9+'))
   })
 
   it('removes all subscriptions on socket.close', () => {
     subscriptionRegistry.subscribe('nameA', socketWrapperA)
     subscriptionRegistry.subscribe('nameB', socketWrapperA)
 
-    subscriptionRegistry.sendToSubscribers('nameA', _msg('msgA+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msgA+'))
+    subscriptionRegistry.sendToSubscribers('nameA', fakeEvent('nameA', 'msgA'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|nameA|msgA+'))
 
-    subscriptionRegistry.sendToSubscribers('nameB', _msg('msgB+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msgB+'))
+    subscriptionRegistry.sendToSubscribers('nameB', fakeEvent('nameB', 'msgB'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|nameB|msgB+'))
 
     socketWrapperA.socket.emit('close')
 
-    subscriptionRegistry.sendToSubscribers('nameA', _msg('msgC+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msgB+'))
+    subscriptionRegistry.sendToSubscribers('nameA', fakeEvent('nameA', 'msgC'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|nameB|msgB+'))
 
-    subscriptionRegistry.sendToSubscribers('nameB', _msg('msgD+'))
-    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('msgB+'))
+    subscriptionRegistry.sendToSubscribers('nameB', fakeEvent('nameB', 'msgD'))
+    expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|nameB|msgB+'))
   })
 })
 

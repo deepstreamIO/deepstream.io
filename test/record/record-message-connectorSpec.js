@@ -40,7 +40,7 @@ describe('messages from direct connected clients and messages that come in via m
 
   it('subscribes to a record', () => {
 	    recordHandler.handle(subscriber, {
-	    	topic: 'RECORD',
+	    	topic: 'R',
 	    	action: 'CR',
 	    	data: ['someRecord']
 	    })
@@ -59,7 +59,7 @@ describe('messages from direct connected clients and messages that come in via m
 
 	    recordHandler.handle('SOURCE_MESSAGE_CONNECTOR', {
 	    	raw: msg('R|U|someRecord|1|{"firstname":"Wolfram"}+'),
-	    	topic: 'RECORD',
+	    	topic: 'R',
 	    	action: 'U',
 	    	data: ['someRecord', 1, { firstname: 'Wolfram' }]
 	    })
@@ -72,7 +72,7 @@ describe('messages from direct connected clients and messages that come in via m
   it('receives an update from the client and forwards it to the message connector', () => {
 	    recordHandler.handle(subscriber, {
 	    	raw: msg('R|U|someRecord|1|{"firstname":"Wolfram"}+'),
-	    	topic: 'RECORD',
+	    	topic: 'R',
 	    	action: 'U',
 	    	data: ['someRecord', 1, '{"firstname":"Wolfram"}']
 	    })
@@ -81,7 +81,7 @@ describe('messages from direct connected clients and messages that come in via m
     expect(options.storage.lastSetValue).toEqual({ _v: 1, _d: { firstname: 'Wolfram' } })
     expect(options.messageConnector.lastPublishedMessage).toEqual({
 	    	raw: msg('R|U|someRecord|1|{"firstname":"Wolfram"}+'),
-	    	topic: 'RECORD',
+	    	topic: 'R',
 	    	action: 'U',
 	    	data: ['someRecord', 1, '{"firstname":"Wolfram"}']
 	    })

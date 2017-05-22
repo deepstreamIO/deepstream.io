@@ -52,7 +52,7 @@ SocketWrapper.lastPreparedMessage = null
  * @public
  * @returns {External} prepared message
  */
-SocketWrapper.prepareMessage = function (message) {
+SocketWrapper.prototype.prepareMessage = function (message) {
   SocketWrapper.lastPreparedMessage = message
   return message
 }
@@ -71,6 +71,17 @@ SocketWrapper.prototype.sendPrepared = function (preparedMessage) {
 }
 
 /**
+ * Finalizes the [uws] perpared message.
+ *
+ * @param {External} preparedMessage the prepared message to finalize
+ *
+ * @public
+ * @returns {void}
+ */
+SocketWrapper.prototype.finalizeMessage = function (preparedMessage) {
+}
+
+/**
  * Variant of send with no particular checks or appends of message.
  *
  * @param {String} message the message to send
@@ -80,17 +91,6 @@ SocketWrapper.prototype.sendPrepared = function (preparedMessage) {
  */
 SocketWrapper.prototype.sendNative = function (message) {
   this.socket.send(message)
-}
-
-/**
- * Finalizes the [uws] perpared message.
- *
- * @param {External} preparedMessage the prepared message to finalize
- *
- * @public
- * @returns {void}
- */
-SocketWrapper.finalizeMessage = function (preparedMessage) {
 }
 
 /**

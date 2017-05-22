@@ -4,7 +4,6 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const TimeoutRegistry = require('./listener-timeout-registry')
-const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 
 module.exports = class ListenerRegistry {
@@ -677,11 +676,11 @@ module.exports = class ListenerRegistry {
     if (this._topic !== C.TOPIC.RECORD) {
       return
     }
-    const message = messageBuilder.getMsg(
-      this._topic,
-      C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-      [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
-    )
+    const message = {
+      topic: this._topic,
+      action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+      data: [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
+    }
     this._clientRegistry.sendToSubscribers(subscriptionName, message)
   }
 
@@ -738,12 +737,10 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to find a provider for
   */
   _sendSubscriptionForPatternFound (provider, subscriptionName) {
-    provider.socketWrapper.send(
-      messageBuilder.getMsg(
-        this._topic,
-        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-        [provider.pattern, subscriptionName]
-      )
+    provider.socketWrapper.sendMessage(
+      this._topic,
+      C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+      [provider.pattern, subscriptionName]
     )
   }
 
@@ -756,12 +753,10 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to stop providing
   */
   _sendSubscriptionForPatternRemoved (provider, subscriptionName) {
-    provider.socketWrapper.send(
-      messageBuilder.getMsg(
-        this._topic,
-        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-        [provider.pattern, subscriptionName]
-      )
+    provider.socketWrapper.sendMessage(
+      this._topic,
+      C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+      [provider.pattern, subscriptionName]
     )
   }
 

@@ -3,7 +3,6 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
-const messageBuilder = require('../message/message-builder')
 
 /**
  * This class handles incoming and outgoing messages in relation
@@ -122,8 +121,8 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _onClientAdded (username) {
-    const addMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [username])
-    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
+    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: [username] }
+    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, message)
   }
 
   /**
@@ -136,7 +135,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _onClientRemoved (username) {
-    const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
-    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
+    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: [username] }
+    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, message)
   }
 }
