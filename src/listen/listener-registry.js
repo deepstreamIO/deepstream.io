@@ -23,6 +23,7 @@ module.exports = class ListenerRegistry {
     const clusterTopic = `${topic}_${C.TOPIC.LISTEN_PATTERNS}`
 
     this._providers = options.stateConnector.get(clusterTopic)
+    // TODO: Optimize
     this._providers.watch(this._reconcile)
     this._providerRegistry = new SubscriptionRegistry(options, topic, clusterTopic)
     this._providerRegistry.setAction('subscribe', C.ACTIONS.LISTEN)
