@@ -236,14 +236,14 @@ Deepstream.prototype.onBeforeTransition = function (transition) {
 }
 
 /**
- * First stage in the Deepstream initialization sequence. Initializes the logger.
+ * First stage in the Deepstream initialisation sequence. Initialises the logger.
  *
  * @private
  * @returns {void}
  */
 Deepstream.prototype.onEnterLoggerInit = function () {
-  const loggerInitializer = new DependencyInitialiser(this._options, 'logger')
-  loggerInitializer.once('ready', () => {
+  const loggerInitialiser = new DependencyInitialiser(this._options, 'logger')
+  loggerInitialiser.once('ready', () => {
     if (this._options.logger instanceof EventEmitter) {
       this._options.logger.on('error', this._onPluginError.bind(this, 'logger'))
     }
@@ -252,7 +252,7 @@ Deepstream.prototype.onEnterLoggerInit = function () {
 }
 
 /**
- * Invoked once the logger is initialized. Initializes any built-in or custom Deepstream plugins.
+ * Invoked once the logger is initialised. Initialises any built-in or custom Deepstream plugins.
  *
  * @private
  * @returns {void}
@@ -366,7 +366,7 @@ Deepstream.prototype.onEnterRunning = function () {
 
 /**
  * Begin deepstream shutdown.
- * Closes the (perhaps partially initialized) connectionEndpoints.
+ * Closes the (perhaps partially initialised) connectionEndpoints.
  *
  * @private
  * @returns {void}
@@ -394,7 +394,7 @@ Deepstream.prototype.onEnterServiceShutdown = function () {
 }
 
 /**
- * Close any (perhaps partially initialized) plugins.
+ * Close any (perhaps partially initialised) plugins.
  *
  * @private
  * @returns {void}
@@ -417,7 +417,7 @@ Deepstream.prototype.onEnterPluginShutdown = function () {
 }
 
 /**
- * Close the (perhaps partially initialized) logger.
+ * Close the (perhaps partially initialised) logger.
  *
  * @private
  * @returns {void}
