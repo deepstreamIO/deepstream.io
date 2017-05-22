@@ -249,8 +249,6 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
 
 RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
   const recordName = message.data[0]
-  // a patch can look like [recordName, version, path, data]
-  // or [recordName, version, path, data, config]
   const isPatch = message.data.length === 5
   message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
   const onComplete = function (record) {
