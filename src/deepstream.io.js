@@ -150,7 +150,6 @@ Deepstream.prototype._start = function () {
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `library directory set to: ${global.deepstreamLibDir}`)
   }
 
-  let i
   let initialiser
 
   this._options.pluginTypes.forEach((pluginType) => {
@@ -337,9 +336,7 @@ Deepstream.prototype._checkReady = function (pluginName, plugin) {
     plugin.on('error', this._onPluginError.bind(this, pluginName))
   }
 
-  const isReady = this._options.pluginTypes.every((pluginType) => {
-    return this._options[pluginType].isReady
-  })
+  const isReady = this._options.pluginTypes.every(pluginType => this._options[pluginType].isReady)
 
   if (isReady && this._currentState === STATES.STARTING) {
     this._init()
