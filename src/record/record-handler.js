@@ -50,6 +50,12 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
      * Creates the record if it doesn't exist
      */
     this._createOrRead(socketWrapper, message)
+  } else if (message.action === C.ACTIONS.CREATEANDUPDATE) {
+    /*
+     * Allows updates to the record without being subscribed, creates
+     * the record if it doesn't exist
+     */
+    this._createAndUpdate(socketWrapper, message)
   } else if (message.action === C.ACTIONS.SNAPSHOT) {
     /*
      * Return the current state of the record in cache or db
@@ -241,26 +247,60 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
   )
 }
 
+RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
+  const recordName = message.data[0]
+  // a patch can look like [recordName, version, path, data]
+  // or [recordName, version, path, data, config]
+  const isPatch = message.data.length === 5 ||
+    (message.data.length === 4 && typeof message.data[2] === 'string')
+  message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
+  const onComplete = function (record) {
+    if (record) {
+      this._permissionAction(
+        C.ACTIONS.UPDATE,
+        recordName,
+        socketWrapper,
+        this._update.bind(this, socketWrapper, message)
+      )
+    } else {
+      this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
+        this._create(recordName, socketWrapper, () => {
+          this._update(socketWrapper, message)
+        })
+      })
+    }
+  }
+  // eslint-disable-next-line
+  new RecordRequest(
+    recordName,
+    this._options,
+    socketWrapper,
+    onComplete.bind(this)
+  )
+}
+
 /**
  * Creates a new, empty record and triggers a read operation once done
  *
+ * @param   {String} recordName the name of the record to create
  * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
- *
+ * @param   {Function} callback optional callback that is fired when record
+ *                              is set in cache
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._create = function (recordName, socketWrapper) {
+RecordHandler.prototype._create = function (recordName, socketWrapper, callback) {
   const record = {
     _v: 0,
     _d: {}
   }
-
   // store the records data in the cache and wait for the result
   this._options.cache.set(recordName, record, (error) => {
     if (error) {
       this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName)
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName)
+    } else if (callback) {
+      callback(recordName, socketWrapper)
     } else {
       this._read(recordName, record, socketWrapper)
     }
