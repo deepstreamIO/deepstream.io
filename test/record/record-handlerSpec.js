@@ -510,16 +510,16 @@ describe('record handler handles messages', () => {
     })
   })
 
-  it('It upserts a record with update', () => {
+  it('creates records when using CREATEANDUPDATE', () => {
     options.cache.nextGetWillBeSynchronous = true
     clientA.socket.lastSendMessage = null
     clientB.socket.lastSendMessage = null
 
     recordHandler.handle(clientB, {
-      raw: msg('R|U|upsertedRecord|-1|{"name":"Tom"}|{"upsert": true}'),
+      raw: msg('R|CU|upsertedRecord|-1|{"name":"Tom"}'),
       topic: 'R',
-      action: 'U',
-      data: ['upsertedRecord', -1, '{"name":"Tom"}','{"upsert": true}']
+      action: 'CU',
+      data: ['upsertedRecord', -1, '{"name":"Tom"}', '{}']
     })
 
     options.cache.get('upsertedRecord', (error, record) => {
