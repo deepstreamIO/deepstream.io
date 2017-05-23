@@ -62,7 +62,7 @@ const RecordTransition = function (name, options, recordHandler) {
 
   this._onCacheResponse = this._onCacheResponse.bind(this)
   this._onStorageResponse = this._onStorageResponse.bind(this)
-  this._onRecord = this._onStorageResponse.bind(this)
+  this._onRecord = this._onRecord.bind(this)
   this._onFatalError = this._onFatalError.bind(this)
 }
 
@@ -288,7 +288,7 @@ RecordTransition._getRecordConfig = function (message) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onRecord = function (step, record) {
+RecordTransition.prototype._onRecord = function (record) {
   if (record === null) {
     this._onFatalError(`Received update for non-existant record ${this._name}`)
   } else {
@@ -393,13 +393,9 @@ RecordTransition.prototype._flushVersionExists = function () {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onCacheResponse = function (a, b) {
-  console.log('_onCacheResponse', a, b)
+RecordTransition.prototype._onCacheResponse = function () {
   this._cacheResponses--
-  this._writeError = this._writeError || error
-  if (error) {
-    this._onFatalError(error)
-  } else if (this.isDestroyed === false) {
+  if (this.isDestroyed === false) {
     this._recordHandler._$broadcastUpdate(
       this._name,
       this._currentStep.message,
@@ -424,17 +420,13 @@ RecordTransition.prototype._onCacheResponse = function (a, b) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onStorageResponse = function (a, b) {
-  console.log('_onStorageResponse', a, b)
+RecordTransition.prototype._onStorageResponse = function () {
   this._storageResponses--
-  this._writeError = this._writeError || error
-  if (error) {
-    this._onFatalError(error)
-  } else if (
-      this._cacheResponses === 0 &&
-      this._storageResponses === 0 &&
-      this._steps.length === 0
-    ) {
+  if (
+    this._cacheResponses === 0 &&
+    this._storageResponses === 0 &&
+    this._steps.length === 0
+  ) {
     this.destroy()
   }
 }
