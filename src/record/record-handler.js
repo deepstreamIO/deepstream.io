@@ -247,6 +247,17 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
   )
 }
 
+/**
+ * An upsert operation where the record will be created and written to
+ * with the data in the message. Important to note that each operation,
+ * the create and the write are permissioned separately.
+ *
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object} message parsed and validated message
+ *
+ * @private
+ * @returns {void}
+ */
 RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
   const recordName = message.data[0]
   const isPatch = message.data.length === 5
