@@ -59,6 +59,11 @@ const RecordTransition = function (name, options, recordHandler) {
   this._cacheResponses = 0
   this._lastVersion = null
   this._lastError = null
+
+  this._onCacheResponse = this._onCacheResponse.bind(this)
+  this._onStorageResponse = this._onStorageResponse.bind(this)
+  this._onRecord = this._onStorageResponse.bind(this)
+  this._onFatalError = this._onFatalError.bind(this)
 }
 
 /**
@@ -126,17 +131,10 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     version,
     sender: socketWrapper
   }
-  let data
 
-  try {
-    const config = RecordTransition._getRecordConfig(message)
-    this._applyConfig(config, update)
-  } catch (e) {
-    update.sender.sendError(
-      C.TOPIC.RECORD,
-      C.EVENT.INVALID_CONFIG_DATA,
-      message.data[4] || message.data[3]
-    )
+  const valid = this._applyConfigAndData(socketWrapper, message, update)
+  if (!valid) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
     return
   }
 
@@ -146,20 +144,12 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       return
     }
 
-    try {
-      data = JSON.parse(message.data[2])
-    } catch (e) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
-    if (!utils.isOfType(data, 'object') && !utils.isOfType(data, 'array')) {
+    if (!utils.isOfType(update.data, 'object')) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
 
     update.isPatch = false
-    update.data = data
   }
 
   if (message.action === C.ACTIONS.PATCH) {
@@ -169,13 +159,6 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     }
 
     update.isPatch = true
-    update.data = messageParser.convertTyped(message.data[3])
-
-    if (update.data instanceof Error) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, `${update.data.toString()}:${message.data[3]}`)
-      return
-    }
-
     update.path = message.data[2]
   }
 
@@ -195,12 +178,27 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       this._name,
       this._options,
       socketWrapper,
-      this._onRecord.bind(this, update),
-      this._onFatalError.bind(this)
+      this._onRecord,
+      this._onFatalError
     )
   } else if (this._steps.length === 1 && this._cacheResponses === 1) {
     this._next()
   }
+}
+
+RecordTransition.prototype._applyConfigAndData = function (socketWrapper, message, step) {
+  try {
+    const config = RecordTransition._getRecordConfig(message)
+    this._applyConfig(config, step)
+    if (message.action === C.ACTIONS.UPDATE) {
+      step.data = JSON.parse(message.data[2])
+    } else {
+      step.data = messageParser.convertTyped(message.data[3])
+    }
+  } catch (e) {
+    return false
+  }
+  return true
 }
 
 /**
@@ -359,13 +357,13 @@ RecordTransition.prototype._next = function () {
     this._options.storage.set(
       this._name,
       this._record,
-      this._onStorageResponse.bind(this, this._currentStep)
+      this._onStorageResponse
     )
   }
   this._options.cache.set(
     this._name,
     this._record,
-    this._onCacheResponse.bind(this, this._currentStep)
+    this._onCacheResponse
   )
 }
 
@@ -393,7 +391,8 @@ RecordTransition.prototype._flushVersionExists = function () {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
+RecordTransition.prototype._onCacheResponse = function (a, b) {
+  console.log('_onCacheResponse', a, b)
   this._cacheResponses--
   this._writeError = this._writeError || error
   if (error) {
@@ -423,7 +422,8 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
+RecordTransition.prototype._onStorageResponse = function (a, b) {
+  console.log('_onStorageResponse', a, b)
   this._storageResponses--
   this._writeError = this._writeError || error
   if (error) {
