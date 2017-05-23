@@ -260,8 +260,29 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
  */
 RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
   const recordName = message.data[0]
+
+  if (message.data.length < 4) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
+    return
+  }
+
   const isPatch = message.data.length === 5
   message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
+
+  // if the transition already exists we can avoid a RecordRequest by adding
+  // directly to the transition
+  if (this._transitions[recordName]) {
+    this._permissionAction(message.action, recordName, socketWrapper, () => {
+      // need to check again in case transition ended during permission checks
+      if (this._transitions[recordName]) {
+        this._transitions[recordName].add(socketWrapper, message)
+      } else {
+        this._update(socketWrapper, message)
+      }
+    })
+    return
+  }
+
   const onComplete = function (record) {
     if (record) {
       this._permissionAction(
