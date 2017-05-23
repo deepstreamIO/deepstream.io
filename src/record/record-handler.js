@@ -50,6 +50,12 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
      * Creates the record if it doesn't exist
      */
     this._createOrRead(socketWrapper, message)
+  } else if (message.action === C.ACTIONS.CREATEANDUPDATE) {
+    /*
+     * Allows updates to the record without being subscribed, creates
+     * the record if it doesn't exist
+     */
+    this._createAndUpdate(socketWrapper, message)
   } else if (message.action === C.ACTIONS.SNAPSHOT) {
     /*
      * Return the current state of the record in cache or db
@@ -242,7 +248,9 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
 }
 
 /**
- * Creates a new, empty record and triggers a read operation once done
+ * An upsert operation where the record will be created and written to
+ * with the data in the message. Important to note that each operation,
+ * the create and the write are permissioned separately.
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
@@ -250,17 +258,78 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._create = function (recordName, socketWrapper) {
+RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
+  const recordName = message.data[0]
+
+  if (message.data.length < 4) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
+    return
+  }
+
+  const isPatch = message.data.length === 5
+  message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
+
+  // if the transition already exists we can avoid a RecordRequest by adding
+  // directly to the transition
+  if (this._transitions[recordName]) {
+    this._permissionAction(message.action, recordName, socketWrapper, () => {
+      // need to check again in case transition ended during permission checks
+      if (this._transitions[recordName]) {
+        this._transitions[recordName].add(socketWrapper, message)
+      } else {
+        this._update(socketWrapper, message)
+      }
+    })
+    return
+  }
+
+  const onComplete = function (record) {
+    if (record) {
+      this._permissionAction(
+        C.ACTIONS.UPDATE,
+        recordName,
+        socketWrapper,
+        this._update.bind(this, socketWrapper, message)
+      )
+    } else {
+      this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
+        this._create(recordName, socketWrapper, () => {
+          this._update(socketWrapper, message)
+        })
+      })
+    }
+  }
+  // eslint-disable-next-line
+  new RecordRequest(
+    recordName,
+    this._options,
+    socketWrapper,
+    onComplete.bind(this)
+  )
+}
+
+/**
+ * Creates a new, empty record and triggers a read operation once done
+ *
+ * @param   {String} recordName the name of the record to create
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Function} callback optional callback that is fired when record
+ *                              is set in cache
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._create = function (recordName, socketWrapper, callback) {
   const record = {
     _v: 0,
     _d: {}
   }
-
   // store the records data in the cache and wait for the result
   this._options.cache.set(recordName, record, (error) => {
     if (error) {
       this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName)
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName)
+    } else if (callback) {
+      callback(recordName, socketWrapper)
     } else {
       this._read(recordName, record, socketWrapper)
     }

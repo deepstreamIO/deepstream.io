@@ -32,7 +32,10 @@ const RecordRequest = function (recordName, options, socketWrapper, onComplete, 
     this._options.cacheRetrievalTimeout
   )
 
-  this._options.cache.get(this._recordName, this._onCacheResponse.bind(this))
+  this._onCacheResponse = this._onCacheResponse.bind(this)
+  this._onStorageResponse = this._onStorageResponse.bind(this)
+
+  this._options.cache.get(this._recordName, this._onCacheResponse)
 }
 
 /**
@@ -63,7 +66,7 @@ RecordRequest.prototype._onCacheResponse = function (error, record) {
       this._sendError.bind(this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName),
       this._options.storageRetrievalTimeout
     )
-    this._options.storage.get(this._recordName, this._onStorageResponse.bind(this))
+    this._options.storage.get(this._recordName, this._onStorageResponse)
   } else {
     this._onComplete(null)
   }
