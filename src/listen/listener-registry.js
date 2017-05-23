@@ -8,12 +8,16 @@ const xuid = require('xuid')
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._reconcile = this._reconcile.bind(this)
+    this._dispatch = this._dispatch.bind(this)
+    this._provide = this._provide.bind(this)
     this._onError = this._onError.bind(this)
 
     this._listeners = new Map()
     this._timeouts = new Map()
     this._provided = new Set()
+    this._pending = new Set()
 
+    this._timeout = null
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
     this._serverName = options.serverName
@@ -151,6 +155,27 @@ module.exports = class ListenerRegistry {
   }
 
   _reconcile (name) {
+    this._pending.add(name)
+    if (!this._timeout) {
+      this._timeout = setTimeout(this._dispatch, 10)
+    }
+  }
+
+  _dispatch () {
+    if (this._pending.size === 0) {
+      this._timeout = null
+      return
+    }
+
+    Promise
+      .all(Array.from(this._pending).map(this._provide))
+      .then(this._dispatch)
+      .catch(this._onError)
+
+    this._pending.clear()
+  }
+
+  _provide (name) {
     return this._providers
       .upsert(name, prev => {
         if (!prev.deadline && this._isAlive(prev)) {
