@@ -32,11 +32,6 @@ class UwsSocketWrapper extends EventEmitter {
     this.uuid = Math.random()
     this._handshakeData = handshakeData
     this._external = external
-
-    this._queuedMessages = []
-    this._currentPacketMessageCount = 0
-    this._sendNextPacketTimeout = null
-    this._currentMessageResetTimeout = null
   }
 
   /**
