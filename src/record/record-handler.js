@@ -252,6 +252,11 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
  * with the data in the message. Important to note that each operation,
  * the create and the write are permissioned separately.
  *
+ * This method also takes note of the storageHotPathPatterns option, when a record
+ * with a name that matches one of the storageHotPathPatterns is written to with
+ * the CREATEANDUPDATE action, it will be permissioned for both CREATE and UPDATE, then
+ * inserted into the cache and storage.
+ *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
  *
@@ -259,15 +264,39 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
-  const recordName = message.data[0]
-
   if (message.data.length < 4) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
     return
   }
 
+  const recordName = message.data[0]
   const isPatch = message.data.length === 5
   message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
+
+  // allow writes on the hot path to bypass the record transition
+  // and be written directly to cache and storage
+  for (let i = 0; i < this._options.storageHotPathPatterns.length; i++) {
+    const pattern = this._options.storageHotPathPatterns[i]
+    if (recordName.indexOf(pattern) !== -1 && !isPatch) {
+      this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
+        this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
+          const data = `{ "_v": 0, "_d": ${message.data[2]}`
+          this._options.storage.set(recordName, data, () => {})
+          this._options.cache.set(recordName, data, () => {
+            this._$broadcastUpdate(recordName, message, false, socketWrapper)
+          })
+        })
+      })
+      return
+    } else if (isPatch) {
+      socketWrapper.sendError(
+        C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, 'unable to patch record data on hot path'
+      )
+      return
+    }
+  }
+
+  const version = message.data[1] * 10 // https://jsperf.com/number-vs-parseint-vs-plus/3
 
   const transition = this._transitions[recordName]
   if (transition) {
@@ -279,13 +308,13 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
 
   const onComplete = function (record) {
     if (record) {
-      this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
+      this._permissionAction(message.action, recordName, socketWrapper, () => {
         this._update(socketWrapper, message)
       })
     } else {
       this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
-        this._create(recordName, socketWrapper, () => {
-          this._update(socketWrapper, message)
+        this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
+          this._update(socketWrapper, message, true)
         })
       })
     }
@@ -374,18 +403,30 @@ RecordHandler.prototype._sendRecord = function (recordName, record, socketWrappe
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
  * @param   {Object} message parsed and validated message
+ * @param   {Boolean} upsert whether an upsert is possible
  *
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._update = function (socketWrapper, message) {
+RecordHandler.prototype._update = function (socketWrapper, message, upsert) {
   if (message.data.length < 3) {
     socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
     return
   }
 
   const recordName = message.data[0]
-  const version = parseInt(message.data[1], 10)
+
+  for (let i = 0; i < this._options.storageHotPathPatterns.length; i++) {
+    const pattern = this._options.storageHotPathPatterns[i]
+    if (recordName.indexOf(pattern) !== -1) {
+      socketWrapper.sendError(
+        C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, 'unable to update record data on hot path, must use CU action'
+      )
+      return
+    }
+  }
+
+  const version = message.data[1] * 10 // https://jsperf.com/number-vs-parseint-vs-plus/3
 
   /*
    * If the update message is received from the message bus, rather than from a client,
@@ -402,16 +443,19 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
     return
   }
 
-  if (this._transitions[recordName] && this._transitions[recordName].hasVersion(version)) {
-    this._transitions[recordName].sendVersionExists({ message, version, sender: socketWrapper })
+  let transition = this._transitions[recordName]
+
+  if (transition && transition.hasVersion(version)) {
+    transition.sendVersionExists({ message, version, sender: socketWrapper })
     return
   }
 
-  if (!this._transitions[recordName]) {
-    this._transitions[recordName] = new RecordTransition(recordName, this._options, this)
+  if (!transition) {
+    transition = new RecordTransition(recordName, this._options, this)
+    this._transitions[recordName] = transition
   }
 
-  this._transitions[recordName].add(socketWrapper, version, message)
+  transition.add(socketWrapper, version, message, upsert)
 }
 
 /**
