@@ -1,1 +1,1 @@
-deepstream stop
+/etc/init.d/deepstream stop
