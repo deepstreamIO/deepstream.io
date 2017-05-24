@@ -179,7 +179,8 @@ class SubscriptionRegistry {
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
       const sockets = this._subscriptions.get(name)
       if (sockets && sockets.size > 0) {
-        // unfortunately accessing any element from a set
+        // unfortunately accessing the first (or any single) element from a set requires creating
+        // an iterator
         const first = sockets.values().next().value
         const preparedMessage = first.prepareMessage(sharedMessages)
         for (const socket of sockets) {
