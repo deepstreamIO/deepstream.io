@@ -272,7 +272,8 @@ if [ $OS = "linux" ]; then
 		$DEEPSTREAM_PACKAGE/doc/=/usr/share/doc/deepstream/ \
 		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
 		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
-		./build/deepstream=/usr/bin/deepstream
+		./build/deepstream=/usr/bin/deepstream \
+		./scripts/daemon/init-script=/etc/init.d/deepstream
 
 	echo -e "\t\tCreating deb"
 	fpm \
@@ -296,7 +297,8 @@ if [ $OS = "linux" ]; then
 		$DEEPSTREAM_PACKAGE/doc/=/usr/share/doc/deepstream/ \
 		$DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
 		$DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
-		./build/deepstream=/usr/bin/deepstream
+		./build/deepstream=/usr/bin/deepstream \
+		./scripts/daemon/init-script=/etc/init.d/deepstream
 fi
 
 rm -rf $DEEPSTREAM_PACKAGE
