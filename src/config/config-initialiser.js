@@ -34,6 +34,7 @@ exports.initialise = function (config) {
   handleSSLProperties(config)
   handleLogger(config)
   handlePlugins(config)
+  handleConnectionEndpoints(config)
   handleAuthStrategy(config)
   handlePermissionStrategy(config)
 
@@ -166,11 +167,64 @@ function handlePlugins (config) {
     if (plugin) {
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
       config[key] = new PluginConstructor(plugin.options)
-      if(config.pluginTypes.indexOf(key) === -1) {
+      if (config.pluginTypes.indexOf(key) === -1) {
         config.pluginTypes.push(key)
       }
     }
   }
+}
+
+/**
+ * Handle connection endpoint plugin config.
+ * The type is typically the protocol e.g. ws
+ * Plugins can be passed either as a __path__ property or as a __name__ property with
+ * a naming convetion: *{amqp: {name: 'my-plugin'}}* will be resolved to the
+ * npm module *deepstream.io-connection-my-plugin*
+ * Exception: the name *uws* will be resolved to deepstream.io's internal uWebSockets plugin
+ * Options to the constructor of the plugin can be passed as *options* object.
+ *
+ * CLI arguments will be considered.
+ *
+ * @param {Object} config deepstream configuration object
+ *
+ * @private
+ * @returns {void}
+ */
+function handleConnectionEndpoints (config) {
+  if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
+    throw new Error('No connection endpoints configured')
+  }
+  if (Object.keys(config.connectionEndpoints).length > 1) {
+    throw new Error('Currently only one connection endpoint may be configured')
+  }
+  const connectionEndpoints = []
+  for (const connectionType in config.connectionEndpoints) {
+    const plugin = config.connectionEndpoints[connectionType]
+
+    plugin.options = plugin.options || {}
+
+    // use global options unless provided in plugin options
+    plugin.options.port = plugin.options.port || config.port
+    plugin.options.host = plugin.options.host || config.host
+    plugin.options.urlPath = plugin.options.urlPath || config.urlPath
+    plugin.options.pingInterval = plugin.options.pingInterval || config.heartbeatInterval
+    plugin.options.externalUrl = plugin.options.externalUrl || config.externalUrl
+    plugin.options.healthCheckPath = plugin.options.healthCheckPath || config.healthCheckPath
+    plugin.options.unauthenticatedClientTimeout =
+      plugin.options.unauthenticatedClientTimeout || config.unauthenticatedClientTimeout
+    plugin.options.sslKey = plugin.options.sslKey || config.sslKey
+    plugin.options.sslCert = plugin.options.sslCert || config.sslCert
+    plugin.options.sslCa = plugin.options.sslCa || config.sslCa
+
+    let PluginConstructor
+    if (plugin.name === 'uws') {
+      PluginConstructor = require('../message/uws-connection-endpoint')
+    } else {
+      PluginConstructor = resolvePluginClass(plugin, 'connection')
+    }
+    connectionEndpoints.push(new PluginConstructor(plugin.options))
+  }
+  config.connectionEndpoints = connectionEndpoints
 }
 
 /**
@@ -185,7 +239,8 @@ function handlePlugins (config) {
  * @private
  * @returns {Function} Instance return be the plugin constructor
  */
-function resolvePluginClass (plugin, type) {  // nexe needs *global.require* for __dynamic__ modules
+function resolvePluginClass (plugin, type) {
+  // nexe needs *global.require* for __dynamic__ modules
   // but browserify and proxyquire can't handle *global.require*
   const req = global && global.require ? global.require : require
   let requirePath

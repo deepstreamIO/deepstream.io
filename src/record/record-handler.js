@@ -366,7 +366,7 @@ RecordHandler.prototype._update = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._$broadcastUpdate = function (name, message, noDelay, originalSender) {
-  this._subscriptionRegistry.sendToSubscribers(name, message.raw, noDelay, originalSender)
+  this._subscriptionRegistry.sendToSubscribers(name, message, noDelay, originalSender)
 
   if (originalSender !== C.SOURCE_MESSAGE_CONNECTOR) {
     this._options.messageConnector.publish(C.TOPIC.RECORD, message)

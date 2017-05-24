@@ -1,6 +1,5 @@
 'use strict'
 
-const messageParser = require('./message-parser')
 const C = require('../constants/constants')
 
 /**
@@ -45,35 +44,23 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  process (socketWrapper, message) {
-    if (typeof message !== 'string') {
-      this._options.logger.log(
-        C.LOG_LEVEL.WARN,
-        C.EVENT.INVALID_MESSAGE,
-        'non text based message recieved'
-      )
-      socketWrapper.sendError(
-        C.TOPIC.ERROR,
-        C.EVENT.MESSAGE_PARSE_ERROR,
-        'non text based message recieved'
-      )
-      return
-    }
-
-    const parsedMessages = messageParser.parse(message)
+  process (socketWrapper, parsedMessages) {
     let parsedMessage
 
     const length = parsedMessages.length
     for (let i = 0; i < length; i++) {
       parsedMessage = parsedMessages[i]
 
-      if (parsedMessage === null) {
-        this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, message)
-        socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, message)
+      if (parsedMessage.topic === C.TOPIC.CONNECTION && parsedMessage.action === C.ACTIONS.PONG) {
         continue
       }
 
-      if (parsedMessage.topic === C.TOPIC.CONNECTION && parsedMessage.action === C.ACTIONS.PONG) {
+      if (parsedMessage === null ||
+        !parsedMessage.action ||
+        !parsedMessage.topic ||
+        !parsedMessage.data) {
+        this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
+        socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
         continue
       }
 

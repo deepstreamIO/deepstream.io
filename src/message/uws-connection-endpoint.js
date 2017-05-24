@@ -3,7 +3,7 @@
 const C = require('../constants/constants')
 const messageParser = require('./message-parser')
 const messageBuilder = require('./message-builder')
-const SocketWrapper = require('./socket-wrapper')
+const SocketWrapper = require('./uws-socket-wrapper')
 const events = require('events')
 const http = require('http')
 const https = require('https')
@@ -23,38 +23,135 @@ const OPEN = 'OPEN'
  * @param {Object} options the extended default options
  * @param {Function} readyCallback will be invoked once both the ws is ready
  */
-module.exports = class ConnectionEndpoint extends events.EventEmitter {
-  constructor (options, readyCallback) {
+module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
+  constructor (options) {
     super()
     this._options = options
-    this._readyCallback = readyCallback
-
-    this._wsReady = false
-    this._wsServerClosed = false
-
-    this._server = this._createHttpServer()
-    this._server.listen(this._options.port, this._options.host)
-    this._server.on('request', this._handleHealthCheck.bind(this))
-    this._options.logger.log(
-      C.LOG_LEVEL.INFO,
-      C.EVENT.INFO,
-      `Listening for health checks on path ${options.healthCheckPath}`
-    )
-
-    this._ws = new uws.Server({
-      server: this._server,
-      perMessageDeflate: false,
-      path: this._options.urlPath
-    })
-    this._ws.startAutoPing(
-      this._options.heartbeatInterval,
-      messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
-    )
-    this._server.once('listening', this._checkReady.bind(this))
-    this._ws.on('error', this._onError.bind(this))
-    this._ws.on('connection', this._onConnection.bind(this))
+    this.isReady = false
+    this.description = 'µWebSocket Connection Endpoint'
+    this.initialised = false
 
     this._authenticatedSockets = new Set()
+  }
+
+  /**
+   * Called on initialization with a reference to the instantiating deepstream server.
+   *
+   * @param {Deepstream} deepstream
+   *
+   * @public
+   * @returns {Void}
+   */
+  setDeepstream (deepstream) {
+    this._logger = deepstream._options.logger
+    this._authenticationHandler = deepstream._options.authenticationHandler
+    this._dsOptions = deepstream._options
+  }
+
+  /**
+   * Initialise and setup the http and WebSocket servers.
+   *
+   * @throws Will throw if called before `setDeepstream()`.
+   *
+   * @public
+   * @returns {Void}
+   */
+  init () {
+    if (!this._dsOptions) {
+      throw new Error('setDeepstream must be called before init()')
+    }
+    if (this.initialised) {
+      throw new Error('init() must only be called once')
+    }
+    this.initialised = true
+
+    this._healthCheckPath = this._getOption('healthCheckPath')
+
+    this._maxAuthAttempts = this._getOption('maxAuthAttempts')
+    this._logInvalidAuthData = this._getOption('logInvalidAuthData')
+    this._urlPath = this._getOption('urlPath')
+    this._unauthenticatedClientTimeout = this._getOption('unauthenticatedClientTimeout')
+
+    this._uwsInit()
+
+    this._server = this._createHttpServer()
+    this._server.on('request', this._handleHealthCheck.bind(this))
+
+    this._server.once('listening', this._onReady.bind(this))
+    this._server.on('error', this._onError.bind(this))
+    this._server.on('upgrade', this._onUpgradeRequest.bind(this))
+
+    const port = this._getOption('port')
+    const host = this._getOption('host')
+    this._server.listen(port, host)
+  }
+
+  /**
+   * Get a parameter from the root of the deepstream options if present, otherwise get it from the
+   * plugin config. If neither is present, default to the optionally provided default.
+   *
+   * @param {String} option  The name of the option to be fetched
+   * @param {Value}  default Optional default value
+   *
+   * @private
+   * @returns {Value} value
+   */
+  _getOption (option, defaultOpt) {
+    return this._dsOptions[option] || this._options[option] || defaultOpt
+  }
+
+  /**
+   * Initialize the uws endpoint, setup callbacks etc.
+   *
+   * @private
+   * @returns {void}
+   */
+  _uwsInit () {
+    const maxMessageSize = this._getOption('maxMessageSize', 1048576)
+    this._serverGroup = uws.native.server.group.create(0, maxMessageSize)
+
+    this._noDelay = this._getOption('noDelay', true)
+
+    uws.native.server.group.onDisconnection(
+      this._serverGroup,
+      (external, code, message, socketWrapper) => {
+        if (socketWrapper) {
+          socketWrapper.close()
+        }
+      }
+    )
+
+    uws.native.server.group.onMessage(this._serverGroup, (message, socketWrapper) => {
+      socketWrapper.onMessage(message)
+    })
+
+    uws.native.server.group.onPing(this._serverGroup, () => {})
+    uws.native.server.group.onPong(this._serverGroup, () => {})
+    uws.native.server.group.onConnection(this._serverGroup, this._onConnection.bind(this))
+
+    uws.native.server.group.startAutoPing(
+      this._serverGroup,
+      this._getOption('pingInterval'),
+      messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
+    )
+  }
+
+  /**
+   * Called for the ready event of the ws server.
+   *
+   * @private
+   * @returns {void}
+   */
+  _onReady () {
+    const serverAddress = this._server.address()
+    const address = serverAddress.address
+    const port = serverAddress.port
+    const wsMsg = `Listening for websocket connections on ${address}:${port}${this._urlPath}`
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, wsMsg)
+    const hcMsg = `Listening for health checks on path ${this._healthCheckPath} `
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, hcMsg)
+    this.emit('ready')
+    this.isReady = true
   }
 
   /**
@@ -65,41 +162,13 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * of an event emitter to improve the performance of the messaging pipeline
    *
    * @param   {SocketWrapper} socketWrapper
-   * @param   {String} message the raw message as sent by the client
+   * @param   {Array} messages the parsed messages as sent by the client
    *
    * @public
    *
    * @returns {void}
    */
-  onMessage (socketWrapper, message) { // eslint-disable-line
-  }
-
-  /**
-   * Closes the ws server connection. The ConnectionEndpoint
-   * will emit a close event once succesfully shut down
-   * @public
-   * @returns {void}
-   */
-  close () {
-    this._server.removeAllListeners('request')
-    this._ws.removeAllListeners('connection')
-    this._ws.close()
-
-    this._server.close(() => {
-      this._wsServerClosed = true
-      this._checkClosed()
-    })
-  }
-
-  /**
-   * Returns the number of currently connected clients. This is used by the
-   * cluster module to determine loadbalancing endpoints
-   *
-   * @public
-   * @returns {Number} connectionCount
-   */
-  getConnectionCount () {
-    return this._authenticatedSockets.length
+  onMessages (socketWrapper, messages) { // eslint-disable-line
   }
 
   /**
@@ -110,20 +179,44 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {http.HttpServer | http.HttpsServer}
    */
   _createHttpServer () {
-    if (this._isHttpsServer()) {
-      const httpsOptions = {
-        key: this._options.sslKey,
-        cert: this._options.sslCert
-      }
-
-      if (this._options.sslCa) {
-        httpsOptions.ca = this._options.sslCa
-      }
-
-      return https.createServer(httpsOptions)
+    const httpsParams = this._getHttpsParams()
+    if (httpsParams) {
+      return https.createServer(httpsParams)
     }
-
     return http.createServer()
+  }
+
+  /**
+  * Returns sslKey, sslCert and sslCa options from the config.
+  *
+  * @throws Will throw an error if one of sslKey or sslCert are not specified
+  *
+  * @private
+  * @returns {null|Object} {
+  *   {String}           key   ssl key
+  *   {String}           cert  ssl certificate
+  *   {String|undefined} ca    ssl certificate authority (if it's present in options)
+  * }
+  */
+  _getHttpsParams () {
+    const key = this._getOption('sslKey')
+    const cert = this._getOption('sslCert')
+    const ca = this._getOption('sslCa')
+    if (key || cert) {
+      if (!key) {
+        throw new Error('Must also include sslKey in order to use HTTPS')
+      }
+      if (!cert) {
+        throw new Error('Must also include sslCert in order to use HTTPS')
+      }
+
+      const params = { key, cert }
+      if (ca) {
+        params.ca = ca
+      }
+      return params
+    }
+    return null
   }
 
   /**
@@ -134,60 +227,52 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _handleHealthCheck (req, res) {
-    if (req.method === 'GET' && req.url === this._options.healthCheckPath) {
+    if (req.method === 'GET' && req.url === this._healthCheckPath) {
       res.writeHead(200)
       res.end()
     }
   }
 
   /**
-   * Called whenever either the server itself or one of its sockets
-   * is closed. Once everything is closed it will emit a close event
-   *
-   * @private
-   * @returns {void}
-   */
-  _checkClosed () {
-    if (this._wsServerClosed === false) {
-      return
-    }
-
-    this.emit('close')
-  }
-
-  /**
-   * Callback for 'connection' event. Receives
-   * a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user and
-  * subscribes to authentication messages.
+   * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
+   * and subscribes to authentication messages.
    * @param {Websocket} socket
    *
+   * @param {WebSocket} external    uws native websocket
+   *
    * @private
    * @returns {void}
    */
-  _onConnection (socket) {
-    const socketWrapper = new SocketWrapper(socket, this._options)
-    const handshakeData = socketWrapper.getHandshakeData()
-    const logMsg = `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
+  _onConnection (external) {
+    const handshakeData = this._upgradeRequest.headers
+    this._upgradeRequest = null
+
+    const socketWrapper = new SocketWrapper(external, handshakeData, this._logger)
+    uws.native.setUserData(external, socketWrapper)
+
+    this._logger.log(
+      C.LOG_LEVEL.INFO,
+      C.EVENT.INCOMING_CONNECTION,
+      `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
+    )
+
     let disconnectTimer
-
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INCOMING_CONNECTION, logMsg)
-
-    if (this._options.unauthenticatedClientTimeout !== null) {
+    if (this._unauthenticatedClientTimeout !== null) {
       disconnectTimer = setTimeout(
         this._processConnectionTimeout.bind(this, socketWrapper),
-        this._options.unauthenticatedClientTimeout
+        this._unauthenticatedClientTimeout
       )
       socketWrapper.once('close', clearTimeout.bind(null, disconnectTimer))
     }
 
-    socketWrapper.connectionCallback = this._processConnectionMessage.bind(this, socketWrapper)
     socketWrapper.authCallBack = this._authenticateConnection.bind(
       this,
       socketWrapper,
       disconnectTimer
     )
+
     socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.CHALLENGE)
-    socket.on('message', socketWrapper.connectionCallback)
+    socketWrapper.onMessage = this._processConnectionMessage.bind(this, socketWrapper)
   }
 
   /**
@@ -203,7 +288,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    */
   _processConnectionMessage (socketWrapper, connectionMessage) {
     if (typeof connectionMessage !== 'string') {
-      this._options.logger.log(
+      this._logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.INVALID_MESSAGE,
         connectionMessage.toString()
@@ -219,20 +304,19 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     const msg = messageParser.parse(connectionMessage)[0]
 
     if (msg === null || msg === undefined) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.destroy()
     } else if (msg.topic !== C.TOPIC.CONNECTION) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
       socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message')
     } else if (msg.action === C.ACTIONS.PONG) {
       // do nothing
     } else if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
-      socketWrapper.socket.removeListener('message', socketWrapper.connectionCallback)
-      socketWrapper.socket.on('message', socketWrapper.authCallBack)
+      socketWrapper.onMessage = socketWrapper.authCallBack
       socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.ACK)
     } else {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action)
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action)
       socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, `unknown action ${msg.action}`)
     }
   }
@@ -252,7 +336,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    */
   _authenticateConnection (socketWrapper, disconnectTimeout, authMsg) {
     if (typeof authMsg !== 'string') {
-      this._options.logger.log(
+      this._logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.INVALID_AUTH_MSG,
         authMsg.toString()
@@ -280,7 +364,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
      * Log the authentication attempt
      */
     const logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
-    this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
+    this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
 
     /**
      * Ensure the message is a valid authentication message
@@ -290,7 +374,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
         msg.action !== C.ACTIONS.REQUEST ||
         msg.data.length !== 1
       ) {
-      errorMsg = this._options.logInvalidAuthData === true ? authMsg : ''
+      errorMsg = this._logInvalidAuthData === true ? authMsg : ''
       this._sendInvalidAuthMsg(socketWrapper, errorMsg)
       return
     }
@@ -303,7 +387,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     } catch (e) {
       errorMsg = 'Error parsing auth message'
 
-      if (this._options.logInvalidAuthData === true) {
+      if (this._logInvalidAuthData === true) {
         errorMsg += ` "${authMsg}": ${e.toString()}`
       }
 
@@ -314,7 +398,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     /**
      * Forward for authentication
      */
-    this._options.authenticationHandler.isValidUser(
+    this._authenticationHandler.isValidUser(
       socketWrapper.getHandshakeData(),
       authData,
       this._processAuthResult.bind(this, authData, socketWrapper, disconnectTimeout)
@@ -333,7 +417,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _sendInvalidAuthMsg (socketWrapper, msg) {
-    this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_AUTH_MSG, this._options.logInvalidAuthData ? msg : '')
+    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_AUTH_MSG, this._logInvalidAuthData ? msg : '')
     socketWrapper.sendError(C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_MSG, 'invalid authentication message')
     socketWrapper.destroy()
   }
@@ -351,9 +435,12 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _registerAuthenticatedSocket (socketWrapper, userData) {
-    socketWrapper.socket.removeListener('message', socketWrapper.authCallBack)
+    delete socketWrapper.authCallBack
     socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
-    socketWrapper.socket.on('message', (msg) => { this.onMessage(socketWrapper, msg) })
+    socketWrapper.onMessage = (message) => {
+      const parsedMessages = messageParser.parse(message)
+      this.onMessages(socketWrapper, parsedMessages)
+    }
     this._appendDataToSocketWrapper(socketWrapper, userData)
     if (typeof userData.clientData === 'undefined') {
       socketWrapper.sendMessage(C.TOPIC.AUTH, C.ACTIONS.ACK)
@@ -370,7 +457,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     }
 
     this._authenticatedSockets.add(socketWrapper)
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user)
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user)
   }
 
   /**
@@ -404,11 +491,11 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   _processInvalidAuth (clientData, authData, socketWrapper) {
     let logMsg = 'invalid authentication data'
 
-    if (this._options.logInvalidAuthData === true) {
+    if (this._logInvalidAuthData === true) {
       logMsg += `: ${JSON.stringify(authData)}`
     }
 
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INVALID_AUTH_DATA, logMsg)
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INVALID_AUTH_DATA, logMsg)
     socketWrapper.sendError(
       C.TOPIC.AUTH,
       C.EVENT.INVALID_AUTH_DATA,
@@ -416,8 +503,8 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     )
     socketWrapper.authAttempts++
 
-    if (socketWrapper.authAttempts >= this._options.maxAuthAttempts) {
-      this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts')
+    if (socketWrapper.authAttempts >= this._maxAuthAttempts) {
+      this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts')
       socketWrapper.sendError(C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, messageBuilder.typed('too many authentication attempts'))
       socketWrapper.destroy()
     }
@@ -435,7 +522,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    */
   _processConnectionTimeout (socketWrapper) {
     const log = 'connection has not authenticated successfully in the expected time'
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log)
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log)
     socketWrapper.sendError(
       C.TOPIC.CONNECTION,
       C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT,
@@ -468,21 +555,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   }
 
   /**
-   * Called for the ready event of the ws server.
-   *
-   * @private
-   * @returns {void}
-   */
-  _checkReady () {
-    const address = this._server.address()
-    const msg = `Listening for websocket connections on ${address.address}:${address.port}${this._options.urlPath}`
-    this._wsReady = true
-
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, msg)
-    this._readyCallback()
-  }
-
-  /**
    * Generic callback for connection errors. This will most often be called
    * if the configured port number isn't available
    *
@@ -492,7 +564,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onError (error) {
-    this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error.toString())
+    this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error.toString())
   }
 
   /**
@@ -505,52 +577,115 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   * @returns {void}
   */
   _onSocketClose (socketWrapper) {
-    if (this._options.authenticationHandler.onClientDisconnect) {
-      this._options.authenticationHandler.onClientDisconnect(socketWrapper.user)
+    if (this._authenticationHandler.onClientDisconnect) {
+      this._authenticationHandler.onClientDisconnect(socketWrapper.user)
     }
 
     if (socketWrapper.user !== OPEN) {
       this.emit('client-disconnected', socketWrapper)
     }
 
+    uws.native.clearUserData(socketWrapper._external)
     this._authenticatedSockets.delete(socketWrapper)
   }
 
   /**
-  * Returns whether or not sslKey and sslCert have been set to start a https server.
-  *
-  * @throws Will throw an error if only sslKey or sslCert have been specified
-  *
-  * @private
-  * @returns {boolean}
-  */
-  _isHttpsServer () {
-    let isHttps = false
-    if (this._options.sslKey || this._options.sslCert) {
-      if (!this._options.sslKey) {
-        throw new Error('Must also include sslKey in order to use HTTPS')
-      }
-      if (!this._options.sslCert) {
-        throw new Error('Must also include sslCert in order to use HTTPS')
-      }
-      isHttps = true
-    }
-    return isHttps
-  }
-
-  /**
-  * Checks for authentication data and throws if null or not well formed
-  *
-  * @throws Will throw an error on invalid auth data
-  *
-  * @private
-  * @returns {void}
-  */
+   * Checks for authentication data and throws if null or not well formed
+   *
+   * @throws Will throw an error on invalid auth data
+   *
+   * @private
+   * @returns {void}
+   */
   _getValidAuthData (authData) { // eslint-disable-line
     const parsedData = JSON.parse(authData)
     if (parsedData === null || parsedData === undefined || typeof parsedData !== 'object') {
       throw new Error(`invalid authentication data ${authData}`)
     }
     return parsedData
+  }
+
+  /**
+   * HTTP upgrade request listener
+   *
+   * @param {Request} request
+   * @param {Socket}  socket
+   *
+   * @private
+   * @returns {void}
+   */
+  _onUpgradeRequest (request, socket) {
+    const requestPath = request.url.split('?')[0].split('#')[0]
+    if (!this._urlPath || this._urlPath === requestPath) {
+      this._handleUpgrade(request, socket)
+    }
+    UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
+  }
+
+  /**
+   * Terminate an HTTP socket with some error code and error message
+   *
+   * @param {Socket}  socket
+   * @param {Number}  code
+   * @param {String}  name
+   *
+   * @private
+   * @returns {void}
+   */
+  static _terminateSocket (socket, code, name) {
+    socket.end(`HTTP/1.1 ${code}  ${name}\r\n\r\n`)
+  }
+
+  /**
+   * Process websocket upgrade
+   *
+   * @param {Request} request
+   * @param {Socket}  socket
+   *
+   * @private
+   * @returns {void}
+   */
+  _handleUpgrade (request, socket) {
+    const secKey = request.headers['sec-websocket-key']
+    const socketHandle = socket.ssl ? socket._parent._handle : socket._handle
+    const sslState = socket.ssl ? socket.ssl._external : null
+    if (secKey && secKey.length === 24) {
+      socket.setNoDelay(this._noDelay)
+      const ticket = uws.native.transfer(
+        socketHandle.fd === -1 ? socketHandle : socketHandle.fd,
+        sslState
+      )
+      socket.on('close', () => {
+        if (this._serverGroup) {
+          this._upgradeRequest = request
+          uws.native.upgrade(
+            this._serverGroup,
+            ticket, secKey,
+            request.headers['sec-websocket-extensions'],
+            request.headers['sec-websocket-protocol']
+          )
+        }
+      })
+    }
+    socket.destroy()
+  }
+
+  /**
+   * Closes the ws server connection. The ConnectionEndpoint
+   * will emit a close event once succesfully shut down
+   * @public
+   * @returns {void}
+   */
+  close () {
+    this._server.removeAllListeners('request')
+    this._server.removeAllListeners('upgrade')
+    if (this._serverGroup) {
+      uws.native.server.group.close(this._serverGroup)
+    }
+    this._serverGroup = null
+
+    this._server.close(() => {
+      this.emit('close')
+    })
   }
 }

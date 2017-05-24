@@ -1,9 +1,9 @@
 'use strict'
 
-const C = require('../constants/constants')
-const messageBuilder = require('./message-builder')
+const C = require('../../src/constants/constants')
+const messageBuilder = require('../../src/message/message-builder')
 const utils = require('util')
-const uws = require('uws')
+const SocketMock = require('./socket-mock')
 
 const EventEmitter = require('events').EventEmitter
 
@@ -21,6 +21,9 @@ const EventEmitter = require('events').EventEmitter
  */
 const SocketWrapper = function (socket, options) {
   this.socket = socket
+  if (!this.socket.on) {
+    this.socket = new SocketMock
+  }
   this.isClosed = false
   this.socket.once('close', this._onSocketClose.bind(this))
   this._options = options
@@ -49,9 +52,9 @@ SocketWrapper.lastPreparedMessage = null
  * @public
  * @returns {External} prepared message
  */
-SocketWrapper.prepareMessage = function (message) {
+SocketWrapper.prototype.prepareMessage = function (message) {
   SocketWrapper.lastPreparedMessage = message
-  return uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
+  return message
 }
 
 /**
@@ -64,11 +67,18 @@ SocketWrapper.prepareMessage = function (message) {
  * @returns {void}
  */
 SocketWrapper.prototype.sendPrepared = function (preparedMessage) {
-  if (this.socket.external) {
-    uws.native.server.sendPrepared(this.socket.external, preparedMessage)
-  } else if (this.socket.external !== null) {
-    this.socket.send(SocketWrapper.lastPreparedMessage)
-  }
+  this.socket.send(preparedMessage)
+}
+
+/**
+ * Finalizes the [uws] perpared message.
+ *
+ * @param {External} preparedMessage the prepared message to finalize
+ *
+ * @public
+ * @returns {void}
+ */
+SocketWrapper.prototype.finalizeMessage = function (preparedMessage) {
 }
 
 /**
@@ -81,18 +91,6 @@ SocketWrapper.prototype.sendPrepared = function (preparedMessage) {
  */
 SocketWrapper.prototype.sendNative = function (message) {
   this.socket.send(message)
-}
-
-/**
- * Finalizes the [uws] perpared message.
- *
- * @param {External} preparedMessage the prepared message to finalize
- *
- * @public
- * @returns {void}
- */
-SocketWrapper.finalizeMessage = function (preparedMessage) {
-  uws.native.server.finalizeMessage(preparedMessage)
 }
 
 /**
@@ -150,6 +148,7 @@ SocketWrapper.prototype.sendMessage = function (topic, action, data) {
  * @returns {void}
  */
 SocketWrapper.prototype.send = function (message) {
+  this.lastSendMessage = message
   if (message.charAt(message.length - 1) !== C.MESSAGE_SEPERATOR) {
     message += C.MESSAGE_SEPERATOR // eslint-disable-line
   }
@@ -182,7 +181,6 @@ SocketWrapper.prototype.destroy = function () {
 SocketWrapper.prototype._onSocketClose = function () {
   this.isClosed = true
   this.emit('close', this)
-  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
   this.socket.removeAllListeners()
 }
 
@@ -194,13 +192,9 @@ SocketWrapper.prototype._onSocketClose = function () {
  */
 SocketWrapper.prototype._setUpHandshakeData = function () {
   this._handshakeData = {
-    remoteAddress: this.socket._socket.remoteAddress
+    remoteAddress: 'remote@address'
   }
 
-  if (this.socket.upgradeReq) {
-    this._handshakeData.headers = this.socket.upgradeReq.headers
-    this._handshakeData.referer = this.socket.upgradeReq.headers.referer
-  }
   return this._handshakeData
 }
 

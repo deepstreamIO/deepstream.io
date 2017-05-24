@@ -44,7 +44,7 @@ describe('it starts and stops the server', () => {
         server.start()
         next.fail('should fail to start deepstream twice')
       } catch (err) {
-        expect(err.toString()).toContain('can only start after it stops succesfully')
+        expect(err.toString()).toContain('can only start after it stops successfully')
         next()
       }
     })
@@ -52,7 +52,7 @@ describe('it starts and stops the server', () => {
     server.start()
   })
 
-	// NOTE: depends on test before
+  // NOTE: depends on test before
   it('stops the server', (next) => {
     expect(server.isRunning()).toBe(true)
     server.on('stopped', () => {
@@ -61,14 +61,14 @@ describe('it starts and stops the server', () => {
         server.stop()
         next.fail('should fail to stop deepstream twice')
       } catch (err) {
-        expect(err.toString()).toContain('only be stopped after it starts succesfully')
+        expect(err.toString()).toContain('server is already stopped')
         next()
       }
     })
     server.stop()
   })
 
-	// NOTE: depends on the test before
+  // NOTE: depends on the test before
   it('start the server again from the same instance', (next) => {
     server.on('started', server.stop)
     server.on('stopped', next)
@@ -144,7 +144,7 @@ describe('it starts and stops a configured server', () => {
     server.set('cache', fakeCloseablePlugin)
     server.on('started', () => {
       fakeCloseablePlugin.emit('error', 'test error')
-			// TODO: why fakeCloseablePlugin contains console args?
+      // TODO: why fakeCloseablePlugin contains console args?
       expect(logger.log.calls.mostRecent().args[2]).toBe('Error from cache plugin: test error')
       expect(fakeCloseablePlugin.log.calls.mostRecent().args[2]).toBe('Error from cache plugin: test error')
       next()

@@ -15,7 +15,7 @@ const EventEmitter = require('events').EventEmitter
  *
  * @constructor
  */
-const DependencyInitialiser = function (options, name) {
+const DependencyInitialiser = function (deepstream, options, name) {
   this.isReady = false
 
   this._options = options
@@ -29,6 +29,10 @@ const DependencyInitialiser = function (options, name) {
     const error = new Error(errorMessage)
     error.code = 'PLUGIN_INITIALIZATION_ERROR'
     throw error
+  }
+
+  if (this._dependency.setDeepstream instanceof Function) {
+    this._dependency.setDeepstream(deepstream)
   }
 
   if (this._dependency.isReady) {

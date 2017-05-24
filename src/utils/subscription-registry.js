@@ -2,7 +2,7 @@
 
 const C = require('../constants/constants')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
-const SocketWrapper = require('../message/socket-wrapper')
+const messageBuilder = require('../message/message-builder')
 
 class SubscriptionRegistry {
   /**
@@ -178,14 +178,16 @@ class SubscriptionRegistry {
       // specialized message. only sockets that sent something will have a special message, all
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
       const sockets = this._subscriptions.get(name)
-      if (sockets) {
-        const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
+      if (sockets && sockets.size > 0) {
+        // unfortunately accessing any element from a set
+        const first = sockets.values().next().value
+        const preparedMessage = first.prepareMessage(sharedMessages)
         for (const socket of sockets) {
           if (!uniqueSenders.has(socket)) {
             socket.sendPrepared(preparedMessage)
           }
         }
-        SocketWrapper.finalizeMessage(preparedMessage)
+        first.finalizeMessage(preparedMessage)
       }
 
       delayedBroadcasts.uniqueSenders.clear()
@@ -207,7 +209,8 @@ class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  sendToSubscribers (name, msgString, noDelay, socket) {
+  sendToSubscribers (name, message, noDelay, socket) {
+    const msgString = messageBuilder.getMsg(message.topic, message.action, message.data)
     if (!this._subscriptions.has(name)) {
       return
     }

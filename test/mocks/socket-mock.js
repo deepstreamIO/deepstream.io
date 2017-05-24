@@ -8,6 +8,8 @@ const SocketMock = function () {
   this.autoClose = true
   this.readyState = ''
   this._socket = {}
+  this.ssl = null
+  this._handle = {}
 }
 
 require('util').inherits(SocketMock, require('events').EventEmitter)
@@ -15,6 +17,9 @@ require('util').inherits(SocketMock, require('events').EventEmitter)
 SocketMock.prototype.send = function (message) {
   this.lastSendMessage = message
   this.sendMessages.push(message)
+}
+
+SocketMock.prototype.end = function () {
 }
 
 SocketMock.prototype.getMsg = function (i) {
@@ -30,11 +35,17 @@ SocketMock.prototype.close = function () {
     this.doClose()
   }
 }
+SocketMock.prototype.destroy = function () {
+  this.doClose()
+}
 
 SocketMock.prototype.doClose = function () {
   this.isDisconnected = true
   this.readyState = 'closed'
   this.emit('close')
+}
+
+SocketMock.prototype.setNoDelay = function () {
 }
 
 module.exports = SocketMock

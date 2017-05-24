@@ -6,62 +6,86 @@ const C = require('./constants/constants')
 exports.get = function () {
   const options = {
     /*
-    * General
-    */
+     * General
+     */
     serverName: utils.getUid(),
     showLogo: true,
     logLevel: C.LOG_LEVEL.INFO,
 
     /*
-    * Connectivity
-    */
-    port: 6020,
-    host: '0.0.0.0',
-    urlPath: '/deepstream',
-    healthCheckPath: '/health-check',
+     * Connectivity
+     */
     externalUrl: null,
-    heartbeatInterval: 30000,
 
     /*
-    * SSL Configuration
-    */
+     * SSL Configuration
+     */
     sslKey: null,
     sslCert: null,
     sslCa: null,
 
     /*
-    * Authentication
-    */
+     * Authentication
+     */
     auth: {
       type: 'none'
     },
 
     /*
-    * Permissioning
-    */
+     * Permissioning
+     */
     permission: {
       type: 'none'
     },
 
     /*
-    * Default Plugins
-    */
+     * Connection Endpoints
+     */
+    connectionEndpoints: {
+      websocket: {
+        name: 'uws',
+        options: {
+          port: 6020,
+          host: '0.0.0.0',
+          urlPath: '/deepstream',
+          healthCheckPath: '/health-check',
+          pingInterval: 30000,
+
+          /*
+           * Security
+           */
+          unauthenticatedClientTimeout: 180000,
+          maxAuthAttempts: 3,
+          logInvalidAuthData: true,
+          maxMessageSize: 1048576
+        }
+      }
+    },
+
+    /*
+     * Redundant connection config (maintained for overriding by environment/CLI)
+     */
+    port: null,
+    host: null,
+    urlPath: null,
+    healthCheckPath: null,
+    pingInterval: null,
+    unauthenticatedClientTimeout: null,
+    maxAuthAttempts: null,
+    logInvalidAuthData: null,
+    maxMessageSize: null,
+
+    /*
+     * Default Plugins
+     */
     messageConnector: require('./default-plugins/noop-message-connector'),
     cache: require('./default-plugins/local-cache'),
     storage: require('./default-plugins/noop-storage'),
 
     /*
-    * Storage options
-    */
+     * Storage options
+     */
     storageExclusion: null,
-
-    /*
-    * Security
-    */
-    unauthenticatedClientTimeout: 180000,
-    maxAuthAttempts: 3,
-    logInvalidAuthData: true,
-    maxMessageSize: 1048576,
 
     /**
      * Listening
@@ -69,8 +93,8 @@ exports.get = function () {
     shuffleListenProviders: true,
 
     /*
-    * Timeouts
-    */
+     * Timeouts
+     */
     rpcAckTimeout: 1000,
     rpcTimeout: 10000,
     cacheRetrievalTimeout: 1000,

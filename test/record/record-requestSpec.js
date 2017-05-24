@@ -2,7 +2,7 @@
 'use strict'
 
 let RecordRequest = require('../../src/record/record-request'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
   SocketMock = require('../mocks/socket-mock'),
   StorageMock = require('../mocks/storage-mock'),
   msg = require('../test-helper/test-helper').msg

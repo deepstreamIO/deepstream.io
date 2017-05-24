@@ -3,7 +3,6 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
-const messageBuilder = require('../message/message-builder')
 
 /**
  * This class handles incoming and outgoing messages in relation
@@ -21,9 +20,6 @@ module.exports = class PresenceHandler {
   constructor (options) {
     this._options = options
     this._localClients = new Map()
-    this._connectionEndpoint = options.connectionEndpoint
-    this._connectionEndpoint.on('client-connected', this._handleJoin.bind(this))
-    this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
 
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
 
@@ -67,7 +63,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleJoin (socketWrapper) {
+  handleJoin (socketWrapper) {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === undefined) {
       this._localClients.set(socketWrapper.user, 1)
@@ -86,7 +82,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleLeave (socketWrapper) {
+  handleLeave (socketWrapper) {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === 1) {
       this._localClients.delete(socketWrapper.user)
@@ -125,8 +121,8 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _onClientAdded (username) {
-    const addMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [username])
-    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
+    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: [username] }
+    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, message)
   }
 
   /**
@@ -139,7 +135,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _onClientRemoved (username) {
-    const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
-    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
+    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: [username] }
+    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, message)
   }
 }

@@ -4,7 +4,7 @@
 let ListenerRegistry = require('../../src/listen/listener-registry'),
   msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
   LoggerMock = require('../mocks/logger-mock'),
   LocalMessageConnector = require('../mocks/local-message-connector'),
   ClusterRegistry = require('../../src/cluster/cluster-registry'),
@@ -228,8 +228,13 @@ class ListenerTestUtils {
 
   publishUpdateSentToSubscribers(subscription, state) {
     const msgString = msg(`${topic}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|${subscription}|${state ? C.TYPES.TRUE : C.TYPES.FALSE}+`)
+    const message = {
+      topic,
+      action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+      data: [ subscription, state ? C.TYPES.TRUE : C.TYPES.FALSE ]
+    }
     if (sendToSubscribersMock.calls.mostRecent()) {
-      expect(sendToSubscribersMock.calls.mostRecent().args).toEqual([subscription, msgString])
+      expect(sendToSubscribersMock.calls.mostRecent().args).toEqual([subscription, message])
     } else {
       expect('Send to subscribers never called').toEqual(0)
     }

@@ -359,8 +359,6 @@ RecordTransition.prototype._next = function () {
     const message = this._currentStep.message
     const version = this._record._v + 1
     this._currentStep.version = message.data[1] = version
-    // Raw message is rebroadcast, needs to be rebuilt with new version number
-    message.raw = messageBuilder.getMsg(message.topic, message.action, message.data)
   }
 
   if (this._record._v !== this._currentStep.version - 1) {

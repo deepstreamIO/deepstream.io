@@ -1,6 +1,5 @@
 'use strict'
 
-const messageBuilder = require('../message/message-builder')
 const C = require('../constants/constants')
 
 /**
@@ -86,11 +85,10 @@ RecordDeletion.prototype._done = function () {
   const ackMessage = {
     topic: C.TOPIC.RECORD,
     action: C.ACTIONS.ACK,
-    data: [C.ACTIONS.DELETE, this._recordName],
-    raw: messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.ACK, [C.ACTIONS.DELETE, this._recordName])
+    data: [C.ACTIONS.DELETE, this._recordName]
   }
 
-  this._socketWrapper.send(ackMessage.raw)
+  this._socketWrapper.sendMessage(ackMessage.topic, ackMessage.action, ackMessage.data)
   this._successCallback(this._recordName, ackMessage, this._socketWrapper)
   this._destroy()
 }
