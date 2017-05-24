@@ -7,6 +7,8 @@ const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 
+const writeConfig = JSON.stringify({ writeSuccess: true })
+
 /**
  * This class manages one or more simultanious updates to the data of a record.
  * But: Why does that need to be so complicated and why does this class even exist?
@@ -125,7 +127,7 @@ RecordTransition.prototype.sendVersionExists = function (step) {
  * @public
  * @returns {void}
  */
-RecordTransition.prototype.add = function (socketWrapper, version, message) {
+RecordTransition.prototype.add = function (socketWrapper, version, message, upsert) {
   const update = {
     message,
     version,
@@ -178,7 +180,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       this._name,
       this._options,
       socketWrapper,
-      this._onRecord,
+      record => this._onRecord(record, upsert),
       this._onFatalError
     )
   } else if (this._steps.length === 1 && this._cacheResponses === 1) {
@@ -186,19 +188,29 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
   }
 }
 
+/**
+ * Validates and assigns config and data to the step object. Because
+ * JSON parsing is expensive we want to push these to the lowest level
+ * of execution.
+ *
+ * @param  {SocketWrapper} socketWrapper the socket wrapper that sent the
+ *                                       request
+ * @param  {Object} message the message the socketwrapper sent
+ * @param  {Object} step the step object for this write
+ * @return {Boolean} a flag indicating whether or not the apply was
+ *                     successful
+ */
 RecordTransition.prototype._applyConfigAndData = function (socketWrapper, message, step) {
-  try {
-    const config = RecordTransition._getRecordConfig(message)
-    this._applyConfig(config, step)
-    if (message.action === C.ACTIONS.UPDATE) {
-      step.data = JSON.parse(message.data[2])
-    } else {
-      step.data = messageParser.convertTyped(message.data[3])
-      if (step.data instanceof Error) {
-        return false
-      }
-    }
-  } catch (e) {
+  const config = RecordTransition._getRecordConfig(message)
+  this._applyConfig(config, step)
+
+  if (message.action === C.ACTIONS.UPDATE) {
+    step.data = utils.parseJSON(message.data[2])
+  } else {
+    step.data = messageParser.convertTyped(message.data[3])
+  }
+
+  if (step.data instanceof Error) {
     return false
   }
   return true
@@ -276,11 +288,12 @@ RecordTransition._getRecordConfig = function (message) {
     config = message.data[3]
   }
 
-  if (!config) {
-    return null
+  if (config === writeConfig) {
+    return { writeSuccess: true }
+  } else if (config === null) {
+    return {}
   }
-
-  return JSON.parse(config)
+  return null
 }
 
 /**
@@ -291,9 +304,13 @@ RecordTransition._getRecordConfig = function (message) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onRecord = function (record) {
+RecordTransition.prototype._onRecord = function (record, upsert) {
   if (record === null) {
-    this._onFatalError(`Received update for non-existant record ${this._name}`)
+    if (upsert) {
+      this._record = { _v: 0, _d: {} }
+    } else {
+      this._onFatalError(`Received update for non-existant record ${this._name}`)
+    }
   } else {
     this._record = record
     this._flushVersionExists()
