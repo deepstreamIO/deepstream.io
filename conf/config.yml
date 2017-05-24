@@ -40,7 +40,7 @@ connectionEndpoints:
         # invalid login attempts before the connection is cut
         maxAuthAttempts: 3
         # if true, the logs will contain the cleartext username / password of invalid login attempts
-        logInvalidAuthData: true
+        logInvalidAuthData: false
         # maximum allowed size of an individual message in bytes
         maxMessageSize: 1048576
 
