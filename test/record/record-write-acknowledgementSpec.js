@@ -1,7 +1,7 @@
 'use strict'
 
 /* global it, describe, expect, jasmine */
-const proxyquire = require('proxyquire')
+const proxyquire = require('proxyquire').noPreserveCache()
 const RecordRequestMock = require('../mocks/record-request-mock')
 const RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': RecordRequestMock })
 const SocketWrapper = require('../mocks/socket-wrapper-mock')

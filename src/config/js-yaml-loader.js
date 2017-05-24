@@ -159,7 +159,7 @@ function extendConfig (config, argv) {
   let key
 
   for (key in defaultOptions.get()) {
-    cliArgs[key] = typeof argv[key] === 'undefined' ? undefined : argv[key]
+    cliArgs[key] = argv[key]
   }
 
   return utils.merge({ plugins: {} }, defaultOptions.get(), config, cliArgs)

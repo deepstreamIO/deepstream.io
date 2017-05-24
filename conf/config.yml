@@ -9,23 +9,40 @@ logLevel: INFO
 #libDir: ../lib
 
 # Connectivity
-# port for the websocket server
-port: 6020
-# host for the websocket server
-host: 0.0.0.0
-# url path websocket connections connect to
-urlPath: /deepstream
-# url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
-healthCheckPath: /health-check
 # webfacing URL under which this client is reachable. Used for loadbalancing / failover
 externalUrl: null
-# the amount of milliseconds between each heartbeat
-heartbeatInterval: 30000
 
 # SSL Configuration
 sslKey: null
 sslCert: null
 sslCa: null
+
+# Connection Endpoint Configuration
+# currently at most one may be specified
+connectionEndpoints:
+  websocket:
+    name: uws
+    options:
+        # port for the websocket server
+        port: 6020
+        # host for the websocket server
+        host: 0.0.0.0
+        # url path websocket connections connect to
+        urlPath: /deepstream
+        # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
+        healthCheckPath: /health-check
+        # the amount of milliseconds between each ping/heartbeat message
+        pingInterval: 30000
+
+        # Security
+        # amount of time a connection can remain open while not being logged in
+        unauthenticatedClientTimeout: 180000
+        # invalid login attempts before the connection is cut
+        maxAuthAttempts: 3
+        # if true, the logs will contain the cleartext username / password of invalid login attempts
+        logInvalidAuthData: true
+        # maximum allowed size of an individual message in bytes
+        maxMessageSize: 1048576
 
 # Logger Configuration
 # logger:
@@ -76,16 +93,6 @@ plugins:
 # Storage options
 # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
 storageExclusion: null
-
-# Security
-# amount of time a connection can remain open while not being logged in
-unauthenticatedClientTimeout: 180000
-# invalid login attempts before the connection is cut
-maxAuthAttempts: 3
-# if true, the logs will contain the cleartext username / password of invalid login attempts
-logInvalidAuthData: true
-# maximum allowed size of an individual message in bytes
-maxMessageSize: 1048576
 
 #Authentication
 auth:

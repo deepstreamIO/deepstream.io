@@ -1,6 +1,5 @@
 'use strict'
 
-const ConnectionEndpoint = require('./message/uws-connection-endpoint')
 const MessageProcessor = require('./message/message-processor')
 const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')
@@ -160,18 +159,6 @@ Deepstream.prototype.start = function () {
   }
   this._showStartLogo()
   process.nextTick(() => this._state.start())
-
-  process.on('SIGINT', () => {
-    try {
-      this.stop()
-      this.on('stopped', () => {
-        process.exit(0)
-      })
-    } catch (_e) {
-      console.error('Failed to exit gracefully.')
-      process.exit(1)
-    }
-  })
 }
 
 /**
@@ -242,7 +229,7 @@ Deepstream.prototype.onBeforeTransition = function (transition) {
  * @returns {void}
  */
 Deepstream.prototype.onEnterLoggerInit = function () {
-  const loggerInitialiser = new DependencyInitialiser(this._options, 'logger')
+  const loggerInitialiser = new DependencyInitialiser(this, this._options, 'logger')
   loggerInitialiser.once('ready', () => {
     if (this._options.logger instanceof EventEmitter) {
       this._options.logger.on('error', this._onPluginError.bind(this, 'logger'))
@@ -272,12 +259,30 @@ Deepstream.prototype.onEnterPluginInit = function () {
   }
 
   this._options.pluginTypes.forEach((pluginType) => {
-    if (this._options[pluginType].setDeepstream instanceof Function) {
-      this._options[pluginType].setDeepstream(this)
-    }
-    const initialiser = new DependencyInitialiser(this._options, pluginType)
-    initialiser.once('ready', this._checkReady.bind(this, pluginType, initialiser.getDependency()))
+    const initialiser = new DependencyInitialiser(this, this._options, pluginType)
+    initialiser.once('ready', () => {
+      this._checkReady(pluginType, initialiser.getDependency())
+    })
   })
+}
+
+/**
+ * Called whenever a dependency emits a ready event. Once all dependencies are ready
+ * deepstream moves to the init step.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._checkReady = function (pluginType, plugin) {
+  if (plugin instanceof EventEmitter) {
+    plugin.on('error', this._onPluginError.bind(this, pluginType))
+  }
+
+  const allPluginsReady = this._options.pluginTypes.every(type => this._options[type].isReady)
+
+  if (allPluginsReady && this._state.is(STATES.PLUGIN_INIT)) {
+    this._state.pluginsStarted()
+  }
 }
 
 /**
@@ -336,11 +341,12 @@ Deepstream.prototype.onEnterServiceInit = function () {
  * @returns {void}
  */
 Deepstream.prototype.onEnterConnectionEndpointInit = function () {
-  this._connectionEndpoint = new ConnectionEndpoint(
-    this._options,
-    () => this._state.connectionEndpointsStarted()
-  )
+  this._connectionEndpoint = this._options.connectionEndpoints[0]
   this._options.connectionEndpoint = this._connectionEndpoint
+  const connectionEndpointInitializer = new DependencyInitialiser(
+    this, this._options, 'connectionEndpoint')
+
+  connectionEndpointInitializer.once('ready', () => this._state.connectionEndpointsStarted())
 
   this._connectionEndpoint.onMessages = this._messageProcessor.process.bind(this._messageProcessor)
   this._connectionEndpoint.on(
@@ -488,25 +494,6 @@ Deepstream.prototype._showStartLogo = function () {
   /* istanbul ignore next */
   process.stdout.write(logo + EOL)
   process.stdout.write(` =========================   starting   ==========================${EOL}`)
-}
-
-/**
- * Called whenever a dependency emits a ready event. Once all dependencies are ready
- * deepstream moves to the init step.
- *
- * @private
- * @returns {void}
- */
-Deepstream.prototype._checkReady = function (pluginType, plugin) {
-  if (plugin instanceof EventEmitter) {
-    plugin.on('error', this._onPluginError.bind(this, pluginType))
-  }
-
-  const allPluginsReady = this._options.pluginTypes.every(type => this._options[type].isReady)
-
-  if (allPluginsReady && this._state.is(STATES.PLUGIN_INIT)) {
-    this._state.pluginsStarted()
-  }
 }
 
 /**

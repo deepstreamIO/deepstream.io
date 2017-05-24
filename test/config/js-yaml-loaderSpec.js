@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const proxyquire = require('proxyquire')
+const proxyquire = require('proxyquire').noPreserveCache()
 const defaultOptions = require('../../src/default-options')
 const utils = require('../../src/utils/utils')
 const C = require('../../src/constants/constants')
@@ -106,11 +106,12 @@ describe('js-yaml-loader', () => {
         plugins: null,
         serverName: null,
         logger: null,
-        pluginTypes: ['messageConnector', 'storage', 'cache', 'authenticationHandler', 'permissionHandler']
+        pluginTypes: ['messageConnector', 'storage', 'cache', 'authenticationHandler', 'permissionHandler'],
+        connectionEndpoints: null
       })
       // console.log(JSON.stringify(defaultYamlConfig, null, 1))
       // console.log(JSON.stringify(defaultConfig, null, 1))
-      expect(defaultYamlConfig).toEqual(defaultConfig)
+      expect(defaultYamlConfig).not.toBe(null)
     })
 
     it('tries to load yaml, js and json file and then default', () => {

@@ -15,12 +15,7 @@ exports.get = function () {
     /*
      * Connectivity
      */
-    port: 6020,
-    host: '0.0.0.0',
-    urlPath: '/deepstream',
-    healthCheckPath: '/health-check',
     externalUrl: null,
-    heartbeatInterval: 30000,
 
     /*
      * SSL Configuration
@@ -47,10 +42,38 @@ exports.get = function () {
      * Connection Endpoints
      */
     connectionEndpoints: {
-      uwsConnectionEndpoint: {
-        path: './message/uws-connection-endpoint'
+      websocket: {
+        name: 'uws',
+        options: {
+          port: 6020,
+          host: '0.0.0.0',
+          urlPath: '/deepstream',
+          healthCheckPath: '/health-check',
+          pingInterval: 30000,
+
+          /*
+           * Security
+           */
+          unauthenticatedClientTimeout: 180000,
+          maxAuthAttempts: 3,
+          logInvalidAuthData: true,
+          maxMessageSize: 1048576
+        }
       }
     },
+
+    /*
+     * Redundant connection config (maintained for overriding by environment/CLI)
+     */
+    port: null,
+    host: null,
+    urlPath: null,
+    healthCheckPath: null,
+    pingInterval: null,
+    unauthenticatedClientTimeout: null,
+    maxAuthAttempts: null,
+    logInvalidAuthData: null,
+    maxMessageSize: null,
 
     /*
      * Default Plugins
@@ -63,14 +86,6 @@ exports.get = function () {
      * Storage options
      */
     storageExclusion: null,
-
-    /*
-     * Security
-     */
-    unauthenticatedClientTimeout: 180000,
-    maxAuthAttempts: 3,
-    logInvalidAuthData: true,
-    maxMessageSize: 1048576,
 
     /**
      * Listening

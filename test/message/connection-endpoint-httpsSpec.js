@@ -1,86 +1,102 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let proxyquire = require('proxyquire').noCallThru(),
-  uwsMock = require('../mocks/uws-mock'),
-  HttpMock = require('../mocks/http-mock'),
-  httpMock = new HttpMock(),
-  httpsMock = new HttpMock(),
-  ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', {
-    uws: uwsMock,
-    http: httpMock,
-    https: httpsMock
-  }),
-  _msg = require('../test-helper/test-helper').msg,
-  permissionHandlerMock = require('../mocks/permission-handler-mock'),
-  lastAuthenticatedMessage = null,
-  lastLoggedMessage = null,
-  socketMock,
-  onReady = function () { ready = true },
-  connectionEndpoint,
-  ready = false,
-  sslOptions
+const proxyquire = require('proxyquire').noPreserveCache()
+const uwsMock = require('../mocks/uws-mock')
+const HttpMock = require('../mocks/http-mock')
 
-let options = {
-  permissionHandler: require('../mocks/permission-handler-mock'),
+const httpMock = new HttpMock()
+const httpsMock = new HttpMock()
+// since proxyquire.callThru is enabled, manually capture members from prototypes
+httpMock.createServer = httpMock.createServer
+httpsMock.createServer = httpsMock.createServer
+const ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', {
+  uws: uwsMock,
+  http: httpMock,
+  https: httpsMock
+})
+const PermissionHandlerMock = require('../mocks/permission-handler-mock')
+const _msg = require('../test-helper/test-helper').msg
+let lastLoggedMessage = null
+
+const options = {
+  permissionHandler: PermissionHandlerMock,
   logger: { log(logLevel, event, msg) { lastLoggedMessage = msg } },
   maxAuthAttempts: 3,
   logInvalidAuthData: true
 }
 
+const mockDs = { _options: options }
+
+const connectionEndpointInit = (endpointOptions, onReady) => {
+  options.connectionEndpoint = new ConnectionEndpoint(endpointOptions)
+  options.connectionEndpoint.setDeepstream(mockDs)
+  options.connectionEndpoint.init()
+  options.connectionEndpoint.on('ready', onReady)
+}
+
 describe('validates HTTPS server conditions', () => {
-  const options = null
-  let error = null
-  let connectionEndpointValidation = null
+  let error
+  let sslOptions
+  options.connectionEndpoint = null
+
+  beforeAll(() => {
+    spyOn(httpMock, 'createServer').and.callThrough()
+    spyOn(httpsMock, 'createServer').and.callThrough()
+  })
 
   beforeEach(() => {
     sslOptions = {
       permissionHandler: require('../mocks/permission-handler-mock'),
       logger: { log(logLevel, event, msg) {} }
     }
-
-    spyOn(httpMock, 'createServer').and.callThrough()
-    spyOn(httpsMock, 'createServer').and.callThrough()
+    error = { message: null }
   })
-
 
   afterEach((done) => {
-    if (ready || !connectionEndpointValidation) {
-      ready = false
+    if (!options.connectionEndpoint || !options.connectionEndpoint.isReady) {
       done()
     } else {
-      connectionEndpointValidation.once('close', done)
-      connectionEndpointValidation.close()
+      options.connectionEndpoint.once('close', done)
+      options.connectionEndpoint.close()
     }
+    httpMock.createServer.calls.reset()
+    httpsMock.createServer.calls.reset()
   })
 
-  it('creates a http connection when sslKey and sslCert are not provided', () => {
-    connectionEndpointValidation = new ConnectionEndpoint(sslOptions, onReady)
-    expect(httpMock.createServer).toHaveBeenCalledWith()
-    expect(httpsMock.createServer).not.toHaveBeenCalled()
+  it('creates a http connection when sslKey and sslCert are not provided', (done) => {
+    connectionEndpointInit(sslOptions, () => {
+      expect(httpMock.createServer).toHaveBeenCalledWith()
+      expect(httpsMock.createServer).not.toHaveBeenCalled()
+      done()
+    })
   })
 
-  it('creates a https connection when sslKey and sslCert are provided', () => {
+  it('creates a https connection when sslKey and sslCert are provided', (done) => {
     sslOptions.sslKey = 'sslPrivateKey'
     sslOptions.sslCert = 'sslCertificate'
-    connectionEndpointValidation = new ConnectionEndpoint(sslOptions, onReady)
-    expect(httpMock.createServer).not.toHaveBeenCalled()
-    expect(httpsMock.createServer).toHaveBeenCalledWith({ key: 'sslPrivateKey', cert: 'sslCertificate' })
+    connectionEndpointInit(sslOptions, () => {
+      expect(httpMock.createServer).not.toHaveBeenCalled()
+      expect(httpsMock.createServer).toHaveBeenCalledWith({ key: 'sslPrivateKey', cert: 'sslCertificate' })
+      done()
+    })
   })
 
-  it('creates a https connection when sslKey, sslCert and sslCa are provided', () => {
+  it('creates a https connection when sslKey, sslCert and sslCa are provided', (done) => {
     sslOptions.sslKey = 'sslPrivateKey'
     sslOptions.sslCert = 'sslCertificate'
     sslOptions.sslCa = 'sslCertificateAuthority'
-    connectionEndpointValidation = new ConnectionEndpoint(sslOptions, onReady)
-    expect(httpMock.createServer).not.toHaveBeenCalled()
-    expect(httpsMock.createServer).toHaveBeenCalledWith({ key: 'sslPrivateKey', cert: 'sslCertificate', ca: 'sslCertificateAuthority' })
+    connectionEndpointInit(sslOptions, () => {
+      expect(httpMock.createServer).not.toHaveBeenCalled()
+      expect(httpsMock.createServer).toHaveBeenCalledWith({ key: 'sslPrivateKey', cert: 'sslCertificate', ca: 'sslCertificateAuthority' })
+      done()
+    })
   })
 
   it('throws an exception when only sslCert is provided', () => {
     try {
       sslOptions.sslCert = 'sslCertificate'
-      connectionEndpointValidation = new ConnectionEndpoint(sslOptions, onReady)
+      connectionEndpointInit(sslOptions, () => {})
     } catch (e) {
       error = e
     } finally {
@@ -91,7 +107,7 @@ describe('validates HTTPS server conditions', () => {
   it('throws an exception when only sslKey is provided', () => {
     try {
       sslOptions.sslKey = 'sslPrivateKey'
-      connectionEndpointValidation = new ConnectionEndpoint(sslOptions, onReady)
+      connectionEndpointInit(sslOptions, () => {})
     } catch (e) {
       error = e
     } finally {
@@ -103,7 +119,7 @@ describe('validates HTTPS server conditions', () => {
     try {
       sslOptions.sslCert = 'sslCertificate'
       sslOptions.sslCa = 'sslCertificateAuthority'
-      connectionEndpointValidation = new ConnectionEndpoint(sslOptions, onReady)
+      connectionEndpointInit(sslOptions, () => {})
     } catch (e) {
       error = e
     } finally {
@@ -115,7 +131,7 @@ describe('validates HTTPS server conditions', () => {
     try {
       sslOptions.sslKey = 'sslPrivateKey'
       sslOptions.sslCa = 'sslCertificateAuthority'
-      connectionEndpointValidation = new ConnectionEndpoint(sslOptions, onReady)
+      connectionEndpointInit(sslOptions, () => {})
     } catch (e) {
       error = e
     } finally {

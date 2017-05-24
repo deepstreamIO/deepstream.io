@@ -21,10 +21,10 @@ const EventEmitter = require('events').EventEmitter
  */
 class UwsSocketWrapper extends EventEmitter {
 
-  constructor (external, handshakeData, options) {
+  constructor (external, handshakeData, logger) {
     super()
     this.isClosed = false
-    this._options = options
+    this._logger = logger
     this.user = null
     this.authCallBack = null
     this.authAttempts = 0
@@ -163,7 +163,7 @@ class UwsSocketWrapper extends EventEmitter {
     this.isClosed = true
     delete this.authCallBack
     this.emit('close', this)
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
     this.removeAllListeners()
   }
 

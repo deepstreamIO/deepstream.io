@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const proxyquire = require('proxyquire').noCallThru()
+const proxyquire = require('proxyquire').noCallThru().noPreserveCache()
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
 const SubscriptionRegistry = proxyquire('../../src/utils/subscription-registry', {
   '../message/uws-socket-wrapper': SocketWrapper
