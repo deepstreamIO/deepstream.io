@@ -175,7 +175,20 @@ function handlePlugins (config) {
 }
 
 /**
+ * Handle connection endpoint plugin config.
+ * The type is typically the protocol e.g. ws
+ * Plugins can be passed either as a __path__ property or as a __name__ property with
+ * a naming convetion: *{amqp: {name: 'my-plugin'}}* will be resolved to the
+ * npm module *deepstream.io-connection-my-plugin*
+ * Exception: the name *uws* will be resolved to deepstream.io's internal uWebSockets plugin
+ * Options to the constructor of the plugin can be passed as *options* object.
  *
+ * CLI arguments will be considered.
+ *
+ * @param {Object} config deepstream configuration object
+ *
+ * @private
+ * @returns {void}
  */
 function handleConnectionEndpoints (config) {
   if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
