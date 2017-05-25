@@ -308,7 +308,7 @@ class SubscriptionRegistry {
 
     const logMsg = `for ${this._topic}:${name} by ${socket.user}`
     this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg)
-    socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name])
+    socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name], true)
   }
 
   /**
@@ -359,7 +359,7 @@ class SubscriptionRegistry {
     if (!silent) {
       const logMsg = `for ${this._topic}:${name} by ${socket.user}`
       this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg)
-      socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name])
+      socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name], true)
     }
   }
 

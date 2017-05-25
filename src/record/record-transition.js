@@ -486,7 +486,7 @@ RecordTransition.prototype._sendWriteAcknowledgements = function (errorMessage) 
       this._name,
       update.versions,
       messageBuilder.typed(errorMessage)
-    ])
+    ], true)
   }
 }
 
