@@ -6,6 +6,9 @@ const ListenerRegistry = require('../listen/listener-registry')
 const RecordRequest = require('./record-request')
 const RecordTransition = require('./record-transition')
 const RecordDeletion = require('./record-deletion')
+const messageBuilder = require('../message/message-builder')
+
+const writeSuccess = JSON.stringify({ writeSuccess: true })
 
 /**
  * The entry point for record related operations
@@ -280,11 +283,7 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
     if (recordName.indexOf(pattern) !== -1 && !isPatch) {
       this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
         this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
-          const data = `{ "_v": 0, "_d": ${message.data[2]}`
-          this._options.storage.set(recordName, data, () => {})
-          this._options.cache.set(recordName, data, () => {
-            this._$broadcastUpdate(recordName, message, false, socketWrapper)
-          })
+          this._forceWrite(recordName, message, socketWrapper)
         })
       })
       return
@@ -309,6 +308,77 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
       this._update(socketWrapper, message, true)
     })
   })
+}
+
+/**
+ * Forcibly writes to the cache and storage layers without going via
+ * the RecordTransition. Usually updates and patches will go via the
+ * transition which handles write acknowledgements, however in the
+ * case of a hot path write acknowledgement we need to handle that
+ * case here.
+ *
+ * @param  {String} recordName the name of the record being updated
+ * @param  {Object} message the update message
+ * @param  {SocketWrapper} socketWrapper the socket that sent the request
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._forceWrite = function (recordName, message, socketWrapper) {
+  const storageData = `{ "__ds": { "_v": 0 }, ${message.data[2]} }`
+  const cacheData = `{ "_v": 0, "_d": ${message.data[2]}`
+  const writeAck = message.data[message.data.length - 1] === writeSuccess
+  let cacheResponse = false
+  let storageResponse = false
+  let writeError
+  this._options.storage.set(recordName, storageData, (error) => {
+    if (writeAck) {
+      storageResponse = true
+      writeError = writeError || error || null
+      this._handleForceWriteAcknowledgement(
+        socketWrapper, message, cacheResponse, storageResponse, writeError
+      )
+    }
+  })
+
+  this._options.cache.set(recordName, cacheData, (error) => {
+    if (!error) {
+      this._$broadcastUpdate(recordName, message, false, socketWrapper)
+    }
+    if (writeAck) {
+      cacheResponse = true
+      writeError = writeError || error || null
+      this._handleForceWriteAcknowledgement(
+        socketWrapper, message, cacheResponse, storageResponse, writeError
+      )
+    }
+  })
+}
+
+/**
+ * Handles write acknowledgements during a force write. Usually
+ * this case is handled via the record transition.
+ *
+ * @param  {SocketWrapper} socketWrapper the socket that sent the request
+ * @param  {Object} message the update message
+ * @param  {Boolean} cacheResponse flag indicating whether the cache has been set
+ * @param  {Boolean} storageResponse flag indicating whether the storage layer
+ *                                   has been set
+ * @param  {String} error any errors that occurred during writing to cache
+ *                        and storage
+ *
+ * @private
+ * @returns {void}
+ */
+RecordHandler.prototype._handleForceWriteAcknowledgement = function
+  (socketWrapper, message, cacheResponse, storageResponse, error) {
+  if (storageResponse && cacheResponse) {
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
+      message.data[0],
+      [message.data[1]],
+      messageBuilder.typed(error)
+    ], true)
+  }
 }
 
 /**
@@ -402,17 +472,6 @@ RecordHandler.prototype._update = function (socketWrapper, message, upsert) {
   }
 
   const recordName = message.data[0]
-
-  for (let i = 0; i < this._options.storageHotPathPatterns.length; i++) {
-    const pattern = this._options.storageHotPathPatterns[i]
-    if (recordName.indexOf(pattern) !== -1) {
-      socketWrapper.sendError(
-        C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, 'unable to update record data on hot path, must use CU action'
-      )
-      return
-    }
-  }
-
   const version = message.data[1] * 1 // https://jsperf.com/number-vs-parseint-vs-plus/3
 
   /*
