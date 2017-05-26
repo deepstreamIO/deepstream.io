@@ -38,7 +38,7 @@ const options = {
 
 const mockDs = { _options: options }
 
-xdescribe('connection endpoint', () => {
+describe('connection endpoint', () => {
   beforeAll(() => {
     authenticationHandlerMock.reset()
 
@@ -278,13 +278,13 @@ xdescribe('connection endpoint', () => {
 
   describe('disconnects client if authentication timeout is exceeded', () => {
     beforeAll(() => {
-      options.unauthenticatedClientTimeout = 100
+      connectionEndpoint._unauthenticatedClientTimeout = 100
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
       socketWrapperMock = uwsMock.simulateConnection()
     })
 
     afterAll(() => {
-      options.unauthenticatedClientTimeout = null
+      connectionEndpoint._unauthenticatedClientTimeout = null
     })
 
     it('disconnects client after timeout and sends force close', (done) => {

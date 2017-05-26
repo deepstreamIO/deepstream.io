@@ -31,6 +31,10 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     this.description = 'µWebSocket Connection Endpoint'
     this.initialised = false
 
+    this._flushSockets = this._flushSockets.bind(this)
+    this._flushTimeout = null
+    this._scheduledSocketWrapperWrites = new Set()
+
     this._authenticatedSockets = new Set()
   }
 
@@ -87,17 +91,44 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
   }
 
   /**
+   * Called from a socketWrapper. This method tells the connection endpoint
+   * to flush the socket after a certain amount of time, used to low priority
+   * messages
+   * @param  {UwsSocketWrapper} socketWrapper SocketWrapper with a flush
+   */
+  scheduleFlush (socketWrapper) {
+    this._scheduledSocketWrapperWrites.add(socketWrapper)
+    if (!this._flushTimeout) {
+      this._flushTimeout = setTimeout(this._flushSockets, this._options.outgoingBufferTimeout)
+    }
+  }
+
+  /**
+   * Called when the flushTimeout occurs in order to send  all pending socket acks
+   */
+  _flushSockets () {
+    for (let socketWrapper of this._scheduledSocketWrapperWrites) {
+      socketWrapper.flush()
+    }
+    this._scheduledSocketWrapperWrites.clear()
+    this._flushTimeout = null
+  }
+
+  /**
    * Get a parameter from the root of the deepstream options if present, otherwise get it from the
    * plugin config. If neither is present, default to the optionally provided default.
    *
    * @param {String} option  The name of the option to be fetched
-   * @param {Value}  default Optional default value
    *
    * @private
    * @returns {Value} value
    */
-  _getOption (option, defaultOpt) {
-    return this._dsOptions[option] || this._options[option] || defaultOpt
+  _getOption (option) {
+    let value = this._dsOptions[option]
+    if ((value === null || value === undefined) && (this._options[option] !== undefined)) {
+      return this._options[option]
+    }
+    return value
   }
 
   /**
@@ -107,10 +138,10 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _uwsInit () {
-    const maxMessageSize = this._getOption('maxMessageSize', 1048576)
+    const maxMessageSize = this._getOption('maxMessageSize')
     this._serverGroup = uws.native.server.group.create(0, maxMessageSize)
 
-    this._noDelay = this._getOption('noDelay', true)
+    this._noDelay = this._getOption('noDelay')
 
     uws.native.server.group.onDisconnection(
       this._serverGroup,
@@ -247,7 +278,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     const handshakeData = this._upgradeRequest.headers
     this._upgradeRequest = null
 
-    const socketWrapper = new SocketWrapper(external, handshakeData, this._logger)
+    const socketWrapper = new SocketWrapper(external, handshakeData, this._logger, this._options, this)
     uws.native.setUserData(external, socketWrapper)
 
     this._logger.log(

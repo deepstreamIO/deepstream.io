@@ -21,7 +21,7 @@ const EventEmitter = require('events').EventEmitter
  */
 class UwsSocketWrapper extends EventEmitter {
 
-  constructor (external, handshakeData, logger) {
+  constructor (external, handshakeData, logger, config, connectionEndpoint) {
     super()
     this.isClosed = false
     this._logger = logger
@@ -32,6 +32,10 @@ class UwsSocketWrapper extends EventEmitter {
     this.uuid = Math.random()
     this._handshakeData = handshakeData
     this._external = external
+
+    this._bufferedWrites = ''
+    this._config = config
+    this._connectionEndpoint = connectionEndpoint
   }
 
   /**
@@ -58,6 +62,7 @@ class UwsSocketWrapper extends EventEmitter {
    * @returns {void}
    */
   sendPrepared (preparedMessage) {
+    this.flush()
     uws.native.server.sendPrepared(this._external, preparedMessage)
   }
 
@@ -82,8 +87,28 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendNative (message) {
-    uws.native.server.send(this._external, message)
+  sendNative (message, allowBuffering) {
+    if (this._config.outgoingBufferTimeout === 0) {
+      uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
+    } else if (!allowBuffering) {
+      this.flush()
+      uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
+    } else {
+      this._bufferedWrites += message
+      this._connectionEndpoint.scheduleFlush(this)
+    }
+  }
+
+  /**
+   * Called by the connection endpoint to flush all buffered writes.
+   * A buffered write is a write that is not a high priority, such as an ack
+   * and can wait to be bundled into another message if necessary
+   */
+  flush () {
+    if (this._bufferedWrites !== '') {
+      uws.native.server.send(this._external, this._bufferedWrites, uws.OPCODE_TEXT)
+      this._bufferedWrites = ''
+    }
   }
 
   /**
@@ -97,14 +122,13 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendError (topic, type, msg) {
+  sendError (topic, type, msg, allowBuffering) {
     if (this.isClosed === false) {
-      this._send(messageBuilder.getErrorMsg(topic, type, msg))
+      this.sendNative(
+        messageBuilder.getErrorMsg(topic, type, msg),
+        allowBuffering
+      )
     }
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  onMessage () {
   }
 
   /**
@@ -113,34 +137,23 @@ class UwsSocketWrapper extends EventEmitter {
    * @param {String} topic one of C.TOPIC
    * @param {String} action one of C.ACTIONS
    * @param {Array} data Array of strings or JSON-serializable objects
+   * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
+   *                                 this message type
    *
    * @public
    * @returns {void}
    */
-  sendMessage (topic, action, data) {
+  sendMessage (topic, action, data, allowBuffering) {
     if (this.isClosed === false) {
-      this._send(messageBuilder.getMsg(topic, action, data))
+      this.sendNative(
+        messageBuilder.getMsg(topic, action, data), 
+        allowBuffering
+      )
     }
   }
 
-  /**
-   * Checks the passed message and appends missing end separator if
-   * needed, and then sends this message immediately.
-   *
-   * @param   {String} message deepstream message
-   *
-   * @public
-   * @returns {void}
-   */
-  _send (message) {
-    if (message.charAt(message.length - 1) !== C.MESSAGE_SEPERATOR) {
-      message += C.MESSAGE_SEPERATOR // eslint-disable-line
-    }
-
-    if (this.isClosed === true) {
-      return
-    }
-    uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
+  // eslint-disable-next-line class-methods-use-this
+  onMessage () {
   }
 
   /**
