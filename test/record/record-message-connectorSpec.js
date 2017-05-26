@@ -30,7 +30,8 @@ describe('messages from direct connected clients and messages that come in via m
       uniqueRegistry: {
         get(name, callback) { callback(true) },
         release() {}
-      }
+      },
+      storageHotPathPatterns: []
     }
 
   it('creates the record handler', () => {
