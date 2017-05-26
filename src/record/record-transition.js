@@ -141,11 +141,6 @@ RecordTransition.prototype.add = function (socketWrapper, version, message, upse
   }
 
   if (message.action === C.ACTIONS.UPDATE) {
-    if (message.data.length !== 4 && message.data.length !== 3) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
     if (!utils.isOfType(update.data, 'object') && !utils.isOfType(update.data, 'array')) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
@@ -155,11 +150,6 @@ RecordTransition.prototype.add = function (socketWrapper, version, message, upse
   }
 
   if (message.action === C.ACTIONS.PATCH) {
-    if (message.data.length !== 5 && message.data.length !== 4) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
     update.isPatch = true
     update.path = message.data[2]
   }
@@ -205,11 +195,15 @@ RecordTransition.prototype._applyConfigAndData = function (socketWrapper, messag
   this._applyConfig(config, step)
 
   if (message.action === C.ACTIONS.UPDATE) {
-    step.data = utils.parseJSON(message.data[2])
-  } else {
-    step.data = messageParser.convertTyped(message.data[3])
+    const res = utils.parseJSON(message.data[2])
+    if (res.error) {
+      return false
+    }
+    step.data = res.value
+    return true
   }
 
+  step.data = messageParser.convertTyped(message.data[3])
   if (step.data instanceof Error) {
     return false
   }
@@ -306,16 +300,16 @@ RecordTransition._getRecordConfig = function (message) {
  */
 RecordTransition.prototype._onRecord = function (record, upsert) {
   if (record === null) {
-    if (upsert) {
-      this._record = { _v: 0, _d: {} }
-    } else {
+    if (!upsert) {
       this._onFatalError(`Received update for non-existant record ${this._name}`)
+      return
     }
+    this._record = { _v: 0, _d: {} }
   } else {
     this._record = record
-    this._flushVersionExists()
-    this._next()
   }
+  this._flushVersionExists()
+  this._next()
 }
 
 /**

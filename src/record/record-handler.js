@@ -296,8 +296,6 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
     }
   }
 
-  const version = message.data[1] * 10 // https://jsperf.com/number-vs-parseint-vs-plus/3
-
   const transition = this._transitions[recordName]
   if (transition) {
     this._permissionAction(message.action, recordName, socketWrapper, () => {
@@ -306,26 +304,11 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
     return
   }
 
-  const onComplete = function (record) {
-    if (record) {
-      this._permissionAction(message.action, recordName, socketWrapper, () => {
-        this._update(socketWrapper, message)
-      })
-    } else {
-      this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
-        this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
-          this._update(socketWrapper, message, true)
-        })
-      })
-    }
-  }
-  // eslint-disable-next-line
-  new RecordRequest(
-    recordName,
-    this._options,
-    socketWrapper,
-    onComplete.bind(this)
-  )
+  this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
+    this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
+      this._update(socketWrapper, message, true)
+    })
+  })
 }
 
 /**
@@ -409,8 +392,12 @@ RecordHandler.prototype._sendRecord = function (recordName, record, socketWrappe
  * @returns {void}
  */
 RecordHandler.prototype._update = function (socketWrapper, message, upsert) {
-  if (message.data.length < 3) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
+  const dataLength = message.data.length
+  if (
+    (message.action === C.ACTIONS.UPDATE && (dataLength !== 4 && dataLength !== 3)) ||
+    (message.action === C.ACTIONS.PATCH && (dataLength !== 5 && dataLength !== 4))
+  ) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data)
     return
   }
 
@@ -426,7 +413,7 @@ RecordHandler.prototype._update = function (socketWrapper, message, upsert) {
     }
   }
 
-  const version = message.data[1] * 10 // https://jsperf.com/number-vs-parseint-vs-plus/3
+  const version = message.data[1] * 1 // https://jsperf.com/number-vs-parseint-vs-plus/3
 
   /*
    * If the update message is received from the message bus, rather than from a client,
@@ -444,7 +431,6 @@ RecordHandler.prototype._update = function (socketWrapper, message, upsert) {
   }
 
   let transition = this._transitions[recordName]
-
   if (transition && transition.hasVersion(version)) {
     transition.sendVersionExists({ message, version, sender: socketWrapper })
     return

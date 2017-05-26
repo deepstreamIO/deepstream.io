@@ -34,7 +34,6 @@ const RecordRequest = function (recordName, options, socketWrapper, onComplete, 
 
   this._onCacheResponse = this._onCacheResponse.bind(this)
   this._onStorageResponse = this._onStorageResponse.bind(this)
-
   this._options.cache.get(this._recordName, this._onCacheResponse)
 }
 

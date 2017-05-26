@@ -31,7 +31,8 @@ describe('record handler handles messages', () => {
       uniqueRegistry: {
         get() {},
         release() {}
-      }
+      },
+      storageHotPathPatterns: []
     }
 
   it('creates the record handler', () => {
@@ -329,7 +330,7 @@ describe('record handler handles messages', () => {
       data: ['existingRecord', 6]
     })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|existingRecord+'))
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|existingRecord|6+'))
   })
 
   it('handles invalid patch messages', () => {
@@ -340,7 +341,7 @@ describe('record handler handles messages', () => {
       data: ['existingRecord', 6, 'bla']
     })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|R|P|existingRecord|6|bla+'))
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|existingRecord|6|bla+'))
   })
 
   it('updates a record via same client to the same version', (done) => {
