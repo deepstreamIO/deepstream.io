@@ -144,7 +144,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       return
     }
 
-    if (!utils.isOfType(update.data, 'object') && !utils.isOfType(data, 'array')) {
+    if (!utils.isOfType(update.data, 'object') && !utils.isOfType(update.data, 'array')) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
@@ -194,6 +194,9 @@ RecordTransition.prototype._applyConfigAndData = function (socketWrapper, messag
       step.data = JSON.parse(message.data[2])
     } else {
       step.data = messageParser.convertTyped(message.data[3])
+      if (step.data instanceof Error) {
+        return false
+      }
     }
   } catch (e) {
     return false
@@ -288,7 +291,7 @@ RecordTransition._getRecordConfig = function (message) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onRecord = function (step, record) {
+RecordTransition.prototype._onRecord = function (record) {
   if (record === null) {
     this._onFatalError(`Received update for non-existant record ${this._name}`)
   } else {
