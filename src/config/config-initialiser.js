@@ -191,11 +191,17 @@ function handlePlugins (config) {
  * @returns {void}
  */
 function handleConnectionEndpoints (config) {
+  // delete any endpoints that have been set to `null`
+  for (const type in config.connectionEndpoints) {
+    if (!config.connectionEndpoints[type]) {
+      delete config.connectionEndpoints[type]
+    }
+  }
   if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
     throw new Error('No connection endpoints configured')
   }
   if (Object.keys(config.connectionEndpoints).length > 1) {
-    throw new Error('Currently only one connection endpoint may be configured')
+    throw new Error('Currently only one connection endpoint may be configured.')
   }
   const connectionEndpoints = []
   for (const connectionType in config.connectionEndpoints) {
