@@ -62,7 +62,7 @@ const RecordTransition = function (name, options, recordHandler) {
 
   this._onCacheResponse = this._onCacheResponse.bind(this)
   this._onStorageResponse = this._onStorageResponse.bind(this)
-  this._onRecord = this._onStorageResponse.bind(this)
+  this._onRecord = this._onRecord.bind(this)
   this._onFatalError = this._onFatalError.bind(this)
 }
 
@@ -144,7 +144,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
       return
     }
 
-    if (!utils.isOfType(update.data, 'object')) {
+    if (!utils.isOfType(update.data, 'object') && !utils.isOfType(data, 'array')) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
@@ -391,8 +391,7 @@ RecordTransition.prototype._flushVersionExists = function () {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onCacheResponse = function (a, b) {
-  console.log('_onCacheResponse', a, b)
+RecordTransition.prototype._onCacheResponse = function (error) {
   this._cacheResponses--
   this._writeError = this._writeError || error
   if (error) {
@@ -422,8 +421,7 @@ RecordTransition.prototype._onCacheResponse = function (a, b) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onStorageResponse = function (a, b) {
-  console.log('_onStorageResponse', a, b)
+RecordTransition.prototype._onStorageResponse = function (error) {
   this._storageResponses--
   this._writeError = this._writeError || error
   if (error) {
