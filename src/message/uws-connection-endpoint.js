@@ -107,7 +107,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * Called when the flushTimeout occurs in order to send  all pending socket acks
    */
   _flushSockets () {
-    for (let socketWrapper of this._scheduledSocketWrapperWrites) {
+    for (const socketWrapper of this._scheduledSocketWrapperWrites) {
       socketWrapper.flush()
     }
     this._scheduledSocketWrapperWrites.clear()
@@ -124,7 +124,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * @returns {Value} value
    */
   _getOption (option) {
-    let value = this._dsOptions[option]
+    const value = this._dsOptions[option]
     if ((value === null || value === undefined) && (this._options[option] !== undefined)) {
       return this._options[option]
     }
@@ -278,7 +278,9 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     const handshakeData = this._upgradeRequest.headers
     this._upgradeRequest = null
 
-    const socketWrapper = new SocketWrapper(external, handshakeData, this._logger, this._options, this)
+    const socketWrapper = new SocketWrapper(
+      external, handshakeData, this._logger, this._options, this
+    )
     uws.native.setUserData(external, socketWrapper)
 
     this._logger.log(

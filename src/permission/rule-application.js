@@ -8,7 +8,7 @@ const STRING = 'string'
 const EOL = require('os').EOL
 
 const C = require('../constants/constants')
-const RecordRequest = require('../record/record-request')
+const recordRequest = require('../record/record-request')
 const messageParser = require('../message/message-parser')
 const JsonPath = require('../record/json-path')
 
@@ -40,7 +40,9 @@ const RuleApplication = function (params) {
   this._isDestroyed = false
   this._runScheduled = false
   this._maxIterationCount = this._params.permissionOptions.maxRuleIterations
+  this._run = this._run.bind(this)
   this._crossReferenceFn = this._crossReference.bind(this)
+  this._createNewRecordRequest = this._createNewRecordRequest.bind(this)
   this._pathVars = this._getPathVars()
   this._user = this._getUser()
   this._recordData = {}
@@ -122,12 +124,12 @@ RuleApplication.prototype._onRuleError = function (error) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._onLoadComplete = function (recordName, data) {
+RuleApplication.prototype._onLoadComplete = function (data, recordName) {
   this._recordData[recordName] = data
 
   if (this._isReady()) {
     this._runScheduled = true
-    process.nextTick(this._run.bind(this))
+    process.nextTick(this._run)
   }
 }
 
@@ -141,7 +143,7 @@ RuleApplication.prototype._onLoadComplete = function (recordName, data) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._onLoadError = function (recordName, error) {
+RuleApplication.prototype._onLoadError = function (error, message, recordName) {
   this._recordData[recordName] = ERROR
   const errorMsg = `failed to load record ${this._params.name} for permissioning:${error.toString()}`
   this._params.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, errorMsg)
@@ -379,7 +381,7 @@ RuleApplication.prototype._loadRecord = function (recordName) {
 
   this._params.recordHandler.runWhenRecordStable(
     recordName,
-    this._createNewRecordRequest.bind(this)
+    this._createNewRecordRequest
   )
 }
 
@@ -394,13 +396,13 @@ RuleApplication.prototype._loadRecord = function (recordName) {
  * @returns {void}
  */
 RuleApplication.prototype._createNewRecordRequest = function (recordName) {
-  // eslint-disable-next-line
-  new RecordRequest(
+  recordRequest(
     recordName,
     this._params.options,
     null,
-    this._onLoadComplete.bind(this, recordName),
-    this._onLoadError.bind(this, recordName)
+    this._onLoadComplete,
+    this._onLoadError,
+    this
   )
 }
 

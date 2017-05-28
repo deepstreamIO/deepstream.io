@@ -51,7 +51,6 @@ exports.get = function () {
           healthCheckPath: '/health-check',
           pingInterval: 30000,
           outgoingBufferTimeout: 0,
-          maxMessageSize: 1048576,
           noDelay: true,
 
           /*

@@ -281,7 +281,7 @@ describe('the rpc handler', () => {
         rpcHandler.handle(provider, responseMessage)
         expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_RPC_CORRELATION_ID|unexpected state for rpc addTwo with action RES+'))
         done()
-      }, 10)
+      }, 30)
   })
 
   it('executes remote rpcs', () => {

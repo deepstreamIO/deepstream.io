@@ -3,10 +3,10 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
-const RecordRequest = require('./record-request')
 const RecordTransition = require('./record-transition')
 const RecordDeletion = require('./record-deletion')
 const messageBuilder = require('../message/message-builder')
+const recordRequest = require('./record-request')
 
 const writeSuccess = JSON.stringify({ writeSuccess: true })
 
@@ -123,22 +123,22 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._hasRecord = function (socketWrapper, message) {
-  const recordName = message.data[0]
-
-  const onComplete = function (record) {
+  const onComplete = function (record, recordName, socket) {
     const hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
-  }
-  const onError = function (error) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, error])
+    socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
   }
 
-  // eslint-disable-next-line
-  new RecordRequest(recordName,
+  const onError = function (event, errorMessage, recordName, socket) {
+    socket.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, event])
+  }
+
+  recordRequest(
+    message.data[0],
     this._options,
     socketWrapper,
-    onComplete.bind(this),
-    onError.bind(this)
+    onComplete,
+    onError,
+    this
   )
 }
 
@@ -151,30 +151,28 @@ RecordHandler.prototype._hasRecord = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._snapshot = function (socketWrapper, message) {
-  const recordName = message.data[0]
-
-  const onComplete = function (record) {
+  const onComplete = function (record, recordName, socket) {
     if (record) {
-      this._sendRecord(recordName, record, socketWrapper)
+      this._sendRecord(recordName, record, socket)
     } else {
-      socketWrapper.sendError(
+      socket.sendError(
         C.TOPIC.RECORD,
         C.ACTIONS.SNAPSHOT,
         [recordName, C.EVENT.RECORD_NOT_FOUND]
       )
     }
   }
-  const onError = function (error) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, error])
+  const onError = function (event, errorMessage, recordName, socket) {
+    socket.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, event])
   }
 
-  // eslint-disable-next-line
-  new RecordRequest(
-    recordName,
+  recordRequest(
+    message.data[0],
     this._options,
     socketWrapper,
-    onComplete.bind(this),
-    onError.bind(this)
+    onComplete,
+    onError,
+    this
   )
 }
 
@@ -187,30 +185,28 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._head = function (socketWrapper, message) {
-  const recordName = message.data[0]
-
-  const onComplete = function (record) {
+  const onComplete = function (record, recordName, socket) {
     if (record) {
-      socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, record._v])
+      socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, record._v])
     } else {
-      socketWrapper.sendError(
+      socket.sendError(
         C.TOPIC.RECORD,
         C.ACTIONS.HEAD,
         [recordName, C.EVENT.RECORD_NOT_FOUND]
       )
     }
   }
-  const onError = function (error) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, error])
+  const onError = function (error, errorMessage, recordName, socket) {
+    socket.sendError(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, error])
   }
 
-  // eslint-disable-next-line
-  new RecordRequest(
-    recordName,
+  recordRequest(
+    message.data[0],
     this._options,
     socketWrapper,
-    onComplete.bind(this),
-    onError.bind(this)
+    onComplete,
+    onError,
+    this
   )
 }
 
@@ -226,27 +222,26 @@ RecordHandler.prototype._head = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
-  const recordName = message.data[0]
-
-  const onComplete = function (record) {
+  const onComplete = function (record, recordName, socket) {
     if (record) {
-      this._read(recordName, record, socketWrapper)
+      this._read(recordName, record, socket)
     } else {
       this._permissionAction(
         C.ACTIONS.CREATE,
         recordName,
-        socketWrapper,
-        this._create.bind(this, recordName, socketWrapper)
+        socket,
+        this._create.bind(this, recordName, socket)
       )
     }
   }
 
-  // eslint-disable-next-line
-  new RecordRequest(
-    recordName,
+  recordRequest(
+    message.data[0],
     this._options,
     socketWrapper,
-    onComplete.bind(this)
+    onComplete,
+    () => {},
+    this
   )
 }
 
