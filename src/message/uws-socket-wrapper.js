@@ -146,7 +146,7 @@ class UwsSocketWrapper extends EventEmitter {
   sendMessage (topic, action, data, allowBuffering) {
     if (this.isClosed === false) {
       this.sendNative(
-        messageBuilder.getMsg(topic, action, data), 
+        messageBuilder.getMsg(topic, action, data),
         allowBuffering
       )
     }

@@ -2,7 +2,7 @@
 
 const C = require('../constants/constants')
 const JsonPath = require('./json-path')
-const RecordRequest = require('./record-request')
+const recordRequest = require('./record-request')
 const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
@@ -166,12 +166,14 @@ RecordTransition.prototype.add = function (socketWrapper, version, message, upse
   this._steps.push(update)
 
   if (this._recordRequest === null) {
-    this._recordRequest = new RecordRequest(
+    this._recordRequest = true
+    recordRequest(
       this._name,
       this._options,
       socketWrapper,
       record => this._onRecord(record, upsert),
-      this._onFatalError
+      this._onFatalError,
+      this
     )
   } else if (this._steps.length === 1 && this._cacheResponses === 1) {
     this._next()

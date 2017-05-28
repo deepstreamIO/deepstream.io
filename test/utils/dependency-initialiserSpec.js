@@ -17,7 +17,7 @@ describe('dependency-initialiser', () => {
     pluginC: new PluginMock('C'),
     brokenPlugin: {},
     logger: new LoggerMock(),
-    dependencyInitialisationTimeout: 10
+    dependencyInitialisationTimeout: 50
   }
 
   it('throws an error if dependency doesnt implement emitter or has isReady', () => {

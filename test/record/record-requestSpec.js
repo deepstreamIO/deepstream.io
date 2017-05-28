@@ -1,223 +1,313 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let RecordRequest = require('../../src/record/record-request'),
-  SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  SocketMock = require('../mocks/socket-mock'),
-  StorageMock = require('../mocks/storage-mock'),
-  msg = require('../test-helper/test-helper').msg
+const recordRequest = require('../../src/record/record-request')
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const SocketMock = require('../mocks/socket-mock')
+const StorageMock = require('../mocks/storage-mock')
+const msg = require('../test-helper/test-helper').msg
 
-describe('records are requested from cache and storage sequentially', () => {
-  let recordRequest,
-    socketWrapper = new SocketWrapper(new SocketMock(), {}),
+describe('record request', () => {
+  const completeCallback = jasmine.createSpy('completeCallback')
+  const errorCallback = jasmine.createSpy('errorCallback')
+  let socketWrapper, options
+
+  beforeEach(() => {
     options = {
-      cacheRetrievalTimeout: 30,
-      storageRetrievalTimeout: 30,
+      cacheRetrievalTimeout: 100,
+      storageRetrievalTimeout: 100,
       cache: new StorageMock(),
       storage: new StorageMock(),
-      logger: { log: jasmine.createSpy('log') }
+      logger: { log: jasmine.createSpy('log') },
+      storageExclusion: new RegExp('dont-save')
     }
+    options.cache.set('existingRecord', { _v: 1, _d: {} }, () => {})
+    options.storage.set('onlyExistsInStorage', { _v: 1, _d: {} }, () => {})
 
-  options.cache.set('existingRecord', { _v: 1, _d: {} }, () => {})
-  options.storage.set('onlyExistsInStorage', { _v: 1, _d: {} }, () => {})
+    completeCallback.calls.reset()
+    errorCallback.calls.reset()
 
-  it('requests a record that exists in a synchronous cache', () => {
-    const completeCallback = jasmine.createSpy('completeCallback')
-    options.cache.nextOperationWillBeSynchronous = true
-    recordRequest = new RecordRequest('existingRecord', options, socketWrapper, completeCallback)
-    expect(options.cache.lastRequestedKey).toBe('existingRecord')
-    expect(completeCallback).toHaveBeenCalledWith({ _v: 1, _d: {} })
-    expect(options.storage.lastRequestedKey).toBe(null)
+    socketWrapper = new SocketWrapper(new SocketMock(), {})
   })
 
-  it('requests a record that exists in an asynchronous cache', (done) => {
-    options.cache.nextGetWillBeSynchronous = false
-    recordRequest = new RecordRequest('existingRecord', options, socketWrapper, (record) => {
-      expect(record).toEqual({ _v: 1, _d: {} })
-      done()
-    })
-    expect(options.cache.lastRequestedKey).toBe('existingRecord')
-    expect(options.storage.lastRequestedKey).toBe(null)
-  })
+  describe('records are requested from cache and storage sequentially', () => {
+    it('requests a record that exists in a synchronous cache', () => {
+      options.cache.nextOperationWillBeSynchronous = true
 
-  it('requests a record that doesn\'t exists in a synchronous cache, but in storage', (done) => {
-    options.cache.nextGetWillBeSynchronous = true
+      recordRequest(
+        'existingRecord', 
+        options, 
+        socketWrapper, 
+        completeCallback, 
+        errorCallback, 
+        null
+        )
 
-    recordRequest = new RecordRequest('onlyExistsInStorage', options, socketWrapper, (record) => {
-      expect(record).toEqual({ _v: 1, _d: {} })
-      done()
-    })
+      expect(options.cache.lastRequestedKey).toBe('existingRecord')
+      expect(options.storage.lastRequestedKey).toBe(null)
 
-    expect(options.cache.lastRequestedKey).toBe('onlyExistsInStorage')
-    expect(options.storage.lastRequestedKey).toBe('onlyExistsInStorage')
-  })
-
-  it('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', (done) => {
-    options.cache.nextGetWillBeSynchronous = false
-    options.storage.nextGetWillBeSynchronous = false
-
-    recordRequest = new RecordRequest('onlyExistsInStorage', options, socketWrapper, (record) => {
-      expect(record).toEqual({ _v: 1, _d: {} })
-      done()
+      expect(completeCallback).toHaveBeenCalledWith(
+        { _v: 1, _d: {} },
+        'existingRecord',
+        socketWrapper
+        )
+      expect(errorCallback).not.toHaveBeenCalled()
     })
 
-    expect(options.cache.lastRequestedKey).toBe('onlyExistsInStorage')
-    expect(options.storage.lastRequestedKey).toBe('onlyExistsInStorage')
-  })
+    it('requests a record that exists in an asynchronous cache', (done) => {
+      options.cache.nextGetWillBeSynchronous = false
 
-  it('returns null for non existent records', (done) => {
-    options.cache.nextGetWillBeSynchronous = true
+      recordRequest(
+        'existingRecord', 
+        options, 
+        socketWrapper, 
+        completeCallback, 
+        errorCallback, 
+        null
+        )
 
-    recordRequest = new RecordRequest('doesNotExist', options, socketWrapper, (record) => {
-      expect(record).toBe(null)
-      done()
+      setTimeout(() => {
+        expect(completeCallback).toHaveBeenCalledWith(
+          { _v: 1, _d: {} },
+          'existingRecord',
+          socketWrapper
+          )
+        expect(errorCallback).not.toHaveBeenCalled()
+        expect(options.cache.lastRequestedKey).toBe('existingRecord')
+        expect(options.storage.lastRequestedKey).toBe(null)
+        done()
+      }, 30)
     })
 
-    expect(options.cache.lastRequestedKey).toBe('doesNotExist')
-    expect(options.storage.lastRequestedKey).toBe('doesNotExist')
-  })
+    it('requests a record that doesn\'t exists in a synchronous cache, but in storage', () => {
+      options.cache.nextGetWillBeSynchronous = true
 
-  it('fails gracefully if an error occured out of order', (done) => {
-    options.cache.nextGetWillBeSynchronous = true
-    options.storage.nextGetWillBeSynchronous = false
+      recordRequest(
+        'onlyExistsInStorage', 
+        options, 
+        socketWrapper, 
+        completeCallback, 
+        errorCallback, 
+        null
+        )
 
-    recordRequest = new RecordRequest('doesNotExist', options, socketWrapper, (record) => {
-      expect(record).toBe(null)
-      done()
+      expect(options.cache.lastRequestedKey).toBe('onlyExistsInStorage')
+      expect(options.storage.lastRequestedKey).toBe('onlyExistsInStorage')
+
+      expect(completeCallback).toHaveBeenCalledWith(
+        { _v: 1, _d: {} },
+        'onlyExistsInStorage',
+        socketWrapper
+        )
+      expect(errorCallback).not.toHaveBeenCalled()
     })
 
-    recordRequest._isDestroyed = true
-    setTimeout(done, 20)
-  })
+    it('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', (done) => {
+      options.cache.nextGetWillBeSynchronous = false
+      options.storage.nextGetWillBeSynchronous = false
 
-  it('handles cache errors', (done) => {
-    const completeCallback = jasmine.createSpy('completeCallback')
+      recordRequest(
+        'onlyExistsInStorage', 
+        options, 
+        socketWrapper, 
+        completeCallback, 
+        errorCallback, 
+        null
+        )
 
-    options.cache.nextGetWillBeSynchronous = true
-    options.cache.nextOperationWillBeSuccessful = false
+      setTimeout(() => {
+        expect(options.cache.lastRequestedKey).toBe('onlyExistsInStorage')
+        expect(options.storage.lastRequestedKey).toBe('onlyExistsInStorage')
 
-    recordRequest = new RecordRequest('cacheError', options, socketWrapper, completeCallback, (error, message) => {
+        expect(errorCallback).not.toHaveBeenCalled()
+        expect(completeCallback).toHaveBeenCalledWith(
+          { _v: 1, _d: {} },
+          'onlyExistsInStorage',
+          socketWrapper
+          )
+        done()
+      }, 75)
+    })
+
+    it('returns null for non existent records', () => {
+      options.cache.nextGetWillBeSynchronous = true
+
+      recordRequest(
+        'doesNotExist', 
+        options, 
+        socketWrapper, 
+        completeCallback, 
+        errorCallback, 
+        null
+        )
+
+      expect(completeCallback).toHaveBeenCalledWith(
+        null,
+        'doesNotExist',
+        socketWrapper
+        )
+      expect(errorCallback).not.toHaveBeenCalled()
+
+      expect(options.cache.lastRequestedKey).toBe('doesNotExist')
+      expect(options.storage.lastRequestedKey).toBe('doesNotExist')
+    })
+
+    it('handles cache errors', () => {
+      const completeCallback = jasmine.createSpy('completeCallback')
+
+      options.cache.nextGetWillBeSynchronous = true
+      options.cache.nextOperationWillBeSuccessful = false
+
+      recordRequest(
+        'cacheError', 
+        options, 
+        socketWrapper, 
+        completeCallback, 
+        errorCallback, 
+        null
+        )
+
+      expect(errorCallback).toHaveBeenCalledWith(
+        'RECORD_LOAD_ERROR',
+        'error while loading cacheError from cache:storageError',
+        'cacheError',
+        socketWrapper
+        )
       expect(completeCallback).not.toHaveBeenCalled()
-
-      expect(error).toBe('RECORD_LOAD_ERROR')
-      expect(message).toBe('error while loading cacheError from cache:storageError')
 
       expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_LOAD_ERROR', 'error while loading cacheError from cache:storageError')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'))
-      done()
     })
-  })
 
-  it('handles storage errors', (done) => {
-    const completeCallback = jasmine.createSpy('completeCallback')
+    it('handles storage errors', () => {
+      options.cache.nextGetWillBeSynchronous = true
+      options.cache.nextOperationWillBeSuccessful = true
+      options.storage.nextGetWillBeSynchronous = true
+      options.storage.nextOperationWillBeSuccessful = false
 
-    options.cache.nextGetWillBeSynchronous = true
-    options.cache.nextOperationWillBeSuccessful = true
-    options.storage.nextGetWillBeSynchronous = true
-    options.storage.nextOperationWillBeSuccessful = false
+      recordRequest(
+        'storageError', 
+        options, 
+        socketWrapper, 
+        completeCallback, 
+        errorCallback, 
+        null
+        )
 
-    recordRequest = new RecordRequest('storageError', options, socketWrapper, completeCallback, (error, message) => {
+      expect(errorCallback).toHaveBeenCalledWith(
+        'RECORD_LOAD_ERROR',
+        'error while loading storageError from storage:storageError',
+        'storageError',
+        socketWrapper
+        )
       expect(completeCallback).not.toHaveBeenCalled()
-
-      expect(error).toBe('RECORD_LOAD_ERROR')
-      expect(message).toBe('error while loading storageError from storage:storageError')
 
       expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_LOAD_ERROR', 'error while loading storageError from storage:storageError')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+'))
-
-      done()
-    })
-  })
-
-  describe('handles cache timeouts', () => {
-    const completeCallback = jasmine.createSpy('completeCallback')
-
-    beforeAll(() => {
-      options.cacheRetrievalTimeout = 1
-      options.cache.nextGetWillBeSynchronous = false
-      options.cache.nextOperationWillBeSuccessful = true
     })
 
-    afterAll(() => {
-      options.cacheRetrievalTimeout = 10
-    })
+    describe('handles cache timeouts', () => {
+      beforeEach(() => {
+        options.cacheRetrievalTimeout = 1
+        options.cache.nextGetWillBeSynchronous = false
+        options.cache.nextOperationWillBeSuccessful = true
+      })
 
-    it('sends a CACHE_RETRIEVAL_TIMEOUT message when cache times out', (done) => {
-      recordRequest = new RecordRequest('willTimeoutCache', options, socketWrapper, completeCallback, (error, message) => {
-        expect(completeCallback).not.toHaveBeenCalled()
-        expect(error).toBe('CACHE_RETRIEVAL_TIMEOUT')
-        expect(message).toBe('willTimeoutCache')
-        setTimeout(done)
+      afterEach(() => {
+        options.cacheRetrievalTimeout = 10
+      })
+
+      it('sends a CACHE_RETRIEVAL_TIMEOUT message when cache times out', (done) => {
+        recordRequest(
+          'willTimeoutCache', 
+          options, 
+          socketWrapper, 
+          completeCallback, 
+          errorCallback, 
+          null
+        )
+
+        setTimeout(() => {
+          expect(errorCallback).toHaveBeenCalledWith(
+            'CACHE_RETRIEVAL_TIMEOUT',
+            'willTimeoutCache',
+            'willTimeoutCache',
+            socketWrapper
+            )
+          expect(completeCallback).not.toHaveBeenCalled()
+
+          // ignores update from cache that may occur afterwards
+          options.cache.triggerLastGetCallback(null, '{ data: "value" }')
+          expect(completeCallback).not.toHaveBeenCalled()
+
+          done()
+        }, 1)
       })
     })
 
-    it('ignores update from cache that may occur afterwards', () => {
-      options.cache.triggerLastGetCallback(null, '{ data: "value" }')
-      expect(completeCallback).not.toHaveBeenCalled()
+    describe('handles storage timeouts', () => {
+      beforeEach(() => {
+        options.storageRetrievalTimeout = 1
+        options.cache.nextGetWillBeSynchronous = true
+        options.cache.nextOperationWillBeSuccessful = true
+        options.storage.nextGetWillBeSynchronous = false
+        options.storage.nextOperationWillBeSuccessful = true
+      })
+
+      it('sends a STORAGE_RETRIEVAL_TIMEOUT message when storage times out', (done) => {
+        recordRequest(
+          'willTimeoutStorage', 
+          options, 
+          socketWrapper, 
+          completeCallback, 
+          errorCallback, 
+          null
+        )
+
+        setTimeout(() => {
+          expect(errorCallback).toHaveBeenCalledWith(
+            'STORAGE_RETRIEVAL_TIMEOUT',
+            'willTimeoutStorage',
+            'willTimeoutStorage',
+            socketWrapper
+          )
+          expect(completeCallback).not.toHaveBeenCalled()
+
+          // ignores update from storage that may occur afterwards
+          options.storage.triggerLastGetCallback(null, '{ data: "value" }')
+          expect(completeCallback).not.toHaveBeenCalled()
+
+          done()
+        }, 1)  
+      })
     })
   })
 
-  describe('handles storage timeouts', () => {
-    const completeCallback = jasmine.createSpy('completeCallback')
-
-    beforeAll(() => {
-      options.storageRetrievalTimeout = 1
+  describe('excluded records are not put into storage', () => {
+    beforeEach(() => {
       options.cache.nextGetWillBeSynchronous = true
-      options.cache.nextOperationWillBeSuccessful = true
-      options.storage.nextGetWillBeSynchronous = false
-      options.storage.nextOperationWillBeSuccessful = true
+      options.storage.nextGetWillBeSynchronous = true
+      options.storage.delete = jasmine.createSpy('storage.delete')
+      options.storage.set('dont-save/1', { _v: 1, _d: {} }, () => {})
     })
+    
+    it('returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', (done) => {
+      recordRequest(
+        'dont-save/1', 
+        options, 
+        socketWrapper, 
+        completeCallback, 
+        errorCallback, 
+        null
+      )
 
-    afterAll(() => {
-      options.cacheRetrievalTimeout = 10
-    })
-
-
-    it('sends a STORAGE_RETRIEVAL_TIMEOUT message when storage times out', (done) => {
-      recordRequest = new RecordRequest('willTimeoutStorage', options, socketWrapper, completeCallback, (error, message) => {
-        expect(completeCallback).not.toHaveBeenCalled()
-        expect(error).toBe('STORAGE_RETRIEVAL_TIMEOUT')
-        expect(message).toBe('willTimeoutStorage')
-        setTimeout(done)
-      })
-    })
-
-    it('ignores update from cache that may occur afterwards', () => {
-      options.storage.triggerLastGetCallback(null, '{ data: "value" }')
-      expect(completeCallback).not.toHaveBeenCalled()
-    })
-  })
-})
-
-describe('excluded records are not put into storage', () => {
-  let recordRequest,
-    socketWrapper = new SocketWrapper(new SocketMock(), {}),
-    options = {
-      cacheRetrievalTimeout: 10,
-      storageRetrievalTimeout: 10,
-      cache: new StorageMock(),
-      storage: new StorageMock(),
-      storageExclusion: new RegExp('dont-save')
-    }
-
-  options.storage.delete = jasmine.createSpy('storage.delete')
-  options.storage.set('dont-save/1', { _v: 1, _d: {} }, () => {})
-
-  it('returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', (done) => {
-    recordRequest = new RecordRequest('dont-save/1', options, socketWrapper, (record) => {
-      expect(record).toBeNull()
+      expect(completeCallback).toHaveBeenCalledWith(
+        null,
+        'dont-save/1',
+        socketWrapper
+      )
+      expect(errorCallback).not.toHaveBeenCalled()
       expect(options.storage.lastRequestedKey).toBeNull()
-      done()
-    })
-  })
-
-  it('returns null for non existent records', (done) => {
-    options.cache.nextGetWillBeSynchronous = true
-
-    recordRequest = new RecordRequest('doesNotExist', options, socketWrapper, (record) => {
-      expect(record).toBe(null)
-      expect(options.cache.lastRequestedKey).toBe('doesNotExist')
-      expect(options.storage.lastRequestedKey).toBe('doesNotExist')
       done()
     })
   })

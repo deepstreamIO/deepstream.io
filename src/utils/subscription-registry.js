@@ -326,7 +326,7 @@ class SubscriptionRegistry {
     const sockets = this._subscriptions.get(name)
 
     if (!sockets || !sockets.has(socket)) {
-      if(!silent) {
+      if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
         this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg)
         socket.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)

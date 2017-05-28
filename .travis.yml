@@ -30,7 +30,7 @@ matrix:
 
 script:
   # This fails on node 4
-  - if [ "$TRAVIS_NODE_VERSION" == "6.10.0" ]; then
+  - if [[ "$TRAVIS_NODE_VERSION" == "6.10"* ]]; then
       npm run lint;
     fi
   - npm run coverage
