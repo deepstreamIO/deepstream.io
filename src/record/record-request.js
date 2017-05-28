@@ -28,7 +28,7 @@ const RecordRequest = function (recordName, options, socketWrapper, onComplete, 
   this._isDestroyed = false
 
   this._cacheRetrievalTimeout = setTimeout(
-    this._sendError.bind(this, C.EVENT.CACHE_RETRIEVAL_TIMEOUT, this._recordName),
+    this._cacheReadThrough.bind(this, C.EVENT.CACHE_RETRIEVAL_TIMEOUT),
     this._options.cacheRetrievalTimeout
   )
 
@@ -38,7 +38,33 @@ const RecordRequest = function (recordName, options, socketWrapper, onComplete, 
 }
 
 /**
- * Callback for responses returned by the cache connector
+ * If cache read times out, allow the read request to read through to the underlying storage mechenism.
+ * 
+ * @param   {String} error  null if no error has occured
+ *
+ * @private
+ * @returns {void}
+ */
+RecordRequest.prototype._cacheReadThrough = function (error) {
+  clearTimeout(this._cacheRetrievalTimeout)
+
+  if (this._isDestroyed === true) {
+    return
+  }
+
+  if (this._options.storageExclusion && this._options.storageExclusion.test(this._recordName)) {
+    this._sendError(error, `timeout exceeded while loading ${this._recordName} from cache:${error.toString()}`)
+  } else {
+    this._storageRetrievalTimeout = setTimeout(
+      this._sendError.bind(this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName),
+      this._options.storageRetrievalTimeout
+    )
+    this._options.storage.get(this._recordName, this._onStorageResponse.bind(this))
+  }
+}
+
+/**
+ * Callback for responses returned by the cache connector, allows read through if cache lookup fails
  *
  * @param   {String} error  null if no error has occured
  * @param   {Object} record the record data structure, e.g. { _v: 33, _d: { some: 'data' } }
@@ -53,14 +79,13 @@ RecordRequest.prototype._onCacheResponse = function (error, record) {
     return
   }
 
-  if (error) {
+  let storageExclusion = this._options.storageExclusion && this._options.storageExclusion.test(this._recordName)
+
+  if (error && !storageExclusion) {
     this._sendError(C.EVENT.RECORD_LOAD_ERROR, `error while loading ${this._recordName} from cache:${error.toString()}`)
   } else if (record) {
     this._onComplete(record)
-  } else if (
-      !this._options.storageExclusion ||
-      !this._options.storageExclusion.test(this._recordName)
-    ) {
+  } else if ( !storageExclusion ) {
     this._storageRetrievalTimeout = setTimeout(
       this._sendError.bind(this, C.EVENT.STORAGE_RETRIEVAL_TIMEOUT, this._recordName),
       this._options.storageRetrievalTimeout
