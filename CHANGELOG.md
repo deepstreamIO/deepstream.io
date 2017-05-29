@@ -1,3 +1,19 @@
+## [2.3.0] - 2017.05.29
+
+### Enhancements
+
+- Significant performance improvements stemming from message batching.
+- Adds support for `setData()`: upsert-style record updates without requiring that a client is
+  subscribed to the record. This uses a new 'CU' (Create and Update) message. The `setData()` API
+  is up to 10x faster than subscribing, setting, then discarding a record.
+
+### Miscellaneous
+
+- Adds "storageHotPathPatterns" config option.
+- Support for connection endpoint plugins.
+- Moved uws into a connection endpoint plugin.
+- Explicit state-machine that initializes and closes dependencies in a well-defined order.
+
 ## [2.2.2] - 2017.05.03
 
 ### Enhancements
