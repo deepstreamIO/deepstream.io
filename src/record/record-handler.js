@@ -320,8 +320,8 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._forceWrite = function (recordName, message, socketWrapper) {
-  const storageData = `{ "__ds": { "_v": 0 }, ${message.data[2]} }`
-  const cacheData = `{ "_v": 0, "_d": ${message.data[2]}`
+  const storageData = Object.assign({ __ds: { _v: 0 } }, message.data[2])
+  const cacheData = { _v: 0, _d: message.data[2] }
   const writeAck = message.data[message.data.length - 1] === writeSuccess
   let cacheResponse = false
   let storageResponse = false
