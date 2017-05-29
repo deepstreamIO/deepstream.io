@@ -59,7 +59,7 @@ describe('connection endpoint', () => {
   })
 
   it('sets autopings on the websocket server', () => {
-    expect(uwsMock.pingInterval).toBe(options.pingInterval)
+    expect(uwsMock.heartbeatInterval).toBe(options.heartbeatInterval)
     expect(uwsMock.pingMessage).toBe(_msg('C|PI+'))
   })
 

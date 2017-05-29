@@ -162,7 +162,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
 
     uws.native.server.group.startAutoPing(
       this._serverGroup,
-      this._getOption('pingInterval'),
+      this._getOption('heartbeatInterval'),
       messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
     )
   }

@@ -210,19 +210,6 @@ function handleConnectionEndpoints (config) {
 
     plugin.options = plugin.options || {}
 
-    // use global options unless provided in plugin options
-    plugin.options.port = plugin.options.port || config.port
-    plugin.options.host = plugin.options.host || config.host
-    plugin.options.urlPath = plugin.options.urlPath || config.urlPath
-    plugin.options.pingInterval = plugin.options.pingInterval || config.heartbeatInterval
-    plugin.options.externalUrl = plugin.options.externalUrl || config.externalUrl
-    plugin.options.healthCheckPath = plugin.options.healthCheckPath || config.healthCheckPath
-    plugin.options.unauthenticatedClientTimeout =
-      plugin.options.unauthenticatedClientTimeout || config.unauthenticatedClientTimeout
-    plugin.options.sslKey = plugin.options.sslKey || config.sslKey
-    plugin.options.sslCert = plugin.options.sslCert || config.sslCert
-    plugin.options.sslCa = plugin.options.sslCa || config.sslCa
-
     let PluginConstructor
     if (plugin.name === 'uws') {
       PluginConstructor = UWSConnectionEndpoint
