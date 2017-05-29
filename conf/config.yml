@@ -157,3 +157,7 @@ lockTimeout: 1000
 lockRequestTimeout: 1000
 # The amount of time a broadcast will wait (to allow broadcast coalescing). -1 means disabled.
 broadcastTimeout: 0
+# A list of record names that, once permissioned, will be written directly to cache and storage
+storageHotPathPatterns:
+  # - exampleRecordA
+  # - exampleRecordB
