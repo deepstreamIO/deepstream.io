@@ -11,9 +11,11 @@ const EventEmitter = require('events').EventEmitter
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  *
- * @param {WebSocket} external    uws native websocket
- * @param {Object} handshakeData  headers from the websocket http handshake
- * @param {Object} options        configuration options
+ * @param {WebSocket} external        uws native websocket
+ * @param {Object} handshakeData      headers from the websocket http handshake
+ * @param {Logger} logger
+ * @param {Object} config             configuration options
+ * @param {Object} connectionEndpoint the uws connection endpoint
  *
  * @extends EventEmitter
  *
