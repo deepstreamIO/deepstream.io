@@ -49,7 +49,7 @@ exports.get = function () {
           host: '0.0.0.0',
           urlPath: '/deepstream',
           healthCheckPath: '/health-check',
-          pingInterval: 30000,
+          heartbeatInterval: 30000,
           outgoingBufferTimeout: 0,
           noDelay: true,
 
@@ -71,7 +71,7 @@ exports.get = function () {
     host: null,
     urlPath: null,
     healthCheckPath: null,
-    pingInterval: null,
+    heartbeatInterval: null,
     unauthenticatedClientTimeout: null,
     maxAuthAttempts: null,
     logInvalidAuthData: null,

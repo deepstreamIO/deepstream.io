@@ -11,7 +11,7 @@ class Group {
   }
 
   startAutoPing (group, interval, message) {
-    this.root.pingInterval = interval
+    this.root.heartbeatInterval = interval
     this.root.pingMessage = message
   }
   create () {
@@ -81,7 +81,7 @@ let uwsMock = null
 const UWSMock = function () {
   this.clients = {}
   this.clientsCount = 0
-  this.pingInterval = null
+  this.heartbeatInterval = null
   this.pingMessage = null
   this._connectionHandler = null
   this._messageHandler = null

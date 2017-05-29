@@ -32,7 +32,7 @@ connectionEndpoints:
         # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
         healthCheckPath: /health-check
         # the amount of milliseconds between each ping/heartbeat message
-        pingInterval: 30000
+        heartbeatInterval: 30000
 
         # Security
         # amount of time a connection can remain open while not being logged in
