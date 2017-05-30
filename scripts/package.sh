@@ -212,19 +212,23 @@ if [ $OS = "darwin" ]; then
 	cp ../$COMMIT_NAME ../../$CLEAN_NAME
 	cd -
 
-	echo -e "\tSkipping .pkg creation"
-	# gem install fpm
-	# fpm \
-	# 	-s dir \
-	# 	-t osxpkg \
-	# 	-v $PACKAGE_VERSION \
-	# 	--package ./build/$PACKAGE_VERSION \
-	# 	-n deepstream.io \
-	# 	--license MIT \
-	# 	--vendor "deepstreamHub GmbH" \
-	# 	--url https://deepstream.io/ \
-	# 	-m "<info@deepstream.io>" \
-	# 	$DEEPSTREAM_PACKAGE
+	# Adding ruby dir to path
+	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
+
+	 gem install fpm --user-install --no-ri --no-rdoc
+	 fpm \
+	 	-s dir \
+	 	-t osxpkg \
+		--prefix /usr/local \
+	 	-v $PACKAGE_VERSION \
+	 	--package ./build/$PACKAGE_VERSION \
+	 	-n deepstream.io \
+		--after-install ./scripts/daemon/after-install-osxpkg \
+	 	--license MIT \
+	 	--vendor "deepstreamHub GmbH" \
+	 	--url https://deepstream.io/ \
+	 	-m "<info@deepstream.io>" \
+	 	$DEEPSTREAM_PACKAGE
 fi
 
 if [ $OS = "linux" ]; then

@@ -1,0 +1,2 @@
+#!/bin/bash
+ln -sf /usr/local/build/*/deepstream.io/deepstream /usr/local/bin/deepstream
