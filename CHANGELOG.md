@@ -1,3 +1,9 @@
+## [2.3.1] - 2017.05.30
+
+### Fixes
+
+- Correctly merging config options from `config.yml` file with the default options
+
 ## [2.3.0] - 2017.05.29
 
 ### Features
@@ -6,7 +12,7 @@
 - Adds support for `setData()`: upsert-style record updates without requiring that a client is
   subscribed to the record. This uses a new 'CU' (Create and Update) message. The `setData()` API
   is up to 10x faster than subscribing, setting, then discarding a record.
-- Support for connection endpoint plugins.  
+- Support for connection endpoint plugins.
 
 ### Enhancements
 
