@@ -33,6 +33,8 @@ connectionEndpoints:
         healthCheckPath: /health-check
         # the amount of milliseconds between each ping/heartbeat message
         heartbeatInterval: 30000
+        # the amount of milliseconds that writes to sockets are buffered
+        outgoingBufferTimeout: 0
 
         # Security
         # amount of time a connection can remain open while not being logged in
@@ -159,6 +161,6 @@ lockRequestTimeout: 1000
 broadcastTimeout: 0
 # A list of prefixes that, when a record is updated via setData and it matches one of the prefixes
 # it will be permissioned and written directly to the cache and storage layers
-storageHotPathPatterns:
+# storageHotPathPatterns:
   # - analytics/
   # - metrics/
