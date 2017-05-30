@@ -10,9 +10,9 @@ randombytes@2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/randombytes/-/randombytes-2.0.3.tgz#674c99760901c3c4112771a31e521dc349cc09ec"
 
-uws@^0.14.1:
-  version "0.14.1"
-  resolved "https://registry.yarnpkg.com/uws/-/uws-0.14.1.tgz#89b8eb7bced272c65621472e878c57f4e0e00640"
+uws@^0.14.5:
+  version "0.14.5"
+  resolved "https://registry.yarnpkg.com/uws/-/uws-0.14.5.tgz#67aaf33c46b2a587a5f6666d00f7691328f149dc"
 
 xuid@^1.2.0:
   version "1.2.1"
@@ -20,6 +20,6 @@ xuid@^1.2.0:
   dependencies:
     randombytes "2.0.3"
 
-yallist@^3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/yallist/-/yallist-3.0.1.tgz#4affa89763ea5c2aeb9e2ed98387ceada34f4c4d"
+yallist@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/yallist/-/yallist-3.0.2.tgz#8452b4bb7e83c7c188d8041c1a837c773d6d8bb9"
