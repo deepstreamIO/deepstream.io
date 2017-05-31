@@ -1,3 +1,9 @@
+## [2.3.2] - 2017.05.31
+
+### Fixes
+
+- Fixing a connection data regression where it wasn't formatted the same as pre 2.3.0
+
 ## [2.3.1] - 2017.05.30
 
 ### Fixes
