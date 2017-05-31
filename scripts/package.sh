@@ -219,6 +219,7 @@ if [ $OS = "darwin" ]; then
 	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
 
 	echo "\tInstalling fpm"
+	gem update --system
 	gem install fpm --user-install --no-ri --no-rdoc
 
 	echo "\tCreating *.pkg"
