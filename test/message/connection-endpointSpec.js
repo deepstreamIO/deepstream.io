@@ -196,6 +196,19 @@ describe('connection endpoint', () => {
       uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
     })
 
+    it('client has the correct connection data', () => {
+      // for backwards compatibility the connection data should be in the form
+      // {
+      //    remoteAddress: 'xxx',
+      //    headers: {
+      //    },
+      //    referrer: 'xxx'
+      // }
+      const connectionData = socketWrapperMock.getHandshakeData()
+      expect(connectionData.remoteAddress).toBe('127.0.0.1')
+      expect(connectionData.headers).toBeDefined()
+    })
+
     it('emits connected event for user with name', (done) => {
       connectionEndpoint.once('client-connected', (socketWrapper) => {
         expect(socketWrapper.user).toBe('test-user')
