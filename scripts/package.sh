@@ -212,12 +212,16 @@ if [ $OS = "darwin" ]; then
 	cp ../$COMMIT_NAME ../../$CLEAN_NAME
 	cd -
 
-	echo "Patching config file for zip lib and var directories"
+	echo "Patching config file for lib and var directories"
 	cp -f ./scripts/package-conf-osxpkg.yml $DEEPSTREAM_PACKAGE/conf/config.yml
+
 	# Adding ruby dir to path
 	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
 
-	 gem install fpm --user-install --no-ri --no-rdoc
+	echo "\tInstalling fpm"
+	gem install fpm --user-install --no-ri --no-rdoc
+
+	echo "\tCreating *.pkg"
 	 fpm \
 	 	-s dir \
 	 	-t osxpkg \
