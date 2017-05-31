@@ -7,6 +7,8 @@ const utils = require('../../src/utils/utils')
 const C = require('../../src/constants/constants')
 const path = require('path')
 
+const deepstreamRoot = path.join(__dirname, '..', '..')
+
 function setUpStub(fileExists, fileContent) {
   const fileMock = {}
   if (typeof fileExists !== 'undefined') {
@@ -88,7 +90,7 @@ describe('js-yaml-loader', () => {
       const result = loader.loadConfig()
       let defaultYamlConfig = result.config
 
-      expect(result.file).toEqual(path.join('conf', 'config.yml'))
+      expect(path.relative(deepstreamRoot, result.file)).toEqual(path.join('conf', 'config.yml'))
 
       expect(defaultYamlConfig.serverName).toEqual(jasmine.any(String))
       defaultYamlConfig = utils.merge(defaultYamlConfig, {
@@ -123,9 +125,9 @@ describe('js-yaml-loader', () => {
 
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(12)
 
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.js'))
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.json'))
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.yml'))
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join(deepstreamRoot, 'conf', 'config.js'))
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join(deepstreamRoot, 'conf', 'config.json'))
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join(deepstreamRoot, 'conf', 'config.yml'))
 
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/config.js')
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith('/etc/deepstream/config.json')
