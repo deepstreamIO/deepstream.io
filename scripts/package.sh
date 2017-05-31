@@ -212,6 +212,8 @@ if [ $OS = "darwin" ]; then
 	cp ../$COMMIT_NAME ../../$CLEAN_NAME
 	cd -
 
+	echo "Patching config file for zip lib and var directories"
+	cp -f ./scripts/package-conf-osxpkg.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 	# Adding ruby dir to path
 	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
 

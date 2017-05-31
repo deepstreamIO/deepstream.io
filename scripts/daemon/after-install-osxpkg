@@ -1,2 +1,4 @@
 #!/bin/bash
 ln -sf /usr/local/build/*/deepstream.io/deepstream /usr/local/bin/deepstream
+mkdir -p /usr/local/etc/deepstream/lib
+cp -r /usr/local/build/*/deepstream.io/* /usr/local/etc/deepstream/
