@@ -197,7 +197,6 @@ describe('connection endpoint', () => {
     })
 
     it('client has the correct connection data', () => {
-      // for backwards compatibility the connection data should be in the form
       // {
       //    remoteAddress: 'xxx',
       //    headers: {
