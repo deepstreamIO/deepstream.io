@@ -214,6 +214,7 @@ if [ $OS = "darwin" ]; then
 
 	echo "Patching config file for lib and var directories"
 	cp -f ./scripts/package-conf-osxpkg.yml $DEEPSTREAM_PACKAGE/conf/config.yml
+	cp -f ./conf/config.yml $DEEPSTREAM_PACKAGE/conf/config.defaults
 
 	# Adding ruby dir to path
 	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
