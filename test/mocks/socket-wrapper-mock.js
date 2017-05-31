@@ -26,14 +26,12 @@ const SocketWrapper = function (socket, options) {
   }
   this.isClosed = false
   this.socket.once('close', this._onSocketClose.bind(this))
-  this._options = options
   this.user = null
   this.authCallBack = null
   this.authAttempts = 0
   this.setMaxListeners(0)
   this.uuid = Math.random()
-  this._handshakeData = null
-  this._setUpHandshakeData()
+  this._handshakeData = options
 
   this._queuedMessages = []
   this._currentPacketMessageCount = 0

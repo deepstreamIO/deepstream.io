@@ -65,6 +65,10 @@ class Native {
 
   }
 
+  getAddress () {
+    return [null, '127.0.0.1', null]
+  }
+
   transfer () {
     this.root.close()
   }

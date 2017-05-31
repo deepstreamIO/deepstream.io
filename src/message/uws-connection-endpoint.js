@@ -275,7 +275,13 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onConnection (external) {
-    const handshakeData = this._upgradeRequest.headers
+    const address = uws.native.getAddress(external)
+    const handshakeData = {
+      remoteAddress: address[1],
+      headers: this._upgradeRequest.headers,
+      referer: this._upgradeRequest.headers.referer
+    }
+
     this._upgradeRequest = null
 
     const socketWrapper = new SocketWrapper(
