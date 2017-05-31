@@ -16,7 +16,6 @@ compiler:
   - clang
 
 node_js:
-  - "7"
   - "6.10.1"
   - "4"
 
