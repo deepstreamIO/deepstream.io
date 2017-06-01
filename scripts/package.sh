@@ -220,7 +220,9 @@ if [ $OS = "darwin" ]; then
 	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
 
 	if [ "$TRAVIS" = "" ];then
-	  gem update --system
+	   echo "Not a Travis build"
+  else
+		gem update --system
   fi
 
 	echo "\tInstalling fpm"
