@@ -219,9 +219,10 @@ if [ $OS = "darwin" ]; then
 	# Adding ruby dir to path
 	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
 
-	if [ -z ${TRAVIS}  ]; then
-		gem update --system
+	if [ "$TRAVIS" = "" ];then
+	  gem update --system
   fi
+
 	echo "\tInstalling fpm"
 	gem install fpm --user-install --no-ri --no-rdoc
 	echo "\tCreating *.pkg"
