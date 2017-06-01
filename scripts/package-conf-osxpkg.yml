@@ -13,4 +13,4 @@ logger:
     -
       type: time
       options:
-        filename: /Library/Logs/deepstream/deepstream
+        filename: $LOG_PATH
