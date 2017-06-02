@@ -293,7 +293,7 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
   const transition = this._transitions[recordName]
   if (transition) {
     this._permissionAction(message.action, recordName, socketWrapper, () => {
-      transition.add(socketWrapper, message)
+      transition.add(socketWrapper, message.data[1] * 1, message)
     })
     return
   }
