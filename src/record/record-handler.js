@@ -320,13 +320,12 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._forceWrite = function (recordName, message, socketWrapper) {
-  const storageData = Object.assign({ __ds: { _v: 0 } }, message.data[2])
-  const cacheData = { _v: 0, _d: message.data[2] }
+  const record = { _v: 0, _d: JSON.parse(message.data[2]) }
   const writeAck = message.data[message.data.length - 1] === writeSuccess
   let cacheResponse = false
   let storageResponse = false
   let writeError
-  this._options.storage.set(recordName, storageData, (error) => {
+  this._options.storage.set(recordName, record, (error) => {
     if (writeAck) {
       storageResponse = true
       writeError = writeError || error || null
@@ -336,7 +335,7 @@ RecordHandler.prototype._forceWrite = function (recordName, message, socketWrapp
     }
   })
 
-  this._options.cache.set(recordName, cacheData, (error) => {
+  this._options.cache.set(recordName, record, (error) => {
     if (!error) {
       this._$broadcastUpdate(recordName, message, false, socketWrapper)
     }
