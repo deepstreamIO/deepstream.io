@@ -1,3 +1,10 @@
+## [2.3.3] - 2017.06.02
+
+### Fixes
+
+- Binary config files have the correct latest structure
+- Fix an issue where heavy concurrent writes on the same record fail
+
 ## [2.3.2] - 2017.05.31
 
 ### Fixes
