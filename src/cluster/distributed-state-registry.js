@@ -72,6 +72,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     if (!this._has(name, this._options.serverName)) {
       this._add(name, this._options.serverName)
       this._sendMessage(name, C.EVENT.DISTRIBUTED_STATE_ADD)
+    } else {
+      this._data[name].localCount++
     }
   }
 
@@ -86,8 +88,11 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   */
   remove (name) {
     if (this._has(name, this._options.serverName)) {
-      this._remove(name, this._options.serverName)
-      this._sendMessage(name, C.EVENT.DISTRIBUTED_STATE_REMOVE)
+      this._data[name].localCount--
+      if (this._data[name].localCount === 0) {
+        this._remove(name, this._options.serverName)
+        this._sendMessage(name, C.EVENT.DISTRIBUTED_STATE_REMOVE)
+      }
     }
   }
 
@@ -177,6 +182,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   _add (name, serverName) {
     if (!this._data[name]) {
       this._data[name] = {
+        localCount: 1,
         nodes: {},
         checkSum: this._createCheckSum(name)
       }
