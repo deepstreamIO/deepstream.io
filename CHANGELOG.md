@@ -1,3 +1,9 @@
+## [2.3.4] - 2017.06.02
+
+## Fixes
+
+- Hot path needs to store values in the correct format
+
 ## [2.3.3] - 2017.06.02
 
 ### Fixes
