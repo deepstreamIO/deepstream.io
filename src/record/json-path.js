@@ -29,18 +29,61 @@ const JsonPath = function (path) {
  */
 JsonPath.prototype.setValue = function (node, value) {
   let i = 0
+  const tokensLen = (this._tokens === undefined) ? 0 : this._tokens.length
+  let traverser = node
+  let parent = node
+  let token = undefined
 
-  for (i = 0; i < this._tokens.length - 1; i++) {
-    if (node[this._tokens[i]] !== undefined) {
-      node = node[this._tokens[i]]
-    } else if (this._tokens[i + 1] && !isNaN(this._tokens[i + 1])) {
-      node = node[this._tokens[i]] = []
-    } else {
-      node = node[this._tokens[i]] = {}
-    }
+  // validate start state first
+  if (node === undefined || tokensLen === 0) {
+    return
   }
 
-  node[this._tokens[i]] = value
+  // traverse root obj (node)
+  // create path nodes of the proper type (array|object) where necessary
+  for (i = 0; i < tokensLen; i++) {
+    token = this._tokens[i]
+    parent = traverser
+
+    const isLastPathToken = (i === (tokensLen - 1))
+    const isArrayToken = (token.indexOf('=') >= 0)
+    const nextToken = isLastPathToken ? undefined : this._tokens[i + 1]
+    const isNextTokenArrayToken = isLastPathToken ? undefined : (nextToken.indexOf('=') >= 0)
+    let elem = undefined
+
+    if (isArrayToken) {
+      const idx = token.split('=')[1] * 1
+      elem = traverser[idx]
+      if (!isLastPathToken) {
+        if (isNextTokenArrayToken) {
+          if (elem === undefined || !(elem instanceof Array)) {
+            traverser[idx] = []
+          }
+        } else if (elem === undefined || !(elem instanceof Object)) {
+          traverser[idx] = {}
+        }
+        elem = traverser[idx]
+      } else {
+        token = idx
+      }
+    } else if (traverser[token] !== undefined) {
+      elem = traverser[token]
+    } else if (!isLastPathToken && isNextTokenArrayToken) {
+      traverser[token] = []
+      elem = traverser[token]
+    } else {
+      traverser[token] = {}
+      elem = traverser[token]
+    }
+    parent = traverser
+    traverser = elem
+  }
+
+  // assign value to path target
+  if (parent !== undefined && token !== undefined) {
+    parent[token] = value
+  }
+
 }
 
 /**
@@ -51,19 +94,25 @@ JsonPath.prototype.setValue = function (node, value) {
  * @returns {void}
  */
 JsonPath.prototype._tokenize = function () {
-  const parts = this._path.split(SPLIT_REG_EXP)
+
+  // makes json path array items a single 'part' value of parts below
+  // 'arrayProp[#]' members transform to 'arrayProp=#' now instead of 'arrayProp.#' previously
+  // see setValue fnc above for special handling of array item parsing vs numeric obj member name
+  // e.g. 'object.1' parsing. this allows for support of parsing and differentiating object
+  // member names that are also numeric values
+  // also supports multi-dimensional arrays e.g. arr[0][1][2][3]... => arr.=0.=1.=2.=3...
+  // note: array index tokens are prefixed from regex with a '=' e.g. .=0.=1.=2 compared with
+  // numeric obj field names tokens which are just .0.1.2.3
+  let str = this._path.replace(/\s/g, '')
+  str = str.replace(/\[(.*?)\]/g, '.=$1')
+  const parts = str.split(SPLIT_REG_EXP)
   let part
   let i
 
   for (i = 0; i < parts.length; i++) {
     part = parts[i].trim()
 
-    if (part.length === 0) {
-      continue
-    }
-
-    if (!isNaN(part)) {
-      this._tokens.push(parseInt(part, 10))
+    if (part === undefined || part.length === 0) {
       continue
     }
 
