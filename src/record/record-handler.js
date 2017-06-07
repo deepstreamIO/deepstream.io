@@ -86,7 +86,7 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
     this._delete(socketWrapper, message)
   } else if (message.action === C.ACTIONS.ACK && message.data[0] === C.ACTIONS.DELETE) {
     /*
-     * Deletes the record
+     * Handle delete acknowledgement from message bus
      */
     this._deleteAck(socketWrapper, message)
   } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
