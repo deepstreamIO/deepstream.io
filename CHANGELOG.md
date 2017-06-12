@@ -1,3 +1,11 @@
+## [2.3.6] - 2017.06.12
+
+## Fixes
+
+- Fix for issue [#703](https://github.com/deepstreamIO/deepstream.io/issues/703)
+  where record deletions were not being propogated correctly within a cluster.
+- Fixes config-loading issue present in the binary release of 2.3.5.
+
 ## [2.3.5] - 2017.06.12
 
 ## Fixes
