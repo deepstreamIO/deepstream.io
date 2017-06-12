@@ -1,3 +1,9 @@
+## [2.3.5] - 2017.06.12
+
+## Fixes
+
+- Hardcode v3.0.0-rc1 dependency on javascript-state-machine, as v3.0.1 causes deepstream.io startup to fail
+
 ## [2.3.4] - 2017.06.02
 
 ## Fixes
