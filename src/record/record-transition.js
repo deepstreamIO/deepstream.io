@@ -277,13 +277,7 @@ RecordTransition.prototype._applyConfig = function (config, step) {
  * @returns null or the given config
  */
 RecordTransition._getRecordConfig = function (message) {
-  let config
-  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
-    config = message.data[4]
-  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
-    config = message.data[3]
-  }
-
+  const config = message.data[message.data.length - 1]
   if (config === writeConfig) {
     return { writeSuccess: true }
   } else if (config === null) {
