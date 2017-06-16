@@ -221,7 +221,7 @@ module.exports = class RpcHandler {
     const rpcData = this._rpcs.get(correlationId)
 
     const servers = this._subscriptionRegistry.getAllRemoteServers(rpcName)
-    const server = servers[Math.round(Math.random() * (servers.length - 1))]
+    const server = servers[utils.getRandomIntInRange(0, servers.length)]
 
     if (server) {
       const rpcProxy = new RpcProxy(this._options, C.TOPIC.PRIVATE + server, rpcName, correlationId)
