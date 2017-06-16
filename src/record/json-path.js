@@ -19,7 +19,7 @@ function setValue(node, path, value) {
     const token = tokens[i]
     if (node[token] !== undefined) {
       node = node[token]
-    } else if (tokens[i + 1] && !isNaN(tokens[i + 1])) {
+    } else if (tokens[i + 1] !== undefined && typeof tokens[i + 1] === 'number') {
       node = node[token] = []
     } else {
       node = node[token] = {}
@@ -38,7 +38,8 @@ function setValue(node, path, value) {
  */
 function tokenize (path) {
   const tokens = []
-  const parts = path.split(SPLIT_REG_EXP)
+
+  const parts = path.split('.')
 
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i].trim()
@@ -47,14 +48,18 @@ function tokenize (path) {
       continue
     }
 
-    if (!isNaN(part)) {
-      tokens.push(parseInt(part, 10))
-      continue
+    const arrayIndexes = part.split(SPLIT_REG_EXP)
+    
+    tokens.push(arrayIndexes[0])
+
+    for(let j=1; j < arrayIndexes.length; j++) {
+      if (arrayIndexes[j].length === 0) {
+        continue
+      }
+
+      tokens.push(Number(arrayIndexes[j]))
     }
-
-    tokens.push(part)
   }
-
   return tokens
 }
 
