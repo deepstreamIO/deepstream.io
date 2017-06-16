@@ -271,7 +271,16 @@ module.exports = class RpcHandler {
       const proxy = new RpcProxy(this._options, msg.remotePrivateTopic, msg.data[0], msg.data[1])
       this._makeRpc(proxy, msg, C.SOURCE_MESSAGE_CONNECTOR)
     } else if ((msg.action === C.ACTIONS.ACK || msg.action === C.ACTIONS.ERROR) && msg.data[2]) {
-      this._rpcs.get(msg.data[2]).rpc.handle(msg)
+      const rpc = this._rpcs.get(msg.data[2])
+      if (!rpc) {
+        this._options.logger.log(
+          C.LOG_LEVEL.WARN,
+          C.EVENT.INVALID_RPC_CORRELATION_ID,
+          `Message bus response for RPC that may have been destroyed: ${JSON.stringify(msg)}`
+        )
+        return
+      }
+      rpc.rpc.handle(msg)
     } else if (this._rpcs.get(msg.data[1])) {
       this._rpcs.get(msg.data[1]).rpc.handle(msg)
     } else {
