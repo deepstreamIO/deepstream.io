@@ -1,7 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
-const JsonPath = require('./json-path')
+const jsonPath = require('./json-path')
 const recordRequest = require('./record-request')
 const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
@@ -348,7 +348,7 @@ RecordTransition.prototype._next = function () {
   this._record._v = this._currentStep.version
 
   if (this._currentStep.isPatch) {
-    (new JsonPath(this._currentStep.path)).setValue(this._record._d, this._currentStep.data)
+    jsonPath.setValue(this._record._d, this._currentStep.path, this._currentStep.data)
   } else {
     this._record._d = this._currentStep.data
   }

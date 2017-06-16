@@ -1,5 +1,5 @@
 'use strict'
-/* eslint-disable no-param-reassign */
+/* eslint-disable */
 const SPLIT_REG_EXP = /[.[\]]/g
 
 /**
@@ -11,36 +11,22 @@ const SPLIT_REG_EXP = /[.[\]]/g
  *
  * @constructor
  */
-const JsonPath = function (path) {
-  this._path = path
-  this._tokens = []
-  this._tokenize()
-}
+function setValue(node, path, value) {
+  const tokens = tokenize(path)
 
-/**
- * Sets the value of the path. If the path (or parts
- * of it) doesn't exist yet, it will be created
- *
- * @param {Object} node
- * @param {Mixed} value
- *
- * @public
- * @returns {void}
- */
-JsonPath.prototype.setValue = function (node, value) {
-  let i = 0
-
-  for (i = 0; i < this._tokens.length - 1; i++) {
-    if (node[this._tokens[i]] !== undefined) {
-      node = node[this._tokens[i]]
-    } else if (this._tokens[i + 1] && !isNaN(this._tokens[i + 1])) {
-      node = node[this._tokens[i]] = []
+  let i
+  for (i = 0; i < tokens.length - 1; i++) {
+    const token = tokens[i]
+    if (node[token] !== undefined) {
+      node = node[token]
+    } else if (tokens[i + 1] && !isNaN(tokens[i + 1])) {
+      node = node[token] = []
     } else {
-      node = node[this._tokens[i]] = {}
+      node = node[token] = {}
     }
   }
 
-  node[this._tokens[i]] = value
+  node[tokens[i]] = value
 }
 
 /**
@@ -50,25 +36,28 @@ JsonPath.prototype.setValue = function (node, value) {
  * @private
  * @returns {void}
  */
-JsonPath.prototype._tokenize = function () {
-  const parts = this._path.split(SPLIT_REG_EXP)
-  let part
-  let i
+function tokenize (path) {
+  const tokens = []
+  const parts = path.split(SPLIT_REG_EXP)
 
-  for (i = 0; i < parts.length; i++) {
-    part = parts[i].trim()
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i].trim()
 
     if (part.length === 0) {
       continue
     }
 
     if (!isNaN(part)) {
-      this._tokens.push(parseInt(part, 10))
+      tokens.push(parseInt(part, 10))
       continue
     }
 
-    this._tokens.push(part)
+    tokens.push(part)
   }
+
+  return tokens
 }
 
-module.exports = JsonPath
+module.exports = {
+  setValue
+}

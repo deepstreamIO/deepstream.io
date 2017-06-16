@@ -10,7 +10,7 @@ const EOL = require('os').EOL
 const C = require('../constants/constants')
 const recordRequest = require('../record/record-request')
 const messageParser = require('../message/message-parser')
-const JsonPath = require('../record/json-path')
+const jsonPath = require('../record/json-path')
 
 /**
  * This class handles the evaluation of a single rule. It creates
@@ -247,7 +247,6 @@ RuleApplication.prototype._getRecordPatchData = function (msg) {
 
   const currentData = this._recordData[this._params.name]
   const newData = messageParser.convertTyped(msg.data[3])
-  let jsonPath
   let data
 
   if (newData instanceof Error) {
@@ -259,9 +258,8 @@ RuleApplication.prototype._getRecordPatchData = function (msg) {
   }
 
   if (typeof currentData !== UNDEFINED && currentData !== LOADING) {
-    jsonPath = new JsonPath(msg.data[2])
     data = JSON.parse(JSON.stringify(currentData._d))
-    jsonPath.setValue(data, newData)
+    jsonPath.setValue(data, msg.data[2], newData)
     return data
   }
   this._loadRecord(this._params.name)

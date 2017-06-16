@@ -1,21 +1,20 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const JsonPath = require('../../src/record/json-path')
+const jsonPath = require('../../src/record/json-path')
 
 describe('objects are created from paths and their value is set correctly', () => {
   it('sets simple values', () => {
-    let record = {},
-      jsonPath = new JsonPath('firstname')
+    let record = {}
 
-    jsonPath.setValue(record, 'Wolfram')
+    jsonPath.setValue(record, 'firstname', 'Wolfram')
     expect(record).toEqual({ firstname: 'Wolfram' })
   })
 
   it('sets values for nested objects', () => {
-    let record = {},
-      jsonPath = new JsonPath('address.street')
-    jsonPath.setValue(record, 'someStreet')
+    let record = {}
+
+    jsonPath.setValue(record, 'address.street', 'someStreet')
 
     expect(record).toEqual({
       address: {
@@ -25,9 +24,9 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('sets values for arrays', () => {
-    let record = {},
-      jsonPath = new JsonPath('pastAddresses[1].street')
-    jsonPath.setValue(record, 'someStreet')
+    let record = {}
+
+    jsonPath.setValue(record, 'pastAddresses[1].street', 'someStreet')
 
     expect(JSON.stringify(record)).toEqual(JSON.stringify({
       pastAddresses: [
@@ -39,9 +38,9 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('extends existing objects', () => {
-    let record = { firstname: 'Wolfram' },
-      jsonPath = new JsonPath('lastname')
-    jsonPath.setValue(record, 'Hempel')
+    let record = { firstname: 'Wolfram' }
+
+    jsonPath.setValue(record, 'lastname', 'Hempel')
 
     expect(record).toEqual({
       firstname: 'Wolfram',
@@ -53,9 +52,9 @@ describe('objects are created from paths and their value is set correctly', () =
     let record = {
         firstname: 'Wolfram',
         animals: ['Bear', 'Cow', 'Ostrich']
-      },
-      jsonPath = new JsonPath('animals[ 1 ]')
-    jsonPath.setValue(record, 'Emu')
+      }
+
+    jsonPath.setValue(record, 'animals[ 1 ]', 'Emu')
 
     expect(record).toEqual({
       firstname: 'Wolfram',
