@@ -1,6 +1,6 @@
 'use strict'
-/* eslint-disable */
-const SPLIT_REG_EXP = /[.[\]]/g
+
+const SPLIT_REG_EXP = /[[\]]/g
 
 /**
  * This class allows to set or get specific
@@ -11,8 +11,9 @@ const SPLIT_REG_EXP = /[.[\]]/g
  *
  * @constructor
  */
-function setValue(node, path, value) {
+function setValue (root, path, value) {
   const tokens = tokenize(path)
+  let node = root
 
   let i
   for (i = 0; i < tokens.length - 1; i++) {
@@ -49,10 +50,10 @@ function tokenize (path) {
     }
 
     const arrayIndexes = part.split(SPLIT_REG_EXP)
-    
+
     tokens.push(arrayIndexes[0])
 
-    for(let j=1; j < arrayIndexes.length; j++) {
+    for (let j = 1; j < arrayIndexes.length; j++) {
       if (arrayIndexes[j].length === 0) {
         continue
       }
