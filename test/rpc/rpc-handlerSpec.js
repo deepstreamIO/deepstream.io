@@ -75,6 +75,13 @@ let RpcHandler = require('../../src/rpc/rpc-handler'),
     originalTopic: C.TOPIC.RPC,
     data: ['REQ', 'substract', '4']
   },
+  privateRemoteAckMessageUnknown = {
+    topic: C.TOPIC.PRIVATE + options.serverName,
+    action: C.ACTIONS.ACK,
+    raw: _msg('P|A|REQ|substract|4+'),
+    originalTopic: C.TOPIC.RPC,
+    data: ['REQ', 'substract', '5']
+  },
   privateRemoteResponseMessage = {
     topic: C.TOPIC.PRIVATE + options.serverName,
     action: C.ACTIONS.RESPONSE,
@@ -320,5 +327,9 @@ describe('the rpc handler', () => {
     requestor.socket.lastSendMessage = null
     options.messageConnector.simulateIncomingMessage(privateRemoteResponseMessage)
     expect(requestor.socket.lastSendMessage).toBeNull()
+
+    options.messageConnector.simulateIncomingMessage(privateRemoteAckMessageUnknown)
+    expect(requestor.socket.lastSendMessage).toBeNull()
+    expect(options.logger.lastLogEvent).toBe('INVALID_RPC_CORRELATION_ID')
   })
 })
