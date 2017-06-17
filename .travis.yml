@@ -16,6 +16,7 @@ compiler:
   - clang
 
 node_js:
+  - "8"
   - "6.11"
   - "4"
 
@@ -32,7 +33,7 @@ script:
   - if [[ "$TRAVIS_NODE_VERSION" == "6.11"* ]]; then
       npm run lint;
     fi
-  - npm run coverage
+  - npm run reporter
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sh scripts/run-e2e.sh;
     fi
