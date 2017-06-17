@@ -1,3 +1,4 @@
+sudo: true
 language: node_js
 
 before_install:
@@ -25,7 +26,7 @@ env:
 
 matrix:
   include:
-    - node_js: "6.10.1"
+    - node_js: "6.11"
       os: osx
 
 script:
