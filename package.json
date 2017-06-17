@@ -14,7 +14,7 @@
     "lint": "node_modules/.bin/eslint src/",
     "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
-    "reporter": "node jasmine-runner",
+    "reporter": "istanbul cover jasmine-runner.js",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "test-http-server": "node test/test-helper/start-test-server.js",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE"
