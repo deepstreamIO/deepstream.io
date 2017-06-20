@@ -1,3 +1,14 @@
+## [2.3.7] - 2017.06.20
+
+## Fixes
+
+- Fix issue where using both `.0.` and `[0]` within a json path resulted in inserting into an array. However, when using other SDKs such as Java they would be treated as an Object key or array index.
+- Fix issue where nested array access/manipulation didn't work via json paths.
+
+## Compatability Issue
+
+Due to the nature of this fix, it may result in compatability issues with applications that used json paths incorrectly ( using `.0.` intead of `[0]` ). Please ensure you change those before upgrading.
+
 ## [2.3.6] - 2017.06.12
 
 ## Fixes
