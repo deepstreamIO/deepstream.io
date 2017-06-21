@@ -28,7 +28,7 @@ function execute(action) {
 
   if (action === 'add') {
     const options = {
-      exec: `${__dirnam}/deepstream`,
+      exec: `${__dirname}/deepstream`,
       programArgs: [],
       logDir: this.logDir || '/var/log/deepstream',
       dryRun: this.dryRun
