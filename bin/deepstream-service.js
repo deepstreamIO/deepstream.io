@@ -26,9 +26,17 @@ function response (error, result) {
 function execute(action) {
   const name = this.serviceName || 'deepstream'
 
+  let exec
+  try {
+    require('nexeres')
+    exec = process.argv[0]
+  } catch (e) {
+    exec = process.argv[1]
+  }
+
   if (action === 'add') {
     const options = {
-      exec: `${__dirname}/deepstream`,
+      exec,
       programArgs: [],
       logDir: this.logDir || '/var/log/deepstream',
       dryRun: this.dryRun
