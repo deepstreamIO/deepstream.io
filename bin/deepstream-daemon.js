@@ -21,7 +21,13 @@ module.exports = function (program) {
 }
 
 function action () {
-  daemon.start({
-    processExec: `${__dirname}/deepstream`
-  })
+  let processExec
+  try {
+    require('nexeres')
+    processExec = process.argv[0]
+  } catch (e) {
+    processExec = process.argv[1]
+  }
+
+  daemon.start({ processExec })
 }
