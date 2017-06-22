@@ -19,16 +19,8 @@ function setValue (root, path, value) {
   for (i = 0; i < tokens.length - 1; i++) {
     const token = tokens[i]
 
-    if (node[token] !== undefined) {
-      if (typeof node[token] !== 'object') {
-        if (typeof tokens[i + 1] === 'number') {
-          node = node[token] = []
-        } else {
-          node = node[token] = {}
-        }
-      } else {
-        node = node[token]
-      }
+    if (node[token] !== undefined && typeof node[token] === 'object') {
+      node = node[token]
     } else if (typeof tokens[i + 1] === 'number') {
       node = node[token] = []
     } else {
