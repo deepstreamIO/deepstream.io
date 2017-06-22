@@ -290,4 +290,37 @@ describe('objects are created from paths and their value is set correctly', () =
     })
   })
 
+  it('handles .xyz paths into non-objects', () => {
+    const record = { animals: 3 }
+    jsonPath.setValue(record, 'animals.name', 'Emu')
+
+    expect(record).toEqual({
+      animals: {
+        name: 'Emu'
+      }
+    })
+  })
+
+  it('handles .xyz paths through non-objects', () => {
+    const record = { animals: 3 }
+    jsonPath.setValue(record, 'animals.name.length', 7)
+
+    expect(record).toEqual({
+      animals: {
+        name: {
+          length: 7
+        }
+      }
+    })
+  })
+
+  it('handles [0] paths into non-objects', () => {
+    const record = { animals: 3 }
+    jsonPath.setValue(record, 'animals[0]', 7)
+
+    expect(record).toEqual({
+      animals: [7]
+    })
+  })
+
 })
