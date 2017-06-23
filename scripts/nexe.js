@@ -7,9 +7,7 @@ nexe.compile( {
     nodeTempDir: "nexe_node",
     framework: "node",
     resourceFiles: [
-      "ascii-logo.txt",
-      "node_modules/deepstream.io-service/src/template/initd",
-      "node_modules/deepstream.io-service/src/template/systemd"
+      "ascii-logo.txt"
     ]
   },
   error => {
