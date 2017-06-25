@@ -8,36 +8,24 @@ script:
 
 jobs:
   include:
-    - stage: create packages
-      env:
-        - DISTRO=centos
-          VERSION=7
+    - &create-packages
+      stage: Create and upload linux packages
+      install: curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-package.sh
+      script: bash linux-package.sh centos 7
+    - <<: *create-packages
+      script: bash linux-package.sh ubuntu trusty
+    - <<: *create-packages
+      script: bash linux-package.sh ubuntu xenial
+    - <<: *create-packages
+      script: bash linux-package.sh debian jessie
 
-        - DISTRO=ubuntu
-          VERSION=trusty
-
-        - DISTRO=ubuntu
-          VERSION=xenial
-
-        - DISTRO=debian
-          VERSION=jessie
-      script: 
-        - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-package.sh
-        - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/trigger-build.sh
-        - bash linux-package.sh $DISTRO $VERSION
-    - stage: test packages
-      env:
-        - DISTRO=centos
-          VERSION=7
-
-        - DISTRO=ubuntu
-          VERSION=trusty
-
-        - DISTRO=ubuntu
-          VERSION=xenial
-
-        - DISTRO=debian
-          VERSION=jessie
-      script: 
-        - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-test.sh
-        - bash linux-test.sh $DISTRO $VERSION
+    - &test-packages
+      stage: Download and test packages
+      install: curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-test.sh
+      script: bash linux-test.sh centos 7
+    - <<: *test-packages
+      script: bash linux-test.sh ubuntu trusty
+    - <<: *test-packages
+      script: bash linux-test.sh ubuntu xenial
+    - <<: *test-packages
+      script: bash linux-test.sh debian jessie
