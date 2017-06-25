@@ -1,24 +1,43 @@
+language: bash
+
 services:
   - docker
 
-env:
-  matrix:
-    - DISTRO=centos
-      VERSION=7
-
-    - DISTRO=ubuntu
-      VERSION=trusty
-
-    - DISTRO=ubuntu
-      VERSION=xenial
-
-    - DISTRO=debian
-      VERSION=jessie
-
 script:
-  - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-package.sh
-  - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/trigger-build.sh
-  - bash linux-package.sh $DISTRO $VERSION
+  - echo "No tests to run here"
 
-after_script:
-  - bash trigger-build.sh releases/test
+jobs:
+  include:
+    - stage: create packages
+      env:
+        - DISTRO=centos
+          VERSION=7
+
+        - DISTRO=ubuntu
+          VERSION=trusty
+
+        - DISTRO=ubuntu
+          VERSION=xenial
+
+        - DISTRO=debian
+          VERSION=jessie
+      script: 
+        - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-package.sh
+        - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/trigger-build.sh
+        - bash linux-package.sh $DISTRO $VERSION
+    - stage: test packages
+      env:
+        - DISTRO=centos
+          VERSION=7
+
+        - DISTRO=ubuntu
+          VERSION=trusty
+
+        - DISTRO=ubuntu
+          VERSION=xenial
+
+        - DISTRO=debian
+          VERSION=jessie
+      script: 
+        - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-test.sh
+        - bash linux-test.sh $DISTRO $VERSION
