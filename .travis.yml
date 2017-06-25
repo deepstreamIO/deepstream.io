@@ -10,9 +10,6 @@ env:
       VERSION=trusty
 
     - DISTRO=ubuntu
-      VERSION=wily
-
-    - DISTRO=ubuntu
       VERSION=xenial
 
     - DISTRO=debian
