@@ -1,6 +1,3 @@
-dist: trusty
-sudo: required
-
 services:
   - docker
 
@@ -22,5 +19,9 @@ env:
       VERSION=jessie
 
 script:
-  - chmod +x linux.sh
-  - ./linux.sh $DISTRO $VERSION
+  - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-package.sh
+  - curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/trigger-build.sh
+  - sh linux-package.sh $DISTRO $VERSION
+
+after_script:
+  - sh trigger-build.sh releases/test
