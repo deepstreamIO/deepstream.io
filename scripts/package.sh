@@ -219,11 +219,9 @@ if [ $OS = "darwin" ]; then
 	# Adding ruby dir to path
 	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
 
-	if [ "$TRAVIS" = "" ];then
-	   echo "Not a Travis build"
-  else
-		gem update --system
-  fi
+	if [ -n $TRAVIS ]; then
+	  gem update --system
+        fi
 
 	echo "\tInstalling fpm"
 	gem install fpm --user-install --no-ri --no-rdoc
@@ -239,7 +237,7 @@ if [ $OS = "darwin" ]; then
 	 	--license MIT \
 	 	--vendor "deepstreamHub GmbH" \
 	 	--url https://deepstream.io/ \
-	 	-m "<info@deepstream.io>" \
+	 	-m "<info@deepstreamhub.com>" \
 	 	$DEEPSTREAM_PACKAGE
 fi
 
@@ -279,7 +277,7 @@ if [ $OS = "linux" ]; then
 		--vendor "deepstreamHub GmbH" \
 		--description "deepstream.io rpm package" \
 		--url https://deepstream.io/ \
-		-m "<info@deepstream.io>" \
+		-m "<info@deepstreamhub.com>" \
 		--after-install ./scripts/daemon/after-install \
 		--before-remove ./scripts/daemon/before-remove \
 		--before-upgrade ./scripts/daemon/before-upgrade \
@@ -302,7 +300,7 @@ if [ $OS = "linux" ]; then
 		--vendor "deepstreamHub GmbH" \
 		--description "deepstream.io deb package" \
 		--url https://deepstream.io/ \
-		-m "<info@deepstream.io>" \
+		-m "<info@deepstreamhub.com>" \
 		--after-install ./scripts/daemon/after-install \
 		--before-remove ./scripts/daemon/before-remove \
 		--before-upgrade ./scripts/daemon/before-upgrade \
