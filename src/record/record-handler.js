@@ -84,6 +84,11 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
      * Deletes the record
      */
     this._delete(socketWrapper, message)
+  } else if (message.action === C.ACTIONS.ACK && message.data[0] === C.ACTIONS.DELETE) {
+    /*
+     * Handle delete acknowledgement from message bus
+     */
+    this._deleteAck(socketWrapper, message)
   } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
   /*
    * Unsubscribes (discards) a record that was previously subscribed to
@@ -293,7 +298,7 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
   const transition = this._transitions[recordName]
   if (transition) {
     this._permissionAction(message.action, recordName, socketWrapper, () => {
-      transition.add(socketWrapper, message)
+      transition.add(socketWrapper, message.data[1] * 1, message)
     })
     return
   }
@@ -320,13 +325,12 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
  * @returns {void}
  */
 RecordHandler.prototype._forceWrite = function (recordName, message, socketWrapper) {
-  const storageData = Object.assign({ __ds: { _v: 0 } }, message.data[2])
-  const cacheData = { _v: 0, _d: message.data[2] }
+  const record = { _v: 0, _d: JSON.parse(message.data[2]) }
   const writeAck = message.data[message.data.length - 1] === writeSuccess
   let cacheResponse = false
   let storageResponse = false
   let writeError
-  this._options.storage.set(recordName, storageData, (error) => {
+  this._options.storage.set(recordName, record, (error) => {
     if (writeAck) {
       storageResponse = true
       writeError = writeError || error || null
@@ -336,7 +340,7 @@ RecordHandler.prototype._forceWrite = function (recordName, message, socketWrapp
     }
   })
 
-  this._options.cache.set(recordName, cacheData, (error) => {
+  this._options.cache.set(recordName, record, (error) => {
     if (!error) {
       this._$broadcastUpdate(recordName, message, false, socketWrapper)
     }
@@ -584,15 +588,11 @@ RecordHandler.prototype.runWhenRecordStable = function (recordName, callback) {
 }
 
 /**
- * Deletes a record. If a transition is in progress it will be stopped. Once the
- * deletion is complete, an Ack is returned.
- *
- * If the deletion message is received from the message bus, rather than from a client,
- * we assume that the original deepstream node has already deleted the record from cache and
- * storage and we only need to broadcast the message to subscribers
+ * Deletes a record. If a transition is in progress it will be stopped. Once the deletion is
+ * complete, an ACK is returned to the sender and broadcast to the message bus.
  *
  * @param   {SocketWrapper} socketWrapper the socket that send the request
- * @param   {Object} message parsed and validated message
+ * @param   {Object}        message       parsed and validated message
  *
  * @private
  * @returns {void}
@@ -605,12 +605,31 @@ RecordHandler.prototype._delete = function (socketWrapper, message) {
     delete this._transitions[recordName]
   }
 
-  if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
-    this._onDeleted(recordName, message, socketWrapper)
-  } else {
-    // eslint-disable-next-line
-    new RecordDeletion(this._options, socketWrapper, message, this._onDeleted.bind(this))
+  // eslint-disable-next-line
+  new RecordDeletion(this._options, socketWrapper, message, this._onDeleted.bind(this))
+}
+
+/**
+ * Handle a record deletion ACK from the message bus. We assume that the original deepstream node
+ * has already deleted the record from cache and storage and we only need to broadcast the message
+ * to subscribers.
+ *
+ * If a transition is in progress it will be stopped.
+ *
+ * @param   {SocketWrapper} socketWrapper the socket that send the request
+ * @param   {Object}        message       parsed and validated message
+ *
+ * @private @returns {void}
+ */
+RecordHandler.prototype._deleteAck = function (socketWrapper, message) {
+  const recordName = message.data[1]
+
+  if (this._transitions[recordName]) {
+    this._transitions[recordName].destroy()
+    delete this._transitions[recordName]
   }
+
+  this._onDeleted(recordName, message, socketWrapper)
 }
 
 /*

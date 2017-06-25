@@ -449,15 +449,15 @@ describe('record handler handles messages', () => {
     expect(clientA.socket.lastSendMessage).toBe(msg('R|R|anotherRecord|0|{}+'))
   })
 
-  it('receives a deletion message from the message connector for anotherRecord', () => {
+  it('receives a deletion ack from the message connector for anotherRecord', () => {
     recordHandler.handle('SOURCE_MESSAGE_CONNECTOR', {
-      raw: msg('R|D|anotherRecord'),
+      raw: msg('R|A|D|anotherRecord'),
       topic: 'R',
-      action: 'D',
-      data: ['anotherRecord']
+      action: 'A',
+      data: ['D', 'anotherRecord']
     })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|D|anotherRecord+'))
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|A|D|anotherRecord+'))
   })
 
   it('creates another record', () => {

@@ -1,3 +1,47 @@
+## [2.3.7] - 2017.06.20
+
+## Fixes
+
+- Fix issue where using both `.0.` and `[0]` within a json path resulted in inserting into an array. However, when using other SDKs such as Java they would be treated as an Object key or array index.
+- Fix issue where nested array access/manipulation didn't work via json paths.
+
+## Compatability Issue
+
+Due to the nature of this fix, it may result in compatability issues with applications that used json paths incorrectly ( using `.0.` intead of `[0]` ). Please ensure you change those before upgrading.
+
+## [2.3.6] - 2017.06.12
+
+## Fixes
+
+- Fix for issue [#703](https://github.com/deepstreamIO/deepstream.io/issues/703)
+  where record deletions were not being propogated correctly within a cluster.
+- Fixes config-loading issue present in the binary release of 2.3.5.
+
+## [2.3.5] - 2017.06.12
+
+## Fixes
+
+- Hardcode v3.0.0-rc1 dependency on javascript-state-machine, as v3.0.1 causes deepstream.io startup to fail
+
+## [2.3.4] - 2017.06.02
+
+## Fixes
+
+- Hot path needs to store values in the correct format
+
+## [2.3.3] - 2017.06.02
+
+### Fixes
+
+- Binary config files have the correct latest structure
+- Fix an issue where heavy concurrent writes on the same record fail
+
+## [2.3.2] - 2017.05.31
+
+### Fixes
+
+- Fixing a connection data regression where it wasn't formatted the same as pre 2.3.0
+
 ## [2.3.1] - 2017.05.30
 
 ### Fixes

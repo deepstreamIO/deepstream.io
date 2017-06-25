@@ -1,3 +1,4 @@
+sudo: true
 language: node_js
 
 before_install:
@@ -11,12 +12,16 @@ before_install:
       export CXX=g++-4.8;
     fi
 
+after_deploy:
+  - if [ -n "TRAVIS_TAG" ]; bash scripts/trigger-build.sh releases/package; fi
+
 compiler:
   - gcc
   - clang
 
 node_js:
-  - "6.10.1"
+  - "8"
+  - "6.11"
   - "4"
 
 env:
@@ -24,21 +29,20 @@ env:
 
 matrix:
   include:
-    - node_js: "6.10.1"
+    - node_js: "6.11"
       os: osx
 
 script:
   # This fails on node 4
-  - if [[ "$TRAVIS_NODE_VERSION" == "6.10"* ]]; then
+  - if [[ "$TRAVIS_NODE_VERSION" == "6.11"* ]]; then
       npm run lint;
     fi
-  - npm run coverage
+  - npm run reporter
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sh scripts/run-e2e.sh;
     fi
   # This has to happen here and not in before_deploy to be put in travis cache
-  - chmod 555 scripts/package.sh
-  - ./scripts/package.sh
+  - bash ./scripts/package.sh
 
 cache:
   directories:
@@ -57,7 +61,6 @@ deploy:
     upload-dir: $TRAVIS_REPO_SLUG
     on:
       branch: master
-
   - provider: releases
     skip_cleanup: true
     api_key:
