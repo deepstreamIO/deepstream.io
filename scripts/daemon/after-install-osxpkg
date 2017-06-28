@@ -1,9 +1,0 @@
-#!/bin/bash
-DEEPSTREAM_DIR=/usr/local/etc/deepstream
-
-ln -sf /usr/local/build/*/deepstream.io/deepstream /usr/local/bin/deepstream
-mkdir -p $DEEPSTREAM_DIR/lib
-cp -r /usr/local/build/*/deepstream.io/* $DEEPSTREAM_DIR
-
-mkdir -p ~/Library/Logs/deepstream
-sed -i '' "s%\$LOG_PATH%$HOME/Library/Logs/deepstream/deepstream%" $DEEPSTREAM_DIR/conf/config.yml

@@ -23,7 +23,8 @@ fi
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
-mkdir -p build
+rm -rf build
+mkdir build
 
 echo "Installing missing npm packages, just in case something changes"
 npm i
@@ -159,7 +160,6 @@ SECONDS=0;
 while kill -0 "$PROC_ID" >/dev/null 2>&1; do
 	echo -ne "\rCompiling deepstream... ($SECONDS SECONDS)"
 	sleep 1
-	SECONDS=$[SECONDS+1]
 done
 
 echo ""
@@ -212,33 +212,53 @@ if [ $OS = "darwin" ]; then
 	cp ../$COMMIT_NAME ../../$CLEAN_NAME
 	cd -
 
-	echo "Patching config file for lib and var directories"
-	cp -f ./scripts/package-conf-osxpkg.yml $DEEPSTREAM_PACKAGE/conf/config.yml
-	cp -f ./conf/config.yml $DEEPSTREAM_PACKAGE/conf/config.defaults
-
 	# Adding ruby dir to path
 	PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
 
-	if [ -n $TRAVIS ]; then
+	if [ -z $TRAVIS ]; then
 	  gem update --system
-        fi
 
-	echo "\tInstalling fpm"
-	gem install fpm --user-install --no-ri --no-rdoc
+	  echo "\tInstalling fpm"
+	  gem install fpm --user-install --no-ri --no-rdoc
+    fi
+
+ 	rm -rf build/osxpkg
+ 	mkdir -p build/osxpkg/bin
+ 	mkdir -p build/osxpkg/etc/deepstream
+ 	mkdir -p build/osxpkg/lib/deepstream
+ 	mkdir -p build/osxpkg/share/doc/deepstream
+ 	mkdir -p build/osxpkg/var/log/deepstream
+
+ 	cp -r ./build/$PACKAGE_VERSION/deepstream.io/deepstream build/osxpkg/bin/deepstream
+ 	cp -r ./build/$PACKAGE_VERSION/deepstream.io/conf/* build/osxpkg/etc/deepstream
+ 	cp -r ./build/$PACKAGE_VERSION/deepstream.io/lib/* build/osxpkg/lib/deepstream
+ 	cp -r ./build/$PACKAGE_VERSION/deepstream.io/doc/* build/osxpkg/share/doc/deepstream
+
+	echo "Patching config file for lib and var directories"
+	sed -i '' 's@ ../lib@ /usr/local/lib/deepstream@' build/osxpkg/etc/deepstream/config.yml
+	sed -i '' 's@ ../var@ /usr/local/var/log/deepstream@' build/osxpkg/etc/deepstream/config.yml
+
+ 	cp build/osxpkg/etc/deepstream/config.yml build/osxpkg/etc/deepstream/config.defaults
+
+ 	echo "\tTemporary OSXPKG directory hacks"
+ 	mv -f build/osxpkg local
+
 	echo "\tCreating *.pkg"
-	 fpm \
+	fpm \
 	 	-s dir \
 	 	-t osxpkg \
-		--prefix /usr/local \
+		--prefix usr \
 	 	-v $PACKAGE_VERSION \
-	 	--package ./build/$PACKAGE_VERSION \
+	 	--package build \
 	 	-n deepstream.io \
-		--after-install ./scripts/daemon/after-install-osxpkg \
-	 	--license MIT \
+	 	--license "AGPL-3.0" \
 	 	--vendor "deepstreamHub GmbH" \
 	 	--url https://deepstream.io/ \
 	 	-m "<info@deepstreamhub.com>" \
-	 	$DEEPSTREAM_PACKAGE
+	 	local
+
+ 	echo "\tDeleting OSXPKG Temporary directory hacks"
+	rm -rf local
 fi
 
 if [ $OS = "linux" ]; then
