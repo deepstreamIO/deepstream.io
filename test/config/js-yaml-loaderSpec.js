@@ -121,7 +121,7 @@ describe('js-yaml-loader', () => {
         stub.configLoader.loadConfig()
       }).toThrow()
 
-      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(16)
+      expect(stub.fileMock.fileExistsSync).toHaveBeenCalledTimes(24)
 
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.js'))
       expect(stub.fileMock.fileExistsSync).toHaveBeenCalledWith(path.join('conf', 'config.json'))

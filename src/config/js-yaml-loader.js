@@ -13,6 +13,15 @@ const fileUtils = require('./file-utils')
 const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js']
 const DEFAULT_CONFIG_DIRS = [path.join('.', 'conf', 'config'), path.join('..', 'conf', 'config'), '/etc/deepstream/config', '/usr/local/etc/deepstream/config']
 
+try {
+  require('nexeres') // eslint-disable-line
+  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', 'conf', 'config'))
+  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', '..', 'conf', 'config'))
+} catch (e) {
+  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[1], '..', 'conf', 'config'))
+  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[1], '..', '..', 'conf', 'config'))
+}
+
 /**
  * Reads and parse a general configuration file content.
  *
