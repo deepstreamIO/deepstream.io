@@ -1,6 +1,5 @@
 'use strict'
 
-const colors = require('colors')
 const daemon = require('deepstream.io-service/src/daemon')
 
 module.exports = function (program) {
