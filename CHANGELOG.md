@@ -1,3 +1,29 @@
+## [2.4.0] - 2017.07.01
+
+## Features
+
+- Added new CLI command, including:
+
+  + deepstream daemon
+  This command forks deepstream and monitors it for crashes, allowing it to restart automatically to avoid downtime
+
+  + deepstream service add
+  This command allows you to create an init.d or systemd script automatically and add it to your system.
+  ```bash
+  sudo deepstream service --help
+  Usage: service [options] [add|remove|start|stop|status]
+  Add, remove, start or stop deepstream as a service to your operating system
+  ```
+
+- Added brew cask support
+
+You can now install easily install deepstream on your mac using `brew cask install deepstream` driven by config files within `/user/local/etc/deepstream/conf`
+
+## Fixes
+
+- Fix issue where certain invalid paths would return 'Invalid Type' on the server.
+- Fix issue in request/response where selecting a remote server as not done uniformly.
+
 ## [2.3.7] - 2017.06.20
 
 ## Fixes
