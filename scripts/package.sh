@@ -22,6 +22,9 @@ if [ $OS = "win32" ]; then
 fi
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
+# Needed even for void builds for travis deploy to pass
+mkdir build
+
 if ! [[ $NODE_VERSION_WITHOUT_V == $LTS_VERSION* ]]; then
     echo "Packaging only done on $LTS_VERSION.x"
     exit

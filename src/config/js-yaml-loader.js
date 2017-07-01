@@ -12,9 +12,9 @@ const fileUtils = require('./file-utils')
 
 const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js']
 const DEFAULT_CONFIG_DIRS = [
-  path.join('.', 'conf', 'config'), path.join('..', 'conf', 'config'), 
+  path.join('.', 'conf', 'config'), path.join('..', 'conf', 'config'),
   '/etc/deepstream/config', '/usr/local/etc/deepstream/config',
-  '/usr/local/etc/deepstream/conf/config' 
+  '/usr/local/etc/deepstream/conf/config'
 ]
 
 try {
