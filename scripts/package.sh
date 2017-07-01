@@ -22,13 +22,6 @@ if [ $OS = "win32" ]; then
 fi
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
-echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
-rm -rf build
-mkdir build
-
-echo "Installing missing npm packages, just in case something changes"
-npm i
-
 if ! [[ $NODE_VERSION_WITHOUT_V == $LTS_VERSION* ]]; then
     echo "Packaging only done on $LTS_VERSION.x"
     exit
@@ -56,139 +49,148 @@ if [ $OS = "linux" ]; then
     fpm --version
 fi
 
-echo -e "\tGenerate License File using unmodified npm packages"
-./scripts/license-aggregator.js > build/DEPENDENCIES.LICENSE
+function compile {
+    echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
+    rm -rf build
+    mkdir build
 
-echo "Generating meta.json"
-node scripts/details.js META
+    echo "Installing missing npm packages, just in case something changes"
+    npm i
 
-echo -e "Preparing node"
-mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-rm -rf node-$NODE_VERSION_WITHOUT_V
-if [ ! -f node-$NODE_VERSION_WITHOUT_V.tar.gz ]; then
-    echo -e "\tDownloading node src"
-    curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-fi
+    echo -e "\tGenerate License File using unmodified npm packages"
+    ./scripts/license-aggregator.js > build/DEPENDENCIES.LICENSE
 
-echo -e "\tUnpacking node"
-tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-cd -
+    echo "Generating meta.json"
+    node scripts/details.js META
 
-echo -e "\t\tDelete node uws"
-rm -rf node_modules/uws
-
-echo -e "\tAdding in UWS"
-
-echo -e "\t\tDownloading UWS"
-rm -rf nexe_node/uWebSockets
-git clone https://github.com/mkozjak/uWebSockets.git nexe_node/uWebSockets
-cd nexe_node/uWebSockets
-git checkout v$UWS_VERSION
-cd -
-
-echo -e "\t\tAdding UWS into node"
-
-C_FILE_NAMES="      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/WebSocketImpl.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
-
-if [ $OS = "darwin" ]; then
-    echo -e "\t\tapplying patches only tested on darwin node v6.9.1"
-    sed -i '' "s@'library_files': \[@'library_files': \[ 'lib\/uws.js',@" $NODE_SOURCE/node.gyp
-    sed -i '' "s@'src/debug-agent.cc',@'src\/debug-agent.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
-    sed -i '' "s@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x',  # -std=gnu++0x@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x', 'CLANG_CXX_LIBRARY': 'libc++',@" $NODE_SOURCE/common.gypi
-    sed -i '' "14,18d" $NODE_SOURCE/src/util.h
-else
-    sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
-    sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',\n  $C_FILE_NAMES/" $NODE_SOURCE/node.gyp
-    sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/dist/uws.js
-fi
-
-mkdir -p $NODE_SOURCE/src/uws
-cp $UWS_SOURCE/src/* $NODE_SOURCE/src/uws
-mv $NODE_SOURCE/src/uws/Node.cpp $NODE_SOURCE/src/uws/uws_Node.cpp
-cp $UWS_SOURCE/nodejs/extension.cpp $NODE_SOURCE/src/uws
-cp $UWS_SOURCE/nodejs/addon.h $NODE_SOURCE/src/uws
-cp $UWS_SOURCE/nodejs/dist/uws.js $NODE_SOURCE/lib/uws.js
-
-if [ $OS = "win32" ]; then
-    echo "Windows icon"
-
-    NAME=$PACKAGE_VERSION
-
-    echo -e "\tPatch the window executable icon and details"
-    cp scripts/resources/node.rc $NODE_SOURCE/src/res/node.rc
-    cp scripts/resources/deepstream.ico $NODE_SOURCE/src/res/deepstream.ico
-
-    if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
-        echo -e "\tVersion can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
-        NAME="0.0.0"
+    echo -e "Preparing node"
+    mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
+    cd nexe_node/node/$NODE_VERSION_WITHOUT_V
+    rm -rf node-$NODE_VERSION_WITHOUT_V
+    if [ ! -f node-$NODE_VERSION_WITHOUT_V.tar.gz ]; then
+        echo -e "\tDownloading node src"
+        curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
     fi
 
-    sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
-fi
+    echo -e "\tUnpacking node"
+    tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
+    cd -
 
-# Nexe Patches
-echo "Nexe Patches for Browserify, copying stub versions of optional installs since they aern't bundled anyway"
+    echo -e "\t\tDelete node uws"
+    rm -rf node_modules/uws
 
-echo -e "\tStubbing xml2js for needle"
-mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
+    echo -e "\tAdding in UWS"
 
-# Creatine package structure
-rm -rf build/$PACKAGE_VERSION
-mkdir -p $DEEPSTREAM_PACKAGE
-mkdir $DEEPSTREAM_PACKAGE/var
-mkdir $DEEPSTREAM_PACKAGE/lib
-mkdir $DEEPSTREAM_PACKAGE/doc
+    echo -e "\t\tDownloading UWS"
+    rm -rf nexe_node/uWebSockets
+    git clone https://github.com/mkozjak/uWebSockets.git nexe_node/uWebSockets
+    cd nexe_node/uWebSockets
+    git checkout v$UWS_VERSION
+    cd -
 
-echo "Adding winston logger to libs"
-cd $DEEPSTREAM_PACKAGE/lib
-echo '{ "name": "TEMP" }' > package.json
-npm install deepstream.io-logger-winston --loglevel error
-mv -f node_modules/deepstream.io-logger-winston ./deepstream.io-logger-winston
-rm -rf node_modules package.json
-cd -
+    echo -e "\t\tAdding UWS into node"
 
-cd $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
-npm install --production --loglevel error
-cd -
+    C_FILE_NAMES="      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/WebSocketImpl.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
 
-echo "Creating '$EXECUTABLE_NAME', this will take a while..."
-NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &
+    if [ $OS = "darwin" ]; then
+        echo -e "\t\tapplying patches only tested on darwin node v6.9.1"
+        sed -i '' "s@'library_files': \[@'library_files': \[ 'lib\/uws.js',@" $NODE_SOURCE/node.gyp
+        sed -i '' "s@'src/debug-agent.cc',@'src\/debug-agent.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
+        sed -i '' "s@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x',  # -std=gnu++0x@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x', 'CLANG_CXX_LIBRARY': 'libc++',@" $NODE_SOURCE/common.gypi
+        sed -i '' "14,18d" $NODE_SOURCE/src/util.h
+    else
+        sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
+        sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',\n  $C_FILE_NAMES/" $NODE_SOURCE/node.gyp
+        sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/dist/uws.js
+    fi
 
-PROC_ID=$!
-SECONDS=0;
-while kill -0 "$PROC_ID" >/dev/null 2>&1; do
-    echo -ne "\rCompiling deepstream... ($SECONDS SECONDS)"
-    sleep 1
-done
+    mkdir -p $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/src/* $NODE_SOURCE/src/uws
+    mv $NODE_SOURCE/src/uws/Node.cpp $NODE_SOURCE/src/uws/uws_Node.cpp
+    cp $UWS_SOURCE/nodejs/extension.cpp $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/nodejs/addon.h $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/nodejs/dist/uws.js $NODE_SOURCE/lib/uws.js
 
-echo ""
+    if [ $OS = "win32" ]; then
+        echo "Windows icon"
 
-if wait $pid; then
-    echo -e "\tNexe Build Succeeded"
-else
-    echo -e "\tNexe Build Failed"
-    exit 1
-fi
+        NAME=$PACKAGE_VERSION
 
-echo "Adding docs"
-echo -e "\tAdding Readme"
-echo "Documentation is available at https://deepstream.io
-" > $DEEPSTREAM_PACKAGE/doc/README
-echo -e "\tAdding Changelog"
-cp CHANGELOG.md $DEEPSTREAM_PACKAGE/doc/CHANGELOG.md
-echo -e "\tAdding Licenses"
-cp $NODE_SOURCE/LICENSE $DEEPSTREAM_PACKAGE/doc/NODE.LICENSE
-mv build/DEPENDENCIES.LICENSE $DEEPSTREAM_PACKAGE/doc/LICENSE
+        echo -e "\tPatch the window executable icon and details"
+        cp scripts/resources/node.rc $NODE_SOURCE/src/res/node.rc
+        cp scripts/resources/deepstream.ico $NODE_SOURCE/src/res/deepstream.ico
 
-echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
-cp -r conf $DEEPSTREAM_PACKAGE/
-cp build/deepstream $DEEPSTREAM_PACKAGE/
+        if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+            echo -e "\tVersion can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
+            NAME="0.0.0"
+        fi
 
-echo "Patching config file for zip lib and var directories"
-cp -f ./scripts/package-conf.yml $DEEPSTREAM_PACKAGE/conf/config.yml
+        sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
+    fi
 
-if [ $OS = "win32" ]; then
+    # Nexe Patches
+    echo "Nexe Patches for Browserify, copying stub versions of optional installs since they aern't bundled anyway"
+
+    echo -e "\tStubbing xml2js for needle"
+    mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
+
+    # Creatine package structure
+    rm -rf build/$PACKAGE_VERSION
+    mkdir -p $DEEPSTREAM_PACKAGE
+    mkdir $DEEPSTREAM_PACKAGE/var
+    mkdir $DEEPSTREAM_PACKAGE/lib
+    mkdir $DEEPSTREAM_PACKAGE/doc
+
+    echo "Adding winston logger to libs"
+    cd $DEEPSTREAM_PACKAGE/lib
+    echo '{ "name": "TEMP" }' > package.json
+    npm install deepstream.io-logger-winston --loglevel error
+    mv -f node_modules/deepstream.io-logger-winston ./deepstream.io-logger-winston
+    rm -rf node_modules package.json
+    cd -
+
+    cd $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
+    npm install --production --loglevel error
+    cd -
+
+    echo "Creating '$EXECUTABLE_NAME', this will take a while..."
+    NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &
+
+    PROC_ID=$!
+    SECONDS=0;
+    while kill -0 "$PROC_ID" >/dev/null 2>&1; do
+        echo -ne "\rCompiling deepstream... ($SECONDS SECONDS)"
+        sleep 1
+    done
+
+    echo ""
+
+    if wait $pid; then
+        echo -e "\tNexe Build Succeeded"
+    else
+        echo -e "\tNexe Build Failed"
+        exit 1
+    fi
+
+    echo "Adding docs"
+    echo -e "\tAdding Readme"
+    echo "Documentation is available at https://deepstream.io
+    " > $DEEPSTREAM_PACKAGE/doc/README
+    echo -e "\tAdding Changelog"
+    cp CHANGELOG.md $DEEPSTREAM_PACKAGE/doc/CHANGELOG.md
+    echo -e "\tAdding Licenses"
+    cp $NODE_SOURCE/LICENSE $DEEPSTREAM_PACKAGE/doc/NODE.LICENSE
+    mv build/DEPENDENCIES.LICENSE $DEEPSTREAM_PACKAGE/doc/LICENSE
+
+    echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
+    cp -r conf $DEEPSTREAM_PACKAGE/
+    cp build/deepstream $DEEPSTREAM_PACKAGE/
+    
+    echo "Patching config file for zip lib and var directories"
+    cp -f ./scripts/package-conf.yml $DEEPSTREAM_PACKAGE/conf/config.yml
+}
+
+function windows {
     COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "
     CLEAN_NAME="deepstream.io-windows-$PACKAGE_VERSION.zip"
 
@@ -198,41 +200,31 @@ if [ $OS = "win32" ]; then
     7z a ../$COMMIT_NAME . > /dev/null
     cp ../$COMMIT_NAME ../../$CLEAN_NAME
     cd -
-fi
+}
 
-if [ $OS = "darwin" ]; then
-    COMMIT_NAME="deepstream.io-mac-$PACKAGE_VERSION-$COMMIT.zip"
-    CLEAN_NAME="deepstream.io-mac-$PACKAGE_VERSION.zip"
+function mac {
+    COMMIT_NAME="deepstream.io-mac-$PACKAGE_VERSION-$COMMIT"
+    CLEAN_NAME="deepstream.io-mac-$PACKAGE_VERSION"
 
     echo "OS is mac"
     echo -e "\tCreating $CLEAN_NAME"
 
     cd $DEEPSTREAM_PACKAGE
-    zip -r ../$COMMIT_NAME .
-    cp ../$COMMIT_NAME ../../$CLEAN_NAME
+    zip -r ../${COMMIT_NAME}.zip .
+    cp ../${COMMIT_NAME}.zip ../../${CLEAN_NAME}.zip
     cd -
 
-    # Adding ruby dir to path
-    PATH="`ruby -e 'puts Gem.user_dir'`/bin:$PATH"
-
-    if [ -z $TRAVIS ]; then
-      gem update --system
-
-      echo "\tInstalling fpm"
-      gem install fpm --user-install --no-ri --no-rdoc
-    fi
-
-    rm -rf build/osxpkg
+    rm -rf build/osxpkg 
     mkdir -p build/osxpkg/bin
     mkdir -p build/osxpkg/etc/deepstream
     mkdir -p build/osxpkg/lib/deepstream
     mkdir -p build/osxpkg/share/doc/deepstream
     mkdir -p build/osxpkg/var/log/deepstream
 
-    cp -r ./build/$PACKAGE_VERSION/deepstream.io/deepstream build/osxpkg/bin/deepstream
-    cp -r ./build/$PACKAGE_VERSION/deepstream.io/conf/* build/osxpkg/etc/deepstream
-    cp -r ./build/$PACKAGE_VERSION/deepstream.io/lib/* build/osxpkg/lib/deepstream
-    cp -r ./build/$PACKAGE_VERSION/deepstream.io/doc/* build/osxpkg/share/doc/deepstream
+    cp -r ${DEEPSTREAM_PACKAGE}/deepstream build/osxpkg/bin/deepstream
+    cp -r ${DEEPSTREAM_PACKAGE}/conf/* build/osxpkg/etc/deepstream
+    cp -r ${DEEPSTREAM_PACKAGE}/lib/* build/osxpkg/lib/deepstream
+    cp -r ${DEEPSTREAM_PACKAGE}/doc/* build/osxpkg/share/doc/deepstream
 
     echo "Patching config file for lib and var directories"
     sed -i '' 's@ ../lib@ /usr/local/lib/deepstream@' build/osxpkg/etc/deepstream/config.yml
@@ -240,28 +232,29 @@ if [ $OS = "darwin" ]; then
 
     cp build/osxpkg/etc/deepstream/config.yml build/osxpkg/etc/deepstream/config.defaults
 
-    echo "\tTemporary OSXPKG directory hacks"
-    mv -f build/osxpkg local
+    chmod -R 777 build/osxpkg/bin
+    chmod -R 777 build/osxpkg/share
+    chmod -R 777 build/osxpkg/var
+    chmod -R 777 build/osxpkg/lib
+    chmod -R 777 build/osxpkg/etc
 
     echo "\tCreating *.pkg"
-    fpm \
-        -s dir \
-        -t osxpkg \
-        --prefix usr \
-        -v $PACKAGE_VERSION \
-        --package build \
-        -n deepstream.io \
-        --license "AGPL-3.0" \
-        --vendor "deepstreamHub GmbH" \
-        --url https://deepstream.io/ \
-        -m "<info@deepstreamhub.com>" \
-        local
+    pkgbuild \
+        --root build/osxpkg \
+        --identifier deepstream.io \
+        --version $PACKAGE_VERSION \
+        --info scripts/PackageInfo \
+        --install-location /usr/local \
+        ${DEEPSTREAM_PACKAGE}/../${COMMIT_NAME}.pkg
 
-    echo "\tDeleting OSXPKG Temporary directory hacks"
-    rm -rf local
-fi
+    cp \
+      ${DEEPSTREAM_PACKAGE}/../${COMMIT_NAME}.pkg \
+      ${DEEPSTREAM_PACKAGE}/../../${CLEAN_NAME}.pkg
 
-if [ $OS = "linux" ]; then
+    rm -rf build/osxpkg
+}
+
+function linux {
     echo "OS is linux"
 
     echo -e "\tCreating tar.gz"
@@ -331,11 +324,25 @@ if [ $OS = "linux" ]; then
         $DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
         $DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
         ./build/deepstream=/usr/bin/deepstream
+}
+
+function clean {
+    rm -rf $DEEPSTREAM_PACKAGE
+    rm build/deepstream
+    rm -f npm-shrinkwrap
+}
+
+compile
+
+if [ $OS = "win32" ]; then
+    windows
+elif [ $OS = "darwin" ]; then
+    mac
+elif [ $OS = "linux" ]; then
+    linux
 fi
 
-rm -rf $DEEPSTREAM_PACKAGE
-rm build/deepstream
+clean
 
 echo "Files in build directory are $( ls build/ )"
 echo "Done"
-rm -f npm-shrinkwrap
