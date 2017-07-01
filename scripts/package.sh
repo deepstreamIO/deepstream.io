@@ -23,7 +23,7 @@ fi
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 # Needed even for void builds for travis deploy to pass
-mkdir build
+mkdir -p build
 
 if ! [[ $NODE_VERSION_WITHOUT_V == $LTS_VERSION* ]]; then
     echo "Packaging only done on $LTS_VERSION.x"

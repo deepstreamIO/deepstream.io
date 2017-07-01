@@ -13,7 +13,9 @@ before_install:
     fi
 
 after_deploy:
-  - if [ -n "TRAVIS_TAG" ]; bash scripts/trigger-build.sh releases/package; fi
+  - if [ -n "TRAVIS_TAG" ]; then
+      bash scripts/trigger-build.sh releases/package;
+    fi
 
 compiler:
   - gcc
