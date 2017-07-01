@@ -27,7 +27,7 @@
     "adm-zip": "^0.4.7",
     "colors": "^1.1.2",
     "commander": "^2.9.0",
-    "deepstream.io-service": "https://github.com/deepstreamIO/deepstream.io-service.git#master",
+    "deepstream.io-service": "latest",
     "glob": "^7.1.1",
     "javascript-state-machine": "3.0.0-rc.1",
     "js-yaml": "^3.8.1",

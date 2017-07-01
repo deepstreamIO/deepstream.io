@@ -57,6 +57,6 @@ function execute(action) {
   } else if (action === 'status') {
     service.status(name, response)
   } else {
-    console.log(`Unknown action for service, please 'add',  'remove', 'start' or 'stop'`)
+    console.log(`Unknown action for service, please 'add', 'remove', 'start', 'stop' or 'status'`)
   }
 }
