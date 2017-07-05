@@ -8,3 +8,14 @@ deepstream is a new type of server that syncs data and sends events across milli
 
 ![Elton](elton-square.png)
 
+sanity-test:
+1. launch and ssh into an ec2 machine
+2. copy scripts/sanity-test.sh to file on ec2 machine
+3. run script with arg "rpm": "bash sanity-test.sh rpm"
+4. run script with arg "tar": "bash sanity-test.sh tar"
+5. exit and terminate ec2 machine
+6. launch and ssh into an ubuntu machine
+7. copy scripts/sanity-test.sh to file on ubuntu machine
+8. run script with arg "deb": "bash sanity-test.sh deb"
+9. run script with arg "tar": "bash sanity-test.sh tar"
+10. exit and terminate ubuntu machine
