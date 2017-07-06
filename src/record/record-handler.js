@@ -176,7 +176,7 @@ module.exports = class RecordHandler {
 function isSameOrNewer (a, b) {
   const [ av, ar ] = a ? splitRev(a) : [ 0, '00000000000000' ]
   const [ bv, br ] = b ? splitRev(b) : [ 0, '00000000000000' ]
-  return av > bv || (av === bv && ar >= br)
+  return bv !== Number.MAX_SAFE_INTEGER && (av > bv || (av === bv && ar >= br))
 }
 
 function splitRev (s) {
