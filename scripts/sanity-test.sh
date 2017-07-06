@@ -13,7 +13,7 @@ elif [[ $1 == "rpm" ]]; then
 elif [[ $1 == "tar" ]]; then
   if [[ -z $2 ]]; then
     echo 'Missing version number when testing tar release'
-    return 1
+    exit 1
   fi
   curl -OL https://github.com/deepstreamIO/deepstream.io/releases/download/v$2/deepstream.io-linux-$2.tar.gz
   tar xf deepstream.io-linux-$2.tar.gz
