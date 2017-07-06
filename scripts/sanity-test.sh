@@ -11,8 +11,12 @@ elif [[ $1 == "rpm" ]]; then
   sudo wget https://bintray.com/deepstreamio/rpm/rpm -O /etc/yum.repos.d/bintray-deepstreamio-rpm.repo
   sudo yum install -y deepstream.io
 elif [[ $1 == "tar" ]]; then
-  curl -OL https://github.com/deepstreamIO/deepstream.io/releases/download/v2.4.0/deepstream.io-linux-2.4.0.tar.gz
-  tar xf deepstream.io-linux-2.4.0.tar.gz
+  if [[ -z $2 ]]; then
+    echo 'Missing version number when testing tar release'
+    return 1
+  fi
+  curl -OL https://github.com/deepstreamIO/deepstream.io/releases/download/v$2/deepstream.io-linux-$2.tar.gz
+  tar xf deepstream.io-linux-$2.tar.gz
 elif [[ $1 == "installed" ]]; then
   echo "Assuming deepstream installed"
 else
