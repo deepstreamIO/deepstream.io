@@ -6,5 +6,14 @@ deepstream is a new type of server that syncs data and sends events across milli
 
 ## https://deepstream.io/
 
-![Elton](elton-square.png)
+### Post release sanity test for linux distributions:
+1. access a linux machine
 
+2. copy over the sanity test using:
+  
+`curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/sanity-test-linux/scripts/sanity-test.sh`
+
+3. depending on your distribution, run
+- debian/ubuntu: `bash sanity-test.sh deb`
+- centos/aws: `bash sanity-test.sh rpm`
+- any linux distro: `bash sanity-test.sh tar`
