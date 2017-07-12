@@ -33,7 +33,7 @@
   "dependencies": {
     "adm-zip": "^0.4.7",
     "colors": "^1.1.2",
-    "commander": "^2.9.0",
+    "commander": "^2.11.0",
     "deepstream.io-service": "latest",
     "glob": "^7.1.1",
     "ioredis": "^3.1.1",
