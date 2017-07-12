@@ -6,7 +6,7 @@ NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
-UWS_VERSION=0.12.0
+UWS_COMMIT=193bd4744ebe0bca48b9f881f38792ded1235c40
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
@@ -86,33 +86,39 @@ function compile {
 
     echo -e "\t\tDownloading UWS"
     rm -rf nexe_node/uWebSockets
-    git clone https://github.com/mkozjak/uWebSockets.git nexe_node/uWebSockets
+    git clone https://github.com/uNetworking/bindings.git nexe_node/uWebSockets
     cd nexe_node/uWebSockets
-    git checkout v$UWS_VERSION
+    git submodule update --init
+    git checkout v$UWS_COMMIT
     cd -
 
     echo -e "\t\tAdding UWS into node"
 
-    C_FILE_NAMES="      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/WebSocketImpl.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
+    C_FILE_NAMES="      'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp', 'src\/uws\/addon.cpp',"
 
     if [ $OS = "darwin" ]; then
         echo -e "\t\tapplying patches only tested on darwin node v6.9.1"
         sed -i '' "s@'library_files': \[@'library_files': \[ 'lib\/uws.js',@" $NODE_SOURCE/node.gyp
         sed -i '' "s@'src/debug-agent.cc',@'src\/debug-agent.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
+        sed -i '' "s@../src/uWS@uWS@" $UWS_SOURCE/nodejs/src/addon.cpp
         sed -i '' "s@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x',  # -std=gnu++0x@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x', 'CLANG_CXX_LIBRARY': 'libc++',@" $NODE_SOURCE/common.gypi
         sed -i '' "14,18d" $NODE_SOURCE/src/util.h
     else
         sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
         sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',\n  $C_FILE_NAMES/" $NODE_SOURCE/node.gyp
-        sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/dist/uws.js
+        sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/src/uws.js
+        sed -i "s@../src/uWS@uWS@" $UWS_SOURCE/nodejs/src/addon.cpp
     fi
 
     mkdir -p $NODE_SOURCE/src/uws
-    cp $UWS_SOURCE/src/* $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/uWebSockets/src/* $NODE_SOURCE/src/uws
     mv $NODE_SOURCE/src/uws/Node.cpp $NODE_SOURCE/src/uws/uws_Node.cpp
-    cp $UWS_SOURCE/nodejs/extension.cpp $NODE_SOURCE/src/uws
-    cp $UWS_SOURCE/nodejs/addon.h $NODE_SOURCE/src/uws
-    cp $UWS_SOURCE/nodejs/dist/uws.js $NODE_SOURCE/lib/uws.js
+
+    cp $UWS_SOURCE/nodejs/src/extension.cpp $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/nodejs/src/addon.h $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/nodejs/src/addon.cpp $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/nodejs/src/http.h $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/nodejs/src/uws.js $NODE_SOURCE/lib/uws.js
 
     if [ $OS = "win32" ]; then
         echo "Windows icon"
