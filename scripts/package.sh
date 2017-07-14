@@ -108,6 +108,7 @@ function compile {
         sed -i "s/'src\/debug-agent.cc',/'src\/debug-agent.cc',\n  $C_FILE_NAMES/" $NODE_SOURCE/node.gyp
         sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/src/uws.js
         sed -i "s@../src/uWS@uWS@" $UWS_SOURCE/nodejs/src/addon.cpp
+        sed -i "/UV_READABLE =/,/UV_WRITABLE =/d" $UWS_SOURCE/uWebSockets/src/Epoll.h
     fi
 
     mkdir -p $NODE_SOURCE/src/uws
