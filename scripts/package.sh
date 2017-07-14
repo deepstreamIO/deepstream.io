@@ -94,7 +94,7 @@ function compile {
 
     echo -e "\t\tAdding UWS into node"
 
-    C_FILE_NAMES="      'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp', 'src\/uws\/addon.cpp',"
+    C_FILE_NAMES="      'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp', 'src\/uws\/extension.cpp',"
 
     if [ $OS = "darwin" ]; then
         echo -e "\t\tapplying patches only tested on darwin node v6.9.1"
