@@ -57,7 +57,7 @@ deploy:
     local_dir: build
     upload-dir: $TRAVIS_REPO_SLUG
     on:
-      branch: master
+      branch: uws-14
   - provider: releases
     skip_cleanup: true
     api_key:
