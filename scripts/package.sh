@@ -162,6 +162,9 @@ function compile {
     npm install --production --loglevel error
     cd -
 
+    # ensure that uWebSockets builds against libUV
+    export USE_LIBUV=1
+
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
     NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &
 
