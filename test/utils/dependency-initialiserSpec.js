@@ -29,7 +29,7 @@ describe('dependency-initialiser', () => {
 
   it('selects the correct plugin', () => {
     options.logger.lastLogEvent = null
-    dependencyBInitialiser = new DependencyInitialiser({}, options, 'pluginB')
+    dependencyBInitialiser = new DependencyInitialiser({}, options, options.pluginB, 'pluginB')
     expect(dependencyBInitialiser.getDependency().name).toBe('B')
     expect(options.logger.lastLogEvent).toBe(null)
   })
@@ -51,7 +51,7 @@ describe('dependency-initialiser', () => {
     const dsMock = { is: 'deepstream' }
     const setDsSpy = options.pluginC.setDeepstream = jasmine.createSpy('setDeepstream')
     options.pluginC.isReady = true
-    new DependencyInitialiser(dsMock, options, 'pluginC')
+    new DependencyInitialiser(dsMock, options, options.pluginC, 'pluginC')
     expect(setDsSpy).toHaveBeenCalledWith(dsMock)
   })
 
@@ -63,7 +63,7 @@ describe('dependency-initialiser', () => {
       options.pluginC.setReady()
     }
     options.pluginC.isReady = false
-    new DependencyInitialiser(dsMock, options, 'pluginC')
+    new DependencyInitialiser(dsMock, options, options.pluginC, 'pluginC')
     expect(options.pluginC._deepstream).toBe(dsMock)
   })
 })
@@ -86,7 +86,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
   })
 
   it('creates a depdendency initialiser and doesnt initialise a plugin in time', (next) => {
-    dependencyInitialiser = new DependencyInitialiser({}, options, 'plugin')
+    dependencyInitialiser = new DependencyInitialiser({}, options, options.plugin, 'plugin')
     dependencyInitialiser.on('ready', onReady)
     expect(options.plugin.isReady).toBe(false)
     process.removeAllListeners('uncaughtException')
@@ -104,7 +104,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
       expect(log).toHaveBeenCalledWith('Error while initialising plugin: something went wrong')
       next()
     })
-    dependencyInitialiser = new DependencyInitialiser({}, options, 'plugin')
+    dependencyInitialiser = new DependencyInitialiser({}, options, options.plugin, 'plugin')
     dependencyInitialiser.on('ready', onReady)
     options.logger.isReady = false
     try {
