@@ -205,20 +205,15 @@ Deepstream.prototype.toTyped = function (value) {
  */
 Deepstream.prototype._transition = function (transitionName) {
   let transition
-  let found = false
   for (let i = 0; i < this._stateMachine.transitions.length; i++) {
     transition = this._stateMachine.transitions[i]
     if (transitionName === transition.name && this._currentState === transition.from) {
       // found transition
-      found = true
-      break
+      this._onTransition(transition)
+      this._currentState = transition.to
+      transition.handler.call(this)
+      return
     }
-  }
-  if (found) {
-    this._onTransition(transition)
-    this._currentState = transition.to
-    transition.handler.call(this)
-    return
   }
   const details = JSON.stringify({ transition: transitionName, state: this._currentState })
   throw new Error(`Invalid state transition: ${details}`)
