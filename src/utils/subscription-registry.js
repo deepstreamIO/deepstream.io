@@ -37,7 +37,7 @@ class SubscriptionRegistry {
     this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
 
-    this._setupRemoteComponents(clusterTopic)
+    // this._setupRemoteComponents(clusterTopic)
   }
 
   /**
