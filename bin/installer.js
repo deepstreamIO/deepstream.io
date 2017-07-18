@@ -26,7 +26,7 @@ const getWebUrl = function (repo) {
  * name convention: deepstreamIO/deepstream.io-TYPE-NAME
  *
  * @param  {array}    releases JSON array of the GitHub REST API for list releases
- * @param  {string}   type Connector type: {cache|message|storage}
+ * @param  {string}   type Connector type: {cache|storage}
  * @param  {string}   name Name of the connector
  * @param  {string}   version Version of the connector (optional)
  * @param  {string}   outputDir Path to directory where to install and extract the connector
@@ -111,7 +111,7 @@ const downloadArchive = function (urlPath, outStream, callback) {
  * Fetch a JSON array from GitHub Release API which contains all meta data
  * for a specific reposotiry.
  *
- * @param  {String}   type Connector type: {cache|message|storage}
+ * @param  {String}   type Connector type: {cache|storage}
  * @param  {String}   name Name of the connector
  * @callback callback
  * @param {error} error
@@ -215,7 +215,8 @@ const showConfig = function (directory) {
  */
 module.exports = function (opts, callback) {
   if (opts.type === 'message') {
-    opts.type = 'msg'
+    console.log('Message connectors are deprecated as of deepstream.io v3.0')
+    return callback()
   }
   fetchReleases(opts.type, opts.name, (error, releases) => {
     if (error) {
