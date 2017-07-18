@@ -1,0 +1,88 @@
+{
+	"presence": {
+		"*": {
+			"allow": false
+		}
+	},
+	"record": {
+		"*": {
+			"create": true,
+			"delete": true,
+			"write": true,
+			"read": true,
+			"listen": true
+		},
+		"d/*": {
+			"create": "_('perm/JohnDoe').boolean",
+			"read": "_('perm/JohnDoe').boolean"
+		},
+		"public-read-private-write/$userid": {
+			"read": true,
+			"create": "user.id === $userid",
+			"write": "user.id === $userid"
+		},
+		"only-increment": {
+			"write": "!oldData.value || data.value > oldData.value",
+			"create": true,
+			"read": true
+		},
+			"only-decrement": {
+			"write": "!oldData.value || data.value < oldData.value",
+			"create": true,
+			"read": true
+		},
+		"only-delete-egon-miller/$firstname/$lastname": {
+			"delete": "$firstname.toLowerCase() === 'egon' && $lastname.toLowerCase() === 'miller'"
+		},
+		"only-allows-purchase-of-products-in-stock/$purchaseId": {
+			"create": true,
+			"write": "_('item/' + data.itemId ).stock > 0"
+		},
+		"only-a-can-read-and-create": {
+			"create": "user.id === 'A'",
+			"read": "user.id === 'A'"
+		}
+	},
+	"event": {
+		"*": {
+			"listen": true,
+			"publish": true,
+			"subscribe": true
+		},
+		"open/*": {
+			"listen": true,
+			"publish": true,
+			"subscribe": true
+		},
+		"forbidden/*": {
+			"publish": false,
+			"subscribe": false
+		},
+		"a-to-b/*": {
+			"publish": "user.id === 'A'",
+			"subscribe": "user.id === 'B'"
+		},
+		"news/$topic": {
+			"publish": "$topic === 'tea-cup-pigs'"
+		},
+		"number": {
+			"publish": "data > 10"
+		},
+		"place/$city": {
+			"publish": "$city.toLowerCase() === data.address.city.toLowerCase()"
+		}
+	},
+	"rpc": {
+		"*": {
+			"provide": true,
+			"request": true
+		},
+		"a-provide-b-request": {
+			"provide": "user.id === 'A'",
+			"request": "user.id === 'B'"
+		},
+		"only-full-user-data": {
+			"request": "typeof data.firstname === 'string' && typeof data.lastname === 'string'"
+		}
+	}
+}

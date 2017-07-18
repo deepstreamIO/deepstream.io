@@ -201,9 +201,6 @@ function handleConnectionEndpoints (config) {
   if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
     throw new Error('No connection endpoints configured')
   }
-  if (Object.keys(config.connectionEndpoints).length > 1) {
-    throw new Error('Currently only one connection endpoint may be configured.')
-  }
   const connectionEndpoints = []
   for (const connectionType in config.connectionEndpoints) {
     const plugin = config.connectionEndpoints[connectionType]

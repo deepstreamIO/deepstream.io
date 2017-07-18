@@ -15,11 +15,11 @@ const EventEmitter = require('events').EventEmitter
  *
  * @constructor
  */
-const DependencyInitialiser = function (deepstream, options, name) {
+const DependencyInitialiser = function (deepstream, options, dependency, name) {
   this.isReady = false
 
   this._options = options
-  this._dependency = options[name]
+  this._dependency = dependency
   this._name = name
   this._timeout = null
 

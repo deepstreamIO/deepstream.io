@@ -42,7 +42,6 @@ const STATES = C.STATES
 const Deepstream = function (config) {
   this.constants = C
   this._loadConfig(config)
-  this._connectionEndpoint = null
   this._messageProcessor = null
   this._messageDistributor = null
   this._eventHandler = null
@@ -229,10 +228,11 @@ Deepstream.prototype.onBeforeTransition = function (transition) {
  * @returns {void}
  */
 Deepstream.prototype.onEnterLoggerInit = function () {
-  const loggerInitialiser = new DependencyInitialiser(this, this._options, 'logger')
+  const logger = this._options.logger
+  const loggerInitialiser = new DependencyInitialiser(this, this._options, logger, 'logger')
   loggerInitialiser.once('ready', () => {
-    if (this._options.logger instanceof EventEmitter) {
-      this._options.logger.on('error', this._onPluginError.bind(this, 'logger'))
+    if (logger instanceof EventEmitter) {
+      logger.on('error', this._onPluginError.bind(this, 'logger'))
     }
     this._state.loggerStarted()
   })
@@ -259,10 +259,12 @@ Deepstream.prototype.onEnterPluginInit = function () {
   }
 
   this._options.pluginTypes.forEach((pluginType) => {
-    const initialiser = new DependencyInitialiser(this, this._options, pluginType)
+    const plugin = this._options[pluginType]
+    const initialiser = new DependencyInitialiser(this, this._options, plugin, pluginType)
     initialiser.once('ready', () => {
-      this._checkReady(pluginType, initialiser.getDependency())
+      this._checkReady(pluginType, plugin)
     })
+    return initialiser
   })
 }
 
@@ -277,6 +279,7 @@ Deepstream.prototype._checkReady = function (pluginType, plugin) {
   if (plugin instanceof EventEmitter) {
     plugin.on('error', this._onPluginError.bind(this, pluginType))
   }
+  plugin.isReady = true
 
   const allPluginsReady = this._options.pluginTypes.every(type => this._options[type].isReady)
 
@@ -341,22 +344,30 @@ Deepstream.prototype.onEnterServiceInit = function () {
  * @returns {void}
  */
 Deepstream.prototype.onEnterConnectionEndpointInit = function () {
-  this._connectionEndpoint = this._options.connectionEndpoints[0]
-  this._options.connectionEndpoint = this._connectionEndpoint
-  const connectionEndpointInitializer = new DependencyInitialiser(
-    this, this._options, 'connectionEndpoint')
+  const endpoints = this._options.connectionEndpoints
+  const initialisers = []
 
-  connectionEndpointInitializer.once('ready', () => this._state.connectionEndpointsStarted())
+  for (let i = 0; i < endpoints.length; i++) {
+    const connectionEndpoint = endpoints[i]
+    initialisers[i] = new DependencyInitialiser(
+      this,
+      this._options,
+      connectionEndpoint,
+      'connectionEndpoint'
+    )
 
-  this._connectionEndpoint.onMessages = this._messageProcessor.process.bind(this._messageProcessor)
-  this._connectionEndpoint.on(
-    'client-connected',
-    this._presenceHandler.handleJoin.bind(this._presenceHandler)
-  )
-  this._connectionEndpoint.on(
-    'client-disconnected',
-    this._presenceHandler.handleLeave.bind(this._presenceHandler)
-  )
+    connectionEndpoint.onMessages = this._messageProcessor.process.bind(this._messageProcessor)
+    connectionEndpoint.on(
+      'client-connected',
+      this._presenceHandler.handleJoin.bind(this._presenceHandler)
+    )
+    connectionEndpoint.on(
+      'client-disconnected',
+      this._presenceHandler.handleLeave.bind(this._presenceHandler)
+    )
+  }
+
+  utils.combineEvents(initialisers, 'ready', () => this._state.connectionEndpointsStarted())
 }
 
 /**
@@ -378,7 +389,7 @@ Deepstream.prototype.onEnterRunning = function () {
  * @returns {void}
  */
 Deepstream.prototype.onEnterConnectionEndpointShutdown = function () {
-  const endpoints = [this._connectionEndpoint]
+  const endpoints = this._options.connectionEndpoints
 
   endpoints.forEach((endpoint) => {
     process.nextTick(() => endpoint.close())

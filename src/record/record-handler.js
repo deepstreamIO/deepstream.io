@@ -273,6 +273,15 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
   }
 
   const recordName = message.data[0]
+  if (recordName.length === 0) {
+    socketWrapper.sendError(
+      C.TOPIC.RECORD,
+      C.EVENT.INVALID_MESSAGE_DATA,
+      'record name must have non-zero length'
+    )
+    return
+  }
+
   const isPatch = message.data.length === 5
   message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
 
