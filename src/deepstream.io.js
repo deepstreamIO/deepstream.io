@@ -51,49 +51,28 @@ const Deepstream = function (config) {
   this._stateMachine = {
     init: STATES.STOPPED,
     transitions: [
-      { name: 'start', from: STATES.STOPPED, to: STATES.LOGGER_INIT, handler: this.onEnterLoggerInit },
-      { name: 'logger-started', from: STATES.LOGGER_INIT, to: STATES.PLUGIN_INIT, handler: this.onEnterPluginInit },
-      { name: 'plugins-started', from: STATES.PLUGIN_INIT, to: STATES.SERVICE_INIT, handler: this.onEnterServiceInit },
-      { name: 'services-started', from: STATES.SERVICE_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this.onEnterConnectionEndpointInit },
-      { name: 'connection-endpoints-started', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.RUNNING, handler: this.onEnterRunning },
+      { name: 'start', from: STATES.STOPPED, to: STATES.LOGGER_INIT, handler: this._loggerInit },
+      { name: 'logger-started', from: STATES.LOGGER_INIT, to: STATES.PLUGIN_INIT, handler: this._pluginInit },
+      { name: 'plugins-started', from: STATES.PLUGIN_INIT, to: STATES.SERVICE_INIT, handler: this._serviceInit },
+      { name: 'services-started', from: STATES.SERVICE_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this._connectionEndpointInit },
+      { name: 'connection-endpoints-started', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.RUNNING, handler: this._start },
 
-      { name: 'stop', from: STATES.LOGGER_INIT, to: STATES.LOGGER_SHUTDOWN, handler: this.onEnterLoggerShutdown },
-      { name: 'stop', from: STATES.PLUGIN_INIT, to: STATES.PLUGIN_SHUTDOWN, handler: this.onEnterPluginShutdown },
-      { name: 'stop', from: STATES.SERVICE_INIT, to: STATES.SERVICE_SHUTDOWN, handler: this.onEnterServiceShutdown },
-      { name: 'stop', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this.onEnterConnectionEndpointShutdown },
-      { name: 'stop', from: STATES.RUNNING, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this.onEnterConnectionEndpointShutdown },
+      { name: 'stop', from: STATES.LOGGER_INIT, to: STATES.LOGGER_SHUTDOWN, handler: this._loggerShutdown },
+      { name: 'stop', from: STATES.PLUGIN_INIT, to: STATES.PLUGIN_SHUTDOWN, handler: this._pluginShutdown },
+      { name: 'stop', from: STATES.SERVICE_INIT, to: STATES.SERVICE_SHUTDOWN, handler: this._serviceShutdown },
+      { name: 'stop', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this._connectionEndpointShutdown },
+      { name: 'stop', from: STATES.RUNNING, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this._connectionEndpointShutdown },
 
-      { name: 'connection-endpoints-closed', from: STATES.CONNECTION_ENDPOINT_SHUTDOWN, to: STATES.SERVICE_SHUTDOWN, handler: this.onEnterServiceShutdown },
-      { name: 'services-closed', from: STATES.SERVICE_SHUTDOWN, to: STATES.PLUGIN_SHUTDOWN, handler: this.onEnterPluginShutdown },
-      { name: 'plugins-closed', from: STATES.PLUGIN_SHUTDOWN, to: STATES.LOGGER_SHUTDOWN, handler: this.onEnterLoggerShutdown },
-      { name: 'logger-closed', from: STATES.LOGGER_SHUTDOWN, to: STATES.STOPPED, handler: this.onEnterStopped },
+      { name: 'connection-endpoints-closed', from: STATES.CONNECTION_ENDPOINT_SHUTDOWN, to: STATES.SERVICE_SHUTDOWN, handler: this._serviceShutdown },
+      { name: 'services-closed', from: STATES.SERVICE_SHUTDOWN, to: STATES.PLUGIN_SHUTDOWN, handler: this._pluginShutdown },
+      { name: 'plugins-closed', from: STATES.PLUGIN_SHUTDOWN, to: STATES.LOGGER_SHUTDOWN, handler: this._loggerShutdown },
+      { name: 'logger-closed', from: STATES.LOGGER_SHUTDOWN, to: STATES.STOPPED, handler: this._stop },
     ]
   }
   this._currentState = this._stateMachine.init
 }
 
 util.inherits(Deepstream, EventEmitter)
-
-Deepstream.prototype._transition = function (transitionName) {
-  let transition
-  let found = false
-  for (let i = 0; i < this._stateMachine.transitions.length; i++) {
-    transition = this._stateMachine.transitions[i]
-    if (transitionName === transition.name && this._currentState === transition.from) {
-      // found transition
-      found = true
-      break
-    }
-  }
-  if (found) {
-    this.onBeforeTransition(transition)
-    this._currentState = transition.to
-    transition.handler.call(this)
-    return
-  }
-  const details = JSON.stringify({ transition: transitionName, state: this._currentState })
-  throw new Error(`Invalid state transition: ${details}`)
-}
 
 /**
  * Sets the name of the process
@@ -219,12 +198,39 @@ Deepstream.prototype.toTyped = function (value) {
  * ======================================================================= */
 
 /**
+ * Try to perform a state change
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._transition = function (transitionName) {
+  let transition
+  let found = false
+  for (let i = 0; i < this._stateMachine.transitions.length; i++) {
+    transition = this._stateMachine.transitions[i]
+    if (transitionName === transition.name && this._currentState === transition.from) {
+      // found transition
+      found = true
+      break
+    }
+  }
+  if (found) {
+    this._onTransition(transition)
+    this._currentState = transition.to
+    transition.handler.call(this)
+    return
+  }
+  const details = JSON.stringify({ transition: transitionName, state: this._currentState })
+  throw new Error(`Invalid state transition: ${details}`)
+}
+
+/**
  * Log state transitions for debugging.
  *
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onBeforeTransition = function (transition) {
+Deepstream.prototype._onTransition = function (transition) {
   const logger = this._options.logger
   if (logger) {
     logger.log(
@@ -241,7 +247,7 @@ Deepstream.prototype.onBeforeTransition = function (transition) {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterLoggerInit = function () {
+Deepstream.prototype._loggerInit = function () {
   const logger = this._options.logger
   const loggerInitialiser = new DependencyInitialiser(this, this._options, logger, 'logger')
   loggerInitialiser.once('ready', () => {
@@ -258,7 +264,7 @@ Deepstream.prototype.onEnterLoggerInit = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterPluginInit = function () {
+Deepstream.prototype._pluginInit = function () {
   const infoLogger = message => this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, message)
 
   infoLogger(`deepstream version: ${pkg.version}`)
@@ -309,7 +315,7 @@ Deepstream.prototype._checkReady = function (pluginType, plugin) {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterServiceInit = function () {
+Deepstream.prototype._serviceInit = function () {
   this._messageProcessor = new MessageProcessor(this._options)
   this._messageDistributor = new MessageDistributor(this._options)
 
@@ -357,7 +363,7 @@ Deepstream.prototype.onEnterServiceInit = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterConnectionEndpointInit = function () {
+Deepstream.prototype._connectionEndpointInit = function () {
   const endpoints = this._options.connectionEndpoints
   const initialisers = []
 
@@ -390,7 +396,7 @@ Deepstream.prototype.onEnterConnectionEndpointInit = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterRunning = function () {
+Deepstream.prototype._start = function () {
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started')
   this.emit('started')
 }
@@ -402,7 +408,7 @@ Deepstream.prototype.onEnterRunning = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterConnectionEndpointShutdown = function () {
+Deepstream.prototype._connectionEndpointShutdown = function () {
   const endpoints = this._options.connectionEndpoints
 
   endpoints.forEach((endpoint) => {
@@ -418,7 +424,7 @@ Deepstream.prototype.onEnterConnectionEndpointShutdown = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterServiceShutdown = function () {
+Deepstream.prototype._serviceShutdown = function () {
   this._options.clusterRegistry.leaveCluster()
 
   process.nextTick(() => this._transition('services-closed'))
@@ -430,7 +436,7 @@ Deepstream.prototype.onEnterServiceShutdown = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterPluginShutdown = function () {
+Deepstream.prototype._pluginShutdown = function () {
   const closeablePlugins = []
   this._options.pluginTypes.forEach((pluginType) => {
     const plugin = this._options[pluginType]
@@ -453,7 +459,7 @@ Deepstream.prototype.onEnterPluginShutdown = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterLoggerShutdown = function () {
+Deepstream.prototype._loggerShutdown = function () {
   const logger = this._options.logger
   if (typeof logger.close === 'function') {
     process.nextTick(() => logger.close())
@@ -470,7 +476,7 @@ Deepstream.prototype.onEnterLoggerShutdown = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype.onEnterStopped = function () {
+Deepstream.prototype._stop = function () {
   this.emit('stopped')
 }
 
