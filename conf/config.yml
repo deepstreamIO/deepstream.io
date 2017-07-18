@@ -75,6 +75,10 @@ connectionEndpoints:
 
 # Plugin Configuration
 plugins:
+  # message:
+  #   name: rewq
+  #   options:
+  #     hello: 'there'
   # cache:
   #   name: memcached
   #   options:

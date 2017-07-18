@@ -215,7 +215,7 @@ const showConfig = function (directory) {
  */
 module.exports = function (opts, callback) {
   if (opts.type === 'message') {
-    console.log('Message connectors are deprecated as of deepstream.io v3.0')
+    console.log('Message connectors are no longer supported as of deepstream.io v3.0')
     return callback()
   }
   fetchReleases(opts.type, opts.name, (error, releases) => {
