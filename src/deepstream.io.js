@@ -299,8 +299,8 @@ Deepstream.prototype.onEnterServiceInit = function () {
   this._messageProcessor = new MessageProcessor(this._options)
   this._messageDistributor = new MessageDistributor(this._options)
 
-  // this._options.clusterRegistry = new ClusterRegistry(this._options)
-  // this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
+  this._options.clusterRegistry = new ClusterRegistry(this._options)
+  this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
 
   this._eventHandler = new EventHandler(this._options)
   this._messageDistributor.registerForTopic(
@@ -504,7 +504,7 @@ Deepstream.prototype._showStartLogo = function () {
 
   /* istanbul ignore next */
   process.stdout.write(logo + EOL)
-  process.stdout.write(` =========================   starting   ==========================${EOL}`)
+  process.stdout.write(` =========================================   starting   =========================================${EOL}`)
 }
 
 /**

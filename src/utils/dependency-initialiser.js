@@ -75,8 +75,10 @@ DependencyInitialiser.prototype._onReady = function () {
   }
 
   this._dependency.type = this._dependency.description || this._dependency.type
-  const dependencyType = this._dependency.type ? `: ${this._dependency.type}` : ': no dependency description provided'
-  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `${this._name} ready${dependencyType}`)
+  if (this._name !== 'messageConnector') {
+    const dependencyType = this._dependency.type ? `: ${this._dependency.type}` : ': no dependency description provided'
+    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `${this._name} ready${dependencyType}`)
+  }
   process.nextTick(this._emitReady.bind(this))
 }
 

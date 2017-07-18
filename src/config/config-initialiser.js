@@ -165,6 +165,9 @@ function handlePlugins (config) {
 
   for (const key in plugins) {
     const plugin = plugins[key]
+    if (key === 'messageConnector') {
+      throw new Error('message connectors have been deprecated as part of deepstream.io v3.0')
+    }
     if (plugin) {
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
       config[key] = new PluginConstructor(plugin.options)
