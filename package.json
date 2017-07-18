@@ -17,12 +17,13 @@
     "reporter": "istanbul cover jasmine-runner.js",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "test-http-server": "node test/test-helper/start-test-server.js",
-    "e2e": "node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps",
-    "rpc-e2e": "npm run e2e -- --tags @rpcs",
-    "event-e2e": "npm run e2e -- --tags @events",
-    "record-e2e": "npm run e2e -- --tags @records",
-    "login-e2e": "npm run e2e -- --tags @login",
-    "presence-e2e": "npm run e2e -- --tags @presence",
+    "test-e2e": "npm run rpc-e2e && npm run event-e2e && npm run login-e2e && npm run presence-e2e && npm run record-e2e",
+    "run-e2e": "node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps",
+    "rpc-e2e": "npm run run-e2e -- --tags @rpcs --tags ~@cluster",
+    "event-e2e": "npm run run-e2e -- --tags @events --tags ~@cluster",
+    "record-e2e": "npm run run-e2e -- --tags @records --tags ~@cluster",
+    "login-e2e": "npm run run-e2e -- --tags @login",
+    "presence-e2e": "npm run run-e2e -- --tags @presence",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE"
   },
   "repository": {
@@ -44,7 +45,8 @@
   "devDependencies": {
     "async": "^2.1.4",
     "coveralls": "^2.11.16",
-    "cucumber": "^2.3.1",
+    "cucumber": "^1",
+    "deepstream.io-client-js": "^2.2.1",
     "eslint-config-deepstream": "^2.2.0",
     "istanbul": "^0.4.5",
     "jasmine": "^2.5.3",
@@ -52,6 +54,7 @@
     "n0p3": "^1.0.2",
     "nexe": "^1.1.2",
     "proxyquire": "1.7.11",
+    "sinon": "^2.3.8",
     "watch": "^1.0.1"
   },
   "author": "deepstreamHub GmbH",
