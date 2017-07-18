@@ -17,6 +17,12 @@
     "reporter": "istanbul cover jasmine-runner.js",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "test-http-server": "node test/test-helper/start-test-server.js",
+    "e2e": "node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps",
+    "rpc-e2e": "npm run e2e -- --tags @rpcs",
+    "event-e2e": "npm run e2e -- --tags @events",
+    "record-e2e": "npm run e2e -- --tags @records",
+    "login-e2e": "npm run e2e -- --tags @login",
+    "presence-e2e": "npm run e2e -- --tags @presence",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE"
   },
   "repository": {
@@ -38,6 +44,7 @@
   "devDependencies": {
     "async": "^2.1.4",
     "coveralls": "^2.11.16",
+    "cucumber": "^2.3.1",
     "eslint-config-deepstream": "^2.2.0",
     "istanbul": "^0.4.5",
     "jasmine": "^2.5.3",
