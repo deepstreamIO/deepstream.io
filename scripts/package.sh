@@ -117,6 +117,7 @@ function compile {
     mv $NODE_SOURCE/src/uws/Node.cpp $NODE_SOURCE/src/uws/uws_Node.cpp
 
     cp $UWS_SOURCE/nodejs/src/extension.cpp $NODE_SOURCE/src/uws
+    cp $UWS_SOURCE/nodejs/src/addon.h $NODE_SOURCE/src/uws
     cp $UWS_SOURCE/nodejs/src/http.h $NODE_SOURCE/src/uws
     cp $UWS_SOURCE/nodejs/src/uws.js $NODE_SOURCE/lib/uws.js
 
