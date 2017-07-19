@@ -9,31 +9,23 @@ module.exports = function () {
   })
 
   this.When(/^server (\S)* goes down$/, (server, done) => {
-    if (global.cluster.started === false) {
-      done()
-      return
-    }
-    global.cluster.on('stopped', done)
-    global.cluster.stop(done)
+    global.cluster.stopServer(server - 1, done)
   })
 
   this.When(/^server (\S)* comes back up$/, (server, done) => {
-    if (global.cluster.started) {
-      done()
-      return
-    }
-    global.cluster.on('started', done)
-    global.cluster.start()
+    global.cluster.startServer(server - 1, done)
   })
 
   this.registerHandler('BeforeFeature', (features, callback) => {
-    global.cluster = new Cluster(6001, false)
-    global.cluster.on('started', callback)
+    global.cluster = new Cluster([6001, 6002, 6003], false)
+    global.cluster.on('ready', callback)
   })
 
   this.registerHandler('AfterFeature', (features, callback) => {
     setTimeout(() => {
-      global.cluster.on('stopped', callback)
+      global.cluster.on('stopped', () => {
+        callback()
+      })
       global.cluster.stop()
     }, 100)
   })
