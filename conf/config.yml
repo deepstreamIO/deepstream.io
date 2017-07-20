@@ -75,6 +75,13 @@ connectionEndpoints:
 
 # Plugin Configuration
 plugins:
+  # monitoring:
+  #   path: 'dsx-monitoring'
+  #   options:
+  #     reportInterval: 200
+  #     permissionLogLimit: 3
+  #     technicalErrorLogLimit: 3
+  #
   # message:
   #   name: redis
   #   options:

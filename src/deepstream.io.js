@@ -390,7 +390,6 @@ Deepstream.prototype.onEnterRunning = function () {
  */
 Deepstream.prototype.onEnterConnectionEndpointShutdown = function () {
   const endpoints = this._options.connectionEndpoints
-
   endpoints.forEach((endpoint) => {
     process.nextTick(() => endpoint.close())
   })

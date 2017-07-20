@@ -1,5 +1,5 @@
 {
-  "name": "deepstream.io",
+  "name": "deepstream-black",
   "version": "2.4.0",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
@@ -34,6 +34,7 @@
     "colors": "^1.1.2",
     "commander": "^2.9.0",
     "deepstream.io-service": "latest",
+    "dsx-monitoring": "git+ssh://git@github.com/deepstreamIO/dsx-monitoring.git",
     "glob": "^7.1.1",
     "javascript-state-machine": "3.0.0-rc.1",
     "js-yaml": "^3.8.1",
