@@ -114,11 +114,9 @@ plugins:
   #     technicalErrorLogLimit: 3
   #
   # message:
-  #   name: redis
+  #   name: rewq
   #   options:
-  #     host: localhost
-  #     port: 6379
-  #
+  #     hello: 'there'
   # cache:
   #   name: memcached
   #   options:
@@ -183,12 +181,6 @@ cacheRetrievalTimeout: 1000
 storageRetrievalTimeout: 2000
 # Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
 dependencyInitialisationTimeout: 2000
-# The interval at which a status message is sent by each node within a cluster
-clusterKeepAliveInterval: 5000
-# The interval at which all nodes within a cluster registry are checked for timeouts
-clusterActiveCheckInterval: 1000
-# The longest duration since the last status message was received until the remote node is declared inactive
-clusterNodeInactiveTimeout: 6000
 # The amount of time to wait for a provider to acknowledge or reject a listen request
 listenResponseTimeout: 500
 # The amount of time a lock can be reserved for before it is force released
