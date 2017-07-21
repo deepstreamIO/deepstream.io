@@ -1,6 +1,6 @@
 'use strict'
 
-/* global describe, beforeAll, after, it */
+/* global describe, beforeAll, afterAll, it */
 /* eslint-disable no-unused-expressions, import/no-extraneous-dependencies */
 const chai = require('chai') // eslint-disable-line
 const proxyquire = require('proxyquire') // eslint-disable-line
@@ -18,6 +18,7 @@ const needle = require('needle')
 const constants = require('../../src/constants/constants')
 const MessageBuilder = require('../../src/message/message-builder')
 const MessageParser = require('../../src/message/message-parser')
+const LoggerMock = require('../mocks/logger-mock')
 
 Promise.promisifyAll(needle)
 
@@ -37,7 +38,7 @@ const conf = {
 const mockDS = {
   _options: {
     serverName: `server_${Math.round(Math.random() * 1000)}`,
-    logger: { log: (msg, level) => { console.log(msg, level) } },
+    logger: new LoggerMock(),
     authenticationHandler: { isValidUser (headers, authData, callback) { callback(true, {}) } },
     permissionHandler: { canPerformAction (user, message, callback/* , authData */) {
       callback(null, true)
@@ -168,11 +169,11 @@ describe('http plugin', () => {
 
     describe('authentication', () => {
       let canPerformActionStub // eslint-disable-line
-      before(() => {
+      beforeAll(() => {
         canPerformActionStub = sinon.stub(mockDS._options.permissionHandler, 'canPerformAction')
       })
 
-      after(() => {
+      afterAll(() => {
         mockDS._options.permissionHandler.canPerformAction.restore()
       })
 
