@@ -6,6 +6,7 @@ const utils = require('../utils/utils')
 const C = require('../constants/constants')
 const fileUtils = require('./file-utils')
 const UWSConnectionEndpoint = require('../message/uws-connection-endpoint')
+const HTTPConnectionEndpoint = require('../message/http/plugin')
 
 const LOG_LEVEL_KEYS = Object.keys(C.LOG_LEVEL)
 
@@ -213,6 +214,8 @@ function handleConnectionEndpoints (config) {
     let PluginConstructor
     if (plugin.name === 'uws') {
       PluginConstructor = UWSConnectionEndpoint
+    } else if (plugin.name === 'http') {
+      PluginConstructor = HTTPConnectionEndpoint
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection')
     }
