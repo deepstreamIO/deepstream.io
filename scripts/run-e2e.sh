@@ -3,4 +3,4 @@ git submodule init
 git submodule update
 npm i
 echo '4) Running tests'
-npm run test-e2e
+npm run e2e
