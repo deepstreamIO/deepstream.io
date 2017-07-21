@@ -52,9 +52,9 @@ Cluster.prototype.stop = function () {
   }
 }
 
-Cluster.prototype._startServer = function () {
+Cluster.prototype._startServer = function (port, done) {
   this.started = true
-  this._server = new DeepstreamServer({
+  this.servers[port] = new DeepstreamServer({
     serverName : `server-${this._port}`,
     stateReconciliationTimeout : 100,
     clusterKeepAliveInterval   : 100,
@@ -95,7 +95,7 @@ Cluster.prototype._startServer = function () {
       websocket: {
         name: 'uws',
         options: {
-          port: this._port,
+          port
         }
       },
       http: null
