@@ -27,5 +27,5 @@ daemon(program)
 program.parse(process.argv)
 
 if (program.args.length === 0) {
-  program.emit('start')
+  program.emit('command:start')
 }
