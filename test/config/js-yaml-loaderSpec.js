@@ -275,8 +275,8 @@ describe('js-yaml-loader', () => {
 								"logger": {
 									"path": "./logger"
 								},
-								"message": {
-									"path": "./message",
+								"cache": {
+									"path": "./cache",
 									"options": { "foo": 3, "bar": 4 }
 								}
 							}
@@ -289,20 +289,20 @@ describe('js-yaml-loader', () => {
       const loggerModule = function (options) { return options }
       loggerModule['@noCallThru'] = true
       loggerModule['@global'] = true
-      class MessageModule { constructor(options) { this.options = options }}
-      MessageModule['@noCallThru'] = true
-      MessageModule['@global'] = true
+      class CacheModule { constructor (options) { this.options = options }}
+      CacheModule['@noCallThru'] = true
+      CacheModule['@global'] = true
       const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
         [path.resolve('./logger')]: loggerModule,
-        [path.resolve('./message')]: MessageModule
+        [path.resolve('./cache')]: CacheModule
       })
       config = configLoader.loadConfig(null, { config: './config.json' }).config
     })
 
     it('load plugins', () => {
-      expect(config.messageConnector.options).toEqual({ foo: 3, bar: 4 })
+      expect(config.cache.options).toEqual({ foo: 3, bar: 4 })
     })
   })
 
@@ -361,8 +361,8 @@ describe('js-yaml-loader', () => {
           if (filePath === './config.json') {
             return `{
 							"plugins": {
-								"message": {
-									"name": "super-messager",
+								"cache": {
+									"name": "super-cache",
 									"options": { "foo": 5, "bar": 6 }
 								},
 								"storage": {
@@ -376,11 +376,11 @@ describe('js-yaml-loader', () => {
           }
         }
       }
-      class SuperMessager {
+      class SuperCache {
         constructor(options) { this.options = options }
 			}
-      SuperMessager['@noCallThru'] = true
-      SuperMessager['@global'] = true
+      SuperCache['@noCallThru'] = true
+      SuperCache['@global'] = true
       class SuperStorage {
         constructor(options) { this.options = options }
 			}
@@ -389,7 +389,7 @@ describe('js-yaml-loader', () => {
       const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
-        'deepstream.io-msg-super-messager': SuperMessager,
+        'deepstream.io-cache-super-cache': SuperCache,
         'deepstream.io-storage-super-storage': SuperStorage
       })
       config = configLoader.loadConfig(null, {
@@ -398,7 +398,7 @@ describe('js-yaml-loader', () => {
     })
 
     it('load plugins', () => {
-      expect(config.messageConnector.options).toEqual({ foo: 5, bar: 6 })
+      expect(config.cache.options).toEqual({ foo: 5, bar: 6 })
       expect(config.storage.options).toEqual({ foo: 7, bar: 8 })
     })
   })
@@ -416,8 +416,8 @@ describe('js-yaml-loader', () => {
           if (filePath === './config.json') {
             return `{
 							"plugins": {
-								"message": {
-									"name": "super-messager",
+								"cache": {
+									"name": "super-cache",
 									"options": { "foo": -1, "bar": -2 }
 								},
 								"storage": {
@@ -431,21 +431,27 @@ describe('js-yaml-loader', () => {
           }
         }
       }
-      class SuperMessager {
+      class SuperCache {
         constructor(options) { this.options = options }
 			}
-      SuperMessager['@noCallThru'] = true
-      SuperMessager['@global'] = true
+      SuperCache['@noCallThru'] = true
+      SuperCache['@global'] = true
       class SuperStorage {
         constructor(options) { this.options = options }
 			}
       SuperStorage['@noCallThru'] = true
       SuperStorage['@global'] = true
+      class HTTPMock {
+        constructor(options) { this.options = options }
+			}
+      HTTPMock['@noCallThru'] = true
+      HTTPMock['@global'] = true
       const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
-        [path.resolve(process.cwd(), 'foobar', 'deepstream.io-msg-super-messager')]: SuperMessager,
-        [path.resolve(process.cwd(), 'foobar', 'deepstream.io-storage-super-storage')]: SuperStorage
+        [path.resolve(process.cwd(), 'foobar', 'deepstream.io-cache-super-cache')]: SuperCache,
+        [path.resolve(process.cwd(), 'foobar', 'deepstream.io-storage-super-storage')]: SuperStorage,
+        [path.resolve(process.cwd(), 'foobar', 'deepstream.io-connection-http')]: HTTPMock
       })
       config = configLoader.loadConfig(null, {
         config: './config.json',
@@ -454,7 +460,7 @@ describe('js-yaml-loader', () => {
     })
 
     it('load plugins', () => {
-      expect(config.messageConnector.options).toEqual({ foo: -1, bar: -2 })
+      expect(config.cache.options).toEqual({ foo: -1, bar: -2 })
       expect(config.storage.options).toEqual({ foo: -3, bar: -4 })
     })
   })
@@ -472,8 +478,8 @@ describe('js-yaml-loader', () => {
           if (filePath === './config.json') {
             return `{
 							"plugins": {
-								"message": {
-									"name": "super-messager",
+								"cache": {
+									"name": "super-cache",
 									"options": { "foo": -1, "bar": -2 }
 								},
 								"storage": {
@@ -487,21 +493,27 @@ describe('js-yaml-loader', () => {
           }
         }
       }
-      class SuperMessager {
+      class SuperCache {
         constructor(options) { this.options = options }
 			}
-      SuperMessager['@noCallThru'] = true
-      SuperMessager['@global'] = true
+      SuperCache['@noCallThru'] = true
+      SuperCache['@global'] = true
       class SuperStorage {
         constructor(options) { this.options = options }
 			}
       SuperStorage['@noCallThru'] = true
       SuperStorage['@global'] = true
+      class HTTPMock {
+        constructor(options) { this.options = options }
+			}
+      HTTPMock['@noCallThru'] = true
+      HTTPMock['@global'] = true
       const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
-        [path.resolve('/foobar', 'deepstream.io-msg-super-messager')]: SuperMessager,
-        [path.resolve('/foobar', 'deepstream.io-storage-super-storage')]: SuperStorage
+        [path.resolve('/foobar', 'deepstream.io-cache-super-cache')]: SuperCache,
+        [path.resolve('/foobar', 'deepstream.io-storage-super-storage')]: SuperStorage,
+        [path.resolve('/foobar', 'deepstream.io-connection-http')]: HTTPMock
       })
       config = configLoader.loadConfig(null, {
         config: './config.json',
@@ -510,7 +522,7 @@ describe('js-yaml-loader', () => {
     })
 
     it('load plugins', () => {
-      expect(config.messageConnector.options).toEqual({ foo: -1, bar: -2 })
+      expect(config.cache.options).toEqual({ foo: -1, bar: -2 })
       expect(config.storage.options).toEqual({ foo: -3, bar: -4 })
     })
   })

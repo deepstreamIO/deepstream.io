@@ -31,7 +31,7 @@ function action () {
     ds.start()
     process
       .removeAllListeners('SIGINT').on('SIGINT', () => {
-        ds.on('stopped', process.exit(0))
+        ds.on('stopped', () => process.exit(0))
         ds.stop()
       })
   } catch (err) {
