@@ -61,6 +61,21 @@ exports.get = function () {
           logInvalidAuthData: true,
           maxMessageSize: 1048576
         }
+      },
+      http: {
+        name: 'http',
+        options: {
+          port: 8080,
+          host: '0.0.0.0',
+          allowAuthData: true,
+          enableAuthEndpoint: false,
+          authPath: '/auth',
+          postPath: '/',
+          getPath: '/',
+          healthCheckPath: '/health-check',
+          allowAllOrigins: true,
+          origins: []
+        }
       }
     },
 

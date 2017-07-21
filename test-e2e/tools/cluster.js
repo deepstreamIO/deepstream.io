@@ -44,7 +44,6 @@ Cluster.prototype.stop = function () {
 Cluster.prototype._startServer = function () {
   this.started = true
   this._server = new DeepstreamServer({
-    port: this._port,
     serverName : `server-${this._port}`,
 
     stateReconciliationTimeout : 100,
@@ -68,7 +67,16 @@ Cluster.prototype._startServer = function () {
       options : {
         path: './test-e2e/config/permissions.json'
       }
-    }
+    },
+    connectionEndpoints: {
+      websocket: {
+        name: 'uws',
+        options: {
+          port: this._port,
+        }
+      },
+      http: null
+    },
   })
 
   if (this._enableLogging !== true) {
