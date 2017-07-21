@@ -188,21 +188,9 @@ function compile {
     echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
     cp -r conf $DEEPSTREAM_PACKAGE/
     cp build/deepstream $DEEPSTREAM_PACKAGE/
-    
+
     echo "Patching config file for zip lib and var directories"
     cp -f ./scripts/package-conf.yml $DEEPSTREAM_PACKAGE/conf/config.yml
-}
-
-function windows {
-    COMMIT_NAME="deepstream.io-windows-$PACKAGE_VERSION-$COMMIT.zip "
-    CLEAN_NAME="deepstream.io-windows-$PACKAGE_VERSION.zip"
-
-    echo "OS is windows"
-    echo -e "\tCreating zip deepstream.io-windows-$PACKAGE_VERSION.zip"
-    cd $DEEPSTREAM_PACKAGE
-    7z a ../$COMMIT_NAME . > /dev/null
-    cp ../$COMMIT_NAME ../../$CLEAN_NAME
-    cd -
 }
 
 function mac {
@@ -217,7 +205,7 @@ function mac {
     cp ../${COMMIT_NAME}.zip ../../${CLEAN_NAME}.zip
     cd -
 
-    rm -rf build/osxpkg 
+    rm -rf build/osxpkg
     mkdir -p build/osxpkg/bin
     mkdir -p build/osxpkg/etc/deepstream
     mkdir -p build/osxpkg/lib/deepstream
@@ -337,9 +325,7 @@ function clean {
 
 compile
 
-if [ $OS = "win32" ]; then
-    windows
-elif [ $OS = "darwin" ]; then
+if [ $OS = "darwin" ]; then
     mac
 elif [ $OS = "linux" ]; then
     linux

@@ -45,6 +45,17 @@ connectionEndpoints:
         logInvalidAuthData: false
         # maximum allowed size of an individual message in bytes
         maxMessageSize: 1048576
+  http:
+    name: http
+    path: deepstream.io-connection-http
+    options:
+      healthCheckPath: '/health-check'
+      authPath: '/api/v1/auth'
+      postPath: '/api/v1'
+      getPath: '/api/v1'
+      allowAllOrigins: true
+      port: 6022
+      host: 0.0.0.0
 
 # Logger Configuration
 # logger:
