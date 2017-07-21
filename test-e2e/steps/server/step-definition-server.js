@@ -27,7 +27,7 @@ module.exports = function () {
   })
 
   this.registerHandler('BeforeFeature', (features, callback) => {
-    global.cluster = new Cluster(6001, false)
+    global.cluster = new Cluster(6001, 8001, process.env.ENABLE_LOGGING === 'true')
     global.cluster.on('started', callback)
   })
 

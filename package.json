@@ -17,12 +17,13 @@
     "reporter": "istanbul cover jasmine-runner.js",
     "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "test-http-server": "node test/test-helper/start-test-server.js",
-    "e2e": "node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps --tags ~@cluster",
+    "e2e": "node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps --tags ~@cluster --tags ~@batching",
     "rpc-e2e": "npm run e2e -- --tags @rpcs",
     "event-e2e": "npm run e2e -- --tags @events",
     "record-e2e": "npm run e2e -- --tags @records",
     "login-e2e": "npm run e2e -- --tags @login",
     "presence-e2e": "npm run e2e -- --tags @presence",
+    "http-e2e": "node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps --tags @http",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE"
   },
   "repository": {

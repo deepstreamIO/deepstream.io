@@ -58,7 +58,7 @@ exports.get = function () {
            */
           unauthenticatedClientTimeout: 180000,
           maxAuthAttempts: 3,
-          logInvalidAuthData: true,
+          logInvalidAuthData: false,
           maxMessageSize: 1048576
         }
       },
@@ -73,6 +73,7 @@ exports.get = function () {
           postPath: '/',
           getPath: '/',
           healthCheckPath: '/health-check',
+          logInvalidAuthData: false,
           allowAllOrigins: true,
           origins: []
         }

@@ -17,6 +17,8 @@ C:
   password: "abcdefgh"
 D:
   password: "abcdefgh"
+W:
+  password: "abcdefgh"
 
 1:
   password: "abcdefgh"

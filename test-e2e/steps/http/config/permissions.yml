@@ -1,0 +1,38 @@
+presence:
+  "*":
+    allow: true
+record:
+  "deny-read":
+    create: false
+    write: false
+    read: false
+    delete: false
+    listen: false
+  "deny-write":
+    create: true
+    write: false
+    read: true
+    delete: false
+    listen: false
+  "*":
+    create: true
+    write: true
+    read: true
+    delete: true
+    listen: true
+event:
+  "deny-this*":
+    publish: false
+    subscribe: false
+    listen: false
+  "*":
+    publish: true
+    subscribe: true
+    listen: true
+rpc:
+  "double":
+    provide: false
+    request: false
+  "*":
+    provide: true
+    request: true

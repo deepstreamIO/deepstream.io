@@ -12,6 +12,17 @@
 			"read": true,
 			"listen": true
 		},
+		"forbidden": {
+			"create": false,
+			"delete": false,
+			"write": false,
+			"read": false,
+			"listen": false
+		},
+		"read-only": {
+			"write": false,
+			"read": true
+		},
 		"d/*": {
 			"create": "_('perm/JohnDoe').boolean",
 			"read": "_('perm/JohnDoe').boolean"
