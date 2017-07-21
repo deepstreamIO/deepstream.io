@@ -55,7 +55,7 @@ Cluster.prototype.stop = function () {
 Cluster.prototype._startServer = function (port, done) {
   this.started = true
   this.servers[port] = new DeepstreamServer({
-    serverName : `server-${this._port}`,
+    serverName : `server-${port}`,
     stateReconciliationTimeout : 100,
     clusterKeepAliveInterval   : 100,
     clusterActiveCheckInterval : 100,
