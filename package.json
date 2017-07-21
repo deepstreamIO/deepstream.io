@@ -34,6 +34,7 @@
     "adm-zip": "^0.4.7",
     "colors": "^1.1.2",
     "commander": "^2.11.0",
+    "deepstream.io-connection-http": "git+ssh://git@github.com/deepstreamIO/deepstream.io-connection-http.git",
     "deepstream.io-service": "latest",
     "glob": "^7.1.1",
     "ioredis": "^3.1.1",
