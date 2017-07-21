@@ -52,11 +52,10 @@ Cluster.prototype.stop = function () {
   }
 }
 
-Cluster.prototype._startServer = function (port, done) {
-  this.servers[port] = new DeepstreamServer({
-    port,
-    serverName : `server-${port}`,
-
+Cluster.prototype._startServer = function () {
+  this.started = true
+  this._server = new DeepstreamServer({
+    serverName : `server-${this._port}`,
     stateReconciliationTimeout : 100,
     clusterKeepAliveInterval   : 100,
     clusterActiveCheckInterval : 100,
@@ -91,7 +90,16 @@ Cluster.prototype._startServer = function (port, done) {
       options : {
         path: './test-e2e/config/permissions.json'
       }
-    }
+    },
+    connectionEndpoints: {
+      websocket: {
+        name: 'uws',
+        options: {
+          port: this._port,
+        }
+      },
+      http: null
+    },
   })
   if (done instanceof Function) {
     this.servers[port].on('started', done)

@@ -1,4 +1,4 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* global jasmine, spyOn, describe, it, expect, beforeAll, beforeEach, afterEach */
 'use strict'
 
 const defaultConfig = require('../../src/default-options')
@@ -95,29 +95,13 @@ describe('config-initialiser', () => {
 
       expect(errored).toBe(true)
     })
-
-    it('translates message connectors', () => {
-      global.deepstreamLibDir = '/foobar'
-      const config = defaultConfig.get()
-      let errored = false
-      config.plugins = {
-        message: {
-          name: 'blablub'
-        }
-      }
-
-      try {
-        configInitialiser.initialise(config)
-      } catch (e) {
-        errored = true
-        expect(e.toString()).toContain(path.join('/foobar', 'deepstream.io-msg-blablub'))
-      }
-
-      expect(errored).toBe(true)
-    })
   })
 
   describe('creates the right authentication handler', () => {
+    beforeAll(() => {
+      global.deepstreamLibDir = './test/test-plugins'
+    })
+
     it('works for authtype: none', () => {
       const config = defaultConfig.get()
 

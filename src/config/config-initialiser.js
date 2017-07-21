@@ -6,6 +6,7 @@ const utils = require('../utils/utils')
 const C = require('../constants/constants')
 const fileUtils = require('./file-utils')
 const UWSConnectionEndpoint = require('../message/uws-connection-endpoint')
+const HTTPConnectionEndpoint = require('../message/http/plugin')
 
 const LOG_LEVEL_KEYS = Object.keys(C.LOG_LEVEL)
 
@@ -169,6 +170,9 @@ function handlePlugins (config) {
       throw new Error('message connectors have been deprecated as part of deepstream.io v3.0')
     }
     if (plugin) {
+      if (key === 'messageConnector') {
+        throw new Error('message connectors have been deprecated as part of deepstream.io v3.0')
+      }
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
       config[key] = new PluginConstructor(plugin.options)
       if (config.pluginTypes.indexOf(key) === -1) {
@@ -213,6 +217,8 @@ function handleConnectionEndpoints (config) {
     let PluginConstructor
     if (plugin.name === 'uws') {
       PluginConstructor = UWSConnectionEndpoint
+    } else if (plugin.name === 'http') {
+      PluginConstructor = HTTPConnectionEndpoint
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection')
     }

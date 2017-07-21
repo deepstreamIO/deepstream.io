@@ -55,7 +55,7 @@ const Deepstream = function (config) {
       { name: 'logger-started', from: STATES.LOGGER_INIT, to: STATES.PLUGIN_INIT, handler: this._pluginInit },
       { name: 'plugins-started', from: STATES.PLUGIN_INIT, to: STATES.SERVICE_INIT, handler: this._serviceInit },
       { name: 'services-started', from: STATES.SERVICE_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this._connectionEndpointInit },
-      { name: 'connection-endpoints-started', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.RUNNING, handler: this._start },
+      { name: 'connection-endpoints-started', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.RUNNING, handler: this._run },
 
       { name: 'stop', from: STATES.LOGGER_INIT, to: STATES.LOGGER_SHUTDOWN, handler: this._loggerShutdown },
       { name: 'stop', from: STATES.PLUGIN_INIT, to: STATES.PLUGIN_SHUTDOWN, handler: this._pluginShutdown },
@@ -150,7 +150,7 @@ Deepstream.prototype.start = function () {
     throw new Error(`Server can only start after it stops successfully. Current state: ${this._currentState}`)
   }
   this._showStartLogo()
-  process.nextTick(() => this._transition('start'))
+  this._transition('start')
 }
 
 /**
@@ -165,7 +165,7 @@ Deepstream.prototype.stop = function () {
     throw new Error('The server is already stopped.')
   }
 
-  process.nextTick(() => this._transition('stop'))
+  this._transition('stop')
 }
 
 /**
@@ -391,7 +391,7 @@ Deepstream.prototype._connectionEndpointInit = function () {
  * @private
  * @returns {void}
  */
-Deepstream.prototype._start = function () {
+Deepstream.prototype._run = function () {
   this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started')
   this.emit('started')
 }
