@@ -112,7 +112,7 @@ Cluster.prototype._startServer = function () {
         }
       }
       // authenicate auth data
-      const users = ['A', 'B', 'C', 'D', 'W']
+      const users = ['A', 'B', 'C', 'D', 'W', '1', '2', '3', '4']
       if (
         users.indexOf(authData.username) !== -1
         && authData.password === 'abcdefgh'
@@ -123,7 +123,8 @@ Cluster.prototype._startServer = function () {
         return
       }
       if (authData.username === 'userA' && authData.password === 'abcdefgh') {
-        callback(true, {})
+        callback(true, { username: 'userA' })
+        return
       }
       if (authData.username === 'userB' && authData.password === '123456789') {
         callback(true, {
@@ -136,6 +137,7 @@ Cluster.prototype._startServer = function () {
             invalid: 'invalid'
           }
         })
+        return
       }
       callback(false)
     }
