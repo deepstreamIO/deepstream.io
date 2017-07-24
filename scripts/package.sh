@@ -20,7 +20,7 @@ EXTENSION=""
 if [ $OS = "win32" ]; then
     EXTENSION=".exe"
 fi
-EXECUTABLE_NAME="build/deepstream-black$EXTENSION"
+EXECUTABLE_NAME="build/deepstream$EXTENSION"
 
 # Needed even for void builds for travis deploy to pass
 mkdir -p build
