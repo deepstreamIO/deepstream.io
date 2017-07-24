@@ -10,7 +10,7 @@ UWS_VERSION=0.12.0
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
-DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
+DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream-black
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 
 NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
@@ -20,7 +20,7 @@ EXTENSION=""
 if [ $OS = "win32" ]; then
     EXTENSION=".exe"
 fi
-EXECUTABLE_NAME="build/deepstream$EXTENSION"
+EXECUTABLE_NAME="build/deepstream-black$EXTENSION"
 
 # Needed even for void builds for travis deploy to pass
 mkdir -p build
@@ -53,7 +53,7 @@ if [ $OS = "linux" ]; then
 fi
 
 function compile {
-    echo "Starting deepstream.io packaging with Node.js $NODE_VERSION_WITHOUT_V"
+    echo "Starting deepstream-black packaging with Node.js $NODE_VERSION_WITHOUT_V"
     rm -rf build
     mkdir build
 
@@ -174,7 +174,7 @@ function compile {
     PROC_ID=$!
     SECONDS=0;
     while kill -0 "$PROC_ID" >/dev/null 2>&1; do
-        echo -ne "\rCompiling deepstream... ($SECONDS SECONDS)"
+        echo -ne "\rCompiling deepstream-black... ($SECONDS SECONDS)"
         sleep 1
     done
 
@@ -189,7 +189,7 @@ function compile {
 
     echo "Adding docs"
     echo -e "\tAdding Readme"
-    echo "Documentation is available at https://deepstream.io
+    echo "Documentation is available at https://deepstreamhub.com
     " > $DEEPSTREAM_PACKAGE/doc/README
     echo -e "\tAdding Changelog"
     cp CHANGELOG.md $DEEPSTREAM_PACKAGE/doc/CHANGELOG.md
@@ -206,8 +206,8 @@ function compile {
 }
 
 function mac {
-    COMMIT_NAME="deepstream.io-mac-$PACKAGE_VERSION-$COMMIT"
-    CLEAN_NAME="deepstream.io-mac-$PACKAGE_VERSION"
+    COMMIT_NAME="deepstream-black-mac-$PACKAGE_VERSION-$COMMIT"
+    CLEAN_NAME="deepstream-black-mac-$PACKAGE_VERSION"
 
     echo "OS is mac"
     echo -e "\tCreating $CLEAN_NAME"
@@ -244,7 +244,7 @@ function mac {
     echo "\tCreating *.pkg"
     pkgbuild \
         --root build/osxpkg \
-        --identifier deepstream.io \
+        --identifier deepstream-black \
         --version $PACKAGE_VERSION \
         --info scripts/PackageInfo \
         --install-location /usr/local \
@@ -262,8 +262,8 @@ function linux {
 
     echo -e "\tCreating tar.gz"
 
-    COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
-    CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
+    COMMIT_NAME="deepstream-black-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
+    CLEAN_NAME="deepstream-black-linux-$PACKAGE_VERSION.tar.gz"
 
     cd $DEEPSTREAM_PACKAGE
     tar czf ../$COMMIT_NAME .
@@ -287,12 +287,12 @@ function linux {
         -t rpm \
         --package ./build/ \
         --package-name-suffix $COMMIT \
-        -n deepstream.io \
+        -n deepstream-black \
         -v $PACKAGE_VERSION \
         --license "AGPL-3.0" \
         --vendor "deepstreamHub GmbH" \
-        --description "deepstream.io rpm package" \
-        --url https://deepstream.io/ \
+        --description "deepstream-black rpm package" \
+        --url https://deepstreamhub.com/ \
         -m "<info@deepstreamhub.com>" \
         --after-install ./scripts/daemon/after-install \
         --before-remove ./scripts/daemon/before-remove \
@@ -310,12 +310,12 @@ function linux {
         -t deb \
         --package ./build \
         --package-name-suffix $COMMIT \
-        -n deepstream.io \
+        -n deepstream-black \
         -v $PACKAGE_VERSION \
         --license "AGPL-3.0" \
         --vendor "deepstreamHub GmbH" \
-        --description "deepstream.io deb package" \
-        --url https://deepstream.io/ \
+        --description "deepstream-black deb package" \
+        --url https://deepstreamhub.com/ \
         -m "<info@deepstreamhub.com>" \
         --after-install ./scripts/daemon/after-install \
         --before-remove ./scripts/daemon/before-remove \
