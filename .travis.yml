@@ -12,11 +12,6 @@ before_install:
       export CXX=g++-4.8;
     fi
 
-after_deploy:
-  - if [ -n "TRAVIS_TAG" ]; then
-      bash scripts/trigger-build.sh releases/package;
-    fi
-
 compiler:
   - gcc
   - clang
