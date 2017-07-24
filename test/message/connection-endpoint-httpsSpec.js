@@ -10,7 +10,7 @@ const httpsMock = new HttpMock()
 // since proxyquire.callThru is enabled, manually capture members from prototypes
 httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
-const ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', {
+const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
   uws: uwsMock,
   http: httpMock,
   https: httpsMock

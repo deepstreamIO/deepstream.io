@@ -1,9 +1,9 @@
 'use strict'
 
-const C = require('../constants/constants')
-const messageParser = require('./message-parser')
-const messageBuilder = require('./message-builder')
-const SocketWrapper = require('./uws-socket-wrapper')
+const C = require('../../constants/constants')
+const messageParser = require('../message-parser')
+const messageBuilder = require('../message-builder')
+const SocketWrapper = require('./socket-wrapper')
 const events = require('events')
 const http = require('http')
 const https = require('https')

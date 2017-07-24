@@ -1,7 +1,7 @@
 'use strict'
 
-const C = require('../constants/constants')
-const messageBuilder = require('./message-builder')
+const C = require('../../constants/constants')
+const messageBuilder = require('../message-builder')
 const uws = require('uws')
 
 const EventEmitter = require('events').EventEmitter

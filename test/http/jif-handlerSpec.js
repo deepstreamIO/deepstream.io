@@ -13,7 +13,7 @@ const MessageBuilder = require('../../src/message/message-builder')
 const MessageParser = require('../../src/message/message-parser')
 const msg = require('../test-helper/test-helper').msg
 
-const JIFHandler = require('../../src/message/http/jif-handler')
+const JIFHandler = require('../../src/message/jif-handler')
 
 describe('JIF Handler', () => {
   let jifHandler
