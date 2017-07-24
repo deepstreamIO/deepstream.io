@@ -18,7 +18,8 @@ let EventHandler = require('../../src/event/event-handler'),
     uniqueRegistry: {
       get(name, callback) { callback(true) },
       release() {}
-    }
+    },
+    enableRegexListenPatterns: true
   },
   eventHandler,
   subscribingClient = new SocketWrapper(new SocketMock(), {}),

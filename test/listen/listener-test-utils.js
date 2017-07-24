@@ -53,7 +53,8 @@ class ListenerTestUtils {
       messageConnector: new LocalMessageConnector(),
       logger: new LoggerMock(),
       listenResponseTimeout: 30,
-      shuffleListenProviders: false
+      shuffleListenProviders: false,
+      enableRegexListenPatterns: true
     }
     options.clusterRegistry = new ClusterRegistry(options, {
       getConnectionCount() {}
