@@ -11,11 +11,11 @@ httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
 const SocketMock = require('../mocks/socket-mock')
 const SocketWrapperMock = require('../mocks/socket-wrapper-mock')
-const ConnectionEndpoint = proxyquire('../../src/message/uws-connection-endpoint', {
+const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
   uws: uwsMock,
   http: httpMock,
   https: httpsMock,
-  './uws-socket-wrapper': SocketWrapperMock
+  './socket-wrapper': SocketWrapperMock
 })
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
 const _msg = require('../test-helper/test-helper').msg

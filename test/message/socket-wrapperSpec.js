@@ -3,11 +3,11 @@
 
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../mocks/uws-mock')
-const SocketWrapper = proxyquire('../../src/message/uws-socket-wrapper', {
+const SocketWrapper = proxyquire('../../src/message/uws/socket-wrapper', {
   uws: uwsMock
 })
 
-describe('uws-socket-wrapper creates a unified interface for sockets', () => {
+describe('uws socket-wrapper creates a unified interface for sockets', () => {
   let socketWrapper
 
   const handshakeData = {

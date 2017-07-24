@@ -3,9 +3,7 @@
 
 let proxyquire = require('proxyquire').noCallThru().noPreserveCache(),
   SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  SubscriptionRegistry = proxyquire('../../src/utils/subscription-registry', {
-    '../message/uws-socket-wrapper': SocketWrapper
-  }),
+  SubscriptionRegistry = require('../../src/utils/subscription-registry'),
   SocketMock = require('../mocks/socket-mock'),
   lastLogEvent = null,
   socketWrapperOptions = { logger: { log() {} } },

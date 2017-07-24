@@ -1,7 +1,7 @@
 'use strict'
 
 const Server = require('./server')
-const JIFHandler = require('./jif-handler')
+const JIFHandler = require('../jif-handler')
 const HTTPSocketWrapper = require('./socket-wrapper')
 const HTTPStatus = require('http-status')
 const events = require('events')

@@ -3,9 +3,7 @@
 
 const proxyquire = require('proxyquire').noCallThru().noPreserveCache()
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
-const SubscriptionRegistry = proxyquire('../../src/utils/subscription-registry', {
-  '../message/uws-socket-wrapper': SocketWrapper
-})
+const SubscriptionRegistry = require('../../src/utils/subscription-registry')
 const PresenceHandler = proxyquire('../../src/presence/presence-handler', {
   '../utils/subscription-registry': SubscriptionRegistry
 })

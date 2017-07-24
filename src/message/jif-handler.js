@@ -3,7 +3,7 @@
 const Ajv = require('ajv')
 
 const jifSchema = require('./jif-schema')
-const utils = require('./utils')
+const utils = require('../utils/utils')
 
 const ajv = new Ajv()
 
