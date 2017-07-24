@@ -58,17 +58,16 @@ deploy:
     upload-dir: $TRAVIS_REPO_SLUG
     on:
       branch: master
-  - provider: releases
+  - provider: s3
+    access_key_id:
+      secure: "I18K+fcvIuH2qg7eow0PtBC7J5oenf/w3SmmKpCl/Cr7oLcs7Qb92Dbmw/7TCTL5OaRvGyJ7QjaVpFjFhcEoB30WZvyth/qs8oTZb5qSPXQlRepto39Qj5vRef0ICpMgxGHYYCm7fLI+8YMWQgEF4SjKUgxeobo6WYATu+c9aD0c9xJtMFcwQWmtHKhln5ao4A4a0vYPDWz1AGJIiWqpSJjsUNWx6pa5F7UwPT7ZnzA3eKFvJVftgI/aFaowpUhrkrJ57rVjVkKJm30ny/gSc1BT++TdpQGAjwXPZrZsSmLzJjJYA2SEOEA5+D3BfrnI/HjQRWya+zWjkCrX5LOzb2uUU2cRRgtBCYBdLmoopiu373A5HNZ3BkNlXa1qPmUxCkZ2CL19FjXp4sdXDHjyL3qrT+gaWS2KF+w9DsITdVELm9cKMLEppCCrZfA3CRXxZogo8X0hiYqkHcpLNTDKDgRvsoIH9fwgAB8wHUHjwHFev5WQ188Pz1hAaPkWs/vKvOBgO/ykM52ZXF4cF9ewHJ1tcfert5Yvo4rxFxDNZGlMRDZB1zYXJ96oVlyit+7kiwRs/XFD5/zOQP7gklyFCfyQgfR2UoFM0Jwm4RbC2rB1I+MIKCMqQe7+QxeLyUMsYOWasHcsJf8y7L3HDY+UW56GOPywJr6+D5IQuko4SWk="
+    secret_access_key:
+      secure: "rqiM7mKGiQuyX+0XOHas6j/VdmqKSnXzSE0p/CtWM+CeEE/W5a468GWR+MF+SdLGitHXB/9pEBmvNuJidWdlcdY1IQtbKB15ByetYbBsPI9mITsjqy1i+VUXMc+t7/im89KLjaqSHHbzwd9fKwLWjUbJVyrgxOSxWYM6ZJphBf/6BichRjevPxdifm38mLGfvGR44zkihpFmttaQaOthxwzJ5faClVHqk4zfv+XxVUCDM9vitsAkNsoWzXEsBdBWn3bocC3kTvpPo1cyclHR21iGJwNhaA6oefmyEBfTLCSRdHmwehhm2CGR7FjY8s2KsAe66E4lV9fcnVmEUCu+0GAw+5MurNj8PSYQAYZhu/oKG87Q+Njp6sicPtu0AaNb9D7wkMjUrTbQcFoH4vF0Y5OQl3VRIIc9yj0vBQFMrzHmK9ETSTDXkpB32Xwhm1tVQeb5v7/eJrlHqMxutReHSO4mPsLB8CNWa9wH8VoAtm4mEWp4Ub8TOWPBuT86byuCuT1g3XSeeMhO7DxjtSJsdZfHYaywmhZQg0sp4d/61VGtoDNgLudAw+XB62N+eFEYAtCthPm8vJlOCbhV/La57IXDXt8oWne3peuBkJGtk0WZsL202+geDJeZrBoZ4UXpWcZ8QZ3TN+v8z0MA9Rkqd/W9kfnaIWOXqmI6k8ugP3I="
+    bucket: dsx-server-artifacts
     skip_cleanup: true
-    api_key:
-      secure: "UeDGbc9qehbKD63mNT4IebRpcPdctgqAlk7GNrz6/l6rPBsyLALd0o7mqHYcF0Dd2kMew1fDBiQEBUMTuFaggvGyKDmDkqGCdfo/6dGH07FzTpCwXisZ6u5eXo30deT5q94K1kaU17h8gmowBwmrU6iLXRrxCb6fkq58GX8P9tE="
-    file_glob: true
-    file:
-      - "build/*.pkg"
-      - "build/*.deb"
-      - "build/*.rpm"
-      - "build/*.tar.gz"
-      - "build/*.zip"
+    acl: public_read
+    local_dir: build
+    upload-dir: $TRAVIS_REPO_SLUG
     on:
       tags: true
 
