@@ -22,7 +22,7 @@ const LoggerMock = require('../mocks/logger-mock')
 
 Promise.promisifyAll(needle)
 
-const Plugin = require('../../src/message/http/plugin')
+const ConnectionEndpoint = require('../../src/message/http/connection-endpoint')
 
 const conf = {
   healthCheckPath: '/health-check',
@@ -57,7 +57,7 @@ describe('http plugin', () => {
   const postUrl = `http://0.0.0.0:8888/api/v1/${apiKey}`
 
   beforeAll(() => {
-    httpPlugin = new Plugin(conf)
+    httpPlugin = new ConnectionEndpoint(conf)
     httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
   })
