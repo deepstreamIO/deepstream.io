@@ -6,7 +6,7 @@ const utils = require('../utils/utils')
 const C = require('../constants/constants')
 const fileUtils = require('./file-utils')
 const UWSConnectionEndpoint = require('../message/uws-connection-endpoint')
-const HTTPConnectionEndpoint = require('../message/http/plugin')
+const HTTPConnectionEndpoint = require('../message/http/connection-endpoint')
 
 const LOG_LEVEL_KEYS = Object.keys(C.LOG_LEVEL)
 
