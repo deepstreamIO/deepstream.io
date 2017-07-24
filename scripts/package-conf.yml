@@ -93,30 +93,30 @@ logger:
         filename: ../var/deepstream
 
 # Plugin Configuration
-plugins:
-  # monitoring:
-  #   path: 'dsx-monitoring'
-  #   options:
-  #     reportInterval: 200
-  #     permissionLogLimit: 3
-  #     technicalErrorLogLimit: 3
-  #
-  # message:
-  #   name: redis
-  #   options:
-  #     host: localhost
-  #     port: 6379
-  #
-  # cache:
-  #   name: memcached
-  #   options:
-  #     serverLocation: 'localhost:11211'
-  #
-  # storage:
-  #   name: rethinkdb
-  #   options:
-  #     host: localhost
-  #     port: 28015
+# plugins:
+#   monitoring:
+#     path: 'dsx-monitoring'
+#     options:
+#       reportInterval: 200
+#       permissionLogLimit: 3
+#       technicalErrorLogLimit: 3
+
+#   message:
+#     name: redis
+#     options:
+#       host: localhost
+#       port: 6379
+
+#   cache:
+#     name: memcached
+#     options:
+#       serverLocation: 'localhost:11211'
+
+#   storage:
+#     name: rethinkdb
+#     options:
+#       host: localhost
+#       port: 28015
 
 # Storage options
 # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db

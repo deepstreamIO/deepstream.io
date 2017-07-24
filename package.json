@@ -38,7 +38,6 @@
     "commander": "^2.11.0",
     "content-type": "^1.0.2",
     "deepstream.io-service": "latest",
-    "dsx-monitoring": "git+ssh://git@github.com/deepstreamIO/dsx-monitoring.git",
     "glob": "^7.1.1",
     "http-shutdown": "^1.2.0",
     "http-status": "^1.0.1",

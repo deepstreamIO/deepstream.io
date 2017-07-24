@@ -156,6 +156,18 @@ function compile {
     npm install --production --loglevel error
     cd -
 
+    echo "Adding dsx-monitoring to libs"
+    cd $DEEPSTREAM_PACKAGE/lib
+    echo '{ "name": "TEMP" }' > package.json
+    npm install git+ssh://git@github.com/deepstreamIO/dsx-monitoring.git --loglevel error
+    mv -f node_modules/dsx-monitoring ./dsx-monitoring
+    rm -rf node_modules package.json
+    cd -
+
+    cd $DEEPSTREAM_PACKAGE/lib/dsx-monitoring
+    npm install --production --loglevel error
+    cd -
+
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
     NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &
 
