@@ -2,18 +2,13 @@
 
 /* global describe, beforeAll, afterAll, it */
 /* eslint-disable no-unused-expressions, import/no-extraneous-dependencies */
-const chai = require('chai') // eslint-disable-line
-const proxyquire = require('proxyquire') // eslint-disable-line
-const sinon = require('sinon') // eslint-disable-line
+const chai = require('chai')
+const sinon = require('sinon')
 const Promise = require('bluebird')
 
 const expect = chai.expect
 
 const needle = require('needle')
-/*
- *const http = require('http')
- *const url = require('url')
- */
 
 const constants = require('../../src/constants/constants')
 const MessageBuilder = require('../../src/message/message-builder')
@@ -30,8 +25,8 @@ const conf = {
   authPath: '/api/v1/auth',
   postPath: '/api/v1',
   getPath: '/api/v1',
-  port: 8888,
-  host: '0.0.0.0',
+  port: 8080,
+  host: 'localhost',
   allowAllOrigins: true,
   requestTimeout: 30
 }
@@ -54,12 +49,18 @@ const mockDS = {
 describe('http plugin', () => {
   let httpPlugin
   const apiKey = '9x5xfdxa-xxxx-4efe-a342-xxxxxxxxxxxx'
-  const postUrl = `http://0.0.0.0:8888/api/v1/${apiKey}`
+  const postUrl = `http://localhost:8080/api/v1/${apiKey}`
 
-  beforeAll(() => {
+  beforeAll((done) => {
     httpPlugin = new ConnectionEndpoint(conf)
     httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
+    httpPlugin.on('ready', done)
+  })
+
+  afterAll((done) => {
+    httpPlugin.close()
+    httpPlugin.on('close', done)
   })
 
   const message = Object.freeze({
@@ -95,7 +96,7 @@ describe('http plugin', () => {
 
   describe('POST endpoint', () => {
     it('should reject a request with an empty path', (done) => {
-      needle.post('0.0.0.0:8888', message, { json: true }, (err, response) => {
+      needle.post('localhost:8080', message, { json: true }, (err, response) => {
         expect(err).to.be.null
         expect(response.statusCode).to.be.within(400, 499)
         expect(response.headers['content-type']).to.match(/^text\/plain/)
