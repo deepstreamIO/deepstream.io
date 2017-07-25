@@ -2,18 +2,13 @@
 
 /* global describe, beforeAll, afterAll, it */
 /* eslint-disable no-unused-expressions, import/no-extraneous-dependencies */
-const chai = require('chai') // eslint-disable-line
-const proxyquire = require('proxyquire') // eslint-disable-line
-const sinon = require('sinon') // eslint-disable-line
+const chai = require('chai')
+const sinon = require('sinon')
 const Promise = require('bluebird')
 
 const expect = chai.expect
 
 const needle = require('needle')
-/*
- *const http = require('http')
- *const url = require('url')
- */
 
 const constants = require('../../src/constants/constants')
 const MessageBuilder = require('../../src/message/message-builder')
@@ -56,10 +51,16 @@ describe('http plugin', () => {
   const apiKey = '9x5xfdxa-xxxx-4efe-a342-xxxxxxxxxxxx'
   const postUrl = `http://0.0.0.0:8080/api/v1/${apiKey}`
 
-  beforeAll(() => {
+  beforeAll((done) => {
     httpPlugin = new ConnectionEndpoint(conf)
     httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
+    httpPlugin.on('ready', done)
+  })
+
+  afterAll((done) => {
+    httpPlugin.close()
+    httpPlugin.on('close', done)
   })
 
   const message = Object.freeze({
