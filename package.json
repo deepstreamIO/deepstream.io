@@ -23,6 +23,7 @@
     "record-e2e": "npm run e2e -- --tags @records",
     "login-e2e": "npm run e2e -- --tags @login",
     "presence-e2e": "npm run e2e -- --tags @presence",
+    "http-e2e": "npm run e2e -- --tags @http",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE"
   },
   "repository": {

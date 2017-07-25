@@ -21,6 +21,14 @@ Cluster.prototype.getUrl = function (serverId) {
   return `localhost:${ports[serverId]}`
 }
 
+Cluster.prototype.getHttpUrl = function (serverId) {
+  return `localhost:${ports[serverId] + 200}/`
+}
+
+Cluster.prototype.getAuthUrl = function (serverId) {
+  return `localhost:${ports[serverId] + 200}/auth`
+}
+
 Cluster.prototype.updatePermissions = function (type) {
   for (const serverName in this.servers) {
     this.servers[serverName]._options.permissionHandler.loadConfig(`./test-e2e/config/permissions-${type}.json`)
@@ -79,18 +87,13 @@ Cluster.prototype._startServer = function (port, done) {
 
     maxAuthAttempts              : 2,
     unauthenticatedClientTimeout : 200,
-    auth : {
-      type    : 'file',
-      options : {
-        path : './test-e2e/config/users.yml'
-      }
-    },
     permission: {
       type    : 'config',
       options : {
         path: './test-e2e/config/permissions.json'
       }
     },
+
     connectionEndpoints: {
       websocket: {
         name: 'uws',
@@ -98,7 +101,20 @@ Cluster.prototype._startServer = function (port, done) {
           port
         }
       },
-      http: null
+      http: {
+        name: 'http',
+        options: {
+          port: Number(port) + 200,
+          host: '0.0.0.0',
+          allowAuthData: true,
+          enableAuthEndpoint: true,
+          authPath: '/auth',
+          postPath: '/',
+          getPath: '/',
+          healthCheckPath: '/health-check',
+          allowAllOrigins: true
+        }
+      }
     },
   })
   if (done instanceof Function) {
@@ -110,6 +126,55 @@ Cluster.prototype._startServer = function (port, done) {
   if (this._enableLogging !== true) {
     this.servers[port].set('logger', new Logger())
   }
+
+  const tokens = new Map()
+  this.servers[port].set('authenticationHandler', {
+    isReady: true,
+    isValidUser (headers, authData, callback) {
+      if (authData.token) {
+        // authenticate token
+        const username = tokens.get(authData.token)
+        if (username) {
+          callback(true, { username })
+          return
+        }
+
+        if (authData.token === 'letmein') {
+          callback(true, { username: 'A' })
+          return
+        }
+      }
+      // authenicate auth data
+      const users = ['A', 'B', 'C', 'D', 'W', '1', '2', '3', '4']
+      if (
+        users.indexOf(authData.username) !== -1
+        && authData.password === 'abcdefgh'
+      ) {
+        const token = Math.random().toString()
+        tokens.set(token, authData.username)
+        callback(true, { token, username: authData.username })
+        return
+      }
+      if (authData.username === 'userA' && authData.password === 'abcdefgh') {
+        callback(true, { username: 'userA' })
+        return
+      }
+      if (authData.username === 'userB' && authData.password === '123456789') {
+        callback(true, {
+          username: 'userB',
+          clientData: {
+            'favorite color': 'orange',
+            id: 'userB'
+          },
+          serverData: {
+            invalid: 'invalid'
+          }
+        })
+        return
+      }
+      callback(false)
+    }
+  })
 
   this.servers[port].on('stopped', this._checkStopped.bind(this))
   this.servers[port].start()
