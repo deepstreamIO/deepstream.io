@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "2.4.0",
+  "version": "2.4.0-rc.1",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
   "bin": {

@@ -1,3 +1,29 @@
+## [3.0.0-rc.1] - 2017.07.25
+
+### Features
+
+- Adds a HTTP API, giving access to records, RPCs, events and presence through a REST/JSON interface
+  This is configured by default on port 8080, set the body of
+  `connectionEndpoints.http` to null to disable it.
+
+- Enable multiple connection endpoints to be configured at one time
+
+### Miscellaneous
+
+- Moved end-to-end tests into this repository from `deepstream.io-client-js`.
+- Replaced `javascript-state-machine` dependency with custom state machine.
+
+### Fixes
+
+- Improve handling of invalid record names
+
+### Breaking Changes
+
+- Remove message connector support to address scalability issues
+  associated with the interface's coarse topics. Alternative clustering support
+  is available for enterprise customers as a built-in, high-performance
+  p2p/relay clustering plugin.
+
 ## [2.4.0] - 2017.07.01
 
 ## Features
