@@ -13,8 +13,10 @@ module.exports = function (program) {
     .option('-l, --lib-dir [directory]', 'path where to lookup for plugins like connectors and logger')
 
     .option('--server-name <name>', 'Each server within a cluster needs a unique name')
-    .option('--host <host>', 'host for the HTTP/websocket server')
-    .option('--port <port>', 'port for the HTTP/websocket server', parseInteger.bind(null, '--port'))
+    .option('--host <host>', 'host for the websocket server')
+    .option('--port <port>', 'port for the websocket server', parseInteger.bind(null, '--port'))
+    .option('--httpHost <host>', 'host for the HTTP server')
+    .option('--httpPort <port>', 'port for the HTTP server', parseInteger.bind(null, '--httpPort'))
     .option('--disable-auth', 'Force deepstream to use "none" auth type')
     .option('--disable-permissions', 'Force deepstream to use "none" permissions')
     .option('--log-level <level>', 'Log messages with this level and above', parseLogLevel)

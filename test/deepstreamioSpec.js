@@ -21,7 +21,7 @@ describe('the main server class', () => {
   it('sets a supported option', () => {
     const server = new Deepstream()
     expect(() => {
-      server.set('port', 4444)
+      server.set('serverName', 'my lovely horse')
     }).not.toThrow()
   })
 
