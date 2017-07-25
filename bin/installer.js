@@ -131,10 +131,10 @@ const fetchReleases = function (type, name, callback) {
       return callback(error)
     }
     if (response.statusCode === 404) {
-      return callback(new Error('Not found, see available connectors on https://deepstream.io/download'))
+      return callback(new Error('Not found, see available connectors on https://deepstreamhub.com/open-source/'))
     }
     if (response.statusCode == 403) {
-			// API rate limit
+      // API rate limit
       return callback(new Error(response.body.message))
     }
     callback(null, response.body)
@@ -214,7 +214,7 @@ const showConfig = function (directory) {
  * @return {void}
  */
 module.exports = function (opts, callback) {
-  if (opts.type === 'message') {
+  if (opts.type === 'message' || opts.type === 'msg') {
     console.log('Message connectors are no longer supported as of deepstream.io v3.0')
     return callback()
   }
