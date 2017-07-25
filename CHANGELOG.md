@@ -2,27 +2,33 @@
 
 ### Features
 
-- Adds a HTTP API, giving access to records, RPCs, events and presence through a REST/JSON interface
-  This is configured by default on port 8080, set the body of
-  `connectionEndpoints.http` to null to disable it.
+#### [HTTP API](https://deepstreamhub.com/docs/http/v1/)
+Enabling clients to create, read, update and delete records, emit events, request RPCS
+and read presence using a JSON bulk request/response format via HTTP.
+- The HTTP API is enabled by default on PORT 8080 and can be configured in the
+connectionEndpoints -> http section of deepstream's `config.yml`
+- To disable the HTTP API set the above config to null
 
-- Enable multiple connection endpoints to be configured at one time
+#### [PHP Client Support](https://deepstreamhub.com/docs/client-php/DeepstreamClient/)
+The above HTTP API makes deepstream.io compatible with the deepstream PHP client
+
+#### Multi Endpoint Architecture
+The deepstream 3.0 release lays the groundwork for multiple combinable endpoints/protocols,
+e.g. GraphQL or Binary to be used together. It also introduces a [new endpoint type](TODO) enabling
+developers to write their own. Please note - at the moment it is not possible to run multiple subscription
+based endpoints (e.g. websocket) simultaneously. 
+
+#### Message Connector Discontinuation
+To address the scalability issues associated with the message connector interface's coarse topics
+deepstream will move to a build-in, high performance p2p/small world network based clustering approach, available
+as an enterprise plugin. The current message connector support is discontinued.
 
 ### Miscellaneous
-
 - Moved end-to-end tests into this repository from `deepstream.io-client-js`.
 - Replaced `javascript-state-machine` dependency with custom state machine.
 
 ### Fixes
-
-- Improve handling of invalid record names
-
-### Breaking Changes
-
-- Remove message connector support to address scalability issues
-  associated with the interface's coarse topics. Alternative clustering support
-  is available for enterprise customers as a built-in, high-performance
-  p2p/relay clustering plugin.
+- Improved handling of invalid record names.
 
 ## [2.4.0] - 2017.07.01
 
