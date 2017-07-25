@@ -30,7 +30,7 @@ const conf = {
   authPath: '/api/v1/auth',
   postPath: '/api/v1',
   getPath: '/api/v1',
-  port: 8888,
+  port: 8080,
   host: '0.0.0.0',
   allowAllOrigins: true,
   requestTimeout: 30
@@ -54,7 +54,7 @@ const mockDS = {
 describe('http plugin', () => {
   let httpPlugin
   const apiKey = '9x5xfdxa-xxxx-4efe-a342-xxxxxxxxxxxx'
-  const postUrl = `http://0.0.0.0:8888/api/v1/${apiKey}`
+  const postUrl = `http://0.0.0.0:8080/api/v1/${apiKey}`
 
   beforeAll(() => {
     httpPlugin = new ConnectionEndpoint(conf)
@@ -95,7 +95,7 @@ describe('http plugin', () => {
 
   describe('POST endpoint', () => {
     it('should reject a request with an empty path', (done) => {
-      needle.post('0.0.0.0:8888', message, { json: true }, (err, response) => {
+      needle.post('0.0.0.0:8080', message, { json: true }, (err, response) => {
         expect(err).to.be.null
         expect(response.statusCode).to.be.within(400, 499)
         expect(response.headers['content-type']).to.match(/^text\/plain/)
