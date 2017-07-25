@@ -79,7 +79,7 @@ module.exports = class Server extends EventEmitter {
     const address = serverAddress.address
     const port = serverAddress.port
     const C = this._constants
-    const wsMsg = `Listening for HTTP connections on ${address}:${port}`
+    const wsMsg = `listening for HTTP connections on ${address}:${port}`
     this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, wsMsg)
     this.emit('ready')
     this.isReady = true
