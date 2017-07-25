@@ -80,19 +80,6 @@ exports.get = function () {
     },
 
     /*
-     * Redundant connection config (maintained for overriding by environment/CLI)
-     */
-    port: null,
-    host: null,
-    urlPath: null,
-    healthCheckPath: null,
-    heartbeatInterval: null,
-    unauthenticatedClientTimeout: null,
-    maxAuthAttempts: null,
-    logInvalidAuthData: null,
-    maxMessageSize: null,
-
-    /*
      * Default Plugins
      */
     messageConnector: require('./default-plugins/noop-message-connector'),

@@ -174,8 +174,31 @@ function extendConfig (config, argv) {
   for (key in defaultOptions.get()) {
     cliArgs[key] = argv[key]
   }
+  if (argv.port) {
+    overrideEndpointOption('port', argv.port, 'websocket', config)
+  }
+  if (argv.host) {
+    overrideEndpointOption('host', argv.host, 'websocket', config)
+  }
+  if (argv.httpPort) {
+    overrideEndpointOption('port', argv.httpPort, 'http', config)
+  }
+  if (argv.httpHost) {
+    overrideEndpointOption('host', argv.httpHost, 'http', config)
+  }
 
   return utils.merge({ plugins: {} }, defaultOptions.get(), config, cliArgs)
+}
+
+function overrideEndpointOption (key, value, endpoint, config) {
+  try {
+    config.connectionEndpoints[endpoint].options[key] = value
+  } catch (exception) {
+    throw new Error(
+      `${key} could not be set: ${endpoint} connection endpoint not found`,
+      exception.message
+    )
+  }
 }
 
 /**

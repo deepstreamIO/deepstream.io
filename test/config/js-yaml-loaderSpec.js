@@ -255,7 +255,7 @@ describe('js-yaml-loader', () => {
 
     it('does environment variable substitution for yaml', () => {
       const config = configLoader.loadConfig().config
-      expect(config.port).toBe(5555)
+      expect(config.connectionEndpoints[0]._options.port).toBe(5555)
     })
   })
 
