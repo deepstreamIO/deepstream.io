@@ -371,6 +371,13 @@ Deepstream.prototype._connectionEndpointInit = function () {
       'connectionEndpoint'
     )
 
+    connectionEndpoint.on('ready', () =>
+      this._options.logger.log(
+        C.LOG_LEVEL.INFO,
+        C.EVENT.INFO,
+        `${connectionEndpoint.description} ready: listening on ${connectionEndpoint._options.host}:${connectionEndpoint._options.port} and accepting health checks on path: ${connectionEndpoint._options.healthCheckPath}`)
+    )
+
     connectionEndpoint.onMessages = this._messageProcessor.process.bind(this._messageProcessor)
     connectionEndpoint.on(
       'client-connected',

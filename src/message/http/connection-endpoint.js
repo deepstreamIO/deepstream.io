@@ -11,7 +11,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
     super()
     this._options = options
     this.isReady = false
-    this.description = 'DSX HTTP Plugin'
+    this.description = 'HTTP Connection Endpoint'
 
     // this._socketWrapperPool = []
     this._onSocketMessage = this._onSocketMessage.bind(this)
