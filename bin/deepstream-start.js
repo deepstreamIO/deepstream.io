@@ -36,7 +36,6 @@ function action () {
       })
   } catch (err) {
     console.error(err.toString())
-    console.trace()
     process.exit(1)
   }
 }

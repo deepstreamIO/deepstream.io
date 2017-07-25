@@ -231,7 +231,7 @@ Deepstream.prototype._onTransition = function (transition) {
     logger.log(
       C.LOG_LEVEL.DEBUG,
       C.EVENT.INFO,
-      `State transition (${transition.name}): ${transition.from} -> ${transition.to}`
+      `state transition (${transition.name}): ${transition.from} -> ${transition.to}`
     )
   }
 }
@@ -392,7 +392,7 @@ Deepstream.prototype._connectionEndpointInit = function () {
  * @returns {void}
  */
 Deepstream.prototype._run = function () {
-  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started')
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, 'deepstream started')
   this.emit('started')
 }
 
