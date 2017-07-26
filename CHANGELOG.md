@@ -1,4 +1,4 @@
-## [3.0.0-rc.3] - 2017.07.26
+## [3.0.0] - 2017.07.26
 
 ### Features
 
@@ -14,7 +14,7 @@ The above HTTP API makes deepstream.io compatible with the deepstream PHP client
 
 #### Multi Endpoint Architecture
 The deepstream 3.0 release lays the groundwork for multiple combinable endpoints/protocols,
-e.g. GraphQL or Binary to be used together. It also introduces a [new endpoint type](TODO) enabling
+e.g. GraphQL or Binary to be used together. It also introduces a new endpoint type enabling
 developers to write their own. Please note - at the moment it is not possible to run multiple subscription
 based endpoints (e.g. websocket) simultaneously. 
 
