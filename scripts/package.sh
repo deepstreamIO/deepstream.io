@@ -177,7 +177,7 @@ function compile {
 
     echo "Adding docs"
     echo -e "\tAdding Readme"
-    echo "Documentation is available at https://deepstream.io
+    echo "Documentation is available at https://deepstreamhub.com/open-source
     " > $DEEPSTREAM_PACKAGE/doc/README
     echo -e "\tAdding Changelog"
     cp CHANGELOG.md $DEEPSTREAM_PACKAGE/doc/CHANGELOG.md
@@ -188,7 +188,7 @@ function compile {
     echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
     cp -r conf $DEEPSTREAM_PACKAGE/
     cp build/deepstream $DEEPSTREAM_PACKAGE/
-    
+
     echo "Patching config file for zip lib and var directories"
     cp -f ./scripts/package-conf.yml $DEEPSTREAM_PACKAGE/conf/config.yml
 }
@@ -217,7 +217,7 @@ function mac {
     cp ../${COMMIT_NAME}.zip ../../${CLEAN_NAME}.zip
     cd -
 
-    rm -rf build/osxpkg 
+    rm -rf build/osxpkg
     mkdir -p build/osxpkg/bin
     mkdir -p build/osxpkg/etc/deepstream
     mkdir -p build/osxpkg/lib/deepstream
