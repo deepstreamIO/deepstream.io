@@ -60,7 +60,6 @@ module.exports = class ClusterRegistry extends EventEmitter {
     if (this._inCluster === false) {
       return
     }
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLUSTER_LEAVE, this._options.serverName)
     this._options.messageConnector.publish(C.TOPIC.CLUSTER, {
       topic: C.TOPIC.CLUSTER,
       action: C.ACTIONS.REMOVE,
@@ -198,7 +197,6 @@ module.exports = class ClusterRegistry extends EventEmitter {
     this._nodes[data.serverName] = data
     this._nodes[data.serverName].lastStatusTime = Date.now()
     if (isNew) {
-      this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLUSTER_JOIN, data.serverName)
       this.emit('add', data.serverName)
     }
   }
@@ -216,7 +214,6 @@ module.exports = class ClusterRegistry extends EventEmitter {
   _removeNode (serverName) {
     if (this._nodes[serverName]) {
       delete this._nodes[serverName]
-      this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLUSTER_LEAVE, serverName)
       this.emit('remove', serverName)
     }
   }
