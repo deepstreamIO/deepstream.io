@@ -38,8 +38,8 @@ For power users who want to make sure the binary works, you can run `sh scripts/
 1. access a linux machine
 
 2. copy over the sanity test using:
-  
-`curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/sanity-test-linux/scripts/sanity-test.sh`
+
+`curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/scripts/sanity-test.sh`
 
 3. depending on your distribution, run
 
