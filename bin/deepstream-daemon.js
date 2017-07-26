@@ -10,9 +10,10 @@ module.exports = function (program) {
     .option('-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files')
     .option('-l, --lib-dir [directory]', 'path where to lookup for plugins like connectors and logger')
 
-    .option('--server-name <name>', 'Each server within a cluster needs a unique name')
     .option('--host <host>', 'host for the HTTP/websocket server')
     .option('--port <port>', 'port for the HTTP/websocket server')
+    .option('--http-host <host>', 'host for the HTTP server')
+    .option('--http-port <port>', 'port for the HTTP server', parseInteger.bind(null, '--http-port'))
     .option('--disable-auth', 'Force deepstream to use "none" auth type')
     .option('--disable-permissions', 'Force deepstream to use "none" permissions')
     .option('--log-level <level>', 'Log messages with this level and above')

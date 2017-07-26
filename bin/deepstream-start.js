@@ -12,7 +12,6 @@ module.exports = function (program) {
     .option('-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files')
     .option('-l, --lib-dir [directory]', 'path where to lookup for plugins like connectors and logger')
 
-    .option('--server-name <name>', 'Each server within a cluster needs a unique name')
     .option('--host <host>', 'host for the websocket server')
     .option('--port <port>', 'port for the websocket server', parseInteger.bind(null, '--port'))
     .option('--http-host <host>', 'host for the HTTP server')

@@ -1,6 +1,4 @@
 # General
-# Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
-serverName: UUID
 # Show the deepstream logo on startup (highly recommended)
 showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
