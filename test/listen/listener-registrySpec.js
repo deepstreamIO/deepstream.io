@@ -15,7 +15,8 @@ let listenerRegistry,
     messageConnector: noopMessageConnector,
     logger: {
       log: jasmine.createSpy('logger')
-    }
+    },
+    enableRegexListenPatterns: true
   },
   recordSubscriptionRegistryMock = {
     getNames() {
@@ -53,6 +54,8 @@ describe('listener-registry errors', () => {
 
   it('adds a listener with an invalid regexp', () => {
     const socketWrapper = new SocketWrapper(new SocketMock(), options)
+    socketWrapper.socket.lastSendMessage = null
+    options.logger.log.calls.reset()
     listenerRegistry.handle(socketWrapper, {
       topic: 'R',
       action: 'L',

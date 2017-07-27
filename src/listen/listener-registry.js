@@ -5,6 +5,7 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const TimeoutRegistry = require('./listener-timeout-registry')
 const utils = require('../utils/utils')
+const minimatch = require('minimatch')
 
 module.exports = class ListenerRegistry {
   /**
@@ -290,7 +291,7 @@ module.exports = class ListenerRegistry {
   */
   _addListener (socketWrapper, message) {
     const pattern = this._getPattern(socketWrapper, message)
-    const regExp = this._validatePattern(socketWrapper, pattern)
+    const regExp = this._compilePattern(socketWrapper, pattern)
 
     if (!regExp) {
       return
@@ -316,7 +317,7 @@ module.exports = class ListenerRegistry {
   */
   _reconcileSubscriptionsToPatterns (regExp, pattern, socketWrapper) {
     for (const subscriptionName of this._clientRegistry.getNames()) {
-      if (!subscriptionName.match(regExp)) {
+      if (!regExp.test(subscriptionName)) {
         continue
       }
 
@@ -602,7 +603,17 @@ module.exports = class ListenerRegistry {
   */
   _addPattern (pattern /* , socketWrapper, count */) {
     if (!this._patterns[pattern]) {
-      this._patterns[pattern] = new RegExp(pattern)
+      const regExp = this._compilePattern(null, pattern)
+      if (!regExp) {
+        this._options.logger.log(
+          C.LOG_LEVEL.WARN,
+          C.EVENT.INVALID_PROVIDER_SUBSCRIPTION,
+          `Received invalid pattern subscription notification: ${pattern}. Expected ${
+            this._options.enableRegexListenPatterns ? 'RexExp' : 'Glob'
+          }`
+        )
+      }
+      this._patterns[pattern] = regExp
     }
   }
 
@@ -842,23 +853,42 @@ module.exports = class ListenerRegistry {
   }
 
   /**
-  * Validates that the pattern is not empty and is a valid regular expression
+  * Converts a pattern to a RegExp object
   *
-  * @param   {SocketWrapper} socketWrapper
-  * @param   {String} pattern
+  * Expects the pattern to be a glob expression unless the `enableRegexListenPatterns` option is
+  * set, in which case it expects a valid regular expression
+  *
+  * returns false if the pattern is empty or is not a valid glob/regular expression
+  *
+  * @param   {SocketWrapper?} socketWrapper
+  * @param   {String}         pattern
   *
   * @returns {RegExp}
   */
-  _validatePattern (socketWrapper, pattern) {
+  _compilePattern (socketWrapper, pattern) {
     if (!pattern) {
       return false
     }
-
-    try {
-      return new RegExp(pattern)
-    } catch (e) {
-      this._onMsgDataError(socketWrapper, e.toString())
-      return false
+    if (this._options.enableRegexListenPatterns === true) {
+      try {
+        return new RegExp(pattern)
+      } catch (e) {
+        if (socketWrapper) {
+          this._onMsgDataError(socketWrapper, e.toString())
+        }
+        return false
+      }
+    } else {
+      // convert glob pattern to RegExp, returns false if pattern is invalid
+      const regExp = minimatch.makeRe(pattern, {
+        noglobstar: true, // disable ** patterns
+        nocomment: true,  // patterns beginning with # shouldn't be ignored
+        noext: true       // disable "extglob" patterns
+      })
+      if (!regExp && socketWrapper) {
+        this._onMsgDataError(socketWrapper, `Invalid glob expression: ${pattern}`)
+      }
+      return regExp
     }
   }
 

@@ -24,7 +24,8 @@ describe('record handler handles messages', () => {
       uniqueRegistry: {
         get(name, callback) { callback(true) },
         release() {}
-      }
+      },
+      enableRegexListenPatterns: true
     }
 
   it('creates the record handler', () => {
