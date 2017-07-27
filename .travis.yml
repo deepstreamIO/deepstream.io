@@ -56,6 +56,7 @@ deploy:
     acl: public_read
     local_dir: build
     upload-dir: $TRAVIS_REPO_SLUG
+    region: us-east-1
     on:
       branch: master
   - provider: s3
