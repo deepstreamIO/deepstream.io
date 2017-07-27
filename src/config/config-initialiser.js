@@ -321,7 +321,7 @@ function handlePermissionStrategy (config) {
     config.permission.options = {}
   }
 
-  if (!permissionStrategies[config.permission.type] && !config.permission.path) {
+  if (!permissionStrategies[config.permission.type] && !config.permission.options.path) {
     throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 
