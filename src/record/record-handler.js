@@ -18,13 +18,13 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionAdded: (name, socket, localCount) => {
         this._listenerRegistry.onSubscriptionAdded(name, socket, localCount)
-        if (socket && localCount === 1) {
+        if (localCount === 1) {
           this._cache.lock(name)
         }
       },
       onSubscriptionRemoved: (name, socket, localCount) => {
         this._listenerRegistry.onSubscriptionRemoved(name, socket, localCount)
-        if (socket && localCount === 0) {
+        if (localCount === 0) {
           this._cache.unlock(name)
         }
       }
