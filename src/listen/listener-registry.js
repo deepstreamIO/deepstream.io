@@ -4,6 +4,8 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 
+let idCounter = 0
+
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._listeners = new Map()
@@ -59,7 +61,8 @@ module.exports = class ListenerRegistry {
 
     listener.sockets.set(socket, {
       socket,
-      pattern
+      pattern,
+      id: idCounter++
     })
 
     this._reconcilePattern(listener.expr)
@@ -111,7 +114,10 @@ module.exports = class ListenerRegistry {
       deadline: null
     })
 
-    this._reconcile(name)
+    if (!this._provided.has(name)) {
+      this._sendHasProviderUpdate(true, name)
+      this._provided.add(name)
+    }
   }
 
   _reject (socket, [ pattern, name ]) {
@@ -143,40 +149,31 @@ module.exports = class ListenerRegistry {
   _reconcile (name) {
     const prev = this._providers.get(name) || {}
 
-    if (!prev.deadline && this._isAlive(prev)) {
-      if (!this._provided.has(name)) {
-        this._sendHasProviderUpdate(true, name)
-        this._provided.add(name)
-      }
-    } else if (this._provided.delete(name)) {
-      this._sendHasProviderUpdate(false, name)
-    }
-
-    let next = {}
-
     if (this._subscriptionRegistry.hasName(name)) {
       if (this._isAlive(prev)) {
         return
       }
 
+      if (this._provided.has(name)) {
+        this._sendHasProviderUpdate(false, name)
+        this._provided.delete(name)
+      }
+
       const history = prev.history || []
       const matches = this._match(name).filter(match => !history.includes(match.id))
+      const match = matches[Math.floor(Math.random() * matches.length)]
 
-      if (matches.length === 0) {
-        next = history.length ? { history } : {}
-      } else {
-        const match = matches[Math.floor(Math.random() * matches.length)]
-
-        next = {
-          history: history.concat(match.id),
-          socket: match.socket,
-          pattern: match.pattern,
-          deadline: Date.now() + this._listenResponseTimeout
-        }
-      }
+      this._providers.set(name, match ? {
+        history: history.concat(match.id),
+        socket: match.socket,
+        pattern: match.pattern,
+        deadline: Date.now() + this._listenResponseTimeout
+      } : { history })
+    } else {
+      this._providers.delete(name)
     }
 
-    this._providers.set(name, next)
+    const next = this._providers.get(name) || {}
 
     if (next.socket) {
       this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
@@ -207,11 +204,10 @@ module.exports = class ListenerRegistry {
   }
 
   _isAlive (provider) {
+    const listener = this._listeners.get(provider.pattern)
     return (
-      provider &&
       (!provider.deadline || provider.deadline > Date.now()) &&
-      provider.socket &&
-      !provider.socket.isClosed
+      listener && listener.sockets.has(provider.socket)
     )
   }
 
