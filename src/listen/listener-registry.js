@@ -11,7 +11,6 @@ module.exports = class ListenerRegistry {
     this._listeners = new Map()
     this._timeouts = new Map()
     this._provided = new Set()
-    this._pending = new Set()
 
     this._timeout = null
     this._topic = topic
