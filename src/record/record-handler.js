@@ -109,6 +109,8 @@ module.exports = class RecordHandler {
 
   // [ name, ?version ]
   _refresh (record) {
+    this._message.publish(`RH.R`, [ record[0], record[1], this._inbox ])
+
     this._pending.push(record)
 
     if (this._pending.length > 1) {
