@@ -161,7 +161,7 @@ module.exports = class RecordHandler {
     )
 
     if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`RH.U`, nextRecord)
+      this._message.publish(`RH.U`, nextRecord.slice(0, 2))
     }
   }
 
