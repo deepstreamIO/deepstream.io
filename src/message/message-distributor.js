@@ -32,9 +32,7 @@ MessageDistributor.prototype.distribute = function (socketWrapper, message) {
 
   socketWrapper.emit(message.topic, message)
 
-  if (message.isCompleted !== true) {
-    this._callbacks[message.topic](socketWrapper, message)
-  }
+  this._callbacks[message.topic](socketWrapper, message)
 }
 
 /**
