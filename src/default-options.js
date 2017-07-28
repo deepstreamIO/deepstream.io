@@ -14,7 +14,6 @@ exports.get = function () {
     host: '0.0.0.0',
     urlPath: '/deepstream',
     healthCheckPath: '/healthcheck',
-    externalUrl: null,
     heartbeatInterval: 30000,
 
     /*
