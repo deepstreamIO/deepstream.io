@@ -8,39 +8,27 @@ const RecordCache = require(`./record-cache`)
 
 module.exports = class RecordHandler {
   constructor (options) {
-    this._update = this._update.bind(this)
-    this._read = this._read.bind(this)
-
     this._logger = options.logger
     this._message = options.messageConnector
     this._storage = options.storageConnector
-    this._pending = []
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
-    this._inbox = `RH.U.${options.serverName}`
     this._storageExclusion = options.storageExclusion
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
-      onSubscriptionAdded: (name, socket, localCount, remoteCount) => {
-        this._listenerRegistry.onSubscriptionAdded(name, socket, localCount, remoteCount)
+      onSubscriptionAdded: (name, socket, localCount) => {
+        this._listenerRegistry.onSubscriptionAdded(name, socket, localCount)
         if (socket && localCount === 1) {
           this._cache.lock(name)
-
-          const record = this._cache.peek(name)
-          this._message.publish(`RH.R`, [ name, record ? record[1] : undefined, this._inbox ])
         }
       },
-      onSubscriptionRemoved: (name, socket, localCount, remoteCount) => {
-        this._listenerRegistry.onSubscriptionRemoved(name, socket, localCount, remoteCount)
+      onSubscriptionRemoved: (name, socket, localCount) => {
+        this._listenerRegistry.onSubscriptionRemoved(name, socket, localCount)
         if (socket && localCount === 0) {
           this._cache.unlock(name)
         }
       }
     })
-
-    this._message.subscribe(`RH.U`, this._update)
-    this._message.subscribe(this._inbox, this._update)
-    this._message.subscribe(`RH.R`, this._read)
   }
 
   handle (socket, message) {
@@ -85,69 +73,31 @@ module.exports = class RecordHandler {
     }
   }
 
-  // [ name, ?version, inbox ]
-  _read ([ name, version, inbox = `RH.U` ]) {
-    const record = this._cache.del(name)
-
-    if (!record || isSameOrNewer(version, record[1])) {
-      return
-    }
-
-    this._message.publish(inbox, record)
-  }
-
-  // [ name, version, ?body ]
-  _update (record) {
-    if (record[2]) {
-      this._broadcast(record)
-    } else if (this._subscriptionRegistry.hasLocalSubscribers(record[0])) {
-      this._refresh(record)
-    } else {
-      this._cache.del(record[0])
-    }
-  }
-
   // [ name, ?version ]
-  _refresh (record) {
-    this._message.publish(`RH.R`, [ record[0], record[1], this._inbox ])
+  _refresh ([ name, version ]) {
+    const prevRecord = this._cache.peek(name)
 
-    this._pending.push(record)
-
-    if (this._pending.length > 1) {
+    if (prevRecord && isSameOrNewer(prevRecord[1], version)) {
       return
     }
 
-    setTimeout(() => {
-      for (let n = 0; n < this._pending.length; ++n) {
-        const [ name, version ] = this._pending[n]
-
-        const prevRecord = this._cache.peek(name)
-
-        if (prevRecord && isSameOrNewer(prevRecord[1], version)) {
-          continue
-        }
-
-        this._storage.get(name, (error, nextRecord, version) => {
-          if (error) {
-            const message = `error while reading ${nextRecord[0]} from storage ${error}`
-            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-          }
-
-          this._broadcast(nextRecord)
-
-          if (version && !isSameOrNewer(nextRecord[1], version)) {
-            const message = `error while reading ${nextRecord[0]} version ${version} (${nextRecord[1]}) from storage ${error}`
-            this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, [ ...nextRecord, message ])
-          }
-        }, version)
+    this._storage.get(name, (error, nextRecord, version) => {
+      if (error) {
+        const message = `error while reading ${nextRecord[0]} from storage ${error}`
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
       }
 
-      this._pending = []
-    }, 100)
+      this._broadcast(nextRecord)
+
+      if (version && !isSameOrNewer(nextRecord[1], version)) {
+        const message = `error while reading ${nextRecord[0]} version ${version} (${nextRecord[1]}) from storage ${error}`
+        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, [ ...nextRecord, message ])
+      }
+    }, version)
   }
 
   // [ name, version, body ]
-  _broadcast (nextRecord, sender = C.SOURCE_MESSAGE_CONNECTOR) {
+  _broadcast (nextRecord, sender) {
     const prevRecord = this._cache.peek(nextRecord[0])
 
     if (prevRecord && isSameOrNewer(prevRecord[1], nextRecord[1])) {
@@ -161,10 +111,6 @@ module.exports = class RecordHandler {
       messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
       sender
     )
-
-    if (sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._message.publish(`RH.U`, nextRecord.slice(0, 2))
-    }
   }
 
   _sendError (socket, event, message) {

@@ -1,7 +1,6 @@
 'use strict'
 
 const C = require('../constants/constants')
-const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const SocketWrapper = require('../message/socket-wrapper')
 
 class SubscriptionRegistry {
@@ -14,9 +13,8 @@ class SubscriptionRegistry {
    *
    * @param {Object} options deepstream options
    * @param {String} topic one of C.TOPIC
-   * @param {[String]} clusterTopic A unique cluster topic, if not created uses format: topic_SUBSCRIPTIONS
    */
-  constructor (options, topic, clusterTopic) {
+  constructor (options, topic) {
     this._delayedBroadcasts = new Map()
     this._delay = -1
     if (options.broadcastTimeout !== undefined) {
@@ -27,7 +25,6 @@ class SubscriptionRegistry {
     this._options = options
     this._topic = topic
     this._subscriptionListener = null
-    this._serverName = options.serverName
     this._constants = {
       MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
       SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
@@ -36,48 +33,6 @@ class SubscriptionRegistry {
     }
     this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
-
-    this._setupRemoteComponents(clusterTopic)
-  }
-
-  /**
-   * Setup all the remote components and actions required to deal with the subscription
-   * via the cluster.
-   */
-  _setupRemoteComponents (clusterTopic) {
-    this._clusterSubscriptions = new DistributedStateRegistry(clusterTopic || `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`, this._options)
-    this._clusterSubscriptions.on('add', this._onClusterSubscriptionAdded.bind(this))
-    this._clusterSubscriptions.on('remove', this._onClusterSubscriptionRemoved.bind(this))
-  }
-
-  /**
-   * Return all the servers that have this subscription.
-   *
-   * @param  {String} subscriptionName the subscriptionName to look for
-   *
-   * @public
-   * @return {Array}  An array of all the servernames with this subscription
-   */
-  getAllServers (subscriptionName) {
-    return this._clusterSubscriptions.getAllServers(subscriptionName)
-  }
-
-  /**
-   * Return all the servers that have this subscription excluding the current
-   * server name
-   *
-   * @param  {String} subscriptionName the subscriptionName to look for
-   *
-   * @public
-   * @return {Array}  An array of all the servernames with this subscription
-   */
-  getAllRemoteServers (subscriptionName) {
-    const serverNames = this._clusterSubscriptions.getAllServers(subscriptionName)
-    const localServerIndex = serverNames.indexOf(this._serverName)
-    if (localServerIndex > -1) {
-      serverNames.splice(serverNames.indexOf(this._serverName), 1)
-    }
-    return serverNames
   }
 
   /**
@@ -88,18 +43,30 @@ class SubscriptionRegistry {
    * @returns {Array} names
    */
   getNames () {
-    return this._clusterSubscriptions.getAll()
+    return this._subscriptions.keys()
   }
 
   /**
-   * Returns true if the subscription exists somewhere
-   * in the cluster
+   * Returns true if the subscription exists
    *
    * @public
    * @returns {Array} names
    */
   hasName (subscriptionName) {
-    return this._clusterSubscriptions.has(subscriptionName)
+    return this._subscriptions.has(subscriptionName)
+  }
+
+  /**
+   * Returns an array of SocketWrappers that are subscribed
+   * to <name> or null if there are no subscribers
+   *
+   * @param   {String} name
+   *
+   * @public
+   * @returns {Array} SocketWrapper[]
+   */
+  getSubscribers (name) {
+    return this._subscriptions.get(name) || new Set()
   }
 
   /**
@@ -275,14 +242,11 @@ class SubscriptionRegistry {
     }
     names.add(name)
 
-    this._clusterSubscriptions.add(name)
-
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionAdded(
         name,
         socket,
-        sockets.size,
-        this.getAllRemoteServers(name).length
+        sockets.size
       )
     }
 
@@ -324,14 +288,11 @@ class SubscriptionRegistry {
       this._names.delete(socket)
     }
 
-    this._clusterSubscriptions.remove(name)
-
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socket,
-        sockets.size,
-        this.getAllRemoteServers(name).length
+        sockets.size
       )
     }
 
@@ -340,33 +301,6 @@ class SubscriptionRegistry {
       this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg)
       socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name])
     }
-  }
-
-  /**
-   * Returns an array of SocketWrappers that are subscribed
-   * to <name> or null if there are no subscribers
-   *
-   * @param   {String} name
-   *
-   * @public
-   * @returns {Array} SocketWrapper[]
-   */
-  getLocalSubscribers (name) {
-    return this._subscriptions.get(name) || new Set()
-  }
-
-  /**
-   * Returns true if there are SocketWrappers that
-   * are subscribed to <name> or false if there
-   * aren't any subscribers
-   *
-   * @param   {String}  name
-   *
-   * @public
-   * @returns {Boolean} hasLocalSubscribers
-   */
-  hasLocalSubscribers (name) {
-    return this._subscriptions.has(name)
   }
 
   /**
@@ -379,30 +313,6 @@ class SubscriptionRegistry {
    */
   setSubscriptionListener (subscriptionListener) {
     this._subscriptionListener = subscriptionListener
-  }
-
-  _onClusterSubscriptionAdded (name, serverName) {
-    if (this._subscriptionListener && serverName !== this._serverName) {
-      const sockets = this._subscriptions.get(name)
-      this._subscriptionListener.onSubscriptionAdded(
-        name,
-        null,
-        sockets ? sockets.size : 0,
-        this.getAllRemoteServers(name).length
-      )
-    }
-  }
-
-  _onClusterSubscriptionRemoved (name, serverName) {
-    if (this._subscriptionListener && serverName !== this._serverName) {
-      const sockets = this._subscriptions.get(name)
-      this._subscriptionListener.onSubscriptionRemoved(
-        name,
-        null,
-        sockets ? sockets.size : 0,
-        this.getAllRemoteServers(name).length
-      )
-    }
   }
 }
 

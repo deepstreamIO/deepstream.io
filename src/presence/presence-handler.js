@@ -2,7 +2,6 @@
 
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
-const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const messageBuilder = require('../message/message-builder')
 
 /**
@@ -25,10 +24,6 @@ module.exports = class PresenceHandler {
     this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
 
     this._presenceRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
-
-    this._connectedClients = new DistributedStateRegistry(C.TOPIC.ONLINE_USERS, options)
-    this._connectedClients.on('add', this._onClientAdded.bind(this))
-    this._connectedClients.on('remove', this._onClientRemoved.bind(this))
   }
 
   /**
@@ -50,11 +45,7 @@ module.exports = class PresenceHandler {
     } else if (message.action === C.ACTIONS.QUERY) {
       this._handleQuery(socketWrapper)
     } else {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
-
-      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-        socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
-      }
+      socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
     }
   }
 
@@ -70,7 +61,7 @@ module.exports = class PresenceHandler {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === undefined) {
       this._localClients.set(socketWrapper.user, 1)
-      this._connectedClients.add(socketWrapper.user)
+      this._onClientAdded(socketWrapper.user)
     } else {
       currentCount++
       this._localClients.set(socketWrapper.user, currentCount)
@@ -89,7 +80,7 @@ module.exports = class PresenceHandler {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === 1) {
       this._localClients.delete(socketWrapper.user)
-      this._connectedClients.remove(socketWrapper.user)
+      this._onClientRemoved(socketWrapper.user)
     } else {
       currentCount--
       this._localClients.set(socketWrapper.user, currentCount)
@@ -106,7 +97,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleQuery (socketWrapper) {
-    const clients = this._connectedClients.getAll()
+    const clients = Array.from(this._localClients.values())
     const index = clients.indexOf(socketWrapper.user)
     if (index !== -1) {
       clients.splice(index, 1)

@@ -1,4 +1,3 @@
-const utils = require('./utils/utils')
 const C = require('./constants/constants')
 
 exports.get = function () {
@@ -6,7 +5,6 @@ exports.get = function () {
     /*
      * General
      */
-    serverName: utils.getUid(),
     logLevel: C.LOG_LEVEL.INFO,
 
     /*
@@ -33,13 +31,7 @@ exports.get = function () {
     rpcAckTimeout: 1000,
     rpcTimeout: 10000,
     dependencyInitialisationTimeout: 2000,
-    stateReconciliationTimeout: 500,
-    clusterKeepAliveInterval: 5000,
-    clusterActiveCheckInterval: 1000,
-    clusterNodeInactiveTimeout: 6000,
     listenResponseTimeout: 500,
-    lockTimeout: 1000,
-    lockRequestTimeout: 1000,
     broadcastTimeout: 0
   }
 

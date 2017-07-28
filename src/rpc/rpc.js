@@ -1,5 +1,4 @@
 const C = require('../constants/constants')
-const RpcProxy = require('./rpc-proxy')
 
 /**
  * Relays a remote procedure call from a requestor to a provider and routes
@@ -196,11 +195,6 @@ module.exports = class Rpc {
   * @returns {void}
   */
   _send (receiver, message, sender) {
-    if (receiver instanceof RpcProxy) {
-      receiver.send(message)
-      return
-    }
-
     receiver.sendMessage(message.topic, message.action, message.data)
   }
 }

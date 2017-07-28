@@ -1,11 +1,5 @@
 'use strict'
 
-const xuid = require('xuid')
-
-exports.getUid = function () {
-  return xuid()
-}
-
 exports.setTimeout = function (callback, timeoutDuration) {
   if (timeoutDuration !== null) {
     return setTimeout(callback, timeoutDuration)

@@ -8,7 +8,6 @@ const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
 const DependencyInitialiser = require('./utils/dependency-initialiser')
-const ClusterRegistry = require('./cluster/cluster-registry')
 const C = require('./constants/constants')
 const pkg = require('../package.json')
 
@@ -38,11 +37,9 @@ const Deepstream = function (config) {
   this._rpcHandler = null
   this._recordHandler = null
   this._plugins = [
-    'messageConnector',
     'storageConnector',
     'authenticationHandler',
-    'permissionHandler',
-    'stateConnector'
+    'permissionHandler'
   ]
 }
 
@@ -180,7 +177,6 @@ Deepstream.prototype.stop = function () {
       }
     })
   }
-  this._options.clusterRegistry.leaveCluster()
   this._connectionEndpoint.close()
 }
 
@@ -221,8 +217,6 @@ Deepstream.prototype._init = function () {
   this._messageProcessor = new MessageProcessor(this._options)
   this._messageDistributor = new MessageDistributor(this._options)
   this._connectionEndpoint.onMessage = this._messageProcessor.process.bind(this._messageProcessor)
-
-  this._options.clusterRegistry = new ClusterRegistry(this._options, this._connectionEndpoint)
 
   this._eventHandler = new EventHandler(this._options)
   this._messageDistributor.registerForTopic(C.TOPIC.EVENT, this._eventHandler.handle.bind(this._eventHandler))

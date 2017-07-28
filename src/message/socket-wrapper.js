@@ -4,7 +4,6 @@ const C = require('../constants/constants')
 const messageBuilder = require('./message-builder')
 const utils = require('util')
 const uws = require('uws')
-const xuid = require('xuid')
 
 const EventEmitter = require('events').EventEmitter
 
@@ -28,7 +27,6 @@ const SocketWrapper = function (socket, options) {
   this.user = null
   this.authCallBack = null
   this.authAttempts = 0
-  this.uuid = xuid()
   this.setMaxListeners(0)
   this._handshakeData = null
   this._setUpHandshakeData()
