@@ -48,7 +48,22 @@ module.exports = class RecordCache {
 
   peek (name) {
     const node = this._map.get(name)
-    return node ? node.value.record : undefined
+    if (!node) {
+      return
+    }
+
+    return node.value.record
+  }
+
+  get (name) {
+    const node = this._map.get(name)
+    if (!node) {
+      return
+    }
+
+    this._list.unshiftNode(node)
+
+    return node.value.record
   }
 
   lock (name) {
@@ -56,7 +71,7 @@ module.exports = class RecordCache {
     if (node) {
       ++node.value.refs
     } else {
-      const size = 32
+      const size = 32 + name.length
       this._space -= size
       this._list.unshift({ name, size, record: undefined, refs: 1 })
       this._map.set(name, this._list.head)
@@ -72,33 +87,5 @@ module.exports = class RecordCache {
     if (--node.value.refs === 0) {
       this.prune()
     }
-  }
-
-  get (name) {
-    const node = this._map.get(name)
-    if (!node) {
-      return
-    }
-
-    this._list.unshiftNode(node)
-
-    return node.value.record
-  }
-
-  del (name) {
-    const node = this._map.get(name)
-    if (!node) {
-      return
-    }
-
-    const record = node.value.record
-
-    if (node.value.refs === 0) {
-      this._space += node.value.size
-      this._map.delete(name)
-      this._list.removeNode(node)
-    }
-
-    return record
   }
 }
