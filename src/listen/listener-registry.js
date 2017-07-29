@@ -10,7 +10,6 @@ module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._listeners = new Map()
     this._timeouts = new Map()
-    this._provided = new Set()
 
     this._timeout = null
     this._topic = topic
@@ -82,10 +81,12 @@ module.exports = class ListenerRegistry {
   onSubscriptionAdded (name, socket, localCount) {
     if (localCount === 1) {
       this._reconcile(name)
-    }
+    } else {
+      const prev = this._providers.get(name) || {}
 
-    if (this._provided.has(name)) {
-      this._sendHasProviderUpdate(true, name, socket)
+      if (prev.socket && !prev.deadline) {
+        this._sendHasProviderUpdate(true, name, socket)
+      }
     }
   }
 
@@ -113,10 +114,7 @@ module.exports = class ListenerRegistry {
       deadline: null
     })
 
-    if (!this._provided.has(name)) {
-      this._sendHasProviderUpdate(true, name)
-      this._provided.add(name)
-    }
+    this._sendHasProviderUpdate(true, name)
   }
 
   _reject (socket, [ pattern, name ]) {
@@ -153,9 +151,8 @@ module.exports = class ListenerRegistry {
         return
       }
 
-      if (this._provided.has(name)) {
+      if (prev.socket && !prev.deadline) {
         this._sendHasProviderUpdate(false, name)
-        this._provided.delete(name)
       }
 
       const history = prev.history || []

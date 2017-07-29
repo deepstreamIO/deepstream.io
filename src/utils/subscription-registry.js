@@ -100,11 +100,8 @@ class SubscriptionRegistry {
    */
   _onBroadcastTimeout () {
     this._delayedBroadcastsTimer = null
-    for (const entry of this._delayedBroadcasts) {
-      const name = entry[0]
-      const delayedBroadcasts = entry[1]
-      const uniqueSenders = delayedBroadcasts.uniqueSenders
-      const sharedMessages = delayedBroadcasts.sharedMessages
+    for (const [ name, delayedBroadcasts ] of this._delayedBroadcasts) {
+      const { uniqueSenders, sharedMessages } = delayedBroadcasts
 
       if (sharedMessages.length === 0) {
         this._delayedBroadcasts.delete(name)
@@ -112,9 +109,7 @@ class SubscriptionRegistry {
       }
 
       // for all unique senders and their gaps, build their special messages
-      for (const entry of uniqueSenders) {
-        let socket = entry[0]
-        let gaps = entry[1]
+      for (const [ socket, gaps ] of uniqueSenders) {
         let i = 0
         let message = sharedMessages.substring(0, gaps[i++])
         let lastStop = gaps[i++]
@@ -173,7 +168,7 @@ class SubscriptionRegistry {
 
     // if not already a delayed broadcast, create it
     let delayedBroadcasts = this._delayedBroadcasts.get(name)
-    if (delayedBroadcasts === undefined) {
+    if (!delayedBroadcasts) {
       delayedBroadcasts = {
         uniqueSenders: new Map(),
         sharedMessages: ''
@@ -188,12 +183,10 @@ class SubscriptionRegistry {
     const stop = delayedBroadcasts.sharedMessages.length
 
     if (socket && socket.sendNative) {
-      let uniqueSenders = delayedBroadcasts.uniqueSenders
-      let gaps = uniqueSenders.get(socket)
+      const gaps = delayedBroadcasts.uniqueSenders.get(socket) || []
 
-      if (!gaps) {
-        gaps = []
-        uniqueSenders.set(socket, gaps)
+      if (gaps.length === 0) {
+        delayedBroadcasts.uniqueSenders.set(socket, gaps)
       }
 
       gaps.push(start, stop)
