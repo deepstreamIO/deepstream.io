@@ -211,11 +211,20 @@ module.exports = class ListenerRegistry {
   }
 
   _isAlive (provider) {
+    if (!provider.socket) {
+      return false
+    }
+
+    if (provider.deadline && Date.now() >= provider.deadline) {
+      return false
+    }
+
     const listener = this._listeners.get(provider.pattern)
-    return (
-      (!provider.deadline || provider.deadline > Date.now()) &&
-      listener && listener.sockets.has(provider.socket)
-    )
+    if (!listener || !listener.sockets.has(provider.socket)) {
+      return false
+    }
+
+    return true
   }
 
   _sendHasProviderUpdate (hasProvider, name, socket) {
