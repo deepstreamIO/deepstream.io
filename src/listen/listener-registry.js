@@ -10,8 +10,6 @@ module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._listeners = new Map()
     this._timeouts = new Map()
-
-    this._timeout = null
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
     this._subscriptionRegistry = subscriptionRegistry
@@ -239,7 +237,7 @@ module.exports = class ListenerRegistry {
     )
 
     if (socket) {
-      socket.send(message)
+      socket.sendNative(message)
     } else {
       this._subscriptionRegistry.sendToSubscribers(name, message)
     }
