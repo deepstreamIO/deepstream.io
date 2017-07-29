@@ -64,7 +64,7 @@ module.exports = class ListenerRegistry {
     })
 
     for (const name of this._subscriptionRegistry.getNames()) {
-      if (listener.expr.test(name)) {
+      if (!this._providers.has(name) && listener.expr.test(name)) {
         this._reconcile(name)
       }
     }
