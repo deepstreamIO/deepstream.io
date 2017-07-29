@@ -63,7 +63,11 @@ module.exports = class ListenerRegistry {
       id: idCounter++
     })
 
-    this._reconcilePattern(listener)
+    for (const name of this._subscriptionRegistry.getNames()) {
+      if (listener.expr.test(name)) {
+        this._reconcile(name)
+      }
+    }
   }
 
   onListenRemoved (pattern, socket) {
@@ -75,7 +79,11 @@ module.exports = class ListenerRegistry {
       this._listeners.delete(pattern)
     }
 
-    this._reconcilePattern(listener)
+    for (const [ name, { pattern } ] of this._providers) {
+      if (listener.pattern === pattern) {
+        this._reconcile(name)
+      }
+    }
   }
 
   onSubscriptionAdded (name, socket, localCount) {
@@ -134,15 +142,6 @@ module.exports = class ListenerRegistry {
     this._reconcile(name)
   }
 
-  _reconcilePattern ({ pattern, expr }) {
-    // TODO: Optimize
-    for (const name of this._subscriptionRegistry.getNames()) {
-      if (expr.test(name)) {
-        this._reconcile(name)
-      }
-    }
-  }
-
   _reconcile (name) {
     let prev = this._providers.get(name) || {}
     let next = {}
@@ -192,25 +191,18 @@ module.exports = class ListenerRegistry {
 
   _match (name, history) {
     // TODO: Optimize
-    let matches = []
-    for (const [ pattern, { expr } ] of this._listeners) {
-      if (expr.test(name)) {
-        matches.push(pattern)
-      }
-    }
-
     let results = []
 
-    for (const pattern of matches) {
-      const listener = this._listeners.get(pattern)
-      if (!listener) {
+    for (const [ , { expr, sockets } ] of this._listeners) {
+      if (!expr.test(name)) {
         continue
       }
 
-      for (const socket of listener.sockets.values()) {
+      for (const socket of sockets) {
         if (history.includes(socket.id)) {
           continue
         }
+
         results.push(socket)
       }
     }
