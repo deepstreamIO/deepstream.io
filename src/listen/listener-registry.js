@@ -198,7 +198,7 @@ module.exports = class ListenerRegistry {
         continue
       }
 
-      for (const socket of sockets) {
+      for (const socket of sockets.values()) {
         if (history.includes(socket.id)) {
           continue
         }
