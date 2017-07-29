@@ -63,7 +63,7 @@ module.exports = class ListenerRegistry {
       id: idCounter++
     })
 
-    this._reconcilePattern(listener.expr)
+    this._reconcilePattern(listener)
   }
 
   onListenRemoved (pattern, socket) {
@@ -75,7 +75,7 @@ module.exports = class ListenerRegistry {
       this._listeners.delete(pattern)
     }
 
-    this._reconcilePattern(listener.expr)
+    this._reconcilePattern(listener)
   }
 
   onSubscriptionAdded (name, socket, localCount) {
@@ -134,7 +134,7 @@ module.exports = class ListenerRegistry {
     this._reconcile(name)
   }
 
-  _reconcilePattern (expr) {
+  _reconcilePattern ({ pattern, expr }) {
     // TODO: Optimize
     for (const name of this._subscriptionRegistry.getNames()) {
       if (expr.test(name)) {
@@ -144,7 +144,8 @@ module.exports = class ListenerRegistry {
   }
 
   _reconcile (name) {
-    const prev = this._providers.get(name) || {}
+    let prev = this._providers.get(name) || {}
+    let next = {}
 
     if (this._subscriptionRegistry.hasName(name)) {
       if (this._isAlive(prev)) {
@@ -156,20 +157,21 @@ module.exports = class ListenerRegistry {
       }
 
       const history = prev.history || []
-      const matches = this._match(name).filter(match => !history.includes(match.id))
-      const match = matches[Math.floor(Math.random() * matches.length)]
+      const match = this._match(name, history)
 
-      this._providers.set(name, match ? {
+      next = match ? {
         history: history.concat(match.id),
         socket: match.socket,
         pattern: match.pattern,
         deadline: Date.now() + this._listenResponseTimeout
-      } : { history })
+      } : { history }
+    }
+
+    if (next.history && next.history.length > 0) {
+      this._providers.set(name, next)
     } else {
       this._providers.delete(name)
     }
-
-    const next = this._providers.get(name) || {}
 
     if (next.socket) {
       this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
@@ -188,15 +190,32 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  _match (name) {
+  _match (name, history) {
     // TODO: Optimize
-    const matches = []
-    for (const { expr, sockets } of this._listeners.values()) {
+    let matches = []
+    for (const [ pattern, { expr } ] of this._listeners) {
       if (expr.test(name)) {
-        matches.push(...sockets.values())
+        matches.push(pattern)
       }
     }
-    return matches
+
+    let results = []
+
+    for (const pattern of matches) {
+      const listener = this._listeners.get(pattern)
+      if (!listener) {
+        continue
+      }
+
+      for (const socket of listener.sockets.values()) {
+        if (history.includes(socket.id)) {
+          continue
+        }
+        results.push(socket)
+      }
+    }
+
+    return results[Math.floor(Math.random() * results.length)]
   }
 
   _isAlive (provider) {
