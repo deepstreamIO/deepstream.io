@@ -79,8 +79,8 @@ module.exports = class ListenerRegistry {
       this._listeners.delete(pattern)
     }
 
-    for (const [ name, { pattern } ] of this._providers) {
-      if (listener.pattern === pattern) {
+    for (const [ name, provider ] of this._providers) {
+      if (provider.pattern === pattern) {
         this._reconcile(name)
       }
     }
