@@ -9,7 +9,6 @@ let idCounter = 0
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._listeners = new Map()
-    this._timeouts = new Map()
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
     this._subscriptionRegistry = subscriptionRegistry
@@ -63,7 +62,7 @@ module.exports = class ListenerRegistry {
 
     for (const name of this._subscriptionRegistry.getNames()) {
       if (!this._providers.has(name) && listener.expr.test(name)) {
-        this._reconcile(name, true, null)
+        this._provide(name, null)
       }
     }
   }
@@ -73,120 +72,122 @@ module.exports = class ListenerRegistry {
 
     listener.sockets.delete(socket)
 
-    if (listener.sockets.size === 0) {
-      this._listeners.delete(pattern)
+    if (listener.sockets.size > 0) {
+      return
     }
 
+    this._listeners.delete(pattern)
+
     for (const [ name, provider ] of this._providers) {
-      if (provider.pattern === pattern) {
-        this._reconcile(name, undefined, provider)
+      if (provider.pattern !== pattern) {
+        continue
       }
+
+      this._sendHasProviderUpdate(false, name)
+
+      this._provide(name, provider)
     }
   }
 
   onSubscriptionAdded (name, socket, localCount) {
     if (localCount === 1) {
-      this._reconcile(name, true, null)
+      this._provide(name, null)
     } else {
-      const prev = this._providers.get(name)
+      const provider = this._providers.get(name)
 
-      if (prev && prev.socket && !prev.deadline) {
+      if (provider && provider.socket && !provider.timeout) {
         this._sendHasProviderUpdate(true, name, socket)
       }
     }
   }
 
   onSubscriptionRemoved (name, socket, localCount) {
-    if (localCount === 0) {
-      this._reconcile(name, false, undefined)
+    if (localCount !== 0) {
+      return
     }
-  }
-
-  _accept (socket, [ pattern, name ]) {
-    clearTimeout(this._timeouts.get(name))
-    this._timeouts.delete(name)
 
     const provider = this._providers.get(name)
 
-    if (!provider || !provider.deadline) {
+    if (!provider) {
+      return
+    }
+
+    this._reset(provider)
+    this._providers.delete(name)
+
+    if (!provider.socket) {
+      return
+    }
+
+    provider.socket.sendMessage(
+      this._topic,
+      C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+      [ provider.pattern, name ]
+    )
+  }
+
+  _accept (socket, [ pattern, name ]) {
+    const provider = this._providers.get(name)
+
+    if (!provider || !provider.timeout) {
       socket.sendMessage(this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ pattern, name ])
       return
     }
 
-    provider.socket = socket
-    provider.deadline = null
+    this._reset(provider, socket, pattern)
 
     this._sendHasProviderUpdate(true, name, undefined)
   }
 
   _reject (socket, [ pattern, name ]) {
-    clearTimeout(this._timeouts.get(name))
-    this._timeouts.delete(name)
-
     const provider = this._providers.get(name)
 
-    if (!provider || provider.socket !== socket || provider.pattern !== pattern) {
+    if (!provider || !provider.timeout) {
       return
     }
 
-    provider.socket = null
-    provider.deadline = null
+    if (provider.socket !== socket || provider.pattern !== pattern) {
+      return
+    }
 
-    this._reconcile(name, undefined, provider)
+    this._provide(name, provider)
   }
 
-  _reconcile (
-    name,
-    subscribed = this._subscriptionRegistry.hasName(name),
-    provider = this._providers.get(name)
-  ) {
-    if (subscribed) {
-      if (provider) {
-        if (this._isAlive(provider)) {
-          return
-        }
-
-        if (provider.socket && !provider.deadline) {
-          this._sendHasProviderUpdate(false, name)
-        }
-
-        provider.socket = null
-        provider.pattern = null
-        provider.deadline = null
-      }
-
-      const match = this._match(name, provider && provider.history)
-
-      if (!match) {
-        return
-      }
-
-      if (!provider) {
-        provider = { history: [] }
-        this._provider.set(name, provider)
-      }
-
-      provider.history.push(match.id)
-      provider.socket = match.socket
-      provider.pattern = match.pattern
-      provider.deadline = Date.now() + this._listenResponseTimeout
-
-      this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
-
-      provider.socket.sendMessage(
-        this._topic,
-        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-        [ provider.pattern, name ]
-      )
-    } else if (provider) {
-      this._providers.delete(name)
-
-      provider.socket && provider.socket.sendMessage(
-        this._topic,
-        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-        [ provider.pattern, name ]
-      )
+  _provide (name, provider) {
+    if (provider) {
+      this._reset(provider)
     }
+
+    const match = this._match(name, provider && provider.history)
+
+    if (!match) {
+      return
+    }
+
+    if (!provider) {
+      provider = this._reset()
+      this._providers.set(name, provider)
+    }
+
+    provider.history.push(match.id)
+    provider.socket = match.socket
+    provider.pattern = match.pattern
+    provider.timeout = setTimeout(() => this._provide(name, provider), this._listenResponseTimeout)
+
+    provider.socket.sendMessage(
+      this._topic,
+      C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+      [ provider.pattern, name ]
+    )
+  }
+
+  _reset (provider = Object.create(null), socket = null, pattern = null) {
+    clearTimeout(provider.timeout)
+    provider.history = provider.history || []
+    provider.socket = socket
+    provider.pattern = pattern
+    provider.timeout = null
+    return provider
   }
 
   _match (name, history) {
@@ -208,23 +209,6 @@ module.exports = class ListenerRegistry {
     }
 
     return results[Math.floor(Math.random() * results.length)]
-  }
-
-  _isAlive (provider) {
-    if (!provider.socket) {
-      return false
-    }
-
-    if (provider.deadline && Date.now() >= provider.deadline) {
-      return false
-    }
-
-    const listener = this._listeners.get(provider.pattern)
-    if (!listener || !listener.sockets.has(provider.socket)) {
-      return false
-    }
-
-    return true
   }
 
   _sendHasProviderUpdate (hasProvider, name, socket) {
