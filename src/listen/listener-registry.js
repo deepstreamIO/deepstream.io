@@ -61,9 +61,10 @@ module.exports = class ListenerRegistry {
     })
 
     for (const name of this._subscriptionRegistry.getNames()) {
-      if (!this._providers.has(name) && listener.expr.test(name)) {
-        this._provide(name, null)
+      if (this._providers.has(name) || !listener.expr.test(name)) {
+        continue
       }
+      this._provide(name, null)
     }
   }
 
@@ -72,14 +73,12 @@ module.exports = class ListenerRegistry {
 
     listener.sockets.delete(socket)
 
-    if (listener.sockets.size > 0) {
-      return
+    if (listener.sockets.size === 0) {
+      this._listeners.delete(pattern)
     }
 
-    this._listeners.delete(pattern)
-
     for (const [ name, provider ] of this._providers) {
-      if (provider.pattern !== pattern) {
+      if (provider.pattern !== pattern || provider.socket !== socket) {
         continue
       }
 
@@ -158,7 +157,7 @@ module.exports = class ListenerRegistry {
       this._reset(provider)
     }
 
-    const match = this._match(name, provider && provider.history)
+    const match = this._match(name, provider.history)
 
     if (!match) {
       return
