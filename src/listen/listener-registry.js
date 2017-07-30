@@ -5,7 +5,6 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 
 let idCounter = 0
-let EMPTY = Object.create(null)
 
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
@@ -64,7 +63,7 @@ module.exports = class ListenerRegistry {
 
     for (const name of this._subscriptionRegistry.getNames()) {
       if (!this._providers.has(name) && listener.expr.test(name)) {
-        this._reconcile(name, true)
+        this._reconcile(name, true, null)
       }
     }
   }
@@ -87,11 +86,11 @@ module.exports = class ListenerRegistry {
 
   onSubscriptionAdded (name, socket, localCount) {
     if (localCount === 1) {
-      this._reconcile(name, true)
+      this._reconcile(name, true, null)
     } else {
-      const prev = this._providers.get(name) || EMPTY
+      const prev = this._providers.get(name)
 
-      if (prev.socket && !prev.deadline) {
+      if (prev && prev.socket && !prev.deadline) {
         this._sendHasProviderUpdate(true, name, socket)
       }
     }
@@ -99,7 +98,7 @@ module.exports = class ListenerRegistry {
 
   onSubscriptionRemoved (name, socket, localCount) {
     if (localCount === 0) {
-      this._reconcile(name, false)
+      this._reconcile(name, false, undefined)
     }
   }
 
@@ -107,9 +106,9 @@ module.exports = class ListenerRegistry {
     clearTimeout(this._timeouts.get(name))
     this._timeouts.delete(name)
 
-    const provider = this._providers.get(name) || EMPTY
+    const provider = this._providers.get(name)
 
-    if (!provider.deadline) {
+    if (!provider || !provider.deadline) {
       socket.sendMessage(this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ pattern, name ])
       return
     }
@@ -117,16 +116,16 @@ module.exports = class ListenerRegistry {
     provider.socket = socket
     provider.deadline = null
 
-    this._sendHasProviderUpdate(true, name)
+    this._sendHasProviderUpdate(true, name, undefined)
   }
 
   _reject (socket, [ pattern, name ]) {
     clearTimeout(this._timeouts.get(name))
     this._timeouts.delete(name)
 
-    const provider = this._providers.get(name) || EMPTY
+    const provider = this._providers.get(name)
 
-    if (provider.socket !== socket || provider.pattern !== pattern) {
+    if (!provider || provider.socket !== socket || provider.pattern !== pattern) {
       return
     }
 
@@ -139,50 +138,53 @@ module.exports = class ListenerRegistry {
   _reconcile (
     name,
     subscribed = this._subscriptionRegistry.hasName(name),
-    provider = this._providers.get(name) || EMPTY
+    provider = this._providers.get(name)
   ) {
-    let prev = provider
-    let next = EMPTY
-
     if (subscribed) {
-      if (this._isAlive(prev)) {
+      if (provider) {
+        if (this._isAlive(provider)) {
+          return
+        }
+
+        if (provider.socket && !provider.deadline) {
+          this._sendHasProviderUpdate(false, name)
+        }
+
+        provider.socket = null
+        provider.pattern = null
+        provider.deadline = null
+      }
+
+      const match = this._match(name, provider && provider.history)
+
+      if (!match) {
         return
       }
 
-      if (prev.socket && !prev.deadline) {
-        this._sendHasProviderUpdate(false, name)
+      if (!provider) {
+        provider = { history: [] }
+        this._provider.set(name, provider)
       }
 
-      const history = prev.history || []
-      const match = this._match(name, history)
+      provider.history.push(match.id)
+      provider.socket = match.socket
+      provider.pattern = match.pattern
+      provider.deadline = Date.now() + this._listenResponseTimeout
 
-      next = match ? {
-        history: history.concat(match.id),
-        socket: match.socket,
-        pattern: match.pattern,
-        deadline: Date.now() + this._listenResponseTimeout
-      } : { history }
-    }
-
-    if (next.history && next.history.length > 0) {
-      this._providers.set(name, next)
-    } else {
-      this._providers.delete(name)
-    }
-
-    if (next.socket) {
       this._timeouts.set(name, setTimeout(() => this._reconcile(name), this._listenResponseTimeout))
 
-      next.socket.sendMessage(
+      provider.socket.sendMessage(
         this._topic,
         C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-        [ next.pattern, name ]
+        [ provider.pattern, name ]
       )
-    } else if (prev.socket) {
-      prev.socket.sendMessage(
+    } else if (provider) {
+      this._providers.delete(name)
+
+      provider.socket && provider.socket.sendMessage(
         this._topic,
         C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-        [ prev.pattern, name ]
+        [ provider.pattern, name ]
       )
     }
   }
@@ -197,7 +199,7 @@ module.exports = class ListenerRegistry {
       }
 
       for (const socket of sockets.values()) {
-        if (history.includes(socket.id)) {
+        if (history && history.includes(socket.id)) {
           continue
         }
 
