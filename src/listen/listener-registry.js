@@ -224,7 +224,7 @@ module.exports = class ListenerRegistry {
     )
 
     if (socket) {
-      socket.sendNative(message)
+      socket.send(message)
     } else {
       this._subscriptionRegistry.sendToSubscribers(name, message)
     }

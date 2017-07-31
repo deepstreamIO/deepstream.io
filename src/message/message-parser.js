@@ -30,14 +30,6 @@ module.exports = class MessageParser {
    */
   static parse (message, callback) {
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
-    let result
-
-    if (!callback) {
-      result = []
-      callback = (msg) => {
-        result.push(msg)
-      }
-    }
 
     for (let i = 0; i < rawMessages.length; i++) {
       if (rawMessages[i].length < 3) {
@@ -51,7 +43,5 @@ module.exports = class MessageParser {
         data: parts.splice(2)
       }, message)
     }
-
-    return result
   }
 }
