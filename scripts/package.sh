@@ -107,6 +107,7 @@ function compile {
         sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
         sed -i "s@'src/debug-agent.cc',@'src/debug-agent.cc',\n  $C_FILE_NAMES@" $NODE_SOURCE/node.gyp
         sed -i "s@'deps/uv/src/ares',@'deps/uv/src/ares',\n  $EXTRA_INCLUDES@" $NODE_SOURCE/node.gyp
+        sed -i "s/'cflags': [ '-g', '-O0' ],/'cflags': [ '-g', '-O0', '-DUSE_LIBUV' ],/" $NODE_SOURCE/common.gypi
         sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/src/uws.js
         sed -i "s/UV_WRITABLE/UV_WRITABLE_/" $UWS_SOURCE/uWebSockets/src/*
         sed -i "s/UV_READABLE/UV_READABLE_/" $UWS_SOURCE/uWebSockets/src/*

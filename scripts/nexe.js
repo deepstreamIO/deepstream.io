@@ -9,9 +9,6 @@ nexe.compile({
   framework: 'node',
   resourceFiles: [
     'ascii-logo.txt'
-  ],
-  nodeMakeArgs: [
-    '-DUSE_LIBUV'
   ]
 },
   error => {
