@@ -48,6 +48,7 @@ module.exports = class MessageProcessor {
    */
   process (socketWrapper, message) {
     if (typeof message !== 'string') {
+      console.log(typeof message)
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.INVALID_MESSAGE,
