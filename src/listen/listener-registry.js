@@ -88,8 +88,8 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onSubscriptionAdded (name, socket, localCount) {
-    if (localCount === 1) {
+  onSubscriptionAdded (name, socket, count) {
+    if (count === 1) {
       this._provide(name, null)
     } else {
       const provider = this._providers.get(name)
@@ -100,8 +100,8 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onSubscriptionRemoved (name, socket, localCount) {
-    if (localCount !== 0) {
+  onSubscriptionRemoved (name, socket, count) {
+    if (count !== 0) {
       return
     }
 
@@ -111,24 +111,26 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    this._reset(provider)
-    this._providers.delete(name)
-
-    if (!provider.socket) {
-      return
+    if (provider.socket) {
+      provider.socket.sendMessage(
+        this._topic,
+        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+        [ provider.pattern, name ]
+      )
     }
 
-    provider.socket.sendMessage(
-      this._topic,
-      C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-      [ provider.pattern, name ]
-    )
+    this._reset(provider)
+    this._providers.delete(name)
   }
 
   _accept (socket, [ pattern, name ]) {
     const provider = this._providers.get(name)
 
-    if (!provider || !provider.timeout) {
+    if (!provider) {
+      return
+    }
+
+    if (!provider.timeout) {
       socket.sendMessage(this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ pattern, name ])
       return
     }
