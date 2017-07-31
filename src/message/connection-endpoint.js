@@ -295,8 +295,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
         return
       }
 
-      this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, 'foo1')
-
       /**
        * Ensure the authentication data is valid JSON
        */
@@ -312,8 +310,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
         this._sendInvalidAuthMsg(socketWrapper, errorMsg)
         return
       }
-
-      this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, 'foo2')
 
       /**
        * Forward for authentication
@@ -356,8 +352,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _registerAuthenticatedSocket (socketWrapper, userData) {
-    this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, 'foo4')
-
     socketWrapper.socket.removeListener('message', socketWrapper.authCallBack)
     socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
     socketWrapper.socket.on('message', (msg) => { this.onMessage(socketWrapper, msg) })
@@ -467,8 +461,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     userData = userData || {}
 
     clearTimeout(disconnectTimeout)
-
-    this._options.logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, 'foo3')
 
     if (isAllowed === true) {
       this._registerAuthenticatedSocket(socketWrapper, userData)
