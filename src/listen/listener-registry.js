@@ -159,7 +159,7 @@ module.exports = class ListenerRegistry {
       this._reset(provider)
     }
 
-    const match = this._match(name, provider.history)
+    const match = this._match(name, provider && provider.history)
 
     if (!match) {
       return
