@@ -1,6 +1,6 @@
 {
   "name": "@nxtedition/deepstream.io",
-  "version": "4.1.7",
+  "version": "4.1.8",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
   "repository": {
