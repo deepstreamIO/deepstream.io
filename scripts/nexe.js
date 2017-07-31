@@ -10,7 +10,7 @@ nexe.compile({
   resourceFiles: [
     'ascii-logo.txt'
   ],
-  make: [
+  nodeMakeArgs: [
     '-DUSE_LIBUV'
   ]
 },
