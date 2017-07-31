@@ -10,7 +10,9 @@ module.exports = class RecordCache {
   }
 
   set (name, record) {
-    const size = record[0].length + record[1].length + record[2].length + 32
+    const size = record
+      ? record[0].length + record[1].length + record[2].length + 32
+      : 32
 
     this._space -= size
 

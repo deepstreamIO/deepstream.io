@@ -77,9 +77,15 @@ module.exports = class RecordHandler {
   _refresh ([ name, version ]) {
     const prevRecord = this._cache.peek(name)
 
+    if (prevRecord === null) {
+      return
+    }
+
     if (prevRecord && isSameOrNewer(prevRecord[1], version)) {
       return
     }
+
+    this._cache.set(name, null)
 
     this._storage.get(name, (error, nextRecord, version) => {
       if (error) {
