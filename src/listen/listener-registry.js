@@ -4,8 +4,6 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 
-let idCounter = 0
-
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._listeners = new Map()
@@ -57,7 +55,7 @@ module.exports = class ListenerRegistry {
     listener.sockets.set(socket, {
       socket,
       pattern,
-      id: idCounter++
+      id: Math.random()
     })
 
     for (const name of this._subscriptionRegistry.getNames()) {
