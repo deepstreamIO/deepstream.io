@@ -52,11 +52,7 @@ module.exports = class ListenerRegistry {
       this._listeners.set(pattern, listener)
     }
 
-    listener.sockets.set(socket, {
-      socket,
-      pattern,
-      id: Math.random()
-    })
+    listener.sockets.set(socket, { socket, pattern })
 
     for (const name of this._subscriptionRegistry.getNames()) {
       if (this._providers.has(name) || !listener.expr.test(name)) {
@@ -168,7 +164,7 @@ module.exports = class ListenerRegistry {
       this._providers.set(name, provider)
     }
 
-    provider.history.push(match.id)
+    provider.history.push(match)
     provider.socket = match.socket
     provider.pattern = match.pattern
     provider.timeout = setTimeout(() => this._provide(name, provider), this._listenResponseTimeout)
@@ -191,23 +187,23 @@ module.exports = class ListenerRegistry {
 
   _match (name, history) {
     // TODO: Optimize
-    let results = []
+    let matches = []
 
     for (const [ , { expr, sockets } ] of this._listeners) {
       if (!expr.test(name)) {
         continue
       }
 
-      for (const socket of sockets.values()) {
-        if (history && history.includes(socket.id)) {
+      for (const match of sockets.values()) {
+        if (history && history.includes(match)) {
           continue
         }
 
-        results.push(socket)
+        matches.push(match)
       }
     }
 
-    return results[Math.floor(Math.random() * results.length)]
+    return matches[Math.floor(Math.random() * matches.length)]
   }
 
   _sendHasProviderUpdate (hasProvider, name, socket) {
