@@ -11,7 +11,6 @@ const EventHandler = function (options) {
   this._listenerRegistry = new ListenerRegistry(C.TOPIC.EVENT, options, this._subscriptionRegistry)
   this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
   this._logger = options.logger
-  this._message = options.messageConnector
 }
 
 EventHandler.prototype.handle = function (socket, message) {

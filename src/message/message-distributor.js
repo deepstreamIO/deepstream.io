@@ -37,8 +37,7 @@ MessageDistributor.prototype.distribute = function (socketWrapper, message) {
 
 /**
  * Allows handlers (event, rpc, record) to register for topics. Subscribes them
- * to both messages passed to the distribute method as well as messages received
- * from the messageConnector
+ * to both messages passed to the distribute method
  *
  * @param   {String}   topic    One of C.TOPIC
  * @param   {Function} callback The method that should be called for every message

@@ -9,7 +9,6 @@ const RecordCache = require(`./record-cache`)
 module.exports = class RecordHandler {
   constructor (options) {
     this._logger = options.logger
-    this._message = options.messageConnector
     this._storage = options.storageConnector
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
     this._storageExclusion = options.storageExclusion
