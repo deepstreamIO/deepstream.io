@@ -52,7 +52,7 @@ module.exports = class ListenerRegistry {
       this._listeners.set(pattern, listener)
     }
 
-    listener.sockets.set(socket, { socket, pattern })
+    listener.sockets.set(socket, { socket, pattern, id: Math.random() })
 
     for (const name of this._subscriptionRegistry.getNames()) {
       const provider = this._providers.get(name)
@@ -175,7 +175,7 @@ module.exports = class ListenerRegistry {
       this._providers.set(name, provider)
     }
 
-    provider.history.push(match)
+    provider.history.push(match.id)
     provider.socket = match.socket
     provider.pattern = match.pattern
     provider.timeout = setTimeout(() => this._provide(name, provider), this._listenResponseTimeout)
@@ -207,7 +207,7 @@ module.exports = class ListenerRegistry {
       }
 
       for (const match of sockets.values()) {
-        if (history && history.includes(match)) {
+        if (history && history.includes(match.id)) {
           continue
         }
 
