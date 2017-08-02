@@ -13,15 +13,15 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
-      onSubscriptionAdded: (name, socket, localCount) => {
-        this._listenerRegistry.onSubscriptionAdded(name, socket, localCount)
-        if (localCount === 1) {
+      onSubscriptionAdded: (name, socket, count) => {
+        this._listenerRegistry.onSubscriptionAdded(name, socket, count)
+        if (count === 1) {
           this._cache.lock(name)
         }
       },
-      onSubscriptionRemoved: (name, socket, localCount) => {
-        this._listenerRegistry.onSubscriptionRemoved(name, socket, localCount)
-        if (localCount === 0) {
+      onSubscriptionRemoved: (name, socket, count) => {
+        this._listenerRegistry.onSubscriptionRemoved(name, socket, count)
+        if (count === 0) {
           this._cache.unlock(name)
         }
       }
