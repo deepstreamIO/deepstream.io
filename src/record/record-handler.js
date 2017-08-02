@@ -83,9 +83,9 @@ module.exports = class RecordHandler {
       if (error) {
         const message = `error while reading ${nextRecord[0]} from storage ${error}`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
+      } else {
+        this._broadcast(nextRecord)
       }
-
-      this._broadcast(nextRecord)
     })
   }
 
