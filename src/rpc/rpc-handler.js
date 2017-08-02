@@ -2,8 +2,6 @@
 
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
-const Rpc = require('./rpc')
-const utils = require('../utils/utils')
 
 module.exports = class RpcHandler {
   /**
@@ -21,176 +19,74 @@ module.exports = class RpcHandler {
   * Main interface. Handles incoming messages
   * from the message distributor
   *
-  * @param   {SocketWrapper} socketWrapper
+  * @param   {SocketWrapper} socket
   * @param   {Object} message parsed and validated deepstream message
   *
   * @public
   * @returns {void}
   */
-  handle (socketWrapper, message) {
+  handle (socket, message) {
+    const [ name, id, data ] = message.data
+
     if (message.action === C.ACTIONS.SUBSCRIBE) {
-      this._registerProvider(socketWrapper, message)
+      this._subscriptionRegistry.subscribe(name, socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._unregisterProvider(socketWrapper, message)
+      this._subscriptionRegistry.unsubscribe(name, socket)
     } else if (message.action === C.ACTIONS.REQUEST) {
-      this._makeRpc(socketWrapper, message)
+      this._rpcs.set(id, {
+        id,
+        name,
+        socket,
+        data,
+        providers: new Set(),
+        timeout: null
+      })
+
+      this._request(id)
     } else if (
       message.action === C.ACTIONS.RESPONSE ||
-      message.action === C.ACTIONS.ACK ||
       message.action === C.ACTIONS.REJECTION ||
       message.action === C.ACTIONS.ERROR
     ) {
-      const rpcNameIndex = (message.action === C.ACTIONS.ACK || message.action === C.ACTIONS.ERROR)
-        ? 1 : 0
-      const correlationId = message.data[rpcNameIndex + 1]
-      const rpcData = this._rpcs.get(correlationId)
-      if (rpcData) {
-        rpcData.rpc.handle(message)
-      } else {
-        socketWrapper.sendError(
+      const [ name, id ] = message
+      const rpc = this._rpcs.get(id)
+
+      if (!rpc) {
+        socket.sendError(
           C.TOPIC.RPC,
           C.EVENT.INVALID_MESSAGE_DATA,
-          `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
+          `unexpected state for rpc ${name} with action ${message.action}`
         )
+        return
+      }
+
+      if (message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR) {
+        rpc.socket.sendNative(message.topic, message.action, message.data)
+        clearTimeout(rpc.timeout)
+        this._rpcs.delete(id)
+      } else if (message.action === C.ACTIONS.REJECTION) {
+        this._request(rpc)
       }
     } else {
-      socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+      socket.sendError(C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
     }
   }
 
-  /**
-  * This method is called by Rpc to reroute its request
-  *
-  * If a provider is temporarily unable to service a request, it can reject it. Deepstream
-  * will then try to reroute it to an alternative provider. Finding an alternative provider
-  * happens in this method.
-  *
-  * Initially, deepstream will look for a local provider that hasn't been used by the RPC yet.
-  * If non can be found, it will go through the currently avaiblable remote providers and try
-  * find one that hasn't been used yet.
-  *
-  * If a remote provider couldn't be found or all remote-providers have been tried already
-  * this method will return null - which in turn will prompt the RPC to send a NO_RPC_PROVIDER
-  * error to the client
-  *
-  * @param {String}  rpcName
-  * @param {String}  correlationId
-  *
-  * @public
-  * @returns {SocketWrapper|RpcProxy} alternativeProvider
-  */
-  getAlternativeProvider (rpcName, correlationId) {
-    const { providers } = this._rpcs.get(correlationId)
-    const subscribers = Array.from(this._subscriptionRegistry.getSubscribers(rpcName))
-    const offset = utils.getRandomIntInRange(0, subscribers.length)
+  _request (rpc) {
+    const { name, socket, providers } = rpc
 
-    for (let n = 0; n < subscribers.length; ++n) {
-      const subscriber = subscribers[(offset + n) % subscribers.length]
+    const subscribers = Array
+      .from(this._subscriptionRegistry.getSubscribers(name))
+      .filter(x => !providers.has(x))
 
-      if (providers.has(subscriber)) {
-        continue
-      }
-
-      providers.add(subscriber)
-
-      return subscriber
-    }
-  }
-
-  /**
-  * Callback for subscription messages. Registers
-  * a client as a provider for specific remote
-  * procedure calls as identified by <rpcName>
-  *
-  * @param   {SocketWrapper} socketWrapper
-  * @param   {Object} message parsed and validated deepstream message
-  *
-  * @private
-  * @returns {void}
-  */
-  _registerProvider (socketWrapper, message) {
-    if (isValidMessage(1, socketWrapper, message)) {
-      this._subscriptionRegistry.subscribe(message.data[0], socketWrapper)
-    }
-  }
-
-  /**
-  * Callback for unsubscribe messages. Removes
-  * a client as a provider for specific remote
-  * procedure calls as identified by <rpcName>
-  *
-  * @param   {SocketWrapper} socketWrapper
-  * @param   {Object} message parsed and validated deepstream message
-  *
-  * @private
-  * @returns {void}
-  */
-  _unregisterProvider (socketWrapper, message) {
-    if (isValidMessage(1, socketWrapper, message)) {
-      this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
-    }
-  }
-
-  /**
-  * Executes a RPC. If there are clients connected to
-  * this deepstream instance that can provide the rpc, it
-  * will be routed to a random one of them, otherwise it will be routed
-  * to the message connector
-  *
-  * @param   {SocketWrapper} socketWrapper
-  * @param   {Object} message parsed and validated deepstream message
-  *
-  * @private
-  * @returns {void}
-  */
-  _makeRpc (socketWrapper, message) {
-    if (!isValidMessage(2, socketWrapper, message)) {
-      return
-    }
-
-    const rpcName = message.data[0]
-    const correlationId = message.data[1]
-
-    const rpcData = {
-      providers: new Set(),
-      rpc: null
-    }
-    this._rpcs.set(correlationId, rpcData)
-
-    const subscribers = Array.from(this._subscriptionRegistry.getSubscribers(rpcName))
-    const provider = subscribers[utils.getRandomIntInRange(0, subscribers.length)]
+    const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
 
     if (provider) {
-      rpcData.providers.add(provider)
-      rpcData.rpc = new Rpc(this, socketWrapper, provider, this._options, message)
+      provider.sendNative(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ name, rpc.id, rpc.data ])
+      providers.add(provider)
+      rpc.timeout = setTimeout(() => this._request(rpc), this._options.rpcTimeout)
     } else {
-      socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [rpcName, correlationId])
+      socket.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ name, rpc.id ])
     }
   }
-
-  _$onDestroy (correlationId) {
-    this._rpcs.delete(correlationId)
-  }
-}
-
-/**
-* Checks if the incoming message is valid, e.g. if rpcName
-* is present for subscribe / unsubscribe messages or if
-* rpcName and correlationId is present for rpc calls.
-*
-* @param   {Number}  dataLength    The expected number of entries in the data array
-* @param   {SocketWrapper} socketWrapper
-* @param   {Object} message parsed and validated deepstream message
-*
-* @private
-* @returns {Boolean} isValid
-*/
-function isValidMessage (dataLength, socketWrapper, message) {
-  if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
-    return true
-  }
-
-  socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-
-  return false
 }

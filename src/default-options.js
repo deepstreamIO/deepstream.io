@@ -27,7 +27,6 @@ exports.get = function () {
     /*
      * Timeouts
      */
-    rpcAckTimeout: 1000,
     rpcTimeout: 10000,
     dependencyInitialisationTimeout: 2000,
     listenResponseTimeout: 500,
