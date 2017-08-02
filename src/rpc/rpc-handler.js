@@ -4,27 +4,12 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 
 module.exports = class RpcHandler {
-  /**
-  * Handles incoming messages for the RPC Topic.
-  *
-  * @param {Object} options deepstream options
-  */
   constructor (options) {
     this._options = options
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
     this._rpcs = new Map()
   }
 
-  /**
-  * Main interface. Handles incoming messages
-  * from the message distributor
-  *
-  * @param   {SocketWrapper} socket
-  * @param   {Object} message parsed and validated deepstream message
-  *
-  * @public
-  * @returns {void}
-  */
   handle (socket, message) {
     const [ name, id, data ] = message.data
 
