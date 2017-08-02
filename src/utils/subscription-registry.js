@@ -45,7 +45,7 @@ class SubscriptionRegistry {
    * via the cluster.
    */
   _setupRemoteComponents (clusterTopic) {
-    this._clusterSubscriptions = new DistributedStateRegistry(
+    this._clusterSubscriptions = this._options.message.getStateRegistry(
       clusterTopic ||
       `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`,
       this._options
@@ -211,8 +211,17 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   sendToSubscribers (name, message, noDelay, socket) {
-    if (!this._subscriptions.has(name)) {
-      return
+
+    /**
+     * This used to be a valid check. Check should now maybe be if there
+     * are other clients subscribed on other deepstreams
+     */
+    // if (!this._subscriptions.has(name)) {
+    //   return
+    // }
+
+    if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
+      this._options.message.send(message.topic, message)
     }
 
     const msgString = messageBuilder.getMsg(message.topic, message.action, message.data)

@@ -39,7 +39,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     super()
     this._topic = topic
     this._options = options
-    this._options.messageConnector.subscribe(topic, this._processIncomingMessage.bind(this))
+    this._options.message.subscribe(topic, this._processIncomingMessage.bind(this))
     this._options.clusterRegistry.on('remove', this.removeAll.bind(this))
     this._data = {}
     this._reconciliationTimeouts = {}
@@ -221,7 +221,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       data: [name, this._options.serverName, this._getCheckSumTotal(this._options.serverName)]
     }
 
-    this._options.messageConnector.publish(this._topic, message)
+    this._options.message.send(this._topic, message)
   }
 
   /**
@@ -310,7 +310,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @returns {void}
   */
   _requestFullState (serverName) {
-    this._options.messageConnector.publish(this._topic, {
+    this._options.message.send(this._topic, {
       topic: this._topic,
       action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
       data: [serverName]
@@ -339,7 +339,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       }
     }
 
-    this._options.messageConnector.publish(this._topic, {
+    this._options.message.send(this._topic, {
       topic: this._topic,
       action: C.EVENT.DISTRIBUTED_STATE_FULL_STATE,
       data: [this._options.serverName, localState]

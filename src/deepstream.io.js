@@ -16,6 +16,7 @@ const jsYamlLoader = require('./config/js-yaml-loader')
 const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
+const MessageConnector = require('./default-plugins/message-connector')
 const DependencyInitialiser = require('./utils/dependency-initialiser')
 const ClusterRegistry = require('./cluster/cluster-registry')
 const UniqueRegistry = require('./cluster/cluster-unique-state-provider')
@@ -314,8 +315,9 @@ Deepstream.prototype._serviceInit = function () {
   this._messageProcessor = new MessageProcessor(this._options)
   this._messageDistributor = new MessageDistributor(this._options)
 
-  this._options.clusterRegistry = new ClusterRegistry(this._options)
-  this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
+  this._options.message = new MessageConnector(this._options)
+  // this._options.clusterRegistry = new ClusterRegistry(this._options)
+  // this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
 
   this._eventHandler = new EventHandler(this._options)
   this._messageDistributor.registerForTopic(

@@ -38,7 +38,7 @@ module.exports = class UniqueRegistry {
     this._responseEventEmitter = new EventEmitter()
     this._onPrivateMessageFn = this._onPrivateMessage.bind(this)
     this._localTopic = this._getPrivateTopic(this._options.serverName)
-    this._options.messageConnector.subscribe(this._localTopic, this._onPrivateMessageFn)
+    this._options.message.subscribe(this._localTopic, this._onPrivateMessageFn)
   }
 
   /**
@@ -102,7 +102,7 @@ module.exports = class UniqueRegistry {
 
     const remoteTopic = this._getPrivateTopic(leaderServerName)
 
-    this._options.messageConnector.publish(remoteTopic, {
+    this._message.send(remoteTopic, {
       topic: remoteTopic,
       action: C.ACTIONS.LOCK_REQUEST,
       data: [{
@@ -124,7 +124,7 @@ module.exports = class UniqueRegistry {
   _releaseRemoteLock (name, leaderServerName) {
     const remoteTopic = this._getPrivateTopic(leaderServerName)
 
-    this._options.messageConnector.publish(remoteTopic, {
+    this._message.send(remoteTopic, {
       topic: remoteTopic,
       action: C.ACTIONS.LOCK_RELEASE,
       data: [{
@@ -190,7 +190,7 @@ module.exports = class UniqueRegistry {
   * @returns {void}
   */
   _handleRemoteLockRequest (data) {
-    this._options.messageConnector.publish(data.responseTopic, {
+    this._message.send(data.responseTopic, {
       topic: data.responseTopic,
       action: C.ACTIONS.LOCK_RESPONSE,
       data: [{

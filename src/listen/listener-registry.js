@@ -693,7 +693,7 @@ module.exports = class ListenerRegistry {
   */
   _sendRemoteDiscoveryStart (serverName, subscriptionName) {
     const messageTopic = this._getMessageBusTopic(serverName, this._topic)
-    this._messageConnector.publish(messageTopic, {
+    this._message.send(messageTopic, {
       topic: messageTopic,
       action: C.ACTIONS.LISTEN,
       data: [serverName, subscriptionName, this._options.serverName]
