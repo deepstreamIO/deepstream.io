@@ -34,7 +34,7 @@ module.exports = class RecordHandler {
   handle (socket, message) {
     const data = message && message.data
     if (!data || !data[0]) {
-      this._sendError(C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ], socket)
+      socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
     } else if (message.action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(data[0], socket)
       const record = this._cache.get(data[0])
@@ -51,7 +51,7 @@ module.exports = class RecordHandler {
         this._storage.set(data, (error, data) => {
           if (error) {
             const message = `error while writing ${data[0]} to storage`
-            this._sendError(socket, C.EVENT.RECORD_UPDATE_ERROR, [ ...data, message ])
+            socket.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, [ ...data, message ])
           } else {
             this._cache.unlock(data[0])
           }
@@ -68,8 +68,7 @@ module.exports = class RecordHandler {
     ) {
       this._listenerRegistry.handle(socket, message)
     } else {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, [ ...data, message.action ])
-      this._sendError(socket, C.EVENT.UNKNOWN_ACTION, [ ...data, `unknown action ${message.action}` ])
+      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [ ...data, `unknown action ${message.action}` ])
     }
   }
 
@@ -117,13 +116,6 @@ module.exports = class RecordHandler {
       messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
       sender
     )
-  }
-
-  _sendError (socket, event, message) {
-    if (socket && socket.sendError) {
-      socket.sendError(C.TOPIC.RECORD, event, message)
-    }
-    this._logger.log(C.LOG_LEVEL.ERROR, event, message)
   }
 }
 

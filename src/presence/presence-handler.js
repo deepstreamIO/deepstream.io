@@ -23,7 +23,7 @@ module.exports = class PresenceHandler {
     } else if (message.action === C.ACTIONS.QUERY) {
       this._handleQuery(socket)
     } else {
-      socket.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+      socket.sendError(C.TOPIC.PRESENCE, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
     }
   }
 
