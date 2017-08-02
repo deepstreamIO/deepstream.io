@@ -9,30 +9,32 @@ const C = require('../constants/constants')
  * @param {Object} options deepstream options
  */
 const MessageDistributor = function (options) {
-  this._callbacks = {}
+  this._callbacks = new Array(32).map(() => 0)
   this._options = options
 }
 
 /**
- * Accepts a socketWrapper and a parsed message as input and distributes
+ * Accepts a socket and a parsed message as input and distributes
  * it to its subscriber, based on the message's topic
  *
- * @param   {SocketWrapper} socketWrapper
+ * @param   {SocketWrapper} socket
  * @param   {Object} message parsed and permissioned message
  *
  * @public
  * @returns {void}
  */
-MessageDistributor.prototype.distribute = function (socketWrapper, message) {
-  if (this._callbacks[message.topic] === undefined) {
+MessageDistributor.prototype.distribute = function (socket, message) {
+  const callback = this._callbacks[message.topic.charCodeAt(0) - 65]
+
+  if (!callback) {
     this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_TOPIC, message.topic)
-    socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
+    socket.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
     return
   }
 
-  socketWrapper.emit(message.topic, message)
+  socket.emit(message.topic, message)
 
-  this._callbacks[message.topic](socketWrapper, message)
+  callback(socket, message)
 }
 
 /**
@@ -41,18 +43,18 @@ MessageDistributor.prototype.distribute = function (socketWrapper, message) {
  *
  * @param   {String}   topic    One of C.TOPIC
  * @param   {Function} callback The method that should be called for every message
- *                              on the specified topic. Will be called with socketWrapper
+ *                              on the specified topic. Will be called with socket
  *                              and message
  *
  * @public
  * @returns {void}
  */
 MessageDistributor.prototype.registerForTopic = function (topic, callback) {
-  if (this._callbacks[topic] !== undefined) {
+  if (this._callbacks[topic.charCodeAt(0) - 65]) {
     throw new Error(`Callback already registered for topic ${topic}`)
   }
 
-  this._callbacks[topic] = callback
+  this._callbacks[topic.charCodeAt(0) - 65] = callback
 }
 
 module.exports = MessageDistributor
