@@ -1,5 +1,3 @@
-'use strict'
-
 const List = require('yallist')
 
 module.exports = class RecordCache {

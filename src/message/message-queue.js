@@ -1,5 +1,3 @@
-'use strict'
-
 const messageParser = require('./message-parser')
 const C = require('../constants/constants')
 

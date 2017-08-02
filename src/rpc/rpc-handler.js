@@ -1,5 +1,3 @@
-'use strict'
-
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 

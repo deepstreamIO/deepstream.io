@@ -1,5 +1,3 @@
-'use strict'
-
 const C = require('../constants/constants')
 const messageBuilder = require('./message-builder')
 const uws = require('uws')

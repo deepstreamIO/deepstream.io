@@ -1,5 +1,3 @@
-'use strict'
-
 const MessageQueue = require('./message-queue')
 const C = require('../constants/constants')
 

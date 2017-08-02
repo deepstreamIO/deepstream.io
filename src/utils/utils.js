@@ -1,5 +1,3 @@
-'use strict'
-
 exports.setTimeout = function (callback, timeoutDuration) {
   if (timeoutDuration !== null) {
     return setTimeout(callback, timeoutDuration)
