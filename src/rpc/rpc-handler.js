@@ -87,6 +87,7 @@ module.exports = class RpcHandler {
       rpc.timeout = setTimeout(() => this._request(rpc), this._options.rpcTimeout)
     } else {
       socket.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ name, rpc.id ])
+      this._rpcs.delete(rpc.id)
     }
   }
 }
