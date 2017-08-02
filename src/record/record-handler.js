@@ -69,33 +69,24 @@ module.exports = class RecordHandler {
     }
   }
 
-  // [ name, ?version ]
-  _refresh ([ name, version ]) {
+  // [ name ]
+  _refresh ([ name ]) {
     const prevRecord = this._cache.peek(name)
 
     if (prevRecord === null) {
       return
     }
 
-    if (prevRecord && isSameOrNewer(prevRecord[1], version)) {
-      return
-    }
-
     this._cache.set(name, null)
 
-    this._storage.get(name, (error, nextRecord, version) => {
+    this._storage.get(name, (error, nextRecord) => {
       if (error) {
         const message = `error while reading ${nextRecord[0]} from storage ${error}`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
       }
 
       this._broadcast(nextRecord)
-
-      if (version && !isSameOrNewer(nextRecord[1], version)) {
-        const message = `error while reading ${nextRecord[0]} version ${version} (${nextRecord[1]}) from storage ${error}`
-        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.RECORD_LOAD_ERROR, [ ...nextRecord, message ])
-      }
-    }, version)
+    })
   }
 
   // [ name, version, body ]
