@@ -28,7 +28,10 @@ EventHandler.prototype.handle = function (socket, message) {
   ) {
     this._listenerRegistry.handle(socket, message)
   } else {
-    socket.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+    socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
+      ...(message ? message.data : []),
+      `unknown action ${message.action}`
+    ])
   }
 }
 

@@ -67,7 +67,10 @@ module.exports = class RecordHandler {
     ) {
       this._listenerRegistry.handle(socket, message)
     } else {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [ ...data, `unknown action ${message.action}` ])
+      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
+        ...(message ? message.data : []),
+        `unknown action ${message.action}`
+      ])
     }
   }
 

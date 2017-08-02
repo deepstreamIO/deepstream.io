@@ -53,7 +53,10 @@ module.exports = class RpcHandler {
         this._request(rpc)
       }
     } else {
-      socket.sendError(C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
+        ...(message ? message.data : []),
+        `unknown action ${message.action}`
+      ])
     }
   }
 
