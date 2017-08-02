@@ -47,7 +47,7 @@ module.exports = class RpcHandler {
       clearTimeout(rpc.timeout)
 
       if (message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR) {
-        rpc.socket.sendNative(message.topic, message.action, message.data)
+        rpc.socket.sendMessage(message.topic, message.action, message.data)
         this._rpcs.delete(id)
       } else if (message.action === C.ACTIONS.REJECTION) {
         this._request(rpc)
@@ -65,7 +65,7 @@ module.exports = class RpcHandler {
     const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
 
     if (provider) {
-      provider.sendNative(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ rpc.name, rpc.id, rpc.data ])
+      provider.sendMessage(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ rpc.name, rpc.id, rpc.data ])
       rpc.providers.add(provider)
       rpc.timeout = setTimeout(() => this._request(rpc), this._options.rpcTimeout)
     } else {
