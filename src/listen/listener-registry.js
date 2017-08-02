@@ -55,10 +55,17 @@ module.exports = class ListenerRegistry {
     listener.sockets.set(socket, { socket, pattern })
 
     for (const name of this._subscriptionRegistry.getNames()) {
-      if (this._providers.has(name) || !listener.expr.test(name)) {
+      const provider = this._providers.get(name)
+
+      if (provider && provider.socket && !provider.timeout) {
         continue
       }
-      this._provide(name, null)
+
+      if (!listener.expr.test(name)) {
+        continue
+      }
+
+      this._provide(name, provider)
     }
   }
 
