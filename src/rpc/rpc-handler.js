@@ -6,8 +6,20 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 module.exports = class RpcHandler {
   constructor (options) {
     this._options = options
-    this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
     this._rpcs = new Map()
+    this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
+
+    this._onSocketClose = this._onSocketClose.bind(this)
+  }
+
+  _onSocketClose (socket) {
+    for (const [ id, rpc ] of this._rpcs) {
+      if (rpc.provider !== socket) {
+        continue
+      }
+      clearTimeout(rpc.timeout)
+      this._request(id)
+    }
   }
 
   handle (socket, message) {
@@ -18,14 +30,17 @@ module.exports = class RpcHandler {
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(name, socket)
     } else if (message.action === C.ACTIONS.REQUEST) {
-      this._rpcs.set(id, {
+      const rpc = {
         id,
         name,
         socket,
         data,
         providers: new Set(),
+        provider: null,
+        request: this._request.bind(this, rpc),
         timeout: null
-      })
+      }
+      this._rpcs.set(id, rpc)
 
       this._request(id)
     } else if (
@@ -41,6 +56,10 @@ module.exports = class RpcHandler {
       }
 
       clearTimeout(rpc.timeout)
+      rpc.timeout = null
+
+      rpc.provider.removeListener('close', rpc.request)
+      rpc.provider = null
 
       if (message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR) {
         if (message.raw) {
@@ -49,7 +68,7 @@ module.exports = class RpcHandler {
           rpc.socket.sendMessage(message.topic, message.action, message.data)
         }
         this._rpcs.delete(id)
-      } else if (message.action === C.ACTIONS.REJECTION) {
+      } else if (message.action === C.ACTIONS.REJECTION && rpc.provider === socket) {
         this._request(rpc)
       }
     } else {
@@ -65,12 +84,18 @@ module.exports = class RpcHandler {
       .from(this._subscriptionRegistry.getSubscribers(rpc.name))
       .filter(x => !rpc.providers.has(x))
 
+    if (rpc.timeout) {
+      clearTimeout(rpc.timeout)
+      rpc.timeout = null
+    }
+
     const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
 
     if (provider) {
       provider.sendMessage(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ rpc.name, rpc.id, rpc.data ])
-      rpc.providers.add(provider)
-      rpc.timeout = setTimeout(() => this._request(rpc), this._options.rpcTimeout)
+      rpc.timeout = setTimeout(rpc.request, this._options.rpcTimeout || 1000)
+      rpc.provider = provider
+      rpc.provider.once('close', rpc.request)
     } else {
       rpc.socket.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ rpc.name, rpc.id ])
       this._rpcs.delete(rpc.id)
