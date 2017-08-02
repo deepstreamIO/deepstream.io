@@ -8,18 +8,6 @@ module.exports = class RpcHandler {
     this._options = options
     this._rpcs = new Map()
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
-
-    this._onSocketClose = this._onSocketClose.bind(this)
-  }
-
-  _onSocketClose (socket) {
-    for (const [ id, rpc ] of this._rpcs) {
-      if (rpc.provider !== socket) {
-        continue
-      }
-      clearTimeout(rpc.timeout)
-      this._request(id)
-    }
   }
 
   handle (socket, message) {
