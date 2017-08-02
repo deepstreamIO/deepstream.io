@@ -10,7 +10,6 @@ const STATE = {
 
 module.exports = class MessageQueue {
   constructor (options, socket) {
-    this._processor = options.processor
     this._permissionHandler = options.permissionHandler
     this._logger = options.logger
     this._socket = socket
@@ -22,34 +21,9 @@ module.exports = class MessageQueue {
     this._onResponse = this._onResponse.bind(this)
   }
 
-  /**
-   * There will only ever be one consumer of forwarded messages. So rather than using
-   * events - and their performance overhead - the messageProcessor exposes
-   * this method that's expected to be overwritten.
-   *
-   * @param   {SocketWrapper} socketWrapper
-   * @param   {Object} message the parsed message
-   *
-   * @overwrite
-   *
-   * @returns {void}
-   */
   onAuthenticatedMessage (socketWrapper, message) {
   }
 
-  /**
-   * This method is the way the message queue accepts input. It receives arrays
-   * of parsed messages, iterates through them and issues permission requests for
-   * each individual message
-   *
-   * @todo The responses from the permissionHandler might arive in any arbitrary order - order them
-   * @todo Handle permission handler timeouts
-   *
-   * @param   {SocketWrapper} socketWrapper
-   * @param   {Object} message parsed message
-   *
-   * @returns {void}
-   */
   process (rawMessage) {
     messageParser.parse(rawMessage, this._onMessage)
   }
