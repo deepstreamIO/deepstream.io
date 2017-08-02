@@ -28,7 +28,7 @@ module.exports = class RpcHandler {
       rpc.request = this._request.bind(this, rpc)
       this._rpcs.set(id, rpc)
 
-      this._request(id)
+      this._request(rpc)
     } else if (
       message.action === C.ACTIONS.RESPONSE ||
       message.action === C.ACTIONS.REJECTION ||
