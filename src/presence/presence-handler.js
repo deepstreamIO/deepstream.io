@@ -4,17 +4,6 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 
-/**
- * This class handles incoming and outgoing messages in relation
- * to deepstream presence. It provides a way to inform clients
- * who else is logged into deepstream
- *
- * @param {Object} options    deepstream options
- * @param {Connection} connection
- * @param {Client} client
- * @public
- * @constructor
- */
 module.exports = class PresenceHandler {
   constructor (options) {
     this._options = options
@@ -26,110 +15,58 @@ module.exports = class PresenceHandler {
     this._presenceRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
   }
 
-  /**
-  * The main entry point to the presence handler class.
-  *
-  * Handles subscriptions, unsubscriptions and queries
-  *
-  * @param   {SocketWrapper} socketWrapper the socket that send the request
-  * @param   {Object} message parsed and validated message
-  *
-  * @public
-  * @returns {void}
-  */
-  handle (socketWrapper, message) {
+  handle (socket, message) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
-      this._presenceRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
+      this._presenceRegistry.subscribe(C.TOPIC.PRESENCE, socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._presenceRegistry.unsubscribe(C.TOPIC.PRESENCE, socketWrapper)
+      this._presenceRegistry.unsubscribe(C.TOPIC.PRESENCE, socket)
     } else if (message.action === C.ACTIONS.QUERY) {
-      this._handleQuery(socketWrapper)
+      this._handleQuery(socket)
     } else {
-      socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+      socket.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
     }
   }
 
-  /**
-  * Called whenever a client has succesfully logged in with a username
-  *
-  * @param   {Object} socketWrapper the socketWrapper of the client that logged in
-  *
-  * @private
-  * @returns {void}
-  */
-  _handleJoin (socketWrapper) {
-    let currentCount = this._localClients.get(socketWrapper.user)
-    if (currentCount === undefined) {
-      this._localClients.set(socketWrapper.user, 1)
-      this._onClientAdded(socketWrapper.user)
+  _handleJoin (socket) {
+    const currentCount = this._localClients.get(socket.user)
+    if (!currentCount) {
+      this._localClients.set(socket.user, 1)
+      this._onClientAdded(socket.user)
     } else {
-      currentCount++
-      this._localClients.set(socketWrapper.user, currentCount)
+      this._localClients.set(socket.user, currentCount + 1)
     }
   }
 
-  /**
-  * Called whenever a client has disconnected
-  *
-  * @param   {Object} socketWrapper the socketWrapper of the client that disconnected
-  *
-  * @private
-  * @returns {void}
-  */
-  _handleLeave (socketWrapper) {
-    let currentCount = this._localClients.get(socketWrapper.user)
+  _handleLeave (socket) {
+    const currentCount = this._localClients.get(socket.user)
     if (currentCount === 1) {
-      this._localClients.delete(socketWrapper.user)
-      this._onClientRemoved(socketWrapper.user)
+      this._localClients.delete(socket.user)
+      this._onClientRemoved(socket.user)
     } else {
-      currentCount--
-      this._localClients.set(socketWrapper.user, currentCount)
+      this._localClients.set(socket.user, currentCount - 1)
     }
   }
 
-  /**
-  * Handles finding clients who are connected and splicing out the client
-  * querying for users
-  *
-  * @param   {Object} socketWrapper the socketWrapper of the client that is querying
-  *
-  * @private
-  * @returns {void}
-  */
-  _handleQuery (socketWrapper) {
+  _handleQuery (socket) {
     const clients = Array.from(this._localClients.values())
-    const index = clients.indexOf(socketWrapper.user)
+    const index = clients.indexOf(socket.user)
     if (index !== -1) {
       clients.splice(index, 1)
     }
-    socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients)
+    socket.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients)
   }
 
-  /**
-  * Alerts all clients who are subscribed to
-  * PRESENCE_JOIN that a new client has been added.
-  *
-  * @param   {String} username the username of the client that joined
-  *
-  * @private
-  * @returns {void}
-  */
   _onClientAdded (username) {
-    const addMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [username])
-    this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
+    this._presenceRegistry.sendToSubscribers(
+      C.TOPIC.PRESENCE,
+      messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ username ])
+    )
   }
 
-  /**
-  * Alerts all clients who are subscribed to
-  * PRESENCE_LEAVE that the client has left.
-  *
-  * @param   {String} username the username of the client that left
-  *
-  * @private
-  * @returns {void}
-  */
   _onClientRemoved (username) {
-    const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
-    this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
+    this._presenceRegistry.sendToSubscribers(
+      C.TOPIC.PRESENCE,
+      messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ username ])
+    )
   }
 }
