@@ -47,7 +47,11 @@ module.exports = class RpcHandler {
       clearTimeout(rpc.timeout)
 
       if (message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR) {
-        rpc.socket.sendMessage(message.topic, message.action, message.data)
+        if (message.raw) {
+          rpc.socket.sendNative(message.raw)
+        } else {
+          rpc.socket.sendMessage(message.topic, message.action, message.data)
+        }
         this._rpcs.delete(id)
       } else if (message.action === C.ACTIONS.REJECTION) {
         this._request(rpc)
