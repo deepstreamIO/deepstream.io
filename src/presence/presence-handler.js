@@ -5,11 +5,10 @@ const messageBuilder = require('../message/message-builder')
 module.exports = class PresenceHandler {
   constructor (options) {
     this._options = options
-    this._localClients = new Map()
+    this._users = new Map()
     this._connectionEndpoint = options.connectionEndpoint
     this._connectionEndpoint.on('client-connected', this._handleJoin.bind(this))
     this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
-
     this._presenceRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
   }
 
@@ -29,45 +28,37 @@ module.exports = class PresenceHandler {
   }
 
   _handleJoin (socket) {
-    const currentCount = this._localClients.get(socket.user)
-    if (!currentCount) {
-      this._localClients.set(socket.user, 1)
-      this._onClientAdded(socket.user)
+    const count = this._users.get(socket.user)
+    if (!count) {
+      this._users.set(socket.user, 1)
+      this._presenceRegistry.sendToSubscribers(
+        C.TOPIC.PRESENCE,
+        messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ socket.user ])
+      )
     } else {
-      this._localClients.set(socket.user, currentCount + 1)
+      this._users.set(socket.user, count + 1)
     }
   }
 
   _handleLeave (socket) {
-    const currentCount = this._localClients.get(socket.user)
-    if (currentCount === 1) {
-      this._localClients.delete(socket.user)
-      this._onClientRemoved(socket.user)
+    const count = this._users.get(socket.user)
+    if (count === 1) {
+      this._users.delete(socket.user)
+      this._presenceRegistry.sendToSubscribers(
+        C.TOPIC.PRESENCE,
+        messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ socket.user ])
+      )
     } else {
-      this._localClients.set(socket.user, currentCount - 1)
+      this._users.set(socket.user, count - 1)
     }
   }
 
   _handleQuery (socket) {
-    const clients = Array.from(this._localClients.values())
+    const clients = Array.from(this._users.values())
     const index = clients.indexOf(socket.user)
     if (index !== -1) {
       clients.splice(index, 1)
     }
     socket.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients)
-  }
-
-  _onClientAdded (username) {
-    this._presenceRegistry.sendToSubscribers(
-      C.TOPIC.PRESENCE,
-      messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ username ])
-    )
-  }
-
-  _onClientRemoved (username) {
-    this._presenceRegistry.sendToSubscribers(
-      C.TOPIC.PRESENCE,
-      messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ username ])
-    )
   }
 }

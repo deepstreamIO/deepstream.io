@@ -1,6 +1,5 @@
 const ConnectionEndpoint = require('./message/connection-endpoint')
 const MessageProcessor = require('./message/message-processor')
-const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')
 const util = require('util')
 const defaultOptions = require('./default-options')
@@ -32,7 +31,6 @@ const Deepstream = function (config) {
   this._loadConfig(config)
   this._connectionEndpoint = null
   this._messageProcessor = null
-  this._messageDistributor = null
   this._eventHandler = null
   this._rpcHandler = null
   this._recordHandler = null
@@ -214,7 +212,6 @@ Deepstream.prototype._onStopped = function () {
  */
 Deepstream.prototype._init = function () {
   this._messageProcessor = new MessageProcessor(this._options)
-  this._messageDistributor = new MessageDistributor(this._options)
 
   this._connectionEndpoint = new ConnectionEndpoint(this._options)
   this._connectionEndpoint.setDeepstream(this)
@@ -222,20 +219,26 @@ Deepstream.prototype._init = function () {
   this._connectionEndpoint.onMessage = this._messageProcessor.process.bind(this._messageProcessor)
   this._connectionEndpoint.init()
 
-  this._eventHandler = new EventHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.EVENT, this._eventHandler.handle.bind(this._eventHandler))
-
-  this._rpcHandler = new RpcHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.RPC, this._rpcHandler.handle.bind(this._rpcHandler))
-
-  this._recordHandler = new RecordHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.RECORD, this._recordHandler.handle.bind(this._recordHandler))
-
   this._options.connectionEndpoint = this._connectionEndpoint
-  this._presenceHandler = new PresenceHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.PRESENCE, this._presenceHandler.handle.bind(this._presenceHandler))
 
-  this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind(this._messageDistributor)
+  this._eventHandler = new EventHandler(this._options)
+  this._rpcHandler = new RpcHandler(this._options)
+  this._recordHandler = new RecordHandler(this._options)
+  this._presenceHandler = new PresenceHandler(this._options)
+
+  this._messageProcessor.onAuthenticatedMessage = (socket, message) => {
+    if (message.topic === C.TOPIC.RECORD) {
+      this._recordHandler.handle(socket, message)
+    } else if (message.topic === C.TOPIC.EVENT) {
+      this._eventHandler.handle(socket, message)
+    } else if (message.topic === C.TOPIC.RPC) {
+      this._rpcHandler.handle(socket, message)
+    } else if (message.topic === C.TOPIC.PRESENCE) {
+      this._presenceHandler.handle(socket, message)
+    } else {
+      socket.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
+    }
+  }
 
   if (this._options.permissionHandler.setRecordHandler) {
     this._options.permissionHandler.setRecordHandler(this._recordHandler)
