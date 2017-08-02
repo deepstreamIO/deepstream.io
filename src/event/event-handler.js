@@ -5,13 +5,6 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
 const messageBuilder = require('../message/message-builder')
 
-/**
- * Handles incoming and outgoing messages for the EVENT topic.
- *
- * @param {Object} options deepstream options
- *
- * @constructor
- */
 const EventHandler = function (options) {
   this._options = options
   this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.EVENT)
@@ -21,78 +14,26 @@ const EventHandler = function (options) {
   this._message = options.messageConnector
 }
 
-/**
- * The main distribution method. Routes messages to functions
- * based on the provided action parameter of the message
- *
- * @param {SocketWrapper} socket
- * @param {Object} message parsed and permissioned deepstream message
- *
- * @public
- * @returns {void}
- */
 EventHandler.prototype.handle = function (socket, message) {
   if (message.action === C.ACTIONS.SUBSCRIBE) {
-    this._addSubscriber(socket, message)
+    this._subscriptionRegistry.subscribe(message.data[0], socket)
   } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-    this._removeSubscriber(socket, message)
+    this._subscriptionRegistry.unsubscribe(message.data[0], socket)
   } else if (message.action === C.ACTIONS.EVENT) {
-    this._triggerEvent(socket, message)
-  } else if (message.action === C.ACTIONS.LISTEN ||
+    this._trigger(socket, message)
+  } else if (
+    message.action === C.ACTIONS.LISTEN ||
     message.action === C.ACTIONS.UNLISTEN ||
     message.action === C.ACTIONS.LISTEN_ACCEPT ||
-    message.action === C.ACTIONS.LISTEN_REJECT) {
+    message.action === C.ACTIONS.LISTEN_REJECT
+  ) {
     this._listenerRegistry.handle(socket, message)
   } else {
-    this._sendError(socket, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+    socket.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
   }
 }
 
-/**
- * Handler for the SUBSCRIBE action. Adds the socket as
- * a subscriber to the specified event name
- *
- * @param {SocketWrapper} socket
- * @param {Object} message parsed and permissioned deepstream message
- *
- * @private
- * @returns {void}
- */
-EventHandler.prototype._addSubscriber = function (socket, message) {
-  if (validateSubscriptionMessage(socket, message)) {
-    this._subscriptionRegistry.subscribe(message.data[0], socket)
-  }
-}
-
-/**
- * Handler for the UNSUBSCRIBE action. Removes the socket as
- * a subscriber from the specified event name
- *
- * @param {SocketWrapper} socket
- * @param {Object} message parsed and permissioned deepstream message
- *
- * @private
- * @returns {void}
- */
-EventHandler.prototype._removeSubscriber = function (socket, message) {
-  if (validateSubscriptionMessage(socket, message)) {
-    this._subscriptionRegistry.unsubscribe(message.data[0], socket)
-  }
-}
-
-/**
- * Notifies subscribers of events. This method is invoked for the EVENT action. It can
- * be triggered by messages coming in from both clients and the message connector.
- *
- * @param {String|SocketWrapper} socket If socket is the constant SOURCE_MESSAGE_CONNECTOR
- *                        the message was received from the message connector
- *
- * @param {Object} message parsed and permissioned deepstream message
- *
- * @private
- * @returns {void}
- */
-EventHandler.prototype._triggerEvent = function (socket, message) {
+EventHandler.prototype._trigger = function (socket, message) {
   if (typeof message.data[0] !== 'string') {
     this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
     return
@@ -105,33 +46,6 @@ EventHandler.prototype._triggerEvent = function (socket, message) {
     messageBuilder.getMsg(C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data),
     socket
   )
-}
-
-EventHandler.prototype._sendError = function (socket, event, message) {
-  if (socket && socket.sendError) {
-    socket.sendError(C.TOPIC.EVENT, event, message)
-  }
-  this._logger.log(C.LOG_LEVEL.ERROR, event, message)
-}
-
-/**
- * Makes sure that subscription message contains the name of the event. Sends an error to the client
- * if not
- *
- * @param {SocketWrapper} socket
- * @param {Object} message parsed and permissioned deepstream message
- *
- * @private
- * @returns {Boolean} is valid subscription message
- */
-function validateSubscriptionMessage (socket, message) {
-  if (message.data && message.data.length === 1 && typeof message.data[0] === 'string') {
-    return true
-  }
-
-  socket.sendError(C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-
-  return false
 }
 
 module.exports = EventHandler
