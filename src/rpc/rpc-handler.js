@@ -80,14 +80,14 @@ module.exports = class RpcHandler {
   }
 
   _request (rpc) {
-    const subscribers = Array
-      .from(this._subscriptionRegistry.getSubscribers(rpc.name))
-      .filter(x => !rpc.providers.has(x))
-
     if (rpc.timeout) {
       clearTimeout(rpc.timeout)
       rpc.timeout = null
     }
+
+    const subscribers = Array
+      .from(this._subscriptionRegistry.getSubscribers(rpc.name))
+      .filter(x => !rpc.providers.has(x))
 
     const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
 
