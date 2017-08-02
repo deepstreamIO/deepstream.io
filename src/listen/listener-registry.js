@@ -131,12 +131,16 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    if (!provider.timeout) {
+    if (provider.active) {
       socket.sendMessage(this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ pattern, name ])
       return
     }
 
-    this._reset(provider, socket, pattern)
+    this._reset(provider)
+
+    provider.pattern = pattern
+    provider.socket = socket
+    provider.active = true
 
     this._sendHasProviderUpdate(true, name, undefined)
   }
@@ -183,12 +187,13 @@ module.exports = class ListenerRegistry {
     )
   }
 
-  _reset (provider = Object.create(null), socket = null, pattern = null) {
+  _reset (provider = Object.create(null)) {
     clearTimeout(provider.timeout)
     provider.history = provider.history || []
-    provider.socket = socket
-    provider.pattern = pattern
+    provider.socket = null
+    provider.pattern = null
     provider.timeout = null
+    provider.active = false
     return provider
   }
 
