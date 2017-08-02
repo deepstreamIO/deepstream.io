@@ -44,15 +44,12 @@ module.exports = class RecordHandler {
       const [ start ] = splitRev(data[1])
       if (start > 0 && start < Number.MAX_SAFE_INTEGER && (!this._storageExclusion || !this._storageExclusion.test(data[0]))) {
         // TODO: Remove storage exclusion
-        this._cache.lock(data[0])
-        this._storage.set(data, (error, data) => {
+        this._storage.set(data, (error, [ data, socket ]) => {
           if (error) {
             const message = `error while writing ${data[0]} to storage`
             socket.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, [ ...data, message ])
-          } else {
-            this._cache.unlock(data[0])
           }
-        }, data)
+        }, [ data, socket ])
       }
       this._broadcast(data.slice(0, 3), socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
