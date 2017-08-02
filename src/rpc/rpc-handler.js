@@ -33,7 +33,6 @@ module.exports = class RpcHandler {
       message.action === C.ACTIONS.REJECTION ||
       message.action === C.ACTIONS.ERROR
     ) {
-      const [ name, id ] = message
       const rpc = this._rpcs.get(id)
 
       if (!rpc) {
