@@ -57,7 +57,7 @@ module.exports = class ListenerRegistry {
     for (const name of this._subscriptionRegistry.getNames()) {
       const provider = this._providers.get(name)
 
-      if (provider && provider.socket && !provider.timeout) {
+      if (provider && provider.socket) {
         continue
       }
 
