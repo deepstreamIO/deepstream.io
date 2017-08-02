@@ -28,44 +28,14 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     this.description = 'µWebSocket Connection Endpoint'
     this.initialised = false
     this._authenticatedSockets = new Set()
-  }
+    this._logger = options.logger
+    this._authenticationHandler = options.authenticationHandler
 
-  /**
-   * Called on initialization with a reference to the instantiating deepstream server.
-   *
-   * @param {Deepstream} deepstream
-   *
-   * @public
-   * @returns {Void}
-   */
-  setDeepstream (deepstream) {
-    this._logger = deepstream._options.logger
-    this._authenticationHandler = deepstream._options.authenticationHandler
-    this._dsOptions = deepstream._options
-  }
-
-  /**
-   * Initialise and setup the http and WebSocket servers.
-   *
-   * @throws Will throw if called before `setDeepstream()`.
-   *
-   * @public
-   * @returns {Void}
-   */
-  init () {
-    if (!this._dsOptions) {
-      throw new Error('setDeepstream must be called before init()')
-    }
-    if (this.initialised) {
-      throw new Error('init() must only be called once')
-    }
-    this.initialised = true
-
-    this._healthCheckPath = this._getOption('healthCheckPath')
-    this._maxAuthAttempts = this._getOption('maxAuthAttempts')
-    this._logInvalidAuthData = this._getOption('logInvalidAuthData')
-    this._urlPath = this._getOption('urlPath')
-    this._unauthenticatedClientTimeout = this._getOption('unauthenticatedClientTimeout')
+    this._healthCheckPath = this._options.healthCheckPath
+    this._maxAuthAttempts = this._options.maxAuthAttempts
+    this._logInvalidAuthData = this._options.logInvalidAuthData
+    this._urlPath = this._options.urlPath
+    this._unauthenticatedClientTimeout = this._options.unauthenticatedClientTimeout
 
     this._uwsInit()
 
@@ -75,26 +45,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     this._server.on('error', this._onError.bind(this))
     this._server.on('upgrade', this._onUpgradeRequest.bind(this))
 
-    const port = this._getOption('port')
-    const host = this._getOption('host')
-    this._server.listen(port, host)
-  }
-
-  /**
-   * Get a parameter from the root of the deepstream options if present, otherwise get it from the
-   * plugin config. If neither is present, default to the optionally provided default.
-   *
-   * @param {String} option  The name of the option to be fetched
-   *
-   * @private
-   * @returns {Value} value
-   */
-  _getOption (option) {
-    const value = this._dsOptions[option]
-    if ((value === null || value === undefined) && (this._options[option] !== undefined)) {
-      return this._options[option]
-    }
-    return value
+    this._server.listen(this._options.port, this._options.host)
   }
 
   /**
@@ -104,10 +55,10 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _uwsInit () {
-    const maxMessageSize = this._getOption('maxMessageSize')
+    const maxMessageSize = this._options.maxMessageSize
     this._serverGroup = uws.native.server.group.create(0, maxMessageSize)
 
-    this._noDelay = this._getOption('noDelay')
+    this._noDelay = this._options.noDelay
 
     uws.native.server.group.onDisconnection(
       this._serverGroup,
@@ -128,7 +79,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
 
     uws.native.server.group.startAutoPing(
       this._serverGroup,
-      this._getOption('heartbeatInterval'),
+      this._options.heartbeatInterval,
       messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
     )
   }

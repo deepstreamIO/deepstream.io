@@ -214,10 +214,8 @@ Deepstream.prototype._init = function () {
   this._messageProcessor = new MessageProcessor(this._options)
 
   this._connectionEndpoint = new ConnectionEndpoint(this._options)
-  this._connectionEndpoint.setDeepstream(this)
   this._connectionEndpoint.on('ready', this._onStarted.bind(this))
   this._connectionEndpoint.onMessage = this._messageProcessor.process.bind(this._messageProcessor)
-  this._connectionEndpoint.init()
 
   this._options.connectionEndpoint = this._connectionEndpoint
 
