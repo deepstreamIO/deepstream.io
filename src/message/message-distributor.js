@@ -32,8 +32,6 @@ MessageDistributor.prototype.distribute = function (socket, message) {
     return
   }
 
-  socket.emit(message.topic, message)
-
   callback(socket, message)
 }
 
