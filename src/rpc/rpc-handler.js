@@ -36,11 +36,7 @@ module.exports = class RpcHandler {
       const rpc = this._rpcs.get(id)
 
       if (!rpc) {
-        socket.sendError(
-          C.TOPIC.RPC,
-          C.EVENT.INVALID_MESSAGE_DATA,
-          `unexpected state for rpc ${name} with action ${message.action}`
-        )
+        socket.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, `unexpected state for rpc ${name} with action ${message.action}`)
         return
       }
 
