@@ -9,21 +9,48 @@ module.exports = class MessageConnector {
     this._options = options
     this._isReady = true
     this._options.message = this
-    this._options.clusterRegistry = new ClusterRegistry(this._options)
     this._stateRegistries = new Map()
+    this._options.clusterRegistry = new ClusterRegistry(this._options)
     this._bus = this._options.messageConnector
   }
 
-  send (name, message) {
+  sendBroadcast (name, message) {
+    message.__originServer = this._options.serverName
     this._options.messageConnector.publish(name, message)
   }
 
-  sendDirect (serverName, name, message) {
-
+  subscribeBroadcast (name, callback) {
+    this._options.messageConnector.subscribe(name, (message) => {
+      if (message.__originServer === this._options.serverName) {
+        return
+      }
+      callback(message)
+    })
   }
 
-  subscribe (topic, callback) {
-    this._options.messageConnector.subscribe(topic, callback)
+  send (name, message) {
+    const recordName = message.action === 'A' ? message.data[1] : message.data[0]
+    const serverNames = this.getStateRegistry(`${message.topic}_SUB`).getAllServers(recordName)
+
+    for (let i = 0; i < serverNames.length; i++) {
+      if (serverNames[i] === this._options.serverName) {
+        continue
+      }
+      this._options.messageConnector.publish(`${serverNames[i]}/${name}`, message)
+    }
+  }
+
+  sendDirect (serverName, name, message) {
+    message.__originServer = this._options.serverName
+    this._options.messageConnector.publish(`${serverName}/${name}`, message)
+  }
+
+  subscribe (name, callback) {
+    this._options.messageConnector.subscribe(`${this._options.serverName}/${name}`, (message) => {
+      const serverName = message.__originServer
+      delete message.__originServer
+      callback(message, serverName)
+    })
   }
 
   /**
@@ -33,7 +60,7 @@ module.exports = class MessageConnector {
    * @returns {Array} serverNames
    */
   getAll () {
-    return this._cluster.getAll()
+    return this._options.clusterRegistry.getAll()
   }
 
   /**
@@ -41,7 +68,7 @@ module.exports = class MessageConnector {
    * @return {Boolean} [description]
    */
   isLeader () {
-    return this._cluster.isLeader()
+    return this._options.clusterRegistry.isLeader()
   }
 
   /**
@@ -49,7 +76,7 @@ module.exports = class MessageConnector {
   * @return {String}
   */
   getCurrentLeader () {
-    return this._cluster.getCurrentLeader()
+    return this._options.clusterRegistry.getCurrentLeader()
   }
 
   getStateRegistry (name) {

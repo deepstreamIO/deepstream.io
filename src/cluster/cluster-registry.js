@@ -34,7 +34,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
 
     this._onMessageFn = this._onMessage.bind(this)
     this._leaveClusterFn = this.leaveCluster.bind(this)
-    this._options.message.subscribe(C.TOPIC.CLUSTER, this._onMessageFn)
+    this._options.message.subscribeBroadcast(C.TOPIC.CLUSTER, this._onMessageFn)
     this._publishStatus()
     this._publishInterval = setInterval(
       this._publishStatus.bind(this),
@@ -61,7 +61,7 @@ module.exports = class ClusterRegistry extends EventEmitter {
       return
     }
     this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLUSTER_LEAVE, this._options.serverName)
-    this._options.message.send(C.TOPIC.CLUSTER, {
+    this._options.message.sendBroadcast(C.TOPIC.CLUSTER, {
       topic: C.TOPIC.CLUSTER,
       action: C.ACTIONS.REMOVE,
       data: [this._options.serverName]
@@ -240,10 +240,13 @@ module.exports = class ClusterRegistry extends EventEmitter {
 
     this._updateNode(data)
 
-    this._options.message.send(C.TOPIC.CLUSTER, {
-      topic: C.TOPIC.CLUSTER,
-      action: C.ACTIONS.STATUS,
-      data: [data]
-    })
+    setTimeout(() => {
+      this._options.message.sendBroadcast(C.TOPIC.CLUSTER, {
+        topic: C.TOPIC.CLUSTER,
+        action: C.ACTIONS.STATUS,
+        data: [data]
+      })
+
+    }, 1)
   }
 }

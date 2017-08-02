@@ -2,7 +2,6 @@
 
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
-const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const TimeoutRegistry = require('./listener-timeout-registry')
 const utils = require('../utils/utils')
 

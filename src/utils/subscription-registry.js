@@ -211,17 +211,12 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   sendToSubscribers (name, message, noDelay, socket) {
-
-    /**
-     * This used to be a valid check. Check should now maybe be if there
-     * are other clients subscribed on other deepstreams
-     */
-    // if (!this._subscriptions.has(name)) {
-    //   return
-    // }
-
     if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
       this._options.message.send(message.topic, message)
+    }
+
+    if (!this._subscriptions.has(name)) {
+      return
     }
 
     const msgString = messageBuilder.getMsg(message.topic, message.action, message.data)
