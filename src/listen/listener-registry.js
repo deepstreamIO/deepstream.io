@@ -40,7 +40,7 @@ module.exports = class ListenerRegistry {
     this._uniqueLockName = `${topic}_LISTEN_LOCK`
 
     this._uniqueStateProvider = this._options.uniqueRegistry
-    this._messageConnector = this._options.messageConnector
+    this._message = this._options.message
 
     this._patterns = {}
     this._localListenInProgress = {}
@@ -78,14 +78,13 @@ module.exports = class ListenerRegistry {
    * via the cluster.
    */
   _setupRemoteComponents () {
-    this._clusterProvidedRecords = new DistributedStateRegistry(
-      `${this._topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`,
-      this._options
+    this._clusterProvidedRecords = this._message.getStateRegistry(
+      `${this._topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`
     )
     this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
     this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
 
-    this._messageConnector.subscribe(
+    this._message.subscribe(
       this._getMessageBusTopic(this._options.serverName, this._topic),
       this._onIncomingMessage.bind(this)
     )
@@ -709,7 +708,7 @@ module.exports = class ListenerRegistry {
   */
   _sendRemoteDiscoveryStop (listenLeaderServerName, subscriptionName) {
     const messageTopic = this._getMessageBusTopic(listenLeaderServerName, this._topic)
-    this._messageConnector.publish(messageTopic, {
+    this._message.send(messageTopic, {
       topic: messageTopic,
       action: C.ACTIONS.ACK,
       data: [listenLeaderServerName, subscriptionName]
@@ -722,7 +721,7 @@ module.exports = class ListenerRegistry {
     */
   _sendLastSubscriberRemoved (serverName, subscriptionName) {
     const messageTopic = this._getMessageBusTopic(serverName, this._topic)
-    this._messageConnector.publish(messageTopic, {
+    this._message.send(messageTopic, {
       topic: messageTopic,
       action: C.ACTIONS.UNSUBSCRIBE,
       data: [serverName, subscriptionName]

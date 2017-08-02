@@ -37,7 +37,7 @@ module.exports = class RpcProxy {
     message.remotePrivateTopic = this._privateTopic
     message.topic = this._receiverPrivateTopic
     message.originalTopic = C.TOPIC.RPC
-    this._options.messageConnector.publish(this._receiverPrivateTopic, message)
+    this._options.message.send(this._receiverPrivateTopic, message)
     message.isCompleted = true
   }
 
@@ -54,7 +54,7 @@ module.exports = class RpcProxy {
   * @returns {void}
   */
   sendError (topic, type, msg) {
-    this._options.messageConnector.publish(this._receiverPrivateTopic, {
+    this._options.message.send(this._receiverPrivateTopic, {
       topic: this._receiverPrivateTopic,
       originalTopic: C.TOPIC.RPC,
       action: C.ACTIONS.ERROR,
