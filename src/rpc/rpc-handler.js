@@ -58,20 +58,18 @@ module.exports = class RpcHandler {
   }
 
   _request (rpc) {
-    const { name, socket, providers } = rpc
-
     const subscribers = Array
-      .from(this._subscriptionRegistry.getSubscribers(name))
-      .filter(x => !providers.has(x))
+      .from(this._subscriptionRegistry.getSubscribers(rpc.name))
+      .filter(x => !rpc.providers.has(x))
 
     const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
 
     if (provider) {
-      provider.sendNative(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ name, rpc.id, rpc.data ])
-      providers.add(provider)
+      provider.sendNative(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ rpc.name, rpc.id, rpc.data ])
+      rpc.providers.add(provider)
       rpc.timeout = setTimeout(() => this._request(rpc), this._options.rpcTimeout)
     } else {
-      socket.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ name, rpc.id ])
+      rpc.socket.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ rpc.name, rpc.id ])
       this._rpcs.delete(rpc.id)
     }
   }
