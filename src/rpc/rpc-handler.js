@@ -23,9 +23,9 @@ module.exports = class RpcHandler {
         data,
         providers: new Set(),
         provider: null,
-        request: this._request.bind(this, rpc),
         timeout: null
       }
+      rpc.request = this._request.bind(this, rpc)
       this._rpcs.set(id, rpc)
 
       this._request(id)
@@ -41,11 +41,15 @@ module.exports = class RpcHandler {
         return
       }
 
-      clearTimeout(rpc.timeout)
-      rpc.timeout = null
+      if (rpc.timeout) {
+        clearTimeout(rpc.timeout)
+        rpc.timeout = null
+      }
 
-      rpc.provider.removeListener('close', rpc.request)
-      rpc.provider = null
+      if (rpc.provider) {
+        rpc.provider.removeListener('close', rpc.request)
+        rpc.provider = null
+      }
 
       if (message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR) {
         if (message.raw) {
