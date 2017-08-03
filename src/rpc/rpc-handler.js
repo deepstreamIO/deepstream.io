@@ -9,7 +9,14 @@ module.exports = class RpcHandler {
   }
 
   handle (socket, message) {
-    const [ name, id, data ] = message.data
+    if (!message.data || !message.data[0]) {
+      socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
+      return
+    }
+
+    const [ name, id, data ] = message.action !== C.ACTIONS.ERROR
+      ? message.data
+      : message.data.slice(1).concat(message.data.slice(0, 1))
 
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._subscriptionRegistry.subscribe(name, socket)
