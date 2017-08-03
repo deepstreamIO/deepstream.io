@@ -14,9 +14,7 @@ module.exports = class RpcHandler {
       return
     }
 
-    const [ name, id, data ] = message.action !== C.ACTIONS.ERROR
-      ? message.data
-      : message.data.slice(1).concat(message.data.slice(0, 1))
+    const [ name, id, data ] = message.data
 
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._subscriptionRegistry.subscribe(name, socket)
@@ -38,8 +36,7 @@ module.exports = class RpcHandler {
       this._request(rpc)
     } else if (
       message.action === C.ACTIONS.RESPONSE ||
-      message.action === C.ACTIONS.REJECTION ||
-      message.action === C.ACTIONS.ERROR
+      message.action === C.ACTIONS.REJECTION
     ) {
       const rpc = this._rpcs.get(id)
 
@@ -58,7 +55,7 @@ module.exports = class RpcHandler {
         rpc.provider = null
       }
 
-      if (message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR) {
+      if (message.action === C.ACTIONS.RESPONSE) {
         rpc.socket.sendNative(message.raw)
         this._rpcs.delete(id)
       } else if (message.action === C.ACTIONS.REJECTION && rpc.provider === socket) {
