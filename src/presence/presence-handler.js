@@ -54,7 +54,7 @@ module.exports = class PresenceHandler {
   }
 
   _handleQuery (socket) {
-    const clients = Array.from(this._users.values())
+    const clients = Array.from(this._users.keys())
     const index = clients.indexOf(socket.user)
     if (index !== -1) {
       clients.splice(index, 1)
