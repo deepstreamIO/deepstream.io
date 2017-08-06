@@ -151,8 +151,17 @@ class SubscriptionRegistry {
       const uniqueSenders = delayedBroadcasts.uniqueSenders
       const sharedMessages = delayedBroadcasts.sharedMessages
 
+      const sockets = this._subscriptions.get(name)
+      if (!sockets) {
+        continue
+      }
+
       // for all unique senders and their gaps, build their special messages
       for (const uniqueSender of uniqueSenders) {
+        if (!sockets.has(uniqueSender)) {
+          continue
+        }
+
         const socket = uniqueSender[0]
         const gaps = uniqueSender[1]
         let i = 0
@@ -172,19 +181,17 @@ class SubscriptionRegistry {
       // for all sockets in this subscription name, send either sharedMessage or this socket's
       // specialized message. only sockets that sent something will have a special message, all
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
-      const sockets = this._subscriptions.get(name)
-      if (sockets && sockets.size > 0) {
-        // unfortunately accessing the first (or any single) element from a set requires creating
-        // an iterator
-        const first = sockets.values().next().value
-        const preparedMessage = first.prepareMessage(sharedMessages)
-        for (const socket of sockets) {
-          if (!uniqueSenders.has(socket)) {
-            socket.sendPrepared(preparedMessage)
-          }
+
+      // unfortunately accessing the first (or any single) element from a set requires creating
+      // an iterator
+      const first = sockets.values().next().value
+      const preparedMessage = first.prepareMessage(sharedMessages)
+      for (const socket of sockets) {
+        if (!uniqueSenders.has(socket)) {
+          socket.sendPrepared(preparedMessage)
         }
-        first.finalizeMessage(preparedMessage)
       }
+      first.finalizeMessage(preparedMessage)
     }
 
     this._delayedBroadcasts.clear()
