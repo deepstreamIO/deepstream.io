@@ -18,7 +18,7 @@ class SubscriptionRegistry {
    *                                topic_SUBSCRIPTIONS
    */
   constructor (options, topic, clusterTopic) {
-    this._delayedBroadcasts = new Map()
+    this._pending = new Set()
     this._delay = -1
     if (options.broadcastTimeout !== undefined) {
       this._delay = options.broadcastTimeout
@@ -145,10 +145,10 @@ class SubscriptionRegistry {
   _onBroadcastTimeout () {
     this._delayedBroadcastsTimer = null
 
-    for (const delayedBroadcasts of this._delayedBroadcasts.values()) {
-      const uniqueSenders = delayedBroadcasts.uniqueSenders
-      const sharedMessages = delayedBroadcasts.sharedMessages
-      const sockets = delayedBroadcasts.sockets
+    for (const subscription of this._pending) {
+      const uniqueSenders = subscription.uniqueSenders
+      const sharedMessages = subscription.sharedMessages
+      const sockets = subscription.sockets
 
       // for all unique senders and their gaps, build their special messages
       for (const uniqueSender of uniqueSenders) {
@@ -182,9 +182,12 @@ class SubscriptionRegistry {
         }
       }
       first.finalizeMessage(preparedMessage)
+
+      subscription.sharedMessages = ''
+      subscription.uniqueSenders.clear()
     }
 
-    this._delayedBroadcasts.clear()
+    this._pending.clear()
   }
 
   /**
@@ -202,9 +205,9 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   sendToSubscribers (name, message, noDelay, socket) {
-    const sockets = this._subscriptions.get(name)
+    const subscription = this._subscriptions.get(name)
 
-    if (!sockets) {
+    if (!subscription) {
       return
     }
 
@@ -215,29 +218,20 @@ class SubscriptionRegistry {
       msgString += C.MESSAGE_SEPERATOR // eslint-disable-line
     }
 
-    // if not already a delayed broadcast, create it
-    const delayedBroadcasts = this._delayedBroadcasts.get(name) || {
-      uniqueSenders: new Map(),
-      sharedMessages: '',
-      sockets
-    }
-
-    if (delayedBroadcasts.sharedMessages.length === 0) {
-      this._delayedBroadcasts.set(name, delayedBroadcasts)
-    }
-
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
-    const start = delayedBroadcasts.sharedMessages.length
-    delayedBroadcasts.sharedMessages += msgString
-    const stop = delayedBroadcasts.sharedMessages.length
+    const start = subscription.sharedMessages.length
+    subscription.sharedMessages += msgString
+    const stop = subscription.sharedMessages.length
+
+    this._pending.add(subscription)
 
     // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
     // each uniqueSender has a vector of "gaps" in relation to sharedMessage
     // sockets should not receive what they sent themselves, so a gap is inserted
     // for every send from this socket
     if (socket && socket.uuid !== undefined) {
-      const uniqueSenders = delayedBroadcasts.uniqueSenders
+      const uniqueSenders = subscription.uniqueSenders
       const gaps = uniqueSenders.get(socket) || []
 
       if (gaps.length === 0) {
@@ -267,18 +261,22 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   subscribe (name, socket) {
-    const sockets = this._subscriptions.get(name) || new Set()
+    const subscription = this._subscriptions.get(name) || {
+      sockets: new Set(),
+      uniqueSenders: new Map(),
+      sharedMessages: ''
+    }
 
-    if (sockets.size === 0) {
-      this._subscriptions.set(name, sockets)
-    } else if (sockets.has(socket)) {
+    if (subscription.sockets.size === 0) {
+      this._subscriptions.set(name, subscription)
+    } else if (subscription.sockets.has(socket)) {
       const msg = `repeat supscription to "${name}" by ${socket.user}`
       this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
       socket.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
-    sockets.add(socket)
+    subscription.sockets.add(socket)
 
     if (socket.listeners('close').indexOf(this._onSocketClose) === -1) {
       socket.once('close', this._onSocketClose)
@@ -294,7 +292,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionMade(
         name,
         socket,
-        sockets.size
+        subscription.sockets.size
       )
     }
 
@@ -316,9 +314,9 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   unsubscribe (name, socket, silent) {
-    const sockets = this._subscriptions.get(name)
+    const subscription = this._subscriptions.get(name)
 
-    if (!sockets || !sockets.delete(socket)) {
+    if (!subscription || !subscription.sockets.delete(socket)) {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
         this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg)
@@ -329,14 +327,11 @@ class SubscriptionRegistry {
 
     this._clusterSubscriptions.remove(name)
 
-    if (sockets.size === 0) {
+    if (subscription.sockets.size === 0) {
       this._subscriptions.delete(name)
-      this._delayedBroadcasts.delete(name)
+      this._pending.delete(subscription)
     } else {
-      const delayedBroadcasts = this._delayedBroadcasts.get(name)
-      if (delayedBroadcasts) {
-        delayedBroadcasts.uniqueSenders.delete(socket)
-      }
+      subscription.uniqueSenders.delete(socket)
     }
 
     const names = this._names.get(socket)
@@ -351,7 +346,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socket,
-        sockets.size,
+        subscription.sockets.size,
         this.getAllRemoteServers(name).length
       )
     }
@@ -373,7 +368,8 @@ class SubscriptionRegistry {
    * @returns {Array} SocketWrapper[]
    */
   getLocalSubscribers (name) {
-    return this._subscriptions.get(name) || new Set()
+    const subscription = this._subscriptions.get(name)
+    return subscription ? subscription.sockets : new Set()
   }
 
   /**
