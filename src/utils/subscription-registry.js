@@ -18,7 +18,7 @@ class SubscriptionRegistry {
    *                                topic_SUBSCRIPTIONS
    */
   constructor (options, topic, clusterTopic) {
-    this._pending = new Set()
+    this._pending = []
     this._delay = -1
     if (options.broadcastTimeout !== undefined) {
       this._delay = options.broadcastTimeout
@@ -187,7 +187,7 @@ class SubscriptionRegistry {
       subscription.uniqueSenders.clear()
     }
 
-    this._pending.clear()
+    this._pending.length = 0
   }
 
   /**
@@ -218,13 +218,15 @@ class SubscriptionRegistry {
       msgString += C.MESSAGE_SEPERATOR // eslint-disable-line
     }
 
+    if (subscription.sharedMessages.length === 0) {
+      this._pending.push(subscription)
+    }
+
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
     const start = subscription.sharedMessages.length
     subscription.sharedMessages += msgString
     const stop = subscription.sharedMessages.length
-
-    this._pending.add(subscription)
 
     // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
     // each uniqueSender has a vector of "gaps" in relation to sharedMessage
@@ -326,7 +328,7 @@ class SubscriptionRegistry {
 
     if (subscription.sockets.size === 0) {
       this._subscriptions.delete(name)
-      this._pending.delete(subscription)
+      this._pending.splice(this._pending.indexOf(subscription), 1)
     } else {
       subscription.uniqueSenders.delete(socket)
     }
