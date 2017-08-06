@@ -44,8 +44,8 @@ class SubscriptionRegistry {
 
   subscribe (name, socket) {
     const subscription = this._subscriptions.get(name) || {
-      sharedMessages: '',
-      uniqueSenders: new Map(),
+      shared: '',
+      senders: new Map(),
       sockets: new Set()
     }
 
@@ -105,7 +105,7 @@ class SubscriptionRegistry {
       this._subscriptions.delete(name)
       this._pending.delete(subscription)
     } else {
-      subscription.uniqueSenders.delete(socket)
+      subscription.senders.delete(socket)
     }
 
     const names = this._names.get(socket)
@@ -151,9 +151,9 @@ class SubscriptionRegistry {
 
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
-    const start = subscription.sharedMessages.length
-    subscription.sharedMessages += msg
-    const stop = subscription.sharedMessages.length
+    const start = subscription.shared.length
+    subscription.shared += msg
+    const stop = subscription.shared.length
 
     this._pending.add(subscription)
 
@@ -161,10 +161,10 @@ class SubscriptionRegistry {
       return
     }
 
-    const gaps = subscription.uniqueSenders.get(socket) || []
+    const gaps = subscription.senders.get(socket) || []
 
     if (gaps.length === 0) {
-      subscription.uniqueSenders.set(socket, gaps)
+      subscription.senders.set(socket, gaps)
     }
 
     gaps.push(start, stop)
@@ -178,32 +178,32 @@ class SubscriptionRegistry {
 
   _onBroadcastTimeout () {
     for (const subscription of this._pending) {
-      const { uniqueSenders, sharedMessages, sockets } = subscription
+      const { senders, shared, sockets } = subscription
 
-      for (const [ socket, gaps ] of uniqueSenders) {
+      for (const [ socket, gaps ] of senders) {
         let i = 0
-        let message = sharedMessages.substring(0, gaps[i++])
+        let message = shared.substring(0, gaps[i++])
         let lastStop = gaps[i++]
 
         while (i < gaps.length) {
-          message += sharedMessages.substring(lastStop, gaps[i++])
+          message += shared.substring(lastStop, gaps[i++])
           lastStop = gaps[i++]
         }
-        message += sharedMessages.substring(lastStop, sharedMessages.length)
+        message += shared.substring(lastStop, shared.length)
 
         socket.sendNative(message)
       }
 
-      const preparedMessage = SocketWrapper.prepareMessage(sharedMessages)
+      const preparedMessage = SocketWrapper.prepareMessage(shared)
       for (const socket of sockets) {
-        if (!uniqueSenders.has(socket)) {
+        if (!senders.has(socket)) {
           socket.sendPrepared(preparedMessage)
         }
       }
       SocketWrapper.finalizeMessage(preparedMessage)
 
-      subscription.sharedMessages = ''
-      subscription.uniqueSenders.clear()
+      subscription.shared = ''
+      subscription.senders.clear()
     }
 
     this._pending.clear()
