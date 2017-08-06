@@ -3,8 +3,8 @@ const SocketWrapper = require('../message/socket-wrapper')
 
 class SubscriptionRegistry {
   constructor (options, topic) {
-    this._delayedBroadcasts = new Map()
     this._names = new Map()
+    this._pending = new Set()
     this._subscriptions = new Map()
     this._options = options
     this._topic = topic
@@ -30,7 +30,8 @@ class SubscriptionRegistry {
   }
 
   getSubscribers (name) {
-    return this._subscriptions.get(name) || new Set()
+    const subscription = this._subscriptions.get(name)
+    return subscription ? subscription.sockets : new Set()
   }
 
   setAction (name, value) {
@@ -42,11 +43,15 @@ class SubscriptionRegistry {
   }
 
   subscribe (name, socket) {
-    let sockets = this._subscriptions.get(name) || new Set()
+    const subscription = this._subscriptions.get(name) || {
+      sharedMessages: '',
+      uniqueSenders: new Map(),
+      sockets: new Set()
+    }
 
-    if (sockets.size === 0) {
-      this._subscriptions.set(name, sockets)
-    } else if (sockets.has(socket)) {
+    if (subscription.sockets.size === 0) {
+      this._subscriptions.set(name, subscription)
+    } else if (subscription.sockets.has(socket)) {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         this._constants.MULTIPLE_SUBSCRIPTIONS,
@@ -56,7 +61,7 @@ class SubscriptionRegistry {
       return
     }
 
-    sockets.add(socket)
+    subscription.sockets.add(socket)
 
     if (!socket.listeners('close').includes(this._onSocketClose)) {
       socket.once('close', this._onSocketClose)
@@ -72,7 +77,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionAdded(
         name,
         socket,
-        sockets.size
+        subscription.sockets.size
       )
     }
 
@@ -84,9 +89,9 @@ class SubscriptionRegistry {
   }
 
   unsubscribe (name, socket, silent) {
-    const sockets = this._subscriptions.get(name)
+    const subscription = this._subscriptions.get(name)
 
-    if (!sockets || !sockets.delete(socket)) {
+    if (!subscription || !subscription.sockets.delete(socket)) {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         this._constants.NOT_SUBSCRIBED,
@@ -96,14 +101,11 @@ class SubscriptionRegistry {
       return
     }
 
-    if (sockets.size === 0) {
+    if (subscription.sockets.size === 0) {
       this._subscriptions.delete(name)
-      this._delayedBroadcasts.delete(name)
+      this._pending.delete(subscription)
     } else {
-      const delayedBroadcasts = this._delayedBroadcasts.get(name)
-      if (delayedBroadcasts) {
-        delayedBroadcasts.uniqueSenders.delete(socket)
-      }
+      subscription.uniqueSenders.delete(socket)
     }
 
     const names = this._names.get(socket)
@@ -118,7 +120,7 @@ class SubscriptionRegistry {
       this._subscriptionListener.onSubscriptionRemoved(
         name,
         socket,
-        sockets.size
+        subscription.sockets.size
       )
     }
 
@@ -136,9 +138,9 @@ class SubscriptionRegistry {
       return
     }
 
-    const sockets = this._subscriptions.get(name)
+    const subscription = this._subscriptions.get(name)
 
-    if (!sockets) {
+    if (!subscription) {
       return
     }
 
@@ -147,31 +149,22 @@ class SubscriptionRegistry {
       msg += C.MESSAGE_SEPERATOR
     }
 
-    // if not already a delayed broadcast, create it
-    const delayedBroadcasts = this._delayedBroadcasts.get(name) || {
-      uniqueSenders: new Map(),
-      sharedMessages: '',
-      sockets
-    }
-
-    if (delayedBroadcasts.sharedMessages.length === 0) {
-      this._delayedBroadcasts.set(name, delayedBroadcasts)
-    }
-
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
-    const start = delayedBroadcasts.sharedMessages.length
-    delayedBroadcasts.sharedMessages += msg
-    const stop = delayedBroadcasts.sharedMessages.length
+    const start = subscription.sharedMessages.length
+    subscription.sharedMessages += msg
+    const stop = subscription.sharedMessages.length
+
+    this._pending.add(subscription)
 
     if (!socket) {
       return
     }
 
-    const gaps = delayedBroadcasts.uniqueSenders.get(socket) || []
+    const gaps = subscription.uniqueSenders.get(socket) || []
 
     if (gaps.length === 0) {
-      delayedBroadcasts.uniqueSenders.set(socket, gaps)
+      subscription.uniqueSenders.set(socket, gaps)
     }
 
     gaps.push(start, stop)
@@ -184,7 +177,9 @@ class SubscriptionRegistry {
   }
 
   _onBroadcastTimeout () {
-    for (const { uniqueSenders, sharedMessages, sockets } of this._delayedBroadcasts.values()) {
+    for (const subscription of this._pending) {
+      const { uniqueSenders, sharedMessages, sockets } = subscription
+
       for (const [ socket, gaps ] of uniqueSenders) {
         let i = 0
         let message = sharedMessages.substring(0, gaps[i++])
@@ -206,8 +201,12 @@ class SubscriptionRegistry {
         }
       }
       SocketWrapper.finalizeMessage(preparedMessage)
+
+      subscription.sharedMessages = ''
+      subscription.uniqueSenders.clear()
     }
-    this._delayedBroadcasts.clear()
+
+    this._pending.clear()
   }
 }
 
