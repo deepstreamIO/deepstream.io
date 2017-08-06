@@ -326,7 +326,7 @@ class SubscriptionRegistry {
   unsubscribe (name, socket, silent) {
     const sockets = this._subscriptions.get(name)
 
-    if (!sockets || !sockets.has(socket)) {
+    if (!sockets || !sockets.delete(socket)) {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
         this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg)
@@ -335,7 +335,6 @@ class SubscriptionRegistry {
       return
     }
 
-    sockets.delete(socket)
     this._clusterSubscriptions.remove(name)
 
     if (sockets.size === 0) {
