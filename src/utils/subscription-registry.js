@@ -63,13 +63,10 @@ class SubscriptionRegistry {
 
     subscription.sockets.add(socket)
 
-    if (!socket.listeners('close').includes(this._onSocketClose)) {
-      socket.once('close', this._onSocketClose)
-    }
-
     const names = this._names.get(socket) || new Set()
     if (names.size === 0) {
       this._names.set(socket, names)
+      socket.once('close', this._onSocketClose)
     }
     names.add(name)
 
