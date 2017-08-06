@@ -278,13 +278,10 @@ class SubscriptionRegistry {
 
     subscription.sockets.add(socket)
 
-    if (socket.listeners('close').indexOf(this._onSocketClose) === -1) {
-      socket.once('close', this._onSocketClose)
-    }
-
     const names = this._names.get(socket) || new Set()
     if (names.size === 0) {
       this._names.set(socket, names)
+      socket.once('close', this._onSocketClose)
     }
     names.add(name)
 
