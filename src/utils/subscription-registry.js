@@ -149,13 +149,15 @@ class SubscriptionRegistry {
       msg += C.MESSAGE_SEPERATOR
     }
 
+    if (subscription.shared.size === 0) {
+      this._pending.add(subscription)
+    }
+
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
     const start = subscription.shared.length
     subscription.shared += msg
     const stop = subscription.shared.length
-
-    this._pending.add(subscription)
 
     if (!socket) {
       return
