@@ -129,8 +129,7 @@ class SubscriptionRegistry {
   * @param {SockerWrapper} the socket that closed
   */
   _onSocketClose (socket) {
-    const names = this._names.get(socket) || new Set()
-    for (const name of names) {
+    for (const name of this._names.get(socket)) {
       this.unsubscribe(name, socket, true)
     }
   }
@@ -346,6 +345,7 @@ class SubscriptionRegistry {
 
     if (names.size === 0) {
       this._names.delete(socket)
+      socket.removeListener('close', this._onSocketClose)
     }
 
     if (this._subscriptionListener) {
