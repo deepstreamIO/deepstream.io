@@ -119,7 +119,7 @@ class UwsSocketWrapper extends EventEmitter {
 
   close () {
     this.isClosed = true
-    delete this.authCallBack
+    this.authCallBack = null
     this.emit('close', this)
     this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
     this.removeAllListeners()
