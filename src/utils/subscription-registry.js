@@ -144,9 +144,11 @@ class SubscriptionRegistry {
    */
   _onBroadcastTimeout () {
     this._delayedBroadcastsTimer = null
+
     for (const entry of this._delayedBroadcasts) {
       const name = entry[0]
       const delayedBroadcasts = entry[1]
+
       const uniqueSenders = delayedBroadcasts.uniqueSenders
       const sharedMessages = delayedBroadcasts.sharedMessages
 
@@ -223,12 +225,12 @@ class SubscriptionRegistry {
     }
 
     // if not already a delayed broadcast, create it
-    let delayedBroadcasts = this._delayedBroadcasts.get(name)
-    if (delayedBroadcasts === undefined) {
-      delayedBroadcasts = {
-        uniqueSenders: new Map(),
-        sharedMessages: ''
-      }
+    const delayedBroadcasts = this._delayedBroadcasts.get(name) || {
+      uniqueSenders: new Map(),
+      sharedMessages: ''
+    }
+
+    if (delayedBroadcasts.sharedMessages.length === 0) {
       this._delayedBroadcasts.set(name, delayedBroadcasts)
     }
 
@@ -244,10 +246,9 @@ class SubscriptionRegistry {
     // for every send from this socket
     if (socket && socket.uuid !== undefined) {
       const uniqueSenders = delayedBroadcasts.uniqueSenders
-      let gaps = uniqueSenders.get(socket)
+      const gaps = uniqueSenders.get(socket) || []
 
-      if (!gaps) {
-        gaps = []
+      if (gaps.length === 0) {
         uniqueSenders.set(socket, gaps)
       }
 
