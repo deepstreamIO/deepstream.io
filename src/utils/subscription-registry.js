@@ -3,7 +3,6 @@ const SocketWrapper = require('../message/socket-wrapper')
 
 class SubscriptionRegistry {
   constructor (options, topic) {
-    this._delay = options.broadcastTimeout || 0
     this._delayedBroadcasts = new Map()
     this._names = new Map()
     this._subscriptions = new Map()
@@ -18,6 +17,8 @@ class SubscriptionRegistry {
     }
     this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
+
+    setInterval(this._onBroadcastTimeout, options.broadcastTimeout || 0)
   }
 
   getNames () {
@@ -163,19 +164,17 @@ class SubscriptionRegistry {
     delayedBroadcasts.sharedMessages += msg
     const stop = delayedBroadcasts.sharedMessages.length
 
-    if (socket) {
-      const gaps = delayedBroadcasts.uniqueSenders.get(socket) || []
-
-      if (gaps.length === 0) {
-        delayedBroadcasts.uniqueSenders.set(socket, gaps)
-      }
-
-      gaps.push(start, stop)
+    if (!socket) {
+      return
     }
 
-    if (!this._delayedBroadcastsTimer) {
-      this._delayedBroadcastsTimer = setTimeout(this._onBroadcastTimeout, this._delay)
+    const gaps = delayedBroadcasts.uniqueSenders.get(socket) || []
+
+    if (gaps.length === 0) {
+      delayedBroadcasts.uniqueSenders.set(socket, gaps)
     }
+
+    gaps.push(start, stop)
   }
 
   _onSocketClose (socket) {
@@ -185,8 +184,6 @@ class SubscriptionRegistry {
   }
 
   _onBroadcastTimeout () {
-    this._delayedBroadcastsTimer = null
-
     for (const { uniqueSenders, sharedMessages, sockets } of this._delayedBroadcasts.values()) {
       for (const [ socket, gaps ] of uniqueSenders) {
         let i = 0
@@ -210,7 +207,6 @@ class SubscriptionRegistry {
       }
       SocketWrapper.finalizeMessage(preparedMessage)
     }
-
     this._delayedBroadcasts.clear()
   }
 }
