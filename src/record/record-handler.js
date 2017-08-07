@@ -46,8 +46,10 @@ module.exports = class RecordHandler {
         // TODO: Remove storage exclusion
         this._storage.set(data, (error, [ data, socket ]) => {
           if (error) {
-            const message = `error while writing ${data[0]} to storage`
-            socket.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, [ ...data, message ])
+            socket.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, [
+              ...data,
+              `error while writing ${data[0]} to storage`
+            ])
           }
         }, [ data, socket ])
       }
