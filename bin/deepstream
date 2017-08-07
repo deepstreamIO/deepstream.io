@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict'
 require('colors')
+require('dsx-monitoring')
 
 const pgk = require('../package.json')
 

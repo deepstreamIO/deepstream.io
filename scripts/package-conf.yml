@@ -118,6 +118,13 @@ logger:
 #       host: localhost
 #       port: 28015
 
+#   monitoring:
+#     name: 'dsx-monitoring'
+#     options:
+#       reportInterval: 200
+#       permissionLogLimit: 3
+#       technicalErrorLogLimit: 3
+
 # Storage options
 # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
 storageExclusion: null
