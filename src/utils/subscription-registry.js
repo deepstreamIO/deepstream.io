@@ -4,6 +4,8 @@ const SocketWrapper = require('../message/socket-wrapper')
 class SubscriptionRegistry {
   constructor (options, topic) {
     this._names = new Map()
+    this._broadcastTimeoutTime = options.broadcastTimeout || 0
+    this._broadcastTimeout = null
     this._pending = []
     this._subscriptions = new Map()
     this._options = options
@@ -17,8 +19,6 @@ class SubscriptionRegistry {
     }
     this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
-
-    setInterval(this._onBroadcastTimeout, options.broadcastTimeout || 0)
   }
 
   getNames () {
@@ -167,6 +167,10 @@ class SubscriptionRegistry {
     }
 
     gaps.push(start, stop)
+
+    if (!this._broadcastTimeout) {
+      this._broadcastTimeout = setTimeout(this._onBroadcastTimeout, this._broadcastTimeoutTime)
+    }
   }
 
   _onSocketClose (socket) {
