@@ -37,8 +37,7 @@ module.exports = class UniqueRegistry {
     this._timeouts = {}
     this._responseEventEmitter = new EventEmitter()
     this._onPrivateMessageFn = this._onPrivateMessage.bind(this)
-    this._localTopic = this._getPrivateTopic(this._options.serverName)
-    this._options.message.subscribeBroadcast(this._localTopic, this._onPrivateMessageFn)
+    this._options.message.subscribe(C.TOPIC.LEADER_PRIVATE, this._onPrivateMessageFn)
   }
 
   /**
@@ -100,10 +99,8 @@ module.exports = class UniqueRegistry {
 
     this._responseEventEmitter.once(name, callback)
 
-    const remoteTopic = this._getPrivateTopic(leaderServerName)
-
-    this._options.message.sendBroadcast(remoteTopic, {
-      topic: remoteTopic,
+    this._options.message.sendDirect(leaderServerName, C.TOPIC.LEADER_PRIVATE, {
+      topic: C.TOPIC.LEADER_PRIVATE,
       action: C.ACTIONS.LOCK_REQUEST,
       data: [{
         name,
@@ -122,10 +119,8 @@ module.exports = class UniqueRegistry {
   * @returns {void}
   */
   _releaseRemoteLock (name, leaderServerName) {
-    const remoteTopic = this._getPrivateTopic(leaderServerName)
-
-    this._options.message.send(remoteTopic, {
-      topic: remoteTopic,
+    this._options.message.sendDirect(leaderServerName, C.TOPIC.LEADER_PRIVATE, {
+      topic:  C.TOPIC.LEADER_PRIVATE,
       action: C.ACTIONS.LOCK_RELEASE,
       data: [{
         name
@@ -143,7 +138,7 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _onPrivateMessage (message) {
+  _onPrivateMessage (message, remoteServerName) {
     if (!SUPPORTED_ACTIONS[message.action]) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
       return
@@ -160,11 +155,6 @@ module.exports = class UniqueRegistry {
     }
 
     if (this._clusterRegistry.isLeader() === false) {
-      let remoteServerName = 'unknown-server'
-      if (message.data[0].responseTopic) {
-        remoteServerName = message.data[0].responseTopic.replace(C.TOPIC.LEADER_PRIVATE, '')
-      }
-
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.INVALID_LEADER_REQUEST,
@@ -175,9 +165,9 @@ module.exports = class UniqueRegistry {
     }
 
     if (message.action === C.ACTIONS.LOCK_REQUEST) {
-      this._handleRemoteLockRequest(message.data[0])
+      this._handleRemoteLockRequest(message.data[0], remoteServerName)
     } else if (message.action === C.ACTIONS.LOCK_RELEASE) {
-      this._handleRemoteLockRelease(message.data[0])
+      this._handleRemoteLockRelease(message.data[0], remoteServerName)
     }
   }
 
@@ -189,8 +179,8 @@ module.exports = class UniqueRegistry {
   * @private
   * @returns {void}
   */
-  _handleRemoteLockRequest (data) {
-    this._options.message.sendBroadcast(data.responseTopic, {
+  _handleRemoteLockRequest (data, remoteServerName) {
+    this._options.message.sendDirect(remoteServerName, C.TOPIC.LEADER_PRIVATE, {
       topic: data.responseTopic,
       action: C.ACTIONS.LOCK_RESPONSE,
       data: [{
@@ -226,19 +216,6 @@ module.exports = class UniqueRegistry {
     clearTimeout(this._timeouts[data.name])
     delete this._timeouts[data.name]
     delete this._locks[data.name]
-  }
-
-  /**
-  * Generates a private topic to allow routing requests directly
-  * to this node
-  *
-  * @param  {String} serverName The server of this server
-  *
-  * @private
-  * @returns {String} privateTopic
-  */
-  _getPrivateTopic (serverName) { // eslint-disable-line
-    return C.TOPIC.LEADER_PRIVATE + serverName
   }
 
   /**

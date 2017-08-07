@@ -59,7 +59,6 @@ module.exports = class ListenerRegistry {
    * via the cluster.
    */
   _setupProviderRegistry () {
-    this._messageTopic = this._topic + C.ACTIONS.LISTEN
     this._providerRegistry = new SubscriptionRegistry(
       this._options,
       this._topic,
@@ -78,6 +77,7 @@ module.exports = class ListenerRegistry {
    * via the cluster.
    */
   _setupRemoteComponents () {
+    this._messageTopic = this._topic + C.ACTIONS.LISTEN
     this._clusterProvidedRecords = this._message.getStateRegistry(
       `${this._topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`
     )
@@ -116,7 +116,6 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   handle (socketWrapper, message) {
-    console.log('handle', message)
     const pattern = message.data[0]
     const subscriptionName = message.data[1]
     if (message.action === C.ACTIONS.LISTEN) {
@@ -157,7 +156,6 @@ module.exports = class ListenerRegistry {
     } else if (message.action === C.ACTIONS.ACK) {
       this._nextDiscoveryStage(message.data[1])
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      console.log('unsubscribe')
       this.onSubscriptionRemoved(
         message.data[1],
         null,
@@ -275,9 +273,9 @@ module.exports = class ListenerRegistry {
       closeListener: this._removeListener.bind(this, socketWrapper, message)
     }
     socketWrapper.once('close', this._locallyProvidedRecords[subscriptionName].closeListener)
-    this._clusterProvidedRecords.add(subscriptionName)
 
     this._stopLocalDiscoveryStage(subscriptionName)
+    this._clusterProvidedRecords.add(subscriptionName)
   }
 
   /**
@@ -425,7 +423,6 @@ module.exports = class ListenerRegistry {
         subscriptionName
       )
       this._leadingListen[subscriptionName] = remoteListenArray
-
       this._startLocalDiscoveryStage(subscriptionName, localListenArray)
     })
   }
@@ -693,6 +690,7 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to find a provider for
   */
   _sendRemoteDiscoveryStart (serverName, subscriptionName) {
+    console.trace('<>', serverName, subscriptionName)
     this._message.sendDirect(serverName, this._messageTopic, {
       topic: this._messageTopic,
       action: C.ACTIONS.LISTEN,
@@ -735,6 +733,7 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to find a provider for
   */
   _sendSubscriptionForPatternFound (provider, subscriptionName) {
+    console.trace(subscriptionName, this._options.serverName)
     provider.socketWrapper.sendMessage(
       this._topic,
       C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,

@@ -416,6 +416,7 @@ class SubscriptionRegistry {
    * @param  {String} name the name that was added
    */
   _onClusterSubscriptionAdded (name) {
+    console.log('_onClusterSubscriptionAdded', name)
     if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
       this._subscriptionListener.onSubscriptionMade(name, null, 1)
     }
