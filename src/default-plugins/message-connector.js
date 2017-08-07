@@ -41,12 +41,14 @@ module.exports = class MessageConnector {
   }
 
   sendDirect (serverName, name, message) {
+    console.log('sendDirect', `${serverName}/${name}`)
     message.__originServer = this._options.serverName
     this._options.messageConnector.publish(`${serverName}/${name}`, message)
   }
 
   subscribe (name, callback) {
-    this._options.messageConnector.subscribe(name, (message) => {
+    console.log('subscribe', `${this._options.serverName}/${name}`)
+    this._options.messageConnector.subscribe(`${this._options.serverName}/${name}`, (message) => {
       const serverName = message.__originServer
       delete message.__originServer
       callback(message, serverName)

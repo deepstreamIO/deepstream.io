@@ -2,7 +2,6 @@
 
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
-const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 
 /**
  * This class handles incoming and outgoing messages in relation
@@ -26,11 +25,6 @@ module.exports = class PresenceHandler {
     this._connectedClients = this._options.message.getStateRegistry(C.TOPIC.ONLINE_USERS, options)
     this._connectedClients.on('add', this._onClientAdded.bind(this))
     this._connectedClients.on('remove', this._onClientRemoved.bind(this))
-
-    this._options.message.subscribe(
-      `${this._options.serverName}/${C.TOPIC.PRESENCE}`,
-      this.handle.bind(this, C.SOURCE_MESSAGE_CONNECTOR)
-    )
   }
 
   /**

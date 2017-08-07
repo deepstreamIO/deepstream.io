@@ -22,11 +22,6 @@ const RecordHandler = function (options) {
   this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
   this._transitions = {}
   this._recordRequestsInProgress = {}
-
-  this._options.message.subscribe(
-    `${this._options.serverName}/${C.TOPIC.RECORD}`,
-    this.handle.bind(this, C.SOURCE_MESSAGE_CONNECTOR)
-  )
 }
 
 /**

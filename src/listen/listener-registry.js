@@ -59,6 +59,7 @@ module.exports = class ListenerRegistry {
    * via the cluster.
    */
   _setupProviderRegistry () {
+    this._messageTopic = this._topic + C.ACTIONS.LISTEN
     this._providerRegistry = new SubscriptionRegistry(
       this._options,
       this._topic,
@@ -82,9 +83,8 @@ module.exports = class ListenerRegistry {
     )
     this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
     this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
-    console.log(this._getMessageBusTopic(this._options.serverName, this._topic))
     this._message.subscribe(
-      this._getMessageBusTopic(this._options.serverName, this._topic),
+      this._messageTopic,
       this._onIncomingMessage.bind(this)
     )
   }
@@ -147,7 +147,7 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   _onIncomingMessage (message) {
-    console.log(message)
+    console.log('>>', message)
     if (this._options.serverName !== message.data[0]) {
       return
     }
@@ -227,7 +227,6 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   onSubscriptionRemoved (subscriptionName, socketWrapper, localCount, remoteCount) {
-    console.log('onSubscriptionRemoved', subscriptionName, localCount, remoteCount)
     const provider = this._locallyProvidedRecords[subscriptionName]
 
     if (this.hasActiveProvider(subscriptionName) && !provider) {
@@ -694,9 +693,8 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to find a provider for
   */
   _sendRemoteDiscoveryStart (serverName, subscriptionName) {
-    const messageTopic = this._getMessageBusTopic(serverName, this._topic)
-    this._message.send(messageTopic, {
-      topic: messageTopic,
+    this._message.sendDirect(serverName, this._messageTopic, {
+      topic: this._messageTopic,
       action: C.ACTIONS.LISTEN,
       data: [serverName, subscriptionName, this._options.serverName]
     })
@@ -710,9 +708,8 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to that has just finished
   */
   _sendRemoteDiscoveryStop (listenLeaderServerName, subscriptionName) {
-    const messageTopic = this._getMessageBusTopic(listenLeaderServerName, this._topic)
-    this._message.send(messageTopic, {
-      topic: messageTopic,
+    this._message.sendDirect(listenLeaderServerName, this._messageTopic, {
+      topic: this._messageTopic,
       action: C.ACTIONS.ACK,
       data: [listenLeaderServerName, subscriptionName]
     })
@@ -723,9 +720,8 @@ module.exports = class ListenerRegistry {
     * to do a provider cleanup if necessary
     */
   _sendLastSubscriberRemoved (serverName, subscriptionName) {
-    const messageTopic = this._getMessageBusTopic(serverName, this._topic)
-    this._message.send(messageTopic, {
-      topic: messageTopic,
+    this._message.sendDirect(serverName, this._messageTopic, {
+      topic: this._messageTopic,
       action: C.ACTIONS.UNSUBSCRIBE,
       data: [serverName, subscriptionName]
     })
@@ -876,16 +872,6 @@ module.exports = class ListenerRegistry {
     socketWrapper.sendError(this._topic, errorEvent, errorMsg)
     // TODO: This isn't a CRITICAL error, would we say its an info
     this._options.logger.log(C.LOG_LEVEL.ERROR, errorEvent, errorMsg)
-  }
-
-  /**
-  * Get the unique topic to use for the message bus
-  * @param  {String} serverName the name of the server
-  * @param  {Topic} topic
-  * @return {String}
-  */
-  _getMessageBusTopic (serverName, topic) { // eslint-disable-line
-    return C.TOPIC.LEADER_PRIVATE + serverName + topic + C.ACTIONS.LISTEN
   }
 
   /**
