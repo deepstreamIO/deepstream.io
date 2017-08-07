@@ -247,8 +247,12 @@ function resolvePluginClass (plugin, type) {
     requirePath = fileUtils.lookupLibRequirePath(requirePath)
     pluginConstructor = req(requirePath)
   } else if (plugin.name != null) {
-    requirePath = fileUtils.lookupLibRequirePath(plugin.name)
-    pluginConstructor = req(requirePath)
+    try {
+      pluginConstructor = require(plugin.name)
+    } catch (e) {
+      requirePath = fileUtils.lookupLibRequirePath(plugin.name)
+      pluginConstructor = req(requirePath)
+    }
   } else {
     throw new Error(`Neither name nor path property found for ${type}`)
   }
