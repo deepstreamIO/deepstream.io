@@ -35,13 +35,13 @@ module.exports = class RecordHandler {
     } else if (message.action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(data[0], socket)
       const record = this._cache.get(data[0])
-      if (record) {
+      if (record && record.message) {
         socket.sendNative(record.message)
       } else if (
-        record !== null &&
+        record.message === undefined &&
         (!this._storageExclusion || !this._storageExclusion.test(data[0]))
       ) {
-        this._cache.set(data[0], null)
+        this._cache.set(data[0], '', '')
 
         this._storage.get(data[0], (error, nextRecord) => {
           if (error) {
@@ -100,7 +100,7 @@ module.exports = class RecordHandler {
       return
     }
 
-    this._cache.set(name, { version, message })
+    this._cache.set(name, version, message)
 
     this._subscriptionRegistry.sendToSubscribers(name, message, sender)
   }

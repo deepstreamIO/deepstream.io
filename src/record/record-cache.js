@@ -7,23 +7,17 @@ module.exports = class RecordCache {
     this._space = size
   }
 
-  has (name) {
-    return this._map.has(name)
-  }
-
   get (name) {
     const node = this._map.get(name)
     if (!node) {
       return
     }
 
-    return node.value.record
+    return node.value
   }
 
-  set (name, record) {
-    const size = record
-      ? name.length + record.version.length + record.message.length + 32
-      : 32
+  set (name, version, message) {
+    const size = name.length + version.length + message.length + 32
 
     this._space -= size
 
@@ -31,9 +25,16 @@ module.exports = class RecordCache {
     if (node) {
       this._space += node.value.size
       node.value.size = size
-      node.value.record = record
+      node.value.version = version
+      node.value.message = message
     } else {
-      this._list.unshift({ name, size, record, refs: 0 })
+      this._list.unshift({
+        name,
+        size,
+        refs: 0,
+        version,
+        message
+      })
       this._map.set(name, this._list.head)
     }
 
@@ -56,7 +57,13 @@ module.exports = class RecordCache {
     if (!node) {
       const size = 32 + name.length
       this._space -= size
-      node = new List.Node({ name, size, record: undefined, refs: 0 })
+      node = new List.Node({
+        name,
+        size,
+        refs: 0,
+        version: undefined,
+        message: undefined
+      })
       this._map.set(name, node)
     }
     if (node.list) {
