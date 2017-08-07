@@ -28,8 +28,8 @@ class SubscriptionRegistry {
     return this._subscriptions.keys()
   }
 
-  hasName (subscriptionName) {
-    return this._subscriptions.has(subscriptionName)
+  hasName (name) {
+    return this._subscriptions.has(name)
   }
 
   getSubscribers (name) {

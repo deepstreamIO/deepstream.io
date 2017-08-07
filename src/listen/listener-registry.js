@@ -122,6 +122,10 @@ module.exports = class ListenerRegistry {
     this._providers.delete(name)
   }
 
+  hasName (name) {
+    return this._providers.has(name)
+  }
+
   _accept (socket, [ pattern, name ]) {
     const provider = this._providers.get(name)
 

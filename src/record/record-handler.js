@@ -26,7 +26,11 @@ module.exports = class RecordHandler {
         : this._cache.get(data[0])
       if (record) {
         socket.sendNative(record.message)
-      } else if (count === 1 && !this._storageExclusion.test(data[0])) {
+      } else if (
+        count === 1 &&
+        !this._listenerRegistry.hasName(data[0]) &&
+        !this._storageExclusion.test(data[0])
+      ) {
         this._storage.get(data[0], (error, record) => {
           if (error) {
             const message = `error while reading ${record[0]} from storage ${error}`
