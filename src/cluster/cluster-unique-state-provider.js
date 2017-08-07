@@ -38,7 +38,7 @@ module.exports = class UniqueRegistry {
     this._responseEventEmitter = new EventEmitter()
     this._onPrivateMessageFn = this._onPrivateMessage.bind(this)
     this._localTopic = this._getPrivateTopic(this._options.serverName)
-    this._options.message.subscribe(this._localTopic, this._onPrivateMessageFn)
+    this._options.message.subscribeBroadcast(this._localTopic, this._onPrivateMessageFn)
   }
 
   /**
@@ -94,15 +94,15 @@ module.exports = class UniqueRegistry {
   */
   _getRemoteLock (name, leaderServerName, callback) {
     this._timeouts[name] = utils.setTimeout(
-            this._onLockRequestTimeout.bind(this, name),
-            this._options.lockRequestTimeout
-        )
+      this._onLockRequestTimeout.bind(this, name),
+      this._options.lockRequestTimeout
+    )
 
     this._responseEventEmitter.once(name, callback)
 
     const remoteTopic = this._getPrivateTopic(leaderServerName)
 
-    this._message.send(remoteTopic, {
+    this._options.message.sendBroadcast(remoteTopic, {
       topic: remoteTopic,
       action: C.ACTIONS.LOCK_REQUEST,
       data: [{
@@ -124,7 +124,7 @@ module.exports = class UniqueRegistry {
   _releaseRemoteLock (name, leaderServerName) {
     const remoteTopic = this._getPrivateTopic(leaderServerName)
 
-    this._message.send(remoteTopic, {
+    this._options.message.send(remoteTopic, {
       topic: remoteTopic,
       action: C.ACTIONS.LOCK_RELEASE,
       data: [{
@@ -166,10 +166,10 @@ module.exports = class UniqueRegistry {
       }
 
       this._options.logger.log(
-                C.LOG_LEVEL.WARN,
-                C.EVENT.INVALID_LEADER_REQUEST,
-                `server ${remoteServerName} assumes this node '${this._options.serverName}' is the leader`
-            )
+        C.LOG_LEVEL.WARN,
+        C.EVENT.INVALID_LEADER_REQUEST,
+        `server ${remoteServerName} assumes this node '${this._options.serverName}' is the leader`
+      )
 
       return
     }
@@ -190,7 +190,7 @@ module.exports = class UniqueRegistry {
   * @returns {void}
   */
   _handleRemoteLockRequest (data) {
-    this._message.send(data.responseTopic, {
+    this._options.message.sendBroadcast(data.responseTopic, {
       topic: data.responseTopic,
       action: C.ACTIONS.LOCK_RESPONSE,
       data: [{

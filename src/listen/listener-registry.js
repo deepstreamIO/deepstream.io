@@ -82,7 +82,7 @@ module.exports = class ListenerRegistry {
     )
     this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
     this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
-
+    console.log(this._getMessageBusTopic(this._options.serverName, this._topic))
     this._message.subscribe(
       this._getMessageBusTopic(this._options.serverName, this._topic),
       this._onIncomingMessage.bind(this)
@@ -90,7 +90,7 @@ module.exports = class ListenerRegistry {
   }
 
   /**
-  * Used primarily for tests. Returns whether or not a provider exists for
+  * Returns whether or not a provider exists for
   * the specific subscriptionName
   * @public
   * @returns {boolean}
@@ -116,6 +116,7 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   handle (socketWrapper, message) {
+    console.log('handle', message)
     const pattern = message.data[0]
     const subscriptionName = message.data[1]
     if (message.action === C.ACTIONS.LISTEN) {
@@ -146,6 +147,7 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   _onIncomingMessage (message) {
+    console.log(message)
     if (this._options.serverName !== message.data[0]) {
       return
     }
@@ -155,6 +157,7 @@ module.exports = class ListenerRegistry {
     } else if (message.action === C.ACTIONS.ACK) {
       this._nextDiscoveryStage(message.data[1])
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+      console.log('unsubscribe')
       this.onSubscriptionRemoved(
         message.data[1],
         null,
@@ -224,6 +227,7 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   onSubscriptionRemoved (subscriptionName, socketWrapper, localCount, remoteCount) {
+    console.log('onSubscriptionRemoved', subscriptionName, localCount, remoteCount)
     const provider = this._locallyProvidedRecords[subscriptionName]
 
     if (this.hasActiveProvider(subscriptionName) && !provider) {
