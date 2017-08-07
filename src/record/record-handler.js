@@ -51,7 +51,7 @@ module.exports = class RecordHandler {
             this._broadcast(
               nextRecord[0],
               nextRecord[1],
-              messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
+              messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord)
             )
           }
         })
@@ -69,11 +69,10 @@ module.exports = class RecordHandler {
           }
         }, [ data, socket ])
       }
-      const nextRecord = data.slice(0, 3)
       this._broadcast(
-        nextRecord[0],
-        nextRecord[1],
-        messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
+        data[0],
+        data[1],
+        message.raw,
         socket
       )
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
