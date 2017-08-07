@@ -99,7 +99,11 @@ module.exports = class RecordHandler {
   _broadcast (name, version, message, sender) {
     const prevRecord = this._cache.get(name)
 
-    if (prevRecord && isSameOrNewer(prevRecord.version, version)) {
+    if (
+      prevRecord &&
+      prevRecord.version &&
+      isSameOrNewer(prevRecord.version, version)
+    ) {
       return
     }
 
