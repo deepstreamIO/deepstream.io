@@ -91,13 +91,20 @@ logger:
 # Plugin Configuration
 # plugins:
 
+#   monitoring:
+#     path: 'dsx-monitoring'
+#     options:
+#       reportInterval: 200
+#       permissionLogLimit: 3
+#       technicalErrorLogLimit: 3
+
 #   message:
 #     name: redis
 #     options:
 #       host: ${REDIS_HOST}
 #       port: 6379
 
-#   message:
+#   cache:
 #     name: redis
 #     options:
 #       host: ${REDIS_HOST}
@@ -108,13 +115,6 @@ logger:
 #     options:
 #       host: localhost
 #       port: 28015
-
-#   monitoring:
-#     path: 'dsx-monitoring'
-#     options:
-#       reportInterval: 200
-#       permissionLogLimit: 3
-#       technicalErrorLogLimit: 3
 
 # Storage options
 # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
