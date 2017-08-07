@@ -60,12 +60,14 @@ module.exports = class RecordHandler {
         start < Number.MAX_SAFE_INTEGER &&
         (!this._storageExclusion || !this._storageExclusion.test(data[0]))
       ) {
-        this._storage.set(data, (error, data) => {
+        this._storage.set(data, (error, [ data, socket ]) => {
           if (error) {
-            const message = `error while writing ${data[0]} to storage ${error}`
-            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, message)
+            socket.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, [
+              ...data,
+              `error while writing ${data[0]} to storage`
+            ])
           }
-        }, data)
+        }, [ data, socket ])
       }
       this._broadcast(data[0], data[1], message.raw, socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
