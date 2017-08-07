@@ -52,8 +52,6 @@ module.exports = class RecordCache {
     } else if (node.list) {
       node.list.removeNode(node)
     }
-
-    return node.value
   }
 
   unlock (name) {
