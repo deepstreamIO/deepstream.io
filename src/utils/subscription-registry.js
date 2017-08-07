@@ -84,6 +84,8 @@ class SubscriptionRegistry {
       this._constants.SUBSCRIBE,
       `for ${this._topic}:${name} by ${socket.user}`
     )
+
+    return subscription.sockets.size
   }
 
   unsubscribe (name, socket, silent) {
@@ -127,6 +129,8 @@ class SubscriptionRegistry {
         `for ${this._topic}:${name} by ${socket.user}`
       )
     }
+
+    return subscription.sockets.size
   }
 
   sendToSubscribers (name, msg, socket) {

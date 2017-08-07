@@ -38,19 +38,23 @@ module.exports = class RecordCache {
   }
 
   lock (name) {
-    let node = this._map.get(name)
+    const node = this._map.get(name)
+
     if (!node) {
       const size = name.length + 32
       this._space -= size
-      node = new List.Node({
+      this._map.set(name, new List.Node({
         name,
         size,
         version: undefined,
         message: undefined
-      })
-      this._map.set(name, node)
-    } else if (node.list) {
-      node.list.removeNode(node)
+      }))
+    } else {
+      if (node.list) {
+        node.list.removeNode(node)
+      }
+
+      return node.value
     }
   }
 

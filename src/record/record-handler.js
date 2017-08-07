@@ -9,23 +9,10 @@ module.exports = class RecordHandler {
     this._logger = options.logger
     this._storage = options.storageConnector
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
-    this._storageExclusion = options.storageExclusion
+    this._storageExclusion = options.storageExclusion || { test: () => false }
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
-    this._subscriptionRegistry.setSubscriptionListener({
-      onSubscriptionAdded: (name, socket, count) => {
-        this._listenerRegistry.onSubscriptionAdded(name, socket, count)
-        if (count === 1) {
-          this._cache.lock(name)
-        }
-      },
-      onSubscriptionRemoved: (name, socket, count) => {
-        this._listenerRegistry.onSubscriptionRemoved(name, socket, count)
-        if (count === 0) {
-          this._cache.unlock(name)
-        }
-      }
-    })
+    this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
   }
 
   handle (socket, message) {
@@ -33,45 +20,39 @@ module.exports = class RecordHandler {
     if (!data || !data[0]) {
       socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
     } else if (message.action === C.ACTIONS.READ) {
-      this._subscriptionRegistry.subscribe(data[0], socket)
-      const record = this._cache.get(data[0])
-      if (record && record.message) {
+      const count = this._subscriptionRegistry.subscribe(data[0], socket)
+      const record = count === 1
+        ? this._cache.lock(data[0])
+        : this._cache.get(data[0])
+      if (record) {
         socket.sendNative(record.message)
-      } else if (
-        record.message === undefined &&
-        (!this._storageExclusion || !this._storageExclusion.test(data[0]))
-      ) {
-        this._cache.set(data[0], '', '')
-
-        this._storage.get(data[0], (error, nextRecord) => {
+      } else if (count === 1 && !this._storageExclusion.test(data[0])) {
+        this._storage.get(data[0], (error, record) => {
           if (error) {
-            const message = `error while reading ${nextRecord[0]} from storage ${error}`
+            const message = `error while reading ${record[0]} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
           } else {
-            const rawMessage = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord)
-            this._broadcast(nextRecord[0], nextRecord[1], rawMessage)
+            const rawMessage = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
+            this._broadcast(record[0], record[1], rawMessage)
           }
         })
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       const [ start ] = splitRev(data[1])
-      if (
-        start > 0 &&
-        start < Number.MAX_SAFE_INTEGER &&
-        (!this._storageExclusion || !this._storageExclusion.test(data[0]))
-      ) {
-        this._storage.set(data, (error, [ data, socket ]) => {
+      if (start > 0 && start < Number.MAX_SAFE_INTEGER && !this._storageExclusion.test(data[0])) {
+        this._storage.set(data, (error, record) => {
           if (error) {
-            socket.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, [
-              ...data,
-              `error while writing ${data[0]} to storage`
-            ])
+            const message = `error while writing ${record[0]} to storage ${error}`
+            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDAtE_ERROR, message)
           }
-        }, [ data, socket ])
+        }, data)
       }
       this._broadcast(data[0], data[1], message.raw, socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._subscriptionRegistry.unsubscribe(data[0], socket)
+      const count = this._subscriptionRegistry.unsubscribe(data[0], socket)
+      if (count === 0) {
+        this._cache.unlock(data[0])
+      }
     } else if (
       message.action === C.ACTIONS.LISTEN ||
       message.action === C.ACTIONS.UNLISTEN ||
@@ -90,11 +71,7 @@ module.exports = class RecordHandler {
   _broadcast (name, version, message, sender) {
     const prevRecord = this._cache.get(name)
 
-    if (
-      prevRecord &&
-      prevRecord.version &&
-      isSameOrNewer(prevRecord.version, version)
-    ) {
+    if (prevRecord && isSameOrNewer(prevRecord.version, version)) {
       return
     }
 
