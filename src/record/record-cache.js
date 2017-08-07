@@ -9,11 +9,7 @@ module.exports = class RecordCache {
 
   get (name) {
     const node = this._map.get(name)
-    if (!node) {
-      return
-    }
-
-    return node.value
+    return node ? node.value : undefined
   }
 
   set (name, version, message) {
@@ -21,27 +17,56 @@ module.exports = class RecordCache {
 
     this._space -= size
 
-    const node = this._map.get(name)
+    let node = this._map.get(name)
     if (node) {
       this._space += node.value.size
       node.value.size = size
       node.value.version = version
       node.value.message = message
     } else {
-      this._list.unshift({
+      node = new List.Node({
         name,
         size,
-        refs: 0,
         version,
         message
       })
-      this._map.set(name, this._list.head)
+      this._list.unshiftNode(node)
+      this._map.set(name, node)
     }
 
-    this.prune()
+    this._prune()
   }
 
-  prune () {
+  lock (name) {
+    let node = this._map.get(name)
+    if (!node) {
+      const size = name.length + 32
+      this._space -= size
+      node = new List.Node({
+        name,
+        size,
+        version: undefined,
+        message: undefined
+      })
+      this._map.set(name, node)
+    } else if (node.list) {
+      node.list.removeNode(node)
+    }
+  }
+
+  unlock (name) {
+    const node = this._map.get(name)
+
+    if (!node) {
+      return
+    }
+
+    this._list.unshiftNode(node)
+
+    this._prune()
+  }
+
+  _prune () {
     let node = this._list.tail
     while (node && this._space < 0) {
       const prev = node.prev
@@ -49,37 +74,6 @@ module.exports = class RecordCache {
       this._map.delete(node.value.name)
       this._list.removeNode(node)
       node = prev
-    }
-  }
-
-  lock (name) {
-    let node = this._map.get(name)
-    if (!node) {
-      const size = 32 + name.length
-      this._space -= size
-      node = new List.Node({
-        name,
-        size,
-        refs: 0,
-        version: undefined,
-        message: undefined
-      })
-      this._map.set(name, node)
-    }
-    if (node.list) {
-      node.list.removeNode(node)
-    }
-    ++node.value.refs
-  }
-
-  unlock (name) {
-    const node = this._map.get(name)
-    if (!node) {
-      return
-    }
-
-    if (--node.value.refs === 0) {
-      this._list.unshiftNode(node)
     }
   }
 }
