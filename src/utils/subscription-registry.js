@@ -179,6 +179,8 @@ class SubscriptionRegistry {
   }
 
   _onBroadcastTimeout () {
+    this._onBroadcastTimeout = null
+
     for (const subscription of this._pending) {
       const { senders, shared, sockets } = subscription
 
