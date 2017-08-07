@@ -26,28 +26,21 @@ module.exports = class MessageParser {
    *                    data: <array of strings>
    *                  }
    */
-  static parse (message, callback) {
+  static parse (message) {
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
-    let result
-
-    if (!callback) {
-      result = []
-      callback = (msg) => {
-        result.push(msg)
-      }
-    }
+    const result = []
 
     for (let i = 0; i < rawMessages.length; i++) {
       if (rawMessages[i].length < 3) {
         continue
       }
       const parts = rawMessages[i].split(C.MESSAGE_PART_SEPERATOR)
-      callback(parts.length < 2 ? null : {
+      result.push(parts.length < 2 ? null : {
         raw: rawMessages[i],
         topic: parts[0],
         action: parts[1],
         data: parts.splice(2)
-      }, message)
+      })
     }
 
     return result

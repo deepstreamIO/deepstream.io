@@ -1,4 +1,3 @@
-const messageParser = require('./message-parser')
 const C = require('../constants/constants')
 
 const STATE = {
@@ -14,10 +13,15 @@ module.exports = class MessageQueue {
     this._logger = options.logger
     this._socket = socket
     this._messages = []
+    this._message = {
+      raw: undefined,
+      topic: undefined,
+      action: undefined,
+      data: undefined
+    }
     this._index = 0
     this._state = STATE.IDLE
 
-    this._onMessage = this._onMessage.bind(this)
     this._onResponse = this._onResponse.bind(this)
   }
 
@@ -25,43 +29,21 @@ module.exports = class MessageQueue {
   }
 
   process (rawMessage) {
-    messageParser.parse(rawMessage, this._onMessage)
-  }
+    this._messages.push(...rawMessage.split(C.MESSAGE_SEPERATOR))
 
-  _onMessage (message, rawMessage) {
-    if (!message) {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, rawMessage)
-      this._socket.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, rawMessage)
-      return
+    if (this._state === STATE.IDLE) {
+      this._next()
     }
-
-    if (message.topic === C.TOPIC.CONNECTION && message.action === C.ACTIONS.PONG) {
-      return
-    }
-
-    this._messages.push(message)
-
-    if (this._state !== STATE.IDLE) {
-      return
-    }
-
-    this._next()
   }
 
   _onResponse (error, result) {
-    const message = this._messages[this._index]
-
-    this._messages[this._index++] = undefined
-
     if (error) {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-      this._sendError(C.EVENT.MESSAGE_PERMISSION_ERROR, message)
+      this._sendError(C.EVENT.MESSAGE_PERMISSION_ERROR, this._message)
     } else if (!result) {
-      this._sendError(C.EVENT.MESSAGE_DENIED, message)
-    }
-
-    if (!error && result) {
-      this.onAuthenticatedMessage(this._socket, message)
+      this._sendError(C.EVENT.MESSAGE_DENIED, this._message)
+    } else {
+      this.onAuthenticatedMessage(this._socket, this._message)
     }
 
     if (this._state === STATE.WAITING) {
@@ -75,14 +57,35 @@ module.exports = class MessageQueue {
 
   _next () {
     while (true) {
-      const message = this._messages[this._index]
+      const rawMessage = this._messages[this._index++]
 
-      if (!message) {
+      if (rawMessage === undefined) {
         this._index = 0
         this._state = STATE.IDLE
-        this._messages.splice(0, this._messages.length)
+        this._messages.length = 0
         break
       }
+
+      if (rawMessage.length < 3) {
+        continue
+      }
+
+      const parts = rawMessage.split(C.MESSAGE_PART_SEPERATOR)
+
+      if (parts.length < 2) {
+        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, rawMessage)
+        this._socket.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, rawMessage)
+        continue
+      }
+
+      if (parts[0] === C.TOPIC.CONNECTION && parts[1] === C.ACTIONS.PONG) {
+        return
+      }
+
+      this._message.raw = rawMessage
+      this._message.topic = parts[0]
+      this._message.action = parts[1]
+      this._message.data = parts.splice(2)
 
       // Determine (STATE.WAITING) if canPerformAction is executed synchronously (STATE.SYNC) or
       // (STATE.ASYNC) asynchronously.
@@ -94,7 +97,7 @@ module.exports = class MessageQueue {
 
       this._permissionHandler.canPerformAction(
         this._socket.user,
-        message,
+        this._message,
         this._onResponse,
         this._socket.authData
       )
