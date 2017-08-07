@@ -17,7 +17,7 @@ module.exports = class RpcHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
     this._options.message.subscribe(
-      C.TOPIC.RPC,
+      `${this._options.serverName}/${C.TOPIC.RPC}`,
       this._onPrivateMessage.bind(this)
     )
 
@@ -117,7 +117,7 @@ module.exports = class RpcHandler {
     for (let n = 0; n < servers.length; ++n) {
       if (!rpcData.servers.has(servers[index])) {
         rpcData.servers.add(servers[index])
-        return new RpcProxy(this._options, C.TOPIC.PRIVATE + servers[index], rpcName, correlationId)
+        return new RpcProxy(this._options, servers[index], rpcName, correlationId)
       }
       index = (index + 1) % servers.length
     }
@@ -223,7 +223,7 @@ module.exports = class RpcHandler {
     const server = servers[utils.getRandomIntInRange(0, servers.length)]
 
     if (server) {
-      const rpcProxy = new RpcProxy(this._options, C.TOPIC.PRIVATE + server, rpcName, correlationId)
+      const rpcProxy = new RpcProxy(this._options, server, rpcName, correlationId)
       rpcData.rpc = new Rpc(this, requestor, rpcProxy, this._options, message)
       return
     }
