@@ -6,7 +6,7 @@ showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 logLevel: INFO
 # Directory where all plugins reside
-#libDir: ../lib
+libDir: ../lib
 
 # Connectivity
 # webfacing URL under which this client is reachable. Used for loadbalancing / failover
@@ -105,13 +105,13 @@ connectionEndpoints:
 #   path: ./my-custom-logger
 
 # Plugin Configuration
-# plugins:
-#   monitoring:
-#     name: 'dsx-monitoring'
-#     options:
-#       reportInterval: 200
-#       permissionLogLimit: 3
-#       technicalErrorLogLimit: 3
+plugins:
+  monitoring:
+    name: 'dsx-monitoring'
+    options:
+      reportInterval: 200
+      permissionLogLimit: 3
+      technicalErrorLogLimit: 3
 
 #   message:
 #     name: redis

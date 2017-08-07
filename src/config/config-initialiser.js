@@ -248,7 +248,7 @@ function resolvePluginClass (plugin, type) {
     pluginConstructor = req(requirePath)
   } else if (plugin.name != null) {
     try {
-      pluginConstructor = require(plugin.name)
+      pluginConstructor = req(plugin.name)
     } catch (e) {
       requirePath = fileUtils.lookupLibRequirePath(plugin.name)
       pluginConstructor = req(requirePath)
