@@ -59,6 +59,6 @@ function execute(action) {
   } else if (action === 'restart') {
     service.restart(name, response)
   } else {
-    console.log(`Unknown action for service, please 'add', 'remove', 'start', 'stop' or 'status'`)
+    console.log(`Unknown action for service, please 'add', 'remove', 'start', 'stop', 'restart' or 'status'`)
   }
 }
