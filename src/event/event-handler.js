@@ -17,11 +17,6 @@ const EventHandler = function (options) {
   this._listenerRegistry = new ListenerRegistry(C.TOPIC.EVENT, options, this._subscriptionRegistry)
   this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
   this._logger = options.logger
-
-  this._options.message.subscribe(
-    `${this._options.serverName}/${C.TOPIC.EVENT}`,
-    this.handle.bind(this, C.SOURCE_MESSAGE_CONNECTOR)
-  )
 }
 
 /**

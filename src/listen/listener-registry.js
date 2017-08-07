@@ -146,7 +146,6 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   _onIncomingMessage (message) {
-    console.log('>>', message)
     if (this._options.serverName !== message.data[0]) {
       return
     }
@@ -274,8 +273,8 @@ module.exports = class ListenerRegistry {
     }
     socketWrapper.once('close', this._locallyProvidedRecords[subscriptionName].closeListener)
 
-    this._stopLocalDiscoveryStage(subscriptionName)
     this._clusterProvidedRecords.add(subscriptionName)
+    this._stopLocalDiscoveryStage(subscriptionName)
   }
 
   /**
@@ -690,7 +689,6 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to find a provider for
   */
   _sendRemoteDiscoveryStart (serverName, subscriptionName) {
-    console.trace('<>', serverName, subscriptionName)
     this._message.sendDirect(serverName, this._messageTopic, {
       topic: this._messageTopic,
       action: C.ACTIONS.LISTEN,
@@ -733,7 +731,6 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to find a provider for
   */
   _sendSubscriptionForPatternFound (provider, subscriptionName) {
-    console.trace(subscriptionName, this._options.serverName)
     provider.socketWrapper.sendMessage(
       this._topic,
       C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
