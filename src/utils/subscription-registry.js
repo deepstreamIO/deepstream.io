@@ -4,7 +4,7 @@ const SocketWrapper = require('../message/socket-wrapper')
 class SubscriptionRegistry {
   constructor (options, topic) {
     this._names = new Map()
-    this._pending = new Set()
+    this._pending = []
     this._subscriptions = new Map()
     this._options = options
     this._topic = topic
@@ -100,7 +100,7 @@ class SubscriptionRegistry {
 
     if (subscription.sockets.size === 0) {
       this._subscriptions.delete(name)
-      this._pending.delete(subscription)
+      this._pending.splice(this._pending.indexOf(subscription), 1)
     } else {
       subscription.senders.delete(socket)
     }
@@ -147,7 +147,7 @@ class SubscriptionRegistry {
     }
 
     if (subscription.shared.size === 0) {
-      this._pending.add(subscription)
+      this._pending.push(subscription)
     }
 
     // append this message to the sharedMessage, the message that
@@ -205,7 +205,7 @@ class SubscriptionRegistry {
       subscription.senders.clear()
     }
 
-    this._pending.clear()
+    this._pending.length = 0
   }
 }
 
