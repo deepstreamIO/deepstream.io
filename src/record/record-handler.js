@@ -36,7 +36,7 @@ module.exports = class RecordHandler {
       this._subscriptionRegistry.subscribe(data[0], socket)
       const record = this._cache.get(data[0])
       if (record) {
-        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
+        socket.sendNative(record.message)
       } else if (
         record !== null &&
         (!this._storageExclusion || !this._storageExclusion.test(data[0]))
@@ -48,7 +48,11 @@ module.exports = class RecordHandler {
             const message = `error while reading ${nextRecord[0]} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
           } else {
-            this._broadcast(nextRecord)
+            this._broadcast(
+              nextRecord[0],
+              nextRecord[1],
+              messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
+            )
           }
         })
       }
@@ -65,7 +69,13 @@ module.exports = class RecordHandler {
           }
         }, [ data, socket ])
       }
-      this._broadcast(data.slice(0, 3), socket)
+      const nextRecord = data.slice(0, 3)
+      this._broadcast(
+        nextRecord[0],
+        nextRecord[1],
+        messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
+        socket
+      )
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(data[0], socket)
     } else if (
@@ -83,21 +93,16 @@ module.exports = class RecordHandler {
     }
   }
 
-  // [ name, version, body ]
-  _broadcast (nextRecord, sender) {
-    const prevRecord = this._cache.get(nextRecord[0])
+  _broadcast (name, version, message, sender) {
+    const prevRecord = this._cache.get(name)
 
-    if (prevRecord && isSameOrNewer(prevRecord[1], nextRecord[1])) {
+    if (prevRecord && isSameOrNewer(prevRecord.version, version)) {
       return
     }
 
-    this._cache.set(nextRecord[0], nextRecord)
+    this._cache.set(name, { version, message })
 
-    this._subscriptionRegistry.sendToSubscribers(
-      nextRecord[0],
-      messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord),
-      sender
-    )
+    this._subscriptionRegistry.sendToSubscribers(name, message, sender)
   }
 }
 
