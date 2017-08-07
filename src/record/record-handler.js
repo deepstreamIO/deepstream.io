@@ -37,8 +37,20 @@ module.exports = class RecordHandler {
       const record = this._cache.get(data[0])
       if (record) {
         socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
-      } else {
-        this._refresh(data)
+      } else if (
+        record !== null &&
+        (!this._storageExclusion || !this._storageExclusion.test(data[0]))
+      ) {
+        this._cache.set(data[0], null)
+
+        this._storage.get(data[0], (error, nextRecord) => {
+          if (error) {
+            const message = `error while reading ${nextRecord[0]} from storage ${error}`
+            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
+          } else {
+            this._broadcast(nextRecord)
+          }
+        })
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       const [ start ] = splitRev(data[1])
@@ -69,26 +81,6 @@ module.exports = class RecordHandler {
         `unknown action ${message.action}`
       ])
     }
-  }
-
-  // [ name ]
-  _refresh ([ name ]) {
-    const prevRecord = this._cache.get(name)
-
-    if (prevRecord === null) {
-      return
-    }
-
-    this._cache.set(name, null)
-
-    this._storage.get(name, (error, nextRecord) => {
-      if (error) {
-        const message = `error while reading ${nextRecord[0]} from storage ${error}`
-        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-      } else {
-        this._broadcast(nextRecord)
-      }
-    })
   }
 
   // [ name, version, body ]
