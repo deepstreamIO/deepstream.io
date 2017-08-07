@@ -48,11 +48,8 @@ module.exports = class RecordHandler {
             const message = `error while reading ${nextRecord[0]} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
           } else {
-            this._broadcast(
-              nextRecord[0],
-              nextRecord[1],
-              messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord)
-            )
+            const rawMessage = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, nextRecord)
+            this._broadcast(nextRecord[0], nextRecord[1], rawMessage)
           }
         })
       }
@@ -73,12 +70,7 @@ module.exports = class RecordHandler {
           }
         }, [ data, socket ])
       }
-      this._broadcast(
-        data[0],
-        data[1],
-        message.raw,
-        socket
-      )
+      this._broadcast(data[0], data[1], message.raw, socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(data[0], socket)
     } else if (
