@@ -1,5 +1,5 @@
 'use strict'
-
+/* eslint-disable valid-typeof */
 const configValidator = require('./config-validator')
 const configCompiler = require('./config-compiler')
 const rulesMap = require('./rules-map')
@@ -28,19 +28,25 @@ const UNDEFINED = 'undefined'
  * @extends {EventEmitter}
  *
  * @param {Object} options deepstream options
- * @param {[Object]} config  Optional config. If no config is provided, the ConfigPermissionHandler will attempt
+ * @param {[Object]} config  Optional config. If no config is provided, the
+ *                           ConfigPermissionHandler will attempt
  *                           to load it from the path provided in options.path.
  */
 const ConfigPermissionHandler = function (options, config) {
-  this._ruleCache = new RuleCache(options)
   this._options = options
   this._permissionOptions = options.permission.options
+  this._ruleCache = new RuleCache(this._permissionOptions)
   this._config = null
   this._recordHandler = null
   this.isReady = false
   this.type = `valve permissions loaded from ${this._permissionOptions.path}`
+  this._optionsValid = true
 
-  if (config) {
+  const maxRuleIterations = options.permission.options.maxRuleIterations
+  if (maxRuleIterations !== undefined && maxRuleIterations < 1) {
+    this._optionsValid = false
+    process.nextTick(() => this.emit('error', 'Maximum rule iteration has to be at least one '))
+  } else if (config) {
     this.useConfig(config)
   }
 }
@@ -68,7 +74,7 @@ ConfigPermissionHandler.prototype.setRecordHandler = function (recordHandler) {
  * @returns {void}
  */
 ConfigPermissionHandler.prototype.init = function () {
-  if (this._config === null) {
+  if (this._config === null && this._optionsValid) {
     this.loadConfig(this._permissionOptions.path)
   }
 }
@@ -138,7 +144,8 @@ ConfigPermissionHandler.prototype.useConfig = function (config) {
  * @interface
  * @returns {void}
  */
-ConfigPermissionHandler.prototype.canPerformAction = function (username, message, callback, authData) {
+ConfigPermissionHandler.prototype.canPerformAction = function (
+  username, message, callback, authData) {
   if (typeof message.data[0] !== STRING) {
     callback('invalid message', false)
     return
@@ -154,6 +161,7 @@ ConfigPermissionHandler.prototype.canPerformAction = function (username, message
 
   const ruleData = this._getCompiledRulesForName(name, ruleSpecification)
 
+  // eslint-disable-next-line
   new RuleApplication({
     recordHandler: this._recordHandler,
     username,

@@ -1,72 +1,70 @@
 'use strict'
 
 /* global it, describe, expect, jasmine */
-let proxyquire = require('proxyquire'),
-  RecordRequestMock = require('../mocks/record-request-mock'),
-  RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': RecordRequestMock }),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
-  SocketMock = require('../mocks/socket-mock'),
-  msg = require('../test-helper/test-helper').msg,
-  StorageMock = require('../mocks/storage-mock')
+const recordRequestMock = jasmine.createSpy()
+const proxyquire = require('proxyquire').noPreserveCache()
+const RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': recordRequestMock })
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const SocketMock = require('../mocks/socket-mock')
+const msg = require('../test-helper/test-helper').msg
+const StorageMock = require('../mocks/storage-mock')
+
+const patchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 1, 'firstname', 'SEgon'] }
+const recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() }
+
+let options, recordTransition, socketWrapper
+
+function recordRequestMockCallback (data, isError) {
+  const callback = recordRequestMock.calls.mostRecent().args[isError ? 4 : 3]
+  const context = recordRequestMock.calls.mostRecent().args[5]
+  data = data === undefined ? { _v: 0, _d: {} } : data
+  callback.call(context, data)
+}
+
+function createRecordTransition (recordName, message) {
+  options = { 
+    cache: new StorageMock(), 
+    storage: new StorageMock(),
+    logger: { log: jasmine.createSpy('log') },
+    storageExclusion: new RegExp('no-storage/')
+  }
+
+  recordRequestMock.calls.reset()
+  recordHandlerMock._$broadcastUpdate.calls.reset()
+  recordHandlerMock._$transitionComplete.calls.reset()
+
+  socketWrapper = new SocketWrapper(new SocketMock(), {})
+
+  recordTransition = new RecordTransition(recordName || 'recordName', options, recordHandlerMock)
+  expect(recordTransition.hasVersion).toBeDefined()
+  expect(recordTransition.hasVersion(2)).toBe(false)
+
+  expect(recordRequestMock).not.toHaveBeenCalled()
+  recordTransition.add(socketWrapper, 1, message || patchMessage)
+}
 
 describe('record transitions', () => {
 
   describe('happy path', () => {
-
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      options = { cache: new StorageMock(), storage: new StorageMock() }
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 1, patchMessage)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('someRecord')
-    })
+    beforeAll(() => createRecordTransition())
 
     it('retrieves the empty record', () => {
       expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalled()
       expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
-      recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
-      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, socketWrapper)
-      expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('someRecord')
+      recordRequestMockCallback()
+      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage, false, socketWrapper)
+      expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('recordName')
     })
   })
 
   describe('multiple steps', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
-      patchMessage2 = { topic: 'RECORD', action: 'P', data: ['someRecord', 3, 'firstname', 'SLana'] },
-      updateMessage = { topic: 'RECORD', action: 'U', data: ['someRecord', 2, '{ "lastname": "Peterson" }'] },
-      recordHandlerMock = {
-        _$broadcastUpdate: jasmine.createSpy('_$broadcastUpdate'),
-        _$transitionComplete: jasmine.createSpy('_$transitionComplete') },
-      options = { cache: new StorageMock(), storage: new StorageMock() }
+    let 
+      patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 3, 'firstname', 'SLana'] },
+      updateMessage = { topic: 'RECORD', action: 'U', data: ['recordName', 2, '{ "lastname": "Peterson" }'] }
 
-    options.cache.nextOperationWillBeSynchronous = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition._record).toBe(null)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 1, patchMessage)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('someRecord')
-      expect(recordTransition._record).toBe(null)
+    beforeAll(() => {
+      createRecordTransition()
+      options.cache.nextOperationWillBeSynchronous = false
     })
 
     it('adds an update to the queue', () => {
@@ -91,7 +89,40 @@ describe('record transitions', () => {
       recordTransition.add(socketWrapper, 3, {
         topic: 'RECORD',
         action: 'U',
-        data: ['someRecord', 2, '{ "lastname": "Peterson']
+        data: ['recordName', 2, '{ "lastname": "Peterson']
+      })
+      expect(recordTransition._steps.length).toBe(2)
+      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
+    })
+
+     it('adds a message with null data to the queue', () => {
+      socketWrapper.socket.lastSendMessage = null
+      recordTransition.add(socketWrapper, 3, {
+        topic: 'RECORD',
+        action: 'U',
+        data: ['recordName', 3, 'null']
+      })
+      expect(recordTransition._steps.length).toBe(2)
+      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
+    })
+
+    it('adds a message with string data to the queue', () => {
+      socketWrapper.socket.lastSendMessage = null
+      recordTransition.add(socketWrapper, 3, {
+        topic: 'RECORD',
+        action: 'U',
+        data: ['recordName', 3, 'This is a string']
+      })
+      expect(recordTransition._steps.length).toBe(2)
+      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
+    })
+
+    it('adds a message with numeric data to the queue', () => {
+      socketWrapper.socket.lastSendMessage = null
+      recordTransition.add(socketWrapper, 3, {
+        topic: 'RECORD',
+        action: 'U',
+        data: ['recordName', 3, 100.23]
       })
       expect(recordTransition._steps.length).toBe(2)
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
@@ -102,12 +133,15 @@ describe('record transitions', () => {
       expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
       expect(recordTransition._steps.length).toBe(2)
       expect(recordTransition._record).toBe(null)
-      recordTransition._recordRequest.onComplete({ _v: 0, _d: { lastname: 'Kowalski' } })
-      expect(recordTransition._record).toEqual({ _v: 1, _d: { firstname: 'Egon', lastname: 'Kowalski' } })
+
+      recordRequestMockCallback({ _v: 0, _d: { firstname: 'Egon' } })
+
+      expect(recordTransition._record).toEqual({ _v: 1, _d: { firstname: 'Egon' } })
       expect(options.cache.completedSetOperations).toBe(0)
+      
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 1) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage, false, socketWrapper)
           expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
           expect(recordTransition._record).toEqual({ _v: 2, _d: { lastname: 'Peterson' } })
           clearInterval(check)
@@ -133,8 +167,8 @@ describe('record transitions', () => {
     it('processes the next step in the queue', (done) => {
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 2) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', updateMessage, socketWrapper)
-          expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalledWith('someRecord', patchMessage2, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', updateMessage, false, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper)
           expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
           expect(recordTransition._record).toEqual({ _v: 3, _d: { firstname: 'Lana', lastname: 'Peterson' } })
           clearInterval(check)
@@ -146,7 +180,7 @@ describe('record transitions', () => {
     it('processes the final step in the queue', (done) => {
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 3) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('someRecord', patchMessage2, socketWrapper)
+          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper)
           expect(recordHandlerMock._$transitionComplete).toHaveBeenCalled()
           clearInterval(check)
           done()
@@ -164,30 +198,15 @@ describe('record transitions', () => {
   })
 
   describe('does not store excluded data', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['no-storage/1', 1, 'firstname', 'SEgon'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      options = { cache: new StorageMock(), storage: new StorageMock(), storageExclusion: new RegExp('no-storage/') }
+    const patchMessage = { topic: 'RECORD', action: 'P', data: ['no-storage/1', 1, 'firstname', 'SEgon'] }
 
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('no-storage/1', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 1, patchMessage)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('no-storage/1')
-    })
+    beforeAll(() => createRecordTransition('no-storage/1', patchMessage))
 
     it('retrieves the empty record', () => {
       expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalled()
       expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
-      recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
-      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('no-storage/1', patchMessage, socketWrapper)
+      recordRequestMockCallback()
+      expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('no-storage/1', patchMessage, false, socketWrapper)
       expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('no-storage/1')
     })
 
@@ -201,27 +220,11 @@ describe('record transitions', () => {
   })
 
   describe('destroys a transition between steps', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      firstPatchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
-      secondPatchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 2, 'firstname', 'SEgon'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      options = { cache: new StorageMock(), storage: new StorageMock() }
-
-    options.cache.nextOperationWillBeSynchronous = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 1, firstPatchMessage)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('someRecord')
-      recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
+    const secondPatchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'firstname', 'SEgon'] }
+      
+    beforeAll(() => {
+      createRecordTransition()
+      options.cache.nextOperationWillBeSynchronous = false
     })
 
     it('adds a patch to the queue', () => {
@@ -232,62 +235,24 @@ describe('record transitions', () => {
     })
   })
 
-  describe('tries to set a record, but everything goes wrong', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      options = {
-        cache: new StorageMock(),
-        storage: new StorageMock(),
-        logger: { log: jasmine.createSpy('log') }
-      }
-
-    options.cache.nextOperationWillBeSynchronous = true
-    options.cache.nextOperationWillBeSuccessful = false
-    options.storage.nextOperationWillBeSuccessful = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
+  describe('tries to set a record, but both cache and storage fail', () => {
+    beforeAll(() => {
+      createRecordTransition()
+      options.cache.nextOperationWillBeSynchronous = true
+      options.cache.nextOperationWillBeSuccessful = false
+      options.storage.nextOperationWillBeSuccessful = false
+      recordRequestMockCallback()
     })
 
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 1, patchMessage)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('someRecord')
-      recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
+    it('logged an error', () => {
       expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'storageError')
     })
   })
 
   describe('destroys the transition', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      options = { cache: new StorageMock(), storage: new StorageMock(), logger: { log: jasmine.createSpy('log') } }
-
-    options.cache.nextOperationWillBeSynchronous = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 1, patchMessage)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('someRecord')
-      recordTransition._recordRequest.onComplete({ _v: 0, _d: {} })
-    })
-
-    it('adds a patch to the queue', () => {
-      recordTransition.add(socketWrapper, 1, patchMessage)
+    beforeAll(() => {
+      createRecordTransition()
+      options.cache.nextOperationWillBeSynchronous = false
     })
 
     it('destroys the transition', (done) => {
@@ -309,116 +274,39 @@ describe('record transitions', () => {
   })
 
   describe('recordRequest returns an error', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      logSpy = jasmine.createSpy('log'),
-      options = { cache: new StorageMock(), storage: new StorageMock(), logger: { log: logSpy } }
-
-    options.cache.nextOperationWillBeSynchronous = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 1, patchMessage)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('someRecord')
+    beforeAll(() => {
+      createRecordTransition()
+      options.cache.nextOperationWillBeSynchronous = false
     })
 
     it('receives an error', () => {
       expect(socketWrapper.socket.lastSendMessage).toBe(null)
-      recordTransition._recordRequest.onError('errorMsg')
-      expect(logSpy).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'errorMsg')
+      recordRequestMockCallback('errorMsg', true)
+      expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'errorMsg')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_UPDATE_ERROR|1+'))
     })
-
-
   })
 
   describe('recordRequest returns null', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      logSpy = jasmine.createSpy('log'),
-      options = { cache: new StorageMock(), storage: new StorageMock(), logger: { log: logSpy } }
-
-    options.cache.nextOperationWillBeSynchronous = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 1, patchMessage)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('someRecord')
+    beforeAll(() => {
+      createRecordTransition()
+      options.cache.nextOperationWillBeSynchronous = false
     })
 
     it('receives a non existant error', () => {
       expect(socketWrapper.socket.lastSendMessage).toBe(null)
-      recordTransition._recordRequest.onComplete(null, null)
-      expect(logSpy).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'Received update for non-existant record someRecord')
+      recordRequestMockCallback(null)
+      expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'Received update for non-existant record recordName')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_UPDATE_ERROR|1+'))
     })
   })
 
   describe('handles invalid message data', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 2, 'somepath', 'O{"invalid":"json'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      logSpy = jasmine.createSpy('log'),
-      options = { cache: new StorageMock(), storage: new StorageMock(), logger: { log: logSpy } }
-
-    options.cache.nextOperationWillBeSynchronous = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 2, patchMessage)
-      expect(recordTransition._recordRequest).toBe(null)
-    })
-
-    it('receives an error', () => {
-      expect(socketWrapper.socket.lastSendMessage).toContain(msg('R|E|INVALID_MESSAGE_DATA|'))
-    })
-  })
-
-  describe('handles invalid message data', () => {
-    let recordTransition,
-      socketWrapper = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['someRecord', 2, 'somepath', 'O{"invalid":"json'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      logSpy = jasmine.createSpy('log'),
-      options = { cache: new StorageMock(), storage: new StorageMock(), logger: { log: logSpy } }
-
-    options.cache.nextOperationWillBeSynchronous = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper, 2, patchMessage)
-      expect(recordTransition._recordRequest).toBe(null)
+    const patchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'somepath', 'O{"invalid":"json'] }
+      
+    beforeAll(() => {
+      createRecordTransition('recordName', patchMessage)
+      options.cache.nextOperationWillBeSynchronous = false
     })
 
     it('receives an error', () => {
@@ -427,38 +315,24 @@ describe('record transitions', () => {
   })
 
   describe('transition version conflicts', () => {
-
-    let recordTransition,
+    let 
       socketMock1 = new SocketMock(),
       socketMock2 = new SocketMock(),
       socketMock3 = new SocketMock(),
       socketWrapper1 = new SocketWrapper(socketMock1, {}),
       socketWrapper2 = new SocketWrapper(socketMock2, {}),
       socketWrapper3 = new SocketWrapper(socketMock3, {}),
-      patchMessage1 = { topic: 'RECORD', action: 'P', data: ['someRecord', 1, 'firstname', 'SEgon'] },
-      patchMessage2 = { topic: 'RECORD', action: 'P', data: ['someRecord', 2, 'firstname', 'SEgon'] },
-      recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() },
-      logSpy = jasmine.createSpy('log'),
-      options = { cache: new StorageMock(), storage: new StorageMock(), logger: { log: logSpy } }
+      patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'firstname', 'SEgon'] }
 
-    options.cache.nextOperationWillBeSynchronous = false
-
-    it('creates the transition', () => {
-      recordTransition = new RecordTransition('someRecord', options, recordHandlerMock)
-      expect(recordTransition.hasVersion).toBeDefined()
-      expect(recordTransition.hasVersion(2)).toBe(false)
-    })
-
-    it('adds a patch to the queue', () => {
-      expect(recordTransition._recordRequest).toBe(null)
-      recordTransition.add(socketWrapper1, 1, patchMessage1)
-      recordTransition.add(socketWrapper1, 2, patchMessage2)
-      expect(recordTransition._recordRequest).toBeDefined()
-      expect(recordTransition._recordRequest.recordName).toBe('someRecord')
+    beforeAll(() => {
+      createRecordTransition('recordName')
+      options.cache.nextOperationWillBeSynchronous = false
     })
 
     it('gets a version exist error on two seperate updates but does not send error', () => {
-      recordTransition.sendVersionExists({ sender: socketWrapper1, version: 1, message: patchMessage1 })
+      recordTransition.add(socketWrapper1, 2, patchMessage2)
+
+      recordTransition.sendVersionExists({ sender: socketWrapper1, version: 1, message: patchMessage })
       recordTransition.sendVersionExists({ sender: socketWrapper2, version: 1, message: patchMessage2 })
 
       expect(socketMock1.lastSendMessage).toBeNull()
@@ -467,10 +341,10 @@ describe('record transitions', () => {
     })
 
     it('sends version exists error once record request is completed is retrieved', () => {
-      recordTransition._recordRequest.onComplete({ _v: 1, _d: { lastname: 'Kowalski' } })
+      recordRequestMockCallback({ _v: 1, _d: { lastname: 'Kowalski' } })
 
-      expect(socketMock1.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|someRecord|1|{"lastname":"Kowalski"}+'))
-      expect(socketMock2.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|someRecord|1|{"lastname":"Kowalski"}+'))
+      expect(socketMock1.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|recordName|1|{"lastname":"Kowalski"}+'))
+      expect(socketMock2.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|recordName|1|{"lastname":"Kowalski"}+'))
       expect(socketMock3.lastSendMessage).toBeNull()
     })
 
@@ -479,11 +353,11 @@ describe('record transitions', () => {
       socketMock2.lastSendMessage = null
       socketMock3.lastSendMessage = null
 
-      recordTransition.sendVersionExists({ sender: socketWrapper3, version: 1, message: patchMessage1 })
+      recordTransition.sendVersionExists({ sender: socketWrapper3, version: 1, message: patchMessage })
 
       expect(socketMock1.lastSendMessage).toBeNull()
       expect(socketMock2.lastSendMessage).toBeNull()
-      expect(socketMock3.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|someRecord|2|{"lastname":"Kowalski","firstname":"Egon"}+'))
+      expect(socketMock3.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|recordName|2|{"lastname":"Kowalski","firstname":"Egon"}+'))
     })
 
     it('destroys the transition', (done) => {
@@ -497,5 +371,4 @@ describe('record transitions', () => {
       }, 50)
     })
   })
-
 })

@@ -1,10 +1,10 @@
 'use strict'
 
-const ConnectionEndpoint = require('./message/connection-endpoint')
 const MessageProcessor = require('./message/message-processor')
 const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')
 const messageParser = require('./message/message-parser')
+const messageBuilder = require('./message/message-builder')
 const readMessage = require('./utils/read-message')
 const fs = require('fs')
 const path = require('path')
@@ -39,22 +39,37 @@ const STATES = C.STATES
  * @constructor
  */
 const Deepstream = function (config) {
-  this._currentState = STATES.CLOSED
   this.constants = C
   this._loadConfig(config)
-  this._connectionEndpoint = null
   this._messageProcessor = null
   this._messageDistributor = null
   this._eventHandler = null
   this._rpcHandler = null
   this._recordHandler = null
-  this._plugins = [
-    'messageConnector',
-    'storage',
-    'cache',
-    'authenticationHandler',
-    'permissionHandler'
-  ]
+  this._messageBuilder = messageBuilder
+
+  this._stateMachine = {
+    init: STATES.STOPPED,
+    transitions: [
+      { name: 'start', from: STATES.STOPPED, to: STATES.LOGGER_INIT, handler: this._loggerInit },
+      { name: 'logger-started', from: STATES.LOGGER_INIT, to: STATES.PLUGIN_INIT, handler: this._pluginInit },
+      { name: 'plugins-started', from: STATES.PLUGIN_INIT, to: STATES.SERVICE_INIT, handler: this._serviceInit },
+      { name: 'services-started', from: STATES.SERVICE_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this._connectionEndpointInit },
+      { name: 'connection-endpoints-started', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.RUNNING, handler: this._run },
+
+      { name: 'stop', from: STATES.LOGGER_INIT, to: STATES.LOGGER_SHUTDOWN, handler: this._loggerShutdown },
+      { name: 'stop', from: STATES.PLUGIN_INIT, to: STATES.PLUGIN_SHUTDOWN, handler: this._pluginShutdown },
+      { name: 'stop', from: STATES.SERVICE_INIT, to: STATES.SERVICE_SHUTDOWN, handler: this._serviceShutdown },
+      { name: 'stop', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this._connectionEndpointShutdown },
+      { name: 'stop', from: STATES.RUNNING, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this._connectionEndpointShutdown },
+
+      { name: 'connection-endpoints-closed', from: STATES.CONNECTION_ENDPOINT_SHUTDOWN, to: STATES.SERVICE_SHUTDOWN, handler: this._serviceShutdown },
+      { name: 'services-closed', from: STATES.SERVICE_SHUTDOWN, to: STATES.PLUGIN_SHUTDOWN, handler: this._pluginShutdown },
+      { name: 'plugins-closed', from: STATES.PLUGIN_SHUTDOWN, to: STATES.LOGGER_SHUTDOWN, handler: this._loggerShutdown },
+      { name: 'logger-closed', from: STATES.LOGGER_SHUTDOWN, to: STATES.STOPPED, handler: this._stop },
+    ]
+  }
+  this._currentState = this._stateMachine.init
 }
 
 util.inherits(Deepstream, EventEmitter)
@@ -70,7 +85,7 @@ process.title = 'deepstream server'
  * Expose constants to allow consumers to access them without
  * requiring a reference to a deepstream instance.
  *
- *
+ * @type {Object}
 */
 Deepstream.constants = C
 
@@ -94,15 +109,18 @@ Deepstream.readMessage = readMessage
  * @returns {void}
  */
 Deepstream.prototype.set = function (key, value) {
-  if (key === 'message') {
-    key = 'messageConnector'
+  let optionName
+  if (key === 'message' || key === 'messageConnector') {
+    throw new Error('unable to start deepstream with a message connector, these have been removed as part of deepstream.io v3.0')
+  } else {
+    optionName = key
   }
 
-  if (this._options[key] === undefined) {
-    throw new Error(`Unknown option "${key}"`)
+  if (this._options[optionName] === undefined) {
+    throw new Error(`Unknown option "${optionName}"`)
   }
 
-  this._options[key] = value
+  this._options[optionName] = value
   return this
 }
 
@@ -113,7 +131,7 @@ Deepstream.prototype.set = function (key, value) {
  * @returns {boolean}
  */
 Deepstream.prototype.isRunning = function () {
-  return this._currentState === STATES.IS_RUNNING
+  return this._currentState === STATES.RUNNING
 }
 
 /**
@@ -128,43 +146,11 @@ Deepstream.prototype.isRunning = function () {
  * @returns {void}
  */
 Deepstream.prototype.start = function () {
-  if (this._currentState !== STATES.CLOSED) {
-    throw new Error(`Server can only start after it stops succesfully, currently ${this._currentState}`)
+  if (this._currentState !== STATES.STOPPED) {
+    throw new Error(`Server can only start after it stops successfully. Current state: ${this._currentState}`)
   }
-  this._currentState = STATES.STARTING
   this._showStartLogo()
-  const loggerInitializer = new DependencyInitialiser(this._options, 'logger')
-  loggerInitializer.once('ready', this._start.bind(this))
-}
-
-/**
- * This is the actual function which starts deepstream. It is invoked after+
- * the logger was intialized or emitted the read event if it was initialized
- * asynchronously
- *
- * @private
- * @returns {void}
- */
-Deepstream.prototype._start = function () {
-  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `deepstream version: ${pkg.version}`)
-
-  // otherwise (no configFile) deepstream was invoked by API
-  if (this._configFile != null) {
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `configuration file loaded from ${this._configFile}`)
-  }
-
-  if (global.deepstreamLibDir) {
-    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `library directory set to: ${global.deepstreamLibDir}`)
-  }
-
-  let i
-  let initialiser
-
-  for (i = 0; i < this._plugins.length; i++) {
-    initialiser = new DependencyInitialiser(this._options, this._plugins[i])
-    initialiser.once('ready', this._checkReady.bind(this, this._plugins[i], initialiser.getDependency()))
-  }
-  this._checkReady('logger', this._options.logger)
+  this._transition('start')
 }
 
 /**
@@ -175,51 +161,325 @@ Deepstream.prototype._start = function () {
  * @returns {void}
  */
 Deepstream.prototype.stop = function () {
-  if (this._currentState !== STATES.IS_RUNNING) {
-    throw new Error(`Server can only be stopped after it starts succesfully, currently ${this._currentState}`)
-  }
-  this._currentState = STATES.CLOSING
-
-  let i
-  let plugin
-  const closables = [this._connectionEndpoint]
-
-  if (typeof this._options.logger.close === 'function') {
-    closables.push(this._options.logger)
-    setTimeout(this._options.logger.close.bind(this._options.logger))
+  if (this._currentState === STATES.STOPPED) {
+    throw new Error('The server is already stopped.')
   }
 
-  for (i = 0; i < this._plugins.length; i++) {
-    plugin = this._options[this._plugins[i]]
-    if (typeof plugin.close === 'function') {
-      closables.push(plugin)
-      setTimeout(plugin.close.bind(plugin))
-    }
-  }
-
-  utils.combineEvents(closables, 'close', this._onStopped.bind(this))
-  this._options.clusterRegistry.leaveCluster()
-  this._connectionEndpoint.close()
+  this._transition('stop')
 }
 
 /**
- * Expose the message-parser's convertTyped method
- * so that it can be used within permissionHandlers
+ * Expose the message-parser's convertTyped method for use within plugins
  *
  * @param   {String} value A String starting with a type identifier (see C.TYPES)
  *
  * @public
- * @returns {mixed} the converted value
+ * @returns {JSValue} the converted value
  */
 Deepstream.prototype.convertTyped = function (value) {
   return messageParser.convertTyped(value)
 }
 
 /**
+ * Expose the message-builder's typed method for use within plugins
+ *
+ * @param   {JSValue} value A javascript value
+ *
+ * @public
+ * @returns {String} A type-prefixed string
+ */
+Deepstream.prototype.toTyped = function (value) {
+  return messageBuilder.typed(value)
+}
+
+
+/* ======================================================================= *
+ * ========================== State Transitions ========================== *
+ * ======================================================================= */
+
+/**
+ * Try to perform a state change
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._transition = function (transitionName) {
+  let transition
+  for (let i = 0; i < this._stateMachine.transitions.length; i++) {
+    transition = this._stateMachine.transitions[i]
+    if (transitionName === transition.name && this._currentState === transition.from) {
+      // found transition
+      this._onTransition(transition)
+      this._currentState = transition.to
+      transition.handler.call(this)
+      return
+    }
+  }
+  const details = JSON.stringify({ transition: transitionName, state: this._currentState })
+  throw new Error(`Invalid state transition: ${details}`)
+}
+
+/**
+ * Log state transitions for debugging.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._onTransition = function (transition) {
+  const logger = this._options.logger
+  if (logger) {
+    logger.log(
+      C.LOG_LEVEL.DEBUG,
+      C.EVENT.INFO,
+      `state transition (${transition.name}): ${transition.from} -> ${transition.to}`
+    )
+  }
+}
+
+/**
+ * First stage in the Deepstream initialisation sequence. Initialises the logger.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._loggerInit = function () {
+  const logger = this._options.logger
+  const loggerInitialiser = new DependencyInitialiser(this, this._options, logger, 'logger')
+  loggerInitialiser.once('ready', () => {
+    if (logger instanceof EventEmitter) {
+      logger.on('error', this._onPluginError.bind(this, 'logger'))
+    }
+    this._transition('logger-started')
+  })
+}
+
+/**
+ * Invoked once the logger is initialised. Initialises any built-in or custom Deepstream plugins.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._pluginInit = function () {
+  const infoLogger = message => this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, message)
+
+  infoLogger(`deepstream version: ${pkg.version}`)
+
+  // otherwise (no configFile) deepstream was invoked by API
+  if (this._configFile != null) {
+    infoLogger(`configuration file loaded from ${this._configFile}`)
+  }
+
+  if (global.deepstreamLibDir) {
+    infoLogger(`library directory set to: ${global.deepstreamLibDir}`)
+  }
+
+  this._options.pluginTypes.forEach((pluginType) => {
+    const plugin = this._options[pluginType]
+    const initialiser = new DependencyInitialiser(this, this._options, plugin, pluginType)
+    initialiser.once('ready', () => {
+      this._checkReady(pluginType, plugin)
+    })
+    return initialiser
+  })
+}
+
+/**
+ * Called whenever a dependency emits a ready event. Once all dependencies are ready
+ * deepstream moves to the init step.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._checkReady = function (pluginType, plugin) {
+  if (plugin instanceof EventEmitter) {
+    plugin.on('error', this._onPluginError.bind(this, pluginType))
+  }
+  plugin.isReady = true
+
+  const allPluginsReady = this._options.pluginTypes.every(type => this._options[type].isReady)
+
+  if (allPluginsReady && this._currentState === STATES.PLUGIN_INIT) {
+    this._transition('plugins-started')
+  }
+}
+
+/**
+ * Invoked once all plugins are initialised. Instantiates the messaging pipeline and
+ * the various handlers.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._serviceInit = function () {
+  this._messageProcessor = new MessageProcessor(this._options)
+  this._messageDistributor = new MessageDistributor(this._options)
+
+  this._options.clusterRegistry = new ClusterRegistry(this._options)
+  this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
+
+  this._eventHandler = new EventHandler(this._options)
+  this._messageDistributor.registerForTopic(
+    C.TOPIC.EVENT,
+    this._eventHandler.handle.bind(this._eventHandler)
+  )
+
+  this._rpcHandler = new RpcHandler(this._options)
+  this._messageDistributor.registerForTopic(
+    C.TOPIC.RPC,
+    this._rpcHandler.handle.bind(this._rpcHandler)
+  )
+
+  this._recordHandler = new RecordHandler(this._options)
+  this._messageDistributor.registerForTopic(
+    C.TOPIC.RECORD,
+    this._recordHandler.handle.bind(this._recordHandler)
+  )
+
+  this._presenceHandler = new PresenceHandler(this._options)
+  this._messageDistributor.registerForTopic(
+    C.TOPIC.PRESENCE,
+    this._presenceHandler.handle.bind(this._presenceHandler)
+  )
+
+  this._messageProcessor.onAuthenticatedMessage =
+      this._messageDistributor.distribute.bind(this._messageDistributor)
+
+  if (this._options.permissionHandler.setRecordHandler) {
+    this._options.permissionHandler.setRecordHandler(this._recordHandler)
+  }
+
+  process.nextTick(() => this._transition('services-started'))
+}
+
+/**
+ * Invoked once all dependencies and services are initialised.
+ * The startup sequence will be complete once the connection endpoint is started and listening.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._connectionEndpointInit = function () {
+  const endpoints = this._options.connectionEndpoints
+  const initialisers = []
+
+  for (let i = 0; i < endpoints.length; i++) {
+    const connectionEndpoint = endpoints[i]
+    initialisers[i] = new DependencyInitialiser(
+      this,
+      this._options,
+      connectionEndpoint,
+      'connectionEndpoint'
+    )
+
+    connectionEndpoint.onMessages = this._messageProcessor.process.bind(this._messageProcessor)
+    connectionEndpoint.on(
+      'client-connected',
+      this._presenceHandler.handleJoin.bind(this._presenceHandler)
+    )
+    connectionEndpoint.on(
+      'client-disconnected',
+      this._presenceHandler.handleLeave.bind(this._presenceHandler)
+    )
+  }
+
+  utils.combineEvents(initialisers, 'ready', () => this._transition('connection-endpoints-started'))
+}
+
+/**
+ * Initialization complete - Deepstream is up and running.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._run = function () {
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, 'deepstream started')
+  this.emit('started')
+}
+
+/**
+ * Begin deepstream shutdown.
+ * Closes the (perhaps partially initialised) connectionEndpoints.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._connectionEndpointShutdown = function () {
+  const endpoints = this._options.connectionEndpoints
+
+  endpoints.forEach((endpoint) => {
+    process.nextTick(() => endpoint.close())
+  })
+
+  utils.combineEvents(endpoints, 'close', () => this._transition('connection-endpoints-closed'))
+}
+
+/**
+ * Shutdown the services.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._serviceShutdown = function () {
+  this._options.clusterRegistry.leaveCluster()
+
+  process.nextTick(() => this._transition('services-closed'))
+}
+
+/**
+ * Close any (perhaps partially initialised) plugins.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._pluginShutdown = function () {
+  const closeablePlugins = []
+  this._options.pluginTypes.forEach((pluginType) => {
+    const plugin = this._options[pluginType]
+    if (typeof plugin.close === 'function') {
+      process.nextTick(() => plugin.close())
+      closeablePlugins.push(plugin)
+    }
+  })
+
+  if (closeablePlugins.length > 0) {
+    utils.combineEvents(closeablePlugins, 'close', () => this._transition('plugins-closed'))
+  } else {
+    process.nextTick(() => this._transition('plugins-closed'))
+  }
+}
+
+/**
+ * Close the (perhaps partially initialised) logger.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._loggerShutdown = function () {
+  const logger = this._options.logger
+  if (typeof logger.close === 'function') {
+    process.nextTick(() => logger.close())
+    logger.once('close', () => this._transition('logger-closed'))
+    return
+  }
+  process.nextTick(() => this._transition('logger-closed'))
+}
+
+/**
+ * Final stop state.
+ * Deepstream can now be started again.
+ *
+ * @private
+ * @returns {void}
+ */
+Deepstream.prototype._stop = function () {
+  this.emit('stopped')
+}
+
+/**
  * Synchronously loads a configuration file
  * Initialization of plugins and logger will be triggered by the
  * configInitialiser, but it should not block. Instead the ready events of
- * those plugins are handled through the DependencyInitialiser in this instnace.
+ * those plugins are handled through the DependencyInitialiser in this instance.
  *
  * @param {Object} config Configuration object
  * @private
@@ -229,23 +489,11 @@ Deepstream.prototype._loadConfig = function (config) {
   if (config === null || typeof config === 'string') {
     const result = jsYamlLoader.loadConfig(config)
     this._configFile = result.file
-    config = result.config
+    this._options = result.config
   } else {
     const rawConfig = utils.merge(defaultOptions.get(), config)
-    config = configInitialiser.initialise(rawConfig)
+    this._options = configInitialiser.initialise(rawConfig)
   }
-  this._options = config
-}
-
-/**
- * Callback for the final stop event
- *
- * @private
- * @returns {void}
- */
-Deepstream.prototype._onStopped = function () {
-  this._currentState = STATES.CLOSED
-  this.emit('stopped')
 }
 
 /**
@@ -263,7 +511,7 @@ Deepstream.prototype._showStartLogo = function () {
   let logo
 
   try {
-    const nexeres = require('nexeres')
+    const nexeres = require('nexeres') // eslint-disable-line
     logo = nexeres.get('ascii-logo.txt').toString('ascii')
   } catch (e) {
     logo = fs.readFileSync(path.join(__dirname, '..', '/ascii-logo.txt'), 'utf8')
@@ -271,80 +519,7 @@ Deepstream.prototype._showStartLogo = function () {
 
   /* istanbul ignore next */
   process.stdout.write(logo + EOL)
-  process.stdout.write(` =========================   starting   ==========================${EOL}`)
-}
-
-/**
- * Invoked once all dependencies are initialised. Instantiates the messaging pipeline and the various handlers.
- * The startup sequence will be complete once the connection endpoint is started and listening
- *
- * @private
- * @returns {void}
- */
-Deepstream.prototype._init = function () {
-  this._connectionEndpoint = new ConnectionEndpoint(this._options, this._onStarted.bind(this))
-  this._messageProcessor = new MessageProcessor(this._options)
-  this._messageDistributor = new MessageDistributor(this._options)
-  this._connectionEndpoint.onMessage = this._messageProcessor.process.bind(this._messageProcessor)
-
-  this._options.clusterRegistry = new ClusterRegistry(this._options, this._connectionEndpoint)
-  this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
-
-  this._eventHandler = new EventHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.EVENT, this._eventHandler.handle.bind(this._eventHandler))
-
-  this._rpcHandler = new RpcHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.RPC, this._rpcHandler.handle.bind(this._rpcHandler))
-
-  this._recordHandler = new RecordHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.RECORD, this._recordHandler.handle.bind(this._recordHandler))
-
-  this._options.connectionEndpoint = this._connectionEndpoint
-  this._presenceHandler = new PresenceHandler(this._options)
-  this._messageDistributor.registerForTopic(C.TOPIC.PRESENCE, this._presenceHandler.handle.bind(this._presenceHandler))
-
-  this._messageProcessor.onAuthenticatedMessage = this._messageDistributor.distribute.bind(this._messageDistributor)
-
-  if (this._options.permissionHandler.setRecordHandler) {
-    this._options.permissionHandler.setRecordHandler(this._recordHandler)
-  }
-
-  this._currentState = STATES.INITIALIZED
-}
-
-/**
- * Called whenever a dependency emits a ready event. Once all dependencies are ready
- * deepstream moves to the init step.
- *
- * @private
- * @returns {void}
- */
-Deepstream.prototype._checkReady = function (pluginName, plugin) {
-  if (plugin instanceof EventEmitter) {
-    plugin.on('error', this._onPluginError.bind(this, pluginName))
-  }
-
-  for (let i = 0; i < this._plugins.length; i++) {
-    if (this._options[this._plugins[i]].isReady !== true) {
-      return
-    }
-  }
-
-  if (this._currentState === STATES.STARTING) {
-    this._init()
-  }
-}
-
-/**
- * Final callback - Deepstream is up and running now
- *
- * @private
- * @returns {void}
- */
-Deepstream.prototype._onStarted = function () {
-  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started')
-  this._currentState = STATES.IS_RUNNING
-  this.emit('started')
+  process.stdout.write(` =====================   starting   ======================${EOL}`)
 }
 
 /**

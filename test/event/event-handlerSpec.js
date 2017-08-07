@@ -1,8 +1,12 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let EventHandler = require('../../src/event/event-handler'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+let proxyquire = require('proxyquire').noCallThru().noPreserveCache(),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
+  SubscriptionRegistry = require('../../src/utils/subscription-registry'),
+  EventHandler = proxyquire('../../src/event/event-handler', {
+    '../utils/subscription-registry': SubscriptionRegistry
+  }),
   C = require('../../src/constants/constants'),
   _msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),
@@ -84,7 +88,6 @@ describe('the eventHandler routes events correctly', () => {
   it('triggers events', () => {
     let socketA = new SocketWrapper(new SocketMock(), {}),
       socketB = new SocketWrapper(new SocketMock(), {})
-
 		 eventHandler.handle(socketA, subscriptionsMessage)
 		 eventHandler.handle(socketB, subscriptionsMessage)
 

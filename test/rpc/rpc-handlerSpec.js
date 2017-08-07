@@ -2,7 +2,7 @@
 'use strict'
 
 let RpcHandler = require('../../src/rpc/rpc-handler'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
   C = require('../../src/constants/constants'),
   _msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),
@@ -75,6 +75,13 @@ let RpcHandler = require('../../src/rpc/rpc-handler'),
     originalTopic: C.TOPIC.RPC,
     data: ['REQ', 'substract', '4']
   },
+  privateRemoteAckMessageUnknown = {
+    topic: C.TOPIC.PRIVATE + options.serverName,
+    action: C.ACTIONS.ACK,
+    raw: _msg('P|A|REQ|substract|4+'),
+    originalTopic: C.TOPIC.RPC,
+    data: ['REQ', 'substract', '5']
+  },
   privateRemoteResponseMessage = {
     topic: C.TOPIC.PRIVATE + options.serverName,
     action: C.ACTIONS.RESPONSE,
@@ -85,6 +92,7 @@ let RpcHandler = require('../../src/rpc/rpc-handler'),
 
 describe('the rpc handler', () => {
   describe('routes remote procedure call related messages', () => {
+
     it('sends an error for subscription messages without data', () => {
       let socketWrapper = new SocketWrapper(new SocketMock(), {}),
         invalidMessage = {
@@ -171,7 +179,7 @@ describe('the rpc handler', () => {
       provider.socket.lastSendMessage = null
       rpcHandler.handle(provider, additionalResponseMessage)
       expect(requestor.socket.lastSendMessage).toBeNull()
-      expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action RES+'))
+      expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_RPC_CORRELATION_ID|unexpected state for rpc addTwo with action RES+'))
     })
 
     it('executes local rpcs - error scenario', () => {
@@ -197,7 +205,7 @@ describe('the rpc handler', () => {
       provider.socket.lastSendMessage = null
       rpcHandler.handle(provider, errorMessage)
       expect(requestor.socket.lastSendMessage).toBeNull()
-      expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_MESSAGE_DATA|unexpected state for rpc addTwo with action E+'))
+      expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_RPC_CORRELATION_ID|unexpected state for rpc addTwo with action E+'))
     })
 
     it('supports multiple RPCs in quick succession', () => {
@@ -217,10 +225,76 @@ describe('the rpc handler', () => {
     })
   })
 
+  it('ignores ack message if it arrives after response', () => {
+    let requestor = new SocketWrapper(new SocketMock(), {}),
+        provider = new SocketWrapper(new SocketMock(), {})
+
+      // Register provider
+      subscriptionMessage.action = C.ACTIONS.SUBSCRIBE
+      rpcHandler.handle(provider, subscriptionMessage)
+      expect(provider.socket.lastSendMessage).toBe(_msg('P|A|S|addTwo+'))
+
+      // Issue Rpc
+      rpcHandler.handle(requestor, requestMessage)
+
+      // Response
+      rpcHandler.handle(provider, responseMessage)
+      expect(requestor.socket.lastSendMessage).toBe(_msg('P|RES|addTwo|1234|12+'))
+
+      // Ack is ignored
+      rpcHandler.handle(provider, ackMessage)
+      expect(requestor.socket.lastSendMessage).toBe(_msg('P|RES|addTwo|1234|12+'))
+  })
+
+  it('ignores multiple responses', () => {
+    let requestor = new SocketWrapper(new SocketMock(), {}),
+        provider = new SocketWrapper(new SocketMock(), {})
+
+      // Register provider
+      subscriptionMessage.action = C.ACTIONS.SUBSCRIBE
+      rpcHandler.handle(provider, subscriptionMessage)
+      expect(provider.socket.lastSendMessage).toBe(_msg('P|A|S|addTwo+'))
+
+      // Issue Rpc
+      rpcHandler.handle(requestor, requestMessage)
+
+      // Response
+      rpcHandler.handle(provider, responseMessage)
+      expect(requestor.socket.lastSendMessage).toBe(_msg('P|RES|addTwo|1234|12+'))
+
+      requestor.socket.lastSendMessage = null
+      // Another response
+      rpcHandler.handle(provider, responseMessage)
+      expect(requestor.socket.lastSendMessage).toBe(null)
+  })
+
+  it('doesn\'t throw error on response after timeout', (done) => {
+    let requestor = new SocketWrapper(new SocketMock(), {}),
+        provider = new SocketWrapper(new SocketMock(), {})
+
+      // Register provider
+      subscriptionMessage.action = C.ACTIONS.SUBSCRIBE
+      rpcHandler.handle(provider, subscriptionMessage)
+      expect(provider.socket.lastSendMessage).toBe(_msg('P|A|S|addTwo+'))
+
+      // Issue Rpc
+      rpcHandler.handle(requestor, requestMessage)
+
+      // Ack
+      rpcHandler.handle(provider, ackMessage)
+
+      // Response timeout
+      setTimeout(() => {
+        rpcHandler.handle(provider, responseMessage)
+        expect(provider.socket.lastSendMessage).toBe(_msg('P|E|INVALID_RPC_CORRELATION_ID|unexpected state for rpc addTwo with action RES+'))
+        done()
+      }, 30)
+  })
+
   it('executes remote rpcs', () => {
     let requestor
 
-		// This is terrible practice, but we don't have any means to access the object otherwise
+    // This is terrible practice, but we don't have any means to access the object otherwise
     rpcHandler._subscriptionRegistry.getAllRemoteServers = function (name) {
       return ['random-server-1']
     }
@@ -230,7 +304,7 @@ describe('the rpc handler', () => {
     requestor = new SocketWrapper(new SocketMock(), {})
     expect(options.messageConnector.lastPublishedMessage).toBeNull()
 
-		// There are no local providers for the substract rpc
+    // There are no local providers for the substract rpc
     rpcHandler.handle(requestor, remoteRequestMessage)
     delete options.messageConnector.lastPublishedMessage.raw
     expect(options.messageConnector.lastPublishedMessage).toEqual({
@@ -239,19 +313,23 @@ describe('the rpc handler', () => {
       data: ['substract', '4', '{"numA":8, "numB":3}'],
       remotePrivateTopic: 'PRIVATE/thisServer',
       originalTopic: 'P' }
-		)
+    )
     expect(requestor.socket.lastSendMessage).toBeNull()
 
     options.messageConnector.simulateIncomingMessage(privateRemoteAckMessage)
     expect(requestor.socket.lastSendMessage).toBe(_msg('P|A|REQ|substract|4+'))
 
-		// forwards response from remote provider to requestor
+    // forwards response from remote provider to requestor
     options.messageConnector.simulateIncomingMessage(privateRemoteResponseMessage)
     expect(requestor.socket.lastSendMessage).toBe(_msg('P|RES|substract|4|5+'))
 
-		// ignores subsequent responses
+    // ignores subsequent responses
     requestor.socket.lastSendMessage = null
     options.messageConnector.simulateIncomingMessage(privateRemoteResponseMessage)
     expect(requestor.socket.lastSendMessage).toBeNull()
+
+    options.messageConnector.simulateIncomingMessage(privateRemoteAckMessageUnknown)
+    expect(requestor.socket.lastSendMessage).toBeNull()
+    expect(options.logger.lastLogEvent).toBe('INVALID_RPC_CORRELATION_ID')
   })
 })

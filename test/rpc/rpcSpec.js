@@ -4,15 +4,15 @@
 let C = require('../../src/constants/constants'),
   Rpc = require('../../src/rpc/rpc'),
   msg = require('../test-helper/test-helper').msg,
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
   SocketMock = require('../mocks/socket-mock'),
   RpcProxy = require('../../src/rpc/rpc-proxy'),
   alternativeProvider = new SocketWrapper(new SocketMock(), {}),
-  mockRpcHandler = { getAlternativeProvider() { return alternativeProvider } },
+  mockRpcHandler = { getAlternativeProvider() { return alternativeProvider }, _$onDestroy () {} },
 	mockMessageConnector = new (require('../mocks/message-connector-mock'))(),
 	options = {
-  rpcAckTimeout: 5,
-  rpcTimeout: 5
+  rpcAckTimeout: 15,
+  rpcTimeout: 15
 },
 	requestMessage = {
   topic: C.TOPIC.RPC,
@@ -62,7 +62,7 @@ describe('executes local rpc calls', () => {
     setTimeout(() => {
       expect(requestor.socket.lastSendMessage).toBe(msg('P|E|ACK_TIMEOUT|addTwo|1234+'))
       done()
-    }, 7)
+    }, options.rpcAckTimeout + 2)
   })
 
   it('forwards ack message', () => {
@@ -78,7 +78,7 @@ describe('executes local rpc calls', () => {
     setTimeout(() => {
       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|E|RESPONSE_TIMEOUT|addTwo|1234+'))
       done()
-    }, 8)
+    }, options.rpcTimeout + 2)
   })
 
   it('forwards response message', () => {
@@ -95,14 +95,6 @@ describe('executes local rpc calls', () => {
     expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|E|ErrorOccured|addTwo|1234+'))
   })
 
-  it('ignores ack message if it arrives after response', () => {
-    const rpc = makeRpc(requestMessage)
-    rpc.localRpc.handle(responseMessage)
-    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
-    rpc.localRpc.handle(ackMessage)
-    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
-  })
-
   it('sends error for multiple ack messages', () => {
     const rpc = makeRpc(requestMessage)
 
@@ -113,21 +105,6 @@ describe('executes local rpc calls', () => {
     rpc.localRpc.handle(ackMessage)
     expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
     expect(rpc.provider.socket.lastSendMessage).toBe(msg('P|E|MULTIPLE_ACK|addTwo|1234+'))
-  })
-
-  it('ignores multiple responses', () => {
-    const rpc = makeRpc(requestMessage)
-
-    rpc.localRpc.handle(ackMessage)
-    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
-
-    rpc.localRpc.handle(responseMessage)
-    expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
-
-    rpc.requestor.socket.lastSendMessage = null
-
-    rpc.localRpc.handle(responseMessage)
-    expect(rpc.requestor.socket.lastSendMessage).toBe(null)
   })
 })
 

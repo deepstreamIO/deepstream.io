@@ -1,6 +1,5 @@
 'use strict'
 
-const messageBuilder = require('../message/message-builder')
 const C = require('../constants/constants')
 
 module.exports = class ListenerTimeoutRegistry {
@@ -15,7 +14,7 @@ module.exports = class ListenerTimeoutRegistry {
   *
   * @constructor
   */
-  constructor(type, options) {
+  constructor (type, options) {
     this._type = type
     this._options = options
     this._timeoutMap = {}
@@ -36,7 +35,7 @@ module.exports = class ListenerTimeoutRegistry {
     * @private
     * @returns {void}
     */
-  handle(socketWrapper, message) {
+  handle (socketWrapper, message) {
     const subscriptionName = message.data[1]
     const index = this._getIndex(socketWrapper, message)
     const provider = this._timedoutProviders[subscriptionName][index]
@@ -44,12 +43,10 @@ module.exports = class ListenerTimeoutRegistry {
       if (!this._acceptedProvider[subscriptionName]) {
         this._acceptedProvider[subscriptionName] = this._timedoutProviders[subscriptionName][index]
       } else {
-        provider.socketWrapper.send(
-          messageBuilder.getMsg(
-            this._type,
-            C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-            [provider.pattern, subscriptionName]
-          )
+        provider.socketWrapper.sendMessage(
+          this._type,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+          [provider.pattern, subscriptionName]
         )
       }
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
@@ -65,7 +62,7 @@ module.exports = class ListenerTimeoutRegistry {
     * @public
     * @returns {void}
     */
-  clear(subscriptionName) {
+  clear (subscriptionName) {
     delete this._timeoutMap[subscriptionName]
     delete this._timedoutProviders[subscriptionName]
     delete this._acceptedProvider[subscriptionName]
@@ -79,7 +76,7 @@ module.exports = class ListenerTimeoutRegistry {
     * @private
     * @returns {void}
     */
-  removeProvider(socketWrapper) {
+  removeProvider (socketWrapper) {
     for (const acceptedProvider in this._acceptedProvider) {
       if (this._acceptedProvider[acceptedProvider].socketWrapper === socketWrapper) {
         delete this._acceptedProvider[acceptedProvider]
@@ -109,7 +106,7 @@ module.exports = class ListenerTimeoutRegistry {
   * @public
   * @returns {void}
   */
-  addTimeout(subscriptionName, provider, callback) {
+  addTimeout (subscriptionName, provider, callback) {
     const timeoutId = setTimeout(() => {
       if (this._timedoutProviders[subscriptionName] == null) {
         this._timedoutProviders[subscriptionName] = []
@@ -126,7 +123,7 @@ module.exports = class ListenerTimeoutRegistry {
     *
     * @public
     */
-  clearTimeout(subscriptionName) {
+  clearTimeout (subscriptionName) {
     clearTimeout(this._timeoutMap[subscriptionName])
     delete this._timeoutMap[subscriptionName]
   }
@@ -136,7 +133,7 @@ module.exports = class ListenerTimeoutRegistry {
     *
     * @public
     */
-  isALateResponder(socketWrapper, message) {
+  isALateResponder (socketWrapper, message) {
     const index = this._getIndex(socketWrapper, message)
     return this._timedoutProviders[message.data[1]] && index !== -1
   }
@@ -146,16 +143,14 @@ module.exports = class ListenerTimeoutRegistry {
     *
     * @public
     */
-  rejectLateResponderThatAccepted(subscriptionName) {
+  rejectLateResponderThatAccepted (subscriptionName) {
     const provider = this._acceptedProvider[subscriptionName]
     if (provider) {
-      provider.socketWrapper.send(
-                messageBuilder.getMsg(
-                    this._type,
-                    C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-                    [provider.pattern, subscriptionName]
-                )
-            )
+      provider.socketWrapper.sendMessage(
+        this._type,
+        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+        [provider.pattern, subscriptionName]
+      )
     }
   }
 
@@ -164,7 +159,7 @@ module.exports = class ListenerTimeoutRegistry {
     *
     * @public
     */
-  getLateResponderThatAccepted(subscriptionName) {
+  getLateResponderThatAccepted (subscriptionName) {
     return this._acceptedProvider[subscriptionName]
   }
 
@@ -173,18 +168,22 @@ module.exports = class ListenerTimeoutRegistry {
     *
     * @private
     */
-  _getIndex(socketWrapper, message) {
+  _getIndex (socketWrapper, message) {
     const pattern = message.data[0]
     const subscriptionName = message.data[1]
     const timedoutProviders = this._timedoutProviders[subscriptionName]
 
-    for (let i = 0; timedoutProviders && i < timedoutProviders.length; i++) {
-      if (timedoutProviders[i].socketWrapper === socketWrapper && timedoutProviders[i].pattern === pattern) {
-        return i
+    if (timedoutProviders) {
+      for (let i = 0; i < timedoutProviders.length; i++) {
+        if (
+          timedoutProviders[i].socketWrapper === socketWrapper &&
+          timedoutProviders[i].pattern === pattern
+        ) {
+          return i
+        }
       }
     }
 
     return -1
   }
-
 }

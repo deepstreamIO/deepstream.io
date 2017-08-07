@@ -1,4 +1,4 @@
-/* global jasmine, spyOn, describe, xdescribe, it, expect, beforeEach, afterEach */
+/* global fail, jasmine, spyOn, describe, xdescribe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
@@ -29,6 +29,29 @@ xdescribe('permission handler loading', () => {
         next()
       })
       permissionHandler.setRecordHandler(recordHandler)
+      expect(permissionHandler.isReady).toBe(false)
+      permissionHandler.init()
+    })
+
+    it('fails to load maxRuleIterations less than zero initialisation', (next) => {
+      const permissionHandler = new ConfigPermissionHandler({
+        permission: {
+          options: {
+            path: './conf/permissions.yml',
+            cacheEvacuationInterval: 60000,
+            maxRuleIterations: 0
+          }
+        }
+      })
+      permissionHandler.setRecordHandler(recordHandler)
+      permissionHandler.on('error', (error) => {
+        expect(error).toContain('Maximum rule iteration has to be at least one')
+        next()
+      })
+      permissionHandler.on('ready', () => {
+        fail('should not have gotten here')
+        next()
+      })
       expect(permissionHandler.isReady).toBe(false)
       permissionHandler.init()
     })

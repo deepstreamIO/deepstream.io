@@ -1,11 +1,15 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let RecordHandler = require('../../src/record/record-handler'),
+let proxyquire = require('proxyquire').noCallThru().noPreserveCache(),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
+  SubscriptionRegistry = require('../../src/utils/subscription-registry'),
+  RecordHandler = proxyquire('../../src/record/record-handler', {
+    '../utils/subscription-registry': SubscriptionRegistry
+  }),
   msg = require('../test-helper/test-helper').msg,
   StorageMock = require('../mocks/storage-mock'),
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
   LoggerMock = require('../mocks/logger-mock'),
   MessageConnectorMock = require('../mocks/message-connector-mock.js'),
   clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
@@ -24,7 +28,8 @@ describe('messages from direct connected clients and messages that come in via m
       uniqueRegistry: {
         get(name, callback) { callback(true) },
         release() {}
-      }
+      },
+      storageHotPathPatterns: []
     }
 
   it('creates the record handler', () => {
@@ -34,7 +39,7 @@ describe('messages from direct connected clients and messages that come in via m
 
   it('subscribes to a record', () => {
 	    recordHandler.handle(subscriber, {
-	    	topic: 'RECORD',
+	    	topic: 'R',
 	    	action: 'CR',
 	    	data: ['someRecord']
 	    })
@@ -53,7 +58,7 @@ describe('messages from direct connected clients and messages that come in via m
 
 	    recordHandler.handle('SOURCE_MESSAGE_CONNECTOR', {
 	    	raw: msg('R|U|someRecord|1|{"firstname":"Wolfram"}+'),
-	    	topic: 'RECORD',
+	    	topic: 'R',
 	    	action: 'U',
 	    	data: ['someRecord', 1, { firstname: 'Wolfram' }]
 	    })
@@ -66,7 +71,7 @@ describe('messages from direct connected clients and messages that come in via m
   it('receives an update from the client and forwards it to the message connector', () => {
 	    recordHandler.handle(subscriber, {
 	    	raw: msg('R|U|someRecord|1|{"firstname":"Wolfram"}+'),
-	    	topic: 'RECORD',
+	    	topic: 'R',
 	    	action: 'U',
 	    	data: ['someRecord', 1, '{"firstname":"Wolfram"}']
 	    })
@@ -75,7 +80,7 @@ describe('messages from direct connected clients and messages that come in via m
     expect(options.storage.lastSetValue).toEqual({ _v: 1, _d: { firstname: 'Wolfram' } })
     expect(options.messageConnector.lastPublishedMessage).toEqual({
 	    	raw: msg('R|U|someRecord|1|{"firstname":"Wolfram"}+'),
-	    	topic: 'RECORD',
+	    	topic: 'R',
 	    	action: 'U',
 	    	data: ['someRecord', 1, '{"firstname":"Wolfram"}']
 	    })

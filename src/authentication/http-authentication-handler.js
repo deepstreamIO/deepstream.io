@@ -11,21 +11,22 @@ const EventEmitter = require('events').EventEmitter
  * @extends {EventEmitter}
  */
 module.exports = class HttpAuthenticationHandler extends EventEmitter {
-
   /**
   * Creates the class
   *
   * @param   {Object} settings
   * @param   {String} settings.endpointUrl http(s) endpoint that will receive post requests
-  * @param   {Array}  settings.permittedStatusCodes an array of http status codes that qualify as permitted
-  * @param   {Number} settings.requestTimeout time in milliseconds before the request times out if no reply is received
+  * @param   {Array}  settings.permittedStatusCodes an array of http status codes that qualify
+  *                                                 as permitted
+  * @param   {Number} settings.requestTimeout time in milliseconds before the request times out
+  *                                           if no reply is received
   *
   * @param   {Logger} logger
   *
   * @constructor
   * @returns {void}
   */
-  constructor(settings, logger) {
+  constructor (settings, logger) {
     super()
     this.isReady = true
     this.type = `http webhook to ${settings.endpointUrl}`
@@ -45,13 +46,14 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter {
   * @implements {PermissionHandler.isValidUser}
   * @returns {void}
   */
-  isValidUser(connectionData, authData, callback) {
+  isValidUser (connectionData, authData, callback) {
+    // eslint-disable-next-line
     new HttpAuthenticationRequest(
-            { connectionData, authData },
-            this._settings,
-            this._logger,
-            callback
-        )
+      { connectionData, authData },
+      this._settings,
+      this._logger,
+      callback
+    )
   }
 
   /**
@@ -60,7 +62,7 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _validateSettings() {
+  _validateSettings () {
     utils.validateMap(this._settings, true, {
       endpointUrl: 'url',
       permittedStatusCodes: 'array',

@@ -1,11 +1,15 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let RecordHandler = require('../../src/record/record-handler'),
+let proxyquire = require('proxyquire').noCallThru().noPreserveCache(),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
+  SubscriptionRegistry = require('../../src/utils/subscription-registry'),
+  RecordHandler = proxyquire('../../src/record/record-handler', {
+    '../utils/subscription-registry': SubscriptionRegistry
+  }),
   msg = require('../test-helper/test-helper').msg,
   StorageMock = require('../mocks/storage-mock'),
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
   LoggerMock = require('../mocks/logger-mock'),
   noopMessageConnector = require('../../src/default-plugins/noop-message-connector'),
   clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
@@ -25,7 +29,8 @@ describe('record handler handles messages', () => {
       uniqueRegistry: {
         get() {},
         release() {}
-      }
+      },
+      storageHotPathPatterns: []
     }
 
   it('creates the record handler', () => {
@@ -196,6 +201,45 @@ describe('record handler handles messages', () => {
     options.cache.nextOperationWillBeSuccessful = true
   })
 
+
+  it('returns a version of the data that exists with version number', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|existingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['existingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|HD|existingRecord|3+'))
+  })
+
+
+  it('returns an error for a head request of data that doesn\'t exists', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|nonExistingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['nonExistingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|HD|nonExistingRecord|RECORD_NOT_FOUND+'))
+  })
+
+  it('returns an error for a version if message error occurs with record retrieval', () => {
+    options.cache.nextOperationWillBeSuccessful = false
+
+    recordHandler.handle(clientA, {
+      raw: msg('R|HD|existingRecord'),
+      topic: 'R',
+      action: 'HD',
+      data: ['existingRecord']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|HD|existingRecord|RECORD_LOAD_ERROR+'))
+
+    options.cache.nextOperationWillBeSuccessful = true
+  })
+
   it('patches a record', () => {
     recordHandler.handle(clientB, {
       raw: msg('R|P|existingRecord|4|lastname|SEgon'),
@@ -284,18 +328,18 @@ describe('record handler handles messages', () => {
       data: ['existingRecord', 6]
     })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|existingRecord+'))
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|existingRecord|6+'))
   })
 
   it('handles invalid patch messages', () => {
     recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|6|bla'),
+      raw: msg('R|P|existingRecord|6|bla'),
       topic: 'R',
       action: 'P',
       data: ['existingRecord', 6, 'bla']
     })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|R|U|existingRecord|6|bla+'))
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|existingRecord|6|bla+'))
   })
 
   it('updates a record via same client to the same version', (done) => {
@@ -403,18 +447,85 @@ describe('record handler handles messages', () => {
     expect(clientA.socket.lastSendMessage).toBe(msg('R|R|anotherRecord|0|{}+'))
   })
 
-  it('receives a deletion message from the message connector for anotherRecord', () => {
+  it('receives a deletion ack from the message connector for anotherRecord', () => {
     recordHandler.handle('SOURCE_MESSAGE_CONNECTOR', {
-      raw: msg('R|D|anotherRecord'),
+      raw: msg('R|A|D|anotherRecord'),
       topic: 'R',
-      action: 'D',
-      data: ['anotherRecord']
+      action: 'A',
+      data: ['D', 'anotherRecord']
     })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|D|anotherRecord+'))
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|A|D|anotherRecord+'))
+  })
+
+  it('creates another record', () => {
+    options.cache.nextGetWillBeSynchronous = true
+    recordHandler.handle(clientA, {
+      topic: 'R',
+      action: 'CR',
+      data: ['overrideRecord']
+    })
+
+    expect(options.cache.lastSetKey).toBe('overrideRecord')
+    expect(options.cache.lastSetValue).toEqual({ _v: 0, _d: { } })
+
+    expect(options.storage.lastSetKey).toBe('overrideRecord')
+    expect(options.storage.lastSetValue).toEqual({ _v: 0, _d: { } })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|overrideRecord|0|{}+'))
+  })
+
+
+  it('updates a record with an -1 version number', () => {
+    options.cache.nextGetWillBeSynchronous = true
+    clientA.socket.lastSendMessage = null
+    clientB.socket.lastSendMessage = null
+
+    recordHandler.handle(clientB, {
+      raw: msg('R|U|overrideRecord|-1|{"name":"Johansson"}'),
+      topic: 'R',
+      action: 'U',
+      data: ['overrideRecord', -1, '{"name":"Johansson"}']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|U|overrideRecord|1|{"name":"Johansson"}+'))
+    options.cache.get('overrideRecord', (error, record) => {
+      expect(record).toEqual({ _v: 1, _d: { name: 'Johansson' } })
+    })
+  })
+
+  it('updates a record again with an -1 version number', () => {
+
+    recordHandler.handle(clientB, {
+      raw: msg('R|U|overrideRecord|-1|{"name":"Tom"}'),
+      topic: 'R',
+      action: 'U',
+      data: ['overrideRecord', -1, '{"name":"Tom"}']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|U|overrideRecord|2|{"name":"Tom"}+'))
+    options.cache.get('overrideRecord', (error, record) => {
+      expect(record).toEqual({ _v: 2, _d: { name: 'Tom' } })
+    })
+  })
+
+  it('creates records when using CREATEANDUPDATE', () => {
+    options.cache.nextGetWillBeSynchronous = true
+    clientA.socket.lastSendMessage = null
+    clientB.socket.lastSendMessage = null
+
+    recordHandler.handle(clientB, {
+      raw: msg('R|CU|upsertedRecord|-1|{"name":"Tom"}'),
+      topic: 'R',
+      action: 'CU',
+      data: ['upsertedRecord', -1, '{"name":"Tom"}', '{}']
+    })
+
+    options.cache.get('upsertedRecord', (error, record) => {
+      expect(record).toEqual({ _v: 1, _d: { name: 'Tom' } })
+    })
   })
 })
-
 
 describe('record handler handles messages', () => {
   let recordHandler,
@@ -463,6 +574,7 @@ describe('record handler handles messages', () => {
     expect(clientA.socket.lastSendMessage).toBe(msg('R|A|D|test+'))
   })
 
+
   it('creates record test', () => {
     clientA.socket.sendMessages = []
     recordHandler.handle(clientA, {
@@ -474,5 +586,38 @@ describe('record handler handles messages', () => {
 
     expect(clientA.socket.sendMessages[0]).not.toContain('MULTIPLE_SUBSCRIPTIONS')
     expect(clientA.socket.lastSendMessage).toBe(msg('R|R|test|0|{}+'))
+  })
+
+  it('creates record deleteEvent', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|CR|deleteEvent'),
+      topic: 'R',
+      action: 'CR',
+      data: ['deleteEvent']
+    })
+
+    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|deleteEvent|0|{}+'))
+  })
+
+  it('subscribes record deleteEvent', () => {
+    recordHandler.handle(clientB, {
+      raw: msg('R|CR|deleteEvent'),
+      topic: 'R',
+      action: 'CR',
+      data: ['deleteEvent']
+    })
+
+    expect(clientB.socket.lastSendMessage).toBe(msg('R|R|deleteEvent|0|{}+'))
+  })
+
+  it('deletes record deleteEvent and receives event', () => {
+    recordHandler.handle(clientA, {
+      raw: msg('R|D|deleteEvent'),
+      topic: 'R',
+      action: 'D',
+      data: ['deleteEvent']
+    })
+
+    expect(clientB.socket.lastSendMessage).toBe(msg('R|A|D|deleteEvent+'))
   })
 })

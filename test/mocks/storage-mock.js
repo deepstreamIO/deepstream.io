@@ -51,7 +51,7 @@ StorageMock.prototype.get = function (key, callback) {
   } else {
     this.getTimeout = setTimeout(() => {
       callback(this.nextOperationWillBeSuccessful ? null : 'storageError', value)
-    }, 5)
+    }, 25)
   }
 }
 
@@ -76,7 +76,7 @@ StorageMock.prototype.set = function (key, value, callback) {
     this.setTimeout = setTimeout(() => {
       this.completedSetOperations++
       callback(this.nextOperationWillBeSuccessful ? null : 'storageError')
-    }, 30)
+    }, 50)
   }
 }
 

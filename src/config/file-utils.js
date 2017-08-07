@@ -97,7 +97,7 @@ exports.fileExistsSync = function (filePath) {
 * @private
 * @returns {String} resolvedPath
 */
-function resolvePrefixAndFile(nonAbsoluteFilePath, prefix) {
+function resolvePrefixAndFile (nonAbsoluteFilePath, prefix) {
   // prefix is not absolute
   if (path.parse(prefix).root === '') {
     return path.resolve(process.cwd(), prefix, nonAbsoluteFilePath)

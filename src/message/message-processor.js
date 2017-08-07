@@ -1,6 +1,7 @@
 'use strict'
 
 const MessageQueue = require('./message-queue')
+const C = require('../constants/constants')
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -12,8 +13,7 @@ const MessageQueue = require('./message-queue')
  * @param {Object} options deepstream options
  */
 module.exports = class MessageProcessor {
-
-  constructor(options) {
+  constructor (options) {
     this._options = options
   }
 
@@ -29,7 +29,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  onAuthenticatedMessage(socketWrapper, message) {
+  onAuthenticatedMessage (socketWrapper, message) { // eslint-disable-line
   }
 
   /**
@@ -54,5 +54,4 @@ module.exports = class MessageProcessor {
     }
     queue.process(message)
   }
-
 }

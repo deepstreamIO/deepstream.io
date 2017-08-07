@@ -10,8 +10,21 @@ const utils = require('../utils/utils')
 const configInitialiser = require('./config-initialiser')
 const fileUtils = require('./file-utils')
 
-const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js']; path.join('.', 'conf', 'config')
-const DEFAULT_CONFIG_DIRS = [path.join('.', 'conf', 'config'), '/etc/deepstream/config', '/usr/local/etc/deepstream/config']
+const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js']
+const DEFAULT_CONFIG_DIRS = [
+  path.join('.', 'conf', 'config'), path.join('..', 'conf', 'config'),
+  '/etc/deepstream/config', '/usr/local/etc/deepstream/config',
+  '/usr/local/etc/deepstream/conf/config'
+]
+
+try {
+  require('nexeres') // eslint-disable-line
+  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', 'conf', 'config'))
+  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', '..', 'conf', 'config'))
+} catch (e) {
+  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[1], '..', 'conf', 'config'))
+  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[1], '..', '..', 'conf', 'config'))
+}
 
 /**
  * Reads and parse a general configuration file content.
@@ -32,8 +45,8 @@ exports.readAndParseFile = function (filePath, callback) {
       try {
         const config = parseFile(filePath, fileContent)
         return callback(null, config)
-      } catch (error) {
-        return callback(error)
+      } catch (parseError) {
+        return callback(parseError)
       }
     })
   } catch (error) {
@@ -54,14 +67,14 @@ exports.readAndParseFile = function (filePath, callback) {
  * @private
  * @returns {Object} config
  */
-function parseFile(filePath, fileContent) {
+function parseFile (filePath, fileContent) {
   let config = null
   const extension = path.extname(filePath)
 
   if (extension === '.yml' || extension === '.yaml') {
     config = yaml.safeLoad(replaceEnvironmentVariables(fileContent))
   } else if (extension === '.js') {
-    config = require(path.resolve(filePath))
+    config = require(path.resolve(filePath)) // eslint-disable-line
   } else if (extension === '.json') {
     config = JSON.parse(replaceEnvironmentVariables(fileContent))
   } else {
@@ -117,13 +130,15 @@ module.exports.loadConfig = function (filePath, /* test only */ args) {
 * Set the globalConfig prefix that will be used as the directory for ssl, permissions and auth
 * relative files within the config file
 */
-function setGlobalConfigDirectory(argv, filePath) {
+function setGlobalConfigDirectory (argv, filePath) {
   const customConfigPath =
       argv.c ||
       argv.config ||
       filePath ||
       process.env.DEEPSTREAM_CONFIG_DIRECTORY
-  const configPath = customConfigPath ? verifyCustomConfigPath(customConfigPath) : getDefaultConfigPath()
+  const configPath = customConfigPath
+    ? verifyCustomConfigPath(customConfigPath)
+    : getDefaultConfigPath()
   global.deepstreamConfDir = path.dirname(configPath)
   return configPath
 }
@@ -132,7 +147,7 @@ function setGlobalConfigDirectory(argv, filePath) {
 * Set the globalLib prefix that will be used as the directory for the logger
 * and plugins within the config file
 */
-function setGlobalLibDirectory(argv, config) {
+function setGlobalLibDirectory (argv, config) {
   const libDir =
       argv.l ||
       argv.libDir ||
@@ -152,15 +167,38 @@ function setGlobalLibDirectory(argv, config) {
  * @private
  * @returns {Object} extended config
  */
-function extendConfig(config, argv) {
+function extendConfig (config, argv) {
   const cliArgs = {}
   let key
 
   for (key in defaultOptions.get()) {
-    cliArgs[key] = typeof argv[key] === 'undefined' ? undefined : argv[key]
+    cliArgs[key] = argv[key]
+  }
+  if (argv.port) {
+    overrideEndpointOption('port', argv.port, 'websocket', config)
+  }
+  if (argv.host) {
+    overrideEndpointOption('host', argv.host, 'websocket', config)
+  }
+  if (argv.httpPort) {
+    overrideEndpointOption('port', argv.httpPort, 'http', config)
+  }
+  if (argv.httpHost) {
+    overrideEndpointOption('host', argv.httpHost, 'http', config)
   }
 
   return utils.merge({ plugins: {} }, defaultOptions.get(), config, cliArgs)
+}
+
+function overrideEndpointOption (key, value, endpoint, config) {
+  try {
+    config.connectionEndpoints[endpoint].options[key] = value
+  } catch (exception) {
+    throw new Error(
+      `${key} could not be set: ${endpoint} connection endpoint not found`,
+      exception.message
+    )
+  }
 }
 
 /**
@@ -171,7 +209,7 @@ function extendConfig(config, argv) {
  * @private
  * @returns {String} verified path
  */
-function verifyCustomConfigPath(configPath) {
+function verifyCustomConfigPath (configPath) {
   if (fileUtils.fileExistsSync(configPath)) {
     return configPath
   }
@@ -185,7 +223,7 @@ function verifyCustomConfigPath(configPath) {
  * @private
  * @returns {String} filePath
  */
-function getDefaultConfigPath() {
+function getDefaultConfigPath () {
   let filePath
   let i
   let k
@@ -217,8 +255,9 @@ function getDefaultConfigPath() {
  * @private
  * @returns {void}
  */
-function replaceEnvironmentVariables(fileContent) {
-  const environmentVariable = new RegExp(/\${([^\}]+)}/g)
+function replaceEnvironmentVariables (fileContent) {
+  const environmentVariable = new RegExp(/\${([^}]+)}/g)
+  // eslint-disable-next-line
   fileContent = fileContent.replace(environmentVariable, (a, b) => process.env[b] || b)
   return fileContent
 }

@@ -1,18 +1,81 @@
 # General
-serverName: UUID # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
-showLogo: true # Show the deepstream logo on startup (highly recommended)
-logLevel: INFO # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
-libDir: ../lib  # Directory where all plugins reside
+# Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
+serverName: UUID
+# Show the deepstream logo on startup (highly recommended)
+showLogo: true
+# Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
+logLevel: INFO
+# Directory where all plugins reside
+libDir: ../lib
 
 # Connectivity
-port: 6020 # port for the HTTP/websocket server
-host: 0.0.0.0 # host for the HTTP/websocket server
-urlPath: /deepstream # url path HTTP/WEBSOCKET connections connect to
+# webfacing URL under which this client is reachable. Used for loadbalancing / failover
+externalUrl: null
 
 # SSL Configuration
 sslKey: null
 sslCert: null
 sslCa: null
+
+# Connection Endpoint Configuration
+# currently at most one may be specified
+connectionEndpoints:
+  websocket:
+    name: uws
+    options:
+        # port for the websocket server
+        port: 6020
+        # host for the websocket server
+        host: 0.0.0.0
+        # url path websocket connections connect to
+        urlPath: /deepstream
+        # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
+        healthCheckPath: /health-check
+        # the amount of milliseconds between each ping/heartbeat message
+        heartbeatInterval: 30000
+        # the amount of milliseconds that writes to sockets are buffered
+        outgoingBufferTimeout: 0
+
+        # Security
+        # amount of time a connection can remain open while not being logged in
+        unauthenticatedClientTimeout: 180000
+        # invalid login attempts before the connection is cut
+        maxAuthAttempts: 3
+        # if true, the logs will contain the cleartext username / password of invalid login attempts
+        logInvalidAuthData: false
+        # maximum allowed size of an individual message in bytes
+        maxMessageSize: 1048576
+
+  http:
+    name: http
+    options:
+      # port for the http server
+      port: 8080
+      # host for the http server
+      host: 0.0.0.0
+      # allow 'authData' parameter in POST requests, if disabled only token and OPEN auth is
+      # possible
+      allowAuthData: true
+      # enable the authentication endpoint for requesting tokens/userData.
+      # note: a custom authentication handler is required for token generation
+      enableAuthEndpoint: false
+      # path for authentication requests
+      authPath: /auth
+      # path for POST requests
+      postPath: /
+      # path for GET requests
+      getPath: /
+      # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
+      healthCheckPath: /health-check
+
+      # -- CORS --
+      # if disabled, only requests with an 'Origin' header matching one specified under 'origins'
+      # below will be permitted and the 'Access-Control-Allow-Credentials' response header will be
+      # enabled
+      allowAllOrigins: true
+      # a list of allowed origins
+      origins:
+        - 'https://example.com'
 
 # Logger Configuration
 logger:
@@ -31,12 +94,6 @@ logger:
 
 # Plugin Configuration
 plugins:
-  # message:
-  #   name: redis
-  #   options:
-  #     host: localhost
-  #     port: 5672
-  #
   # cache:
   #   name: memcached
   #   options:
@@ -49,44 +106,68 @@ plugins:
   #     port: 28015
 
 # Storage options
-storageExclusion: null # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
-
-# Security
-maxAuthAttempts: 3 # invalid login attempts before the connection is cut
-logInvalidAuthData: true # if true, the logs will contain the cleartext username / password of invalid login attempts
-maxMessageSize: 1048576 # maximum allowed size of an individual message in bytes
+# a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
+storageExclusion: null
 
 #Authentication
 auth:
   type: none
 
-# # reading users and passwords from a file
+#   # reading users and passwords from a file
 #   type: file
 #   options:
-#     path: ./users.yml # Path to the user file. Can be json, js or yml
-#     hash: 'md5' # the name of a HMAC digest algorithm
-#     iterations: 100 # the number of times the algorithm should be applied
-#     keyLength: 32 # the length of the resulting key
+#     # Path to the user file. Can be json, js or yml
+#     path: ./users.yml
+#     # the name of a HMAC digest algorithm
+#     hash: 'md5'
+#     # the number of times the algorithm should be applied
+#     iterations: 100
+#     # the length of the resulting key
+#     keyLength: 32
 
-# # getting permissions from a http webhook
+#   # getting permissions from a http webhook
 #   type: http
 #   options:
-#     endpointUrl: https://someurl.com/validateLogin # a post request will be send to this url on every incoming connection
-#     permittedStatusCodes: [ 200 ] # any of these will be treated as access granted
-#     requestTimeout: 2000 # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+#     # a post request will be send to this url on every incoming connection
+#     endpointUrl: https://someurl.com/validateLogin
+#     # any of these will be treated as access granted
+#     permittedStatusCodes: [ 200 ]
+#     # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+#     requestTimeout: 2000
 
 # Permissioning
 permission:
-  type: config # Only config or custom permissionHandler at the moment
+  # Only config or custom permissionHandler at the moment
+  type: config
   options:
-    path: ./permissions.yml # Path to the permissionFile. Can be json, js or yml
-    maxRuleIterations: 3 # Amount of times nested cross-references will be loaded. Avoids endless loops
-    cacheEvacuationInterval: 60000 # PermissionResults are cached to increase performance. Lower number means more loading
+    # Path to the permissionFile. Can be json, js or yml
+    path: ./permissions.yml
+    # Amount of times nested cross-references will be loaded. Avoids endless loops
+    maxRuleIterations: 3
+    # PermissionResults are cached to increase performance. Lower number means more loading
+    cacheEvacuationInterval: 60000
 
 # Timeouts (in milliseconds)
-rpcProviderQueryTimeout: 1000
+# Timeout for client RPC acknownledgement
 rpcAckTimeout: 1000
+# Timeout for actual RPC provider response
 rpcTimeout: 10000
+# Maximum time permitted to fetch from cache
 cacheRetrievalTimeout: 1000
+# Maximum time permitted to fetch from storage
 storageRetrievalTimeout: 2000
+# Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
 dependencyInitialisationTimeout: 2000
+# The amount of time to wait for a provider to acknowledge or reject a listen request
+listenResponseTimeout: 500
+# The amount of time a lock can be reserved for before it is force released
+lockTimeout: 1000
+# The amount of time a lock request waits for before it defaults to false
+lockRequestTimeout: 1000
+# The amount of time a broadcast will wait (to allow broadcast coalescing). -1 means disabled.
+broadcastTimeout: 0
+# A list of prefixes that, when a record is updated via setData and it matches one of the prefixes
+# it will be permissioned and written directly to the cache and storage layers
+# storageHotPathPatterns:
+  # - analytics/
+  # - metrics/

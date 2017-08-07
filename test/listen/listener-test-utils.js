@@ -4,7 +4,7 @@
 let ListenerRegistry = require('../../src/listen/listener-registry'),
   msg = require('../test-helper/test-helper').msg,
   SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../../src/message/socket-wrapper'),
+  SocketWrapper = require('../mocks/socket-wrapper-mock'),
   LoggerMock = require('../mocks/logger-mock'),
   LocalMessageConnector = require('../mocks/local-message-connector'),
   ClusterRegistry = require('../../src/cluster/cluster-registry'),
@@ -13,7 +13,7 @@ let ListenerRegistry = require('../../src/listen/listener-registry'),
 
 let topic,
   subscribedTopics,
-  subscribers = [],
+  subscribers = new Set(),
   sendToSubscribersMock,
   providers,
   clients,
@@ -39,7 +39,7 @@ class ListenerTestUtils {
         return subscribers
       },
       hasLocalSubscribers() {
-        return subscribers.length > 0
+        return subscribers.size > 0
       },
       sendToSubscribers: sendToSubscribersMock
     }
@@ -52,7 +52,8 @@ class ListenerTestUtils {
       stateReconciliationTimeout: 10,
       messageConnector: new LocalMessageConnector(),
       logger: new LoggerMock(),
-      listenResponseTimeout: 30
+      listenResponseTimeout: 30,
+      shuffleListenProviders: false
     }
     options.clusterRegistry = new ClusterRegistry(options, {
       getConnectionCount() {}
@@ -144,13 +145,13 @@ class ListenerTestUtils {
   providerSubscribesTo(provider, subscriptionName) {
     listenerRegistry.onSubscriptionMade(subscriptionName, providers[provider], undefined)
     subscribedTopics.push(subscriptionName)
-    subscribers.push(providers[provider])
+    subscribers.add(providers[provider])
   }
 
   providerUnsubscribesTo(provider, subscriptionName, subscriptionCount) {
     listenerRegistry.onSubscriptionRemoved(subscriptionName, providers[provider], subscriptionCount || 0)
     subscribedTopics.splice(subscribedTopics.indexOf(subscriptionName), 1)
-    subscribers.splice(subscribers.indexOf(providers[provider]), 1)
+    subscribers.delete(providers[provider])
   }
 
   providerRecievedNoNewMessages(provider) {
@@ -227,8 +228,13 @@ class ListenerTestUtils {
 
   publishUpdateSentToSubscribers(subscription, state) {
     const msgString = msg(`${topic}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|${subscription}|${state ? C.TYPES.TRUE : C.TYPES.FALSE}+`)
+    const message = {
+      topic,
+      action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+      data: [ subscription, state ? C.TYPES.TRUE : C.TYPES.FALSE ]
+    }
     if (sendToSubscribersMock.calls.mostRecent()) {
-      expect(sendToSubscribersMock.calls.mostRecent().args).toEqual([subscription, msgString])
+      expect(sendToSubscribersMock.calls.mostRecent().args).toEqual([subscription, message])
     } else {
       expect('Send to subscribers never called').toEqual(0)
     }

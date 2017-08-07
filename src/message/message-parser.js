@@ -1,6 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
+const utils = require('../utils/utils')
 
 /**
  * Turns the ACTION:SHORTCODE constants map
@@ -10,16 +11,7 @@ const C = require('../constants/constants')
  *
  * @returns {Object} actions
 */
-const actions = (function getActions() {
-  const result = {}
-  let key
-
-  for (key in C.ACTIONS) {
-    result[C.ACTIONS[key]] = key
-  }
-
-  return result
-}())
+const actions = new Set(Object.keys(C.ACTIONS).map(key => C.ACTIONS[key]))
 
 /**
  * Parses ASCII control character seperated
@@ -28,7 +20,6 @@ const actions = (function getActions() {
  * @constructor
  */
 module.exports = class MessageParser {
-
   /**
    * Main interface method. Receives a raw message
    * string, containing one or more messages
@@ -48,14 +39,22 @@ module.exports = class MessageParser {
    *                    data: <array of strings>
    *                  }
    */
-  static parse(message) {
+  static parse (message) {
     const parsedMessages = []
     const rawMessages = message.split(C.MESSAGE_SEPERATOR)
 
     for (let i = 0; i < rawMessages.length; i++) {
-      if (rawMessages[i].length > 2) {
-        parsedMessages.push(this.parseMessage(rawMessages[i]))
+      if (rawMessages[i].length < 3) {
+        continue
       }
+
+      const parts = rawMessages[i].split(C.MESSAGE_PART_SEPERATOR)
+      parsedMessages.push(parts.length < 2 || !actions.has(parts[1]) ? null : {
+        raw: rawMessages[i],
+        topic: parts[0],
+        action: parts[1],
+        data: parts.splice(2)
+      })
     }
 
     return parsedMessages
@@ -70,7 +69,7 @@ module.exports = class MessageParser {
    * @public
    * @returns {Mixed} original value
    */
-  static convertTyped(value) {
+  static convertTyped (value) {
     const type = value.charAt(0)
 
     if (type === C.TYPES.STRING) {
@@ -78,11 +77,11 @@ module.exports = class MessageParser {
     }
 
     if (type === C.TYPES.OBJECT) {
-      try {
-        return JSON.parse(value.substr(1))
-      } catch (e) {
-        return e
+      const result = utils.parseJSON(value.substr(1))
+      if (result.value) {
+        return result.value
       }
+      return result.error
     }
 
     if (type === C.TYPES.NUMBER) {
@@ -106,35 +105,5 @@ module.exports = class MessageParser {
     }
 
     return new Error('Unknown type')
-  }
-
-  /**
-   * Parses an individual message (as oposed to a
-   * block of multiple messages as is processed by .parse())
-   *
-   * @param   {String} message
-   *
-   * @private
-   *
-   * @returns {Object} parsedMessage
-   */
-  static parseMessage(message) {
-    const parts = message.split(C.MESSAGE_PART_SEPERATOR)
-    const messageObject = {}
-
-    if (parts.length < 2) {
-      return null
-    }
-
-    if (actions[parts[1]] === undefined) {
-      return null
-    }
-
-    messageObject.raw = message
-    messageObject.topic = parts[0]
-    messageObject.action = parts[1]
-    messageObject.data = parts.splice(2)
-
-    return messageObject
   }
 }

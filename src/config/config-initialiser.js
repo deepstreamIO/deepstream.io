@@ -5,6 +5,8 @@ const fs = require('fs')
 const utils = require('../utils/utils')
 const C = require('../constants/constants')
 const fileUtils = require('./file-utils')
+const UWSConnectionEndpoint = require('../message/uws/connection-endpoint')
+const HTTPConnectionEndpoint = require('../message/http/connection-endpoint')
 
 const LOG_LEVEL_KEYS = Object.keys(C.LOG_LEVEL)
 
@@ -21,10 +23,20 @@ let commandLineArguments
 exports.initialise = function (config) {
   commandLineArguments = global.deepstreamCLI || {}
 
+  // The default plugins required by deepstream to run
+  config.pluginTypes = [
+    'messageConnector',
+    'storage',
+    'cache',
+    'authenticationHandler',
+    'permissionHandler'
+  ]
+
   handleUUIDProperty(config)
   handleSSLProperties(config)
   handleLogger(config)
   handlePlugins(config)
+  handleConnectionEndpoints(config)
   handleAuthStrategy(config)
   handlePermissionStrategy(config)
 
@@ -39,7 +51,7 @@ exports.initialise = function (config) {
  * @private
  * @returns {void}
  */
-function handleUUIDProperty(config) {
+function handleUUIDProperty (config) {
   if (config.serverName === 'UUID') {
     config.serverName = utils.getUid()
   }
@@ -54,7 +66,7 @@ function handleUUIDProperty(config) {
  * @private
  * @returns {void}
  */
-function handleSSLProperties(config) {
+function handleSSLProperties (config) {
   const sslFiles = ['sslKey', 'sslCert', 'sslCa']
   let key
   let resolvedFilePath
@@ -83,7 +95,7 @@ function handleSSLProperties(config) {
  * @private
  * @returns {void}
  */
-function handleLogger(config) {
+function handleLogger (config) {
   const configOptions = (config.logger || {}).options
   let Logger
   if (config.logger == null || config.logger.name === 'default') {
@@ -129,11 +141,11 @@ function handleLogger(config) {
  * @private
  * @returns {void}
  */
-function handlePlugins(config) {
+function handlePlugins (config) {
   if (config.plugins == null) {
     return
   }
-  // mappnig between the root properties which contains the plugin instance
+  // mapping between the root properties which contains the plugin instance
   // and the plugin configuration objects
   const connectorMap = {
     messageConnector: 'message',
@@ -147,19 +159,69 @@ function handlePlugins(config) {
     cache: 'cache',
     storage: 'storage'
   }
-  const plugins = {
-    messageConnector: config.plugins.message,
-    cache: config.plugins.cache,
-    storage: config.plugins.storage
-  }
+  const plugins = Object.assign({}, config.plugins, {
+    messageConnector: config.plugins.message
+  })
+  delete plugins.message
 
   for (const key in plugins) {
     const plugin = plugins[key]
-    if (plugin != null) {
+    if (plugin) {
+      if (key === 'messageConnector') {
+        throw new Error('unable to start deepstream with a message connector, these have been deprecated as part of deepstream.io v3.0')
+      }
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
       config[key] = new PluginConstructor(plugin.options)
+      if (config.pluginTypes.indexOf(key) === -1) {
+        config.pluginTypes.push(key)
+      }
     }
   }
+}
+
+/**
+ * Handle connection endpoint plugin config.
+ * The type is typically the protocol e.g. ws
+ * Plugins can be passed either as a __path__ property or as a __name__ property with
+ * a naming convetion: *{amqp: {name: 'my-plugin'}}* will be resolved to the
+ * npm module *deepstream.io-connection-my-plugin*
+ * Exception: the name *uws* will be resolved to deepstream.io's internal uWebSockets plugin
+ * Options to the constructor of the plugin can be passed as *options* object.
+ *
+ * CLI arguments will be considered.
+ *
+ * @param {Object} config deepstream configuration object
+ *
+ * @private
+ * @returns {void}
+ */
+function handleConnectionEndpoints (config) {
+  // delete any endpoints that have been set to `null`
+  for (const type in config.connectionEndpoints) {
+    if (!config.connectionEndpoints[type]) {
+      delete config.connectionEndpoints[type]
+    }
+  }
+  if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
+    throw new Error('No connection endpoints configured')
+  }
+  const connectionEndpoints = []
+  for (const connectionType in config.connectionEndpoints) {
+    const plugin = config.connectionEndpoints[connectionType]
+
+    plugin.options = plugin.options || {}
+
+    let PluginConstructor
+    if (plugin.name === 'uws') {
+      PluginConstructor = UWSConnectionEndpoint
+    } else if (plugin.name === 'http') {
+      PluginConstructor = HTTPConnectionEndpoint
+    } else {
+      PluginConstructor = resolvePluginClass(plugin, 'connection')
+    }
+    connectionEndpoints.push(new PluginConstructor(plugin.options))
+  }
+  config.connectionEndpoints = connectionEndpoints
 }
 
 /**
@@ -174,7 +236,7 @@ function handlePlugins(config) {
  * @private
  * @returns {Function} Instance return be the plugin constructor
  */
-function resolvePluginClass(plugin, type) {
+function resolvePluginClass (plugin, type) {
   // nexe needs *global.require* for __dynamic__ modules
   // but browserify and proxyquire can't handle *global.require*
   const req = global && global.require ? global.require : require
@@ -183,12 +245,13 @@ function resolvePluginClass(plugin, type) {
   if (plugin.path != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.path)
     pluginConstructor = req(requirePath)
+  } else if (plugin.name != null && type) {
+    requirePath = `deepstream.io-${type}-${plugin.name}`
+    requirePath = fileUtils.lookupLibRequirePath(requirePath)
+    pluginConstructor = req(requirePath)
   } else if (plugin.name != null) {
-    if (type != null) {
-      requirePath = `deepstream.io-${type}-${plugin.name}`
-      requirePath = fileUtils.lookupLibRequirePath(requirePath)
-      pluginConstructor = req(requirePath)
-    }
+    requirePath = fileUtils.lookupLibRequirePath(plugin.name)
+    pluginConstructor = req(requirePath)
   } else {
     throw new Error(`Neither name nor path property found for ${type}`)
   }
@@ -205,19 +268,15 @@ function resolvePluginClass(plugin, type) {
  * @private
  * @returns {void}
  */
-function handleAuthStrategy(config) {
+function handleAuthStrategy (config) {
   const authStrategies = {
-    none: require('../authentication/open-authentication-handler'),
-    file: require('../authentication/file-based-authentication-handler'),
-    http: require('../authentication/http-authentication-handler')
+    none: require('../authentication/open-authentication-handler'), // eslint-disable-line
+    file: require('../authentication/file-based-authentication-handler'), // eslint-disable-line
+    http: require('../authentication/http-authentication-handler') // eslint-disable-line
   }
 
   if (!config.auth) {
     throw new Error('No authentication type specified')
-  }
-
-  if (!authStrategies[config.auth.type]) {
-    throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
 
   if (commandLineArguments.disableAuth) {
@@ -225,11 +284,16 @@ function handleAuthStrategy(config) {
     config.auth.options = {}
   }
 
+  if (!authStrategies[config.auth.type] && !config.auth.path) {
+    throw new Error(`Unknown authentication type ${config.auth.type}`)
+  }
+
   if (config.auth.options && config.auth.options.path) {
     config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
   }
 
-  config.authenticationHandler = new (authStrategies[config.auth.type])(config.auth.options, config.logger)
+  config.authenticationHandler =
+    new (authStrategies[config.auth.type])(config.auth.options, config.logger)
 }
 
 /**
@@ -242,23 +306,23 @@ function handleAuthStrategy(config) {
  * @private
  * @returns {void}
  */
-function handlePermissionStrategy(config) {
+function handlePermissionStrategy (config) {
   const permissionStrategies = {
-    config: require('../permission/config-permission-handler'),
-    none: require('../permission/open-permission-handler')
+    config: require('../permission/config-permission-handler'), // eslint-disable-line
+    none: require('../permission/open-permission-handler') // eslint-disable-line
   }
 
   if (!config.permission) {
     throw new Error('No permission type specified')
   }
 
-  if (!permissionStrategies[config.permission.type]) {
-    throw new Error(`Unknown permission type ${config.permission.type}`)
-  }
-
   if (commandLineArguments.disablePermissions) {
     config.permission.type = 'none'
     config.permission.options = {}
+  }
+
+  if (!permissionStrategies[config.permission.type] && !config.permission.path) {
+    throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 
   if (config.permission.options && config.permission.options.path) {

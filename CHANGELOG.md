@@ -1,3 +1,200 @@
+## [3.0.0] - 2017.07.26
+
+### Features
+
+#### [HTTP API](https://deepstreamhub.com/docs/http/v1/)
+Enabling clients to create, read, update and delete records, emit events, request RPCS
+and read presence using a JSON bulk request/response format via HTTP.
+- The HTTP API is enabled by default on PORT 8080 and can be configured in the
+connectionEndpoints -> http section of deepstream's `config.yml`
+- To disable the HTTP API set the above config to null
+
+#### [PHP Client Support](https://deepstreamhub.com/docs/client-php/DeepstreamClient/)
+The above HTTP API makes deepstream.io compatible with the deepstream PHP client
+
+#### Multi Endpoint Architecture
+The deepstream 3.0 release lays the groundwork for multiple combinable endpoints/protocols,
+e.g. GraphQL or Binary to be used together. It also introduces a new endpoint type enabling
+developers to write their own. Please note - at the moment it is not possible to run multiple subscription
+based endpoints (e.g. websocket) simultaneously. 
+
+#### Message Connector Discontinuation
+To address the scalability issues associated with the message connector interface's coarse topics
+deepstream will move to a build-in, high performance p2p/small world network based clustering approach, available
+as an enterprise plugin. The current message connector support is discontinued.
+
+### Miscellaneous
+- Moved end-to-end tests into this repository from `deepstream.io-client-js`.
+- Replaced `javascript-state-machine` dependency with custom state machine.
+
+### Fixes
+- Improved handling of invalid record names.
+
+## [2.4.0] - 2017.07.01
+
+## Features
+
+- Added new CLI command, including:
+
+  + deepstream daemon
+  This command forks deepstream and monitors it for crashes, allowing it to restart automatically to avoid downtime
+
+  + deepstream service add
+  This command allows you to create an init.d or systemd script automatically and add it to your system.
+  ```bash
+  sudo deepstream service --help
+  Usage: service [options] [add|remove|start|stop|status]
+  Add, remove, start or stop deepstream as a service to your operating system
+  ```
+
+- Added brew cask support
+
+You can now install easily install deepstream on your mac using `brew cask install deepstream` driven by config files within `/user/local/etc/deepstream/conf`
+
+## Fixes
+
+- Fix issue where certain invalid paths would return 'Invalid Type' on the server.
+- Fix issue in request/response where selecting a remote server as not done uniformly.
+
+## [2.3.7] - 2017.06.20
+
+## Fixes
+
+- Fix issue where using both `.0.` and `[0]` within a json path resulted in inserting into an array. However, when using other SDKs such as Java they would be treated as an Object key or array index.
+- Fix issue where nested array access/manipulation didn't work via json paths.
+
+## Compatability Issue
+
+Due to the nature of this fix, it may result in compatability issues with applications that used json paths incorrectly ( using `.0.` intead of `[0]` ). Please ensure you change those before upgrading.
+
+## [2.3.6] - 2017.06.12
+
+## Fixes
+
+- Fix for issue [#703](https://github.com/deepstreamIO/deepstream.io/issues/703)
+  where record deletions were not being propogated correctly within a cluster.
+- Fixes config-loading issue present in the binary release of 2.3.5.
+
+## [2.3.5] - 2017.06.12
+
+## Fixes
+
+- Hardcode v3.0.0-rc1 dependency on javascript-state-machine, as v3.0.1 causes deepstream.io startup to fail
+
+## [2.3.4] - 2017.06.02
+
+## Fixes
+
+- Hot path needs to store values in the correct format
+
+## [2.3.3] - 2017.06.02
+
+### Fixes
+
+- Binary config files have the correct latest structure
+- Fix an issue where heavy concurrent writes on the same record fail
+
+## [2.3.2] - 2017.05.31
+
+### Fixes
+
+- Fixing a connection data regression where it wasn't formatted the same as pre 2.3.0
+
+## [2.3.1] - 2017.05.30
+
+### Fixes
+
+- Correctly merging config options from `config.yml` file with the default options
+
+## [2.3.0] - 2017.05.29
+
+### Features
+
+- Adds "storageHotPathPatterns" config option.
+- Adds support for `setData()`: upsert-style record updates without requiring that a client is
+  subscribed to the record. This uses a new 'CU' (Create and Update) message. The `setData()` API
+  is up to 10x faster than subscribing, setting, then discarding a record.
+- Support for connection endpoint plugins.
+
+### Enhancements
+
+- Significant performance improvements stemming from message batching.
+
+### Miscellaneous
+
+- Moved uws into a connection endpoint plugin.
+- Explicit state-machine that initializes and closes dependencies in a well-defined order.
+
+## [2.2.2] - 2017.05.03
+
+### Enhancements
+- Adds support for custom authentication and permissioning plugins.
+- Adds support for generic plugins.
+
+### Fixes
+- Added check to ensure subscriptions are not removed from distributed state registry prematurely.
+
+## [2.2.1] - 2017.04.24
+
+### Enhancements
+
+- Unsolicited RPCs now get a `INVALID_RPC_CORRELATION_ID` message
+
+### Fixes
+
+- RPC lifecycles have been improved and don't throw exceptions on response after a timeout by [ronag](ronag)
+- Correct options now being passed into the `RuleCache`, courtesy of [ralphtheninja](ralphtheninja)
+
+## [2.2.0] - 2017.04.08
+
+### Enhancements
+
+- Records now can be set with a version -1, which ignores version conflicts by [datasage](datasage)
+- Delete events are now propagated in the correct order by [datasage](datasage)
+- You can now request the HEAD of a record to retrieve just its version number by [datasage](datasage)
+- Providers for listeners are now by default selected randomly instead of in order of subscription
+- Ensure record updates are not scalar values before trying to save them in cache by [datasage](datasage)
+- Long lived RPC requests now use dynamic lookups for providers rather than building the Set upfront by [ronag]{ronag}
+- Huge optimization to subscription registry, where the time for registering a subscriber has been reduced from n^2 to O(n log n)
+
+### Miscellaneous
+
+- Deleting grunt since everything is script based
+
+
+## [2.1.6] - 2017.03.29
+
+### Miscellaneous
+
+- Due to uws releases being pulled from NPM, we're now using uws from a git repo
+- Created a separate repo [uws-dependency](https://github.com/deepstreamIO/uws-dependency) with binaries.
+
+## [2.1.4 - 2.1.5]
+
+- Due to problems with build resulting from uws unpublishing, these two npm packages
+  have been unpublished (noop)
+
+## [2.1.3] - 2017.02.25
+
+### Bug Fixes
+
+- Unsolicited message in Listening when all clients unsubscribe [#531]
+- Handle Non text based websocket frame [#538]
+- Aligning binary config with node [#488]
+- Event subscription data mishandled in Valve [#510]
+- Logging after logger is destroyed [#527]
+- Deepstream crash on empty users file [#512]
+- Logging error object instead of name in connection error [#420]
+
+### Enhancements
+
+- maxRuleIterations must be 1 or higher [#498]
+- Ignore sender in subscriptionRegistry if messagebus [#473]
+- Removing dead config options [#599]
+- getAlternativeProvider in RPC Handler deals with more edge cases [#566]
+- Update UWS build version to 0.12
+- Packages built against node 6.10
+
 ## [2.1.2] - 2016.12.28
 
 ### Bug fixes
@@ -46,7 +243,7 @@
 - Introduces the configuration option `broadcastTimeout` to `config.yml` to allow coalescing of
   broadcasts. This option can be used to improve broadcast message latency such
   as events, data-sync and presence
-  For example, the perfomance of broadcasting 100 events to 1000 subscribers
+  For example, the performance of broadcasting 100 events to 1000 subscribers
   was improved by a factor of 20
 - Adds client heartbeats, along with configuration option`heartbeatInterval` in `config.yml`.
   If a connected client fails to send a heartbeat within this timeout, it will be
@@ -66,7 +263,7 @@
 - Changed format of RPC request ACK messages to be more consistent with the
   rest of the specs
   [#408](https://github.com/deepstreamIO/deepstream.io/issues/408)
-- We removed support for TCP and engine.io, providing huge perfomance gains by
+- We removed support for TCP and engine.io, providing huge performance gains by
   integrating tightly with native uWS
 - Support for webRTC has been removed
 - You can no longer set custom data transforms directly on deepstream

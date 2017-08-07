@@ -3,7 +3,7 @@
 
 const path = require('path')
 const pj = path.join
-const proxyquire = require('proxyquire')
+const proxyquire = require('proxyquire').noPreserveCache()
 const mkdirp = require('mkdirp')
 const Emitter = require('events').EventEmitter
 const Stream = require('stream')

@@ -15,11 +15,11 @@ const EventEmitter = require('events').EventEmitter
  *
  * @constructor
  */
-const DependencyInitialiser = function (options, name) {
+const DependencyInitialiser = function (deepstream, options, dependency, name) {
   this.isReady = false
 
   this._options = options
-  this._dependency = options[name]
+  this._dependency = dependency
   this._name = name
   this._timeout = null
 
@@ -31,10 +31,17 @@ const DependencyInitialiser = function (options, name) {
     throw error
   }
 
+  if (this._dependency.setDeepstream instanceof Function) {
+    this._dependency.setDeepstream(deepstream)
+  }
+
   if (this._dependency.isReady) {
     this._onReady()
   } else {
-    this._timeout = setTimeout(this._onTimeout.bind(this), this._options.dependencyInitialisationTimeout)
+    this._timeout = setTimeout(
+      this._onTimeout.bind(this),
+      this._options.dependencyInitialisationTimeout
+    )
     this._dependency.once('ready', this._onReady.bind(this))
     this._dependency.on('error', this._onError.bind(this))
 
@@ -67,8 +74,11 @@ DependencyInitialiser.prototype._onReady = function () {
     clearTimeout(this._timeout)
   }
 
-  const dependencyType = this._dependency.type ? `: ${this._dependency.type}` : ''
-  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `${this._name} ready${dependencyType}`)
+  this._dependency.type = this._dependency.description || this._dependency.type
+  if (this._name !== 'messageConnector') {
+    const dependencyType = this._dependency.type ? `: ${this._dependency.type}` : ': no dependency description provided'
+    this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `${this._name} ready${dependencyType}`)
+  }
   process.nextTick(this._emitReady.bind(this))
 }
 

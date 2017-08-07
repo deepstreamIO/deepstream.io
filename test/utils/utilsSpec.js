@@ -120,7 +120,8 @@ describe('isOfType', () => {
     expect(utils.isOfType(true, 'number')).toBe(false)
     expect(utils.isOfType(true, 'boolean')).toBe(true)
     expect(utils.isOfType({}, 'object')).toBe(true)
-    expect(utils.isOfType(null, 'object')).toBe(true)
+    expect(utils.isOfType(null, 'null')).toBe(true)
+    expect(utils.isOfType(null, 'object')).toBe(false)
     expect(utils.isOfType([], 'object')).toBe(true)
   })
 
@@ -289,5 +290,19 @@ describe('merges recoursively', () => {
         zebra: 9
       }
     })
+  })
+})
+
+describe('json parse', () => {
+  it('parses valid json and returns value', () => {
+    const result = utils.parseJSON('{"a":2}')
+    expect(result.error).toBeUndefined()
+    expect(result.value).toEqual({ a: 2 })
+  })
+
+  it('parses invalid json and returns error', () => {
+    const result = utils.parseJSON('{"a:2}')
+    expect(result.value).toBeUndefined()
+    expect(result.error).not.toBeNull()
   })
 })

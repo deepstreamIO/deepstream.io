@@ -1,11 +1,13 @@
 'use strict'
 
 const C = require('../constants/constants')
-const JsonPath = require('./json-path')
-const RecordRequest = require('./record-request')
+const jsonPath = require('./json-path')
+const recordRequest = require('./record-request')
 const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
+const utils = require('../utils/utils')
 
+const writeConfig = JSON.stringify({ writeSuccess: true })
 
 /**
  * This class manages one or more simultanious updates to the data of a record.
@@ -16,19 +18,23 @@ const messageBuilder = require('../message/message-builder')
  * build an app that allows many users to collaboratively edit the same dataset, sooner or later
  * two of them will do so at the same time and clash.
  *
- * Every deepstream record therefor has a version number that's incremented with every change. Every client
- * sends this version number along with the changed data. If no other update has been received for the same version
- * in the meantime, the update is accepted and not much more happens.
+ * Every deepstream record therefor has a version number that's incremented with every change.
+ * Every client sends this version number along with the changed data. If no other update has
+ * been received for the same version in the meantime, the update is accepted and not much more
+ * happens.
  *
- * If, however, another clients was able to send its updated version before this update was processed, the second
- * (later) update for the same version number is rejected and the issuing client is notified of the change.
+ * If, however, another clients was able to send its updated version before this update was
+ * processed, the second (later) update for the same version number is rejected and the issuing
+ * client is notified of the change.
  *
- * The client is then expected to merge its changes on top of the new version and re-issue the update message.
+ * The client is then expected to merge its changes on top of the new version and re-issue the
+ * update message.
  *
  * Please note: For performance reasons, succesful updates are not explicitly acknowledged.
  *
- * It's this class' responsibility to manage this. It will be created when an update arrives and only exist as
- * long as it takes to apply it and make sure that no subsequent updates for the same version are requested.
+ * It's this class' responsibility to manage this. It will be created when an update arrives and
+ * only exist as long as it takes to apply it and make sure that no subsequent updates for the
+ * same version are requested.
  *
  * Once the update is applied it will notify the record-handler to broadcast the
  * update and delete the instance of this class.
@@ -55,6 +61,11 @@ const RecordTransition = function (name, options, recordHandler) {
   this._cacheResponses = 0
   this._lastVersion = null
   this._lastError = null
+
+  this._onCacheResponse = this._onCacheResponse.bind(this)
+  this._onStorageResponse = this._onStorageResponse.bind(this)
+  this._onRecord = this._onRecord.bind(this)
+  this._onFatalError = this._onFatalError.bind(this)
 }
 
 /**
@@ -66,7 +77,7 @@ const RecordTransition = function (name, options, recordHandler) {
  * @returns {Boolean} hasVersion
  */
 RecordTransition.prototype.hasVersion = function (version) {
-  return version <= this._lastVersion
+  return version !== -1 && version <= this._lastVersion
 }
 
 /**
@@ -85,9 +96,9 @@ RecordTransition.prototype.sendVersionExists = function (step) {
   const config = step.message.data[4]
 
   if (this._record) {
-    const data = config === undefined ?
-		[this._name, this._record._v, JSON.stringify(this._record._d)] :
-		[this._name, this._record._v, JSON.stringify(this._record._d), config]
+    const data = config === undefined
+    ? [this._name, this._record._v, JSON.stringify(this._record._d)]
+    : [this._name, this._record._v, JSON.stringify(this._record._d), config]
     socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, data)
 
     const msg = `${socketWrapper.user} tried to update record ${this._name} to version ${version} but it already was ${this._record._v}`
@@ -116,59 +127,30 @@ RecordTransition.prototype.sendVersionExists = function (step) {
  * @public
  * @returns {void}
  */
-RecordTransition.prototype.add = function (socketWrapper, version, message) {
+RecordTransition.prototype.add = function (socketWrapper, version, message, upsert) {
   const update = {
-      message,
-      version,
-      sender: socketWrapper
-    }
-  let data
+    message,
+    version,
+    sender: socketWrapper
+  }
+
+  const valid = this._applyConfigAndData(socketWrapper, message, update)
+  if (!valid) {
+    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+    return
+  }
 
   if (message.action === C.ACTIONS.UPDATE) {
-    if (message.data.length !== 4 && message.data.length !== 3) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
-    try {
-      this._applyConfig(update, message)
-    } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 3 ])
-      return
-    }
-
-    try {
-      data = JSON.parse(message.data[2])
-    } catch (e) {
+    if (!utils.isOfType(update.data, 'object') && !utils.isOfType(update.data, 'array')) {
       socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
 
     update.isPatch = false
-    update.data = data
   }
 
   if (message.action === C.ACTIONS.PATCH) {
-    if (message.data.length !== 5 && message.data.length !== 4) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
-    try {
-      this._applyConfig(update, message)
-    } catch (e) {
-      update.sender.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_CONFIG_DATA, message.data[ 4 ])
-      return
-    }
-
     update.isPatch = true
-    update.data = messageParser.convertTyped(message.data[3])
-
-    if (update.data instanceof Error) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, `${update.data.toString()}:${message.data[3]}`)
-      return
-    }
-
     update.path = message.data[2]
   }
 
@@ -177,21 +159,57 @@ RecordTransition.prototype.add = function (socketWrapper, version, message) {
     return
   }
 
-  this._lastVersion = version
+  if (version !== -1) {
+    this._lastVersion = version
+  }
   this._cacheResponses++
-
   this._steps.push(update)
+
   if (this._recordRequest === null) {
-    this._recordRequest = new RecordRequest(
+    this._recordRequest = true
+    recordRequest(
       this._name,
       this._options,
       socketWrapper,
-      this._onRecord.bind(this),
-      this._onFatalError.bind(this)
+      record => this._onRecord(record, upsert),
+      this._onFatalError,
+      this
     )
   } else if (this._steps.length === 1 && this._cacheResponses === 1) {
     this._next()
   }
+}
+
+/**
+ * Validates and assigns config and data to the step object. Because
+ * JSON parsing is expensive we want to push these to the lowest level
+ * of execution.
+ *
+ * @param  {SocketWrapper} socketWrapper the socket wrapper that sent the
+ *                                       request
+ * @param  {Object} message the message the socketwrapper sent
+ * @param  {Object} step the step object for this write
+ * @return {Boolean} a flag indicating whether or not the apply was
+ *                     successful
+ */
+RecordTransition.prototype._applyConfigAndData = function (socketWrapper, message, step) {
+  const config = RecordTransition._getRecordConfig(message)
+  this._applyConfig(config, step)
+
+  if (message.action === C.ACTIONS.UPDATE) {
+    const res = utils.parseJSON(message.data[2])
+    if (res.error) {
+      return false
+    }
+    step.data = res.value
+    return true
+  }
+
+  step.data = messageParser.convertTyped(message.data[3])
+  if (step.data instanceof Error) {
+    return false
+  }
+  return true
 }
 
 /**
@@ -225,26 +243,17 @@ RecordTransition.prototype.destroy = function (errorMessage) {
  * Tries to apply config given from a socketWrapper on an
  * incoming message
  *
- * @param 	{Object} step the current step of the transition
- * @param 	{String} message
+ * @param {Object} step the current step of the transition
+ * @param {String} message
  *
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._applyConfig = function (step, message) {
-  if ((message.action === C.ACTIONS.PATCH && message.data.length === 4) ||
-    (message.action === C.ACTIONS.UPDATE && message.data.length === 3)) {
+RecordTransition.prototype._applyConfig = function (config, step) {
+  if (!config) {
     return
   }
 
-  let config
-  if (message.action === C.ACTIONS.PATCH && message.data.length === 5) {
-    config = message.data[4]
-  } else if (message.action === C.ACTIONS.UPDATE && message.data.length === 4) {
-    config = message.data[3]
-  }
-
-  config = JSON.parse(config)
   if (config.writeSuccess) {
     if (this._pendingUpdates[step.sender.uuid] === undefined) {
       this._pendingUpdates[step.sender.uuid] = {
@@ -259,6 +268,25 @@ RecordTransition.prototype._applyConfig = function (step, message) {
 }
 
 /**
+ * Gets the config from an incoming Record message
+ *
+ * @param   {String} message
+ *
+ * @private
+ * @throws {SyntaxError } If config not valid
+ * @returns null or the given config
+ */
+RecordTransition._getRecordConfig = function (message) {
+  const config = message.data[message.data.length - 1]
+  if (config === writeConfig) {
+    return { writeSuccess: true }
+  } else if (config === null) {
+    return {}
+  }
+  return null
+}
+
+/**
  * Callback for successfully retrieved records
  *
  * @param   {Object} record
@@ -266,14 +294,18 @@ RecordTransition.prototype._applyConfig = function (step, message) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onRecord = function (record) {
+RecordTransition.prototype._onRecord = function (record, upsert) {
   if (record === null) {
-    this._onFatalError(`Received update for non-existant record ${this._name}`)
+    if (!upsert) {
+      this._onFatalError(`Received update for non-existant record ${this._name}`)
+      return
+    }
+    this._record = { _v: 0, _d: {} }
   } else {
     this._record = record
-    this._flushVersionExists()
-    this._next()
   }
+  this._flushVersionExists()
+  this._next()
 }
 
 /**
@@ -300,6 +332,12 @@ RecordTransition.prototype._next = function () {
   }
 
   this._currentStep = this._steps.shift()
+  if (this._currentStep.version === -1) {
+    const message = this._currentStep.message
+    const version = this._record._v + 1
+    this._currentStep.version = message.data[1] = version
+  }
+
   if (this._record._v !== this._currentStep.version - 1) {
     this._cacheResponses--
     this.sendVersionExists(this._currentStep)
@@ -310,7 +348,7 @@ RecordTransition.prototype._next = function () {
   this._record._v = this._currentStep.version
 
   if (this._currentStep.isPatch) {
-    (new JsonPath(this._currentStep.path)).setValue(this._record._d, this._currentStep.data)
+    jsonPath.setValue(this._record._d, this._currentStep.path, this._currentStep.data)
   } else {
     this._record._d = this._currentStep.data
   }
@@ -326,9 +364,17 @@ RecordTransition.prototype._next = function () {
    */
   if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._name)) {
     this._storageResponses++
-    this._options.storage.set(this._name, this._record, this._onStorageResponse.bind(this, this._currentStep))
+    this._options.storage.set(
+      this._name,
+      this._record,
+      this._onStorageResponse
+    )
   }
-  this._options.cache.set(this._name, this._record, this._onCacheResponse.bind(this, this._currentStep))
+  this._options.cache.set(
+    this._name,
+    this._record,
+    this._onCacheResponse
+  )
 }
 
 /**
@@ -355,17 +401,24 @@ RecordTransition.prototype._flushVersionExists = function () {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
+RecordTransition.prototype._onCacheResponse = function (error) {
   this._cacheResponses--
   this._writeError = this._writeError || error
   if (error) {
     this._onFatalError(error)
   } else if (this.isDestroyed === false) {
-    this._recordHandler._$broadcastUpdate(this._name, this._currentStep.message, this._currentStep.sender)
+    this._recordHandler._$broadcastUpdate(
+      this._name,
+      this._currentStep.message,
+      false,
+      this._currentStep.sender
+    )
     this._next()
-  } else if (this._cacheResponses === 0 
-      && this._storageResponses === 0
-      && this._steps.length === 0) {
+  } else if (
+      this._cacheResponses === 0 &&
+      this._storageResponses === 0 &&
+      this._steps.length === 0
+    ) {
     this.destroy()
   }
 }
@@ -378,16 +431,16 @@ RecordTransition.prototype._onCacheResponse = function (currentStep, error) {
  * @private
  * @returns {void}
  */
-RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
+RecordTransition.prototype._onStorageResponse = function (error) {
   this._storageResponses--
   this._writeError = this._writeError || error
   if (error) {
     this._onFatalError(error)
-  } else if (this.isDestroyed) {
-    this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, error)
-  } else if (this._cacheResponses === 0 
-      && this._storageResponses === 0
-      && this._steps.length === 0) {
+  } else if (
+      this._cacheResponses === 0 &&
+      this._storageResponses === 0 &&
+      this._steps.length === 0
+    ) {
     this.destroy()
   }
 }
@@ -395,14 +448,14 @@ RecordTransition.prototype._onStorageResponse = function (currentStep, error) {
 /**
  * Sends all write acknowledgement messages at the end of a transition
  *
- * @param   {String} error any error message that occurred while storing the 
+ * @param   {String} error any error message that occurred while storing the
  *                         record data
  *
  * @private
  * @returns {void}
  */
 RecordTransition.prototype._sendWriteAcknowledgements = function (errorMessage) {
-  errorMessage = errorMessage === undefined ? null : errorMessage
+  errorMessage = errorMessage === undefined ? null : errorMessage // eslint-disable-line
   for (const uid in this._pendingUpdates) {
     const update = this._pendingUpdates[uid]
 
@@ -410,7 +463,7 @@ RecordTransition.prototype._sendWriteAcknowledgements = function (errorMessage) 
       this._name,
       update.versions,
       messageBuilder.typed(errorMessage)
-    ])
+    ], true)
   }
 }
 
@@ -432,7 +485,11 @@ RecordTransition.prototype._onFatalError = function (errorMessage) {
 
   for (let i = 0; i < this._steps.length; i++) {
     if (this._steps[i].sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._steps[i].sender.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, this._steps[i].version)
+      this._steps[i].sender.sendError(
+        C.TOPIC.RECORD,
+        C.EVENT.RECORD_UPDATE_ERROR,
+        this._steps[i].version
+      )
     }
   }
 

@@ -1,4 +1,5 @@
 'use strict'
+/* eslint-disable max-len */
 
 const C = require('../constants/constants')
 const RpcProxy = require('./rpc-proxy')
@@ -21,7 +22,7 @@ module.exports = class Rpc {
   *
   * @constructor
   */
-  constructor(rpcHandler, requestor, provider, options, message) {
+  constructor (rpcHandler, requestor, provider, options, message) {
     this._rpcHandler = rpcHandler
     this._rpcName = message.data[0]
     this._correlationId = message.data[1]
@@ -30,7 +31,6 @@ module.exports = class Rpc {
     this._options = options
     this._message = message
     this._isAcknowledged = false
-    this.isComplete = false
 
     this._setProvider(provider)
   }
@@ -53,13 +53,7 @@ module.exports = class Rpc {
   * @private
   * @returns {void}
   */
-  handle(message) {
-        // This guard is for backwards compatability. Having multiple responses or recieving an ack
-        // prior to a response should not actually occur
-    if (this.isComplete === true) {
-      return
-    }
-
+  handle (message) {
     if (message.data[1] !== this._correlationId && message.data[2] !== this._correlationId) {
       return
     }
@@ -80,15 +74,11 @@ module.exports = class Rpc {
   * @public
   * @returns {void}
   */
-  destroy() {
+  destroy () {
     clearTimeout(this._ackTimeout)
     clearTimeout(this._responseTimeout)
 
-    this.isComplete = true
-    this._requestor = null
-    this._provider = null
-    this._options = null
-    this._message = null
+    this._rpcHandler._$onDestroy(this._correlationId)
   }
 
   /**
@@ -106,7 +96,7 @@ module.exports = class Rpc {
   * @private
   * @returns {void}
   */
-  _setProvider(provider) {
+  _setProvider (provider) {
     clearTimeout(this._ackTimeout)
     clearTimeout(this._responseTimeout)
 
@@ -126,7 +116,7 @@ module.exports = class Rpc {
   * @private
   * @returns {void}
   */
-  _handleAck(message) {
+  _handleAck (message) {
     if (this._isAcknowledged === true) {
       this._provider.sendError(C.TOPIC.RPC, C.EVENT.MULTIPLE_ACK, [this._rpcName, this._correlationId])
       return
@@ -147,8 +137,7 @@ module.exports = class Rpc {
   * @private
   * @returns {void}
   */
-  _handleResponse(message) {
-    clearTimeout(this._responseTimeout)
+  _handleResponse (message) {
     this._send(this._requestor, message, this._provider)
     this.destroy()
   }
@@ -164,7 +153,7 @@ module.exports = class Rpc {
   * @private
   * @returns {void}
   */
-  _reroute() {
+  _reroute () {
     const alternativeProvider = this._rpcHandler.getAlternativeProvider(this._rpcName, this._correlationId)
 
     if (alternativeProvider) {
@@ -182,7 +171,7 @@ module.exports = class Rpc {
   * @private
   * @returns {void}
   */
-  _onAckTimeout() {
+  _onAckTimeout () {
     this._requestor.sendError(C.TOPIC.RPC, C.EVENT.ACK_TIMEOUT, [this._rpcName, this._correlationId])
     this.destroy()
   }
@@ -194,7 +183,7 @@ module.exports = class Rpc {
   * @private
   * @returns {void}
   */
-  _onResponseTimeout() {
+  _onResponseTimeout () {
     this._requestor.sendError(C.TOPIC.RPC, C.EVENT.RESPONSE_TIMEOUT, [this._rpcName, this._correlationId])
     this.destroy()
   }
@@ -204,12 +193,11 @@ module.exports = class Rpc {
   *
   * @param   {SocketWrapper} receiver    the SocketWrapper that will receive the message. Can be a RpcProxy
   * @param   {Object}        message     deepstream message object
-  * @param   {SocketWrapper} sender      the SocketWrapper that send the message. Will only be used to extract metaData
   *
   * @private
   * @returns {void}
   */
-  _send(receiver, message, sender) {
+  _send (receiver, message) { // eslint-disable-line
     if (receiver instanceof RpcProxy) {
       receiver.send(message)
       return

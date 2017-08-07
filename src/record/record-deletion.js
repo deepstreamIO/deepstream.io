@@ -1,6 +1,5 @@
 'use strict'
 
-const messageBuilder = require('../message/message-builder')
 const C = require('../constants/constants')
 
 /**
@@ -23,12 +22,24 @@ const RecordDeletion = function (options, socketWrapper, message, successCallbac
   this._completed = 0
   this._isDestroyed = false
 
-  this._cacheTimeout = setTimeout(this._handleError.bind(this, 'cache timeout'), this._options.cacheRetrievalTimeout)
-  this._options.cache.delete(this._recordName, this._checkIfDone.bind(this, this._cacheTimeout))
+  this._cacheTimeout = setTimeout(
+    this._handleError.bind(this, 'cache timeout'),
+    this._options.cacheRetrievalTimeout
+  )
+  this._options.cache.delete(
+    this._recordName,
+    this._checkIfDone.bind(this, this._cacheTimeout)
+  )
 
   if (!this._options.storageExclusion || !this._options.storageExclusion.test(this._recordName)) {
-    this._storageTimeout = setTimeout(this._handleError.bind(this, 'storage timeout'), this._options.storageRetrievalTimeout)
-    this._options.storage.delete(this._recordName, this._checkIfDone.bind(this, this._storageTimeout))
+    this._storageTimeout = setTimeout(
+      this._handleError.bind(this, 'storage timeout'),
+      this._options.storageRetrievalTimeout
+    )
+    this._options.storage.delete(
+      this._recordName,
+      this._checkIfDone.bind(this, this._storageTimeout)
+    )
   } else {
     this._checkIfDone(null)
   }
@@ -74,11 +85,10 @@ RecordDeletion.prototype._done = function () {
   const ackMessage = {
     topic: C.TOPIC.RECORD,
     action: C.ACTIONS.ACK,
-    data: [C.ACTIONS.DELETE, this._recordName],
-    raw: messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.ACK, [C.ACTIONS.DELETE, this._recordName])
+    data: [C.ACTIONS.DELETE, this._recordName]
   }
 
-  this._socketWrapper.send(ackMessage.raw)
+  this._socketWrapper.sendMessage(ackMessage.topic, ackMessage.action, ackMessage.data)
   this._successCallback(this._recordName, ackMessage, this._socketWrapper)
   this._destroy()
 }

@@ -3,7 +3,6 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
-const messageBuilder = require('../message/message-builder')
 
 /**
  * This class handles incoming and outgoing messages in relation
@@ -18,14 +17,11 @@ const messageBuilder = require('../message/message-builder')
  */
 module.exports = class PresenceHandler {
 
-  constructor(options) {
+  constructor (options) {
     this._options = options
     this._localClients = new Map()
-    this._connectionEndpoint = options.connectionEndpoint
-    this._connectionEndpoint.on('client-connected', this._handleJoin.bind(this))
-    this._connectionEndpoint.on('client-disconnected', this._handleLeave.bind(this))
 
-    this._presenceRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
+    this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
 
     this._connectedClients = new DistributedStateRegistry(C.TOPIC.ONLINE_USERS, options)
     this._connectedClients.on('add', this._onClientAdded.bind(this))
@@ -43,11 +39,11 @@ module.exports = class PresenceHandler {
   * @public
   * @returns {void}
   */
-  handle(socketWrapper, message) {
+  handle (socketWrapper, message) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
-      this._presenceRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
+      this._subscriptionRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._presenceRegistry.unsubscribe(C.TOPIC.PRESENCE, socketWrapper)
+      this._subscriptionRegistry.unsubscribe(C.TOPIC.PRESENCE, socketWrapper)
     } else if (message.action === C.ACTIONS.QUERY) {
       this._handleQuery(socketWrapper)
     } else {
@@ -67,7 +63,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleJoin(socketWrapper) {
+  handleJoin (socketWrapper) {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === undefined) {
       this._localClients.set(socketWrapper.user, 1)
@@ -86,7 +82,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleLeave(socketWrapper) {
+  handleLeave (socketWrapper) {
     let currentCount = this._localClients.get(socketWrapper.user)
     if (currentCount === 1) {
       this._localClients.delete(socketWrapper.user)
@@ -106,7 +102,7 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleQuery(socketWrapper) {
+  _handleQuery (socketWrapper) {
     const clients = this._connectedClients.getAll()
     const index = clients.indexOf(socketWrapper.user)
     if (index !== -1) {
@@ -124,9 +120,9 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _onClientAdded(username) {
-    const addMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [username])
-    this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, addMsg)
+  _onClientAdded (username) {
+    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: [username] }
+    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, message)
   }
 
   /**
@@ -138,8 +134,8 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _onClientRemoved(username) {
-    const removeMsg = messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [username])
-    this._presenceRegistry.sendToSubscribers(C.TOPIC.PRESENCE, removeMsg)
+  _onClientRemoved (username) {
+    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: [username] }
+    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, message)
   }
 }

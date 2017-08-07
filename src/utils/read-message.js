@@ -2,7 +2,7 @@
 
 const C = require('../constants/constants')
 
-function readMessage(message) {
+function readMessage (message) {
   const TOPIC = C.TOPIC
   const ACTIONS = C.ACTIONS
   return {

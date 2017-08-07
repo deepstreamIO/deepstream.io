@@ -1,3 +1,4 @@
+sudo: true
 language: node_js
 
 before_install:
@@ -16,20 +17,29 @@ compiler:
   - clang
 
 node_js:
-  - "6.9"
-  - "5"
+  - "8"
+  - "6.11"
   - "4"
+
+env:
+  - DEFAULT_DELAY: 50
 
 matrix:
   include:
-    - node_js: "6.9.1"
+    - node_js: "6.11"
       os: osx
 
 script:
-  - npm run coverage
+  # This fails on node 4
+  - if [[ "$TRAVIS_NODE_VERSION" == "6.11"* ]]; then
+      npm run lint;
+    fi
+  - npm run reporter
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      sh scripts/run-e2e.sh;
+    fi
   # This has to happen here and not in before_deploy to be put in travis cache
-  - chmod 555 scripts/package.sh
-  - ./scripts/package.sh
+  - bash ./scripts/package.sh
 
 cache:
   directories:
@@ -48,7 +58,6 @@ deploy:
     upload-dir: $TRAVIS_REPO_SLUG
     on:
       branch: master
-
   - provider: releases
     skip_cleanup: true
     api_key:
@@ -63,6 +72,9 @@ deploy:
     on:
       tags: true
 
+services:
+  - redis-server
+
 addons:
   apt:
     sources:
@@ -70,3 +82,6 @@ addons:
     packages:
     - g++-4.8
     - rpm
+
+notifications:
+  email: false

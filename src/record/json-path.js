@@ -1,6 +1,6 @@
 'use strict'
 
-const SPLIT_REG_EXP = /[\.\[\]]/g
+const SPLIT_REG_EXP = /[[\]]/g
 
 /**
  * This class allows to set or get specific
@@ -11,36 +11,24 @@ const SPLIT_REG_EXP = /[\.\[\]]/g
  *
  * @constructor
  */
-const JsonPath = function (path) {
-  this._path = path
-  this._tokens = []
-  this._tokenize()
-}
+function setValue (root, path, value) {
+  const tokens = tokenize(path)
+  let node = root
 
-/**
- * Sets the value of the path. If the path (or parts
- * of it) doesn't exist yet, it will be created
- *
- * @param {Object} node
- * @param {Mixed} value
- *
- * @public
- * @returns {void}
- */
-JsonPath.prototype.setValue = function (node, value) {
-  let i = 0
+  let i
+  for (i = 0; i < tokens.length - 1; i++) {
+    const token = tokens[i]
 
-  for (i = 0; i < this._tokens.length - 1; i++) {
-    if (node[this._tokens[i]] !== undefined) {
-      node = node[this._tokens[i]]
-    } else if (this._tokens[i + 1] && !isNaN(this._tokens[i + 1])) {
-      node = node[this._tokens[i]] = []
+    if (node[token] !== undefined && typeof node[token] === 'object') {
+      node = node[token]
+    } else if (typeof tokens[i + 1] === 'number') {
+      node = node[token] = []
     } else {
-      node = node[this._tokens[i]] = {}
+      node = node[token] = {}
     }
   }
 
-  node[this._tokens[i]] = value
+  node[tokens[i]] = value
 }
 
 /**
@@ -50,25 +38,33 @@ JsonPath.prototype.setValue = function (node, value) {
  * @private
  * @returns {void}
  */
-JsonPath.prototype._tokenize = function () {
-  const parts = this._path.split(SPLIT_REG_EXP)
-  let part
-  let i
+function tokenize (path) {
+  const tokens = []
 
-  for (i = 0; i < parts.length; i++) {
-    part = parts[i].trim()
+  const parts = path.split('.')
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i].trim()
 
     if (part.length === 0) {
       continue
     }
 
-    if (!isNaN(part)) {
-      this._tokens.push(parseInt(part, 10))
-      continue
-    }
+    const arrayIndexes = part.split(SPLIT_REG_EXP)
 
-    this._tokens.push(part)
+    tokens.push(arrayIndexes[0])
+
+    for (let j = 1; j < arrayIndexes.length; j++) {
+      if (arrayIndexes[j].length === 0) {
+        continue
+      }
+
+      tokens.push(Number(arrayIndexes[j]))
+    }
   }
+  return tokens
 }
 
-module.exports = JsonPath
+module.exports = {
+  setValue
+}

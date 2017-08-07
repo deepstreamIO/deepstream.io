@@ -7,7 +7,7 @@ const FUNCTION_REGEXP = /([\w]+(?:['"`]\])?)\s*\(/g
 const USER_FUNCTION_REGEXP = /[^\w$]function[^\w$]|=>/g
 const NEW_REGEXP = /(^|[^\w$])new[^\w$]/
 const OLD_DATA_REGEXP = /(^|[^\w~])oldData[^\w~]/
-const DATA_REGEXP = /(^|[^\w\.~])data($|[^\w~])/
+const DATA_REGEXP = /(^|[^\w.~])data($|[^\w~])/
 
 const SUPPORTED_FUNCTIONS = [
   '_',
@@ -69,7 +69,8 @@ exports.validate = function (rule, section, type) {
   }
 
   try {
-    new Function(rule) // jshint ignore:line
+    // eslint-disable-next-line
+    new Function(rule)
   } catch (e) {
     return e.toString()
   }

@@ -1,77 +1,110 @@
 'use strict'
-
+/* eslint-disable global-require */
 const utils = require('./utils/utils')
 const C = require('./constants/constants')
 
 exports.get = function () {
   const options = {
     /*
-    * General
-    */
+     * General
+     */
     serverName: utils.getUid(),
     showLogo: true,
     logLevel: C.LOG_LEVEL.INFO,
 
     /*
-    * Connectivity
-    */
-    port: 6020,
-    host: '0.0.0.0',
-    urlPath: '/deepstream',
-    healthCheckPath: '/health-check',
+     * Connectivity
+     */
     externalUrl: null,
-    timeBetweenSendingQueuedPackages: 1,
-    maxMessagesPerPacket: 1000,
-    heartbeatInterval: 30000,
 
     /*
-    * SSL Configuration
-    */
+     * SSL Configuration
+     */
     sslKey: null,
     sslCert: null,
     sslCa: null,
 
     /*
-    * Authentication
-    */
+     * Authentication
+     */
     auth: {
       type: 'none'
     },
 
     /*
-    * Permissioning
-    */
+     * Permissioning
+     */
     permission: {
       type: 'none'
     },
 
     /*
-    * Default Plugins
-    */
+     * Connection Endpoints
+     */
+    connectionEndpoints: {
+      websocket: {
+        name: 'uws',
+        options: {
+          port: 6020,
+          host: '0.0.0.0',
+          urlPath: '/deepstream',
+          healthCheckPath: '/health-check',
+          heartbeatInterval: 30000,
+          outgoingBufferTimeout: 0,
+          noDelay: true,
+
+          /*
+           * Security
+           */
+          unauthenticatedClientTimeout: 180000,
+          maxAuthAttempts: 3,
+          logInvalidAuthData: false,
+          maxMessageSize: 1048576
+        }
+      },
+      http: {
+        name: 'http',
+        options: {
+          port: 8080,
+          host: '0.0.0.0',
+          allowAuthData: true,
+          enableAuthEndpoint: false,
+          authPath: '/auth',
+          postPath: '/',
+          getPath: '/',
+          healthCheckPath: '/health-check',
+          logInvalidAuthData: false,
+          allowAllOrigins: true,
+          origins: []
+        }
+      }
+    },
+
+    /*
+     * Default Plugins
+     */
     messageConnector: require('./default-plugins/noop-message-connector'),
     cache: require('./default-plugins/local-cache'),
     storage: require('./default-plugins/noop-storage'),
 
     /*
-    * Storage options
-    */
+     * Storage options
+     */
     storageExclusion: null,
 
-    /*
-    * Security
-    */
-    unauthenticatedClientTimeout: 180000,
-    maxAuthAttempts: 3,
-    logInvalidAuthData: true,
-    maxMessageSize: 1048576,
+    /**
+     * Listening
+     */
+    shuffleListenProviders: true,
 
     /*
-    * Timeouts
-    */
+     * Timeouts
+     */
     rpcAckTimeout: 1000,
     rpcTimeout: 10000,
     cacheRetrievalTimeout: 1000,
     storageRetrievalTimeout: 2000,
+    storageHotPathPatterns: [],
     dependencyInitialisationTimeout: 2000,
     stateReconciliationTimeout: 500,
     clusterKeepAliveInterval: 5000,

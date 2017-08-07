@@ -1,5 +1,5 @@
 'use strict'
-
+/* eslint-disable consistent-return */
 const OPEN = 'open'
 const UNDEFINED = 'undefined'
 const LOADING = 'loading'
@@ -8,9 +8,9 @@ const STRING = 'string'
 const EOL = require('os').EOL
 
 const C = require('../constants/constants')
-const RecordRequest = require('../record/record-request')
+const recordRequest = require('../record/record-request')
 const messageParser = require('../message/message-parser')
-const JsonPath = require('../record/json-path')
+const jsonPath = require('../record/json-path')
 
 /**
  * This class handles the evaluation of a single rule. It creates
@@ -40,7 +40,9 @@ const RuleApplication = function (params) {
   this._isDestroyed = false
   this._runScheduled = false
   this._maxIterationCount = this._params.permissionOptions.maxRuleIterations
+  this._run = this._run.bind(this)
   this._crossReferenceFn = this._crossReference.bind(this)
+  this._createNewRecordRequest = this._createNewRecordRequest.bind(this)
   this._pathVars = this._getPathVars()
   this._user = this._getUser()
   this._recordData = {}
@@ -122,12 +124,12 @@ RuleApplication.prototype._onRuleError = function (error) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._onLoadComplete = function (recordName, data) {
+RuleApplication.prototype._onLoadComplete = function (data, recordName) {
   this._recordData[recordName] = data
 
   if (this._isReady()) {
     this._runScheduled = true
-    process.nextTick(this._run.bind(this))
+    process.nextTick(this._run)
   }
 }
 
@@ -141,7 +143,7 @@ RuleApplication.prototype._onLoadComplete = function (recordName, data) {
  * @private
  * @returns {void}
  */
-RuleApplication.prototype._onLoadError = function (recordName, error) {
+RuleApplication.prototype._onLoadError = function (error, message, recordName) {
   this._recordData[recordName] = ERROR
   const errorMsg = `failed to load record ${this._params.name} for permissioning:${error.toString()}`
   this._params.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, errorMsg)
@@ -192,7 +194,7 @@ RuleApplication.prototype._getCurrentData = function () {
   const msg = this._params.message
   let data
 
-  if (msg.topic === C.TOPIC.EVENT) {
+  if (msg.topic === C.TOPIC.EVENT && msg.data[1]) {
     data = messageParser.convertTyped(msg.data[1])
   } else if (msg.topic === C.TOPIC.RPC) {
     data = messageParser.convertTyped(msg.data[2])
@@ -245,7 +247,6 @@ RuleApplication.prototype._getRecordPatchData = function (msg) {
 
   const currentData = this._recordData[this._params.name]
   const newData = messageParser.convertTyped(msg.data[3])
-  let jsonPath
   let data
 
   if (newData instanceof Error) {
@@ -257,13 +258,11 @@ RuleApplication.prototype._getRecordPatchData = function (msg) {
   }
 
   if (typeof currentData !== UNDEFINED && currentData !== LOADING) {
-    jsonPath = new JsonPath(msg.data[2])
     data = JSON.parse(JSON.stringify(currentData._d))
-    jsonPath.setValue(data, newData)
+    jsonPath.setValue(data, msg.data[2], newData)
     return data
-  } else {
-    this._loadRecord(this._params.name)
   }
+  this._loadRecord(this._params.name)
 }
 
 /**
@@ -281,9 +280,8 @@ RuleApplication.prototype._getOldData = function () {
     return null
   } else if (this._recordData[this._params.name]) {
     return this._recordData[this._params.name]._d
-  } else {
-    this._loadRecord(this._params.name)
   }
+  this._loadRecord(this._params.name)
 }
 
 /**
@@ -381,7 +379,7 @@ RuleApplication.prototype._loadRecord = function (recordName) {
 
   this._params.recordHandler.runWhenRecordStable(
     recordName,
-    this._createNewRecordRequest.bind(this)
+    this._createNewRecordRequest
   )
 }
 
@@ -396,12 +394,13 @@ RuleApplication.prototype._loadRecord = function (recordName) {
  * @returns {void}
  */
 RuleApplication.prototype._createNewRecordRequest = function (recordName) {
-  new RecordRequest(
+  recordRequest(
     recordName,
     this._params.options,
     null,
-    this._onLoadComplete.bind(this, recordName),
-    this._onLoadError.bind(this, recordName)
+    this._onLoadComplete,
+    this._onLoadError,
+    this
   )
 }
 
@@ -433,6 +432,5 @@ RuleApplication.prototype._crossReference = function (recordName) {
     return this._recordData[recordName]._d
   }
 }
-
 
 module.exports = RuleApplication
