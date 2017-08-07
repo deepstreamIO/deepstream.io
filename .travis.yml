@@ -17,6 +17,7 @@ compiler:
   - clang
 
 node_js:
+  - "8"
   - "6.11"
 
 env:
