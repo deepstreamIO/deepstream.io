@@ -60,7 +60,6 @@ module.exports = class RecordHandler {
         start < Number.MAX_SAFE_INTEGER &&
         (!this._storageExclusion || !this._storageExclusion.test(data[0]))
       ) {
-        // TODO: Remove storage exclusion
         this._storage.set(data, (error, [ data, socket ]) => {
           if (error) {
             socket.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_UPDATE_ERROR, [
