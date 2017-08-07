@@ -46,7 +46,7 @@ module.exports = class MessageConnector {
   }
 
   subscribe (name, callback) {
-    this._options.messageConnector.subscribe(`${this._options.serverName}/${name}`, (message) => {
+    this._options.messageConnector.subscribe(name, (message) => {
       const serverName = message.__originServer
       delete message.__originServer
       callback(message, serverName)
