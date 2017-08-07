@@ -1,16 +1,18 @@
 'use strict'
 
-const ClusterRegistry = require('../cluster/cluster-registry')
-const StateRegistry = require('../cluster/distributed-state-registry')
+const LockRegistry = require('./cluster-unique-state-provider')
+const ClusterRegistry = require('./cluster-registry')
+const StateRegistry = require('./distributed-state-registry')
 
 module.exports = class MessageConnector {
 
   constructor (options) {
     this._options = options
     this._isReady = true
-    this._options.message = this
+    this._cluster = this
     this._stateRegistries = new Map()
-    this._options.clusterRegistry = new ClusterRegistry(this._options)
+    this._options.clusterRegistry = new ClusterRegistry(this._options, this)
+    this._options.uniqueRegistry = new LockRegistry(this._options, this)
     this._bus = this._options.messageConnector
   }
 

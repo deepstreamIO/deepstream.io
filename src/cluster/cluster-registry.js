@@ -23,18 +23,19 @@ module.exports = class ClusterRegistry extends EventEmitter {
    *
    * @constructor
    */
-  constructor (options) {
+  constructor (options, cluster) {
     super()
     this._options = options
     this._inCluster = false
     this._nodes = {}
+    this._cluster = cluster
 
     this._leaderScore = Math.random()
     this.setMaxListeners(12)
 
     this._onMessageFn = this._onMessage.bind(this)
     this._leaveClusterFn = this.leaveCluster.bind(this)
-    this._options.message.subscribeBroadcast(C.TOPIC.CLUSTER, this._onMessageFn)
+    this._cluster.subscribeBroadcast(C.TOPIC.CLUSTER, this._onMessageFn)
     this._publishStatus()
     this._publishInterval = setInterval(
       this._publishStatus.bind(this),

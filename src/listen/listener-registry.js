@@ -38,7 +38,7 @@ module.exports = class ListenerRegistry {
     this._clientRegistry = clientRegistry
     this._uniqueLockName = `${topic}_LISTEN_LOCK`
 
-    this._uniqueStateProvider = this._options.uniqueRegistry
+    this._lockRegistry = this._options.uniqueRegistry
     this._message = this._options.message
 
     this._patterns = {}
@@ -400,13 +400,13 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    this._uniqueStateProvider.get(this._getUniqueLockName(subscriptionName), (success) => {
+    this._lockRegistry.get(this._getUniqueLockName(subscriptionName), (success) => {
       if (!success) {
         return
       }
 
       if (this.hasActiveProvider(subscriptionName)) {
-        this._uniqueStateProvider.release(this._getUniqueLockName(subscriptionName))
+        this._lockRegistry.release(this._getUniqueLockName(subscriptionName))
         return
       }
 
@@ -448,7 +448,7 @@ module.exports = class ListenerRegistry {
         `finished for ${this._topic}:${subscriptionName}`
       )
       delete this._leadingListen[subscriptionName]
-      this._uniqueStateProvider.release(this._getUniqueLockName(subscriptionName))
+      this._lockRegistry.release(this._getUniqueLockName(subscriptionName))
     } else {
       const nextServerName = this._leadingListen[subscriptionName].shift()
       this._options.logger.log(

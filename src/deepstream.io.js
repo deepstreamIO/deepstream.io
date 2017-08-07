@@ -16,9 +16,8 @@ const jsYamlLoader = require('./config/js-yaml-loader')
 const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
-const MessageConnector = require('./default-plugins/message-connector')
+const MessageConnector = require('./cluster/cluster-connector')
 const DependencyInitialiser = require('./utils/dependency-initialiser')
-const UniqueRegistry = require('./cluster/cluster-unique-state-provider')
 const C = require('./constants/constants')
 const pkg = require('../package.json')
 
@@ -315,7 +314,6 @@ Deepstream.prototype._serviceInit = function () {
   this._messageDistributor = new MessageDistributor(this._options)
 
   this._options.message = new MessageConnector(this._options)
-  this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.message)
 
   this._eventHandler = new EventHandler(this._options)
   this._messageDistributor.registerForTopic(
@@ -419,8 +417,6 @@ Deepstream.prototype._connectionEndpointShutdown = function () {
  * @returns {void}
  */
 Deepstream.prototype._serviceShutdown = function () {
-  this._options.clusterRegistry.leaveCluster()
-
   process.nextTick(() => this._transition('services-closed'))
 }
 

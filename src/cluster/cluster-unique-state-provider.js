@@ -30,14 +30,14 @@ module.exports = class UniqueRegistry {
   *
   * @constructor
   */
-  constructor (options, clusterRegistry) {
+  constructor (options, cluster) {
     this._options = options
-    this._clusterRegistry = clusterRegistry
+    this._cluster = cluster
     this._locks = {}
     this._timeouts = {}
     this._responseEventEmitter = new EventEmitter()
     this._onPrivateMessageFn = this._onPrivateMessage.bind(this)
-    this._options.message.subscribe(C.TOPIC.LEADER_PRIVATE, this._onPrivateMessageFn)
+    this._cluster.subscribe(C.TOPIC.LEADER_PRIVATE, this._onPrivateMessageFn)
   }
 
   /**
@@ -51,7 +51,7 @@ module.exports = class UniqueRegistry {
   * @returns {void}
   */
   get (name, callback) {
-    const leaderServerName = this._clusterRegistry.getCurrentLeader()
+    const leaderServerName = this._cluster.getCurrentLeader()
 
     if (this._options.serverName === leaderServerName) {
       callback(this._getLock(name))
@@ -71,7 +71,7 @@ module.exports = class UniqueRegistry {
   * @returns {void}
   */
   release (name) {
-    const leaderServerName = this._clusterRegistry.getCurrentLeader()
+    const leaderServerName = this._cluster.getCurrentLeader()
 
     if (this._options.serverName === leaderServerName) {
       this._releaseLock(name)
@@ -99,7 +99,7 @@ module.exports = class UniqueRegistry {
 
     this._responseEventEmitter.once(name, callback)
 
-    this._options.message.sendDirect(leaderServerName, C.TOPIC.LEADER_PRIVATE, {
+    this._cluster.sendDirect(leaderServerName, C.TOPIC.LEADER_PRIVATE, {
       topic: C.TOPIC.LEADER_PRIVATE,
       action: C.ACTIONS.LOCK_REQUEST,
       data: [{
@@ -119,7 +119,7 @@ module.exports = class UniqueRegistry {
   * @returns {void}
   */
   _releaseRemoteLock (name, leaderServerName) {
-    this._options.message.sendDirect(leaderServerName, C.TOPIC.LEADER_PRIVATE, {
+    this._cluster.sendDirect(leaderServerName, C.TOPIC.LEADER_PRIVATE, {
       topic:  C.TOPIC.LEADER_PRIVATE,
       action: C.ACTIONS.LOCK_RELEASE,
       data: [{
@@ -154,7 +154,7 @@ module.exports = class UniqueRegistry {
       return
     }
 
-    if (this._clusterRegistry.isLeader() === false) {
+    if (this._cluster.isLeader() === false) {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.INVALID_LEADER_REQUEST,
@@ -167,7 +167,7 @@ module.exports = class UniqueRegistry {
     if (message.action === C.ACTIONS.LOCK_REQUEST) {
       this._handleRemoteLockRequest(message.data[0], remoteServerName)
     } else if (message.action === C.ACTIONS.LOCK_RELEASE) {
-      this._handleRemoteLockRelease(message.data[0], remoteServerName)
+      this._releaseLock(message.data[0].name, remoteServerName)
     }
   }
 
@@ -202,20 +202,6 @@ module.exports = class UniqueRegistry {
     clearTimeout(this._timeouts[data.name])
     delete this._timeouts[data.name]
     this._responseEventEmitter.emit(data.name, data.result)
-  }
-
-  /**
-  * Called when a remote node notifies the cluster that a lock has been removed
-  *
-  * @param  {Object} data messageData
-  *
-  * @private
-  * @returns {void}
-  */
-  _handleRemoteLockRelease (data) {
-    clearTimeout(this._timeouts[data.name])
-    delete this._timeouts[data.name]
-    delete this._locks[data.name]
   }
 
   /**
