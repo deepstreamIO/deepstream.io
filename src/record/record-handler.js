@@ -58,7 +58,11 @@ module.exports = class RecordHandler {
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
       const [ start ] = splitRev(data[1])
-      if (start > 0 && start < Number.MAX_SAFE_INTEGER && (!this._storageExclusion || !this._storageExclusion.test(data[0]))) {
+      if (
+        start > 0 &&
+        start < Number.MAX_SAFE_INTEGER &&
+        (!this._storageExclusion || !this._storageExclusion.test(data[0]))
+      ) {
         // TODO: Remove storage exclusion
         this._storage.set(data, (error, [ data, socket ]) => {
           if (error) {
