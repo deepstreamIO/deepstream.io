@@ -146,7 +146,7 @@ class SubscriptionRegistry {
       msg += C.MESSAGE_SEPERATOR
     }
 
-    if (subscription.shared.size === 0) {
+    if (subscription.shared.length === 0) {
       this._pending.push(subscription)
     }
 
