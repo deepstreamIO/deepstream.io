@@ -45,7 +45,7 @@ class SubscriptionRegistry {
     this._subscriptionListener = subscriptionListener
   }
 
-  subscribe (name, socket) {
+  subscribe (name, socket, silent) {
     const subscription = this._subscriptions.get(name) || {
       shared: '',
       senders: new Map(),
@@ -79,11 +79,15 @@ class SubscriptionRegistry {
       subscription.sockets.size
     )
 
-    this._options.logger.log(
-      C.LOG_LEVEL.DEBUG,
-      this._constants.SUBSCRIBE,
-      `for ${this._topic}:${name} by ${socket.user}`
-    )
+    if (silent) {
+      this._options.logger.log(
+        C.LOG_LEVEL.DEBUG,
+        this._constants.SUBSCRIBE,
+        `for ${this._topic}:${name} by ${socket.user}`
+      )
+    }
+
+    return subscription.sockets.size
   }
 
   unsubscribe (name, socket, silent) {
@@ -127,6 +131,8 @@ class SubscriptionRegistry {
         `for ${this._topic}:${name} by ${socket.user}`
       )
     }
+
+    return subscription.sockets.size
   }
 
   sendToSubscribers (name, msg, socket) {
