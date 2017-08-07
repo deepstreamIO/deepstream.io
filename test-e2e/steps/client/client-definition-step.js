@@ -31,6 +31,10 @@ module.exports = function () {
     })
   })
 
+  this.Then(/^a small amount of time passes$/, (done) => {
+    setTimeout(done, 500)
+  })
+
   this.Then(/^(.+) received? no errors$/, (clientExpression) => {
     clientHandler.getClients(clientExpression).forEach((client) => {
       clientHandler.assertNoErrors(client.name)

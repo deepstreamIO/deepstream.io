@@ -17,7 +17,7 @@ module.exports = function () {
   })
 
   this.registerHandler('BeforeFeature', (features, callback) => {
-    global.cluster = new Cluster([6001, 6002, 6003], false)
+    global.cluster = new Cluster([6001, 6002, 6003], process.env.LOG || false)
     global.cluster.on('ready', callback)
   })
 
