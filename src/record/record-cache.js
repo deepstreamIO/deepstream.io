@@ -19,6 +19,7 @@ module.exports = class RecordCache {
       this._space += node.value.size
       node.value.size = size
       node.value.record = record
+      this._list.unshiftNode(node)
     } else {
       this._list.unshift({ name, size, record, refs: 0 })
       this._map.set(name, this._list.head)
