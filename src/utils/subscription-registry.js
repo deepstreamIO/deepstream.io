@@ -10,7 +10,10 @@ class SubscriptionRegistry {
     this._subscriptions = new Map()
     this._options = options
     this._topic = topic
-    this._subscriptionListener = null
+    this._subscriptionListener = {
+      onSubscriptionAdded: () => {},
+      onSubscriptionRemoved: () => {}
+    }
     this._constants = {
       MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
       SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
@@ -70,13 +73,11 @@ class SubscriptionRegistry {
     }
     names.add(name)
 
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionAdded(
-        name,
-        socket,
-        subscription.sockets.size
-      )
-    }
+    this._subscriptionListener.onSubscriptionAdded(
+      name,
+      socket,
+      subscription.sockets.size
+    )
 
     this._options.logger.log(
       C.LOG_LEVEL.DEBUG,
@@ -113,13 +114,11 @@ class SubscriptionRegistry {
       socket.removeListener('close', this._onSocketClose)
     }
 
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionRemoved(
-        name,
-        socket,
-        subscription.sockets.size
-      )
-    }
+    this._subscriptionListener.onSubscriptionRemoved(
+      name,
+      socket,
+      subscription.sockets.size
+    )
 
     if (!silent) {
       this._options.logger.log(
