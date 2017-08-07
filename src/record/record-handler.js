@@ -73,7 +73,7 @@ module.exports = class RecordHandler {
 
   // [ name ]
   _refresh ([ name ]) {
-    const prevRecord = this._cache.peek(name)
+    const prevRecord = this._cache.get(name)
 
     if (prevRecord === null) {
       return
@@ -93,7 +93,7 @@ module.exports = class RecordHandler {
 
   // [ name, version, body ]
   _broadcast (nextRecord, sender) {
-    const prevRecord = this._cache.peek(nextRecord[0])
+    const prevRecord = this._cache.get(nextRecord[0])
 
     if (prevRecord && isSameOrNewer(prevRecord[1], nextRecord[1])) {
       return
