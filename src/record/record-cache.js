@@ -13,11 +13,12 @@ module.exports = class RecordCache {
   }
 
   set (name, version, message) {
+    let node = this._map.get(name)
+
     const size = name.length + version.length + message.length + 32
 
     this._space -= size
 
-    let node = this._map.get(name)
     if (node) {
       this._space += node.value.size
       node.value.size = size
@@ -33,8 +34,6 @@ module.exports = class RecordCache {
       this._list.unshiftNode(node)
       this._map.set(name, node)
     }
-
-    this._prune()
   }
 
   lock (name) {
