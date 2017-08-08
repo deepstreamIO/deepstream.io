@@ -1,7 +1,6 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
-const messageBuilder = require('../message/message-builder')
 
 const EventHandler = function (options) {
   this._options = options
@@ -41,11 +40,7 @@ EventHandler.prototype._trigger = function (socket, message) {
 
   this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.TRIGGER_EVENT, message.raw)
 
-  this._subscriptionRegistry.sendToSubscribers(
-    message.data[0],
-    messageBuilder.getMsg(C.TOPIC.EVENT, C.ACTIONS.EVENT, message.data),
-    socket
-  )
+  this._subscriptionRegistry.sendToSubscribers(message.data[0], message.raw, socket)
 }
 
 module.exports = EventHandler

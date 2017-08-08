@@ -17,45 +17,49 @@ module.exports = class RecordHandler {
 
   handle (socket, message) {
     const data = message && message.data
+
     if (!data || !data[0]) {
       socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
-    } else if (message.action === C.ACTIONS.READ) {
-      const count = this._subscriptionRegistry.subscribe(data[0], socket)
-      const record = count === 1
-        ? this._cache.lock(data[0])
-        : this._cache.get(data[0])
+      return
+    }
+
+    const [ name ] = data
+
+    if (message.action === C.ACTIONS.READ) {
+      const count = this._subscriptionRegistry.subscribe(name, socket)
+      const record = count === 1 ? this._cache.lock(name) : this._cache.get(name)
       if (record) {
         socket.sendNative(record.message)
       } else if (
         count === 1 &&
-        !this._listenerRegistry.hasName(data[0]) &&
-        !this._storageExclusion.test(data[0])
+        !this._listenerRegistry.hasName(name) &&
+        !this._storageExclusion.test(name)
       ) {
-        this._storage.get(data[0], (error, record) => {
+        this._storage.get(name, (error, record) => {
           if (error) {
             const message = `error while reading ${record[0]} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
           } else {
-            const rawMessage = messageBuilder.getMsg(C.TOPIC.RECORD, C.ACTIONS.UPDATE, record)
-            this._broadcast(record[0], record[1], rawMessage)
+            this._broadcast(record)
           }
         })
       }
     } else if (message.action === C.ACTIONS.UPDATE) {
-      const [ start ] = splitRev(data[1])
-      if (start > 0 && start < Number.MAX_SAFE_INTEGER && !this._storageExclusion.test(data[0])) {
-        this._storage.set(data, (error, record) => {
+      const record = data
+      const [ start ] = splitRev(record[1])
+      if (start > 0 && start < Number.MAX_SAFE_INTEGER && !this._storageExclusion.test(record[0])) {
+        this._storage.set(record, (error, record) => {
           if (error) {
             const message = `error while writing ${record[0]} to storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDAtE_ERROR, message)
           }
-        }, data)
+        }, record)
       }
-      this._broadcast(data[0], data[1], message.raw, socket)
+      this._broadcast(record, socket)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      const count = this._subscriptionRegistry.unsubscribe(data[0], socket)
+      const count = this._subscriptionRegistry.unsubscribe(name, socket)
       if (count === 0) {
-        this._cache.unlock(data[0])
+        this._cache.unlock(name)
       }
     } else if (
       message.action === C.ACTIONS.LISTEN ||
@@ -66,22 +70,30 @@ module.exports = class RecordHandler {
       this._listenerRegistry.handle(socket, message)
     } else {
       socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
-        ...(message ? message.data : []),
+        ...data,
         `unknown action ${message.action}`
       ])
     }
   }
 
-  _broadcast (name, version, message, sender) {
-    const prevRecord = this._cache.get(name)
+  _broadcast (nextRecord, sender) {
+    const prevRecord = this._cache.get(nextRecord[0])
 
-    if (prevRecord && isSameOrNewer(prevRecord.version, version)) {
+    if (prevRecord && isSameOrNewer(prevRecord.version, nextRecord[1])) {
       return
     }
 
-    this._cache.set(name, version, message)
+    const rawMessage = messageBuilder.buildMsg5(
+      C.TOPIC.RECORD,
+      C.ACTIONS.UPDATE,
+      nextRecord[0],
+      nextRecord[1],
+      nextRecord[2]
+    )
 
-    this._subscriptionRegistry.sendToSubscribers(name, message, sender)
+    this._cache.set(nextRecord[0], nextRecord[1], rawMessage)
+
+    this._subscriptionRegistry.sendToSubscribers(nextRecord[0], rawMessage, sender)
   }
 }
 
