@@ -27,9 +27,9 @@ module.exports = class RecordHandler {
 
     if (message.action === C.ACTIONS.READ) {
       const count = this._subscriptionRegistry.subscribe(name, socket)
-      const record = count === 1 ? this._cache.lock(name) : this._cache.get(name)
-      if (record) {
-        socket.sendNative(record.message)
+      const entry = count === 1 ? this._cache.lock(name) : this._cache.get(name)
+      if (entry) {
+        socket.sendNative(entry.message)
       } else if (
         count === 1 &&
         // !this._listenerRegistry.hasName(name) &&
@@ -76,24 +76,24 @@ module.exports = class RecordHandler {
     }
   }
 
-  _broadcast (nextRecord, sender) {
-    const prevRecord = this._cache.get(nextRecord[0])
+  _broadcast (record, sender) {
+    const entry = this._cache.get(record[0])
 
-    if (prevRecord && isSameOrNewer(prevRecord.version, nextRecord[1])) {
+    if (entry && isSameOrNewer(entry.version, record[1])) {
       return
     }
 
     const rawMessage = messageBuilder.buildMsg5(
       C.TOPIC.RECORD,
       C.ACTIONS.UPDATE,
-      nextRecord[0],
-      nextRecord[1],
-      nextRecord[2]
+      record[0],
+      record[1],
+      record[2]
     )
 
-    this._cache.set(nextRecord[0], nextRecord[1], rawMessage)
+    this._cache.set(record[0], record[1], rawMessage)
 
-    this._subscriptionRegistry.sendToSubscribers(nextRecord[0], rawMessage, sender)
+    this._subscriptionRegistry.sendToSubscribers(record[0], rawMessage, sender)
   }
 }
 
