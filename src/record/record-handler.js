@@ -30,11 +30,7 @@ module.exports = class RecordHandler {
       const entry = count === 1 ? this._cache.lock(name) : this._cache.get(name)
       if (entry) {
         socket.sendNative(entry.message)
-      } else if (
-        count === 1 &&
-        // !this._listenerRegistry.hasName(name) &&
-        !this._storageExclusion.test(name)
-      ) {
+      } else if (count === 1 && !this._storageExclusion.test(name)) {
         this._storage.get(name, (error, record) => {
           if (error) {
             const message = `error while reading ${record[0]} from storage ${error}`
@@ -51,7 +47,7 @@ module.exports = class RecordHandler {
         this._storage.set(record, (error, record) => {
           if (error) {
             const message = `error while writing ${record[0]} to storage ${error}`
-            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDAtE_ERROR, message)
+            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, message)
           }
         }, record)
       }
