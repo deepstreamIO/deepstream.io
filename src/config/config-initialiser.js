@@ -150,14 +150,16 @@ function handlePlugins (config) {
   const connectorMap = {
     messageConnector: 'message',
     cache: 'cache',
-    storage: 'storage'
+    storage: 'storage',
+    monitoring: 'monitoring'
   }
   // mapping between the plugin configuration properties and the npm module
   // name resolution
   const typeMap = {
     message: 'msg',
     cache: 'cache',
-    storage: 'storage'
+    storage: 'storage',
+    monitoring: 'monitoring'
   }
   const plugins = Object.assign({}, config.plugins, {
     messageConnector: config.plugins.message
@@ -234,6 +236,10 @@ function handleConnectionEndpoints (config) {
  * @returns {Function} Instance return be the plugin constructor
  */
 function resolvePluginClass (plugin, type) {
+  if (type === 'monitoring') {
+    return require('dsx-monitoring')
+  }
+
   // nexe needs *global.require* for __dynamic__ modules
   // but browserify and proxyquire can't handle *global.require*
   const req = global && global.require ? global.require : require
@@ -247,12 +253,8 @@ function resolvePluginClass (plugin, type) {
     requirePath = fileUtils.lookupLibRequirePath(requirePath)
     pluginConstructor = req(requirePath)
   } else if (plugin.name != null) {
-    try {
-      pluginConstructor = req(plugin.name)
-    } catch (e) {
-      requirePath = fileUtils.lookupLibRequirePath(plugin.name)
-      pluginConstructor = req(requirePath)
-    }
+    requirePath = fileUtils.lookupLibRequirePath(plugin.name)
+    pluginConstructor = req(requirePath)
   } else {
     throw new Error(`Neither name nor path property found for ${type}`)
   }

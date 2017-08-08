@@ -92,7 +92,7 @@ logger:
 # plugins:
 
 #   monitoring:
-#     path: 'dsx-monitoring'
+#     name: monitoring
 #     options:
 #       reportInterval: 200
 #       permissionLogLimit: 3
