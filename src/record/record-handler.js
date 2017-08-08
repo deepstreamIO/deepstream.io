@@ -32,7 +32,7 @@ module.exports = class RecordHandler {
         socket.sendNative(record.message)
       } else if (
         count === 1 &&
-        !this._listenerRegistry.hasName(name) &&
+        // !this._listenerRegistry.hasName(name) &&
         !this._storageExclusion.test(name)
       ) {
         this._storage.get(name, (error, record) => {
