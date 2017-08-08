@@ -9,7 +9,7 @@ module.exports = class RecordCache {
 
   get (name) {
     const node = this._map.get(name)
-    return node ? node.value : undefined
+    return node && node.value.version !== undefined ? node.value : undefined
   }
 
   set (name, version, message) {

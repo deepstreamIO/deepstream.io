@@ -159,17 +159,15 @@ class SubscriptionRegistry {
     subscription.shared += msg
     const stop = subscription.shared.length
 
-    if (!socket) {
-      return
+    if (socket) {
+      const gaps = subscription.senders.get(socket) || []
+
+      if (gaps.length === 0) {
+        subscription.senders.set(socket, gaps)
+      }
+
+      gaps.push(start, stop)
     }
-
-    const gaps = subscription.senders.get(socket) || []
-
-    if (gaps.length === 0) {
-      subscription.senders.set(socket, gaps)
-    }
-
-    gaps.push(start, stop)
 
     if (!this._broadcastTimeout) {
       this._broadcastTimeout = setTimeout(this._onBroadcastTimeout, this._broadcastTimeoutTime)
