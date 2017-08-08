@@ -237,7 +237,7 @@ function handleConnectionEndpoints (config) {
  */
 function resolvePluginClass (plugin, type) {
   if (type === 'monitoring') {
-    return require('dsx-monitoring')
+    return require('dsx-monitoring') // eslint-disable-line
   }
 
   // nexe needs *global.require* for __dynamic__ modules
