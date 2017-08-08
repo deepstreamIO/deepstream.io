@@ -10,7 +10,7 @@ module.exports = class RpcHandler {
 
   handle (socket, message) {
     if (!message.data || !message.data[0]) {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
+      socket.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
       return
     }
 

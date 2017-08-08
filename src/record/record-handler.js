@@ -16,13 +16,22 @@ module.exports = class RecordHandler {
   }
 
   handle (socket, message) {
-    const data = message && message.data
-
-    if (!data || !data[0]) {
+    if (!message.data || !message.data[0]) {
       socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
       return
     }
 
+    if (
+      message.action === C.ACTIONS.LISTEN ||
+      message.action === C.ACTIONS.UNLISTEN ||
+      message.action === C.ACTIONS.LISTEN_ACCEPT ||
+      message.action === C.ACTIONS.LISTEN_REJECT
+    ) {
+      this._listenerRegistry.handle(socket, message)
+      return
+    }
+
+    const data = message && message.data
     const [ name ] = data
 
     if (message.action === C.ACTIONS.READ) {
@@ -43,7 +52,7 @@ module.exports = class RecordHandler {
     } else if (message.action === C.ACTIONS.UPDATE) {
       const record = data
       const [ start ] = splitRev(record[1])
-      if (start > 0 && start < Number.MAX_SAFE_INTEGER && !this._storageExclusion.test(record[0])) {
+      if (start > 0 && start < Number.MAX_SAFE_INTEGER && !this._storageExclusion.test(name)) {
         this._storage.set(record, (error, record) => {
           if (error) {
             const message = `error while writing ${record[0]} to storage ${error}`
@@ -57,13 +66,6 @@ module.exports = class RecordHandler {
       if (count === 0) {
         this._cache.unlock(name)
       }
-    } else if (
-      message.action === C.ACTIONS.LISTEN ||
-      message.action === C.ACTIONS.UNLISTEN ||
-      message.action === C.ACTIONS.LISTEN_ACCEPT ||
-      message.action === C.ACTIONS.LISTEN_REJECT
-    ) {
-      this._listenerRegistry.handle(socket, message)
     } else {
       socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
         ...data,
