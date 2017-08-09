@@ -25,6 +25,14 @@ class OutgoingConnection extends ClusterConnection {
     this._reconnectTimeout = null
     this._createSocket()
     this.once('identify', () => this._stateTransition(this.STATE.STABLE))
+    this._pongTimeoutId = null
+    this._pingIntervalId = null
+    this._onPongTimeoutBound = this._onPongTimeout.bind(this)
+  }
+
+  _onConnect () {
+    this._pingIntervalId = setInterval(this._sendPing.bind(this), this._config.pingInterval)
+    this.emit('connect')
   }
 
   /**
@@ -55,6 +63,23 @@ class OutgoingConnection extends ClusterConnection {
       this._scheduleReconnect()
     } else {
       this.emit('error', error)
+    }
+  }
+
+  _sendPing () {
+    if (this.isAlive()) {
+      this._send(MESSAGE.PING)
+      this._pongTimeoutId = setTimeout(this._onPongTimeoutBound, this._config.pingTimeout)
+    }
+  }
+
+  _handlePong () {
+    clearTimeout(this._pongTimeoutId)
+  }
+
+  _onPongTimeout () {
+    if (this.isAlive()) {
+      this.emit('error', `connection did not receive a PONG after ${this._config.pingTimeout}ms`)
     }
   }
 
@@ -111,6 +136,8 @@ class OutgoingConnection extends ClusterConnection {
 
   close () {
     clearTimeout(this._reconnectTimeout)
+    clearTimeout(this._pongTimeoutId)
+    clearInterval(this._pingIntervalId)
     super.close()
   }
 

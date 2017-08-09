@@ -42,8 +42,17 @@ class ClusterConnection extends EventEmitter
     return this._state === this.STATE.STABLE
   }
 
-  _send (topic, message) {
-    console.log(`->(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
+  isAlive () {
+    return this._state === this.STATE.UNIDENTIFIED
+      || this._state === this.STATE.IDENTIFIED
+      || this._state === this.STATE.STABLE
+  }
+
+  _send (topic, messageOpt) {
+    const message = messageOpt || ''
+    if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
+      console.log(`->(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
+    }
     this._socket.write(topic + message + MESSAGE.MESSAGE_SEPERATOR, 'utf8')
   }
 
@@ -61,9 +70,10 @@ class ClusterConnection extends EventEmitter
   }
 
   close () {
-    if (this._state !== STATE.CLOSED) {
+    if (this.isAlive()) {
       this._socket.setKeepAlive(false)
-      this._socket.end(MESSAGE.CLOSE)
+      this._send(MESSAGE.CLOSE)
+      this._socket.end()
       this._onClose()
     }
   }
@@ -111,7 +121,7 @@ class ClusterConnection extends EventEmitter
     this._socket.on('error', this._onSocketError.bind(this))
     this._socket.on('data', this._onData.bind(this))
     this._socket.on('close', this._onClose.bind(this))
-    this._socket.on('connect', this.emit.bind(this, 'connect'))
+    this._socket.on('connect', this._onConnect.bind(this))
   }
 
   _onData (data) {
@@ -124,7 +134,9 @@ class ClusterConnection extends EventEmitter
   _onMessage (prefixedMessage) {
     const topic = prefixedMessage[0]
     const message = prefixedMessage.slice(1)
-    console.log(`<-(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
+    if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
+      console.log(`<-(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
+    }
 
     if (topic === MESSAGE.CLOSE) {
       this._onClose()
@@ -134,6 +146,12 @@ class ClusterConnection extends EventEmitter
       return
     } else if (topic === MESSAGE.ERROR) {
       this._handleError(message)
+      return
+    } else if (topic === MESSAGE.PING) {
+      this._handlePing(message)
+      return
+    } else if (topic === MESSAGE.PONG) {
+      this._handlePong(message)
       return
     }
     let parsedMessage
@@ -150,8 +168,10 @@ class ClusterConnection extends EventEmitter
       this.emit('iam', parsedMessage)
     } else if (topic === MESSAGE.KNOWN) {
       this.emit('known', parsedMessage)
-    } else {
+    } else if (topic === MESSAGE.MSG) {
       this.emit('message', topic, parsedMessage)
+    } else {
+      this.emit('error', `unknown message topic ${topic}`)
     }
   }
 
@@ -181,7 +201,13 @@ class ClusterConnection extends EventEmitter
     console.error('an error message was received:', error)
   }
 
-  _onSocketError () {} // eslint-disable-line
+  _onSocketError () {
+    throw new Error('not implemented')
+  }
+
+  _onConnect () {
+    throw new Error('not implemented')
+  }
 
   _onClose () {
     this._stateTransition(STATE.CLOSED)

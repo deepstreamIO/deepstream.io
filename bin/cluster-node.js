@@ -43,7 +43,7 @@ class ClusterNode {
       const current = STATE_LOOKUP[this._state]
       const next = STATE_LOOKUP[nextState]
       console.log(`<><> node state transition ${current} -> ${next} <><>`)
-      console.log('<><> peers', this._knownUrls, '<><>', this._leader, '<><>')
+      console.log('<><> peers', this._knownUrls, '<><>')
     }
     this._state = nextState
   }
@@ -69,7 +69,8 @@ class ClusterNode {
       this._addConnection(connection)
       connection.sendWho({
         id: this._serverName,
-        url: this._url
+        url: this._url,
+        electionNumber: this._electionNumber
       })
     })
 
@@ -141,6 +142,9 @@ class ClusterNode {
         leader = connection.remoteName
         leaderNumber = connection.electionNumber
       }
+    }
+    if (leader !== this._leader) {
+      console.log(`----- new leader! ${leader} -----`)
     }
     this._leader = leader
   }
@@ -229,6 +233,8 @@ if (!module.parent) {
     seedNodes: process.argv.slice(4),
     maxReconnectAttempts: 4,
     reconnectInterval: 1500,
+    pingTimeout: 500,
+    pingInterval: 1000,
     serverName: Math.random()
   }
   console.log(config)
