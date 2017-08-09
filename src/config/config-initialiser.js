@@ -287,13 +287,17 @@ function handleAuthStrategy (config) {
     config.auth.options = {}
   }
 
-  if (config.auth.name || config.auth.path || !authStrategies[config.auth.type]) {
+  if (config.auth.name || config.auth.path) {
     const AuthHandler = resolvePluginClass(config.auth, 'authentication')
     if (!AuthHandler) {
-      throw new Error(`Unknown authentication type ${name}`)
+      throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
     }
     config.authenticationHandler = new AuthHandler(config.auth.options, config.logger)
     return
+  }
+
+  if (!authStrategies[config.auth.type]) {
+    throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
 
   if (config.auth.options && config.auth.options.path) {
@@ -329,17 +333,17 @@ function handlePermissionStrategy (config) {
     config.permission.options = {}
   }
 
-  if (
-    config.permission.name ||
-    config.permission.path ||
-    !permissionStrategies[config.permission.type]
-  ) {
+  if (config.permission.name || config.permission.path) {
     const PermHandler = resolvePluginClass(config.permission, 'permission')
     if (!PermHandler) {
-      throw new Error(`Unknown permission type ${name}`)
+      throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
     }
     config.permissionHandler = new PermHandler(config.permission.options, config.logger)
     return
+  }
+
+  if (!permissionStrategies[config.permission.type]) {
+    throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 
   if (config.permission.options && config.permission.options.path) {

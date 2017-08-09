@@ -153,6 +153,33 @@ describe('config-initialiser', () => {
       }).toThrowError('No authentication type specified')
     })
 
+    it('allows passing a custom authentication handler', () => {
+      const config = defaultConfig.get()
+
+      config.auth = {
+        path: '../mocks/auth-handler-mock',
+        options: {
+          hello: 'there'
+        }
+      }
+
+      configInitialiser.initialise(config)
+      expect(config.authenticationHandler.isReady).toBe(true)
+      expect(config.authenticationHandler.options).toEqual({ hello: 'there' })
+    })
+
+    it('tries to find a custom authentication handler from name', () => {
+      const config = defaultConfig.get()
+
+      config.auth = {
+        name: 'my-custom-auth-handler',
+      }
+
+      expect(() => {
+        configInitialiser.initialise(config)
+      }).toThrowError(/Cannot find module/)
+    })
+
     it('fails for unknown auth types', () => {
       const config = defaultConfig.get()
 
@@ -209,6 +236,33 @@ describe('config-initialiser', () => {
       expect(() => {
         configInitialiser.initialise(config)
       }).toThrowError('Unknown permission type does-not-exist')
+    })
+
+    it('allows passing a custom permission handler', () => {
+      const config = defaultConfig.get()
+
+      config.auth = {
+        path: '../mocks/perm-handler-mock',
+        options: {
+          hello: 'there'
+        }
+      }
+
+      configInitialiser.initialise(config)
+      expect(config.authenticationHandler.isReady).toBe(true)
+      expect(config.authenticationHandler.options).toEqual({ hello: 'there' })
+    })
+
+    it('tries to find a custom authentication handler from name', () => {
+      const config = defaultConfig.get()
+
+      config.auth = {
+        name: 'my-custom-perm-handler',
+      }
+
+      expect(() => {
+        configInitialiser.initialise(config)
+      }).toThrowError(/Cannot find module/)
     })
 
     it('fails for missing permission configs', () => {
