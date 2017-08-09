@@ -36,30 +36,16 @@ export class Connection extends EventEmitter {
     this._endpoint.onmessage = this._onMessage
   }
 
-  _checkHeartBeat () {
-    const heartBeatTolerance = this._options.heartbeatInterval * 2
-
-    if (Date.now() - this._lastHeartBeat > heartBeatTolerance) {
-      clearInterval(this._heartbeatInterval)
-      this._endpoint.close()
-      this.emit('error', new Error(`heartbeat not received in the last ${heartBeatTolerance} milliseconds`))
-    }
-  }
-
   _onOpen () {
-    this._lastHeartBeat = Date.now()
-    this._heartbeatInterval = setInterval(this._checkHeartBeat, this._options.heartbeatInterval)
     this._state = C.CONNECTION_STATE.AWAITING_CONNECTION
   }
 
   _onError (error) {
-    clearInterval(this._heartbeatInterval)
     this._state = C.CONNECTION_STATE.ERROR
     this.emit('error', error)
   }
 
   _onClose () {
-    clearInterval(this._heartbeatInterval)
     this._state = C.CONNECTION_STATE.CLOSED
   }
 
@@ -78,10 +64,7 @@ export class Connection extends EventEmitter {
   }
 
   _handleConnectionResponse (message) {
-    if (message.action === C.ACTIONS.PING) {
-      this._lastHeartBeat = Date.now()
-      this.send(C.TOPIC.CONNECTION, C.ACTIONS.PONG)
-    } else if (message.action === C.ACTIONS.ACK) {
+    if (message.action === C.ACTIONS.ACK) {
       this._state = C.CONNECTION_STATE.AWAITING_AUTHENTICATION
       if (this._authParams) {
         this._sendAuthParams()
