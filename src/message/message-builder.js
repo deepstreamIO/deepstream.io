@@ -28,16 +28,16 @@ exports.getMsg = function (topic, action, data) {
   return sendData.join(SEP) + C.MESSAGE_SEPERATOR
 }
 
-exports.buildMsg3 = function (p1, p2, p3) {
-  return `${p1}${SEP}${p2}${SEP}${p3}${C.MESSAGE_SEPERATOR}`
+exports.buildMsg3 = function (topic, action, p1) {
+  return `${topic}${SEP}${action}${SEP}${p1}${C.MESSAGE_SEPERATOR}`
 }
 
-exports.buildMsg4 = function (p1, p2, p3, p4) {
-  return `${p1}${SEP}${p2}${SEP}${p3}${SEP}${p4}${C.MESSAGE_SEPERATOR}`
+exports.buildMsg4 = function (topic, action, p1, p2) {
+  return `${topic}${SEP}${action}${SEP}${p1}${SEP}${p2}${C.MESSAGE_SEPERATOR}`
 }
 
-exports.buildMsg5 = function (p1, p2, p3, p4, p5) {
-  return `${p1}${SEP}${p2}${SEP}${p3}${SEP}${p4}${SEP}${p5}${C.MESSAGE_SEPERATOR}`
+exports.buildMsg5 = function (topic, action, p1, p2, p3) {
+  return `${topic}${SEP}${action}${SEP}${p1}${SEP}${p2}${SEP}${p3}${C.MESSAGE_SEPERATOR}`
 }
 
 /**

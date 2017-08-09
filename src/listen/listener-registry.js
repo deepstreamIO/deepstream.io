@@ -21,6 +21,11 @@ module.exports = class ListenerRegistry {
   }
 
   handle (socket, message) {
+    if (!message.data || !message.data[0]) {
+      socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
+      return
+    }
+
     if (message.action === C.ACTIONS.LISTEN) {
       this._providerRegistry.subscribe(message.data[0], socket)
     } else if (message.action === C.ACTIONS.UNLISTEN) {
@@ -30,7 +35,10 @@ module.exports = class ListenerRegistry {
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
       this._reject(socket, message.data)
     } else {
-      socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
+        ...message.data,
+        `unknown action ${message.action}`
+      ])
     }
   }
 
@@ -227,10 +235,11 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    const message = messageBuilder.getMsg(
+    const message = messageBuilder.buildMsg4(
       C.TOPIC.RECORD,
       C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-      [ name, hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE ]
+      name,
+      hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE
     )
 
     if (socket) {
