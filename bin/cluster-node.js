@@ -11,8 +11,8 @@ const STATE = {
   INIT: 0,
   DISCOVERY: 1,
   BROADCAST: 2,
-  LISTEN: 2,
-  CLOSED: 3
+  LISTEN: 3,
+  CLOSED: 4
 }
 
 const STATE_LOOKUP = utils.reverseMap(STATE)
@@ -40,7 +40,8 @@ class ClusterNode {
     {
       const current = STATE_LOOKUP[this._state]
       const next = STATE_LOOKUP[nextState]
-      console.log(`node state transition ${current} -> ${next}`)
+      console.log(`<><> node state transition ${current} -> ${next} <><>`)
+      console.log('<><> peers', this._knownUrls, '<><>')
     }
     this._state = nextState
   }
@@ -63,7 +64,7 @@ class ClusterNode {
     const connection = new OutgoingConnection(nodeUrl, this._config)
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('connect', () => {
-      this._addConnection.bind(this, connection)
+      this._addConnection(connection)
       connection.sendWho({
         id: this._serverName,
         url: this._url
@@ -76,16 +77,17 @@ class ClusterNode {
         // TODO: send error
         return
       }
-      connection.remoteName = message.id
+      connection.setRemoteName(message.id)
       if (this._knownPeers.has(connection.remoteName)) {
         // this peer was already known to us, but responded to our identification message
         // TODO: warn, reject with reason
-        console.error('an outbound connection to a known peer identified')
-        return
-      }
-      this._addPeer(connection)
-      for (const url of message.peers) {
-        this._probeHost(url)
+        this._removeConnection(connection)
+        console.error('received IAM from an outbound connection to a known peer')
+      } else {
+        this._addPeer(connection)
+        for (const url of message.peers) {
+          this._probeHost(url)
+        }
       }
       this._checkReady()
     })
@@ -93,7 +95,7 @@ class ClusterNode {
 
   _checkReady () {
     for (const connection of this._connections) {
-      if (!connection.isStable()) {
+      if (!connection.isIdentified()) {
         return
       }
     }
@@ -103,10 +105,12 @@ class ClusterNode {
 
   _startBroadcast () {
     for (const connection of this._connections) {
+      console.log('send known to', connection.remoteUrl)
       connection.sendKnown({
         peers: this._getPeers()
       })
     }
+    this._stateTransition(STATE.LISTEN)
   }
 
   _addPeer (connection) {
@@ -130,12 +134,12 @@ class ClusterNode {
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('who', (message) => {
       if (!message.id || !message.url) {
-        console.error('malformed message', message, message.id, message.url)
+        console.error('malformed who message', message)
         // send error
         return
       }
-      connection.remoteName = message.id
       connection.remoteUrl = message.url
+      connection.setRemoteName(message.id)
       if (this._knownPeers.has(connection.remoteName)) {
         // I'm already connected to this peer, probably through an outbound connection, reject
         // TODO: reject
@@ -152,11 +156,17 @@ class ClusterNode {
       this._addPeer(connection)
     })
     connection.on('known', (message) => {
-      if (!message.peers) {
+      if (!message.peers || message.peers.constructor !== Array) {
+        console.error('malformed known message', message)
         // send error
         return
       }
-      // const peers = message.peers
+
+      for (const url of message.peers) {
+        this._probeHost(url)
+      }
+
+      this._checkReady()
     })
     this._addConnection(connection)
     console.log('new incoming connection from socket', connection.remoteUrl)

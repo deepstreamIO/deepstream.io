@@ -6,6 +6,7 @@ class IncomingConnection extends ClusterConnection {
 
     this._socket = socket
     this._configureSocket()
+    this.on('known', this._stateTransition.bind(this, this.STATE.STABLE))
   }
 
   _onSocketError (error) {

@@ -13,6 +13,7 @@ const STATE = {
 }
 
 const STATE_LOOKUP = utils.reverseMap(STATE)
+const MESSAGE_LOOKUP = utils.reverseMap(MESSAGE)
 
 /* eslint-disable class-methods-use-this */
 
@@ -33,12 +34,26 @@ class ClusterConnection extends EventEmitter
     return `${this._socket.remoteAddress}:${this._socket.remotePort}`
   }
 
+  isIdentified () {
+    return this._state === this.STATE.IDENTIFIED || this._state === this.STATE.STABLE
+  }
+
   isStable () {
     return this._state === this.STATE.STABLE
   }
 
-  send (topic, message) {
+  _send (topic, message) {
+    console.log(`->(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
     this._socket.write(topic + message + MESSAGE.MESSAGE_SEPERATOR, 'utf8')
+  }
+
+  sendMessage (message) {
+    this._send(MESSAGE.MSG, JSON.stringify(message))
+  }
+
+  setRemoteName (name) {
+    this.remoteName = name
+    this._stateTransition(STATE.IDENTIFIED)
   }
 
   close () {
@@ -57,19 +72,19 @@ class ClusterConnection extends EventEmitter
   }
 
   sendWho (identificationData) {
-    this.send(MESSAGE.WHO, JSON.stringify(identificationData))
+    this._send(MESSAGE.WHO, JSON.stringify(identificationData))
   }
 
   sendIAm (identificationData) {
-    this.send(MESSAGE.IAM, JSON.stringify(identificationData))
+    this._send(MESSAGE.IAM, JSON.stringify(identificationData))
   }
 
   sendKnown (identificationData) {
-    this.send(MESSAGE.KNOWN, JSON.stringify(identificationData))
+    this._send(MESSAGE.KNOWN, JSON.stringify(identificationData))
   }
 
   sendReject (reason) {
-    this.send(MESSAGE.REJECT, reason)
+    this._send(MESSAGE.REJECT, reason)
     this.close()
   }
 
@@ -77,7 +92,10 @@ class ClusterConnection extends EventEmitter
     {
       const current = STATE_LOOKUP[this._state]
       const next = STATE_LOOKUP[nextState]
-      console.log(`connection ${this.remoteName} state transition ${current} -> ${next}`)
+      if (!current || !next) {
+        console.trace(nextState)
+      }
+      console.log(`connection ${this.remoteUrl} state transition ${current} -> ${next}`)
     }
     this._state = nextState
   }
@@ -102,6 +120,8 @@ class ClusterConnection extends EventEmitter
   _onMessage (prefixedMessage) {
     const topic = prefixedMessage[0]
     const message = prefixedMessage.slice(1)
+    console.log(`<-(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
+
     if (topic === MESSAGE.CLOSE) {
       this._onClose()
       return
@@ -121,13 +141,10 @@ class ClusterConnection extends EventEmitter
       return
     }
     if (topic === MESSAGE.WHO) {
-      console.log('WHO', message)
       this.emit('who', parsedMessage)
     } else if (topic === MESSAGE.IAM) {
-      console.log('IAM', message)
       this.emit('iam', parsedMessage)
     } else if (topic === MESSAGE.KNOWN) {
-      console.log('KNOWN', message)
       this.emit('known', parsedMessage)
     } else {
       this.emit('message', topic, parsedMessage)
@@ -140,7 +157,7 @@ class ClusterConnection extends EventEmitter
       data = JSON.parse(message)
     } catch (err) {
       this.emit('error', 'failed to parse identify message')
-      this.send(MESSAGE.ERROR, 'failed to parse identify message')
+      this._send(MESSAGE.ERROR, 'failed to parse identify message')
       return
     }
     this._stateTransition(STATE.IDENTIFIED)
