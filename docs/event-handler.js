@@ -25,7 +25,7 @@ export default class EventHandler {
   }
 
   emit (name, data) {
-    this._connection.send(C.TOPIC.EVENT, C.ACTIONS.EVENT, [ name, buildTyped(data) ])
+    this._connection.send(C.TOPIC.EVENT, C.ACTIONS.EVENT, [ name, 'O' + JSON.stringify(data) ])
     this._emitter.emit(name, data)
   }
 
@@ -36,7 +36,7 @@ export default class EventHandler {
 
     if (message.action === C.ACTIONS.EVENT) {
       if (message.data && message.data.length === 2) {
-        this._emitter.emit(name, parseTyped(data, this))
+        this._emitter.emit(name, JSON.parse(data.slice(1)))
       } else {
         this._emitter.emit(name)
       }
@@ -48,72 +48,4 @@ export default class EventHandler {
       }
     }
   }
-}
-
-function buildTyped (value) {
-  const type = typeof value
-
-  if (type === 'string') {
-    return C.TYPES.STRING + value
-  }
-
-  if (value === null) {
-    return C.TYPES.NULL
-  }
-
-  if (type === 'object') {
-    return C.TYPES.OBJECT + JSON.stringify(value)
-  }
-
-  if (type === 'number') {
-    return C.TYPES.NUMBER + value.toString()
-  }
-
-  if (value === true) {
-    return C.TYPES.TRUE
-  }
-
-  if (value === false) {
-    return C.TYPES.FALSE
-  }
-
-  if (value === undefined) {
-    return C.TYPES.UNDEFINED
-  }
-
-  throw new Error(`Can't serialize type ${value}`)
-}
-
-function parseTyped (value) {
-  const type = value.charAt(0)
-
-  if (type === C.TYPES.STRING) {
-    return value.substr(1)
-  }
-
-  if (type === C.TYPES.OBJECT) {
-    return JSON.parse(value.substr(1))
-  }
-
-  if (type === C.TYPES.NUMBER) {
-    return parseFloat(value.substr(1))
-  }
-
-  if (type === C.TYPES.NULL) {
-    return null
-  }
-
-  if (type === C.TYPES.TRUE) {
-    return true
-  }
-
-  if (type === C.TYPES.FALSE) {
-    return false
-  }
-
-  if (type === C.TYPES.UNDEFINED) {
-    return undefined
-  }
-
-  throw new Error(`Can't deserialize value ${value}`)
 }
