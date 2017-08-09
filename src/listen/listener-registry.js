@@ -134,7 +134,7 @@ module.exports = class ListenerRegistry {
     }
 
     if (provider.active) {
-      socket.sendMessage(this._topic, C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [ pattern, name ])
+      socket.sendMessage(this._topic, C.ACTIONS.LISTEN_REJECT, [ pattern, name ])
       return
     }
 
@@ -145,6 +145,8 @@ module.exports = class ListenerRegistry {
     provider.active = true
 
     this._sendHasProviderUpdate(true, name, undefined)
+
+    socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
   }
 
   _reject (socket, [ pattern, name ]) {
