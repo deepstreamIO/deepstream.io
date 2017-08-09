@@ -333,7 +333,7 @@ function handlePermissionStrategy (config) {
   ) {
     const PermHandler = resolvePluginClass(config.permission, 'permission')
     if (!PermHandler) {
-      throw new Error(`Unknown permission type ${name}`)
+      throw new Error(`Unknown permission type ${config.permission.name || config.permission.path}`)
     }
     config.permissionHandler = new PermHandler(config.permission.options, config.logger)
     return
