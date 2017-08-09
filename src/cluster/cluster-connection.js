@@ -51,8 +51,12 @@ class ClusterConnection extends EventEmitter
     this._send(MESSAGE.MSG, JSON.stringify(message))
   }
 
-  setRemoteName (name) {
+  setRemoteDetails (name, electionNumber, url) {
     this.remoteName = name
+    this.electionNumber = electionNumber
+    if (url) {
+      this.remoteUrl = url
+    }
     this._stateTransition(STATE.IDENTIFIED)
   }
 

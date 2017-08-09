@@ -1,7 +1,6 @@
 const net = require('net')
 const MESSAGE = require('./message-enums')
 const ClusterConnection = require('./cluster-connection')
-const urlParser = require('url')
 
 /**
  * Represents a TCP connection made by this deepstream instance

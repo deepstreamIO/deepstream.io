@@ -33,7 +33,9 @@ class ClusterNode {
     this._knownUrls = new Set()
 
     this._state = STATE.INIT
-    this._leaderNumber = Math.random()
+    this._electionNumber = Math.random()
+    this._leader = null
+    this._decideLeader()
   }
 
   _stateTransition (nextState) {
@@ -41,7 +43,7 @@ class ClusterNode {
       const current = STATE_LOOKUP[this._state]
       const next = STATE_LOOKUP[nextState]
       console.log(`<><> node state transition ${current} -> ${next} <><>`)
-      console.log('<><> peers', this._knownUrls, '<><>')
+      console.log('<><> peers', this._knownUrls, '<><>', this._leader, '<><>')
     }
     this._state = nextState
   }
@@ -72,12 +74,12 @@ class ClusterNode {
     })
 
     connection.on('iam', (message) => {
-      if (!message.id || !message.peers || message.leaderNumber === undefined) {
+      if (!message.id || !message.peers || message.electionNumber === undefined) {
         console.error('malformed iam message', message)
         // TODO: send error
         return
       }
-      connection.setRemoteName(message.id)
+      connection.setRemoteDetails(message.id, message.electionNumber)
       if (this._knownPeers.has(connection.remoteName)) {
         // this peer was already known to us, but responded to our identification message
         // TODO: warn, reject with reason
@@ -119,6 +121,7 @@ class ClusterNode {
     }
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
+    this._decideLeader()
   }
 
   _removePeer (connection) {
@@ -127,19 +130,31 @@ class ClusterNode {
     }
     this._knownPeers.delete(connection.remoteName)
     this._knownUrls.delete(connection.remoteUrl)
+    this._decideLeader()
+  }
+
+  _decideLeader () {
+    let leader = this._serverName
+    let leaderNumber = this._electionNumber
+    for (const connection of this._knownPeers.values()) {
+      if (connection.electionNumber > leaderNumber) {
+        leader = connection.remoteName
+        leaderNumber = connection.electionNumber
+      }
+    }
+    this._leader = leader
   }
 
   _onIncomingConnection (socket) {
     const connection = new IncomingConnection(socket, this._config)
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('who', (message) => {
-      if (!message.id || !message.url) {
+      if (!message.id || !message.url || !message.electionNumber) {
         console.error('malformed who message', message)
         // send error
         return
       }
-      connection.remoteUrl = message.url
-      connection.setRemoteName(message.id)
+      connection.setRemoteDetails(message.id, message.electionNumber, message.url)
       if (this._knownPeers.has(connection.remoteName)) {
         // I'm already connected to this peer, probably through an outbound connection, reject
         // TODO: reject
@@ -150,7 +165,7 @@ class ClusterNode {
       connection.sendIAm({
         id: this._serverName,
         peers: this._getPeers(),
-        leaderNumber: this._leaderNumber
+        electionNumber: this._electionNumber
       })
 
       this._addPeer(connection)
