@@ -38,6 +38,7 @@ function execute(action) {
     const options = {
       exec,
       programArgs: [],
+      pidFile: `/var/run/deepstream/${name}.pid`,
       logDir: this.logDir || '/var/log/deepstream',
       dryRun: this.dryRun
     }
