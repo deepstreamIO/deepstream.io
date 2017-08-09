@@ -4,7 +4,7 @@ const service = require('deepstream.io-service')
 
 module.exports = function (program) {
   program
-    .command('service [add|remove|start|stop|status]')
+    .command('service [add|remove|start|stop|restart|status]')
     .description('Add, remove, start or stop deepstream as a service to your operating system')
 
     .option('-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files')
@@ -57,7 +57,9 @@ function execute(action) {
     service.stop (name, response)
   } else if (action === 'status') {
     service.status(name, response)
+  } else if (action === 'restart') {
+    service.restart(name, response)
   } else {
-    console.log(`Unknown action for service, please 'add', 'remove', 'start', 'stop' or 'status'`)
+    console.log(`Unknown action for service, please 'add', 'remove', 'start', 'stop', 'restart' or 'status'`)
   }
 }
