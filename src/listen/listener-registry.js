@@ -230,12 +230,8 @@ module.exports = class ListenerRegistry {
   }
 
   _sendHasProviderUpdate (hasProvider, name, socket) {
-    if (this._topic !== C.TOPIC.RECORD) {
-      return
-    }
-
     const message = messageBuilder.buildMsg4(
-      C.TOPIC.RECORD,
+      this._topic,
       C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
       name,
       hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE
