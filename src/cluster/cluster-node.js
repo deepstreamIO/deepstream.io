@@ -295,7 +295,7 @@ class ClusterNode {
   }
 
   _onConnectionError (connection, error) {
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, 'connection error', error)
+    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `connection error: ${error.toString()}`)
   }
 
   _onMessage (connection, data) {
