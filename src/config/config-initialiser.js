@@ -25,7 +25,6 @@ exports.initialise = function (config) {
 
   // The default plugins required by deepstream to run
   config.pluginTypes = [
-    'messageConnector',
     'storage',
     'cache',
     'authenticationHandler',
@@ -127,11 +126,10 @@ function handleLogger (config) {
 
 /**
  * Handle the plugins property in the config object the connectors.
- * Allowed types: {message|cache|storage}
+ * Allowed types: {cache|storage}
  * Plugins can be passed either as a __path__ property or as a __name__ property with
  * a naming convetion: *{cache: {name: 'redis'}}* will be resolved to the
  * npm module *deepstream.io-cache-redis*
- * Exception: *message* will be resolved to *msg*
  * Options to the constructor of the plugin can be passed as *options* object.
  *
  * CLI arguments will be considered.
@@ -148,21 +146,16 @@ function handlePlugins (config) {
   // mapping between the root properties which contains the plugin instance
   // and the plugin configuration objects
   const connectorMap = {
-    messageConnector: 'message',
     cache: 'cache',
     storage: 'storage'
   }
   // mapping between the plugin configuration properties and the npm module
   // name resolution
   const typeMap = {
-    message: 'msg',
     cache: 'cache',
     storage: 'storage'
   }
-  const plugins = Object.assign({}, config.plugins, {
-    messageConnector: config.plugins.message
-  })
-  delete plugins.message
+  const plugins = Object.assign({}, config.plugins)
 
   for (const key in plugins) {
     const plugin = plugins[key]

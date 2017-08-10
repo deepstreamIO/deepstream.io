@@ -56,10 +56,6 @@ class ClusterConnection extends EventEmitter
     this._socket.write(topic + message + MESSAGE.MESSAGE_SEPERATOR, 'utf8')
   }
 
-  sendMessage (message) {
-    this._send(MESSAGE.MSG, JSON.stringify(message))
-  }
-
   setRemoteDetails (name, electionNumber, url) {
     this.remoteName = name
     this.electionNumber = electionNumber
@@ -100,6 +96,10 @@ class ClusterConnection extends EventEmitter
   sendReject (reason) {
     this._send(MESSAGE.REJECT, reason)
     this.close()
+  }
+
+  sendMessage (message) {
+    this._send(MESSAGE.MSG, JSON.stringify(message))
   }
 
   _stateTransition (nextState) {

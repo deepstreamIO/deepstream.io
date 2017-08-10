@@ -39,7 +39,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     super()
     this._topic = topic
     this._options = options
-    this._options.message.subscribeBroadcast(topic, this._processIncomingMessage.bind(this))
+    this._options.message.subscribe(topic, this._processIncomingMessage.bind(this))
     this._options.clusterRegistry.on('remove', this.removeAll.bind(this))
     this._data = {}
     this._reconciliationTimeouts = {}

@@ -16,7 +16,7 @@ const jsYamlLoader = require('./config/js-yaml-loader')
 const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
-const MessageConnector = require('./cluster/cluster-connector')
+const MessageConnector = require('./cluster/cluster-node')
 const DependencyInitialiser = require('./utils/dependency-initialiser')
 const C = require('./constants/constants')
 const pkg = require('../package.json')
@@ -108,18 +108,11 @@ Deepstream.readMessage = readMessage
  * @returns {void}
  */
 Deepstream.prototype.set = function (key, value) {
-  let optionName
-  if (key === 'message') {
-    optionName = 'messageConnector'
-  } else {
-    optionName = key
+  if (this._options[key] === undefined) {
+    throw new Error(`Unknown option "${key}"`)
   }
 
-  if (this._options[optionName] === undefined) {
-    throw new Error(`Unknown option "${optionName}"`)
-  }
-
-  this._options[optionName] = value
+  this._options[key] = value
   return this
 }
 

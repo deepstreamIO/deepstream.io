@@ -3,9 +3,10 @@
 
 const net = require('net')
 
-const IncomingConnection = require('../src/cluster/incoming-connection')
-const OutgoingConnection = require('../src/cluster/outgoing-connection')
-const utils = require('../src/utils/utils')
+const IncomingConnection = require('./incoming-connection')
+const OutgoingConnection = require('./outgoing-connection')
+const utils = require('../utils/utils')
+const StateRegistry = require('./distributed-state-registry')
 
 const STATE = {
   INIT: 0,
@@ -18,10 +19,12 @@ const STATE = {
 const STATE_LOOKUP = utils.reverseMap(STATE)
 
 class ClusterNode {
-  constructor (config) {
-    this._config = config
+  constructor (options) {
+    this._serverName = options.serverName
+    this._logger = options.logger
+
+    const config = this._config = options.messageConnector
     this._seedNodes = config.seedNodes
-    this._serverName = config.serverName
     this._url = `${config.host}:${config.port}`
 
     this._tcpServer = net.createServer(this._onIncomingConnection.bind(this))
@@ -31,11 +34,59 @@ class ClusterNode {
     // serverName -> connection
     this._knownPeers = new Map()
     this._knownUrls = new Set()
+    this._subscriptions = new Map() // topic -> [callback, ...]
+    this._stateRegistries = new Map() // topic -> StateRegistry
 
     this._state = STATE.INIT
     this._electionNumber = Math.random()
     this._leader = null
     this._decideLeader()
+  }
+
+  sendMessage (serverName, topic, message) {
+    const connection = this._knownPeers.get(serverName)
+    if (!connection) {
+      // TODO: warn
+      console.error('tried to send message to unknown serverName', serverName)
+      return
+    }
+    connection.sendMessage({ topic, message })
+  }
+
+  sendBroadcast (topic, message) {
+    for (const connection of this._knownPeers.values()) {
+      connection.sendMessage({ topic, message })
+    }
+  }
+
+  subscribe (topic, callback) {
+    const subscriptionsToTopic = this._subscriptions.get(topic) || []
+    if (!subscriptionsToTopic) {
+      this._subscriptions.set(topic, [callback])
+    } else {
+      subscriptionsToTopic.push(callback)
+    }
+  }
+
+  getAll () {
+    return Array.from(this._knownPeers.keys())
+  }
+
+  isLeader () {
+    return this._leader === this._serverName
+  }
+
+  getCurrentLeader () {
+    return this._leader
+  }
+
+  getStateRegistry (name) {
+    let registry = this._stateRegistries.get(name)
+    if (!registry) {
+      registry = new StateRegistry(name, this._options)
+      this._stateRegistries.set(name, registry)
+    }
+    return registry
   }
 
   _stateTransition (nextState) {
@@ -241,3 +292,4 @@ if (!module.parent) {
   const node = new ClusterNode(config)
   process.on('SIGINT', () => node.close())
 }
+
