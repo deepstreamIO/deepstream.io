@@ -2,8 +2,8 @@ const ClusterConnection = require('./cluster-connection')
 const MESSAGE = require('./message-enums')
 
 class IncomingConnection extends ClusterConnection {
-  constructor (socket, config) {
-    super(config)
+  constructor (socket, config, logger) {
+    super(config, logger)
 
     this._socket = socket
     this._configureSocket()

@@ -1,6 +1,7 @@
 const EventEmitter = require('events').EventEmitter
 const MESSAGE = require('./message-enums')
 const utils = require('../utils/utils')
+const C = require('../constants/constants')
 
 const STATE = {
   INIT: 0,
@@ -19,8 +20,9 @@ const MESSAGE_LOOKUP = utils.reverseMap(MESSAGE)
 
 class ClusterConnection extends EventEmitter
 {
-  constructor (config) {
+  constructor (config, logger) {
     super()
+    this._logger = logger
     this._config = config
     this.remoteName = null
     this.remoteUrl = null
@@ -51,7 +53,11 @@ class ClusterConnection extends EventEmitter
   _send (topic, messageOpt) {
     const message = messageOpt || ''
     if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
-      console.log(`->(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
+      this._logger.log(
+        C.LOG_LEVEL.DEBUG,
+        C.EVENT.INFO,
+        `->(${this.remoteUrl}) ${MESSAGE_LOOKUP[topic]} ${message}`
+      )
     }
     this._socket.write(topic + message + MESSAGE.MESSAGE_SEPERATOR, 'utf8')
   }
@@ -70,7 +76,6 @@ class ClusterConnection extends EventEmitter
       this._socket.setKeepAlive(false)
       this._send(MESSAGE.CLOSE)
       this._socket.end()
-      this._onClose()
     }
   }
 
@@ -107,9 +112,9 @@ class ClusterConnection extends EventEmitter
       const current = STATE_LOOKUP[this._state]
       const next = STATE_LOOKUP[nextState]
       if (!current || !next) {
-        console.trace(nextState)
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_STATE_TRANSITION, nextState)
       }
-      console.log(`connection ${this.remoteUrl} state transition ${current} -> ${next}`)
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `connection ${this.remoteUrl} state transition ${current} -> ${next}`)
     }
     this._state = nextState
   }
@@ -135,11 +140,11 @@ class ClusterConnection extends EventEmitter
     const topic = prefixedMessage[0]
     const message = prefixedMessage.slice(1)
     if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
-      console.log(`<-(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<-(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
     }
 
     if (topic === MESSAGE.CLOSE) {
-      this._onClose()
+      this._socket.end()
       return
     } else if (topic === MESSAGE.REJECT) {
       this._handleReject(message)
@@ -159,7 +164,7 @@ class ClusterConnection extends EventEmitter
       parsedMessage = JSON.parse(message)
     } catch (err) {
       // send error message
-      console.error('malformed json', message)
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, `malformed json ${message}`)
       return
     }
     if (topic === MESSAGE.WHO) {
@@ -169,7 +174,7 @@ class ClusterConnection extends EventEmitter
     } else if (topic === MESSAGE.KNOWN) {
       this.emit('known', parsedMessage)
     } else if (topic === MESSAGE.MSG) {
-      this.emit('message', topic, parsedMessage)
+      this.emit('message', parsedMessage)
     } else {
       this.emit('error', `unknown message topic ${topic}`)
     }
@@ -192,13 +197,13 @@ class ClusterConnection extends EventEmitter
     // TODO: if reason is because we're already connected, do nothing (perhaps add REJECT_DUPLICATE
     // message for that?)
     // TODO: else warn
-    console.error('connection rejected with reason:', reason)
+    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `connection rejected with reason: ${reason}`)
     this._stateTransition(STATE.REJECTED)
   }
 
   _handleError (error) {
     // TODO: handle e.g. malformed message errors, probably just log
-    console.error('an error message was received:', error)
+    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `an error message was received: ${error}`)
   }
 
   _onSocketError () {

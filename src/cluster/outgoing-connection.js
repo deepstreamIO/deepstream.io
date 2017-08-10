@@ -14,8 +14,8 @@ const ClusterConnection = require('./cluster-connection')
  * @param {Object} config The configuration as passed to the MessageConnector
  */
 class OutgoingConnection extends ClusterConnection {
-  constructor (url, config) {
-    super(config)
+  constructor (url, config, logger) {
+    super(config, logger)
 
     this.remoteUrl = url
     this._config = config

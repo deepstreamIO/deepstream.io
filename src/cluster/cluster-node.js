@@ -50,7 +50,7 @@ class ClusterNode {
     const connection = this._knownPeers.get(serverName)
     if (!connection) {
       // TODO: warn
-      console.error('tried to send message to unknown serverName', serverName)
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, `tried to send message to unknown server ${serverName}`)
       return
     }
     connection.sendMessage({ topic, message })
@@ -100,13 +100,17 @@ class ClusterNode {
     {
       const current = STATE_LOOKUP[this._state]
       const next = STATE_LOOKUP[nextState]
-      this._logger.log(C.LOG_LEVEL.DEBUG, `<><> Node state transition ${current} -> ${next} <><>`)
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<><> Node state transition ${current} -> ${next} <><>`)
     }
     this._state = nextState
   }
 
   _onReady () {
-    console.log('server ready')
+    this._logger.log(
+      C.LOG_LEVEL.INFO,
+      C.EVENT.INFO,
+      `P2P Message Connector listening at ${this._config.host}:${this._config.port}`
+    )
     for (let i = 0; i < this._seedNodes.length; i++) {
       this._probeHost(this._seedNodes[i])
     }
@@ -120,7 +124,7 @@ class ClusterNode {
     if (parts.length !== 2) {
       throw new Error(`Invalid node url ${nodeUrl}, must have a host and port e.g. '0.0.0.0:9089'`)
     }
-    const connection = new OutgoingConnection(nodeUrl, this._config)
+    const connection = new OutgoingConnection(nodeUrl, this._config, this._logger)
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('connect', () => {
       this._addConnection(connection)
@@ -133,7 +137,7 @@ class ClusterNode {
 
     connection.on('iam', (message) => {
       if (!message.id || !message.peers || message.electionNumber === undefined) {
-        console.error('malformed iam message', message)
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, `malformed IAM message ${message}`)
         // TODO: send error
         return
       }
@@ -142,7 +146,11 @@ class ClusterNode {
         // this peer was already known to us, but responded to our identification message
         // TODO: warn, reject with reason
         this._removeConnection(connection)
-        console.error('received IAM from an outbound connection to a known peer')
+        this._logger.log(
+          C.LOG_LEVEL.WARN,
+          C.EVENT.UNSOLICITED_MSGBUS_MESSAGE,
+          'received IAM from an outbound connection to a known peer'
+        )
       } else {
         this._addPeer(connection)
         for (const url of message.peers) {
@@ -165,7 +173,6 @@ class ClusterNode {
 
   _startBroadcast () {
     for (const connection of this._connections) {
-      console.log('send known to', connection.remoteUrl)
       connection.sendKnown({
         peers: this._getPeers()
       })
@@ -202,7 +209,7 @@ class ClusterNode {
       }
     }
     if (leader !== this._leader) {
-      console.log(`----- new leader! ${leader} -----`)
+      this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `New cluster leader ${leader}`)
     }
     this._leader = leader
   }
@@ -212,7 +219,7 @@ class ClusterNode {
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('who', (message) => {
       if (!message.id || !message.url || !message.electionNumber) {
-        console.error('malformed who message', message)
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, `malformed WHO message ${message}`)
         // send error
         return
       }
@@ -220,7 +227,7 @@ class ClusterNode {
       if (this._knownPeers.has(connection.remoteName)) {
         // I'm already connected to this peer, probably through an outbound connection, reject
         // TODO: reject
-        console.error('received inbound connection from peer that was already known')
+        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, 'received inbound connection from peer that was already known')
         return
       }
 
@@ -234,7 +241,7 @@ class ClusterNode {
     })
     connection.on('known', (message) => {
       if (!message.peers || message.peers.constructor !== Array) {
-        console.error('malformed known message', message)
+        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, 'malformed known message', message)
         // send error
         return
       }
@@ -246,7 +253,7 @@ class ClusterNode {
       this._checkReady()
     })
     this._addConnection(connection)
-    console.log('new incoming connection from socket', connection.remoteUrl)
+    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, 'new incoming connection from socket', connection.remoteUrl)
   }
 
   _getPeers () {
@@ -268,16 +275,33 @@ class ClusterNode {
   }
 
   _onConnectionError (connection, error) {
-    console.error('connection error', error)
+    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, 'connection error', error)
   }
 
-  _onMessage (connection, topic, message) {
-    console.log('onmessage', topic, message)
+  _onMessage (connection, data) {
+    const topic = data.topic
+    const message = data.message
+    const listeners = this._subscriptions.get(topic)
+    if (!listeners || listeners.length === 0) {
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, `message on unknown topic ${topic}`, message)
+      return
+    }
+    for (let i = 0; i < listeners.length; i++) {
+      listeners[i](message)
+    }
   }
 
-  close () {
-    this._tcpServer.close(() => {})
-    this._connections.forEach(connection => connection.close())
+  close (callback) {
+    this._tcpServer.close(() => {
+      this._connections.forEach(connection => connection.close())
+      if (this._connections.length === 0) {
+        callback()
+        return
+      }
+      utils.combineEvents(this._connections, 'close', () => {
+        callback()
+      })
+    })
   }
 }
 
@@ -296,7 +320,11 @@ if (!module.parent) {
     serverName: Math.random()
   }
   console.log(config)
-  const node = new ClusterNode(config)
+  const options = {
+    messageConnector: config,
+    logger: console
+  }
+  const node = new ClusterNode(options)
   process.on('SIGINT', () => node.close())
 }
 

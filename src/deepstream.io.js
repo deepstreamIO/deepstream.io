@@ -410,7 +410,7 @@ Deepstream.prototype._connectionEndpointShutdown = function () {
  * @returns {void}
  */
 Deepstream.prototype._serviceShutdown = function () {
-  process.nextTick(() => this._transition('services-closed'))
+  this._options.message.close(() => this._transition('services-closed'))
 }
 
 /**
