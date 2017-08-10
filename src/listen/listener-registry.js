@@ -97,11 +97,11 @@ module.exports = class ListenerRegistry {
 
   onSubscriptionAdded (name, socket, count) {
     if (count === 1) {
-      this._provide(name, null)
+      this._provide(name)
     } else {
       const provider = this._providers.get(name)
 
-      if (provider && provider.socket && !provider.timeout) {
+      if (provider && provider.active) {
         this._sendHasProviderUpdate(true, name, socket)
       }
     }
