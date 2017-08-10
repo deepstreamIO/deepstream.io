@@ -76,6 +76,8 @@ class ClusterConnection extends EventEmitter
       this._socket.setKeepAlive(false)
       this._send(MESSAGE.CLOSE)
       this._socket.end()
+    } else {
+      this._onClose()
     }
   }
 
@@ -173,10 +175,17 @@ class ClusterConnection extends EventEmitter
       this.emit('iam', parsedMessage)
     } else if (topic === MESSAGE.KNOWN) {
       this.emit('known', parsedMessage)
+      this._onKnown()
     } else if (topic === MESSAGE.MSG) {
       this.emit('message', parsedMessage)
     } else {
       this.emit('error', `unknown message topic ${topic}`)
+    }
+  }
+
+  _onKnown () {
+    if (this._state === this.STATE.IDENTIFIED) {
+      this._stateTransition(this.STATE.STABLE)
     }
   }
 

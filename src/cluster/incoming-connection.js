@@ -7,7 +7,6 @@ class IncomingConnection extends ClusterConnection {
 
     this._socket = socket
     this._configureSocket()
-    this.on('known', this._onKnown.bind(this))
     this._pingTimeoutId = null
     this._onPingTimeoutBound = this._onPingTimeout.bind(this)
   }
@@ -15,12 +14,6 @@ class IncomingConnection extends ClusterConnection {
   _onConnect () {
     this._pingTimeoutId = setTimeout(this._onPingTimeoutBound, this._config.pingTimeout)
     this.emit('connect')
-  }
-
-  _onKnown () {
-    if (this._state === this.STATE.IDENTIFIED) {
-      this._stateTransition(this.STATE.STABLE)
-    }
   }
 
   _handlePing () {

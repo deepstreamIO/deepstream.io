@@ -22,9 +22,9 @@ class OutgoingConnection extends ClusterConnection {
     this._params = this._parseUrl(url)
     this._connectionAttempts = 0
     this._socket = null
-    this._reconnectTimeout = null
+    this._reconnectTimeoutId = null
     this._createSocket()
-    this.once('identify', () => this._stateTransition(this.STATE.STABLE))
+    // this.once('identify', () => this._stateTransition(this.STATE.STABLE))
     this._pongTimeoutId = null
     this._pingIntervalId = null
     this._onPongTimeoutBound = this._onPongTimeout.bind(this)
@@ -32,6 +32,7 @@ class OutgoingConnection extends ClusterConnection {
 
   _onConnect () {
     this._pingIntervalId = setInterval(this._sendPing.bind(this), this._config.pingInterval)
+    this._stateTransition(this.STATE.UNIDENTIFIED)
     this.emit('connect')
   }
 
@@ -43,7 +44,6 @@ class OutgoingConnection extends ClusterConnection {
    */
   _createSocket () {
     this._socket = net.createConnection(this._params)
-    this._stateTransition(this.STATE.UNIDENTIFIED)
     this._configureSocket()
   }
 
@@ -96,7 +96,7 @@ class OutgoingConnection extends ClusterConnection {
 
     if (this._connectionAttempts <= this._config.maxReconnectAttempts) {
       this._destroySocket()
-      this._reconnectTimeout = setTimeout(
+      this._reconnectTimeoutId = setTimeout(
         this._createSocket.bind(this),
         this._config.reconnectInterval
       )
@@ -135,7 +135,7 @@ class OutgoingConnection extends ClusterConnection {
   }
 
   close () {
-    clearTimeout(this._reconnectTimeout)
+    clearTimeout(this._reconnectTimeoutId)
     clearTimeout(this._pongTimeoutId)
     clearInterval(this._pingIntervalId)
     super.close()
@@ -148,7 +148,7 @@ class OutgoingConnection extends ClusterConnection {
    * @returns {void}
    */
   _destroySocket () {
-    clearTimeout(this._reconnectTimeout)
+    clearTimeout(this._reconnectTimeoutId)
     this._socket.destroy()
     this._socket.removeAllListeners()
   }

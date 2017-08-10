@@ -44,6 +44,8 @@ class ClusterNode {
     this._electionNumber = Math.random()
     this._leader = null
     this._decideLeader()
+
+    this._onMessageBound = this._onMessage.bind(this)
   }
 
   sendMessage (serverName, topic, message) {
@@ -125,9 +127,9 @@ class ClusterNode {
       throw new Error(`Invalid node url ${nodeUrl}, must have a host and port e.g. '0.0.0.0:9089'`)
     }
     const connection = new OutgoingConnection(nodeUrl, this._config, this._logger)
+    this._addConnection(connection)
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('connect', () => {
-      this._addConnection(connection)
       connection.sendWho({
         id: this._serverName,
         url: this._url,
@@ -137,7 +139,11 @@ class ClusterNode {
 
     connection.on('iam', (message) => {
       if (!message.id || !message.peers || message.electionNumber === undefined) {
-        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, `malformed IAM message ${message}`)
+        this._logger.log(
+          C.LOG_LEVEL.ERROR,
+          C.EVENT.INVALID_MSGBUS_MESSAGE,
+          `malformed IAM message ${JSON.stringify(message)}`
+        )
         // TODO: send error
         return
       }
@@ -184,6 +190,7 @@ class ClusterNode {
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to add uninitialized peer')
     }
+    connection.on('message', this._onMessageBound)
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
@@ -193,6 +200,7 @@ class ClusterNode {
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to remove uninitialized peer')
     }
+    connection.removeListener('message', this._onMessageBound)
     this._knownPeers.delete(connection.remoteName)
     this._knownUrls.delete(connection.remoteUrl)
     this._decideLeader()
@@ -215,11 +223,15 @@ class ClusterNode {
   }
 
   _onIncomingConnection (socket) {
-    const connection = new IncomingConnection(socket, this._config)
+    const connection = new IncomingConnection(socket, this._config, this._logger)
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('who', (message) => {
       if (!message.id || !message.url || !message.electionNumber) {
-        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, `malformed WHO message ${message}`)
+        this._logger.log(
+          C.LOG_LEVEL.ERROR,
+          C.EVENT.UNSOLICITED_MSGBUS_MESSAGE,
+          `malformed WHO message ${JSON.stringify(message)}`
+        )
         // send error
         return
       }
@@ -241,7 +253,11 @@ class ClusterNode {
     })
     connection.on('known', (message) => {
       if (!message.peers || message.peers.constructor !== Array) {
-        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, 'malformed known message', message)
+        this._logger.log(
+          C.LOG_LEVEL.WARN,
+          C.EVENT.INFO,
+          `malformed known message ${JSON.stringify(message)}`
+        )
         // send error
         return
       }
@@ -253,7 +269,12 @@ class ClusterNode {
       this._checkReady()
     })
     this._addConnection(connection)
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, 'new incoming connection from socket', connection.remoteUrl)
+    this._logger.log(
+      C.LOG_LEVEL.DEBUG,
+      C.EVENT.INFO,
+      'new incoming connection from socket',
+      connection._socket.address()
+    )
   }
 
   _getPeers () {
@@ -262,7 +283,6 @@ class ClusterNode {
 
   _addConnection (connection) {
     connection.once('close', this._removeConnection.bind(this, connection))
-    connection.on('message', this._onMessage.bind(this, connection))
 
     this._connections.add(connection)
   }
@@ -292,16 +312,16 @@ class ClusterNode {
   }
 
   close (callback) {
-    this._tcpServer.close(() => {
-      this._connections.forEach(connection => connection.close())
-      if (this._connections.length === 0) {
-        callback()
-        return
-      }
-      utils.combineEvents(this._connections, 'close', () => {
-        callback()
-      })
-    })
+    if (this._connections.size === 0) {
+      this._tcpServer.close(callback)
+      return
+    }
+    utils.combineEvents(
+      Array.from(this._connections),
+      'close',
+      () => this._tcpServer.close(callback)
+    )
+    this._connections.forEach(connection => connection.close())
   }
 }
 
@@ -317,14 +337,16 @@ if (!module.parent) {
     reconnectInterval: 1500,
     pingTimeout: 500,
     pingInterval: 1000,
-    serverName: Math.random()
   }
   console.log(config)
   const options = {
     messageConnector: config,
-    logger: console
+    logger: console,
+    serverName: utils.getUid()
   }
   const node = new ClusterNode(options)
-  process.on('SIGINT', () => node.close())
+  process.on('SIGINT', (err) => node.close(() => {
+    process.exit(0)
+  }))
 }
 
