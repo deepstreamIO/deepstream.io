@@ -7,7 +7,6 @@ module.exports = class EventHandler {
     this._options = options
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.EVENT)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.EVENT, options, this._subscriptionRegistry)
-    this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
     this._logger = options.logger
   }
 

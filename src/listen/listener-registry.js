@@ -12,10 +12,11 @@ module.exports = class ListenerRegistry {
 
     this._providers = new Map()
     this._providerRegistry = new SubscriptionRegistry(options, topic)
-    this._providerRegistry.setSubscriptionListener({
-      onSubscriptionAdded: this.onListenAdded.bind(this),
-      onSubscriptionRemoved: this.onListenRemoved.bind(this)
-    })
+    this._providerRegistry.onSubscriptionAdded = this.onListenAdded.bind(this)
+    this._providerRegistry.onSubscriptionRemoved = this.onListenRemoved.bind(this)
+
+    this._subscriptionRegistry.onSubscriptionAdded = this.onSubscriptionAdded.bind(this)
+    this._subscriptionRegistry.onSubscriptionRemoved = this.onSubscriptionRemoved.bind(this)
   }
 
   handle (socket, message) {

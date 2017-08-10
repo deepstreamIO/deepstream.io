@@ -10,12 +10,16 @@ class SubscriptionRegistry {
     this._subscriptions = new Map()
     this._options = options
     this._topic = topic
-    this._subscriptionListener = {
-      onSubscriptionAdded: () => {},
-      onSubscriptionRemoved: () => {}
-    }
     this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
+  }
+
+  onSubscriptionAdded () {
+
+  }
+
+  onSubscriptionRemoved () {
+
   }
 
   getNames () {
@@ -29,10 +33,6 @@ class SubscriptionRegistry {
   getSubscribers (name) {
     const subscription = this._subscriptions.get(name)
     return subscription ? subscription.sockets : new Set()
-  }
-
-  setSubscriptionListener (subscriptionListener) {
-    this._subscriptionListener = subscriptionListener
   }
 
   subscribe (name, socket, silent) {
@@ -63,7 +63,7 @@ class SubscriptionRegistry {
     }
     names.add(name)
 
-    this._subscriptionListener.onSubscriptionAdded(
+    this.onSubscriptionAdded(
       name,
       socket,
       subscription.sockets.size
@@ -108,7 +108,7 @@ class SubscriptionRegistry {
       socket.removeListener('close', this._onSocketClose)
     }
 
-    this._subscriptionListener.onSubscriptionRemoved(
+    this.onSubscriptionRemoved(
       name,
       socket,
       subscription.sockets.size

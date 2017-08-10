@@ -12,7 +12,6 @@ module.exports = class RecordHandler {
     this._storageExclusion = options.storageExclusion || { test: () => false }
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
-    this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
   }
 
   handle (socket, message) {
