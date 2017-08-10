@@ -7,6 +7,7 @@ const IncomingConnection = require('./incoming-connection')
 const OutgoingConnection = require('./outgoing-connection')
 const utils = require('../utils/utils')
 const StateRegistry = require('./distributed-state-registry')
+const C = require('../constants/constants')
 
 const STATE = {
   INIT: 0,
@@ -22,6 +23,7 @@ class ClusterNode {
   constructor (options) {
     this._serverName = options.serverName
     this._logger = options.logger
+    this._options = options
 
     const config = this._config = options.messageConnector
     this._seedNodes = config.seedNodes
@@ -36,6 +38,7 @@ class ClusterNode {
     this._knownUrls = new Set()
     this._subscriptions = new Map() // topic -> [callback, ...]
     this._stateRegistries = new Map() // topic -> StateRegistry
+    this._serverDisconnectListeners = []
 
     this._state = STATE.INIT
     this._electionNumber = Math.random()
@@ -72,6 +75,10 @@ class ClusterNode {
     return Array.from(this._knownPeers.keys())
   }
 
+  subscribeServerDisconnect (callback) {
+    this._serverDisconnectListeners.push(callback)
+  }
+
   isLeader () {
     return this._leader === this._serverName
   }
@@ -83,7 +90,7 @@ class ClusterNode {
   getStateRegistry (name) {
     let registry = this._stateRegistries.get(name)
     if (!registry) {
-      registry = new StateRegistry(name, this._options)
+      registry = new StateRegistry(name, this._options, this)
       this._stateRegistries.set(name, registry)
     }
     return registry
@@ -93,8 +100,7 @@ class ClusterNode {
     {
       const current = STATE_LOOKUP[this._state]
       const next = STATE_LOOKUP[nextState]
-      console.log(`<><> node state transition ${current} -> ${next} <><>`)
-      console.log('<><> peers', this._knownUrls, '<><>')
+      this._logger.log(C.LOG_LEVEL.DEBUG, `<><> Node state transition ${current} -> ${next} <><>`)
     }
     this._state = nextState
   }
@@ -183,6 +189,7 @@ class ClusterNode {
     this._knownPeers.delete(connection.remoteName)
     this._knownUrls.delete(connection.remoteUrl)
     this._decideLeader()
+    this._serverDisconnectListeners.forEach(callback => callback(connection.remoteName))
   }
 
   _decideLeader () {
