@@ -14,12 +14,6 @@ class SubscriptionRegistry {
       onSubscriptionAdded: () => {},
       onSubscriptionRemoved: () => {}
     }
-    this._constants = {
-      MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
-      SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
-      UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
-      NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
-    }
     this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
   }
@@ -35,10 +29,6 @@ class SubscriptionRegistry {
   getSubscribers (name) {
     const subscription = this._subscriptions.get(name)
     return subscription ? subscription.sockets : new Set()
-  }
-
-  setAction (name, value) {
-    this._constants[name.toUpperCase()] = value
   }
 
   setSubscriptionListener (subscriptionListener) {
@@ -57,10 +47,10 @@ class SubscriptionRegistry {
     } else if (subscription.sockets.has(socket)) {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
-        this._constants.MULTIPLE_SUBSCRIPTIONS,
+        C.EVENT.MULTIPLE_SUBSCRIPTIONS,
         `repeat supscription to "${name}" by ${socket.user}`
       )
-      socket.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
+      socket.sendError(this._topic, C.EVENT.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
@@ -82,7 +72,7 @@ class SubscriptionRegistry {
     if (!silent) {
       this._options.logger.log(
         C.LOG_LEVEL.DEBUG,
-        this._constants.SUBSCRIBE,
+        C.EVENT.SUBSCRIBE,
         `for ${this._topic}:${name} by ${socket.user}`
       )
     }
@@ -96,10 +86,10 @@ class SubscriptionRegistry {
     if (!subscription || !subscription.sockets.delete(socket)) {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
-        this._constants.NOT_SUBSCRIBED,
+        C.EVENT.NOT_SUBSCRIBED,
         `${socket.user} is not subscribed to ${name}`
       )
-      socket.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)
+      socket.sendError(this._topic, C.EVENT.NOT_SUBSCRIBED, name)
       return
     }
 
@@ -127,7 +117,7 @@ class SubscriptionRegistry {
     if (!silent) {
       this._options.logger.log(
         C.LOG_LEVEL.DEBUG,
-        this._constants.UNSUBSCRIBE,
+        C.EVENT.UNSUBSCRIBE,
         `for ${this._topic}:${name} by ${socket.user}`
       )
     }

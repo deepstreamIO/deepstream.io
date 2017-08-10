@@ -12,8 +12,6 @@ module.exports = class ListenerRegistry {
 
     this._providers = new Map()
     this._providerRegistry = new SubscriptionRegistry(options, topic)
-    this._providerRegistry.setAction('subscribe', C.ACTIONS.LISTEN)
-    this._providerRegistry.setAction('unsubscribe', C.ACTIONS.UNLISTEN)
     this._providerRegistry.setSubscriptionListener({
       onSubscriptionAdded: this.onListenAdded.bind(this),
       onSubscriptionRemoved: this.onListenRemoved.bind(this)
