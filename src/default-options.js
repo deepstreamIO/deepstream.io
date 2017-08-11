@@ -82,9 +82,25 @@ exports.get = function () {
     /*
      * Default Plugins
      */
-    messageConnector: require('./default-plugins/noop-message-connector'),
     cache: require('./default-plugins/local-cache'),
     storage: require('./default-plugins/noop-storage'),
+
+    /*
+     * Clustering config
+     */
+    messageConnector: {
+      enabled: true,
+      host: 'localhost',
+      port: 9089,
+      seedNodes: [],
+      maxReconnectAttempts: 5,
+      reconnectInterval: 1500,
+      pingInterval: 1000,
+      pingTimeout: 500,
+      clusterKeepAliveInterval: 5000,
+      clusterActiveCheckInterval: 1000,
+      clusterNodeInactiveTimeout: 6000
+    },
 
     /*
      * Storage options

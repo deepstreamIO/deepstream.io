@@ -197,6 +197,7 @@ class ClusterNode {
   }
 
   _removePeer (connection) {
+    this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `peer removed ${connection.remoteUrl}/${connection.remoteName}`)
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to remove uninitialized peer')
     }
@@ -289,7 +290,7 @@ class ClusterNode {
 
   _removeConnection (connection) {
     this._connections.delete(connection)
-    if (this._knownPeers.has(connection.serverName)) {
+    if (this._knownPeers.has(connection.remoteName)) {
       this._removePeer(connection)
     }
   }
@@ -345,7 +346,7 @@ if (!module.parent) {
     serverName: utils.getUid()
   }
   const node = new ClusterNode(options)
-  process.on('SIGINT', (err) => node.close(() => {
+  process.on('SIGINT', () => node.close(() => {
     process.exit(0)
   }))
 }

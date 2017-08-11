@@ -142,7 +142,7 @@ class ClusterConnection extends EventEmitter
     const topic = prefixedMessage[0]
     const message = prefixedMessage.slice(1)
     if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
-      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<-(${this.remoteUrl})`, MESSAGE_LOOKUP[topic], message)
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<-(${this.remoteUrl}) ${MESSAGE_LOOKUP[topic]} ${message}`)
     }
 
     if (topic === MESSAGE.CLOSE) {
