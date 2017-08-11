@@ -30,6 +30,7 @@ class ClusterConnection extends EventEmitter
     this.localUrl = `${config.host}:${config.port}`
     this.STATE = STATE
     this._state = STATE.INIT
+    this._readBuffer = ''
   }
 
   getRemoteUrl () {
@@ -53,11 +54,8 @@ class ClusterConnection extends EventEmitter
   _send (topic, messageOpt) {
     const message = messageOpt || ''
     if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
-      this._logger.log(
-        C.LOG_LEVEL.DEBUG,
-        C.EVENT.INFO,
-        `->(${this.remoteUrl}) ${MESSAGE_LOOKUP[topic]} ${message}`
-      )
+      const error = `->(${this.remoteName}) ${MESSAGE_LOOKUP[topic]} ${message}`
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, error)
     }
     this._socket.write(topic + message + MESSAGE.MESSAGE_SEPERATOR, 'utf8')
   }
@@ -105,6 +103,11 @@ class ClusterConnection extends EventEmitter
     this.close()
   }
 
+  sendRejectDuplicate () {
+    this._send(MESSAGE.REJECT_DUPLICATE_CONNECTION)
+    this.close()
+  }
+
   sendMessage (message) {
     this._send(MESSAGE.MSG, JSON.stringify(message))
   }
@@ -132,9 +135,18 @@ class ClusterConnection extends EventEmitter
   }
 
   _onData (data) {
-    const messages = data.split(MESSAGE.MESSAGE_SEPERATOR)
-    for (let i = 0; i < messages.length - 1; i++) {
-      this._onMessage(messages[i])
+    const readBuffer = this._readBuffer + data
+    this._readBuffer = ''
+    let readIndex = 0
+    let splitIndex
+    while (readIndex < readBuffer.length) {
+      splitIndex = readBuffer.indexOf(MESSAGE.MESSAGE_SEPERATOR, readIndex)
+      if (splitIndex === -1) {
+        this._readBuffer = readBuffer.slice(readIndex)
+        return
+      }
+      this._onMessage(readBuffer.slice(readIndex, splitIndex))
+      readIndex = splitIndex + 1
     }
   }
 
@@ -142,23 +154,27 @@ class ClusterConnection extends EventEmitter
     const topic = prefixedMessage[0]
     const message = prefixedMessage.slice(1)
     if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
-      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<-(${this.remoteUrl}) ${MESSAGE_LOOKUP[topic]} ${message}`)
+      const topicStr = MESSAGE_LOOKUP[topic]
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<-(${this.remoteName}) ${topicStr} ${message}`)
     }
 
-    if (topic === MESSAGE.CLOSE) {
+    if (topic === MESSAGE.PING) {
+      this._handlePing(message)
+      return
+    } else if (topic === MESSAGE.PONG) {
+      this._handlePong(message)
+      return
+    } else if (topic === MESSAGE.CLOSE) {
       this._socket.end()
       return
     } else if (topic === MESSAGE.REJECT) {
       this._handleReject(message)
       return
+    } else if (topic === MESSAGE.REJECT_DUPLICATE_CONNECTION) {
+      this._handleRejectDuplicate()
+      return
     } else if (topic === MESSAGE.ERROR) {
       this._handleError(message)
-      return
-    } else if (topic === MESSAGE.PING) {
-      this._handlePing(message)
-      return
-    } else if (topic === MESSAGE.PONG) {
-      this._handlePong(message)
       return
     }
     let parsedMessage
@@ -167,6 +183,7 @@ class ClusterConnection extends EventEmitter
     } catch (err) {
       // send error message
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, `malformed json ${message}`)
+      process.exit(1)
       return
     }
     if (topic === MESSAGE.WHO) {
@@ -203,11 +220,13 @@ class ClusterConnection extends EventEmitter
   }
 
   _handleReject (reason) {
-    // TODO: if reason is because we're already connected, do nothing (perhaps add REJECT_DUPLICATE
-    // message for that?)
     // TODO: else warn
     this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `connection rejected with reason: ${reason}`)
     this._stateTransition(STATE.REJECTED)
+  }
+
+  _handleRejectDuplicate () {
+    this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, 'duplicate connection rejected')
   }
 
   _handleError (error) {

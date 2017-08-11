@@ -447,6 +447,7 @@ module.exports = class ListenerRegistry {
         C.EVENT.LEADING_LISTEN,
         `finished for ${this._topic}:${subscriptionName}`
       )
+
       delete this._leadingListen[subscriptionName]
       this._lockRegistry.release(this._getUniqueLockName(subscriptionName))
     } else {
@@ -510,9 +511,15 @@ module.exports = class ListenerRegistry {
 
     if (this._leadingListen[subscriptionName]) {
       this._nextDiscoveryStage(subscriptionName)
-    } else {
+    } else if (this._leadListen[subscriptionName]) {
       this._sendRemoteDiscoveryStop(this._leadListen[subscriptionName], subscriptionName)
       delete this._leadListen[subscriptionName]
+    } else {
+      this._options.logger.log(
+        C.LOG_LEVEL.WARN,
+        C.EVENT.LOCAL_LISTEN,
+        `nothing to stop for ${this._topic}:${subscriptionName}`
+      )
     }
   }
 

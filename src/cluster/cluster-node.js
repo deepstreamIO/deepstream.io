@@ -48,7 +48,6 @@ class ClusterNode {
   sendDirect (serverName, topic, message) {
     const connection = this._knownPeers.get(serverName)
     if (!connection) {
-      // TODO: warn
       const error = `tried to send message to unknown server ${serverName}`
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
       return
@@ -111,11 +110,8 @@ class ClusterNode {
   }
 
   _onReady () {
-    this._logger.log(
-      C.LOG_LEVEL.INFO,
-      C.EVENT.INFO,
-      `P2P Message Connector listening at ${this._config.host}:${this._config.port}`
-    )
+    const error = `P2P Message Connector listening at ${this._config.host}:${this._config.port}`
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, error)
     for (let i = 0; i < this._seedNodes.length; i++) {
       this._probeHost(this._seedNodes[i])
     }
@@ -145,11 +141,8 @@ class ClusterNode {
 
     connection.on('iam', (message) => {
       if (!message.id || !message.peers || message.electionNumber === undefined) {
-        this._logger.log(
-          C.LOG_LEVEL.ERROR,
-          C.EVENT.INVALID_MSGBUS_MESSAGE,
-          `malformed IAM message ${JSON.stringify(message)}`
-        )
+        const error = `malformed IAM message ${JSON.stringify(message)}`
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
         // TODO: send error
         return
       }
@@ -158,11 +151,8 @@ class ClusterNode {
         // this peer was already known to us, but responded to our identification message
         // TODO: warn, reject with reason
         this._removeConnection(connection)
-        this._logger.log(
-          C.LOG_LEVEL.WARN,
-          C.EVENT.UNSOLICITED_MSGBUS_MESSAGE,
-          'received IAM from an outbound connection to a known peer'
-        )
+        const error = 'received IAM from an outbound connection to a known peer'
+        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
       } else {
         this._addPeer(connection)
         for (const url of message.peers) {
@@ -234,19 +224,19 @@ class ClusterNode {
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('who', (message) => {
       if (!message.id || !message.url || !message.electionNumber) {
-        this._logger.log(
-          C.LOG_LEVEL.ERROR,
-          C.EVENT.UNSOLICITED_MSGBUS_MESSAGE,
-          `malformed WHO message ${JSON.stringify(message)}`
-        )
+        const error = `malformed WHO message ${JSON.stringify(message)}`
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
         // send error
         return
       }
       connection.setRemoteDetails(message.id, message.electionNumber, message.url)
       if (this._knownPeers.has(connection.remoteName)) {
         // I'm already connected to this peer, probably through an outbound connection, reject
-        // TODO: reject
-        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, 'received inbound connection from peer that was already known')
+        // TODO: the following line causes 'tried to send message to unknown server' errors in e2e
+        // tests, investigate :)
+        // connection.sendRejectDuplicate()
+        const error = 'received inbound connection from peer that was already known'
+        this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
         return
       }
 
@@ -260,11 +250,8 @@ class ClusterNode {
     })
     connection.on('known', (message) => {
       if (!message.peers || message.peers.constructor !== Array) {
-        this._logger.log(
-          C.LOG_LEVEL.WARN,
-          C.EVENT.INFO,
-          `malformed known message ${JSON.stringify(message)}`
-        )
+        const error = `malformed known message ${JSON.stringify(message)}`
+        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, error)
         // send error
         return
       }
@@ -276,12 +263,8 @@ class ClusterNode {
       this._checkReady()
     })
     this._addConnection(connection)
-    this._logger.log(
-      C.LOG_LEVEL.DEBUG,
-      C.EVENT.INFO,
-      'new incoming connection from socket',
-      connection._socket.address()
-    )
+    const error = `new incoming connection from socket ${connection._socket.address()}`
+    this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, error)
   }
 
   _getPeers () {

@@ -1,5 +1,4 @@
 module.exports = {
-  TOPIC_SEPERATOR: String.fromCharCode(29),
   MESSAGE_SEPERATOR: String.fromCharCode(28),
   SUBSCRIBE: 'S',
   UNSUBSCRIBE: 'U',
@@ -7,6 +6,7 @@ module.exports = {
   IAM: 'I',
   KNOWN: 'K',
   REJECT: 'R',
+  REJECT_DUPLICATE_CONNECTION: 'D',
   CLOSE: 'C',
   MSG: 'M',
   ERROR: 'E',
