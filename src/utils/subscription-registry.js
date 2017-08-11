@@ -3,7 +3,7 @@ const SocketWrapper = require('../message/socket-wrapper')
 
 class SubscriptionRegistry {
   constructor (options, topic) {
-    this._names = new Map()
+    this._sockets = new Map()
     this._broadcastTimeoutTime = options.broadcastTimeout || 0
     this._broadcastTimeout = null
     this._pending = []
@@ -35,8 +35,9 @@ class SubscriptionRegistry {
     return subscription ? subscription.sockets : new Set()
   }
 
-  subscribe (name, socket, silent) {
+  subscribe (name, socket) {
     const subscription = this._subscriptions.get(name) || {
+      name,
       shared: '',
       senders: new Map(),
       sockets: new Set()
@@ -54,33 +55,16 @@ class SubscriptionRegistry {
       return
     }
 
-    subscription.sockets.add(socket)
-
-    const names = this._names.get(socket) || new Set()
-    if (names.size === 0) {
-      this._names.set(socket, names)
-      socket.once('close', this._onSocketClose)
-    }
-    names.add(name)
-
-    this.onSubscriptionAdded(
-      name,
-      socket,
-      subscription.sockets.size
+    this._options.logger.log(
+      C.LOG_LEVEL.DEBUG,
+      C.EVENT.SUBSCRIBE,
+      `for ${this._topic}:${name} by ${socket.user}`
     )
 
-    if (!silent) {
-      this._options.logger.log(
-        C.LOG_LEVEL.DEBUG,
-        C.EVENT.SUBSCRIBE,
-        `for ${this._topic}:${name} by ${socket.user}`
-      )
-    }
-
-    return subscription.sockets.size
+    return this._addSocket(subscription, socket)
   }
 
-  unsubscribe (name, socket, silent) {
+  unsubscribe (name, socket) {
     const subscription = this._subscriptions.get(name)
 
     if (!subscription || !subscription.sockets.delete(socket)) {
@@ -93,31 +77,13 @@ class SubscriptionRegistry {
       return
     }
 
-    if (subscription.sockets.size === 0) {
-      this._subscriptions.delete(name)
-      this._pending.splice(this._pending.indexOf(subscription), 1)
-    } else {
-      subscription.senders.delete(socket)
-    }
-
-    const names = this._names.get(socket)
-    names.delete(name)
-
-    this.onSubscriptionRemoved(
-      name,
-      socket,
-      subscription.sockets.size
+    this._options.logger.log(
+      C.LOG_LEVEL.DEBUG,
+      C.EVENT.UNSUBSCRIBE,
+      `for ${this._topic}:${name} by ${socket.user}`
     )
 
-    if (!silent) {
-      this._options.logger.log(
-        C.LOG_LEVEL.DEBUG,
-        C.EVENT.UNSUBSCRIBE,
-        `for ${this._topic}:${name} by ${socket.user}`
-      )
-    }
-
-    return subscription.sockets.size
+    return this._removeSocket(subscription, socket)
   }
 
   sendToSubscribers (name, msg, socket) {
@@ -162,10 +128,48 @@ class SubscriptionRegistry {
   }
 
   _onSocketClose (socket) {
-    for (const name of this._names.get(socket)) {
-      this.unsubscribe(name, socket, true)
+    for (const subscription of this._sockets.get(socket)) {
+      this._removeSocket(subscription, socket)
     }
-    this._names.delete(socket)
+  }
+
+  _addSocket (subscription, socket) {
+    subscription.sockets.add(socket)
+
+    const subscriptions = this._sockets.get(socket) || new Set()
+    if (subscriptions.size === 0) {
+      this._sockets.set(socket, subscriptions)
+      socket.once('close', this._onSocketClose)
+    }
+    subscriptions.add(subscription)
+
+    this.onSubscriptionAdded(
+      subscription.name,
+      socket,
+      subscription.sockets.size
+    )
+
+    return subscription.sockets.size
+  }
+
+  _removeSocket (subscription, socket) {
+    const subscriptions = this._sockets.get(socket)
+    subscriptions.delete(subscription)
+
+    if (subscription.sockets.size === 0) {
+      this._subscriptions.delete(subscription.name)
+      this._pending.splice(this._pending.indexOf(subscription), 1)
+    } else {
+      subscription.senders.delete(socket)
+    }
+
+    this.onSubscriptionRemoved(
+      subscription.name,
+      socket,
+      subscription.sockets.size
+    )
+
+    return subscription.sockets.size
   }
 
   _onBroadcastTimeout () {
