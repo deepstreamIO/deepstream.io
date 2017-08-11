@@ -57,6 +57,15 @@ module.exports = class ListenerRegistry {
       this._listeners.set(pattern, listener)
     }
 
+    if (listener.sockets.has(socket)) {
+      this._options.logger.log(
+        C.LOG_LEVEL.ERROR,
+        C.EVENT.MULTIPLE_SUBSCRIPTIONS,
+        `repeat listen to "${pattern}" by ${socket.user}`
+      )
+      return
+    }
+
     listener.sockets.set(socket, { socket, pattern, id: Math.random() })
 
     for (const name of this._subscriptionRegistry.getNames()) {
@@ -77,7 +86,14 @@ module.exports = class ListenerRegistry {
   onListenRemoved (pattern, socket) {
     const listener = this._listeners.get(pattern)
 
-    listener.sockets.delete(socket)
+    if (!listener || !listener.sockets.delete(socket)) {
+      this._options.logger.log(
+        C.LOG_LEVEL.WARN,
+        C.EVENT.NOT_SUBSCRIBED,
+        `${socket.user} is not listening to ${pattern}`
+      )
+      return
+    }
 
     if (listener.sockets.size === 0) {
       this._listeners.delete(pattern)
