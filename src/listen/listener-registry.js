@@ -44,17 +44,18 @@ module.exports = class ListenerRegistry {
 
   onListenAdded (pattern, socket) {
     const listener = this._listeners.get(pattern) || {
-      expr: null,
+      expr: undefined,
       sockets: new Map()
     }
 
-    if (listener.expr === null) {
+    if (listener.expr === undefined) {
       try {
         listener.expr = new RegExp(pattern)
       } catch (err) {
+        listener.expr = null
         socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
-        return
       }
+
       this._listeners.set(pattern, listener)
     }
 
@@ -224,7 +225,7 @@ module.exports = class ListenerRegistry {
     let matches = []
 
     for (const [ , { expr, sockets } ] of this._listeners) {
-      if (!expr.test(name)) {
+      if (!expr || !expr.test(name)) {
         continue
       }
 
