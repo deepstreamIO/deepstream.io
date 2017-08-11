@@ -341,7 +341,7 @@ Deepstream.prototype._serviceInit = function () {
     this._options.permissionHandler.setRecordHandler(this._recordHandler)
   }
 
-  setTimeout(() => this._transition('services-started'), 400)
+  process.nextTick(() => this._transition('services-started'))
 }
 
 /**
