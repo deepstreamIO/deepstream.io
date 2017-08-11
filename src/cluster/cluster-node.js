@@ -49,7 +49,8 @@ class ClusterNode {
     const connection = this._knownPeers.get(serverName)
     if (!connection) {
       // TODO: warn
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, `tried to send message to unknown server ${serverName}`)
+      const error = `tried to send message to unknown server ${serverName}`
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
       return
     }
     connection.sendMessage({ topic, message })
@@ -314,7 +315,7 @@ class ClusterNode {
       return
     }
     for (let i = 0; i < listeners.length; i++) {
-      listeners[i](message)
+      listeners[i](message, connection.remoteName)
     }
   }
 

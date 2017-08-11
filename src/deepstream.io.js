@@ -17,6 +17,7 @@ const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
 const MessageConnector = require('./cluster/cluster-node')
+const LockRegistry = require('./cluster/cluster-unique-state-provider')
 const DependencyInitialiser = require('./utils/dependency-initialiser')
 const C = require('./constants/constants')
 const pkg = require('../package.json')
@@ -307,6 +308,7 @@ Deepstream.prototype._serviceInit = function () {
   this._messageDistributor = new MessageDistributor(this._options)
 
   this._options.message = new MessageConnector(this._options)
+  this._options.uniqueRegistry = new LockRegistry(this._options, this._options.message)
 
   this._eventHandler = new EventHandler(this._options)
   this._messageDistributor.registerForTopic(
