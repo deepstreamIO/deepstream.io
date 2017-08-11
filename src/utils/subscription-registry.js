@@ -103,11 +103,6 @@ class SubscriptionRegistry {
     const names = this._names.get(socket)
     names.delete(name)
 
-    if (names.size === 0) {
-      this._names.delete(socket)
-      socket.removeListener('close', this._onSocketClose)
-    }
-
     this.onSubscriptionRemoved(
       name,
       socket,
@@ -170,6 +165,7 @@ class SubscriptionRegistry {
     for (const name of this._names.get(socket)) {
       this.unsubscribe(name, socket, true)
     }
+    this._names.delete(socket)
   }
 
   _onBroadcastTimeout () {
