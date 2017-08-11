@@ -76,16 +76,6 @@ Cluster.prototype._startServer = function (port, done) {
     showLogo : false,
     stopped  : this._checkStopped.bind(this),
 
-    plugins : {
-      message : {
-        name    : 'redis',
-        options : {
-          host   : process.env.REDIS_HOST || 'localhost',
-          port   : process.env.REDIS_PORT || 6379
-        }
-      }
-    },
-
     maxAuthAttempts              : 2,
     unauthenticatedClientTimeout : 200,
     permission: {
@@ -117,6 +107,12 @@ Cluster.prototype._startServer = function (port, done) {
         }
       }
     },
+
+    messageConnector: {
+      host: 'localhost',
+      port: Number(port) + 400,
+      seedNodes: Object.keys(this.servers).map(p => `localhost:${Number(p) + 400}`),
+    }
   })
   if (done instanceof Function) {
     this.servers[port].on('started', done)
