@@ -2,6 +2,8 @@ const C = require('../constants/constants')
 const SocketWrapper = require('../message/socket-wrapper')
 const invariant = require('invariant')
 
+const EMPTY_SET = new Set()
+
 class SubscriptionRegistry {
   constructor (options, topic) {
     invariant(topic, 'missing subscription topic')
@@ -35,7 +37,7 @@ class SubscriptionRegistry {
 
   getSubscribers (name) {
     const subscription = this._subscriptions.get(name)
-    return subscription ? subscription.sockets : new Set()
+    return subscription ? subscription.sockets : EMPTY_SET
   }
 
   subscribe (name, socket) {
