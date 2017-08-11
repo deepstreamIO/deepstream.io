@@ -4,6 +4,8 @@ const invariant = require('invariant')
 
 class SubscriptionRegistry {
   constructor (options, topic) {
+    invariant(topic, 'missing subscription topic')
+
     this._sockets = new Map()
     this._broadcastTimeoutTime = options.broadcastTimeout || 0
     this._broadcastTimeout = null
@@ -129,8 +131,12 @@ class SubscriptionRegistry {
   }
 
   _onSocketClose (socket) {
-    for (const subscription of this._sockets.get(socket)) {
-      this._removeSocket(subscription, socket)
+    try {
+      for (const subscription of this._sockets.get(socket)) {
+        this._removeSocket(subscription, socket)
+      }
+    } catch (err) {
+      this._logger.log(C.LOG_LEVEL.ERROR, 'ERROR', err.message || err)
     }
   }
 

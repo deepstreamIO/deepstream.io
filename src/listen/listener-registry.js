@@ -48,7 +48,7 @@ module.exports = class ListenerRegistry {
       sockets: new Map()
     }
 
-    if (!listener.expr) {
+    if (listener.expr === null) {
       try {
         listener.expr = new RegExp(pattern)
       } catch (err) {
