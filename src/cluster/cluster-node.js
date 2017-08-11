@@ -44,8 +44,6 @@ class ClusterNode {
     this._electionNumber = Math.random()
     this._leader = null
     this._decideLeader()
-
-    this._onMessageBound = this._onMessage.bind(this)
   }
 
   sendMessage (serverName, topic, message) {
@@ -58,6 +56,10 @@ class ClusterNode {
     connection.sendMessage({ topic, message })
   }
 
+  send (topic, message) {
+    this.sendBroadcast(topic, message)
+  }
+
   sendBroadcast (topic, message) {
     for (const connection of this._knownPeers.values()) {
       connection.sendMessage({ topic, message })
@@ -65,7 +67,8 @@ class ClusterNode {
   }
 
   subscribe (topic, callback) {
-    const subscriptionsToTopic = this._subscriptions.get(topic) || []
+    this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `new subscription to topic ${topic}`)
+    const subscriptionsToTopic = this._subscriptions.get(topic)
     if (!subscriptionsToTopic) {
       this._subscriptions.set(topic, [callback])
     } else {
@@ -122,9 +125,12 @@ class ClusterNode {
     if (this._url === nodeUrl || this._knownUrls.has(nodeUrl)) {
       return
     }
+    if (typeof nodeUrl !== 'string') {
+      throw new Error(`Invalid node url ${nodeUrl}: must be a string e.g. "localhost:9089"`)
+    }
     const parts = nodeUrl.split(':')
     if (parts.length !== 2) {
-      throw new Error(`Invalid node url ${nodeUrl}, must have a host and port e.g. '0.0.0.0:9089'`)
+      throw new Error(`Invalid node url ${nodeUrl}: must have a host and port e.g. "localhost:9089"`)
     }
     const connection = new OutgoingConnection(nodeUrl, this._config, this._logger)
     this._addConnection(connection)
@@ -190,7 +196,7 @@ class ClusterNode {
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to add uninitialized peer')
     }
-    connection.on('message', this._onMessageBound)
+    connection.on('message', this._onMessage.bind(this, connection))
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
@@ -201,7 +207,7 @@ class ClusterNode {
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to remove uninitialized peer')
     }
-    connection.removeListener('message', this._onMessageBound)
+    connection.removeAllListeners('message')
     this._knownPeers.delete(connection.remoteName)
     this._knownUrls.delete(connection.remoteUrl)
     this._decideLeader()
@@ -304,7 +310,8 @@ class ClusterNode {
     const message = data.message
     const listeners = this._subscriptions.get(topic)
     if (!listeners || listeners.length === 0) {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, `message on unknown topic ${topic}`, message)
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, `message on unknown topic ${topic}: ${message}`)
+      console.log(this._subscriptions.keys())
       return
     }
     for (let i = 0; i < listeners.length; i++) {
