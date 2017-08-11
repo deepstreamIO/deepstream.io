@@ -58,6 +58,8 @@ class SubscriptionRegistry {
       return
     }
 
+    subscription.sockets.add(socket)
+
     this._options.logger.log(
       C.LOG_LEVEL.DEBUG,
       C.EVENT.SUBSCRIBE,
@@ -131,20 +133,13 @@ class SubscriptionRegistry {
   }
 
   _onSocketClose (socket) {
-    try {
-      for (const subscription of this._sockets.get(socket)) {
-        this._removeSocket(subscription, socket)
-      }
-    } catch (err) {
-      this._logger.log(C.LOG_LEVEL.ERROR, 'ERROR', err.message || err)
+    for (const subscription of this._sockets.get(socket)) {
+      subscription.sockets.delete(socket)
+      this._removeSocket(subscription, socket)
     }
   }
 
   _addSocket (subscription, socket) {
-    invariant(!subscription.sockets.has(socket), `existing subscription for ${socket.user}`)
-
-    subscription.sockets.add(socket)
-
     const subscriptions = this._sockets.get(socket) || new Set()
 
     if (subscriptions.size === 0) {
