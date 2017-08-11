@@ -140,12 +140,13 @@ class SubscriptionRegistry {
     subscription.sockets.add(socket)
 
     const subscriptions = this._sockets.get(socket) || new Set()
+
     if (subscriptions.size === 0) {
       this._sockets.set(socket, subscriptions)
       socket.once('close', this._onSocketClose)
     }
 
-    invariant(!subscriptions.has(subscription), `existing subscription for ${socket.user}`)
+    invariant(!subscriptions.has(subscription), `existing subscription for ${subscription.name}`)
     subscriptions.add(subscription)
 
     this.onSubscriptionAdded(
@@ -158,24 +159,22 @@ class SubscriptionRegistry {
   }
 
   _removeSocket (subscription, socket) {
-    const subscriptions = this._sockets.get(socket)
-
-    invariant(subscriptions.has(subscription), `missing subscription for ${socket.user}`)
-    subscriptions.delete(subscription)
-
     if (subscription.sockets.size === 0) {
       invariant(this._subscriptions.has(subscription.name), `missing subscription for ${subscription.name}`)
       this._subscriptions.delete(subscription.name)
 
-      {
-        const idx = this._pending.indexOf(subscription)
-        if (idx !== -1) {
-          this._pending.splice(idx, 1)
-        }
+      const idx = this._pending.indexOf(subscription)
+      if (idx !== -1) {
+        this._pending.splice(idx, 1)
       }
     } else {
       subscription.senders.delete(socket)
     }
+
+    const subscriptions = this._sockets.get(socket)
+
+    invariant(subscriptions.has(subscription), `missing subscription for ${socket.user}`)
+    subscriptions.delete(subscription)
 
     this.onSubscriptionRemoved(
       subscription.name,
