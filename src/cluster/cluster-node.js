@@ -33,8 +33,7 @@ class ClusterNode {
     this._tcpServer.listen(config.port, config.host, this._onReady.bind(this))
 
     this._connections = new Set()
-    // serverName -> connection
-    this._knownPeers = new Map()
+    this._knownPeers = new Map() // serverName -> connection
     this._knownUrls = new Set()
     this._subscriptions = new Map() // topic -> [callback, ...]
     this._stateRegistries = new Map() // topic -> StateRegistry
@@ -46,7 +45,7 @@ class ClusterNode {
     this._decideLeader()
   }
 
-  sendMessage (serverName, topic, message) {
+  sendDirect (serverName, topic, message) {
     const connection = this._knownPeers.get(serverName)
     if (!connection) {
       // TODO: warn
