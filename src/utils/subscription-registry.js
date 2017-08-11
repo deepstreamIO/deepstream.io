@@ -1,5 +1,6 @@
 const C = require('../constants/constants')
 const SocketWrapper = require('../message/socket-wrapper')
+const invariant = require('invariant')
 
 class SubscriptionRegistry {
   constructor (options, topic) {
@@ -134,6 +135,8 @@ class SubscriptionRegistry {
   }
 
   _addSocket (subscription, socket) {
+    invariant(!subscription.sockets.has(socket), `existing subscription for ${socket.user}`)
+
     subscription.sockets.add(socket)
 
     const subscriptions = this._sockets.get(socket) || new Set()
@@ -141,6 +144,8 @@ class SubscriptionRegistry {
       this._sockets.set(socket, subscriptions)
       socket.once('close', this._onSocketClose)
     }
+
+    invariant(!subscriptions.has(subscription), `existing subscription for ${socket.user}`)
     subscriptions.add(subscription)
 
     this.onSubscriptionAdded(
@@ -154,11 +159,20 @@ class SubscriptionRegistry {
 
   _removeSocket (subscription, socket) {
     const subscriptions = this._sockets.get(socket)
+
+    invariant(subscriptions.has(subscription), `missing subscription for ${socket.user}`)
     subscriptions.delete(subscription)
 
     if (subscription.sockets.size === 0) {
+      invariant(this._subscriptions.has(subscription.name), `missing subscription for ${subscription.name}`)
       this._subscriptions.delete(subscription.name)
-      this._pending.splice(this._pending.indexOf(subscription), 1)
+
+      {
+        const idx = this._pending.indexOf(subscription)
+        if (idx !== -1) {
+          this._pending.splice(idx, 1)
+        }
+      }
     } else {
       subscription.senders.delete(socket)
     }

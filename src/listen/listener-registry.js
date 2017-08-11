@@ -1,6 +1,7 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
+const invariant = require('invariant')
 
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
@@ -57,12 +58,9 @@ module.exports = class ListenerRegistry {
       this._listeners.set(pattern, listener)
     }
 
+    invariant(!listener.sockets.has(socket), `repeat listen to "${pattern}" by ${socket.user}`)
+
     if (listener.sockets.has(socket)) {
-      this._options.logger.log(
-        C.LOG_LEVEL.ERROR,
-        C.EVENT.MULTIPLE_SUBSCRIPTIONS,
-        `repeat listen to "${pattern}" by ${socket.user}`
-      )
       return
     }
 
@@ -86,12 +84,9 @@ module.exports = class ListenerRegistry {
   onListenRemoved (pattern, socket) {
     const listener = this._listeners.get(pattern)
 
+    invariant(listener && listener.sockets.has(socket), `${socket.user} is not listening to ${pattern}`)
+
     if (!listener || !listener.sockets.delete(socket)) {
-      this._options.logger.log(
-        C.LOG_LEVEL.WARN,
-        C.EVENT.NOT_SUBSCRIBED,
-        `${socket.user} is not listening to ${pattern}`
-      )
       return
     }
 
