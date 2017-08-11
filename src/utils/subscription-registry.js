@@ -23,7 +23,7 @@ class SubscriptionRegistry {
     if (options.broadcastTimeout !== undefined) {
       this._delay = options.broadcastTimeout
     }
-    this._names = new Map()
+    this._sockets = new Map()
     this._subscriptions = new Map()
     this._options = options
     this._topic = topic
@@ -129,8 +129,9 @@ class SubscriptionRegistry {
   * @param {SockerWrapper} the socket that closed
   */
   _onSocketClose (socket) {
-    for (const name of this._names.get(socket)) {
-      this.unsubscribe(name, socket, true)
+    for (const subscription of this._sockets.get(socket)) {
+      subscription.sockets.delete(socket)
+      this._removeSocket(subscription, socket)
     }
   }
 
@@ -264,6 +265,7 @@ class SubscriptionRegistry {
    */
   subscribe (name, socket) {
     const subscription = this._subscriptions.get(name) || {
+      name,
       sockets: new Set(),
       uniqueSenders: new Map(),
       sharedMessages: ''
@@ -280,20 +282,7 @@ class SubscriptionRegistry {
 
     subscription.sockets.add(socket)
 
-    const names = this._names.get(socket) || new Set()
-    if (names.size === 0) {
-      this._names.set(socket, names)
-      socket.once('close', this._onSocketClose)
-    }
-    names.add(name)
-
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionMade(
-        name,
-        socket,
-        subscription.sockets.size
-      )
-    }
+    this._addSocket(subscription, socket)
 
     this._clusterSubscriptions.add(name)
 
@@ -307,7 +296,6 @@ class SubscriptionRegistry {
    *
    * @param   {String} name
    * @param   {SocketWrapper} socket
-   * @param   {Boolean} silent supresses logs and unsubscribe ACK messages
    *
    * @public
    * @returns {void}
@@ -326,29 +314,7 @@ class SubscriptionRegistry {
 
     this._clusterSubscriptions.remove(name)
 
-    if (subscription.sockets.size === 0) {
-      this._subscriptions.delete(name)
-      this._pending.splice(this._pending.indexOf(subscription), 1)
-    } else {
-      subscription.uniqueSenders.delete(socket)
-    }
-
-    const names = this._names.get(socket)
-    names.delete(name)
-
-    if (names.size === 0) {
-      this._names.delete(socket)
-      socket.removeListener('close', this._onSocketClose)
-    }
-
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionRemoved(
-        name,
-        socket,
-        subscription.sockets.size,
-        this.getAllRemoteServers(name).length
-      )
-    }
+    this._removeSocket(subscription, socket)
 
     if (!silent) {
       const logMsg = `for ${this._topic}:${name} by ${socket.user}`
@@ -396,6 +362,47 @@ class SubscriptionRegistry {
    */
   setSubscriptionListener (subscriptionListener) {
     this._subscriptionListener = subscriptionListener
+  }
+
+  _addSocket (subscription, socket) {
+    const subscriptions = this._sockets.get(socket) || new Set()
+    if (subscriptions.size === 0) {
+      this._sockets.set(socket, subscriptions)
+      socket.once('close', this._onSocketClose)
+    }
+    subscriptions.add(subscription)
+
+    if (this._subscriptionListener) {
+      this._subscriptionListener.onSubscriptionMade(
+        subscription.name,
+        socket,
+        subscription.sockets.size
+      )
+    }
+  }
+
+  _removeSocket (subscription, socket) {
+    if (subscription.sockets.size === 0) {
+      this._subscriptions.delete(subscription.name)
+      const idx = this._pending.indexOf(subscription)
+      if (idx !== -1) {
+        this._pending.splice(idx, 1)
+      }
+    } else {
+      subscription.uniqueSenders.delete(socket)
+    }
+
+    const subscriptions = this._sockets.get(socket)
+    subscriptions.delete(subscription)
+
+    if (this._subscriptionListener) {
+      this._subscriptionListener.onSubscriptionRemoved(
+        subscription.name,
+        socket,
+        subscription.sockets.size,
+        this.getAllRemoteServers(subscription.name).length
+      )
+    }
   }
 
   /**
