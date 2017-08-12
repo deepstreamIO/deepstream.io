@@ -94,7 +94,7 @@ function compile {
 
     echo -e "\t\tAdding UWS into node"
 
-    C_FILE_NAMES="      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp', 'src\/uws\/Epoll.cpp',"
+    C_FILE_NAMES="      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
     EXTRA_INCLUDES="        'src\/uws',"
 
     if [ $OS = "darwin" ]; then
@@ -109,17 +109,18 @@ function compile {
         sed -i "s@'deps/uv/src/ares',@'deps/uv/src/ares',\n  $EXTRA_INCLUDES@" $NODE_SOURCE/node.gyp
         sed -i "s/'cflags': \[ '-g', '-O0' \],/'cflags': [ '-g', '-O0', '-DUSE_LIBUV' ],/" $NODE_SOURCE/common.gypi
         sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/src/uws.js
-        sed -i "s/UV_WRITABLE/UV_WRITABLE_/" $UWS_SOURCE/uWebSockets/src/*
-        sed -i "s/UV_READABLE/UV_READABLE_/" $UWS_SOURCE/uWebSockets/src/*
     fi
 
     mkdir -p $NODE_SOURCE/src/uws
     cp $UWS_SOURCE/uWebSockets/src/* $NODE_SOURCE/src/uws
     mv $NODE_SOURCE/src/uws/Node.cpp $NODE_SOURCE/src/uws/uws_Node.cpp
+    rm $NODE_SOURCE/src/uws/Epoll.h
 
+    echo "#include \"Libuv.h\"" > $NODE_SOURCE/src/uws/Backend.h
+
+    cp $UWS_SOURCE/nodejs/src/http.h $NODE_SOURCE/src/uws
     cp $UWS_SOURCE/nodejs/src/extension.cpp $NODE_SOURCE/src/uws
     cp $UWS_SOURCE/nodejs/src/addon.h $NODE_SOURCE/src/uws
-    cp $UWS_SOURCE/nodejs/src/http.h $NODE_SOURCE/src/uws
     cp $UWS_SOURCE/nodejs/src/uws.js $NODE_SOURCE/lib/uws.js
 
     if [ $OS = "win32" ]; then
