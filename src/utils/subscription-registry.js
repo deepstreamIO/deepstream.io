@@ -4,6 +4,8 @@ const invariant = require('invariant')
 
 const EMPTY_SET = new Set()
 
+let idCounter = 0
+
 class SubscriptionRegistry {
   constructor (options, topic) {
     invariant(topic, 'missing subscription topic')
@@ -191,6 +193,8 @@ class SubscriptionRegistry {
   _onBroadcastTimeout () {
     this._broadcastTimeout = null
 
+    idCounter = (idCounter + 1) % Number.MAX_SAFE_INTEGER
+
     for (const subscription of this._pending) {
       const { senders, shared, sockets } = subscription
 
@@ -206,11 +210,13 @@ class SubscriptionRegistry {
         message += shared.substring(lastStop, shared.length)
 
         socket.sendNative(message)
+
+        socket.__id = idCounter
       }
 
       const preparedMessage = SocketWrapper.prepareMessage(shared)
       for (const socket of sockets) {
-        if (!senders.has(socket)) {
+        if (socket.__id !== idCounter) {
           socket.sendPrepared(preparedMessage)
         }
       }
