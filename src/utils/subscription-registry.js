@@ -217,11 +217,9 @@ class SubscriptionRegistry {
 
         socket.__id = idCounter
 
-        if (message.length === 0) {
-          continue
+        if (message) {
+          socket.sendNative(message)
         }
-
-        socket.sendNative(message)
       }
 
       const preparedMessage = SocketWrapper.prepareMessage(shared)
