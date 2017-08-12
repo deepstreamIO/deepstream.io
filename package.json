@@ -39,6 +39,7 @@
     "commander": "^2.11.0",
     "content-type": "^1.0.2",
     "deepstream.io-service": "latest",
+    "dsx-monitoring": "git+ssh://git@github.com/deepstreamIO/dsx-monitoring.git",
     "glob": "^7.1.1",
     "http-shutdown": "^1.2.0",
     "http-status": "^1.0.1",
@@ -46,8 +47,7 @@
     "js-yaml": "^3.8.1",
     "mkdirp": "^0.5.1",
     "needle": "^1.4.5",
-    "uws": "git+https://github.com/deepstreamIO/uws-dependency.git#v0.12.0",
-    "dsx-monitoring": "git+ssh://git@github.com/deepstreamIO/dsx-monitoring.git"
+    "uws": "8.14.0"
   },
   "devDependencies": {
     "async": "^2.1.4",
