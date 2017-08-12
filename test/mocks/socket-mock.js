@@ -26,7 +26,7 @@ SocketMock.prototype.getMsg = function (i) {
   return this.sendMessages[this.sendMessages.length - (i + 1)]
 }
 
-SocketMock.prototype.getMsgSize = function (i) {
+SocketMock.prototype.getMsgSize = function () {
   return this.sendMessages.length
 }
 

@@ -126,7 +126,9 @@ module.exports = class PresenceHandler {
   */
   _onClientAdded (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: [username] }
-    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, message, false, C.SOURCE_MESSAGE_CONNECTOR)
+    this._subscriptionRegistry.sendToSubscribers(
+      C.TOPIC.PRESENCE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+    )
   }
 
   /**
@@ -140,6 +142,8 @@ module.exports = class PresenceHandler {
   */
   _onClientRemoved (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: [username] }
-    this._subscriptionRegistry.sendToSubscribers(C.TOPIC.PRESENCE, message, false, C.SOURCE_MESSAGE_CONNECTOR)
+    this._subscriptionRegistry.sendToSubscribers(
+      C.TOPIC.PRESENCE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+    )
   }
 }

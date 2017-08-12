@@ -1,4 +1,5 @@
-/* global describe, it, expect */
+/* global jasmine, describe, it, expect */
+/* eslint-disable no-undef */
 'use strict'
 
 const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')
@@ -125,6 +126,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).toBe(false)
       expect(logger.log).toHaveBeenCalledWith(2, 'AUTH_ERROR', 'http auth server error: oh dear')
+      expect(data).toBe('oh dear')
       done()
     })
   })
@@ -134,7 +136,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     const authData = { username: 'userA' }
 
     server.once('request-received', () => {
-			// don't respond
+      // don't respond
     })
 
     logger.log.calls.reset()
@@ -142,6 +144,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).toBe(false)
       expect(logger.log).toHaveBeenCalledWith(2, 'AUTH_ERROR', 'http auth error: Error: socket hang up')
+      expect(data).toBeNull()
       server.respondWith(200)
       done()
     })

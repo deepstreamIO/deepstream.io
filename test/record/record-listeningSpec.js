@@ -1,31 +1,18 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let RecordHandler = require('../../src/record/record-handler'),
-  msg = require('../test-helper/test-helper').msg,
-  StorageMock = require('../mocks/storage-mock'),
-  SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  LoggerMock = require('../mocks/logger-mock'),
-  noopMessageConnector = require('../../src/default-plugins/noop-message-connector'),
-  clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
+const RecordHandler = require('../../src/record/record-handler')
+const SocketMock = require('../mocks/socket-mock')
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const testHelper = require('../test-helper/test-helper')
+
+const msg = testHelper.msg
 
 describe('record handler handles messages', () => {
-  let recordHandler,
-    subscribingClient = new SocketWrapper(new SocketMock(), {}),
-    listeningClient = new SocketWrapper(new SocketMock(), {}),
-    options = {
-      clusterRegistry: clusterRegistryMock,
-      cache: new StorageMock(),
-      storage: new StorageMock(),
-      logger: new LoggerMock(),
-      messageConnector: noopMessageConnector,
-      permissionHandler: { canPerformAction(a, b, c) { c(null, true) } },
-      uniqueRegistry: {
-        get(name, callback) { callback(true) },
-        release() {}
-      }
-    }
+  let recordHandler
+  const subscribingClient = new SocketWrapper(new SocketMock(), {})
+  const listeningClient = new SocketWrapper(new SocketMock(), {})
+  const options = testHelper.getDeepstreamOptions()
 
   it('creates the record handler', () => {
     recordHandler = new RecordHandler(options)
@@ -49,51 +36,51 @@ describe('record handler handles messages', () => {
 
   it('registers a listener', () => {
     recordHandler.handle(listeningClient, {
-				 topic: 'R',
-				 action: 'L',
-				 data: ['user\/.*']
+      topic: 'R',
+      action: 'L',
+      data: ['user/.*']
     })
 
-    expect(listeningClient.socket.getMsg(2)).toBe(msg('R|A|L|user\/.*+'))
-    expect(listeningClient.socket.getMsg(1)).toBe(msg('R|SP|user\/.*|user/A+'))
-    expect(listeningClient.socket.getMsg(0)).toBe(msg('R|SP|user\/.*|user/B+'))
+    expect(listeningClient.socket.getMsg(2)).toBe(msg('R|A|L|user/.*+'))
+    expect(listeningClient.socket.getMsg(1)).toBe(msg('R|SP|user/.*|user/A+'))
+    expect(listeningClient.socket.getMsg(0)).toBe(msg('R|SP|user/.*|user/B+'))
   })
 
   it('makes a new subscription', () => {
-			 recordHandler.handle(subscribingClient, {
-   topic: 'R',
-   action: 'CR',
-   data: ['user/C']
- })
+    recordHandler.handle(subscribingClient, {
+      topic: 'R',
+      action: 'CR',
+      data: ['user/C']
+    })
     expect(subscribingClient.socket.lastSendMessage).toBe(msg('R|R|user/C|0|{}+'))
-    expect(listeningClient.socket.lastSendMessage).toBe(msg('R|SP|user\/.*|user/C+'))
+    expect(listeningClient.socket.lastSendMessage).toBe(msg('R|SP|user/.*|user/C+'))
   })
 
   it('doesn\'t send messages for subsequent subscriptions', () => {
-			 expect(listeningClient.socket.sendMessages.length).toBe(4)
-			 recordHandler.handle(subscribingClient, {
-   topic: 'R',
-   action: 'CR',
-   data: ['user/C']
- })
+    expect(listeningClient.socket.sendMessages.length).toBe(4)
+    recordHandler.handle(subscribingClient, {
+      topic: 'R',
+      action: 'CR',
+      data: ['user/C']
+    })
     expect(listeningClient.socket.sendMessages.length).toBe(4)
   })
 
   it('removes listeners', () => {
-			 recordHandler.handle(listeningClient, {
-				 topic: 'R',
-				 action: 'UL',
-				 data: ['user\/.*']
- })
+    recordHandler.handle(listeningClient, {
+      topic: 'R',
+      action: 'UL',
+      data: ['user/.*']
+    })
 
-    expect(listeningClient.socket.lastSendMessage).toBe(msg('R|A|UL|user\/.*+'))
+    expect(listeningClient.socket.lastSendMessage).toBe(msg('R|A|UL|user/.*+'))
     expect(listeningClient.socket.sendMessages.length).toBe(5)
 
-			 recordHandler.handle(subscribingClient, {
-   topic: 'R',
-   action: 'CR',
-   data: ['user/D']
- })
+    recordHandler.handle(subscribingClient, {
+      topic: 'R',
+      action: 'CR',
+      data: ['user/D']
+    })
     expect(listeningClient.socket.sendMessages.length).toBe(5)
   })
 })

@@ -1,30 +1,14 @@
+/* eslint-disable no-param-reassign, no-new, max-len, */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
 const C = require('../../src/constants/constants')
-const options = {
-  logger: { log: jasmine.createSpy('log') },
-  permission: {
-    options: {
-      cacheEvacuationInterval: 60000
-    }
-  }
-}
-const testPermission = function (permissions, message, username, userdata, callback) {
-  const permissionHandler = new ConfigPermissionHandler(options, permissions)
-  permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-  let permissionResult
+const testHelper = require('../test-helper/test-helper')
+const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
 
-  username = username || 'someUser'
-  userdata = userdata || {}
-  callback = callback || function (error, result) {
-    permissionResult = result
-  }
-  permissionHandler.canPerformAction(username, message, callback, userdata)
-  return permissionResult
-}
+const options = testHelper.getDeepstreamPermissionOptions()
+const testPermission = testHelper.testPermission(options)
 
 describe('supports spaces after variables and escaped quotes', () => {
   it('errors for read with data', () => {

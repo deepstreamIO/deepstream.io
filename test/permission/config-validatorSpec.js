@@ -2,33 +2,7 @@
 'use strict'
 
 const configValidator = require('../../src/permission/config-validator')
-const getConfig = function () {
-  return {
-    presence: {
-      '*': {
-        allow: true
-      }
-    },
-    record: {
-      '*': {
-        write: true,
-        read: true
-      }
-    },
-    event: {
-      '*': {
-        publish: true,
-        subscribe: true
-      }
-    },
-    rpc: {
-      '*': {
-        provide: true,
-        request: true
-      }
-    }
-  }
-}
+const testHelper = require('../test-helper/test-helper')
 
 describe('it validates permission.json files', () => {
   it('exposes a validate method', () => {
@@ -36,35 +10,35 @@ describe('it validates permission.json files', () => {
   })
 
   it('validates a basic configuration', () => {
-    expect(configValidator.validate(getConfig())).toBe(true)
+    expect(configValidator.validate(testHelper.getBasePermissions())).toBe(true)
   })
 
   it('validates the type of the configuration', () => {
     expect(configValidator.validate()).toBe('config should be an object literal, but was of type undefined')
     expect(configValidator.validate('bla')).toBe('config should be an object literal, but was of type string')
-    expect(configValidator.validate(getConfig())).toBe(true)
+    expect(configValidator.validate(testHelper.getBasePermissions())).toBe(true)
   })
 
   it('fails if a top level key is missing', () => {
-    const conf = getConfig()
+    const conf = testHelper.getBasePermissions()
     delete conf.record
     expect(configValidator.validate(conf)).toBe('missing configuration section "record"')
   })
 
   it('fails if an unknown top level key is added', () => {
-    const conf = getConfig()
+    const conf = testHelper.getBasePermissions()
     conf.bogus = {}
     expect(configValidator.validate(conf)).toBe('unexpected configuration section "bogus"')
   })
 
   it('fails for empty sections', () => {
-    const conf = getConfig()
+    const conf = testHelper.getBasePermissions()
     conf.rpc = {}
     expect(configValidator.validate(conf)).toBe('empty section "rpc"')
   })
 
   it('fails if no root permissions are specified', () => {
-    const conf = getConfig()
+    const conf = testHelper.getBasePermissions()
     conf.rpc = { bla: {
       request: 'user.id === $userId'
     } }
@@ -72,26 +46,28 @@ describe('it validates permission.json files', () => {
   })
 
   it('fails for invalid paths', () => {
-    const conf = getConfig()
+    const conf = testHelper.getBasePermissions()
     conf.record.a$$x = {}
     expect(configValidator.validate(conf)).toBe('invalid variable name $$ for path a$$x in section record')
   })
 
   it('fails for invalid rule types', () => {
-    const conf = getConfig()
+    const conf = testHelper.getBasePermissions()
     conf.rpc.somepath = { write: 'a === b' }
     expect(configValidator.validate(conf)).toBe('unknown rule type write in section rpc')
   })
 
   it('fails for invalid rules', () => {
-    const conf = getConfig()
+    const conf = testHelper.getBasePermissions()
     conf.record.somepath = { write: 'process.exit()' }
     expect(configValidator.validate(conf)).toBe('function exit is not supported')
   })
 
-	// it( 'fails for rules referencing data that dont support it', function(){
-	// 	var conf = getConfig();
-	// 	conf.record.somepath = { read: 'data.firstname === "Egon"' };
-	// 	expect( configValidator.validate( conf ) ).toBe( 'data is not supported for record read - did you mean "oldData"?' );
-	// });
+  // it( 'fails for rules referencing data that dont support it', function(){
+  //  var conf = testHelper.getBasePermissions();
+  //  conf.record.somepath = { read: 'data.firstname === "Egon"' };
+  //  expect( configValidator.validate( conf ) ).toBe(
+  //    'data is not supported for record read - did you mean "oldData"?' \
+  //  );
+  // });
 })

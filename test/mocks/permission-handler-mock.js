@@ -1,3 +1,4 @@
+/* eslint-disable prefer-rest-params */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 

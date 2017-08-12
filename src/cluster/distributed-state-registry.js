@@ -312,7 +312,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   */
   _requestFullState (serverName) {
     setTimeout(() => {
-      this._options.message.sendBroadcast(this._topic, {
+      this._messageConnector.sendBroadcast(this._topic, {
         topic: this._topic,
         action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
         data: [serverName]
@@ -343,7 +343,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       }
     }
 
-    this._options.message.sendBroadcast(this._topic, {
+    this._messageConnector.sendBroadcast(this._topic, {
       topic: this._topic,
       action: C.EVENT.DISTRIBUTED_STATE_FULL_STATE,
       data: [this._options.serverName, localState]

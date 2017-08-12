@@ -32,7 +32,7 @@ describe('validates rule strings from permissions.json', () => {
   it('accepts rules that contain new as part of another string or object name', () => {
     expect(ruleParser.validate('newData.firstname')).toBe(true)
     expect(ruleParser.validate('$new = "foo"')).toBe(true) // TODO also unicode in identifiers
-    //expect(ruleParser.validate('a == "new"')).toBe(true) // TODO
+    // expect(ruleParser.validate('a == "new"')).toBe(true) // TODO
   })
 
   it('rejects rules that define user functions', () => {

@@ -1,3 +1,5 @@
+'use strict'
+
 const EventEmitter = require('events').EventEmitter
 const MESSAGE = require('./message-enums')
 const utils = require('../utils/utils')
@@ -18,8 +20,7 @@ const MESSAGE_LOOKUP = utils.reverseMap(MESSAGE)
 
 /* eslint-disable class-methods-use-this */
 
-class ClusterConnection extends EventEmitter
-{
+class ClusterConnection extends EventEmitter {
   constructor (config, logger) {
     super()
     this._logger = logger

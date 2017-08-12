@@ -1,3 +1,5 @@
+'use strict'
+
 const net = require('net')
 const MESSAGE = require('./message-enums')
 const ClusterConnection = require('./cluster-connection')

@@ -39,7 +39,7 @@ describe('unique state provider handles cluster locks', () => {
     b = createServer('servername-b', 2)
     c = createServer('servername-c', 3)
 
-		// Done for nodes to find each other out
+    // Done for nodes to find each other out
     setTimeout(done, 50)
   })
 

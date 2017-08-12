@@ -1,29 +1,29 @@
 {
-	"presence": {
-		"*": {
-			"allow": true
-		}
-	},
-	"record": {
-		"*": {
-			"write": true,
-			"read": true
-		}
-	},
-	"event": {
-		"*": {
-			"publish": true,
-			"subscribe": true
-		},
-		"private/*": {
-			"publish": false,
-			"subscribe": false
-		}
-	},
-	"rpc": {
-		"*": {
-			"provide": true,
-			"request": true
-		}
-	}
+    "presence": {
+        "*": {
+            "allow": true
+        }
+    },
+    "record": {
+        "*": {
+            "write": true,
+            "read": true
+        }
+    },
+    "event": {
+        "*": {
+            "publish": true,
+            "subscribe": true
+        },
+        "private/*": {
+            "publish": false,
+            "subscribe": false
+        }
+    },
+    "rpc": {
+        "*": {
+            "provide": true,
+            "request": true
+        }
+    }
 }

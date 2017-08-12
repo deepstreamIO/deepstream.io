@@ -1,33 +1,34 @@
+/* eslint-disable max-len, import/no-extraneous-dependencies */
 'use strict'
 
-/* global it, describe, expect, jasmine */
-const recordRequestMock = jasmine.createSpy()
+/* global it, describe, expect, jasmine, beforeAll */
 const proxyquire = require('proxyquire').noPreserveCache()
-const RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': recordRequestMock })
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
 const SocketMock = require('../mocks/socket-mock')
-const msg = require('../test-helper/test-helper').msg
-const StorageMock = require('../mocks/storage-mock')
+const testHelper = require('../test-helper/test-helper')
 
+const msg = testHelper.msg
+const recordRequestMock = jasmine.createSpy()
 const patchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 1, 'firstname', 'SEgon'] }
-const recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() }
+const recordHandlerMock = {
+  _$broadcastUpdate: jasmine.createSpy(),
+  _$transitionComplete: jasmine.createSpy()
+}
+const RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': recordRequestMock })
 
-let options, recordTransition, socketWrapper
+let options
+let recordTransition
+let socketWrapper
 
 function recordRequestMockCallback (data, isError) {
   const callback = recordRequestMock.calls.mostRecent().args[isError ? 4 : 3]
   const context = recordRequestMock.calls.mostRecent().args[5]
-  data = data === undefined ? { _v: 0, _d: {} } : data
-  callback.call(context, data)
+  callback.call(context, data === undefined ? { _v: 0, _d: {} } : data)
 }
 
 function createRecordTransition (recordName, message) {
-  options = { 
-    cache: new StorageMock(), 
-    storage: new StorageMock(),
-    logger: { log: jasmine.createSpy('log') },
-    storageExclusion: new RegExp('no-storage/')
-  }
+  options = testHelper.getDeepstreamOptions()
+  options.logger.log = jasmine.createSpy()
 
   recordRequestMock.calls.reset()
   recordHandlerMock._$broadcastUpdate.calls.reset()
@@ -58,9 +59,8 @@ describe('record transitions', () => {
   })
 
   describe('multiple steps', () => {
-    let 
-      patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 3, 'firstname', 'SLana'] },
-      updateMessage = { topic: 'RECORD', action: 'U', data: ['recordName', 2, '{ "lastname": "Peterson" }'] }
+    const patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 3, 'firstname', 'SLana'] }
+    const updateMessage = { topic: 'RECORD', action: 'U', data: ['recordName', 2, '{ "lastname": "Peterson" }'] }
 
     beforeAll(() => {
       createRecordTransition()
@@ -95,7 +95,7 @@ describe('record transitions', () => {
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
     })
 
-     it('adds a message with null data to the queue', () => {
+    it('adds a message with null data to the queue', () => {
       socketWrapper.socket.lastSendMessage = null
       recordTransition.add(socketWrapper, 3, {
         topic: 'RECORD',
@@ -138,7 +138,7 @@ describe('record transitions', () => {
 
       expect(recordTransition._record).toEqual({ _v: 1, _d: { firstname: 'Egon' } })
       expect(options.cache.completedSetOperations).toBe(0)
-      
+
       const check = setInterval(() => {
         if (options.cache.completedSetOperations === 1) {
           expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage, false, socketWrapper)
@@ -191,6 +191,7 @@ describe('record transitions', () => {
     it('stored each transition in storage', (done) => {
       const check = setInterval(() => {
         if (options.storage.completedSetOperations === 3) {
+          clearInterval(check)
           done()
         }
       }, 1)
@@ -198,8 +199,6 @@ describe('record transitions', () => {
   })
 
   describe('does not store excluded data', () => {
-    const patchMessage = { topic: 'RECORD', action: 'P', data: ['no-storage/1', 1, 'firstname', 'SEgon'] }
-
     beforeAll(() => createRecordTransition('no-storage/1', patchMessage))
 
     it('retrieves the empty record', () => {
@@ -213,6 +212,7 @@ describe('record transitions', () => {
     it('does not store transition in storage', (done) => {
       const check = setInterval(() => {
         if (options.storage.completedSetOperations === 0) {
+          clearInterval(check)
           done()
         }
       }, 1)
@@ -221,7 +221,7 @@ describe('record transitions', () => {
 
   describe('destroys a transition between steps', () => {
     const secondPatchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'firstname', 'SEgon'] }
-      
+
     beforeAll(() => {
       createRecordTransition()
       options.cache.nextOperationWillBeSynchronous = false
@@ -260,8 +260,8 @@ describe('record transitions', () => {
       expect(recordTransition.isDestroyed).toBe(true)
       expect(recordTransition._steps).toBe(null)
       setTimeout(() => {
-				// just leave this here to make sure no error is thrown when the
-				// record request returns after 30ms
+        // just leave this here to make sure no error is thrown when the
+        // record request returns after 30ms
         done()
       }, 50)
     })
@@ -302,10 +302,10 @@ describe('record transitions', () => {
   })
 
   describe('handles invalid message data', () => {
-    const patchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'somepath', 'O{"invalid":"json'] }
-      
+    const invalidPatchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'somepath', 'O{"invalid":"json'] }
+
     beforeAll(() => {
-      createRecordTransition('recordName', patchMessage)
+      createRecordTransition('recordName', invalidPatchMessage)
       options.cache.nextOperationWillBeSynchronous = false
     })
 
@@ -315,14 +315,13 @@ describe('record transitions', () => {
   })
 
   describe('transition version conflicts', () => {
-    let 
-      socketMock1 = new SocketMock(),
-      socketMock2 = new SocketMock(),
-      socketMock3 = new SocketMock(),
-      socketWrapper1 = new SocketWrapper(socketMock1, {}),
-      socketWrapper2 = new SocketWrapper(socketMock2, {}),
-      socketWrapper3 = new SocketWrapper(socketMock3, {}),
-      patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'firstname', 'SEgon'] }
+    const socketMock1 = new SocketMock()
+    const socketMock2 = new SocketMock()
+    const socketMock3 = new SocketMock()
+    const socketWrapper1 = new SocketWrapper(socketMock1, {})
+    const socketWrapper2 = new SocketWrapper(socketMock2, {})
+    const socketWrapper3 = new SocketWrapper(socketMock3, {})
+    const patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'firstname', 'SEgon'] }
 
     beforeAll(() => {
       createRecordTransition('recordName')
@@ -365,8 +364,8 @@ describe('record transitions', () => {
       expect(recordTransition.isDestroyed).toBe(true)
       expect(recordTransition._steps).toBe(null)
       setTimeout(() => {
-				// just leave this here to make sure no error is thrown when the
-				// record request returns after 30ms
+        // just leave this here to make sure no error is thrown when the
+        // record request returns after 30ms
         done()
       }, 50)
     })

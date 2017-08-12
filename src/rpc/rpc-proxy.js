@@ -33,8 +33,10 @@ module.exports = class RpcProxy {
   * @returns {void}
   */
   send (message) {
+    if (message.action !== C.ACTIONS.ACK && message.action !== C.ACTIONS.REQUEST) {
+      message.isCompleted = true
+    }
     this._options.message.sendDirect(this._remoteServer, C.TOPIC.PRIVATE + C.TOPIC.RPC, message)
-    message.isCompleted = true
   }
 
   /**

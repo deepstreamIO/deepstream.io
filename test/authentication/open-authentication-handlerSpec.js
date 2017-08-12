@@ -1,4 +1,4 @@
-/* global describe, it, expect */
+/* global jasmine, describe, it, expect */
 'use strict'
 
 const AuthenticationHandler = require('../../src/authentication/open-authentication-handler')

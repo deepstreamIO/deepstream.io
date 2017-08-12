@@ -1,3 +1,5 @@
+'use strict'
+
 const ClusterConnection = require('./cluster-connection')
 const MESSAGE = require('./message-enums')
 

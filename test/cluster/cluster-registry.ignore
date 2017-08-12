@@ -160,8 +160,8 @@ describe('cluster registry adds and removes names', () => {
     clusterRegistry.leaveCluster()
 
     expect(options.messageConnector.lastPublishedMessage).toEqual(
-			{ topic: 'CL', action: 'RM', data: ['server-name-a'] }
-		)
+      { topic: 'CL', action: 'RM', data: ['server-name-a'] }
+    )
     expect(options.messageConnector.publishedMessages.length).toBe(expectedLength)
   })
 
