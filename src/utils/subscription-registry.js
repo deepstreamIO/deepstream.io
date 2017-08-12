@@ -199,10 +199,10 @@ class SubscriptionRegistry {
   _onBroadcastTimeout () {
     this._broadcastTimeout = null
 
-    idCounter = (idCounter + 1) % Number.MAX_SAFE_INTEGER
-
     for (const subscription of this._pending) {
       const { senders, shared, sockets } = subscription
+
+      idCounter = (idCounter + 1) % Number.MAX_SAFE_INTEGER
 
       for (const [ socket, gaps ] of senders) {
         let i = 0
@@ -215,13 +215,13 @@ class SubscriptionRegistry {
         }
         message += shared.substring(lastStop, shared.length)
 
+        socket.__id = idCounter
+
         if (message.length === 0) {
           continue
         }
 
         socket.sendNative(message)
-
-        socket.__id = idCounter
       }
 
       const preparedMessage = SocketWrapper.prepareMessage(shared)
