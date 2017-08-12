@@ -79,7 +79,7 @@ module.exports = class MessageQueue {
       }
 
       if (parts[0] === C.TOPIC.CONNECTION && parts[1] === C.ACTIONS.PONG) {
-        return
+        continue
       }
 
       this._message.raw = rawMessage
