@@ -209,6 +209,10 @@ class SubscriptionRegistry {
         }
         message += shared.substring(lastStop, shared.length)
 
+        if (message.length === 0) {
+          continue
+        }
+
         socket.sendNative(message)
 
         socket.__id = idCounter
