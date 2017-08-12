@@ -4,6 +4,8 @@ const C = require('../constants/constants')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const messageBuilder = require('../message/message-builder')
 
+let idCounter = 0
+
 class SubscriptionRegistry {
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
@@ -151,6 +153,8 @@ class SubscriptionRegistry {
       const sharedMessages = subscription.sharedMessages
       const sockets = subscription.sockets
 
+      idCounter = (idCounter + 1) % Number.MAX_SAFE_INTEGER
+
       // for all unique senders and their gaps, build their special messages
       for (const uniqueSender of uniqueSenders) {
         const socket = uniqueSender[0]
@@ -163,6 +167,8 @@ class SubscriptionRegistry {
           lastStop = gaps[i++]
         }
         message += sharedMessages.substring(lastStop, sharedMessages.length)
+
+        socket.__id = idCounter
 
         if (message) {
           socket.sendNative(message)
@@ -178,7 +184,7 @@ class SubscriptionRegistry {
       const first = sockets.values().next().value
       const preparedMessage = first.prepareMessage(sharedMessages)
       for (const socket of sockets) {
-        if (!uniqueSenders.has(socket)) {
+        if (socket.__id !== idCounter) {
           socket.sendPrepared(preparedMessage)
         }
       }
