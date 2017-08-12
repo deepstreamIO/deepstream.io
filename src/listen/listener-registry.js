@@ -1,11 +1,9 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
-const invariant = require('invariant')
 
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
-    this._listeners = new Map()
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
     this._subscriptionRegistry = subscriptionRegistry
@@ -42,30 +40,15 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onListenAdded (pattern, socket) {
-    const listener = this._listeners.get(pattern) || {
-      expr: undefined,
-      sockets: new Map()
-    }
-
-    if (listener.expr === undefined) {
+  onListenAdded (pattern, socket, count, listener) {
+    if (!listener.expr) {
       try {
         listener.expr = new RegExp(pattern)
       } catch (err) {
-        listener.expr = null
         socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
+        return
       }
-
-      this._listeners.set(pattern, listener)
     }
-
-    invariant(!listener.sockets.has(socket), `repeat listen to "${pattern}" by ${socket.user}`)
-
-    if (listener.sockets.has(socket)) {
-      return
-    }
-
-    listener.sockets.set(socket, { socket, pattern, id: Math.random() })
 
     for (const name of this._subscriptionRegistry.getNames()) {
       const provider = this._providers.get(name)
@@ -74,7 +57,7 @@ module.exports = class ListenerRegistry {
         continue
       }
 
-      if (!listener.expr || !listener.expr.test(name)) {
+      if (!listener.expr.test(name)) {
         continue
       }
 
@@ -82,17 +65,9 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onListenRemoved (pattern, socket) {
-    const listener = this._listeners.get(pattern)
-
-    invariant(listener && listener.sockets.has(socket), `${socket.user} is not listening to ${pattern}`)
-
-    if (!listener || !listener.sockets.delete(socket)) {
+  onListenRemoved (pattern, socket, count, listener) {
+    if (!listener.expr) {
       return
-    }
-
-    if (listener.sockets.size === 0) {
-      this._listeners.delete(pattern)
     }
 
     for (const [ name, provider ] of this._providers) {
@@ -224,17 +199,19 @@ module.exports = class ListenerRegistry {
     // TODO: Optimize
     let matches = []
 
-    for (const [ , { expr, sockets } ] of this._listeners) {
+    for (const [ pattern, { expr, sockets } ] of this._providerRegistry.getSubscriptions()) {
       if (!expr || !expr.test(name)) {
         continue
       }
 
-      for (const match of sockets.values()) {
-        if (history && history.includes(match.id)) {
+      for (const socket of sockets) {
+        const id = `${pattern}_${socket.id}`
+
+        if (history && history.includes(id)) {
           continue
         }
 
-        matches.push(match)
+        matches.push({ socket, pattern, id })
       }
     }
 

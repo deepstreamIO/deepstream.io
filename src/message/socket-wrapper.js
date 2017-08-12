@@ -4,6 +4,8 @@ const uws = require('uws')
 
 const EventEmitter = require('events').EventEmitter
 
+let idCounter = 0
+
 /**
  * This class wraps around a websocket
  * and provides higher level methods that are integrated
@@ -26,6 +28,7 @@ class UwsSocketWrapper extends EventEmitter {
     this.isClosed = false
     this._logger = logger
     this.user = null
+    this.id = (idCounter++).toString(16)
     this.authCallBack = null
     this.authAttempts = 0
     this.setMaxListeners(0)

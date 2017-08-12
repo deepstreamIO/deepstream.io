@@ -29,6 +29,10 @@ class SubscriptionRegistry {
 
   }
 
+  getSubscriptions () {
+    return this._subscriptions
+  }
+
   getNames () {
     return this._subscriptions.keys()
   }
@@ -157,7 +161,8 @@ class SubscriptionRegistry {
     this.onSubscriptionAdded(
       subscription.name,
       socket,
-      subscription.sockets.size
+      subscription.sockets.size,
+      subscription
     )
 
     return subscription.sockets.size
@@ -184,7 +189,8 @@ class SubscriptionRegistry {
     this.onSubscriptionRemoved(
       subscription.name,
       socket,
-      subscription.sockets.size
+      subscription.sockets.size,
+      subscription
     )
 
     return subscription.sockets.size
