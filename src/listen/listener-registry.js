@@ -74,7 +74,7 @@ module.exports = class ListenerRegistry {
         continue
       }
 
-      if (!listener.expr.test(name)) {
+      if (!listener.expr || !listener.expr.test(name)) {
         continue
       }
 
