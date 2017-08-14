@@ -297,7 +297,6 @@ class ClusterNode extends EventEmitter {
     const listeners = this._subscriptions.get(topic)
     if (!listeners || listeners.length === 0) {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, `message on unknown topic ${topic}: ${message}`)
-      console.log(this._subscriptions.keys())
       return
     }
     for (let i = 0; i < listeners.length; i++) {

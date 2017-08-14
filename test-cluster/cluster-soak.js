@@ -21,6 +21,7 @@ module.exports = function (program) {
 const logger = { log: () => {} }
 const ports = []
 const clusters = {}
+const subscriptions = {}
 const localSeedNodes = []
 
 let globalSeedNodes = []
@@ -57,18 +58,25 @@ function createClusterNode (port) {
 function setupRegistries (cluster) {
 
   for (let i = 0; i < stateCount; i++) {
-    console.time(i)
-    const stateRegistry = cluster.node.getStateRegistry(`TOPIC_${i.toString()}`)
+    const topic = `TOPIC_${i}`
+    const stateRegistry = cluster.node.getStateRegistry(topic)
     for (let j = 0; j < subscriptionCount; j++) {
-      stateRegistry.add(utils.getUid())
+      const subscription = utils.getUid()
+      if (!subscriptions[topic]) {
+        subscriptions[topic] = []
+      }
+      if (stateRegistry.has(subscription)) {
+        return
+      }
+      stateRegistry.add(subscription)
+      subscriptions[topic].push(subscription)
     }
-    console.timeEnd(i)
     cluster.states.push(stateRegistry)
   }
 }
 
-function startStopNode () {
-  const start = Math.random() > 0.5
+function startStopNodes () {
+  const start = getRandomBool()
   if (start) {
     if (ports.length === nodeCount) {
       return
@@ -89,7 +97,7 @@ function startStopNode () {
     const index = utils.getRandomIntInRange(0, ports.length)
     const port = ports[index]
 
-    clusters[port].close(() => {})
+    clusters[port].node.close(() => {})
 
     delete clusters[port]
 
@@ -99,21 +107,40 @@ function startStopNode () {
   }
 }
 
-function addRemoveSubscriptions() {
- setInterval(() => {
-    const add = Math.random() > 0.5
+function addRemoveSubscriptions () {
+  for (const port in clusters) {
+    const cluster = clusters[port]
+    const topic = `TOPIC_${utils.getRandomIntInRange(0, stateCount)}`
+    const registry = cluster.node.getStateRegistry(topic)
+    const add = getRandomBool()
     if (add) {
-      const topic = getUid()
+      const subscription = utils.getUid()
+      if (registry.has(subscription)) {
+        return
+      }
       // insert into redis
-      registry.add(topic)
+      console.log(subscriptions[topic].indexOf(subscription))
+      registry.add(subscription)
+      subscriptions[topic].push(subscription)
+      console.log('adding', subscription, 'to', topic)
     } else {
-      const topic = getFromRedis()
-      registry.remove(topic)
+      const clusterSubscriptions = registry.getAll()
+      const index = utils.getRandomIntInRange(0, clusterSubscriptions.length)
+      registry.remove(clusterSubscriptions[index])
+
+      // remove from local map
+      console.log('removing', clusterSubscriptions[index], 'from', topic)
+      console.log(1, subscriptions[topic])
+      const localIndex = subscriptions[topic].indexOf(clusterSubscriptions[index])
+      console.log('localIndex', localIndex)
+      subscriptions[topic].splice(localIndex, 1)
+      console.log(subscriptions[topic])
+      //getFromRedis()
     }
-  }, subscriptionRate)
+  }
 }
 
-function action () {
+async function action () {
   if (this.nodes) {
     nodeCount = this.nodes
   }
@@ -145,19 +172,26 @@ function action () {
    * Initialise Cluster
    */
   for (let i = 0; i < ports.length; i++) {
-    setTimeout(() => { // eslint-disable-line
-      createClusterNode(3030 + i)
-    }, (1000 * i) + 1)
+    createClusterNode(3030 + i)
+    await sleep(1000)
   }
 
+  console.log('Nodes initialised')
+
   /**
-   * Adding / Removing nodes
+   * Adding / removing nodes
    */
-  // setTimeout(() => {
-  //   setInterval(() => {
-  //     startStopNode(localSeedNodes)
-  //   }, nodeRate)
-  // }, 1000 * ports.length)
+  // setInterval(() => {
+  //   startStopNodes()
+  // }, nodeRate)
+
+
+  /**
+   * Adding / removing subscriptions
+   */
+  setInterval(() => {
+    addRemoveSubscriptions()
+  }, subscriptionRate)
 
   /**
    * Assertions
@@ -180,17 +214,26 @@ function action () {
    * Subscriptions are valid
    */
   setInterval(() => {
-    console.log('==== START ====')
     for (let i = 0; i < stateCount; i++) {
-      console.log(`
-TOPIC_${i.toString()}
---------`)
+      const topic = `TOPIC_${i}`
       for (const port in clusters) {
-        const stateRegistry = clusters[port].states[i]
-        console.log(port, '|', stateRegistry.getAll().length)
+        const registry = clusters[port].node.getStateRegistry(topic)
+        if (registry.getAll().length !== subscriptions[topic].length) {
+          console.error(
+            'invalid subscriptions on port', port,
+            'subscriptions', registry.getAll().length,
+            'expected', subscriptions[topic].length
+          )
+        }
       }
     }
-    console.log('==== DONE ====')
-  }, 5000)
+  }, 1000)
 }
 
+function sleep (duration) {
+  return new Promise(resolve => setTimeout(resolve, duration))
+}
+
+function getRandomBool () {
+  return Math.random() > 0.5
+}

@@ -155,7 +155,6 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     if (!this._data[name]) {
       return
     }
-
     delete this._data[name].nodes[serverName]
 
     for (const nodeName in this._data[name].nodes) {
@@ -371,7 +370,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     const namesMap = {}
     for (i = 0; i < names.length; i++) {
       namesMap[names[i]] = true
-      this._add(names[i], serverName)
+
     }
 
     for (name in this._data) {
@@ -380,6 +379,10 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       if (!namesMap[name]) {
         this._remove(name, serverName)
       }
+    }
+
+    for (i = 0; i < names.length; i++) {
+      this._add(names[i], serverName)
     }
   }
 
