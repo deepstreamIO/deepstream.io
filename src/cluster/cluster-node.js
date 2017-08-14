@@ -8,6 +8,7 @@ const OutgoingConnection = require('./outgoing-connection')
 const utils = require('../utils/utils')
 const StateRegistry = require('./distributed-state-registry')
 const C = require('../constants/constants')
+const EventEmitter = require('events').EventEmitter
 
 const STATE = {
   INIT: 0,
@@ -19,8 +20,9 @@ const STATE = {
 
 const STATE_LOOKUP = utils.reverseMap(STATE)
 
-class ClusterNode {
+class ClusterNode extends EventEmitter {
   constructor (options) {
+    super()
     this._serverName = options.serverName
     this._logger = options.logger
     this._options = options
@@ -190,6 +192,7 @@ class ClusterNode {
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
+    this.emit('added', connection.remoteName)
   }
 
   _removePeer (connection) {

@@ -45,7 +45,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     this._data = {}
     this._reconciliationTimeouts = {}
     this._fullStateSent = false
-    this._requestFullState(C.ALL)
+    messageConnector.on('added', this._requestFullState.bind(this, C.ALL))
   }
 
   /**
@@ -366,18 +366,20 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   */
   _applyFullState (serverName, names) {
     let name
-    let i
+    let i = 0
+
+    const namesMap = {}
+    for (i = 0; i < names.length; i++) {
+      namesMap[names[i]] = true
+      this._add(names[i], serverName)
+    }
 
     for (name in this._data) {
       // please note: only checking if the name exists is sufficient as the registry will just
       // set node[serverName] to false if the entry exists, but not for the remote server.
-      if (names.indexOf(name) === -1) {
+      if (!namesMap[name]) {
         this._remove(name, serverName)
       }
-    }
-
-    for (i = 0; i < names.length; i++) {
-      this._add(names[i], serverName)
     }
   }
 
