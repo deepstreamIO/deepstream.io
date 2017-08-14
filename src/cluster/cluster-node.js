@@ -263,7 +263,7 @@ class ClusterNode {
       this._checkReady()
     })
     this._addConnection(connection)
-    const error = `new incoming connection from socket ${connection._socket.address()}`
+    const error = `new incoming connection from socket ${JSON.stringify(connection._socket.address())}`
     this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, error)
   }
 
