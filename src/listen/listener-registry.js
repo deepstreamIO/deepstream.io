@@ -44,7 +44,6 @@ module.exports = class ListenerRegistry {
   onListenAdded (pattern, socket, count, listener) {
     if (count === 1) {
       try {
-        listener.subscriptions = new Set()
         this._matcher.addPattern(pattern)
       } catch (err) {
         socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
@@ -57,8 +56,11 @@ module.exports = class ListenerRegistry {
       this._matcher.removePattern(pattern)
     }
 
-    for (const subscription of listener.subscriptions) {
-      this._provide(subscription)
+    // TODO: Optimize
+    for (const subscription of this._subscriptionRegistry.getSubscriptions()) {
+      if (subscription.pattern === pattern && subscription.socket === socket) {
+        this._provide(subscription)
+      }
     }
   }
 
@@ -131,10 +133,7 @@ module.exports = class ListenerRegistry {
       subscription.active = false
     }
 
-    if (subscription.listener) {
-      subscription.listener.subscriptions.delete(subscription)
-      subscription.listener = null
-      subscription.history = null
+    if (subscription.history) {
       subscription.socket = null
       subscription.pattern = null
     }
@@ -159,7 +158,7 @@ module.exports = class ListenerRegistry {
       for (const socket of listener.sockets) {
         const id = `${pattern}_${socket.id}`
         if (!subscription.history || !subscription.history.has(id)) {
-          matches.push({ socket, pattern, id, listener })
+          matches.push({ socket, pattern, id })
         }
       }
     }
@@ -170,8 +169,6 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    subscription.listener = match.listener
-    subscription.listener.subscriptions.add(subscription)
     subscription.history = subscription.history || new Set()
     subscription.history.add(match.id)
     subscription.socket = match.socket
