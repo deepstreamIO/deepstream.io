@@ -1,7 +1,7 @@
 'use strict'
 const ClusterNode = require('../src/cluster/cluster-node')
 const utils = require('../src/utils/utils')
-
+const Redis = require('ioredis')
 
 module.exports = function (program) {
   program
@@ -18,10 +18,10 @@ module.exports = function (program) {
     .action(action)
 }
 
+const redis = new Redis()
 const logger = { log: () => {} }
 const ports = []
 const clusters = {}
-const subscriptions = {}
 const localSeedNodes = []
 
 let globalSeedNodes = []
@@ -33,7 +33,7 @@ let nodeCount = 2
 let subscriptionRate = 10000
 let nodeRate = 1000
 
-function createClusterNode (port) {
+async function createClusterNode (port) {
   const serverName = port
 
   // insert into set
@@ -52,24 +52,17 @@ function createClusterNode (port) {
   })
 
   clusters[port] = { serverName, node, states: [] }
-  setupRegistries(clusters[port])
+  await setupRegistries(clusters[port])
 }
 
-function setupRegistries (cluster) {
-
+async function setupRegistries (cluster) {
   for (let i = 0; i < stateCount; i++) {
     const topic = `TOPIC_${i}`
     const stateRegistry = cluster.node.getStateRegistry(topic)
     for (let j = 0; j < subscriptionCount; j++) {
       const subscription = utils.getUid()
-      if (!subscriptions[topic]) {
-        subscriptions[topic] = []
-      }
-      if (stateRegistry.has(subscription)) {
-        return
-      }
       stateRegistry.add(subscription)
-      subscriptions[topic].push(subscription)
+      await redis.lpush(topic, subscription)
     }
     cluster.states.push(stateRegistry)
   }
@@ -107,36 +100,33 @@ function startStopNodes () {
   }
 }
 
-function addRemoveSubscriptions () {
-  for (const port in clusters) {
-    const cluster = clusters[port]
-    const topic = `TOPIC_${utils.getRandomIntInRange(0, stateCount)}`
-    const registry = cluster.node.getStateRegistry(topic)
-    const add = getRandomBool()
-    if (add) {
-      const subscription = utils.getUid()
-      if (registry.has(subscription)) {
-        return
-      }
-      // insert into redis
-      console.log(subscriptions[topic].indexOf(subscription))
-      registry.add(subscription)
-      subscriptions[topic].push(subscription)
-      console.log('adding', subscription, 'to', topic)
-    } else {
-      const clusterSubscriptions = registry.getAll()
-      const index = utils.getRandomIntInRange(0, clusterSubscriptions.length)
-      registry.remove(clusterSubscriptions[index])
+async function addRemoveSubscriptions () {
+  const index = utils.getRandomIntInRange(0, ports.length)
+  const cluster = clusters[ports[index]]
 
-      // remove from local map
-      console.log('removing', clusterSubscriptions[index], 'from', topic)
-      console.log(1, subscriptions[topic])
-      const localIndex = subscriptions[topic].indexOf(clusterSubscriptions[index])
-      console.log('localIndex', localIndex)
-      subscriptions[topic].splice(localIndex, 1)
-      console.log(subscriptions[topic])
-      //getFromRedis()
+  const topic = `TOPIC_${utils.getRandomIntInRange(0, stateCount)}`
+  const registry = cluster.node.getStateRegistry(topic)
+  const add = getRandomBool()
+  if (add) {
+    const subscription = utils.getUid()
+    registry.add(subscription)
+    await redis.lpush(topic, subscription)
+  } else {
+    const clusterSubscriptions = registry.getAll(ports[index])
+    if (clusterSubscriptions.length === 0) {
+      return
     }
+    const i = utils.getRandomIntInRange(0, clusterSubscriptions.length)
+
+    registry.remove(clusterSubscriptions[i])
+    await redis.lrem(topic, 0, clusterSubscriptions[i])
+  }
+}
+
+async function clearRedisState () {
+  for (let i = 0; i < stateCount; i++) {
+    const topic = `TOPIC_${i}`
+    await redis.del(topic)
   }
 }
 
@@ -157,6 +147,8 @@ async function action () {
     nodeRate = this.nodeRate
   }
 
+  await clearRedisState()
+
   if (this.clusterSeed) {
     globalSeedNodes = localSeedNodes.concat(this.clusterSeed.split(','))
   } else {
@@ -172,10 +164,10 @@ async function action () {
    * Initialise Cluster
    */
   for (let i = 0; i < ports.length; i++) {
-    createClusterNode(3030 + i)
-    await sleep(1000)
+    await createClusterNode(3030 + i)
   }
 
+  await sleep(1000)
   console.log('Nodes initialised')
 
   /**
@@ -213,21 +205,38 @@ async function action () {
   /**
    * Subscriptions are valid
    */
-  setInterval(() => {
+  setInterval(async () => {
+    const errors = []
     for (let i = 0; i < stateCount; i++) {
       const topic = `TOPIC_${i}`
       for (const port in clusters) {
         const registry = clusters[port].node.getStateRegistry(topic)
-        if (registry.getAll().length !== subscriptions[topic].length) {
-          console.error(
-            'invalid subscriptions on port', port,
-            'subscriptions', registry.getAll().length,
-            'expected', subscriptions[topic].length
-          )
+        const redisEntries = await redis.lrange(topic, 0, -1)
+        const registryEntries = registry.getAll()
+        // console.log(port, topic, 'redis', redisEntries.length, 'registry', registryEntries.length)
+        if (redisEntries.length !== registryEntries.length) {
+          errors.push(`server ${port} has invalid subscriptions on topic ${topic} expected ${redisEntries.length} actual ${registryEntries.length}`)
+        }
+
+        for (let j = 0; j < redisEntries.length; j++) {
+          if (registryEntries.indexOf(redisEntries[j]) === -1) {
+            errors.push(`state inconsistent, redis has ${redisEntries[j]} but state registry ${topic} does not`)
+          }
+        }
+
+        for (let j = 0; j < registryEntries.length; j++) {
+          if (redisEntries.indexOf(registryEntries[j]) === -1) {
+            errors.push(`state inconsistent, state ${topic} has ${registryEntries[j]} but redis does not`)
+          }
         }
       }
     }
-  }, 1000)
+    if (errors.length !== 0) {
+      console.error(errors.length, 'errors')
+    } else {
+      console.log('state consistent')
+    }
+  }, 5000)
 }
 
 function sleep (duration) {
