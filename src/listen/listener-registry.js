@@ -195,7 +195,7 @@ module.exports = class ListenerRegistry {
     // TODO: Optimize
     let matches = []
 
-    for (const [ pattern, { expr, sockets } ] of this._providerRegistry.getSubscriptions()) {
+    for (const { name: pattern, expr, sockets } of this._providerRegistry.getSubscriptions()) {
       if (!expr || !expr.test(name)) {
         continue
       }

@@ -30,7 +30,11 @@ class SubscriptionRegistry {
   }
 
   getSubscriptions () {
-    return this._subscriptions
+    return this._subscriptions.values()
+  }
+
+  getSubscription (name) {
+    return this._subscriptions.get(name)
   }
 
   getNames () {
