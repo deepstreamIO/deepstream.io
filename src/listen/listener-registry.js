@@ -228,13 +228,12 @@ class Matcher {
   addPattern (pattern) {
     const expr = new RegExp(pattern)
     this._patterns.set(pattern, expr)
-    setImmediate(() => {
-      for (const name of this._names) {
-        if (expr.test(name)) {
-          this.match(name)
-        }
+
+    for (const name of this._names) {
+      if (expr.test(name)) {
+        this.match(name)
       }
-    })
+    }
   }
 
   removePattern (pattern) {
