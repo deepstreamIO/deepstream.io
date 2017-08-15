@@ -50,6 +50,7 @@ module.exports = class ListenerRegistry {
       }
     }
 
+    // TODO: O(N^2) - Optimize
     for (const subscription of this._subscriptionRegistry.getSubscriptions()) {
       if (!subscription.socket && listener.expr.test(subscription.name)) {
         this._provide(subscription)
@@ -58,6 +59,7 @@ module.exports = class ListenerRegistry {
   }
 
   onListenRemoved (pattern, socket, count, listener) {
+    // TODO: O(N^2) - Optimize
     for (const subscription of this._subscriptionRegistry.getSubscriptions()) {
       if (subscription.pattern === pattern && subscription.socket === socket) {
         this._provide(subscription)
@@ -158,8 +160,8 @@ module.exports = class ListenerRegistry {
     )
   }
 
+  // TODO: O(N) - Optimize
   _match ({ name, history }) {
-    // TODO: Optimize
     let matches = []
 
     for (const { name: pattern, expr, sockets } of this._providerRegistry.getSubscriptions()) {
