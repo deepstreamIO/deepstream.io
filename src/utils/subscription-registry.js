@@ -211,8 +211,6 @@ class SubscriptionRegistry {
   }
 
   _dispatch () {
-    this.onDispatch()
-
     this._broadcastTimeout = null
 
     for (const subscription of this._pending) {

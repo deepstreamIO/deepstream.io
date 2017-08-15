@@ -12,8 +12,6 @@ module.exports = class RecordHandler {
     this._storageExclusion = options.storageExclusion || { test: () => false }
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
-    this._pending = new Map()
-    this._subscriptionRegistry.onDispatch = this._dispatch.bind(this)
   }
 
   handle (socket, message) {
@@ -76,7 +74,7 @@ module.exports = class RecordHandler {
   }
 
   _broadcast (record, sender) {
-    let entry = this._cache.get(record[0])
+    const entry = this._cache.get(record[0])
 
     if (entry && isSameOrNewer(entry.version, record[1])) {
       return
@@ -90,18 +88,9 @@ module.exports = class RecordHandler {
       record[2]
     )
 
-    entry = this._cache.set(record[0], record[1], message, sender)
+    this._cache.set(record[0], record[1], message, sender)
 
-    this._pending.set(record[0], entry)
-
-    this._subscriptionRegistry.dispatch()
-  }
-
-  _dispatch () {
-    for (const { name, message, sender } of this._pending.values()) {
-      this._subscriptionRegistry.sendToSubscribers(name, message, sender)
-    }
-    this._pending.clear()
+    this._subscriptionRegistry.sendToSubscribers(record[0], message, sender)
   }
 }
 
