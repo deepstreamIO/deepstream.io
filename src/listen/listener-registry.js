@@ -15,7 +15,7 @@ module.exports = class ListenerRegistry {
     this._subscriptionRegistry.onSubscriptionAdded = this.onSubscriptionAdded.bind(this)
     this._subscriptionRegistry.onSubscriptionRemoved = this.onSubscriptionRemoved.bind(this)
 
-    this._matcher = new Matcher(this._providerRegistry)
+    this._matcher = new Matcher()
     this._matcher.onMatch = this._onMatch.bind(this)
   }
 
@@ -42,24 +42,22 @@ module.exports = class ListenerRegistry {
   }
 
   onListenAdded (pattern, socket, count, listener) {
-    if (!listener.expr) {
-      try {
-        listener.expr = new RegExp(pattern)
-      } catch (err) {
-        socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
-        return
-      }
+    if (count !== 1) {
+      return
     }
 
-    // TODO: O(N^2) - Optimize
-    for (const subscription of this._subscriptionRegistry.getSubscriptions()) {
-      if (!subscription.socket && listener.expr.test(subscription.name)) {
-        this._provide(subscription)
-      }
+    try {
+      this._matcher.addPattern(pattern)
+    } catch (err) {
+      socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
     }
   }
 
   onListenRemoved (pattern, socket, count, listener) {
+    if (count === 0) {
+      this._matcher.removePattern(pattern)
+    }
+
     // TODO: O(N^2) - Optimize
     for (const subscription of this._subscriptionRegistry.getSubscriptions()) {
       if (subscription.pattern === pattern && subscription.socket === socket) {
@@ -70,7 +68,7 @@ module.exports = class ListenerRegistry {
 
   onSubscriptionAdded (name, socket, count, subscription) {
     if (count === 1) {
-      this._provide(subscription)
+      this._matcher.addName(name)
     } else if (subscription.active) {
       this._sendHasProviderUpdate(true, subscription, socket)
     }
@@ -80,6 +78,8 @@ module.exports = class ListenerRegistry {
     if (count !== 0) {
       return
     }
+
+    this._matcher.removeName(name)
 
     if (subscription.socket) {
       subscription.socket.sendMessage(
@@ -203,14 +203,40 @@ module.exports = class ListenerRegistry {
 }
 
 class Matcher {
-  constructor (providerRegistry) {
-    this._providerRegistry = providerRegistry
+  constructor () {
     this._pending = []
     this._match = this._match.bind(this)
+    this._patterns = new Map()
+    this._names = new Set()
   }
 
   onMatch (name, pattern) {
 
+  }
+
+  addName (name) {
+    this._names.add(name)
+    this.match(name)
+  }
+
+  removeName (name) {
+    this._names.delete(name)
+  }
+
+  addPattern (pattern) {
+    const expr = new RegExp(pattern)
+    this._patterns.set(pattern, expr)
+    setImmediate(() => {
+      for (const name of this._names) {
+        if (expr.test(name)) {
+          this.match(name)
+        }
+      }
+    })
+  }
+
+  removePattern (pattern) {
+    this._patterns.delete(pattern)
   }
 
   match (name) {
@@ -236,9 +262,9 @@ class Matcher {
 
     let patterns = []
 
-    for (const listener of this._providerRegistry.getSubscriptions()) {
-      if (listener.expr && listener.expr.test(name)) {
-        patterns.push(listener.name)
+    for (const [ pattern, expr ] of this._patterns) {
+      if (expr && expr.test(name)) {
+        patterns.push(pattern)
       }
     }
 
