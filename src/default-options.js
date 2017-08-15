@@ -59,6 +59,7 @@ exports.get = function () {
           unauthenticatedClientTimeout: 180000,
           maxAuthAttempts: 3,
           logInvalidAuthData: false,
+          perMessageDeflate: false,
           maxMessageSize: 1048576
         }
       },
