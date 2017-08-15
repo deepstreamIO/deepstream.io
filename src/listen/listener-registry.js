@@ -242,13 +242,9 @@ class Matcher {
   }
 
   match (name) {
-    const index = this._pending.indexOf(name)
-
-    if (index !== -1) {
-      this._pending.splice(index, 1)
+    if (!this._pending.includes(name)) {
+      this._pending.push(name)
     }
-
-    this._pending.push(name)
 
     if (this._pending.length === 1) {
       setImmediate(this._match)
