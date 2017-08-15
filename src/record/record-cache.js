@@ -12,7 +12,7 @@ module.exports = class RecordCache {
     return node && node.value.version !== undefined ? node.value : undefined
   }
 
-  set (name, version, message) {
+  set (name, version, message, sender) {
     let node = this._map.get(name)
 
     const size = name.length + version.length + message.length + 32
@@ -24,16 +24,20 @@ module.exports = class RecordCache {
       node.value.size = size
       node.value.version = version
       node.value.message = message
+      node.value.sender = sender
     } else {
       node = new List.Node({
         name,
         size,
         version,
-        message
+        message,
+        sender
       })
       this._list.unshiftNode(node)
       this._map.set(name, node)
     }
+
+    return node.value
   }
 
   lock (name) {

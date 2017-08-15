@@ -17,7 +17,7 @@ class SubscriptionRegistry {
     this._subscriptions = new Map()
     this._options = options
     this._topic = topic
-    this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
+    this._dispatch = this._dispatch.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
   }
 
@@ -26,6 +26,10 @@ class SubscriptionRegistry {
   }
 
   onSubscriptionRemoved () {
+
+  }
+
+  onDispatch () {
 
   }
 
@@ -103,8 +107,8 @@ class SubscriptionRegistry {
     return this._removeSocket(subscription, socket)
   }
 
-  sendToSubscribers (nameOrSubscription, msg, socket) {
-    if (!msg) {
+  sendToSubscribers (nameOrSubscription, message, socket) {
+    if (!message) {
       return
     }
 
@@ -117,8 +121,8 @@ class SubscriptionRegistry {
     }
 
     // not all messages are valid, this should be fixed elsewhere!
-    if (msg.charAt(msg.length - 1) !== C.MESSAGE_SEPERATOR) {
-      msg += C.MESSAGE_SEPERATOR
+    if (message.charAt(message.length - 1) !== C.MESSAGE_SEPERATOR) {
+      message += C.MESSAGE_SEPERATOR
     }
 
     if (subscription.shared.length === 0) {
@@ -128,7 +132,7 @@ class SubscriptionRegistry {
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
     const start = subscription.shared.length
-    subscription.shared += msg
+    subscription.shared += message
     const stop = subscription.shared.length
 
     if (socket) {
@@ -141,8 +145,12 @@ class SubscriptionRegistry {
       gaps.push(start, stop)
     }
 
+    this.dispatch()
+  }
+
+  dispatch () {
     if (!this._broadcastTimeout) {
-      this._broadcastTimeout = setTimeout(this._onBroadcastTimeout, this._broadcastTimeoutTime)
+      this._broadcastTimeout = setTimeout(this._dispatch, this._broadcastTimeoutTime)
     }
   }
 
@@ -202,7 +210,9 @@ class SubscriptionRegistry {
     return subscription.sockets.size
   }
 
-  _onBroadcastTimeout () {
+  _dispatch () {
+    this.onDispatch()
+
     this._broadcastTimeout = null
 
     for (const subscription of this._pending) {
