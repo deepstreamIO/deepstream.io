@@ -103,14 +103,14 @@ class SubscriptionRegistry {
     return this._removeSocket(subscription, socket)
   }
 
-  sendToSubscribers (name, msg, socket) {
+  sendToSubscribers (nameOrSubscription, msg, socket) {
     if (!msg) {
       return
     }
 
-    const subscription = typeof name === 'string'
-      ? this._subscriptions.get(name)
-      : subscription
+    const subscription = typeof nameOrSubscription === 'string'
+      ? this._subscriptions.get(nameOrSubscription)
+      : nameOrSubscription
 
     if (!subscription) {
       return
