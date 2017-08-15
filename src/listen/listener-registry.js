@@ -15,9 +15,8 @@ module.exports = class ListenerRegistry {
     this._subscriptionRegistry.onSubscriptionAdded = this.onSubscriptionAdded.bind(this)
     this._subscriptionRegistry.onSubscriptionRemoved = this.onSubscriptionRemoved.bind(this)
 
-    this._pending = []
-    this._match = this._match.bind(this)
-    this._onMatch = this._onMatch.bind(this)
+    this._matcher = new Matcher(this._providerRegistry)
+    this._matcher.onMatch = this._onMatch.bind(this)
   }
 
   handle (socket, message) {
@@ -143,18 +142,10 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
-    this._pending.push(subscription.name)
-
-    if (this._pending.length === 1) {
-      setTimeout(this._match, 1)
-    }
+    this._matcher.match(subscription.name)
   }
 
-  _onMatch (err, name, patterns) {
-    if (err) {
-      return
-    }
-
+  _onMatch (name, patterns) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
     if (!subscription || subscription.socket) {
@@ -165,7 +156,10 @@ module.exports = class ListenerRegistry {
 
     for (const pattern of patterns) {
       const listener = this._providerRegistry.getSubscription(pattern)
-      for (const socket of listener.sockets || new Set()) {
+      if (!listener) {
+        continue
+      }
+      for (const socket of listener.sockets) {
         const id = `${pattern}_${socket.id}`
         if (!subscription.history || !subscription.history.has(id)) {
           matches.push({ socket, pattern, id })
@@ -192,25 +186,6 @@ module.exports = class ListenerRegistry {
     )
   }
 
-  // TODO: O(N) - Optimize
-  _match () {
-    const name = this._pending.shift()
-
-    let patterns = []
-
-    for (const listener of this._providerRegistry.getSubscriptions()) {
-      if (listener.expr && listener.expr.test(name)) {
-        patterns.push(listener.name)
-      }
-    }
-
-    this._onMatch(null, name, patterns)
-
-    if (this._pending.length > 0) {
-      setTimeout(this._match, 1)
-    }
-  }
-
   _sendHasProviderUpdate (hasProvider, subscription, socket) {
     const message = messageBuilder.buildMsg4(
       this._topic,
@@ -224,5 +199,51 @@ module.exports = class ListenerRegistry {
     } else {
       this._subscriptionRegistry.sendToSubscribers(subscription, message)
     }
+  }
+}
+
+class Matcher {
+  constructor (providerRegistry) {
+    this._providerRegistry = providerRegistry
+    this._pending = []
+    this._match = this._match.bind(this)
+  }
+
+  onMatch (name, pattern) {
+
+  }
+
+  match (name) {
+    const index = this._pending.indexOf(name)
+
+    if (index !== -1) {
+      this._pending.splice(index, 1)
+    }
+
+    this._pending.push(name)
+
+    if (this._pending.length === 1) {
+      setImmediate(this._match)
+    }
+  }
+
+  _match () {
+    const name = this._pending.shift()
+
+    if (!name) {
+      return
+    }
+
+    let patterns = []
+
+    for (const listener of this._providerRegistry.getSubscriptions()) {
+      if (listener.expr && listener.expr.test(name)) {
+        patterns.push(listener.name)
+      }
+    }
+
+    this.onMatch(name, patterns)
+
+    setImmediate(this._match)
   }
 }
