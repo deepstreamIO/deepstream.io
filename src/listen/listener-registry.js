@@ -14,6 +14,8 @@ module.exports = class ListenerRegistry {
 
     this._subscriptionRegistry.onSubscriptionAdded = this.onSubscriptionAdded.bind(this)
     this._subscriptionRegistry.onSubscriptionRemoved = this.onSubscriptionRemoved.bind(this)
+
+    this._onMatch = this._onMatch.bind(this)
   }
 
   handle (socket, message) {
@@ -139,7 +141,33 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
-    const match = this._match(subscription)
+    this._match(subscription.name, this._onMatch)
+  }
+
+  _onMatch (err, name, patterns) {
+    if (err) {
+      return
+    }
+
+    const subscription = this._subscriptionRegistry.getSubscription(name)
+
+    if (!subscription || subscription.socket) {
+      return
+    }
+
+    let matches = []
+
+    for (const pattern of patterns) {
+      const listener = this._providerRegistry.getSubscription(pattern)
+      for (const socket of listener.sockets || new Set()) {
+        const id = `${pattern}_${socket.id}`
+        if (!subscription.history || !subscription.history.has(id)) {
+          matches.push({ socket, pattern, id })
+        }
+      }
+    }
+
+    const match = matches[Math.floor(Math.random() * matches.length)]
 
     if (!match) {
       return
@@ -159,26 +187,16 @@ module.exports = class ListenerRegistry {
   }
 
   // TODO: O(N) - Optimize
-  _match ({ name, history }) {
-    let matches = []
+  _match (name, callback) {
+    let patterns = []
 
-    for (const { name: pattern, expr, sockets } of this._providerRegistry.getSubscriptions()) {
-      if (!expr || !expr.test(name)) {
-        continue
-      }
-
-      for (const socket of sockets) {
-        const id = `${pattern}_${socket.id}`
-
-        if (history && history.has(id)) {
-          continue
-        }
-
-        matches.push({ socket, pattern, id })
+    for (const listener of this._providerRegistry.getSubscriptions()) {
+      if (listener.expr && listener.expr.test(name)) {
+        patterns.push(listener.name)
       }
     }
 
-    return matches[Math.floor(Math.random() * matches.length)]
+    callback(null, name, patterns)
   }
 
   _sendHasProviderUpdate (hasProvider, subscription, socket) {
