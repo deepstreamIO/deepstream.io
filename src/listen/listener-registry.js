@@ -15,6 +15,8 @@ module.exports = class ListenerRegistry {
     this._subscriptionRegistry.onSubscriptionAdded = this.onSubscriptionAdded.bind(this)
     this._subscriptionRegistry.onSubscriptionRemoved = this.onSubscriptionRemoved.bind(this)
 
+    this._pending = []
+    this._match = this._match.bind(this)
     this._onMatch = this._onMatch.bind(this)
   }
 
@@ -141,7 +143,11 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
-    this._match(subscription.name, this._onMatch)
+    this._pending.push(subscription.name)
+
+    if (this._pending.length === 1) {
+      setTimeout(this._match, 1)
+    }
   }
 
   _onMatch (err, name, patterns) {
@@ -187,7 +193,9 @@ module.exports = class ListenerRegistry {
   }
 
   // TODO: O(N) - Optimize
-  _match (name, callback) {
+  _match () {
+    const name = this._pending.shift()
+
     let patterns = []
 
     for (const listener of this._providerRegistry.getSubscriptions()) {
@@ -196,7 +204,11 @@ module.exports = class ListenerRegistry {
       }
     }
 
-    callback(null, name, patterns)
+    this._onMatch(null, name, patterns)
+
+    if (this._pending.length > 0) {
+      setTimeout(this._match, 1)
+    }
   }
 
   _sendHasProviderUpdate (hasProvider, subscription, socket) {
