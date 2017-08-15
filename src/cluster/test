@@ -46,7 +46,6 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     this._reconciliationTimeouts = {}
     this._fullStateSent = false
     messageConnector.on('added', this._requestFullState.bind(this, C.ALL))
-    this._requestFullState(C.ALL)
   }
 
   /**
@@ -135,17 +134,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @public
   * @returns {Array} entries
   */
-  getAll (serverName) {
-    if (!serverName) {
-      return Object.keys(this._data)
-    }
-    const entries = []
-    for (const name in this._data) {
-      if (this._data[name].nodes[serverName]) {
-        entries.push(name)
-      }
-    }
-    return entries
+  getAll () {
+    return Object.keys(this._data)
   }
 
   /**
@@ -160,11 +150,15 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @returns {void}
   */
   _remove (name, serverName) {
+
     let exists = false
 
     if (!this._data[name]) {
+      console.log('no data')
       return
     }
+    console.trace('_remove', name, serverName)
+
     delete this._data[name].nodes[serverName]
 
     for (const nodeName in this._data[name].nodes) {
@@ -172,6 +166,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
         exists = true
       }
     }
+
+    console.log('after deleting exists', exists)
 
     if (exists === false) {
       delete this._data[name]
@@ -380,7 +376,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     const namesMap = {}
     for (i = 0; i < names.length; i++) {
       namesMap[names[i]] = true
-
+      this._add(names[i], serverName)
     }
 
     for (name in this._data) {
@@ -389,10 +385,6 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       if (!namesMap[name]) {
         this._remove(name, serverName)
       }
-    }
-
-    for (i = 0; i < names.length; i++) {
-      this._add(names[i], serverName)
     }
   }
 
