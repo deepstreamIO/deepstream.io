@@ -35,6 +35,7 @@ const Deepstream = function (config) {
   this._rpcHandler = null
   this._recordHandler = null
   this._plugins = [
+    'patternMatcher',
     'storageConnector',
     'authenticationHandler',
     'permissionHandler'

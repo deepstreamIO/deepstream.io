@@ -15,7 +15,7 @@ module.exports = class ListenerRegistry {
     this._subscriptionRegistry.onSubscriptionAdded = this.onSubscriptionAdded.bind(this)
     this._subscriptionRegistry.onSubscriptionRemoved = this.onSubscriptionRemoved.bind(this)
 
-    this._matcher = new Matcher()
+    this._matcher = options.patternMatcher
     this._matcher.onMatch = this._onMatch.bind(this)
   }
 
@@ -195,78 +195,5 @@ module.exports = class ListenerRegistry {
     } else {
       this._subscriptionRegistry.sendToSubscribers(subscription, message)
     }
-  }
-}
-
-class Matcher {
-  constructor () {
-    this._pending = []
-    this._match = this._match.bind(this)
-    this._patterns = new Map()
-    this._names = new Set()
-  }
-
-  onMatch (name, pattern) {
-
-  }
-
-  addName (name) {
-    this._names.add(name)
-    this.match(name)
-  }
-
-  removeName (name) {
-    this._names.delete(name)
-
-    const index = this._pending.indexOf(name)
-    if (index !== -1) {
-      this._pending.splice(index, 1)
-    }
-  }
-
-  addPattern (pattern) {
-    const expr = new RegExp(pattern)
-    this._patterns.set(pattern, expr)
-
-    // TODO: Optimize
-    for (const name of this._names) {
-      if (expr.test(name)) {
-        this.match(name)
-      }
-    }
-  }
-
-  removePattern (pattern) {
-    this._patterns.delete(pattern)
-  }
-
-  match (name) {
-    if (!this._pending.includes(name)) {
-      this._pending.push(name)
-    }
-
-    if (this._pending.length === 1) {
-      setImmediate(this._match)
-    }
-  }
-
-  _match () {
-    const name = this._pending.shift()
-
-    if (!name) {
-      return
-    }
-
-    let patterns = []
-
-    for (const [ pattern, expr ] of this._patterns) {
-      if (expr && expr.test(name)) {
-        patterns.push(pattern)
-      }
-    }
-
-    this.onMatch(name, patterns)
-
-    setImmediate(this._match)
   }
 }
