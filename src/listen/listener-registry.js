@@ -58,10 +58,6 @@ module.exports = class ListenerRegistry {
   }
 
   onListenRemoved (pattern, socket, count, listener) {
-    if (!listener.expr) {
-      return
-    }
-
     for (const subscription of this._subscriptionRegistry.getSubscriptions()) {
       if (subscription.pattern === pattern && subscription.socket === socket) {
         this._provide(subscription)
@@ -73,7 +69,7 @@ module.exports = class ListenerRegistry {
     if (count === 1) {
       this._provide(subscription)
     } else if (subscription.active) {
-      this._sendHasProviderUpdate(true, name, socket)
+      this._sendHasProviderUpdate(true, subscription, socket)
     }
   }
 
@@ -108,7 +104,7 @@ module.exports = class ListenerRegistry {
     subscription.socket = socket
     subscription.active = true
 
-    this._sendHasProviderUpdate(true, name, undefined)
+    this._sendHasProviderUpdate(true, subscription, undefined)
 
     socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
   }
@@ -134,7 +130,7 @@ module.exports = class ListenerRegistry {
     }
 
     if (subscription.active) {
-      this._sendHasProviderUpdate(false, subscription.name)
+      this._sendHasProviderUpdate(false, subscription)
       subscription.active = false
     }
 
@@ -185,18 +181,18 @@ module.exports = class ListenerRegistry {
     return matches[Math.floor(Math.random() * matches.length)]
   }
 
-  _sendHasProviderUpdate (hasProvider, name, socket) {
+  _sendHasProviderUpdate (hasProvider, subscription, socket) {
     const message = messageBuilder.buildMsg4(
       this._topic,
       C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-      name,
+      subscription.name,
       hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE
     )
 
     if (socket) {
       socket.sendNative(message)
     } else {
-      this._subscriptionRegistry.sendToSubscribers(name, message)
+      this._subscriptionRegistry.sendToSubscribers(subscription, message)
     }
   }
 }

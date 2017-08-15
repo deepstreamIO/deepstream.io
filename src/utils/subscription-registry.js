@@ -108,7 +108,9 @@ class SubscriptionRegistry {
       return
     }
 
-    const subscription = this._subscriptions.get(name)
+    const subscription = typeof name === 'string'
+      ? this._subscriptions.get(name)
+      : subscription
 
     if (!subscription) {
       return
