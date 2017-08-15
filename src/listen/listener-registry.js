@@ -42,14 +42,12 @@ module.exports = class ListenerRegistry {
   }
 
   onListenAdded (pattern, socket, count, listener) {
-    if (count !== 1) {
-      return
-    }
-
-    try {
-      this._matcher.addPattern(pattern)
-    } catch (err) {
-      socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
+    if (count === 1) {
+      try {
+        this._matcher.addPattern(pattern)
+      } catch (err) {
+        socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
+      }
     }
   }
 
@@ -58,7 +56,7 @@ module.exports = class ListenerRegistry {
       this._matcher.removePattern(pattern)
     }
 
-    // TODO: O(N^2) - Optimize
+    // TODO: Optimize
     for (const subscription of this._subscriptionRegistry.getSubscriptions()) {
       if (subscription.pattern === pattern && subscription.socket === socket) {
         this._provide(subscription)
@@ -75,21 +73,19 @@ module.exports = class ListenerRegistry {
   }
 
   onSubscriptionRemoved (name, socket, count, subscription) {
-    if (count !== 0) {
-      return
+    if (count === 0) {
+      this._matcher.removeName(name)
+
+      if (subscription.socket) {
+        subscription.socket.sendMessage(
+          this._topic,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+          [ subscription.pattern, name ]
+        )
+      }
+
+      clearTimeout(subscription.timeout)
     }
-
-    this._matcher.removeName(name)
-
-    if (subscription.socket) {
-      subscription.socket.sendMessage(
-        this._topic,
-        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-        [ subscription.pattern, name ]
-      )
-    }
-
-    clearTimeout(subscription.timeout)
   }
 
   _accept (socket, [ pattern, name ]) {
