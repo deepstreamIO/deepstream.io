@@ -217,6 +217,12 @@ class Matcher {
 
   removeName (name) {
     this._names.delete(name)
+
+    const index = this._pending.indexOf(name)
+
+    if (index !== -1) {
+      this._pending.splice(index, 1)
+    }
   }
 
   addPattern (pattern) {
