@@ -7,9 +7,7 @@ module.exports = class ListenerRegistry {
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
     this._subscriptionRegistry = subscriptionRegistry
-    this._logger = options.logger
 
-    this._providers = new Map()
     this._providerRegistry = new SubscriptionRegistry(options, topic)
     this._providerRegistry.onSubscriptionAdded = this.onListenAdded.bind(this)
     this._providerRegistry.onSubscriptionRemoved = this.onListenRemoved.bind(this)
