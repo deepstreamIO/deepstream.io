@@ -55,15 +55,16 @@
     "deepstream.io-cache-redis": "^1.1.0",
     "deepstream.io-client-js": "^2.2.1",
     "eslint-config-deepstream": "^2.2.0",
+    "ioredis": "^3.1.1",
     "istanbul": "^0.4.5",
     "jasmine": "^2.5.3",
     "jasmine-spec-reporter": "^4.1.0",
     "n0p3": "^1.0.2",
     "nexe": "^1.1.2",
+    "pino": "^4.7.1",
     "proxyquire": "1.7.11",
     "sinon": "^2.3.8",
-    "watch": "^1.0.1",
-    "ioredis": "^3.1.1"
+    "watch": "^1.0.1"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",
