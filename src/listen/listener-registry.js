@@ -219,7 +219,6 @@ class Matcher {
     this._names.delete(name)
 
     const index = this._pending.indexOf(name)
-
     if (index !== -1) {
       this._pending.splice(index, 1)
     }
@@ -229,6 +228,7 @@ class Matcher {
     const expr = new RegExp(pattern)
     this._patterns.set(pattern, expr)
 
+    // TODO: Optimize
     for (const name of this._names) {
       if (expr.test(name)) {
         this.match(name)
