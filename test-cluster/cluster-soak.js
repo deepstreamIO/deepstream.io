@@ -30,7 +30,10 @@ module.exports = function (program) {
 
 const redis = new Redis()
 const logFile = new Date().toString()
-const fsLog = data => { console.log(data); fs.appendFile(`./logs/${logFile}`, `${data},${Date.now()}\n`, () => {}); }
+const fsLog = (data) => {
+  console.log(data)
+  fs.appendFile(`./logs/${logFile}`, `${Date.now()},${data}\n`, () => {})
+}
 const logger = { log: () => {} }
 const ports = []
 const clusters = {}
@@ -38,21 +41,15 @@ const localSeedNodes = []
 
 let globalSeedNodes = []
 
-let stateCount = 1
-let subscriptionCount = 10
-let nodeCount = 2
+let stateCount = 10
+let subscriptionCount = 100
+let nodeCount = 10
 
-let subscriptionRate = 10000
-let nodeRate = 10000
+let subscriptionRate = 1000
+let nodeRate = 2500
 
 async function createClusterNode (port) {
   ports.push(port)
-
-  if (globalSeedNodes.indexOf(`localhost:${port}`) === -1) {
-    globalSeedNodes.push(`localhost:${port}`)
-  }
-
-  const timeStart = Date.now()
 
   const serverName = port
 
@@ -70,10 +67,14 @@ async function createClusterNode (port) {
       pingInterval: 1000
     }
   })
+
+  const cluster = { serverName, node, states: [] }
   await redis.lpush('nodes', serverName)
-  clusters[port] = { serverName, node, states: [] }
-  await setupRegistries(clusters[port])
+  await setupRegistries(cluster)
   fsLog(`${C.NODE_START},${port}`)
+  clusters[port] = cluster
+  globalSeedNodes.push(`localhost:${port}`)
+  console.log('with', globalSeedNodes.length, 'seed nodes')
 }
 
 async function setupRegistries (cluster) {
@@ -94,22 +95,23 @@ async function setupRegistries (cluster) {
 async function startStopNodes () {
   const start = getRandomBool()
   if (start) {
-    const currentNodeCount = Object.keys(clusters).length
+    const currentNodeCount = ports.length
     if (currentNodeCount === nodeCount) {
       return
     }
 
     const lastPort = ports[ports.length - 1]
     const newPort = lastPort + 1
-    createClusterNode(newPort)
+    await createClusterNode(newPort)
   } else {
     if (ports.length === 2) {
       return
     }
-
-    const index = utils.getRandomIntInRange(0, ports.length)
-    const port = ports[index]
+    const cPorts = Object.keys(clusters)
+    const index = utils.getRandomIntInRange(0, cPorts.length)
+    const port = cPorts[index]
     const cluster = clusters[port]
+    delete clusters[port]
 
     for (let i = 0; i < cluster.states.length; i++) {
       const registry = cluster.states[i]
@@ -121,11 +123,9 @@ async function startStopNodes () {
 
     cluster.node.close(() => {})
 
-
     ports.splice(index, 1)
     globalSeedNodes.splice(globalSeedNodes.indexOf(`localhost:${port}`), 1)
 
-    delete clusters[port]
     await redis.lrem('nodes', 0, port)
 
     fsLog(`${C.NODE_STOP},${port}`)
@@ -201,10 +201,8 @@ async function action () {
   /**
    * Adding / removing nodes
    */
-  setInterval(async () => {
-    await startStopNodes()
-    await sleep(1000)
-    await checkNodeState()
+  setTimeout(async () => {
+    startStopCheckNodes()
   }, nodeRate)
 
   /**
@@ -214,6 +212,13 @@ async function action () {
     await addRemoveSubscriptions()
     await checkSubscriptionState()
   }, subscriptionRate)
+}
+
+async function startStopCheckNodes () {
+  await startStopNodes()
+  await sleep(500)
+  await checkNodeState()
+  setTimeout(startStopCheckNodes, nodeRate)
 }
 
 async function checkNodeState () {
