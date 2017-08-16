@@ -139,7 +139,7 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
-    if (!subscription.matches || subscription.matches.length === 0) {
+    if (!subscription.matches) {
       return
     }
 
@@ -207,6 +207,10 @@ module.exports = class ListenerRegistry {
       if (index !== -1) {
         subscription.matches[index] = subscription.matches.pop()
       }
+    }
+
+    if (subscription.matches.length === 0) {
+      subscription.matches = null
     }
   }
 
