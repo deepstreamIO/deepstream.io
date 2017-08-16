@@ -10,7 +10,7 @@ SUPPORTED_ACTIONS[C.ACTIONS.LOCK_REQUEST] = true
 SUPPORTED_ACTIONS[C.ACTIONS.LOCK_RELEASE] = true
 
 /**
- * The unique registry is responsible for maintaing a single source of truth
+ * The lock registry is responsible for maintaing a single source of truth
  * within the cluster, used mainly for issuing cluster wide locks when an operation
  * that stretches over multiple nodes are required.
  *
@@ -18,7 +18,7 @@ SUPPORTED_ACTIONS[C.ACTIONS.LOCK_RELEASE] = true
  * so issuing a lock prevents multiple nodes from assuming the lead.
  *
  */
-module.exports = class UniqueRegistry {
+module.exports = class LockRegistry {
   /**
   * The unique registry is a singleton and is only created once
   * within deepstream.io. It is passed via
