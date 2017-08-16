@@ -2,7 +2,16 @@
 const ClusterNode = require('../src/cluster/cluster-node')
 const utils = require('../src/utils/utils')
 const Redis = require('ioredis')
-const pino = require('pino')
+const fs = require('fs')
+
+const C = {
+  NODE_START: 'NODE_START',
+  NODE_STOP: 'NODE_STOP',
+  SUBSCRIPTION_ADDED: 'SUBSCRIPTION_ADDED',
+  SUBSCRIPTION_REMOVED: 'SUBSCRIPTION_REMOVED',
+  INVALID_NODE_COUNT: 'INVALID_NODE_COUNT',
+  INVALID_SUBSCRIPTION_COUNT: 'INVALID_SUBSCRIPTION_COUNT'
+}
 
 module.exports = function (program) {
   program
@@ -20,6 +29,8 @@ module.exports = function (program) {
 }
 
 const redis = new Redis()
+const logFile = new Date().toString()
+const fsLog = data => { console.log(data); fs.appendFile(`./logs/${logFile}`, `${data}\n`, () => {}); }
 const logger = { log: () => {} }
 const ports = []
 const clusters = {}
@@ -41,7 +52,8 @@ async function createClusterNode (port) {
     globalSeedNodes.push(`localhost:${port}`)
   }
 
-  console.time(`started node on port ${port}`)
+  const timeStart = Date.now()
+
   const serverName = port
 
   // insert into set
@@ -61,7 +73,7 @@ async function createClusterNode (port) {
   await redis.lpush('nodes', serverName)
   clusters[port] = { serverName, node, states: [] }
   await setupRegistries(clusters[port])
-  console.timeEnd(`started node on port ${port}`)
+  fsLog(`${C.NODE_START},${port}`)
 }
 
 async function setupRegistries (cluster) {
@@ -99,8 +111,6 @@ async function startStopNodes () {
     const port = ports[index]
     const cluster = clusters[port]
 
-    console.log('>>> removing node', port)
-
     for (let i = 0; i < cluster.states.length; i++) {
       const registry = cluster.states[i]
       const subscriptions = registry.getAll(port)
@@ -117,6 +127,8 @@ async function startStopNodes () {
 
     delete clusters[port]
     await redis.lrem('nodes', 0, port)
+
+    fsLog(`${C.NODE_STOP},${port}`)
   }
 }
 
@@ -130,6 +142,7 @@ async function addRemoveSubscriptions () {
   if (add) {
     const subscription = utils.getUid()
     registry.add(subscription)
+    fsLog(`${C.SUBSCRIPTION_ADDED},${topic}`)
     await redis.lpush(topic, subscription)
   } else {
     const clusterSubscriptions = registry.getAll(ports[index])
@@ -137,7 +150,7 @@ async function addRemoveSubscriptions () {
       return
     }
     const i = utils.getRandomIntInRange(0, clusterSubscriptions.length)
-
+    fsLog(`${C.SUBSCRIPTION_REMOVED},${topic}`)
     registry.remove(clusterSubscriptions[i])
     await redis.lrem(topic, 0, clusterSubscriptions[i])
   }
@@ -206,8 +219,10 @@ async function action () {
 async function checkNodeState () {
   const redisNodes = await redis.lrange('nodes', 0, -1)
   for (const port in clusters) {
-    if (clusters[port].node.getAll().length !== redisNodes.length - 1) {
-      console.error(`Invalid amount of nodes on ${port}`)
+    const expected = redisNodes.length - 1
+    const actual = clusters[port].node.getAll().length
+    if (expected !== actual) {
+      fsLog(`${C.INVALID_NODE_COUNT},${expected},${actual}`)
     }
   }
 }
@@ -220,7 +235,7 @@ async function checkSubscriptionState () {
       const registry = clusters[port].node.getStateRegistry(topic)
       const redisEntries = await redis.llen(topic)
       const registryEntries = registry.getAll()
-    //   // console.log(port, topic, 'redis', redisEntries.length, 'registry', registryEntries.length)
+
       if (redisEntries !== registryEntries.length) {
         errors.push(`server ${port} has invalid subscriptions on topic ${topic} expected ${redisEntries} actual ${registryEntries.length}`)
       }
@@ -239,9 +254,7 @@ async function checkSubscriptionState () {
     }
   }
   if (errors.length !== 0) {
-    console.error(errors.length, 'errors')
-  } else {
-    console.log('state consistent')
+    fsLog(`${C.INVALID_SUBSCRIPTION_COUNT},${errors.length}`)
   }
 }
 
