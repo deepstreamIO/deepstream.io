@@ -58,7 +58,12 @@ class ClusterNode extends EventEmitter {
   }
 
   send (topic, message) {
-    this.sendBroadcast(topic, message)
+    const stateRegistry = this._stateRegistries.get(`${topic}_SUB`)
+    const name = message.action !== C.ACTIONS.ACK ? message.data[0] : message.data[1]
+    const serverNames = stateRegistry.getAllServers(name)
+    for (let i = 0; i < serverNames.length; i++) {
+      this.sendDirect(serverNames[i], topic, message)
+    }
   }
 
   sendBroadcast (topic, message) {
