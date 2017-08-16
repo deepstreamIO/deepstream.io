@@ -10,7 +10,8 @@ const C = {
   SUBSCRIPTION_ADDED: 'SUBSCRIPTION_ADDED',
   SUBSCRIPTION_REMOVED: 'SUBSCRIPTION_REMOVED',
   INVALID_NODE_COUNT: 'INVALID_NODE_COUNT',
-  INVALID_SUBSCRIPTION_COUNT: 'INVALID_SUBSCRIPTION_COUNT'
+  INVALID_SUBSCRIPTION_COUNT: 'INVALID_SUBSCRIPTION_COUNT',
+  MAX_CONSECUTIVE_ERRORS_REACHED: 'MAX_CONSECUTIVE_ERRORS_REACHED'
 }
 
 module.exports = function (program) {
@@ -38,13 +39,15 @@ const logger = { log: () => {} }
 const ports = []
 const clusters = {}
 const localSeedNodes = []
+const maxConsecutiveErrors = 10
 
 let globalSeedNodes = []
 
 let stateCount = 10
 let subscriptionCount = 100
 let nodeCount = 10
-
+let consecutiveSubscriptionsErrors = 0
+let consecutiveNodeCountErrors = 0
 let subscriptionRate = 1000
 let nodeRate = 2500
 
@@ -74,7 +77,6 @@ async function createClusterNode (port) {
   fsLog(`${C.NODE_START},${port}`)
   clusters[port] = cluster
   globalSeedNodes.push(`localhost:${port}`)
-  console.log('with', globalSeedNodes.length, 'seed nodes')
 }
 
 async function setupRegistries (cluster) {
@@ -228,6 +230,13 @@ async function checkNodeState () {
     const actual = clusters[port].node.getAll().length
     if (expected !== actual) {
       fsLog(`${C.INVALID_NODE_COUNT},${expected},${actual}`)
+      consecutiveNodeCountErrors++
+      if (consecutiveNodeCountErrors === maxConsecutiveErrors) {
+        fsLog(C.MAX_CONSECUTIVE_ERRORS_REACHED)
+        process.exit(1)
+      }
+    } else {
+      consecutiveNodeCountErrors = 0
     }
   }
 }
@@ -260,6 +269,13 @@ async function checkSubscriptionState () {
   }
   if (errors.length !== 0) {
     fsLog(`${C.INVALID_SUBSCRIPTION_COUNT},${errors.length}`)
+    consecutiveSubscriptionsErrors++
+    if (consecutiveSubscriptionsErrors === maxConsecutiveErrors) {
+      fsLog(C.MAX_CONSECUTIVE_ERRORS_REACHED)
+      process.exit(1)
+    } else {
+      consecutiveSubscriptionsErrors = 0
+    }
   }
 }
 
