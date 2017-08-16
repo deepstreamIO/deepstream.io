@@ -16,7 +16,8 @@ module.exports = class ListenerRegistry {
     this._subscriptionRegistry.onSubscriptionRemoved = this.onSubscriptionRemoved.bind(this)
 
     this._matcher = options.patternMatcher
-    this._matcher.onMatch = this._onMatch.bind(this)
+    this._matcher.onMatchAdded = this._onMatchAdded.bind(this)
+    this._matcher.onMatchRemoved = this._onMatchRemoved.bind(this)
   }
 
   handle (socket, message) {
@@ -176,17 +177,37 @@ module.exports = class ListenerRegistry {
     )
   }
 
-  _onMatch (name, matches) {
+  _onMatchAdded (name, matches) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
     if (!subscription || matches.length === 0) {
       return
     }
 
-    subscription.matches = matches
+    if (!subscription.matches) {
+      subscription.matches = matches
+    } else {
+      subscription.matches.push(...matches)
+    }
 
     if (!subscription.socket) {
       this._provide(subscription)
+    }
+  }
+
+  _onMatchRemoved (name, matches) {
+    const subscription = this._subscriptionRegistry.getSubscription(name)
+
+    if (!subscription || !subscription.matches) {
+      return
+    }
+
+    for (const match of matches) {
+      const index = subscription.matches.indexOf(match)
+      if (index !== -1) {
+        subscription.matches[index] = subscription.matches[subscription.matches.length - 1]
+        subscription.matches.pop()
+      }
     }
   }
 
