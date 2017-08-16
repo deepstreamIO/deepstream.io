@@ -2,8 +2,8 @@
 
 const EventEmitter = require('events').EventEmitter
 const MESSAGE = require('./message-enums')
-const utils = require('../utils/utils')
-const C = require('../constants/constants')
+const utils = require('../../utils/utils')
+const C = require('../../constants/constants')
 
 const STATE = {
   INIT: 0,

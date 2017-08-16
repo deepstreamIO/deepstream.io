@@ -3,8 +3,8 @@
 
 const net = require('net')
 
-const IncomingConnection = require('./incoming-connection')
-const OutgoingConnection = require('./outgoing-connection')
+const IncomingConnection = require('./messaging/incoming-connection')
+const OutgoingConnection = require('./messaging/outgoing-connection')
 const utils = require('../utils/utils')
 const StateRegistry = require('./distributed-state-registry')
 const C = require('../constants/constants')
