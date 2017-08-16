@@ -179,7 +179,7 @@ module.exports = class ListenerRegistry {
   _onMatch (name, patterns) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
-    if (!subscription) {
+    if (!subscription || patterns.length === 0) {
       return
     }
 
