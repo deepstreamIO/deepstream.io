@@ -138,19 +138,13 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
-    this._matcher.match(subscription.name)
-  }
-
-  _onMatch (name, patterns) {
-    const subscription = this._subscriptionRegistry.getSubscription(name)
-
-    if (!subscription || subscription.socket) {
+    if (!subscription.matches || subscription.matches.length === 0) {
       return
     }
 
     let matches = []
 
-    for (const pattern of patterns) {
+    for (const pattern of subscription.matches) {
       const listener = this._providerRegistry.getSubscription(pattern)
       if (!listener) {
         continue
@@ -180,6 +174,20 @@ module.exports = class ListenerRegistry {
       C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
       [ subscription.pattern, subscription.name ]
     )
+  }
+
+  _onMatch (name, patterns) {
+    const subscription = this._subscriptionRegistry.getSubscription(name)
+
+    if (!subscription) {
+      return
+    }
+
+    subscription.matches = patterns
+
+    if (!subscription.socket) {
+      this._provide(subscription)
+    }
   }
 
   _sendHasProviderUpdate (hasProvider, subscription, socket) {
