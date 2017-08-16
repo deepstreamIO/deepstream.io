@@ -176,14 +176,14 @@ module.exports = class ListenerRegistry {
     )
   }
 
-  _onMatch (name, patterns) {
+  _onMatch (name, matches) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
-    if (!subscription || patterns.length === 0) {
+    if (!subscription || matches.length === 0) {
       return
     }
 
-    subscription.matches = patterns
+    subscription.matches = matches
 
     if (!subscription.socket) {
       this._provide(subscription)
