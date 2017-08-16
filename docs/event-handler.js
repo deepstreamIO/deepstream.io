@@ -30,9 +30,7 @@ export default class EventHandler {
   }
 
   onMessage (message) {
-    const [ name, data ] = message.action !== C.ACTIONS.ERROR
-      ? message.data
-      : message.data.slice(1).concat(message.data.slice(0, 1))
+    const [ name, data ] = message.data
 
     if (message.action === C.ACTIONS.EVENT) {
       if (message.data && message.data.length === 2) {
@@ -40,12 +38,8 @@ export default class EventHandler {
       } else {
         this._emitter.emit(name)
       }
-    } else {
-      const listener = this._listeners.get(name)
-
-      if (listener) {
-        listener._$onMessage(message)
-      }
+    } else if (message.action === C.ACTIONS.ERROR) {
+      // TODO
     }
   }
 }
