@@ -1,47 +1,22 @@
 const C = require('../constants/constants')
 
-/**
- * Parses ASCII control character seperated
- * message strings into digestable maps
- *
- * @constructor
- */
 module.exports = class MessageParser {
-  /**
-   * Main interface method. Receives a raw message
-   * string, containing one or more messages
-   * and returns an array of parsed message objects
-   * or null for invalid messages
-   *
-   * @param   {String} message raw message
-   *
-   * @public
-   *
-   * @returns {Array} array of parsed message objects
-   *                  following the format
-   *                  {
-   *                    raw: <original message string>
-   *                    topic: <string>
-   *                    action: <string - shortcode>
-   *                    data: <array of strings>
-   *                  }
-   */
-  static parse (message) {
-    const rawMessages = message.split(C.MESSAGE_SEPERATOR)
-    const result = []
-
-    for (let i = 0; i < rawMessages.length; i++) {
-      if (rawMessages[i].length < 3) {
-        continue
-      }
-      const parts = rawMessages[i].split(C.MESSAGE_PART_SEPERATOR)
-      result.push(parts.length < 2 ? null : {
-        raw: rawMessages[i],
-        topic: parts[0],
-        action: parts[1],
-        data: parts.splice(2)
-      })
+  static parse (rawMessage, result) {
+    if (rawMessage.length < 3) {
+      return
     }
+
+    const parts = rawMessage.split(C.MESSAGE_PART_SEPERATOR)
+
+    if (parts.length < 2) {
+      return null
+    }
+
+    result = result || Object.create(null)
+    result.raw = rawMessage
+    result.topic = parts[0]
+    result.action = parts[1]
+    result.data = parts.splice(2)
 
     return result
   }

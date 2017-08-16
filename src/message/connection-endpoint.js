@@ -207,7 +207,9 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       return
     }
 
-    const msg = messageParser.parse(connectionMessage)[0]
+    const msg = connectionMessage
+      .split(C.MESSAGE_SEPERATOR)
+      .map(messageParser.parse)[0]
 
     if (msg === null || msg === undefined) {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
@@ -255,7 +257,9 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       return
     }
 
-    const msg = messageParser.parse(authMsg)[0]
+    const msg = authMsg
+      .split(C.MESSAGE_SEPERATOR)
+      .map(messageParser.parse)[0]
     let authData
     let errorMsg
 

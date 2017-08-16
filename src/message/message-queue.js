@@ -1,4 +1,5 @@
 const C = require('../constants/constants')
+const messageParser = require('./message-parser')
 
 const STATE = {
   IDLE: 0,
@@ -66,26 +67,20 @@ module.exports = class MessageQueue {
         break
       }
 
-      if (rawMessage.length < 3) {
-        continue
-      }
+      const res = messageParser.parse(rawMessage, this._message)
 
-      const parts = rawMessage.split(C.MESSAGE_PART_SEPERATOR)
-
-      if (parts.length < 2) {
+      if (res === null) {
         this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, rawMessage)
         this._socket.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, rawMessage)
+      }
+
+      if (res === undefined) {
         continue
       }
 
-      if (parts[0] === C.TOPIC.CONNECTION && parts[1] === C.ACTIONS.PONG) {
+      if (this._message.topic === C.TOPIC.CONNECTION && this._message.action === C.ACTIONS.PONG) {
         continue
       }
-
-      this._message.raw = rawMessage
-      this._message.topic = parts[0]
-      this._message.action = parts[1]
-      this._message.data = parts.splice(2)
 
       // Determine (STATE.WAITING) if canPerformAction is executed synchronously (STATE.SYNC) or
       // (STATE.ASYNC) asynchronously.
