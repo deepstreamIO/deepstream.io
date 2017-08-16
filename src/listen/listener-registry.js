@@ -180,7 +180,7 @@ module.exports = class ListenerRegistry {
   _onMatchAdded (name, matches) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
-    if (!subscription || matches.length === 0) {
+    if (!subscription) {
       return
     }
 
@@ -205,8 +205,7 @@ module.exports = class ListenerRegistry {
     for (const match of matches) {
       const index = subscription.matches.indexOf(match)
       if (index !== -1) {
-        subscription.matches[index] = subscription.matches[subscription.matches.length - 1]
-        subscription.matches.pop()
+        subscription.matches[index] = subscription.matches.pop()
       }
     }
   }
