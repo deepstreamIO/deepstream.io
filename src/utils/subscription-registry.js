@@ -29,10 +29,6 @@ class SubscriptionRegistry {
 
   }
 
-  onDispatch () {
-
-  }
-
   getSubscriptions () {
     return this._subscriptions.values()
   }
