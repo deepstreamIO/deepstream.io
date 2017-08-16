@@ -30,7 +30,7 @@ module.exports = function (program) {
 
 const redis = new Redis()
 const logFile = new Date().toString()
-const fsLog = data => { fs.appendFile(`./logs/${logFile}`, `${data},${Date.now()}\n`, () => {}); }
+const fsLog = data => { console.log(data); fs.appendFile(`./logs/${logFile}`, `${data},${Date.now()}\n`, () => {}); }
 const logger = { log: () => {} }
 const ports = []
 const clusters = {}
