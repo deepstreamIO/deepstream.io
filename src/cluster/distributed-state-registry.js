@@ -40,13 +40,13 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     this._topic = topic
     this._options = options
     this._messageConnector = messageConnector
-    messageConnector.subscribe(topic, this._processIncomingMessage.bind(this))
-    messageConnector.subscribeServerDisconnect(this.removeAll.bind(this))
     this._data = {}
     this._reconciliationTimeouts = {}
     this._fullStateSent = false
-    messageConnector.on('added', this._requestFullState.bind(this, C.ALL))
-    this._requestFullState(C.ALL)
+
+    messageConnector.subscribe(topic, this._processIncomingMessage.bind(this))
+
+    this._requestFullState()
   }
 
   /**
@@ -99,14 +99,21 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   }
 
   /**
-  * Removes all entries for a given serverName. This is intended to be called
-  * whenever a node leaves the cluster
+  * Informs the distributed state registry a server has been added to the cluster
   *
   * @param   {String} serverName The serverName of a node within the cluster
-  *
-  * @returns {[type]}
   */
-  removeAll (serverName) {
+  onServerAdded (serverName) {
+    this._requestFullState(serverName)
+  }
+
+  /**
+  * Removes all entries for a given serverName. This is intended to be called
+  * whenever a node is removed from the cluster
+  *
+  * @param   {String} serverName The serverName of a node within the cluster
+  */
+  onServerRemoved (serverName) {
     let name
     for (name in this._data) {
       if (this._data[name].nodes[serverName]) {
@@ -177,6 +184,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       delete this._data[name]
       this.emit('remove', name)
     }
+
+    this.emit('server-removed', name, serverName)
   }
 
   /**
@@ -200,6 +209,8 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     }
 
     this._data[name].nodes[serverName] = true
+
+    this.emit('server-added', name, serverName)
   }
 
   /**
@@ -231,7 +242,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       data: [name, this._options.serverName, this._getCheckSumTotal(this._options.serverName)]
     }
 
-    this._messageConnector.sendBroadcast(this._topic, message)
+    this._messageConnector.sendState(this._topic, message)
   }
 
   /**
@@ -320,14 +331,16 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @returns {void}
   */
   _requestFullState (serverName) {
-    setTimeout(() => {
-      this._messageConnector.sendBroadcast(this._topic, {
-        topic: this._topic,
-        action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE,
-        data: [serverName]
-      })
-
-    }, 10)
+    const message = {
+      topic: this._topic,
+      action: C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE
+    }
+    if (!serverName) {
+      message.data = [C.ALL]
+      this._messageConnector.sendState(this._topic, message)
+    } else {
+      this._messageConnector.sendDirect(serverName, this._topic, message)
+    }
   }
 
   /**
@@ -352,7 +365,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       }
     }
 
-    this._messageConnector.sendBroadcast(this._topic, {
+    this._messageConnector.sendState(this._topic, {
       topic: this._topic,
       action: C.EVENT.DISTRIBUTED_STATE_FULL_STATE,
       data: [this._options.serverName, localState]
@@ -418,6 +431,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @returns {void}
   */
   _processIncomingMessage (message) {
+
     if (!this._isValidMessage(message)) {
       return
     }
@@ -430,7 +444,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       this._verifyCheckSum(message.data[1], message.data[2])
     } else if (message.action === C.EVENT.DISTRIBUTED_STATE_REQUEST_FULL_STATE) {
       if (
-        message.data[0] === C.ALL ||
+        !message.data ||
         (message.data[0] === this._options.serverName && this._fullStateSent === false)
       ) {
         this._sendFullState()
@@ -454,10 +468,10 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       return false
     }
 
-    if (message.data.length !== DATA_LENGTH[message.action]) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, message.data)
-      return false
-    }
+    // if (message.data.length !== DATA_LENGTH[message.action]) {
+    //   this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE_DATA, message.data)
+    //   return false
+    // }
 
     return true
   }

@@ -10,6 +10,8 @@ const StateRegistry = require('./distributed-state-registry')
 const C = require('../constants/constants')
 const EventEmitter = require('events').EventEmitter
 
+const GLOBAL_STATES = 'GLOBAL_STATES'
+
 const STATE = {
   INIT: 0,
   DISCOVERY: 1,
@@ -20,9 +22,8 @@ const STATE = {
 
 const STATE_LOOKUP = utils.reverseMap(STATE)
 
-class ClusterNode extends EventEmitter {
+class ClusterNode {
   constructor (options) {
-    super()
     this._serverName = options.serverName
     this._logger = options.logger
     this._options = options
@@ -38,23 +39,50 @@ class ClusterNode extends EventEmitter {
     this._knownPeers = new Map() // serverName -> connection
     this._knownUrls = new Set()
     this._subscriptions = new Map() // topic -> [callback, ...]
+
+    this._globalStateRegistry = new StateRegistry(GLOBAL_STATES, this._options, this, true)
+    this._globalStateRegistry.on('server-added', (stateRegistryTopic, serverName) => {
+      if (serverName === this._serverName) return
+      this._emitter.emit(`ssra_${stateRegistryTopic}`, serverName)
+    })
+    this._globalStateRegistry.on('server-removed', (stateRegistryTopic, serverName) => {
+      if (serverName === this._serverName) return
+      this._emitter.emit(`ssrr_${stateRegistryTopic}`, serverName)
+    })
+
     this._stateRegistries = new Map() // topic -> StateRegistry
-    this._serverDisconnectListeners = []
 
     this._state = STATE.INIT
     this._electionNumber = Math.random()
     this._leader = null
     this._decideLeader()
+
+    this._emitter = new EventEmitter()
   }
 
   sendDirect (serverName, topic, message) {
     const connection = this._knownPeers.get(serverName)
     if (!connection) {
-      const error = `tried to send message to unknown server ${serverName}`
+      const error = `tried to send message to unknown server ${serverName} from ${this._serverName}`
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
       return
     }
     connection.sendMessage({ topic, message })
+  }
+
+  sendState (topic, message) {
+    if (topic === GLOBAL_STATES) {
+      for (const connection of this._knownPeers.values()) {
+        connection.sendMessage({ topic, message })
+      }
+      return
+    }
+    const serverNames = this._globalStateRegistry.getAllServers(topic)
+    for (let i = 0; i < serverNames.length; i++) {
+      if (serverNames[i] !== this._serverName) {
+        this.sendDirect(serverNames[i], topic, message)
+      }
+    }
   }
 
   send (topic, message) {
@@ -62,13 +90,9 @@ class ClusterNode extends EventEmitter {
     const name = message.action !== C.ACTIONS.ACK ? message.data[0] : message.data[1]
     const serverNames = stateRegistry.getAllServers(name)
     for (let i = 0; i < serverNames.length; i++) {
-      this.sendDirect(serverNames[i], topic, message)
-    }
-  }
-
-  sendBroadcast (topic, message) {
-    for (const connection of this._knownPeers.values()) {
-      connection.sendMessage({ topic, message })
+      if (serverNames[i] !== this._serverName) {
+        this.sendDirect(serverNames[i], topic, message)
+      }
     }
   }
 
@@ -86,10 +110,6 @@ class ClusterNode extends EventEmitter {
     return Array.from(this._knownPeers.keys())
   }
 
-  subscribeServerDisconnect (callback) {
-    this._serverDisconnectListeners.push(callback)
-  }
-
   isLeader () {
     return this._leader === this._serverName
   }
@@ -102,6 +122,9 @@ class ClusterNode extends EventEmitter {
     let registry = this._stateRegistries.get(name)
     if (!registry) {
       registry = new StateRegistry(name, this._options, this)
+      this._emitter.on(`ssra_${name}`, registry.onServerAdded.bind(registry))
+      this._emitter.on(`ssrr_${name}`, registry.onServerRemoved.bind(registry))
+      this._globalStateRegistry.add(name)
       this._stateRegistries.set(name, registry)
     }
     return registry
@@ -197,7 +220,8 @@ class ClusterNode extends EventEmitter {
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
-    this.emit('added', connection.remoteName)
+
+    this._globalStateRegistry.onServerAdded(connection.remoteName)
   }
 
   _removePeer (connection) {
@@ -209,7 +233,8 @@ class ClusterNode extends EventEmitter {
     this._knownPeers.delete(connection.remoteName)
     this._knownUrls.delete(connection.remoteUrl)
     this._decideLeader()
-    this._serverDisconnectListeners.forEach(callback => callback(connection.remoteName))
+
+    this._globalStateRegistry.onServerRemoved(connection.remoteName)
   }
 
   _decideLeader () {
