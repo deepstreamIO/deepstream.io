@@ -58,14 +58,6 @@ class SubscriptionRegistry {
     return this._subscriptions.get(name)
   }
 
-  getNames () {
-    return this._subscriptions.keys()
-  }
-
-  hasName (name) {
-    return this._subscriptions.has(name)
-  }
-
   getSubscribers (name) {
     const subscription = this._subscriptions.get(name)
     return subscription ? subscription.sockets : EMPTY_SET

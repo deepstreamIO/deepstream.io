@@ -64,7 +64,7 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onMatchMade (name, matches) {
+  onNoProvider (subscription) {
 
   }
 
@@ -150,6 +150,7 @@ module.exports = class ListenerRegistry {
     }
 
     if (!subscription.matches || subscription.matches.length === 0) {
+      this.onNoProvider(subscription)
       return
     }
 
@@ -171,6 +172,7 @@ module.exports = class ListenerRegistry {
     const match = matches[Math.floor(Math.random() * matches.length)]
 
     if (!match) {
+      this.onNoProvider(subscription)
       return
     }
 
@@ -203,7 +205,7 @@ module.exports = class ListenerRegistry {
       subscription.matches.push(...matches)
     }
 
-    if (!subscription.socket && subscription.matches.length > 0) {
+    if (!subscription.socket) {
       this._provide(subscription)
     }
 

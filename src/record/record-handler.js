@@ -12,9 +12,9 @@ module.exports = class RecordHandler {
     this._storageExclusion = options.storageExclusion || { test: () => false }
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
-    this._listenerRegistry.onMatchMade = (name, matches) => {
-      if (matches.length === 0 && !this._storageExclusion.test(name)) {
-        this._storage.get(name, (error, record) => {
+    this._listenerRegistry.onNoProvider = (subscription) => {
+      if (!subscription.version && !this._storageExclusion.test(subscription.name)) {
+        this._storage.get(subscription.name, (error, record) => {
           if (error) {
             const message = `error while reading ${record[0]} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
