@@ -28,7 +28,11 @@ class ClusterNode extends EventEmitter {
     this._options = options
 
     const config = this._config = options.messageConnector
-    this._seedNodes = config.seedNodes
+    if (typeof config.seedNodes === 'string') {
+      this._seedNodes = config.seedNodes.split(',')
+    } else {
+      this._seedNodes = config.seedNodes
+    }
     this._url = `${config.host}:${config.port}`
 
     this._tcpServer = net.createServer(this._onIncomingConnection.bind(this))
