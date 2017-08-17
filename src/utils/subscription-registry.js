@@ -5,7 +5,7 @@ const invariant = require('invariant')
 
 const EMPTY_SET = new Set()
 
-let idCounter = 0
+let counter = 0
 
 class SubscriptionRegistry {
   constructor (options, topic) {
@@ -239,7 +239,7 @@ class SubscriptionRegistry {
     for (const subscription of this._pending) {
       const { senders, shared, sockets } = subscription
 
-      idCounter = (idCounter + 1) % Number.MAX_SAFE_INTEGER
+      counter = (counter + 1) % Number.MAX_SAFE_INTEGER
 
       for (const [ socket, gaps ] of senders) {
         let i = 0
@@ -252,7 +252,7 @@ class SubscriptionRegistry {
         }
         message += shared.substring(lastStop, shared.length)
 
-        socket.opaque = idCounter
+        socket.opaque = counter
 
         if (message) {
           socket.sendNative(message)
@@ -261,7 +261,7 @@ class SubscriptionRegistry {
 
       const preparedMessage = SocketWrapper.prepareMessage(shared)
       for (const socket of sockets) {
-        if (socket.opaque !== idCounter) {
+        if (socket.opaque !== counter) {
           socket.sendPrepared(preparedMessage)
         }
       }
