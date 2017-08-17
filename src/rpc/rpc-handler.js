@@ -1,5 +1,6 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
+const toFastProperties = require('to-fast-properties')
 
 module.exports = class RpcHandler {
   constructor (options) {
@@ -22,15 +23,24 @@ module.exports = class RpcHandler {
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(name, socket)
     } else if (message.action === C.ACTIONS.REQUEST) {
-      const rpc = this._pool.pop() || Object.create(null)
+      let rpc = this._pool.pop()
 
-      rpc.id = id
-      rpc.name = name
-      rpc.socket = socket
-      rpc.data = data
-      rpc.history = new Set()
-      rpc.provider = null
-      rpc.timeout = null
+      if (rpc) {
+        rpc.id = id
+        rpc.name = name
+        rpc.socket = socket
+        rpc.data = data
+      } else {
+        rpc = toFastProperties({
+          id,
+          name,
+          socket,
+          data,
+          history: new Set(),
+          provider: null,
+          timeout: null
+        })
+      }
 
       rpc.request = this._request.bind(this, rpc)
       this._rpcs.set(id, rpc)
@@ -101,7 +111,7 @@ module.exports = class RpcHandler {
     rpc.name = null
     rpc.socket = null
     rpc.data = null
-    rpc.history = null
+    rpc.history.clear()
     rpc.provider = null
     rpc.timeout = null
     this._pool.push(rpc)
