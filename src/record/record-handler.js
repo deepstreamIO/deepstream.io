@@ -12,6 +12,18 @@ module.exports = class RecordHandler {
     this._storageExclusion = options.storageExclusion || { test: () => false }
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
+    this._listenerRegistry.onMatchAdded = (name, matches) => {
+      if (matches.length === 0 && !this._storageExclusion.test(name)) {
+        this._storage.get(name, (error, record) => {
+          if (error) {
+            const message = `error while reading ${record[0]} from storage ${error}`
+            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
+          } else {
+            this._broadcast(record)
+          }
+        })
+      }
+    }
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionAdded: (name, socket, count, subscription) => {
         if (count === 1) {
@@ -20,15 +32,6 @@ module.exports = class RecordHandler {
 
         if (subscription.message) {
           socket.sendNative(subscription.message)
-        } else if (count === 1 && !this._storageExclusion.test(name)) {
-          this._storage.get(name, (error, record) => {
-            if (error) {
-              const message = `error while reading ${record[0]} from storage ${error}`
-              this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-            } else {
-              this._broadcast(record)
-            }
-          })
         }
 
         this._listenerRegistry.onSubscriptionAdded(name, socket, count, subscription)

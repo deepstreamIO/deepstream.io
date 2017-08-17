@@ -64,6 +64,14 @@ module.exports = class ListenerRegistry {
     }
   }
 
+  onMatchAdded (name, matches) {
+
+  }
+
+  onMatchRemoved (name, matches) {
+
+  }
+
   onSubscriptionAdded (name, socket, count, subscription) {
     if (count === 1) {
       this._matcher.addName(name)
@@ -145,7 +153,7 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
-    if (!subscription.matches) {
+    if (!subscription.matches || subscription.matches.length === 0) {
       return
     }
 
@@ -202,6 +210,8 @@ module.exports = class ListenerRegistry {
     if (!subscription.socket) {
       this._provide(subscription)
     }
+
+    this.onMatchAdded(name, matches)
   }
 
   _onMatchRemoved (name, matches) {
@@ -221,6 +231,8 @@ module.exports = class ListenerRegistry {
     if (subscription.matches.length === 0) {
       subscription.matches = null
     }
+
+    this.onMatchRemoved(name, matches)
   }
 
   _sendHasProviderUpdate (hasProvider, subscription, socket) {
