@@ -22,7 +22,6 @@ let idCounter = 0
  * @constructor
  */
 class UwsSocketWrapper extends EventEmitter {
-
   constructor (external, handshakeData, logger, config, connectionEndpoint) {
     super()
     this.isClosed = false
@@ -124,7 +123,7 @@ class UwsSocketWrapper extends EventEmitter {
     this.isClosed = true
     this.authCallBack = null
     this.emit('close', this)
-    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, this.user)
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.CLIENT_DISCONNECTED, `${this.user}/${this.id}`)
     this.removeAllListeners()
   }
 

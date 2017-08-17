@@ -32,12 +32,18 @@ class SubscriptionRegistry {
   }
 
   _alloc (name) {
-    return this._pool.pop() || toFastProperties({
-      owner: this,
-      name,
-      senders: new Map(),
-      sockets: new Set()
-    })
+    const subscription = this._pool.pop()
+    if (subscription) {
+      subscription.name = name
+      return subscription
+    } else {
+      return toFastProperties({
+        owner: this,
+        name,
+        senders: new Map(),
+        sockets: new Set()
+      })
+    }
   }
 
   setSubscriptionListener (listener) {
@@ -72,19 +78,21 @@ class SubscriptionRegistry {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.MULTIPLE_SUBSCRIPTIONS,
-        `repeat supscription to "${name}" by ${socket.user}`
+        `repeat supscription to ${this._topic}/${name}/ by ${socket.user}/${socket.id}`
       )
       socket.sendError(this._topic, C.EVENT.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
+    invariant(name === subscription.name, `invalid subscription name ${subscription.name} for ${name}`)
+
     this._options.logger.log(
       C.LOG_LEVEL.DEBUG,
       C.EVENT.SUBSCRIBE,
-      `for ${this._topic}:${name} by ${socket.user}`
+      `for ${this._topic}:${name} by ${socket.user} ${socket.id}`
     )
 
-    return this._addSocket(subscription, socket)
+    this._addSocket(subscription, socket)
   }
 
   unsubscribe (name, socket) {
@@ -94,19 +102,21 @@ class SubscriptionRegistry {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.NOT_SUBSCRIBED,
-        `${socket.user} is not subscribed to ${name}`
+        `${socket.user}/${socket.id} is not subscribed to ${this._topic}/${name}`
       )
       socket.sendError(this._topic, C.EVENT.NOT_SUBSCRIBED, name)
       return
     }
 
+    invariant(name === subscription.name, `invalid subscription name ${subscription.name} for ${name}`)
+
     this._options.logger.log(
       C.LOG_LEVEL.DEBUG,
       C.EVENT.UNSUBSCRIBE,
-      `for ${this._topic}:${name} by ${socket.user}`
+      `for ${this._topic}/${name} by ${socket.user}/${socket.id}`
     )
 
-    return this._removeSocket(subscription, socket)
+    this._removeSocket(subscription, socket)
   }
 
   sendToSubscribers (nameOrSubscription, message, socket) {
@@ -160,19 +170,20 @@ class SubscriptionRegistry {
     for (const subscription of this._sockets.get(socket)) {
       this._removeSocket(subscription, socket)
     }
+    this._print(socket.id)
   }
 
   _addSocket (subscription, socket) {
-    invariant(!subscription.sockets.has(socket), `existing socket of ${socket.user}`)
+    invariant(!subscription.sockets.has(socket), `existing socket of ${socket.user}/${socket.id}`)
     subscription.sockets.add(socket)
 
     if (subscription.sockets.size === 1) {
-      invariant(!this._subscriptions.has(subscription.name), `existing subscription of ${subscription.name}`)
+      invariant(!this._subscriptions.has(subscription.name), `existing subscription of ${this._topic}/${subscription.name}`)
       this._subscriptions.set(subscription.name, subscription)
     }
 
     const subscriptions = this._sockets.get(socket) || new Set()
-    invariant(!subscriptions.has(subscription), `existing subscription for ${subscription.name}`)
+    invariant(!subscriptions.has(subscription), `existing subscription for ${this._topic}/${subscription.name}`)
     subscriptions.add(subscription)
 
     if (subscriptions.size === 1) {
@@ -189,21 +200,16 @@ class SubscriptionRegistry {
   }
 
   _removeSocket (subscription, socket) {
-    invariant(subscription.sockets.has(socket), `missing socket of ${socket.user}`)
+    invariant(subscription.sockets.has(socket), `missing socket of ${socket.user}/${socket.id}`)
     subscription.sockets.delete(socket)
 
     if (subscription.sockets.size === 0) {
-      invariant(this._subscriptions.has(subscription.name), `missing subscription for ${subscription.name}`)
+      invariant(this._subscriptions.has(subscription.name), `missing subscription for ${this._topic}/${subscription.name}`)
       this._subscriptions.delete(subscription.name)
 
       subscription.shared = ''
       subscription.senders.clear()
       subscription.sockets.clear()
-
-      if (subscription.owner === this) {
-        invariant(!this._pool.includes(subscription), `pool contains subscription ${subscription.name}`)
-        this._pool.push(subscription)
-      }
 
       const idx = this._pending.indexOf(subscription)
       if (idx !== -1) {
@@ -214,7 +220,7 @@ class SubscriptionRegistry {
     }
 
     const subscriptions = this._sockets.get(socket)
-    invariant(subscriptions.has(subscription), `missing subscription for ${socket.user}`)
+    invariant(subscriptions.has(subscription), `missing subscription for ${socket.user} ${socket.id}`)
     subscriptions.delete(subscription)
 
     if (subscriptions.size === 0) {
@@ -228,6 +234,12 @@ class SubscriptionRegistry {
       subscription.sockets.size,
       subscription
     )
+
+    if (subscription.sockets.size === 0 && subscription.owner === this) {
+      invariant(!this._pool.includes(subscription), `pool contains subscription ${this._topic}/${subscription.name}`)
+      subscription.name = null
+      this._pool.push(subscription)
+    }
   }
 
   _dispatch () {
