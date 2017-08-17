@@ -185,6 +185,10 @@ class SubscriptionRegistry {
       invariant(this._subscriptions.has(subscription.name), `missing subscription for ${subscription.name}`)
       this._subscriptions.delete(subscription.name)
 
+      subscription.shared = ''
+      subscription.senders.clear()
+      subscription.sockets.clear()
+
       const idx = this._pending.indexOf(subscription)
       if (idx !== -1) {
         this._pending.splice(idx, 1)

@@ -85,6 +85,13 @@ module.exports = class ListenerRegistry {
       }
 
       clearTimeout(subscription.timeout)
+
+      subscription.timeout = null
+      subscription.history = null
+      subscription.active = false
+      subscription.socket = null
+      subscription.pattern = null
+      subscription.matches = null
     }
   }
 
