@@ -252,7 +252,7 @@ class SubscriptionRegistry {
         }
         message += shared.substring(lastStop, shared.length)
 
-        socket.__id = idCounter
+        socket.opaque = idCounter
 
         if (message) {
           socket.sendNative(message)
@@ -261,7 +261,7 @@ class SubscriptionRegistry {
 
       const preparedMessage = SocketWrapper.prepareMessage(shared)
       for (const socket of sockets) {
-        if (socket.__id !== idCounter) {
+        if (socket.opaque !== idCounter) {
           socket.sendPrepared(preparedMessage)
         }
       }
