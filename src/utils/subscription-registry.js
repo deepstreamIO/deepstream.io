@@ -19,14 +19,18 @@ class SubscriptionRegistry {
     this._topic = topic
     this._dispatch = this._dispatch.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
+    this._subscriptionListener = {
+      onSubscriptionAdded () {
+
+      },
+      onSubscriptionRemoved () {
+
+      }
+    }
   }
 
-  onSubscriptionAdded () {
-
-  }
-
-  onSubscriptionRemoved () {
-
+  setSubscriptionListener (listener) {
+    this._subscriptionListener = listener
   }
 
   getSubscriptions () {
@@ -168,14 +172,12 @@ class SubscriptionRegistry {
     invariant(!subscriptions.has(subscription), `existing subscription for ${subscription.name}`)
     subscriptions.add(subscription)
 
-    this.onSubscriptionAdded(
+    this._subscriptionListener.onSubscriptionAdded(
       subscription.name,
       socket,
       subscription.sockets.size,
       subscription
     )
-
-    return subscription.sockets.size
   }
 
   _removeSocket (subscription, socket) {
@@ -196,14 +198,12 @@ class SubscriptionRegistry {
     invariant(subscriptions.has(subscription), `missing subscription for ${socket.user}`)
     subscriptions.delete(subscription)
 
-    this.onSubscriptionRemoved(
+    this._subscriptionListener.onSubscriptionRemoved(
       subscription.name,
       socket,
       subscription.sockets.size,
       subscription
     )
-
-    return subscription.sockets.size
   }
 
   _dispatch () {

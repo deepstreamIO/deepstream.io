@@ -12,6 +12,32 @@ module.exports = class RecordHandler {
     this._storageExclusion = options.storageExclusion || { test: () => false }
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
+    this._subscriptionRegistry.setSubscriptionListener({
+      onSubscriptionAdded: (name, socket, count, subscription) => {
+        const node = count === 1 ? this._cache.lock(name) : this._cache.get(name)
+        if (node && node.message) {
+          socket.sendNative(node.message)
+        } else if (count === 1 && !this._storageExclusion.test(name)) {
+          this._storage.get(name, (error, record) => {
+            if (error) {
+              const message = `error while reading ${record[0]} from storage ${error}`
+              this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
+            } else {
+              this._broadcast(record, null)
+            }
+          })
+        }
+
+        this._listenerRegistry.onSubscriptionAdded(name, socket, count, subscription)
+      },
+      onSubscriptionRemoved: (name, socket, count, subscription) => {
+        if (count === 0) {
+          this._cache.unlock(name)
+        }
+
+        this._listenerRegistry.onSubscriptionRemoved(name, socket, count, subscription)
+      }
+    })
   }
 
   handle (socket, message) {
@@ -34,20 +60,9 @@ module.exports = class RecordHandler {
     const [ name ] = data
 
     if (message.action === C.ACTIONS.READ) {
-      const count = this._subscriptionRegistry.subscribe(name, socket)
-      const node = count === 1 ? this._cache.lock(name) : this._cache.get(name)
-      if (node && node.message) {
-        socket.sendNative(node.message)
-      } else if (count === 1 && !this._storageExclusion.test(name)) {
-        this._storage.get(name, (error, record) => {
-          if (error) {
-            const message = `error while reading ${record[0]} from storage ${error}`
-            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-          } else {
-            this._broadcast(record, null)
-          }
-        })
-      }
+      this._subscriptionRegistry.subscribe(name, socket)
+    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+      this._subscriptionRegistry.unsubscribe(name, socket)
     } else if (message.action === C.ACTIONS.UPDATE) {
       const record = data
       const [ start ] = splitRev(record[1])
@@ -60,11 +75,6 @@ module.exports = class RecordHandler {
         }, record)
       }
       this._broadcast(record, socket)
-    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      const count = this._subscriptionRegistry.unsubscribe(name, socket)
-      if (count === 0) {
-        this._cache.unlock(name)
-      }
     } else {
       socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
         ...data,

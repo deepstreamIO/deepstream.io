@@ -9,11 +9,10 @@ module.exports = class ListenerRegistry {
     this._subscriptionRegistry = subscriptionRegistry
 
     this._providerRegistry = new SubscriptionRegistry(options, topic)
-    this._providerRegistry.onSubscriptionAdded = this.onListenAdded.bind(this)
-    this._providerRegistry.onSubscriptionRemoved = this.onListenRemoved.bind(this)
-
-    this._subscriptionRegistry.onSubscriptionAdded = this.onSubscriptionAdded.bind(this)
-    this._subscriptionRegistry.onSubscriptionRemoved = this.onSubscriptionRemoved.bind(this)
+    this._providerRegistry.setSubscriptionListener({
+      onSubscriptionAdded: this.onListenAdded.bind(this),
+      onSubscriptionRemoved: this.onListenRemoved.bind(this)
+    })
 
     this._matcher = options.patternMatcher
     this._matcher.onMatchAdded = this._onMatchAdded.bind(this)
