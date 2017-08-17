@@ -12,12 +12,12 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._listenerRegistry.onNoProvider = (subscription) => {
-      if (!subscription.version) {
+      if (!subscription.message) {
         this._storage.get(subscription.name, (error, record) => {
           if (error) {
             const message = `error while reading ${record[0]} from storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-          } else if (record[1]) {
+          } else {
             this._broadcast(record)
           }
         })
