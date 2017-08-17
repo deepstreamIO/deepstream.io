@@ -89,7 +89,7 @@ class SubscriptionRegistry {
     this._options.logger.log(
       C.LOG_LEVEL.DEBUG,
       C.EVENT.SUBSCRIBE,
-      `for ${this._topic}:${name} by ${socket.user} ${socket.id}`
+      `for ${this._topic}/${name} by ${socket.user}/${socket.id}`
     )
 
     this._addSocket(subscription, socket)
