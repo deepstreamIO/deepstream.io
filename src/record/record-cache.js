@@ -61,15 +61,19 @@ module.exports = class RecordCache {
       node.version = null
       node.message = null
       node.sender = null
-      this._pool.push(node)
+
+      if (node.owner === this) {
+        this._pool.push(node)
+      }
 
       node = prev
     }
   }
 
   _allocNode () {
-    this._space -= 128
+    this._space -= 256
     return {
+      owner: this,
       name: null,
       // yallist
       next: null,

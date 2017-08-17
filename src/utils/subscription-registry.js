@@ -19,6 +19,7 @@ class SubscriptionRegistry {
     this._topic = topic
     this._dispatch = this._dispatch.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
+    this._pool = []
     this._subscriptionListener = {
       onSubscriptionAdded () {
 
@@ -26,6 +27,15 @@ class SubscriptionRegistry {
       onSubscriptionRemoved () {
 
       }
+    }
+  }
+
+  _alloc (name) {
+    return this._pool.pop() || {
+      owner: this,
+      name,
+      senders: new Map(),
+      sockets: new Set()
     }
   }
 
@@ -55,11 +65,7 @@ class SubscriptionRegistry {
   }
 
   subscribe (name, socket, subscription) {
-    subscription = subscription || this._subscriptions.get(name) || {
-      name,
-      senders: new Map(),
-      sockets: new Set()
-    }
+    subscription = subscription || this._subscriptions.get(name) || this._alloc(name)
 
     if (subscription.sockets.size === 0) {
       this._subscriptions.set(name, subscription)
@@ -187,6 +193,10 @@ class SubscriptionRegistry {
       subscription.shared = ''
       subscription.senders.clear()
       subscription.sockets.clear()
+
+      if (subscription.owner === this) {
+        this._pool.push(subscription)
+      }
 
       const idx = this._pending.indexOf(subscription)
       if (idx !== -1) {
