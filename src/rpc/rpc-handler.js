@@ -54,7 +54,7 @@ module.exports = class RpcHandler {
       const rpc = this._rpcs.get(id)
 
       if (!rpc) {
-        socket.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, `unexpected state for rpc ${name} with action ${message.action}`)
+        rpc.socket.sendError(C.TOPIC.RPC, C.EVENT.RPC_TIMEOUT, [ rpc.name, rpc.id ])
         return
       }
 
@@ -71,8 +71,12 @@ module.exports = class RpcHandler {
       if (message.action === C.ACTIONS.RESPONSE) {
         rpc.socket.sendNative(message.raw)
         this._destroy(rpc)
-      } else if (message.action === C.ACTIONS.REJECTION && rpc.provider === socket) {
-        this._request(rpc)
+      } else if (message.action === C.ACTIONS.REJECTION) {
+        if (rpc.provider === socket) {
+          this._request(rpc)
+        } else {
+          rpc.socket.sendError(C.TOPIC.RPC, C.EVENT.RPC_TIMEOUT, [ rpc.name, rpc.id ])
+        }
       }
     } else {
       socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
