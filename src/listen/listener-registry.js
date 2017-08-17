@@ -64,11 +64,7 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onMatchAdded (name, matches) {
-
-  }
-
-  onMatchRemoved (name, matches) {
+  onMatchMade (name, matches) {
 
   }
 
@@ -211,7 +207,7 @@ module.exports = class ListenerRegistry {
       this._provide(subscription)
     }
 
-    this.onMatchAdded(name, matches)
+    this.onMatchMade(name, matches)
   }
 
   _onMatchRemoved (name, matches) {
@@ -231,8 +227,6 @@ module.exports = class ListenerRegistry {
     if (subscription.matches.length === 0) {
       subscription.matches = null
     }
-
-    this.onMatchRemoved(name, matches)
   }
 
   _sendHasProviderUpdate (hasProvider, subscription, socket) {

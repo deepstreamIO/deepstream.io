@@ -12,7 +12,7 @@ module.exports = class RecordHandler {
     this._storageExclusion = options.storageExclusion || { test: () => false }
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
-    this._listenerRegistry.onMatchAdded = (name, matches) => {
+    this._listenerRegistry.onMatchMade = (name, matches) => {
       if (matches.length === 0 && !this._storageExclusion.test(name)) {
         this._storage.get(name, (error, record) => {
           if (error) {
