@@ -58,9 +58,7 @@ module.exports = class RecordCache {
       node.message = null
       node.sender = null
 
-      if (node.owner === this) {
-        this._pool.push(node)
-      }
+      this._pool.push(node)
 
       node = prev
     }
@@ -69,7 +67,6 @@ module.exports = class RecordCache {
   _allocNode () {
     this._space -= 256
     return toFastProperties({
-      owner: this,
       name: null,
       // yallist
       next: null,
