@@ -64,8 +64,7 @@ module.exports = class RecordHandler {
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(record[0], socket)
     } else if (message.action === C.ACTIONS.UPDATE) {
-      const [ start ] = splitRev(record[1])
-      if (start > 0 && start < Number.MAX_SAFE_INTEGER) {
+      if (record[1].slice(0, 3) !== 'INF') {
         this._storage.set(record, (error, record) => {
           if (error) {
             const message = `error while writing ${record[0]} to storage ${error}`
