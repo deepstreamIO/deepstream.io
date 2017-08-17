@@ -139,7 +139,8 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    */
   _uwsInit () {
     const maxMessageSize = this._getOption('maxMessageSize')
-    this._serverGroup = uws.native.server.group.create(0, maxMessageSize)
+    const perMessageDeflate = this._getOption('perMessageDeflate')
+    this._serverGroup = uws.native.server.group.create(perMessageDeflate, maxMessageSize)
 
     this._noDelay = this._getOption('noDelay')
 
