@@ -26,10 +26,6 @@ module.exports = class RecordHandler {
     }
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionAdded: (name, socket, count, subscription) => {
-        if (count === 1) {
-          this._cache.lock(subscription)
-        }
-
         if (subscription.message) {
           socket.sendNative(subscription.message)
         }
@@ -38,7 +34,7 @@ module.exports = class RecordHandler {
       },
       onSubscriptionRemoved: (name, socket, count, subscription) => {
         if (count === 0) {
-          this._cache.unlock(subscription)
+          this._cache.unref(subscription)
         }
 
         this._listenerRegistry.onSubscriptionRemoved(name, socket, count, subscription)
@@ -65,7 +61,7 @@ module.exports = class RecordHandler {
     const record = message.data
 
     if (message.action === C.ACTIONS.READ) {
-      this._subscriptionRegistry.subscribe(record[0], socket, this._cache.get(record[0]))
+      this._subscriptionRegistry.subscribe(record[0], socket, this._cache.ref(record[0]))
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(record[0], socket)
     } else if (message.action === C.ACTIONS.UPDATE) {

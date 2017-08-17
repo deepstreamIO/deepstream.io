@@ -9,7 +9,7 @@ module.exports = class RecordCache {
     this._map = new Map()
   }
 
-  get (name) {
+  ref (name) {
     let node = this._map.get(name)
     if (!node) {
       node = this._pool.pop() || this._allocNode()
@@ -39,13 +39,7 @@ module.exports = class RecordCache {
     return node
   }
 
-  lock (node) {
-    if (node.list) {
-      this._removeNode(node)
-    }
-  }
-
-  unlock (node) {
+  unref (node) {
     this._unshiftNode(node)
     this._prune()
   }
