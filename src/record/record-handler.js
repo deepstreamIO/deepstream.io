@@ -35,9 +35,9 @@ module.exports = class RecordHandler {
 
     if (message.action === C.ACTIONS.READ) {
       const count = this._subscriptionRegistry.subscribe(name, socket)
-      const entry = count === 1 ? this._cache.lock(name) : this._cache.get(name)
-      if (entry) {
-        socket.sendNative(entry.message)
+      const node = count === 1 ? this._cache.lock(name) : this._cache.get(name)
+      if (node && node.message) {
+        socket.sendNative(node.message)
       } else if (count === 1 && !this._storageExclusion.test(name)) {
         this._storage.get(name, (error, record) => {
           if (error) {
@@ -74,9 +74,9 @@ module.exports = class RecordHandler {
   }
 
   _broadcast (record, sender) {
-    const entry = this._cache.get(record[0])
+    const node = this._cache.get(record[0])
 
-    if (entry && isSameOrNewer(entry.version, record[1])) {
+    if (node && node.version && isSameOrNewer(node.version, record[1])) {
       return
     }
 
@@ -88,7 +88,7 @@ module.exports = class RecordHandler {
       record[2]
     )
 
-    this._cache.set(record[0], record[1], message, sender)
+    this._cache.set(node, record[0], record[1], message, sender)
 
     this._subscriptionRegistry.sendToSubscribers(record[0], message, sender)
   }

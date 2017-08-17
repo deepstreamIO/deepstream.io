@@ -9,9 +9,7 @@
   },
   "dependencies": {
     "invariant": "^2.2.2",
-    "js-base64": "^2.1.9",
-    "uws": "^8.14.1",
-    "yallist": "^3.0.2"
+    "uws": "^8.14.1"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",
