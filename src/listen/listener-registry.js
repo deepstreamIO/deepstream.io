@@ -203,7 +203,7 @@ module.exports = class ListenerRegistry {
       subscription.matches.push(...matches)
     }
 
-    if (!subscription.socket) {
+    if (!subscription.socket && subscription.matches.length > 0) {
       this._provide(subscription)
     }
 
