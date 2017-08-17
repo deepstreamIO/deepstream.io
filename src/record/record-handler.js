@@ -18,10 +18,8 @@ module.exports = class RecordHandler {
           this._cache.lock(subscription)
         }
 
-        const { message } = subscription
-
-        if (message) {
-          socket.sendNative(message)
+        if (subscription.message) {
+          socket.sendNative(subscription.message)
         } else if (count === 1 && !this._storageExclusion.test(name)) {
           this._storage.get(name, (error, record) => {
             if (error) {
@@ -61,17 +59,15 @@ module.exports = class RecordHandler {
       return
     }
 
-    const data = message && message.data
-    const [ name ] = data
+    const record = message.data
 
     if (message.action === C.ACTIONS.READ) {
-      this._subscriptionRegistry.subscribe(name, socket, this._cache.get(name))
+      this._subscriptionRegistry.subscribe(record[0], socket, this._cache.get(record[0]))
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._subscriptionRegistry.unsubscribe(name, socket)
+      this._subscriptionRegistry.unsubscribe(record[0], socket)
     } else if (message.action === C.ACTIONS.UPDATE) {
-      const record = data
       const [ start ] = splitRev(record[1])
-      if (start > 0 && start < Number.MAX_SAFE_INTEGER && !this._storageExclusion.test(name)) {
+      if (start > 0 && start < Number.MAX_SAFE_INTEGER && !this._storageExclusion.test(record[0])) {
         this._storage.set(record, (error, record) => {
           if (error) {
             const message = `error while writing ${record[0]} to storage ${error}`
@@ -82,7 +78,7 @@ module.exports = class RecordHandler {
       this._broadcast(record, socket)
     } else {
       socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
-        ...data,
+        ...record,
         `unknown action ${message.action}`
       ])
     }
@@ -95,9 +91,7 @@ module.exports = class RecordHandler {
       return
     }
 
-    const { version } = subscription
-
-    if (version && isSameOrNewer(version, record[1])) {
+    if (subscription.version && isSameOrNewer(subscription.version, record[1])) {
       return
     }
 
