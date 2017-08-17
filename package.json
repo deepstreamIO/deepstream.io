@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "invariant": "^2.2.2",
+    "to-fast-properties": "^2.0.0",
     "uws": "^8.14.1"
   },
   "author": "deepstreamHub GmbH",

@@ -1,3 +1,5 @@
+const toFastProperties = require('to-fast-properties')
+
 module.exports = class RecordCache {
   constructor ({ size = 128e6 } = {}) {
     this._space = size
@@ -72,7 +74,7 @@ module.exports = class RecordCache {
 
   _allocNode () {
     this._space -= 256
-    return {
+    return toFastProperties({
       owner: this,
       name: null,
       // yallist
@@ -95,7 +97,7 @@ module.exports = class RecordCache {
       socket: null,
       pattern: null,
       matches: null
-    }
+    })
   }
 
   _unshiftNode (node) {

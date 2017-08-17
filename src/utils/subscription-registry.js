@@ -1,3 +1,4 @@
+const toFastProperties = require('to-fast-properties')
 const C = require('../constants/constants')
 const SocketWrapper = require('../message/socket-wrapper')
 const invariant = require('invariant')
@@ -31,12 +32,12 @@ class SubscriptionRegistry {
   }
 
   _alloc (name) {
-    return this._pool.pop() || {
+    return this._pool.pop() || toFastProperties({
       owner: this,
       name,
       senders: new Map(),
       sockets: new Set()
-    }
+    })
   }
 
   setSubscriptionListener (listener) {
