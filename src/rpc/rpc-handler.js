@@ -87,11 +87,11 @@ module.exports = class RpcHandler {
       rpc.timeout = null
     }
 
-    const subscribers = Array
+    const providers = Array
       .from(this._subscriptionRegistry.getSubscribers(rpc.name))
-      .filter(x => !rpc.history.has(x))
+      .filter(provider => !rpc.history.has(provider))
 
-    const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
+    const provider = providers[Math.floor(Math.random() * providers.length)]
 
     if (provider) {
       provider.sendMessage(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ rpc.name, rpc.id, rpc.data ])
