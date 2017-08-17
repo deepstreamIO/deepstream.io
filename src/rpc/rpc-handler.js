@@ -1,6 +1,7 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const toFastProperties = require('to-fast-properties')
+const messageBuilder = require(`../message/message-builder`)
 
 module.exports = class RpcHandler {
   constructor (options) {
@@ -94,7 +95,13 @@ module.exports = class RpcHandler {
     const provider = providers[Math.floor(Math.random() * providers.length)]
 
     if (provider) {
-      provider.sendMessage(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ rpc.name, rpc.id, rpc.data ])
+      provider.sendNative(messageBuilder.buildMsg5(
+        C.TOPIC.RPC,
+        C.ACTIONS.REQUEST,
+        rpc.name,
+        rpc.id,
+        rpc.data
+      ))
       rpc.history.add(provider)
       rpc.timeout = setTimeout(rpc.request, this._options.rpcTimeout || 1000)
       rpc.provider = provider
