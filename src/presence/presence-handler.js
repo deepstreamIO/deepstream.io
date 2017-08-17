@@ -33,7 +33,7 @@ module.exports = class PresenceHandler {
       this._users.set(socket.user, 1)
       this._presenceRegistry.sendToSubscribers(
         C.TOPIC.PRESENCE,
-        messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, [ socket.user ])
+        messageBuilder.buildMsg3(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_JOIN, socket.user)
       )
     } else {
       this._users.set(socket.user, count + 1)
@@ -46,7 +46,7 @@ module.exports = class PresenceHandler {
       this._users.delete(socket.user)
       this._presenceRegistry.sendToSubscribers(
         C.TOPIC.PRESENCE,
-        messageBuilder.getMsg(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, [ socket.user ])
+        messageBuilder.buildMsg3(C.TOPIC.PRESENCE, C.ACTIONS.PRESENCE_LEAVE, socket.user)
       )
     } else {
       this._users.set(socket.user, count - 1)
