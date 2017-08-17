@@ -88,7 +88,7 @@ module.exports = class ListenerRegistry {
 
       subscription.timeout = null
       subscription.history = null
-      subscription.active = false
+      subscription.active = null
       subscription.socket = null
       subscription.pattern = null
       subscription.matches = null
@@ -170,7 +170,10 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    subscription.history = subscription.history || new Set()
+    if (!subscription.history) {
+      subscription.history = new Set()
+    }
+
     subscription.history.add(match.id)
     subscription.socket = match.socket
     subscription.pattern = match.pattern

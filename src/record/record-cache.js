@@ -1,18 +1,24 @@
 module.exports = class RecordCache {
   constructor ({ size = 128e6 } = {}) {
-    this._map = new Map()
     this._space = size
     this._pool = []
     this._tail = null
     this._head = null
+    this._map = new Map()
   }
 
   get (name) {
-    return this._map.get(name)
+    let node = this._map.get(name)
+    if (!node) {
+      node = this._pool.pop() || this._allocNode()
+      node.name = name
+      this._map.set(node.name, node)
+    }
+    return node
   }
 
-  set (node, name, version, message, sender) {
-    const size = name.length + version.length + message.length
+  set (node, version, message, sender) {
+    const size = node.name.length + version.length + message.length
 
     this._space -= size
 
@@ -21,11 +27,9 @@ module.exports = class RecordCache {
     } else {
       node = this._pool.pop() || this._allocNode()
       this._unshiftNode(node)
-      this._map.set(name, node)
     }
 
     node.size = size
-    node.name = name
     node.version = version
     node.message = message
     node.sender = sender
@@ -33,34 +37,14 @@ module.exports = class RecordCache {
     return node
   }
 
-  lock (name) {
-    let node = this._map.get(name)
-
-    if (!node) {
-      const size = name.length
-      this._space -= size
-      node = this._pool.pop() || this._allocNode()
-      node.name = name
-      node.size = size
-      this._map.set(name, node)
-    } else {
-      if (node.list) {
-        this._removeNode(node)
-      }
-
-      return node
+  lock (node) {
+    if (node.list) {
+      this._removeNode(node)
     }
   }
 
-  unlock (name) {
-    const node = this._map.get(name)
-
-    if (!node) {
-      return
-    }
-
+  unlock (node) {
     this._unshiftNode(node)
-
     this._prune()
   }
 
@@ -70,10 +54,10 @@ module.exports = class RecordCache {
       const prev = node.prev
       this._space += node.size
 
-      this._map.delete(node.name)
       this._removeNode(node)
-      node.size = null
+      this._map.delete(node.name, node)
       node.name = null
+      node.size = null
       node.version = null
       node.message = null
       node.sender = null
@@ -84,19 +68,29 @@ module.exports = class RecordCache {
   }
 
   _allocNode () {
-    this._space -= 80
+    this._space -= 128
     return {
+      name: null,
       // yallist
       next: null,
       prev: null,
       list: null,
-      // meta
+      // record-cache
       size: 0,
-      name: null,
-      // record
       version: null,
       message: null,
-      sender: null
+      sender: null,
+      // subscription-registry
+      senders: new Map(),
+      sockets: new Set(),
+      shared: '',
+      // listener-registry
+      timeout: null,
+      history: null,
+      active: null,
+      socket: null,
+      pattern: null,
+      matches: null
     }
   }
 

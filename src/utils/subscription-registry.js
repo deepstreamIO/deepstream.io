@@ -54,10 +54,9 @@ class SubscriptionRegistry {
     return subscription ? subscription.sockets : EMPTY_SET
   }
 
-  subscribe (name, socket) {
-    const subscription = this._subscriptions.get(name) || {
+  subscribe (name, socket, subscription) {
+    subscription = subscription || this._subscriptions.get(name) || {
       name,
-      shared: '',
       senders: new Map(),
       sockets: new Set()
     }

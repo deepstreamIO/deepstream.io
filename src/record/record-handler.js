@@ -14,16 +14,21 @@ module.exports = class RecordHandler {
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionAdded: (name, socket, count, subscription) => {
-        const node = count === 1 ? this._cache.lock(name) : this._cache.get(name)
-        if (node && node.message) {
-          socket.sendNative(node.message)
+        if (count === 1) {
+          this._cache.lock(subscription)
+        }
+
+        const { message } = subscription
+
+        if (message) {
+          socket.sendNative(message)
         } else if (count === 1 && !this._storageExclusion.test(name)) {
           this._storage.get(name, (error, record) => {
             if (error) {
               const message = `error while reading ${record[0]} from storage ${error}`
               this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
             } else {
-              this._broadcast(record, null)
+              this._broadcast(record)
             }
           })
         }
@@ -32,7 +37,7 @@ module.exports = class RecordHandler {
       },
       onSubscriptionRemoved: (name, socket, count, subscription) => {
         if (count === 0) {
-          this._cache.unlock(name)
+          this._cache.unlock(subscription)
         }
 
         this._listenerRegistry.onSubscriptionRemoved(name, socket, count, subscription)
@@ -60,7 +65,7 @@ module.exports = class RecordHandler {
     const [ name ] = data
 
     if (message.action === C.ACTIONS.READ) {
-      this._subscriptionRegistry.subscribe(name, socket)
+      this._subscriptionRegistry.subscribe(name, socket, this._cache.get(name))
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(name, socket)
     } else if (message.action === C.ACTIONS.UPDATE) {
@@ -84,9 +89,15 @@ module.exports = class RecordHandler {
   }
 
   _broadcast (record, sender) {
-    const node = this._cache.get(record[0])
+    const subscription = this._subscriptionRegistry.getSubscription(record[0])
 
-    if (node && node.version && isSameOrNewer(node.version, record[1])) {
+    if (!subscription) {
+      return
+    }
+
+    const { version } = subscription
+
+    if (version && isSameOrNewer(version, record[1])) {
       return
     }
 
@@ -98,9 +109,9 @@ module.exports = class RecordHandler {
       record[2]
     )
 
-    this._cache.set(node, record[0], record[1], message, sender)
+    this._cache.set(subscription, record[1], message, sender)
 
-    this._subscriptionRegistry.sendToSubscribers(record[0], message, sender)
+    this._subscriptionRegistry.sendToSubscribers(subscription, message, sender)
   }
 }
 
