@@ -84,7 +84,7 @@ class SubscriptionRegistry {
       return
     }
 
-    invariant(name === subscription.name, `invalid subscription name ${subscription.name} for ${name}`)
+    invariant(name === subscription.name, `invalid subscription name ${subscription.name} for ${this._topic}/${name}`)
 
     this._options.logger.log(
       C.LOG_LEVEL.DEBUG,
@@ -108,7 +108,7 @@ class SubscriptionRegistry {
       return
     }
 
-    invariant(name === subscription.name, `invalid subscription name ${subscription.name} for ${name}`)
+    invariant(name === subscription.name, `invalid subscription name ${subscription.name} for ${this._topic}/${name}`)
 
     this._options.logger.log(
       C.LOG_LEVEL.DEBUG,
@@ -170,7 +170,6 @@ class SubscriptionRegistry {
     for (const subscription of this._sockets.get(socket)) {
       this._removeSocket(subscription, socket)
     }
-    this._print(socket.id)
   }
 
   _addSocket (subscription, socket) {
@@ -220,7 +219,7 @@ class SubscriptionRegistry {
     }
 
     const subscriptions = this._sockets.get(socket)
-    invariant(subscriptions.has(subscription), `missing subscription for ${socket.user} ${socket.id}`)
+    invariant(subscriptions.has(subscription), `missing subscription for ${socket.user}/${socket.id}`)
     subscriptions.delete(subscription)
 
     if (subscriptions.size === 0) {
