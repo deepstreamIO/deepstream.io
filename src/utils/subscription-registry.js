@@ -68,9 +68,7 @@ class SubscriptionRegistry {
   subscribe (name, socket, subscription) {
     subscription = subscription || this._subscriptions.get(name) || this._alloc(name)
 
-    if (subscription.sockets.size === 0) {
-      this._subscriptions.set(name, subscription)
-    } else if (subscription.sockets.has(socket)) {
+    if (subscription.sockets.has(socket)) {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.MULTIPLE_SUBSCRIPTIONS,
@@ -79,8 +77,6 @@ class SubscriptionRegistry {
       socket.sendError(this._topic, C.EVENT.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
-
-    subscription.sockets.add(socket)
 
     this._options.logger.log(
       C.LOG_LEVEL.DEBUG,
@@ -94,7 +90,7 @@ class SubscriptionRegistry {
   unsubscribe (name, socket) {
     const subscription = this._subscriptions.get(name)
 
-    if (!subscription || !subscription.sockets.delete(socket)) {
+    if (!subscription || !subscription.sockets.has(socket)) {
       this._options.logger.log(
         C.LOG_LEVEL.WARN,
         C.EVENT.NOT_SUBSCRIBED,
@@ -162,21 +158,27 @@ class SubscriptionRegistry {
 
   _onSocketClose (socket) {
     for (const subscription of this._sockets.get(socket)) {
-      subscription.sockets.delete(socket)
       this._removeSocket(subscription, socket)
     }
   }
 
   _addSocket (subscription, socket) {
-    const subscriptions = this._sockets.get(socket) || new Set()
+    invariant(!subscription.sockets.has(socket), `existing socket of ${socket.user}`)
+    subscription.sockets.add(socket)
 
-    if (subscriptions.size === 0) {
+    if (subscription.sockets.size === 1) {
+      invariant(!this._subscriptions.has(subscription.name), `existing subscription of ${subscription.name}`)
+      this._subscriptions.set(subscription.name, subscription)
+    }
+
+    const subscriptions = this._sockets.get(socket) || new Set()
+    invariant(!subscriptions.has(subscription), `existing subscription for ${subscription.name}`)
+    subscriptions.add(subscription)
+
+    if (subscriptions.size === 1) {
       this._sockets.set(socket, subscriptions)
       socket.once('close', this._onSocketClose)
     }
-
-    invariant(!subscriptions.has(subscription), `existing subscription for ${subscription.name}`)
-    subscriptions.add(subscription)
 
     this._subscriptionListener.onSubscriptionAdded(
       subscription.name,
@@ -187,6 +189,9 @@ class SubscriptionRegistry {
   }
 
   _removeSocket (subscription, socket) {
+    invariant(subscription.sockets.has(socket), `missing socket of ${socket.user}`)
+    subscription.sockets.delete(socket)
+
     if (subscription.sockets.size === 0) {
       invariant(this._subscriptions.has(subscription.name), `missing subscription for ${subscription.name}`)
       this._subscriptions.delete(subscription.name)
@@ -196,6 +201,7 @@ class SubscriptionRegistry {
       subscription.sockets.clear()
 
       if (subscription.owner === this) {
+        invariant(!this._pool.includes(subscription), `pool contains subscription ${subscription.name}`)
         this._pool.push(subscription)
       }
 
@@ -208,9 +214,13 @@ class SubscriptionRegistry {
     }
 
     const subscriptions = this._sockets.get(socket)
-
     invariant(subscriptions.has(subscription), `missing subscription for ${socket.user}`)
     subscriptions.delete(subscription)
+
+    if (subscriptions.size === 0) {
+      this._sockets.delete(socket)
+      socket.removeListener('close', this._onSocketClose)
+    }
 
     this._subscriptionListener.onSubscriptionRemoved(
       subscription.name,
