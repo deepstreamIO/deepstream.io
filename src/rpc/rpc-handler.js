@@ -26,7 +26,7 @@ module.exports = class RpcHandler {
         name,
         socket,
         data,
-        providers: new Set(),
+        history: new Set(),
         provider: null,
         timeout: null
       }
@@ -77,11 +77,12 @@ module.exports = class RpcHandler {
 
     const subscribers = Array
       .from(this._subscriptionRegistry.getSubscribers(rpc.name))
-      .filter(x => !rpc.providers.has(x))
+      .filter(x => !rpc.history.has(x))
 
     const provider = subscribers[Math.floor(Math.random() * subscribers.length)]
 
     if (provider) {
+      rpc.history.add(provider)
       provider.sendMessage(C.TOPIC.RPC, C.ACTIONS.REQUEST, [ rpc.name, rpc.id, rpc.data ])
       rpc.timeout = setTimeout(rpc.request, this._options.rpcTimeout || 1000)
       rpc.provider = provider
