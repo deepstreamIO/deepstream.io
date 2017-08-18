@@ -149,22 +149,7 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
-    let matches = []
-
-    for (const pattern of subscription.matches || []) {
-      const listener = this._providerRegistry.getSubscription(pattern)
-      if (!listener) {
-        continue
-      }
-      for (const socket of listener.sockets) {
-        const id = `${pattern}_${socket.id}`
-        if (!subscription.history || !subscription.history.has(id)) {
-          matches.push({ socket, pattern, id })
-        }
-      }
-    }
-
-    const match = matches[Math.floor(Math.random() * matches.length)]
+    const match = this._match(subscription)
 
     if (!match) {
       this.onNoProvider(subscription)
@@ -185,6 +170,27 @@ module.exports = class ListenerRegistry {
       C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
       [ subscription.pattern, subscription.name ]
     )
+  }
+
+  _match (subscription) {
+    // TODO: Optimize
+
+    let matches = []
+
+    for (const pattern of subscription.matches || []) {
+      const listener = this._providerRegistry.getSubscription(pattern)
+      if (!listener) {
+        continue
+      }
+      for (const socket of listener.sockets) {
+        const id = `${pattern}_${socket.id}`
+        if (!subscription.history || !subscription.history.has(id)) {
+          matches.push({ socket, pattern, id })
+        }
+      }
+    }
+
+    return matches[Math.floor(Math.random() * matches.length)]
   }
 
   _onMatchAdded (name, matches) {
