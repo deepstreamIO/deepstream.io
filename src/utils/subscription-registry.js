@@ -40,6 +40,7 @@ class SubscriptionRegistry {
       return toFastProperties({
         owner: this,
         name,
+        shared: '',
         senders: new Map(),
         sockets: new Set()
       })

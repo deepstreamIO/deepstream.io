@@ -21,7 +21,7 @@ module.exports = class ListenerRegistry {
 
   handle (socket, message) {
     if (!message.data || !message.data[0]) {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
+      socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
       return
     }
 
@@ -34,7 +34,7 @@ module.exports = class ListenerRegistry {
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
       this._reject(socket, message.data)
     } else {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
+      socket.sendError(this._topic, C.EVENT.UNKNOWN_ACTION, [
         ...message.data,
         `unknown action ${message.action}`
       ])
