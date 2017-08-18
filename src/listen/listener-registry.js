@@ -149,10 +149,14 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
+    if (!subscription.matches || subscription.matches.length === 0) {
+      this.onNoProvider(subscription)
+      return
+    }
+
     const match = this._match(subscription)
 
     if (!match) {
-      this.onNoProvider(subscription)
       return
     }
 
