@@ -149,14 +149,9 @@ module.exports = class ListenerRegistry {
       subscription.pattern = null
     }
 
-    if (!subscription.matches || subscription.matches.length === 0) {
-      this.onNoProvider(subscription)
-      return
-    }
-
     let matches = []
 
-    for (const pattern of subscription.matches) {
+    for (const pattern of subscription.matches || []) {
       const listener = this._providerRegistry.getSubscription(pattern)
       if (!listener) {
         continue
