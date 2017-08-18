@@ -208,8 +208,6 @@ module.exports = class ListenerRegistry {
     if (!subscription.socket) {
       this._provide(subscription)
     }
-
-    this.onMatchMade(name, matches)
   }
 
   _onMatchRemoved (name, matches) {
