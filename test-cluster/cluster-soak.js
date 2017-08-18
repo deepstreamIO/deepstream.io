@@ -19,6 +19,8 @@ module.exports = function (program) {
     .command('soak')
     .description('start a deepstream server')
 
+    .option('--start-port <start-port>', 'intial port to start nodes')
+    .option('--init <init>', 'flag deciding whether or not to clear the redis state')
     .option('--states <states>', 'amount of state registries')
     .option('--subscriptions <subscriptions>', 'total amount of subscriptions')
     .option('--nodes <nodes>', 'amount of nodes')
@@ -38,32 +40,46 @@ const fsLog = (data) => {
 const logger = { log: () => {} }
 const ports = []
 const clusters = {}
-const localSeedNodes = []
+
 const maxConsecutiveErrors = 10
 
-let globalSeedNodes = []
-
-let stateCount = 10
-let subscriptionCount = 100
-let nodeCount = 10
-let consecutiveSubscriptionsErrors = 0
 let consecutiveNodeCountErrors = 0
-let subscriptionRate = 1000
-let nodeRate = 2500
+let consecutiveSubscriptionsErrors = 0
 
-async function createClusterNode (port) {
-  ports.push(port)
+const config = {
+  startPort: 3030,
+  stateCount: 10,
+  subscriptionCount: 1,
+  nodeCount: 10,
+  maxConsecutiveErrors: 10,
+  subscriptionRate: 1000,
+  nodeRate: 2500
+}
 
-  const serverName = port
+function getLowestAvailablePort (currentPorts) {
+  let possiblePort = config.startPort
+  while (true) {
+    if (currentPorts.indexOf(possiblePort.toString()) === -1) {
+      break
+    }
+    possiblePort++
+  }
+  return possiblePort
+}
 
-  // insert into set
+async function createClusterNode () {
+  const currentPorts = await redis.lrange('nodes', 0, -1)
+  const port = getLowestAvailablePort(currentPorts)
+  await redis.lpush('nodes', port)
+
+  const serverName = port.toString()  // insert into set
   const node = new ClusterNode({
     serverName,
     logger,
     messageConnector: {
       host: 'localhost',
       port,
-      seedNodes: globalSeedNodes,
+      seedNodes: currentPorts.map(p => `localhost:${p}`),
       maxReconnectAttempts: 4,
       reconnectInterval: 1500,
       pingTimeout: 500,
@@ -71,20 +87,19 @@ async function createClusterNode (port) {
     }
   })
 
+  ports.push(port)
   const cluster = { serverName, node, states: [] }
-  await redis.lpush('nodes', serverName)
+  clusters[port] = cluster
   await setupRegistries(cluster)
   fsLog(`${C.NODE_START},${port}`)
-  clusters[port] = cluster
-  globalSeedNodes.push(`localhost:${port}`)
 }
 
 async function setupRegistries (cluster) {
   const pipeline = redis.pipeline()
-  for (let i = 0; i < stateCount; i++) {
+  for (let i = 0; i < config.stateCount; i++) {
     const topic = `TOPIC_${i}`
     const stateRegistry = cluster.node.getStateRegistry(topic)
-    for (let j = 0; j < subscriptionCount; j++) {
+    for (let j = 0; j < config.subscriptionCount; j++) {
       const subscription = utils.getUid()
       stateRegistry.add(subscription)
     }
@@ -94,43 +109,44 @@ async function setupRegistries (cluster) {
   await pipeline.exec()
 }
 
+async function killClusterNode () {
+  const index = utils.getRandomIntInRange(0, ports.length)
+  const localPort = ports[index]
+  if (localPort == config.startPort) {
+    return
+  }
+  const cluster = clusters[localPort]
+
+  cluster.node.close(() => {})
+
+  for (let i = 0; i < cluster.states.length; i++) {
+    const registry = cluster.states[i]
+    const subscriptions = registry.getAll(localPort)
+    for (let j = 0; j < subscriptions.length; j++) {
+      await redis.lrem(registry._topic, 0, subscriptions[j])
+    }
+  }
+
+  ports.splice(index, 1)
+  await redis.lrem('nodes', 0, localPort)
+  delete clusters[localPort]
+
+  fsLog(`${C.NODE_STOP},${localPort}`)
+}
+
 async function startStopNodes () {
   const start = getRandomBool()
   if (start) {
     const currentNodeCount = ports.length
-    if (currentNodeCount === nodeCount) {
+    if (currentNodeCount === config.nodeCount) {
       return
     }
-
-    const lastPort = ports[ports.length - 1]
-    const newPort = lastPort + 1
-    await createClusterNode(newPort)
+    await createClusterNode()
   } else {
-    if (ports.length === 2) {
+    if (ports.length === 1) {
       return
     }
-    const cPorts = Object.keys(clusters)
-    const index = utils.getRandomIntInRange(0, cPorts.length)
-    const port = cPorts[index]
-    const cluster = clusters[port]
-    delete clusters[port]
-
-    for (let i = 0; i < cluster.states.length; i++) {
-      const registry = cluster.states[i]
-      const subscriptions = registry.getAll(port)
-      for (let j = 0; j < subscriptions.length; j++) {
-        await redis.lrem(registry._topic, 0, subscriptions[j])
-      }
-    }
-
-    cluster.node.close(() => {})
-
-    ports.splice(index, 1)
-    globalSeedNodes.splice(globalSeedNodes.indexOf(`localhost:${port}`), 1)
-
-    await redis.lrem('nodes', 0, port)
-
-    fsLog(`${C.NODE_STOP},${port}`)
+    await killClusterNode()
   }
 }
 
@@ -138,7 +154,7 @@ async function addRemoveSubscriptions () {
   const index = utils.getRandomIntInRange(0, ports.length)
   const cluster = clusters[ports[index]]
 
-  const topic = `TOPIC_${utils.getRandomIntInRange(0, stateCount)}`
+  const topic = `TOPIC_${utils.getRandomIntInRange(0, config.stateCount)}`
   const registry = cluster.node.getStateRegistry(topic)
   const add = getRandomBool()
   if (add) {
@@ -158,43 +174,39 @@ async function addRemoveSubscriptions () {
   }
 }
 
-async function clearRedisState () {
-  for (let i = 0; i < stateCount; i++) {
-    const topic = `TOPIC_${i}`
-    await redis.del(topic)
-  }
-  await redis.del('nodes')
-}
-
 async function action () {
   if (this.nodes) {
-    nodeCount = Number(this.nodes)
+    config.nodeCount = Number(this.nodes)
   }
   if (this.subscriptions) {
-    subscriptionCount = Number(this.subscriptions)
+    config.subscriptionCount = Number(this.subscriptions)
   }
   if (this.states) {
-    stateCount = Number(this.states)
+    config.stateCount = Number(this.states)
   }
   if (this.subscriptionRate) {
-    subscriptionRate = Number(this.subscriptionRate)
+    config.subscriptionRate = Number(this.subscriptionRate)
   }
   if (this.nodeRate) {
-    nodeRate = Number(this.nodeRate)
+    config.nodeRate = Number(this.nodeRate)
+  }
+  if (this.startPort) {
+    config.startPort = Number(this.startPort)
+  }
+  if (this.init) {
+    await redis.flushall()
   }
 
-  await clearRedisState()
-
   if (this.clusterSeed) {
-    globalSeedNodes = localSeedNodes.concat(this.clusterSeed.split(','))
+    //globalSeedNodes = localSeedNodes.concat(this.clusterSeed.split(','))
   } else {
-    globalSeedNodes = localSeedNodes
+    //globalSeedNodes = localSeedNodes
   }
 
   /**
    * Initialise Cluster
    */
-  for (let i = 0; i < nodeCount; i++) {
+  for (let i = 0; i < config.nodeCount; i++) {
     await createClusterNode(3030 + i)
   }
 
@@ -205,7 +217,7 @@ async function action () {
    */
   setTimeout(async () => {
     startStopCheckNodes()
-  }, nodeRate)
+  }, config.nodeRate)
 
   /**
    * Adding / removing subscriptions
@@ -213,14 +225,14 @@ async function action () {
   setInterval(async () => {
     await addRemoveSubscriptions()
     await checkSubscriptionState()
-  }, subscriptionRate)
+  }, config.subscriptionRate)
 }
 
 async function startStopCheckNodes () {
   await startStopNodes()
   await sleep(500)
   await checkNodeState()
-  setTimeout(startStopCheckNodes, nodeRate)
+  setTimeout(startStopCheckNodes, config.nodeRate)
 }
 
 async function checkNodeState () {
@@ -243,28 +255,15 @@ async function checkNodeState () {
 
 async function checkSubscriptionState () {
   const errors = []
-  for (let i = 0; i < stateCount; i++) {
+  for (let i = 0; i < config.stateCount; i++) {
     const topic = `TOPIC_${i}`
     for (const port in clusters) {
       const registry = clusters[port].node.getStateRegistry(topic)
       const redisEntries = await redis.llen(topic)
       const registryEntries = registry.getAll()
-
       if (redisEntries !== registryEntries.length) {
         errors.push(`server ${port} has invalid subscriptions on topic ${topic} expected ${redisEntries} actual ${registryEntries.length}`)
       }
-
-      // for (let j = 0; j < redisEntries.length; j++) {
-      //   if (registryEntries.indexOf(redisEntries[j]) === -1) {
-      //     errors.push(`state inconsistent, redis has ${redisEntries[j]} but state registry ${topic} does not`)
-      //   }
-      // }
-
-      // for (let j = 0; j < registryEntries.length; j++) {
-      //   if (redisEntries.indexOf(registryEntries[j]) === -1) {
-      //     errors.push(`state inconsistent, state ${topic} has ${registryEntries[j]} but redis does not`)
-      //   }
-      // }
     }
   }
   if (errors.length !== 0) {
