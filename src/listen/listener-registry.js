@@ -55,13 +55,6 @@ module.exports = class ListenerRegistry {
     if (count === 0) {
       this._matcher.removePattern(pattern)
     }
-
-    // TODO: Optimize
-    for (const subscription of this._subscriptionRegistry.getSubscriptions()) {
-      if (subscription.pattern === pattern && subscription.socket === socket) {
-        this._provide(subscription)
-      }
-    }
   }
 
   onNoProvider (subscription) {
@@ -231,6 +224,10 @@ module.exports = class ListenerRegistry {
 
     if (subscription.matches.length === 0) {
       subscription.matches = null
+    }
+
+    if (subscription.pattern && !matches.includes(subscription.pattern)) {
+      this._provide(subscription)
     }
   }
 
