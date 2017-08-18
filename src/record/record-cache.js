@@ -82,9 +82,6 @@ module.exports = class RecordCache {
       sockets: new Set(),
       shared: '',
       // listener-registry
-      timeout: null,
-      history: null,
-      active: null,
       socket: null,
       pattern: null,
       matches: null

@@ -8,6 +8,7 @@ module.exports = class ListenerRegistry {
     this._listenResponseTimeout = options.listenResponseTimeout
     this._subscriptionRegistry = subscriptionRegistry
 
+    this._listeners = new Map()
     this._providerRegistry = new SubscriptionRegistry(options, topic)
     this._providerRegistry.setSubscriptionListener({
       onSubscriptionAdded: this.onListenAdded.bind(this),
@@ -43,18 +44,22 @@ module.exports = class ListenerRegistry {
 
   onListenAdded (pattern, socket, count, listener) {
     if (count === 1) {
-      try {
-        this._matcher.addPattern(pattern)
-      } catch (err) {
-        socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, err.message)
-      }
+      this._matcher.addPattern(pattern)
     }
+
+    this._listeners.set(`${pattern}_${socket.id}`, new Set())
   }
 
   onListenRemoved (pattern, socket, count, listener) {
     if (count === 0) {
       this._matcher.removePattern(pattern)
     }
+
+    for (const subscription of this._listeners.get(`${pattern}_${socket.id}`)) {
+      this._provide(subscription)
+    }
+
+    this._listeners.delete(`${pattern}_${socket.id}`)
   }
 
   onNoProvider (subscription) {
@@ -64,8 +69,8 @@ module.exports = class ListenerRegistry {
   onSubscriptionAdded (name, socket, count, subscription) {
     if (count === 1) {
       this._matcher.addName(name)
-    } else if (subscription.active) {
-      this._sendHasProviderUpdate(true, subscription, socket)
+    } else if (subscription.socket) {
+      this._sendHasProviderUpdate(subscription, socket)
     }
   }
 
@@ -81,11 +86,6 @@ module.exports = class ListenerRegistry {
         )
       }
 
-      clearTimeout(subscription.timeout)
-
-      subscription.timeout = null
-      subscription.history = null
-      subscription.active = null
       subscription.socket = null
       subscription.pattern = null
       subscription.matches = null
@@ -95,99 +95,29 @@ module.exports = class ListenerRegistry {
   _accept (socket, [ pattern, name ]) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
-    if (!subscription || subscription.active) {
+    if (!subscription || subscription.socket) {
       socket.sendMessage(this._topic, C.ACTIONS.LISTEN_REJECT, [ pattern, name ])
-      return
+    } else {
+      this._listeners.get(`${pattern}_${socket.id}`).add(subscription)
+
+      subscription.socket = socket
+      subscription.pattern = pattern
+      this._sendHasProviderUpdate(subscription)
+
+      socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
     }
-
-    clearTimeout(subscription.timeout)
-
-    subscription.timeout = null
-    subscription.pattern = pattern
-    subscription.socket = socket
-    subscription.active = true
-
-    this._sendHasProviderUpdate(true, subscription, undefined)
-
-    socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
   }
 
   _reject (socket, [ pattern, name ]) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
-    if (!subscription || !subscription.timeout) {
+    if (!subscription || subscription.socket !== socket || subscription.pattern !== pattern) {
       return
     }
 
-    if (subscription.socket !== socket || subscription.pattern !== pattern) {
-      return
-    }
+    this._listeners.get(`${pattern}_${socket.id}`).delete(subscription)
 
     this._provide(subscription)
-  }
-
-  _provide (subscription) {
-    if (subscription.timeout) {
-      clearTimeout(subscription.timeout)
-      subscription.timeout = null
-    }
-
-    if (subscription.active) {
-      this._sendHasProviderUpdate(false, subscription)
-      subscription.active = false
-    }
-
-    if (subscription.history) {
-      subscription.socket = null
-      subscription.pattern = null
-    }
-
-    if (!subscription.matches || subscription.matches.length === 0) {
-      this.onNoProvider(subscription)
-      return
-    }
-
-    const match = this._match(subscription)
-
-    if (!match) {
-      return
-    }
-
-    if (!subscription.history) {
-      subscription.history = new Set()
-    }
-
-    subscription.history.add(match.id)
-    subscription.socket = match.socket
-    subscription.pattern = match.pattern
-    subscription.timeout = setTimeout(() => this._provide(subscription), this._listenResponseTimeout)
-
-    subscription.socket.sendMessage(
-      this._topic,
-      C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-      [ subscription.pattern, subscription.name ]
-    )
-  }
-
-  _match (subscription) {
-    // TODO: Optimize
-
-    let matches = []
-
-    for (const pattern of subscription.matches || []) {
-      const listener = this._providerRegistry.getSubscription(pattern)
-      if (!listener) {
-        continue
-      }
-      for (const socket of listener.sockets) {
-        const id = `${pattern}_${socket.id}`
-        if (!subscription.history || !subscription.history.has(id)) {
-          matches.push({ socket, pattern, id })
-        }
-      }
-    }
-
-    return matches[Math.floor(Math.random() * matches.length)]
   }
 
   _onMatchAdded (name, matches) {
@@ -197,46 +127,58 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    if (!subscription.matches) {
-      subscription.matches = matches
-    } else {
-      subscription.matches.push(...matches)
+    subscription.matches = (subscription.matches || []).concat(matches)
+
+    if (subscription.socket) {
+      return
     }
 
-    if (!subscription.socket) {
-      this._provide(subscription)
+    if (matches.length > 0) {
+      this._provide(subscription, matches)
+    } else {
+      this.onNoProvider(subscription)
     }
   }
 
   _onMatchRemoved (name, matches) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
-    if (!subscription || !subscription.matches) {
+    if (!subscription) {
       return
     }
 
-    for (const match of matches) {
-      const index = subscription.matches.indexOf(match)
-      if (index !== -1) {
-        subscription.matches[index] = subscription.matches.pop()
+    for (const pattern of matches) {
+      const idx = subscription.matches.indexOf(pattern)
+      if (idx !== -1) {
+        subscription.matches[idx] = subscription.matches.pop()
       }
-    }
-
-    if (subscription.matches.length === 0) {
-      subscription.matches = null
-    }
-
-    if (subscription.pattern && !matches.includes(subscription.pattern)) {
-      this._provide(subscription)
     }
   }
 
-  _sendHasProviderUpdate (hasProvider, subscription, socket) {
+  _provide (subscription, matches = subscription.matches) {
+    if (subscription.socket) {
+      subscription.socket = null
+      subscription.pattern = null
+      this._sendHasProviderUpdate(subscription)
+    }
+
+    for (const pattern of matches) {
+      const message = messageBuilder.buildMsg4(
+        this._topic,
+        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+        pattern,
+        subscription.name
+      )
+      this._providerRegistry.sendToSubscribers(pattern, message)
+    }
+  }
+
+  _sendHasProviderUpdate (subscription, socket) {
     const message = messageBuilder.buildMsg4(
       this._topic,
       C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
       subscription.name,
-      hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE
+      subscription.socket ? C.TYPES.TRUE : C.TYPES.FALSE
     )
 
     if (socket) {
