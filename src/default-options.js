@@ -90,7 +90,7 @@ exports.get = function () {
      */
     messageConnector: {
       enabled: true,
-      host: 'localhost',
+      host: '0.0.0.0',
       port: 9089,
       seedNodes: [],
       maxReconnectAttempts: 5,
