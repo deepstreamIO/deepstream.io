@@ -84,11 +84,11 @@ module.exports = class ListenerRegistry {
           C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
           [ subscription.pattern, name ]
         )
-      }
 
-      const listener = this._getListener(subscription.pattern, subscription.socket)
-      if (listener) {
-        listener.delete(subscription)
+        const listener = this._getListener(subscription.pattern, subscription.socket)
+        if (listener) {
+          listener.delete(subscription)
+        }
       }
 
       subscription.socket = null
