@@ -86,22 +86,21 @@ module.exports = class ListenerRegistry {
         )
       }
 
-      subscription.socket = null
-      subscription.pattern = null
-      subscription.matches = null
+      this._reset(subscription)
     }
   }
 
   _accept (socket, [ pattern, name ]) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
+    const listener = this._listeners.get(`${pattern}_${socket.id}`)
 
-    if (!subscription || subscription.socket) {
+    if (!subscription || subscription.socket || !listener) {
       socket.sendMessage(this._topic, C.ACTIONS.LISTEN_REJECT, [ pattern, name ])
     } else {
-      this._listeners.get(`${pattern}_${socket.id}`).add(subscription)
-
+      listener.add(subscription)
       subscription.socket = socket
       subscription.pattern = pattern
+
       this._sendHasProviderUpdate(subscription)
 
       socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
@@ -114,8 +113,6 @@ module.exports = class ListenerRegistry {
     if (!subscription || subscription.socket !== socket || subscription.pattern !== pattern) {
       return
     }
-
-    this._listeners.get(`${pattern}_${socket.id}`).delete(subscription)
 
     this._provide(subscription)
   }
@@ -155,10 +152,20 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  _provide (subscription, matches = subscription.matches) {
+  _reset (subscription) {
     if (subscription.socket) {
+      const listener = this._listeners.get(`${subscription.pattern}_${subscription.socket.id}`)
+      if (listener) {
+        listener.delete(subscription)
+      }
       subscription.socket = null
       subscription.pattern = null
+    }
+  }
+
+  _provide (subscription, matches = subscription.matches) {
+    if (subscription.socket) {
+      this._reset(subscription)
       this._sendHasProviderUpdate(subscription)
     }
 
