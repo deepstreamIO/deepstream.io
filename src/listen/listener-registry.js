@@ -115,7 +115,13 @@ module.exports = class ListenerRegistry {
 
     this._sendHasProviderUpdate(subscription)
 
-    socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
+    const message = messageBuilder.buildMsg4(
+      this._topic,
+      C.ACTIONS.LISTEN_ACCEPT,
+      pattern,
+      subscription.name
+    )
+    socket.sendNative(message)
   }
 
   _onMatch (name, matches) {
