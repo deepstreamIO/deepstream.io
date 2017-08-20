@@ -32,8 +32,6 @@ module.exports = class ListenerRegistry {
       this._providerRegistry.unsubscribe(message.data[0], socket)
     } else if (message.action === C.ACTIONS.LISTEN_ACCEPT) {
       this._accept(socket, message.data)
-    } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
-      this._reject(socket, message.data)
     } else {
       socket.sendError(this._topic, C.EVENT.UNKNOWN_ACTION, [
         ...message.data,
@@ -92,29 +90,24 @@ module.exports = class ListenerRegistry {
 
   _accept (socket, [ pattern, name ]) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
-    const listener = this._listeners.get(`${pattern}_${socket.id}`)
 
-    if (!subscription || subscription.socket || !listener) {
-      socket.sendMessage(this._topic, C.ACTIONS.LISTEN_REJECT, [ pattern, name ])
-    } else {
-      listener.add(subscription)
-      subscription.socket = socket
-      subscription.pattern = pattern
-
-      this._sendHasProviderUpdate(subscription)
-
-      socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
-    }
-  }
-
-  _reject (socket, [ pattern, name ]) {
-    const subscription = this._subscriptionRegistry.getSubscription(name)
-
-    if (!subscription || subscription.socket !== socket || subscription.pattern !== pattern) {
+    if (!subscription || subscription.socket) {
       return
     }
 
-    this._provide(subscription)
+    const listener = this._listeners.get(`${pattern}_${socket.id}`)
+
+    if (!listener) {
+      return
+    }
+
+    listener.add(subscription)
+    subscription.socket = socket
+    subscription.pattern = pattern
+
+    this._sendHasProviderUpdate(subscription)
+
+    socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
   }
 
   _onMatchAdded (name, matches) {
