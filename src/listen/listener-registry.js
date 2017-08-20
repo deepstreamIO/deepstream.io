@@ -54,7 +54,8 @@ module.exports = class ListenerRegistry {
     }
 
     for (const subscription of this._getListener(pattern, socket)) {
-      this._reset(subscription)
+      subscription.socket = null
+      subscription.pattern = null
       this._sendHasProviderUpdate(subscription)
       this._provide(subscription)
     }
@@ -86,7 +87,13 @@ module.exports = class ListenerRegistry {
         )
       }
 
-      this._reset(subscription)
+      const listener = this._getListener(subscription.pattern, subscription.socket)
+      if (listener) {
+        listener.delete(subscription)
+      }
+
+      subscription.socket = null
+      subscription.pattern = null
     }
   }
 
@@ -144,17 +151,6 @@ module.exports = class ListenerRegistry {
       if (idx !== -1) {
         subscription.matches[idx] = subscription.matches.pop()
       }
-    }
-  }
-
-  _reset (subscription) {
-    if (subscription.socket) {
-      const listener = this._getListener(subscription.pattern, subscription.socket)
-      if (listener) {
-        listener.delete(subscription)
-      }
-      subscription.socket = null
-      subscription.pattern = null
     }
   }
 
