@@ -127,11 +127,7 @@ module.exports = class ListenerRegistry {
   _onMatch (name, matches) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
-    if (!subscription) {
-      return
-    }
-
-    if (subscription.socket) {
+    if (!subscription || subscription.socket) {
       return
     }
 
