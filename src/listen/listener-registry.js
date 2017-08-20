@@ -16,8 +16,7 @@ module.exports = class ListenerRegistry {
     })
 
     this._matcher = options.patternMatcher
-    this._matcher.onMatchAdded = this._onMatchAdded.bind(this)
-    this._matcher.onMatchRemoved = this._onMatchRemoved.bind(this)
+    this._matcher.onMatch = this._onMatch.bind(this)
   }
 
   handle (socket, message) {
@@ -57,7 +56,7 @@ module.exports = class ListenerRegistry {
       subscription.socket = null
       subscription.pattern = null
       this._sendHasProviderUpdate(subscription)
-      this._provide(subscription)
+      this._matcher.getName(subscription.name)
     }
 
     this._removeListener(pattern, socket)
@@ -119,42 +118,17 @@ module.exports = class ListenerRegistry {
     socket.sendMessage(this._topic, C.ACTIONS.LISTEN_ACCEPT, [ pattern, name ])
   }
 
-  _onMatchAdded (name, matches) {
+  _onMatch (name, matches) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
     if (!subscription) {
       return
     }
-
-    subscription.matches = (subscription.matches || []).concat(matches)
 
     if (subscription.socket) {
       return
     }
 
-    this._provide(subscription, matches)
-
-    if (subscription.matches.length === 0) {
-      this.onNoProvider(subscription)
-    }
-  }
-
-  _onMatchRemoved (name, matches) {
-    const subscription = this._subscriptionRegistry.getSubscription(name)
-
-    if (!subscription) {
-      return
-    }
-
-    for (const pattern of matches) {
-      const idx = subscription.matches.indexOf(pattern)
-      if (idx !== -1) {
-        subscription.matches[idx] = subscription.matches.pop()
-      }
-    }
-  }
-
-  _provide (subscription, matches = subscription.matches) {
     for (const pattern of matches) {
       const message = messageBuilder.buildMsg4(
         this._topic,
@@ -163,6 +137,10 @@ module.exports = class ListenerRegistry {
         subscription.name
       )
       this._providerRegistry.sendToSubscribers(pattern, message)
+    }
+
+    if (matches.length === 0) {
+      this.onNoProvider(subscription)
     }
   }
 
