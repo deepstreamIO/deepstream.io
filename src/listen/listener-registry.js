@@ -54,6 +54,8 @@ module.exports = class ListenerRegistry {
     }
 
     for (const subscription of this._getListener(pattern, socket)) {
+      this._reset(subscription)
+      this._sendHasProviderUpdate(subscription)
       this._provide(subscription)
     }
 
@@ -123,9 +125,9 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    if (matches.length > 0) {
-      this._provide(subscription, matches)
-    } else {
+    this._provide(subscription, matches)
+
+    if (subscription.matches.length === 0) {
       this.onNoProvider(subscription)
     }
   }
@@ -157,11 +159,6 @@ module.exports = class ListenerRegistry {
   }
 
   _provide (subscription, matches = subscription.matches) {
-    if (subscription.socket) {
-      this._reset(subscription)
-      this._sendHasProviderUpdate(subscription)
-    }
-
     for (const pattern of matches) {
       const message = messageBuilder.buildMsg4(
         this._topic,
@@ -197,6 +194,6 @@ module.exports = class ListenerRegistry {
   }
 
   _removeListener (pattern, socket) {
-    this._listeners.delete(`${pattern}/${socket.id}`, new Set())
+    this._listeners.delete(`${pattern}/${socket.id}`)
   }
 }
