@@ -45,7 +45,7 @@ module.exports = class ListenerRegistry {
       this._matcher.addPattern(pattern)
     }
 
-    this._listeners.set(`${pattern}_${socket.id}`, new Set())
+    this._addListener(pattern, socket)
   }
 
   onListenRemoved (pattern, socket, count, listener) {
@@ -53,11 +53,11 @@ module.exports = class ListenerRegistry {
       this._matcher.removePattern(pattern)
     }
 
-    for (const subscription of this._listeners.get(`${pattern}_${socket.id}`)) {
+    for (const subscription of this._getListener(pattern, socket)) {
       this._provide(subscription)
     }
 
-    this._listeners.delete(`${pattern}_${socket.id}`)
+    this._removeListener(pattern, socket)
   }
 
   onNoProvider (subscription) {
@@ -95,7 +95,7 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    const listener = this._listeners.get(`${pattern}_${socket.id}`)
+    const listener = this._getListener(pattern, socket)
 
     if (!listener) {
       return
@@ -147,7 +147,7 @@ module.exports = class ListenerRegistry {
 
   _reset (subscription) {
     if (subscription.socket) {
-      const listener = this._listeners.get(`${subscription.pattern}_${subscription.socket.id}`)
+      const listener = this._getListener(subscription.pattern, subscription.socket)
       if (listener) {
         listener.delete(subscription)
       }
@@ -186,5 +186,17 @@ module.exports = class ListenerRegistry {
     } else {
       this._subscriptionRegistry.sendToSubscribers(subscription, message)
     }
+  }
+
+  _addListener (pattern, socket) {
+    this._listeners.set(`${pattern}/${socket.id}`, new Set())
+  }
+
+  _getListener (pattern, socket) {
+    return this._listeners.get(`${pattern}/${socket.id}`)
+  }
+
+  _removeListener (pattern, socket) {
+    this._listeners.delete(`${pattern}/${socket.id}`, new Set())
   }
 }
