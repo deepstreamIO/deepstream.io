@@ -253,6 +253,8 @@ Deepstream.prototype._loggerInit = function () {
  * @returns {void}
  */
 Deepstream.prototype._pluginInit = function () {
+  this._options.message = new MessageConnector(this._options)
+
   const infoLogger = message => this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, message)
 
   infoLogger(`deepstream version: ${pkg.version}`)
@@ -307,7 +309,6 @@ Deepstream.prototype._serviceInit = function () {
   this._messageProcessor = new MessageProcessor(this._options)
   this._messageDistributor = new MessageDistributor(this._options)
 
-  this._options.message = new MessageConnector(this._options)
   this._options.uniqueRegistry = new LockRegistry(this._options, this._options.message)
 
   this._eventHandler = new EventHandler(this._options)

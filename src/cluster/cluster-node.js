@@ -57,7 +57,11 @@ class ClusterNode {
     this._stateRegistries = new Map() // topic -> StateRegistry
 
     this._state = STATE.INIT
-    this._electionNumber = Math.random()
+    if (this._options.electionNumber) {
+      this._electionNumber = this._options.electionNumber
+    } else {
+      this._electionNumber = Math.random()
+    }
     this._leader = null
     this._decideLeader()
 
@@ -186,7 +190,7 @@ class ClusterNode {
         // TODO: warn, reject with reason
         this._removeConnection(connection)
         const error = 'received IAM from an outbound connection to a known peer'
-        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
+        this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
       } else {
         this._addPeer(connection)
         for (const url of message.peers) {
