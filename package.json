@@ -45,7 +45,7 @@
     "js-yaml": "^3.9.1",
     "mkdirp": "^0.5.1",
     "needle": "^2.0.0",
-    "uws": "git+https://github.com/deepstreamIO/uws-dependency.git#v0.12.0"
+    "uws": "8.14.1"
   },
   "devDependencies": {
     "async": "^2.5.0",
