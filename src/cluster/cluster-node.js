@@ -29,10 +29,14 @@ class ClusterNode {
     this._options = options
 
     const config = this._config = options.messageConnector
+    config.serverName = this._config.serverName = options.serverName
+
     if (typeof config.seedNodes === 'string') {
       this._seedNodes = config.seedNodes.split(',')
-    } else {
+    } else if (Array.isArray(config.seedNodes)) {
       this._seedNodes = config.seedNodes
+    } else {
+      this._seedNodes = []
     }
     this._url = `${config.host}:${config.port}`
 

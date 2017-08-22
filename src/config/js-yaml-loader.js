@@ -268,6 +268,6 @@ function getDefaultConfigPath () {
 function replaceEnvironmentVariables (fileContent) {
   const environmentVariable = new RegExp(/\${([^}]+)}/g)
   // eslint-disable-next-line
-  fileContent = fileContent.replace(environmentVariable, (a, b) => process.env[b] || b)
+  fileContent = fileContent.replace(environmentVariable, (a, b) => process.env[b] || '')
   return fileContent
 }

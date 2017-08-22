@@ -210,8 +210,10 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   sendToSubscribers (name, message, noDelay, socket) {
-    if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._options.message.send(message.topic, message)
+    if (!this._options.isGateway) { // temporary
+      if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
+        this._options.message.send(message.topic, message)
+      }
     }
 
     if (!this._subscriptions.has(name)) {
