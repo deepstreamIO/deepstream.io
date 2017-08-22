@@ -118,10 +118,6 @@ class ClusterNode {
     }
   }
 
-  getAll () {
-    return Array.from(this._knownPeers.keys())
-  }
-
   isLeader () {
     return this._leader === this._serverName
   }
