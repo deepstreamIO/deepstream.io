@@ -48,6 +48,10 @@ module.exports = class MessageConnectorMock extends EventEmitter {
     this.lastPublishedMessage = JSON.parse(JSON.stringify(message))
   }
 
+  sendState (topic, message) {
+
+  }
+
   sendDirect (serverName, topic, message) {
     this.lastDirectSentMessage = {
       serverName,
