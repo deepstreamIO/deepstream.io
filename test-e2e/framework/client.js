@@ -26,9 +26,9 @@ module.exports = {
       const client = clientHandler.createClient(clientName, server)
       client.client.login({ username: clientName, password: 'abcdefgh' }, () => {
         client.user = clientName
+        done()
       })
     })
-    done()
   },
 
   login (clientExpression, username, password, done) {
