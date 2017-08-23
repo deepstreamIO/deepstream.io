@@ -64,6 +64,7 @@ module.exports = class RecordHandler {
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(record[0], socket)
     } else if (message.action === C.ACTIONS.UPDATE) {
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.ACTIONS.UPDATE, message)
       if (record[1].slice(0, 3) !== 'INF') {
         this._storage.set(record, (error, record) => {
           if (error) {
