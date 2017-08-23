@@ -70,10 +70,11 @@ function createClient (clientName, server, options) {
   }
 
   clients[clientName].client.on('error', (message, event, topic) => {
-    // console.log('An Error occured on', clientName, message, event, topic)
+    if (process.env.DEBUG_LOG) {
+      console.log('An Error occured on', clientName, message, event, topic)
+    }
 
     if (!clients[clientName]) {
-      console.error('missing client')
       return
     }
     const clientErrors = clients[clientName].error

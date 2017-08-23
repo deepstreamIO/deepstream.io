@@ -1,7 +1,11 @@
 'use strict'
 
 const Cluster = require('../../tools/cluster')
-const { When, Then, Given, BeforeAll, AfterAll } = require('cucumber')
+const { When, Then, Given, Before, BeforeAll, AfterAll } = require('cucumber')
+
+Before(() => {
+  global.cluster.updatePermissions('open')
+})
 
 Given(/"([^"]*)" permissions are used$/, (permissionType) => {
   global.cluster.updatePermissions(permissionType)

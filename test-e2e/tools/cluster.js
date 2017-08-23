@@ -91,7 +91,7 @@ module.exports = class Cluster extends EventEmitter {
       permission: {
         type    : 'config',
         options : {
-          path: './test-e2e/config/permissions.json'
+          path: './test-e2e/config/permissions-open.json'
         }
       },
 

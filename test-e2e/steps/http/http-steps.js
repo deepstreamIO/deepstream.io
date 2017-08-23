@@ -5,7 +5,7 @@ const expect = require('chai').expect
 const sinon = require('sinon')
 const needle = require('needle')
 
-const clientHandler = require('../client/client-handler')
+const clientHandler = require('../../framework/client-handler')
 const utils = require('../client/utils')
 const { When, Then, Given, After } = require('cucumber')
 
@@ -145,9 +145,9 @@ When(/^(.+) queues "(\d+)" random messages$/, (clientExpression, numMessages) =>
           action: 'make',
           rpcName: 'addTwo',
           data: {
-              numA: (r * 1011) % 77,
-              numB: (r * 9528) % 63
-            }
+            numA: (r * 1011) % 77,
+            numB: (r * 9528) % 63
+          }
         }
       } else {
         message = {
@@ -394,7 +394,6 @@ Then(/^(.+) last response had an error matching "([^"]*)"$/, (clientExpression, 
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
-    console.log(lastResponse.body)
     expect(lastResponse).to.not.be.null
     expect(lastResponse.body).to.be.an('string')
     expect(lastResponse.body).to.match(new RegExp(message, 'i'))
