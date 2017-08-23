@@ -79,11 +79,11 @@ class SubscriptionRegistry {
 
     invariant(name === subscription.name, `invalid subscription name ${subscription.name} for ${this._topic}/${name}`)
 
-    this._options.logger.log(
-      C.LOG_LEVEL.DEBUG,
-      C.EVENT.SUBSCRIBE,
-      `for ${this._topic}/${name} by ${socket.user}/${socket.id}`
-    )
+    // this._options.logger.log(
+    //   C.LOG_LEVEL.DEBUG,
+    //   C.EVENT.SUBSCRIBE,
+    //   `for ${this._topic}/${name} by ${socket.user}/${socket.id}`
+    // )
 
     this._addSocket(subscription, socket)
   }
@@ -103,11 +103,11 @@ class SubscriptionRegistry {
 
     invariant(name === subscription.name, `invalid subscription name ${subscription.name} for ${this._topic}/${name}`)
 
-    this._options.logger.log(
-      C.LOG_LEVEL.DEBUG,
-      C.EVENT.UNSUBSCRIBE,
-      `for ${this._topic}/${name} by ${socket.user}/${socket.id}`
-    )
+    // this._options.logger.log(
+    //   C.LOG_LEVEL.DEBUG,
+    //   C.EVENT.UNSUBSCRIBE,
+    //   `for ${this._topic}/${name} by ${socket.user}/${socket.id}`
+    // )
 
     this._removeSocket(subscription, socket)
   }
