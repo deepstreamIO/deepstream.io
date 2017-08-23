@@ -39,7 +39,7 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onListenAdded (pattern, socket, count, listener) {
+  onListenAdded (pattern, socket, count) {
     if (count === 1) {
       this._matcher.addPattern(pattern)
     }
@@ -47,7 +47,7 @@ module.exports = class ListenerRegistry {
     this._addListener(pattern, socket)
   }
 
-  onListenRemoved (pattern, socket, count, listener) {
+  onListenRemoved (pattern, socket, count) {
     if (count === 0) {
       this._matcher.removePattern(pattern)
     }
@@ -131,18 +131,18 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    for (const pattern of matches) {
-      const message = messageBuilder.buildMsg4(
-        this._topic,
-        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-        pattern,
-        subscription.name
-      )
-      this._providerRegistry.sendToSubscribers(pattern, message)
-    }
-
     if (matches.length === 0) {
       this.onNoProvider(subscription)
+    } else {
+      for (const pattern of matches) {
+        const message = messageBuilder.buildMsg4(
+          this._topic,
+          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+          pattern,
+          subscription.name
+        )
+        this._providerRegistry.sendToSubscribers(pattern, message)
+      }
     }
   }
 
