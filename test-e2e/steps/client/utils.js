@@ -2,7 +2,7 @@
 
 const defaultDelay = process.env.DEFAULT_DELAY || 20
 
-function parseData(data) {
+function parseData (data) {
   if (data === undefined || data === 'undefined') {
     return undefined
   } else if (data === 'null') {
@@ -11,7 +11,6 @@ function parseData(data) {
   try {
     return JSON.parse(data)
   } catch (e) {
-    console.log(`'${data}' parsed as a string`)
     return data
   }
 

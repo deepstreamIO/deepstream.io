@@ -52,7 +52,7 @@
     "async": "^2.5.0",
     "chai": "^4.1.1",
     "coveralls": "^2.13.1",
-    "cucumber": "^1",
+    "cucumber": "^3",
     "deepstream.io-cache-redis": "^1.1.0",
     "deepstream.io-client-js": "^2.2.1",
     "deepstream.io-msg-redis": "^1.0.5",

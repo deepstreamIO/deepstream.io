@@ -7,9 +7,10 @@ const clientHandler = require('./client-handler')
 
 const clients = clientHandler.clients
 
-module.exports = function () {
+const { When, Then, Given, Before, After } = require('cucumber')
 
-  this.Then(/^(.+) receives? at least one "([^"]*)" error "([^"]*)"$/, (clientExpression, topicName, eventName) => {
+
+Then(/^(.+) receives? at least one "([^"]*)" error "([^"]*)"$/, (clientExpression, topicName, eventName) => {
     const topic = C.TOPIC[topicName.toUpperCase()]
     const event = C.EVENT[eventName.toUpperCase()]
 
@@ -20,7 +21,7 @@ module.exports = function () {
     })
   })
 
-  this.Then(/^(.+) receives? "([^"]*)" error "([^"]*)"$/, (clientExpression, topicName, eventName) => {
+Then(/^(.+) receives? "([^"]*)" error "([^"]*)"$/, (clientExpression, topicName, eventName) => {
     const topic = C.TOPIC[topicName.toUpperCase()]
     const event = C.EVENT[eventName.toUpperCase()]
 
@@ -31,21 +32,21 @@ module.exports = function () {
     })
   })
 
-  this.Then(/^(.+) received? no errors$/, (clientExpression) => {
+Then(/^(.+) received? no errors$/, (clientExpression) => {
     clientHandler.getClients(clientExpression).forEach((client) => {
       clientHandler.assertNoErrors(client.name)
-    });
+    })
   })
 
   /** ******************************************************************************************************************************
    *************************************************** Boiler Plate ***************************************************************
    ********************************************************************************************************************************/
 
-  this.Before((/* scenario*/) => {
+Before((/* scenario*/) => {
     // client are connecting via "Background" explictly
   })
 
-  this.After((scenario, done) => {
+After((scenario, done) => {
     for (const client in clients) {
 
       clientHandler.assertNoErrors(client)
@@ -56,7 +57,7 @@ module.exports = function () {
         }
       }
 
-      setTimeout(function (client) {
+      setTimeout((client) => {
         for (const pattern in clients[client].event.callbacksListeners) {
           if (clients[client].event.callbacksListeners[pattern].isListening !== false) {
             clients[client].client.event.unlisten(pattern, clients[client].event.callbacksListeners[pattern])
@@ -64,7 +65,7 @@ module.exports = function () {
         }
       }.bind(null, client), 1)
 
-      setTimeout(function (client) {
+      setTimeout((client) => {
         clients[client].client.close()
         delete clients[client]
       }.bind(null, client), 50)
@@ -73,4 +74,3 @@ module.exports = function () {
     setTimeout(done, 100)
   })
 
-}
