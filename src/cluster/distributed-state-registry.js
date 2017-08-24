@@ -339,7 +339,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
       message.data = [C.ALL]
       this._messageConnector.sendState(this._topic, message)
     } else {
-      this._messageConnector.sendDirect(serverName, this._topic, message)
+      this._messageConnector.sendStateDirect(serverName, this._topic, message)
     }
   }
 

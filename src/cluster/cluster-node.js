@@ -73,26 +73,42 @@ class ClusterNode {
   }
 
   sendDirect (serverName, topic, message) {
-    const connection = this._knownPeers.get(serverName)
-    if (!connection) {
-      const error = `tried to send message to unknown server ${serverName} from ${this._serverName}`
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
-      return
+    const connection = this._getKnownPeer(serverName)
+    if (connection) {
+      connection.sendMessage({ topic, message })
     }
-    connection.sendMessage({ topic, message })
   }
 
-  sendState (topic, message) {
-    if (topic === GLOBAL_STATES) {
+  _getKnownPeer (serverName) {
+    const connection = this._knownPeers.get(serverName)
+    if (!connection) {
+      const error = `tried to find to unknown server ${serverName} among peers of ${this._serverName}`
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
+    }
+    return connection
+  }
+
+  sendStateDirect (serverName, registryTopic, message) {
+    const connection = this._getKnownPeer(serverName)
+    if (connection) {
+      connection.sendState(message.action, registryTopic, message.data)
+    }
+  }
+
+  sendState (registryTopic, message) {
+    if (registryTopic === GLOBAL_STATES) {
       for (const connection of this._knownPeers.values()) {
-        connection.sendMessage({ topic, message })
+        connection.sendState(message.action, registryTopic, message.data)
       }
       return
     }
-    const serverNames = this._globalStateRegistry.getAllServers(topic)
+    const serverNames = this._globalStateRegistry.getAllServers(registryTopic)
     for (let i = 0; i < serverNames.length; i++) {
       if (serverNames[i] !== this._serverName) {
-        this.sendDirect(serverNames[i], topic, message)
+        const connection = this._getKnownPeer(serverNames[i])
+        if (connection) {
+          connection.sendState(message.action, registryTopic, message.data)
+        }
       }
     }
   }
@@ -225,6 +241,7 @@ class ClusterNode {
       throw new Error('tried to add uninitialized peer')
     }
     connection.on('message', this._onMessage.bind(this, connection))
+    connection.on('state-message', this._onMessage.bind(this, connection))
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
@@ -265,7 +282,7 @@ class ClusterNode {
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('who', (message) => {
       if (!message.id || !message.url || !message.electionNumber) {
-        const error = `malformed WHO message ${JSON.stringify(message)}`
+        const error = `malformed WHO message '${JSON.stringify(message)}'`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
         // send error
         return
@@ -329,12 +346,11 @@ class ClusterNode {
     this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `connection error: ${error.toString()}`)
   }
 
-  _onMessage (connection, data) {
-    const topic = data.topic
-    const message = data.message
+  _onMessage (connection, topic, message) {
     const listeners = this._subscriptions.get(topic)
     if (!listeners || listeners.length === 0) {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, `message on unknown topic ${topic}: ${JSON.stringify(message)}`)
+      const warnMsg = `message on unknown topic ${topic}: ${JSON.stringify(message)}`
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, warnMsg)
       return
     }
     for (let i = 0; i < listeners.length; i++) {

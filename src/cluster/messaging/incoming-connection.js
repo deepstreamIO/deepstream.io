@@ -1,7 +1,7 @@
 'use strict'
 
 const ClusterConnection = require('./cluster-connection')
-const MESSAGE = require('./message-enums')
+const MC = require('./message-constants')
 
 class IncomingConnection extends ClusterConnection {
   constructor (socket, config, logger) {
@@ -21,7 +21,7 @@ class IncomingConnection extends ClusterConnection {
   _handlePing () {
     clearTimeout(this._pingTimeoutId)
     if (this.isAlive()) {
-      this._send(MESSAGE.PONG)
+      this._sendCluster(MC.ACTIONS.CLUSTER.PONG.BYTE)
       this._pingTimeoutId = setTimeout(
         this._onPingTimeoutBound,
         this._config.pingInterval + this._config.pingTimeout

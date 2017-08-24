@@ -1,8 +1,9 @@
 'use strict'
 
 const net = require('net')
-const MESSAGE = require('./message-enums')
+const MC = require('./message-constants')
 const ClusterConnection = require('./cluster-connection')
+const C = require('../../constants/constants')
 
 /**
  * Represents a TCP connection made by this deepstream instance
@@ -61,7 +62,8 @@ class OutgoingConnection extends ClusterConnection {
    * @returns {void}
    */
   _onSocketError (error) {
-    if (error.code === 'ECONNREFUSED' && this._state !== this.STATE.REJECTED) {
+    if ((error.code === 'ECONNREFUSED' && this._state !== this.STATE.REJECTED)
+      || error === C.EVENT.MESSAGE_PARSE_ERROR) {
       this._scheduleReconnect()
     } else {
       this.emit('error', error)
@@ -70,7 +72,7 @@ class OutgoingConnection extends ClusterConnection {
 
   _sendPing () {
     if (this.isAlive()) {
-      this._send(MESSAGE.PING)
+      this._sendCluster(MC.ACTIONS.CLUSTER.PING.BYTE)
       this._pongTimeoutId = setTimeout(this._onPongTimeoutBound, this._config.pingTimeout)
     }
   }

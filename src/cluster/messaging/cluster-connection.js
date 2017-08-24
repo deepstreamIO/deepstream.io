@@ -1,10 +1,12 @@
 'use strict'
 
 const EventEmitter = require('events').EventEmitter
-const MESSAGE = require('./message-enums')
+const messageHandler = require('./message-handler')
+const MC = require('./message-constants')
 const utils = require('../../utils/utils')
 const C = require('../../constants/constants')
 
+const CLUSTER_ACTION_BYTES = MC.ACTIONS.CLUSTER_BYTES
 const STATE = {
   INIT: 0,
   UNIDENTIFIED: 1,
@@ -16,7 +18,6 @@ const STATE = {
 }
 
 const STATE_LOOKUP = utils.reverseMap(STATE)
-const MESSAGE_LOOKUP = utils.reverseMap(MESSAGE)
 
 /* eslint-disable class-methods-use-this */
 
@@ -31,7 +32,7 @@ class ClusterConnection extends EventEmitter {
     this.localUrl = `${config.host}:${config.port}`
     this.STATE = STATE
     this._state = STATE.INIT
-    this._readBuffer = ''
+    this._readBuffer = null
   }
 
   getRemoteUrl () {
@@ -52,13 +53,18 @@ class ClusterConnection extends EventEmitter {
       || this._state === this.STATE.STABLE
   }
 
-  _send (topic, messageOpt) {
-    const message = messageOpt || ''
-    if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
-      const error = `->(${this.remoteName}) ${MESSAGE_LOOKUP[topic]} ${message}`
-      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, error)
+  _sendCluster (action, message) {
+    if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
+      const actionStr = MC.ACTIONS.CLUSTER_BYTE_TO_TEXT[action]
+      const messageStr = message && JSON.stringify(message).slice(0, 30)
+      const debugMsg = `->(${this.remoteName}) ${actionStr}: ${messageStr}...)`
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
     }
-    this._socket.write(topic + message + MESSAGE.MESSAGE_SEPERATOR, 'utf8')
+    this._send(MC.TOPIC.CLUSTER.BYTE, action, message)
+  }
+
+  _send (topic, action, message) {
+    this._socket.write(messageHandler.getBinaryMsg(topic, action, message))
   }
 
   setRemoteDetails (name, electionNumber, url) {
@@ -73,7 +79,7 @@ class ClusterConnection extends EventEmitter {
   close () {
     if (this.isAlive()) {
       this._socket.setKeepAlive(false)
-      this._send(MESSAGE.CLOSE)
+      this._sendCluster(CLUSTER_ACTION_BYTES.CLOSE)
       this._socket.end()
     } else {
       this._onClose()
@@ -88,29 +94,34 @@ class ClusterConnection extends EventEmitter {
   }
 
   sendWho (identificationData) {
-    this._send(MESSAGE.WHO, JSON.stringify(identificationData))
+    this._sendCluster(CLUSTER_ACTION_BYTES.IDENTIFICATION_REQUEST, identificationData)
   }
 
   sendIAm (identificationData) {
-    this._send(MESSAGE.IAM, JSON.stringify(identificationData))
+    this._sendCluster(CLUSTER_ACTION_BYTES.IDENTIFICATION_RESPONSE, identificationData)
   }
 
   sendKnown (identificationData) {
-    this._send(MESSAGE.KNOWN, JSON.stringify(identificationData))
+    this._sendCluster(CLUSTER_ACTION_BYTES.KNOWN_PEERS, identificationData)
   }
 
   sendReject (reason) {
-    this._send(MESSAGE.REJECT, reason)
+    this._sendCluster(CLUSTER_ACTION_BYTES.REJECT, { reason })
     this.close()
   }
 
   sendRejectDuplicate () {
-    this._send(MESSAGE.REJECT_DUPLICATE_CONNECTION)
+    this._sendCluster(CLUSTER_ACTION_BYTES.REJECT_DUPLICATE)
     this.close()
   }
 
   sendMessage (message) {
-    this._send(MESSAGE.MSG, JSON.stringify(message))
+    this._sendCluster(CLUSTER_ACTION_BYTES.MESSAGE, message)
+  }
+
+  sendState (action, registryTopic, message) {
+    const actionByte = MC.ACTIONS.STATE_REGISTRY_TEXT_TO_BYTE[action]
+    this._send(MC.TOPIC.STATE_REGISTRY.BYTE, actionByte, [registryTopic, message])
   }
 
   _stateTransition (nextState) {
@@ -126,7 +137,6 @@ class ClusterConnection extends EventEmitter {
   }
 
   _configureSocket () {
-    this._socket.setEncoding('utf8')
     this._socket.setKeepAlive(true, 2000)
     this._socket.setNoDelay(true)
     this._socket.on('error', this._onSocketError.bind(this))
@@ -136,69 +146,92 @@ class ClusterConnection extends EventEmitter {
   }
 
   _onData (data) {
-    const readBuffer = this._readBuffer + data
-    this._readBuffer = ''
-    let readIndex = 0
-    let splitIndex
-    while (readIndex < readBuffer.length) {
-      splitIndex = readBuffer.indexOf(MESSAGE.MESSAGE_SEPERATOR, readIndex)
-      if (splitIndex === -1) {
-        this._readBuffer = readBuffer.slice(readIndex)
-        return
+    let readBuffer = this._readBuffer ? Buffer.concat([this._readBuffer, data]) : data
+    let result
+    do {
+      result = messageHandler.tryParseBinaryMsg(readBuffer, this._onBodyParseError.bind(this))
+      if (result.bytesConsumed > 0) {
+        this._onMessage(result.message)
+        readBuffer = readBuffer.slice(result.bytesConsumed)
       }
-      this._onMessage(readBuffer.slice(readIndex, splitIndex))
-      readIndex = splitIndex + 1
-    }
+    } while (readBuffer.length !== 0 && result.bytesConsumed !== 0)
+    this._readBuffer = readBuffer.length > 0 ? readBuffer : null
   }
 
-  _onMessage (prefixedMessage) {
-    const topic = prefixedMessage[0]
-    const message = prefixedMessage.slice(1)
-    if (topic !== MESSAGE.PING && topic !== MESSAGE.PONG) {
-      const topicStr = MESSAGE_LOOKUP[topic]
-      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<-(${this.remoteName}) ${topicStr} ${message}`)
+  _onBodyParseError (errMsg, header) {
+    const logMsg = `${errMsg} (${JSON.stringify(header)})`
+    this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, logMsg)
+    this._socket.destroy(C.EVENT.MESSAGE_PARSE_ERROR)
+  }
+
+  _onMessage (message) {
+    const topic = message.topicByte
+    if (topic === MC.TOPIC.CLUSTER.BYTE) {
+      this._handleCluster(message)
+      return
+    }
+    if (topic === MC.TOPIC.STATE_REGISTRY.BYTE) {
+      this._handleStateRegistry(message)
+      return
+    }
+    const topicStr = MC.TOPIC_BYTE_TO_TEXT[topic]
+    const errMsg = `Unexpected message topic on message bus: ${topicStr} (0x${topic.toString(16)})`
+    this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, errMsg)
+  }
+
+  _handleCluster (message) {
+    const topic = message.topicByte
+    const action = message.actionByte
+    if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
+      const topicStr = MC.TOPIC_BYTE_TO_TEXT[topic]
+      const actionStr = MC.ACTIONS.CLUSTER_BYTE_TO_TEXT[action]
+      const messageStr = message && JSON.stringify(message).slice(0, 30)
+      const debugMsg = `<-(${this.remoteName}) ${topicStr} ${actionStr} ${messageStr}...`
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
     }
 
-    if (topic === MESSAGE.PING) {
+    if (action === CLUSTER_ACTION_BYTES.PING) {
       this._handlePing(message)
       return
-    } else if (topic === MESSAGE.PONG) {
+    } else if (action === CLUSTER_ACTION_BYTES.PONG) {
       this._handlePong(message)
       return
-    } else if (topic === MESSAGE.CLOSE) {
+    } else if (action === CLUSTER_ACTION_BYTES.CLOSE) {
       this._socket.end()
       return
-    } else if (topic === MESSAGE.REJECT) {
+    } else if (action === CLUSTER_ACTION_BYTES.REJECT) {
       this._handleReject(message)
       return
-    } else if (topic === MESSAGE.REJECT_DUPLICATE_CONNECTION) {
+    } else if (action === CLUSTER_ACTION_BYTES.REJECT_DUPLICATE) {
       this._handleRejectDuplicate()
       return
-    } else if (topic === MESSAGE.ERROR) {
+    } else if (action === CLUSTER_ACTION_BYTES.ERROR) {
       this._handleError(message)
       return
     }
-    let parsedMessage
-    try {
-      parsedMessage = JSON.parse(message)
-    } catch (err) {
-      // send error message
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, `malformed json ${message}`)
-      process.exit(1)
-      return
-    }
-    if (topic === MESSAGE.WHO) {
-      this.emit('who', parsedMessage)
-    } else if (topic === MESSAGE.IAM) {
-      this.emit('iam', parsedMessage)
-    } else if (topic === MESSAGE.KNOWN) {
-      this.emit('known', parsedMessage)
+    if (action === CLUSTER_ACTION_BYTES.IDENTIFICATION_REQUEST) {
+      this.emit('who', message.body)
+    } else if (action === CLUSTER_ACTION_BYTES.IDENTIFICATION_RESPONSE) {
+      this.emit('iam', message.body)
+    } else if (action === CLUSTER_ACTION_BYTES.KNOWN_PEERS) {
+      this.emit('known', message.body)
       this._onKnown()
-    } else if (topic === MESSAGE.MSG) {
-      this.emit('message', parsedMessage)
+    } else if (action === CLUSTER_ACTION_BYTES.MESSAGE) {
+      this.emit('message', message.body.topic, message.body.message)
     } else {
-      this.emit('error', `unknown message topic ${topic}`)
+      this.emit('error', `unknown message action ${MC.ACTIONS.CLUSTER_BYTE_TO_TEXT[action]}(0x${action.toString(16)})`)
     }
+  }
+
+  _handleStateRegistry (message) {
+    // TODO: don't bother building something that looks like a json message
+    const topic = message.body[0]
+    const m2 = {
+      topic,
+      action: MC.ACTIONS.STATE_REGISTRY_BYTE_TO_TEXT[message.actionByte],
+      data: message.body[1]
+    }
+    this.emit('state-message', topic, m2)
   }
 
   _onKnown () {
@@ -213,14 +246,15 @@ class ClusterConnection extends EventEmitter {
       data = JSON.parse(message)
     } catch (err) {
       this.emit('error', 'failed to parse identify message')
-      this._send(MESSAGE.ERROR, 'failed to parse identify message')
+      this._sendCluster(CLUSTER_ACTION_BYTES.ERROR, { message: 'failed to parse identify message' })
       return
     }
     this._stateTransition(STATE.IDENTIFIED)
     this.emit('identify', data)
   }
 
-  _handleReject (reason) {
+  _handleReject (message) {
+    const reason = message.reason
     // TODO: else warn
     this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `connection rejected with reason: ${reason}`)
     this._stateTransition(STATE.REJECTED)
@@ -232,7 +266,8 @@ class ClusterConnection extends EventEmitter {
 
   _handleError (error) {
     // TODO: handle e.g. malformed message errors, probably just log
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `an error message was received: ${error}`)
+    console.log(error)
+    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `an error message was received: ${JSON.stringify(error)}`)
   }
 
   _onSocketError () {
