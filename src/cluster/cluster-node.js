@@ -91,14 +91,14 @@ class ClusterNode {
   sendStateDirect (serverName, registryTopic, message) {
     const connection = this._getKnownPeer(serverName)
     if (connection) {
-      connection.sendState(message.action, registryTopic, message.data)
+      connection.send(C.TOPIC.STATE_REGISTRY, message.action, [registryTopic, message.data])
     }
   }
 
   sendState (registryTopic, message) {
     if (registryTopic === GLOBAL_STATES) {
       for (const connection of this._knownPeers.values()) {
-        connection.sendState(message.action, registryTopic, message.data)
+        connection.send(C.TOPIC.STATE_REGISTRY, message.action, [registryTopic, message.data])
       }
       return
     }
@@ -107,7 +107,7 @@ class ClusterNode {
       if (serverNames[i] !== this._serverName) {
         const connection = this._getKnownPeer(serverNames[i])
         if (connection) {
-          connection.sendState(message.action, registryTopic, message.data)
+          connection.send(C.TOPIC.STATE_REGISTRY, message.action, [registryTopic, message.data])
         }
       }
     }

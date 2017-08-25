@@ -6,7 +6,7 @@ const MC = require('./message-constants')
 const utils = require('../../utils/utils')
 const C = require('../../constants/constants')
 
-const CLUSTER_ACTION_BYTES = MC.ACTIONS.CLUSTER_BYTES
+const CLUSTER_ACTION_BYTES = MC.ACTIONS_.BYTES.CLUSTER
 const STATE = {
   INIT: 0,
   UNIDENTIFIED: 1,
@@ -55,7 +55,7 @@ class ClusterConnection extends EventEmitter {
 
   _sendCluster (action, message) {
     if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
-      const actionStr = MC.ACTIONS.CLUSTER_BYTE_TO_TEXT[action]
+      const actionStr = MC.ACTIONS_.BYTE_TO_TEXT.CLUSTER[action]
       const messageStr = message && JSON.stringify(message).slice(0, 30)
       const debugMsg = `->(${this.remoteName}) ${actionStr}: ${messageStr}...)`
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
@@ -119,9 +119,10 @@ class ClusterConnection extends EventEmitter {
     this._sendCluster(CLUSTER_ACTION_BYTES.MESSAGE, message)
   }
 
-  sendState (action, registryTopic, message) {
-    const actionByte = MC.ACTIONS.STATE_REGISTRY_TEXT_TO_BYTE[action]
-    this._send(MC.TOPIC.STATE_REGISTRY.BYTE, actionByte, [registryTopic, message])
+  send (topic, action, message) {
+    const topicKey = MC.TOPIC_.TEXT_TO_KEY[topic]
+    const actionByte = MC.ACTIONS_.TEXT_TO_BYTE[topicKey][action]
+    this._send(MC.TOPIC[topicKey].BYTE, actionByte, message)
   }
 
   _stateTransition (nextState) {
@@ -174,7 +175,7 @@ class ClusterConnection extends EventEmitter {
       this._handleStateRegistry(message)
       return
     }
-    const topicStr = MC.TOPIC_BYTE_TO_TEXT[topic]
+    const topicStr = MC.TOPIC_.BYTE_TO_TEXT[topic]
     const errMsg = `Unexpected message topic on message bus: ${topicStr} (0x${topic.toString(16)})`
     this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, errMsg)
   }
@@ -183,8 +184,8 @@ class ClusterConnection extends EventEmitter {
     const topic = message.topicByte
     const action = message.actionByte
     if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
-      const topicStr = MC.TOPIC_BYTE_TO_TEXT[topic]
-      const actionStr = MC.ACTIONS.CLUSTER_BYTE_TO_TEXT[action]
+      const topicStr = MC.TOPIC_.BYTE_TO_TEXT[topic]
+      const actionStr = MC.ACTIONS_.BYTE_TO_TEXT.CLUSTER[action]
       const messageStr = message && JSON.stringify(message).slice(0, 30)
       const debugMsg = `<-(${this.remoteName}) ${topicStr} ${actionStr} ${messageStr}...`
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
@@ -219,7 +220,7 @@ class ClusterConnection extends EventEmitter {
     } else if (action === CLUSTER_ACTION_BYTES.MESSAGE) {
       this.emit('message', message.body.topic, message.body.message)
     } else {
-      this.emit('error', `unknown message action ${MC.ACTIONS.CLUSTER_BYTE_TO_TEXT[action]}(0x${action.toString(16)})`)
+      this.emit('error', `unknown message action ${MC.ACTIONS_.BYTE_TO_TEXT.CLUSTER[action]}(0x${action.toString(16)})`)
     }
   }
 
@@ -228,7 +229,7 @@ class ClusterConnection extends EventEmitter {
     const topic = message.body[0]
     const m2 = {
       topic,
-      action: MC.ACTIONS.STATE_REGISTRY_BYTE_TO_TEXT[message.actionByte],
+      action: MC.ACTIONS_.BYTE_TO_TEXT.STATE_REGISTRY[message.actionByte],
       data: message.body[1]
     }
     this.emit('state-message', topic, m2)

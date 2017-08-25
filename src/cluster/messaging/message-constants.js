@@ -1,5 +1,7 @@
 'use strict'
 
+const utils = require('../../utils/utils')
+
 /* eslint-disable comma-spacing, no-multi-spaces */
 
 const TOPIC                   = {}
@@ -140,14 +142,25 @@ OPTIONS.PAYLOAD_ENCODING = {}
 OPTIONS.PAYLOAD_ENCODING.JSON = 0x00
 
 exports.TOPIC = TOPIC
-exports.TOPIC_BYTE_TO_TEXT = convertMap(TOPIC, 'BYTE', 'TEXT')
-exports.TOPIC_TEXT_TO_BYTE = convertMap(TOPIC, 'TEXT', 'BYTE')
+const TOPIC_ = exports.TOPIC_ = {}
+TOPIC_.BYTE_TO_TEXT = convertMap(TOPIC, 'BYTE', 'TEXT')
+TOPIC_.TEXT_TO_BYTE = convertMap(TOPIC, 'TEXT', 'BYTE')
+TOPIC_.TEXT_TO_KEY = utils.reverseMap(specifyMap(TOPIC, 'TEXT'))
+TOPIC_.BYTE_TO_KEY = utils.reverseMap(specifyMap(TOPIC, 'BYTE'))
 
 exports.ACTIONS = ACTIONS
+const ACTIONS_ = exports.ACTIONS_ = {}
+ACTIONS_.BYTE_TO_TEXT = {}
+ACTIONS_.TEXT_TO_BYTE = {}
+ACTIONS_.BYTES = {}
+ACTIONS_.TEXT_TO_KEY = {}
+ACTIONS_.BYTE_TO_KEY = {}
 for (const key in ACTIONS) {
-  ACTIONS[`${key}_BYTE_TO_TEXT`] = convertMap(ACTIONS[key], 'BYTE', 'TEXT')
-  ACTIONS[`${key}_TEXT_TO_BYTE`] = convertMap(ACTIONS[key], 'TEXT', 'BYTE')
-  ACTIONS[`${key}_BYTES`] = specifyMap(ACTIONS[key], 'BYTE')
+  ACTIONS_.BYTE_TO_TEXT[key] = convertMap(ACTIONS[key], 'BYTE', 'TEXT')
+  ACTIONS_.TEXT_TO_BYTE[key] = convertMap(ACTIONS[key], 'TEXT', 'BYTE')
+  ACTIONS_.BYTES[key] = specifyMap(ACTIONS[key], 'BYTE')
+  ACTIONS_.TEXT_TO_KEY[key] = utils.reverseMap(specifyMap(ACTIONS[key], 'TEXT'))
+  ACTIONS_.BYTE_TO_KEY[key] = utils.reverseMap(specifyMap(ACTIONS[key], 'BYTE'))
 }
 
 exports.OPTIONS = OPTIONS
