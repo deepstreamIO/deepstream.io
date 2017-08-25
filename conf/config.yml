@@ -6,11 +6,7 @@ showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 logLevel: INFO
 # Directory where all plugins reside
-#libDir: ../lib
-
-# Connectivity
-# webfacing URL under which this client is reachable. Used for loadbalancing / failover
-externalUrl: null
+libDir: ../lib
 
 # SSL Configuration
 sslKey: null
@@ -78,13 +74,13 @@ connectionEndpoints:
         - 'https://example.com'
 
 # Logger Configuration
-# logger:
-#   # use either the default logger
-#   name: default
-#    options:
-#      colors: true
-#      # value of logLevel (line 4) will always overwrite this value
-#      logLevel: INFO
+logger:
+  # use either the default logger
+  name: default
+  options:
+    colors: true
+    # value of logLevel (line 4) will always overwrite this value
+    logLevel: INFO
 
 #   # or the winston logger
 #   name: winston
@@ -112,11 +108,11 @@ plugins:
 #       reportInterval: 200
 #       permissionLogLimit: 3
 #       technicalErrorLogLimit: 3
-
 #   cache:
-#     name: memcached
+#     name: redis
 #     options:
-#       serverLocation: 'localhost:11211'
+#       host: ${REDIS_HOST}
+#       port: 6379
 
 #   storage:
 #     name: rethinkdb

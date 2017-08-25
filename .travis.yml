@@ -19,7 +19,6 @@ compiler:
 node_js:
   - "8"
   - "6.11"
-  - "4"
 
 env:
   - DEFAULT_DELAY: 50

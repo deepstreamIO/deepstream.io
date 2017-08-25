@@ -147,13 +147,15 @@ function handlePlugins (config) {
   // and the plugin configuration objects
   const connectorMap = {
     cache: 'cache',
-    storage: 'storage'
+    storage: 'storage',
+    monitoring: 'monitoring'
   }
   // mapping between the plugin configuration properties and the npm module
   // name resolution
   const typeMap = {
     cache: 'cache',
-    storage: 'storage'
+    storage: 'storage',
+    monitoring: 'monitoring'
   }
   const plugins = Object.assign({}, config.plugins)
 
@@ -227,6 +229,10 @@ function handleConnectionEndpoints (config) {
  * @returns {Function} Instance return be the plugin constructor
  */
 function resolvePluginClass (plugin, type) {
+  if (type === 'monitoring') {
+    return require('dsx-monitoring') // eslint-disable-line
+  }
+
   // nexe needs *global.require* for __dynamic__ modules
   // but browserify and proxyquire can't handle *global.require*
   const req = global && global.require ? global.require : require
@@ -274,7 +280,16 @@ function handleAuthStrategy (config) {
     config.auth.options = {}
   }
 
-  if (!authStrategies[config.auth.type] && !config.auth.path) {
+  if (config.auth.name || config.auth.path) {
+    const AuthHandler = resolvePluginClass(config.auth, 'authentication')
+    if (!AuthHandler) {
+      throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
+    }
+    config.authenticationHandler = new AuthHandler(config.auth.options, config.logger)
+    return
+  }
+
+  if (!authStrategies[config.auth.type]) {
     throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
 
@@ -311,7 +326,16 @@ function handlePermissionStrategy (config) {
     config.permission.options = {}
   }
 
-  if (!permissionStrategies[config.permission.type] && !config.permission.path) {
+  if (config.permission.name || config.permission.path) {
+    const PermHandler = resolvePluginClass(config.permission, 'permission')
+    if (!PermHandler) {
+      throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
+    }
+    config.permissionHandler = new PermHandler(config.permission.options, config.logger)
+    return
+  }
+
+  if (!permissionStrategies[config.permission.type]) {
     throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 

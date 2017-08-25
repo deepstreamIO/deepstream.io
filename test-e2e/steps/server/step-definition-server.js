@@ -2,32 +2,34 @@
 
 const Cluster = require('../../tools/cluster')
 
-module.exports = function () {
+const { When, Then, Given, Before, BeforeAll, AfterAll } = require('cucumber')
 
-  this.Given(/"([^"]*)" permissions are used$/, (permissionType) => {
-    global.cluster.updatePermissions(permissionType)
-  })
+Before(() => {
+  global.cluster.updatePermissions('open')
+})
 
-  this.When(/^server (\S)* goes down$/, (server, done) => {
-    global.cluster.stopServer(server - 1, done)
-  })
+Given(/"([^"]*)" permissions are used$/, (permissionType) => {
+  global.cluster.updatePermissions(permissionType)
+})
 
-  this.When(/^server (\S)* comes back up$/, (server, done) => {
-    global.cluster.startServer(server - 1, done)
-  })
+When(/^server (\S)* goes down$/, (server, done) => {
+  global.cluster.stopServer(server - 1, done)
+})
 
-  this.registerHandler('BeforeFeature', (features, callback) => {
-    global.cluster = new Cluster([6001, 6002, 6003], !!process.env.LOG)
-    global.cluster.on('ready', callback)
-  })
+When(/^server (\S)* comes back up$/, (server, done) => {
+  global.cluster.startServer(server - 1, done)
+})
 
-  this.registerHandler('AfterFeature', (features, callback) => {
-    setTimeout(() => {
-      global.cluster.on('stopped', () => {
-        callback()
-      })
-      global.cluster.stop()
-    }, 100)
-  })
+BeforeAll((callback) => {
+  global.cluster = new Cluster([6001, 6002, 6003], false)
+  global.cluster.on('ready', callback)
+})
 
-}
+AfterAll((callback) => {
+  setTimeout(() => {
+    global.cluster.on('stopped', () => {
+      callback()
+    })
+    global.cluster.stop()
+  }, 100)
+})
