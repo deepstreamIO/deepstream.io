@@ -355,29 +355,3 @@ class ClusterNode {
     this._connections.forEach(connection => connection.close())
   }
 }
-
-module.exports = ClusterNode
-
-if (!module.parent) {
-  console.log('command line mode')
-  const config = {
-    host: process.argv[2],
-    port: process.argv[3],
-    seedNodes: process.argv.slice(4),
-    maxReconnectAttempts: 4,
-    reconnectInterval: 1500,
-    pingTimeout: 500,
-    pingInterval: 1000,
-  }
-  console.log(config)
-  const options = {
-    messageConnector: config,
-    logger: console,
-    serverName: utils.getUid()
-  }
-  const node = new ClusterNode(options)
-  process.on('SIGINT', () => node.close(() => {
-    process.exit(0)
-  }))
-}
-
