@@ -75,7 +75,7 @@ module.exports = class MessageDistributor {
    * @private
    * @returns {void}
    */
-  _onMessageConnectorMessage (callback, message) { // eslint-disable-line
-    callback(C.SOURCE_MESSAGE_CONNECTOR, message)
+  _onMessageConnectorMessage (callback, message, originServer) { // eslint-disable-line
+    callback(C.SOURCE_MESSAGE_CONNECTOR, message, originServer)
   }
 }

@@ -36,7 +36,7 @@ module.exports = class RpcProxy {
     if (message.action !== C.ACTIONS.ACK && message.action !== C.ACTIONS.REQUEST) {
       message.isCompleted = true
     }
-    this._options.message.sendDirect(this._remoteServer, C.TOPIC.PRIVATE + C.TOPIC.RPC, message)
+    this._options.message.sendDirect(this._remoteServer, C.TOPIC.RPC, message)
   }
 
   /**
@@ -52,7 +52,7 @@ module.exports = class RpcProxy {
   * @returns {void}
   */
   sendError (topic, type, msg) {
-    this._options.message.sendDirect(this._remoteServer, C.TOPIC.PRIVATE + C.TOPIC.RPC, {
+    this._options.message.sendDirect(this._remoteServer, C.TOPIC.RPC, {
       topic: C.TOPIC.RPC,
       action: C.ACTIONS.ERROR,
       data: [type, msg]

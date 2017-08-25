@@ -75,7 +75,7 @@ class ClusterNode {
   sendDirect (serverName, topic, message) {
     const connection = this._getKnownPeer(serverName)
     if (connection) {
-      connection.sendMessage({ topic, message })
+      connection.send(topic, message.action, message.data)
     }
   }
 
@@ -241,7 +241,6 @@ class ClusterNode {
       throw new Error('tried to add uninitialized peer')
     }
     connection.on('message', this._onMessage.bind(this, connection))
-    connection.on('state-message', this._onMessage.bind(this, connection))
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
@@ -347,9 +346,14 @@ class ClusterNode {
   }
 
   _onMessage (connection, topic, message) {
-    const listeners = this._subscriptions.get(topic)
+    let modifiedTopic = topic
+    if (topic === C.TOPIC.STATE_REGISTRY) {
+      modifiedTopic = message.data[0]
+      message.data = message.data[1]
+    }
+    const listeners = this._subscriptions.get(modifiedTopic)
     if (!listeners || listeners.length === 0) {
-      const warnMsg = `message on unknown topic ${topic}: ${JSON.stringify(message)}`
+      const warnMsg = `message on unknown topic ${modifiedTopic}: ${JSON.stringify(message)}`
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, warnMsg)
       return
     }

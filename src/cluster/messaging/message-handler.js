@@ -1,11 +1,36 @@
 const MC = require('./message-constants')
+const C = require('../../constants/constants')
 
 const MAX_PAYLOAD_LENGTH = Math.pow(2, 24)
 const HEADER_LENGTH = 6
 
-function getBinaryMsg (topic, action, data) {
-  const topicByte = typeof topic === 'number' ? topic : MC.TOPIC_TEXT_TO_BYTE[topic]
-  const actionByte = typeof action === 'number' ? action : MC.ACTIONS.CLUSTER_TEXT_TO_BYTE[action]
+function preprocessMsg (topic, action, data) {
+  const topicByte = MC.TOPIC_TEXT_TO_BYTE[topic]
+  const topicKey = MC.TOPIC_TEXT_TO_KEY[topic]
+  let processedAction = action
+  let processedData = data
+  if (action === C.ACTIONS.ACK) {
+    processedAction = `${data[0]}_A`
+    processedData = data.slice(1)
+  }
+  const actionByte = MC.ACTIONS_TEXT_TO_BYTE[topicKey][processedAction]
+
+  return { topicByte, actionByte, data: processedData }
+}
+
+function postprocessMsg (message) {
+  const topic = MC.TOPIC_BYTE_TO_TEXT[message.topicByte]
+  const topicKey = MC.TOPIC_BYTE_TO_KEY[message.topicByte]
+  let action = MC.ACTIONS_BYTE_TO_TEXT[topicKey][message.actionByte]
+  const data = message.body
+  if (action.endsWith('_A')) {
+    data.unshift(action.slice(0, -2))
+    action = C.ACTIONS.ACK
+  }
+  return { topic, action, data }
+}
+
+function getBinaryMsg (topicByte, actionByte, data) {
   const optionByte = 0x00
   let payload
   let payloadLength = 0
@@ -28,7 +53,7 @@ function getBinaryMsg (topic, action, data) {
 
 function tryParseBinaryMsg (buff, onBodyParseError) {
   if (!(buff instanceof Buffer)) {
-    throw new Error('tried to parse non-buffer' + typeof buff)
+    throw new Error(`tried to parse ${typeof buff}`)
   }
   // parse header
   if (buff.length < HEADER_LENGTH) {
@@ -61,4 +86,4 @@ function tryParseBinaryMsg (buff, onBodyParseError) {
   return { message, bytesConsumed: messageLength }
 }
 
-module.exports = { getBinaryMsg, tryParseBinaryMsg }
+module.exports = { preprocessMsg, postprocessMsg, getBinaryMsg, tryParseBinaryMsg }
