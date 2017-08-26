@@ -205,7 +205,7 @@ describe('JIF Handler', () => {
     })
 
     describe('records', () => {
-      it('should handle a record write without path', () => {
+      it('should handle a record write (object type) without path', () => {
         const jif = {
           topic: 'record',
           action: 'write',
@@ -221,6 +221,25 @@ describe('JIF Handler', () => {
         expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
         expect(message.data).to.deep.equal(
           ['car/bmw', -1, '{"tyres":2,"wheels":4}', '{"writeSuccess":true}']
+        )
+      })
+
+      it('should handle a record write (array type) without path', () => {
+        const jif = {
+          topic: 'record',
+          action: 'write',
+          recordName: 'car/bmw',
+          data: [{ model: 'M6', hp: 560 }, { model: 'X6', hp: 306 }]
+        }
+        const result = jifHandler.fromJIF(jif)
+        const message = result.message
+
+        expect(result.success).to.be.true
+        expect(message).to.be.an('object')
+        expect(message.topic).to.equal(C.TOPIC.RECORD)
+        expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
+        expect(message.data).to.deep.equal(
+          ['car/bmw', -1, '[{"model":"M6","hp":560},{"model":"X6","hp":306}]', '{"writeSuccess":true}']
         )
       })
 
