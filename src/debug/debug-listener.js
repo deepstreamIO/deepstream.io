@@ -19,7 +19,7 @@ var listenRecord = function(pattern, callback){
             }
             this._data = null;
         }
-    },100);
+    },1);
 }
 
 /**
