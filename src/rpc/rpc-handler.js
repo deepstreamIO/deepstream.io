@@ -16,6 +16,11 @@ module.exports = class RpcHandler {
     this._options = options
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
+    this._options.message.subscribe(
+      C.TOPIC.PRIVATE + C.TOPIC.RPC,
+      this._onPrivateMessage.bind(this)
+    )
+
     this._rpcs = new Map()
   }
 
@@ -29,15 +34,11 @@ module.exports = class RpcHandler {
   * @public
   * @returns {void}
   */
-  handle (socketWrapper, message, originServer) {
+  handle (socketWrapper, message) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._registerProvider(socketWrapper, message)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._unregisterProvider(socketWrapper, message)
-    } else if (message.action === C.ACTIONS.REQUEST
-      && socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
-      const proxy = new RpcProxy(this._options, originServer)
-      this._makeRpc(proxy, message, C.SOURCE_MESSAGE_CONNECTOR)
     } else if (message.action === C.ACTIONS.REQUEST) {
       this._makeRpc(socketWrapper, message)
     } else if (
@@ -53,15 +54,11 @@ module.exports = class RpcHandler {
       if (rpcData) {
         rpcData.rpc.handle(message)
       } else {
-        if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-          socketWrapper.sendError(
-            C.TOPIC.RPC,
-            C.EVENT.INVALID_RPC_CORRELATION_ID,
-            `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
-          )
-        } else {
-
-        }
+        socketWrapper.sendError(
+          C.TOPIC.RPC,
+          C.EVENT.INVALID_RPC_CORRELATION_ID,
+          `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
+        )
       }
     } else {
       /*
@@ -253,9 +250,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _onPrivateMessage (msg, originServerName) {
-    if (msg.topic !== C.TOPIC.RPC) {
-      return
-    }
+    msg.topic = C.TOPIC.RPC
 
     if (!msg.data || msg.data.length < 2) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, msg.data)
