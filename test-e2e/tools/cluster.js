@@ -2,9 +2,9 @@
 
 const DeepstreamServer = require('../../src/deepstream.io')
 
-const util = require('util')
 const EventEmitter = require('events').EventEmitter
 const Logger = require('./test-logger')
+const utils = require('../../src/utils/utils')
 
 let ports
 
@@ -30,10 +30,14 @@ module.exports = class Cluster extends EventEmitter {
     return `localhost:${ports[serverId] + 200}/auth`
   }
 
-  updatePermissions (type) {
-    for (const serverName in this.servers) {
-      this.servers[serverName]._options.permissionHandler.loadConfig(`./test-e2e/config/permissions-${type}.json`)
+  updatePermissions (type, done) {
+    if (!(done instanceof Function)) {
+      console.trace(done)
     }
+    const permissionHandlers = Object.keys(this.servers)
+      .map(serverName => this.servers[serverName]._options.permissionHandler)
+    permissionHandlers.forEach(ph => ph.loadConfig(`./test-e2e/config/permissions-${type}.json`))
+    utils.combineEvents(permissionHandlers, 'config-loaded', done)
   }
 
   stopServer (serverNumber, done) {
