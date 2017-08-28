@@ -6,13 +6,19 @@ const HEADER_LENGTH = 6
 
 function preprocessMsg (topic, action, data) {
   const topicByte = MC.TOPIC_TEXT_TO_BYTE[topic]
-  const topicKey = MC.TOPIC_TEXT_TO_KEY[topic]
   let processedAction = action
   let processedData = data
-  if (action === C.ACTIONS.ACK) {
+  if (
+    action === C.ACTIONS.ACK &&
+    topicByte !== MC.TOPIC_BYTES.EVENT_LISTENING &&
+    topicByte !== MC.TOPIC_BYTES.RECORD_LISTENING &&
+    topicByte !== MC.TOPIC_BYTES.CONNECTION &&
+    topicByte !== MC.TOPIC_BYTES.AUTH
+  ) {
     processedAction = `${data[0]}_A`
     processedData = data.slice(1)
   }
+  const topicKey = MC.TOPIC_TEXT_TO_KEY[topic]
   const actionByte = MC.ACTIONS_TEXT_TO_BYTE[topicKey][processedAction]
 
   return { topicByte, actionByte, data: processedData }
