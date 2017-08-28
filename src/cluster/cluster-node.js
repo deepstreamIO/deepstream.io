@@ -355,3 +355,5 @@ class ClusterNode {
     this._connections.forEach(connection => connection.close())
   }
 }
+
+module.exports = ClusterNode
