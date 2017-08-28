@@ -88,17 +88,31 @@ class ClusterNode {
     return connection
   }
 
+  /*
+   * Prepare and send a message corresponding to the state registry
+   */
+  _sendStateMessage (connection, registryTopic, message) {
+    const msg = message.data !== undefined ? [registryTopic, message.data] : [registryTopic]
+    connection.send(C.TOPIC.STATE_REGISTRY, message.action, msg)
+  }
+
+  /*
+   * Send a state update to a named peer
+   */
   sendStateDirect (serverName, registryTopic, message) {
     const connection = this._getKnownPeer(serverName)
     if (connection) {
-      connection.send(C.TOPIC.STATE_REGISTRY, message.action, [registryTopic, message.data])
+      this._sendStateMessage(connection, registryTopic, message)
     }
   }
 
+  /*
+   * Broadcast a state update to all peers
+   */
   sendState (registryTopic, message) {
     if (registryTopic === GLOBAL_STATES) {
       for (const connection of this._knownPeers.values()) {
-        connection.send(C.TOPIC.STATE_REGISTRY, message.action, [registryTopic, message.data])
+        this._sendStateMessage(connection, registryTopic, message)
       }
       return
     }
@@ -107,7 +121,7 @@ class ClusterNode {
       if (serverNames[i] !== this._serverName) {
         const connection = this._getKnownPeer(serverNames[i])
         if (connection) {
-          connection.send(C.TOPIC.STATE_REGISTRY, message.action, [registryTopic, message.data])
+          this._sendStateMessage(connection, registryTopic, message)
         }
       }
     }

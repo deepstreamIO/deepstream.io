@@ -72,7 +72,7 @@ class OutgoingConnection extends ClusterConnection {
 
   _sendPing () {
     if (this.isAlive()) {
-      this._sendCluster(MC.ACTIONS.CLUSTER.PING.BYTE)
+      this._sendCluster(MC.ACTIONS_BYTES.CLUSTER.PING)
       this._pongTimeoutId = setTimeout(this._onPongTimeoutBound, this._config.pingTimeout)
     }
   }

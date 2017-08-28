@@ -21,7 +21,7 @@ class IncomingConnection extends ClusterConnection {
   _handlePing () {
     clearTimeout(this._pingTimeoutId)
     if (this.isAlive()) {
-      this._sendCluster(MC.ACTIONS.CLUSTER.PONG.BYTE)
+      this._sendCluster(MC.ACTIONS_BYTES.CLUSTER.PONG)
       this._pingTimeoutId = setTimeout(
         this._onPingTimeoutBound,
         this._config.pingInterval + this._config.pingTimeout

@@ -168,6 +168,7 @@ exports.TOPIC_BYTE_TO_TEXT = convertMap(TOPIC, 'BYTE', 'TEXT')
 exports.TOPIC_TEXT_TO_BYTE = convertMap(TOPIC, 'TEXT', 'BYTE')
 exports.TOPIC_TEXT_TO_KEY = utils.reverseMap(specifyMap(TOPIC, 'TEXT'))
 exports.TOPIC_BYTE_TO_KEY = utils.reverseMap(specifyMap(TOPIC, 'BYTE'))
+exports.TOPIC_BYTES = specifyMap(TOPIC, 'BYTE')
 
 exports.ACTIONS = ACTIONS
 exports.ACTIONS_BYTE_TO_TEXT = {}

@@ -53,31 +53,6 @@ class ClusterConnection extends EventEmitter {
       || this._state === this.STATE.STABLE
   }
 
-  _sendCluster (action, message) {
-    if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
-      const actionStr = MC.ACTIONS_BYTE_TO_KEY.CLUSTER[action]
-      const messageStr = message && JSON.stringify(message).slice(0, 30)
-      const debugMsg = `->(${this.remoteName}) ${actionStr}: ${messageStr}...)`
-      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
-    }
-    this._sendBytes(MC.TOPIC.CLUSTER.BYTE, action, message)
-  }
-
-  _send (topic, action, message) {
-    const processedMsg = messageHandler.preprocessMsg(topic, action, message)
-    this._socket.write(
-      messageHandler.getBinaryMsg(
-        processedMsg.topicByte,
-        processedMsg.actionByte,
-        processedMsg.data
-      )
-    )
-  }
-
-  _sendBytes (topicByte, actionByte, data) {
-    this._socket.write(messageHandler.getBinaryMsg(topicByte, actionByte, data))
-  }
-
   setRemoteDetails (name, electionNumber, url) {
     this.remoteName = name
     this.electionNumber = electionNumber
@@ -127,7 +102,28 @@ class ClusterConnection extends EventEmitter {
   }
 
   send (topic, action, message) {
-    this._send(topic, action, message)
+    const processedMsg = messageHandler.preprocessMsg(topic, action, message)
+    this._socket.write(
+      messageHandler.getBinaryMsg(
+        processedMsg.topicByte,
+        processedMsg.actionByte,
+        processedMsg.data
+      )
+    )
+  }
+
+  _sendCluster (action, message) {
+    if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
+      const actionStr = MC.ACTIONS_BYTE_TO_KEY.CLUSTER[action]
+      const messageStr = message && JSON.stringify(message).slice(0, 30)
+      const debugMsg = `->(${this.remoteName}) ${actionStr}: ${messageStr}...)`
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
+    }
+    this._sendBytes(MC.TOPIC_BYTES.CLUSTER, action, message)
+  }
+
+  _sendBytes (topicByte, actionByte, data) {
+    this._socket.write(messageHandler.getBinaryMsg(topicByte, actionByte, data))
   }
 
   _stateTransition (nextState) {
@@ -172,11 +168,12 @@ class ClusterConnection extends EventEmitter {
 
   _onMessage (message) {
     const topic = message.topicByte
-    if (topic === MC.TOPIC.CLUSTER.BYTE) {
+    if (topic === MC.TOPIC_BYTES.CLUSTER) {
       this._handleCluster(message)
       return
     }
-    this._handleOtherTopics(message)
+    const processedMsg = messageHandler.postprocessMsg(message)
+    this.emit('message', processedMsg.topic, processedMsg)
   }
 
   _handleCluster (message) {
@@ -219,11 +216,6 @@ class ClusterConnection extends EventEmitter {
     } else {
       this.emit('error', `unknown message action ${MC.ACTIONS_BYTE_TO_TEXT.CLUSTER[action]}(0x${action.toString(16)})`)
     }
-  }
-
-  _handleOtherTopics (message) {
-    const processedMsg = messageHandler.postprocessMsg(message)
-    this.emit('message', processedMsg.topic, processedMsg)
   }
 
   _onKnown () {
