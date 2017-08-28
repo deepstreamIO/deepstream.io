@@ -1,3 +1,40 @@
+/**
+ * Functions for handling (de)serialization of the deepstream binary realtime protocol.
+ *
+ * In brief, a message is a variable length binary blob with the following structure:
+ *
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +---------------+---------------+-----+-+-+-+-+-+---------------+
+ * |    Message    |    Message    |Payl.|C|R|R|R|R|               |
+ * |     Topic     |    Action     |Enc- |O|S|S|S|S|    Payload    |
+ * |      (8)      |     (8)       |oding|N|V|V|V|V|   Length (24) |
+ * |               |               |(3)  |T|0|1|2|3|               |
+ * +---------------+---------------+-----+-+-+-+-+-+---------------+
+ * | Payload Length (continued)... |      Payload Data             |
+ * +-------------------------------+ - - - - - - - - - - - - - - - +
+ * :                     Payload Data continued ...                :
+ * + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+ * |                     Payload Data continued ...                |
+ * +---------------------------------------------------------------+
+ *
+ * The first 6 bytes of the message are the header, and the rest of the message is the payload.
+ *
+ * Payload Encoding (3 bits): A 3-bit enumeration of encoding of the payload
+ *                00      - utf-8/json
+ *                01      - utf-8/json + gzip
+ *                02      - msg-pack
+ *                03...07 - unassigned
+ * CONT (1 bit): The continuation bit. If this is set, the following payload of the following
+ *                message must be appended to this one. If this is not set, parsing may finish
+ *                after the payload is read.
+ * RSV{0..3} (1 bit): Reserved for extension.
+ * Payload Length (24 bits): The total length of the payload in bytes.
+ *                If the payload is longer than 16 MB, it must be split into chunks of
+ *                less than 2^24 bytes with identical topic and action, setting the CONT bit
+ *                in all but the final chunk.
+ *
+ */
 const MC = require('./message-constants')
 const C = require('../../constants/constants')
 
