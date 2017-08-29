@@ -35,12 +35,39 @@
  *                in all but the final chunk.
  *
  */
+
+'use strict'
+
 const MC = require('./message-constants')
 const C = require('../../constants/constants')
 
-const MAX_PAYLOAD_LENGTH = Math.pow(2, 24)
+const MAX_PAYLOAD_LENGTH = Math.pow(2, 24) - 1
 const HEADER_LENGTH = 6
 
+/*
+ * Convert deepstream topic and action constants into their corresponding binary encoding
+ * The binary action format is encoded based on the topic, so ensure the topic and action are
+ * defined properly in the constants file.
+ * Message acknowledgements where the action is normally embedded in the data become unique
+ * actions.
+ *
+ * e.g. preprocessMsg('R', 'A', ['S', 'foobar'])
+ *    =>>>
+ *  {
+ *    topicByte: MC.TOPIC_BYTES.RECORD,
+ *    actionByte: MC.ACTION_BYTES.RECORD.SUBSCRIBE_ACK,
+ *    data: ['foobar']
+ *  }
+ * @param topic  {String} deepstream topic e.g. 'R'
+ * @param action {String} deepstream action e.g. 'US'
+ * @param data   {Object|Array} data
+ *
+ * @returns {
+ *   topicByte  {Integer}
+ *   actionByte {Integer}
+ *   data       {Object}
+ * }
+ */
 function preprocessMsg (topic, action, data) {
   const topicByte = MC.TOPIC_TEXT_TO_BYTE[topic]
   let processedAction = action
@@ -61,6 +88,21 @@ function preprocessMsg (topic, action, data) {
   return { topicByte, actionByte, data: processedData }
 }
 
+/*
+ * Convert deepstream binary enums back to the standard deepstream internal message format
+ *
+ * @param message {
+ *  topicByte  {Integer}
+ *  actionByte {Integer}
+ *  body       {Object}
+ * }
+ *
+ * @returns {
+ *   topic  {String}
+ *   action {String}
+ *   data   {Object}
+ * }
+ */
 function postprocessMsg (message) {
   const topic = MC.TOPIC_BYTE_TO_TEXT[message.topicByte]
   const topicKey = MC.TOPIC_BYTE_TO_KEY[message.topicByte]
@@ -73,11 +115,22 @@ function postprocessMsg (message) {
   return { topic, action, data }
 }
 
+/*
+ * Serialize a binary message
+ * If a payload is provided it will be serialized as JSON
+ *
+ * @returns {Buffer} the serialized data buffer
+ *
+ * @throws when length of serialized data is greater than MAX_PAYLOAD_LENGTH
+ */
 function getBinaryMsg (topicByte, actionByte, data) {
   const optionByte = 0x00
   let payload
   let payloadLength = 0
-  if (data) {
+  if (data instanceof Buffer) {
+    payload = data
+    payloadLength = data.length
+  } else if (data !== undefined) {
     payload = Buffer.from(JSON.stringify(data))
     payloadLength = payload.length
   }
