@@ -9,20 +9,15 @@ TOPIC.CONNECTION       = { TEXT: 'C'        , BYTE: 0x00 }
 TOPIC.AUTH             = { TEXT: 'A'        , BYTE: 0x01 }
 TOPIC.ERROR            = { TEXT: 'X'        , BYTE: 0x02 }
 TOPIC.EVENT            = { TEXT: 'E'        , BYTE: 0x03 }
-TOPIC.RECORD           = { TEXT: 'R'        , BYTE: 0x04 }
-TOPIC.RPC              = { TEXT: 'P'        , BYTE: 0x05 }
-TOPIC.PRESENCE         = { TEXT: 'U'        , BYTE: 0x06 }
-TOPIC.CLUSTER          = { TEXT: 'CL'       , BYTE: 0x07 }
-TOPIC.STATE_REGISTRY   = { TEXT: 'STATE_REG', BYTE: 0x08 }
-TOPIC.EVENT_LISTENING  = { TEXT: 'EL'       , BYTE: 0x0A }
-TOPIC.RECORD_LISTENING = { TEXT: 'RL'       , BYTE: 0x0B }
-TOPIC.RPC_PRIVATE      = { TEXT: 'PRIVATE/P', BYTE: 0x0C }
-
-// TOPIC.PUBLISHED_SUBSCRIPTIONS = { TEXT: 'PS' , BYTE: 0x0A }
-// TOPIC.LISTEN_PATTERNS         = { TEXT: 'LIP', BYTE: 0x0B }
-// TOPIC.SUBSCRIPTIONS           = { TEXT: 'SUB', BYTE: 0x0C }
-// TOPIC.ONLINE_USERS            = { TEXT: 'O'  , BYTE: 0x07 }
-// TOPIC.LISTEN                  = { TEXT: 'LI' , BYTE: 0x0C }
+TOPIC.EVENT_LISTENING  = { TEXT: 'EL'       , BYTE: 0x04 }
+TOPIC.RECORD           = { TEXT: 'R'        , BYTE: 0x05 }
+TOPIC.RECORD_LISTENING = { TEXT: 'RL'       , BYTE: 0x06 }
+TOPIC.RPC              = { TEXT: 'P'        , BYTE: 0x07 }
+TOPIC.RPC_PRIVATE      = { TEXT: 'PRIVATE/P', BYTE: 0x08 }
+TOPIC.PRESENCE         = { TEXT: 'U'        , BYTE: 0x09 }
+TOPIC.CLUSTER          = { TEXT: 'CL'       , BYTE: 0x0A }
+TOPIC.STATE_REGISTRY   = { TEXT: 'STATE_REG', BYTE: 0x0B }
+TOPIC.LOCK_REGISTRY    = { TEXT: 'LOCK_REG' , BYTE: 0x0C }
 
 const ACTIONS = {}
 
@@ -145,18 +140,15 @@ ACTIONS.CLUSTER.REJECT_DUPLICATE        = { TEXT: 'REJD' , BYTE: 0x07 }
 ACTIONS.CLUSTER.CLOSE                   = { TEXT: 'CLOSE', BYTE: 0x08 }
 
 ACTIONS.STATE_REGISTRY                                      = {}
-ACTIONS.STATE_REGISTRY.LOCK_REQUEST                         = { TEXT: 'LRQ'                                 , BYTE: 0x00 }
-ACTIONS.STATE_REGISTRY.LOCK_RESPONSE                        = { TEXT: 'LRP'                                 , BYTE: 0x01 }
-ACTIONS.STATE_REGISTRY.LOCK_RELEASE                         = { TEXT: 'LRL'                                 , BYTE: 0x02 }
-ACTIONS.STATE_REGISTRY.PUBLISHED_SUBSCRIPTIONS              = { TEXT: 'PS'                                  , BYTE: 0x04 }
-ACTIONS.STATE_REGISTRY.LISTEN_PATTERNS                      = { TEXT: 'LIP'                                 , BYTE: 0x05 }
-ACTIONS.STATE_REGISTRY.LEADER_PRIVATE                       = { TEXT: 'LP_'                                 , BYTE: 0x06 }
-ACTIONS.STATE_REGISTRY.SUBSCRIPTIONS                        = { TEXT: 'SUB'                                 , BYTE: 0x07 }
-ACTIONS.STATE_REGISTRY.ONLINE_USERS                         = { TEXT: 'O'                                   , BYTE: 0x08 }
 ACTIONS.STATE_REGISTRY.DISTRIBUTED_STATE_ADD                = { TEXT: 'DISTRIBUTED_STATE_ADD'               , BYTE: 0x09 }
 ACTIONS.STATE_REGISTRY.DISTRIBUTED_STATE_REMOVE             = { TEXT: 'DISTRIBUTED_STATE_REMOVE'            , BYTE: 0x0A }
 ACTIONS.STATE_REGISTRY.DISTRIBUTED_STATE_REQUEST_FULL_STATE = { TEXT: 'DISTRIBUTED_STATE_REQUEST_FULL_STATE', BYTE: 0x0B }
 ACTIONS.STATE_REGISTRY.DISTRIBUTED_STATE_FULL_STATE         = { TEXT: 'DISTRIBUTED_STATE_FULL_STATE'        , BYTE: 0x0C }
+
+ACTIONS.LOCK_REGISTRY                                      = {}
+ACTIONS.LOCK_REGISTRY.LOCK_REQUEST                         = { TEXT: 'LRQ'                                 , BYTE: 0x00 }
+ACTIONS.LOCK_REGISTRY.LOCK_RESPONSE                        = { TEXT: 'LRP'                                 , BYTE: 0x01 }
+ACTIONS.LOCK_REGISTRY.LOCK_RELEASE                         = { TEXT: 'LRL'                                 , BYTE: 0x02 }
 
 const OPTIONS = {}
 

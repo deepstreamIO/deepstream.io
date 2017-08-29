@@ -37,7 +37,7 @@ module.exports = class LockRegistry {
     this._timeouts = {}
     this._responseEventEmitter = new EventEmitter()
     this._onPrivateMessageFn = this._onPrivateMessage.bind(this)
-    this._cluster.subscribe(C.TOPIC.LEADER_PRIVATE, this._onPrivateMessageFn)
+    this._cluster.subscribe(C.TOPIC.LOCK_REGISTRY, this._onPrivateMessageFn)
   }
 
   /**
@@ -99,8 +99,8 @@ module.exports = class LockRegistry {
 
     this._responseEventEmitter.once(name, callback)
 
-    this._cluster.sendStateDirect(leaderServerName, C.TOPIC.LEADER_PRIVATE, {
-      topic: C.TOPIC.LEADER_PRIVATE,
+    this._cluster.sendDirect(leaderServerName, C.TOPIC.LOCK_REGISTRY, {
+      topic: C.TOPIC.LOCK_REGISTRY,
       action: C.ACTIONS.LOCK_REQUEST,
       data: [{
         name,
@@ -119,8 +119,8 @@ module.exports = class LockRegistry {
   * @returns {void}
   */
   _releaseRemoteLock (name, leaderServerName) {
-    this._cluster.sendStateDirect(leaderServerName, C.TOPIC.LEADER_PRIVATE, {
-      topic:  C.TOPIC.LEADER_PRIVATE,
+    this._cluster.sendDirect(leaderServerName, C.TOPIC.LOCK_REGISTRY, {
+      topic:  C.TOPIC.LOCK_REGISTRY,
       action: C.ACTIONS.LOCK_RELEASE,
       data: [{
         name
@@ -180,7 +180,7 @@ module.exports = class LockRegistry {
   * @returns {void}
   */
   _handleRemoteLockRequest (data, remoteServerName) {
-    this._options.message.sendStateDirect(remoteServerName, C.TOPIC.LEADER_PRIVATE, {
+    this._options.message.sendDirect(remoteServerName, C.TOPIC.LOCK_REGISTRY, {
       topic: data.responseTopic,
       action: C.ACTIONS.LOCK_RESPONSE,
       data: [{

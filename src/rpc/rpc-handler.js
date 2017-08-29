@@ -17,7 +17,7 @@ module.exports = class RpcHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
     this._options.message.subscribe(
-      C.TOPIC.PRIVATE + C.TOPIC.RPC,
+      C.TOPIC.RPC_PRIVATE,
       this._onPrivateMessage.bind(this)
     )
 
