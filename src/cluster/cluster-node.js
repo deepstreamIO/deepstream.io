@@ -82,7 +82,7 @@ class ClusterNode {
   _getKnownPeer (serverName) {
     const connection = this._knownPeers.get(serverName)
     if (!connection) {
-      const error = `tried to find to unknown server ${serverName} among peers of ${this._serverName}`
+      const error = `tried to find unknown server ${serverName} among peers of ${this._serverName}`
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
     }
     return connection
