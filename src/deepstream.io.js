@@ -21,6 +21,7 @@ const ClusterRegistry = require('./cluster/cluster-registry')
 const UniqueRegistry = require('./cluster/cluster-unique-state-provider')
 const C = require('./constants/constants')
 const pkg = require('../package.json')
+const DebugListener = require('./debug/debug-listener')
 
 const EventEmitter = require('events').EventEmitter
 const EOL = require('os').EOL
@@ -97,6 +98,22 @@ Deepstream.constants = C
  * @return {object}         description
  */
 Deepstream.readMessage = readMessage
+
+
+/**
+ * Listen record which you receive from clients.
+ *
+ * @param {String} pattern The pattern to match records which you receive from clients.
+ * @param {Callback} callback callback of parameter recordName and recordData.
+ *
+ * @public
+ * @returns {void}
+ */
+Deepstream.prototype.listenRecord = function (pattern, callback) {
+  DebugListener.listenRecord(pattern, (recordName, recordData) => {
+    callback(recordName, recordData)
+  })
+}
 
 /**
  * Set a deepstream option. For a list of all available options
