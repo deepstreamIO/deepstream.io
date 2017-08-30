@@ -110,7 +110,7 @@ Deepstream.readMessage = readMessage
  * @returns {void}
  */
 Deepstream.prototype.listenRecord = function(pattern, callback){
-  DebugListener.listenRecord(pattern, (recordName, recordData)=>{
+  DebugListener.listenRecord(pattern, function(recordName, recordData){
     callback(recordName, recordData);
   });
 }

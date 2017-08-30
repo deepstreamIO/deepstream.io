@@ -12,7 +12,7 @@ this._data = {};
  * @returns {void}
  */
 var listenRecord = function(pattern, callback){
-    setInterval(()=>{
+    setInterval(function(){
         if (this._data != null){
             if (this._data.message.data[0].match(pattern)){
                 callback(this._data.message.data[0], this._data.data);
