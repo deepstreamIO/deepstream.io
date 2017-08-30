@@ -57,7 +57,7 @@
     "coveralls": "^2.13.1",
     "cucumber": "^3",
     "deepstream.io-cache-redis": "^1.1.0",
-    "deepstream.io-client-js": "^2.2.1",
+    "deepstream.io-client-js": "https://github.com/deepstreamIO/deepstream.io-client-js.git",
     "deepstream.io-msg-redis": "^1.0.5",
     "eslint-config-deepstream": "^2.2.1",
     "istanbul": "^0.4.5",
