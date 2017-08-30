@@ -2,7 +2,6 @@
 
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
-const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 
 const EVERYONE = `U`
 
@@ -25,9 +24,14 @@ module.exports = class PresenceHandler {
 
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
 
-    this._connectedClients = new DistributedStateRegistry(C.TOPIC.ONLINE_USERS, options)
+    this._connectedClients = this._options.message.getStateRegistry(C.TOPIC.ONLINE_USERS, options)
     this._connectedClients.on('add', this._onClientAdded.bind(this))
     this._connectedClients.on('remove', this._onClientRemoved.bind(this))
+
+    this._options.message.subscribe(
+      `${this._options.serverName}/${C.TOPIC.PRESENCE}`,
+      this.handle.bind(this)
+    )
   }
 
   /**
@@ -136,8 +140,13 @@ module.exports = class PresenceHandler {
   */
   _onClientAdded (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: [username] }
-    this._subscriptionRegistry.sendToSubscribers(EVERYONE, message)
-    this._subscriptionRegistry.sendToSubscribers(username, message)
+
+    this._subscriptionRegistry.sendToSubscribers(
+      EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+    )
+    this._subscriptionRegistry.sendToSubscribers(
+      username, message, false, C.SOURCE_MESSAGE_CONNECTOR
+    )
   }
 
   /**
@@ -151,17 +160,23 @@ module.exports = class PresenceHandler {
   */
   _onClientRemoved (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: [username] }
-    this._subscriptionRegistry.sendToSubscribers(EVERYONE, message)
-    this._subscriptionRegistry.sendToSubscribers(username, message)
+    this._subscriptionRegistry.sendToSubscribers(
+      EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+    )
+    this._subscriptionRegistry.sendToSubscribers(
+      username, message, false, C.SOURCE_MESSAGE_CONNECTOR
+    )
   }
 
   _parseUserNames (data, socketWrapper) {
     // Returns all users for backwards compatability
     if (
-      data.length === 1 && ( 
+      !data ||
+      data.length === 0 ||
+      (data.length === 1 && ( 
       data[0] === C.ACTIONS.QUERY || 
       data[0] === C.ACTIONS.SUBSCRIBE ||
-      data[0] === C.TOPIC.PRESENCE
+      data[0] === C.TOPIC.PRESENCE)
     )) {
       return [ EVERYONE ]
     }

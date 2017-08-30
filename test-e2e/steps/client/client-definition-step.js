@@ -11,4 +11,3 @@ Before((/* scenario*/) => {
 After((scenario, done) => {
   world.endTest(done)
 })
-

@@ -15,6 +15,8 @@ module.exports = function (program) {
     .option('--port <port>', 'port for the HTTP/websocket server')
     .option('--http-host <host>', 'host for the HTTP server')
     .option('--http-port <port>', 'port for the HTTP server')
+    .option('--cluster-host <host>', 'host for listening to TCP connections from deepstream cluster')
+    .option('--cluster-port <port>', 'port for listening to TCP connections from deepstream cluster')
     .option('--disable-auth', 'Force deepstream to use "none" auth type')
     .option('--disable-permissions', 'Force deepstream to use "none" permissions')
     .option('--log-level <level>', 'Log messages with this level and above')

@@ -4,8 +4,8 @@
 const messageParser = require('../../src/message/message-parser')
 
 describe('message parser processes raw messages correctly', () => {
-  let x = String.fromCharCode(30), // ASCII Record Seperator 1E
-    y = String.fromCharCode(31) // ASCII Unit Separator 1F
+  const x = String.fromCharCode(30) // ASCII Record Seperator 1E
+  const y = String.fromCharCode(31) // ASCII Unit Separator 1F
 
   it('parses record messages correctly', () => {
     expect(messageParser.parse(`record${y}C${y}user/someId`)).toEqual([{

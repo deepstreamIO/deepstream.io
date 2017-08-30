@@ -1,31 +1,21 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const proxyquire = require('proxyquire').noCallThru().noPreserveCache()
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
-const SubscriptionRegistry = require('../../src/utils/subscription-registry')
-const PresenceHandler = proxyquire('../../src/presence/presence-handler', {
-  '../utils/subscription-registry': SubscriptionRegistry
-})
 const C = require('../../src/constants/constants')
-const _msg = require('../test-helper/test-helper').msg
 const SocketMock = require('../mocks/socket-mock')
-const messageConnectorMock = new (require('../mocks/message-connector-mock'))()
-const clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
-const LoggerMock = require('../mocks/logger-mock')
-const options = {
-  clusterRegistry: clusterRegistryMock,
-  serverName: 'server-name-a',
-  stateReconciliationTimeout: 10,
-  messageConnector: messageConnectorMock,
-  logger: new LoggerMock()
-}
+const testHelper = require('../test-helper/test-helper')
+
+const _msg = testHelper.msg
+const PresenceHandler = require('../../src/presence/presence-handler')
+
 const queryMessage = {
   topic: C.TOPIC.PRESENCE,
   action: C.ACTIONS.QUERY,
-  data: null
+  data: []
 }
-const presenceHandler = new PresenceHandler(options)
+
+const presenceHandler = new PresenceHandler(testHelper.getDeepstreamOptions())
 
 const userOne = new SocketWrapper(new SocketMock(), {}); userOne.user = 'Homer'
 const userTwo = new SocketWrapper(new SocketMock(), {}); userTwo.user = 'Marge'

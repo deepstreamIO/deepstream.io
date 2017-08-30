@@ -1,0 +1,15 @@
+#!/usr/bin/env node
+'use strict'
+
+const pgk = require('../package.json')
+const clusterSoak = require('./cluster-soak.js')
+
+const Command = require('commander').Command
+const program = new Command('cluster')
+program
+	.usage('[command]')
+	.version(pgk.version)
+
+clusterSoak(program)
+
+program.parse(process.argv)

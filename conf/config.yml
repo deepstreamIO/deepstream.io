@@ -102,20 +102,12 @@ logger:
 
 # Plugin Configuration
 plugins:
-
-  monitoring:
-    name: monitoring
-    options:
-      reportInterval: 200
-      permissionLogLimit: 3
-      technicalErrorLogLimit: 3
-
-#   message:
-#     name: redis
+#   monitoring:
+#     name: 'dsx-monitoring'
 #     options:
-#       host: ${REDIS_HOST}
-#       port: 6379
-
+#       reportInterval: 200
+#       permissionLogLimit: 3
+#       technicalErrorLogLimit: 3
 #   cache:
 #     name: redis
 #     options:
@@ -127,6 +119,21 @@ plugins:
 #     options:
 #       host: localhost
 #       port: 28015
+
+# Peer-to-peer clustering configuration
+messageConnector:
+  enabled: true
+  # host/port for listening to connections within the cluster
+  host: localhost
+  port: 9089
+  # a (possibly empty) list of existing node host:port pairs to try connecting to
+  seedNodes: []
+  #  - localhost:9080
+  #  - localhost:9081
+  maxReconnectAttempts: 5
+  reconnectInterval: 1500
+  pingInterval: 1000
+  pingTimeout: 500
 
 # Storage options
 # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db

@@ -1,4 +1,4 @@
-/* global fail, jasmine, spyOn, describe, xdescribe, it, expect, beforeEach, afterEach */
+/* global fail, jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
@@ -9,7 +9,7 @@ const recordHandler = {
   runWhenRecordStable: (r, c) => { c(r) }
 }
 
-xdescribe('permission handler loading', () => {
+describe('permission handler loading', () => {
   describe('permission handler is initialised correctly', () => {
     it('loads a valid config file upon initialisation', (next) => {
       const permissionHandler = new ConfigPermissionHandler({

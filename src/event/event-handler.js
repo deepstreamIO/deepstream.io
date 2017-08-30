@@ -17,7 +17,6 @@ const EventHandler = function (options) {
   this._listenerRegistry = new ListenerRegistry(C.TOPIC.EVENT, options, this._subscriptionRegistry)
   this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
   this._logger = options.logger
-  this._message = options.messageConnector
 }
 
 /**
@@ -98,10 +97,6 @@ EventHandler.prototype._triggerEvent = function (socket, message) {
   }
 
   this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.TRIGGER_EVENT, message.raw)
-
-  if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
-    this._message.publish(C.TOPIC.EVENT, message)
-  }
 
   const eventMessage = { topic: C.TOPIC.EVENT, action: C.ACTIONS.EVENT, data: message.data }
   this._subscriptionRegistry.sendToSubscribers(message.data[0], eventMessage, false, socket)
