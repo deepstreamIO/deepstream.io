@@ -156,6 +156,16 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   }
 
   /**
+  * Returns all currently registered entries as a map
+  *
+  * @public
+  * @returns {Array} entries
+  */
+  getAllMap () {
+    return this._data
+  }
+
+  /**
   * Removes an entry for a given serverName. If the serverName
   * was the last node that held the entry, the entire entry will
   * be removed and a `remove` event will be emitted

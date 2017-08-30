@@ -12,7 +12,7 @@ const PresenceHandler = require('../../src/presence/presence-handler')
 const queryMessage = {
   topic: C.TOPIC.PRESENCE,
   action: C.ACTIONS.QUERY,
-  data: null
+  data: []
 }
 
 const presenceHandler = new PresenceHandler(testHelper.getDeepstreamOptions())

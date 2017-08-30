@@ -3,6 +3,8 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 
+const EVERYONE = `U`
+
 /**
  * This class handles incoming and outgoing messages in relation
  * to deepstream presence. It provides a way to inform clients
@@ -44,12 +46,17 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   handle (socketWrapper, message) {
+    const users = this._parseUserNames(message.data, socketWrapper)
     if (message.action === C.ACTIONS.SUBSCRIBE) {
-      this._subscriptionRegistry.subscribe(C.TOPIC.PRESENCE, socketWrapper)
+      for (let i = 0; i < users.length; i++) {
+        this._subscriptionRegistry.subscribe(users[i], socketWrapper)
+      }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._subscriptionRegistry.unsubscribe(C.TOPIC.PRESENCE, socketWrapper)
+      for (let i = 0; i < users.length; i++) {
+        this._subscriptionRegistry.unsubscribe(users[i], socketWrapper)
+      }  
     } else if (message.action === C.ACTIONS.QUERY) {
-      this._handleQuery(socketWrapper)
+      this._handleQuery(users, message.data[0], socketWrapper)
     } else {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
@@ -73,8 +80,7 @@ module.exports = class PresenceHandler {
       this._localClients.set(socketWrapper.user, 1)
       this._connectedClients.add(socketWrapper.user)
     } else {
-      currentCount++
-      this._localClients.set(socketWrapper.user, currentCount)
+      this._localClients.set(socketWrapper.user, ++currentCount)
     }
   }
 
@@ -92,8 +98,7 @@ module.exports = class PresenceHandler {
       this._localClients.delete(socketWrapper.user)
       this._connectedClients.remove(socketWrapper.user)
     } else {
-      currentCount--
-      this._localClients.set(socketWrapper.user, currentCount)
+      this._localClients.set(socketWrapper.user, --currentCount)
     }
   }
 
@@ -106,13 +111,22 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleQuery (socketWrapper) {
-    const clients = this._connectedClients.getAll()
-    const index = clients.indexOf(socketWrapper.user)
-    if (index !== -1) {
-      clients.splice(index, 1)
+  _handleQuery (users, correlationId, socketWrapper) {
+    if (users[0] === EVERYONE) {
+      const clients = this._connectedClients.getAll()
+      const index = clients.indexOf(socketWrapper.user)
+      if (index !== -1) {
+        clients.splice(index, 1)
+      }
+      socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients)
+    } else {
+      const result = {}
+      const clients = this._connectedClients.getAllMap()
+      for (let i = 0; i < users.length; i++) {
+        result[users[i]] = !!clients[users[i]]
+      }
+      socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, [correlationId, result])
     }
-    socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients)
   }
 
   /**
@@ -126,8 +140,12 @@ module.exports = class PresenceHandler {
   */
   _onClientAdded (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: [username] }
+
     this._subscriptionRegistry.sendToSubscribers(
-      C.TOPIC.PRESENCE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+      EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+    )
+    this._subscriptionRegistry.sendToSubscribers(
+      username, message, false, C.SOURCE_MESSAGE_CONNECTOR
     )
   }
 
@@ -143,7 +161,34 @@ module.exports = class PresenceHandler {
   _onClientRemoved (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: [username] }
     this._subscriptionRegistry.sendToSubscribers(
-      C.TOPIC.PRESENCE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+      EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
     )
+    this._subscriptionRegistry.sendToSubscribers(
+      username, message, false, C.SOURCE_MESSAGE_CONNECTOR
+    )
+  }
+
+  _parseUserNames (data, socketWrapper) {
+    // Returns all users for backwards compatability
+    if (
+      !data ||
+      data.length === 0 ||
+      (data.length === 1 && ( 
+      data[0] === C.ACTIONS.QUERY || 
+      data[0] === C.ACTIONS.SUBSCRIBE ||
+      data[0] === C.TOPIC.PRESENCE)
+    )) {
+      return [ EVERYONE ]
+    }
+    try {
+      return JSON.parse(data[1])
+    } catch (e) {
+      socketWrapper.sendError(
+        C.TOPIC.EVENT, 
+        C.EVENT.INVALID_PRESENCE_USERS, 
+        `users are required to be a json array of usernames`
+      )
+      return null
+    }
   }
 }
