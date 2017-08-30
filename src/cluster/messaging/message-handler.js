@@ -29,7 +29,7 @@
  *                message must be appended to this one. If this is not set, parsing may finish
  *                after the payload is read.
  * RSV{0..3} (1 bit): Reserved for extension.
- * Payload Length (24 bits): The total length of the payload in bytes.
+ * Payload Length (24 bits, unsigned big-endian): The total length of the payload in bytes.
  *                If the payload is longer than 16 MB, it must be split into chunks of
  *                less than 2^24 bytes with identical topic and action, setting the CONT bit
  *                in all but the final chunk.
@@ -159,32 +159,39 @@ function tryParseBinaryMsg (buff, onBodyParseError) {
   if (buff.length < HEADER_LENGTH) {
     return { bytesConsumed: 0 }
   }
-  const message = {}
-  message.topicByte = buff.readUInt8(0)
-  message.actionByte = buff.readUInt8(1)
-  message.optionByte = buff.readUInt8(2)
-  const payloadLength = message.payloadLength = buff.readUIntBE(3, 3)
+  const topicByte = buff[0]
+  const actionByte = buff[1]
+  const optionByte = buff[2]
+  const payloadLength = buff.readUIntBE(3, 3)
   const messageLength = HEADER_LENGTH + payloadLength
 
   // parse payload
   if (payloadLength === 0) {
-    return { message, bytesConsumed: messageLength }
+    return { message: { topicByte, actionByte, optionByte, payloadLength }, bytesConsumed: messageLength }
   }
   if (payloadLength > MAX_PAYLOAD_LENGTH) {
-    onBodyParseError('payload length limit exceeded', message)
+    onBodyParseError('payload length limit exceeded', { topicByte, actionByte, optionByte, payloadLength })
     return { bytesConsumed: messageLength }
   }
   if (buff.length < messageLength) {
     return { bytesConsumed: 0 }
   }
   const payload = buff.slice(HEADER_LENGTH, messageLength)
-  try {
-    message.body = JSON.parse(payload)
-  } catch (err) {
+  const body = parseJSON(payload)
+  const message = { topicByte, actionByte, optionByte, payloadLength, body }
+  if (body === undefined) {
     onBodyParseError(`malformed json body: '${payload.toString()}'`, message)
     return { bytesConsumed: messageLength }
   }
   return { message, bytesConsumed: messageLength }
+}
+
+function parseJSON (string) {
+  try {
+    return JSON.parse(string)
+  } catch (err) {
+    return undefined
+  }
 }
 
 module.exports = { preprocessMsg, postprocessMsg, getBinaryMsg, tryParseBinaryMsg }

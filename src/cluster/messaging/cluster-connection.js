@@ -103,13 +103,7 @@ class ClusterConnection extends EventEmitter {
 
   send (topic, action, message) {
     const processedMsg = messageHandler.preprocessMsg(topic, action, message)
-    this._socket.write(
-      messageHandler.getBinaryMsg(
-        processedMsg.topicByte,
-        processedMsg.actionByte,
-        processedMsg.data
-      )
-    )
+    this._sendBytes(processedMsg.topicByte, processedMsg.actionByte, processedMsg.data)
   }
 
   _sendCluster (action, message) {
