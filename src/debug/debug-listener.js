@@ -1,6 +1,6 @@
 'use strict'
 
-this._data = {};
+this._data = {}
 
 /**
  * Listen record which you receive from clients.
@@ -11,15 +11,15 @@ this._data = {};
  * @public
  * @returns {void}
  */
-var listenRecord = function(pattern, callback){
-    setInterval(function(){
-        if (this._data != null){
-            if (this._data.message.data[0].match(pattern)){
-                callback(this._data.message.data[0], this._data.data);
+let listenRecord = function (pattern, callback) {
+    setInterval(function() {
+        if (this._data != null) {
+            if (this._data.message.data[0].match(pattern)) {
+                callback(this._data.message.data[0], this._data.data)
             }
-            this._data = null;
+            this._data = null
         }
-    },1);
+    } , 1)
 }
 
 /**
@@ -27,9 +27,9 @@ var listenRecord = function(pattern, callback){
  *
  * @returns {void}
  */
-var enter = function(data){
-    this._data = data;
+let enter = function (data) {
+    this._data = data
 }
 
-exports.listenRecord = listenRecord;
-exports.enter = enter;
+exports.listenRecord = listenRecord
+exports.enter = enter

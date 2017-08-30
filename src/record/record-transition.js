@@ -6,7 +6,7 @@ const recordRequest = require('./record-request')
 const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
-const debugListener = require('../debug/debug-listener');
+const debugListener = require('../debug/debug-listener')
 
 const writeConfig = JSON.stringify({ writeSuccess: true })
 
@@ -180,7 +180,7 @@ RecordTransition.prototype.add = function (socketWrapper, version, message, upse
     this._next()
   }
 
-  debugListener.enter(update);
+  debugListener.enter(update)
 }
 
 /**

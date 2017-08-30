@@ -102,17 +102,17 @@ Deepstream.readMessage = readMessage
 
 /**
  * Listen record which you receive from clients.
- * 
+ *
  * @param {String} pattern The pattern to match records which you receive from clients.
- * @param {Callback} callback callback with parameter recordName for name of record and recordData for data from record.
+ * @param {Callback} callback callback with parameter recordName and recordData for data from record.
  *
  * @public
  * @returns {void}
  */
-Deepstream.prototype.listenRecord = function(pattern, callback){
-  DebugListener.listenRecord(pattern, function(recordName, recordData){
-    callback(recordName, recordData);
-  });
+Deepstream.prototype.listenRecord = function (pattern, callback) {
+  DebugListener.listenRecord(pattern, function (recordName, recordData) {
+    callback(recordName, recordData)
+  })
 }
 
 /**
