@@ -30,7 +30,7 @@ const conf = {
   authPath: '/api/v1/auth',
   postPath: '/api/v1',
   getPath: '/api/v1',
-  port: 8888,
+  port: 8001,
   host: '0.0.0.0',
   allowAllOrigins: true,
   requestTimeout: 30
