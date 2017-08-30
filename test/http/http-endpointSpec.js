@@ -30,7 +30,7 @@ const conf = {
   authPath: '/api/v1/auth',
   postPath: '/api/v1',
   getPath: '/api/v1',
-  port: 8001,
+  port: 8888,
   host: '0.0.0.0',
   allowAllOrigins: true,
   requestTimeout: 30
@@ -56,8 +56,9 @@ describe('http plugin', () => {
   const apiKey = '9x5xfdxa-xxxx-4efe-a342-xxxxxxxxxxxx'
   const postUrl = `http://0.0.0.0:8888/api/v1/${apiKey}`
 
-  beforeAll(() => {
+  beforeAll((done) => {
     httpPlugin = new ConnectionEndpoint(conf)
+    httpPlugin.on('ready', done)
     httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
   })
