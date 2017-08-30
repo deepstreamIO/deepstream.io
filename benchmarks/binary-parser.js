@@ -1,3 +1,5 @@
+'use strict'
+
 const messageHandler = require('../src/cluster/messaging/message-handler')
 const assert = require('assert')
 
@@ -20,11 +22,9 @@ const suite = new Benchmark('parser', () => {
 }, {
   maxTime: 10,
   onComplete () {
-    const { mean, variance, deviation } = this.stats
-    const { count } = this
-    console.log(`The mean run time after ${count} iterations was ${
-      mean * 1000} ± ${deviation * 1000} ms`)
-    console.log(`Variance ${variance.toExponential(9)}`)
+    console.log(`The mean run time after ${this.count} iterations was ${
+      this.stats.mean * 1000} ± ${this.stats.deviation * 1000} ms`)
+    console.log(`Variance ${this.stats.variance.toExponential(9)}`)
   },
   onError (err) {
     console.error('an error occurred', err)

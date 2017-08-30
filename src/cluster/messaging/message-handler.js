@@ -167,10 +167,16 @@ function tryParseBinaryMsg (buff, onBodyParseError) {
 
   // parse payload
   if (payloadLength === 0) {
-    return { message: { topicByte, actionByte, optionByte, payloadLength }, bytesConsumed: messageLength }
+    return {
+      message: { topicByte, actionByte, optionByte, payloadLength },
+      bytesConsumed: messageLength
+    }
   }
   if (payloadLength > MAX_PAYLOAD_LENGTH) {
-    onBodyParseError('payload length limit exceeded', { topicByte, actionByte, optionByte, payloadLength })
+    onBodyParseError(
+      'payload length limit exceeded',
+      { topicByte, actionByte, optionByte, payloadLength }
+    )
     return { bytesConsumed: messageLength }
   }
   if (buff.length < messageLength) {
