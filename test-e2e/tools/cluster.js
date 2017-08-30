@@ -69,22 +69,13 @@ module.exports = class Cluster extends EventEmitter {
       clusterKeepAliveInterval   : 100,
       clusterActiveCheckInterval : 100,
       clusterNodeInactiveTimeout : 200,
-      lockTimeout                : 1000,
+      lockTimeout                : 1500,
+      lockRequestTimeout         : 1500,
       shuffleListenProviders     : false,
       rpcTimeout: 30,
 
       showLogo : false,
       stopped  : this._checkStopped.bind(this),
-
-      plugins : {
-        message : {
-          name    : 'redis',
-          options : {
-            host   : process.env.REDIS_HOST || 'localhost',
-            port   : process.env.REDIS_PORT || 6379
-          }
-        }
-      },
 
       maxAuthAttempts              : 2,
       unauthenticatedClientTimeout : 200,
@@ -117,6 +108,12 @@ module.exports = class Cluster extends EventEmitter {
           }
         }
       },
+
+      messageConnector: {
+        host: 'localhost',
+        port: Number(port) + 400,
+        seedNodes: Object.keys(this.servers).map(p => `localhost:${Number(p) + 400}`),
+      }
     })
     if (done instanceof Function) {
       this.servers[port].on('started', done)

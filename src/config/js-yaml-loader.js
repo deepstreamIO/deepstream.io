@@ -186,6 +186,16 @@ function extendConfig (config, argv) {
   if (argv.httpHost) {
     overrideEndpointOption('host', argv.httpHost, 'http', config)
   }
+  if (argv.clusterPort) {
+    config.messageConnector.port = argv.clusterPort
+  }
+  if (argv.clusterHost) {
+    config.messageConnector.host = argv.clusterHost
+  }
+  if (argv.join || argv.j) {
+    const seedNodes = argv.join || argv.j
+    config.messageConnector.seedNodes = seedNodes.split(',')
+  }
 
   return utils.merge({ plugins: {} }, defaultOptions.get(), config, cliArgs)
 }
@@ -258,6 +268,6 @@ function getDefaultConfigPath () {
 function replaceEnvironmentVariables (fileContent) {
   const environmentVariable = new RegExp(/\${([^}]+)}/g)
   // eslint-disable-next-line
-  fileContent = fileContent.replace(environmentVariable, (a, b) => process.env[b] || b)
+  fileContent = fileContent.replace(environmentVariable, (a, b) => process.env[b] || '')
   return fileContent
 }

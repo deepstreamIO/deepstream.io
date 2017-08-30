@@ -15,10 +15,9 @@ module.exports = class RpcProxy {
   * @return {[type]}
   * @constructor
   */
-  constructor (options, receiverPrivateTopic) {
+  constructor (options, remoteServer) {
     this._options = options
-    this._receiverPrivateTopic = receiverPrivateTopic
-    this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
+    this._remoteServer = remoteServer
   }
 
   /**
@@ -34,11 +33,10 @@ module.exports = class RpcProxy {
   * @returns {void}
   */
   send (message) {
-    message.remotePrivateTopic = this._privateTopic
-    message.topic = this._receiverPrivateTopic
-    message.originalTopic = C.TOPIC.RPC
-    this._options.messageConnector.publish(this._receiverPrivateTopic, message)
-    message.isCompleted = true
+    if (message.action !== C.ACTIONS.ACK && message.action !== C.ACTIONS.REQUEST) {
+      message.isCompleted = true
+    }
+    this._options.message.sendDirect(this._remoteServer, C.TOPIC.PRIVATE + C.TOPIC.RPC, message)
   }
 
   /**
@@ -54,9 +52,8 @@ module.exports = class RpcProxy {
   * @returns {void}
   */
   sendError (topic, type, msg) {
-    this._options.messageConnector.publish(this._receiverPrivateTopic, {
-      topic: this._receiverPrivateTopic,
-      originalTopic: C.TOPIC.RPC,
+    this._options.message.sendDirect(this._remoteServer, C.TOPIC.PRIVATE + C.TOPIC.RPC, {
+      topic: C.TOPIC.RPC,
       action: C.ACTIONS.ERROR,
       data: [type, msg]
     })

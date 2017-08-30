@@ -6,7 +6,7 @@ const C = require('../../src/constants/constants')
 const LocalMessageConnector = require('../mocks/local-message-connector')
 const messageConnector = new LocalMessageConnector()
 const connectionEndpointMock = {
-  getConnectionCount() { return 8 }
+  getConnectionCount () { return 8 }
 }
 
 describe('distributed-state-registry adds and removes names', () => {

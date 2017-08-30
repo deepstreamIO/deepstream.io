@@ -22,7 +22,7 @@ const EventEmitter = require('events').EventEmitter
 const SocketWrapper = function (socket, options) {
   this.socket = socket
   if (!this.socket.on) {
-    this.socket = new SocketMock
+    this.socket = new SocketMock()
   }
   this.isClosed = false
   this.socket.once('close', this._onSocketClose.bind(this))
@@ -76,7 +76,7 @@ SocketWrapper.prototype.sendPrepared = function (preparedMessage) {
  * @public
  * @returns {void}
  */
-SocketWrapper.prototype.finalizeMessage = function (preparedMessage) {
+SocketWrapper.prototype.finalizeMessage = function () {
 }
 
 /**

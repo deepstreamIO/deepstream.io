@@ -1,7 +1,6 @@
 'use strict'
 
 const C = require('../constants/constants')
-const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const messageBuilder = require('../message/message-builder')
 
 class SubscriptionRegistry {
@@ -45,7 +44,7 @@ class SubscriptionRegistry {
    * via the cluster.
    */
   _setupRemoteComponents (clusterTopic) {
-    this._clusterSubscriptions = new DistributedStateRegistry(
+    this._clusterSubscriptions = this._options.message.getStateRegistry(
       clusterTopic ||
       `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`,
       this._options
@@ -211,6 +210,10 @@ class SubscriptionRegistry {
    * @returns {void}
    */
   sendToSubscribers (name, message, noDelay, socket) {
+    if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
+      this._options.message.send(message.topic, message)
+    }
+
     if (!this._subscriptions.has(name)) {
       return
     }

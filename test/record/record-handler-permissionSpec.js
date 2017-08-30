@@ -1,42 +1,18 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let RecordHandler = require('../../src/record/record-handler'),
-  msg = require('../test-helper/test-helper').msg,
-  StorageMock = require('../mocks/storage-mock'),
-  SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  LoggerMock = require('../mocks/logger-mock'),
-  noopMessageConnector = require('../../src/default-plugins/noop-message-connector'),
-  clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
+const RecordHandler = require('../../src/record/record-handler')
+const SocketMock = require('../mocks/socket-mock')
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
 
-const permissionHandler = {
-  nextResult: true,
-  nextError: null,
-  lastArgs: [],
-  canPerformAction(a, b, c) {
-    this.lastArgs.push(arguments)
-    c(this.nextError, this.nextResult)
-  }
-}
+const testHelper = require('../test-helper/test-helper')
+
+const msg = testHelper.msg
 
 describe('record handler handles messages', () => {
-  let recordHandler,
-    clientA = new SocketWrapper(new SocketMock(), {}),
-    clientB = new SocketWrapper(new SocketMock(), {}),
-    options = {
-      clusterRegistry: clusterRegistryMock,
-      cache: new StorageMock(),
-      storage: new StorageMock(),
-      storageExclusion: new RegExp('no-storage'),
-      logger: new LoggerMock(),
-      messageConnector: noopMessageConnector,
-      permissionHandler,
-      uniqueRegistry: {
-        get(name, callback) { callback(true) },
-        release() {}
-      }
-    }
+  let recordHandler
+  const clientA = new SocketWrapper(new SocketMock(), {})
+  const options = testHelper.getDeepstreamOptions()
 
   it('creates the record handler', () => {
     recordHandler = new RecordHandler(options)
@@ -51,14 +27,14 @@ describe('record handler handles messages', () => {
       data: ['some-record']
     })
 
-    expect(permissionHandler.lastArgs.length).toBe(2)
-    expect(permissionHandler.lastArgs[0][1].action).toBe('C')
-    expect(permissionHandler.lastArgs[1][1].action).toBe('R')
+    expect(options.permissionHandler.lastArgs.length).toBe(2)
+    expect(options.permissionHandler.lastArgs[0][1].action).toBe('C')
+    expect(options.permissionHandler.lastArgs[1][1].action).toBe('R')
     expect(clientA.socket.lastSendMessage).toBe(msg('R|R|some-record|0|{}+'))
   })
 
   it('triggers only read action if record does exist', () => {
-    permissionHandler.lastArgs = []
+    options.permissionHandler.lastArgs = []
 
     recordHandler.handle(clientA, {
       raw: 'raw-message',
@@ -67,14 +43,14 @@ describe('record handler handles messages', () => {
       data: ['some-record']
     })
 
-    expect(permissionHandler.lastArgs.length).toBe(1)
-    expect(permissionHandler.lastArgs[0][1].action).toBe('R')
+    expect(options.permissionHandler.lastArgs.length).toBe(1)
+    expect(options.permissionHandler.lastArgs[0][1].action).toBe('R')
     expect(clientA.socket.lastSendMessage).toBe(msg('R|R|some-record|0|{}+'))
   })
 
   it('rejects a read', () => {
-    permissionHandler.lastArgs = []
-    permissionHandler.nextResult = false
+    options.permissionHandler.lastArgs = []
+    options.permissionHandler.nextResult = false
 
     recordHandler.handle(clientA, {
       raw: 'raw-message',
@@ -83,15 +59,15 @@ describe('record handler handles messages', () => {
       data: ['some-record']
     })
 
-    expect(permissionHandler.lastArgs.length).toBe(1)
-    expect(permissionHandler.lastArgs[0][1].action).toBe('R')
+    expect(options.permissionHandler.lastArgs.length).toBe(1)
+    expect(options.permissionHandler.lastArgs[0][1].action).toBe('R')
     expect(clientA.socket.lastSendMessage).toBe(msg('R|E|MESSAGE_DENIED|some-record|R+'))
   })
 
   it('handles a permission error', () => {
-    permissionHandler.lastArgs = []
-    permissionHandler.nextError = 'XXX'
-    permissionHandler.nextResult = false
+    options.permissionHandler.lastArgs = []
+    options.permissionHandler.nextError = 'XXX'
+    options.permissionHandler.nextResult = false
 
     recordHandler.handle(clientA, {
       raw: 'raw-message',
@@ -100,8 +76,8 @@ describe('record handler handles messages', () => {
       data: ['some-record']
     })
 
-    expect(permissionHandler.lastArgs.length).toBe(1)
-    expect(permissionHandler.lastArgs[0][1].action).toBe('R')
+    expect(options.permissionHandler.lastArgs.length).toBe(1)
+    expect(options.permissionHandler.lastArgs[0][1].action).toBe('R')
     expect(clientA.socket.lastSendMessage).toBe(msg('R|E|MESSAGE_PERMISSION_ERROR|XXX+'))
   })
 })

@@ -58,7 +58,7 @@ module.exports = class MessageDistributor {
     }
 
     this._callbacks[topic] = callback
-    this._options.messageConnector.subscribe(
+    this._options.message.subscribe(
       topic,
       this._onMessageConnectorMessage.bind(this, callback)
     )

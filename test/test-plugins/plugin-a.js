@@ -1,7 +1,7 @@
 'use strict'
 
 module.exports = class PluginA {
-  constructor(options) {
+  constructor (options) {
     this.options = options
     this.type = 'pluginA'
   }
