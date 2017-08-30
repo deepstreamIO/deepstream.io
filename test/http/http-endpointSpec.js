@@ -31,7 +31,7 @@ const conf = {
   postPath: '/api/v1',
   getPath: '/api/v1',
   port: 8888,
-  host: '0.0.0.0',
+  host: '127.0.0.1',
   allowAllOrigins: true,
   requestTimeout: 30
 }
