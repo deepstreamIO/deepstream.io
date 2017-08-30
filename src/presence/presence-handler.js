@@ -4,7 +4,7 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 
-const DEPRECATED_EVERYONE = `U`
+const EVERYONE = `U`
 
 /**
  * This class handles incoming and outgoing messages in relation
@@ -42,7 +42,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   handle (socketWrapper, message) {
-    const users = this._parseUserNames(message.data && message.data[0], socketWrapper)
+    const users = this._parseUserNames(message.data, socketWrapper)
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this._subscriptionRegistry.subscribe(users[i], socketWrapper)
@@ -52,7 +52,7 @@ module.exports = class PresenceHandler {
         this._subscriptionRegistry.unsubscribe(users[i], socketWrapper)
       }  
     } else if (message.action === C.ACTIONS.QUERY) {
-      this._handleQuery(users, socketWrapper)
+      this._handleQuery(users, message.data[0], socketWrapper)
     } else {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
 
@@ -107,9 +107,8 @@ module.exports = class PresenceHandler {
   * @private
   * @returns {void}
   */
-  _handleQuery (users, socketWrapper) {
-    if (users[0] === DEPRECATED_EVERYONE) {
-      // LOG DEPRECATED MESSAGE
+  _handleQuery (users, correlationId, socketWrapper) {
+    if (users[0] === EVERYONE) {
       const clients = this._connectedClients.getAll()
       const index = clients.indexOf(socketWrapper.user)
       if (index !== -1) {
@@ -120,9 +119,9 @@ module.exports = class PresenceHandler {
       const result = {}
       const clients = this._connectedClients.getAllMap()
       for (let i = 0; i < users.length; i++) {
-        result[users[i]] = clients[users[i]]
+        result[users[i]] = !!clients[users[i]]
       }
-      socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, result)
+      socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, [correlationId, result])
     }
   }
 
@@ -137,7 +136,7 @@ module.exports = class PresenceHandler {
   */
   _onClientAdded (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: [username] }
-    this._subscriptionRegistry.sendToSubscribers(DEPRECATED_EVERYONE, message)
+    this._subscriptionRegistry.sendToSubscribers(EVERYONE, message)
     this._subscriptionRegistry.sendToSubscribers(username, message)
   }
 
@@ -152,22 +151,22 @@ module.exports = class PresenceHandler {
   */
   _onClientRemoved (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: [username] }
-    this._subscriptionRegistry.sendToSubscribers(DEPRECATED_EVERYONE, message)
+    this._subscriptionRegistry.sendToSubscribers(EVERYONE, message)
     this._subscriptionRegistry.sendToSubscribers(username, message)
   }
 
   _parseUserNames (data, socketWrapper) {
     // Returns all users for backwards compatability
     if (
-      !data || 
-      data === C.ACTIONS.QUERY || 
-      data === C.ACTIONS.SUBSCRIBE ||
-      data === C.TOPIC.PRESENCE
-    ) {
-      return [ DEPRECATED_EVERYONE ]
+      data.length === 1 && ( 
+      data[0] === C.ACTIONS.QUERY || 
+      data[0] === C.ACTIONS.SUBSCRIBE ||
+      data[0] === C.TOPIC.PRESENCE
+    )) {
+      return [ EVERYONE ]
     }
     try {
-      return JSON.parse(data)
+      return JSON.parse(data[1])
     } catch (e) {
       socketWrapper.sendError(
         C.TOPIC.EVENT, 
