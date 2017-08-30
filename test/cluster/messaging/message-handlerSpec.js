@@ -1,8 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const messageHandler = require('../../../src/cluster/messaging/message-handler.js')
-const C = require('../../../src/constants/constants')
+const messageHandler = require('../../../src/cluster/messaging/message-handler')
 
 describe('cluster binary message handler', () => {
   describe('getBinaryMsg()', () => {
