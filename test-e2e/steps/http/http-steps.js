@@ -7,7 +7,12 @@ const needle = require('needle')
 
 const clientHandler = require('../../framework/client-handler')
 const utils = require('../client/utils')
-const { When, Then, Given, After } = require('cucumber')
+
+const cucumber = require('cucumber')
+const When = cucumber.When
+const Then = cucumber.Then
+const Given = cucumber.Given
+const After = cucumber.After
 
 let httpClients = {}
 

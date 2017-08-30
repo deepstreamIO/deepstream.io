@@ -3,7 +3,10 @@
 const utils = require('./utils')
 const listening = require('../../framework/listening')
 
-const { When, Then, Given } = require('cucumber')
+const cucumber = require('cucumber')
+const When = cucumber.When
+const Then = cucumber.Then
+const Given = cucumber.Given
 
 When(/^publisher (\S*) (accepts|rejects) (?:a|an) (event|record) match "([^"]*)" for pattern "([^"]*)"$/, (client, action, type, subscriptionName, pattern) => {
   listening.setupListenResponse(client, action === 'accepts', type, subscriptionName, pattern)

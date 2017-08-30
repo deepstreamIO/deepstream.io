@@ -4,7 +4,10 @@ const sinon = require('sinon')
 
 const utils = require('./utils')
 
-const { When, Then, Given } = require('cucumber')
+const cucumber = require('cucumber')
+const When = cucumber.When
+const Then = cucumber.Then
+const Given = cucumber.Given
 
 const event = require('../../framework/event')
 

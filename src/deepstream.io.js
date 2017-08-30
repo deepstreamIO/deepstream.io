@@ -16,9 +16,9 @@ const jsYamlLoader = require('./config/js-yaml-loader')
 const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
+const MessageConnector = require('./cluster/cluster-node')
+const LockRegistry = require('./cluster/lock-registry')
 const DependencyInitialiser = require('./utils/dependency-initialiser')
-const ClusterRegistry = require('./cluster/cluster-registry')
-const UniqueRegistry = require('./cluster/cluster-unique-state-provider')
 const C = require('./constants/constants')
 const pkg = require('../package.json')
 
@@ -109,18 +109,11 @@ Deepstream.readMessage = readMessage
  * @returns {void}
  */
 Deepstream.prototype.set = function (key, value) {
-  let optionName
-  if (key === 'message' || key === 'messageConnector') {
-    throw new Error('unable to start deepstream with a message connector, these have been removed as part of deepstream.io v3.0')
-  } else {
-    optionName = key
+  if (this._options[key] === undefined) {
+    throw new Error(`Unknown option "${key}"`)
   }
 
-  if (this._options[optionName] === undefined) {
-    throw new Error(`Unknown option "${optionName}"`)
-  }
-
-  this._options[optionName] = value
+  this._options[key] = value
   return this
 }
 
@@ -231,7 +224,7 @@ Deepstream.prototype._onTransition = function (transition) {
     logger.log(
       C.LOG_LEVEL.DEBUG,
       C.EVENT.INFO,
-      `state transition (${transition.name}): ${transition.from} -> ${transition.to}`
+      `State transition (${transition.name}): ${transition.from} -> ${transition.to}`
     )
   }
 }
@@ -260,6 +253,8 @@ Deepstream.prototype._loggerInit = function () {
  * @returns {void}
  */
 Deepstream.prototype._pluginInit = function () {
+  this._options.message = new MessageConnector(this._options)
+
   const infoLogger = message => this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, message)
 
   infoLogger(`deepstream version: ${pkg.version}`)
@@ -314,8 +309,7 @@ Deepstream.prototype._serviceInit = function () {
   this._messageProcessor = new MessageProcessor(this._options)
   this._messageDistributor = new MessageDistributor(this._options)
 
-  this._options.clusterRegistry = new ClusterRegistry(this._options)
-  this._options.uniqueRegistry = new UniqueRegistry(this._options, this._options.clusterRegistry)
+  this._options.uniqueRegistry = new LockRegistry(this._options, this._options.message)
 
   this._eventHandler = new EventHandler(this._options)
   this._messageDistributor.registerForTopic(
@@ -392,7 +386,7 @@ Deepstream.prototype._connectionEndpointInit = function () {
  * @returns {void}
  */
 Deepstream.prototype._run = function () {
-  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, 'deepstream started')
+  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, 'Deepstream started')
   this.emit('started')
 }
 
@@ -405,7 +399,6 @@ Deepstream.prototype._run = function () {
  */
 Deepstream.prototype._connectionEndpointShutdown = function () {
   const endpoints = this._options.connectionEndpoints
-
   endpoints.forEach((endpoint) => {
     process.nextTick(() => endpoint.close())
   })
@@ -420,9 +413,7 @@ Deepstream.prototype._connectionEndpointShutdown = function () {
  * @returns {void}
  */
 Deepstream.prototype._serviceShutdown = function () {
-  this._options.clusterRegistry.leaveCluster()
-
-  process.nextTick(() => this._transition('services-closed'))
+  this._options.message.close(() => this._transition('services-closed'))
 }
 
 /**

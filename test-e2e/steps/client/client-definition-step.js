@@ -1,6 +1,8 @@
 'use strict'
 
-const { When, Then, Given, Before, After } = require('cucumber')
+const cucumber = require('cucumber')
+const Before = cucumber.Before
+const After = cucumber.After
 
 const world = require('../../framework/world')
 

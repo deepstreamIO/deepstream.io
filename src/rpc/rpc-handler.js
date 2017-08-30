@@ -16,9 +16,8 @@ module.exports = class RpcHandler {
     this._options = options
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
-    this._privateTopic = C.TOPIC.PRIVATE + this._options.serverName
-    this._options.messageConnector.subscribe(
-      this._privateTopic,
+    this._options.message.subscribe(
+      C.TOPIC.PRIVATE + C.TOPIC.RPC,
       this._onPrivateMessage.bind(this)
     )
 
@@ -118,7 +117,7 @@ module.exports = class RpcHandler {
     for (let n = 0; n < servers.length; ++n) {
       if (!rpcData.servers.has(servers[index])) {
         rpcData.servers.add(servers[index])
-        return new RpcProxy(this._options, C.TOPIC.PRIVATE + servers[index], rpcName, correlationId)
+        return new RpcProxy(this._options, servers[index], rpcName, correlationId)
       }
       index = (index + 1) % servers.length
     }
@@ -224,7 +223,7 @@ module.exports = class RpcHandler {
     const server = servers[utils.getRandomIntInRange(0, servers.length)]
 
     if (server) {
-      const rpcProxy = new RpcProxy(this._options, C.TOPIC.PRIVATE + server, rpcName, correlationId)
+      const rpcProxy = new RpcProxy(this._options, server, rpcName, correlationId)
       rpcData.rpc = new Rpc(this, requestor, rpcProxy, this._options, message)
       return
     }
@@ -250,8 +249,8 @@ module.exports = class RpcHandler {
   * @private
   * @returns {void}
   */
-  _onPrivateMessage (msg) {
-    if (msg.originalTopic !== C.TOPIC.RPC) {
+  _onPrivateMessage (msg, originServerName) {
+    if (msg.topic !== C.TOPIC.RPC) {
       return
     }
 
@@ -260,15 +259,13 @@ module.exports = class RpcHandler {
       return
     }
 
-    msg.topic = msg.originalTopic
-
     if (msg.action === C.ACTIONS.ERROR && msg.data[0] === C.EVENT.NO_RPC_PROVIDER) {
       msg.action = C.ACTIONS.REJECTION
       msg.data = msg.data[1]
     }
 
     if (msg.action === C.ACTIONS.REQUEST) {
-      const proxy = new RpcProxy(this._options, msg.remotePrivateTopic, msg.data[0], msg.data[1])
+      const proxy = new RpcProxy(this._options, originServerName)
       this._makeRpc(proxy, msg, C.SOURCE_MESSAGE_CONNECTOR)
     } else if ((msg.action === C.ACTIONS.ACK || msg.action === C.ACTIONS.ERROR) && msg.data[2]) {
       const rpc = this._rpcs.get(msg.data[2])

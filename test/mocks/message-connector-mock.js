@@ -3,7 +3,7 @@
 'use strict'
 
 const EventEmitter = require('events').EventEmitter
-const StateRegistry = require('../../src/cluster/distributed-state-registry')
+const StateRegistry = require('../../src/cluster/state-registry')
 
 module.exports = class MessageConnectorMock extends EventEmitter {
 

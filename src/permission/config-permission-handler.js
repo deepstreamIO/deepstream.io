@@ -161,6 +161,11 @@ ConfigPermissionHandler.prototype.canPerformAction = function (
 
   const ruleData = this._getCompiledRulesForName(name, ruleSpecification)
 
+  if (!ruleData) {
+    callback(null, false)
+    return
+  }
+
   // eslint-disable-next-line
   new RuleApplication({
     recordHandler: this._recordHandler,
