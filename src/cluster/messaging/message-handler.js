@@ -122,6 +122,7 @@ function postprocessMsg (message) {
  * @returns {Buffer} the serialized data buffer
  *
  * @throws when length of serialized data is greater than MAX_PAYLOAD_LENGTH
+ * @throws if the data object contains circular references
  */
 function getBinaryMsg (topicByte, actionByte, data) {
   const optionByte = 0x00
@@ -147,6 +148,9 @@ function getBinaryMsg (topicByte, actionByte, data) {
   return buff
 }
 
+/*
+ * Deserialize a binary message
+ */
 function tryParseBinaryMsg (buff, onBodyParseError) {
   if (!(buff instanceof Buffer)) {
     throw new Error(`tried to parse ${typeof buff}`)
@@ -178,6 +182,7 @@ function tryParseBinaryMsg (buff, onBodyParseError) {
     message.body = JSON.parse(payload)
   } catch (err) {
     onBodyParseError(`malformed json body: '${payload.toString()}'`, message)
+    return { bytesConsumed: messageLength }
   }
   return { message, bytesConsumed: messageLength }
 }

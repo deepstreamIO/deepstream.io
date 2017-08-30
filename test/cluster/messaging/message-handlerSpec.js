@@ -42,9 +42,66 @@ fdescribe('cluster binary message handler', () => {
       expect(() => messageHandler.getBinaryMsg(0x01, 0x23, payload)).toThrowError(/too long/)
     })
   })
-  /*
-   *describe('tryParseBinaryMsg()', () => {
-   *  it('')
-   *})
-   */
+  describe('tryParseBinaryMsg()', () => {
+    it('deserializes a message without a payload', () => {
+      const buff = Buffer.of(0x01, 0x02, 0x00, 0x00, 0x00, 0x00)
+      const onBodyParseErrorSpy = jasmine.createSpy('onBodyParseError')
+      const result = messageHandler.tryParseBinaryMsg(buff, onBodyParseErrorSpy)
+      expect(result.message).toEqual({
+        topicByte: 0x01,
+        actionByte: 0x02,
+        optionByte: 0x00,
+        payloadLength: 0
+      })
+      expect(result.bytesConsumed).toEqual(6)
+      expect(onBodyParseErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('deserializes a message with a payload', () => {
+      const buff = Buffer.of(0xab, 0xcd, 0x00, 0x00, 0x00, 0x0d,
+        0x7b, 0x22, 0x66, 0x6f, 0x6f, 0x22, 0x3a, 0x22, 0x62, 0x61, 0x72, 0x22, 0x7d)
+      const onBodyParseErrorSpy = jasmine.createSpy('onBodyParseError')
+      const result = messageHandler.tryParseBinaryMsg(buff, onBodyParseErrorSpy)
+      expect(result.message).toEqual({
+        topicByte: 0xab,
+        actionByte: 0xcd,
+        optionByte: 0x00,
+        payloadLength: 13,
+        body: { foo: 'bar' }
+      })
+      expect(result.bytesConsumed).toEqual(6 + 13)
+      expect(onBodyParseErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('does not consume an incomplete header', () => {
+      const buff = Buffer.of(0x01, 0x02, 0x00, 0x00, 0x00)
+      const onBodyParseErrorSpy = jasmine.createSpy('onBodyParseError')
+      const result = messageHandler.tryParseBinaryMsg(buff, onBodyParseErrorSpy)
+      expect(result.message).toEqual(undefined)
+      expect(result.bytesConsumed).toEqual(0)
+      expect(onBodyParseErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('does not consume an incomplete payload', () => {
+      const buff = Buffer.of(0x01, 0x02, 0x00, 0x00, 0x00, 0x02,
+        0x00)
+      const onBodyParseErrorSpy = jasmine.createSpy('onBodyParseError')
+      const result = messageHandler.tryParseBinaryMsg(buff, onBodyParseErrorSpy)
+      expect(result.message).toEqual(undefined)
+      expect(result.bytesConsumed).toEqual(0)
+      expect(onBodyParseErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('calls the callback when the payload is invalid JSON', () => {
+      const buff = Buffer.concat([
+        Buffer.of(0x01, 0x02, 0x00, 0x00, 0x00, 0x01),
+        Buffer.from('{')
+      ])
+      const onBodyParseErrorSpy = jasmine.createSpy('onBodyParseError')
+      const result = messageHandler.tryParseBinaryMsg(buff, onBodyParseErrorSpy)
+      expect(result.message).toEqual(undefined)
+      expect(result.bytesConsumed).toEqual(6 + 1)
+      expect(onBodyParseErrorSpy).toHaveBeenCalled()
+    })
+  })
 })
