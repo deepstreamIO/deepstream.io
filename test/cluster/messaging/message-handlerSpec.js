@@ -4,7 +4,7 @@
 const messageHandler = require('../../../src/cluster/messaging/message-handler.js')
 const C = require('../../../src/constants/constants')
 
-fdescribe('cluster binary message handler', () => {
+describe('cluster binary message handler', () => {
   describe('getBinaryMsg()', () => {
     it('serializes a message without a payload', () => {
       expect(messageHandler.getBinaryMsg(0xab, 0xcd)).toEqual(
