@@ -12,8 +12,8 @@ const STATE = {
   UNIDENTIFIED: 1,
   IDENTIFIED: 2,
   STABLE: 3,
-  CLOSED: 4,
-  REJECTED: 5,
+  CLOSING: 4,
+  CLOSED: 5,
   ERROR: 6
 }
 
@@ -51,6 +51,7 @@ class ClusterConnection extends EventEmitter {
     return this._state === this.STATE.UNIDENTIFIED
       || this._state === this.STATE.IDENTIFIED
       || this._state === this.STATE.STABLE
+      || this._state === this.STATE.CLOSING
   }
 
   setRemoteDetails (name, electionNumber, url) {
@@ -67,13 +68,14 @@ class ClusterConnection extends EventEmitter {
       this._socket.setKeepAlive(false)
       this._sendCluster(CLUSTER_ACTION_BYTES.CLOSE)
       this._socket.end()
+      this._stateTransition(STATE.CLOSING)
     } else {
       this._onClose()
     }
   }
 
   destroy () {
-    if (this._state !== STATE.CLOSED) {
+    if (this.isAlive()) {
       this._socket.setKeepAlive(false)
       this._socket.destroy()
     }
@@ -91,8 +93,8 @@ class ClusterConnection extends EventEmitter {
     this._sendCluster(CLUSTER_ACTION_BYTES.KNOWN_PEERS, identificationData)
   }
 
-  sendReject (reason) {
-    this._sendCluster(CLUSTER_ACTION_BYTES.REJECT, { reason })
+  sendReject (event, message) {
+    this._sendCluster(CLUSTER_ACTION_BYTES.REJECT, { event, message })
     this.close()
   }
 
@@ -213,7 +215,7 @@ class ClusterConnection extends EventEmitter {
   }
 
   _onKnown () {
-    if (this._state === this.STATE.IDENTIFIED) {
+    if (this.isIdentified()) {
       this._stateTransition(this.STATE.STABLE)
     }
   }
@@ -231,11 +233,9 @@ class ClusterConnection extends EventEmitter {
     this.emit('identify', data)
   }
 
-  _handleReject (message) {
-    const reason = message.reason
-    // TODO: else warn
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `connection rejected with reason: ${reason}`)
-    this._stateTransition(STATE.REJECTED)
+  _handleReject (data) {
+    const body = data.body
+    this.emit('rejection', body.event, body.message)
   }
 
   _handleRejectDuplicate () {
@@ -243,9 +243,7 @@ class ClusterConnection extends EventEmitter {
   }
 
   _handleError (error) {
-    // TODO: handle e.g. malformed message errors, probably just log
-    console.log(error)
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `an error message was received: ${JSON.stringify(error)}`)
+    this.emit('error', JSON.stringify(error))
   }
 
   _onSocketError () {
@@ -257,8 +255,10 @@ class ClusterConnection extends EventEmitter {
   }
 
   _onClose () {
-    this._stateTransition(STATE.CLOSED)
-    this.emit('close')
+    if (this.isAlive()) {
+      this._stateTransition(STATE.CLOSED)
+      this.emit('close')
+    }
   }
 }
 

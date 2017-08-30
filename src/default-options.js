@@ -93,6 +93,7 @@ exports.get = function () {
       host: '0.0.0.0',
       port: 9089,
       seedNodes: [],
+      maxConnections: 16,
       maxReconnectAttempts: 5,
       reconnectInterval: 1500,
       pingInterval: 1000,

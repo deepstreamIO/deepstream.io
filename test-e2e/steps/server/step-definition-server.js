@@ -25,7 +25,7 @@ When(/^server (\S)* comes back up$/, (server, done) => {
 })
 
 BeforeAll((callback) => {
-  global.cluster = new Cluster([6001, 6002, 6003], false)
+  global.cluster = new Cluster([6001, 6002, 6003], !!process.env.LOG)
   global.cluster.on('ready', callback)
 })
 

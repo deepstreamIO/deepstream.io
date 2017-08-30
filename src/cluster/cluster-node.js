@@ -17,7 +17,8 @@ const STATE = {
   DISCOVERY: 1,
   BROADCAST: 2,
   LISTEN: 3,
-  CLOSED: 4
+  CLOSED: 4,
+  ERROR: 5
 }
 
 const STATE_LOOKUP = utils.reverseMap(STATE)
@@ -39,6 +40,7 @@ class ClusterNode {
       this._seedNodes = []
     }
     this._url = `${config.host}:${config.port}`
+    this._maxConnections = config.maxConnections
 
     this._tcpServer = net.createServer(this._onIncomingConnection.bind(this))
     this._tcpServer.listen(config.port, config.host, this._onReady.bind(this))
@@ -174,7 +176,9 @@ class ClusterNode {
       const next = STATE_LOOKUP[nextState]
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<><> Node state transition ${current} -> ${next} <><>`)
     }
-    this._state = nextState
+    if (this._state !== STATE.ERROR) {
+      this._state = nextState
+    }
   }
 
   _onReady () {
@@ -199,6 +203,19 @@ class ClusterNode {
     const connection = new OutgoingConnection(nodeUrl, this._config, this._logger)
     this._addConnection(connection)
     connection.on('error', this._onConnectionError.bind(this, connection))
+    connection.on('rejection', (event, message) => {
+      if (event === C.EVENT.CONNECTION_LIMIT_EXCEEDED) {
+        if (this._state === STATE.ERROR) {
+          return
+        }
+        let errMsg = connection.remoteName ? `Server ${connection.remoteName}` : 'A server'
+        errMsg += ` reached its cluster connection limit (${message} connections)!`
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_LIMIT_EXCEEDED, errMsg)
+        this._stateTransition(STATE.ERROR)
+        return
+      }
+      this._logger.log(C.LOG_LEVEL.WARN, event, message)
+    })
     connection.on('connect', () => {
       connection.sendWho({
         id: this._serverName,
@@ -222,9 +239,11 @@ class ClusterNode {
         const error = 'received IAM from an outbound connection to a known peer'
         this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
       } else {
-        this._addPeer(connection)
-        for (const url of message.peers) {
-          this._probeHost(url)
+        const peerWasAdded = this._addPeer(connection)
+        if (peerWasAdded) {
+          for (const url of message.peers) {
+            this._probeHost(url)
+          }
         }
       }
       this._checkReady()
@@ -254,12 +273,17 @@ class ClusterNode {
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to add uninitialized peer')
     }
+    if (this._knownPeers.size >= this._maxConnections - 1) {
+      connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
+      return false
+    }
     connection.on('message', this._onMessage.bind(this, connection))
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
 
-    this._globalStateRegistry.onServerAdded(connection.remoteName)
+    process.nextTick(() => this._globalStateRegistry.onServerAdded(connection.remoteName))
+    return true
   }
 
   _removePeer (connection) {
@@ -311,13 +335,14 @@ class ClusterNode {
         return
       }
 
-      connection.sendIAm({
-        id: this._serverName,
-        peers: this._getPeers(),
-        electionNumber: this._electionNumber
-      })
-
-      this._addPeer(connection)
+      const peerWasAdded = this._addPeer(connection)
+      if (peerWasAdded) {
+        connection.sendIAm({
+          id: this._serverName,
+          peers: this._getPeers(),
+          electionNumber: this._electionNumber
+        })
+      }
     })
     connection.on('known', (message) => {
       if (!message.peers || message.peers.constructor !== Array) {
