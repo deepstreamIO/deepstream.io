@@ -31,7 +31,7 @@ void iterate() {
     if (received != 0) {
         if (++iterations % iterationsPerPrint == 0) {
             int ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
-            std::cout << (float(ms) / iterationsPerPrint);
+            std::cout << (float(ms) / iterationsPerPrint) << ", ";
 
             hub.getDefaultGroup<uWS::CLIENT>().close();
             return;

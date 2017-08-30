@@ -1,12 +1,10 @@
 #!/bin/bash
-connections_steps=( 2 10 100 1000 10000 20000 50000 10000  )
-publishes_steps=( 1 10 100 1000 )
-
-echo "connections, publishes, latency"
+connections_steps=( 10 100 1000 10000 )
+publishes_steps=( 1 10 100 1000 10000 )
 for connections in "${connections_steps[@]}"
 do
-  for publishes in "${publishes_steps[@]}"
-    do
-      ./eventBenchmark ${connections} ${publishes} | xargs echo "${connections}, ${publishes},"
-    done
+	for publishes in "${publishes_steps[@]}"
+	do
+		./eventBenchmark ${connections} ${publishes}
+	done
 done
