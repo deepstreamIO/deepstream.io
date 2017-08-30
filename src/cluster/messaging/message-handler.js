@@ -119,6 +119,10 @@ function postprocessMsg (message) {
  * Serialize a binary message
  * If a payload is provided it will be serialized as JSON
  *
+ * @param topicByte  {Integer}             topic enum 0 <= n < 256
+ * @param actionByte {Integer}             action enum 0 <= n < 256
+ * @param data       {Buffer|Object|Value} a buffer to send, or some JSON.stringify-able value
+ *
  * @returns {Buffer} the serialized data buffer
  *
  * @throws when length of serialized data is greater than MAX_PAYLOAD_LENGTH
@@ -127,22 +131,21 @@ function postprocessMsg (message) {
 function getBinaryMsg (topicByte, actionByte, data) {
   const optionByte = 0x00
   let payload
-  let payloadLength = 0
   if (data instanceof Buffer) {
     payload = data
-    payloadLength = data.length
   } else if (data !== undefined) {
     payload = Buffer.from(JSON.stringify(data))
-    payloadLength = payload.length
   }
+  const payloadLength = payload ? payload.length : 0
   if (payloadLength > MAX_PAYLOAD_LENGTH) {
     throw new Error(`Data payload too long: ${payload.length} cannot be encoded in 24 bits`)
   }
-  // Message: | T | A | O | L | L | L | payload...
+  // Warning: ensure entire buffer is overwritten. Exposing content of buffer from allocUnsafe is a
+  // serious security vuln.
   const buff = Buffer.allocUnsafe(HEADER_LENGTH + payloadLength)
-  buff.writeUInt8(topicByte, 0)
-  buff.writeUInt8(actionByte, 1)
-  buff.writeUInt8(optionByte, 2)
+  buff[0] = topicByte
+  buff[1] = actionByte
+  buff[2] = optionByte
   buff.writeUIntBE(payloadLength, 3, 3)
   if (payloadLength > 0) payload.copy(buff, HEADER_LENGTH)
   return buff
