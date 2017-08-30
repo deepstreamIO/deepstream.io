@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, import/no-extraneous-dependencies, import/newline-after-import */
 /* global jasmine, spyOn, describe, it, expect, beforeAll, afterEach */
 'use strict'
 
@@ -20,8 +21,6 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
 const SocketMock = require('../mocks/socket-mock')
 const _msg = require('../test-helper/test-helper').msg
-let lastAuthenticatedMessage = null
-let lastLoggedMessage = null
 
 const permissionHandler = {
   isValidUser (connectionData, authData, callback) {
@@ -40,7 +39,7 @@ const permissionHandler = {
 const options = {
   permissionHandler,
   authenticationHandler: permissionHandler,
-  logger: { log (logLevel, event, msg) { lastLoggedMessage = msg } },
+  logger: { log (logLevel, event, msg) { } },
   maxAuthAttempts: 3,
   logInvalidAuthData: true
 }
@@ -57,9 +56,7 @@ describe('permissionHandler passes additional user meta data', () => {
     connectionEndpoint = new ConnectionEndpoint(options)
     const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
-      connectionEndpoint.onMessages = function (socket, messages) {
-        lastAuthenticatedMessage = messages[messages.length - 1]
-      }
+      connectionEndpoint.onMessages = function () {}
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
       socketWrapperMock = uwsMock.simulateConnection()
       uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)

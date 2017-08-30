@@ -5,13 +5,13 @@ const jsonPath = require('../../src/record/json-path')
 
 describe('objects are created from paths and their value is set correctly', () => {
   it('sets simple values', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'firstname', 'Wolfram')
     expect(record).toEqual({ firstname: 'Wolfram' })
   })
 
   it('sets values for nested objects', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'address.street', 'someStreet')
 
     expect(record).toEqual({
@@ -22,21 +22,21 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('sets values for nested objects with numeric field names', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'address.street.1', 'someStreet')
 
     expect(record).toEqual({
       address: {
-          street: {
-              1: 'someStreet'
-          }
+        street: {
+          1: 'someStreet'
+        }
       }
     })
   })
 
 
   it('sets values for nested objects with multiple numeric field names', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'address.99.street.1', 'someStreet')
 
     expect(record).toEqual({
@@ -52,41 +52,41 @@ describe('objects are created from paths and their value is set correctly', () =
 
 
   it('sets values for nested objects with multiple mixed array and numeric field names', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'address[2].99.street[2].1', 'someStreet')
 
     expect(record).toEqual({
       address: [
-          undefined,
-          undefined,
-          {
-              99 : {
-                  street: [
-                      undefined,
-                      undefined,
-                      {
-                          1: 'someStreet'
-                      }
-                  ]
+        undefined,
+        undefined,
+        {
+          99 : {
+            street: [
+              undefined,
+              undefined,
+              {
+                1: 'someStreet'
               }
+            ]
           }
-        ]
+        }
+      ]
     })
   })
 
   it('sets first value of array', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'items[0]', 51)
 
     expect(JSON.stringify(record)).toEqual(JSON.stringify({
-        items: [
-            51
-        ]
+      items: [
+        51
+      ]
     }))
   })
 
   it('sets numeric obj member name of 0 (zero)', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'items.0', 51)
 
     expect(JSON.stringify(record)).toEqual(JSON.stringify({
@@ -97,7 +97,7 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('sets values for arrays', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'pastAddresses[1].street', 'someStreet')
 
     expect(JSON.stringify(record)).toEqual(JSON.stringify({
@@ -111,10 +111,10 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('sets value AS arrays of arrays', () => {
-    let record = {
+    const record = {
       addresses: undefined
-    },
-    arrOfArr = [
+    }
+    const arrOfArr = [
       undefined,
       [
         'new-Street1', 'road1', 'blvd1'
@@ -140,7 +140,7 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('sets value IN arrays of arrays', () => {
-    let record = {
+    const record = {
       addresses: [
         undefined,
         [
@@ -167,7 +167,7 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('sets value IN deeper nested multi-dimensional arrays of arrays', () => {
-    let record = {
+    const record = {
       obj: {
         101 : {
           addresses: [
@@ -175,8 +175,8 @@ describe('objects are created from paths and their value is set correctly', () =
               undefined,
               [
                 undefined,
-                [ 'street1', 'road1', 'blvd1' ],
-                [ 'street2', 'road2', 'blvd2' ]
+                ['street1', 'road1', 'blvd1'],
+                ['street2', 'road2', 'blvd2']
               ],
               [
                 undefined,
@@ -185,7 +185,7 @@ describe('objects are created from paths and their value is set correctly', () =
               ]
             ],
             undefined,
-            [ [0,1,2,3], [9,8,7,6], [2,4,6,8] ]
+            [[0, 1, 2, 3], [9, 8, 7, 6], [2, 4, 6, 8]]
           ]
         }
       }
@@ -193,32 +193,32 @@ describe('objects are created from paths and their value is set correctly', () =
     jsonPath.setValue(record, 'obj.101.addresses[0][1][1][0]', 'new-Street1')
 
     expect(JSON.stringify(record)).toEqual(JSON.stringify({
-        obj: {
-          101 : {
-            addresses: [
+      obj: {
+        101 : {
+          addresses: [
+            [
+              undefined,
               [
                 undefined,
-                [
-                  undefined,
-                  [ 'new-Street1', 'road1', 'blvd1' ],
-                  [ 'street2', 'road2', 'blvd2' ]
-                ],
-                [
-                  undefined,
+                  ['new-Street1', 'road1', 'blvd1'],
+                  ['street2', 'road2', 'blvd2']
+              ],
+              [
+                undefined,
                   { a: 'street1', b: 'road1', c: 'blvd1' },
                   { 1: 'street2', 2: 'road2', 3: 'blvd2' }
-                ]
-              ],
-              undefined,
-              [ [0,1,2,3], [9,8,7,6], [2,4,6,8] ]
-            ]
-          }
+              ]
+            ],
+            undefined,
+              [[0, 1, 2, 3], [9, 8, 7, 6], [2, 4, 6, 8]]
+          ]
         }
+      }
     }))
   })
 
   it('extends existing objects', () => {
-    let record = { firstname: 'Wolfram' }
+    const record = { firstname: 'Wolfram' }
     jsonPath.setValue(record, 'lastname', 'Hempel')
 
     expect(record).toEqual({
@@ -228,7 +228,7 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('extends existing arrays', () => {
-    let record = {
+    const record = {
       firstname: 'Wolfram',
       animals: ['Bear', 'Cow', 'Ostrich']
     }
@@ -241,7 +241,7 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('extends existing arrays with empty slot assigned a primitive', () => {
-    let record = {
+    const record = {
       firstname: 'Wolfram',
       animals: [undefined, 'Cow', 'Ostrich']
     }
@@ -254,20 +254,20 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('extends existing arrays with objects', () => {
-    let record = {
-        firstname: 'Wolfram',
-        animals: [undefined, 'Cow', 'Ostrich']
+    const record = {
+      firstname: 'Wolfram',
+      animals: [undefined, 'Cow', 'Ostrich']
     }
     jsonPath.setValue(record, 'animals[0].xxx', 'Emu')
 
     expect(record).toEqual({
       firstname: 'Wolfram',
-      animals: [{ xxx: 'Emu'}, 'Cow', 'Ostrich']
+      animals: [{ xxx: 'Emu' }, 'Cow', 'Ostrich']
     })
   })
 
   it('treats numbers with the path such as .0. as a key value', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'animals.0.name', 'Emu')
 
     expect(record).toEqual({
@@ -280,7 +280,7 @@ describe('objects are created from paths and their value is set correctly', () =
   })
 
   it('treats numbers with the path such as [0] as an index value', () => {
-    let record = {}
+    const record = {}
     jsonPath.setValue(record, 'animals[0].name', 'Emu')
 
     expect(record).toEqual({

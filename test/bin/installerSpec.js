@@ -1,3 +1,4 @@
+/* eslint-disable */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
@@ -12,31 +13,31 @@ const noop = function () {}
 
 // Needle mock
 class Needle extends Emitter {
-  constructor(response1, response2) {
+  constructor (response1, response2) {
     super()
     this.response1 = response1
     this.response2 = response2
   }
-  get(urlPath, options, callback) {
+  get (urlPath, options, callback) {
     if (urlPath.indexOf('https://api') !== -1) {
       return this.response1(urlPath, options, callback)
-    } else {
-      return this.response2(urlPath, options, callback)
     }
+    return this.response2(urlPath, options, callback)
+
   }
 }
 
-function createZipMock(cb1, cb2) {
+function createZipMock (cb1, cb2) {
   if (cb1 == null) { cb1 = noop }
   if (cb2 == null) { cb2 = noop }
   class ZipMock {
-    constructor(filePath) {
+    constructor (filePath) {
       cb1(filePath)
     }
-    extractAllTo(directory, overwrite) {
+    extractAllTo (directory, overwrite) {
       cb2(directory, overwrite)
     }
-	}
+  }
   return ZipMock
 }
 
@@ -70,16 +71,16 @@ describe('installer', () => {
   process.env.QUIET = 1 // do not print out to stdout
   const archiveUrl = 'https://github.com/deepstream.io-cache-redis-test.zip'
   const assets = [
-		{ name: 'windows', browser_download_url: archiveUrl },
-		{ name: 'linux', browser_download_url: archiveUrl },
-		{ name: 'mac', browser_download_url: archiveUrl }
+    { name: 'windows', browser_download_url: archiveUrl },
+    { name: 'linux', browser_download_url: archiveUrl },
+    { name: 'mac', browser_download_url: archiveUrl }
   ]
 
   it('handle network error', (done) => {
     const needleMock = new Needle(
-			// request handler for fetching all releases
-			(urlPath, options, callback) => callback(new Error('network-dummy-error'))
-		)
+      // request handler for fetching all releases
+      (urlPath, options, callback) => callback(new Error('network-dummy-error'))
+    )
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock
@@ -93,9 +94,9 @@ describe('installer', () => {
 
   it('connector not found', (done) => {
     const needleMock = new Needle(
-			// request handler for fetching all releases
-			(urlPath, options, callback) => callback(null, { statusCode: 404 })
-		)
+      // request handler for fetching all releases
+      (urlPath, options, callback) => callback(null, { statusCode: 404 })
+    )
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock
@@ -110,12 +111,12 @@ describe('installer', () => {
 
   it('connector found but not the version', (done) => {
     const needleMock = new Needle(
-			// request handler for fetching all releases
-			(urlPath, options, callback) => callback(null, {
-  statusCode: 200,
-  body: [{ tag_name: '1.2.1', assets }]
-})
-		)
+      // request handler for fetching all releases
+      (urlPath, options, callback) => callback(null, {
+        statusCode: 200,
+        body: [{ tag_name: '1.2.1', assets }]
+      })
+    )
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock
@@ -130,14 +131,15 @@ describe('installer', () => {
 
   it('connector found but not the platform', (done) => {
     const needleMock = new Needle(
-			// request handler for fetching all releases
-			(urlPath, options, callback) => callback(null, {
-  statusCode: 200,
-  body: [{ tag_name: '1.2.3', assets: [
-						{ name: 'other-os', browser_download_url: archiveUrl }
-  ] }]
-})
-		)
+      // request handler for fetching all releases
+      (urlPath, options, callback) => callback(null, {
+        statusCode: 200,
+        body: [{ tag_name: '1.2.3',
+          assets: [
+            { name: 'other-os', browser_download_url: archiveUrl }
+          ] }]
+      })
+    )
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock
@@ -155,14 +157,14 @@ describe('installer', () => {
       createWriteStream: dummyWritedStream()
     }
     const needleMock = new Needle(
-			// request handler for fetching all releases
-			(urlPath, options, callback) => callback(null, {
-  statusCode: 200,
-  body: [{ tag_name: '1.2.3', assets }]
-}),
-			// request handler for all other requests, not starting with 'https://api'
-			(urlPath, options, callback) => callback(new Error('dummy-stream-read-error'))
-		)
+      // request handler for fetching all releases
+      (urlPath, options, callback) => callback(null, {
+        statusCode: 200,
+        body: [{ tag_name: '1.2.3', assets }]
+      }),
+      // request handler for all other requests, not starting with 'https://api'
+      (urlPath, options, callback) => callback(new Error('dummy-stream-read-error'))
+    )
     spyOn(mkdirp, 'sync')
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
@@ -181,17 +183,17 @@ describe('installer', () => {
       createWriteStream: dummyWritedStream()
     }
     const childProcessMock = {
-      execSync() { throw new Error('Could not extract archive') }
+      execSync () { throw new Error('Could not extract archive') }
     }
     const needleMock = new Needle(
-			// request handler for fetching all releases
-			(urlPath, options, callback) => callback(null, {
-  statusCode: 200,
-  body: [{ tag_name: '1.2.3', assets }]
-}),
-			// request handler for all other requests, not starting with 'https://api'
-			(urlPath, options, callback) => callback(null, { body: '' })
-		)
+      // request handler for fetching all releases
+      (urlPath, options, callback) => callback(null, {
+        statusCode: 200,
+        body: [{ tag_name: '1.2.3', assets }]
+      }),
+      // request handler for all other requests, not starting with 'https://api'
+      (urlPath, options, callback) => callback(null, { body: '' })
+    )
     spyOn(mkdirp, 'sync')
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
@@ -208,25 +210,25 @@ describe('installer', () => {
 
   it('downloads a connector and extract it', (done) => {
     const fsMock = {
-      readFileSync() {
-        return 'config:\n	host: localhost\n	port: 1234'
+      readFileSync () {
+        return 'config:\n host: localhost\n port: 1234'
       },
       createWriteStream: dummyWritedStream()
     }
     const needleMock = new Needle(
-			// request handler for fetching all releases
-			(urlPath, options, callback) => callback(null, {
-  statusCode: 200,
-  body: [{ tag_name: '1.0.0', assets }]
-}),
-			// request handler for all other requests, not starting with 'https://api'
-			(urlPath, options, callback) => callback(null, { body: '' })
-		)
+      // request handler for fetching all releases
+      (urlPath, options, callback) => callback(null, {
+        statusCode: 200,
+        body: [{ tag_name: '1.0.0', assets }]
+      }),
+      // request handler for all other requests, not starting with 'https://api'
+      (urlPath, options, callback) => callback(null, { body: '' })
+    )
     const zipConstructor = jasmine.createSpy('callback')
     const zipExtractor = jasmine.createSpy('callback')
     const zipMock = createZipMock(zipConstructor, zipExtractor)
     const child_processMock = {
-      execSync() {}
+      execSync () {}
     }
 
     spyOn(needleMock, 'get').and.callThrough()
@@ -251,28 +253,28 @@ describe('installer', () => {
 
     installer(installOptions, (error) => {
       expect(error).toBeUndefined()
-			// fetch all releases
+      // fetch all releases
       expect(needleMock.get.calls.argsFor(0)[0])
-				.toEqual('https://api.github.com/repos/deepstreamIO/deepstream.io-cache-redis/releases')
-			// fetch archive
+        .toEqual('https://api.github.com/repos/deepstreamIO/deepstream.io-cache-redis/releases')
+      // fetch archive
       expect(needleMock.get.calls.argsFor(1)[0])
-				.toEqual('https://github.com/deepstream.io-cache-redis-test.zip')
-			// save archive
+        .toEqual('https://github.com/deepstream.io-cache-redis-test.zip')
+      // save archive
       expect(mkdirp.sync.calls.argsFor(0)[0]).toEqual('lib')
       expect(fsMock.createWriteStream.calls.argsFor(0)[0])
-				.toEqual(pj('lib', 'cache-redis-test-1.0.0.zip'))
-			// prepare extract archive
+        .toEqual(pj('lib', 'cache-redis-test-1.0.0.zip'))
+      // prepare extract archive
       if (child_processMock.execSync.calls.count()) {
         expect(child_processMock.execSync.calls.argsFor(0)[0])
-					.toEqual('mkdir -p lib/deepstream.io-cache-redis && ' +
-					'tar -xzf lib/cache-redis-test-1.0.0.zip -C lib/deepstream.io-cache-redis')
+          .toEqual('mkdir -p lib/deepstream.io-cache-redis && ' +
+          'tar -xzf lib/cache-redis-test-1.0.0.zip -C lib/deepstream.io-cache-redis')
       } else {
         expect(zipConstructor.calls.argsFor(0)[0]).toEqual(pj('lib', 'cache-redis-test-1.0.0.zip'))
         expect(zipExtractor.calls.argsFor(0)).toEqual([pj('lib', 'deepstream.io-cache-redis'), true])
       }
-			// show example config
+      // show example config
       expect(fsMock.readFileSync.calls.argsFor(0)[0])
-				.toEqual(pj('lib', 'deepstream.io-cache-redis', 'example-config.yml'))
+        .toEqual(pj('lib', 'deepstream.io-cache-redis', 'example-config.yml'))
       done()
     })
   })

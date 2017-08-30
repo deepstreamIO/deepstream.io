@@ -1,44 +1,22 @@
+/* no-param-reassign no-param-reassign, no-new, max-len, */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
+/* eslint-disable no-param-reassign */
 
-const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
-const StorageMock = require('../mocks/storage-mock')
-const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
+const testHelper = require('../test-helper/test-helper')
 const C = require('../../src/constants/constants')
+
 const noop = function () {}
+const options = testHelper.getDeepstreamPermissionOptions()
+const testPermission = testHelper.testPermission(options)
+
 const lastError = function () {
   return options.logger.log.calls.mostRecent().args[2]
-}
-let options = {
-  logger: { log: jasmine.createSpy('log') },
-  cache: new StorageMock(),
-  storage: new StorageMock(),
-  cacheRetrievalTimeout: 500,
-  permission: {
-    options: {
-      cacheEvacuationInterval: 60000,
-      maxRuleIterations: 3,
-    }
-  }
-}
-
-const testPermission = function (permissions, message, username, userdata, callback) {
-  const permissionHandler = new ConfigPermissionHandler(options, permissions)
-  permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-  let permissionResult
-
-  username = username || 'someUser'
-  userdata = userdata || {}
-  callback = callback || function (error, result) {
-    permissionResult = result
-  }
-  permissionHandler.canPerformAction(username, message, callback, userdata)
-  return permissionResult
 }
 
 describe('permission handler loads data for cross referencing', () => {
   it('retrieves data for a nested cross references', (next) => {
-    const permissions = getBasePermissions()
+    const permissions = testHelper.getBasePermissions()
 
     options.cache.set('thing/x', { ref: 'y' }, noop)
     options.cache.set('thing/y', { is: 'it' }, noop)
@@ -68,7 +46,7 @@ describe('permission handler loads data for cross referencing', () => {
   })
 
   it('erors for undefined fields in crossreferences', (next) => {
-    const permissions = getBasePermissions()
+    const permissions = testHelper.getBasePermissions()
 
     options.cache.set('thing/x', { ref: 'y' }, noop)
     options.cache.set('thing/y', { is: 'it' }, noop)
@@ -94,7 +72,7 @@ describe('permission handler loads data for cross referencing', () => {
   })
 
   it('can use the same cross reference multiple times', (next) => {
-    const permissions = getBasePermissions()
+    const permissions = testHelper.getBasePermissions()
 
     options.cache.reset()
     options.cache.set('user', { firstname: 'Wolfram', lastname: 'Hempel' }, noop)
@@ -122,7 +100,7 @@ describe('permission handler loads data for cross referencing', () => {
   })
 
   it('supports nested references to the same record', (next) => {
-    const permissions = getBasePermissions()
+    const permissions = testHelper.getBasePermissions()
 
     options.cache.reset()
     options.cache.set('user', { ref: 'user', firstname: 'Egon' }, noop)
@@ -150,7 +128,7 @@ describe('permission handler loads data for cross referencing', () => {
   })
 
   it('errors for objects as cross reference arguments', (next) => {
-    const permissions = getBasePermissions()
+    const permissions = testHelper.getBasePermissions()
 
     options.cache.reset()
     options.cache.set('user', { ref: { bla: 'blub' } }, noop)
@@ -176,7 +154,7 @@ describe('permission handler loads data for cross referencing', () => {
   })
 
   it('prevents nesting beyond limit', (next) => {
-    const permissions = getBasePermissions()
+    const permissions = testHelper.getBasePermissions()
 
     options.cache.reset()
     options.cache.set('a', 'a', noop)

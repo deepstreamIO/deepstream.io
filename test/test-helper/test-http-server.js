@@ -1,10 +1,11 @@
+/* eslint-disable class-methods-use-this */
 'use strict'
 
 const http = require('http')
 const EventEmitter = require('events').EventEmitter
 
 module.exports = class TestHttpServer extends EventEmitter {
-  constructor(port, callback, doLog) {
+  constructor (port, callback, doLog) {
     super()
     this.server = http.createServer(this._onRequest.bind(this))
     this.lastRequestData = null
@@ -17,42 +18,42 @@ module.exports = class TestHttpServer extends EventEmitter {
     this.server.listen(port, this._onListen.bind(this))
   }
 
-  static getRandomPort() {
+  static getRandomPort () {
     return 1000 + Math.floor(Math.random() * 9000)
   }
 
-  reset() {
+  reset () {
     this.lastRequestData = null
     this.hasReceivedRequest = false
     this.lastRequestHeaders = null
   }
 
-  respondWith(statusCode, data) {
+  respondWith (statusCode, data) {
     if (typeof data === 'object') {
-      data = JSON.stringify(data)
+      data = JSON.stringify(data) // eslint-disable-line
     }
     this._response.setHeader('content-type', 'application/json')
     this._response.writeHead(statusCode)
     this._response.end(data)
   }
 
-  close(callback) {
+  close (callback) {
     this.server.close(callback)
   }
 
 
-  _onListen() {
+  _onListen () {
     this._log.bind(this, `server listening on port ${this._port}`)
     this._callback()
   }
 
-  _log(msg) {
+  _log (msg) {
     if (this._doLog) {
       console.log(msg)
     }
   }
 
-  _onRequest(request, response) {
+  _onRequest (request, response) {
     request.postData = ''
     request.setEncoding('utf8')
     request.on('data', this._addChunk.bind(this, request))
@@ -60,11 +61,11 @@ module.exports = class TestHttpServer extends EventEmitter {
     this._response = response
   }
 
-  _addChunk(request, chunk) {
+  _addChunk (request, chunk) {
     request.postData += chunk
   }
 
-  _onRequestComplete(request) {
+  _onRequestComplete (request) {
     this.lastRequestData = JSON.parse(request.postData)
     this.lastRequestHeaders = request.headers
     this.lastRequestMethod = request.method

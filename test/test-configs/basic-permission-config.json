@@ -1,25 +1,25 @@
 {
-	"presence": {
-		"*": {
-			"allow": true
-		}
-	},
-	"record": {
-		"*": {
-			"write": true,
-			"read": true
-		}
-	},
-	"event": {
-		"*": {
-			"publish": true,
-			"subscribe": true
-		}
-	},
-	"rpc": {
-		"*": {
-			"provide": true,
-			"request": true
-		}
-	}
+    "presence": {
+        "*": {
+            "allow": true
+        }
+    },
+    "record": {
+        "*": {
+            "write": true,
+            "read": true
+        }
+    },
+    "event": {
+        "*": {
+            "publish": true,
+            "subscribe": true
+        }
+    },
+    "rpc": {
+        "*": {
+            "provide": true,
+            "request": true
+        }
+    }
 }

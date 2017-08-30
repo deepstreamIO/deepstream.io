@@ -1,4 +1,5 @@
 /* global describe, it, expect */
+/* eslint-disable no-new */
 'use strict'
 
 const AuthenticationHandler = require('../../src/authentication/file-based-authentication-handler')
