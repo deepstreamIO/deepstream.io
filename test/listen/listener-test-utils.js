@@ -1,64 +1,55 @@
+/* eslint-disable class-methods-use-this, max-len */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let ListenerRegistry = require('../../src/listen/listener-registry'),
-  msg = require('../test-helper/test-helper').msg,
-  SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  LoggerMock = require('../mocks/logger-mock'),
-  LocalMessageConnector = require('../mocks/local-message-connector'),
-  ClusterRegistry = require('../../src/cluster/cluster-registry'),
-  UniqueRegistry = require('../../src/cluster/cluster-unique-state-provider'),
-  C = require('../../src/constants/constants')
+const ListenerRegistry = require('../../src/listen/listener-registry')
+const testHelper = require('../test-helper/test-helper')
+const SocketMock = require('../mocks/socket-mock')
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const C = require('../../src/constants/constants')
 
-let topic,
-  subscribedTopics,
-  subscribers = new Set(),
-  sendToSubscribersMock,
-  providers,
-  clients,
-  listenerRegistry,
-  clientRegistry,
-  messageHistory
+const msg = testHelper.msg
+const options = testHelper.getDeepstreamOptions()
+
+let topic
+let subscribedTopics
+const subscribers = new Set()
+let sendToSubscribersMock
+let providers
+let clients
+let listenerRegistry
+let clientRegistry
+let messageHistory
 
 class ListenerTestUtils {
-  constructor(listenerTopic) {
+  constructor (listenerTopic) {
     topic = listenerTopic || C.TOPIC.RECORD
     messageHistory = {}
     sendToSubscribersMock = jasmine.createSpy('sendToSubscribersMock')
 
     subscribedTopics = []
     clientRegistry = {
-      hasName(subscriptionName) {
+      hasName (subscriptionName) {
         return subscribedTopics.indexOf(subscriptionName)
       },
-      getNames() {
+      getNames () {
         return subscribedTopics
       },
-      getLocalSubscribers() {
+      getLocalSubscribers () {
         return subscribers
       },
-      hasLocalSubscribers() {
+      hasLocalSubscribers () {
         return subscribers.size > 0
       },
       sendToSubscribers: sendToSubscribersMock
     }
 
-		// TODO Mock process insead
-    process.setMaxListeners(0)
+    // TODO Mock process insead
+    // process.setMaxListeners(0)
 
-    const options = {
-      serverName: 'server-name-a',
-      stateReconciliationTimeout: 10,
-      messageConnector: new LocalMessageConnector(),
-      logger: new LoggerMock(),
-      listenResponseTimeout: 30,
-      shuffleListenProviders: false
-    }
-    options.clusterRegistry = new ClusterRegistry(options, {
-      getConnectionCount() {}
-    })
-    options.uniqueRegistry = new UniqueRegistry(options, options.clusterRegistry)
+    options.listenResponseTimeout = 30
+    options.shuffleListenProviders = false
+    options.stateReconciliationTimeout = 10
 
     clients = [
       null, // to make tests start from 1
@@ -85,17 +76,17 @@ class ListenerTestUtils {
     expect(typeof listenerRegistry.handle).toBe('function')
   }
 
-  nothingHappened() {
+  nothingHappened () {
     for (let i = 1; i < 4; i++) {
       this.providerRecievedNoNewMessages(i)
       this.clientDoesNotRecievePublishedUpdate(i)
     }
   }
 
-	/**
-	* Provider Utils
-	*/
-  providerListensTo(provider, pattern) {
+  /**
+  * Provider Utils
+  */
+  providerListensTo (provider, pattern) {
     updateRegistry(providers[provider], C.ACTIONS.LISTEN, [pattern])
     if (providers[provider].socket.getMsgSize() > 1) {
       verify(providers[provider], [C.ACTIONS.ACK, C.ACTIONS.LISTEN], pattern, 1)
@@ -104,134 +95,130 @@ class ListenerTestUtils {
     }
   }
 
-  providerUnlistensTo(provider, pattern) {
+  providerUnlistensTo (provider, pattern) {
     updateRegistry(providers[provider], C.ACTIONS.UNLISTEN, [pattern])
     verify(providers[provider], [C.ACTIONS.ACK, C.ACTIONS.UNLISTEN], pattern)
   }
 
-  providerGetsSubscriptionFound(provider, pattern, subscription) {
+  providerGetsSubscriptionFound (provider, pattern, subscription) {
     verify(providers[provider], C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND, [pattern, subscription])
   }
 
-  providerGetsSubscriptionRemoved(provider, pattern, subscription, negate) {
+  providerGetsSubscriptionRemoved (provider, pattern, subscription) {
     verify(providers[provider], C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED, [pattern, subscription])
   }
 
-  providerAcceptsButIsntAcknowledged(provider, pattern, subscriptionName, doesnthaveActiveProvider) {
+  providerAcceptsButIsntAcknowledged (provider, pattern, subscriptionName) {
     this.providerAccepts(provider, pattern, subscriptionName, true)
   }
 
-  providerAccepts(provider, pattern, subscriptionName, doesnthaveActiveProvider) {
+  providerAccepts (provider, pattern, subscriptionName, doesnthaveActiveProvider) {
     updateRegistry(providers[provider], C.ACTIONS.LISTEN_ACCEPT, [pattern, subscriptionName])
     expect(listenerRegistry.hasActiveProvider(subscriptionName)).toBe(!doesnthaveActiveProvider)
   }
 
-  providerRejectsAndPreviousTimeoutProviderThatAcceptedIsUsed(provider, pattern, subscriptionName) {
+  providerRejectsAndPreviousTimeoutProviderThatAcceptedIsUsed (provider, pattern, subscriptionName) {
     this.providerRejects(provider, pattern, subscriptionName, true)
   }
 
-  providerAcceptsAndIsSentSubscriptionRemoved(provider, pattern, subscriptionName) {
+  providerAcceptsAndIsSentSubscriptionRemoved (provider, pattern, subscriptionName) {
     this.providerAcceptsButIsntAcknowledged(provider, pattern, subscriptionName)
     this.providerGetsSubscriptionRemoved(provider, pattern, subscriptionName)
   }
 
-  providerRejects(provider, pattern, subscriptionName, doNotCheckActiveProvider) {
+  providerRejects (provider, pattern, subscriptionName, doNotCheckActiveProvider) {
     updateRegistry(providers[provider], C.ACTIONS.LISTEN_REJECT, [pattern, subscriptionName])
     if (!doNotCheckActiveProvider) {
       expect(listenerRegistry.hasActiveProvider(subscriptionName)).toBe(false)
     }
   }
 
-  providerSubscribesTo(provider, subscriptionName) {
+  providerSubscribesTo (provider, subscriptionName) {
     listenerRegistry.onSubscriptionMade(subscriptionName, providers[provider], undefined)
     subscribedTopics.push(subscriptionName)
     subscribers.add(providers[provider])
   }
 
-  providerUnsubscribesTo(provider, subscriptionName, subscriptionCount) {
+  providerUnsubscribesTo (provider, subscriptionName, subscriptionCount) {
     listenerRegistry.onSubscriptionRemoved(subscriptionName, providers[provider], subscriptionCount || 0)
     subscribedTopics.splice(subscribedTopics.indexOf(subscriptionName), 1)
     subscribers.delete(providers[provider])
   }
 
-  providerRecievedNoNewMessages(provider) {
+  providerRecievedNoNewMessages (provider) {
     verify(providers[provider], null)
   }
 
-  acceptMessageThrowsError(provider, pattern, subscriptionName, doesnthaveActiveProvider) {
+  acceptMessageThrowsError (provider, pattern, subscriptionName) {
     updateRegistry(providers[provider], C.ACTIONS.LISTEN_ACCEPT, [pattern, subscriptionName])
-		// TODO
-		// verify( providers[ provider], C.ACTIONS.ERROR, [ C.EVENT.INVALID_MESSAGE, C.ACTIONS.LISTEN_ACCEPT, pattern, subscriptionName ] );
+    // TODO
+    // verify( providers[ provider], C.ACTIONS.ERROR, [ C.EVENT.INVALID_MESSAGE, C.ACTIONS.LISTEN_ACCEPT, pattern, subscriptionName ] );
   }
 
-  rejectMessageThrowsError(provider, pattern, subscriptionName, doNotCheckActiveProvider) {
+  rejectMessageThrowsError (provider, pattern, subscriptionName) {
     updateRegistry(providers[provider], C.ACTIONS.LISTEN_REJECT, [pattern, subscriptionName])
-		// TODO
-		// verify( providers[ provider], C.ACTIONS.ERROR, [ C.EVENT.INVALID_MESSAGE, C.ACTIONS.LISTEN_REJECT, pattern, subscriptionName ] );
+    // TODO
+    // verify( providers[ provider], C.ACTIONS.ERROR, [ C.EVENT.INVALID_MESSAGE, C.ACTIONS.LISTEN_REJECT, pattern, subscriptionName ] );
   }
 
-  providerLosesItsConnection(provider) {
+  providerLosesItsConnection (provider) {
     providers[provider].socket.emit('close')
   }
 
-  providerRecievesPublishedUpdate(provider, subscription, state) {
+  providerRecievesPublishedUpdate (provider, subscription, state) {
     verify(providers[provider], C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [subscription, state ? C.TYPES.TRUE : C.TYPES.FALSE])
   }
 
-	/**
-	* Subscriber Utils
-	*/
-  subscriptionAlreadyMadeFor(subscriptionName) {
+  /**
+  * Subscriber Utils
+  */
+  subscriptionAlreadyMadeFor (subscriptionName) {
     subscribedTopics.push(subscriptionName)
   }
 
-  clientSubscribesToButIsNotFirstSubscriber(client, subscriptionName) {
+  clientSubscribesToButIsNotFirstSubscriber (client, subscriptionName) {
     listenerRegistry.onSubscriptionMade(subscriptionName, clients[client], 5)
     subscribedTopics.push(subscriptionName)
   }
 
-  clientSubscribesTo(client, subscriptionName, currentSusbcriptions) {
+  clientSubscribesTo (client, subscriptionName, currentSusbcriptions) {
     listenerRegistry.onSubscriptionMade(subscriptionName, clients[client], currentSusbcriptions || 1)
     subscribedTopics.push(subscriptionName)
   }
 
-  clientUnsubscribesAndOnlyRemainingSubscriberIsProvider(client, subscriptionName) {
+  clientUnsubscribesAndOnlyRemainingSubscriberIsProvider (client, subscriptionName) {
     listenerRegistry.onSubscriptionRemoved(subscriptionName, clients[client], 1)
   }
 
-  clientUnSubscribesToButIsNotLastSubscriber(client, subscriptionName) {
+  clientUnSubscribesToButIsNotLastSubscriber (client, subscriptionName) {
     this.clientUnsubscribesTo(client, subscriptionName, 1)
   }
 
-  clientUnsubscribesTo(client, subscriptionName, remainingSubscriptions) {
-    if (remainingSubscriptions == null) {
-      remainingSubscriptions = 0
-    }
-    listenerRegistry.onSubscriptionRemoved(subscriptionName, clients[client], remainingSubscriptions)
+  clientUnsubscribesTo (client, subscriptionName, remainingSubscriptions) {
+    listenerRegistry.onSubscriptionRemoved(subscriptionName, clients[client], remainingSubscriptions || 0)
   }
 
-  clientRecievedNoNewMessages(client) {
+  clientRecievedNoNewMessages (client) {
     verify(clients[client], null)
   }
 
-  clientRecievesPublishedUpdate(client, subscription, state) {
+  clientRecievesPublishedUpdate (client, subscription, state) {
     verify(clients[client], C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER, [subscription, state ? C.TYPES.TRUE : C.TYPES.FALSE])
   }
 
-  clientDoesNotRecievePublishedUpdate(client) {
+  clientDoesNotRecievePublishedUpdate (client) {
     this.clientRecievedNoNewMessages(client)
   }
 
-  publishUpdateIsNotSentToSubscribers(subscription) {
+  publishUpdateIsNotSentToSubscribers () {
     expect(sendToSubscribersMock.calls.count()).toEqual(0)
   }
 
-  publishUpdateSentToSubscribers(subscription, state) {
-    const msgString = msg(`${topic}|${C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER}|${subscription}|${state ? C.TYPES.TRUE : C.TYPES.FALSE}+`)
+  publishUpdateSentToSubscribers (subscription, state) {
     const message = {
       topic,
       action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-      data: [ subscription, state ? C.TYPES.TRUE : C.TYPES.FALSE ]
+      data: [subscription, state ? C.TYPES.TRUE : C.TYPES.FALSE]
     }
     if (sendToSubscribersMock.calls.mostRecent()) {
       expect(sendToSubscribersMock.calls.mostRecent().args).toEqual([subscription, message])
@@ -240,7 +227,7 @@ class ListenerTestUtils {
     }
   }
 
-  subscriptionHasActiveProvider(subscription, value) {
+  subscriptionHasActiveProvider (subscription, value) {
     expect(listenerRegistry.hasActiveProvider(subscription)).toBe(value)
   }
 
@@ -248,7 +235,7 @@ class ListenerTestUtils {
 
 module.exports = ListenerTestUtils
 
-function updateRegistry(socket, action, data) {
+function updateRegistry (socket, action, data) {
   const message = {
     topic,
     action,
@@ -258,8 +245,7 @@ function updateRegistry(socket, action, data) {
   listenerRegistry.handle(socket, message)
 }
 
-function verify(provider, actions, data, messageIndex, negate) {
-  var messageIndex = messageIndex || 0
+function verify (provider, actions, data, messageIndex, negate) {
   if (actions == null) {
     const lastMessage = provider.socket.getMsg(0)
     expect(lastMessage).toBe((messageHistory[provider] || {}).message)
@@ -267,12 +253,12 @@ function verify(provider, actions, data, messageIndex, negate) {
     return
   }
   if (!(actions instanceof Array)) {
-    actions = [actions]
+    actions = [actions] // eslint-disable-line
   }
   if (!(data instanceof Array)) {
-    data = [data]
+    data = [data] // eslint-disable-line
   }
-  const message = provider.socket.getMsg(messageIndex)
+  const message = provider.socket.getMsg(messageIndex || 0)
   messageHistory[provider] = {
     message,
     size: provider.socket.getMsgSize()

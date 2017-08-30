@@ -1,9 +1,0 @@
-#!/bin/bash
-sudo apt update
-sudo apt -y install libz-dev libssl-dev libuv1-dev g++ make
-git clone https://github.com/uWebSockets/uWebSockets.git && cd uWebSockets
-git checkout v0.13.0
-make
-sudo make install
-cd ..
-make

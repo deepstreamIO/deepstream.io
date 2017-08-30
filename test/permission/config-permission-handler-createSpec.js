@@ -1,34 +1,13 @@
+/* eslint-disable no-param-reassign */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
 const C = require('../../src/constants/constants')
-const StorageMock = require('../mocks/storage-mock')
+const testHelper = require('../test-helper/test-helper')
 
-const options = {
-  logger: { log: jasmine.createSpy('log') },
-  cache: new StorageMock(),
-  storage: new StorageMock(),
-  permission: {
-    options: {
-      cacheEvacuationInterval: 60000
-    }
-  }
-}
-const testPermission = function (permissions, message, username, userdata, callback) {
-  const permissionHandler = new ConfigPermissionHandler(options, permissions)
-  permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-  let permissionResult
-
-  username = username || 'someUser'
-  userdata = userdata || {}
-  callback = callback || function (error, result) {
-    permissionResult = result
-  }
-  permissionHandler.canPerformAction(username, message, callback, userdata)
-  return permissionResult
-}
+const options = testHelper.getDeepstreamPermissionOptions()
+const testPermission = testHelper.testPermission(options)
 
 describe('allows to create a record without providing data, but denies updating it', () => {
   const permissions = getBasePermissions()

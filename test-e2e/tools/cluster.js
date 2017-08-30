@@ -70,7 +70,7 @@ Cluster.prototype._startServer = function () {
     permission: {
       type    : 'config',
       options : {
-        path: './test-e2e/config/permissions.json'
+        path: './test-e2e/config/permissions-open.json'
       }
     },
     connectionEndpoints: {
@@ -151,6 +151,5 @@ Cluster.prototype._startServer = function () {
   this._server.on('stopped', () => setTimeout(() => this.emit('stopped'), 500))
   this._server.start()
 }
-
 
 module.exports = Cluster

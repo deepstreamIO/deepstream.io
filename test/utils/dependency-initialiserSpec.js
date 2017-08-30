@@ -1,14 +1,13 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* eslint-disable no-new, no-empty */
 'use strict'
 
-let C = require('../../src/constants/constants'),
-  DependencyInitialiser = require('../../src/utils/dependency-initialiser'),
-  PluginMock = require('../mocks/plugin-mock'),
-  LoggerMock = require('../mocks/logger-mock'),
-  EventEmitter = require('events').EventEmitter
+const C = require('../../src/constants/constants')
+const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
+const PluginMock = require('../mocks/plugin-mock')
+const LoggerMock = require('../mocks/logger-mock')
 
 describe('dependency-initialiser', () => {
-  let dependencyInitialiser
   let dependencyBInitialiser
 
   const options = {
@@ -98,7 +97,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
   })
 
   it('creates another depdendency initialiser with a plugin error', (next) => {
-    process.once('uncaughtException', (err) => {
+    process.once('uncaughtException', () => {
       expect(onReady).not.toHaveBeenCalled()
       expect(log).toHaveBeenCalledWith('Error while initialising dependency')
       expect(log).toHaveBeenCalledWith('Error while initialising plugin: something went wrong')

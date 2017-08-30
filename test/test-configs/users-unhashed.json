@@ -1,11 +1,11 @@
 {
-	"userC": {
-		"password": "userCPass",
-		"serverData": { "some": "values" },
-		"clientData": { "all": "othervalue" }
-	},
-	"userD": {
-		"password": "userDPass",
-		"clientData": { "all": "client data" }
-	}
+    "userC": {
+        "password": "userCPass",
+        "serverData": { "some": "values" },
+        "clientData": { "all": "othervalue" }
+    },
+    "userD": {
+        "password": "userDPass",
+        "clientData": { "all": "client data" }
+    }
 }

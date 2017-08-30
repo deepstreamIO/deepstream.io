@@ -1,31 +1,24 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, xit */
 'use strict'
 
-let RpcHandler = require('../../src/rpc/rpc-handler'),
-  RpcProxy = require('../../src/rpc/rpc-proxy'),
-  SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  C = require('../../src/constants/constants'),
-  msg = require('../test-helper/test-helper').msg,
-  SocketMock = require('../mocks/socket-mock'),
-  MessageConnectorMock = require('../mocks/message-connector-mock'),
-  clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
+const RpcHandler = require('../../src/rpc/rpc-handler')
+const RpcProxy = require('../../src/rpc/rpc-proxy')
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const C = require('../../src/constants/constants')
+const SocketMock = require('../mocks/socket-mock')
+const testHelper = require('../test-helper/test-helper')
 
-const options = {
-  clusterRegistry: clusterRegistryMock,
-  messageConnector: new MessageConnectorMock(),
-  logger: { log: jasmine.createSpy('log') },
-  serverName: 'thisServer',
-  rpcAckTimeout: 50,
-  rpcTimeout: 50
-}
+const msg = testHelper.msg
+const options = testHelper.getDeepstreamOptions()
+options.rpcAckTimeout = 50
+options.rpcTimeout = 50
 
 describe('rpc handler returns alternative providers for the same rpc', () => {
-  let rpcHandler,
-    rpcProxyForB,
-    providerForA1,
-    providerForA2,
-    providerForA3,
-    providerForB1
+  let rpcHandler
+  let providerForA1
+  let providerForA2
+  let providerForA3
+  let providerForB1
 
   beforeAll(() => {
     providerForA1 = new SocketWrapper(new SocketMock(), {})
@@ -69,6 +62,7 @@ describe('rpc handler returns alternative providers for the same rpc', () => {
       if (name === 'rpcA') {
         return ['random-server-1', 'random-server-2']
       }
+      return []
     }
   })
 
@@ -123,10 +117,8 @@ describe('rpc handler returns alternative providers for the same rpc', () => {
   it('receives a remote request for a local rpc', () => {
     providerForB1.socket.lastSendMessage = null
 
-    options.messageConnector.simulateIncomingMessage({
-      topic: 'PRIVATE/thisServer',
-      originalTopic: C.TOPIC.RPC,
-      remotePrivateTopic: 'PRIVATE/otherServer',
+    options.message.simulateIncomingMessage('PRIVATE/P', {
+      topic: C.TOPIC.RPC,
       action: C.ACTIONS.REQUEST,
       data: ['rpcB', '1234', 'O{"numA":5, "numB":7}']
     })

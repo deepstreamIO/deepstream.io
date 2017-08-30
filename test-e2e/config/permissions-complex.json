@@ -12,17 +12,6 @@
 			"read": true,
 			"listen": true
 		},
-		"forbidden": {
-			"create": false,
-			"delete": false,
-			"write": false,
-			"read": false,
-			"listen": false
-		},
-		"read-only": {
-			"write": false,
-			"read": true
-		},
 		"d/*": {
 			"create": "_('perm/JohnDoe').boolean",
 			"read": "_('perm/JohnDoe').boolean"
@@ -37,7 +26,7 @@
 			"create": true,
 			"read": true
 		},
-			"only-decrement": {
+		"only-decrement": {
 			"write": "!oldData.value || data.value < oldData.value",
 			"create": true,
 			"read": true
@@ -52,6 +41,17 @@
 		"only-a-can-read-and-create": {
 			"create": "user.id === 'A'",
 			"read": "user.id === 'A'"
+		},
+		"forbidden": {
+			"create": false,
+			"delete": false,
+			"write": false,
+			"read": false,
+			"listen": false
+		},
+			"read-only": {
+			"write": false,
+			"read": true
 		}
 	},
 	"event": {

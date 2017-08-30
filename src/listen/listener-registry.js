@@ -2,7 +2,6 @@
 
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
-const DistributedStateRegistry = require('../cluster/distributed-state-registry')
 const TimeoutRegistry = require('./listener-timeout-registry')
 const utils = require('../utils/utils')
 
@@ -39,8 +38,8 @@ module.exports = class ListenerRegistry {
     this._clientRegistry = clientRegistry
     this._uniqueLockName = `${topic}_LISTEN_LOCK`
 
-    this._uniqueStateProvider = this._options.uniqueRegistry
-    this._messageConnector = this._options.messageConnector
+    this._lockRegistry = this._options.uniqueRegistry
+    this._message = this._options.message
 
     this._patterns = {}
     this._localListenInProgress = {}
@@ -78,21 +77,20 @@ module.exports = class ListenerRegistry {
    * via the cluster.
    */
   _setupRemoteComponents () {
-    this._clusterProvidedRecords = new DistributedStateRegistry(
-      `${this._topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`,
-      this._options
+    this._messageTopic = this._topic + C.ACTIONS.LISTEN
+    this._clusterProvidedRecords = this._message.getStateRegistry(
+      `${this._topic}_${C.TOPIC.PUBLISHED_SUBSCRIPTIONS}`
     )
     this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
     this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
-
-    this._messageConnector.subscribe(
-      this._getMessageBusTopic(this._options.serverName, this._topic),
+    this._message.subscribe(
+      this._messageTopic,
       this._onIncomingMessage.bind(this)
     )
   }
 
   /**
-  * Used primarily for tests. Returns whether or not a provider exists for
+  * Returns whether or not a provider exists for
   * the specific subscriptionName
   * @public
   * @returns {boolean}
@@ -274,8 +272,8 @@ module.exports = class ListenerRegistry {
       closeListener: this._removeListener.bind(this, socketWrapper, message)
     }
     socketWrapper.once('close', this._locallyProvidedRecords[subscriptionName].closeListener)
-    this._clusterProvidedRecords.add(subscriptionName)
 
+    this._clusterProvidedRecords.add(subscriptionName)
     this._stopLocalDiscoveryStage(subscriptionName)
   }
 
@@ -402,13 +400,13 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    this._uniqueStateProvider.get(this._getUniqueLockName(subscriptionName), (success) => {
+    this._lockRegistry.get(this._getUniqueLockName(subscriptionName), (success) => {
       if (!success) {
         return
       }
 
       if (this.hasActiveProvider(subscriptionName)) {
-        this._uniqueStateProvider.release(this._getUniqueLockName(subscriptionName))
+        this._lockRegistry.release(this._getUniqueLockName(subscriptionName))
         return
       }
 
@@ -424,7 +422,6 @@ module.exports = class ListenerRegistry {
         subscriptionName
       )
       this._leadingListen[subscriptionName] = remoteListenArray
-
       this._startLocalDiscoveryStage(subscriptionName, localListenArray)
     })
   }
@@ -450,8 +447,9 @@ module.exports = class ListenerRegistry {
         C.EVENT.LEADING_LISTEN,
         `finished for ${this._topic}:${subscriptionName}`
       )
+
       delete this._leadingListen[subscriptionName]
-      this._uniqueStateProvider.release(this._getUniqueLockName(subscriptionName))
+      this._lockRegistry.release(this._getUniqueLockName(subscriptionName))
     } else {
       const nextServerName = this._leadingListen[subscriptionName].shift()
       this._options.logger.log(
@@ -513,9 +511,15 @@ module.exports = class ListenerRegistry {
 
     if (this._leadingListen[subscriptionName]) {
       this._nextDiscoveryStage(subscriptionName)
-    } else {
+    } else if (this._leadListen[subscriptionName]) {
       this._sendRemoteDiscoveryStop(this._leadListen[subscriptionName], subscriptionName)
       delete this._leadListen[subscriptionName]
+    } else {
+      this._options.logger.log(
+        C.LOG_LEVEL.WARN,
+        C.EVENT.LOCAL_LISTEN,
+        `nothing to stop for ${this._topic}:${subscriptionName}`
+      )
     }
   }
 
@@ -692,9 +696,8 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to find a provider for
   */
   _sendRemoteDiscoveryStart (serverName, subscriptionName) {
-    const messageTopic = this._getMessageBusTopic(serverName, this._topic)
-    this._messageConnector.publish(messageTopic, {
-      topic: messageTopic,
+    this._message.sendDirect(serverName, this._messageTopic, {
+      topic: this._messageTopic,
       action: C.ACTIONS.LISTEN,
       data: [serverName, subscriptionName, this._options.serverName]
     })
@@ -708,9 +711,8 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to that has just finished
   */
   _sendRemoteDiscoveryStop (listenLeaderServerName, subscriptionName) {
-    const messageTopic = this._getMessageBusTopic(listenLeaderServerName, this._topic)
-    this._messageConnector.publish(messageTopic, {
-      topic: messageTopic,
+    this._message.sendDirect(listenLeaderServerName, this._messageTopic, {
+      topic: this._messageTopic,
       action: C.ACTIONS.ACK,
       data: [listenLeaderServerName, subscriptionName]
     })
@@ -721,9 +723,8 @@ module.exports = class ListenerRegistry {
     * to do a provider cleanup if necessary
     */
   _sendLastSubscriberRemoved (serverName, subscriptionName) {
-    const messageTopic = this._getMessageBusTopic(serverName, this._topic)
-    this._messageConnector.publish(messageTopic, {
-      topic: messageTopic,
+    this._message.sendDirect(serverName, this._messageTopic, {
+      topic: this._messageTopic,
       action: C.ACTIONS.UNSUBSCRIBE,
       data: [serverName, subscriptionName]
     })
@@ -874,16 +875,6 @@ module.exports = class ListenerRegistry {
     socketWrapper.sendError(this._topic, errorEvent, errorMsg)
     // TODO: This isn't a CRITICAL error, would we say its an info
     this._options.logger.log(C.LOG_LEVEL.ERROR, errorEvent, errorMsg)
-  }
-
-  /**
-  * Get the unique topic to use for the message bus
-  * @param  {String} serverName the name of the server
-  * @param  {Topic} topic
-  * @return {String}
-  */
-  _getMessageBusTopic (serverName, topic) { // eslint-disable-line
-    return C.TOPIC.LEADER_PRIVATE + serverName + topic + C.ACTIONS.LISTEN
   }
 
   /**

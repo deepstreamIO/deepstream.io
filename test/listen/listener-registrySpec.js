@@ -1,27 +1,20 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let ListenerRegistry = require('../../src/listen/listener-registry'),
-  msg = require('../test-helper/test-helper').msg,
-  SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  LoggerMock = require('../mocks/logger-mock'),
-  clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))(),
-  noopMessageConnector = require('../../src/default-plugins/noop-message-connector')
+const ListenerRegistry = require('../../src/listen/listener-registry')
+const testHelper = require('../test-helper/test-helper')
+const SocketMock = require('../mocks/socket-mock')
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
 
-let listenerRegistry,
-  options = {
-    clusterRegistry: clusterRegistryMock,
-    messageConnector: noopMessageConnector,
-    logger: {
-      log: jasmine.createSpy('logger')
-    }
-  },
-  recordSubscriptionRegistryMock = {
-    getNames() {
-      return ['car/Mercedes', 'car/Abarth']
-    }
+const options = testHelper.getDeepstreamOptions()
+const msg = testHelper.msg
+let listenerRegistry
+
+const recordSubscriptionRegistryMock = {
+  getNames () {
+    return ['car/Mercedes', 'car/Abarth']
   }
+}
 
 describe('listener-registry errors', () => {
   beforeEach(() => {
@@ -36,7 +29,7 @@ describe('listener-registry errors', () => {
       action: 'L',
       data: []
     })
-    expect(options.logger.log).toHaveBeenCalledWith(3, 'INVALID_MESSAGE_DATA', undefined)
+    expect(options.logger.lastLogArguments).toEqual([3, 'INVALID_MESSAGE_DATA', undefined])
     expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
   })
 
@@ -47,7 +40,7 @@ describe('listener-registry errors', () => {
       action: 'L',
       data: [44]
     })
-    expect(options.logger.log).toHaveBeenCalledWith(3, 'INVALID_MESSAGE_DATA', 44)
+    expect(options.logger.lastLogArguments).toEqual([3, 'INVALID_MESSAGE_DATA', 44])
     expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|44+'))
   })
 
@@ -58,7 +51,7 @@ describe('listener-registry errors', () => {
       action: 'L',
       data: ['us(']
     })
-    expect(options.logger.log).toHaveBeenCalledWith(3, 'INVALID_MESSAGE_DATA', 'SyntaxError: Invalid regular expression: /us(/: Unterminated group')
+    expect(options.logger.lastLogArguments).toEqual([3, 'INVALID_MESSAGE_DATA', 'SyntaxError: Invalid regular expression: /us(/: Unterminated group'])
     expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|SyntaxError: Invalid regular expression: /us(/: Unterminated group+'))
   })
 })

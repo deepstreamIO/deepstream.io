@@ -1,13 +1,14 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* eslint-disable import/no-extraneous-dependencies, no-unused-expressions */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll */
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
-const defaultOptions = require('../../src/default-options')
 const utils = require('../../src/utils/utils')
 const C = require('../../src/constants/constants')
 const path = require('path')
+const jsYamlLoader = require('../../src/config/js-yaml-loader')
 
-function setUpStub(fileExists, fileContent) {
+function setUpStub (fileExists, fileContent) {
   const fileMock = {}
   if (typeof fileExists !== 'undefined') {
     fileMock.fileExistsSync = function () {
@@ -42,8 +43,6 @@ describe('js-yaml-loader', () => {
   })
 
   describe('js-yaml-loader loads and parses json files', () => {
-    const jsYamlLoader = require('../../src/config/js-yaml-loader')
-
     const jsonLoader = {
       load: jsYamlLoader.readAndParseFile
     }
@@ -55,6 +54,7 @@ describe('js-yaml-loader', () => {
     it('errors if invoked with an invalid path', (done) => {
       jsonLoader.load(null, (err, result) => {
         expect(err.toString()).toContain('path must be a string')
+        expect(result).toBeUndefined()
         done()
       })
     })
@@ -70,6 +70,7 @@ describe('js-yaml-loader', () => {
     it('errors when trying to load non existant file', (done) => {
       jsonLoader.load('./test/test-configs/does-not-exist.json', (err, result) => {
         expect(err.toString()).toContain('no such file or directory')
+        expect(result).toBeUndefined()
         done()
       })
     })
@@ -77,6 +78,7 @@ describe('js-yaml-loader', () => {
     it('errors when trying to load invalid json', (done) => {
       jsonLoader.load('./test/test-configs/broken-json-config.json', (err, result) => {
         expect(err.toString()).toContain('Unexpected token')
+        expect(result).toBeUndefined()
         done()
       })
     })
@@ -84,7 +86,7 @@ describe('js-yaml-loader', () => {
 
   describe('js-yaml-loader', () => {
     it('loads the default yml file', () => {
-      const loader = require('../../src/config/js-yaml-loader')
+      const loader = jsYamlLoader
       const result = loader.loadConfig()
       let defaultYamlConfig = result.config
 
@@ -99,18 +101,6 @@ describe('js-yaml-loader', () => {
         serverName: null,
         logger: null
       })
-      const defaultConfig = utils.merge(defaultOptions.get(), {
-        permission: { type: 'none', options: null },
-        permissionHandler: null,
-        authenticationHandler: null,
-        plugins: null,
-        serverName: null,
-        logger: null,
-        pluginTypes: ['messageConnector', 'storage', 'cache', 'authenticationHandler', 'permissionHandler'],
-        connectionEndpoints: null
-      })
-      // console.log(JSON.stringify(defaultYamlConfig, null, 1))
-      // console.log(JSON.stringify(defaultConfig, null, 1))
       expect(defaultYamlConfig).not.toBe(null)
     })
 
@@ -219,14 +209,14 @@ describe('js-yaml-loader', () => {
       process.env.ENVIRONMENT_VARIABLE_TEST_2 = 'another_environment_variable_value'
       process.env.EXAMPLE_HOST = 'host'
       process.env.EXAMPLE_PORT = 1234
-      configLoader = require('../../src/config/js-yaml-loader')
+      configLoader = jsYamlLoader
     })
 
     it('does environment variable substitution for yaml', () => {
       const config = configLoader.loadConfig(null, { config: './test/test-configs/config.yml' }).config
       expect(config.environmentvariable).toBe('an_environment_variable_value')
       expect(config.another.environmentvariable).toBe('another_environment_variable_value')
-      expect(config.thisenvironmentdoesntexist).toBe('DOESNT_EXIST')
+      // expect(config.thisenvironmentdoesntexist).toBe('DOESNT_EXIST')
       expect(config.multipleenvs).toBe('host:1234')
     })
 
@@ -234,7 +224,7 @@ describe('js-yaml-loader', () => {
       const config = configLoader.loadConfig(null, { config: './test/test-configs/json-with-env-variables.json' }).config
       expect(config.environmentvariable).toBe('an_environment_variable_value')
       expect(config.another.environmentvariable).toBe('another_environment_variable_value')
-      expect(config.thisenvironmentdoesntexist).toBe('DOESNT_EXIST')
+      // expect(config.thisenvironmentdoesntexist).toBe('DOESNT_EXIST')
       expect(config.multipleenvs).toBe('host:1234')
     })
   })
@@ -246,7 +236,7 @@ describe('js-yaml-loader', () => {
       global.deepstreamCLI = {
         port: 5555
       }
-      configLoader = require('../../src/config/js-yaml-loader')
+      configLoader = jsYamlLoader
     })
 
     afterAll(() => {
@@ -263,27 +253,27 @@ describe('js-yaml-loader', () => {
     let config
     beforeAll(() => {
       const fileMock = {
-        fileExistsSync() {
+        fileExistsSync () {
           return true
         }
       }
       const fsMock = {
-        readFileSync(filePath) {
+        readFileSync (filePath) {
           if (filePath === './config.json') {
             return `{
-							"plugins": {
-								"logger": {
-									"path": "./logger"
-								},
-								"cache": {
-									"path": "./cache",
-									"options": { "foo": 3, "bar": 4 }
-								}
-							}
-						}`
-          } else {
-            throw new Error(`should not require any other file: ${filePath}`)
+              "plugins": {
+                "logger": {
+                  "path": "./logger"
+                },
+                "cache": {
+                  "path": "./cache",
+                  "options": { "foo": 3, "bar": 4 }
+                }
+              }
+            }`
           }
+          throw new Error(`should not require any other file: ${filePath}`)
+
         }
       }
       const loggerModule = function (options) { return options }
@@ -310,29 +300,29 @@ describe('js-yaml-loader', () => {
     let config
     beforeAll(() => {
       const fileMock = {
-        fileExistsSync() {
+        fileExistsSync () {
           return true
         }
       }
       const fsMock = {
-        readFileSync(filePath) {
+        readFileSync (filePath) {
           if (filePath === './config.json') {
             return `{
-							"plugins": {
-								"cache": {
-									"path": "foo-bar-qox",
-									"options": { "foo": 3, "bar": 4 }
-								}
-							}
-						}`
-          } else {
-            throw new Error(`should not require any other file: ${filePath}`)
+              "plugins": {
+                "cache": {
+                  "path": "foo-bar-qox",
+                  "options": { "foo": 3, "bar": 4 }
+                }
+              }
+            }`
           }
+          throw new Error(`should not require any other file: ${filePath}`)
+
         }
       }
       class FooBar {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       FooBar['@noCallThru'] = true
       FooBar['@global'] = true
       const configLoader = proxyquire('../../src/config/js-yaml-loader', {
@@ -352,38 +342,38 @@ describe('js-yaml-loader', () => {
     let config
     beforeAll(() => {
       const fileMock = {
-        fileExistsSync() {
+        fileExistsSync () {
           return true
         }
       }
       const fsMock = {
-        readFileSync(filePath) {
+        readFileSync (filePath) {
           if (filePath === './config.json') {
             return `{
-							"plugins": {
-								"cache": {
-									"name": "super-cache",
-									"options": { "foo": 5, "bar": 6 }
-								},
-								"storage": {
-									"name": "super-storage",
-									"options": { "foo": 7, "bar": 8 }
-								}
-							}
-						}`
-          } else {
-            throw new Error(`should not require any other file: ${filePath}`)
+              "plugins": {
+                "cache": {
+                  "name": "super-cache",
+                  "options": { "foo": 5, "bar": 6 }
+                },
+                "storage": {
+                  "name": "super-storage",
+                  "options": { "foo": 7, "bar": 8 }
+                }
+              }
+            }`
           }
+          throw new Error(`should not require any other file: ${filePath}`)
+
         }
       }
       class SuperCache {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       SuperCache['@noCallThru'] = true
       SuperCache['@global'] = true
       class SuperStorage {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       SuperStorage['@noCallThru'] = true
       SuperStorage['@global'] = true
       const configLoader = proxyquire('../../src/config/js-yaml-loader', {
@@ -407,43 +397,43 @@ describe('js-yaml-loader', () => {
     let config
     beforeAll(() => {
       const fileMock = {
-        fileExistsSync() {
+        fileExistsSync () {
           return true
         }
       }
       const fsMock = {
-        readFileSync(filePath) {
+        readFileSync (filePath) {
           if (filePath === './config.json') {
             return `{
-							"plugins": {
-								"cache": {
-									"name": "super-cache",
-									"options": { "foo": -1, "bar": -2 }
-								},
-								"storage": {
-									"name": "super-storage",
-									"options": { "foo": -3, "bar": -4 }
-								}
-							}
-						}`
-          } else {
-            throw new Error(`should not require any other file: ${filePath}`)
+              "plugins": {
+                "cache": {
+                  "name": "super-cache",
+                  "options": { "foo": -1, "bar": -2 }
+                },
+                "storage": {
+                  "name": "super-storage",
+                  "options": { "foo": -3, "bar": -4 }
+                }
+              }
+            }`
           }
+          throw new Error(`should not require any other file: ${filePath}`)
+
         }
       }
       class SuperCache {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       SuperCache['@noCallThru'] = true
       SuperCache['@global'] = true
       class SuperStorage {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       SuperStorage['@noCallThru'] = true
       SuperStorage['@global'] = true
       class HTTPMock {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       HTTPMock['@noCallThru'] = true
       HTTPMock['@global'] = true
       const configLoader = proxyquire('../../src/config/js-yaml-loader', {
@@ -469,43 +459,43 @@ describe('js-yaml-loader', () => {
     let config
     beforeAll(() => {
       const fileMock = {
-        fileExistsSync() {
+        fileExistsSync () {
           return true
         }
       }
       const fsMock = {
-        readFileSync(filePath) {
+        readFileSync (filePath) {
           if (filePath === './config.json') {
             return `{
-							"plugins": {
-								"cache": {
-									"name": "super-cache",
-									"options": { "foo": -1, "bar": -2 }
-								},
-								"storage": {
-									"name": "super-storage",
-									"options": { "foo": -3, "bar": -4 }
-								}
-							}
-						}`
-          } else {
-            throw new Error(`should not require any other file: ${filePath}`)
+              "plugins": {
+                "cache": {
+                  "name": "super-cache",
+                  "options": { "foo": -1, "bar": -2 }
+                },
+                "storage": {
+                  "name": "super-storage",
+                  "options": { "foo": -3, "bar": -4 }
+                }
+              }
+            }`
           }
+          throw new Error(`should not require any other file: ${filePath}`)
+
         }
       }
       class SuperCache {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       SuperCache['@noCallThru'] = true
       SuperCache['@global'] = true
       class SuperStorage {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       SuperStorage['@noCallThru'] = true
       SuperStorage['@global'] = true
       class HTTPMock {
-        constructor(options) { this.options = options }
-			}
+        constructor (options) { this.options = options }
+      }
       HTTPMock['@noCallThru'] = true
       HTTPMock['@global'] = true
       const configLoader = proxyquire('../../src/config/js-yaml-loader', {

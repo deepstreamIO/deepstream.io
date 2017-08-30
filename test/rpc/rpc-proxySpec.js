@@ -1,20 +1,18 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let RpcProxy = require('../../src/rpc/rpc-proxy'),
-  C = require('../../src/constants/constants'),
-  messageConnector = new (require('../mocks/message-connector-mock'))(),
-  options = {
-    messageConnector,
-    serverName: 'serverNameA'
-  }
+const testHelper = require('../test-helper/test-helper')
+const RpcProxy = require('../../src/rpc/rpc-proxy')
+const C = require('../../src/constants/constants')
+
+const options = testHelper.getDeepstreamOptions()
 
 describe('rpcProxy proxies calls from and to the remote receiver', () => {
   let rpcProxy
 
   it('creates the proxy', () => {
-    expect(messageConnector.lastSubscribedTopic).toBe(null)
-    rpcProxy = new RpcProxy(options, 'recPrivateTopicA', 'rpcA', 'corIdA')
+    expect(options.message.lastSubscribedTopic).toBe(null)
+    rpcProxy = new RpcProxy(options, 'serverNameA')
   })
 
   it('manipulates the message before sending', () => {
@@ -24,19 +22,21 @@ describe('rpcProxy proxies calls from and to the remote receiver', () => {
       data: ['a', 'b']
     })
 
-    expect(messageConnector.lastPublishedMessage).toEqual({
-      topic: 'recPrivateTopicA',
-      originalTopic: C.TOPIC.RPC,
-      action: C.ACTIONS.ACK,
-      data: ['a', 'b'],
-      remotePrivateTopic: 'PRIVATE/serverNameA'
+    expect(options.message.lastDirectSentMessage).toEqual({
+      serverName: 'serverNameA',
+      topic: 'PRIVATE/P',
+      message: {
+        topic: C.TOPIC.RPC,
+        action: C.ACTIONS.ACK,
+        data: ['a', 'b']
+      }
     })
   })
 
   it('adds a isCompleted flag after sending the message', () => {
     const msg = {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.ACK,
+      action: C.ACTIONS.RESPONSE,
       data: ['a', 'b']
     }
 

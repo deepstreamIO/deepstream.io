@@ -178,8 +178,10 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     const serverAddress = this._server.address()
     const address = serverAddress.address
     const port = serverAddress.port
-    const wsMsg = `listening for websocket connections on ${address}:${port}${this._urlPath}`
+    const wsMsg = `Listening for websocket connections on ${address}:${port}${this._urlPath}`
     this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, wsMsg)
+    const hcMsg = `Listening for health checks on path ${this._healthCheckPath} `
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, hcMsg)
     this.emit('ready')
     this.isReady = true
   }

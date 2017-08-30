@@ -11,9 +11,8 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
     super()
     this._options = options
     this.isReady = false
-    this.description = 'HTTP Connection Endpoint'
+    this.description = 'HTTP connection endpoint'
 
-    // this._socketWrapperPool = []
     this._onSocketMessage = this._onSocketMessage.bind(this)
     this._onSocketError = this._onSocketError.bind(this)
   }
