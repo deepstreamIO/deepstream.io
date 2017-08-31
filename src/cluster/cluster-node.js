@@ -201,7 +201,6 @@ class ClusterNode {
       throw new Error(`Invalid node url ${nodeUrl}: must have a host and port e.g. "localhost:9089"`)
     }
     const connection = new OutgoingConnection(nodeUrl, this._config, this._logger)
-    this._addConnection(connection)
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('rejection', (event, message) => {
       if (event === C.EVENT.CONNECTION_LIMIT_EXCEEDED) {
@@ -217,16 +216,17 @@ class ClusterNode {
       this._logger.log(C.LOG_LEVEL.WARN, event, message)
     })
     connection.on('connect', () => {
-      connection.sendWho({
+      this._addConnection(connection)
+      connection.sendIdRequest({
         id: this._serverName,
         url: this._url,
         electionNumber: this._electionNumber
       })
     })
 
-    connection.on('iam', (message) => {
+    connection.on('id-response', (message) => {
       if (!message.id || !message.peers || message.electionNumber === undefined) {
-        const error = `malformed IAM message ${JSON.stringify(message)}`
+        const error = `malformed identification response ${JSON.stringify(message)}`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
         // TODO: send error
         return
@@ -236,14 +236,14 @@ class ClusterNode {
         // this peer was already known to us, but responded to our identification message
         // TODO: warn, reject with reason
         this._removeConnection(connection)
-        const error = 'received IAM from an outbound connection to a known peer'
+        const error = 'received identification response from an outbound connection to a known peer'
         this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
+      } else if (this._knownPeers.size >= this._maxConnections - 1) {
+        connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
       } else {
-        const peerWasAdded = this._addPeer(connection)
-        if (peerWasAdded) {
-          for (const url of message.peers) {
-            this._probeHost(url)
-          }
+        this._addPeer(connection)
+        for (const url of message.peers) {
+          this._probeHost(url)
         }
       }
       this._checkReady()
@@ -262,7 +262,7 @@ class ClusterNode {
 
   _startBroadcast () {
     for (const connection of this._connections) {
-      connection.sendKnown({
+      connection.sendKnownPeers({
         peers: this._getPeers()
       })
     }
@@ -273,23 +273,21 @@ class ClusterNode {
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to add uninitialized peer')
     }
-    if (this._knownPeers.size >= this._maxConnections - 1) {
-      connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
-      return false
-    }
     connection.on('message', this._onMessage.bind(this, connection))
     this._knownPeers.set(connection.remoteName, connection)
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
 
     process.nextTick(() => this._globalStateRegistry.onServerAdded(connection.remoteName))
-    return true
   }
 
   _removePeer (connection) {
     this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `peer removed ${connection.remoteUrl}/${connection.remoteName}`)
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to remove uninitialized peer')
+    }
+    if (!this._knownPeers.has(connection.remoteName)) {
+      return
     }
     connection.removeAllListeners('message')
     this._knownPeers.delete(connection.remoteName)
@@ -317,9 +315,9 @@ class ClusterNode {
   _onIncomingConnection (socket) {
     const connection = new IncomingConnection(socket, this._config, this._logger)
     connection.on('error', this._onConnectionError.bind(this, connection))
-    connection.on('who', (message) => {
+    connection.on('id-request', (message) => {
       if (!message.id || !message.url || !message.electionNumber) {
-        const error = `malformed WHO message '${JSON.stringify(message)}'`
+        const error = `malformed identification request '${JSON.stringify(message)}'`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
         // send error
         return
@@ -335,18 +333,20 @@ class ClusterNode {
         return
       }
 
-      const peerWasAdded = this._addPeer(connection)
-      if (peerWasAdded) {
-        connection.sendIAm({
+      if (this._knownPeers.size >= this._maxConnections - 1) {
+        connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
+      } else {
+        connection.sendIdResponse({
           id: this._serverName,
           peers: this._getPeers(),
           electionNumber: this._electionNumber
         })
+        this._addPeer(connection)
       }
     })
-    connection.on('known', (message) => {
+    connection.on('known-peers', (message) => {
       if (!message.peers || message.peers.constructor !== Array) {
-        const error = `malformed known message ${JSON.stringify(message)}`
+        const error = `malformed 'known peers' message ${JSON.stringify(message)}`
         this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, error)
         // send error
         return
@@ -358,6 +358,7 @@ class ClusterNode {
 
       this._checkReady()
     })
+    connection.on('connect', this._addConnection.bind(this, connection))
     this._addConnection(connection)
     const error = `new incoming connection from socket ${JSON.stringify(connection._socket.address())}`
     this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, error)
@@ -374,14 +375,18 @@ class ClusterNode {
   }
 
   _removeConnection (connection) {
-    this._connections.delete(connection)
     if (this._knownPeers.has(connection.remoteName)) {
       this._removePeer(connection)
     }
+    this._connections.delete(connection)
   }
 
   _onConnectionError (connection, error) {
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `connection error: ${error.toString()}`)
+    this._logger.log(
+      C.LOG_LEVEL.WARN,
+      C.EVENT.INFO,
+      `error on connection to ${connection.remoteName}: ${error.toString()}`
+    )
   }
 
   _onMessage (connection, topic, message) {

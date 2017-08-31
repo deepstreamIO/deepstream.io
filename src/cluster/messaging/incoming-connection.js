@@ -13,6 +13,15 @@ class IncomingConnection extends ClusterConnection {
     this._onPingTimeoutBound = this._onPingTimeout.bind(this)
   }
 
+  sendIdResponse (identificationData) {
+    this._sendCluster(MC.ACTIONS_BYTES.CLUSTER.IDENTIFICATION_RESPONSE, identificationData)
+  }
+
+  close () {
+    clearTimeout(this._pingTimeoutId)
+    super.close()
+  }
+
   _onConnect () {
     this._pingTimeoutId = setTimeout(this._onPingTimeoutBound, this._config.pingTimeout)
     this.emit('connect')
@@ -26,6 +35,8 @@ class IncomingConnection extends ClusterConnection {
         this._onPingTimeoutBound,
         this._config.pingInterval + this._config.pingTimeout
       )
+    } else {
+      this.destroy()
     }
   }
 
@@ -34,16 +45,12 @@ class IncomingConnection extends ClusterConnection {
       this.emit('error', `connection did not receive a PING in ${
         this._config.pingInterval + this._config.pingTimeout
       }ms`)
+      this.destroy()
     }
   }
 
   _onSocketError (error) {
     this.emit('error', error)
-  }
-
-  close () {
-    clearTimeout(this._pingTimeoutId)
-    super.close()
   }
 }
 

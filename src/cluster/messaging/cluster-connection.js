@@ -14,7 +14,8 @@ const STATE = {
   STABLE: 3,
   CLOSING: 4,
   CLOSED: 5,
-  ERROR: 6
+  RECONNECTING: 6,
+  ERROR: 7
 }
 
 const STATE_LOOKUP = utils.reverseMap(STATE)
@@ -75,21 +76,11 @@ class ClusterConnection extends EventEmitter {
   }
 
   destroy () {
-    if (this.isAlive()) {
-      this._socket.setKeepAlive(false)
-      this._socket.destroy()
-    }
+    this._socket.setKeepAlive(false)
+    this._socket.destroy()
   }
 
-  sendWho (identificationData) {
-    this._sendCluster(CLUSTER_ACTION_BYTES.IDENTIFICATION_REQUEST, identificationData)
-  }
-
-  sendIAm (identificationData) {
-    this._sendCluster(CLUSTER_ACTION_BYTES.IDENTIFICATION_RESPONSE, identificationData)
-  }
-
-  sendKnown (identificationData) {
+  sendKnownPeers (identificationData) {
     this._sendCluster(CLUSTER_ACTION_BYTES.KNOWN_PEERS, identificationData)
   }
 
@@ -112,7 +103,7 @@ class ClusterConnection extends EventEmitter {
     if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
       const actionStr = MC.ACTIONS_BYTE_TO_KEY.CLUSTER[action]
       const messageStr = message && JSON.stringify(message).slice(0, 30)
-      const debugMsg = `->(${this.remoteName}) ${actionStr}: ${messageStr}...)`
+      const debugMsg = `->(${this.remoteName}) ${actionStr}: ${messageStr}...`
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
     }
     this._sendBytes(MC.TOPIC_BYTES.CLUSTER, action, message)
@@ -176,8 +167,8 @@ class ClusterConnection extends EventEmitter {
     const topic = message.topicByte
     const action = message.actionByte
     if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
-      const topicStr = MC.TOPIC_BYTE_TO_TEXT[topic]
-      const actionStr = MC.ACTIONS_BYTE_TO_TEXT.CLUSTER[action]
+      const topicStr = MC.TOPIC_BYTE_TO_KEY[topic]
+      const actionStr = MC.ACTIONS_BYTE_TO_KEY.CLUSTER[action]
       const messageStr = message && JSON.stringify(message).slice(0, 30)
       const debugMsg = `<-(${this.remoteName}) ${topicStr} ${actionStr} ${messageStr}...`
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
@@ -203,34 +194,21 @@ class ClusterConnection extends EventEmitter {
       return
     }
     if (action === CLUSTER_ACTION_BYTES.IDENTIFICATION_REQUEST) {
-      this.emit('who', message.body)
+      this.emit('id-request', message.body)
     } else if (action === CLUSTER_ACTION_BYTES.IDENTIFICATION_RESPONSE) {
-      this.emit('iam', message.body)
+      this._handleIdResponse(message.body)
     } else if (action === CLUSTER_ACTION_BYTES.KNOWN_PEERS) {
-      this.emit('known', message.body)
-      this._onKnown()
+      this.emit('known-peers', message.body)
+      this._onKnownPeers()
     } else {
       this.emit('error', `unknown message action ${MC.ACTIONS_BYTE_TO_TEXT.CLUSTER[action]}(0x${action.toString(16)})`)
     }
   }
 
-  _onKnown () {
+  _onKnownPeers () {
     if (this.isIdentified()) {
       this._stateTransition(this.STATE.STABLE)
     }
-  }
-
-  _handleWho (message) {
-    let data
-    try {
-      data = JSON.parse(message)
-    } catch (err) {
-      this.emit('error', 'failed to parse identify message')
-      this._sendCluster(CLUSTER_ACTION_BYTES.ERROR, { message: 'failed to parse identify message' })
-      return
-    }
-    this._stateTransition(STATE.IDENTIFIED)
-    this.emit('identify', data)
   }
 
   _handleReject (data) {
@@ -258,6 +236,7 @@ class ClusterConnection extends EventEmitter {
     if (this.isAlive()) {
       this._stateTransition(STATE.CLOSED)
       this.emit('close')
+      this._socket.removeAllListeners()
     }
   }
 }

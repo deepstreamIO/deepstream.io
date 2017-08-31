@@ -33,7 +33,27 @@ class OutgoingConnection extends ClusterConnection {
     this._onPongTimeoutBound = this._onPongTimeout.bind(this)
   }
 
+  sendIdRequest (identificationData) {
+    this._sendCluster(MC.ACTIONS_BYTES.CLUSTER.IDENTIFICATION_REQUEST, identificationData)
+    /*
+     *this._idResponseTimeout = setTimeout(
+     *  this._onIdResponseTimeout.bind(this),
+     *  this._config.pingTimeout
+     *)
+     */
+  }
+
+  _handleIdResponse (data) {
+    this.emit('id-response', data)
+    clearTimeout(this._idResponseTimeout)
+  }
+
+  _onIdResponseTimeout () {
+    this._scheduleReconnect()
+  }
+
   _onConnect () {
+    this._connectionAttempts = 0
     this._pingIntervalId = setInterval(this._sendPing.bind(this), this._config.pingInterval)
     this._stateTransition(this.STATE.UNIDENTIFIED)
     this.emit('connect')
@@ -84,6 +104,8 @@ class OutgoingConnection extends ClusterConnection {
   _onPongTimeout () {
     if (this.isAlive()) {
       this.emit('error', `connection did not receive a PONG after ${this._config.pingTimeout}ms`)
+      clearInterval(this._pingIntervalId)
+      this._scheduleReconnect()
     }
   }
 
@@ -99,7 +121,7 @@ class OutgoingConnection extends ClusterConnection {
     this._connectionAttempts++
 
     if (this._connectionAttempts <= this._config.maxReconnectAttempts) {
-      this._destroySocket()
+      this.destroy()
       this._reconnectTimeoutId = setTimeout(
         this._createSocket.bind(this),
         this._config.reconnectInterval
@@ -142,19 +164,16 @@ class OutgoingConnection extends ClusterConnection {
     clearTimeout(this._reconnectTimeoutId)
     clearTimeout(this._pongTimeoutId)
     clearInterval(this._pingIntervalId)
+    clearTimeout(this._idResponseTimeout)
     super.close()
   }
 
-  /**
-   * Destroys the connection
-   *
-   * @private
-   * @returns {void}
-   */
-  _destroySocket () {
+  destroy () {
     clearTimeout(this._reconnectTimeoutId)
-    this._socket.destroy()
-    this._socket.removeAllListeners()
+    clearTimeout(this._pongTimeoutId)
+    clearInterval(this._pingIntervalId)
+    clearTimeout(this._idResponseTimeout)
+    super.destroy()
   }
 }
 
