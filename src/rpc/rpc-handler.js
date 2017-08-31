@@ -54,7 +54,7 @@ module.exports = class RpcHandler {
       const rpc = this._rpcs.get(id)
 
       if (!rpc) {
-        rpc.socket.sendError(C.TOPIC.RPC, C.EVENT.RPC_TIMEOUT, [ rpc.name, rpc.id ])
+        socket.sendError(C.TOPIC.RPC, C.EVENT.RPC_TIMEOUT, [ rpc.name, rpc.id ])
         return
       }
 
