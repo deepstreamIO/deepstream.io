@@ -27,6 +27,7 @@ class ClusterConnection extends EventEmitter {
     super()
     this._logger = logger
     this._config = config
+    this.connectionId = null
     this.remoteName = null
     this.remoteUrl = null
     this.localName = config.serverName
@@ -52,20 +53,27 @@ class ClusterConnection extends EventEmitter {
     return this._state === this.STATE.UNIDENTIFIED
       || this._state === this.STATE.IDENTIFIED
       || this._state === this.STATE.STABLE
-      || this._state === this.STATE.CLOSING
   }
 
-  setRemoteDetails (name, electionNumber, url) {
+  isClosing () {
+    return this._state === this.STATE.CLOSING
+  }
+
+  setRemoteDetails (name, electionNumber, url, connectionId) {
     this.remoteName = name
     this.electionNumber = electionNumber
     if (url) {
       this.remoteUrl = url
+    }
+    if (connectionId) {
+      this.connectionId = connectionId
     }
     this._stateTransition(STATE.IDENTIFIED)
   }
 
   close () {
     if (this.isAlive()) {
+      this.clearTimeouts()
       this._socket.setKeepAlive(false)
       this._sendCluster(CLUSTER_ACTION_BYTES.CLOSE)
       this._socket.end()
@@ -76,6 +84,7 @@ class ClusterConnection extends EventEmitter {
   }
 
   destroy () {
+    this.clearTimeouts()
     this._socket.setKeepAlive(false)
     this._socket.destroy()
   }
@@ -85,11 +94,17 @@ class ClusterConnection extends EventEmitter {
   }
 
   sendReject (event, message) {
+    if (!this.isAlive()) {
+      return
+    }
     this._sendCluster(CLUSTER_ACTION_BYTES.REJECT, { event, message })
     this.close()
   }
 
   sendRejectDuplicate () {
+    if (!this.isAlive()) {
+      return
+    }
     this._sendCluster(CLUSTER_ACTION_BYTES.REJECT_DUPLICATE)
     this.close()
   }
@@ -103,7 +118,7 @@ class ClusterConnection extends EventEmitter {
     if (action !== CLUSTER_ACTION_BYTES.PING && action !== CLUSTER_ACTION_BYTES.PONG) {
       const actionStr = MC.ACTIONS_BYTE_TO_KEY.CLUSTER[action]
       const messageStr = message && JSON.stringify(message).slice(0, 30)
-      const debugMsg = `->(${this.remoteName}) ${actionStr}: ${messageStr}...`
+      const debugMsg = `->(${this.remoteName}/${this.connectionId}) ${actionStr}: ${messageStr}...`
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
     }
     this._sendBytes(MC.TOPIC_BYTES.CLUSTER, action, message)
@@ -120,7 +135,7 @@ class ClusterConnection extends EventEmitter {
       if (!current || !next) {
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_STATE_TRANSITION, nextState)
       }
-      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `connection ${this.remoteUrl} state transition ${current} -> ${next}`)
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `connection ${this.remoteUrl}/${this.connectionId} state transition ${current} -> ${next}`)
     }
     this._state = nextState
   }
@@ -170,7 +185,7 @@ class ClusterConnection extends EventEmitter {
       const topicStr = MC.TOPIC_BYTE_TO_KEY[topic]
       const actionStr = MC.ACTIONS_BYTE_TO_KEY.CLUSTER[action]
       const messageStr = message && JSON.stringify(message).slice(0, 30)
-      const debugMsg = `<-(${this.remoteName}) ${topicStr} ${actionStr} ${messageStr}...`
+      const debugMsg = `<-(${this.remoteName}/${this.connectionId}) ${topicStr} ${actionStr} ${messageStr}...`
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, debugMsg)
     }
 
@@ -212,11 +227,14 @@ class ClusterConnection extends EventEmitter {
   }
 
   _handleReject (data) {
-    const body = data.body
-    this.emit('rejection', body.event, body.message)
+    this._stateTransition(STATE.CLOSING)
+    this.clearTimeouts()
+    this.emit('rejection', data.body.event, data.body.message)
   }
 
   _handleRejectDuplicate () {
+    this._stateTransition(STATE.CLOSING)
+    this.clearTimeouts()
     this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, 'duplicate connection rejected')
   }
 
@@ -233,7 +251,7 @@ class ClusterConnection extends EventEmitter {
   }
 
   _onClose () {
-    if (this.isAlive()) {
+    if (this.isAlive() || this.isClosing()) {
       this._stateTransition(STATE.CLOSED)
       this.emit('close')
       this._socket.removeAllListeners()

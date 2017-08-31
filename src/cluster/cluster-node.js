@@ -185,14 +185,17 @@ class ClusterNode {
     const error = `P2P Message Connector listening at ${this._config.host}:${this._config.port}`
     this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, error)
     for (let i = 0; i < this._seedNodes.length; i++) {
-      this._probeHost(this._seedNodes[i])
+      if (!this._urlIsKnown(this._seedNodes[i])) {
+        this._probeHost(this._seedNodes[i])
+      }
     }
   }
 
+  _urlIsKnown (url) {
+    return this._url === url || this._knownUrls.has(url)
+  }
+
   _probeHost (nodeUrl) {
-    if (this._url === nodeUrl || this._knownUrls.has(nodeUrl)) {
-      return
-    }
     if (typeof nodeUrl !== 'string') {
       throw new Error(`Invalid node url ${nodeUrl}: must be a string e.g. "localhost:9089"`)
     }
@@ -218,35 +221,43 @@ class ClusterNode {
     connection.on('connect', () => {
       this._addConnection(connection)
       connection.sendIdRequest({
-        id: this._serverName,
+        connectionId: connection.connectionId,
+        name: this._serverName,
         url: this._url,
         electionNumber: this._electionNumber
       })
     })
 
     connection.on('id-response', (message) => {
-      if (!message.id || !message.peers || message.electionNumber === undefined) {
+      if (!message.name || !message.peers || message.electionNumber === undefined) {
         const error = `malformed identification response ${JSON.stringify(message)}`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
         // TODO: send error
         return
       }
-      connection.setRemoteDetails(message.id, message.electionNumber)
+      connection.setRemoteDetails(message.name, message.electionNumber)
       if (this._knownPeers.has(connection.remoteName)) {
         // this peer was already known to us, but responded to our identification message
-        // TODO: warn, reject with reason
-        this._removeConnection(connection)
         const error = 'received identification response from an outbound connection to a known peer'
         this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
+        this._handleDuplicateConnections(connection)
       } else if (this._knownPeers.size >= this._maxConnections - 1) {
         connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
-      } else {
-        this._addPeer(connection)
-        for (const url of message.peers) {
+      }
+      if (!connection.isAlive()) {
+        return
+      }
+      this._addPeer(connection)
+      let somethingChanged = false
+      for (const url of message.peers) {
+        if (!this._urlIsKnown(url)) {
           this._probeHost(url)
+          somethingChanged = true
         }
       }
-      this._checkReady()
+      if (somethingChanged) {
+        this._checkReady()
+      }
     })
   }
 
@@ -316,33 +327,41 @@ class ClusterNode {
     const connection = new IncomingConnection(socket, this._config, this._logger)
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('id-request', (message) => {
-      if (!message.id || !message.url || !message.electionNumber) {
+      if (!message.connectionId || !message.name || !message.url || !message.electionNumber) {
         const error = `malformed identification request '${JSON.stringify(message)}'`
-        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
-        // send error
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
+        connection.sendError(C.EVENT.INVALID_MSGBUS_MESSAGE, 'malformed identification request')
         return
       }
-      connection.setRemoteDetails(message.id, message.electionNumber, message.url)
+      connection.setRemoteDetails(
+        message.name,
+        message.electionNumber,
+        message.url,
+        message.connectionId
+      )
       if (this._knownPeers.has(connection.remoteName)) {
         // I'm already connected to this peer, probably through an outbound connection, reject
-        // TODO: the following line causes 'tried to send message to unknown server' errors in e2e
-        // tests, investigate :)
-        // connection.sendRejectDuplicate()
         const error = 'received inbound connection from peer that was already known'
         this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
+        this._handleDuplicateConnections(connection)
+      }
+
+      if (!connection.isAlive()) {
         return
       }
 
       if (this._knownPeers.size >= this._maxConnections - 1) {
         connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
-      } else {
-        connection.sendIdResponse({
-          id: this._serverName,
-          peers: this._getPeers(),
-          electionNumber: this._electionNumber
-        })
-        this._addPeer(connection)
+        return
       }
+
+      connection.sendIdResponse({
+        name: this._serverName,
+        peers: this._getPeers(),
+        electionNumber: this._electionNumber
+      })
+
+      this._addPeer(connection)
     })
     connection.on('known-peers', (message) => {
       if (!message.peers || message.peers.constructor !== Array) {
@@ -352,16 +371,34 @@ class ClusterNode {
         return
       }
 
+      let somethingChanged = false
       for (const url of message.peers) {
-        this._probeHost(url)
+        if (!this._urlIsKnown(url)) {
+          this._probeHost(url)
+          somethingChanged = true
+        }
       }
 
-      this._checkReady()
+      if (somethingChanged) {
+        this._checkReady()
+      }
     })
     connection.on('connect', this._addConnection.bind(this, connection))
     this._addConnection(connection)
     const error = `new incoming connection from socket ${JSON.stringify(connection._socket.address())}`
     this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, error)
+  }
+
+  _handleDuplicateConnections (connection) {
+    const existingPeer = this._knownPeers.get(connection.remoteName)
+    if (connection.connectionId === undefined || existingPeer.connectionId === undefined) {
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, 'duplicate connection not initialized')
+    }
+    if (connection.connectionId <= existingPeer.connectionId) {
+      connection.sendRejectDuplicate()
+    } else {
+      existingPeer.sendRejectDuplicate()
+    }
   }
 
   _getPeers () {
@@ -375,7 +412,8 @@ class ClusterNode {
   }
 
   _removeConnection (connection) {
-    if (this._knownPeers.has(connection.remoteName)) {
+    const peerConn = this._knownPeers.get(connection.remoteName)
+    if (peerConn === connection) {
       this._removePeer(connection)
     }
     this._connections.delete(connection)

@@ -17,9 +17,8 @@ class IncomingConnection extends ClusterConnection {
     this._sendCluster(MC.ACTIONS_BYTES.CLUSTER.IDENTIFICATION_RESPONSE, identificationData)
   }
 
-  close () {
+  clearTimeouts () {
     clearTimeout(this._pingTimeoutId)
-    super.close()
   }
 
   _onConnect () {

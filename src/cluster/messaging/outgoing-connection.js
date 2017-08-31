@@ -31,16 +31,15 @@ class OutgoingConnection extends ClusterConnection {
     this._pongTimeoutId = null
     this._pingIntervalId = null
     this._onPongTimeoutBound = this._onPongTimeout.bind(this)
+    this.connectionId = Math.random()
   }
 
   sendIdRequest (identificationData) {
     this._sendCluster(MC.ACTIONS_BYTES.CLUSTER.IDENTIFICATION_REQUEST, identificationData)
-    /*
-     *this._idResponseTimeout = setTimeout(
-     *  this._onIdResponseTimeout.bind(this),
-     *  this._config.pingTimeout
-     *)
-     */
+    this._idResponseTimeout = setTimeout(
+      this._onIdResponseTimeout.bind(this),
+      this._config.pingTimeout
+    )
   }
 
   _handleIdResponse (data) {
@@ -160,20 +159,11 @@ class OutgoingConnection extends ClusterConnection {
     return params
   }
 
-  close () {
+  clearTimeouts () {
     clearTimeout(this._reconnectTimeoutId)
     clearTimeout(this._pongTimeoutId)
     clearInterval(this._pingIntervalId)
     clearTimeout(this._idResponseTimeout)
-    super.close()
-  }
-
-  destroy () {
-    clearTimeout(this._reconnectTimeoutId)
-    clearTimeout(this._pongTimeoutId)
-    clearInterval(this._pingIntervalId)
-    clearTimeout(this._idResponseTimeout)
-    super.destroy()
   }
 }
 
