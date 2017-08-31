@@ -17,7 +17,7 @@ module.exports = class RpcHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
 
     this._options.message.subscribe(
-      C.TOPIC.PRIVATE + C.TOPIC.RPC,
+      C.TOPIC.RPC_PRIVATE,
       this._onPrivateMessage.bind(this)
     )
 
@@ -250,9 +250,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _onPrivateMessage (msg, originServerName) {
-    if (msg.topic !== C.TOPIC.RPC) {
-      return
-    }
+    msg.topic = C.TOPIC.RPC
 
     if (!msg.data || msg.data.length < 2) {
       this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, msg.data)

@@ -17,7 +17,8 @@ const STATE = {
   DISCOVERY: 1,
   BROADCAST: 2,
   LISTEN: 3,
-  CLOSED: 4
+  CLOSED: 4,
+  ERROR: 5
 }
 
 const STATE_LOOKUP = utils.reverseMap(STATE)
@@ -39,6 +40,7 @@ class ClusterNode {
       this._seedNodes = []
     }
     this._url = `${config.host}:${config.port}`
+    this._maxConnections = config.maxConnections
 
     this._tcpServer = net.createServer(this._onIncomingConnection.bind(this))
     this._tcpServer.listen(config.port, config.host, this._onReady.bind(this))
@@ -73,26 +75,56 @@ class ClusterNode {
   }
 
   sendDirect (serverName, topic, message) {
-    const connection = this._knownPeers.get(serverName)
-    if (!connection) {
-      const error = `tried to send message to unknown server ${serverName} from ${this._serverName}`
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
-      return
+    const connection = this._getKnownPeer(serverName)
+    if (connection) {
+      connection.send(topic, message.action, message.data)
     }
-    connection.sendMessage({ topic, message })
   }
 
-  sendState (topic, message) {
-    if (topic === GLOBAL_STATES) {
+  _getKnownPeer (serverName) {
+    const connection = this._knownPeers.get(serverName)
+    if (!connection) {
+      const error = `tried to find unknown server ${serverName} among peers of ${this._serverName}`
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
+    }
+    return connection
+  }
+
+  /*
+   * Prepare and send a message corresponding to the state registry
+   */
+  _sendStateMessage (connection, registryTopic, message) {
+    const msg = message.data !== undefined ? [registryTopic, message.data] : [registryTopic]
+    connection.send(C.TOPIC.STATE_REGISTRY, message.action, msg)
+  }
+
+  /*
+   * Send a state update to a named peer
+   */
+  sendStateDirect (serverName, registryTopic, message) {
+    const connection = this._getKnownPeer(serverName)
+    if (connection) {
+      this._sendStateMessage(connection, registryTopic, message)
+    }
+  }
+
+  /*
+   * Broadcast a state update to all peers
+   */
+  sendState (registryTopic, message) {
+    if (registryTopic === GLOBAL_STATES) {
       for (const connection of this._knownPeers.values()) {
-        connection.sendMessage({ topic, message })
+        this._sendStateMessage(connection, registryTopic, message)
       }
       return
     }
-    const serverNames = this._globalStateRegistry.getAllServers(topic)
+    const serverNames = this._globalStateRegistry.getAllServers(registryTopic)
     for (let i = 0; i < serverNames.length; i++) {
       if (serverNames[i] !== this._serverName) {
-        this.sendDirect(serverNames[i], topic, message)
+        const connection = this._getKnownPeer(serverNames[i])
+        if (connection) {
+          this._sendStateMessage(connection, registryTopic, message)
+        }
       }
     }
   }
@@ -144,7 +176,9 @@ class ClusterNode {
       const next = STATE_LOOKUP[nextState]
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `<><> Node state transition ${current} -> ${next} <><>`)
     }
-    this._state = nextState
+    if (this._state !== STATE.ERROR) {
+      this._state = nextState
+    }
   }
 
   _onReady () {
@@ -167,19 +201,32 @@ class ClusterNode {
       throw new Error(`Invalid node url ${nodeUrl}: must have a host and port e.g. "localhost:9089"`)
     }
     const connection = new OutgoingConnection(nodeUrl, this._config, this._logger)
-    this._addConnection(connection)
     connection.on('error', this._onConnectionError.bind(this, connection))
+    connection.on('rejection', (event, message) => {
+      if (event === C.EVENT.CONNECTION_LIMIT_EXCEEDED) {
+        if (this._state === STATE.ERROR) {
+          return
+        }
+        let errMsg = connection.remoteName ? `Server ${connection.remoteName}` : 'A server'
+        errMsg += ` reached its cluster connection limit (${message} connections)!`
+        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_LIMIT_EXCEEDED, errMsg)
+        this._stateTransition(STATE.ERROR)
+        return
+      }
+      this._logger.log(C.LOG_LEVEL.WARN, event, message)
+    })
     connection.on('connect', () => {
-      connection.sendWho({
+      this._addConnection(connection)
+      connection.sendIdRequest({
         id: this._serverName,
         url: this._url,
         electionNumber: this._electionNumber
       })
     })
 
-    connection.on('iam', (message) => {
+    connection.on('id-response', (message) => {
       if (!message.id || !message.peers || message.electionNumber === undefined) {
-        const error = `malformed IAM message ${JSON.stringify(message)}`
+        const error = `malformed identification response ${JSON.stringify(message)}`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
         // TODO: send error
         return
@@ -189,8 +236,10 @@ class ClusterNode {
         // this peer was already known to us, but responded to our identification message
         // TODO: warn, reject with reason
         this._removeConnection(connection)
-        const error = 'received IAM from an outbound connection to a known peer'
+        const error = 'received identification response from an outbound connection to a known peer'
         this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
+      } else if (this._knownPeers.size >= this._maxConnections - 1) {
+        connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
       } else {
         this._addPeer(connection)
         for (const url of message.peers) {
@@ -213,7 +262,7 @@ class ClusterNode {
 
   _startBroadcast () {
     for (const connection of this._connections) {
-      connection.sendKnown({
+      connection.sendKnownPeers({
         peers: this._getPeers()
       })
     }
@@ -229,13 +278,16 @@ class ClusterNode {
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
 
-    this._globalStateRegistry.onServerAdded(connection.remoteName)
+    process.nextTick(() => this._globalStateRegistry.onServerAdded(connection.remoteName))
   }
 
   _removePeer (connection) {
     this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, `peer removed ${connection.remoteUrl}/${connection.remoteName}`)
     if (!connection.remoteName || !connection.remoteUrl) {
       throw new Error('tried to remove uninitialized peer')
+    }
+    if (!this._knownPeers.has(connection.remoteName)) {
+      return
     }
     connection.removeAllListeners('message')
     this._knownPeers.delete(connection.remoteName)
@@ -263,9 +315,9 @@ class ClusterNode {
   _onIncomingConnection (socket) {
     const connection = new IncomingConnection(socket, this._config, this._logger)
     connection.on('error', this._onConnectionError.bind(this, connection))
-    connection.on('who', (message) => {
+    connection.on('id-request', (message) => {
       if (!message.id || !message.url || !message.electionNumber) {
-        const error = `malformed WHO message ${JSON.stringify(message)}`
+        const error = `malformed identification request '${JSON.stringify(message)}'`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
         // send error
         return
@@ -281,17 +333,20 @@ class ClusterNode {
         return
       }
 
-      connection.sendIAm({
-        id: this._serverName,
-        peers: this._getPeers(),
-        electionNumber: this._electionNumber
-      })
-
-      this._addPeer(connection)
+      if (this._knownPeers.size >= this._maxConnections - 1) {
+        connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
+      } else {
+        connection.sendIdResponse({
+          id: this._serverName,
+          peers: this._getPeers(),
+          electionNumber: this._electionNumber
+        })
+        this._addPeer(connection)
+      }
     })
-    connection.on('known', (message) => {
+    connection.on('known-peers', (message) => {
       if (!message.peers || message.peers.constructor !== Array) {
-        const error = `malformed known message ${JSON.stringify(message)}`
+        const error = `malformed 'known peers' message ${JSON.stringify(message)}`
         this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, error)
         // send error
         return
@@ -303,6 +358,7 @@ class ClusterNode {
 
       this._checkReady()
     })
+    connection.on('connect', this._addConnection.bind(this, connection))
     this._addConnection(connection)
     const error = `new incoming connection from socket ${JSON.stringify(connection._socket.address())}`
     this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INFO, error)
@@ -319,22 +375,30 @@ class ClusterNode {
   }
 
   _removeConnection (connection) {
-    this._connections.delete(connection)
     if (this._knownPeers.has(connection.remoteName)) {
       this._removePeer(connection)
     }
+    this._connections.delete(connection)
   }
 
   _onConnectionError (connection, error) {
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INFO, `connection error: ${error.toString()}`)
+    this._logger.log(
+      C.LOG_LEVEL.WARN,
+      C.EVENT.INFO,
+      `error on connection to ${connection.remoteName}: ${error.toString()}`
+    )
   }
 
-  _onMessage (connection, data) {
-    const topic = data.topic
-    const message = data.message
-    const listeners = this._subscriptions.get(topic)
+  _onMessage (connection, topic, message) {
+    let modifiedTopic = topic
+    if (topic === C.TOPIC.STATE_REGISTRY) {
+      modifiedTopic = message.data[0]
+      message.data = message.data[1]
+    }
+    const listeners = this._subscriptions.get(modifiedTopic)
     if (!listeners || listeners.length === 0) {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, `message on unknown topic ${topic}: ${JSON.stringify(message)}`)
+      const warnMsg = `message on unknown topic ${modifiedTopic}: ${JSON.stringify(message)}`
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, warnMsg)
       return
     }
     for (let i = 0; i < listeners.length; i++) {

@@ -4,16 +4,16 @@ const Cluster = require('../../tools/cluster')
 
 const { When, Then, Given, Before, BeforeAll, AfterAll } = require('cucumber')
 
-Before(() => {
-  global.cluster.updatePermissions('open')
+Before((scenarioResult, done) => {
+  global.cluster.updatePermissions('open', done)
 })
 
 Given(/^a small amount of time passes$/, (done) => {
   setTimeout(done, 500)
 })
 
-Given(/"([^"]*)" permissions are used$/, (permissionType) => {
-  global.cluster.updatePermissions(permissionType)
+Given(/"([^"]*)" permissions are used$/, (permissionType, done) => {
+  global.cluster.updatePermissions(permissionType, done)
 })
 
 When(/^server (\S)* goes down$/, (server, done) => {
@@ -25,7 +25,7 @@ When(/^server (\S)* comes back up$/, (server, done) => {
 })
 
 BeforeAll((callback) => {
-  global.cluster = new Cluster([6001, 6002, 6003], false)
+  global.cluster = new Cluster([6001, 6002, 6003], !!process.env.LOG)
   global.cluster.on('ready', callback)
 })
 

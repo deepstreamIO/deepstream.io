@@ -36,7 +36,7 @@ module.exports = class RpcProxy {
     if (message.action !== C.ACTIONS.ACK && message.action !== C.ACTIONS.REQUEST) {
       message.isCompleted = true
     }
-    this._options.message.sendDirect(this._remoteServer, C.TOPIC.PRIVATE + C.TOPIC.RPC, message)
+    this._options.message.sendDirect(this._remoteServer, C.TOPIC.RPC_PRIVATE, message)
   }
 
   /**
@@ -52,7 +52,12 @@ module.exports = class RpcProxy {
   * @returns {void}
   */
   sendError (topic, type, msg) {
-    this._options.message.sendDirect(this._remoteServer, C.TOPIC.PRIVATE + C.TOPIC.RPC, {
+    if (type === C.EVENT.RESPONSE_TIMEOUT) {
+      // by the time an RPC has timed out on this server, it has already timed out on the remote
+      // (and has been cleaned up) so no point sending
+      return
+    }
+    this._options.message.sendDirect(this._remoteServer, C.TOPIC.RPC_PRIVATE, {
       topic: C.TOPIC.RPC,
       action: C.ACTIONS.ERROR,
       data: [type, msg]
