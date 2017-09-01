@@ -18,6 +18,7 @@ TOPIC.PRESENCE         = { TEXT: 'U'        , BYTE: 0x09 }
 TOPIC.CLUSTER          = { TEXT: 'CL'       , BYTE: 0x0A }
 TOPIC.STATE_REGISTRY   = { TEXT: 'STATE_REG', BYTE: 0x0B }
 TOPIC.LOCK_REGISTRY    = { TEXT: 'LOCK_REG' , BYTE: 0x0C }
+TOPIC.MONITORING       = { TEXT: 'MONITORING', BYTE: 0x0D }
 
 const ACTIONS = {}
 
@@ -149,6 +150,11 @@ ACTIONS.LOCK_REGISTRY                                      = {}
 ACTIONS.LOCK_REGISTRY.LOCK_REQUEST                         = { TEXT: 'LRQ'                                 , BYTE: 0x00 }
 ACTIONS.LOCK_REGISTRY.LOCK_RESPONSE                        = { TEXT: 'LRP'                                 , BYTE: 0x01 }
 ACTIONS.LOCK_REGISTRY.LOCK_RELEASE                         = { TEXT: 'LRL'                                 , BYTE: 0x02 }
+
+ACTIONS.MONITORING          = {}
+ACTIONS.MONITORING.INBOUND  = { TEXT: 'MONITORING_INBOUND', BYTE: 0x00 }
+ACTIONS.MONITORING.OUTBOUND = { TEXT: 'MONITORING_OUTBOUND', BYTE: 0x01 }
+
 
 const OPTIONS = {}
 
