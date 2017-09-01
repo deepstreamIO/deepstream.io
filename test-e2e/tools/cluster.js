@@ -1,4 +1,5 @@
 'use strict'
+/* eslint-disable class-methods-use-this */
 
 const DeepstreamServer = require('../../src/deepstream.io')
 
@@ -70,9 +71,6 @@ module.exports = class Cluster extends EventEmitter {
     this.servers[port] = new DeepstreamServer({
       serverName : `server-${port}`,
       stateReconciliationTimeout : 100,
-      clusterKeepAliveInterval   : 100,
-      clusterActiveCheckInterval : 100,
-      clusterNodeInactiveTimeout : 200,
       lockTimeout                : 1500,
       lockRequestTimeout         : 1500,
       shuffleListenProviders     : false,
