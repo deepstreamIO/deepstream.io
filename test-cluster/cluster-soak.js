@@ -242,7 +242,7 @@ async function checkNodeState () {
   const redisNodes = await redis.lrange('nodes', 0, -1)
   for (const port in clusters) {
     const expected = redisNodes.length - 1
-    const actual = clusters[port].node.getAll().length
+    const actual = clusters[port].node._getPeers().length
     if (expected !== actual) {
       fsLog(`${C.INVALID_NODE_COUNT},${expected},${actual}`)
       consecutiveNodeCountErrors++
