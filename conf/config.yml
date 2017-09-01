@@ -130,7 +130,7 @@ messageConnector:
   seedNodes: []
   #  - localhost:9080
   #  - localhost:9081
-  maxConnections: 6
+  maxConnections: 16
   maxReconnectAttempts: 5
   reconnectInterval: 1500
   pingInterval: 1000

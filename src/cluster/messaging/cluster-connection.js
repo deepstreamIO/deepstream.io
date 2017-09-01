@@ -191,24 +191,20 @@ class ClusterConnection extends EventEmitter {
 
     if (action === CLUSTER_ACTION_BYTES.PING) {
       this._handlePing(message)
-      return
     } else if (action === CLUSTER_ACTION_BYTES.PONG) {
       this._handlePong(message)
-      return
     } else if (action === CLUSTER_ACTION_BYTES.CLOSE) {
+      this.clearTimeouts()
+      this._socket.setKeepAlive(false)
+      this._stateTransition(STATE.CLOSING)
       this._socket.end()
-      return
     } else if (action === CLUSTER_ACTION_BYTES.REJECT) {
       this._handleReject(message)
-      return
     } else if (action === CLUSTER_ACTION_BYTES.REJECT_DUPLICATE) {
       this._handleRejectDuplicate()
-      return
     } else if (action === CLUSTER_ACTION_BYTES.ERROR) {
       this._handleError(message)
-      return
-    }
-    if (action === CLUSTER_ACTION_BYTES.IDENTIFICATION_REQUEST) {
+    } else if (action === CLUSTER_ACTION_BYTES.IDENTIFICATION_REQUEST) {
       this.emit('id-request', message.body)
     } else if (action === CLUSTER_ACTION_BYTES.IDENTIFICATION_RESPONSE) {
       this._handleIdResponse(message.body)

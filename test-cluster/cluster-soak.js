@@ -117,6 +117,8 @@ async function killClusterNode () {
     return
   }
   const cluster = clusters[localPort]
+  ports.splice(index, 1)
+  delete clusters[localPort]
 
   cluster.node.close(() => {})
 
@@ -128,9 +130,7 @@ async function killClusterNode () {
     }
   }
 
-  ports.splice(index, 1)
   await redis.lrem('nodes', 0, localPort)
-  delete clusters[localPort]
 
   fsLog(`${C.NODE_STOP},${localPort}`)
 }

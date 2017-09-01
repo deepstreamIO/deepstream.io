@@ -112,6 +112,7 @@ class ClusterNode {
    * Broadcast a state update to all peers
    */
   sendState (registryTopic, message) {
+    if (this._state === STATE.CLOSED) return
     if (registryTopic === GLOBAL_STATES) {
       for (const connection of this._knownPeers.values()) {
         this._sendStateMessage(connection, registryTopic, message)
@@ -130,6 +131,7 @@ class ClusterNode {
   }
 
   send (topic, message) {
+    if (this._state === STATE.CLOSED) return
     const stateRegistry = this._stateRegistries.get(`${topic}_SUB`)
     const name = message.action !== C.ACTIONS.ACK ? message.data[0] : message.data[1]
     const serverNames = stateRegistry.getAllServers(name)
@@ -445,6 +447,8 @@ class ClusterNode {
   }
 
   close (callback) {
+    this._stateTransition(STATE.CLOSED)
+    this._emitter.removeAllListeners()
     if (this._connections.size === 0) {
       this._tcpServer.close(callback)
       return
@@ -452,7 +456,12 @@ class ClusterNode {
     utils.combineEvents(
       Array.from(this._connections),
       'close',
-      () => this._tcpServer.close(callback)
+      () => {
+        this._tcpServer.close(callback)
+        this._globalStateRegistry = null
+        this._stateRegistries.clear()
+        this._subscriptions.clear()
+      }
     )
     this._connections.forEach(connection => connection.close())
   }
