@@ -46,10 +46,19 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
 
     messageConnector.subscribe(topic, this._processIncomingMessage.bind(this))
     this._requestFullState()
+
+    this._isReady = false
   }
 
   whenReady(done) {
-    setTimeout(done, 200)
+    if (this._isReady) {
+      done()
+    } else {
+      setTimeout(() => {
+        this._isReady = true
+        done()
+      }, 50)
+    }
   }
 
   /**
