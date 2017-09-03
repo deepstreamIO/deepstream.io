@@ -45,8 +45,11 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     this._fullStateSent = false
 
     messageConnector.subscribe(topic, this._processIncomingMessage.bind(this))
-
     this._requestFullState()
+  }
+
+  whenReady(done) {
+    setTimeout(done, 200)
   }
 
   /**
@@ -365,7 +368,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _sendFullState () {
+  _sendFullState (serverName) {
     const localState = []
     let name
 
@@ -374,7 +377,6 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
         localState.push(name)
       }
     }
-
     this._messageConnector.sendState(this._topic, {
       topic: this._topic,
       action: C.EVENT.DISTRIBUTED_STATE_FULL_STATE,
@@ -440,7 +442,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _processIncomingMessage (message) {
+  _processIncomingMessage (message, serverName) {
 
     if (!this._isValidMessage(message)) {
       return

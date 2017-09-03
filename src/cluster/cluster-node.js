@@ -39,12 +39,12 @@ class ClusterNode {
     } else {
       this._seedNodes = []
     }
+
     this._url = `${config.host}:${config.port}`
     this._maxConnections = config.maxConnections
 
     this._tcpServer = net.createServer(this._onIncomingConnection.bind(this))
     this._tcpServer.listen(config.port, config.host, this._onReady.bind(this))
-
     this._connections = new Set()
     this._knownPeers = new Map() // serverName -> connection
     this._knownUrls = new Set()
@@ -111,7 +111,7 @@ class ClusterNode {
   /*
    * Broadcast a state update to all peers
    */
-  sendState (registryTopic, message) {
+  sendState (registryTopic, message, serverName) {
     if (this._state === STATE.CLOSED) return
     if (registryTopic === GLOBAL_STATES) {
       for (const connection of this._knownPeers.values()) {
@@ -119,6 +119,15 @@ class ClusterNode {
       }
       return
     }
+
+    if (serverName) {
+      const connection = this._getKnownPeer(serverNames)
+      if (connection) {
+        this._sendStateMessage(connection, registryTopic, message)
+      }
+      return
+    }
+
     const serverNames = this._globalStateRegistry.getAllServers(registryTopic)
     for (let i = 0; i < serverNames.length; i++) {
       if (serverNames[i] !== this._serverName) {
@@ -168,6 +177,13 @@ class ClusterNode {
       this._emitter.on(`ssrr_${name}`, registry.onServerRemoved.bind(registry))
       this._globalStateRegistry.add(name)
       this._stateRegistries.set(name, registry)
+
+      const serverNames = this._globalStateRegistry.getAllServers(name)
+      for (let i = 0; i < serverNames.length; i++) {
+        if (serverNames[i] !== this._options.serverName) {
+          registry.onServerAdded(serverNames[i])
+        }
+      }
     }
     return registry
   }
@@ -184,8 +200,8 @@ class ClusterNode {
   }
 
   _onReady () {
-    const error = `P2P Message Connector listening at ${this._config.host}:${this._config.port}`
-    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, error)
+    const log = `P2P Message Connector listening at ${this._config.host}:${this._config.port}`
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, log)
     for (let i = 0; i < this._seedNodes.length; i++) {
       if (!this._urlIsKnown(this._seedNodes[i])) {
         this._probeHost(this._seedNodes[i])
@@ -240,8 +256,8 @@ class ClusterNode {
       connection.setRemoteDetails(message.name, message.electionNumber)
       if (this._knownPeers.has(connection.remoteName)) {
         // this peer was already known to us, but responded to our identification message
-        const error = 'received identification response from an outbound connection to a known peer'
-        this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
+        const message = 'received identification response from an outbound connection to a known peer'
+        this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, message)
         this._handleDuplicateConnections(connection)
       } else if (this._knownPeers.size >= this._maxConnections - 1) {
         connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
