@@ -3,7 +3,6 @@ const ClusterNode = require('../src/cluster/cluster-node')
 const utils = require('../src/utils/utils')
 const Redis = require('ioredis')
 const fs = require('fs')
-const profiler = require('@risingstack/v8-profiler')
 
 const C = {
   NODE_START: 'NODE_START',
@@ -288,10 +287,3 @@ function sleep (duration) {
 function getRandomBool () {
   return Math.random() > 0.5
 }
-
-setInterval(() => {
-  const snapshot = profiler.takeSnapshot()
-  snapshot.export((error, result) =>
-    fs.writeFileSync(`./logs/${new Date(Date.now())}-dump.heapprofile`, result)
-  )
-}, 1800)
