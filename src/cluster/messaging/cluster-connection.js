@@ -59,8 +59,9 @@ class ClusterConnection extends EventEmitter {
     return this._state === this.STATE.CLOSING
   }
 
-  setRemoteDetails (name, electionNumber, url, connectionId) {
+  setRemoteDetails (name, role, electionNumber, url, connectionId) {
     this.remoteName = name
+    this.role = role
     this.electionNumber = electionNumber
     if (url) {
       this.remoteUrl = url

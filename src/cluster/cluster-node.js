@@ -25,10 +25,11 @@ const STATE = {
 const STATE_LOOKUP = utils.reverseMap(STATE)
 
 class ClusterNode {
-  constructor (options) {
+  constructor (options, role) {
     this._serverName = options.serverName
     this._logger = options.logger
     this._options = options
+    this._role = role
 
     const config = this._config = options.messageConnector
     config.serverName = this._config.serverName = options.serverName
@@ -57,6 +58,7 @@ class ClusterNode {
     this._knownPeers = new Map() // serverName -> connection
     this._knownUrls = new Set()
     this._subscriptions = new Map() // topic -> [callback, ...]
+    this._numPeers = 0
 
     this._globalStateRegistry = new StateRegistry(GLOBAL_STATES, this._options, this, true)
     this._globalStateRegistry.on('server-added', (stateRegistryTopic, serverName) => {
@@ -266,18 +268,21 @@ class ClusterNode {
         connectionId: connection.connectionId,
         name: this._serverName,
         url: this._externalUrl,
-        electionNumber: this._electionNumber
+        electionNumber: this._electionNumber,
+        role: this._role
       })
     })
 
     connection.on('id-response', (message) => {
-      if (!message.name || !message.peers || message.electionNumber === undefined) {
+      if (!message.name || !message.peers || message.electionNumber === undefined
+        || !message.role
+      ) {
         const error = `malformed identification response ${JSON.stringify(message)}`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
         // TODO: send error
         return
       }
-      connection.setRemoteDetails(message.name, message.electionNumber)
+      connection.setRemoteDetails(message.name, message.role, message.electionNumber)
       if (connection.remoteName === this._serverName) {
         connection.sendReject(C.EVENT.ESTABLISHED_SELF_CONNECTION)
         return
@@ -289,7 +294,11 @@ class ClusterNode {
         if (!connection.isAlive()) {
           return
         }
-      } else if (this._knownPeers.size >= this._maxNodes - 1) {
+      } else if (
+        this._role !== 'monitoring'
+        && connection.role !== 'monitoring'
+        && this._numPeers >= this._maxNodes - 1
+      ) {
         connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxNodes)
         return
       }
@@ -323,11 +332,14 @@ class ClusterNode {
   }
 
   _addPeer (connection) {
-    if (!connection.remoteName || !connection.remoteUrl) {
+    if (!connection.remoteName || !connection.remoteUrl || !connection.role) {
       throw new Error('tried to add uninitialized peer')
     }
     connection.on('message', this._onMessage.bind(this, connection))
     this._knownPeers.set(connection.remoteName, connection)
+    if (connection.role !== 'monitoring') {
+      this._numPeers++
+    }
     this._knownUrls.add(connection.remoteUrl)
     this._decideLeader()
 
@@ -344,6 +356,9 @@ class ClusterNode {
     }
     connection.removeAllListeners('message')
     this._knownPeers.delete(connection.remoteName)
+    if (connection.role !== 'monitoring') {
+      this._numPeers--
+    }
     this._knownUrls.delete(connection.remoteUrl)
     this._decideLeader()
 
@@ -369,17 +384,15 @@ class ClusterNode {
     const connection = new IncomingConnection(socket, this._config, this._logger)
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('id-request', (message) => {
-      if (!message.connectionId || !message.name || !message.url || !message.electionNumber) {
+      if (!message.connectionId || !message.name || !message.url || !message.electionNumber
+        || !message.role) {
         const error = `malformed identification request '${JSON.stringify(message)}'`
         this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.INVALID_MSGBUS_MESSAGE, error)
-        connection.sendError(C.EVENT.INVALID_MSGBUS_MESSAGE, 'malformed identification request')
+        connection.sendReject(C.EVENT.INVALID_MSGBUS_MESSAGE, 'malformed identification request')
         return
       }
       connection.setRemoteDetails(
-        message.name,
-        message.electionNumber,
-        message.url,
-        message.connectionId
+        message.name, message.role, message.electionNumber, message.url, message.connectionId
       )
 
       if (connection.remoteName === this._serverName) {
@@ -395,7 +408,11 @@ class ClusterNode {
         }
       }
 
-      if (this._knownPeers.size >= this._maxNodes - 1) {
+      if (
+        this._role !== 'monitoring'
+        && connection.role !== 'monitoring'
+        && this._numPeers >= this._maxNodes - 1
+      ) {
         connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxNodes)
         return
       }
@@ -403,7 +420,8 @@ class ClusterNode {
       connection.sendIdResponse({
         name: this._serverName,
         peers: this._getPeers(),
-        electionNumber: this._electionNumber
+        electionNumber: this._electionNumber,
+        role: this._role
       })
 
       this._addPeer(connection)

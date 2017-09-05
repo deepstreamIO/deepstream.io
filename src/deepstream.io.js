@@ -253,7 +253,7 @@ Deepstream.prototype._loggerInit = function () {
  * @returns {void}
  */
 Deepstream.prototype._pluginInit = function () {
-  this._options.message = new MessageConnector(this._options)
+  this._options.message = new MessageConnector(this._options, 'deepstream')
 
   const infoLogger = message => this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, message)
 
