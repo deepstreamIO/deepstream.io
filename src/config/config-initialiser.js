@@ -2,6 +2,7 @@
 
 const DefaultLogger = require('../default-plugins/std-out-logger')
 const fs = require('fs')
+const crypto = require('crypto')
 const utils = require('../utils/utils')
 const C = require('../constants/constants')
 const fileUtils = require('./file-utils')
@@ -31,6 +32,7 @@ exports.initialise = function (config) {
     'permissionHandler'
   ]
 
+  handleLicenseKey(config)
   handleUUIDProperty(config)
   handleSSLProperties(config)
   handleLogger(config)
@@ -40,6 +42,25 @@ exports.initialise = function (config) {
   handlePermissionStrategy(config)
 
   return config
+}
+
+function handleLicenseKey (config) {
+  if (!config.licenseKey) {
+    throw new Error('No license key configured. ')
+  }
+  const pubkey = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvrpbVcfVaE9TbFdaY0Wz\nSjgNLnR7raKuwuiEdZpDCW1u7JdiQ0WSZuU1+O346Kwo6cKkP6N7AP/LQOl5yHd+\n22+shFvXy0bEeeWC0/txSJGFiqjIQxkQgvubS27qY8WgLfKHm+l9O7YF3Sqz//TL\nWLZRLOt25myBBHtjheca28vz3+PxADX++3WFuOGubtrA6sAM9+rJx79u4+9te6vN\nnCDzeiEdvLgOQlO8d2I0moeMC9Ipe5DYLXReiygUKATR8dXHr8i12cCXBzymZCuB\nX+Yu1ZprYFcf1wmt/w3iAblaXBZnRCCZdOe6snKlJtFkTpxK0XZa4K8UOUW2KS7+\n/wIDAQAB\n-----END PUBLIC KEY-----\n'
+  const rawLicenseInfo = crypto.publicDecrypt(pubkey, Buffer.from(config.licenseKey, 'base64'))
+  let organization
+  let maxNodes
+  try {
+    const licenseInfo = JSON.parse(rawLicenseInfo)
+    organization = licenseInfo.org
+    maxNodes = licenseInfo.maxNodes
+  } catch (err) {
+    throw new Error('Invalid license key provided. Please contact info@deepstreamhub.com.')
+  }
+  config.organization = organization
+  config.maxNodes = maxNodes
 }
 
 /**
