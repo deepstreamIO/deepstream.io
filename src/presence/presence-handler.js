@@ -3,7 +3,31 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 
-const EVERYONE = `U`
+const EVERYONE = 'U'
+
+function parseUserNames (data, socketWrapper) {
+  // Returns all users for backwards compatability
+  if (
+    !data ||
+    data.length === 0 ||
+    (data.length === 1 && (
+    data[0] === C.ACTIONS.QUERY ||
+    data[0] === C.ACTIONS.SUBSCRIBE ||
+    data[0] === C.TOPIC.PRESENCE)
+  )) {
+    return [EVERYONE]
+  }
+  try {
+    return JSON.parse(data[1])
+  } catch (e) {
+    socketWrapper.sendError(
+      C.TOPIC.EVENT,
+      C.EVENT.INVALID_PRESENCE_USERS,
+      'users are required to be a json array of usernames'
+    )
+    return null
+  }
+}
 
 /**
  * This class handles incoming and outgoing messages in relation
@@ -46,7 +70,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   handle (socketWrapper, message) {
-    const users = this._parseUserNames(message.data, socketWrapper)
+    const users = parseUserNames(message.data, socketWrapper)
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this._subscriptionRegistry.subscribe(users[i], socketWrapper)
@@ -54,7 +78,7 @@ module.exports = class PresenceHandler {
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this._subscriptionRegistry.unsubscribe(users[i], socketWrapper)
-      }  
+      }
     } else if (message.action === C.ACTIONS.QUERY) {
       this._handleQuery(users, message.data[0], socketWrapper)
     } else {
@@ -166,29 +190,5 @@ module.exports = class PresenceHandler {
     this._subscriptionRegistry.sendToSubscribers(
       username, message, false, C.SOURCE_MESSAGE_CONNECTOR
     )
-  }
-
-  _parseUserNames (data, socketWrapper) {
-    // Returns all users for backwards compatability
-    if (
-      !data ||
-      data.length === 0 ||
-      (data.length === 1 && ( 
-      data[0] === C.ACTIONS.QUERY || 
-      data[0] === C.ACTIONS.SUBSCRIBE ||
-      data[0] === C.TOPIC.PRESENCE)
-    )) {
-      return [ EVERYONE ]
-    }
-    try {
-      return JSON.parse(data[1])
-    } catch (e) {
-      socketWrapper.sendError(
-        C.TOPIC.EVENT, 
-        C.EVENT.INVALID_PRESENCE_USERS, 
-        `users are required to be a json array of usernames`
-      )
-      return null
-    }
   }
 }

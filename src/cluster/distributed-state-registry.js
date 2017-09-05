@@ -50,7 +50,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
     this._isReady = false
   }
 
-  whenReady(done) {
+  whenReady (done) {
     if (this._isReady) {
       done()
     } else {
@@ -377,7 +377,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _sendFullState (serverName) {
+  _sendFullState () {
     const localState = []
     let name
 
@@ -451,7 +451,7 @@ module.exports = class DistributedStateRegistry extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _processIncomingMessage (message, serverName) {
+  _processIncomingMessage (message) {
 
     if (!this._isValidMessage(message)) {
       return
