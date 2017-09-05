@@ -271,16 +271,12 @@ class ClusterNode {
         return
       }
       this._addPeer(connection)
-      let somethingChanged = false
       for (const url of message.peers) {
         if (!this._urlIsKnown(url)) {
           this._probeHost(url)
-          somethingChanged = true
         }
       }
-      if (somethingChanged) {
-        this._checkReady()
-      }
+      this._checkReady()
     })
   }
 
@@ -388,6 +384,8 @@ class ClusterNode {
       })
 
       this._addPeer(connection)
+
+      this._checkReady()
     })
     connection.on('known-peers', (message) => {
       if (!message.peers || message.peers.constructor !== Array) {
