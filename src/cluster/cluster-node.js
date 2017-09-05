@@ -121,7 +121,7 @@ class ClusterNode {
     }
 
     if (serverName) {
-      const connection = this._getKnownPeer(serverNames)
+      const connection = this._getKnownPeer(serverName)
       if (connection) {
         this._sendStateMessage(connection, registryTopic, message)
       }
