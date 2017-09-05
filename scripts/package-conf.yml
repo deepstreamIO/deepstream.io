@@ -110,12 +110,6 @@ plugins:
       permissionLogLimit: 3
       technicalErrorLogLimit: 3
 
-#   message:
-#     name: redis
-#     options:
-#       host: ${REDIS_HOST}
-#       port: 6379
-
 #   cache:
 #     name: redis
 #     options:
@@ -127,6 +121,24 @@ plugins:
 #     options:
 #       host: localhost
 #       port: 28015
+
+# Peer-to-peer clustering configuration
+messageConnector:
+  enabled: true
+  # host/port for listening to connections within the cluster
+  host: 0.0.0.0
+  port: 9089
+  # externally reachable url for other nodes to connect to. if null, defaults to '${host}:${port}'
+  externalUrl: null
+  # a (possibly empty) list of existing node host:port pairs to try connecting to
+  seedNodes: []
+  #  - localhost:9080
+  #  - localhost:9081
+  maxConnections: 16
+  maxReconnectAttempts: 5
+  reconnectInterval: 1500
+  pingInterval: 1000
+  pingTimeout: 500
 
 # Storage options
 # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db

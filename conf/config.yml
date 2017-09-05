@@ -124,7 +124,7 @@ plugins:
 messageConnector:
   enabled: true
   # host/port for listening to connections within the cluster
-  host: localhost
+  host: 0.0.0.0
   port: 9089
   # externally reachable url for other nodes to connect to. if null, defaults to '${host}:${port}'
   externalUrl: null
