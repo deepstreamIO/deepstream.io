@@ -10,7 +10,7 @@ UWS_COMMIT="193bd4744ebe0bca48b9f881f38792ded1235c40"
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
-DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream-black
+DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream-enterprise
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 
 NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
@@ -53,7 +53,7 @@ if [ $OS = "linux" ]; then
 fi
 
 function compile {
-    echo "Starting deepstream-black packaging with Node.js $NODE_VERSION_WITHOUT_V"
+    echo "Starting deepstream-enterprise packaging with Node.js $NODE_VERSION_WITHOUT_V"
     rm -rf build
     mkdir build
 
@@ -164,14 +164,14 @@ function compile {
     cd $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
     npm install --production --loglevel error
     cd -
- 
+
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
     NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &
 
     PROC_ID=$!
     SECONDS=0;
     while kill -0 "$PROC_ID" >/dev/null 2>&1; do
-        echo -ne "\rCompiling deepstream-black... ($SECONDS SECONDS)"
+        echo -ne "\rCompiling deepstream-enterprise... ($SECONDS SECONDS)"
         sleep 1
     done
 
@@ -203,8 +203,8 @@ function compile {
 }
 
 function mac {
-    COMMIT_NAME="deepstream-black-mac-$PACKAGE_VERSION-$COMMIT"
-    CLEAN_NAME="deepstream-black-mac-$PACKAGE_VERSION"
+    COMMIT_NAME="deepstream-enterprise-mac-$PACKAGE_VERSION-$COMMIT"
+    CLEAN_NAME="deepstream-enterprise-mac-$PACKAGE_VERSION"
 
     echo "OS is mac"
     echo -e "\tCreating $CLEAN_NAME"
@@ -241,7 +241,7 @@ function mac {
     echo "\tCreating *.pkg"
     pkgbuild \
         --root build/osxpkg \
-        --identifier deepstream-black \
+        --identifier deepstream-enterprise \
         --version $PACKAGE_VERSION \
         --info scripts/PackageInfo \
         --install-location /usr/local \
@@ -259,8 +259,8 @@ function linux {
 
     echo -e "\tCreating tar.gz"
 
-    COMMIT_NAME="deepstream-black-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
-    CLEAN_NAME="deepstream-black-linux-$PACKAGE_VERSION.tar.gz"
+    COMMIT_NAME="deepstream-enterprise-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
+    CLEAN_NAME="deepstream-enterprise-linux-$PACKAGE_VERSION.tar.gz"
 
     cd $DEEPSTREAM_PACKAGE
     tar czf ../$COMMIT_NAME .
@@ -284,11 +284,11 @@ function linux {
         -t rpm \
         --package ./build/ \
         --package-name-suffix $COMMIT \
-        -n deepstream-black \
+        -n deepstream-enterprise \
         -v $PACKAGE_VERSION \
         --license "AGPL-3.0" \
         --vendor "deepstreamHub GmbH" \
-        --description "deepstream-black rpm package" \
+        --description "deepstream-enterprise rpm package" \
         --url https://deepstreamhub.com/ \
         -m "<info@deepstreamhub.com>" \
         --after-install ./scripts/daemon/after-install \
@@ -307,11 +307,11 @@ function linux {
         -t deb \
         --package ./build \
         --package-name-suffix $COMMIT \
-        -n deepstream-black \
+        -n deepstream-enterprise \
         -v $PACKAGE_VERSION \
         --license "AGPL-3.0" \
         --vendor "deepstreamHub GmbH" \
-        --description "deepstream-black deb package" \
+        --description "deepstream-enterprise deb package" \
         --url https://deepstreamhub.com/ \
         -m "<info@deepstreamhub.com>" \
         --after-install ./scripts/daemon/after-install \
