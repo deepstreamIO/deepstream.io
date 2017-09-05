@@ -9,6 +9,7 @@ const utils = require('../utils/utils')
 const StateRegistry = require('./distributed-state-registry')
 const C = require('../constants/constants')
 const EventEmitter = require('events').EventEmitter
+const crypto = require('crypto')
 
 const GLOBAL_STATES = 'GLOBAL_STATES'
 
@@ -32,9 +33,11 @@ class ClusterNode {
     const config = this._config = options.messageConnector
     config.serverName = this._config.serverName = options.serverName
 
-    let message = `Validated license key for ${this._options.organization}. `
-    if (this._options.maxNodes > 0) {
-      message += `Clustering enabled for up to ${this._options.maxNodes} nodes.`
+    this._validateLicenseKey()
+
+    let message = `Validated license key for ${this._organization}. `
+    if (this._maxNodes > 1) {
+      message += `Clustering enabled for up to ${this._maxNodes} nodes.`
     }
     this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, message)
 
@@ -47,7 +50,6 @@ class ClusterNode {
     }
 
     this._externalUrl = config.externalUrl || `${config.host}:${config.port}`
-    this._maxConnections = options.maxNodes || 0
 
     this._tcpServer = net.createServer(this._onIncomingConnection.bind(this))
     this._tcpServer.listen(config.port, config.host, this._onReady.bind(this))
@@ -78,6 +80,21 @@ class ClusterNode {
     this._decideLeader()
 
     this._emitter = new EventEmitter()
+  }
+
+  _validateLicenseKey () {
+    if (!this._options.licenseKey) {
+      throw new Error('No license key configured. ')
+    }
+    const pubkey = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvrpbVcfVaE9TbFdaY0Wz\nSjgNLnR7raKuwuiEdZpDCW1u7JdiQ0WSZuU1+O346Kwo6cKkP6N7AP/LQOl5yHd+\n22+shFvXy0bEeeWC0/txSJGFiqjIQxkQgvubS27qY8WgLfKHm+l9O7YF3Sqz//TL\nWLZRLOt25myBBHtjheca28vz3+PxADX++3WFuOGubtrA6sAM9+rJx79u4+9te6vN\nnCDzeiEdvLgOQlO8d2I0moeMC9Ipe5DYLXReiygUKATR8dXHr8i12cCXBzymZCuB\nX+Yu1ZprYFcf1wmt/w3iAblaXBZnRCCZdOe6snKlJtFkTpxK0XZa4K8UOUW2KS7+\n/wIDAQAB\n-----END PUBLIC KEY-----\n'
+    const rawLicenseInfo = crypto.publicDecrypt(pubkey, Buffer.from(this._options.licenseKey, 'base64'))
+    try {
+      const licenseInfo = JSON.parse(rawLicenseInfo)
+      this._organization = licenseInfo.org
+      this._maxNodes = licenseInfo.maxNodes
+    } catch (err) {
+      throw new Error('Invalid license key provided. Please contact info@deepstreamhub.com.')
+    }
   }
 
   sendDirect (serverName, topic, message) {
@@ -272,8 +289,8 @@ class ClusterNode {
         if (!connection.isAlive()) {
           return
         }
-      } else if (this._knownPeers.size >= this._maxConnections - 1) {
-        connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
+      } else if (this._knownPeers.size >= this._maxNodes - 1) {
+        connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxNodes)
         return
       }
       this._addPeer(connection)
@@ -378,8 +395,8 @@ class ClusterNode {
         }
       }
 
-      if (this._knownPeers.size >= this._maxConnections - 1) {
-        connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
+      if (this._knownPeers.size >= this._maxNodes - 1) {
+        connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxNodes)
         return
       }
 
