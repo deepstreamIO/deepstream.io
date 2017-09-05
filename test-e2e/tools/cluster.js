@@ -69,6 +69,7 @@ module.exports = class Cluster extends EventEmitter {
   _startServer (port, done) {
     this.started = true
     this.servers[port] = new DeepstreamServer({
+      licenseKey:'gONHdmvinCbb1adWGR+dVHSdpg6VZYuzbMh9lvCX7yrwLzoegJgBWxAmcOJIfm9mVwRdmhFdnOC76C8HHVoq9o/PsVSBwBsNCST8hezJObprnwBIUfgDquLY1NeMi2k7iiK0dZfJoewXsSHyJHICNEnVhfk3HT2EXgJsGYB0xOiB98K3O/9wVl+0axjQ9OZoy3f8PmcoVCvD5FxihHk2kEhnXzYs5rBdIULsstn0xP86TrLMrZd38nBTIuIEFUZFb550wihhZCpPp/l1W8MZsFVBGGUxkCdGKaeQLgjtBFKGztD9fM8ASlDUn7euukINIOZi54Man6tT9Gx+gcq3sA==',
       serverName : `server-${port}`,
       stateReconciliationTimeout : 100,
       lockTimeout                : 1500,
