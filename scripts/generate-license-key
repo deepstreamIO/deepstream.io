@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+'use strict'
+
+const crypto = require('crypto')
+const program = require('commander')
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
+
+program
+  .option('-o, --organization <name>', 'Required: Organization name')
+  .option('-n, --max-nodes <num>', 'Required: Max number of nodes')
+  .option('-k, --private-key <path>', 'Path to PEM-encoded private key')
+  .parse(process.argv)
+if (!program.organization) {
+  console.error('--organization flag is required')
+  program.help()
+}
+if (!program.maxNodes) {
+  console.error('--max-nodes flag is required')
+  program.help()
+}
+
+const keyfile = program.privateKey
+  || path.join(os.homedir(), '.ssh/enterprise_license_key_private.pem')
+
+const key = fs.readFileSync(keyfile, 'utf-8')
+
+const config = { key, padding: crypto.constants.RSA_PKCS1_PADDING }
+
+const object = { org: program.organization, maxNodes: program.maxNodes }
+
+const plainText = Buffer.from(JSON.stringify(object))
+
+const cipherText = crypto.privateEncrypt(config, plainText).toString('base64')
+
+console.log(object)
+console.log(cipherText)
