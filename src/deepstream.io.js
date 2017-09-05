@@ -511,7 +511,7 @@ Deepstream.prototype._showStartLogo = function () {
   /* istanbul ignore next */
   process.stdout.write(logo + EOL)
   process.stdout.write(
-    ` ===================================   starting   =====================================${EOL}`
+    ` =====================   starting   =====================${EOL}`
   )
 }
 
