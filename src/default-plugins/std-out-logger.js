@@ -59,6 +59,22 @@ StdOutLogger.prototype.log = function (logLevel, event, logMessage) {
   }
 }
 
+StdOutLogger.prototype.debug = function (event, logMessage) {
+  this.log(C.LOG_LEVEL.DEBUG, event, logMessage)
+}
+
+StdOutLogger.prototype.info = function (event, logMessage) {
+  this.log(C.LOG_LEVEL.INFO, event, logMessage)
+}
+
+StdOutLogger.prototype.warn = function (event, logMessage) {
+  this.log(C.LOG_LEVEL.WARN, event, logMessage)
+}
+
+StdOutLogger.prototype.error = function (event, logMessage) {
+  this.log(C.LOG_LEVEL.ERROR, event, logMessage)
+}
+
 /**
  * Sets the log-level. This can be called at runtime.
  *
