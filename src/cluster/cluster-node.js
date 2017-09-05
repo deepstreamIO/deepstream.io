@@ -40,7 +40,7 @@ class ClusterNode {
       this._seedNodes = []
     }
 
-    this._url = `${config.host}:${config.port}`
+    this._externalUrl = config.externalUrl || `${config.host}:${config.port}`
     this._maxConnections = config.maxConnections
 
     this._tcpServer = net.createServer(this._onIncomingConnection.bind(this))
@@ -210,7 +210,7 @@ class ClusterNode {
   }
 
   _urlIsKnown (url) {
-    return this._url === url || this._knownUrls.has(url)
+    return this._externalUrl === url || this._knownUrls.has(url)
   }
 
   _probeHost (nodeUrl) {
@@ -242,7 +242,7 @@ class ClusterNode {
       connection.sendIdRequest({
         connectionId: connection.connectionId,
         name: this._serverName,
-        url: this._url,
+        url: this._externalUrl,
         electionNumber: this._electionNumber
       })
     })

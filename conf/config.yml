@@ -126,6 +126,8 @@ messageConnector:
   # host/port for listening to connections within the cluster
   host: localhost
   port: 9089
+  # externally reachable url for other nodes to connect to. if null, defaults to '${host}:${port}'
+  externalUrl: null
   # a (possibly empty) list of existing node host:port pairs to try connecting to
   seedNodes: []
   #  - localhost:9080

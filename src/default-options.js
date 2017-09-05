@@ -92,6 +92,7 @@ exports.get = function () {
       enabled: true,
       host: '0.0.0.0',
       port: 9089,
+      externalUrl: null,
       seedNodes: [],
       maxConnections: 16,
       maxReconnectAttempts: 5,
