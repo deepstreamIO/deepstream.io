@@ -94,7 +94,6 @@ class OutgoingConnection extends ClusterConnection {
       this._sendCluster(MC.ACTIONS_BYTES.CLUSTER.PING)
       this._pongTimeout = setTimeout(this._onPongTimeoutBound, this._config.pingTimeout)
     } else {
-      console.log('>>>>>>>> trying to send ping from zombie')
       this.clearTimeouts()
     }
   }

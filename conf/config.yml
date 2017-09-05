@@ -1,3 +1,6 @@
+# Your deepstream enterprise license key
+licenseKey: ''
+
 # General
 # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
 serverName: UUID
@@ -132,7 +135,6 @@ messageConnector:
   seedNodes: []
   #  - localhost:9080
   #  - localhost:9081
-  maxConnections: 16
   maxReconnectAttempts: 5
   reconnectInterval: 1500
   pingInterval: 1000

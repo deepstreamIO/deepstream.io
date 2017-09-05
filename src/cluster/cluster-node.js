@@ -32,6 +32,12 @@ class ClusterNode {
     const config = this._config = options.messageConnector
     config.serverName = this._config.serverName = options.serverName
 
+    let message = `Validated license key for ${this._options.organization}. `
+    if (this._options.maxNodes > 0) {
+      message += `Clustering enabled for up to ${this._options.maxNodes} nodes.`
+    }
+    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, message)
+
     if (typeof config.seedNodes === 'string') {
       this._seedNodes = config.seedNodes.split(',')
     } else if (Array.isArray(config.seedNodes)) {
@@ -41,7 +47,7 @@ class ClusterNode {
     }
 
     this._externalUrl = config.externalUrl || `${config.host}:${config.port}`
-    this._maxConnections = config.maxConnections
+    this._maxConnections = options.maxNodes || 0
 
     this._tcpServer = net.createServer(this._onIncomingConnection.bind(this))
     this._tcpServer.listen(config.port, config.host, this._onReady.bind(this))
