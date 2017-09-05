@@ -225,16 +225,17 @@ class ClusterNode {
     connection.on('error', this._onConnectionError.bind(this, connection))
     connection.on('rejection', (event, message) => {
       if (event === C.EVENT.CONNECTION_LIMIT_EXCEEDED) {
-        if (this._state === STATE.ERROR) {
-          return
+        if (this._state !== STATE.ERROR) {
+          let errMsg = connection.remoteName ? `Server ${connection.remoteName}` : 'A server'
+          errMsg += ` reached its cluster connection limit (${message} connections)!`
+          this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_LIMIT_EXCEEDED, errMsg)
+          this._stateTransition(STATE.ERROR)
         }
-        let errMsg = connection.remoteName ? `Server ${connection.remoteName}` : 'A server'
-        errMsg += ` reached its cluster connection limit (${message} connections)!`
-        this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_LIMIT_EXCEEDED, errMsg)
-        this._stateTransition(STATE.ERROR)
-        return
+      } else if (event === C.EVENT.ESTABLISHED_SELF_CONNECTION) {
+        this._logger.log(C.LOG_LEVEL.DEBUG, event, 'connection to self rejected')
+      } else {
+        this._logger.log(C.LOG_LEVEL.WARN, event, message)
       }
-      this._logger.log(C.LOG_LEVEL.WARN, event, message)
     })
     connection.on('connect', () => {
       this._addConnection(connection)
@@ -254,15 +255,19 @@ class ClusterNode {
         return
       }
       connection.setRemoteDetails(message.name, message.electionNumber)
-      if (this._knownPeers.has(connection.remoteName)) {
+      if (connection.remoteName === this._serverName) {
+        connection.sendReject(C.EVENT.ESTABLISHED_SELF_CONNECTION)
+        return
+      } else if (this._knownPeers.has(connection.remoteName)) {
         // this peer was already known to us, but responded to our identification message
-        const message = 'received identification response from an outbound connection to a known peer'
-        this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, message)
+        const msg = 'received identification response from an outbound connection to a known peer'
+        this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg)
         this._handleDuplicateConnections(connection)
+        if (!connection.isAlive()) {
+          return
+        }
       } else if (this._knownPeers.size >= this._maxConnections - 1) {
         connection.sendReject(C.EVENT.CONNECTION_LIMIT_EXCEEDED, this._maxConnections)
-      }
-      if (!connection.isAlive()) {
         return
       }
       this._addPeer(connection)
@@ -357,15 +362,18 @@ class ClusterNode {
         message.url,
         message.connectionId
       )
-      if (this._knownPeers.has(connection.remoteName)) {
+
+      if (connection.remoteName === this._serverName) {
+        connection.sendReject(C.EVENT.ESTABLISHED_SELF_CONNECTION)
+        return
+      } else if (this._knownPeers.has(connection.remoteName)) {
         // I'm already connected to this peer, probably through an outbound connection, reject
         const error = 'received inbound connection from peer that was already known'
         this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.UNSOLICITED_MSGBUS_MESSAGE, error)
         this._handleDuplicateConnections(connection)
-      }
-
-      if (!connection.isAlive()) {
-        return
+        if (!connection.isAlive()) {
+          return
+        }
       }
 
       if (this._knownPeers.size >= this._maxConnections - 1) {
