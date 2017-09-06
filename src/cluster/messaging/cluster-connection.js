@@ -79,8 +79,6 @@ class ClusterConnection extends EventEmitter {
       this._sendCluster(CLUSTER_ACTION_BYTES.CLOSE)
       this._socket.end()
       this._stateTransition(STATE.CLOSING)
-    } else {
-      this._onClose()
     }
   }
 
