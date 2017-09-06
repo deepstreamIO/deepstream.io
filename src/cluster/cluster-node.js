@@ -91,12 +91,8 @@ class ClusterNode {
     const pubkey = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvrpbVcfVaE9TbFdaY0Wz\nSjgNLnR7raKuwuiEdZpDCW1u7JdiQ0WSZuU1+O346Kwo6cKkP6N7AP/LQOl5yHd+\n22+shFvXy0bEeeWC0/txSJGFiqjIQxkQgvubS27qY8WgLfKHm+l9O7YF3Sqz//TL\nWLZRLOt25myBBHtjheca28vz3+PxADX++3WFuOGubtrA6sAM9+rJx79u4+9te6vN\nnCDzeiEdvLgOQlO8d2I0moeMC9Ipe5DYLXReiygUKATR8dXHr8i12cCXBzymZCuB\nX+Yu1ZprYFcf1wmt/w3iAblaXBZnRCCZdOe6snKlJtFkTpxK0XZa4K8UOUW2KS7+\n/wIDAQAB\n-----END PUBLIC KEY-----\n'
 
     try {
-<<<<<<< Updated upstream
       const cipherText = Buffer.from(this._options.licenseKey, 'base64')
       const rawLicenseInfo = crypto.publicDecrypt(pubkey, cipherText)
-=======
-      const rawLicenseInfo = crypto.publicDecrypt(pubkey, Buffer.from(this._options.licenseKey, 'base64'))
->>>>>>> Stashed changes
       const licenseInfo = JSON.parse(rawLicenseInfo)
       this._organization = licenseInfo.org
       this._maxNodes = licenseInfo.maxNodes
