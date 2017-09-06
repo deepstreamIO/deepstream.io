@@ -1,5 +1,5 @@
 # Your deepstream enterprise license key
-licenseKey: ''
+licenseKey: '/esM34JXrrtXmYS/CmtTenSFmEDfs8xhN7aDdO1uzuPZJAdKNXraBJGfZG0I1AnkYHvqGSNvHe5Nnvd1CTiZbSl2B0zrfdlSxNOZtENwjc6pgbEbm2TA9PLPRUIgjS2ol+qkGuM8/znVxIvxbboDZiOKpJXLCtng=='
 
 # General
 # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
