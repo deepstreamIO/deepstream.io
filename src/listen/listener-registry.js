@@ -31,6 +31,8 @@ module.exports = class ListenerRegistry {
       this._providerRegistry.unsubscribe(message.data[0], socket)
     } else if (message.action === C.ACTIONS.LISTEN_ACCEPT) {
       this._accept(socket, message.data)
+    } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
+      this._reject(socket, message.data)
     } else {
       socket.sendError(this._topic, C.EVENT.UNKNOWN_ACTION, [
         ...message.data,
@@ -122,6 +124,25 @@ module.exports = class ListenerRegistry {
       subscription.name
     )
     socket.sendNative(message)
+  }
+
+  _reject (socket, [ pattern, name ]) {
+    const subscription = this._subscriptionRegistry.getSubscription(name)
+
+    if (!subscription || subscription.socket !== socket) {
+      return
+    }
+
+    const listener = this._getListener(pattern, socket)
+
+    if (listener) {
+      listener.delete(subscription)
+    }
+
+    subscription.socket = null
+    subscription.pattern = null
+    this._sendHasProviderUpdate(subscription)
+    this._matcher.getName(name)
   }
 
   _onMatch (name, matches) {
