@@ -19,7 +19,7 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
-      data: [msg.eventName, toTyped(msg.data || null)]
+      data: [msg.eventName, toTyped(msg.data)]
     }
   })
 
@@ -30,7 +30,7 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.RPC,
       action: C.ACTIONS.REQUEST,
-      data: [msg.rpcName, utils.getUid(), toTyped(msg.data || null)]
+      data: [msg.rpcName, utils.getUid(), toTyped(msg.data)]
     }
   })
 
