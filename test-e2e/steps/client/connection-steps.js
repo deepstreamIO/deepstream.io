@@ -18,7 +18,7 @@ Given(/^(.+) logs? out$/, (clientExpression, done) => {
   setTimeout(done, utils.defaultDelay)
 })
 
-Given(/^(.+) connects to server (\d+)$/, client.connect)
+Given(/^(.+) connects? to server (\d+)$/, client.connect)
 
 Then(/^(.+) connections? times? out$/, client.connectionTimesOut)
 

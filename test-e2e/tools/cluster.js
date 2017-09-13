@@ -104,9 +104,9 @@ module.exports = class DeepstreamTest extends EventEmitter {
       isValidUser (headers, authData, callback) {
         if (authData.token) {
           // authenticate token
-          const username = tokens.get(authData.token)
-          if (username) {
-            callback(true, { username })
+          const authResponseData = tokens.get(authData.token)
+          if (authResponseData.username) {
+            callback(true, authResponseData)
             return
           }
 
@@ -115,35 +115,35 @@ module.exports = class DeepstreamTest extends EventEmitter {
             return
           }
         }
+        const username = authData.username
+        const token = Math.random().toString()
+        const clientData = {}
+        const serverData = {}
+        const authResponseData = { username, token, clientData, serverData }
+        let success
+
         // authenicate auth data
-        const users = ['A', 'B', 'C', 'D', 'W', '1', '2', '3', '4']
-        if (
-          users.indexOf(authData.username) !== -1
-          && authData.password === 'abcdefgh'
-        ) {
-          const token = getUid()
-          tokens.set(token, authData.username)
-          callback(true, { token, username: authData.username })
+        const users = ['A', 'B', 'C', 'D', 'E', 'F', 'W', '1', '2', '3', '4']
+        if (users.indexOf(username) !== -1 && authData.password === 'abcdefgh') {
+          success = true
+        } else if (username === 'userA' && authData.password === 'abcdefgh') {
+          success = true
+          serverData.role = 'user'
+        } else if (username === 'userB' && authData.password === '123456789') {
+          success = true
+          clientData['favorite color'] = 'orange'
+          serverData.role = 'admin'
+        } else {
+          success = false
           return
         }
-        if (authData.username === 'userA' && authData.password === 'abcdefgh') {
-          callback(true, { username: 'userA' })
-          return
+
+        if (success) {
+          tokens.set(token, authResponseData)
+          callback(true, authResponseData)
+        } else {
+          callback(false)
         }
-        if (authData.username === 'userB' && authData.password === '123456789') {
-          callback(true, {
-            username: 'userB',
-            clientData: {
-              'favorite color': 'orange',
-              id: 'userB'
-            },
-            serverData: {
-              invalid: 'invalid'
-            }
-          })
-          return
-        }
-        callback(false)
       }
     })
 
@@ -155,5 +155,5 @@ module.exports = class DeepstreamTest extends EventEmitter {
     this._server.once('stopped', () => setTimeout(() => this.emit('stopped'), 500))
     this._server.start()
   }
-  
+
 }
