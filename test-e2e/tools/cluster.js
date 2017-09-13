@@ -103,15 +103,15 @@ module.exports = class DeepstreamTest extends EventEmitter {
       isReady: true,
       isValidUser (headers, authData, callback) {
         if (authData.token) {
+          if (authData.token === 'letmein') {
+            callback(true, { username: 'A' })
+            return
+          }
+
           // authenticate token
           const authResponseData = tokens.get(authData.token)
           if (authResponseData.username) {
             callback(true, authResponseData)
-            return
-          }
-
-          if (authData.token === 'letmein') {
-            callback(true, { username: 'A' })
             return
           }
         }
