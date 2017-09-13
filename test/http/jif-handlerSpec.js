@@ -95,7 +95,7 @@ describe('JIF Handler', () => {
         expect(message.raw).to.be.a('string')
         expect(message.topic).to.equal(C.TOPIC.EVENT)
         expect(message.action).to.equal(C.ACTIONS.EVENT)
-        expect(message.data).to.deep.equal(['time/berlin', C.TYPES.NULL])
+        expect(message.data).to.deep.equal(['time/berlin', C.TYPES.UNDEFINED])
       })
 
       it('should reject malformed topics', () => {
@@ -200,7 +200,7 @@ describe('JIF Handler', () => {
         expect(message.data[0]).to.equal('add-two')
         expect(message.data[1]).to.be.a('string')
         expect(message.data[1]).to.have.length.above(12)
-        expect(message.data[2]).to.equal(C.TYPES.NULL)
+        expect(message.data[2]).to.equal(C.TYPES.UNDEFINED)
       })
     })
 
