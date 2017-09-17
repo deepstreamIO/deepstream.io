@@ -83,7 +83,8 @@ module.exports = class RecordCache {
       shared: '',
       // listener-registry
       socket: null,
-      pattern: null
+      pattern: null,
+      hasProvider: false
     })
   }
 
