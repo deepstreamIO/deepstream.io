@@ -42,10 +42,7 @@ module.exports = class ListenerRegistry {
   }
 
   onListenAdded (pattern, socket, count) {
-    if (count === 1) {
-      this._matcher.addPattern(pattern)
-    }
-
+    this._matcher.addPattern(pattern)
     this._addListener(pattern, socket)
   }
 
