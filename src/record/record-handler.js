@@ -88,7 +88,7 @@ module.exports = class RecordHandler {
       return
     }
 
-    this._providerRegistry.onUpdate(subscription)
+    this._listenerRegistry.onUpdate(subscription)
 
     if (subscription.version && isSameOrNewer(subscription.version, record[1])) {
       return

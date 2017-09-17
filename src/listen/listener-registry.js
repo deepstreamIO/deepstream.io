@@ -42,7 +42,7 @@ module.exports = class ListenerRegistry {
   }
 
   onListenAdded (pattern, socket, count) {
-    this._matcher.addPattern(pattern)
+    this._matcher.addPattern(pattern, socket.id)
     this._addListener(pattern, socket)
   }
 
@@ -143,7 +143,7 @@ module.exports = class ListenerRegistry {
     this._matcher.getName(name)
   }
 
-  _onMatch (name, matches) {
+  _onMatch (name, matches, id) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
     if (!subscription || subscription.socket) {
@@ -160,7 +160,12 @@ module.exports = class ListenerRegistry {
           pattern,
           subscription.name
         )
-        this._providerRegistry.sendToSubscribers(pattern, message)
+        const socket = id && this._getListener(pattern, id)
+        if (socket) {
+          socket.sendNative(message)
+        } else {
+          this._providerRegistry.sendToSubscribers(pattern, message)
+        }
       }
     }
   }
@@ -192,7 +197,7 @@ module.exports = class ListenerRegistry {
   }
 
   _getListener (pattern, socket) {
-    return this._listeners.get(`${pattern}/${socket.id}`)
+    return this._listeners.get(`${pattern}/${socket.id || socket}`)
   }
 
   _removeListener (pattern, socket) {
