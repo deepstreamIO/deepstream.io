@@ -140,6 +140,8 @@ module.exports = class ListenerRegistry {
     subscription.pattern = null
     subscription.hasProvider = false
     this._sendHasProviderUpdate(subscription)
+
+    // TODO
     this._matcher.getName(name)
   }
 
