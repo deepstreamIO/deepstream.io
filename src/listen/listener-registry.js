@@ -45,19 +45,12 @@ module.exports = class ListenerRegistry {
 
     this._matcher.addPattern(pattern, socket.id)
 
-    assert(!this._listeners.has(key))
-
     const listener = toFastProperties({
-      key: null,
-      pattern: null,
-      socket: null,
+      key,
+      pattern,
+      socket,
       subscriptions: new Set()
     })
-
-    listener.key = key
-    listener.pattern = pattern
-    listener.socket = socket
-    listener.subscriptions.clear()
 
     this._listeners.set(key, listener)
   }
@@ -70,8 +63,6 @@ module.exports = class ListenerRegistry {
     }
 
     const listener = this._listeners.get(key)
-
-    assert(listener)
 
     const subscriptions = listener.subscriptions
 
