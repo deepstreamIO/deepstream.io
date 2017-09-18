@@ -133,7 +133,7 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    // TODO: Optimized
+    // TODO: Optimize
     for (const key of subscription.accepts.keys()) {
       if (!this._listeners.has(key)) {
         subscription.accepts.delete(key)
@@ -218,22 +218,23 @@ module.exports = class ListenerRegistry {
 
     if (matches.length === 0) {
       this.onNoProvider(subscription)
-    } else {
-      for (const pattern of matches) {
-        const message = messageBuilder.buildMsg4(
-          this._topic,
-          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-          pattern,
-          subscription.name
-        )
-        if (id) {
-          const listener = this._listeners.get(`${pattern}/${id}`)
-          if (listener) {
-            listener.socket.sendNative(message)
-          }
-        } else {
-          this._providerRegistry.sendToSubscribers(pattern, message)
+      return
+    }
+
+    for (const pattern of matches) {
+      const message = messageBuilder.buildMsg4(
+        this._topic,
+        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+        pattern,
+        subscription.name
+      )
+      if (id) {
+        const listener = this._listeners.get(`${pattern}/${id}`)
+        if (listener) {
+          listener.socket.sendNative(message)
         }
+      } else {
+        this._providerRegistry.sendToSubscribers(pattern, message)
       }
     }
   }
