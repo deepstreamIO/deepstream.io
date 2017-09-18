@@ -3,7 +3,7 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 const toFastProperties = require('to-fast-properties')
 const assert = require('assert')
-const LISTENER_POOL = []
+
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._topic = topic
@@ -45,7 +45,9 @@ module.exports = class ListenerRegistry {
 
     this._matcher.addPattern(pattern, socket.id)
 
-    const listener = LISTENER_POOL.pop() || toFastProperties({
+    assert(!this._listeners.has(key))
+
+    const listener = toFastProperties({
       key: null,
       pattern: null,
       socket: null,
@@ -69,20 +71,20 @@ module.exports = class ListenerRegistry {
 
     const listener = this._listeners.get(key)
 
-    assert(listener && listener.subscriptions)
+    assert(listener)
 
-    for (const subscription of listener.subscriptions) {
-      this._resetAccept(subscription)
-    }
+    const subscriptions = listener.subscriptions
+
+    this._listeners.delete(key)
 
     listener.key = null
     listener.pattern = null
     listener.socket = null
-    listener.subscriptions.clear()
+    listener.subscriptions = new Set()
 
-    this._listeners.delete(key)
-
-    LISTENER_POOL.push(listener)
+    for (const subscription of subscriptions) {
+      this._resetAccept(subscription)
+    }
   }
 
   onNoProvider (subscription) {
@@ -108,7 +110,9 @@ module.exports = class ListenerRegistry {
       this._matcher.removeName(name)
 
       const { listener } = subscription
-      if (listener && listener.socket) {
+
+      if (listener) {
+        assert(listener.socket)
         listener.socket.sendMessage(
           this._topic,
           C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
