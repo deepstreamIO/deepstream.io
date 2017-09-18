@@ -226,9 +226,11 @@ module.exports = class ListenerRegistry {
           pattern,
           subscription.name
         )
-        const { socket } = (id && this._listeners.get(`${pattern}/${id}`)) || {}
-        if (socket) {
-          socket.sendNative(message)
+        if (id) {
+          const listener = this._listeners.get(`${pattern}/${id}`)
+          if (listener) {
+            listener.socket.sendNative(message)
+          }
         } else {
           this._providerRegistry.sendToSubscribers(pattern, message)
         }
