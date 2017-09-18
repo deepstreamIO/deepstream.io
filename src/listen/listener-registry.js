@@ -108,7 +108,7 @@ module.exports = class ListenerRegistry {
       this._matcher.removeName(name)
 
       const { listener } = subscription
-      if (listener) {
+      if (listener && listener.socket) {
         listener.socket.sendMessage(
           this._topic,
           C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
