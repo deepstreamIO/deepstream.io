@@ -63,17 +63,9 @@ module.exports = class ListenerRegistry {
     }
 
     const listener = this._listeners.get(key)
-
-    const subscriptions = listener.subscriptions
-
     this._listeners.delete(key)
 
-    listener.key = null
-    listener.pattern = null
-    listener.socket = null
-    listener.subscriptions = new Set()
-
-    for (const subscription of subscriptions) {
+    for (const subscription of listener.subscriptions) {
       this._resetAccept(subscription)
     }
   }
