@@ -3,22 +3,18 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 const toFastProperties = require('to-fast-properties')
 const assert = require('assert')
-
 const LISTENER_POOL = []
-
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
     this._topic = topic
     this._listenResponseTimeout = options.listenResponseTimeout
     this._subscriptionRegistry = subscriptionRegistry
-
     this._listeners = new Map()
     this._providerRegistry = new SubscriptionRegistry(options, topic)
     this._providerRegistry.setSubscriptionListener({
       onSubscriptionAdded: this.onListenAdded.bind(this),
       onSubscriptionRemoved: this.onListenRemoved.bind(this)
     })
-
     this._matcher = options.patternMatcher
     this._matcher.onMatch = this._onMatch.bind(this)
   }
@@ -28,7 +24,6 @@ module.exports = class ListenerRegistry {
       socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
       return
     }
-
     if (message.action === C.ACTIONS.LISTEN) {
       this._providerRegistry.subscribe(message.data[0], socket)
     } else if (message.action === C.ACTIONS.UNLISTEN) {
@@ -91,7 +86,13 @@ module.exports = class ListenerRegistry {
   }
 
   onNoProvider (subscription) {
+  }
 
+  onUpdate (subscription) {
+    if (!subscription.hasProvider && subscription.listener) {
+      subscription.hasProvider = true
+      this._sendHasProviderUpdate(subscription)
+    }
   }
 
   onSubscriptionAdded (name, socket, count, subscription) {
@@ -107,14 +108,12 @@ module.exports = class ListenerRegistry {
       this._matcher.removeName(name)
 
       const { listener } = subscription
-
       if (listener) {
         listener.socket.sendMessage(
           this._topic,
           C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
           [ listener.pattern, name ]
         )
-
         listener.subscriptions.delete(subscription)
       }
 
@@ -126,11 +125,11 @@ module.exports = class ListenerRegistry {
 
   _accept (socket, [ pattern, name ]) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
-
     if (!subscription) {
       return
     }
 
+    // TODO: Optimized
     for (const key of subscription.accepts.keys()) {
       if (!this._listeners.has(key)) {
         subscription.accepts.delete(key)
@@ -138,16 +137,19 @@ module.exports = class ListenerRegistry {
     }
 
     const key = `${pattern}/${socket.id}`
+
+    const listener = this._listeners.get(key)
+    if (!listener) {
+      return
+    }
+
     subscription.accepts.add(key)
 
-    if (!subscription.listener) {
-      this._sendAccept(key, subscription)
-    }
+    this._sendAccept(listener, subscription)
   }
 
   _reject (socket, [ pattern, name ]) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
-
     if (!subscription) {
       return
     }
@@ -156,7 +158,6 @@ module.exports = class ListenerRegistry {
     subscription.accepts.delete(key)
 
     const listener = this._listeners.get(key)
-
     if (!listener) {
       return
     }
@@ -164,7 +165,6 @@ module.exports = class ListenerRegistry {
     listener.subscriptions.delete(subscription)
 
     if (subscription.listener === listener) {
-      subscription.listener = null
       this._resetAccept(subscription)
     }
   }
@@ -174,22 +174,25 @@ module.exports = class ListenerRegistry {
     subscription.hasProvider = false
     this._sendHasProviderUpdate(subscription)
 
+    const listeners = []
+    // TODO: Optimize
     for (const key of subscription.accepts.keys()) {
-      if (!this._listeners.has(key)) {
+      const listener = this._listeners.get(key)
+      if (!listener) {
         subscription.accepts.delete(key)
+      } else {
+        listeners.push(listener)
       }
     }
 
-    const arr = Array.from(subscription.accepts.keys())
-    const key = arr[Math.floor(Math.random() * arr.length)]
+    const listener = listeners[Math.floor(Math.random() * listeners.length)]
 
-    this._sendAccept(key, subscription)
+    if (listener) {
+      this._sendAccept(listener, subscription)
+    }
   }
 
-  _sendAccept (key, subscription) {
-    const listener = this._listeners.get(key)
-    assert(listener)
-
+  _sendAccept (listener, subscription) {
     subscription.listener = listener
     listener.subscriptions.add(subscription)
 
@@ -199,12 +202,12 @@ module.exports = class ListenerRegistry {
       listener.pattern,
       subscription.name
     )
+
     listener.socket.sendNative(message)
   }
 
   _onMatch (name, matches, id) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
-
     if (!subscription || subscription.listener) {
       return
     }
@@ -229,13 +232,6 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onUpdate (subscription) {
-    if (!subscription.hasProvider && subscription.listener) {
-      subscription.hasProvider = true
-      this._sendHasProviderUpdate(subscription)
-    }
-  }
-
   _sendHasProviderUpdate (subscription, socket) {
     const message = messageBuilder.buildMsg4(
       this._topic,
@@ -243,7 +239,6 @@ module.exports = class ListenerRegistry {
       subscription.name,
       subscription.hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE
     )
-
     if (socket) {
       socket.sendNative(message)
     } else {
