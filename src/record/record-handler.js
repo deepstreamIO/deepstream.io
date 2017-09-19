@@ -25,6 +25,7 @@ module.exports = class RecordHandler {
     }
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionAdded: (name, socket, count, subscription) => {
+        // TODO Only send if no provider
         if (subscription.message) {
           socket.sendNative(subscription.message)
         }
