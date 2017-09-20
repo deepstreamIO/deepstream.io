@@ -1,21 +1,24 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let SocketMock = require('../mocks/socket-mock'),
-  SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  permissionHandlerMock = require('../mocks/permission-handler-mock'),
-  MessageProcessor = require('../../src/message/message-processor'),
-  _msg = require('../test-helper/test-helper').msg,
-  messageProcessor,
-  log,
-  lastAuthenticatedMessage = null
+const SocketMock = require('../mocks/socket-mock')
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const permissionHandlerMock = require('../mocks/permission-handler-mock')
+const MessageProcessor = require('../../src/message/message-processor')
+const _msg = require('../test-helper/test-helper').msg
+const LoggerMock = require('../mocks/logger-mock')
+
+let messageProcessor
+let log
+let lastAuthenticatedMessage = null
 
 describe('the message processor only forwards valid, authorized messages', () => {
   it('creates the message processor', () => {
-    log = jasmine.createSpy('log')
+    const loggerMock = new LoggerMock()
+    log = loggerMock.log
     messageProcessor = new MessageProcessor({
       permissionHandler: permissionHandlerMock,
-      logger: { log }
+      logger: loggerMock
     })
     messageProcessor.onAuthenticatedMessage = function (socketWrapper, message) {
       lastAuthenticatedMessage = message

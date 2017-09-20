@@ -4,23 +4,26 @@
 const recordRequest = require('../../src/record/record-request')
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
 const SocketMock = require('../mocks/socket-mock')
-const StorageMock = require('../mocks/storage-mock')
-const msg = require('../test-helper/test-helper').msg
+const testHelper = require('../test-helper/test-helper')
+const LoggerMock = require('../mocks/logger-mock')
+
+const msg = testHelper.msg
 
 describe('record request', () => {
   const completeCallback = jasmine.createSpy('completeCallback')
   const errorCallback = jasmine.createSpy('errorCallback')
-  let socketWrapper, options
+
+  let socketWrapper
+  let options
 
   beforeEach(() => {
-    options = {
+    options = testHelper.getDeepstreamOptions()
+    options = Object.assign(options, {
       cacheRetrievalTimeout: 100,
       storageRetrievalTimeout: 100,
-      cache: new StorageMock(),
-      storage: new StorageMock(),
-      logger: { log: jasmine.createSpy('log') },
+      logger: new LoggerMock(),
       storageExclusion: new RegExp('dont-save')
-    }
+    })
     options.cache.set('existingRecord', { _v: 1, _d: {} }, () => {})
     options.storage.set('onlyExistsInStorage', { _v: 1, _d: {} }, () => {})
 
@@ -35,11 +38,11 @@ describe('record request', () => {
       options.cache.nextOperationWillBeSynchronous = true
 
       recordRequest(
-        'existingRecord', 
-        options, 
-        socketWrapper, 
-        completeCallback, 
-        errorCallback, 
+        'existingRecord',
+        options,
+        socketWrapper,
+        completeCallback,
+        errorCallback,
         null
         )
 
@@ -58,11 +61,11 @@ describe('record request', () => {
       options.cache.nextGetWillBeSynchronous = false
 
       recordRequest(
-        'existingRecord', 
-        options, 
-        socketWrapper, 
-        completeCallback, 
-        errorCallback, 
+        'existingRecord',
+        options,
+        socketWrapper,
+        completeCallback,
+        errorCallback,
         null
         )
 
@@ -83,11 +86,11 @@ describe('record request', () => {
       options.cache.nextGetWillBeSynchronous = true
 
       recordRequest(
-        'onlyExistsInStorage', 
-        options, 
-        socketWrapper, 
-        completeCallback, 
-        errorCallback, 
+        'onlyExistsInStorage',
+        options,
+        socketWrapper,
+        completeCallback,
+        errorCallback,
         null
         )
 
@@ -107,11 +110,11 @@ describe('record request', () => {
       options.storage.nextGetWillBeSynchronous = false
 
       recordRequest(
-        'onlyExistsInStorage', 
-        options, 
-        socketWrapper, 
-        completeCallback, 
-        errorCallback, 
+        'onlyExistsInStorage',
+        options,
+        socketWrapper,
+        completeCallback,
+        errorCallback,
         null
         )
 
@@ -133,11 +136,11 @@ describe('record request', () => {
       options.cache.nextGetWillBeSynchronous = true
 
       recordRequest(
-        'doesNotExist', 
-        options, 
-        socketWrapper, 
-        completeCallback, 
-        errorCallback, 
+        'doesNotExist',
+        options,
+        socketWrapper,
+        completeCallback,
+        errorCallback,
         null
         )
 
@@ -153,17 +156,15 @@ describe('record request', () => {
     })
 
     it('handles cache errors', () => {
-      const completeCallback = jasmine.createSpy('completeCallback')
-
       options.cache.nextGetWillBeSynchronous = true
       options.cache.nextOperationWillBeSuccessful = false
 
       recordRequest(
-        'cacheError', 
-        options, 
-        socketWrapper, 
-        completeCallback, 
-        errorCallback, 
+        'cacheError',
+        options,
+        socketWrapper,
+        completeCallback,
+        errorCallback,
         null
         )
 
@@ -186,11 +187,11 @@ describe('record request', () => {
       options.storage.nextOperationWillBeSuccessful = false
 
       recordRequest(
-        'storageError', 
-        options, 
-        socketWrapper, 
-        completeCallback, 
-        errorCallback, 
+        'storageError',
+        options,
+        socketWrapper,
+        completeCallback,
+        errorCallback,
         null
         )
 
@@ -219,11 +220,11 @@ describe('record request', () => {
 
       it('sends a CACHE_RETRIEVAL_TIMEOUT message when cache times out', (done) => {
         recordRequest(
-          'willTimeoutCache', 
-          options, 
-          socketWrapper, 
-          completeCallback, 
-          errorCallback, 
+          'willTimeoutCache',
+          options,
+          socketWrapper,
+          completeCallback,
+          errorCallback,
           null
         )
 
@@ -256,11 +257,11 @@ describe('record request', () => {
 
       it('sends a STORAGE_RETRIEVAL_TIMEOUT message when storage times out', (done) => {
         recordRequest(
-          'willTimeoutStorage', 
-          options, 
-          socketWrapper, 
-          completeCallback, 
-          errorCallback, 
+          'willTimeoutStorage',
+          options,
+          socketWrapper,
+          completeCallback,
+          errorCallback,
           null
         )
 
@@ -278,7 +279,7 @@ describe('record request', () => {
           expect(completeCallback).not.toHaveBeenCalled()
 
           done()
-        }, 1)  
+        }, 1)
       })
     })
   })
@@ -290,14 +291,14 @@ describe('record request', () => {
       options.storage.delete = jasmine.createSpy('storage.delete')
       options.storage.set('dont-save/1', { _v: 1, _d: {} }, () => {})
     })
-    
+
     it('returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', (done) => {
       recordRequest(
-        'dont-save/1', 
-        options, 
-        socketWrapper, 
-        completeCallback, 
-        errorCallback, 
+        'dont-save/1',
+        options,
+        socketWrapper,
+        completeCallback,
+        errorCallback,
         null
       )
 

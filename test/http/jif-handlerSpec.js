@@ -14,12 +14,11 @@ const MessageParser = require('../../src/message/message-parser')
 const msg = require('../test-helper/test-helper').msg
 
 const JIFHandler = require('../../src/message/jif-handler')
+const LoggerMock = require('../mocks/logger-mock')
 
 describe('JIF Handler', () => {
   let jifHandler
-  const logger = {
-    log () {}
-  }
+  const logger = new LoggerMock()
   const jifHandlerOptions = {
     logger,
     constants: C,
@@ -95,7 +94,7 @@ describe('JIF Handler', () => {
         expect(message.raw).to.be.a('string')
         expect(message.topic).to.equal(C.TOPIC.EVENT)
         expect(message.action).to.equal(C.ACTIONS.EVENT)
-        expect(message.data).to.deep.equal(['time/berlin', C.TYPES.NULL])
+        expect(message.data).to.deep.equal(['time/berlin', C.TYPES.UNDEFINED])
       })
 
       it('should reject malformed topics', () => {
@@ -200,12 +199,12 @@ describe('JIF Handler', () => {
         expect(message.data[0]).to.equal('add-two')
         expect(message.data[1]).to.be.a('string')
         expect(message.data[1]).to.have.length.above(12)
-        expect(message.data[2]).to.equal(C.TYPES.NULL)
+        expect(message.data[2]).to.equal(C.TYPES.UNDEFINED)
       })
     })
 
     describe('records', () => {
-      it('should handle a record write without path', () => {
+      it('should handle a record write (object type) without path', () => {
         const jif = {
           topic: 'record',
           action: 'write',
@@ -221,6 +220,25 @@ describe('JIF Handler', () => {
         expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
         expect(message.data).to.deep.equal(
           ['car/bmw', -1, '{"tyres":2,"wheels":4}', '{"writeSuccess":true}']
+        )
+      })
+
+      it('should handle a record write (array type) without path', () => {
+        const jif = {
+          topic: 'record',
+          action: 'write',
+          recordName: 'car/bmw',
+          data: [{ model: 'M6', hp: 560 }, { model: 'X6', hp: 306 }]
+        }
+        const result = jifHandler.fromJIF(jif)
+        const message = result.message
+
+        expect(result.success).to.be.true
+        expect(message).to.be.an('object')
+        expect(message.topic).to.equal(C.TOPIC.RECORD)
+        expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
+        expect(message.data).to.deep.equal(
+          ['car/bmw', -1, '[{"model":"M6","hp":560},{"model":"X6","hp":306}]', '{"writeSuccess":true}']
         )
       })
 

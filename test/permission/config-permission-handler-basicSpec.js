@@ -1,34 +1,17 @@
+/* eslint-disable no-param-reassign */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
 const C = require('../../src/constants/constants')
-const options = {
-  logger: { log: jasmine.createSpy('log') },
-  permission: {
-    options: {
-      cacheEvacuationInterval: 60000,
-      maxRuleIterations: 3
-    }
-  }
-}
+const testHelper = require('../test-helper/test-helper')
+const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
+
+const options = testHelper.getDeepstreamPermissionOptions()
+const testPermission = testHelper.testPermission(options)
+
 const lastError = function () {
   return options.logger.log.calls.mostRecent().args[2]
-}
-
-const testPermission = function (permissions, message, username, userdata, callback) {
-  const permissionHandler = new ConfigPermissionHandler(options, permissions)
-  permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
-  let permissionResult
-
-  username = username || 'someUser'
-  userdata = userdata || {}
-  callback = callback || function (error, result) {
-    permissionResult = result
-  }
-  permissionHandler.canPerformAction(username, message, callback, userdata)
-  return permissionResult
 }
 
 describe('permission handler applies basic permissions to incoming messages', () => {
@@ -293,7 +276,10 @@ describe('loads permissions repeatedly', () => {
 
   it('creates the permissionHandler', () => {
     permissionHandler = new ConfigPermissionHandler(options, getBasePermissions())
-    permissionHandler.setRecordHandler({ removeRecordRequest: () => {}, runWhenRecordStable: (r, c) => { c(r) } })
+    permissionHandler.setRecordHandler({
+      removeRecordRequest: () => {},
+      runWhenRecordStable: (r, c) => { c(r) }
+    })
     expect(permissionHandler.isReady).toBe(true)
   })
 

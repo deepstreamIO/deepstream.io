@@ -6,8 +6,10 @@ const C = require('../constants/constants')
  * Sends an error to the socketWrapper that requested the
  * record
  */
-function sendError (event, message, recordName, socketWrapper, onError, options, context) {
-  options.logger.log(C.LOG_LEVEL.ERROR, event, message)
+function sendError (
+  event, message, recordName, socketWrapper, onError, options, context, metaData
+) {
+  options.logger.error(event, message, metaData)
   if (socketWrapper) {
     socketWrapper.sendError(C.TOPIC.RECORD, event, message)
   }
@@ -21,7 +23,7 @@ function sendError (event, message, recordName, socketWrapper, onError, options,
  * here, if the record couldn't be found in storage no further attempts to retrieve it will be made
  */
 function onStorageResponse (
-  error, record, recordName, socketWrapper, onComplete, onError, options, context
+  error, record, recordName, socketWrapper, onComplete, onError, options, context, metaData
 ) {
   if (error) {
     sendError(
@@ -31,13 +33,14 @@ function onStorageResponse (
       socketWrapper,
       onError,
       options,
-      context
+      context,
+      metaData
     )
   } else {
     onComplete.call(context, record || null, recordName, socketWrapper)
 
     if (record) {
-      options.cache.set(recordName, record, () => {})
+      options.cache.set(recordName, record, () => {}, metaData)
     }
   }
 }
@@ -49,7 +52,7 @@ function onStorageResponse (
  * @returns {void}
  */
 function onCacheResponse (
-  error, record, recordName, socketWrapper, onComplete, onError, options, context
+  error, record, recordName, socketWrapper, onComplete, onError, options, context, metaData
 ) {
   if (error) {
     sendError(
@@ -59,7 +62,8 @@ function onCacheResponse (
       socketWrapper,
       onError,
       options,
-      context
+      context,
+      metaData
     )
   } else if (record) {
     onComplete.call(context, record, recordName, socketWrapper)
@@ -74,7 +78,7 @@ function onCacheResponse (
       sendError(
         C.EVENT.STORAGE_RETRIEVAL_TIMEOUT,
         recordName, recordName, socketWrapper,
-        onError, options, context
+        onError, options, context, metaData
       )
     }, options.storageRetrievalTimeout)
 
@@ -89,10 +93,11 @@ function onCacheResponse (
           onComplete,
           onError,
           options,
-          context
+          context,
+          metaData
         )
       }
-    })
+    }, metaData)
   } else {
     onComplete.call(context, null, recordName, socketWrapper)
   }
@@ -114,7 +119,7 @@ function onCacheResponse (
  *
  */
 module.exports = function (
-  recordName, options, socketWrapper, onComplete, onError, context
+  recordName, options, socketWrapper, onComplete, onError, context, metaData
 ) {
   let cacheTimedOut = false
 
@@ -123,7 +128,7 @@ module.exports = function (
     sendError(
       C.EVENT.CACHE_RETRIEVAL_TIMEOUT,
       recordName, recordName, socketWrapper,
-      onError, options, context
+      onError, options, context, metaData
     )
   }, options.cacheRetrievalTimeout)
 
@@ -138,8 +143,9 @@ module.exports = function (
         onComplete,
         onError,
         options,
-        context
+        context,
+        metaData
       )
     }
-  })
+  }, metaData)
 }

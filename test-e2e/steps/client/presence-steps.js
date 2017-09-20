@@ -1,56 +1,50 @@
 'use strict'
 
 const sinon = require('sinon')
-
-const clientHandler = require('./client-handler')
 const utils = require('./utils')
 
-const clients = clientHandler.clients
+const cucumber = require('cucumber')
+const When = cucumber.When
+const Then = cucumber.Then
+const Given = cucumber.Given
 
-module.exports = function () {
+const presence = require('../../framework/presence')
 
-  const subscribeEvent = 'subscribe'
-  const queryEvent = 'query'
+Given(/^(.+) subscribes to presence events$/, (clientExpression, done) => {
+  presence.subscribe(clientExpression)
+  setTimeout(done, utils.defaultDelay)
+})
 
-  this.Given(/^(.+) subscribes to presence events$/, (clientExpression, done) => {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      client.presence.callbacks[subscribeEvent] = sinon.spy()
-      client.client.presence.subscribe(client.presence.callbacks[subscribeEvent])
-    })
-    setTimeout(done, utils.defaultDelay)
-  })
+Given(/^(.+) subscribes to presence events for "([^"]*)"$/, (clientExpression, users, done) => {
+  users.split(',').forEach(user => presence.subscribe(clientExpression, user))
+  setTimeout(done, utils.defaultDelay)
+})
 
-  this.When(/^(.+) queries for connected clients$/, (clientExpression, done) => {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      client.presence.callbacks[queryEvent] = sinon.spy()
-      client.client.presence.getAll(client.presence.callbacks[queryEvent])
-    })
-    setTimeout(done, utils.defaultDelay)
-  })
+When(/^(.+) queries for connected clients$/, (clientExpression, done) => {
+  presence.getAll(clientExpression)
+  setTimeout(done, utils.defaultDelay)
+})
 
-  this.Then(/^(.+) (?:is|are) notified that (.+) logged ([^"]*)$/, (notifeeExpression, notiferExpression, event) => {
-    clientHandler.getClients(notifeeExpression).forEach((notifee) => {
-      clientHandler.getClients(notiferExpression).forEach((notifier) => {
-        sinon.assert.calledWith(notifee.presence.callbacks[subscribeEvent], notifier.user, event === 'in')
-      })
-      notifee.presence.callbacks[subscribeEvent].reset()
-    })
-  })
+When(/^(.+) queries for clients "([^"]*)"$/, (clientExpression, clients, done) => {
+  presence.getAll(clientExpression, clients.split(','))
+  setTimeout(done, utils.defaultDelay)
+})
 
-  this.Then(/^(.+) is notified that (?:clients|client) "([^"]*)" (?:are|is) connected$/, (clientExpression, connectedClients) => {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
-      sinon.assert.calledWith(client.presence.callbacks[queryEvent], connectedClients.split(','))
-      client.presence.callbacks[queryEvent].reset()
-    })
-  })
+Then(/^(.+) (?:is|are) notified that (.+) logged ([^"]*)$/, presence.assert.notifiedUserStateChanged)
 
-  this.Then(/^(.+) is notified that no clients are connected$/, (clientExpression) => {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
-      sinon.assert.calledWith(client.presence.callbacks[queryEvent], [])
-      client.presence.callbacks[queryEvent].reset()
-    })
-  })
+Then(/^(.+) is notified that (?:clients|client) "([^"]*)" (?:are|is) connected$/, (clientExpression, connectedClients) => {
+  presence.assert.globalQueryResult(clientExpression, connectedClients.split(','))
+})
 
-}
+Then(/^(.+) (?:is|are) notified that (?:clients|client) "([^"]*)" (?:are|is) online$/, (clientExpression, clients) => {
+  presence.assert.queryResult(clientExpression, clients.split(','), true)
+})
+
+Then(/^(.+) (?:is|are) notified that (?:clients|client) "([^"]*)" (?:are|is) offline$/, (clientExpression, clients) => {
+  presence.assert.queryResult(clientExpression, clients.split(','), false)
+})
+
+Then(/^(.+) is notified that no clients are connected$/, (clientExpression) => {
+  presence.assert.globalQueryResult(clientExpression, [])
+})
+

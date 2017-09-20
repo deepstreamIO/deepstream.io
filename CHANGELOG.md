@@ -1,3 +1,11 @@
+## [3.0.1] - 2017.08.14
+
+### Features
+
+- Added a `restart` option to deepstream service CLI
+- deepstream will now write to a pid file at `/var/run/deepstream/deepstream.pid` while running as a service
+- Authentication and permission plugins can now be configured via config and will be resolved as normal plugins. Either a path or name will need to be provided at the top level, and any options specified will also be passed in.
+
 ## [3.0.0] - 2017.07.26
 
 ### Features
@@ -16,7 +24,7 @@ The above HTTP API makes deepstream.io compatible with the deepstream PHP client
 The deepstream 3.0 release lays the groundwork for multiple combinable endpoints/protocols,
 e.g. GraphQL or Binary to be used together. It also introduces a new endpoint type enabling
 developers to write their own. Please note - at the moment it is not possible to run multiple subscription
-based endpoints (e.g. websocket) simultaneously. 
+based endpoints (e.g. websocket) simultaneously.
 
 #### Message Connector Discontinuation
 To address the scalability issues associated with the message connector interface's coarse topics

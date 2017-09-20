@@ -11,11 +11,10 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
     super()
     this._options = options
     this.isReady = false
-    this.description = 'HTTP Connection Endpoint'
+    this.description = 'HTTP connection endpoint'
 
-    // this._socketWrapperPool = []
-    this._onSocketMessage = this._onSocketMessage.bind(this)
-    this._onSocketError = this._onSocketError.bind(this)
+    this._onSocketMessageBound = this._onSocketMessage.bind(this)
+    this._onSocketErrorBound = this._onSocketError.bind(this)
   }
 
   /**
@@ -184,7 +183,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
     }
 
     const C = this._constants
-    this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.INVALID_AUTH_DATA, error)
+    this._logger.debug(C.EVENT.INVALID_AUTH_DATA, error)
 
   }
 
@@ -211,8 +210,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
         statusCode: HTTPStatus.BAD_REQUEST,
         message: error
       })
-      this._logger.log(
-        C.LOG_LEVEL.DEBUG,
+      this._logger.debug(
         C.EVENT.INVALID_MESSAGE,
         JSON.stringify(messageData.body)
       )
@@ -223,8 +221,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       if (this._options.allowAuthData !== true) {
         const error = 'Authentication using authData is disabled. Try using a token instead.'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
-        this._logger.log(
-          C.LOG_LEVEL.DEBUG,
+        this._logger.debug(
           C.EVENT.INVALID_AUTH_DATA,
           'Auth rejected because allowAuthData was disabled'
         )
@@ -233,8 +230,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       if (messageData.authData === null || typeof messageData.authData !== 'object') {
         const error = 'Invalid message: the "authData" parameter must be an object'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
-        this._logger.log(
-          C.LOG_LEVEL.DEBUG,
+        this._logger.debug(
           C.EVENT.INVALID_AUTH_DATA,
           `authData was not an object: ${
             this._logInvalidAuthData === true ? JSON.stringify(messageData.authData) : '-'
@@ -247,8 +243,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       if (typeof messageData.token !== 'string' || messageData.token.length === 0) {
         const error = 'Invalid message: the "token" parameter must be a non-empty string'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
-        this._logger.log(
-          C.LOG_LEVEL.DEBUG,
+        this._logger.debug(
           C.EVENT.INVALID_AUTH_DATA,
           `auth token was not a string: ${
             this._logInvalidAuthData === true ? messageData.token : '-'
@@ -264,6 +259,32 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       authData,
       this._onMessageAuthResponse.bind(this, responseCallback, messageData)
     )
+  }
+
+  /**
+   * Create and initialize a new SocketWrapper
+   *
+   * @param   {Object}   authResponseData
+   * @param   {Number}   messageIndex
+   * @param   {Array}    messageResults
+   * @param   {Function} responseCallback
+   * @param   {Timeout}  requestTimeoutId
+   *
+   * @private
+   *
+   * @returns {void}
+   */
+  _createSocketWrapper (
+    authResponseData, messageIndex, messageResults, responseCallback, requestTimeoutId
+  ) {
+    const socketWrapper = new HTTPSocketWrapper(
+      {}, this._onSocketMessageBound, this._onSocketErrorBound
+    )
+
+    socketWrapper.init(
+      authResponseData, messageIndex, messageResults, responseCallback, requestTimeoutId
+    )
+    return socketWrapper
   }
 
   /**
@@ -304,7 +325,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
           statusCode: HTTPStatus.BAD_REQUEST,
           message: parseResult.error ? `${message} Reason: ${parseResult.error}` : message
         })
-        this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.MESSAGE_PARSE_ERROR, parseResult.error)
+        this._logger.debug(C.EVENT.MESSAGE_PARSE_ERROR, parseResult.error)
         return
       }
     }
@@ -314,10 +335,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       this._requestTimeout
     )
 
-    const user = authResponseData.userId || authResponseData.username
-
-    const dummySocketWrapper = new HTTPSocketWrapper({}, () => {}, () => {})
-    dummySocketWrapper.init(authResponseData, user)
+    const dummySocketWrapper = this._createSocketWrapper(authResponseData)
 
     for (let messageIndex = 0; messageIndex < messageCount; messageIndex++) {
       const parseResult = parseResults[messageIndex]
@@ -332,27 +350,21 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
           HTTPConnectionEndpoint._checkComplete(messageResults, responseCallback, requestTimeoutId)
         }
       } else {
-        const socketWrapper = new HTTPSocketWrapper({}, this._onSocketMessage, this._onSocketError)
+        const socketWrapper = this._createSocketWrapper(
+          authResponseData, messageIndex, messageResults, responseCallback, requestTimeoutId
+        )
+
         /*
          * TODO: work out a way to safely enable socket wrapper pooling
          * if (this._socketWrapperPool.length === 0) {
          *   socketWrapper = new HTTPSocketWrapper(
-         *     this._onSocketMessage,
-         *     this._onSocketError
+         *     this._onSocketMessageBound,
+         *     this._onSocketErrorBound
          *   )
          * } else {
          *   socketWrapper = this._socketWrapperPool.pop()
          * }
          */
-
-        socketWrapper.init(
-          authResponseData,
-          user,
-          messageIndex,
-          messageResults,
-          responseCallback,
-          requestTimeoutId
-        )
 
         // emit the message
         this.onMessages(socketWrapper, [parseResult.message])
@@ -383,7 +395,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
     if (!parseResult) {
       const C = this._constants
       const message = `${topic} ${action} ${JSON.stringify(data)}`
-      this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, message)
+      this._logger.error(C.EVENT.MESSAGE_PARSE_ERROR, message)
       return
     }
     if (parseResult.done !== true) {
@@ -476,7 +488,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       return
     }
 
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.TIMEOUT, 'HTTP Request timeout')
+    this._logger.warn(C.EVENT.TIMEOUT, 'HTTP Request timeout')
 
     const result = HTTPConnectionEndpoint.calculateMessageResult(messageResults)
 
@@ -563,9 +575,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
   ) {
     const C = this._constants
     if (error !== null) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-      messageResults[messageIndex] = { success: false, error }
-      return
+      this._options.logger.warn(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
     }
     if (permissioned !== true) {
       messageResults[messageIndex] = {

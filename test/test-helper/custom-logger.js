@@ -1,9 +1,10 @@
+/* eslint-disable class-methods-use-this */
 'use strict'
 
 const Emitter = require('events').EventEmitter
 
 class CustomLogger extends Emitter {
-  constructor(options) {
+  constructor (options) {
     super()
     this.options = options
     this.isReady = false
@@ -13,11 +14,11 @@ class CustomLogger extends Emitter {
     }, 1)
   }
 
-  log(level, event, msg) {
+  log (level, event, msg) {
     console.log('CustomLogger:', level, event, msg)
   }
 
-  setLogLevel(level) {
+  setLogLevel (level) {
     console.log('<< new log level', level)
   }
 

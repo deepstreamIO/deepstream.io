@@ -1,9 +1,9 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let C = require('../../src/constants/constants'),
-  _msg = require('../test-helper/test-helper').msg,
-  messageBuilder = require('../../src/message/message-builder')
+const C = require('../../src/constants/constants')
+const _msg = require('../test-helper/test-helper').msg
+const messageBuilder = require('../../src/message/message-builder')
 
 describe('messageBuilder composes valid deepstream messages', () => {
   it('creates a simple authentication ack message', () => {

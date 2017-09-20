@@ -1,37 +1,24 @@
+/* eslint-disable max-len, import/no-extraneous-dependencies */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-let proxyquire = require('proxyquire').noCallThru().noPreserveCache(),
-  SocketWrapper = require('../mocks/socket-wrapper-mock'),
-  SubscriptionRegistry = require('../../src/utils/subscription-registry'),
-  RecordHandler = proxyquire('../../src/record/record-handler', {
-    '../utils/subscription-registry': SubscriptionRegistry
-  }),
-  msg = require('../test-helper/test-helper').msg,
-  StorageMock = require('../mocks/storage-mock'),
-  SocketMock = require('../mocks/socket-mock'),
-  LoggerMock = require('../mocks/logger-mock'),
-  noopMessageConnector = require('../../src/default-plugins/noop-message-connector'),
-  clusterRegistryMock = new (require('../mocks/cluster-registry-mock'))()
+const proxyquire = require('proxyquire').noCallThru().noPreserveCache()
+const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const SubscriptionRegistry = require('../../src/utils/subscription-registry')
+const SocketMock = require('../mocks/socket-mock')
+const testHelper = require('../test-helper/test-helper')
+
+const RecordHandler = proxyquire('../../src/record/record-handler', {
+  '../utils/subscription-registry': SubscriptionRegistry
+})
+
+const msg = testHelper.msg
 
 describe('record handler handles messages', () => {
-  let recordHandler,
-    clientA = new SocketWrapper(new SocketMock(), {}),
-    clientB = new SocketWrapper(new SocketMock(), {}),
-    options = {
-      clusterRegistry: clusterRegistryMock,
-      cache: new StorageMock(),
-      storage: new StorageMock(),
-      storageExclusion: new RegExp('no-storage'),
-      logger: new LoggerMock(),
-      messageConnector: noopMessageConnector,
-      permissionHandler: { canPerformAction(a, b, c) { c(null, true) } },
-      uniqueRegistry: {
-        get() {},
-        release() {}
-      },
-      storageHotPathPatterns: []
-    }
+  let recordHandler
+  const clientA = new SocketWrapper(new SocketMock(), {})
+  const clientB = new SocketWrapper(new SocketMock(), {})
+  const options = testHelper.getDeepstreamOptions()
 
   it('creates the record handler', () => {
     recordHandler = new RecordHandler(options)
@@ -364,10 +351,10 @@ describe('record handler handles messages', () => {
     setTimeout(() => {
       expect(clientB.socket.lastSendMessage).toBe(msg('R|U|existingRecord|6|{"name":"Kowalski"}+'))
 
-			/**
-			* Important to note this is a race condition since version exists errors are sent as soon as record is retrieved,
-			* which means it hasn't yet been written to cache.
-			*/
+      /**
+      * Important to note this is a race condition since version exists errors are sent as soon as record is retrieved,
+      * which means it hasn't yet been written to cache.
+      */
       expect(clientA.socket.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|existingRecord|5|{"name":"Kowalski"}+'))
       done()
     }, 50)
@@ -395,10 +382,10 @@ describe('record handler handles messages', () => {
 
     setTimeout(() => {
       expect(clientA.socket.lastSendMessage).toBeNull()
-			/**
-			* Important to note this is a race condition since version exists flushes happen before the new record is
-			* written to cache.
-			*/
+      /**
+      * Important to note this is a race condition since version exists flushes happen before the new record is
+      * written to cache.
+      */
       expect(clientB.socket.getMsg(1)).toBe(msg('R|E|VERSION_EXISTS|existingRecord|6|{"name":"Kowalski"}+'))
       expect(clientB.socket.lastSendMessage).toBe(msg('R|U|existingRecord|7|{"name":"Kowalski"}+'))
       done()
@@ -528,22 +515,10 @@ describe('record handler handles messages', () => {
 })
 
 describe('record handler handles messages', () => {
-  let recordHandler,
-    clientA = new SocketWrapper(new SocketMock(), {}),
-    clientB = new SocketWrapper(new SocketMock(), {}),
-    options = {
-      clusterRegistry: clusterRegistryMock,
-      cache: new StorageMock(),
-      storage: new StorageMock(),
-      storageExclusion: new RegExp('no-storage'),
-      logger: new LoggerMock(),
-      messageConnector: noopMessageConnector,
-      permissionHandler: { canPerformAction(a, b, c) { c(null, true) } },
-      uniqueRegistry: {
-        get() {},
-        release() {}
-      }
-    }
+  let recordHandler
+  const clientA = new SocketWrapper(new SocketMock(), {})
+  const clientB = new SocketWrapper(new SocketMock(), {})
+  const options = testHelper.getDeepstreamOptions()
 
   options.cache.nextGetWillBeSynchronous = true
 

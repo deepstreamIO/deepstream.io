@@ -1,7 +1,6 @@
+/* eslint-disable class-methods-use-this, no-unused-vars */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
-
-/* eslint-disable class-methods-use-this */
 
 const SocketMock = require('./socket-mock')
 
@@ -92,7 +91,7 @@ const UWSMock = function () {
   this.setMaxListeners(0)
   uwsMock = this
   this.native = new Native(this)
-  //this.on('message', )
+  // this.on('message', )
 }
 
 require('util').inherits(UWSMock, require('events').EventEmitter)

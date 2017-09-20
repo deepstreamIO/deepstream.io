@@ -1,7 +1,7 @@
 {
 	"presence": {
 		"*": {
-			"allow": false
+			"allow": "user.id === 'B'"
 		}
 	},
 	"record": {
@@ -11,17 +11,6 @@
 			"write": true,
 			"read": true,
 			"listen": true
-		},
-		"forbidden": {
-			"create": false,
-			"delete": false,
-			"write": false,
-			"read": false,
-			"listen": false
-		},
-		"read-only": {
-			"write": false,
-			"read": true
 		},
 		"d/*": {
 			"create": "_('perm/JohnDoe').boolean",
@@ -37,7 +26,7 @@
 			"create": true,
 			"read": true
 		},
-			"only-decrement": {
+		"only-decrement": {
 			"write": "!oldData.value || data.value < oldData.value",
 			"create": true,
 			"read": true
@@ -52,7 +41,32 @@
 		"only-a-can-read-and-create": {
 			"create": "user.id === 'A'",
 			"read": "user.id === 'A'"
-		}
+		},
+		"forbidden": {
+			"create": false,
+			"delete": false,
+			"write": false,
+			"read": false,
+			"listen": false
+		},
+			"read-only": {
+			"write": false,
+			"read": true
+		},
+		"deny-read":{
+			"create": false,
+			"write": false,
+			"read": false,
+			"delete": false,
+			"listen": false
+		},
+		"deny-write":{
+			"create": true,
+			"write": false,
+			"read": true,
+			"delete": false,
+			"listen": false
+		 }
 	},
 	"event": {
 		"*": {
@@ -81,6 +95,14 @@
 		},
 		"place/$city": {
 			"publish": "$city.toLowerCase() === data.address.city.toLowerCase()"
+		},
+		"deny-this*":{
+			"publish": false,
+			"subscribe": false,
+			"listen": false
+		},
+		"admin-publish":{
+			"publish": "user.data.role === 'admin'"
 		}
 	},
 	"rpc": {
@@ -94,6 +116,10 @@
 		},
 		"only-full-user-data": {
 			"request": "typeof data.firstname === 'string' && typeof data.lastname === 'string'"
+		},
+		"deny": {
+			"provide": false,
+			"request": false
 		}
 	}
 }

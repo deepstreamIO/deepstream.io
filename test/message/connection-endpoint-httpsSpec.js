@@ -1,9 +1,12 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* eslint-disable import/no-extraneous-dependencies */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll */
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../mocks/uws-mock')
 const HttpMock = require('../mocks/http-mock')
+const LoggerMock = require('../mocks/logger-mock')
+const PermissionHandlerMock = require('../mocks/permission-handler-mock')
 
 const httpMock = new HttpMock()
 const httpsMock = new HttpMock()
@@ -15,13 +18,10 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
   http: httpMock,
   https: httpsMock
 })
-const PermissionHandlerMock = require('../mocks/permission-handler-mock')
-const _msg = require('../test-helper/test-helper').msg
-let lastLoggedMessage = null
 
 const options = {
   permissionHandler: PermissionHandlerMock,
-  logger: { log(logLevel, event, msg) { lastLoggedMessage = msg } },
+  logger: new LoggerMock(),
   maxAuthAttempts: 3,
   logInvalidAuthData: true
 }
@@ -47,8 +47,8 @@ describe('validates HTTPS server conditions', () => {
 
   beforeEach(() => {
     sslOptions = {
-      permissionHandler: require('../mocks/permission-handler-mock'),
-      logger: { log(logLevel, event, msg) {} }
+      permissionHandler: PermissionHandlerMock,
+      logger: { log () {} }
     }
     error = { message: null }
   })

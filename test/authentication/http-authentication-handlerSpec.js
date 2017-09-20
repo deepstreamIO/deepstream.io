@@ -1,14 +1,16 @@
-/* global describe, it, expect */
+/* global jasmine, describe, it, expect */
+/* eslint-disable no-undef */
 'use strict'
 
 const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')
 const TestHttpServer = require('../test-helper/test-http-server')
+const MockLogger = require('../mocks/logger-mock')
 
 describe('it forwards authentication attempts as http post requests to a specified endpoint', () => {
   let authenticationHandler
   let server
   const port = TestHttpServer.getRandomPort()
-  const logger = { log: jasmine.createSpy('log') }
+  const logger = new MockLogger()
 
   beforeAll((done) => {
     server = new TestHttpServer(port, done)
@@ -125,6 +127,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).toBe(false)
       expect(logger.log).toHaveBeenCalledWith(2, 'AUTH_ERROR', 'http auth server error: oh dear')
+      expect(data).toBe('oh dear')
       done()
     })
   })
@@ -134,7 +137,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     const authData = { username: 'userA' }
 
     server.once('request-received', () => {
-			// don't respond
+      // don't respond
     })
 
     logger.log.calls.reset()
@@ -142,6 +145,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).toBe(false)
       expect(logger.log).toHaveBeenCalledWith(2, 'AUTH_ERROR', 'http auth error: Error: socket hang up')
+      expect(data).toBeNull()
       server.respondWith(200)
       done()
     })

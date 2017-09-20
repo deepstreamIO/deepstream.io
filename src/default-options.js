@@ -59,6 +59,7 @@ exports.get = function () {
           unauthenticatedClientTimeout: 180000,
           maxAuthAttempts: 3,
           logInvalidAuthData: false,
+          perMessageDeflate: false,
           maxMessageSize: 1048576
         }
       },
@@ -68,12 +69,11 @@ exports.get = function () {
           port: 8080,
           host: '0.0.0.0',
           allowAuthData: true,
-          enableAuthEndpoint: false,
+          enableAuthEndpoint: true,
           authPath: '/auth',
           postPath: '/',
           getPath: '/',
           healthCheckPath: '/health-check',
-          logInvalidAuthData: false,
           allowAllOrigins: true,
           origins: []
         }
@@ -83,7 +83,6 @@ exports.get = function () {
     /*
      * Default Plugins
      */
-    messageConnector: require('./default-plugins/noop-message-connector'),
     cache: require('./default-plugins/local-cache'),
     storage: require('./default-plugins/noop-storage'),
 

@@ -8,12 +8,12 @@ const utils = require('./utils')
 
 const DeepstreamClient = require('deepstream.io-client-js')
 
-function createClient(clientName, server) {
+function createClient (clientName, server, options) {
   const gatewayUrl = global.cluster.getUrl(server - 1, clientName)
-  const client = DeepstreamClient(gatewayUrl, {
+  const client = DeepstreamClient(gatewayUrl, Object.assign({
     maxReconnectInterval: 300,
     maxReconnectAttempts: 20,
-  })
+  }, options))
   clients[clientName] = {
     name: clientName,
     client,
@@ -70,8 +70,13 @@ function createClient(clientName, server) {
   }
 
   clients[clientName].client.on('error', (message, event, topic) => {
-    console.log('An Error occured on', clientName, message, event, topic)
+    if (process.env.DEBUG_LOG) {
+      console.log('An Error occured on', clientName, message, event, topic)
+    }
 
+    if (!clients[clientName]) {
+      return
+    }
     const clientErrors = clients[clientName].error
     clientErrors[topic]          = clientErrors[topic] || {}
     clientErrors[topic][event] = clientErrors[topic][event] || sinon.spy()
@@ -81,7 +86,7 @@ function createClient(clientName, server) {
   return clients[clientName]
 }
 
-function getClientNames(expression) {
+function getClientNames (expression) {
   const clientExpression = /all clients|(?:subscriber|publisher|clients?) ([^\s']*)(?:'s)?/
   const result = clientExpression.exec(expression)
   if (result[0] === 'all clients') {
@@ -96,11 +101,11 @@ function getClientNames(expression) {
 
 }
 
-function getClients(expression) {
+function getClients (expression) {
   return getClientNames(expression).map(client => clients[client])
 }
 
-function assertNoErrors(client) {
+function assertNoErrors (client) {
   const clientErrors = clients[client].error
   for (const topic in clientErrors) {
     for (const event in clientErrors[topic]) {

@@ -79,8 +79,10 @@ module.exports = class Server extends EventEmitter {
     const address = serverAddress.address
     const port = serverAddress.port
     const C = this._constants
-    const wsMsg = `listening for HTTP connections on ${address}:${port}`
-    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, wsMsg)
+    const wsMsg = `Listening for http connections on ${address}:${port}`
+    this._logger.info(C.EVENT.INFO, wsMsg)
+    const hcMsg = `Listening for health checks on path ${this._config.healthCheckPath} `
+    this._logger.info(C.EVENT.INFO, hcMsg)
     this.emit('ready')
     this.isReady = true
   }
@@ -307,6 +309,6 @@ module.exports = class Server extends EventEmitter {
    */
   _onError (error) {
     const C = this._constants
-    this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error.toString())
+    this._logger.error(C.EVENT.CONNECTION_ERROR, error.toString())
   }
 }

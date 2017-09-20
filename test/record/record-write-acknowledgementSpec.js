@@ -1,32 +1,36 @@
+/* eslint-disable import/no-extraneous-dependencies */
 'use strict'
 
-/* global it, describe, expect, jasmine */
+/* global it, describe, expect, jasmine, afterAll, beforeAll */
 const proxyquire = require('proxyquire').noPreserveCache()
-const recordRequestMock = jasmine.createSpy()
-const RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': recordRequestMock })
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
 const SocketMock = require('../mocks/socket-mock')
-const msg = require('../test-helper/test-helper').msg
-const StorageMock = require('../mocks/storage-mock')
-const patchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 1, 'firstname', 'SEgon', '{"writeSuccess":true}'] }
-const recordHandlerMock = { _$broadcastUpdate: jasmine.createSpy(), _$transitionComplete: jasmine.createSpy() }
+const testHelper = require('../test-helper/test-helper')
+const LoggerMock = require('../mocks/logger-mock')
 
-let options, socketWrapper, recordTransition
+const patchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 1, 'firstname', 'SEgon', '{"writeSuccess":true}'] }
+const recordHandlerMock = {
+  _$broadcastUpdate: jasmine.createSpy(),
+  _$transitionComplete: jasmine.createSpy()
+}
+const recordRequestMock = jasmine.createSpy()
+const RecordTransition = proxyquire('../../src/record/record-transition', { './record-request': recordRequestMock })
+
+const msg = testHelper.msg
+
+let options
+let socketWrapper
+let recordTransition
 
 function recordRequestMockCallback (data, isError) {
   const callback = recordRequestMock.calls.mostRecent().args[isError ? 4 : 3]
   const context = recordRequestMock.calls.mostRecent().args[5]
-  data = data === undefined ? { _v: 0, _d: {} } : data
-  callback.call(context, data)
+  callback.call(context, data === undefined ? { _v: 0, _d: {} } : data)
 }
 
 function createRecordTransition (recordName, message) {
-  options = { 
-    cache: new StorageMock(), 
-    storage: new StorageMock(),
-    logger: { log: jasmine.createSpy('log') },
-    storageExclusion: new RegExp('no-storage/')
-  }
+  options = testHelper.getDeepstreamOptions()
+  options.logger = new LoggerMock()
 
   recordRequestMock.calls.reset()
   recordHandlerMock._$broadcastUpdate.calls.reset()
@@ -68,12 +72,10 @@ describe('record write acknowledgement', () => {
   })
 
   describe('multiple write acknowledgements', () => {
-    let
-      socketWrapper2 = new SocketWrapper(new SocketMock(), {}),
-      patchMessage = { topic: 'RECORD', action: 'P', data: ['recordName', 1, 'firstname', 'SEgon', '{"writeSuccess":true}'] },
-      patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'firstname', 'SJeff', '{"writeSuccess":true}'] },
-      patchMessage3 = { topic: 'RECORD', action: 'P', data: ['recordName', 3, 'firstname', 'SLana', '{"writeSuccess":true}'] },
-      updateMessage = { topic: 'RECORD', action: 'U', data: ['recordName', 2, '{ "lastname": "Peterson" }'] }
+
+    const socketWrapper2 = new SocketWrapper(new SocketMock(), {})
+    const patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'firstname', 'SJeff', '{"writeSuccess":true}'] }
+    const patchMessage3 = { topic: 'RECORD', action: 'P', data: ['recordName', 3, 'firstname', 'SLana', '{"writeSuccess":true}'] }
 
     beforeAll(() => {
       createRecordTransition()

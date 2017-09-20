@@ -5,6 +5,8 @@ const RecordDeletion = require('../../src/record/record-deletion')
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
 const SocketMock = require('../mocks/socket-mock')
 const msg = require('../test-helper/test-helper').msg
+const LoggerMock = require('../mocks/logger-mock')
+
 const deletionMsg = { topic: 'R', action: 'D', data: ['someRecord'] }
 
 const getOptions = function () {
@@ -13,7 +15,7 @@ const getOptions = function () {
     cache: { delete: jasmine.createSpy('storage.cache') },
     cacheRetrievalTimeout: 1000,
     storageRetrievalTimeout: 1000,
-    logger: { log: jasmine.createSpy('logger.log') }
+    logger: new LoggerMock()
   }
 }
 
@@ -80,7 +82,7 @@ describe('encounters an error during record deletion', () => {
 
 describe('doesn\'t delete excluded messages from storage', () => {
   let recordDeletion
-  const deletionMsg = { topic: 'R', action: 'D', data: ['no-storage/1'] }
+  const anotherDeletionMsg = { topic: 'R', action: 'D', data: ['no-storage/1'] }
   const options = getOptions()
   options.storageExclusion = new RegExp('no-storage/')
   const sender = new SocketWrapper(new SocketMock(), options)
@@ -90,7 +92,7 @@ describe('doesn\'t delete excluded messages from storage', () => {
     expect(options.cache.delete).not.toHaveBeenCalled()
     expect(options.storage.delete).not.toHaveBeenCalled()
 
-    recordDeletion = new RecordDeletion(options, sender, deletionMsg, successCallback)
+    recordDeletion = new RecordDeletion(options, sender, anotherDeletionMsg, successCallback)
 
     expect(options.cache.delete.calls.argsFor(0)[0]).toBe('no-storage/1')
     expect(options.storage.delete).not.toHaveBeenCalled()

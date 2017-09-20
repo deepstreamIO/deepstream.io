@@ -25,7 +25,6 @@ exports.initialise = function (config) {
 
   // The default plugins required by deepstream to run
   config.pluginTypes = [
-    'messageConnector',
     'storage',
     'cache',
     'authenticationHandler',
@@ -117,6 +116,12 @@ function handleLogger (config) {
   }
 
   config.logger = new Logger(configOptions)
+  if (!config.logger.info) {
+    config.logger.debug = config.logger.log.bind(config.logger, C.LOG_LEVEL.DEBUG)
+    config.logger.info = config.logger.log.bind(config.logger, C.LOG_LEVEL.INFO)
+    config.logger.warn = config.logger.log.bind(config.logger, C.LOG_LEVEL.WARN)
+    config.logger.error = config.logger.log.bind(config.logger, C.LOG_LEVEL.ERROR)
+  }
   if (LOG_LEVEL_KEYS.indexOf(config.logLevel) !== -1) {
     // NOTE: config.logLevel has highest priority, compare to the level defined
     // in the nested logger object
@@ -127,11 +132,10 @@ function handleLogger (config) {
 
 /**
  * Handle the plugins property in the config object the connectors.
- * Allowed types: {message|cache|storage}
+ * Allowed types: {cache|storage}
  * Plugins can be passed either as a __path__ property or as a __name__ property with
  * a naming convetion: *{cache: {name: 'redis'}}* will be resolved to the
  * npm module *deepstream.io-cache-redis*
- * Exception: *message* will be resolved to *msg*
  * Options to the constructor of the plugin can be passed as *options* object.
  *
  * CLI arguments will be considered.
@@ -148,28 +152,20 @@ function handlePlugins (config) {
   // mapping between the root properties which contains the plugin instance
   // and the plugin configuration objects
   const connectorMap = {
-    messageConnector: 'message',
     cache: 'cache',
     storage: 'storage'
   }
   // mapping between the plugin configuration properties and the npm module
   // name resolution
   const typeMap = {
-    message: 'msg',
     cache: 'cache',
     storage: 'storage'
   }
-  const plugins = Object.assign({}, config.plugins, {
-    messageConnector: config.plugins.message
-  })
-  delete plugins.message
+  const plugins = Object.assign({}, config.plugins)
 
   for (const key in plugins) {
     const plugin = plugins[key]
     if (plugin) {
-      if (key === 'messageConnector') {
-        throw new Error('unable to start deepstream with a message connector, these have been deprecated as part of deepstream.io v3.0')
-      }
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
       config[key] = new PluginConstructor(plugin.options)
       if (config.pluginTypes.indexOf(key) === -1) {
@@ -284,7 +280,16 @@ function handleAuthStrategy (config) {
     config.auth.options = {}
   }
 
-  if (!authStrategies[config.auth.type] && !config.auth.path) {
+  if (config.auth.name || config.auth.path) {
+    const AuthHandler = resolvePluginClass(config.auth, 'authentication')
+    if (!AuthHandler) {
+      throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
+    }
+    config.authenticationHandler = new AuthHandler(config.auth.options, config.logger)
+    return
+  }
+
+  if (!authStrategies[config.auth.type]) {
     throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
 
@@ -321,7 +326,16 @@ function handlePermissionStrategy (config) {
     config.permission.options = {}
   }
 
-  if (!permissionStrategies[config.permission.type] && !config.permission.path) {
+  if (config.permission.name || config.permission.path) {
+    const PermHandler = resolvePluginClass(config.permission, 'permission')
+    if (!PermHandler) {
+      throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
+    }
+    config.permissionHandler = new PermHandler(config.permission.options, config.logger)
+    return
+  }
+
+  if (!permissionStrategies[config.permission.type]) {
     throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 

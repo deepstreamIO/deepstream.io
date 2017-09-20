@@ -2,47 +2,30 @@
 
 const sinon = require('sinon')
 
-const clientHandler = require('./client-handler')
 const utils = require('./utils')
 
-module.exports = function () {
+const cucumber = require('cucumber')
+const When = cucumber.When
+const Then = cucumber.Then
+const Given = cucumber.Given
 
-  this.When(/^(.+) publishes? (?:an|the) event "([^"]*)"(?: with data ("[^"]*"|\d+|\{.*\}))?$/, (clientExpression, subscriptionName, data, done) => {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      client.client.event.emit(subscriptionName, utils.parseData(data))
-    })
-    setTimeout(done, utils.defaultDelay)
-  })
+const event = require('../../framework/event')
 
-  this.Then(/^(.+) receives? (the|no) event "([^"]*)"(?: with data (.+))?$/, (clientExpression, theNo, subscriptionName, data) => {
-    const doesReceive = !theNo.match(/^no$/)
+When(/^(.+) publishes? (?:an|the) event "([^"]*)"(?: with data ("[^"]*"|\d+|\{.*\}))?$/, (clientExpression, subscriptionName, data, done) => {
+  event.publishes(clientExpression, subscriptionName, data)
+  setTimeout(done, utils.defaultDelay)
+})
 
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      const eventSpy = client.event.callbacks[subscriptionName]
-      if (doesReceive) {
-        sinon.assert.calledOnce(eventSpy)
-        sinon.assert.calledWith(eventSpy, utils.parseData(data))
-        eventSpy.reset()
-      } else {
-        sinon.assert.notCalled(eventSpy)
-      }
-    })
-  })
+Then(/^(.+) receives? (the|no) event "([^"]*)"(?: with data (.+))?$/, (clientExpression, theNo, subscriptionName, data) => {
+  event.recieved(clientExpression, !theNo.match(/^no$/), subscriptionName, data)
+})
 
-  this.Given(/^(.+) subscribes? to (?:an|the) event "([^"]*)"$/, (clientExpression, subscriptionName, done) => {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      client.event.callbacks[subscriptionName] = sinon.spy()
-      client.client.event.subscribe(subscriptionName, client.event.callbacks[subscriptionName])
-    })
-    setTimeout(done, utils.defaultDelay)
-  })
+Given(/^(.+) subscribes? to (?:an|the) event "([^"]*)"$/, (clientExpression, subscriptionName, done) => {
+  event.subscribes(clientExpression, subscriptionName)
+  setTimeout(done, utils.defaultDelay)
+})
 
-  this.When(/^(.+) unsubscribes from (?:an|the) event "([^"]*)"$/, (clientExpression, subscriptionName, done) => {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      client.client.event.unsubscribe(subscriptionName, client.event.callbacks[subscriptionName])
-      client.event.callbacks[subscriptionName].isSubscribed = false
-    })
-    setTimeout(done, utils.defaultDelay)
-  })
-
-}
+When(/^(.+) unsubscribes from (?:an|the) event "([^"]*)"$/, (clientExpression, subscriptionName, done) => {
+  event.unsubscribes(clientExpression, subscriptionName)
+  setTimeout(done, utils.defaultDelay)
+})

@@ -1,14 +1,13 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* eslint-disable no-new, no-empty */
 'use strict'
 
-let C = require('../../src/constants/constants'),
-  DependencyInitialiser = require('../../src/utils/dependency-initialiser'),
-  PluginMock = require('../mocks/plugin-mock'),
-  LoggerMock = require('../mocks/logger-mock'),
-  EventEmitter = require('events').EventEmitter
+const C = require('../../src/constants/constants')
+const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
+const PluginMock = require('../mocks/plugin-mock')
+const LoggerMock = require('../mocks/logger-mock')
 
 describe('dependency-initialiser', () => {
-  let dependencyInitialiser
   let dependencyBInitialiser
 
   const options = {
@@ -71,37 +70,36 @@ describe('dependency-initialiser', () => {
 describe('encounters timeouts and errors during dependency initialisations', () => {
   let dependencyInitialiser
   const onReady = jasmine.createSpy('onReady')
-  const log = jasmine.createSpy('log')
   const originalConsoleLog = console.log
   const options = {
     plugin: new PluginMock('A'),
-    logger: { log: jasmine.createSpy('log'), isReady: true },
+    logger: new LoggerMock(),
     dependencyInitialisationTimeout: 1
   }
 
   it('disables console.error', () => {
     Object.defineProperty(console, 'error', {
-      value: log
+      value: options.logger.log
     })
   })
 
-  it('creates a depdendency initialiser and doesnt initialise a plugin in time', (next) => {
+  it('creates a depdendency initialiser and doesnt initialise a plugin in time', (done) => {
     dependencyInitialiser = new DependencyInitialiser({}, options, options.plugin, 'plugin')
     dependencyInitialiser.on('ready', onReady)
     expect(options.plugin.isReady).toBe(false)
     process.removeAllListeners('uncaughtException')
     process.once('uncaughtException', () => {
       expect(options.logger.log).toHaveBeenCalledWith(3, 'PLUGIN_ERROR', 'plugin wasn\'t initialised in time')
-      next()
+      done()
     })
     expect(onReady).not.toHaveBeenCalled()
   })
 
   it('creates another depdendency initialiser with a plugin error', (next) => {
-    process.once('uncaughtException', (err) => {
+    process.once('uncaughtException', () => {
       expect(onReady).not.toHaveBeenCalled()
-      expect(log).toHaveBeenCalledWith('Error while initialising dependency')
-      expect(log).toHaveBeenCalledWith('Error while initialising plugin: something went wrong')
+      expect(options.logger.log).toHaveBeenCalledWith('Error while initialising dependency')
+      expect(options.logger.log).toHaveBeenCalledWith('Error while initialising plugin: something went wrong')
       next()
     })
     dependencyInitialiser = new DependencyInitialiser({}, options, options.plugin, 'plugin')
