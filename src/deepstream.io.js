@@ -31,7 +31,7 @@ module.exports = class Deepstream extends EventEmitter {
  * Deepstream is a realtime data server that supports data-sync,
  * publish-subscribe, request-response, listeneing, permissioning
  * and a host of other features!
- *  
+ *
  * @copyright 2016 deepstreamHub GmbH
  * @author deepstreamHub GmbH
  *
