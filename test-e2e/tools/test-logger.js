@@ -1,36 +1,49 @@
 'use strict'
 
-const events = require('events')
+const EventEmitter = require('events').EventEmitter
 const util = require('util')
 
-const Logger = function () {
-  this.logs = []
-  this.lastLog = null
-  this.isReady = true
-}
-
-util.inherits(Logger, events.EventEmitter)
-
-Logger.prototype.log = function (logLevel, event, logMessage) {
-  const log = {
-    level: logLevel,
-    event,
-    message: logMessage
+module.exports = class Logger extends EventEmitter{
+  constructor () {
+    super()
+    this.logs = []
+    this.lastLog = null
+    this.isReady = true
   }
 
-  this.logs.push(log)
-  this.lastLog = log
+  error (event, logMessage) {
+    this.log(3, event, logMessage)
+  }
 
-  switch (logLevel) {
-    case 3:
-      throw new Error(`Critical error occured on deepstream ${event} ${logMessage}`)
-      break
-    case 2:
-      console.log('Warning:', event, logMessage)
-      break
+  warn (event, logMessage) {
+    this.log(2, event, logMessage)
+  }
+
+  info (event, logMessage) {
+     this.log(1, event, logMessage)
+  }
+
+  debug (event, logMessage) {
+    this.log(0, event, logMessage)
+  }
+
+  log (logLevel, event, logMessage) {
+    const log = {
+      level: logLevel,
+      event,
+      message: logMessage
+    }
+
+    this.logs.push(log)
+    this.lastLog = log
+
+    switch (logLevel) {
+      case 3:
+        throw new Error(`Critical error occured on deepstream ${event} ${logMessage}`)
+        break
+      case 2:
+        // console.log('Warning:', event, logMessage)
+        break
+    }
   }
 }
-
-Logger.prototype.setLogLevel = function () {}
-
-module.exports = Logger

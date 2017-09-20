@@ -5,6 +5,7 @@
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../mocks/uws-mock')
 const HttpMock = require('../mocks/http-mock')
+const LoggerMock = require('../mocks/logger-mock')
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
 const _msg = require('../test-helper/test-helper').msg
 const permissionHandlerMock = require('../mocks/permission-handler-mock')
@@ -27,7 +28,6 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
 })
 
 let lastAuthenticatedMessage = null
-let lastLoggedMessage = null
 let socketWrapperMock
 let connectionEndpoint
 
@@ -35,7 +35,7 @@ const options = {
   unauthenticatedClientTimeout: null,
   permissionHandler: permissionHandlerMock,
   authenticationHandler: authenticationHandlerMock,
-  logger: { log (logLevel, event, msg) { lastLoggedMessage = msg } },
+  logger: new LoggerMock(),
   maxAuthAttempts: 3,
   logInvalidAuthData: true,
   heartbeatInterval: 4000
@@ -186,7 +186,7 @@ describe('connection endpoint', () => {
 
       expect(authenticationHandlerMock.lastUserValidationQueryArgs.length).toBe(3)
       expect(authenticationHandlerMock.lastUserValidationQueryArgs[1].user).toBe('wolfram')
-      expect(lastLoggedMessage.indexOf('wolfram')).not.toBe(-1)
+      expect(options.logger.lastLogMessage.indexOf('wolfram')).not.toBe(-1)
       expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
       expect(socketWrapperMock.isClosed).toBe(false)
     })
@@ -417,7 +417,7 @@ describe('connection endpoint', () => {
     it('handles valid auth messages', () => {
       authenticationHandlerMock.nextUserValidationResult = false
       uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
-      expect(lastLoggedMessage.indexOf('wolfram')).toBe(-1)
+      expect(options.logger.lastLogMessage.indexOf('wolfram')).toBe(-1)
     })
   })
 })

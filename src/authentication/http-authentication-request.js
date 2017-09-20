@@ -48,14 +48,14 @@ module.exports = class HttpAuthenticationRequest {
    */
   _onComplete (error, response) {
     if (error) {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.AUTH_ERROR, `http auth error: ${error}`)
+      this._logger.warn(C.EVENT.AUTH_ERROR, `http auth error: ${error}`)
       this._callback(false, null)
       this._destroy()
       return
     }
 
     if (response.statusCode >= 500 && response.statusCode < 600) {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.AUTH_ERROR, `http auth server error: ${response.body}`)
+      this._logger.warn(C.EVENT.AUTH_ERROR, `http auth server error: ${response.body}`)
     }
 
     if (this._settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {

@@ -8,14 +8,17 @@ class HTTPSocketWrapper extends EventEmitter {
   constructor (options, onMessage, onError) {
     super()
 
+    this.uuid = Math.random()
     this._onMessage = onMessage
     this._onError = onError
   }
 
-  init (authData, user, messageIndex, messageResults, responseCallback, requestTimeoutId) {
+  init (authResponseData, messageIndex, messageResults, responseCallback, requestTimeoutId) {
     this.isClosed = false
-    this.user = user
-    this.authData = authData
+
+    this.user = authResponseData.userId || authResponseData.username
+    this.authData = authResponseData.serverData
+
     this._correlationIndex = messageIndex
     this._messageResults = messageResults
     this._responseCallback = responseCallback

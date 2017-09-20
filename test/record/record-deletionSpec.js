@@ -5,6 +5,7 @@ const RecordDeletion = require('../../src/record/record-deletion')
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
 const SocketMock = require('../mocks/socket-mock')
 const msg = require('../test-helper/test-helper').msg
+const LoggerMock = require('../mocks/logger-mock')
 
 const deletionMsg = { topic: 'R', action: 'D', data: ['someRecord'] }
 
@@ -14,7 +15,7 @@ const getOptions = function () {
     cache: { delete: jasmine.createSpy('storage.cache') },
     cacheRetrievalTimeout: 1000,
     storageRetrievalTimeout: 1000,
-    logger: { log: jasmine.createSpy('logger.log') }
+    logger: new LoggerMock()
   }
 }
 

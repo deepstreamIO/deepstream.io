@@ -5,6 +5,7 @@ const recordRequest = require('../../src/record/record-request')
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
 const SocketMock = require('../mocks/socket-mock')
 const testHelper = require('../test-helper/test-helper')
+const LoggerMock = require('../mocks/logger-mock')
 
 const msg = testHelper.msg
 
@@ -20,7 +21,7 @@ describe('record request', () => {
     options = Object.assign(options, {
       cacheRetrievalTimeout: 100,
       storageRetrievalTimeout: 100,
-      logger: { log: jasmine.createSpy('log') },
+      logger: new LoggerMock(),
       storageExclusion: new RegExp('dont-save')
     })
     options.cache.set('existingRecord', { _v: 1, _d: {} }, () => {})

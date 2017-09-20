@@ -1,10 +1,10 @@
 'use strict'
 
 const C = require('../constants/constants')
-const utils = require('util')
 
 const EventEmitter = require('events').EventEmitter
 
+module.exports = class DependencyInitialiser extends EventEmitter {
 /**
  * This class is used to track the initialisation of
  * an individual dependency (cache connector, persistance connector,
@@ -15,43 +15,42 @@ const EventEmitter = require('events').EventEmitter
  *
  * @constructor
  */
-const DependencyInitialiser = function (deepstream, options, dependency, name) {
-  this.isReady = false
+  constructor (deepstream, options, dependency, name) {
+    super()
+    this.isReady = false
 
-  this._options = options
-  this._dependency = dependency
-  this._name = name
-  this._timeout = null
+    this._options = options
+    this._dependency = dependency
+    this._name = name
+    this._timeout = null
 
-  if (typeof this._dependency.on !== 'function' && typeof this._dependency.isReady === 'undefined') {
-    const errorMessage = `${this._name} needs to implement isReady or be an emitter`
-    this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
-    const error = new Error(errorMessage)
-    error.code = 'PLUGIN_INITIALIZATION_ERROR'
-    throw error
-  }
+    if (typeof this._dependency.on !== 'function' && typeof this._dependency.isReady === 'undefined') {
+      const errorMessage = `${this._name} needs to implement isReady or be an emitter`
+      this._options.logger.error(C.EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
+      const error = new Error(errorMessage)
+      error.code = 'PLUGIN_INITIALIZATION_ERROR'
+      throw error
+    }
 
-  if (this._dependency.setDeepstream instanceof Function) {
-    this._dependency.setDeepstream(deepstream)
-  }
+    if (this._dependency.setDeepstream instanceof Function) {
+      this._dependency.setDeepstream(deepstream)
+    }
 
-  if (this._dependency.isReady) {
-    this._onReady()
-  } else {
-    this._timeout = setTimeout(
+    if (this._dependency.isReady) {
+      this._onReady()
+    } else {
+      this._timeout = setTimeout(
       this._onTimeout.bind(this),
       this._options.dependencyInitialisationTimeout
     )
-    this._dependency.once('ready', this._onReady.bind(this))
-    this._dependency.on('error', this._onError.bind(this))
+      this._dependency.once('ready', this._onReady.bind(this))
+      this._dependency.on('error', this._onError.bind(this))
 
-    if (this._dependency.init) {
-      this._dependency.init()
+      if (this._dependency.init) {
+        this._dependency.init()
+      }
     }
   }
-}
-
-utils.inherits(DependencyInitialiser, EventEmitter)
 
 /**
  * Returns the underlying dependency (e.g. the Logger, StorageConnector etc.)
@@ -59,9 +58,9 @@ utils.inherits(DependencyInitialiser, EventEmitter)
  * @public
  * @returns {Dependency}
  */
-DependencyInitialiser.prototype.getDependency = function () {
-  return this._dependency
-}
+  getDependency () {
+    return this._dependency
+  }
 
 /**
  * Callback for succesfully initialised dependencies
@@ -69,17 +68,17 @@ DependencyInitialiser.prototype.getDependency = function () {
  * @private
  * @returns {void}
  */
-DependencyInitialiser.prototype._onReady = function () {
-  if (this._timeout) {
-    clearTimeout(this._timeout)
+  _onReady () {
+    if (this._timeout) {
+      clearTimeout(this._timeout)
+    }
+
+    this._dependency.type = this._dependency.description || this._dependency.type
+    const dependencyType = this._dependency.type ? `: ${this._dependency.type}` : ': no dependency description provided'
+    this._options.logger.info(C.EVENT.INFO, `${this._name} ready${dependencyType}`)
+
+    process.nextTick(this._emitReady.bind(this))
   }
-
-  this._dependency.type = this._dependency.description || this._dependency.type
-  const dependencyType = this._dependency.type ? `: ${this._dependency.type}` : ': no dependency description provided'
-  this._options.logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, `${this._name} ready${dependencyType}`)
-
-  process.nextTick(this._emitReady.bind(this))
-}
 
 /**
  * Callback for dependencies that weren't initialised in time
@@ -87,13 +86,13 @@ DependencyInitialiser.prototype._onReady = function () {
  * @private
  * @returns {void}
  */
-DependencyInitialiser.prototype._onTimeout = function () {
-  const message = `${this._name} wasn't initialised in time`
-  this._logError(message)
-  const error = new Error(message)
-  error.code = C.EVENT.PLUGIN_INITIALIZATION_TIMEOUT
-  throw error
-}
+  _onTimeout () {
+    const message = `${this._name} wasn't initialised in time`
+    this._logError(message)
+    const error = new Error(message)
+    error.code = C.EVENT.PLUGIN_INITIALIZATION_TIMEOUT
+    throw error
+  }
 
 /**
 * Handles errors emitted by the dependency at startup.
@@ -105,13 +104,13 @@ DependencyInitialiser.prototype._onTimeout = function () {
 * @private
 * @returns {void}
 */
-DependencyInitialiser.prototype._onError = function (error) {
-  if (this.isReady !== true) {
-    this._logError(`Error while initialising ${this._name}: ${error.toString()}`)
-    error.code = C.EVENT.PLUGIN_INITIALIZATION_ERROR
-    throw error
+  _onError (error) {
+    if (this.isReady !== true) {
+      this._logError(`Error while initialising ${this._name}: ${error.toString()}`)
+      error.code = C.EVENT.PLUGIN_INITIALIZATION_ERROR
+      throw error
+    }
   }
-}
 
 /**
  * Emits the ready event after a one tick delay
@@ -119,10 +118,10 @@ DependencyInitialiser.prototype._onError = function (error) {
  * @private
  * @returns {void}
  */
-DependencyInitialiser.prototype._emitReady = function () {
-  this.isReady = true
-  this.emit('ready')
-}
+  _emitReady () {
+    this.isReady = true
+    this.emit('ready')
+  }
 
 /**
  * Logs error messages
@@ -136,13 +135,14 @@ DependencyInitialiser.prototype._emitReady = function () {
  * @private
  * @returns {void}
  */
-DependencyInitialiser.prototype._logError = function (message) {
-  if (this._options.logger && this._options.logger.isReady) {
-    this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.PLUGIN_ERROR, message)
-  } else {
-    console.error('Error while initialising dependency')
-    console.error(message)
+  _logError (message) {
+    if (this._options.logger && this._options.logger.isReady) {
+      this._options.logger.error(C.EVENT.PLUGIN_ERROR, message)
+    } else {
+      console.error('Error while initialising dependency')
+      console.error(message)
+    }
   }
+
 }
 
-module.exports = DependencyInitialiser

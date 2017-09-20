@@ -42,20 +42,18 @@ function parseUserNames (data, socketWrapper) {
  */
 module.exports = class PresenceHandler {
 
-  constructor (options) {
+  constructor (options, subscriptionRegistry, stateRegistry, metaData) {
+    this._metaData = metaData
     this._options = options
     this._localClients = new Map()
 
-    this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
+    this._subscriptionRegistry =
+      subscriptionRegistry || new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
 
-    this._connectedClients = this._options.message.getStateRegistry(C.TOPIC.ONLINE_USERS, options)
+    this._connectedClients =
+      stateRegistry || this._options.message.getStateRegistry(C.TOPIC.ONLINE_USERS)
     this._connectedClients.on('add', this._onClientAdded.bind(this))
     this._connectedClients.on('remove', this._onClientRemoved.bind(this))
-
-    this._options.message.subscribe(
-      `${this._options.serverName}/${C.TOPIC.PRESENCE}`,
-      this.handle.bind(this)
-    )
   }
 
   /**
@@ -82,7 +80,7 @@ module.exports = class PresenceHandler {
     } else if (message.action === C.ACTIONS.QUERY) {
       this._handleQuery(users, message.data[0], socketWrapper)
     } else {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
+      this._options.logger.warn(C.EVENT.UNKNOWN_ACTION, message.action, this._metaData)
 
       if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
         socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
@@ -191,5 +189,4 @@ module.exports = class PresenceHandler {
       username, message, false, C.SOURCE_MESSAGE_CONNECTOR
     )
   }
-
 }

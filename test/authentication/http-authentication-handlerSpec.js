@@ -4,12 +4,13 @@
 
 const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')
 const TestHttpServer = require('../test-helper/test-http-server')
+const MockLogger = require('../mocks/logger-mock')
 
 describe('it forwards authentication attempts as http post requests to a specified endpoint', () => {
   let authenticationHandler
   let server
   const port = TestHttpServer.getRandomPort()
-  const logger = { log: jasmine.createSpy('log') }
+  const logger = new MockLogger()
 
   beforeAll((done) => {
     server = new TestHttpServer(port, done)

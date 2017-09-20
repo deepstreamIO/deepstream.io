@@ -3,7 +3,7 @@
 const C = require('../constants/constants')
 const messageBuilder = require('../message/message-builder')
 
-class SubscriptionRegistry {
+module.exports = class SubscriptionRegistry {
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
    * A bit like an event-hub, only that it registers SocketWrappers rather
@@ -39,15 +39,17 @@ class SubscriptionRegistry {
     this._setupRemoteComponents(clusterTopic)
   }
 
+  whenReady (callback) {
+    this._clusterSubscriptions.whenReady(callback)
+  }
+
   /**
    * Setup all the remote components and actions required to deal with the subscription
    * via the cluster.
    */
   _setupRemoteComponents (clusterTopic) {
     this._clusterSubscriptions = this._options.message.getStateRegistry(
-      clusterTopic ||
-      `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`,
-      this._options
+      clusterTopic || `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`
     )
     this._clusterSubscriptions.on('add', this._onClusterSubscriptionAdded.bind(this))
     this._clusterSubscriptions.on('remove', this._onClusterSubscriptionRemoved.bind(this))
@@ -283,7 +285,7 @@ class SubscriptionRegistry {
       this._subscriptions.set(name, sockets)
     } else if (sockets.has(socket)) {
       const msg = `repeat supscription to "${name}" by ${socket.user}`
-      this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
+      this._options.logger.warn(this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
       socket.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
@@ -311,7 +313,7 @@ class SubscriptionRegistry {
     this._clusterSubscriptions.add(name)
 
     const logMsg = `for ${this._topic}:${name} by ${socket.user}`
-    this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.SUBSCRIBE, logMsg)
+    this._options.logger.debug(this._constants.SUBSCRIBE, logMsg)
     socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name], true)
   }
 
@@ -331,7 +333,7 @@ class SubscriptionRegistry {
     if (!sockets || !sockets.has(socket)) {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
-        this._options.logger.log(C.LOG_LEVEL.WARN, this._constants.NOT_SUBSCRIBED, msg)
+        this._options.logger.warn(this._constants.NOT_SUBSCRIBED, msg)
         socket.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)
       }
       return
@@ -362,7 +364,7 @@ class SubscriptionRegistry {
 
     if (!silent) {
       const logMsg = `for ${this._topic}:${name} by ${socket.user}`
-      this._options.logger.log(C.LOG_LEVEL.DEBUG, this._constants.UNSUBSCRIBE, logMsg)
+      this._options.logger.debug(this._constants.UNSUBSCRIBE, logMsg)
       socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name], true)
     }
   }
@@ -434,4 +436,3 @@ class SubscriptionRegistry {
   }
 }
 
-module.exports = SubscriptionRegistry

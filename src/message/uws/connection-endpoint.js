@@ -179,9 +179,9 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     const address = serverAddress.address
     const port = serverAddress.port
     const wsMsg = `Listening for websocket connections on ${address}:${port}${this._urlPath}`
-    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, wsMsg)
+    this._logger.info(C.EVENT.INFO, wsMsg)
     const hcMsg = `Listening for health checks on path ${this._healthCheckPath} `
-    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INFO, hcMsg)
+    this._logger.info(C.EVENT.INFO, hcMsg)
     this.emit('ready')
     this.isReady = true
   }
@@ -290,8 +290,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     )
     uws.native.setUserData(external, socketWrapper)
 
-    this._logger.log(
-      C.LOG_LEVEL.INFO,
+    this._logger.info(
       C.EVENT.INCOMING_CONNECTION,
       `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
     )
@@ -328,8 +327,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    */
   _processConnectionMessage (socketWrapper, connectionMessage) {
     if (typeof connectionMessage !== 'string') {
-      this._logger.log(
-        C.LOG_LEVEL.WARN,
+      this._logger.warn(
         C.EVENT.INVALID_MESSAGE,
         connectionMessage.toString()
       )
@@ -344,11 +342,11 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     const msg = messageParser.parse(connectionMessage)[0]
 
     if (msg === null || msg === undefined) {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
+      this._logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.destroy()
     } else if (msg.topic !== C.TOPIC.CONNECTION) {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
+      this._logger.warn(C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
       socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message')
     } else if (msg.action === C.ACTIONS.PONG) {
       // do nothing
@@ -356,7 +354,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       socketWrapper.onMessage = socketWrapper.authCallBack
       socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.ACK)
     } else {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action)
+      this._logger.warn(C.EVENT.UNKNOWN_ACTION, msg.action)
       socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, `unknown action ${msg.action}`)
     }
   }
@@ -376,8 +374,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    */
   _authenticateConnection (socketWrapper, disconnectTimeout, authMsg) {
     if (typeof authMsg !== 'string') {
-      this._logger.log(
-        C.LOG_LEVEL.WARN,
+      this._logger.warn(
         C.EVENT.INVALID_AUTH_MSG,
         authMsg.toString()
       )
@@ -404,7 +401,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
      * Log the authentication attempt
      */
     const logMsg = `${socketWrapper.getHandshakeData().remoteAddress}: ${authMsg}`
-    this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.AUTH_ATTEMPT, logMsg)
+    this._logger.debug(C.EVENT.AUTH_ATTEMPT, logMsg)
 
     /**
      * Ensure the message is a valid authentication message
@@ -457,7 +454,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _sendInvalidAuthMsg (socketWrapper, msg) {
-    this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_AUTH_MSG, this._logInvalidAuthData ? msg : '')
+    this._logger.warn(C.EVENT.INVALID_AUTH_MSG, this._logInvalidAuthData ? msg : '')
     socketWrapper.sendError(C.TOPIC.AUTH, C.EVENT.INVALID_AUTH_MSG, 'invalid authentication message')
     socketWrapper.destroy()
   }
@@ -497,7 +494,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     }
 
     this._authenticatedSockets.add(socketWrapper)
-    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user)
+    this._logger.info(C.EVENT.AUTH_SUCCESSFUL, socketWrapper.user)
   }
 
   /**
@@ -535,7 +532,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       logMsg += `: ${JSON.stringify(authData)}`
     }
 
-    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.INVALID_AUTH_DATA, logMsg)
+    this._logger.info(C.EVENT.INVALID_AUTH_DATA, logMsg)
     socketWrapper.sendError(
       C.TOPIC.AUTH,
       C.EVENT.INVALID_AUTH_DATA,
@@ -544,7 +541,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this._maxAuthAttempts) {
-      this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts')
+      this._logger.info(C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts')
       socketWrapper.sendError(C.TOPIC.AUTH, C.EVENT.TOO_MANY_AUTH_ATTEMPTS, messageBuilder.typed('too many authentication attempts'))
       socketWrapper.destroy()
     }
@@ -562,7 +559,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    */
   _processConnectionTimeout (socketWrapper) {
     const log = 'connection has not authenticated successfully in the expected time'
-    this._logger.log(C.LOG_LEVEL.INFO, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log)
+    this._logger.info(C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log)
     socketWrapper.sendError(
       C.TOPIC.CONNECTION,
       C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT,
@@ -604,7 +601,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onError (error) {
-    this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.CONNECTION_ERROR, error.toString())
+    this._logger.error(C.EVENT.CONNECTION_ERROR, error.toString())
   }
 
   /**

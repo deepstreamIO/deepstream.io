@@ -241,14 +241,14 @@ module.exports.assert = {
   hasData (clientExpression, recordName, data) {
     data = utils.parseData(data)
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      assert.deepEqual(data, recordData.record.get())
+      assert.deepEqual(recordData.record.get(), data)
     })
   },
 
   hasDataAtPath (clientExpression, recordName, path, data) {
     data = utils.parseData(data)
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      assert.deepEqual(data, recordData.record.get(path))
+      assert.deepEqual(recordData.record.get(path), data)
     })
   },
 

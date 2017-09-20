@@ -116,6 +116,12 @@ function handleLogger (config) {
   }
 
   config.logger = new Logger(configOptions)
+  if (!config.logger.info) {
+    config.logger.debug = config.logger.log.bind(config.logger, C.LOG_LEVEL.DEBUG)
+    config.logger.info = config.logger.log.bind(config.logger, C.LOG_LEVEL.INFO)
+    config.logger.warn = config.logger.log.bind(config.logger, C.LOG_LEVEL.WARN)
+    config.logger.error = config.logger.log.bind(config.logger, C.LOG_LEVEL.ERROR)
+  }
   if (LOG_LEVEL_KEYS.indexOf(config.logLevel) !== -1) {
     // NOTE: config.logLevel has highest priority, compare to the level defined
     // in the nested logger object

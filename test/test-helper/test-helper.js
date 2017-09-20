@@ -87,7 +87,7 @@ exports.getDeepstreamOptions = function (serverName) {
 exports.getDeepstreamPermissionOptions = function () {
   let options = exports.getDeepstreamOptions()
   options = Object.assign(options, {
-    logger: { log: jasmine.createSpy('log') },
+    logger: new LoggerMock(),
     cacheRetrievalTimeout: 500,
     permission: {
       options: {
