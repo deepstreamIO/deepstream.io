@@ -1,8 +1,11 @@
 'use strict'
 
-const { When, Then, Given, Before, After } = require('cucumber')
-
 const world = require('../../framework/world')
+
+const cucumber = require('cucumber')
+const Before = cucumber.Before
+const After = cucumber.After
+
 
 Before((/* scenario*/) => {
   // client are connecting via "Background" explictly
