@@ -3,7 +3,10 @@
 const C = require('../constants/constants')
 const messageBuilder = require('../message/message-builder')
 
+let idCounter = 0
+
 module.exports = class SubscriptionRegistry {
+
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
    * A bit like an event-hub, only that it registers SocketWrappers rather
@@ -17,12 +20,12 @@ module.exports = class SubscriptionRegistry {
    *                                topic_SUBSCRIPTIONS
    */
   constructor (options, topic, clusterTopic) {
-    this._delayedBroadcasts = new Map()
+    this._pending = []
     this._delay = -1
     if (options.broadcastTimeout !== undefined) {
       this._delay = options.broadcastTimeout
     }
-    this._names = new Map()
+    this._sockets = new Map()
     this._subscriptions = new Map()
     this._options = options
     this._topic = topic
@@ -130,9 +133,9 @@ module.exports = class SubscriptionRegistry {
   * @param {SockerWrapper} the socket that closed
   */
   _onSocketClose (socket) {
-    const names = this._names.get(socket) || new Set()
-    for (const name of names) {
-      this.unsubscribe(name, socket, true)
+    for (const subscription of this._sockets.get(socket)) {
+      subscription.sockets.delete(socket)
+      this._removeSocket(subscription, socket)
     }
   }
 
@@ -146,16 +149,13 @@ module.exports = class SubscriptionRegistry {
    */
   _onBroadcastTimeout () {
     this._delayedBroadcastsTimer = null
-    for (const entry of this._delayedBroadcasts) {
-      const name = entry[0]
-      const delayedBroadcasts = entry[1]
-      const uniqueSenders = delayedBroadcasts.uniqueSenders
-      const sharedMessages = delayedBroadcasts.sharedMessages
 
-      if (sharedMessages.length === 0) {
-        this._delayedBroadcasts.delete(name)
-        continue
-      }
+    for (const subscription of this._pending) {
+      const uniqueSenders = subscription.uniqueSenders
+      const sharedMessages = subscription.sharedMessages
+      const sockets = subscription.sockets
+
+      idCounter = (idCounter + 1) % Number.MAX_SAFE_INTEGER
 
       // for all unique senders and their gaps, build their special messages
       for (const uniqueSender of uniqueSenders) {
@@ -170,6 +170,8 @@ module.exports = class SubscriptionRegistry {
         }
         message += sharedMessages.substring(lastStop, sharedMessages.length)
 
+        socket.__id = idCounter
+
         if (message) {
           socket.sendNative(message)
         }
@@ -178,23 +180,23 @@ module.exports = class SubscriptionRegistry {
       // for all sockets in this subscription name, send either sharedMessage or this socket's
       // specialized message. only sockets that sent something will have a special message, all
       // other sockets are only listeners and receive the exact same (sharedMessage) message.
-      const sockets = this._subscriptions.get(name)
-      if (sockets && sockets.size > 0) {
-        // unfortunately accessing the first (or any single) element from a set requires creating
-        // an iterator
-        const first = sockets.values().next().value
-        const preparedMessage = first.prepareMessage(sharedMessages)
-        for (const socket of sockets) {
-          if (!uniqueSenders.has(socket)) {
-            socket.sendPrepared(preparedMessage)
-          }
-        }
-        first.finalizeMessage(preparedMessage)
-      }
 
-      delayedBroadcasts.uniqueSenders.clear()
-      delayedBroadcasts.sharedMessages = ''
+      // unfortunately accessing the first (or any single) element from a set requires creating
+      // an iterator
+      const first = sockets.values().next().value
+      const preparedMessage = first.prepareMessage(sharedMessages)
+      for (const socket of sockets) {
+        if (socket.__id !== idCounter) {
+          socket.sendPrepared(preparedMessage)
+        }
+      }
+      first.finalizeMessage(preparedMessage)
+
+      subscription.sharedMessages = ''
+      subscription.uniqueSenders.clear()
     }
+
+    this._pending.length = 0
   }
 
   /**
@@ -215,8 +217,10 @@ module.exports = class SubscriptionRegistry {
     if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
       this._options.message.send(message.topic, message)
     }
+    
+    const subscription = this._subscriptions.get(name)
 
-    if (!this._subscriptions.has(name)) {
+    if (!subscription) {
       return
     }
 
@@ -227,32 +231,25 @@ module.exports = class SubscriptionRegistry {
       msgString += C.MESSAGE_SEPERATOR // eslint-disable-line
     }
 
-    // if not already a delayed broadcast, create it
-    let delayedBroadcasts = this._delayedBroadcasts.get(name)
-    if (delayedBroadcasts === undefined) {
-      delayedBroadcasts = {
-        uniqueSenders: new Map(),
-        sharedMessages: ''
-      }
-      this._delayedBroadcasts.set(name, delayedBroadcasts)
+    if (subscription.sharedMessages.length === 0) {
+      this._pending.push(subscription)
     }
 
     // append this message to the sharedMessage, the message that
     // is shared in the broadcast to every listener-only
-    const start = delayedBroadcasts.sharedMessages.length
-    delayedBroadcasts.sharedMessages += msgString
-    const stop = delayedBroadcasts.sharedMessages.length
+    const start = subscription.sharedMessages.length
+    subscription.sharedMessages += msgString
+    const stop = subscription.sharedMessages.length
 
     // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
     // each uniqueSender has a vector of "gaps" in relation to sharedMessage
     // sockets should not receive what they sent themselves, so a gap is inserted
     // for every send from this socket
     if (socket && socket.uuid !== undefined) {
-      const uniqueSenders = delayedBroadcasts.uniqueSenders
-      let gaps = uniqueSenders.get(socket)
+      const uniqueSenders = subscription.uniqueSenders
+      const gaps = uniqueSenders.get(socket) || []
 
-      if (!gaps) {
-        gaps = []
+      if (gaps.length === 0) {
         uniqueSenders.set(socket, gaps)
       }
 
@@ -279,36 +276,25 @@ module.exports = class SubscriptionRegistry {
    * @returns {void}
    */
   subscribe (name, socket) {
-    const sockets = this._subscriptions.get(name) || new Set()
+    const subscription = this._subscriptions.get(name) || {
+      name,
+      sockets: new Set(),
+      uniqueSenders: new Map(),
+      sharedMessages: ''
+    }
 
-    if (sockets.size === 0) {
-      this._subscriptions.set(name, sockets)
-    } else if (sockets.has(socket)) {
+    if (subscription.sockets.size === 0) {
+      this._subscriptions.set(name, subscription)
+    } else if (subscription.sockets.has(socket)) {
       const msg = `repeat supscription to "${name}" by ${socket.user}`
       this._options.logger.warn(this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
       socket.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
-    sockets.add(socket)
+    subscription.sockets.add(socket)
 
-    if (socket.listeners('close').indexOf(this._onSocketClose) === -1) {
-      socket.once('close', this._onSocketClose)
-    }
-
-    const names = this._names.get(socket) || new Set()
-    if (names.size === 0) {
-      this._names.set(socket, names)
-    }
-    names.add(name)
-
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionMade(
-        name,
-        socket,
-        sockets.size
-      )
-    }
+    this._addSocket(subscription, socket)
 
     this._clusterSubscriptions.add(name)
 
@@ -322,15 +308,14 @@ module.exports = class SubscriptionRegistry {
    *
    * @param   {String} name
    * @param   {SocketWrapper} socket
-   * @param   {Boolean} silent supresses logs and unsubscribe ACK messages
    *
    * @public
    * @returns {void}
    */
   unsubscribe (name, socket, silent) {
-    const sockets = this._subscriptions.get(name)
+    const subscription = this._subscriptions.get(name)
 
-    if (!sockets || !sockets.has(socket)) {
+    if (!subscription || !subscription.sockets.delete(socket)) {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
         this._options.logger.warn(this._constants.NOT_SUBSCRIBED, msg)
@@ -339,28 +324,9 @@ module.exports = class SubscriptionRegistry {
       return
     }
 
-    sockets.delete(socket)
     this._clusterSubscriptions.remove(name)
 
-    if (sockets.size === 0) {
-      this._subscriptions.delete(name)
-    }
-
-    const names = this._names.get(socket)
-    names.delete(name)
-
-    if (names.size === 0) {
-      this._names.delete(socket)
-    }
-
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionRemoved(
-        name,
-        socket,
-        sockets.size,
-        this.getAllRemoteServers(name).length
-      )
-    }
+    this._removeSocket(subscription, socket)
 
     if (!silent) {
       const logMsg = `for ${this._topic}:${name} by ${socket.user}`
@@ -379,7 +345,8 @@ module.exports = class SubscriptionRegistry {
    * @returns {Array} SocketWrapper[]
    */
   getLocalSubscribers (name) {
-    return this._subscriptions.get(name) || new Set()
+    const subscription = this._subscriptions.get(name)
+    return subscription ? subscription.sockets : new Set()
   }
 
   /**
@@ -407,6 +374,47 @@ module.exports = class SubscriptionRegistry {
    */
   setSubscriptionListener (subscriptionListener) {
     this._subscriptionListener = subscriptionListener
+  }
+
+  _addSocket (subscription, socket) {
+    const subscriptions = this._sockets.get(socket) || new Set()
+    if (subscriptions.size === 0) {
+      this._sockets.set(socket, subscriptions)
+      socket.once('close', this._onSocketClose)
+    }
+    subscriptions.add(subscription)
+
+    if (this._subscriptionListener) {
+      this._subscriptionListener.onSubscriptionMade(
+        subscription.name,
+        socket,
+        subscription.sockets.size
+      )
+    }
+  }
+
+  _removeSocket (subscription, socket) {
+    if (subscription.sockets.size === 0) {
+      this._subscriptions.delete(subscription.name)
+      const idx = this._pending.indexOf(subscription)
+      if (idx !== -1) {
+        this._pending.splice(idx, 1)
+      }
+    } else {
+      subscription.uniqueSenders.delete(socket)
+    }
+
+    const subscriptions = this._sockets.get(socket)
+    subscriptions.delete(subscription)
+
+    if (this._subscriptionListener) {
+      this._subscriptionListener.onSubscriptionRemoved(
+        subscription.name,
+        socket,
+        subscription.sockets.size,
+        this.getAllRemoteServers(subscription.name).length
+      )
+    }
   }
 
   /**
