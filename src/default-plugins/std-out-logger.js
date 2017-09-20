@@ -53,7 +53,7 @@ module.exports = class StdOutLogger {
       outputStream = 'stdout'
     }
 
-    if (this._$useColors) {
+    if (this._$useColors && false) {
       process[outputStream].write(msg[this._logLevelColors[logLevel]] + EOL)
     } else {
       process[outputStream].write(msg + EOL)
@@ -73,7 +73,7 @@ module.exports = class StdOutLogger {
   }
 
   error (event, logMessage) {
-    this.error(C.EVENT.ERROR, event, logMessage)
+    this.log(C.EVENT.ERROR, event, logMessage)
   }
 
   /**
