@@ -9,8 +9,9 @@ module.exports = function (program) {
 
     .option('-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files')
 
-    .option('--service-name <name>', 'the name to register the service')
-    .option('--log-dir <directory>', 'the directory for output logs')
+    .option('-n, --service-name <name>', 'the name to register the service')
+    .option('-o, --log-dir <directory>', 'the directory for output logs')
+    .option('-p, --pid-directory <directory>', 'the directory for the pid file')
     .option('--dry-run', 'outputs the service file to screen')
     .action(execute)
 }
@@ -38,7 +39,7 @@ function execute(action) {
     const options = {
       exec,
       programArgs: [],
-      pidFile: `/var/run/deepstream/${name}.pid`,
+      pidFile: this.pidFile || `/var/run/deepstream/${name}.pid`,
       logDir: this.logDir || '/var/log/deepstream',
       dryRun: this.dryRun
     }

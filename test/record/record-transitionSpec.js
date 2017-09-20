@@ -6,6 +6,7 @@ const proxyquire = require('proxyquire').noPreserveCache()
 const SocketWrapper = require('../mocks/socket-wrapper-mock')
 const SocketMock = require('../mocks/socket-mock')
 const testHelper = require('../test-helper/test-helper')
+const LoggerMock = require('../mocks/logger-mock')
 
 const msg = testHelper.msg
 const recordRequestMock = jasmine.createSpy()
@@ -28,7 +29,7 @@ function recordRequestMockCallback (data, isError) {
 
 function createRecordTransition (recordName, message) {
   options = testHelper.getDeepstreamOptions()
-  options.logger.log = jasmine.createSpy()
+  options.logger = new LoggerMock()
 
   recordRequestMock.calls.reset()
   recordHandlerMock._$broadcastUpdate.calls.reset()

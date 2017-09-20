@@ -19,7 +19,7 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
-      data: [msg.eventName, toTyped(msg.data || null)]
+      data: [msg.eventName, toTyped(msg.data)]
     }
   })
 
@@ -30,7 +30,7 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.RPC,
       action: C.ACTIONS.REQUEST,
-      data: [msg.rpcName, utils.getUid(), toTyped(msg.data || null)]
+      data: [msg.rpcName, utils.getUid(), toTyped(msg.data)]
     }
   })
 
@@ -311,8 +311,7 @@ module.exports = class JIFHandler {
       message.error = 'The RPC response timeout was exceeded by the provider.'
 
     } else {
-      this._logger.log(
-        C.LOG_LEVEL.WARN,
+      this._logger.warn(
         `Unhandled request error occurred: ${topic} ${event} ${JSON.stringify(data)}`
       )
       message.error = `An error occurred: ${event}.`

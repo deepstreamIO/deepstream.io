@@ -287,6 +287,22 @@ Then(/^(.+) last response said that clients? "([^"]*)" (?:is|are) connected(?: a
   })
 })
 
+Then(/^(.+) last response said that no clients are connected(?: at index "(\d+)")?$/, (clientExpression, rawIndex) => {
+  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+    const responseIndex = rawIndex === undefined ? 0 : rawIndex
+    const client = httpClients[clientName]
+    const lastResponse = client.lastResponse
+
+    expect(lastResponse).to.not.be.null
+    expect(lastResponse.body).to.be.an('object')
+    expect(lastResponse.body.body).to.be.an('array')
+    const result = lastResponse.body.body[responseIndex]
+    expect(result).to.be.an('object')
+    expect(result.success).to.be.true
+    expect(result.users).to.deep.equal([])
+  })
+})
+
 Then(/^(.+) receives? an RPC response(?: with data ("[^"]*"|\d+|\{.*\}))?(?: at index "(\d+)")?$/, (clientExpression, rawData, rawIndex) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     const responseIndex = rawIndex === undefined ? 0 : rawIndex

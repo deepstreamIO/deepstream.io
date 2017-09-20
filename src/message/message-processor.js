@@ -59,7 +59,7 @@ module.exports = class MessageProcessor {
         !parsedMessage.action ||
         !parsedMessage.topic ||
         !parsedMessage.data) {
-        this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
+        this._options.logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
         socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
         continue
       }
@@ -87,7 +87,7 @@ module.exports = class MessageProcessor {
    */
   _onPermissionResponse (socketWrapper, message, error, result) {
     if (error !== null) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
+      this._options.logger.warn(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
       socketWrapper.sendError(
         message.topic,
         C.EVENT.MESSAGE_PERMISSION_ERROR,

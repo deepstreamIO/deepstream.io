@@ -10,19 +10,23 @@ const recordRequest = require('./record-request')
 
 const writeSuccess = JSON.stringify({ writeSuccess: true })
 
+module.exports = class RecordHandler {
 /**
  * The entry point for record related operations
  *
  * @param {Object} options deepstream options
  */
-const RecordHandler = function (options) {
-  this._options = options
-  this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
-  this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
-  this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
-  this._transitions = {}
-  this._recordRequestsInProgress = {}
-}
+  constructor (options, subscriptionRegistry, listenerRegistry, metaData) {
+    this._metaData = metaData
+    this._options = options
+    this._subscriptionRegistry =
+    subscriptionRegistry || new SubscriptionRegistry(options, C.TOPIC.RECORD)
+    this._listenerRegistry =
+    listenerRegistry || new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
+    this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
+    this._transitions = {}
+    this._recordRequestsInProgress = {}
+  }
 
 /**
  * Handles incoming record requests.
@@ -37,65 +41,65 @@ const RecordHandler = function (options) {
  * @public
  * @returns {void}
  */
-RecordHandler.prototype.handle = function (socketWrapper, message) {
+  handle (socketWrapper, message) {
   /*
    * All messages have to provide at least the name of the record they relate to
    * or a pattern in case of listen
    */
-  if (!message.data || message.data.length < 1) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-    return
-  }
+    if (!message.data || message.data.length < 1) {
+      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+      return
+    }
 
-  if (message.action === C.ACTIONS.CREATEORREAD) {
+    if (message.action === C.ACTIONS.CREATEORREAD) {
     /*
      * Return the record's contents and subscribes for future updates.
      * Creates the record if it doesn't exist
      */
-    this._createOrRead(socketWrapper, message)
-  } else if (message.action === C.ACTIONS.CREATEANDUPDATE) {
+      this._createOrRead(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.CREATEANDUPDATE) {
     /*
      * Allows updates to the record without being subscribed, creates
      * the record if it doesn't exist
      */
-    this._createAndUpdate(socketWrapper, message)
-  } else if (message.action === C.ACTIONS.SNAPSHOT) {
+      this._createAndUpdate(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.SNAPSHOT) {
     /*
      * Return the current state of the record in cache or db
      */
-    this._snapshot(socketWrapper, message)
-  } else if (message.action === C.ACTIONS.HEAD) {
+      this._snapshot(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.HEAD) {
     /*
      * Return the current state of the record in cache or db
      */
-    this._head(socketWrapper, message)
-  } else if (message.action === C.ACTIONS.HAS) {
+      this._head(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.HAS) {
     /*
      * Return a Boolean to indicate if record exists in cache or database
      */
-    this._hasRecord(socketWrapper, message)
-  } else if (message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH) {
+      this._hasRecord(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.UPDATE || message.action === C.ACTIONS.PATCH) {
     /*
      * Handle complete (UPDATE) or partial (PATCH) updates
      */
-    this._update(socketWrapper, message)
-  } else if (message.action === C.ACTIONS.DELETE) {
+      this._update(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.DELETE) {
     /*
      * Deletes the record
      */
-    this._delete(socketWrapper, message)
-  } else if (message.action === C.ACTIONS.ACK && message.data[0] === C.ACTIONS.DELETE) {
+      this._delete(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.ACK && message.data[0] === C.ACTIONS.DELETE) {
     /*
      * Handle delete acknowledgement from message bus
      */
-    this._deleteAck(socketWrapper, message)
-  } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+      this._deleteAck(socketWrapper, message)
+    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
   /*
    * Unsubscribes (discards) a record that was previously subscribed to
    * using read()
    */
-    this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
-  } else if (message.action === C.ACTIONS.LISTEN ||
+      this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
+    } else if (message.action === C.ACTIONS.LISTEN ||
   /*
    * Listen to requests for a particular record or records
    * whose names match a pattern
@@ -104,18 +108,18 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
     message.action === C.ACTIONS.LISTEN_ACCEPT ||
     message.action === C.ACTIONS.LISTEN_REJECT ||
     message.action === C.ACTIONS.LISTEN_SNAPSHOT) {
-    this._listenerRegistry.handle(socketWrapper, message)
-  } else {
+      this._listenerRegistry.handle(socketWrapper, message)
+    } else {
   /*
    * Default for invalid messages
    */
-    this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, message.action)
+      this._options.logger.warn(C.EVENT.UNKNOWN_ACTION, message.action, this._metaData)
 
-    if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
+        socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+      }
     }
   }
-}
 
 /**
  * Tries to retrieve the record from the cache or storage. If not found in either
@@ -127,25 +131,26 @@ RecordHandler.prototype.handle = function (socketWrapper, message) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._hasRecord = function (socketWrapper, message) {
-  const onComplete = function (record, recordName, socket) {
-    const hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE
-    socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
-  }
+  _hasRecord (socketWrapper, message) {
+    const onComplete = function (record, recordName, socket) {
+      const hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE
+      socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
+    }
 
-  const onError = function (event, errorMessage, recordName, socket) {
-    socket.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, event])
-  }
+    const onError = function (event, errorMessage, recordName, socket) {
+      socket.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, event])
+    }
 
-  recordRequest(
+    recordRequest(
     message.data[0],
     this._options,
     socketWrapper,
     onComplete,
     onError,
-    this
+    this,
+    this._metaData
   )
-}
+  }
 
 /**
  * Sends the records data current data once loaded from the cache, and null otherwise
@@ -155,31 +160,32 @@ RecordHandler.prototype._hasRecord = function (socketWrapper, message) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._snapshot = function (socketWrapper, message) {
-  const onComplete = function (record, recordName, socket) {
-    if (record) {
-      this._sendRecord(recordName, record, socket)
-    } else {
-      socket.sendError(
+  _snapshot (socketWrapper, message) {
+    const onComplete = function (record, recordName, socket) {
+      if (record) {
+        sendRecord(recordName, record, socket)
+      } else {
+        socket.sendError(
         C.TOPIC.RECORD,
         C.ACTIONS.SNAPSHOT,
         [recordName, C.EVENT.RECORD_NOT_FOUND]
       )
+      }
     }
-  }
-  const onError = function (event, errorMessage, recordName, socket) {
-    socket.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, event])
-  }
+    const onError = function (event, errorMessage, recordName, socket) {
+      socket.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, event])
+    }
 
-  recordRequest(
+    recordRequest(
     message.data[0],
     this._options,
     socketWrapper,
     onComplete,
     onError,
-    this
+    this,
+    this._metaData
   )
-}
+  }
 
 /**
  * Similar to snapshot, but will only return the current version number
@@ -189,31 +195,32 @@ RecordHandler.prototype._snapshot = function (socketWrapper, message) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._head = function (socketWrapper, message) {
-  const onComplete = function (record, recordName, socket) {
-    if (record) {
-      socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, record._v])
-    } else {
-      socket.sendError(
+  _head (socketWrapper, message) {
+    const onComplete = function (record, recordName, socket) {
+      if (record) {
+        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, record._v])
+      } else {
+        socket.sendError(
         C.TOPIC.RECORD,
         C.ACTIONS.HEAD,
         [recordName, C.EVENT.RECORD_NOT_FOUND]
       )
+      }
     }
-  }
-  const onError = function (error, errorMessage, recordName, socket) {
-    socket.sendError(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, error])
-  }
+    const onError = function (error, errorMessage, recordName, socket) {
+      socket.sendError(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, error])
+    }
 
-  recordRequest(
+    recordRequest(
     message.data[0],
     this._options,
     socketWrapper,
     onComplete,
     onError,
-    this
+    this,
+    this._metaData
   )
-}
+  }
 
 
 /**
@@ -226,29 +233,30 @@ RecordHandler.prototype._head = function (socketWrapper, message) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
-  const onComplete = function (record, recordName, socket) {
-    if (record) {
-      this._read(recordName, record, socket)
-    } else {
-      this._permissionAction(
+  _createOrRead (socketWrapper, message) {
+    const onComplete = function (record, recordName, socket) {
+      if (record) {
+        this._read(recordName, record, socket)
+      } else {
+        this._permissionAction(
         C.ACTIONS.CREATE,
         recordName,
         socket,
         this._create.bind(this, recordName, socket)
       )
+      }
     }
-  }
 
-  recordRequest(
+    recordRequest(
     message.data[0],
     this._options,
     socketWrapper,
     onComplete,
     () => {},
-    this
+    this,
+    this._metaData
   )
-}
+  }
 
 /**
  * An upsert operation where the record will be created and written to
@@ -266,58 +274,58 @@ RecordHandler.prototype._createOrRead = function (socketWrapper, message) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
-  if (message.data.length < 4) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
-    return
-  }
+  _createAndUpdate (socketWrapper, message) {
+    if (message.data.length < 4) {
+      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
+      return
+    }
 
-  const recordName = message.data[0]
-  if (recordName.length === 0) {
-    socketWrapper.sendError(
+    const recordName = message.data[0]
+    if (recordName.length === 0) {
+      socketWrapper.sendError(
       C.TOPIC.RECORD,
       C.EVENT.INVALID_MESSAGE_DATA,
       'record name must have non-zero length'
     )
-    return
-  }
+      return
+    }
 
-  const isPatch = message.data.length === 5
-  message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
+    const isPatch = message.data.length === 5
+    message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
 
   // allow writes on the hot path to bypass the record transition
   // and be written directly to cache and storage
-  for (let i = 0; i < this._options.storageHotPathPatterns.length; i++) {
-    const pattern = this._options.storageHotPathPatterns[i]
-    if (recordName.indexOf(pattern) !== -1 && !isPatch) {
-      this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
-        this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
-          this._forceWrite(recordName, message, socketWrapper)
+    for (let i = 0; i < this._options.storageHotPathPatterns.length; i++) {
+      const pattern = this._options.storageHotPathPatterns[i]
+      if (recordName.indexOf(pattern) !== -1 && !isPatch) {
+        this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
+          this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
+            this._forceWrite(recordName, message, socketWrapper)
+          })
         })
-      })
-      return
-    } else if (isPatch) {
-      socketWrapper.sendError(
+        return
+      } else if (isPatch) {
+        socketWrapper.sendError(
         C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, 'unable to patch record data on hot path'
       )
+        return
+      }
+    }
+
+    const transition = this._transitions[recordName]
+    if (transition) {
+      this._permissionAction(message.action, recordName, socketWrapper, () => {
+        transition.add(socketWrapper, message.data[1] * 1, message)
+      })
       return
     }
-  }
 
-  const transition = this._transitions[recordName]
-  if (transition) {
-    this._permissionAction(message.action, recordName, socketWrapper, () => {
-      transition.add(socketWrapper, message.data[1] * 1, message)
+    this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
+      this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
+        this._update(socketWrapper, message, true)
+      })
     })
-    return
   }
-
-  this._permissionAction(C.ACTIONS.CREATE, recordName, socketWrapper, () => {
-    this._permissionAction(C.ACTIONS.UPDATE, recordName, socketWrapper, () => {
-      this._update(socketWrapper, message, true)
-    })
-  })
-}
 
 /**
  * Forcibly writes to the cache and storage layers without going via
@@ -333,35 +341,35 @@ RecordHandler.prototype._createAndUpdate = function (socketWrapper, message) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._forceWrite = function (recordName, message, socketWrapper) {
-  const record = { _v: 0, _d: JSON.parse(message.data[2]) }
-  const writeAck = message.data[message.data.length - 1] === writeSuccess
-  let cacheResponse = false
-  let storageResponse = false
-  let writeError
-  this._options.storage.set(recordName, record, (error) => {
-    if (writeAck) {
-      storageResponse = true
-      writeError = writeError || error || null
-      this._handleForceWriteAcknowledgement(
+  _forceWrite (recordName, message, socketWrapper) {
+    const record = { _v: 0, _d: JSON.parse(message.data[2]) }
+    const writeAck = message.data[message.data.length - 1] === writeSuccess
+    let cacheResponse = false
+    let storageResponse = false
+    let writeError
+    this._options.storage.set(recordName, record, (error) => {
+      if (writeAck) {
+        storageResponse = true
+        writeError = writeError || error || null
+        this._handleForceWriteAcknowledgement(
         socketWrapper, message, cacheResponse, storageResponse, writeError
       )
-    }
-  })
+      }
+    }, this._metaData)
 
-  this._options.cache.set(recordName, record, (error) => {
-    if (!error) {
-      this._$broadcastUpdate(recordName, message, false, socketWrapper)
-    }
-    if (writeAck) {
-      cacheResponse = true
-      writeError = writeError || error || null
-      this._handleForceWriteAcknowledgement(
+    this._options.cache.set(recordName, record, (error) => {
+      if (!error) {
+        this._$broadcastUpdate(recordName, message, false, socketWrapper)
+      }
+      if (writeAck) {
+        cacheResponse = true
+        writeError = writeError || error || null
+        this._handleForceWriteAcknowledgement(
         socketWrapper, message, cacheResponse, storageResponse, writeError
       )
-    }
-  })
-}
+      }
+    }, this._metaData)
+  }
 
 /**
  * Handles write acknowledgements during a force write. Usually
@@ -378,16 +386,17 @@ RecordHandler.prototype._forceWrite = function (recordName, message, socketWrapp
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._handleForceWriteAcknowledgement = function
-  (socketWrapper, message, cacheResponse, storageResponse, error) {
-  if (storageResponse && cacheResponse) {
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
-      message.data[0],
+  static _handleForceWriteAcknowledgement (
+    socketWrapper, message, cacheResponse, storageResponse, error
+  ) {
+    if (storageResponse && cacheResponse) {
+      socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
+        message.data[0],
       [message.data[1]],
-      messageBuilder.typed(error)
-    ], true)
+        messageBuilder.typed(error)
+      ], true)
+    }
   }
-}
 
 /**
  * Creates a new, empty record and triggers a read operation once done
@@ -399,33 +408,33 @@ RecordHandler.prototype._handleForceWriteAcknowledgement = function
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._create = function (recordName, socketWrapper, callback) {
-  const record = {
-    _v: 0,
-    _d: {}
-  }
+  _create (recordName, socketWrapper, callback) {
+    const record = {
+      _v: 0,
+      _d: {}
+    }
 
   // store the records data in the cache and wait for the result
-  this._options.cache.set(recordName, record, (error) => {
-    if (error) {
-      this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, recordName)
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName)
-    } else if (callback) {
-      callback(recordName, socketWrapper)
-    } else {
-      this._read(recordName, record, socketWrapper)
-    }
-  })
-
-  if (!this._options.storageExclusion || !this._options.storageExclusion.test(recordName)) {
-    // store the record data in the persistant storage independently and don't wait for the result
-    this._options.storage.set(recordName, record, (error) => {
+    this._options.cache.set(recordName, record, (error) => {
       if (error) {
-        this._options.logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_CREATE_ERROR, `storage:${error}`)
+        this._options.logger.error(C.EVENT.RECORD_CREATE_ERROR, recordName, this._metaData)
+        socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName)
+      } else if (callback) {
+        callback(recordName, socketWrapper)
+      } else {
+        this._read(recordName, record, socketWrapper)
       }
-    })
+    }, this._metaData)
+
+    if (!this._options.storageExclusion || !this._options.storageExclusion.test(recordName)) {
+    // store the record data in the persistant storage independently and don't wait for the result
+      this._options.storage.set(recordName, record, (error) => {
+        if (error) {
+          this._options.logger.error(C.EVENT.RECORD_CREATE_ERROR, `storage:${error}`, this._metaData)
+        }
+      }, this._metaData)
+    }
   }
-}
 
 /**
  * Subscribes to updates for a record and sends its current data once done
@@ -437,26 +446,12 @@ RecordHandler.prototype._create = function (recordName, socketWrapper, callback)
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._read = function (recordName, record, socketWrapper) {
-  this._permissionAction(C.ACTIONS.READ, recordName, socketWrapper, () => {
-    this._subscriptionRegistry.subscribe(recordName, socketWrapper)
-    this._sendRecord(recordName, record, socketWrapper)
-  })
-}
-
-/**
- * Sends the records data current data once done
- *
- * @param {String} recordName
- * @param {Object} record
- * @param {SocketWrapper} socketWrapper the socket that send the request
- *
- * @private
- * @returns {void}
- */
-RecordHandler.prototype._sendRecord = function (recordName, record, socketWrapper) {
-  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [recordName, record._v, record._d])
-}
+  _read (recordName, record, socketWrapper) {
+    this._permissionAction(C.ACTIONS.READ, recordName, socketWrapper, () => {
+      this._subscriptionRegistry.subscribe(recordName, socketWrapper)
+      sendRecord(recordName, record, socketWrapper)
+    })
+  }
 
  /**
  * Applies both full and partial updates. Creates a new record transition that will live as
@@ -469,47 +464,47 @@ RecordHandler.prototype._sendRecord = function (recordName, record, socketWrappe
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._update = function (socketWrapper, message, upsert) {
-  const dataLength = message.data.length
-  if (
+  _update (socketWrapper, message, upsert) {
+    const dataLength = message.data.length
+    if (
     (message.action === C.ACTIONS.UPDATE && (dataLength !== 4 && dataLength !== 3)) ||
     (message.action === C.ACTIONS.PATCH && (dataLength !== 5 && dataLength !== 4))
   ) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data)
-    return
-  }
+      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data)
+      return
+    }
 
-  const recordName = message.data[0]
-  const version = message.data[1] * 1 // https://jsperf.com/number-vs-parseint-vs-plus/3
+    const recordName = message.data[0]
+    const version = message.data[1] * 1 // https://jsperf.com/number-vs-parseint-vs-plus/3
 
   /*
    * If the update message is received from the message bus, rather than from a client,
    * assume that the original deepstream node has already updated the record in cache and
    * storage and only broadcast the message to subscribers
    */
-  if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
-    this._$broadcastUpdate(recordName, message, false, socketWrapper)
-    return
-  }
+    if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
+      this._$broadcastUpdate(recordName, message, false, socketWrapper)
+      return
+    }
 
-  if (isNaN(version)) {
-    socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [recordName, version])
-    return
-  }
+    if (isNaN(version)) {
+      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [recordName, version])
+      return
+    }
 
-  let transition = this._transitions[recordName]
-  if (transition && transition.hasVersion(version)) {
-    transition.sendVersionExists({ message, version, sender: socketWrapper })
-    return
-  }
+    let transition = this._transitions[recordName]
+    if (transition && transition.hasVersion(version)) {
+      transition.sendVersionExists({ message, version, sender: socketWrapper })
+      return
+    }
 
-  if (!transition) {
-    transition = new RecordTransition(recordName, this._options, this)
-    this._transitions[recordName] = transition
-  }
+    if (!transition) {
+      transition = new RecordTransition(recordName, this._options, this, this._metaData)
+      this._transitions[recordName] = transition
+    }
 
-  transition.add(socketWrapper, version, message, upsert)
-}
+    transition.add(socketWrapper, version, message, upsert)
+  }
 
 /**
  * Invoked by RecordTransition. Notifies local subscribers and other deepstream
@@ -523,9 +518,9 @@ RecordHandler.prototype._update = function (socketWrapper, message, upsert) {
  * @package private
  * @returns {void}
  */
-RecordHandler.prototype._$broadcastUpdate = function (name, message, noDelay, originalSender) {
-  this._subscriptionRegistry.sendToSubscribers(name, message, noDelay, originalSender)
-}
+  _$broadcastUpdate (name, message, noDelay, originalSender) {
+    this._subscriptionRegistry.sendToSubscribers(name, message, noDelay, originalSender)
+  }
 
 /**
  * Called by a RecordTransition, either if it is complete or if an error occured. Removes
@@ -537,9 +532,9 @@ RecordHandler.prototype._$broadcastUpdate = function (name, message, noDelay, or
  * @package private
  * @returns {void}
  */
-RecordHandler.prototype._$transitionComplete = function (recordName) {
-  delete this._transitions[recordName]
-}
+  _$transitionComplete (recordName) {
+    delete this._transitions[recordName]
+  }
 
 /**
  * Executes or schedules a callback function once all transitions are complete
@@ -553,19 +548,19 @@ RecordHandler.prototype._$transitionComplete = function (recordName) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype.removeRecordRequest = function (recordName) {
-  if (!this._recordRequestsInProgress[recordName]) {
-    return
-  }
+  removeRecordRequest (recordName) {
+    if (!this._recordRequestsInProgress[recordName]) {
+      return
+    }
 
-  if (this._recordRequestsInProgress[recordName].length === 0) {
-    delete this._recordRequestsInProgress[recordName]
-    return
-  }
+    if (this._recordRequestsInProgress[recordName].length === 0) {
+      delete this._recordRequestsInProgress[recordName]
+      return
+    }
 
-  const callback = this._recordRequestsInProgress[recordName].splice(0, 1)[0]
-  callback(recordName)
-}
+    const callback = this._recordRequestsInProgress[recordName].splice(0, 1)[0]
+    callback(recordName)
+  }
 
 /**
  * Executes or schedules a callback function once all record requests are removed.
@@ -580,17 +575,17 @@ RecordHandler.prototype.removeRecordRequest = function (recordName) {
  * @public
  * @returns {void}
  */
-RecordHandler.prototype.runWhenRecordStable = function (recordName, callback) {
-  if (
+  runWhenRecordStable (recordName, callback) {
+    if (
     !this._recordRequestsInProgress[recordName] ||
     this._recordRequestsInProgress[recordName].length === 0
   ) {
-    this._recordRequestsInProgress[recordName] = []
-    callback(recordName)
-  } else {
-    this._recordRequestsInProgress[recordName].push(callback)
+      this._recordRequestsInProgress[recordName] = []
+      callback(recordName)
+    } else {
+      this._recordRequestsInProgress[recordName].push(callback)
+    }
   }
-}
 
 /**
  * Deletes a record. If a transition is in progress it will be stopped. Once the deletion is
@@ -602,17 +597,17 @@ RecordHandler.prototype.runWhenRecordStable = function (recordName, callback) {
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._delete = function (socketWrapper, message) {
-  const recordName = message.data[0]
+  _delete (socketWrapper, message) {
+    const recordName = message.data[0]
 
-  if (this._transitions[recordName]) {
-    this._transitions[recordName].destroy()
-    delete this._transitions[recordName]
-  }
+    if (this._transitions[recordName]) {
+      this._transitions[recordName].destroy()
+      delete this._transitions[recordName]
+    }
 
   // eslint-disable-next-line
-  new RecordDeletion(this._options, socketWrapper, message, this._onDeleted.bind(this))
-}
+  new RecordDeletion(this._options, socketWrapper, message, this._onDeleted.bind(this), this._metaData)
+  }
 
 /**
  * Handle a record deletion ACK from the message bus. We assume that the original deepstream node
@@ -626,16 +621,16 @@ RecordHandler.prototype._delete = function (socketWrapper, message) {
  *
  * @private @returns {void}
  */
-RecordHandler.prototype._deleteAck = function (socketWrapper, message) {
-  const recordName = message.data[1]
+  _deleteAck (socketWrapper, message) {
+    const recordName = message.data[1]
 
-  if (this._transitions[recordName]) {
-    this._transitions[recordName].destroy()
-    delete this._transitions[recordName]
+    if (this._transitions[recordName]) {
+      this._transitions[recordName].destroy()
+      delete this._transitions[recordName]
+    }
+
+    this._onDeleted(recordName, message, socketWrapper)
   }
-
-  this._onDeleted(recordName, message, socketWrapper)
-}
 
 /*
  * Callback for completed deletions. Notifies subscribers of the delete and unsubscribes them
@@ -647,30 +642,13 @@ RecordHandler.prototype._deleteAck = function (socketWrapper, message) {
  * @package private
  * @returns {void}
  */
-RecordHandler.prototype._onDeleted = function (name, message, originalSender) {
-  this._$broadcastUpdate(name, message, true, originalSender)
+  _onDeleted (name, message, originalSender) {
+    this._$broadcastUpdate(name, message, true, originalSender)
 
-  for (const subscriber of this._subscriptionRegistry.getLocalSubscribers(name)) {
-    this._subscriptionRegistry.unsubscribe(name, subscriber, true)
+    for (const subscriber of this._subscriptionRegistry.getLocalSubscribers(name)) {
+      this._subscriptionRegistry.unsubscribe(name, subscriber, true)
+    }
   }
-}
-
-/*
- * Callback for complete permissions. Notifies socket if permission has failed
- */
-RecordHandler.prototype._onPermissionResponse = function (
-  socketWrapper, message, successCallback, error, canPerformAction
-) {
-  if (error !== null) {
-    socketWrapper.sendError(message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-  } else if (canPerformAction !== true) {
-    socketWrapper.sendError(
-      message.topic, C.EVENT.MESSAGE_DENIED, [message.data[0], message.action]
-    )
-  } else {
-    successCallback()
-  }
-}
 
 /**
  * A secondary permissioning step that is performed once we know if the record exists (READ)
@@ -685,21 +663,49 @@ RecordHandler.prototype._onPermissionResponse = function (
  * @private
  * @returns {void}
  */
-RecordHandler.prototype._permissionAction = function (
-  action, recordName, socketWrapper, successCallback
-  ) {
-  const message = {
-    topic: C.TOPIC.RECORD,
-    action,
-    data: [recordName]
-  }
+  _permissionAction (action, recordName, socketWrapper, successCallback) {
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action,
+      data: [recordName]
+    }
 
-  this._options.permissionHandler.canPerformAction(
+    this._options.permissionHandler.canPerformAction(
     socketWrapper.user,
     message,
-    this._onPermissionResponse.bind(null, socketWrapper, message, successCallback),
-    socketWrapper.authData
+    onPermissionResponse.bind(null, socketWrapper, message, successCallback),
+    socketWrapper.authData,
+    socketWrapper
   )
+  }
+
 }
 
-module.exports = RecordHandler
+/*
+ * Callback for complete permissions. Notifies socket if permission has failed
+ */
+function onPermissionResponse (socketWrapper, message, successCallback, error, canPerformAction) {
+  if (error !== null) {
+    socketWrapper.sendError(message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
+  } else if (canPerformAction !== true) {
+    socketWrapper.sendError(
+      message.topic, C.EVENT.MESSAGE_DENIED, [message.data[0], message.action]
+    )
+  } else {
+    successCallback()
+  }
+}
+
+  /**
+ * Sends the records data current data once done
+ *
+ * @param {String} recordName
+ * @param {Object} record
+ * @param {SocketWrapper} socketWrapper the socket that send the request
+ *
+ * @private
+ * @returns {void}
+ */
+function sendRecord (recordName, record, socketWrapper) {
+  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [recordName, record._v, record._d])
+}

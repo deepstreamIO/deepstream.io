@@ -26,7 +26,7 @@ module.exports = class MessageDistributor {
    */
   distribute (socketWrapper, message) {
     if (this._callbacks[message.topic] === undefined) {
-      this._options.logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_TOPIC, message.topic)
+      this._options.logger.warn(C.EVENT.UNKNOWN_TOPIC, message.topic)
       socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
       return
     }
@@ -75,7 +75,7 @@ module.exports = class MessageDistributor {
    * @private
    * @returns {void}
    */
-  _onMessageConnectorMessage (callback, message) { // eslint-disable-line
-    callback(C.SOURCE_MESSAGE_CONNECTOR, message)
+  _onMessageConnectorMessage (callback, message, originServer) { // eslint-disable-line
+    callback(C.SOURCE_MESSAGE_CONNECTOR, message, originServer)
   }
 }

@@ -14,6 +14,10 @@ const rpcs = {
     client.rpc.provides.double()
     response.send(data * 2)
   },
+  stringify: (client, data, response) => {
+    client.rpc.provides.stringify()
+    response.send(typeof data === 'object' ? JSON.stringify(data) : String(data))
+  },
   'a-provide-b-request': (client, data, response) => {
     client.rpc.provides['a-provide-b-request']()
     response.send(data * 3)
@@ -36,6 +40,9 @@ const rpcs = {
     } else {
       response.send(data.root * data.root)
     }
+  },
+  deny: (client, data, response) => {
+    // permissions always deny
   }
 }
 

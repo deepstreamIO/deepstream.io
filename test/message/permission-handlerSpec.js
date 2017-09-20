@@ -5,7 +5,7 @@
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../mocks/uws-mock')
 const HttpMock = require('../mocks/http-mock')
-
+const LoggerMock = require('../mocks/logger-mock')
 const httpMock = new HttpMock()
 const httpsMock = new HttpMock()
 // since proxyquire.callThru is enabled, manually capture members from prototypes
@@ -39,7 +39,7 @@ const permissionHandler = {
 const options = {
   permissionHandler,
   authenticationHandler: permissionHandler,
-  logger: { log (logLevel, event, msg) { } },
+  logger: new LoggerMock(),
   maxAuthAttempts: 3,
   logInvalidAuthData: true
 }

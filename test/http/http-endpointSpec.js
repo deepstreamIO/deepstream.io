@@ -56,9 +56,8 @@ describe('http plugin', () => {
   const apiKey = '9x5xfdxa-xxxx-4efe-a342-xxxxxxxxxxxx'
   const postUrl = `http://127.0.0.1:8888/api/v1/${apiKey}`
 
-  beforeAll((done) => {
+  beforeAll(() => {
     httpPlugin = new ConnectionEndpoint(conf)
-    httpPlugin.on('ready', done)
     httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
   })

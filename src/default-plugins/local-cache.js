@@ -1,23 +1,25 @@
 'use strict'
 
-const LocalCache = function () {
-  this.isReady = true
-  this._data = {}
-  this.type = 'local cache'
-}
+class LocalCache {
+  constructor () {
+    this.isReady = true
+    this._data = {}
+    this.type = 'local cache'
+  }
 
-LocalCache.prototype.set = function (key, value, callback) {
-  this._data[key] = value
-  callback(null)
-}
+  set (key, value, callback) {
+    this._data[key] = value
+    callback(null)
+  }
 
-LocalCache.prototype.get = function (key, callback) {
-  callback(null, this._data[key] || null)
-}
+  get (key, callback) {
+    callback(null, this._data[key] || null)
+  }
 
-LocalCache.prototype.delete = function (key, callback) {
-  delete this._data[key]
-  callback(null)
+  delete (key, callback) {
+    delete this._data[key]
+    callback(null)
+  }
 }
 
 module.exports = new LocalCache()

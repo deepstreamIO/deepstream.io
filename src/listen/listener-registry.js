@@ -32,7 +32,8 @@ module.exports = class ListenerRegistry {
   *                                              subscriptions to allow new listeners to be
   *                                              notified of existing subscriptions
   */
-  constructor (topic, options, clientRegistry) {
+  constructor (topic, options, clientRegistry, metaData) {
+    this._metaData = metaData
     this._topic = topic
     this._options = options
     this._clientRegistry = clientRegistry
@@ -83,6 +84,7 @@ module.exports = class ListenerRegistry {
     )
     this._clusterProvidedRecords.on('add', this._onRecordStartProvided.bind(this))
     this._clusterProvidedRecords.on('remove', this._onRecordStopProvided.bind(this))
+
     this._message.subscribe(
       this._messageTopic,
       this._onIncomingMessage.bind(this)
@@ -410,10 +412,10 @@ module.exports = class ListenerRegistry {
         return
       }
 
-      this._options.logger.log(
-        C.LOG_LEVEL.DEBUG,
+      this._options.logger.debug(
         C.EVENT.LEADING_LISTEN,
-        `started for ${this._topic}:${subscriptionName}`
+        `started for ${this._topic}:${subscriptionName}`,
+        this._metaData
       )
 
       const remoteListenArray = this._createRemoteListenArray(
@@ -442,20 +444,20 @@ module.exports = class ListenerRegistry {
       this.hasActiveProvider(subscriptionName) ||
       this._leadingListen[subscriptionName].length === 0
     ) {
-      this._options.logger.log(
-        C.LOG_LEVEL.DEBUG,
+      this._options.logger.debug(
         C.EVENT.LEADING_LISTEN,
-        `finished for ${this._topic}:${subscriptionName}`
+        `finished for ${this._topic}:${subscriptionName}`,
+        this._metaData
       )
 
       delete this._leadingListen[subscriptionName]
       this._lockRegistry.release(this._getUniqueLockName(subscriptionName))
     } else {
       const nextServerName = this._leadingListen[subscriptionName].shift()
-      this._options.logger.log(
-        C.LOG_LEVEL.DEBUG,
+      this._options.logger.debug(
         C.EVENT.LEADING_LISTEN,
-        `started for ${this._topic}:${subscriptionName}`
+        `started for ${this._topic}:${subscriptionName}`,
+        this._metaData
       )
       this._sendRemoteDiscoveryStart(nextServerName, subscriptionName)
     }
@@ -482,10 +484,10 @@ module.exports = class ListenerRegistry {
     }
 
     if (localListenArray.length > 0) {
-      this._options.logger.log(
-        C.LOG_LEVEL.DEBUG,
+      this._options.logger.debug(
         C.EVENT.LOCAL_LISTEN,
-        `started for ${this._topic}:${subscriptionName}`
+        `started for ${this._topic}:${subscriptionName}`,
+        this._metaDatae
       )
       this._localListenInProgress[subscriptionName] = localListenArray
       this._triggerNextProvider(subscriptionName)
@@ -503,10 +505,10 @@ module.exports = class ListenerRegistry {
   _stopLocalDiscoveryStage (subscriptionName) {
     delete this._localListenInProgress[subscriptionName]
 
-    this._options.logger.log(
-      C.LOG_LEVEL.DEBUG,
+    this._options.logger.debug(
       C.EVENT.LOCAL_LISTEN,
-      `stopped for ${this._topic}:${subscriptionName}`
+      `stopped for ${this._topic}:${subscriptionName}`,
+      this._metaData
     )
 
     if (this._leadingListen[subscriptionName]) {
@@ -515,10 +517,10 @@ module.exports = class ListenerRegistry {
       this._sendRemoteDiscoveryStop(this._leadListen[subscriptionName], subscriptionName)
       delete this._leadListen[subscriptionName]
     } else {
-      this._options.logger.log(
-        C.LOG_LEVEL.WARN,
+      this._options.logger.warn(
         C.EVENT.LOCAL_LISTEN,
-        `nothing to stop for ${this._topic}:${subscriptionName}`
+        `nothing to stop for ${this._topic}:${subscriptionName}`,
+        this._metaData
       )
     }
   }
@@ -700,7 +702,7 @@ module.exports = class ListenerRegistry {
       topic: this._messageTopic,
       action: C.ACTIONS.LISTEN,
       data: [serverName, subscriptionName, this._options.serverName]
-    })
+    }, this._metaData)
   }
 
   /**
@@ -715,7 +717,7 @@ module.exports = class ListenerRegistry {
       topic: this._messageTopic,
       action: C.ACTIONS.ACK,
       data: [listenLeaderServerName, subscriptionName]
-    })
+    }, this._metaData)
   }
 
   /**
@@ -727,7 +729,7 @@ module.exports = class ListenerRegistry {
       topic: this._messageTopic,
       action: C.ACTIONS.UNSUBSCRIBE,
       data: [serverName, subscriptionName]
-    })
+    }, this._metaData)
   }
 
   /**
@@ -776,7 +778,7 @@ module.exports = class ListenerRegistry {
       const pattern = providerPatterns[i]
       let p = patterns[pattern]
       if (p == null) {
-        this._options.logger.log(C.LOG_LEVEL.WARN, '', `can't handle pattern ${pattern}`)
+        this._options.logger.warn('', `can't handle pattern ${pattern}`, this._metaData)
         this._addPattern(pattern)
         p = patterns[pattern]
       }
@@ -873,8 +875,7 @@ module.exports = class ListenerRegistry {
   _onMsgDataError (socketWrapper, errorMsg, errorEvent) {
     errorEvent = errorEvent || C.EVENT.INVALID_MESSAGE_DATA // eslint-disable-line
     socketWrapper.sendError(this._topic, errorEvent, errorMsg)
-    // TODO: This isn't a CRITICAL error, would we say its an info
-    this._options.logger.log(C.LOG_LEVEL.ERROR, errorEvent, errorMsg)
+    this._options.logger.error(errorEvent, errorMsg, this._metaData)
   }
 
   /**
