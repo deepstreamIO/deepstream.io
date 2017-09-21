@@ -27,7 +27,7 @@ class UwsSocketWrapper extends EventEmitter {
     this.isClosed = false
     this._logger = logger
     this.user = null
-    this.id = (idCounter++).toString(16)
+    this.id = idCounter++
     this.opaque = null
     this.authCallBack = null
     this.authAttempts = 0
