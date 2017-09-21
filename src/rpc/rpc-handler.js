@@ -93,7 +93,7 @@ module.exports = class RpcHandler {
 
     const providers = Array
       .from(this._subscriptionRegistry.getSubscribers(rpc.name))
-      .filter(provider => !rpc.history.has(provider))
+      .filter(provider => !rpc.history.has(provider.id))
 
     const provider = providers[Math.floor(Math.random() * providers.length)]
 
@@ -105,7 +105,7 @@ module.exports = class RpcHandler {
         rpc.id,
         rpc.data
       ))
-      rpc.history.add(provider)
+      rpc.history.add(provider.id)
       rpc.timeout = setTimeout(rpc.request, this._options.rpcTimeout || 1000)
       rpc.provider = provider
       rpc.provider.once('close', rpc.request)
