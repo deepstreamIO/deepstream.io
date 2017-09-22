@@ -21,7 +21,7 @@ function parseUserNames (data, socketWrapper) {
     return JSON.parse(data[1])
   } catch (e) {
     socketWrapper.sendError(
-      C.TOPIC.EVENT,
+      C.TOPIC.PRESENCE,
       C.EVENT.INVALID_PRESENCE_USERS,
       'users are required to be a json array of usernames'
     )
@@ -69,6 +69,10 @@ module.exports = class PresenceHandler {
   */
   handle (socketWrapper, message) {
     const users = parseUserNames(message.data, socketWrapper)
+    if (!users) {
+      this._options.logger.error(C.EVENT.INVALID_PRESENCE_USERS, message.data[0], this._metaData)
+      return
+    }
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this._subscriptionRegistry.subscribe(users[i], socketWrapper)
