@@ -151,6 +151,7 @@ class UwsSocketWrapper extends EventEmitter {
     }
   }
 
+  // eslint-disable-next-line
   getMessage (message) {
     return messageBuilder.getMessage(message)
   }
@@ -172,6 +173,7 @@ class UwsSocketWrapper extends EventEmitter {
     }
   }
 
+  // eslint-disable-next-line
   parseData (message) {
     return messageParser.parseData(message)
   }

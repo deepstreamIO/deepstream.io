@@ -29,7 +29,7 @@ module.exports = class MessageDistributor {
       this._options.logger.warn(C.EVENT.UNKNOWN_TOPIC, message.topic)
       socketWrapper.sendError({
         topic: C.TOPIC.ERROR
-      }, C.EVENT.UNKNOWN_TOPIC, message.topic) 
+      }, C.EVENT.UNKNOWN_TOPIC, message.topic)
       return
     }
 

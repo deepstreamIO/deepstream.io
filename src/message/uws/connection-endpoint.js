@@ -167,7 +167,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       this._serverGroup,
       this._getOption('heartbeatInterval'),
       messageBuilder.getMessage({
-        topic: C.TOPIC.CONNECTION, 
+        topic: C.TOPIC.CONNECTION,
         action: C.ACTIONS.PING
       })
     )
@@ -351,13 +351,13 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     if (msg === null || msg === undefined) {
       this._logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.sendError({
-        topic: C.TOPIC.CONNECTION 
+        topic: C.TOPIC.CONNECTION
       }, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.destroy()
     } else if (msg.topic !== C.TOPIC.CONNECTION) {
       this._logger.warn(C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
       socketWrapper.sendError({
-        topic: C.TOPIC.CONNECTION, 
+        topic: C.TOPIC.CONNECTION,
       }, C.EVENT.INVALID_MESSAGE, connectionMessage)
     } else if (msg.action === C.ACTIONS.PONG) {
       // do nothing
@@ -556,7 +556,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     if (socketWrapper.authAttempts >= this._maxAuthAttempts) {
       this._logger.info(C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts')
       socketWrapper.sendError({
-        topic: C.TOPIC.AUTH 
+        topic: C.TOPIC.AUTH
       }, C.EVENT.TOO_MANY_AUTH_ATTEMPTS)
       socketWrapper.destroy()
     }

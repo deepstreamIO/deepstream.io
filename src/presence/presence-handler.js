@@ -5,7 +5,7 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 
 const EVERYONE = 'U'
 
-function parseUserNames (data, socketWrapper) {
+function parseUserNames (data) {
   // Returns all users for backwards compatability
   if (
     !data ||
@@ -63,7 +63,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   handle (socketWrapper, message) {
-    const users = parseUserNames(message.data, socketWrapper)
+    const users = parseUserNames(message.data)
     if (!users) {
       this._options.logger.error(C.EVENT.INVALID_PRESENCE_USERS, message.data[0], this._metaData)
       socketWrapper.sendError(message, C.EVENT.INVALID_PRESENCE_USERS)
@@ -79,10 +79,10 @@ module.exports = class PresenceHandler {
       }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
-        this._subscriptionRegistry.unsubscribe({ 
+        this._subscriptionRegistry.unsubscribe({
           topic: C.TOPIC.PRESENCE,
           action: C.ACTIONS.SUBSCRIBE,
-          name: users[i] 
+          name: users[i]
         }, socketWrapper)
       }
     } else if (message.action === C.ACTIONS.QUERY) {
@@ -158,7 +158,7 @@ module.exports = class PresenceHandler {
       socketWrapper.sendMessage({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
-        correlationId: correlationId,
+        correlationId,
         data: result
       })
     }

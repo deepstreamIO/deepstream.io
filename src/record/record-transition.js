@@ -89,9 +89,8 @@ module.exports = class RecordTransition {
  * @public
  */
   sendVersionExists (step) {
+    const socketWrapper = step.sender
     if (this._record) {
-      const socketWrapper = step.sender
-
       socketWrapper.sendError({
         topic: C.TOPIC.RECORD,
         version: this._record._v,
@@ -100,8 +99,8 @@ module.exports = class RecordTransition {
       }, C.EVENT.VERSION_EXISTS)
 
       this._options.logger.warn(
-        C.EVENT.VERSION_EXISTS, 
-        `${socketWrapper.user} tried to update record ${this._name} to version ${step.message.version} but it already was ${this._record._v}`, 
+        C.EVENT.VERSION_EXISTS,
+        `${socketWrapper.user} tried to update record ${this._name} to version ${step.message.version} but it already was ${this._record._v}`,
         this._metaData
       )
     } else {

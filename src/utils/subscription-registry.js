@@ -296,7 +296,7 @@ module.exports = class SubscriptionRegistry {
 
     const logMsg = `for ${this._topic}:${name} by ${socket.user}`
     this._options.logger.debug(this._constants.SUBSCRIBE, logMsg)
-    socket.sendAckMessage(message)  
+    socket.sendAckMessage(message)
   }
 
   /**

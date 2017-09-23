@@ -237,8 +237,6 @@ module.exports = class JIFHandler {
     }
 
     const result = this.JIF_TO_MSG[jifMessage.topic][jifMessage.action](jifMessage)
-    const message = result.message
-
     result.success = true
     return result
   }
@@ -273,7 +271,7 @@ module.exports = class JIFHandler {
    *    {Boolean} done      false iff message should await another result/acknowledgement
    * }
    */
-  errorToJIF (message, event, errorMessage) {
+  errorToJIF (message, event) {
     // convert topic enum to human-readable key
     const topicKey = this.topicToKey[message.topic]
     const C = this._constants

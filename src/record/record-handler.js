@@ -7,8 +7,6 @@ const RecordTransition = require('./record-transition')
 const RecordDeletion = require('./record-deletion')
 const recordRequest = require('./record-request')
 
-const writeSuccess = JSON.stringify({ writeSuccess: true })
-
 module.exports = class RecordHandler {
 /**
  * The entry point for record related operations
@@ -120,8 +118,8 @@ module.exports = class RecordHandler {
   _hasRecord (socketWrapper, message) {
     const onComplete = function (record, recordName, socket) {
       socket.sendMessage({
-        topic: C.TOPIC.RECORD, 
-        action: C.ACTIONS.HAS, 
+        topic: C.TOPIC.RECORD,
+        action: C.ACTIONS.HAS,
         name: recordName,
         data: [record ? C.TYPES.TRUE : C.TYPES.FALSE]
       })
@@ -185,8 +183,8 @@ module.exports = class RecordHandler {
     const onComplete = function (record, recordName, socket) {
       if (record) {
         socket.sendMessage({
-          topic: C.TOPIC.RECORD, 
-          action: C.ACTIONS.HEAD, 
+          topic: C.TOPIC.RECORD,
+          action: C.ACTIONS.HEAD,
           name: recordName,
           version: record._v
         })
@@ -263,7 +261,8 @@ module.exports = class RecordHandler {
  */
   _createAndUpdate (socketWrapper, message) {
     const recordName = message.name
-    message.action = message.path !== null ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
+    const isPatch = message.path !== null
+    message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage

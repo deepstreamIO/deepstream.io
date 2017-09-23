@@ -3,7 +3,6 @@
 const C = require('../constants/constants')
 
 const SEP = C.MESSAGE_PART_SEPERATOR
-const MSEP = C.MESSAGE_SEPERATOR
 
 const writeConfig = JSON.stringify({ writeSuccess: true })
 
@@ -26,7 +25,7 @@ exports.getMessage = function (message, isAck) {
   }
   if (message.event) {
     sendData.push(message.data)
-  }  
+  }
   if (message.message) {
     sendData.push(message.message)
   }
@@ -48,12 +47,11 @@ exports.getMessage = function (message, isAck) {
   if (message.correlationId) {
     sendData.push(message.correlationId)
   }
-  
+
   if (message.action === C.ACTIONS.WRITE_ACKNOWLEDGEMENT) {
     sendData.push(JSON.stringify(message.data[0]))
     sendData.push(exports.typed(message.data[1]))
-  }
-  else if (message.data) {
+  } else if (message.data) {
     for (let i = 0; i < message.data.length; i++) {
       if (typeof message.data[i] === 'object') {
         sendData.push(JSON.stringify(message.data[i]))
@@ -79,17 +77,18 @@ exports.getMessage = function (message, isAck) {
  * @returns {String } deepstream error message string
  */
 exports.getErrorMessage = function (message, event, errorMessage) {
-  let sendData = [ message.topic, C.ACTIONS.ERROR, event ]
+  let sendData = [message.topic, C.ACTIONS.ERROR, event]
   if (event === C.EVENT.RECORD_NOT_FOUND) {
-    sendData = [ message.topic, C.ACTIONS.ERROR, message.action, message.name, event]
-  }
-  else if (event === C.EVENT.NO_RPC_PROVIDER || event === C.EVENT.RESPONSE_TIMEOUT) {
-    sendData = [ message.topic, C.ACTIONS.ERROR, event, message.name, message.correlationId]
-  }
-  else if (event === C.EVENT.MESSAGE_DENIED && message.topic === C.TOPIC.RPC && message.action === C.ACTIONS.REQUEST) {
-    sendData = [ message.topic, C.ACTIONS.ERROR, event, message.name, message.correlationId ]
-  }
-  else if (!errorMessage) {
+    sendData = [message.topic, C.ACTIONS.ERROR, message.action, message.name, event]
+  } else if (event === C.EVENT.NO_RPC_PROVIDER || event === C.EVENT.RESPONSE_TIMEOUT) {
+    sendData = [message.topic, C.ACTIONS.ERROR, event, message.name, message.correlationId]
+  } else if (
+    event === C.EVENT.MESSAGE_DENIED &&
+    message.topic === C.TOPIC.RPC &&
+    message.action === C.ACTIONS.REQUEST
+  ) {
+    sendData = [message.topic, C.ACTIONS.ERROR, event, message.name, message.correlationId]
+  } else if (!errorMessage) {
     if (message.name) {
       sendData.push(message.name)
     }
@@ -111,8 +110,7 @@ exports.getErrorMessage = function (message, event, errorMessage) {
         }
       }
     }
-  }
-  else {
+  } else {
     sendData.push(errorMessage)
   }
 

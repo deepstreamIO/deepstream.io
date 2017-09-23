@@ -54,7 +54,7 @@ module.exports = class RpcHandler {
         rpcData.rpc.handle(message)
       } else {
         socketWrapper.sendError(
-          { topic: C.TOPIC.RPC }, 
+          { topic: C.TOPIC.RPC },
           C.EVENT.INVALID_RPC_CORRELATION_ID,
           `unexpected state for rpc ${message.name} with action ${message.action}`
         )
@@ -253,7 +253,7 @@ module.exports = class RpcHandler {
       const proxy = new RpcProxy(this._options, originServerName, this._metaData)
       this._makeRpc(proxy, msg, C.SOURCE_MESSAGE_CONNECTOR)
     } else if ((msg.action.isAck || msg.isError) && msg.correlationId) {
-      const rpc = this._rpcs.get(message.correlationId)
+      const rpc = this._rpcs.get(msg.correlationId)
       if (!rpc) {
         this._options.logger.warn(
           C.EVENT.INVALID_RPC_CORRELATION_ID,

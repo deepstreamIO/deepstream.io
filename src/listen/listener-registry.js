@@ -116,9 +116,8 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   handle (socketWrapper, message) {
-    const pattern = message.name
     const subscriptionName = message.subscription
-    
+
     if (message.action === C.ACTIONS.LISTEN) {
       this._addListener(socketWrapper, message)
     } else if (message.action === C.ACTIONS.UNLISTEN) {
@@ -131,7 +130,7 @@ module.exports = class ListenerRegistry {
     } else {
       console.log('>>', message, message.action)
     }
-      
+
   }
 
   /**
@@ -669,7 +668,7 @@ module.exports = class ListenerRegistry {
         topic: this._topic,
         action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
         name: subscriptionName,
-        data: [ hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE ]
+        data: [hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE]
       })
     }
   }

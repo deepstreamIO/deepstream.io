@@ -8,7 +8,6 @@ const RuleCache = require('./rule-cache')
 const EventEmitter = require('events').EventEmitter
 const jsYamlLoader = require('../config/js-yaml-loader')
 
-const STRING = 'string'
 const UNDEFINED = 'undefined'
 
 module.exports = class ConfigPermissionHandler extends EventEmitter {

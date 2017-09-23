@@ -1,8 +1,6 @@
 'use strict'
 
 /* eslint-disable class-methods-use-this */
-
-const messageParser = require('../../protocol/message-parser')
 const EventEmitter = require('events').EventEmitter
 
 module.exports = class HTTPSocketWrapper extends EventEmitter {

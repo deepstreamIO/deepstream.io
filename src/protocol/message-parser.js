@@ -41,9 +41,9 @@ module.exports = class MessageParser {
    *                    data: <array of strings>
    *                  }
    */
-  static parse (message) {
+  static parse (data) {
     const parsedMessages = []
-    const rawMessages = message.split(C.MESSAGE_SEPERATOR)
+    const rawMessages = data.split(C.MESSAGE_SEPERATOR)
 
     for (let i = 0; i < rawMessages.length; i++) {
       if (rawMessages[i].length < 3) {
@@ -51,7 +51,7 @@ module.exports = class MessageParser {
       }
 
       const parts = rawMessages[i].split(C.MESSAGE_PART_SEPERATOR)
-      
+
       if (parts.length < 2 || !actions.has(parts[1])) {
         parsedMessages.push(null)
         continue
@@ -69,7 +69,7 @@ module.exports = class MessageParser {
 
         // rpc / presence query
         correlationId: null,
-        
+
         // subscription by listening
         subscription: null,
 
@@ -84,8 +84,7 @@ module.exports = class MessageParser {
         message.isAck = true
         message.action = parts[2]
         index = 3
-      }
-      else if (message.action === C.ACTIONS.ERROR) {
+      } else if (message.action === C.ACTIONS.ERROR) {
         message.isError = true
         message.action = parts[2]
         index = 3
@@ -100,15 +99,15 @@ module.exports = class MessageParser {
           message.action === C.ACTIONS.PATCH
         ) {
           if (
-            message.action === C.ACTIONS.UPDATE || 
+            message.action === C.ACTIONS.UPDATE ||
             message.action === C.ACTIONS.PATCH ||
             message.action === C.ACTIONS.CREATEANDUPDATE
           ) {
             message.version = parts[index++] * 1
           }
-          
+
           if (
-            message.action === C.ACTIONS.PATCH || 
+            message.action === C.ACTIONS.PATCH ||
             (
               message.action === C.ACTIONS.CREATEANDUPDATE &&
               parts.length - index > 2
@@ -117,7 +116,7 @@ module.exports = class MessageParser {
             message.path = parts[index++]
           }
           if (parts.length - index === 2) {
-            message.isWriteAck = parts[parts.length -1] === writeConfig
+            message.isWriteAck = parts[parts.length - 1] === writeConfig
             message.data = [parts[parts.length - 2]]
           } else {
             message.data = parts.slice(index)
@@ -126,7 +125,7 @@ module.exports = class MessageParser {
       } else if (message.topic === C.TOPIC.EVENT) {
         message.name = parts[index++]
         if (
-          message.action === C.ACTIONS.LISTEN || 
+          message.action === C.ACTIONS.LISTEN ||
           message.action === C.ACTIONS.UNLISTEN ||
           message.action === C.ACTIONS.LISTEN_ACCEPT ||
           message.action === C.ACTIONS.LISTEN_REJECT
@@ -146,9 +145,8 @@ module.exports = class MessageParser {
         message.data = parts.slice(index)
       } else if (message.topic === C.TOPIC.AUTH) {
         message.data = parts.slice(index)
-      } else {
       }
-      
+
       parsedMessages.push(message)
     }
 
@@ -168,14 +166,14 @@ module.exports = class MessageParser {
       }
       message.parsedData = res.value
       return true
-    } else {
-      const parsedData = MessageParser.convertTyped(message.data[0])
-      if (parsedData instanceof Error) {
-        return false
-      }
-      message.parsedData = parsedData
-      return true      
     }
+    const parsedData = MessageParser.convertTyped(message.data[0])
+    if (parsedData instanceof Error) {
+      return false
+    }
+    message.parsedData = parsedData
+    return true
+
   }
 
   /**
