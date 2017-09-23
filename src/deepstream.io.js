@@ -3,8 +3,6 @@
 const MessageProcessor = require('./message/message-processor')
 const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')
-const messageParser = require('./message/message-parser')
-const messageBuilder = require('./message/message-builder')
 const readMessage = require('./utils/read-message')
 const fs = require('fs')
 const path = require('path')
@@ -48,7 +46,6 @@ module.exports = class Deepstream extends EventEmitter {
     this._eventHandler = null
     this._rpcHandler = null
     this._recordHandler = null
-    this._messageBuilder = messageBuilder
 
     this._stateMachine = {
       init: STATES.STOPPED,
@@ -136,31 +133,6 @@ module.exports = class Deepstream extends EventEmitter {
 
     this._transition('stop')
   }
-
-/**
- * Expose the message-parser's convertTyped method for use within plugins
- *
- * @param   {String} value A String starting with a type identifier (see C.TYPES)
- *
- * @public
- * @returns {JSValue} the converted value
- */
-  convertTyped (value) { // eslint-disable-line
-    return messageParser.convertTyped(value)
-  }
-
-/**
- * Expose the message-builder's typed method for use within plugins
- *
- * @param   {JSValue} value A javascript value
- *
- * @public
- * @returns {String} A type-prefixed string
- */
-  toTyped (value) { // eslint-disable-line
-    return messageBuilder.typed(value)
-  }
-
 
 /* ======================================================================= *
  * ========================== State Transitions ========================== *

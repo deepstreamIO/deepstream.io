@@ -1,8 +1,8 @@
 'use strict'
 
 const C = require('../../constants/constants')
-const messageParser = require('../message-parser')
-const messageBuilder = require('../message-builder')
+const messageParser = require('../../protocol/message-parser')
+const messageBuilder = require('../../protocol/message-builder')
 const SocketWrapper = require('./socket-wrapper')
 const events = require('events')
 const http = require('http')
@@ -161,6 +161,8 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     uws.native.server.group.onPong(this._serverGroup, () => {})
     uws.native.server.group.onConnection(this._serverGroup, this._onConnection.bind(this))
 
+    // TODO: This will become an issue when distinguishing
+    // between different protocols
     uws.native.server.group.startAutoPing(
       this._serverGroup,
       this._getOption('heartbeatInterval'),
@@ -339,10 +341,8 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
         connectionMessage.toString()
       )
       socketWrapper.sendError({
-        topic: C.TOPIC.CONNECTION,
-        event: C.EVENT.INVALID_MESSAGE,
-        message: 'invalid connection message'
-      })
+        topic: C.TOPIC.CONNECTION
+      }, C.EVENT.INVALID_MESSAGE)
       return
     }
 
@@ -351,33 +351,23 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     if (msg === null || msg === undefined) {
       this._logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.sendError({
-        topic: C.TOPIC.CONNECTION, 
-        event: C.EVENT.MESSAGE_PARSE_ERROR, 
-        message: connectionMessage
-      })
+        topic: C.TOPIC.CONNECTION 
+      }, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.destroy()
     } else if (msg.topic !== C.TOPIC.CONNECTION) {
       this._logger.warn(C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
       socketWrapper.sendError({
         topic: C.TOPIC.CONNECTION, 
-        event: C.EVENT.INVALID_MESSAGE, 
-        message: 'invalid connection message'
-      })
+      }, C.EVENT.INVALID_MESSAGE, connectionMessage)
     } else if (msg.action === C.ACTIONS.PONG) {
       // do nothing
     } else if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
       socketWrapper.onMessage = socketWrapper.authCallBack
-      socketWrapper.sendMessage({
-        topic: C.TOPIC.CONNECTION,
-        isAck: true
+      socketWrapper.sendAckMessage({
+        topic: C.TOPIC.CONNECTION
       })
     } else {
       this._logger.warn(C.EVENT.UNKNOWN_ACTION, msg.action)
-      socketWrapper.sendError({
-        topic: C.TOPIC.CONNECTION, 
-        event: C.EVENT.UNKNOWN_ACTION, 
-        message: `unknown action ${msg.action}`
-      })
     }
   }
 
@@ -401,10 +391,8 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
         authMsg.toString()
       )
       socketWrapper.sendError({
-        topic: C.TOPIC.AUTH,
-        event: C.EVENT.INVALID_AUTH_MSG,
-        message: 'invalid authentication message'
-      })
+        topic: C.TOPIC.AUTH
+      }, C.EVENT.INVALID_AUTH_MSG)
       return
     }
 
@@ -478,10 +466,8 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
   _sendInvalidAuthMsg (socketWrapper, msg) {
     this._logger.warn(C.EVENT.INVALID_AUTH_MSG, this._logInvalidAuthData ? msg : '')
     socketWrapper.sendError({
-      topic: C.TOPIC.AUTH, 
-      event: C.EVENT.INVALID_AUTH_MSG, 
-      message: 'invalid authentication message'
-    })
+      topic: C.TOPIC.AUTH
+    }, C.EVENT.INVALID_AUTH_MSG)
     socketWrapper.destroy()
   }
 
@@ -563,19 +549,15 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
 
     this._logger.info(C.EVENT.INVALID_AUTH_DATA, logMsg)
     socketWrapper.sendError({
-      topic: C.TOPIC.AUTH,
-      event: C.EVENT.INVALID_AUTH_DATA,
-      message: messageBuilder.typed(clientData)
-    })
+      topic: C.TOPIC.AUTH
+    }, C.EVENT.INVALID_AUTH_DATA, messageBuilder.typed(clientData))
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this._maxAuthAttempts) {
       this._logger.info(C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts')
       socketWrapper.sendError({
-        topic: C.TOPIC.AUTH, 
-        event: C.EVENT.TOO_MANY_AUTH_ATTEMPTS, 
-        message: messageBuilder.typed('too many authentication attempts')
-      })
+        topic: C.TOPIC.AUTH 
+      }, C.EVENT.TOO_MANY_AUTH_ATTEMPTS)
       socketWrapper.destroy()
     }
   }
@@ -594,10 +576,8 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     const log = 'connection has not authenticated successfully in the expected time'
     this._logger.info(C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log)
     socketWrapper.sendError({
-      topic: C.TOPIC.CONNECTION,
-      event: C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT,
-      message: messageBuilder.typed(log)
-    })
+      topic: C.TOPIC.CONNECTION
+    }, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT)
     socketWrapper.destroy()
   }
 

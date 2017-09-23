@@ -1,7 +1,8 @@
 'use strict'
 
 const C = require('../../constants/constants')
-const messageBuilder = require('../message-builder')
+const messageBuilder = require('../../protocol/message-builder')
+const messageParser = require('../../protocol/message-parser')
 const uws = require('uws')
 
 const EventEmitter = require('events').EventEmitter
@@ -150,6 +151,10 @@ class UwsSocketWrapper extends EventEmitter {
     }
   }
 
+  getMessage (message) {
+    return messageBuilder.getMessage(message)
+  }
+
   /**
    * Sends a message based on the provided action and topic
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
@@ -165,6 +170,10 @@ class UwsSocketWrapper extends EventEmitter {
         allowBuffering
       )
     }
+  }
+
+  parseData (message) {
+    return messageParser.parseData(message)
   }
 
   // eslint-disable-next-line class-methods-use-this

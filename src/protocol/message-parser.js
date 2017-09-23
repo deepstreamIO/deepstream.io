@@ -99,7 +99,13 @@ module.exports = class MessageParser {
           message.action === C.ACTIONS.UPDATE ||
           message.action === C.ACTIONS.PATCH
         ) {
-          message.version = parts[index++] * 1
+          if (
+            message.action === C.ACTIONS.UPDATE || 
+            message.action === C.ACTIONS.PATCH ||
+            message.action === C.ACTIONS.CREATEANDUPDATE
+          ) {
+            message.version = parts[index++] * 1
+          }
           
           if (
             message.action === C.ACTIONS.PATCH || 
@@ -143,8 +149,6 @@ module.exports = class MessageParser {
       } else {
       }
       
-
-      // console.log('<', message, rawMessages[i])
       parsedMessages.push(message)
     }
 
@@ -155,6 +159,24 @@ module.exports = class MessageParser {
     //   socketWrapper.sendError(message, C.EVENT.INVALID_VERSION)
     //   return
     // }
+
+  static parseData (message) {
+    if (message.action === C.ACTIONS.UPDATE) {
+      const res = utils.parseJSON(message.data[0])
+      if (res.error) {
+        return false
+      }
+      message.parsedData = res.value
+      return true
+    } else {
+      const parsedData = MessageParser.convertTyped(message.data[0])
+      if (parsedData instanceof Error) {
+        return false
+      }
+      message.parsedData = parsedData
+      return true      
+    }
+  }
 
   /**
    * Deserializes values created by MessageBuilder.typed to

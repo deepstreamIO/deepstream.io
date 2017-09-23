@@ -143,7 +143,7 @@ module.exports = class ConfigPermissionHandler extends EventEmitter {
    * @interface
    * @returns {void}
    */
-  canPerformAction (username, message, callback, authData) {
+  canPerformAction (username, message, callback, authData, socketWrapper) {
     const ruleSpecification = rulesMap.getRulesForMessage(message)
 
     if (ruleSpecification === null) {
@@ -166,6 +166,7 @@ module.exports = class ConfigPermissionHandler extends EventEmitter {
     // eslint-disable-next-line
     new RuleApplication({
       recordHandler: this._recordHandler,
+      socketWrapper,
       username,
       authData,
       path: ruleData,

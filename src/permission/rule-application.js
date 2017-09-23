@@ -9,7 +9,6 @@ const EOL = require('os').EOL
 
 const C = require('../constants/constants')
 const recordRequest = require('../record/record-request')
-const messageParser = require('../message/message-parser')
 const jsonPath = require('../record/json-path')
 
 module.exports = class RuleApplication {
@@ -193,22 +192,22 @@ module.exports = class RuleApplication {
     }
 
     const msg = this._params.message
-    let data
+    let result
 
-    if (msg.topic === C.TOPIC.EVENT && msg.data[0]) {
-      data = messageParser.convertTyped(msg.data[0])
-    } else if (msg.topic === C.TOPIC.RPC) {
-      data = messageParser.convertTyped(msg.data[0])
-    } else if (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE) {
-      data = getRecordUpdateData(msg)
+    if (
+      (msg.topic === C.TOPIC.RPC) ||
+      (msg.topic === C.TOPIC.EVENT && msg.data[0]) ||
+      (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE)
+    ) {
+      result = this._params.socketWrapper.parseData(msg)
     } else if (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.PATCH) {
-      data = this._getRecordPatchData(msg)
+      result = this._getRecordPatchData(msg)
     }
 
-    if (data instanceof Error) {
-      this._onRuleError(`error when converting message data ${data.toString()}`)
+    if (result === false) {
+      this._onRuleError(`error when converting message data ${msg.parsedData.toString()}`)
     } else {
-      return data
+      return msg.parsedData
     }
   }
 
@@ -222,12 +221,8 @@ module.exports = class RuleApplication {
    * @returns {Object} recordData
    */
   _getRecordPatchData (msg) {
-    if (msg.data.length !== 4 || typeof msg.data[2] !== STRING) {
-      return new Error('Invalid message data')
-    }
-
     const currentData = this._recordData[this._params.name]
-    const newData = messageParser.convertTyped(msg.data[3])
+    const newData = this._params.socketWrapper.parseData(msg)
     let data
 
     if (newData instanceof Error) {
@@ -413,24 +408,4 @@ module.exports = class RuleApplication {
       return this._recordData[recordName]._d
     }
   }
-}
-
-  /**
-   * Extracts the data from record update messages
-   *
-   * @param   {Object} msg a deepstream message
-   *
-   * @private
-   * @returns {Object} recordData
-   */
-function getRecordUpdateData (msg) {
-  let data
-
-  try {
-    data = JSON.parse(msg.data[0])
-  } catch (error) {
-    return error
-  }
-
-  return data
 }

@@ -1,7 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
-const messageBuilder = require('../message/message-builder')
+const messageBuilder = require('../protocol/message-builder')
 
 let idCounter = 0
 
@@ -225,11 +225,6 @@ module.exports = class SubscriptionRegistry {
     }
 
     const msgString = messageBuilder.getMessage(message)
-
-    // not all messages are valid, this should be fixed elsewhere!
-    if (msgString.charAt(msgString.length - 1) !== C.MESSAGE_SEPERATOR) {
-      msgString += C.MESSAGE_SEPERATOR // eslint-disable-line
-    }
 
     if (subscription.sharedMessages.length === 0) {
       this._pending.push(subscription)

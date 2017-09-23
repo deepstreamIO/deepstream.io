@@ -48,7 +48,12 @@ exports.getMessage = function (message, isAck) {
   if (message.correlationId) {
     sendData.push(message.correlationId)
   }
-  if (message.data) {
+  
+  if (message.action === C.ACTIONS.WRITE_ACKNOWLEDGEMENT) {
+    sendData.push(JSON.stringify(message.data[0]))
+    sendData.push(exports.typed(message.data[1]))
+  }
+  else if (message.data) {
     for (let i = 0; i < message.data.length; i++) {
       if (typeof message.data[i] === 'object') {
         sendData.push(JSON.stringify(message.data[i]))
@@ -58,11 +63,11 @@ exports.getMessage = function (message, isAck) {
     }
   }
 
+  // only occurs on merge conflicts
   if (message.isWriteAck) {
     sendData.push(writeConfig)
   }
 
-  // console.log('>m>', message, sendData.join(SEP))
   return sendData.join(SEP) + C.MESSAGE_SEPERATOR
 }
 
@@ -111,7 +116,6 @@ exports.getErrorMessage = function (message, event, errorMessage) {
     sendData.push(errorMessage)
   }
 
-  // console.log('>e>', sendData.join(SEP), event)
   return sendData.join(SEP) + C.MESSAGE_SEPERATOR
 }
 

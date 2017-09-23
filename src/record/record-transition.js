@@ -3,8 +3,6 @@
 const C = require('../constants/constants')
 const jsonPath = require('./json-path')
 const recordRequest = require('./record-request')
-const messageParser = require('../message/message-parser')
-const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 
 module.exports = class RecordTransition {
@@ -190,21 +188,7 @@ module.exports = class RecordTransition {
  */
   _applyConfigAndData (socketWrapper, message, step) {
     this._applyConfig(message, step)
-
-    if (message.action === C.ACTIONS.UPDATE) {
-      const res = utils.parseJSON(message.data[0])
-      if (res.error) {
-        return false
-      }
-      message.parsedData = res.value
-      return true
-    } else {
-      message.parsedData = messageParser.convertTyped(message.data[0])
-      if (step.parsedData instanceof Error) {
-        return false
-      }
-      return true      
-    }
+    return socketWrapper.parseData(message)
   }
 
 /**
@@ -440,7 +424,7 @@ module.exports = class RecordTransition {
         name: this._name,
         data: [
           update.versions,
-          messageBuilder.typed(errorMessage)
+          errorMessage
         ]
       }, true)
     }

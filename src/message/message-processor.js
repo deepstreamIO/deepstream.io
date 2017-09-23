@@ -75,7 +75,8 @@ module.exports = class MessageProcessor {
         socketWrapper.user,
         message,
         this._onPermissionResponse.bind(this, socketWrapper, message),
-        socketWrapper.authData
+        socketWrapper.authData,
+        socketWrapper
       )
     }
   }

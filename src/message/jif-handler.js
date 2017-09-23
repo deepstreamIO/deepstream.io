@@ -185,8 +185,6 @@ module.exports = class JIFHandler {
     this.JIF_TO_MSG = getJifToMsg(this._constants, options.toTyped)
     this.MSG_TO_JIF = getMsgToJif(this._constants, options.convertTyped)
 
-    this._buildMessage = options.buildMessage
-
     this.topicToKey = utils.reverseMap(this._constants.TOPIC)
     this.actionToKey = utils.reverseMap(this._constants.ACTIONS)
 
@@ -234,8 +232,6 @@ module.exports = class JIFHandler {
 
     const result = this.JIF_TO_MSG[jifMessage.topic][jifMessage.action](jifMessage)
     const message = result.message
-
-    result.message.raw = this._buildMessage(message.topic, message.action, message.data)
 
     result.success = true
 

@@ -5,7 +5,6 @@ const SubscriptionRegistry = require('../utils/subscription-registry')
 const ListenerRegistry = require('../listen/listener-registry')
 const RecordTransition = require('./record-transition')
 const RecordDeletion = require('./record-deletion')
-const messageBuilder = require('../message/message-builder')
 const recordRequest = require('./record-request')
 
 const writeSuccess = JSON.stringify({ writeSuccess: true })
@@ -323,8 +322,8 @@ module.exports = class RecordHandler {
         storageResponse = true
         writeError = writeError || error || null
         this._handleForceWriteAcknowledgement(
-        socketWrapper, message, cacheResponse, storageResponse, writeError
-      )
+          socketWrapper, message, cacheResponse, storageResponse, writeError
+        )
       }
     }, this._metaData)
 
@@ -365,8 +364,7 @@ module.exports = class RecordHandler {
         topic: C.TOPIC.RECORD,
         action: C.ACTIONS.WRITE_ACKNOWLEDGEMENT,
         name: message.name,
-        version: message.version,
-        data: [messageBuilder.typed(error)]
+        data: [message.version, error]
       }, true)
     }
   }
