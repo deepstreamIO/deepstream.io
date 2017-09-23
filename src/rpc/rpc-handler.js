@@ -132,7 +132,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _registerProvider (socketWrapper, message) {
-    this._subscriptionRegistry.subscribe(message.name, socketWrapper)
+    this._subscriptionRegistry.subscribe(message, socketWrapper)
   }
 
   /**
@@ -147,7 +147,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _unregisterProvider (socketWrapper, message) {
-    this._subscriptionRegistry.unsubscribe(message.name, socketWrapper)
+    this._subscriptionRegistry.unsubscribe(message, socketWrapper)
   }
 
   /**

@@ -58,7 +58,7 @@ module.exports = class EventHandler {
    * @returns {void}
    */
   _addSubscriber (socket, message) {
-    this._subscriptionRegistry.subscribe(message.name, socket)
+    this._subscriptionRegistry.subscribe(message, socket)
   }
 
   /**
@@ -72,7 +72,7 @@ module.exports = class EventHandler {
    * @returns {void}
    */
   _removeSubscriber (socket, message) {
-    this._subscriptionRegistry.unsubscribe(message.name, socket)
+    this._subscriptionRegistry.unsubscribe(message, socket)
   }
 
   /**

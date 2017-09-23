@@ -427,7 +427,7 @@ function getRecordUpdateData (msg) {
   let data
 
   try {
-    data = JSON.parse(msg.data[2])
+    data = JSON.parse(msg.data[0])
   } catch (error) {
     return error
   }

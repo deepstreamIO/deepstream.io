@@ -164,8 +164,6 @@ module.exports = class ConfigPermissionHandler extends EventEmitter {
     }
 
     // eslint-disable-next-line
-    // 
-    console.log('will permission', message)
     new RuleApplication({
       recordHandler: this._recordHandler,
       username,

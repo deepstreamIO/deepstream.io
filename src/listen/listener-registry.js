@@ -122,7 +122,7 @@ module.exports = class ListenerRegistry {
     if (message.action === C.ACTIONS.LISTEN) {
       this._addListener(socketWrapper, message)
     } else if (message.action === C.ACTIONS.UNLISTEN) {
-      this._providerRegistry.unsubscribe(pattern, socketWrapper)
+      this._providerRegistry.unsubscribe(message, socketWrapper)
       this._removeListener(socketWrapper, message)
     } else if (this._listenerTimeoutRegistry.isALateResponder(socketWrapper, message)) {
       this._listenerTimeoutRegistry.handle(socketWrapper, message)
@@ -297,7 +297,7 @@ module.exports = class ListenerRegistry {
     }
 
     if (!this._providerRegistry.getLocalSubscribers(pattern).has(socketWrapper)) {
-      this._providerRegistry.subscribe(pattern, socketWrapper)
+      this._providerRegistry.subscribe(message, socketWrapper)
     }
 
     this._reconcileSubscriptionsToPatterns(regExp, pattern, socketWrapper)

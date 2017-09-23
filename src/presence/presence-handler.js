@@ -11,14 +11,14 @@ function parseUserNames (data, socketWrapper) {
     !data ||
     data.length === 0 ||
     (data.length === 1 && (
-    data.name === C.ACTIONS.QUERY ||
-    data.name === C.ACTIONS.SUBSCRIBE ||
-    data.name === C.TOPIC.PRESENCE)
+    data[0] === C.ACTIONS.QUERY ||
+    data[0] === C.ACTIONS.SUBSCRIBE ||
+    data[0] === C.TOPIC.PRESENCE)
   )) {
     return [EVERYONE]
   }
   try {
-    return JSON.parse(data[0])
+    return JSON.parse(data[1])
   } catch (e) {
     return null
   }
@@ -71,11 +71,19 @@ module.exports = class PresenceHandler {
     }
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
-        this._subscriptionRegistry.subscribe(users[i], socketWrapper)
+        this._subscriptionRegistry.subscribe({
+          topic: C.TOPIC.PRESENCE,
+          action: C.ACTIONS.SUBSCRIBE,
+          name: users[i]
+        }, socketWrapper)
       }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
-        this._subscriptionRegistry.unsubscribe(users[i], socketWrapper)
+        this._subscriptionRegistry.unsubscribe({ 
+          topic: C.TOPIC.PRESENCE,
+          action: C.ACTIONS.SUBSCRIBE,
+          name: users[i] 
+        }, socketWrapper)
       }
     } else if (message.action === C.ACTIONS.QUERY) {
       this._handleQuery(users, message.correlationId, socketWrapper)

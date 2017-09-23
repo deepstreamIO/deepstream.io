@@ -150,6 +150,23 @@ class UwsSocketWrapper extends EventEmitter {
     }
   }
 
+  /**
+   * Sends a message based on the provided action and topic
+   * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
+   *                                 this message type
+   *
+   * @public
+   * @returns {void}
+   */
+  sendAckMessage (message, allowBuffering) {
+    if (this.isClosed === false) {
+      this.sendNative(
+        messageBuilder.getMessage(message, true),
+        allowBuffering
+      )
+    }
+  }
+
   // eslint-disable-next-line class-methods-use-this
   onMessage () {
   }

@@ -275,7 +275,8 @@ module.exports = class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  subscribe (name, socket) {
+  subscribe (message, socket) {
+    const name = message.name
     const subscription = this._subscriptions.get(name) || {
       name,
       sockets: new Set(),
@@ -300,12 +301,7 @@ module.exports = class SubscriptionRegistry {
 
     const logMsg = `for ${this._topic}:${name} by ${socket.user}`
     this._options.logger.debug(this._constants.SUBSCRIBE, logMsg)
-    socket.sendMessage({
-      topic: this._topic,
-      isAck: true,
-      action: this._constants.SUBSCRIBE,
-      name
-    }, true)  
+    socket.sendAckMessage(message)  
   }
 
   /**
@@ -317,7 +313,8 @@ module.exports = class SubscriptionRegistry {
    * @public
    * @returns {void}
    */
-  unsubscribe (name, socket, silent) {
+  unsubscribe (message, socket, silent) {
+    const name = message.name
     const subscription = this._subscriptions.get(name)
 
     if (!subscription || !subscription.sockets.delete(socket)) {
@@ -336,12 +333,7 @@ module.exports = class SubscriptionRegistry {
     if (!silent) {
       const logMsg = `for ${this._topic}:${name} by ${socket.user}`
       this._options.logger.debug(this._constants.UNSUBSCRIBE, logMsg)
-      socket.sendMessage({
-        topic: this._topic,
-        isAck: true,
-        action: this._constants.UNSUBSCRIBE,
-        name
-      }, true)
+      socket.sendAckMessage(message)
     }
   }
 

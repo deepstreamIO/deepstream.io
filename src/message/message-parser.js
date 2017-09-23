@@ -3,6 +3,8 @@
 const C = require('../constants/constants')
 const utils = require('../utils/utils')
 
+const writeConfig = JSON.stringify({ writeSuccess: true })
+
 /**
  * Turns the ACTION:SHORTCODE constants map
  * around to facilitate shortcode lookup
@@ -65,14 +67,17 @@ module.exports = class MessageParser {
         data: [],
         raw: null,
 
-        // listening
+        // rpc / presence query
         correlationId: null,
         
         // subscription by listening
         subscription: null,
 
         // record
-        path: null
+        path: null,
+        version: null,
+        parsedData: null,
+        isWriteAck: null
       }
 
       if (message.action === C.ACTIONS.ACK) {
@@ -88,6 +93,30 @@ module.exports = class MessageParser {
 
       if (message.topic === C.TOPIC.RECORD) {
         message.name = parts[index++]
+        if (
+          message.action === C.ACTIONS.CREATEORREAD ||
+          message.action === C.ACTIONS.CREATEANDUPDATE ||
+          message.action === C.ACTIONS.UPDATE ||
+          message.action === C.ACTIONS.PATCH
+        ) {
+          message.version = parts[index++] * 1
+          
+          if (
+            message.action === C.ACTIONS.PATCH || 
+            (
+              message.action === C.ACTIONS.CREATEANDUPDATE &&
+              parts.length - index > 2
+            )
+          ) {
+            message.path = parts[index++]
+          }
+          if (parts.length - index === 2) {
+            message.isWriteAck = parts[parts.length -1] === writeConfig
+            message.data = [parts[parts.length - 2]]
+          } else {
+            message.data = parts.slice(index)
+          }
+        }
       } else if (message.topic === C.TOPIC.EVENT) {
         message.name = parts[index++]
         if (
@@ -105,22 +134,27 @@ module.exports = class MessageParser {
         message.data = parts.slice(index)
       } else if (message.topic === C.TOPIC.PRESENCE) {
         message.name = message.action
-        message.correlationId = parts[index++]
         message.data = parts.slice(index)
+        message.correlationId = parts[index++]
       } else if (message.topic === C.TOPIC.CONNECTION) {
-        message.data = parts.slice(2)
+        message.data = parts.slice(index)
       } else if (message.topic === C.TOPIC.AUTH) {
-        message.data = parts.slice(2)
+        message.data = parts.slice(index)
       } else {
       }
       
 
-      console.log('<', rawMessages[i])
+      // console.log('<', message, rawMessages[i])
       parsedMessages.push(message)
     }
 
     return parsedMessages
   }
+
+    // if (isNaN(version)) {
+    //   socketWrapper.sendError(message, C.EVENT.INVALID_VERSION)
+    //   return
+    // }
 
   /**
    * Deserializes values created by MessageBuilder.typed to

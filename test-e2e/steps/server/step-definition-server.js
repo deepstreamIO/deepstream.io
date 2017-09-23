@@ -32,7 +32,9 @@ When(/^server (\S)* comes back up$/, (server, done) => {
     done()
     return
   }
-  global.cluster.once('started', done)
+  global.cluster.once('started', () => {
+    setTimeout(done, 250)
+  })
   global.cluster.start()
 })
 

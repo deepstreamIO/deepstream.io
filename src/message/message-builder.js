@@ -5,31 +5,7 @@ const C = require('../constants/constants')
 const SEP = C.MESSAGE_PART_SEPERATOR
 const MSEP = C.MESSAGE_SEPERATOR
 
-/**
- * Creates a deepstream message string, based on the
- * provided parameters
- *
- * @param   {String} topic  One of CONSTANTS.TOPIC
- * @param   {String} action One of CONSTANTS.ACTIONS
- * @param   {Array} data An array of strings or JSON-serializable objects
- *
- * @returns {String} deepstream message string
- */
-exports.getMsg = function (topic, action, data) {
-  const sendData = [topic, action]
-
-  if (data) {
-    for (let i = 0; i < data.length; i++) {
-      if (typeof data[i] === 'object') {
-        sendData.push(JSON.stringify(data[i]))
-      } else {
-        sendData.push(data[i])
-      }
-    }
-  }
-
-  return sendData.join(SEP) + C.MESSAGE_SEPERATOR
-}
+const writeConfig = JSON.stringify({ writeSuccess: true })
 
 /**
  * Creates a deepstream message string, based on the
@@ -41,12 +17,10 @@ exports.getMsg = function (topic, action, data) {
  *
  * @returns {String} deepstream message string
  */
-exports.getMessage = function (message) {
+exports.getMessage = function (message, isAck) {
   let sendData
-  if (message.isAck) {
+  if (message.isAck || isAck) {
     sendData = [message.topic, C.ACTIONS.ACK]
-  } else if (message.isError) {
-    sendData = [message.topic, C.ACTIONS.ERROR]
   } else {
     sendData = [message.topic]
   }
@@ -61,6 +35,12 @@ exports.getMessage = function (message) {
   }
   if (message.name) {
     sendData.push(message.name)
+  }
+  if (typeof message.version !== 'undefined' && message.version !== null) {
+    sendData.push(message.version)
+  }
+  if (typeof message.path !== 'undefined' && message.path !== null) {
+    sendData.push(message.path)
   }
   if (message.subscription) {
     sendData.push(message.subscription)
@@ -78,7 +58,11 @@ exports.getMessage = function (message) {
     }
   }
 
-  console.log('>m>', sendData.join(SEP))
+  if (message.isWriteAck) {
+    sendData.push(writeConfig)
+  }
+
+  // console.log('>m>', message, sendData.join(SEP))
   return sendData.join(SEP) + C.MESSAGE_SEPERATOR
 }
 
@@ -91,16 +75,24 @@ exports.getMessage = function (message) {
  */
 exports.getErrorMessage = function (message, event, errorMessage) {
   let sendData = [ message.topic, C.ACTIONS.ERROR, event ]
-  if (!errorMessage) {
+  if (event === C.EVENT.RECORD_NOT_FOUND) {
+    sendData = [ message.topic, C.ACTIONS.ERROR, message.action, message.name, event]
+  }
+  else if (event === C.EVENT.NO_RPC_PROVIDER || event === C.EVENT.RESPONSE_TIMEOUT) {
+    sendData = [ message.topic, C.ACTIONS.ERROR, event, message.name, message.correlationId]
+  }
+  else if (event === C.EVENT.MESSAGE_DENIED && message.topic === C.TOPIC.RPC && message.action === C.ACTIONS.REQUEST) {
+    sendData = [ message.topic, C.ACTIONS.ERROR, event, message.name, message.correlationId ]
+  }
+  else if (!errorMessage) {
     if (message.name) {
       sendData.push(message.name)
     }
-    if (
-      event !== C.EVENT.NO_RPC_PROVIDER && 
-      event !== C.EVENT.RESPONSE_TIMEOUT && 
-      message.action
-    ) {
+    if (message.action) {
       sendData.push(message.action)
+    }
+    if (message.name) {
+      sendData.push(message.name)
     }
     if (message.correlationId) {
       sendData.push(message.correlationId)
@@ -119,28 +111,8 @@ exports.getErrorMessage = function (message, event, errorMessage) {
     sendData.push(errorMessage)
   }
 
-  console.log('>e>', sendData.join(SEP), event)
+  // console.log('>e>', sendData.join(SEP), event)
   return sendData.join(SEP) + C.MESSAGE_SEPERATOR
-}
-
-/**
- * Creates a deepstream error message string based on the provided
- * arguments
- *
- * @param   {String} topic   One of CONSTANTS.TOPIC - error messages might either be send on
- *                           the generic ERROR topic or on the topic that caused the error
- *
- * @param   {String} type    One of CONSTANTS.EVENT
- * @param   {String | Array } message a message text or an array of data
- *
- * @returns {String } deepstream error message string
- */
-exports.getErrorMsg = function (topic, type, message) {
-  if (message instanceof Array) {
-    return `${topic + SEP}E${SEP}${type}${SEP}${message.join(SEP)}${C.MESSAGE_SEPERATOR}`
-  }
-
-  return `${topic + SEP}E${SEP}${type}${SEP}${message}${C.MESSAGE_SEPERATOR}`
 }
 
 /**

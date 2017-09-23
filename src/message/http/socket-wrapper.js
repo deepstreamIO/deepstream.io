@@ -4,7 +4,7 @@
 
 const EventEmitter = require('events').EventEmitter
 
-class HTTPSocketWrapper extends EventEmitter {
+module.exports = class HTTPSocketWrapper extends EventEmitter {
   constructor (options, onMessage, onError) {
     super()
 
@@ -81,21 +81,17 @@ class HTTPSocketWrapper extends EventEmitter {
   /**
    * Sends a message based on the provided action and topic
    *
-   * @param {String} topic one of C.TOPIC
-   * @param {String} action one of C.ACTIONS
-   * @param {Array} data Array of strings or JSON-serializable objects
+   * @param {Object} message
    *
    * @public
    * @returns {void}
    */
-  sendMessage (topic, action, data) {
+  sendMessage (message) {
     if (this.isClosed === false) {
       this._onMessage(
         this._messageResults,
         this._correlationIndex,
-        topic,
-        action,
-        data,
+        message,
         this._responseCallback,
         this._requestTimeout
       )
@@ -112,6 +108,3 @@ class HTTPSocketWrapper extends EventEmitter {
   destroy () {
   }
 }
-
-
-module.exports = HTTPSocketWrapper

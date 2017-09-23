@@ -43,11 +43,12 @@ module.exports = class ListenerTimeoutRegistry {
       if (!this._acceptedProvider[subscriptionName]) {
         this._acceptedProvider[subscriptionName] = this._timedoutProviders[subscriptionName][index]
       } else {
-        provider.socketWrapper.sendMessage(
-          this._type,
-          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-          [provider.pattern, subscriptionName]
-        )
+        provider.socketWrapper.sendMessage({
+          topic: this._type,
+          action: C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+          name: provider.pattern,
+          subscription: subscriptionName
+        })
       }
     } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
       this._timedoutProviders[subscriptionName].splice(index, 1)
@@ -146,11 +147,12 @@ module.exports = class ListenerTimeoutRegistry {
   rejectLateResponderThatAccepted (subscriptionName) {
     const provider = this._acceptedProvider[subscriptionName]
     if (provider) {
-      provider.socketWrapper.sendMessage(
-        this._type,
-        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-        [provider.pattern, subscriptionName]
-      )
+      provider.socketWrapper.sendMessage({
+        type: this._type,
+        action: C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+        name: provider.pattern,
+        subscription: subscriptionName
+      })
     }
   }
 

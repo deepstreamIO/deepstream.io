@@ -7,8 +7,6 @@ const messageParser = require('../message/message-parser')
 const messageBuilder = require('../message/message-builder')
 const utils = require('../utils/utils')
 
-const writeConfig = JSON.stringify({ writeSuccess: true })
-
 module.exports = class RecordTransition {
 /**
  * This class manages one or more simultanious updates to the data of a record.
@@ -93,23 +91,24 @@ module.exports = class RecordTransition {
  * @public
  */
   sendVersionExists (step) {
-    const socketWrapper = step.sender
-    const version = step.version
-    const config = step.message.data[4]
-
     if (this._record) {
-      const data = config === undefined
-    ? [this._name, this._record._v, JSON.stringify(this._record._d)]
-    : [this._name, this._record._v, JSON.stringify(this._record._d), config]
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.VERSION_EXISTS, data)
+      const socketWrapper = step.sender
 
-      const msg = `${socketWrapper.user} tried to update record ${this._name} to version ${version} but it already was ${this._record._v}`
-      this._options.logger.warn(C.EVENT.VERSION_EXISTS, msg, this._metaData)
+      socketWrapper.sendError({
+        topic: C.TOPIC.RECORD,
+        version: this._record._v,
+        data: JSON.stringify(this._record._d),
+        isWriteAck: step.message.isWriteAck
+      }, C.EVENT.VERSION_EXISTS)
+
+      this._options.logger.warn(
+        C.EVENT.VERSION_EXISTS, 
+        `${socketWrapper.user} tried to update record ${this._name} to version ${version} but it already was ${this._record._v}`, 
+        this._metaData
+      )
     } else {
       this._sendVersionExists.push({
-        version,
         sender: socketWrapper,
-        config,
         message: step.message
       })
     }
@@ -129,31 +128,25 @@ module.exports = class RecordTransition {
  * @public
  * @returns {void}
  */
-  add (socketWrapper, version, message, upsert) {
+  add (socketWrapper, message, upsert) {
+    const version = message.version
     const update = {
       message,
-      version,
-      sender: socketWrapper
+      sender: socketWrapper,
+      isPatch: message.action === C.ACTIONS.PATCH
     }
 
     const valid = this._applyConfigAndData(socketWrapper, message, update)
     if (!valid) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+      socketWrapper.sendError(message, C.EVENT.INVALID_MESSAGE_DATA)
       return
     }
 
     if (message.action === C.ACTIONS.UPDATE) {
-      if (!utils.isOfType(update.data, 'object') && !utils.isOfType(update.data, 'array')) {
-        socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+      if (!utils.isOfType(message.parsedData, 'object') && !utils.isOfType(message.parsedData, 'array')) {
+        socketWrapper.sendError(message, C.EVENT.INVALID_MESSAGE_DATA)
         return
       }
-
-      update.isPatch = false
-    }
-
-    if (message.action === C.ACTIONS.PATCH) {
-      update.isPatch = true
-      update.path = message.data[2]
     }
 
     if (this._lastVersion !== null && this._lastVersion !== version - 1) {
@@ -170,14 +163,14 @@ module.exports = class RecordTransition {
     if (this._recordRequest === null) {
       this._recordRequest = true
       recordRequest(
-      this._name,
-      this._options,
-      socketWrapper,
-      record => this._onRecord(record, upsert),
-      this._onFatalError,
-      this,
-      this._metaData
-    )
+        this._name,
+        this._options,
+        socketWrapper,
+        record => this._onRecord(record, upsert),
+        this._onFatalError,
+        this,
+        this._metaData
+      )
     } else if (this._steps.length === 1 && this._cacheResponses === 1) {
       this._next()
     }
@@ -196,23 +189,22 @@ module.exports = class RecordTransition {
  *                     successful
  */
   _applyConfigAndData (socketWrapper, message, step) {
-    const config = RecordTransition._getRecordConfig(message)
-    this._applyConfig(config, step)
+    this._applyConfig(message, step)
 
     if (message.action === C.ACTIONS.UPDATE) {
-      const res = utils.parseJSON(message.data[2])
+      const res = utils.parseJSON(message.data[0])
       if (res.error) {
         return false
       }
-      step.data = res.value
+      message.parsedData = res.value
       return true
+    } else {
+      message.parsedData = messageParser.convertTyped(message.data[0])
+      if (step.parsedData instanceof Error) {
+        return false
+      }
+      return true      
     }
-
-    step.data = messageParser.convertTyped(message.data[3])
-    if (step.data instanceof Error) {
-      return false
-    }
-    return true
   }
 
 /**
@@ -252,41 +244,18 @@ module.exports = class RecordTransition {
  * @private
  * @returns {void}
  */
-  _applyConfig (config, step) {
-    if (!config) {
-      return
-    }
-
-    if (config.writeSuccess) {
+  _applyConfig (message, step) {
+    if (message.isWriteAck) {
       if (this._pendingUpdates[step.sender.uuid] === undefined) {
         this._pendingUpdates[step.sender.uuid] = {
           socketWrapper: step.sender,
-          versions: [step.version]
+          versions: [step.message.version]
         }
       } else {
         const update = this._pendingUpdates[step.sender.uuid]
-        update.versions.push(step.version)
+        update.versions.push(step.message.version)
       }
     }
-  }
-
-/**
- * Gets the config from an incoming Record message
- *
- * @param   {String} message
- *
- * @private
- * @throws {SyntaxError } If config not valid
- * @returns null or the given config
- */
-  static _getRecordConfig (message) {
-    const config = message.data[message.data.length - 1]
-    if (config === writeConfig) {
-      return { writeSuccess: true }
-    } else if (config === null) {
-      return {}
-    }
-    return null
   }
 
 /**
@@ -335,25 +304,26 @@ module.exports = class RecordTransition {
     }
 
     this._currentStep = this._steps.shift()
-    if (this._currentStep.version === -1) {
-      const message = this._currentStep.message
+    const message = this._currentStep.message
+
+    if (message.version === -1) {
       const version = this._record._v + 1
-      this._currentStep.version = message.data[1] = version
+      message.version = version
     }
 
-    if (this._record._v !== this._currentStep.version - 1) {
+    if (this._record._v !== message.version - 1) {
       this._cacheResponses--
       this.sendVersionExists(this._currentStep)
       this._next()
       return
     }
 
-    this._record._v = this._currentStep.version
+    this._record._v = message.version
 
     if (this._currentStep.isPatch) {
-      jsonPath.setValue(this._record._d, this._currentStep.path, this._currentStep.data)
+      jsonPath.setValue(this._record._d, message.path, message.parsedData)
     } else {
-      this._record._d = this._currentStep.data
+      this._record._d = message.parsedData
     }
 
   /*
@@ -376,11 +346,11 @@ module.exports = class RecordTransition {
     )
     }
     this._options.cache.set(
-    this._name,
-    this._record,
-    this._onCacheResponse,
-    this._metaData
-  )
+      this._name,
+      this._record,
+      this._onCacheResponse,
+      this._metaData
+    )
   }
 
 /**
@@ -414,11 +384,11 @@ module.exports = class RecordTransition {
       this._onFatalError(error)
     } else if (this.isDestroyed === false) {
       this._recordHandler._$broadcastUpdate(
-      this._name,
-      this._currentStep.message,
-      false,
-      this._currentStep.sender
-    )
+        this._name,
+        this._currentStep.message,
+        false,
+        this._currentStep.sender
+      )
       this._next()
     } else if (
       this._cacheResponses === 0 &&
@@ -461,15 +431,18 @@ module.exports = class RecordTransition {
  * @returns {void}
  */
   _sendWriteAcknowledgements (errorMessage) {
-  errorMessage = errorMessage === undefined ? null : errorMessage // eslint-disable-line
-
+    errorMessage = errorMessage === undefined ? null : errorMessage // eslint-disable-line
     for (const uid in this._pendingUpdates) {
       const update = this._pendingUpdates[uid]
-      update.socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
-        this._name,
-        update.versions,
-        messageBuilder.typed(errorMessage)
-      ], true)
+      update.socketWrapper.sendMessage({
+        topic: C.TOPIC.RECORD,
+        action: C.ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        name: this._name,
+        data: [
+          update.versions,
+          messageBuilder.typed(errorMessage)
+        ]
+      }, true)
     }
   }
 
@@ -492,10 +465,10 @@ module.exports = class RecordTransition {
     for (let i = 0; i < this._steps.length; i++) {
       if (this._steps[i].sender !== C.SOURCE_MESSAGE_CONNECTOR) {
         this._steps[i].sender.sendError(
-        C.TOPIC.RECORD,
-        C.EVENT.RECORD_UPDATE_ERROR,
-        this._steps[i].version
-      )
+          C.TOPIC.RECORD,
+          C.EVENT.RECORD_UPDATE_ERROR,
+          this._steps[i].version
+        )
       }
     }
 

@@ -34,7 +34,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
     this._constants = deepstream.constants
     const jifHandlerOptions = {
       logger: deepstream._options.logger,
-      buildMessage: deepstream._messageBuilder.getMsg,
+      buildMessage: deepstream._messageBuilder.getMessage,
       constants: deepstream.constants,
       toTyped: deepstream.toTyped,
       convertTyped: deepstream.convertTyped,

@@ -20,7 +20,7 @@ module.exports = class RecordDeletion {
     this._socketWrapper = socketWrapper
     this._message = message
     this._successCallback = successCallback
-    this._recordName = message.data[0]
+    this._recordName = message.name
     this._completed = 0
     this._isDestroyed = false
 
@@ -85,15 +85,9 @@ module.exports = class RecordDeletion {
  */
   _done () {
     this._options.logger.info(C.EVENT.RECORD_DELETION, this._recordName, this._metaData)
-
-    const ackMessage = {
-      topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.ACK,
-      data: [C.ACTIONS.DELETE, this._recordName]
-    }
-
-    this._socketWrapper.sendMessage(ackMessage.topic, ackMessage.action, ackMessage.data)
-    this._successCallback(this._recordName, ackMessage, this._socketWrapper)
+    this._message.isAck = true
+    this._socketWrapper.sendAckMessage(this._message)
+    this._successCallback(this._recordName, this._message, this._socketWrapper)
     this._destroy()
   }
 
@@ -121,7 +115,7 @@ module.exports = class RecordDeletion {
  * @returns {void}
  */
   _handleError (errorMsg) {
-    this._socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_DELETE_ERROR, errorMsg)
+    this._socketWrapper.sendError(this._message, C.EVENT.RECORD_DELETE_ERROR)
     this._options.logger.error(C.EVENT.RECORD_DELETE_ERROR, errorMsg, this._metaData)
     this._destroy()
   }
