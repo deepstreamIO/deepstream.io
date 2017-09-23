@@ -388,13 +388,13 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onSocketMessage (
-    messageResults, index, topic, action, data, responseCallback, requestTimeoutId
+    messageResults, index, message, responseCallback, requestTimeoutId
   ) {
-    const parseResult = this._jifHandler.toJIF(topic, action, data)
+    const parseResult = this._jifHandler.toJIF(message)
     if (!parseResult) {
       const C = this._constants
-      const message = `${topic} ${action} ${JSON.stringify(data)}`
-      this._logger.error(C.EVENT.MESSAGE_PARSE_ERROR, message)
+      const errorMessage = `${message.topic} ${message.action} ${JSON.stringify(message.data)}`
+      this._logger.error(C.EVENT.MESSAGE_PARSE_ERROR, errorMessage)
       return
     }
     if (parseResult.done !== true) {
@@ -423,9 +423,9 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onSocketError (
-    messageResults, index, topic, event, message, responseCallback, requestTimeoutId
+    messageResults, index, message, event, errorMessage, responseCallback, requestTimeoutId
   ) {
-    const parseResult = this._jifHandler.errorToJIF(topic, event, message)
+    const parseResult = this._jifHandler.errorToJIF(message, event, errorMessage)
     if (parseResult.done && messageResults[index] === null) {
       messageResults[index] = parseResult.message
       HTTPConnectionEndpoint._checkComplete(messageResults, responseCallback, requestTimeoutId)
@@ -551,7 +551,8 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       this._onPermissionResponse.bind(
         this, socketWrapper, parsedMessage, messageResults, messageIndex
       ),
-      socketWrapper.authData
+      socketWrapper.authData,
+      socketWrapper
     )
   }
 

@@ -151,11 +151,6 @@ module.exports = class ConfigPermissionHandler extends EventEmitter {
       return
     }
 
-    if(!message.name) {
-      console.trace(message)
-      process.exit()
-    }
-
     const ruleData = this._getCompiledRulesForName(message.name, ruleSpecification)
 
     if (!ruleData) {

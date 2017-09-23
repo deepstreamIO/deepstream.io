@@ -101,7 +101,7 @@ module.exports = class RecordTransition {
 
       this._options.logger.warn(
         C.EVENT.VERSION_EXISTS, 
-        `${socketWrapper.user} tried to update record ${this._name} to version ${version} but it already was ${this._record._v}`, 
+        `${socketWrapper.user} tried to update record ${this._name} to version ${step.message.version} but it already was ${this._record._v}`, 
         this._metaData
       )
     } else {
@@ -133,7 +133,6 @@ module.exports = class RecordTransition {
       sender: socketWrapper,
       isPatch: message.action === C.ACTIONS.PATCH
     }
-
     const valid = this._applyConfigAndData(socketWrapper, message, update)
     if (!valid) {
       socketWrapper.sendError(message, C.EVENT.INVALID_MESSAGE_DATA)

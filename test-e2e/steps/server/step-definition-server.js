@@ -50,11 +50,11 @@ BeforeAll((callback) => {
   global.cluster.start()
 })
 
-AfterAll((callback) => {
-  setTimeout(() => {
-    global.cluster.once('stopped', () => {
-      callback()
-    })
-    global.cluster.stop()
-  }, 500)
-})
+// AfterAll((callback) => {
+//   setTimeout(() => {
+//     global.cluster.once('stopped', () => {
+//       callback()
+//     })
+//     global.cluster.stop()
+//   }, 500)
+// })

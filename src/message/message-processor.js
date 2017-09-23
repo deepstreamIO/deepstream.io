@@ -57,8 +57,7 @@ module.exports = class MessageProcessor {
 
       if (message === null ||
         !message.action ||
-        !message.topic ||
-        !message.data) {
+        !message.topic) {
         this._options.logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, message)
         socketWrapper.sendError({
           topic: C.TOPIC.ERROR

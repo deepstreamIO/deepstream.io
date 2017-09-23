@@ -5,6 +5,9 @@ const Ajv = require('ajv')
 const jifSchema = require('./jif-schema')
 const utils = require('../utils/utils')
 
+const messageParser = require('../protocol/message-parser')
+const messageBuilder = require('../protocol/message-builder')
+
 const ajv = new Ajv()
 
 const validateJIF = ajv.compile(jifSchema)
@@ -19,7 +22,9 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
-      data: [msg.eventName, toTyped(msg.data)]
+      name: msg.eventName,
+      parsedData: [msg.data],
+      data: [toTyped(msg.data)]
     }
   })
 
@@ -30,7 +35,10 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.RPC,
       action: C.ACTIONS.REQUEST,
-      data: [msg.rpcName, utils.getUid(), toTyped(msg.data)]
+      name: msg.rpcName,
+      correlationId: utils.getUid(),
+      parsedData: [msg.data],
+      data: [toTyped(msg.data)]
     }
   })
 
@@ -40,11 +48,9 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.SNAPSHOT,
-      data: [msg.recordName]
+      name: msg.recordName
     }
   })
-
-  const enableWriteAcks = JSON.stringify({ writeSuccess: true })
 
   JIF_TO_MSG.record.write = msg => (
     msg.path ? JIF_TO_MSG.record.patch(msg) : JIF_TO_MSG.record.update(msg)
@@ -55,13 +61,12 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.CREATEANDUPDATE,
-      data: [
-        msg.recordName,
-        msg.version || -1,
-        msg.path,
-        toTyped(msg.data),
-        msg.config || enableWriteAcks
-      ]
+      name: msg.recordName,
+      version: msg.version || -1,
+      path: msg.path,
+      parsedData: msg.data,
+      data: [toTyped(msg.data)],
+      isWriteAck: true
     }
   })
 
@@ -70,12 +75,12 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.CREATEANDUPDATE,
-      data: [
-        msg.recordName,
-        msg.version || -1,
-        JSON.stringify(msg.data),
-        msg.config || enableWriteAcks
-      ]
+      name: msg.recordName,
+      version: msg.version || -1,
+      path: null,
+      parsedData: msg.data,
+      data: [JSON.stringify(msg.data)],
+      isWriteAck: true
     }
   })
 
@@ -84,7 +89,7 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.HEAD,
-      data: [msg.recordName]
+      name: msg.recordName
     }
   })
 
@@ -93,7 +98,7 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.DELETE,
-      data: [msg.recordName]
+      name: msg.recordName
     }
   })
 
@@ -103,6 +108,7 @@ function getJifToMsg (C, toTyped) {
     message: {
       topic: C.TOPIC.PRESENCE,
       action: C.ACTIONS.QUERY,
+      name: C.ACTIONS.QUERY, // required by permissions
       data: [C.ACTIONS.QUERY]
     }
   })
@@ -118,10 +124,10 @@ function getMsgToJif (C, fromTyped) {
   const MSG_TO_JIF = {}
   MSG_TO_JIF[C.TOPIC.RPC] = {}
   MSG_TO_JIF[C.TOPIC.RPC][C.ACTIONS.RESPONSE] = {}
-  MSG_TO_JIF[C.TOPIC.RPC][C.ACTIONS.RESPONSE][TYPE.NORMAL] = data => ({
+  MSG_TO_JIF[C.TOPIC.RPC][C.ACTIONS.RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      data: fromTyped(data[2]),
+      data: fromTyped(message.data[0]),
       success: true
     }
   })
@@ -131,21 +137,21 @@ function getMsgToJif (C, fromTyped) {
 
   MSG_TO_JIF[C.TOPIC.RECORD] = {}
   MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.READ] = {}
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.READ][TYPE.NORMAL] = data => ({
+  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.READ][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      version: data[1],
-      data: data[2],
+      version: message.version,
+      data: message.data[0],
       success: true
     }
   })
 
   MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.WRITE_ACKNOWLEDGEMENT] = {}
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = data => ({
+  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      error: fromTyped(data[2]) || undefined,
-      success: data[2] === 'L'
+      error: message.data[1] || undefined,
+      success: message.data[1] === null
     }
   })
 
@@ -157,20 +163,20 @@ function getMsgToJif (C, fromTyped) {
     }
   })
   MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.HEAD] = {}
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.HEAD][TYPE.NORMAL] = data => ({
+  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.HEAD][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      version: parseInt(data[1], 10),
+      version: message.version,
       success: true
     }
   })
 
   MSG_TO_JIF[C.TOPIC.PRESENCE] = {}
   MSG_TO_JIF[C.TOPIC.PRESENCE][C.ACTIONS.QUERY] = {}
-  MSG_TO_JIF[C.TOPIC.PRESENCE][C.ACTIONS.QUERY][TYPE.NORMAL] = data => ({
+  MSG_TO_JIF[C.TOPIC.PRESENCE][C.ACTIONS.QUERY][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      users: data,
+      users: message.data,
       success: true
     }
   })
@@ -182,8 +188,8 @@ module.exports = class JIFHandler {
 
   constructor (options) {
     this._constants = options.constants
-    this.JIF_TO_MSG = getJifToMsg(this._constants, options.toTyped)
-    this.MSG_TO_JIF = getMsgToJif(this._constants, options.convertTyped)
+    this.JIF_TO_MSG = getJifToMsg(this._constants, messageBuilder.typed)
+    this.MSG_TO_JIF = getMsgToJif(this._constants, messageParser.convertTyped)
 
     this.topicToKey = utils.reverseMap(this._constants.TOPIC)
     this.actionToKey = utils.reverseMap(this._constants.ACTIONS)
@@ -234,32 +240,26 @@ module.exports = class JIFHandler {
     const message = result.message
 
     result.success = true
-
     return result
   }
 
   /*
    * Convert a deepstream response/ack message to a JIF message response
-   * @param {String}  topic     deepstream TOPIC
-   * @param {String}  action    deepstream ACTION
-   * @param {Array}   data      data array
+   * @param {Object}  message     deepstream message
    *
    * @returns {Object} {
    *    {Object}  message   jif message
    *    {Boolean} done      false iff message should await another result/acknowledgement
    * }
    */
-  toJIF (topic, action, data) {
+  toJIF (message) {
     let type
-    let messageAction
-    if (action === this._constants.ACTIONS.ACK) {
+    if (message.isAck) {
       type = TYPE.ACK
-      messageAction = data[0]
     } else {
       type = TYPE.NORMAL
-      messageAction = action
     }
-    return this.MSG_TO_JIF[topic][messageAction][type](data)
+    return this.MSG_TO_JIF[message.topic][message.action][type](message)
   }
 
   /*
@@ -273,49 +273,46 @@ module.exports = class JIFHandler {
    *    {Boolean} done      false iff message should await another result/acknowledgement
    * }
    */
-  errorToJIF (topic, event, data) {
+  errorToJIF (message, event, errorMessage) {
     // convert topic enum to human-readable key
-    const topicKey = this.topicToKey[topic]
+    const topicKey = this.topicToKey[message.topic]
     const C = this._constants
 
-    const message = {
+    const result = {
       errorTopic: topicKey && topicKey.toLowerCase(),
       errorEvent: event,
       success: false
     }
 
     if (event === C.EVENT.MESSAGE_DENIED) {
-      let action = this.actionToKey[data[1]]
+      let action = this.actionToKey[message.action]
       action = action && action.toLowerCase()
-      message.action = action
-      message.error = `Message denied. Action "${action}" is not permitted.`
+      result.action = action
+      result.error = `Message denied. Action "${action}" is not permitted.`
 
     } else if (event === C.EVENT.VERSION_EXISTS) {
-      message.error = `Record update failed. Version ${data[1]} exists for record "${data[0]}".`
-      message.currentVersion = data[1]
-      message.currentData = JSON.parse(data[2])
-
-    } else if (data[1] === C.EVENT.RECORD_NOT_FOUND) {
-      message.error = `Record read failed. Record "${data[0]}" could not be found.`
-      message.errorEvent = data[1]
-
+      result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
+      result.currentVersion = message.version
+      result.currentData = message.parsedData
+    } else if (event === C.EVENT.RECORD_NOT_FOUND) {
+      result.error = `Record read failed. Record "${message.name}" could not be found.`
+      result.errorEvent = message.event
     } else if (event === C.EVENT.NO_RPC_PROVIDER) {
-      message.error = `No provider was available to handle the RPC "${data[0]}".`
+      result.error = `No provider was available to handle the RPC "${message.name}".`
       // message.correlationId = data[1]
-
-    } else if (topic === C.TOPIC.RPC && event === C.EVENT.RESPONSE_TIMEOUT) {
-      message.error = 'The RPC response timeout was exceeded by the provider.'
+    } else if (message.topic === C.TOPIC.RPC && event === C.EVENT.RESPONSE_TIMEOUT) {
+      result.error = 'The RPC response timeout was exceeded by the provider.'
 
     } else {
       this._logger.warn(
-        `Unhandled request error occurred: ${topic} ${event} ${JSON.stringify(data)}`
+        `Unhandled request error occurred: ${message.topic} ${event} ${JSON.stringify(message.parsedData)}`
       )
-      message.error = `An error occurred: ${event}.`
-      message.errorParams = data
+      result.error = `An error occurred: ${event}.`
+      result.errorParams = message.data
     }
 
     return {
-      message,
+      message: result,
       done: true
     }
   }

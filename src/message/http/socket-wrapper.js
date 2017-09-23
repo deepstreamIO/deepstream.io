@@ -2,6 +2,7 @@
 
 /* eslint-disable class-methods-use-this */
 
+const messageParser = require('../../protocol/message-parser')
 const EventEmitter = require('events').EventEmitter
 
 module.exports = class HTTPSocketWrapper extends EventEmitter {
@@ -64,14 +65,14 @@ module.exports = class HTTPSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendError (topic, event, msg) {
+  sendError (message, event, errorMessage) {
     if (this.isClosed === false) {
       this._onError(
         this._messageResults,
         this._correlationIndex,
-        topic,
+        message,
         event,
-        msg,
+        errorMessage,
         this._responseCallback,
         this._requestTimeout
       )
@@ -96,6 +97,15 @@ module.exports = class HTTPSocketWrapper extends EventEmitter {
         this._requestTimeout
       )
     }
+  }
+
+  sendAckMessage (message) {
+    message.isAck = true
+    this.sendMessage(message)
+  }
+
+  parseData (message) {
+    return message.parsedData
   }
 
   /**

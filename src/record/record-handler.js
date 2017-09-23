@@ -188,7 +188,7 @@ module.exports = class RecordHandler {
           topic: C.TOPIC.RECORD, 
           action: C.ACTIONS.HEAD, 
           name: recordName,
-          data: [record._v]
+          version: record._v
         })
       } else {
         socket.sendError(message, C.EVENT.RECORD_NOT_FOUND)
@@ -436,6 +436,7 @@ module.exports = class RecordHandler {
   _update (socketWrapper, message, upsert) {
     const recordName = message.name
     const version = message.version
+
   /*
    * If the update message is received from the message bus, rather than from a client,
    * assume that the original deepstream node has already updated the record in cache and
