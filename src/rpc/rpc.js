@@ -24,8 +24,8 @@ module.exports = class Rpc {
   */
   constructor (rpcHandler, requestor, provider, options, message) {
     this._rpcHandler = rpcHandler
-    this._rpcName = message.data[0]
-    this._correlationId = message.data[1]
+    this._rpcName = message.name
+    this._correlationId = message.correlationId
     this._requestor = requestor
     this._provider = provider
     this._options = options
@@ -54,16 +54,17 @@ module.exports = class Rpc {
   * @returns {void}
   */
   handle (message) {
-    if (message.data[1] !== this._correlationId && message.data[2] !== this._correlationId) {
+    if (message.correlationId !== this._correlationId) {
       return
     }
 
-    if (message.action === C.ACTIONS.ACK) {
+    if (message.isAck) {
       this._handleAck(message)
     } else if (message.action === C.ACTIONS.REJECTION) {
       this._reroute()
-    } else if (message.action === C.ACTIONS.RESPONSE || message.action === C.ACTIONS.ERROR) {
-      this._handleResponse(message)
+    } else if (message.action === C.ACTIONS.RESPONSE || message.action.isError) {
+      this._send(this._requestor, message, this._provider)
+      this.destroy()
     }
   }
 
@@ -118,28 +119,13 @@ module.exports = class Rpc {
   */
   _handleAck (message) {
     if (this._isAcknowledged === true) {
-      this._provider.sendError(C.TOPIC.RPC, C.EVENT.MULTIPLE_ACK, [this._rpcName, this._correlationId])
+      this._provider.sendError(this._message, C.EVENT.MULTIPLE_ACK)
       return
     }
 
     clearTimeout(this._ackTimeout)
     this._isAcknowledged = true
     this._send(this._requestor, message, this._provider)
-  }
-
-  /**
-  * Forwards response messages from the provider. If the provider
-  * sends more than one response subsequent messages will just
-  * be ignored
-  *
-  * @param   {Object} message parsed and validated deepstream message
-  *
-  * @private
-  * @returns {void}
-  */
-  _handleResponse (message) {
-    this._send(this._requestor, message, this._provider)
-    this.destroy()
   }
 
   /**
@@ -159,7 +145,7 @@ module.exports = class Rpc {
     if (alternativeProvider) {
       this._setProvider(alternativeProvider)
     } else {
-      this._requestor.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [this._rpcName, this._correlationId])
+      this._requestor.sendError(this._message, C.EVENT.NO_RPC_PROVIDER)
       this.destroy()
     }
   }
@@ -172,7 +158,7 @@ module.exports = class Rpc {
   * @returns {void}
   */
   _onAckTimeout () {
-    this._requestor.sendError(C.TOPIC.RPC, C.EVENT.ACK_TIMEOUT, [this._rpcName, this._correlationId])
+    this._requestor.sendError(this._message, C.EVENT.ACK_TIMEOUT)
     this.destroy()
   }
 
@@ -184,7 +170,7 @@ module.exports = class Rpc {
   * @returns {void}
   */
   _onResponseTimeout () {
-    this._requestor.sendError(C.TOPIC.RPC, C.EVENT.RESPONSE_TIMEOUT, [this._rpcName, this._correlationId])
+    this._requestor.sendError(this._message, C.EVENT.RESPONSE_TIMEOUT)
     this.destroy()
   }
 
@@ -203,6 +189,6 @@ module.exports = class Rpc {
       return
     }
 
-    receiver.sendMessage(message.topic, message.action, message.data)
+    receiver.sendMessage(message)
   }
 }

@@ -3,6 +3,7 @@
 const C = require('../constants/constants')
 
 const SEP = C.MESSAGE_PART_SEPERATOR
+const MSEP = C.MESSAGE_SEPERATOR
 
 /**
  * Creates a deepstream message string, based on the
@@ -27,6 +28,98 @@ exports.getMsg = function (topic, action, data) {
     }
   }
 
+  return sendData.join(SEP) + C.MESSAGE_SEPERATOR
+}
+
+/**
+ * Creates a deepstream message string, based on the
+ * provided parameters
+ *
+ * @param   {String} topic  One of CONSTANTS.TOPIC
+ * @param   {String} action One of CONSTANTS.ACTIONS
+ * @param   {Array} data An array of strings or JSON-serializable objects
+ *
+ * @returns {String} deepstream message string
+ */
+exports.getMessage = function (message) {
+  let sendData
+  if (message.isAck) {
+    sendData = [message.topic, C.ACTIONS.ACK]
+  } else if (message.isError) {
+    sendData = [message.topic, C.ACTIONS.ERROR]
+  } else {
+    sendData = [message.topic]
+  }
+  if (message.event) {
+    sendData.push(message.data)
+  }  
+  if (message.message) {
+    sendData.push(message.message)
+  }
+  if (message.action) {
+    sendData.push(message.action)
+  }
+  if (message.name) {
+    sendData.push(message.name)
+  }
+  if (message.subscription) {
+    sendData.push(message.subscription)
+  }
+  if (message.correlationId) {
+    sendData.push(message.correlationId)
+  }
+  if (message.data) {
+    for (let i = 0; i < message.data.length; i++) {
+      if (typeof message.data[i] === 'object') {
+        sendData.push(JSON.stringify(message.data[i]))
+      } else {
+        sendData.push(message.data[i])
+      }
+    }
+  }
+
+  console.log('>m>', sendData.join(SEP))
+  return sendData.join(SEP) + C.MESSAGE_SEPERATOR
+}
+
+/**
+ * Creates a deepstream error message string based on the provided
+ * arguments
+ *
+ * @param   {Message} message a message text or an array of data
+ * @returns {String } deepstream error message string
+ */
+exports.getErrorMessage = function (message, event, errorMessage) {
+  let sendData = [ message.topic, C.ACTIONS.ERROR, event ]
+  if (!errorMessage) {
+    if (message.name) {
+      sendData.push(message.name)
+    }
+    if (
+      event !== C.EVENT.NO_RPC_PROVIDER && 
+      event !== C.EVENT.RESPONSE_TIMEOUT && 
+      message.action
+    ) {
+      sendData.push(message.action)
+    }
+    if (message.correlationId) {
+      sendData.push(message.correlationId)
+    }
+    if (message.data) {
+      for (let i = 0; i < message.data.length; i++) {
+        if (typeof message.data[i] === 'object') {
+          sendData.push(JSON.stringify(message.data[i]))
+        } else {
+          sendData.push(message.data[i])
+        }
+      }
+    }
+  }
+  else {
+    sendData.push(errorMessage)
+  }
+
+  console.log('>e>', sendData.join(SEP), event)
   return sendData.join(SEP) + C.MESSAGE_SEPERATOR
 }
 

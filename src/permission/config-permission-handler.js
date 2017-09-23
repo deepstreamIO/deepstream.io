@@ -144,20 +144,19 @@ module.exports = class ConfigPermissionHandler extends EventEmitter {
    * @returns {void}
    */
   canPerformAction (username, message, callback, authData) {
-    if (typeof message.data[0] !== STRING) {
-      callback('invalid message', false)
-      return
-    }
-
     const ruleSpecification = rulesMap.getRulesForMessage(message)
-    const name = message.data[0]
 
     if (ruleSpecification === null) {
       callback(null, true)
       return
     }
 
-    const ruleData = this._getCompiledRulesForName(name, ruleSpecification)
+    if(!message.name) {
+      console.trace(message)
+      process.exit()
+    }
+
+    const ruleData = this._getCompiledRulesForName(message.name, ruleSpecification)
 
     if (!ruleData) {
       callback(null, false)
@@ -165,6 +164,8 @@ module.exports = class ConfigPermissionHandler extends EventEmitter {
     }
 
     // eslint-disable-next-line
+    // 
+    console.log('will permission', message)
     new RuleApplication({
       recordHandler: this._recordHandler,
       username,
@@ -175,7 +176,7 @@ module.exports = class ConfigPermissionHandler extends EventEmitter {
       action: ruleSpecification.action,
       regexp: ruleData.regexp,
       rule: ruleData.rule,
-      name,
+      name: message.name,
       callback,
       logger: this._options.logger,
       permissionOptions: this._permissionOptions,

@@ -41,25 +41,22 @@ module.exports = class RpcHandler {
       this._registerProvider(socketWrapper, message)
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._unregisterProvider(socketWrapper, message)
-    } else if (message.action === C.ACTIONS.REQUEST) {
+    } else if (message.action === C.ACTIONS.REQUEST && !message.isAck) {
       this._makeRpc(socketWrapper, message)
     } else if (
       message.action === C.ACTIONS.RESPONSE ||
-      message.action === C.ACTIONS.ACK ||
       message.action === C.ACTIONS.REJECTION ||
-      message.action === C.ACTIONS.ERROR
+      message.isAck ||
+      message.isError
     ) {
-      const rpcNameIndex = (message.action === C.ACTIONS.ACK || message.action === C.ACTIONS.ERROR)
-        ? 1 : 0
-      const correlationId = message.data[rpcNameIndex + 1]
-      const rpcData = this._rpcs.get(correlationId)
+      const rpcData = this._rpcs.get(message.correlationId)
       if (rpcData) {
         rpcData.rpc.handle(message)
       } else {
         socketWrapper.sendError(
-          C.TOPIC.RPC,
+          { topic: C.TOPIC.RPC }, 
           C.EVENT.INVALID_RPC_CORRELATION_ID,
-          `unexpected state for rpc ${message.data[rpcNameIndex]} with action ${message.action}`
+          `unexpected state for rpc ${message.name} with action ${message.action}`
         )
       }
     } else {
@@ -68,10 +65,6 @@ module.exports = class RpcHandler {
       * by the Rpc class directly
       */
       this._options.logger.warn(C.EVENT.UNKNOWN_ACTION, message.action, this._metaData)
-
-      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-        socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
-      }
     }
   }
 
@@ -139,9 +132,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _registerProvider (socketWrapper, message) {
-    if (isValidMessage(1, socketWrapper, message)) {
-      this._subscriptionRegistry.subscribe(message.data[0], socketWrapper)
-    }
+    this._subscriptionRegistry.subscribe(message.name, socketWrapper)
   }
 
   /**
@@ -156,9 +147,7 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _unregisterProvider (socketWrapper, message) {
-    if (isValidMessage(1, socketWrapper, message)) {
-      this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
-    }
+    this._subscriptionRegistry.unsubscribe(message.name, socketWrapper)
   }
 
   /**
@@ -174,12 +163,8 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _makeRpc (socketWrapper, message, source) {
-    if (!isValidMessage(2, socketWrapper, message)) {
-      return
-    }
-
-    const rpcName = message.data[0]
-    const correlationId = message.data[1]
+    const rpcName = message.name
+    const correlationId = message.correlationId
 
     const rpcData = {
       providers: new Set(),
@@ -217,8 +202,8 @@ module.exports = class RpcHandler {
   * @returns {void}
   */
   _makeRemoteRpc (requestor, message) {
-    const rpcName = message.data[0]
-    const correlationId = message.data[1]
+    const rpcName = message.name
+    const correlationId = message.correlationId
     const rpcData = this._rpcs.get(correlationId)
 
     const servers = this._subscriptionRegistry.getAllRemoteServers(rpcName)
@@ -235,7 +220,7 @@ module.exports = class RpcHandler {
     this._options.logger.warn(C.EVENT.NO_RPC_PROVIDER, rpcName, this._metaData)
 
     if (requestor !== C.SOURCE_MESSAGE_CONNECTOR) {
-      requestor.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [rpcName, correlationId])
+      requestor.sendError(message, C.EVENT.NO_RPC_PROVIDER)
     }
   }
 
@@ -267,8 +252,8 @@ module.exports = class RpcHandler {
     if (msg.action === C.ACTIONS.REQUEST) {
       const proxy = new RpcProxy(this._options, originServerName, this._metaData)
       this._makeRpc(proxy, msg, C.SOURCE_MESSAGE_CONNECTOR)
-    } else if ((msg.action === C.ACTIONS.ACK || msg.action === C.ACTIONS.ERROR) && msg.data[2]) {
-      const rpc = this._rpcs.get(msg.data[2])
+    } else if ((msg.action.isAck || msg.isError) && msg.correlationId) {
+      const rpc = this._rpcs.get(message.correlationId)
       if (!rpc) {
         this._options.logger.warn(
           C.EVENT.INVALID_RPC_CORRELATION_ID,
@@ -297,26 +282,4 @@ module.exports = class RpcHandler {
   _$onDestroy (correlationId) {
     this._rpcs.delete(correlationId)
   }
-}
-
-/**
-* Checks if the incoming message is valid, e.g. if rpcName
-* is present for subscribe / unsubscribe messages or if
-* rpcName and correlationId is present for rpc calls.
-*
-* @param   {Number}  dataLength    The expected number of entries in the data array
-* @param   {SocketWrapper} socketWrapper
-* @param   {Object} message parsed and validated deepstream message
-*
-* @private
-* @returns {Boolean} isValid
-*/
-function isValidMessage (dataLength, socketWrapper, message) {
-  if (message.data && message.data.length >= dataLength && typeof message.data[0] === 'string') {
-    return true
-  }
-
-  socketWrapper.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-
-  return false
 }

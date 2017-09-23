@@ -224,7 +224,7 @@ module.exports = class SubscriptionRegistry {
       return
     }
 
-    const msgString = messageBuilder.getMsg(message.topic, message.action, message.data)
+    const msgString = messageBuilder.getMessage(message)
 
     // not all messages are valid, this should be fixed elsewhere!
     if (msgString.charAt(msgString.length - 1) !== C.MESSAGE_SEPERATOR) {
@@ -300,7 +300,12 @@ module.exports = class SubscriptionRegistry {
 
     const logMsg = `for ${this._topic}:${name} by ${socket.user}`
     this._options.logger.debug(this._constants.SUBSCRIBE, logMsg)
-    socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name], true)
+    socket.sendMessage({
+      topic: this._topic,
+      isAck: true,
+      action: this._constants.SUBSCRIBE,
+      name
+    }, true)  
   }
 
   /**
@@ -331,7 +336,12 @@ module.exports = class SubscriptionRegistry {
     if (!silent) {
       const logMsg = `for ${this._topic}:${name} by ${socket.user}`
       this._options.logger.debug(this._constants.UNSUBSCRIBE, logMsg)
-      socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.UNSUBSCRIBE, name], true)
+      socket.sendMessage({
+        topic: this._topic,
+        isAck: true,
+        action: this._constants.UNSUBSCRIBE,
+        name
+      }, true)
     }
   }
 

@@ -108,7 +108,6 @@ module.exports = class ListenerRegistry {
   * 2) C.ACTIONS.UNLISTEN
   * 3) C.ACTIONS.LISTEN_ACCEPT
   * 4) C.ACTIONS.LISTEN_REJECT
-  * 5) C.ACTIONS.LISTEN_SNAPSHOT
   *
   * @param   {SocketWrapper} socketWrapper the socket that send the request
   * @param   {Object} message parsed and validated message
@@ -117,8 +116,9 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   handle (socketWrapper, message) {
-    const pattern = message.data[0]
-    const subscriptionName = message.data[1]
+    const pattern = message.name
+    const subscriptionName = message.subscription
+    
     if (message.action === C.ACTIONS.LISTEN) {
       this._addListener(socketWrapper, message)
     } else if (message.action === C.ACTIONS.UNLISTEN) {
@@ -129,8 +129,9 @@ module.exports = class ListenerRegistry {
     } else if (this._localListenInProgress[subscriptionName]) {
       this._processResponseForListenInProgress(socketWrapper, subscriptionName, message)
     } else {
-      this._onMsgDataError(socketWrapper, message.raw, C.EVENT.INVALID_MESSAGE)
+      console.log('>>', message, message.action)
     }
+      
   }
 
   /**
@@ -153,7 +154,7 @@ module.exports = class ListenerRegistry {
     if (message.action === C.ACTIONS.LISTEN) {
       this._leadListen[message.data[1]] = message.data[2]
       this._startLocalDiscoveryStage(message.data[1])
-    } else if (message.action === C.ACTIONS.ACK) {
+    } else if (message.isAck) {
       this._nextDiscoveryStage(message.data[1])
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this.onSubscriptionRemoved(
@@ -263,13 +264,13 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   _accept (socketWrapper, message) {
-    const subscriptionName = message.data[1]
+    const subscriptionName = message.subscription
 
     this._listenerTimeoutRegistry.clearTimeout(subscriptionName)
 
     this._locallyProvidedRecords[subscriptionName] = {
       socketWrapper,
-      pattern: message.data[0],
+      pattern: message.name,
       closeListener: this._removeListener.bind(this, socketWrapper, message)
     }
     socketWrapper.once('close', this._locallyProvidedRecords[subscriptionName].closeListener)
@@ -343,7 +344,7 @@ module.exports = class ListenerRegistry {
   * @returns {void}
   */
   _removeListener (socketWrapper, message) {
-    const pattern = message.data[0]
+    const pattern = message.name
 
     this._removeListenerFromInProgress(this._localListenInProgress, pattern, socketWrapper)
     this._removeListenerIfActive(pattern, socketWrapper)
@@ -664,11 +665,12 @@ module.exports = class ListenerRegistry {
   */
   _sendHasProviderUpdateToSingleSubscriber (hasProvider, socketWrapper, subscriptionName) {
     if (socketWrapper && this._topic === C.TOPIC.RECORD) {
-      socketWrapper.sendMessage(
-        this._topic,
-        C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-        [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
-      )
+      socketWrapper.sendMessage({
+        topic: this._topic,
+        action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+        name: subscriptionName,
+        data: [ hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE ]
+      })
     }
   }
 
@@ -739,11 +741,12 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to find a provider for
   */
   _sendSubscriptionForPatternFound (provider, subscriptionName) {
-    provider.socketWrapper.sendMessage(
-      this._topic,
-      C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
-      [provider.pattern, subscriptionName]
-    )
+    provider.socketWrapper.sendMessage({
+      topic: this._topic,
+      action: C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+      name: provider.pattern,
+      subscription: subscriptionName
+    })
   }
 
   /**
@@ -755,11 +758,12 @@ module.exports = class ListenerRegistry {
   * @param  {String} subscriptionName the subscription to stop providing
   */
   _sendSubscriptionForPatternRemoved (provider, subscriptionName) {
-    provider.socketWrapper.sendMessage(
-      this._topic,
-      C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-      [provider.pattern, subscriptionName]
-    )
+    provider.socketWrapper.sendMessage({
+      topic: this._topic,
+      action: C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+      name: provider.pattern,
+      subscription: subscriptionName
+    })
   }
 
   /**
@@ -828,12 +832,7 @@ module.exports = class ListenerRegistry {
   * @returns {String}
   */
   _getPattern (socketWrapper, message) {
-    if (message.data.length > 2) {
-      this._onMsgDataError(socketWrapper, message.raw)
-      return null
-    }
-
-    const pattern = message.data[0]
+    const pattern = message.name
 
     if (typeof pattern !== 'string') {
       this._onMsgDataError(socketWrapper, pattern)
@@ -873,7 +872,7 @@ module.exports = class ListenerRegistry {
   */
   _onMsgDataError (socketWrapper, errorMsg, errorEvent) {
     errorEvent = errorEvent || C.EVENT.INVALID_MESSAGE_DATA // eslint-disable-line
-    socketWrapper.sendError(this._topic, errorEvent, errorMsg)
+    socketWrapper.sendError({ topic: this._topic }, errorEvent, errorMsg)
     this._options.logger.error(errorEvent, errorMsg, this._metaData)
   }
 

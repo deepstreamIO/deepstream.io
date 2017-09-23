@@ -12,8 +12,7 @@ module.exports = class EventHandler {
    *
    * @constructor
    */
-  constructor (options, subscriptionRegistry, listenerRegistry, metaData) {
-    this._metaData = metaData
+  constructor (options, subscriptionRegistry, listenerRegistry) {
     this._options = options
     this._subscriptionRegistry =
       subscriptionRegistry || new SubscriptionRegistry(options, C.TOPIC.EVENT)
@@ -45,8 +44,6 @@ module.exports = class EventHandler {
       message.action === C.ACTIONS.LISTEN_ACCEPT ||
       message.action === C.ACTIONS.LISTEN_REJECT) {
       this._listenerRegistry.handle(socket, message)
-    } else {
-      this._sendError(socket, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
     }
   }
 
@@ -61,9 +58,7 @@ module.exports = class EventHandler {
    * @returns {void}
    */
   _addSubscriber (socket, message) {
-    if (validateSubscriptionMessage(socket, message)) {
-      this._subscriptionRegistry.subscribe(message.data[0], socket)
-    }
+    this._subscriptionRegistry.subscribe(message.name, socket)
   }
 
   /**
@@ -77,9 +72,7 @@ module.exports = class EventHandler {
    * @returns {void}
    */
   _removeSubscriber (socket, message) {
-    if (validateSubscriptionMessage(socket, message)) {
-      this._subscriptionRegistry.unsubscribe(message.data[0], socket)
-    }
+    this._subscriptionRegistry.unsubscribe(message.name, socket)
   }
 
   /**
@@ -95,41 +88,7 @@ module.exports = class EventHandler {
    * @returns {void}
    */
   _triggerEvent (socket, message) {
-    if (typeof message.data[0] !== 'string') {
-      this._sendError(socket, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-      return
-    }
-
     this._logger.debug(C.EVENT.TRIGGER_EVENT, message.raw, this._metaData)
-
-    const eventMessage = { topic: C.TOPIC.EVENT, action: C.ACTIONS.EVENT, data: message.data }
-    this._subscriptionRegistry.sendToSubscribers(message.data[0], eventMessage, false, socket)
+    this._subscriptionRegistry.sendToSubscribers(message.name, message, false, socket)
   }
-
-  _sendError (socket, event, message) {
-    if (socket && socket.sendError) {
-      socket.sendError(C.TOPIC.EVENT, event, message)
-    }
-    this._logger.error(event, message, this._metaData)
-  }
-}
-
-/**
- * Makes sure that subscription message contains the name of the event. Sends an error to the client
- * if not
- *
- * @param {SocketWrapper} socket
- * @param {Object} message parsed and permissioned deepstream message
- *
- * @private
- * @returns {Boolean} is valid subscription message
- */
-function validateSubscriptionMessage (socket, message) {
-  if (message.data && message.data.length === 1 && typeof message.data[0] === 'string') {
-    return true
-  }
-
-  socket.sendError(C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
-
-  return false
 }

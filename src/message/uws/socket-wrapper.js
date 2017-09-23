@@ -124,10 +124,10 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendError (topic, type, msg, allowBuffering) {
+  sendError (message, event, errorMessage, allowBuffering) {
     if (this.isClosed === false) {
       this.sendNative(
-        messageBuilder.getErrorMsg(topic, type, msg),
+        messageBuilder.getErrorMessage(message, event, errorMessage),
         allowBuffering
       )
     }
@@ -135,20 +135,16 @@ class UwsSocketWrapper extends EventEmitter {
 
   /**
    * Sends a message based on the provided action and topic
-   *
-   * @param {String} topic one of C.TOPIC
-   * @param {String} action one of C.ACTIONS
-   * @param {Array} data Array of strings or JSON-serializable objects
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
    *                                 this message type
    *
    * @public
    * @returns {void}
    */
-  sendMessage (topic, action, data, allowBuffering) {
+  sendMessage (message, allowBuffering) {
     if (this.isClosed === false) {
       this.sendNative(
-        messageBuilder.getMsg(topic, action, data),
+        messageBuilder.getMessage(message),
         allowBuffering
       )
     }

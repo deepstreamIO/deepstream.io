@@ -45,29 +45,36 @@ module.exports = class MessageProcessor {
    * @returns {void}
    */
   process (socketWrapper, parsedMessages) {
-    let parsedMessage
+    let message
 
     const length = parsedMessages.length
     for (let i = 0; i < length; i++) {
-      parsedMessage = parsedMessages[i]
+      message = parsedMessages[i]
 
-      if (parsedMessage.topic === C.TOPIC.CONNECTION && parsedMessage.action === C.ACTIONS.PONG) {
+      if (message.topic === C.TOPIC.CONNECTION && message.action === C.ACTIONS.PONG) {
         continue
       }
 
-      if (parsedMessage === null ||
-        !parsedMessage.action ||
-        !parsedMessage.topic ||
-        !parsedMessage.data) {
-        this._options.logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
-        socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
+      if (message === null ||
+        !message.action ||
+        !message.topic ||
+        !message.data) {
+        this._options.logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, message)
+        socketWrapper.sendError({
+          topic: C.TOPIC.ERROR
+        }, C.EVENT.MESSAGE_PARSE_ERROR, message)
         continue
+      }
+
+      if (message.isAck) {
+        this._onPermissionResponse(socketWrapper, message, null, true)
+        return
       }
 
       this._options.permissionHandler.canPerformAction(
         socketWrapper.user,
-        parsedMessage,
-        this._onPermissionResponse.bind(this, socketWrapper, parsedMessage),
+        message,
+        this._onPermissionResponse.bind(this, socketWrapper, message),
         socketWrapper.authData
       )
     }
@@ -88,38 +95,16 @@ module.exports = class MessageProcessor {
   _onPermissionResponse (socketWrapper, message, error, result) {
     if (error !== null) {
       this._options.logger.warn(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-      socketWrapper.sendError(
-        message.topic,
-        C.EVENT.MESSAGE_PERMISSION_ERROR,
-        this._getPermissionErrorData(message)
-      )
+      socketWrapper.sendError(message, C.EVENT.MESSAGE_PERMISSION_ERROR)
       return
     }
 
     if (result !== true) {
-      socketWrapper.sendError(
-        message.topic,
-        C.EVENT.MESSAGE_DENIED,
-        this._getPermissionErrorData(message)
-      )
+      socketWrapper.sendError(message, C.EVENT.MESSAGE_DENIED)
       return
     }
 
     this.onAuthenticatedMessage(socketWrapper, message)
   }
 
-  /**
-   * Create data in the correct format expected in a MESSAGE_DENIED or MESSAGE_PERMISSION_ERROR
-   *
-   * @param   {Object} message  parsed message - might have been manipulated
-   *                              by the permissionHandler
-   * @returns {Object}
-   */
-  _getPermissionErrorData (message) { // eslint-disable-line
-    let data = [message.data[0], message.action]
-    if (message.data.length > 1) {
-      data = data.concat(message.data.slice(1))
-    }
-    return data
-  }
 }

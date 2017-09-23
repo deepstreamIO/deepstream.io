@@ -27,7 +27,9 @@ module.exports = class MessageDistributor {
   distribute (socketWrapper, message) {
     if (this._callbacks[message.topic] === undefined) {
       this._options.logger.warn(C.EVENT.UNKNOWN_TOPIC, message.topic)
-      socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
+      socketWrapper.sendError({
+        topic: C.TOPIC.ERROR
+      }, C.EVENT.UNKNOWN_TOPIC, message.topic) 
       return
     }
 

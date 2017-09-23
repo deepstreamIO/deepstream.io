@@ -195,10 +195,10 @@ module.exports = class RuleApplication {
     const msg = this._params.message
     let data
 
-    if (msg.topic === C.TOPIC.EVENT && msg.data[1]) {
-      data = messageParser.convertTyped(msg.data[1])
+    if (msg.topic === C.TOPIC.EVENT && msg.data[0]) {
+      data = messageParser.convertTyped(msg.data[0])
     } else if (msg.topic === C.TOPIC.RPC) {
-      data = messageParser.convertTyped(msg.data[2])
+      data = messageParser.convertTyped(msg.data[0])
     } else if (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE) {
       data = getRecordUpdateData(msg)
     } else if (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.PATCH) {

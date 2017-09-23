@@ -49,12 +49,72 @@ module.exports = class MessageParser {
       }
 
       const parts = rawMessages[i].split(C.MESSAGE_PART_SEPERATOR)
-      parsedMessages.push(parts.length < 2 || !actions.has(parts[1]) ? null : {
-        raw: rawMessages[i],
+      
+      if (parts.length < 2 || !actions.has(parts[1])) {
+        parsedMessages.push(null)
+        continue
+      }
+
+      let index = 2
+      const message = {
+        isAck: false,
+        isError: false,
         topic: parts[0],
         action: parts[1],
-        data: parts.splice(2)
-      })
+        name: null,
+        data: [],
+        raw: null,
+
+        // listening
+        correlationId: null,
+        
+        // subscription by listening
+        subscription: null,
+
+        // record
+        path: null
+      }
+
+      if (message.action === C.ACTIONS.ACK) {
+        message.isAck = true
+        message.action = parts[2]
+        index = 3
+      }
+      else if (message.action === C.ACTIONS.ERROR) {
+        message.isError = true
+        message.action = parts[2]
+        index = 3
+      }
+
+      if (message.topic === C.TOPIC.RECORD) {
+        message.name = parts[index++]
+      } else if (message.topic === C.TOPIC.EVENT) {
+        message.name = parts[index++]
+        if (
+          message.action === C.ACTIONS.LISTEN || 
+          message.action === C.ACTIONS.UNLISTEN ||
+          message.action === C.ACTIONS.LISTEN_ACCEPT ||
+          message.action === C.ACTIONS.LISTEN_REJECT
+        ) {
+          message.subscription = parts[index++]
+        }
+        message.data = parts.slice(index)
+      } else if (message.topic === C.TOPIC.RPC) {
+        message.name = parts[index++]
+        message.correlationId = parts[index++]
+        message.data = parts.slice(index)
+      } else if (message.topic === C.TOPIC.PRESENCE) {
+        message.name = parts[index]
+      } else if (message.topic === C.TOPIC.CONNECTION) {
+        message.data = parts.slice(2)
+      } else if (message.topic === C.TOPIC.AUTH) {
+        message.data = parts.slice(2)
+      } else {
+      }
+      
+
+      console.log('<', rawMessages[i])
+      parsedMessages.push(message)
     }
 
     return parsedMessages
