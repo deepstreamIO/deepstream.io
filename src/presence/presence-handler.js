@@ -11,20 +11,15 @@ function parseUserNames (data, socketWrapper) {
     !data ||
     data.length === 0 ||
     (data.length === 1 && (
-    data[0] === C.ACTIONS.QUERY ||
-    data[0] === C.ACTIONS.SUBSCRIBE ||
-    data[0] === C.TOPIC.PRESENCE)
+    data.name === C.ACTIONS.QUERY ||
+    data.name === C.ACTIONS.SUBSCRIBE ||
+    data.name === C.TOPIC.PRESENCE)
   )) {
     return [EVERYONE]
   }
   try {
-    return JSON.parse(data[1])
+    return JSON.parse(data[0])
   } catch (e) {
-    socketWrapper.sendError(
-      C.TOPIC.PRESENCE,
-      C.EVENT.INVALID_PRESENCE_USERS,
-      'users are required to be a json array of usernames'
-    )
     return null
   }
 }
@@ -71,6 +66,7 @@ module.exports = class PresenceHandler {
     const users = parseUserNames(message.data, socketWrapper)
     if (!users) {
       this._options.logger.error(C.EVENT.INVALID_PRESENCE_USERS, message.data[0], this._metaData)
+      socketWrapper.sendError(message, C.EVENT.INVALID_PRESENCE_USERS)
       return
     }
     if (message.action === C.ACTIONS.SUBSCRIBE) {
@@ -82,13 +78,9 @@ module.exports = class PresenceHandler {
         this._subscriptionRegistry.unsubscribe(users[i], socketWrapper)
       }
     } else if (message.action === C.ACTIONS.QUERY) {
-      this._handleQuery(users, message.data[0], socketWrapper)
+      this._handleQuery(users, message.correlationId, socketWrapper)
     } else {
       this._options.logger.warn(C.EVENT.UNKNOWN_ACTION, message.action, this._metaData)
-
-      if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-        socketWrapper.sendError(C.TOPIC.EVENT, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
-      }
     }
   }
 
@@ -144,14 +136,23 @@ module.exports = class PresenceHandler {
       if (index !== -1) {
         clients.splice(index, 1)
       }
-      socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, clients)
+      socketWrapper.sendMessage({
+        topic: C.TOPIC.PRESENCE,
+        action: C.ACTIONS.QUERY,
+        data: clients
+      })
     } else {
       const result = {}
       const clients = this._connectedClients.getAllMap()
       for (let i = 0; i < users.length; i++) {
         result[users[i]] = !!clients[users[i]]
       }
-      socketWrapper.sendMessage(C.TOPIC.PRESENCE, C.ACTIONS.QUERY, [correlationId, result])
+      socketWrapper.sendMessage({
+        topic: C.TOPIC.PRESENCE,
+        action: C.ACTIONS.QUERY,
+        correlationId: correlationId,
+        data: result
+      })
     }
   }
 

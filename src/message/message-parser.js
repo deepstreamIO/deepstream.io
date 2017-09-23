@@ -104,7 +104,9 @@ module.exports = class MessageParser {
         message.correlationId = parts[index++]
         message.data = parts.slice(index)
       } else if (message.topic === C.TOPIC.PRESENCE) {
-        message.name = parts[index]
+        message.name = message.action
+        message.correlationId = parts[index++]
+        message.data = parts.slice(index)
       } else if (message.topic === C.TOPIC.CONNECTION) {
         message.data = parts.slice(2)
       } else if (message.topic === C.TOPIC.AUTH) {
