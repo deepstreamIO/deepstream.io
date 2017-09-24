@@ -86,6 +86,8 @@ class SubscriptionRegistry {
     // )
 
     this._addSocket(subscription, socket)
+
+    return subscription
   }
 
   unsubscribe (name, socket) {
