@@ -62,7 +62,7 @@ module.exports = class Rpc {
       this._handleAck(message)
     } else if (message.action === C.ACTIONS.REJECTION) {
       this._reroute()
-    } else if (message.action === C.ACTIONS.RESPONSE || message.action.isError) {
+    } else if (message.action === C.ACTIONS.RESPONSE || message.isError) {
       this._send(this._requestor, message, this._provider)
       this.destroy()
     }

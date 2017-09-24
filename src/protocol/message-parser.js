@@ -188,7 +188,7 @@ module.exports = class MessageParser {
       message.parsedData = message.data
       return true
     }
-    
+
     console.log('unknown data encoding')
     return false
   }

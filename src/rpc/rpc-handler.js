@@ -54,9 +54,8 @@ module.exports = class RpcHandler {
         rpcData.rpc.handle(message)
       } else {
         socketWrapper.sendError(
-          { topic: C.TOPIC.RPC },
-          C.EVENT.INVALID_RPC_CORRELATION_ID,
-          `unexpected state for rpc ${message.name} with action ${message.action}`
+          message,
+          C.EVENT.INVALID_RPC_CORRELATION_ID
         )
       }
     } else {

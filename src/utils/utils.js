@@ -2,8 +2,6 @@
 /* eslint-disable valid-typeof */
 const url = require('url')
 
-const OBJECT = 'object'
-
 /**
  * Returns a unique identifier
  *

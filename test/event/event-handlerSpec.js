@@ -34,7 +34,7 @@ describe('the eventHandler routes events correctly', () => {
       name: 'someEvent'
     }
     testMocks.subscriptionRegistryMock
-      .expects("subscribe")
+      .expects('subscribe')
       .once()
       .withExactArgs(subscriptionMessage, socketWrapper)
 
@@ -48,36 +48,36 @@ describe('the eventHandler routes events correctly', () => {
       name: 'someEvent'
     }
     testMocks.subscriptionRegistryMock
-      .expects("unsubscribe")
+      .expects('unsubscribe')
       .once()
       .withExactArgs(unSubscriptionMessage, socketWrapper)
 
     eventHandler.handle(socketWrapper, unSubscriptionMessage)
   })
 
-  it('triggers event without data', () => {    
+  it('triggers event without data', () => {
     const eventMessage = {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
       name: 'someEvent'
     }
     testMocks.subscriptionRegistryMock
-      .expects("sendToSubscribers")
+      .expects('sendToSubscribers')
       .once()
       .withExactArgs('someEvent', eventMessage, false, socketWrapper)
 
     eventHandler.handle(socketWrapper, eventMessage)
   })
 
-  it('triggers event with data', () => { 
+  it('triggers event with data', () => {
     const eventMessage = {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
       name: 'someEvent',
-      data: JSON.stringify({ 'data': 'payload' })
-    }   
+      data: JSON.stringify({ data: 'payload' })
+    }
     testMocks.subscriptionRegistryMock
-      .expects("sendToSubscribers")
+      .expects('sendToSubscribers')
       .once()
       .withExactArgs('someEvent', eventMessage, false, socketWrapper)
 
@@ -91,7 +91,7 @@ describe('the eventHandler routes events correctly', () => {
       name: 'event/.*'
     }
     testMocks.listenerRegistryMock
-      .expects("handle")
+      .expects('handle')
       .once()
       .withExactArgs(socketWrapper, listenMessage)
 
@@ -105,7 +105,7 @@ describe('the eventHandler routes events correctly', () => {
       name: 'event/.*'
     }
     testMocks.listenerRegistryMock
-      .expects("handle")
+      .expects('handle')
       .once()
       .withExactArgs(socketWrapper, unlistenMessage)
 
@@ -120,7 +120,7 @@ describe('the eventHandler routes events correctly', () => {
       subscription: 'event/A'
     }
     testMocks.listenerRegistryMock
-      .expects("handle")
+      .expects('handle')
       .once()
       .withExactArgs(socketWrapper, listenAcceptMessage)
 
@@ -135,7 +135,7 @@ describe('the eventHandler routes events correctly', () => {
       subscription: 'event/A'
     }
     testMocks.listenerRegistryMock
-      .expects("handle")
+      .expects('handle')
       .once()
       .withExactArgs(socketWrapper, listenRejectMessage)
 

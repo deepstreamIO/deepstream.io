@@ -2,7 +2,6 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const sinon = require('sinon')
 const PresenceHandler = require('../../src/presence/presence-handler')
 
 const C = require('../../src/constants/constants')
@@ -18,7 +17,9 @@ describe('presence handler', () => {
 
   beforeEach(() => {
     testMocks = getTestMocks()
-    presenceHandler = new PresenceHandler(options, testMocks.subscriptionRegistry, testMocks.stateRegistry)
+    presenceHandler = new PresenceHandler(
+      options, testMocks.subscriptionRegistry, testMocks.stateRegistry
+    )
     userOne = testMocks.getSocketWrapper('Marge')
   })
 
@@ -36,11 +37,11 @@ describe('presence handler', () => {
     }
 
     testMocks.subscriptionRegistryMock
-      .expects("subscribe")
+      .expects('subscribe')
       .once()
-      .withExactArgs({ 
-        topic: C.TOPIC.PRESENCE, 
-        action: C.ACTIONS.SUBSCRIBE, 
+      .withExactArgs({
+        topic: C.TOPIC.PRESENCE,
+        action: C.ACTIONS.SUBSCRIBE,
         name: C.PRESENCE.EVERYONE
       }, userOne.socketWrapper)
 
@@ -55,11 +56,11 @@ describe('presence handler', () => {
     }
 
     testMocks.subscriptionRegistryMock
-      .expects("unsubscribe")
+      .expects('unsubscribe')
       .once()
-      .withExactArgs({ 
-        topic: C.TOPIC.PRESENCE, 
-        action: C.ACTIONS.UNSUBSCRIBE, 
+      .withExactArgs({
+        topic: C.TOPIC.PRESENCE,
+        action: C.ACTIONS.UNSUBSCRIBE,
         name: C.PRESENCE.EVERYONE
       }, userOne.socketWrapper)
 
@@ -80,12 +81,12 @@ describe('presence handler', () => {
       .returns(['Marge'])
 
     userOne.socketWrapperMock
-      .expects("sendMessage")
+      .expects('sendMessage')
       .once()
-      .withExactArgs({ 
-        topic: C.TOPIC.PRESENCE, 
+      .withExactArgs({
+        topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
-        parsedData: [] 
+        parsedData: []
       })
 
     presenceHandler.handle(userOne.socketWrapper, queryMessage)
@@ -154,12 +155,12 @@ describe('presence handler', () => {
       .returns(['Bart'])
 
     userOne.socketWrapperMock
-      .expects("sendMessage")
+      .expects('sendMessage')
       .once()
-      .withExactArgs({ 
-        topic: C.TOPIC.PRESENCE, 
+      .withExactArgs({
+        topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
-        parsedData: ['Bart'] 
+        parsedData: ['Bart']
       })
 
     presenceHandler.handle(userOne.socketWrapper, queryMessage)
@@ -179,12 +180,12 @@ describe('presence handler', () => {
       .returns(['Bart', 'Homer', 'Maggie'])
 
     userOne.socketWrapperMock
-      .expects("sendMessage")
+      .expects('sendMessage')
       .once()
-      .withExactArgs({ 
-        topic: C.TOPIC.PRESENCE, 
+      .withExactArgs({
+        topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
-        parsedData: ['Bart', 'Homer', 'Maggie'] 
+        parsedData: ['Bart', 'Homer', 'Maggie']
       })
 
     presenceHandler.handle(userOne.socketWrapper, queryMessage)
