@@ -296,10 +296,10 @@ module.exports = class JIFHandler {
 
     } else {
       this._logger.warn(
-        `Unhandled request error occurred: ${message.topic} ${event} ${JSON.stringify(message.parsedData)}`
+        `Unhandled request error occurred: ${message.topic} ${event} ${JSON.stringify(message)}`
       )
       result.error = `An error occurred: ${event}.`
-      result.errorParams = message.data
+      result.errorParams = message.name
     }
 
     return {

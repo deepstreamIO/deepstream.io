@@ -16,8 +16,6 @@ const needle = require('needle')
  */
 
 const constants = require('../../src/constants/constants')
-const MessageBuilder = require('../../src/message/message-builder')
-const MessageParser = require('../../src/message/message-parser')
 const LoggerMock = require('../mocks/logger-mock')
 
 Promise.promisifyAll(needle)
@@ -45,9 +43,6 @@ const mockDS = {
     } }
   },
   constants,
-  toTyped: MessageBuilder.typed,
-  convertTyped: MessageParser.convertTyped,
-  _messageBuilder: MessageBuilder,
   _messageDistributor: { distribute () {} }
 }
 

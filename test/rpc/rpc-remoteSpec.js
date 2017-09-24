@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 // /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 // 'use strict'
 
@@ -59,63 +61,6 @@
 
 // describe('rpc', () => {
 
-//   describe('executes local rpc calls', () => {
-//     it('sends the original rpc request to the provider', () => {
-//       const provider = makeRpc(requestMessage).provider
-//       expect(provider.socket.lastSendMessage).toBe(msg('P|REQ|addTwo|1234|O{"numA":5, "numB":7}+'))
-//     })
-
-//     it('times out if no ack is received in time', (done) => {
-//       const requestor = makeRpc(requestMessage).requestor
-
-//       setTimeout(() => {
-//         expect(requestor.socket.lastSendMessage).toBe(msg('P|E|ACK_TIMEOUT|addTwo|1234+'))
-//         done()
-//       }, options.rpcAckTimeout + 2)
-//     })
-
-//     it('forwards ack message', () => {
-//       const rpc = makeRpc(requestMessage)
-//       rpc.localRpc.handle(ackMessage)
-//       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
-//     })
-
-//     it('times out if response is not received in time', (done) => {
-//       const rpc = makeRpc(requestMessage)
-//       rpc.localRpc.handle(ackMessage)
-//       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
-//       setTimeout(() => {
-//         expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|E|RESPONSE_TIMEOUT|addTwo|1234+'))
-//         done()
-//       }, options.rpcTimeout + 2)
-//     })
-
-//     it('forwards response message', () => {
-//       const rpc = makeRpc(requestMessage)
-//       rpc.localRpc.handle(ackMessage)
-//       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
-//       rpc.localRpc.handle(responseMessage)
-//       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|RES|addTwo|1234|N12+'))
-//     })
-
-//     it('forwards error message', () => {
-//       const rpc = makeRpc(requestMessage)
-//       rpc.localRpc.handle(errorMessage)
-//       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|E|ErrorOccured|addTwo|1234+'))
-//     })
-
-//     it('sends error for multiple ack messages', () => {
-//       const rpc = makeRpc(requestMessage)
-
-//       rpc.localRpc.handle(ackMessage)
-//       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
-//       expect(rpc.provider.socket.lastSendMessage).toBe(msg('P|REQ|addTwo|1234|O{"numA":5, "numB":7}+'))
-
-//       rpc.localRpc.handle(ackMessage)
-//       expect(rpc.requestor.socket.lastSendMessage).toBe(msg('P|A|REQ|addTwo|1234+'))
-//       expect(rpc.provider.socket.lastSendMessage).toBe(msg('P|E|MULTIPLE_ACK|addTwo|1234+'))
-//     })
-//   })
 
 //   describe('reroutes remote rpc calls', () => {
 //     let rpc
@@ -178,3 +123,15 @@
 //     })
 //   })
 // })
+//
+//   it('receives a remote request for a local rpc', () => {
+  //   providerForB1.socket.lastSendMessage = null
+
+  //   options.message.simulateIncomingMessage('PRIVATE/P', {
+  //     topic: C.TOPIC.RPC,
+  //     action: C.ACTIONS.REQUEST,
+  //     data: ['rpcB', '1234', 'O{"numA":5, "numB":7}']
+  //   })
+
+  //   expect(providerForB1.socket.lastSendMessage).toEqual(msg('P|REQ|rpcB|1234|O{"numA":5, "numB":7}+'))
+  // })

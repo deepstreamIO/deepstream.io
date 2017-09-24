@@ -2,7 +2,6 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const sinon = require('sinon')
 const RpcHandler = require('../../src/rpc/rpc-handler')
 
 const C = require('../../src/constants/constants')
@@ -20,7 +19,7 @@ describe('the rpcHandler routes events correctly', () => {
 
   beforeEach(() => {
     testMocks = getTestMocks()
-    rpcHandler = new RpcHandler(options, testMocks.subscriptionRegistry, testMocks.listenerRegistry)
+    rpcHandler = new RpcHandler(options, testMocks.subscriptionRegistry)
     requestor = testMocks.getSocketWrapper('requestor')
     provider = testMocks.getSocketWrapper('provider')
   })
@@ -178,7 +177,28 @@ describe('the rpcHandler routes events correctly', () => {
       }).not.toThrow()
     })
 
-    xit('ignores ack message if it arrives after response', () => {
+    it('times out if no ack is received', (done) => {
+      requestor.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs(requestMessage, C.EVENT.ACK_TIMEOUT)
+
+      rpcHandler.handle(requestor.socketWrapper, requestMessage)
+      setTimeout(done, options.rpcAckTimeout * 2)
+    })
+
+    it('times out if response is not received in time', (done) => {
+      requestor.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs(requestMessage, C.EVENT.RESPONSE_TIMEOUT)
+
+      rpcHandler.handle(requestor.socketWrapper, requestMessage)
+      rpcHandler.handle(provider.socketWrapper, ackMessage)
+      setTimeout(done, options.rpcTimeout + 2)
+    })
+
+    xit('ignores ack message if it arrives after response', (done) => {
       provider.socketWrapperMock
         .expects('sendError')
         .never()
@@ -190,7 +210,7 @@ describe('the rpcHandler routes events correctly', () => {
         rpcHandler.handle(provider.socketWrapper, ackMessage)
         done()
       }, 30)
-    }) //('Ack for a non existant rpc should error?')
+    }) // ('Ack for a non existant rpc should error?')
 
     it('doesn\'t throw error on response after timeout', (done) => {
       provider.socketWrapperMock

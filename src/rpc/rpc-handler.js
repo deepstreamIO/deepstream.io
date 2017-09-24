@@ -90,7 +90,6 @@ module.exports = class RpcHandler {
   */
   getAlternativeProvider (rpcName, correlationId) {
     const rpcData = this._rpcs.get(correlationId)
-
     const subscribers = Array.from(this._subscriptionRegistry.getLocalSubscribers(rpcName))
     let index = utils.getRandomIntInRange(0, subscribers.length)
 

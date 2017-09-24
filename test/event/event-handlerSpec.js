@@ -2,7 +2,6 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const sinon = require('sinon')
 const EventHandler = require('../../src/event/event-handler')
 
 const C = require('../../src/constants/constants')
@@ -18,7 +17,9 @@ describe('the eventHandler routes events correctly', () => {
 
   beforeEach(() => {
     testMocks = getTestMocks()
-    eventHandler = new EventHandler(options, testMocks.subscriptionRegistry, testMocks.listenerRegistry)
+    eventHandler = new EventHandler(
+      options, testMocks.subscriptionRegistry, testMocks.listenerRegistry
+    )
     socketWrapper = testMocks.getSocketWrapper().socketWrapper
   })
 

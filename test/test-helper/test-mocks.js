@@ -8,7 +8,8 @@ module.exports = () => {
     unsubscribe: () => {},
     sendToSubscribers: () => {},
     setSubscriptionListener: () => {},
-    getLocalSubscribers: () => {}
+    getLocalSubscribers: () => {},
+    getAllRemoteServers: () => {}
   }
 
   const listenerRegistry = {
