@@ -62,6 +62,10 @@ module.exports = class RecordHandler {
         this._cache.ref(record[0])
       )
 
+      if (!subscription) {
+        return
+      }
+
       if (record[1] &&
           subscription.version &&
           isSameOrNewer(record[1], subscription.version)
