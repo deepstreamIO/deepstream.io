@@ -72,7 +72,6 @@ module.exports = class RecordHandler {
           record[0]
         ))
       } else if (subscription.message) {
-        // TODO Only send if no provider
         socket.sendNative(subscription.message)
       }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
