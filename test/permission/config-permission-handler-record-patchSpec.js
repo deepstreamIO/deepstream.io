@@ -28,7 +28,11 @@ describe('constructs data for patch message validation', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.PATCH,
-      data: ['user/wh', 123, 'lastname', 'SMiller']
+      name: 'user/wh',
+      version: 123,
+      path: 'lastname',
+      data: 'SMiller',
+      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
     }
 
     const onDone = function (error, result) {
@@ -53,35 +57,16 @@ describe('constructs data for patch message validation', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.PATCH,
-      data: ['user/wh', 123, 'lastname', 'SHempel']
+      name: 'user/wh',
+      version: 123,
+      path: 'lastname',
+      data: 'SHempel',
+      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
     }
 
     const onDone = function (error, result) {
       expect(error).toBe(null)
       expect(result).toBe(true)
-      next()
-    }
-
-    testPermission(permissions, message, null, null, onDone)
-  })
-
-  it('errors if the patch message has invalid data', (next) => {
-    const permissions = testHelper.getBasePermissions()
-    options.cache.nextGetWillBeSynchronous = false
-
-    permissions.record['user/wh'] = {
-      write: 'data.firstname === "Wolfram" && data.lastname === "Hempel"'
-    }
-
-    const message = {
-      topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.PATCH,
-      data: ['user/wh', 123]
-    }
-
-    const onDone = function (error, result) {
-      expect(lastError()).toContain('Invalid message data')
-      expect(result).toBe(false)
       next()
     }
 
@@ -99,7 +84,11 @@ describe('constructs data for patch message validation', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.PATCH,
-      data: ['user/wh', 123, 'lastname', 'QHempel']
+      name: 'user/wh',
+      version: 123,
+      path: 'lastname',
+      data: 'QHempel',
+      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
     }
 
     const onDone = function (error, result) {
@@ -120,7 +109,11 @@ describe('constructs data for patch message validation', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.PATCH,
-      data: ['somerecord', 1, 'lastname', 'SHempel']
+      name: 'somerecord',
+      version: 1,
+      path: 'lastname',
+      data: 'SHempel',
+      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
     }
 
     const onDone = function (error, result) {

@@ -30,14 +30,19 @@ module.exports = () => {
   const listenerRegistryMock = sinon.mock(listenerRegistry)
   const stateRegistryMock = sinon.mock(stateRegistry)
 
-  function getSocketWrapper (user) {
+  function getSocketWrapper (user, authData) {
+    const socketWrapperEmitter = new EventEmitter()
     const socketWrapper = {
       user,
+      authData: authData || {},
       sendMessage: () => {},
       sendError: () => {},
       sendAckMessage: () => {},
       uuid: Math.random()
     }
+    socketWrapper.on = socketWrapperEmitter.on
+    socketWrapper.emit = socketWrapperEmitter.emit
+
     return {
       socketWrapper,
       socketWrapperMock: sinon.mock(socketWrapper)

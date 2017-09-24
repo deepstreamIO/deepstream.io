@@ -1,5 +1,5 @@
 /* import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* global jasmine, xit, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const RpcHandler = require('../../src/rpc/rpc-handler')

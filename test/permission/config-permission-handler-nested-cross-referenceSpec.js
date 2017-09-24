@@ -29,7 +29,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['test-record']
+      name: 'test-record'
     }
 
     const onDone = function (error, result) {
@@ -59,7 +59,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['test-record']
+      name: 'test-record'
     }
 
     const onDone = function (error, result) {
@@ -85,7 +85,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['test-record']
+      name: 'test-record'
     }
 
     const onDone = function (error, result) {
@@ -113,7 +113,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['test-record']
+      name: 'test-record'
     }
 
     const onDone = function (error, result) {
@@ -141,7 +141,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['test-record']
+      name: 'test-record'
     }
 
     const onDone = function (error, result) {
@@ -170,7 +170,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['test-record']
+      name: 'test-record'
     }
 
     const onDone = function (error, result) {

@@ -2,6 +2,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeAll, afterEach */
 'use strict'
 
+const C = require('../../src/constants/constants')
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../mocks/uws-mock')
 const HttpMock = require('../mocks/http-mock')
@@ -67,15 +68,19 @@ describe('permissionHandler passes additional user meta data', () => {
 
   it('sends an authentication message', () => {
     spyOn(permissionHandler, 'isValidUser').and.callThrough()
+
     uwsMock._messageHandler(_msg('A|REQ|{"role": "admin"}+'), socketWrapperMock)
+
     expect(permissionHandler.isValidUser).toHaveBeenCalled()
     expect(permissionHandler.isValidUser.calls.mostRecent().args[1]).toEqual({ role: 'admin' })
-    expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|A|O{"firstname":"Wolfram"}+'))
+    expect(socketWrapperMock.lastSendMessage).toEqual({ topic: C.TOPIC.AUTH, isAck: true, data: ['O{"firstname":"Wolfram"}'] })
   })
 
   it('sends a record read message', () => {
     spyOn(connectionEndpoint, 'onMessages')
+
     uwsMock._messageHandler(_msg('R|CR|someRecord+'), socketWrapperMock)
+
     expect(connectionEndpoint.onMessages).toHaveBeenCalled()
     expect(connectionEndpoint.onMessages.calls.mostRecent().args[0].authData).toEqual({ role: 'admin' })
   })

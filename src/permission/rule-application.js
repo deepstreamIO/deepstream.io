@@ -200,15 +200,20 @@ module.exports = class RuleApplication {
       (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE)
     ) {
       result = this._params.socketWrapper.parseData(msg)
+      if (result instanceof Error) {
+        this._onRuleError(`error when converting message data ${result.toString()}`)
+      } else {
+        return msg.parsedData
+      }
     } else if (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.PATCH) {
       result = this._getRecordPatchData(msg)
+      if (result instanceof Error) {
+        this._onRuleError(`error when converting message data ${result.toString()}`)
+      } else {
+        return result
+      }
     }
 
-    if (result === false) {
-      this._onRuleError(`error when converting message data ${msg.parsedData.toString()}`)
-    } else {
-      return msg.parsedData
-    }
   }
 
   /**
@@ -222,11 +227,11 @@ module.exports = class RuleApplication {
    */
   _getRecordPatchData (msg) {
     const currentData = this._recordData[this._params.name]
-    const newData = this._params.socketWrapper.parseData(msg)
+    const parseResult = this._params.socketWrapper.parseData(msg)
     let data
 
-    if (newData instanceof Error) {
-      return newData
+    if (parseResult instanceof Error) {
+      return parseResult
     }
 
     if (currentData === null) {

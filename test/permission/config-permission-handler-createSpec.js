@@ -19,7 +19,7 @@ describe('allows to create a record without providing data, but denies updating 
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.CREATEORREAD,
-      data: ['some/tests']
+      name: 'some/tests'
     }
 
     expect(testPermission(permissions, message)).toBe(true)
@@ -30,7 +30,9 @@ describe('allows to create a record without providing data, but denies updating 
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.UPDATE,
-      data: ['some/tests', 2, '{"other":"data"}']
+      name: 'some/tests',
+      version: 2,
+      data: '{"other":"data"}'
     }
 
     const callback = function (error, result) {
@@ -45,7 +47,10 @@ describe('allows to create a record without providing data, but denies updating 
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.PATCH,
-      data: ['some/tests', 2, 'apath', 'SaValue']
+      name: 'some/tests',
+      version: 2,
+      path: 'apath',
+      data: 'SaValue'
     }
 
     const callback = function (error, result) {

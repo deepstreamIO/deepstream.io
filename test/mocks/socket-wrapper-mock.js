@@ -3,7 +3,7 @@
 const C = require('../../src/constants/constants')
 const utils = require('util')
 const SocketMock = require('./socket-mock')
-
+const messageBuilder = require('../../src/protocol/message-builder')
 const EventEmitter = require('events').EventEmitter
 
 /**

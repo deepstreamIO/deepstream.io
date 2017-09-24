@@ -154,7 +154,8 @@ describe('permission handler loading', () => {
       const message = {
         topic: C.TOPIC.EVENT,
         action: C.ACTIONS.EVENT,
-        data: ['private/event', 'somedata']
+        name: 'private/event',
+        data: 'somedata'
       }
 
       const callback = function (error, result) {
@@ -183,7 +184,8 @@ describe('permission handler loading', () => {
       const message = {
         topic: C.TOPIC.EVENT,
         action: C.ACTIONS.EVENT,
-        data: ['private/event', 'somedata']
+        name: 'private/event',
+        data: 'somedata'
       }
 
       const callback = function (error, result) {

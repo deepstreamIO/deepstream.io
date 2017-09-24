@@ -30,7 +30,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['purchase/doesExist']
+      name: 'purchase/doesExist'
     }
 
     const onDone = function (error, result) {
@@ -57,7 +57,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['purchase/itemA']
+      name: 'purchase/itemA'
     }
 
     const onDone = function (error, result) {
@@ -80,7 +80,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['purchase/itemA']
+      name: 'purchase/itemA'
     }
 
     const onDone = function (error, result) {
@@ -103,7 +103,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['purchase/itemA']
+      name: 'purchase/itemA'
     }
 
     const onDone = function (error, result) {
@@ -128,7 +128,7 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
-      data: ['userA']
+      name: 'userA'
     }
 
     const onDone = function (error, result) {
@@ -155,7 +155,9 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
-      data: ['some-event', 'O{"owner":"userX"}']
+      name: 'some-event',
+      data: 'O{"owner":"userX"}',
+      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
     }
 
     const callback = function (error, result) {
@@ -179,7 +181,9 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
-      data: ['some-event', 'O{"owner":"userX"}']
+      name: 'some-event',
+      data: 'O{"owner":"userX"}',
+      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
     }
 
     const callback = function (error, result) {
@@ -202,7 +206,9 @@ describe('permission handler loads data for cross referencing', () => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
-      data: ['some-event', 'O{"price":15}']
+      name: 'some-event',
+      data: 'O{"price":15}',
+      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
     }
 
     const callback = function (error, result) {

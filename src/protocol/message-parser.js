@@ -173,14 +173,14 @@ module.exports = class MessageParser {
     if (message.dataEncoding === C.ENCODING_TYPES.JSON) {
       const res = utils.parseJSON(message.data)
       if (res.error) {
-        return false
+        return res.error
       }
       message.parsedData = res.value
       return true
     } else if (message.dataEncoding === C.ENCODING_TYPES.DEEPSTREAM) {
       const parsedData = MessageParser.convertTyped(message.data)
       if (parsedData instanceof Error) {
-        return false
+        return parsedData
       }
       message.parsedData = parsedData
       return true
@@ -189,8 +189,7 @@ module.exports = class MessageParser {
       return true
     }
 
-    console.log('unknown data encoding')
-    return false
+    return new Error('unknown data encoding')
   }
 
   /**
