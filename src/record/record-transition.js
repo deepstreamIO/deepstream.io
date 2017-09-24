@@ -185,8 +185,21 @@ module.exports = class RecordTransition {
  *                     successful
  */
   _applyConfigAndData (socketWrapper, message, step) {
-    this._applyConfig(message, step)
-    return socketWrapper.parseData(message)
+    const result = socketWrapper.parseData(message)
+    if (result) {
+      if (message.isWriteAck) {
+        if (this._pendingUpdates[step.sender.uuid] === undefined) {
+          this._pendingUpdates[step.sender.uuid] = {
+            socketWrapper: step.sender,
+            versions: [step.message.version]
+          }
+        } else {
+          const update = this._pendingUpdates[step.sender.uuid]
+          update.versions.push(step.message.version)
+        }
+      }
+    }
+    return result
   }
 
 /**
@@ -214,30 +227,6 @@ module.exports = class RecordTransition {
     this._lastVersion = null
     this._cacheResponses = 0
     this._storageResponses = 0
-  }
-
-/**
- * Tries to apply config given from a socketWrapper on an
- * incoming message
- *
- * @param {Object} step the current step of the transition
- * @param {String} message
- *
- * @private
- * @returns {void}
- */
-  _applyConfig (message, step) {
-    if (message.isWriteAck) {
-      if (this._pendingUpdates[step.sender.uuid] === undefined) {
-        this._pendingUpdates[step.sender.uuid] = {
-          socketWrapper: step.sender,
-          versions: [step.message.version]
-        }
-      } else {
-        const update = this._pendingUpdates[step.sender.uuid]
-        update.versions.push(step.message.version)
-      }
-    }
   }
 
 /**

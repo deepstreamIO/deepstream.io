@@ -192,11 +192,11 @@ module.exports = class RuleApplication {
     }
 
     const msg = this._params.message
-    let result
+    let result = false
 
     if (
       (msg.topic === C.TOPIC.RPC) ||
-      (msg.topic === C.TOPIC.EVENT && msg.data[0]) ||
+      (msg.topic === C.TOPIC.EVENT && msg.data) ||
       (msg.topic === C.TOPIC.RECORD && msg.action === C.ACTIONS.UPDATE)
     ) {
       result = this._params.socketWrapper.parseData(msg)
@@ -230,12 +230,12 @@ module.exports = class RuleApplication {
     }
 
     if (currentData === null) {
-      return new Error(`Tried to apply patch to non-existant record ${msg.data[0]}`)
+      return new Error(`Tried to apply patch to non-existant record ${msg.name}`)
     }
 
     if (typeof currentData !== UNDEFINED && currentData !== LOADING) {
       data = JSON.parse(JSON.stringify(currentData._d))
-      jsonPath.setValue(data, msg.data[2], newData)
+      jsonPath.setValue(data, msg.path, msg.parsedData)
       return data
     }
     this._loadRecord(this._params.name)

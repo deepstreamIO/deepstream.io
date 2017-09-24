@@ -52,12 +52,21 @@ exports.getMessage = function (message, isAck) {
     sendData.push(JSON.stringify(message.data[0]))
     sendData.push(exports.typed(message.data[1]))
   } else if (message.data) {
-    for (let i = 0; i < message.data.length; i++) {
-      if (typeof message.data[i] === 'object') {
-        sendData.push(JSON.stringify(message.data[i]))
-      } else {
-        sendData.push(message.data[i])
+    sendData.push(message.data)
+  } else if (message.parsedData) {
+    if (
+      message.action === C.ACTIONS.READ ||
+      message.action === C.ACTIONS.UPDATE
+    ) {
+      sendData.push(JSON.stringify(message.parsedData))
+    } else if (message.topic === C.TOPIC.PRESENCE) {
+      if (message.action === C.ACTIONS.QUERY) {
+        if (message.parsedData.length !== 0) {
+          sendData.push(message.parsedData.join(SEP))
+        }
       }
+    } else {
+      sendData.push(exports.typed(message.parsedData))
     }
   }
 
@@ -102,13 +111,7 @@ exports.getErrorMessage = function (message, event, errorMessage) {
       sendData.push(message.correlationId)
     }
     if (message.data) {
-      for (let i = 0; i < message.data.length; i++) {
-        if (typeof message.data[i] === 'object') {
-          sendData.push(JSON.stringify(message.data[i]))
-        } else {
-          sendData.push(message.data[i])
-        }
-      }
+      sendData.push(message.data)
     }
   } else {
     sendData.push(errorMessage)

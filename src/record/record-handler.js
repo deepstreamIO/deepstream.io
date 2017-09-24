@@ -311,7 +311,8 @@ module.exports = class RecordHandler {
  * @returns {void}
  */
   _forceWrite (recordName, message, socketWrapper) {
-    const record = { _v: 0, _d: JSON.parse(message.data[0]) }
+    socketWrapper.parseData(message)
+    const record = { _v: 0, _d: message.parsedData }
     const writeAck = message.requiresWriteAck
     let cacheResponse = false
     let storageResponse = false
@@ -621,8 +622,7 @@ module.exports = class RecordHandler {
     const message = {
       topic: C.TOPIC.RECORD,
       action,
-      name: recordName,
-      data: []
+      name: recordName
     }
 
     this._options.permissionHandler.canPerformAction(
@@ -666,6 +666,6 @@ function sendRecord (recordName, record, socketWrapper) {
     action: C.ACTIONS.READ,
     name: recordName,
     version: record._v,
-    data: [record._d]
+    parsedData: record._d
   })
 }

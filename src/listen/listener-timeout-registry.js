@@ -36,7 +36,7 @@ module.exports = class ListenerTimeoutRegistry {
     * @returns {void}
     */
   handle (socketWrapper, message) {
-    const subscriptionName = message.data[1]
+    const subscriptionName = message.subscription
     const index = this._getIndex(socketWrapper, message)
     const provider = this._timedoutProviders[subscriptionName][index]
     if (message.action === C.ACTIONS.LISTEN_ACCEPT) {
@@ -136,7 +136,7 @@ module.exports = class ListenerTimeoutRegistry {
     */
   isALateResponder (socketWrapper, message) {
     const index = this._getIndex(socketWrapper, message)
-    return this._timedoutProviders[message.data[1]] && index !== -1
+    return this._timedoutProviders[message.subscription] && index !== -1
   }
 
   /**
@@ -171,8 +171,8 @@ module.exports = class ListenerTimeoutRegistry {
     * @private
     */
   _getIndex (socketWrapper, message) {
-    const pattern = message.data[0]
-    const subscriptionName = message.data[1]
+    const pattern = message.name
+    const subscriptionName = message.subscription
     const timedoutProviders = this._timedoutProviders[subscriptionName]
 
     if (timedoutProviders) {

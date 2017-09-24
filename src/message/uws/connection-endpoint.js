@@ -419,7 +419,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     if (!msg ||
         msg.topic !== C.TOPIC.AUTH ||
         msg.action !== C.ACTIONS.REQUEST ||
-        msg.data.length !== 1
+        !msg.data
       ) {
       errorMsg = this._logInvalidAuthData === true ? authMsg : ''
       this._sendInvalidAuthMsg(socketWrapper, errorMsg)
@@ -430,7 +430,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
      * Ensure the authentication data is valid JSON
      */
     try {
-      authData = this._getValidAuthData(msg.data[0])
+      authData = this._getValidAuthData(msg.data)
     } catch (e) {
       errorMsg = 'Error parsing auth message'
 

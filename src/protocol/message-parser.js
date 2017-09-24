@@ -65,6 +65,7 @@ module.exports = class MessageParser {
         action: parts[1],
         name: null,
         data: [],
+        dataEncoding: C.ENCODING_TYPES.DEEPSTREAM,
         raw: null,
 
         // rpc / presence query
@@ -105,7 +106,13 @@ module.exports = class MessageParser {
           ) {
             message.version = parts[index++] * 1
           }
-
+          if (
+            (message.action === C.ACTIONS.CREATEANDUPDATE &&
+            (parts.length - index === 2)) ||
+            message.action === C.ACTIONS.UPDATE
+          ) {
+            message.dataEncoding = C.ENCODING_TYPES.JSON
+          }
           if (
             message.action === C.ACTIONS.PATCH ||
             (
@@ -117,9 +124,9 @@ module.exports = class MessageParser {
           }
           if (parts.length - index === 2) {
             message.isWriteAck = parts[parts.length - 1] === writeConfig
-            message.data = [parts[parts.length - 2]]
+            message.data = parts[parts.length - 2]
           } else {
-            message.data = parts.slice(index)
+            message.data = parts[index++]
           }
         }
       } else if (message.topic === C.TOPIC.EVENT) {
@@ -132,19 +139,19 @@ module.exports = class MessageParser {
         ) {
           message.subscription = parts[index++]
         }
-        message.data = parts.slice(index)
+        message.data = parts[index++]
       } else if (message.topic === C.TOPIC.RPC) {
         message.name = parts[index++]
         message.correlationId = parts[index++]
-        message.data = parts.slice(index)
+        message.data = parts[index++]
       } else if (message.topic === C.TOPIC.PRESENCE) {
         message.name = message.action
-        message.data = parts.slice(index)
         message.correlationId = parts[index++]
+        message.data = parts[index++]
       } else if (message.topic === C.TOPIC.CONNECTION) {
-        message.data = parts.slice(index)
+        message.data = parts[index++]
       } else if (message.topic === C.TOPIC.AUTH) {
-        message.data = parts.slice(index)
+        message.data = parts[index++]
       }
 
       parsedMessages.push(message)
@@ -159,21 +166,31 @@ module.exports = class MessageParser {
     // }
 
   static parseData (message) {
-    if (message.action === C.ACTIONS.UPDATE) {
-      const res = utils.parseJSON(message.data[0])
+    if (message.parsedData || !message.data) {
+      return true
+    }
+
+    if (message.dataEncoding === C.ENCODING_TYPES.JSON) {
+      const res = utils.parseJSON(message.data)
       if (res.error) {
         return false
       }
       message.parsedData = res.value
       return true
+    } else if (message.dataEncoding === C.ENCODING_TYPES.DEEPSTREAM) {
+      const parsedData = MessageParser.convertTyped(message.data)
+      if (parsedData instanceof Error) {
+        return false
+      }
+      message.parsedData = parsedData
+      return true
+    } else if (typeof message.dataEncoding === 'undefined') {
+      message.parsedData = message.data
+      return true
     }
-    const parsedData = MessageParser.convertTyped(message.data[0])
-    if (parsedData instanceof Error) {
-      return false
-    }
-    message.parsedData = parsedData
-    return true
-
+    
+    console.log('unknown data encoding')
+    return false
   }
 
   /**

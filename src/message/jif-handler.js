@@ -5,15 +5,12 @@ const Ajv = require('ajv')
 const jifSchema = require('./jif-schema')
 const utils = require('../utils/utils')
 
-const messageParser = require('../protocol/message-parser')
-const messageBuilder = require('../protocol/message-builder')
-
 const ajv = new Ajv()
 
 const validateJIF = ajv.compile(jifSchema)
 
 // jif -> message lookup table
-function getJifToMsg (C, toTyped) {
+function getJifToMsg (C) {
   const JIF_TO_MSG = {}
 
   JIF_TO_MSG.event = {}
@@ -23,8 +20,7 @@ function getJifToMsg (C, toTyped) {
       topic: C.TOPIC.EVENT,
       action: C.ACTIONS.EVENT,
       name: msg.eventName,
-      parsedData: [msg.data],
-      data: [toTyped(msg.data)]
+      parsedData: msg.data
     }
   })
 
@@ -37,8 +33,7 @@ function getJifToMsg (C, toTyped) {
       action: C.ACTIONS.REQUEST,
       name: msg.rpcName,
       correlationId: utils.getUid(),
-      parsedData: [msg.data],
-      data: [toTyped(msg.data)]
+      parsedData: msg.data
     }
   })
 
@@ -65,7 +60,6 @@ function getJifToMsg (C, toTyped) {
       version: msg.version || -1,
       path: msg.path,
       parsedData: msg.data,
-      data: [toTyped(msg.data)],
       isWriteAck: true
     }
   })
@@ -79,7 +73,6 @@ function getJifToMsg (C, toTyped) {
       version: msg.version || -1,
       path: null,
       parsedData: msg.data,
-      data: [JSON.stringify(msg.data)],
       isWriteAck: true
     }
   })
@@ -109,7 +102,7 @@ function getJifToMsg (C, toTyped) {
       topic: C.TOPIC.PRESENCE,
       action: C.ACTIONS.QUERY,
       name: C.ACTIONS.QUERY, // required by permissions
-      data: [C.ACTIONS.QUERY]
+      parsedData: C.ACTIONS.QUERY
     }
   })
 
@@ -119,7 +112,7 @@ function getJifToMsg (C, toTyped) {
 // message type enumeration
 const TYPE = { ACK: 'A', NORMAL: 'N' }
 
-function getMsgToJif (C, fromTyped) {
+function getMsgToJif (C) {
   // message -> jif lookup table
   const MSG_TO_JIF = {}
   MSG_TO_JIF[C.TOPIC.RPC] = {}
@@ -127,7 +120,7 @@ function getMsgToJif (C, fromTyped) {
   MSG_TO_JIF[C.TOPIC.RPC][C.ACTIONS.RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      data: fromTyped(message.data[0]),
+      data: message.parsedData,
       success: true
     }
   })
@@ -141,7 +134,7 @@ function getMsgToJif (C, fromTyped) {
     done: true,
     message: {
       version: message.version,
-      data: message.data[0],
+      data: message.parsedData,
       success: true
     }
   })
@@ -176,7 +169,7 @@ function getMsgToJif (C, fromTyped) {
   MSG_TO_JIF[C.TOPIC.PRESENCE][C.ACTIONS.QUERY][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      users: message.data,
+      users: message.parsedData,
       success: true
     }
   })
@@ -188,8 +181,8 @@ module.exports = class JIFHandler {
 
   constructor (options) {
     this._constants = options.constants
-    this.JIF_TO_MSG = getJifToMsg(this._constants, messageBuilder.typed)
-    this.MSG_TO_JIF = getMsgToJif(this._constants, messageParser.convertTyped)
+    this.JIF_TO_MSG = getJifToMsg(this._constants)
+    this.MSG_TO_JIF = getMsgToJif(this._constants)
 
     this.topicToKey = utils.reverseMap(this._constants.TOPIC)
     this.actionToKey = utils.reverseMap(this._constants.ACTIONS)

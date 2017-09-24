@@ -9,16 +9,14 @@ function parseUserNames (data) {
   // Returns all users for backwards compatability
   if (
     !data ||
-    data.length === 0 ||
-    (data.length === 1 && (
-    data[0] === C.ACTIONS.QUERY ||
-    data[0] === C.ACTIONS.SUBSCRIBE ||
-    data[0] === C.TOPIC.PRESENCE)
-  )) {
+    data === C.ACTIONS.QUERY ||
+    data === C.ACTIONS.SUBSCRIBE ||
+    data === C.TOPIC.PRESENCE
+  ) {
     return [EVERYONE]
   }
   try {
-    return JSON.parse(data[1])
+    return JSON.parse(data)
   } catch (e) {
     return null
   }
@@ -65,7 +63,7 @@ module.exports = class PresenceHandler {
   handle (socketWrapper, message) {
     const users = parseUserNames(message.data)
     if (!users) {
-      this._options.logger.error(C.EVENT.INVALID_PRESENCE_USERS, message.data[0], this._metaData)
+      this._options.logger.error(C.EVENT.INVALID_PRESENCE_USERS, message.data, this._metaData)
       socketWrapper.sendError(message, C.EVENT.INVALID_PRESENCE_USERS)
       return
     }
@@ -147,7 +145,7 @@ module.exports = class PresenceHandler {
       socketWrapper.sendMessage({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
-        data: clients
+        parsedData: clients
       })
     } else {
       const result = {}
@@ -159,7 +157,7 @@ module.exports = class PresenceHandler {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
         correlationId,
-        data: result
+        parsedData: result
       })
     }
   }
@@ -174,7 +172,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _onClientAdded (username) {
-    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: [username] }
+    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: username }
 
     this._subscriptionRegistry.sendToSubscribers(
       EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
@@ -194,7 +192,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _onClientRemoved (username) {
-    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: [username] }
+    const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: username }
     this._subscriptionRegistry.sendToSubscribers(
       EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
     )
