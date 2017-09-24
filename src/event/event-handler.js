@@ -44,6 +44,8 @@ module.exports = class EventHandler {
       message.action === C.ACTIONS.LISTEN_ACCEPT ||
       message.action === C.ACTIONS.LISTEN_REJECT) {
       this._listenerRegistry.handle(socket, message)
+    } else {
+      console.log('unknown action', message)
     }
   }
 

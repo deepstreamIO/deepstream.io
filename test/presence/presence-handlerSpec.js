@@ -1,99 +1,236 @@
+/* import/no-extraneous-dependencies */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const SocketWrapper = require('../mocks/socket-wrapper-mock')
-const C = require('../../src/constants/constants')
-const SocketMock = require('../mocks/socket-mock')
-const testHelper = require('../test-helper/test-helper')
-
-const _msg = testHelper.msg
+const sinon = require('sinon')
 const PresenceHandler = require('../../src/presence/presence-handler')
 
-const queryMessage = {
-  topic: C.TOPIC.PRESENCE,
-  action: C.ACTIONS.QUERY,
-  data: []
-}
+const C = require('../../src/constants/constants')
+const testHelper = require('../test-helper/test-helper')
+const getTestMocks = require('../test-helper/test-mocks')
 
-const presenceHandler = new PresenceHandler(testHelper.getDeepstreamOptions())
-
-const userOne = new SocketWrapper(new SocketMock(), {}); userOne.user = 'Homer'
-const userTwo = new SocketWrapper(new SocketMock(), {}); userTwo.user = 'Marge'
-const userTwoAgain = new SocketWrapper(new SocketMock(), {}); userTwoAgain.user = 'Marge'
-const userThree = new SocketWrapper(new SocketMock(), {}); userThree.user = 'Bart'
+const options = testHelper.getDeepstreamOptions()
 
 describe('presence handler', () => {
+  let testMocks
+  let presenceHandler
+  let userOne
+
   beforeEach(() => {
-    userOne.socket.lastSendMessage = null
-    userTwo.socket.lastSendMessage = null
-    userThree.socket.lastSendMessage = null
+    testMocks = getTestMocks()
+    presenceHandler = new PresenceHandler(options, testMocks.subscriptionRegistry, testMocks.stateRegistry)
+    userOne = testMocks.getSocketWrapper('Marge')
   })
 
-  it('adds client and subscribes to client logins and logouts', () => {
-    presenceHandler.handleJoin(userOne)
+  afterEach(() => {
+    testMocks.subscriptionRegistryMock.verify()
+    testMocks.listenerRegistryMock.verify()
+    userOne.socketWrapperMock.verify()
+  })
 
-    const subJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.SUBSCRIBE, data: [] }
-    presenceHandler.handle(userOne, subJoinMsg)
-    expect(userOne.socket.lastSendMessage).toBe(_msg('U|A|S|U+'))
+  it('subscribes to client logins and logouts', () => {
+    const subscriptionMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.ACTIONS.SUBSCRIBE,
+      name: C.ACTIONS.SUBSCRIBE
+    }
+
+    testMocks.subscriptionRegistryMock
+      .expects("subscribe")
+      .once()
+      .withExactArgs({ 
+        topic: C.TOPIC.PRESENCE, 
+        action: C.ACTIONS.SUBSCRIBE, 
+        name: C.PRESENCE.EVERYONE
+      }, userOne.socketWrapper)
+
+    presenceHandler.handle(userOne.socketWrapper, subscriptionMessage)
+  })
+
+  it('unsubscribes to client logins and logouts', () => {
+    const unsubscriptionMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.ACTIONS.UNSUBSCRIBE,
+      name: C.ACTIONS.UNSUBSCRIBE
+    }
+
+    testMocks.subscriptionRegistryMock
+      .expects("unsubscribe")
+      .once()
+      .withExactArgs({ 
+        topic: C.TOPIC.PRESENCE, 
+        action: C.ACTIONS.UNSUBSCRIBE, 
+        name: C.PRESENCE.EVERYONE
+      }, userOne.socketWrapper)
+
+    presenceHandler.handle(userOne.socketWrapper, unsubscriptionMessage)
   })
 
   it('does not return own name when queried and only user', () => {
-    presenceHandler.handle(userOne, queryMessage)
-    expect(userOne.socket.lastSendMessage).toBe(_msg('U|Q+'))
+    const queryMessage = {
+      topic: C.TOPIC.PRESENCE,
+      action: C.ACTIONS.QUERY,
+      name: C.ACTIONS.QUERY
+    }
+
+    testMocks.stateRegistryMock
+      .expects('getAll')
+      .once()
+      .withExactArgs()
+      .returns(['Marge'])
+
+    userOne.socketWrapperMock
+      .expects("sendMessage")
+      .once()
+      .withExactArgs({ 
+        topic: C.TOPIC.PRESENCE, 
+        action: C.ACTIONS.QUERY,
+        parsedData: [] 
+      })
+
+    presenceHandler.handle(userOne.socketWrapper, queryMessage)
   })
 
-  it('adds a client and notifies original client', () => {
-    presenceHandler.handleJoin(userTwo)
-    expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNJ|Marge+'))
+  it('client joining gets added to state registry', () => {
+    testMocks.stateRegistryMock
+      .expects('add')
+      .once()
+      .withExactArgs(userOne.socketWrapper.user)
+
+    presenceHandler.handleJoin(userOne.socketWrapper)
+  })
+
+  it('client joining multiple times gets added once state registry', () => {
+    testMocks.stateRegistryMock
+      .expects('add')
+      .once()
+      .withExactArgs(userOne.socketWrapper.user)
+
+    presenceHandler.handleJoin(userOne.socketWrapper)
+    presenceHandler.handleJoin(userOne.socketWrapper)
+  })
+
+  it('a duplicate client logs out does not remove from state', () => {
+    testMocks.stateRegistryMock
+      .expects('add')
+      .once()
+      .withExactArgs(userOne.socketWrapper.user)
+
+    testMocks.stateRegistryMock
+      .expects('remove')
+      .never()
+
+    presenceHandler.handleJoin(userOne.socketWrapper)
+    presenceHandler.handleJoin(userOne.socketWrapper)
+    presenceHandler.handleLeave(userOne.socketWrapper)
+  })
+
+  it('a client logging out removes from state', () => {
+    testMocks.stateRegistryMock
+      .expects('add')
+      .once()
+      .withExactArgs(userOne.socketWrapper.user)
+
+    testMocks.stateRegistryMock
+      .expects('remove')
+      .once()
+      .withExactArgs(userOne.socketWrapper.user)
+
+    presenceHandler.handleJoin(userOne.socketWrapper)
+    presenceHandler.handleLeave(userOne.socketWrapper)
   })
 
   it('returns one user when queried', () => {
-    presenceHandler.handle(userOne, queryMessage)
-    expect(userOne.socket.lastSendMessage).toBe(_msg('U|Q|Marge+'))
+    const queryMessage = {
+      topic: C.TOPIC.PRESENCE,
+      action: C.ACTIONS.QUERY,
+      name: C.ACTIONS.QUERY
+    }
+
+    testMocks.stateRegistryMock
+      .expects('getAll')
+      .once()
+      .withExactArgs()
+      .returns(['Bart'])
+
+    userOne.socketWrapperMock
+      .expects("sendMessage")
+      .once()
+      .withExactArgs({ 
+        topic: C.TOPIC.PRESENCE, 
+        action: C.ACTIONS.QUERY,
+        parsedData: ['Bart'] 
+      })
+
+    presenceHandler.handle(userOne.socketWrapper, queryMessage)
   })
 
-  it('same username having another connection does not send an update', () => {
-    presenceHandler.handleJoin(userTwoAgain)
-    expect(userOne.socket.lastSendMessage).toBeNull()
+  it('returns mutiple user when queried', () => {
+    const queryMessage = {
+      topic: C.TOPIC.PRESENCE,
+      action: C.ACTIONS.QUERY,
+      name: C.ACTIONS.QUERY
+    }
+
+    testMocks.stateRegistryMock
+      .expects('getAll')
+      .once()
+      .withExactArgs()
+      .returns(['Bart', 'Homer', 'Maggie'])
+
+    userOne.socketWrapperMock
+      .expects("sendMessage")
+      .once()
+      .withExactArgs({ 
+        topic: C.TOPIC.PRESENCE, 
+        action: C.ACTIONS.QUERY,
+        parsedData: ['Bart', 'Homer', 'Maggie'] 
+      })
+
+    presenceHandler.handle(userOne.socketWrapper, queryMessage)
   })
 
-  it('add another client and only subscribed clients get notified', () => {
-    presenceHandler.handleJoin(userThree)
-    expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNJ|Bart+'))
-    expect(userTwo.socket.lastSendMessage).toBeNull()
-    expect(userThree.socket.lastSendMessage).toBeNull()
+  it('notifies subscribed users when user added to state', () => {
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(C.PRESENCE.EVERYONE, {
+        topic: C.TOPIC.PRESENCE,
+        action: C.ACTIONS.PRESENCE_JOIN,
+        data: 'Bart'
+      }, false, C.SOURCE_MESSAGE_CONNECTOR)
+
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs('Bart', {
+        topic: C.TOPIC.PRESENCE,
+        action: C.ACTIONS.PRESENCE_JOIN,
+        data: 'Bart'
+      }, false, C.SOURCE_MESSAGE_CONNECTOR)
+
+    testMocks.stateRegistry.emit('add', 'Bart')
   })
 
-  it('a duplicate client logs out and subscribed clients are not notified', () => {
-    presenceHandler.handleLeave(userTwoAgain)
-    expect(userOne.socket.lastSendMessage).toBeNull()
-    expect(userTwo.socket.lastSendMessage).toBeNull()
-    expect(userThree.socket.lastSendMessage).toBeNull()
-  })
+  it('notifies subscribed users when user removed from state', () => {
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(C.PRESENCE.EVERYONE, {
+        topic: C.TOPIC.PRESENCE,
+        action: C.ACTIONS.PRESENCE_LEAVE,
+        data: 'Bart'
+      }, false, C.SOURCE_MESSAGE_CONNECTOR)
 
-  it('returns multiple uses when queried', () => {
-    presenceHandler.handle(userOne, queryMessage)
-    expect(userOne.socket.lastSendMessage).toBe(_msg('U|Q|Marge|Bart+'))
-  })
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs('Bart', {
+        topic: C.TOPIC.PRESENCE,
+        action: C.ACTIONS.PRESENCE_LEAVE,
+        data: 'Bart'
+      }, false, C.SOURCE_MESSAGE_CONNECTOR)
 
-  it('client three disconnects', () => {
-    presenceHandler.handleLeave(userThree)
-    expect(userOne.socket.lastSendMessage).toBe(_msg('U|PNL|Bart+'))
-    expect(userTwo.socket.lastSendMessage).toBeNull()
-    expect(userThree.socket.lastSendMessage).toBeNull()
-  })
-
-  it('client one gets acks after unsubscribes', () => {
-    const unsubJoinMsg = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.UNSUBSCRIBE, data: [] }
-    presenceHandler.handle(userOne, unsubJoinMsg)
-    expect(userOne.socket.lastSendMessage).toBe(_msg('U|A|US|U+'))
-  })
-
-  it('client one does not get notified after unsubscribes', () => {
-    presenceHandler.handleLeave(userTwo)
-    expect(userOne.socket.lastSendMessage).toBeNull()
-
-    presenceHandler.handleJoin(userThree)
-    expect(userOne.socket.lastSendMessage).toBeNull()
+    testMocks.stateRegistry.emit('remove', 'Bart')
   })
 })

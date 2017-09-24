@@ -1,7 +1,6 @@
 'use strict'
 
 const C = require('../../src/constants/constants')
-const messageBuilder = require('../../src/message/message-builder')
 const utils = require('util')
 const SocketMock = require('./socket-mock')
 

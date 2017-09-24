@@ -118,31 +118,6 @@ exports.validateMap = function (map, throwError, schema) {
 }
 
 /**
- * Tests have shown that JSON stringify outperforms any attempt of
- * a code based implementation by 50% - 100% whilst also handling edge-cases and keeping
- * implementation complexity low.
- *
- * If ES6/7 ever decides to implement deep copying natively (what happened to Object.clone?
- * that was briefly a thing...), let's switch it for the native implementation. For now though,
- * even Object.assign({}, obj) only provides a shallow copy.
- *
- * Please find performance test results backing these statements here:
- *
- * http://jsperf.com/object-deep-copy-assign
- *
- * @param   {Mixed} obj the object that should be cloned
- *
- * @public
- * @returns {Mixed} clone
- */
-exports.deepCopy = function (obj) {
-  if (typeof obj === OBJECT) {
-    return JSON.parse(JSON.stringify(obj))
-  }
-  return obj
-}
-
-/**
  * Multi Object recoursive merge
  *
  * @param {Object} multiple objects to be merged into each other recoursively

@@ -3,8 +3,6 @@
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 
-const EVERYONE = 'U'
-
 function parseUserNames (data) {
   // Returns all users for backwards compatability
   if (
@@ -13,7 +11,7 @@ function parseUserNames (data) {
     data === C.ACTIONS.SUBSCRIBE ||
     data === C.TOPIC.PRESENCE
   ) {
-    return [EVERYONE]
+    return [C.PRESENCE.EVERYONE]
   }
   try {
     return JSON.parse(data)
@@ -79,7 +77,7 @@ module.exports = class PresenceHandler {
       for (let i = 0; i < users.length; i++) {
         this._subscriptionRegistry.unsubscribe({
           topic: C.TOPIC.PRESENCE,
-          action: C.ACTIONS.SUBSCRIBE,
+          action: C.ACTIONS.UNSUBSCRIBE,
           name: users[i]
         }, socketWrapper)
       }
@@ -136,7 +134,7 @@ module.exports = class PresenceHandler {
   * @returns {void}
   */
   _handleQuery (users, correlationId, socketWrapper) {
-    if (users[0] === EVERYONE) {
+    if (users[0] === C.PRESENCE.EVERYONE) {
       const clients = this._connectedClients.getAll()
       const index = clients.indexOf(socketWrapper.user)
       if (index !== -1) {
@@ -175,7 +173,7 @@ module.exports = class PresenceHandler {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_JOIN, data: username }
 
     this._subscriptionRegistry.sendToSubscribers(
-      EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+      C.PRESENCE.EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
     )
     this._subscriptionRegistry.sendToSubscribers(
       username, message, false, C.SOURCE_MESSAGE_CONNECTOR
@@ -194,7 +192,7 @@ module.exports = class PresenceHandler {
   _onClientRemoved (username) {
     const message = { topic: C.TOPIC.PRESENCE, action: C.ACTIONS.PRESENCE_LEAVE, data: username }
     this._subscriptionRegistry.sendToSubscribers(
-      EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
+      C.PRESENCE.EVERYONE, message, false, C.SOURCE_MESSAGE_CONNECTOR
     )
     this._subscriptionRegistry.sendToSubscribers(
       username, message, false, C.SOURCE_MESSAGE_CONNECTOR
