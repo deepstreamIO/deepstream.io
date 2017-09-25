@@ -41,6 +41,7 @@ module.exports = () => {
       uuid: Math.random()
     }
     socketWrapper.on = socketWrapperEmitter.on
+    socketWrapper.once = socketWrapperEmitter.once
     socketWrapper.emit = socketWrapperEmitter.emit
 
     return {
