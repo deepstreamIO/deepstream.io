@@ -1,3 +1,24 @@
+## [3.1.0] - 2017.09.25
+
+### Features
+
+- a new standardised logging API with `debug`, `info`, `warn` and `error` methods
+- the presence feature can now be used on a per user basis. The online status of individual users can be queried for as well as subscribed to. Check out the tutorial on our website [here](https://deepstreamhub.com/tutorials/guides/presence/)
+
+### Improvements
+
+- `perMessageDeflate` option can now be passed to uws, courtesy of [@daviderenger](@daviderenger) [#786](https://github.com/deepstreamIO/deepstream.io/pull/786)
+- various fixes and performance improvements to the subscription registry [#780](https://github.com/deepstreamIO/deepstream.io/pull/780), courtesy of [@ronag](@ronag).
+
+### Fixes
+
+- allow updating and writing to Lists via the HTTP API [#788](https://github.com/deepstreamIO/deepstream.io/pull/788) courtesy of [@rbarroetavena](@rbarroetavena)
+- no data when sending HTTP requests is now considered undefined, rather than null [#798](https://github.com/deepstreamIO/deepstream.io/pull/798).
+
+### Miscellaneous
+
+- internal refactor to pull e2e client operations into framework and abstract from Cucumber steps.
+
 ## [3.0.1] - 2017.08.14
 
 ### Features
