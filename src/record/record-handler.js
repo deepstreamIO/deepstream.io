@@ -66,10 +66,7 @@ module.exports = class RecordHandler {
         return
       }
 
-      if (record[1] &&
-          subscription.version &&
-          isSameOrNewer(record[1], subscription.version)
-      ) {
+      if (record[1] === subscription.version) {
         socket.sendNative(messageBuilder.buildMsg3(
           C.TOPIC.RECORD,
           C.ACTIONS.UPDATE,
