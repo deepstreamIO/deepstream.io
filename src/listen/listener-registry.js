@@ -177,6 +177,10 @@ module.exports = class ListenerRegistry {
   }
 
   _sendAccept (listener, subscription) {
+    if (subscription.listener) {
+      return
+    }
+
     subscription.listener = listener
     listener.subscriptions.add(subscription)
 
