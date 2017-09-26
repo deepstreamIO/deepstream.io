@@ -70,9 +70,6 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  onNoProvider (subscription) {
-  }
-
   onUpdate (subscription) {
     if (!subscription.hasProvider && subscription.listener) {
       subscription.hasProvider = true
@@ -196,11 +193,6 @@ module.exports = class ListenerRegistry {
   _onMatch (name, matches, id) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
     if (!subscription || subscription.listener) {
-      return
-    }
-
-    if (matches.length === 0) {
-      this.onNoProvider(subscription)
       return
     }
 

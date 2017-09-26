@@ -11,18 +11,6 @@ module.exports = class RecordHandler {
     this._cache = new RecordCache({ max: options.cacheSize || 512e6 })
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
-    this._listenerRegistry.onNoProvider = (subscription) => {
-      if (!subscription.message) {
-        this._storage.get(subscription.name, (error, record) => {
-          if (error) {
-            const message = `error while reading ${record[0]} from storage ${error}`
-            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-          } else {
-            this._broadcast(record)
-          }
-        })
-      }
-    }
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionAdded: (name, socket, count, subscription) => {
         this._listenerRegistry.onSubscriptionAdded(name, socket, count, subscription)
@@ -74,6 +62,15 @@ module.exports = class RecordHandler {
         ))
       } else if (subscription.message) {
         socket.sendNative(subscription.message)
+      } else {
+        this._storage.get(subscription.name, (error, record) => {
+          if (error) {
+            const message = `error while reading ${record[0]} from storage ${error}`
+            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
+          } else {
+            this._broadcast(record)
+          }
+        })
       }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(record[0], socket)
