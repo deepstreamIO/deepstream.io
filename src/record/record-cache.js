@@ -115,6 +115,10 @@ module.exports = class RecordCache {
   }
 
   _removeNode (node) {
+    if (!node.list) {
+      return
+    }
+
     const next = node.next
     const prev = node.prev
 
