@@ -15,6 +15,8 @@ module.exports = class RecordCache {
       node = this._pool.pop() || this._allocNode()
       node.name = name
       this._map.set(node.name, node)
+    } else {
+      this._removeNode(node)
     }
     return node
   }
