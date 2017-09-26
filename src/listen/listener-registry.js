@@ -2,7 +2,6 @@ const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry')
 const messageBuilder = require('../message/message-builder')
 const toFastProperties = require('to-fast-properties')
-const assert = require('assert')
 
 module.exports = class ListenerRegistry {
   constructor (topic, options, subscriptionRegistry) {
@@ -89,19 +88,22 @@ module.exports = class ListenerRegistry {
     if (count === 0) {
       this._matcher.removeName(name)
 
-      const { listener } = subscription
-
-      if (listener) {
-        assert(listener.socket)
-        listener.socket.sendMessage(
+      for (const pattern of subscription.matches) {
+        const message = messageBuilder.buildMsg4(
           this._topic,
           C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-          [ listener.pattern, name ]
+          pattern,
+          subscription.name
         )
-        listener.subscriptions.delete(subscription)
+        this._providerRegistry.sendToSubscribers(pattern, message)
+      }
+
+      if (subscription.listener) {
+        subscription.listener.subscriptions.delete(subscription)
       }
 
       subscription.accepts.clear()
+      subscription.matches.clear()
       subscription.listener = null
       subscription.hasProvider = false
     }
@@ -201,6 +203,8 @@ module.exports = class ListenerRegistry {
     }
 
     for (const pattern of matches) {
+      subscription.matches.add(pattern)
+
       const message = messageBuilder.buildMsg4(
         this._topic,
         C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
