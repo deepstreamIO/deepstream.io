@@ -12,7 +12,26 @@ module.exports = class RecordHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RECORD)
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
-      onSubscriptionAdded: (name, socket, count, subscription) => {
+      onSubscriptionAdded: (name, socket, count, subscription, version) => {
+        if (version === subscription.version) {
+          socket.sendNative(messageBuilder.buildMsg3(
+            C.TOPIC.RECORD,
+            C.ACTIONS.UPDATE,
+            name
+          ))
+        } else if (subscription.message) {
+          socket.sendNative(subscription.message)
+        } else {
+          this._storage.get(subscription.name, (error, record) => {
+            if (error) {
+              const message = `error while reading ${record[0]} from storage ${error}`
+              this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
+            } else {
+              this._broadcast(record)
+            }
+          })
+        }
+
         this._listenerRegistry.onSubscriptionAdded(name, socket, count, subscription)
       },
       onSubscriptionRemoved: (name, socket, count, subscription) => {
@@ -44,36 +63,17 @@ module.exports = class RecordHandler {
     const record = message.data
 
     if (message.action === C.ACTIONS.READ) {
-      const subscription = this._subscriptionRegistry.subscribe(
+      this._subscriptionRegistry.subscribe(
         record[0],
         socket,
-        this._cache.ref(record[0])
+        this._cache.ref(record[0]),
+        record[1]
       )
-
-      if (!subscription) {
-        return
-      }
-
-      if (record[1] === subscription.version) {
-        socket.sendNative(messageBuilder.buildMsg3(
-          C.TOPIC.RECORD,
-          C.ACTIONS.UPDATE,
-          record[0]
-        ))
-      } else if (subscription.message) {
-        socket.sendNative(subscription.message)
-      } else {
-        this._storage.get(subscription.name, (error, record) => {
-          if (error) {
-            const message = `error while reading ${record[0]} from storage ${error}`
-            this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
-          } else {
-            this._broadcast(record)
-          }
-        })
-      }
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._subscriptionRegistry.unsubscribe(record[0], socket)
+      this._subscriptionRegistry.unsubscribe(
+        record[0],
+        socket
+      )
     } else if (message.action === C.ACTIONS.UPDATE) {
       if (record[1].slice(0, 3) !== 'INF') {
         this._storage.set(record, (error, record) => {

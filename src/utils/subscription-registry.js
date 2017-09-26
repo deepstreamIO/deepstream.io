@@ -64,7 +64,7 @@ class SubscriptionRegistry {
     return subscription ? subscription.sockets : EMPTY_SET
   }
 
-  subscribe (name, socket, subscription) {
+  subscribe (name, socket, subscription, opaque) {
     subscription = subscription || this._subscriptions.get(name) || this._alloc(name)
 
     if (subscription.sockets.has(socket)) {
@@ -85,9 +85,7 @@ class SubscriptionRegistry {
     //   `for ${this._topic}/${name} by ${socket.user}/${socket.id}`
     // )
 
-    this._addSocket(subscription, socket)
-
-    return subscription
+    this._addSocket(subscription, socket, opaque)
   }
 
   unsubscribe (name, socket) {
@@ -167,7 +165,7 @@ class SubscriptionRegistry {
     }
   }
 
-  _addSocket (subscription, socket) {
+  _addSocket (subscription, socket, opaque) {
     invariant(!subscription.sockets.has(socket), `existing socket of ${socket.user}/${socket.id}`)
     subscription.sockets.add(socket)
 
@@ -189,7 +187,8 @@ class SubscriptionRegistry {
       subscription.name,
       socket,
       subscription.sockets.size,
-      subscription
+      subscription,
+      opaque
     )
   }
 
