@@ -1,4 +1,5 @@
 const toFastProperties = require('to-fast-properties')
+const invariant = require('invariant')
 
 module.exports = class RecordCache {
   constructor ({ size = 128e6 } = {}) {
@@ -22,16 +23,12 @@ module.exports = class RecordCache {
   }
 
   set (node, version, message, sender) {
+    invariant(node && node.name, 'invalid node')
+
     const size = node.name.length + version.length + message.length
 
     this._space -= size
-
-    if (node) {
-      this._space += node.size
-    } else {
-      node = this._pool.pop() || this._allocNode()
-      this._unshiftNode(node)
-    }
+    this._space += node.size
 
     node.size = size
     node.version = version
