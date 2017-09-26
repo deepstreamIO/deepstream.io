@@ -84,7 +84,6 @@ module.exports = class RecordCache {
       // listener-registry
       listener: null,
       accepts: new Set(),
-      matches: new Set(),
       hasProvider: false
     })
   }

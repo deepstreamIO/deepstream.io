@@ -15,7 +15,8 @@ module.exports = class ListenerRegistry {
       onSubscriptionRemoved: this.onListenRemoved.bind(this)
     })
     this._matcher = options.patternMatcher
-    this._matcher.onMatch = this._onMatch.bind(this)
+    this._matcher.onMatchAdded = this._onMatchAdded.bind(this)
+    this._matcher.onMatchRemoved = this._onMatchRemoved.bind(this)
   }
 
   handle (socket, message) {
@@ -88,22 +89,11 @@ module.exports = class ListenerRegistry {
     if (count === 0) {
       this._matcher.removeName(name)
 
-      for (const pattern of subscription.matches) {
-        const message = messageBuilder.buildMsg4(
-          this._topic,
-          C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
-          pattern,
-          subscription.name
-        )
-        this._providerRegistry.sendToSubscribers(pattern, message)
-      }
-
       if (subscription.listener) {
         subscription.listener.subscriptions.delete(subscription)
       }
 
       subscription.accepts.clear()
-      subscription.matches.clear()
       subscription.listener = null
       subscription.hasProvider = false
     }
@@ -196,15 +186,25 @@ module.exports = class ListenerRegistry {
     listener.socket.sendNative(message)
   }
 
-  _onMatch (name, matches, id) {
+  _onMatchRemoved (name, matches) {
+    for (const pattern of matches) {
+      const message = messageBuilder.buildMsg4(
+        this._topic,
+        C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+        pattern,
+        name
+      )
+      this._providerRegistry.sendToSubscribers(pattern, message)
+    }
+  }
+
+  _onMatchAdded (name, matches, id) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
     if (!subscription || subscription.listener) {
       return
     }
 
     for (const pattern of matches) {
-      subscription.matches.add(pattern)
-
       const message = messageBuilder.buildMsg4(
         this._topic,
         C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
