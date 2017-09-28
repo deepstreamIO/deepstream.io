@@ -77,7 +77,7 @@ module.exports = class RecordHandler {
         socket
       )
     } else if (message.action === C.ACTIONS.UPDATE) {
-      if (record[1].slice(0, 3) !== 'INF') {
+      if (!record[1].startsWith('INF')) {
         this._storage.set(record, (error, record) => {
           if (error) {
             const message = `error while writing ${record[0]} to storage ${error}`
@@ -101,11 +101,11 @@ module.exports = class RecordHandler {
       return
     }
 
-    this._listenerRegistry.onUpdate(subscription)
-
     if (subscription.version && isSameOrNewer(subscription.version, record[1])) {
       return
     }
+
+    this._listenerRegistry.onUpdate(subscription)
 
     const message = messageBuilder.buildMsg5(
       C.TOPIC.RECORD,
