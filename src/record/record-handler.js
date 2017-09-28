@@ -13,15 +13,13 @@ module.exports = class RecordHandler {
     this._listenerRegistry = new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener({
       onSubscriptionAdded: (name, socket, count, subscription, version) => {
-        // TODO Needs fixing on client
-        // if (version && version === subscription.version) {
-        //   socket.sendNative(messageBuilder.buildMsg3(
-        //     C.TOPIC.RECORD,
-        //     C.ACTIONS.UPDATE,
-        //     name
-        //   ))
-        // } else
-        if (subscription.message) {
+        if (version && version === subscription.version) {
+          socket.sendNative(messageBuilder.buildMsg3(
+            C.TOPIC.RECORD,
+            C.ACTIONS.UPDATE,
+            name
+          ))
+        } else if (subscription.message) {
           socket.sendNative(subscription.message)
         } else {
           this._storage.get(subscription.name, (error, record) => {
