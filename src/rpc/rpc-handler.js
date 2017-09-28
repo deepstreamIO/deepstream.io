@@ -8,7 +8,6 @@ module.exports = class RpcHandler {
     this._options = options
     this._rpcs = new Map()
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
-    this._pool = []
   }
 
   handle (socket, message) {
@@ -24,24 +23,15 @@ module.exports = class RpcHandler {
     } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(name, socket)
     } else if (message.action === C.ACTIONS.REQUEST) {
-      let rpc = this._pool.pop()
-
-      if (rpc) {
-        rpc.id = id
-        rpc.name = name
-        rpc.socket = socket
-        rpc.data = data
-      } else {
-        rpc = toFastProperties({
-          id,
-          name,
-          socket,
-          data,
-          history: new Set(),
-          provider: null,
-          timeout: null
-        })
-      }
+      const rpc = toFastProperties({
+        id,
+        name,
+        socket,
+        data,
+        history: new Set(),
+        provider: null,
+        timeout: null
+      })
 
       rpc.request = this._request.bind(this, rpc)
       this._rpcs.set(id, rpc)
@@ -69,7 +59,7 @@ module.exports = class RpcHandler {
 
       if (message.action === C.ACTIONS.RESPONSE) {
         rpc.socket.sendNative(message.raw)
-        this._destroy(rpc)
+        this._rpcs.delete(rpc.id)
       } else if (message.action === C.ACTIONS.REJECTION) {
         if (rpc.provider === socket) {
           this._request(rpc)
@@ -111,19 +101,7 @@ module.exports = class RpcHandler {
       rpc.provider.once('close', rpc.request)
     } else {
       rpc.socket.sendError(C.TOPIC.RPC, C.EVENT.NO_RPC_PROVIDER, [ rpc.name, rpc.id ])
-      this._destroy(rpc)
+      this._rpcs.delete(rpc.id)
     }
-  }
-
-  _destroy (rpc) {
-    this._rpcs.delete(rpc.id)
-    rpc.id = null
-    rpc.name = null
-    rpc.socket = null
-    rpc.data = null
-    rpc.history.clear()
-    rpc.provider = null
-    rpc.timeout = null
-    this._pool.push(rpc)
   }
 }
