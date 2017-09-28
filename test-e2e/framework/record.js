@@ -61,7 +61,7 @@ module.exports = {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       recordData.record.discard()
     })
-  },  
+  },
 
   delete (clientExpression, recordName) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
@@ -77,20 +77,20 @@ module.exports = {
 
   set (clientExpression, recordName, data) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      if (recordData.setCallback) { 
-        recordData.record.set(utils.parseData(data), recordData.setCallback) 
-      } else { 
-        recordData.record.set(utils.parseData(data)) 
+      if (recordData.setCallback) {
+        recordData.record.set(utils.parseData(data), recordData.setCallback)
+      } else {
+        recordData.record.set(utils.parseData(data))
       }
     })
   },
 
   setWithPath (clientExpression, recordName, path, data) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      if (recordData.setCallback) { 
-        recordData.record.set(path, utils.parseData(data), recordData.setCallback) 
+      if (recordData.setCallback) {
+        recordData.record.set(path, utils.parseData(data), recordData.setCallback)
       } else {
-        recordData.record.set(path, utils.parseData(data)) 
+        recordData.record.set(path, utils.parseData(data))
       }
     })
   },
@@ -126,6 +126,12 @@ module.exports = {
   has (clientExpression, recordName) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.record.has(recordName, client.record.hasCallback)
+    })
+  },
+
+  head (clientExpression, recordName) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      client.client.record.head(recordName, client.record.headCallback)
     })
   },
 
@@ -198,7 +204,7 @@ module.exports.assert = {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.calledOnce(recordData.deleteCallback)
       recordData.deleteCallback.reset()
-    })    
+    })
   },
 
   discarded (clientExpression, recordName) {
@@ -229,7 +235,7 @@ module.exports.assert = {
   recievedNoUpdate (clientExpression, recordName) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.notCalled(recordData.subscribeCallback)
-    }) 
+    })
   },
 
   recievedNoUpdateForPath (clientExpression, recordName, path) {
@@ -291,6 +297,22 @@ module.exports.assert = {
     })
   },
 
+  headSuccess (clientExpression, recordName, data) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      sinon.assert.calledOnce(client.record.headCallback)
+      sinon.assert.calledWith(client.record.headCallback, null, utils.parseData(data))
+      client.record.headCallback.reset()
+    })
+  },
+
+  headError (clientExpression, recordName, data) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      sinon.assert.calledOnce(client.record.headCallback)
+      sinon.assert.calledWith(client.record.headCallback, data.replace(/"/g, ''))
+      client.record.snapshotCallback.reset()
+    })
+  },
+
   has (clientExpression, recordName, expected) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.record.hasCallback)
@@ -316,7 +338,7 @@ module.exports.assert = {
     getListData(clientExpression, listName).forEach((listData) => {
       sinon.assert.calledWith(listData.removedCallback, entryName)
     })
-  },  
+  },
 
   movedNotified (clientExpression, listName, entryName, action) {
     getListData(clientExpression, listName).forEach((listData) => {
