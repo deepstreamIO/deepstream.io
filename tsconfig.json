@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "sourceMap": true,
+    "allowJs": true
+  },
+  "files": [
+    "./node_modules/@types/node/index.d.ts"
+  ],
+  "include": [
+    "bin/*",
+    "src/**/*",
+    "src/**/*.json",
+    "test/**/*",
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

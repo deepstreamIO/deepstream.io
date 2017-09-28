@@ -1,3 +1,4 @@
+dist
 temp-e2e-test
 
 # Logs
@@ -33,7 +34,7 @@ node_modules
 npm-shrinkwrap.json
 npm-debug.*
 
-# Users Environment Variables
+ Users Environment Variables
 .lock-wscript
 
 # IDE configuration

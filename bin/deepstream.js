@@ -2,7 +2,7 @@
 'use strict'
 require('colors')
 
-const pgk = require('../package.json')
+const pgk = require('../../package.json')
 
 const Command = require('commander').Command
 const install = require('./deepstream-install')
