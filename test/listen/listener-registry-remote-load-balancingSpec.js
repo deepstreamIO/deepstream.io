@@ -5,7 +5,7 @@ const ListenerTestUtils = require('./listener-test-utils')
 
 let tu
 
-describe('listener-registry-remote-load-balancing', () => {
+xdescribe('listener-registry-remote-load-balancing', () => {
   beforeEach(() => {
     tu = new ListenerTestUtils()
   })

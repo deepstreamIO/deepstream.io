@@ -121,7 +121,7 @@ module.exports = class RecordHandler {
         topic: C.TOPIC.RECORD,
         action: C.ACTIONS.HAS,
         name: recordName,
-        data: [record ? C.TYPES.TRUE : C.TYPES.FALSE]
+        parsedData: !!record
       })
     }
 
@@ -262,7 +262,7 @@ module.exports = class RecordHandler {
   _createAndUpdate (socketWrapper, message) {
     const recordName = message.name
     const isPatch = message.path !== null
-    message.action = isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE
+    message = Object.assign({}, message, { action: isPatch ? C.ACTIONS.PATCH : C.ACTIONS.UPDATE })
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage
@@ -628,7 +628,7 @@ module.exports = class RecordHandler {
     this._options.permissionHandler.canPerformAction(
       socketWrapper.user,
       message,
-      onPermissionResponse.bind(null, socketWrapper, message, successCallback),
+      onPermissionResponse.bind(this, socketWrapper, message, successCallback),
       socketWrapper.authData,
       socketWrapper
     )
@@ -641,7 +641,7 @@ module.exports = class RecordHandler {
  */
 function onPermissionResponse (socketWrapper, message, successCallback, error, canPerformAction) {
   if (error !== null) {
-    this.logger.error(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
+    this._options.logger.error(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
     socketWrapper.sendError(message, C.EVENT.MESSAGE_PERMISSION_ERROR)
   } else if (canPerformAction !== true) {
     socketWrapper.sendError(message, C.EVENT.MESSAGE_DENIED)

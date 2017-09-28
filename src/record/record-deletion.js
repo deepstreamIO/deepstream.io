@@ -85,8 +85,9 @@ module.exports = class RecordDeletion {
  */
   _done () {
     this._options.logger.info(C.EVENT.RECORD_DELETION, this._recordName, this._metaData)
-    this._message.isAck = true
     this._socketWrapper.sendAckMessage(this._message)
+    // Will change with new protocol
+    this._message = Object.assign({}, this._message, { isAck: true })
     this._successCallback(this._recordName, this._message, this._socketWrapper)
     this._destroy()
   }

@@ -17,14 +17,28 @@ StorageMock.prototype.reset = function () {
   this.lastSetKey = null
   this.lastSetValue = null
   this.completedSetOperations = 0
+  this.completedDeleteOperations = 0
   this.getCalls = []
   clearTimeout(this.getTimeout)
   clearTimeout(this.setTimeout)
 }
 
 StorageMock.prototype.delete = function (key, callback) {
-  delete this.values[key]
-  callback(null)
+  if (this.nextOperationWillBeSynchronous) {
+    this.completedDeleteOperations++   
+    if (this.nextOperationWillBeSuccessful) {
+      delete this.values[key]
+      callback()
+    } else {
+      callback('storageError')
+      return
+    }
+  } else {
+    setTimeout(() => {
+      this.completedDeleteOperations++   
+      callback(this.nextOperationWillBeSuccessful ? null : 'storageError')
+    }, 10)
+  }
 }
 
 StorageMock.prototype.hadGetFor = function (key) {

@@ -130,7 +130,6 @@ module.exports = class ListenerRegistry {
     } else {
       console.log('>>', message, message.action)
     }
-
   }
 
   /**

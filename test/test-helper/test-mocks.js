@@ -26,9 +26,16 @@ module.exports = () => {
   stateRegistry.on = emitter.on
   stateRegistry.emit = emitter.emit
 
+
+  const recordHandler = {
+    _$broadcastUpdate: () => {},
+    _$transitionComplete: () => {}
+  }
+
   const subscriptionRegistryMock = sinon.mock(subscriptionRegistry)
   const listenerRegistryMock = sinon.mock(listenerRegistry)
   const stateRegistryMock = sinon.mock(stateRegistry)
+  const recordHandlerMock = sinon.mock(recordHandler)
 
   function getSocketWrapper (user, authData) {
     const socketWrapperEmitter = new EventEmitter()
@@ -38,7 +45,8 @@ module.exports = () => {
       sendMessage: () => {},
       sendError: () => {},
       sendAckMessage: () => {},
-      uuid: Math.random()
+      uuid: Math.random(),
+      parseData: (message) => { return message.parsedData }
     }
     socketWrapper.on = socketWrapperEmitter.on
     socketWrapper.once = socketWrapperEmitter.once
@@ -54,10 +62,12 @@ module.exports = () => {
     subscriptionRegistry,
     listenerRegistry,
     stateRegistry,
+    recordHandler,
     subscriptionRegistryMock,
     listenerRegistryMock,
     stateRegistryMock,
-    getSocketWrapper
+    recordHandlerMock,
+    getSocketWrapper,
   }
 }
 

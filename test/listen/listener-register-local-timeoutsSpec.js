@@ -5,7 +5,7 @@ const ListenerTestUtils = require('./listener-test-utils')
 
 let tu
 
-describe('listener-registry-local-timeouts', () => {
+xdescribe('listener-registry-local-timeouts', () => {
   beforeEach(() => {
     tu = new ListenerTestUtils()
   })

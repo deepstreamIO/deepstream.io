@@ -12,11 +12,6 @@ const http = require('http')
 describe('deepstream.io', () => {
 
   describe('the main server class', () => {
-    it('exposes the message parser\'s convertTyped method', () => {
-      const server = new Deepstream()
-      expect(server.convertTyped('N42')).toBe(42)
-    })
-
     it('exposes constants as a static', () => {
       expect(Deepstream.constants).toBeDefined()
     })

@@ -53,7 +53,7 @@ exports.getMessage = function (message, isAck) {
     sendData.push(exports.typed(message.data[1]))
   } else if (message.data) {
     sendData.push(message.data)
-  } else if (message.parsedData) {
+  } else if (message.parsedData !== undefined) {
     if (
       message.action === C.ACTIONS.READ ||
       message.action === C.ACTIONS.UPDATE

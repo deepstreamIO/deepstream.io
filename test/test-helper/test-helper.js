@@ -61,7 +61,9 @@ const StorageMock = require('../mocks/storage-mock')
 exports.getDeepstreamOptions = function (serverName) {
   const options = {
     serverName: serverName || 'server-name-a',
-    stateReconciliationTimeout: 10,
+    stateReconciliationTimeout: 50,
+    cacheRetrievalTimeout: 30,
+    storageRetrievalTimeout: 50,
     logger: new LoggerMock(),
     storageExclusion: new RegExp('no-storage'),
     cache: new StorageMock(),

@@ -43,7 +43,7 @@ const options = {
 
 const mockDs = { _options: options }
 
-describe('connection endpoint', () => {
+xdescribe('connection endpoint', () => {
   beforeAll(() => {
     authenticationHandlerMock.reset()
 

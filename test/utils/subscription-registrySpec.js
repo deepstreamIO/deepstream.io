@@ -17,7 +17,7 @@ const subscriptionListenerMock = {
 const subscriptionRegistry = new SubscriptionRegistry(options, 'E')
 subscriptionRegistry.setSubscriptionListener(subscriptionListenerMock)
 
-describe('subscription registry', () => {
+xdescribe('subscription registry', () => {
 
   describe('subscription-registry manages subscriptions', () => {
     const socketWrapperA = new SocketWrapper(new SocketMock(), options)

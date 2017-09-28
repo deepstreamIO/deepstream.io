@@ -93,8 +93,9 @@ module.exports = class RecordTransition {
     if (this._record) {
       socketWrapper.sendError({
         topic: C.TOPIC.RECORD,
+        name: this._name,
         version: this._record._v,
-        data: JSON.stringify(this._record._d),
+        parsedData: this._record._d,
         isWriteAck: step.message.isWriteAck
       }, C.EVENT.VERSION_EXISTS)
 
@@ -129,8 +130,7 @@ module.exports = class RecordTransition {
     const version = message.version
     const update = {
       message,
-      sender: socketWrapper,
-      isPatch: message.action === C.ACTIONS.PATCH
+      sender: socketWrapper
     }
     const valid = this._applyConfigAndData(socketWrapper, message, update)
     if (!valid) {
@@ -186,7 +186,9 @@ module.exports = class RecordTransition {
  */
   _applyConfigAndData (socketWrapper, message, step) {
     const result = socketWrapper.parseData(message)
-    if (result) {
+    if (result instanceof Error) {
+      return false
+    } else {
       if (message.isWriteAck) {
         if (this._pendingUpdates[step.sender.uuid] === undefined) {
           this._pendingUpdates[step.sender.uuid] = {
@@ -198,8 +200,8 @@ module.exports = class RecordTransition {
           update.versions.push(step.message.version)
         }
       }
+      return true
     }
-    return result
   }
 
 /**
@@ -275,11 +277,11 @@ module.exports = class RecordTransition {
     }
 
     this._currentStep = this._steps.shift()
-    const message = this._currentStep.message
+    let message = this._currentStep.message
 
     if (message.version === -1) {
-      const version = this._record._v + 1
-      message.version = version
+      message = Object.assign({}, message, { version: this._record._v + 1 })
+      this._currentStep.message = message
     }
 
     if (this._record._v !== message.version - 1) {
@@ -291,7 +293,7 @@ module.exports = class RecordTransition {
 
     this._record._v = message.version
 
-    if (this._currentStep.isPatch) {
+    if (this._currentStep.message.path) {
       jsonPath.setValue(this._record._d, message.path, message.parsedData)
     } else {
       this._record._d = message.parsedData
@@ -435,11 +437,7 @@ module.exports = class RecordTransition {
 
     for (let i = 0; i < this._steps.length; i++) {
       if (this._steps[i].sender !== C.SOURCE_MESSAGE_CONNECTOR) {
-        this._steps[i].sender.sendError(
-          C.TOPIC.RECORD,
-          C.EVENT.RECORD_UPDATE_ERROR,
-          this._steps[i].version
-        )
+        this._steps[i].sender.sendError(this._steps[i].message, C.EVENT.RECORD_UPDATE_ERROR)
       }
     }
 
