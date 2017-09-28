@@ -188,20 +188,20 @@ module.exports = class RecordTransition {
     const result = socketWrapper.parseData(message)
     if (result instanceof Error) {
       return false
-    } else {
-      if (message.isWriteAck) {
-        if (this._pendingUpdates[step.sender.uuid] === undefined) {
-          this._pendingUpdates[step.sender.uuid] = {
-            socketWrapper: step.sender,
-            versions: [step.message.version]
-          }
-        } else {
-          const update = this._pendingUpdates[step.sender.uuid]
-          update.versions.push(step.message.version)
-        }
-      }
-      return true
     }
+    if (message.isWriteAck) {
+      if (this._pendingUpdates[step.sender.uuid] === undefined) {
+        this._pendingUpdates[step.sender.uuid] = {
+          socketWrapper: step.sender,
+          versions: [step.message.version]
+        }
+      } else {
+        const update = this._pendingUpdates[step.sender.uuid]
+        update.versions.push(step.message.version)
+      }
+    }
+    return true
+
   }
 
 /**

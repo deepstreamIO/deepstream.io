@@ -12,8 +12,7 @@ function sendError (
   options.logger.error(event, message, metaData)
   if (onError) {
     onError.call(context, event, message, recordName, socketWrapper)
-  }
-  else if (socketWrapper) {
+  } else if (socketWrapper) {
     socketWrapper.sendError({
       topic: C.TOPIC.RECORD
     }, event)

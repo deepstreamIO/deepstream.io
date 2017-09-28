@@ -179,7 +179,7 @@ describe('record request', () => {
       expect(completeCallback).not.toHaveBeenCalled()
 
       expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_LOAD_ERROR', 'error while loading cacheError from cache:storageError')
-      //expect(client.socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'))
+      // expect(client.socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'))
     })
 
     it('handles storage errors', () => {

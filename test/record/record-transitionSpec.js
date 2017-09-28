@@ -19,7 +19,7 @@ const recordPatch = {
   data: 'SEgon',
   isWriteAck: true
 }
-Object.freeze(recordPatch) 
+Object.freeze(recordPatch)
 
 const recordData = { _v: 5, _d: { name: 'Kowalski' } }
 Object.freeze(recordData)
@@ -32,7 +32,7 @@ const recordUpdate = {
   parsedData: recordData._d,
   isWriteAck: true
 }
-Object.freeze(recordUpdate) 
+Object.freeze(recordUpdate)
 
 const writeAck = {
   topic: C.TOPIC.RECORD,
@@ -40,7 +40,7 @@ const writeAck = {
   name: 'some-record',
   data: [[-1], null]
 }
-Object.freeze(writeAck) 
+Object.freeze(writeAck)
 
 xdescribe('record transitions', () => {
   let options
@@ -66,8 +66,8 @@ xdescribe('record transitions', () => {
     expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('recordName')
   })
 
-    const patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 3, 'firstname', 'SLana'] }
-    const updateMessage = { topic: 'RECORD', action: 'U', data: ['recordName', 2, '{ "lastname": "Peterson" }'] }
+  const patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 3, 'firstname', 'SLana'] }
+  const updateMessage = { topic: 'RECORD', action: 'U', data: ['recordName', 2, '{ "lastname": "Peterson" }'] }
 
   it('adds an update to the queue', () => {
     expect(recordTransition._steps.length).toBe(1)
@@ -77,7 +77,7 @@ xdescribe('record transitions', () => {
 
   it('adds a message with invalid data to the queue', () => {
     socketWrapper.socket.lastSendMessage = null
-    
+
     recordTransition.add(socketWrapper, 3, {
       topic: 'RECORD',
       action: 'U',

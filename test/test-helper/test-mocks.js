@@ -46,7 +46,7 @@ module.exports = () => {
       sendError: () => {},
       sendAckMessage: () => {},
       uuid: Math.random(),
-      parseData: (message) => { return message.parsedData }
+      parseData: message => message.parsedData
     }
     socketWrapper.on = socketWrapperEmitter.on
     socketWrapper.once = socketWrapperEmitter.once

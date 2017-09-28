@@ -116,7 +116,7 @@ module.exports = class RecordHandler {
  * @returns {void}
  */
   _hasRecord (socketWrapper, message) {
-    const onComplete = function (record, recordName, socket) {
+    function onComplete (record, recordName, socket) {
       socket.sendMessage({
         topic: C.TOPIC.RECORD,
         action: C.ACTIONS.HAS,
@@ -125,7 +125,7 @@ module.exports = class RecordHandler {
       })
     }
 
-    const onError = function (event, errorMessage, recordName, socket) {
+    function onError (event, errorMessage, recordName, socket) {
       socket.sendError(message, event)
     }
 

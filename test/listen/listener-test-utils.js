@@ -218,7 +218,7 @@ class ListenerTestUtils {
     const message = {
       topic,
       action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-      name: subscription, 
+      name: subscription,
       data: state ? C.TYPES.TRUE : C.TYPES.FALSE
     }
     if (sendToSubscribersMock.calls.mostRecent()) {

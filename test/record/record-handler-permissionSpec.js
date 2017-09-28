@@ -49,7 +49,7 @@ describe('record handler handles messages', () => {
     action: C.ACTIONS.CREATE,
     name: 'some-record'
   }
-  
+
   it('triggers create and read actions if record doesnt exist', () => {
     client.socketWrapperMock
       .expects('sendMessage')

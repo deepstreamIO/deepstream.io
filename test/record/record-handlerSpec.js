@@ -55,28 +55,28 @@ describe('record handler handles messages', () => {
     version: 0,
     parsedData: {}
   }
-  Object.freeze(readMessage) 
+  Object.freeze(readMessage)
 
   const recordHasMessage = {
     topic: C.TOPIC.RECORD,
     action: C.ACTIONS.HAS,
     name: 'some-record'
   }
-  Object.freeze(recordHasMessage) 
+  Object.freeze(recordHasMessage)
 
   const recordSnapshotMessage = {
     topic: C.TOPIC.RECORD,
     action: C.ACTIONS.SNAPSHOT,
     name: 'some-record'
   }
-  Object.freeze(recordSnapshotMessage) 
+  Object.freeze(recordSnapshotMessage)
 
   const recordHeadMessage = {
     topic: C.TOPIC.RECORD,
     action: C.ACTIONS.HEAD,
     name: 'some-record'
   }
-  Object.freeze(recordHeadMessage) 
+  Object.freeze(recordHeadMessage)
 
   const recordPatch = {
     topic: C.TOPIC.RECORD,
@@ -87,7 +87,7 @@ describe('record handler handles messages', () => {
     data: 'SEgon',
     isWriteAck: false
   }
-  Object.freeze(recordPatch) 
+  Object.freeze(recordPatch)
 
   const recordData = { _v: 5, _d: { name: 'Kowalski' } }
   Object.freeze(recordData)
@@ -100,7 +100,7 @@ describe('record handler handles messages', () => {
     parsedData: recordData._d,
     isWriteAck: false
   }
-  Object.freeze(recordUpdate) 
+  Object.freeze(recordUpdate)
 
   const recordDelete = {
     topic: C.TOPIC.RECORD,
@@ -159,7 +159,7 @@ describe('record handler handles messages', () => {
   it('returns an existing record', () => {
     const parsedData = { _v: 3, _d: { firstname: 'Wolfram' } }
     options.cache.set('some-record', parsedData, () => {})
-    
+
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
@@ -176,7 +176,7 @@ describe('record handler handles messages', () => {
 
   it('returns true for HAS if message exists', () => {
     options.cache.set('some-record', {}, () => {})
-   
+
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
@@ -309,7 +309,7 @@ describe('record handler handles messages', () => {
   describe('updates', () => {
     it('updates a record', () => {
       options.cache.set('some-record', { _v: 5, _d: { name: 'Kowalski' } }, () => {})
-      
+
       testMocks.subscriptionRegistryMock
         .expects('sendToSubscribers')
         .once()
@@ -327,7 +327,7 @@ describe('record handler handles messages', () => {
         .expects('sendError')
         .once()
         .withExactArgs(recordUpdate, C.EVENT.VERSION_EXISTS)
-      
+
       recordHandler.handle(client.socketWrapper, recordUpdate)
 
       expect(options.logger.lastLogMessage).toBe(msg('someUser tried to update record existingRecord to version 5 but it already was 5'))
@@ -376,14 +376,14 @@ describe('record handler handles messages', () => {
   it('handles deletion messages', () => {
     options.cache.nextGetWillBeSynchronous = false
     options.cache.set(recordDelete.name, {}, () => {})
-    
+
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
       .once()
-      .withExactArgs(recordDelete.name, { 
-        topic: C.TOPIC.RECORD, 
-        action: C.ACTIONS.DELETE, 
-        isAck: true, 
+      .withExactArgs(recordDelete.name, {
+        topic: C.TOPIC.RECORD,
+        action: C.ACTIONS.DELETE,
+        isAck: true,
         name: recordDelete.name
       }, true, client.socketWrapper)
 
@@ -445,16 +445,16 @@ describe('record handler handles messages', () => {
       .expects('sendToSubscribers')
       .once()
       .withExactArgs(
-        createAndUpdate.name, 
-        Object.assign({}, createAndUpdate, { action: C.ACTIONS.UPDATE, version: 1 }), 
-        false, 
+        createAndUpdate.name,
+        Object.assign({}, createAndUpdate, { action: C.ACTIONS.UPDATE, version: 1 }),
+        false,
         client.socketWrapper
       )
 
     recordHandler.handle(client.socketWrapper, createAndUpdate)
 
     options.cache.get(createAndUpdate.name, (error, record) => {
-      expect(record).toEqual(Object.assign({}, recordData, { _v: 1}))
+      expect(record).toEqual(Object.assign({}, recordData, { _v: 1 }))
     })
   })
 

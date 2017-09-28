@@ -8,15 +8,15 @@ const C = require('../../src/constants/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
-const deletionMsg = { 
-  topic: C.TOPIC.RECORD, 
-  action: C.ACTIONS.DELETE, 
-  name: 'someRecord' 
+const deletionMsg = {
+  topic: C.TOPIC.RECORD,
+  action: C.ACTIONS.DELETE,
+  name: 'someRecord'
 }
-const anotherDeletionMsg = { 
-  topic: C.TOPIC.RECORD, 
-  action: C.ACTIONS.DELETE, 
-  name: 'no-storage/1' 
+const anotherDeletionMsg = {
+  topic: C.TOPIC.RECORD,
+  action: C.ACTIONS.DELETE,
+  name: 'no-storage/1'
 }
 
 describe('record deletion', () => {

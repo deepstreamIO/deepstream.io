@@ -19,7 +19,7 @@ const recordPatch = {
   data: 'SEgon',
   isWriteAck: true
 }
-Object.freeze(recordPatch) 
+Object.freeze(recordPatch)
 
 const recordData = { _v: 5, _d: { name: 'Kowalski' } }
 Object.freeze(recordData)
@@ -32,7 +32,7 @@ const recordUpdate = {
   parsedData: recordData._d,
   isWriteAck: true
 }
-Object.freeze(recordUpdate) 
+Object.freeze(recordUpdate)
 
 const writeAck = {
   topic: C.TOPIC.RECORD,
@@ -40,7 +40,7 @@ const writeAck = {
   name: 'some-record',
   data: [[-1], null]
 }
-Object.freeze(writeAck) 
+Object.freeze(writeAck)
 
 xdescribe('record write acknowledgement', () => {
   let options
@@ -76,7 +76,7 @@ xdescribe('record write acknowledgement', () => {
 
   it('sends write failure to socket', () => {
     options.storage.nextOperationWillBeSuccessful = false
-    
+
     client.socketWrapperMock
       .expects('sendError')
       .once()
@@ -101,20 +101,20 @@ xdescribe('record write acknowledgement', () => {
     expect(recordTransition.hasVersion(4)).toBe(false)
     expect(recordTransition.hasVersion(5)).toBe(false)
 
-    // 
+    //
   })
 
   it('multiple write acknowledgements', () => {
       // processes the next step in the queue
-      const check = setInterval(() => {
-        if (options.cache.completedSetOperations === 2) {
-          expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper2)
-          expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
-          expect(recordTransition._record).toEqual({ _v: 3, _d: { firstname: 'Lana', lastname: 'Kowalski' } })
-          clearInterval(check)
-          done()
-        }
-      }, 1)
+    const check = setInterval(() => {
+      if (options.cache.completedSetOperations === 2) {
+        expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper2)
+        expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
+        expect(recordTransition._record).toEqual({ _v: 3, _d: { firstname: 'Lana', lastname: 'Kowalski' } })
+        clearInterval(check)
+        done()
+      }
+    }, 1)
 
     // processes the final step in the queue
     if (options.cache.completedSetOperations === 3) {
