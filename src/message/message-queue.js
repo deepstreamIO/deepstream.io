@@ -91,6 +91,6 @@ module.exports = class MessageQueue {
   }
 
   _sendError (event, message) {
-    this._socket.sendError(message.charAt(0), event, message)
+    this._socket.sendError(null, event, message)
   }
 }
