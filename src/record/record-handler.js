@@ -37,12 +37,18 @@ module.exports = class RecordHandler {
         } else if (subscription.message) {
           socket.sendNative(subscription.message)
         } else {
-          this._storage.get(subscription.name, (error, record) => {
+          this._storage.get(subscription.name, (error, name, version, body) => {
             if (error) {
-              const message = `error while reading ${record[0]} from storage ${error}`
+              const message = `error while reading ${name} from storage ${error}`
               this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
             } else {
-              this._broadcast(record)
+              this._broadcast(name, version, body, messageBuilder.buildMsg5(
+                C.TOPIC.RECORD,
+                C.ACTIONS.UPDATE,
+                name,
+                version,
+                body
+              ))
             }
           })
         }
@@ -78,46 +84,38 @@ module.exports = class RecordHandler {
         socket
       )
     } else if (rawMessage.startsWith(UPDATE)) {
-      const record = rawMessage
+      const [ name, version, body, parent = '' ] = rawMessage
         .slice(UPDATE.length + 1)
         .split(C.MESSAGE_PART_SEPERATOR, 4)
 
-      if (!record[1].startsWith('INF')) {
-        this._storage.set(record, (error, record) => {
+      if (!version.startsWith('INF')) {
+        this._storage.set(name, version, body, parent, (error, name) => {
           if (error) {
-            const message = `error while writing ${record[0]} to storage ${error}`
+            const message = `error while writing ${name} to storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, message)
           }
-        }, record)
+        }, name)
       }
-      this._broadcast(record, socket)
+      this._broadcast(name, version, body, rawMessage.slice(0, -(parent.length + 1)), socket)
     } else {
       this._listenerRegistry.handle(socket, rawMessage)
     }
   }
 
-  _broadcast (record, sender) {
-    const subscription = this._subscriptionRegistry.getSubscription(record[0])
+  _broadcast (name, version, body, message, sender) {
+    const subscription = this._subscriptionRegistry.getSubscription(name)
 
     if (!subscription) {
       return
     }
 
-    if (subscription.version && isSameOrNewer(subscription.version, record[1])) {
+    if (subscription.version && isSameOrNewer(subscription.version, version)) {
       return
     }
 
     this._listenerRegistry.onUpdate(subscription)
 
-    const message = messageBuilder.buildMsg5(
-      C.TOPIC.RECORD,
-      C.ACTIONS.UPDATE,
-      record[0],
-      record[1],
-      record[2]
-    )
-
-    this._cache.set(subscription, record[1], message, sender)
+    this._cache.set(subscription, version, message, sender)
 
     this._subscriptionRegistry.sendToSubscribers(subscription, message, sender)
   }
