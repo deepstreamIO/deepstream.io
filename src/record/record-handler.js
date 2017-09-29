@@ -4,6 +4,21 @@ const ListenerRegistry = require(`../listen/listener-registry`)
 const messageBuilder = require(`../message/message-builder`)
 const RecordCache = require(`./record-cache`)
 
+const READ = [
+  C.TOPIC.RECORD,
+  C.ACTIONS.READ
+].join(C.MESSAGE_PART_SEPERATOR)
+
+const UNSUBSCRIBE = [
+  C.TOPIC.RECORD,
+  C.ACTIONS.UNSUBSCRIBE
+].join(C.MESSAGE_PART_SEPERATOR)
+
+const UPDATE = [
+  C.TOPIC.RECORD,
+  C.ACTIONS.UPDATE
+].join(C.MESSAGE_PART_SEPERATOR)
+
 module.exports = class RecordHandler {
   constructor (options) {
     this._logger = options.logger
@@ -45,31 +60,28 @@ module.exports = class RecordHandler {
   }
 
   handle (socket, rawMessage) {
-    const [ , action, ...record ] = rawMessage.split(C.MESSAGE_PART_SEPERATOR, 6)
+    if (rawMessage.startsWith(READ)) {
+      const [ name, version ] = rawMessage
+        .slice(READ.length + 1)
+        .split(C.MESSAGE_PART_SEPERATOR, 2)
 
-    if (
-      action === C.ACTIONS.LISTEN ||
-      action === C.ACTIONS.UNLISTEN ||
-      action === C.ACTIONS.LISTEN_ACCEPT ||
-      action === C.ACTIONS.LISTEN_REJECT
-    ) {
-      this._listenerRegistry.handle(socket, rawMessage)
-      return
-    }
-
-    if (action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(
-        record[0],
+        name,
         socket,
-        this._cache.ref(record[0]),
-        record[1]
+        this._cache.ref(name),
+        version
       )
-    } else if (action === C.ACTIONS.UNSUBSCRIBE) {
+    } else if (rawMessage.startsWith(UNSUBSCRIBE)) {
+      const name = rawMessage.slice(UNSUBSCRIBE.length + 1)
       this._subscriptionRegistry.unsubscribe(
-        record[0],
+        name,
         socket
       )
-    } else if (action === C.ACTIONS.UPDATE) {
+    } else if (rawMessage.startsWith(UPDATE)) {
+      const record = rawMessage
+        .slice(UPDATE.length + 1)
+        .split(C.MESSAGE_PART_SEPERATOR, 4)
+
       if (!record[1].startsWith('INF')) {
         this._storage.set(record, (error, record) => {
           if (error) {
@@ -80,7 +92,7 @@ module.exports = class RecordHandler {
       }
       this._broadcast(record, socket)
     } else {
-      socket.sendError(null, C.EVENT.UNKNOWN_ACTION, rawMessage)
+      this._listenerRegistry.handle(socket, rawMessage)
     }
   }
 
