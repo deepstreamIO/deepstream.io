@@ -225,17 +225,18 @@ Deepstream.prototype._init = function () {
   this._recordHandler = new RecordHandler(this._options)
   this._presenceHandler = new PresenceHandler(this._options)
 
-  this._messageProcessor.onAuthenticatedMessage = (socket, message) => {
-    if (message.topic === C.TOPIC.RECORD) {
-      this._recordHandler.handle(socket, message)
-    } else if (message.topic === C.TOPIC.EVENT) {
-      this._eventHandler.handle(socket, message)
-    } else if (message.topic === C.TOPIC.RPC) {
-      this._rpcHandler.handle(socket, message)
-    } else if (message.topic === C.TOPIC.PRESENCE) {
-      this._presenceHandler.handle(socket, message)
+  this._messageProcessor.onAuthenticatedMessage = (socket, rawMessage) => {
+    const topic = rawMessage.charAt(0)
+    if (topic === C.TOPIC.RECORD) {
+      this._recordHandler.handle(socket, rawMessage)
+    } else if (topic === C.TOPIC.EVENT) {
+      this._eventHandler.handle(socket, rawMessage)
+    } else if (topic === C.TOPIC.RPC) {
+      this._rpcHandler.handle(socket, rawMessage)
+    } else if (topic === C.TOPIC.PRESENCE) {
+      this._presenceHandler.handle(socket, rawMessage)
     } else {
-      socket.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, message.topic)
+      socket.sendError(C.TOPIC.ERROR, C.EVENT.UNKNOWN_TOPIC, rawMessage)
     }
   }
 

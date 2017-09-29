@@ -12,18 +12,17 @@ module.exports = class PresenceHandler {
     this._presenceRegistry = new SubscriptionRegistry(options, C.TOPIC.PRESENCE)
   }
 
-  handle (socket, message) {
-    if (message.action === C.ACTIONS.SUBSCRIBE) {
+  handle (socket, rawMessage) {
+    const [ , action ] = rawMessage.split(C.MESSAGE_PART_SEPERATOR, 2)
+
+    if (action === C.ACTIONS.SUBSCRIBE) {
       this._presenceRegistry.subscribe(C.TOPIC.PRESENCE, socket)
-    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+    } else if (action === C.ACTIONS.UNSUBSCRIBE) {
       this._presenceRegistry.unsubscribe(C.TOPIC.PRESENCE, socket)
-    } else if (message.action === C.ACTIONS.QUERY) {
+    } else if (action === C.ACTIONS.QUERY) {
       this._handleQuery(socket)
     } else {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
-        ...(message ? message.data : []),
-        `unknown action ${message.action}`
-      ])
+      socket.sendError(null, C.EVENT.UNKNOWN_ACTION, rawMessage)
     }
   }
 

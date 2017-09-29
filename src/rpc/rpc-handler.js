@@ -10,19 +10,14 @@ module.exports = class RpcHandler {
     this._subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.RPC)
   }
 
-  handle (socket, message) {
-    if (!message.data || !message.data[0]) {
-      socket.sendError(C.TOPIC.RPC, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
-      return
-    }
+  handle (socket, rawMessage) {
+    const [ , action, name, id, data ] = rawMessage.split(C.MESSAGE_PART_SEPERATOR, 5)
 
-    const [ name, id, data ] = message.data
-
-    if (message.action === C.ACTIONS.SUBSCRIBE) {
+    if (action === C.ACTIONS.SUBSCRIBE) {
       this._subscriptionRegistry.subscribe(name, socket)
-    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+    } else if (action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(name, socket)
-    } else if (message.action === C.ACTIONS.REQUEST) {
+    } else if (action === C.ACTIONS.REQUEST) {
       const rpc = toFastProperties({
         id,
         name,
@@ -38,8 +33,8 @@ module.exports = class RpcHandler {
 
       this._request(rpc)
     } else if (
-      message.action === C.ACTIONS.RESPONSE ||
-      message.action === C.ACTIONS.REJECTION
+      action === C.ACTIONS.RESPONSE ||
+      action === C.ACTIONS.REJECTION
     ) {
       const rpc = this._rpcs.get(id)
 
@@ -57,10 +52,10 @@ module.exports = class RpcHandler {
         rpc.provider = null
       }
 
-      if (message.action === C.ACTIONS.RESPONSE) {
-        rpc.socket.sendNative(message.raw)
+      if (action === C.ACTIONS.RESPONSE) {
+        rpc.socket.sendNative(rawMessage)
         this._rpcs.delete(rpc.id)
-      } else if (message.action === C.ACTIONS.REJECTION) {
+      } else if (action === C.ACTIONS.REJECTION) {
         if (rpc.provider === socket) {
           this._request(rpc)
         } else {
@@ -68,10 +63,7 @@ module.exports = class RpcHandler {
         }
       }
     } else {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
-        ...(message ? message.data : []),
-        `unknown action ${message.action}`
-      ])
+      socket.sendError(null, C.EVENT.UNKNOWN_ACTION, rawMessage)
     }
   }
 

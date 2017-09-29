@@ -10,34 +10,28 @@ module.exports = class EventHandler {
     this._logger = options.logger
   }
 
-  handle (socket, message) {
-    if (!message.data || !message.data[0]) {
-      socket.sendError(C.TOPIC.EVENT, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
-      return
-    }
+  handle (socket, message, rawMessage) {
+    const [ , action, pattern ] = rawMessage.split(C.MESSAGE_PART_SEPERATOR, 3)
 
     if (
-      message.action === C.ACTIONS.LISTEN ||
-      message.action === C.ACTIONS.UNLISTEN ||
-      message.action === C.ACTIONS.LISTEN_ACCEPT ||
-      message.action === C.ACTIONS.LISTEN_REJECT
+      action === C.ACTIONS.LISTEN ||
+      action === C.ACTIONS.UNLISTEN ||
+      action === C.ACTIONS.LISTEN_ACCEPT ||
+      action === C.ACTIONS.LISTEN_REJECT
     ) {
-      this._listenerRegistry.handle(socket, message)
+      this._listenerRegistry.handle(socket, message, rawMessage)
       return
     }
 
-    if (message.action === C.ACTIONS.SUBSCRIBE) {
-      this._subscriptionRegistry.subscribe(message.data[0], socket)
-    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this._subscriptionRegistry.unsubscribe(message.data[0], socket)
-    } else if (message.action === C.ACTIONS.EVENT) {
-      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.TRIGGER_EVENT, message.raw)
-      this._subscriptionRegistry.sendToSubscribers(message.data[0], message.raw, socket)
+    if (action === C.ACTIONS.SUBSCRIBE) {
+      this._subscriptionRegistry.subscribe(pattern, socket)
+    } else if (action === C.ACTIONS.UNSUBSCRIBE) {
+      this._subscriptionRegistry.unsubscribe(pattern, socket)
+    } else if (action === C.ACTIONS.EVENT) {
+      this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.TRIGGER_EVENT, rawMessage)
+      this._subscriptionRegistry.sendToSubscribers(pattern, rawMessage, socket)
     } else {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
-        ...(message ? message.data : []),
-        `unknown action ${message.action}`
-      ])
+      socket.sendError(null, C.EVENT.UNKNOWN_ACTION, message)
     }
   }
 }

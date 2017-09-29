@@ -1,5 +1,4 @@
 const C = require('../constants/constants')
-const messageParser = require('./message-parser')
 
 const STATE = {
   IDLE: 0,
@@ -8,19 +7,15 @@ const STATE = {
   WAITING: 3
 }
 
+const PONG_MSG = `${C.TOPIC.CONNECTION}${C.MESSAGE_PART_SEPERATOR}${C.ACTIONS.PONG}${C.MESSAGE_SEPERATOR}`
+
 module.exports = class MessageQueue {
   constructor (options, socket) {
     this._permissionHandler = options.permissionHandler
     this._logger = options.logger
     this._socket = socket
-    this._messages = []
-    this._message = {
-      raw: undefined,
-      topic: undefined,
-      action: undefined,
-      data: undefined
-    }
-    this._index = 0
+    this._raw = ''
+    this._msg = null
     this._state = STATE.IDLE
 
     this._onResponse = this._onResponse.bind(this)
@@ -30,7 +25,7 @@ module.exports = class MessageQueue {
   }
 
   process (rawMessage) {
-    this._messages.push(...rawMessage.split(C.MESSAGE_SEPERATOR))
+    this._raw += rawMessage
 
     if (this._state === STATE.IDLE) {
       this._next()
@@ -40,11 +35,11 @@ module.exports = class MessageQueue {
   _onResponse (error, result) {
     if (error) {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-      this._sendError(C.EVENT.MESSAGE_PERMISSION_ERROR, this._message)
+      this._sendError(C.EVENT.MESSAGE_PERMISSION_ERROR, this._msg)
     } else if (!result) {
-      this._sendError(C.EVENT.MESSAGE_DENIED, this._message)
+      this._sendError(C.EVENT.MESSAGE_DENIED, this._msg)
     } else {
-      this.onAuthenticatedMessage(this._socket, this._message)
+      this.onAuthenticatedMessage(this._socket, this._msg)
     }
 
     if (this._state === STATE.WAITING) {
@@ -58,29 +53,20 @@ module.exports = class MessageQueue {
 
   _next () {
     while (true) {
-      const rawMessage = this._messages[this._index++]
+      if (this._raw.startsWith(PONG_MSG)) {
+        this._raw = this._raw.slice(PONG_MSG.length)
+        continue
+      }
 
-      if (rawMessage === undefined) {
-        this._index = 0
+      const idx = this._raw.indexOf(C.MESSAGE_SEPERATOR)
+      if (idx === -1) {
         this._state = STATE.IDLE
-        this._messages.length = 0
+        this._raw = ''
         break
       }
 
-      const res = messageParser.parse(rawMessage, this._message)
-
-      if (res === null) {
-        this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, rawMessage)
-        this._socket.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, rawMessage)
-      }
-
-      if (res === undefined) {
-        continue
-      }
-
-      if (this._message.topic === C.TOPIC.CONNECTION && this._message.action === C.ACTIONS.PONG) {
-        continue
-      }
+      this._msg = this._raw.slice(0, idx)
+      this._raw = this._raw.slice(idx + 1)
 
       // Determine (STATE.WAITING) if canPerformAction is executed synchronously (STATE.SYNC) or
       // (STATE.ASYNC) asynchronously.
@@ -92,7 +78,7 @@ module.exports = class MessageQueue {
 
       this._permissionHandler.canPerformAction(
         this._socket.user,
-        this._message,
+        this._msg,
         this._onResponse,
         this._socket.authData
       )
@@ -105,10 +91,6 @@ module.exports = class MessageQueue {
   }
 
   _sendError (event, message) {
-    let data = [ message.data[0], message.action ]
-    if (message.data.length > 1) {
-      data = data.concat(message.data.slice(1))
-    }
-    this._socket.sendError(message.topic, event, data)
+    this._socket.sendError(message.charAt(0), event, message)
   }
 }

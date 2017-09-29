@@ -1,5 +1,4 @@
 const C = require('../constants/constants')
-const messageParser = require('./message-parser')
 const messageBuilder = require('./message-builder')
 const SocketWrapper = require('./socket-wrapper')
 const events = require('events')
@@ -207,25 +206,23 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       return
     }
 
-    const msg = connectionMessage
-      .split(C.MESSAGE_SEPERATOR)
-      .map(messageParser.parse)[0]
+    const [ topic, action ] = connectionMessage.split(C.MESSAGE_PART_SEPERATOR, 2)
 
-    if (msg === null || msg === undefined) {
+    if (!topic || !action) {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.MESSAGE_PARSE_ERROR, connectionMessage)
       socketWrapper.destroy()
-    } else if (msg.topic !== C.TOPIC.CONNECTION) {
+    } else if (topic !== C.TOPIC.CONNECTION) {
       this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.INVALID_MESSAGE, `invalid connection message ${connectionMessage}`)
       socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.INVALID_MESSAGE, 'invalid connection message')
-    } else if (msg.action === C.ACTIONS.PONG) {
+    } else if (action === C.ACTIONS.PONG) {
       // do nothing
-    } else if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
+    } else if (action === C.ACTIONS.CHALLENGE_RESPONSE) {
       socketWrapper.onMessage = socketWrapper.authCallBack
       socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.ACK)
     } else {
-      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, msg.action)
-      socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, `unknown action ${msg.action}`)
+      this._logger.log(C.LOG_LEVEL.WARN, C.EVENT.UNKNOWN_ACTION, action)
+      socketWrapper.sendError(C.TOPIC.CONNECTION, C.EVENT.UNKNOWN_ACTION, `unknown action ${action}`)
     }
   }
 
@@ -257,16 +254,15 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       return
     }
 
-    const msg = authMsg
-      .split(C.MESSAGE_SEPERATOR)
-      .map(messageParser.parse)[0]
+    const [ topic, action, ...data ] = authMsg.slice(0, -1).split(C.MESSAGE_PART_SEPERATOR)
+
     let authData
     let errorMsg
 
     /**
      * Ignore pong messages
      */
-    if (msg && msg.topic === C.TOPIC.CONNECTION && msg.action === C.ACTIONS.PONG) {
+    if (topic === C.TOPIC.CONNECTION && action === C.ACTIONS.PONG) {
       return
     }
 
@@ -279,11 +275,11 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     /**
      * Ensure the message is a valid authentication message
      */
-    if (!msg ||
-        msg.topic !== C.TOPIC.AUTH ||
-        msg.action !== C.ACTIONS.REQUEST ||
-        msg.data.length !== 1
-      ) {
+    if (
+      topic !== C.TOPIC.AUTH ||
+      action !== C.ACTIONS.REQUEST ||
+      data.length !== 1
+    ) {
       errorMsg = this._logInvalidAuthData === true ? authMsg : ''
       this._sendInvalidAuthMsg(socketWrapper, errorMsg)
       return
@@ -293,7 +289,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
      * Ensure the authentication data is valid JSON
      */
     try {
-      authData = this._getValidAuthData(msg.data[0])
+      authData = this._getValidAuthData(data[0])
     } catch (e) {
       errorMsg = 'Error parsing auth message'
 

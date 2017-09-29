@@ -19,24 +19,19 @@ module.exports = class ListenerRegistry {
     this._matcher.onMatchRemoved = this._onMatchRemoved.bind(this)
   }
 
-  handle (socket, message) {
-    if (!message.data || !message.data[0]) {
-      socket.sendError(this._topic, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
-      return
-    }
-    if (message.action === C.ACTIONS.LISTEN) {
-      this._providerRegistry.subscribe(message.data[0], socket)
-    } else if (message.action === C.ACTIONS.UNLISTEN) {
-      this._providerRegistry.unsubscribe(message.data[0], socket)
-    } else if (message.action === C.ACTIONS.LISTEN_ACCEPT) {
-      this._accept(socket, message.data)
-    } else if (message.action === C.ACTIONS.LISTEN_REJECT) {
-      this._reject(socket, message.data)
+  handle (socket, rawMessage) {
+    const [ , action, pattern, name ] = rawMessage.split(C.MESSAGE_PART_SEPERATOR)
+
+    if (action === C.ACTIONS.LISTEN) {
+      this._providerRegistry.subscribe(pattern, socket)
+    } else if (action === C.ACTIONS.UNLISTEN) {
+      this._providerRegistry.unsubscribe(pattern, socket)
+    } else if (action === C.ACTIONS.LISTEN_ACCEPT) {
+      this._accept(socket, pattern, name)
+    } else if (action === C.ACTIONS.LISTEN_REJECT) {
+      this._reject(socket, pattern, name)
     } else {
-      socket.sendError(this._topic, C.EVENT.UNKNOWN_ACTION, [
-        ...message.data,
-        `unknown action ${message.action}`
-      ])
+      socket.sendError(null, C.EVENT.UNKNOWN_ACTION, rawMessage)
     }
   }
 
@@ -99,7 +94,7 @@ module.exports = class ListenerRegistry {
     }
   }
 
-  _accept (socket, [ pattern, name ]) {
+  _accept (socket, pattern, name) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
     if (!subscription) {
       return
@@ -124,7 +119,7 @@ module.exports = class ListenerRegistry {
     this._sendAccept(listener, subscription)
   }
 
-  _reject (socket, [ pattern, name ]) {
+  _reject (socket, pattern, name) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
     if (!subscription) {
       return

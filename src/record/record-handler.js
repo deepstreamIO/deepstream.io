@@ -44,37 +44,32 @@ module.exports = class RecordHandler {
     })
   }
 
-  handle (socket, message) {
-    if (!message.data || !message.data[0]) {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, [ undefined, message.raw ])
-      return
-    }
+  handle (socket, rawMessage) {
+    const [ , action, ...record ] = rawMessage.split(C.MESSAGE_PART_SEPERATOR, 6)
 
     if (
-      message.action === C.ACTIONS.LISTEN ||
-      message.action === C.ACTIONS.UNLISTEN ||
-      message.action === C.ACTIONS.LISTEN_ACCEPT ||
-      message.action === C.ACTIONS.LISTEN_REJECT
+      action === C.ACTIONS.LISTEN ||
+      action === C.ACTIONS.UNLISTEN ||
+      action === C.ACTIONS.LISTEN_ACCEPT ||
+      action === C.ACTIONS.LISTEN_REJECT
     ) {
-      this._listenerRegistry.handle(socket, message)
+      this._listenerRegistry.handle(socket, rawMessage)
       return
     }
 
-    const record = message.data
-
-    if (message.action === C.ACTIONS.READ) {
+    if (action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(
         record[0],
         socket,
         this._cache.ref(record[0]),
         record[1]
       )
-    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
+    } else if (action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(
         record[0],
         socket
       )
-    } else if (message.action === C.ACTIONS.UPDATE) {
+    } else if (action === C.ACTIONS.UPDATE) {
       if (!record[1].startsWith('INF')) {
         this._storage.set(record, (error, record) => {
           if (error) {
@@ -85,10 +80,7 @@ module.exports = class RecordHandler {
       }
       this._broadcast(record, socket)
     } else {
-      socket.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, [
-        ...record,
-        `unknown action ${message.action}`
-      ])
+      socket.sendError(null, C.EVENT.UNKNOWN_ACTION, rawMessage)
     }
   }
 

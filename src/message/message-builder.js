@@ -56,6 +56,9 @@ exports.getErrorMsg = function (topic, type, message) {
   if (message instanceof Array) {
     return `${topic + SEP}E${SEP}${type}${SEP}${message.join(SEP)}${C.MESSAGE_SEPERATOR}`
   }
+  if (!topic) {
+    return `${topic + SEP}E${SEP}${message.slice(2)}`
+  }
 
   return `${topic + SEP}E${SEP}${type}${SEP}${message}${C.MESSAGE_SEPERATOR}`
 }
