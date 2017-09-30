@@ -10,7 +10,7 @@ module.exports = class EventHandler {
     this._logger = options.logger
   }
 
-  handle (socket, message, rawMessage) {
+  handle (socket, rawMessage) {
     const [ , action, pattern ] = rawMessage.split(C.MESSAGE_PART_SEPERATOR, 3)
 
     if (action === C.ACTIONS.SUBSCRIBE) {
@@ -21,7 +21,7 @@ module.exports = class EventHandler {
       this._logger.log(C.LOG_LEVEL.DEBUG, C.EVENT.TRIGGER_EVENT, rawMessage)
       this._subscriptionRegistry.sendToSubscribers(pattern, rawMessage, socket)
     } else {
-      this._listenerRegistry.handle(socket, message, rawMessage)
+      this._listenerRegistry.handle(socket, rawMessage)
     }
   }
 }
