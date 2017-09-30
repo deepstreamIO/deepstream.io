@@ -13,7 +13,7 @@ const EventEmitter = require('events').EventEmitter
  *
  * @author DeepstreamHub GmbH 2016
  */
-module.exports = class DistributedStateRegistry extends EventEmitter {
+module.exports = class StateRegistry extends EventEmitter {
 
   /**
   * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
