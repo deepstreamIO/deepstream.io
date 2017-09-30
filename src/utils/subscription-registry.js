@@ -310,7 +310,7 @@ module.exports = class SubscriptionRegistry {
     if (this._subscriptionListener) {
       this._subscriptionListener.onSubscriptionMade(name, socket)
     }
-    
+
     const logMsg = `for ${this._topic}:${name} by ${socket.user}`
     this._options.logger.debug(this._constants.SUBSCRIBE, logMsg)
     socket.sendMessage(this._topic, C.ACTIONS.ACK, [this._constants.SUBSCRIBE, name], true)

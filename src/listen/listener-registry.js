@@ -228,7 +228,8 @@ module.exports = class ListenerRegistry {
   * @public
   * @returns {void}
   */
-  onSubscriptionRemoved (subscriptionName, socketWrapper) {
+  // eslint-disable-next-line
+  onSubscriptionRemoved (/* subscriptionName, socketWrapper */) {
   }
 
   /**
@@ -293,7 +294,7 @@ module.exports = class ListenerRegistry {
       if (this._locallyProvidedRecords[subscriptionName]) {
         continue
       }
-      
+
       if (!subscriptionName.match(regExp)) {
         continue
       }

@@ -149,7 +149,7 @@ class ListenerTestUtils {
     // verify( providers[ provider], C.ACTIONS.ERROR, [ C.EVENT.INVALID_MESSAGE, C.ACTIONS.LISTEN_REJECT, pattern, subscriptionName ] );
   }
 
-  providerLosesItsConnection (provider, pattern) {
+  providerLosesItsConnection (provider) {
     providers[provider].socket.emit('close', providers[provider])
   }
 
