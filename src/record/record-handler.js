@@ -4,21 +4,6 @@ const ListenerRegistry = require(`../listen/listener-registry`)
 const messageBuilder = require(`../message/message-builder`)
 const RecordCache = require(`./record-cache`)
 
-const READ = [
-  C.TOPIC.RECORD,
-  C.ACTIONS.READ
-].join(C.MESSAGE_PART_SEPERATOR)
-
-const UNSUBSCRIBE = [
-  C.TOPIC.RECORD,
-  C.ACTIONS.UNSUBSCRIBE
-].join(C.MESSAGE_PART_SEPERATOR)
-
-const UPDATE = [
-  C.TOPIC.RECORD,
-  C.ACTIONS.UPDATE
-].join(C.MESSAGE_PART_SEPERATOR)
-
 module.exports = class RecordHandler {
   constructor (options) {
     this._logger = options.logger
@@ -42,7 +27,7 @@ module.exports = class RecordHandler {
               const message = `error while reading ${name} from storage ${error}`
               this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_LOAD_ERROR, message)
             } else {
-              this._broadcast(name, version, body, messageBuilder.buildMsg5(
+              this._broadcast(name, version, messageBuilder.buildMsg5(
                 C.TOPIC.RECORD,
                 C.ACTIONS.UPDATE,
                 name,
@@ -66,43 +51,37 @@ module.exports = class RecordHandler {
   }
 
   handle (socket, rawMessage) {
-    if (rawMessage.startsWith(READ)) {
-      const [ name, version ] = rawMessage
-        .slice(READ.length + 1)
-        .split(C.MESSAGE_PART_SEPERATOR, 2)
+    const [ , action, name, version ] = rawMessage.split(C.MESSAGE_PART_SEPERATOR, 4)
 
+    if (action === C.ACTIONS.READ) {
       this._subscriptionRegistry.subscribe(
         name,
         socket,
         this._cache.ref(name),
         version
       )
-    } else if (rawMessage.startsWith(UNSUBSCRIBE)) {
-      const name = rawMessage.slice(UNSUBSCRIBE.length + 1)
+    } else if (action === C.ACTIONS.UNSUBSCRIBE) {
       this._subscriptionRegistry.unsubscribe(
         name,
         socket
       )
-    } else if (rawMessage.startsWith(UPDATE)) {
-      const [ name, version, body, parent = '' ] = rawMessage
-        .slice(UPDATE.length + 1)
-        .split(C.MESSAGE_PART_SEPERATOR, 4)
-
+    } else if (action === C.ACTIONS.UPDATE) {
       if (!version.startsWith('INF')) {
-        this._storage.set(name, version, body, parent, (error, name) => {
+        this._storage.set(rawMessage.slice(4), (error, name) => {
           if (error) {
             const message = `error while writing ${name} to storage ${error}`
             this._logger.log(C.LOG_LEVEL.ERROR, C.EVENT.RECORD_UPDATE_ERROR, message)
           }
         }, name)
       }
-      this._broadcast(name, version, body, rawMessage.slice(0, -(parent.length + 1)), socket)
+
+      this._broadcast(name, version, rawMessage, socket)
     } else {
       this._listenerRegistry.handle(socket, rawMessage)
     }
   }
 
-  _broadcast (name, version, body, message, sender) {
+  _broadcast (name, version, message, sender) {
     const subscription = this._subscriptionRegistry.getSubscription(name)
 
     if (!subscription) {
