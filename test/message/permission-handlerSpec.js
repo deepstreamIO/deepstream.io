@@ -21,14 +21,13 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
 })
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
 const SocketMock = require('../mocks/socket-mock')
-const _msg = require('../test-helper/test-helper').msg
 
 const permissionHandler = {
   isValidUser (connectionData, authData, callback) {
     callback(true, {
       username: 'someUser',
       clientData: { firstname: 'Wolfram' },
-      serverData: { role: authData.role }
+      serverData: { role: 'admin' }
     })
   },
   canPerformAction (username, message, callback, data) {
@@ -49,18 +48,23 @@ const mockDs = {
   _options: options
 }
 
-xdescribe('permissionHandler passes additional user meta data', () => {
+describe('permissionHandler passes additional user meta data', () => {
   let socketWrapperMock
   let connectionEndpoint
 
-  beforeAll((done) => {
+  beforeEach((done) => {
     connectionEndpoint = new ConnectionEndpoint(options)
     const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
       connectionEndpoint.onMessages = function () {}
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
       socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
+      
+      uwsMock.messageHandler([{
+        topic: C.TOPIC.CONNECTION,
+        action: C.ACTIONS.CHALLENGE_RESPONSE,
+        data: 'localhost:6021'
+      }], socketWrapperMock)
 
       done()
     })
@@ -69,17 +73,35 @@ xdescribe('permissionHandler passes additional user meta data', () => {
   it('sends an authentication message', () => {
     spyOn(permissionHandler, 'isValidUser').and.callThrough()
 
-    uwsMock._messageHandler(_msg('A|REQ|{"role": "admin"}+'), socketWrapperMock)
+    uwsMock.messageHandler([{
+      topic: C.TOPIC.AUTH,
+      action: C.ACTIONS.REQUEST,
+      data: '{ "token": 1234 }'
+    }], socketWrapperMock)
 
     expect(permissionHandler.isValidUser).toHaveBeenCalled()
-    expect(permissionHandler.isValidUser.calls.mostRecent().args[1]).toEqual({ role: 'admin' })
-    expect(socketWrapperMock.lastSendMessage).toEqual({ topic: C.TOPIC.AUTH, isAck: true, data: ['O{"firstname":"Wolfram"}'] })
+    expect(permissionHandler.isValidUser.calls.mostRecent().args[1]).toEqual({ token: 1234 })
+    expect(socketWrapperMock.lastSendMessage).toEqual({ 
+      topic: C.TOPIC.AUTH, 
+      isAck: true,
+      parsedData: { firstname: 'Wolfram' } 
+    })
   })
 
   it('sends a record read message', () => {
     spyOn(connectionEndpoint, 'onMessages')
 
-    uwsMock._messageHandler(_msg('R|CR|someRecord+'), socketWrapperMock)
+    uwsMock.messageHandler([{
+      topic: C.TOPIC.AUTH,
+      action: C.ACTIONS.REQUEST,
+      data: '{ "token": 1234 }'
+    }], socketWrapperMock)
+
+    uwsMock.messageHandler([{
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.READ,
+      name: 'recordA'
+    }], socketWrapperMock)
 
     expect(connectionEndpoint.onMessages).toHaveBeenCalled()
     expect(connectionEndpoint.onMessages.calls.mostRecent().args[0].authData).toEqual({ role: 'admin' })

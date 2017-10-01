@@ -156,6 +156,11 @@ class UwsSocketWrapper extends EventEmitter {
     return messageBuilder.getMessage(message)
   }
 
+  // eslint-disable-next-line
+  parseMessage (message) {
+    return messageParser.getMessage(message)
+  }
+
   /**
    * Sends a message based on the provided action and topic
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
