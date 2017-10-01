@@ -40,13 +40,30 @@ module.exports = () => {
   function getSocketWrapper (user, authData) {
     const socketWrapperEmitter = new EventEmitter()
     const socketWrapper = {
+      authAttempts: 0,
       user,
       authData: authData || {},
+      prepareMessage: () => {},
+      sendPrepared: () => {},
+      finalizeMessage: () => {},
       sendMessage: () => {},
       sendError: () => {},
       sendAckMessage: () => {},
       uuid: Math.random(),
-      parseData: message => message.parsedData
+      parseData: (message) => {
+        if (message.parsedData) return true
+        try {
+          message.parsedData = JSON.parse(message.data)
+          return true
+        } catch (e) {
+          return e
+        }
+      },
+      getMessage: message => message,
+      parseMessage: message => message,
+      destroy: () => {},
+      getHandshakeData: () => ({}),
+      close: () => socketWrapperEmitter.emit('close', this)
     }
     socketWrapper.on = socketWrapperEmitter.on
     socketWrapper.once = socketWrapperEmitter.once

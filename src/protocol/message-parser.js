@@ -151,6 +151,7 @@ module.exports = class MessageParser {
       } else if (message.topic === C.TOPIC.CONNECTION) {
         message.data = parts[index++]
       } else if (message.topic === C.TOPIC.AUTH) {
+        message.dataEncoding = C.ENCODING_TYPES.JSON
         message.data = parts[index++]
       }
 

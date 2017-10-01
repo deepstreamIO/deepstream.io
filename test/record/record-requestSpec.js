@@ -7,8 +7,6 @@ const getTestMocks = require('../test-helper/test-mocks')
 const testHelper = require('../test-helper/test-helper')
 const LoggerMock = require('../mocks/logger-mock')
 
-const msg = testHelper.msg
-
 describe('record request', () => {
   const completeCallback = jasmine.createSpy('completeCallback')
   const errorCallback = jasmine.createSpy('errorCallback')
@@ -178,8 +176,12 @@ describe('record request', () => {
         )
       expect(completeCallback).not.toHaveBeenCalled()
 
-      expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_LOAD_ERROR', 'error while loading cacheError from cache:storageError')
-      // expect(client.socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'))
+      expect(options.logger.log).toHaveBeenCalledWith(
+        3, 'RECORD_LOAD_ERROR', 'error while loading cacheError from cache:storageError'
+      )
+      // expect(client.socketWrapper.socket.lastSendMessage).toBe(
+      //   msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'
+      // ))
     })
 
     it('handles storage errors', () => {

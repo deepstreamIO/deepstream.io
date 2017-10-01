@@ -55,6 +55,9 @@ xdescribe('record transitions', () => {
 
     options = testHelper.getDeepstreamOptions()
     recordTransition = new RecordTransition(recordUpdate.name, options, testMocks.recordHandler)
+  
+    const parsedData = { _v: 4, _d: { firstname: 'Wolfram' } }
+    options.cache.set('some-record', parsedData, () => {})
   })
 
   afterEach(() => {

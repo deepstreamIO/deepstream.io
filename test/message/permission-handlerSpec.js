@@ -12,12 +12,22 @@ const httpsMock = new HttpMock()
 // since proxyquire.callThru is enabled, manually capture members from prototypes
 httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
-const SocketWrapperMock = require('../mocks/socket-wrapper-mock')
+
+const testHelper = require('../test-helper/test-helper')
+const getTestMocks = require('../test-helper/test-mocks')
+
+let client
+
 const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
   uws: uwsMock,
   http: httpMock,
   https: httpsMock,
-  './socket-wrapper': SocketWrapperMock
+  './socket-wrapper-factory': {
+    create: () => {
+      client = getTestMocks().getSocketWrapper('client')
+      return client.socketWrapper
+    }
+  }
 })
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
 const SocketMock = require('../mocks/socket-mock')
@@ -59,12 +69,12 @@ describe('permissionHandler passes additional user meta data', () => {
       connectionEndpoint.onMessages = function () {}
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
       socketWrapperMock = uwsMock.simulateConnection()
-      
+
       uwsMock.messageHandler([{
         topic: C.TOPIC.CONNECTION,
         action: C.ACTIONS.CHALLENGE_RESPONSE,
         data: 'localhost:6021'
-      }], socketWrapperMock)
+      }], client.socketWrapper)
 
       done()
     })
@@ -73,19 +83,25 @@ describe('permissionHandler passes additional user meta data', () => {
   it('sends an authentication message', () => {
     spyOn(permissionHandler, 'isValidUser').and.callThrough()
 
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+        isAck: true,
+        parsedData: { firstname: 'Wolfram' }
+      })
+
     uwsMock.messageHandler([{
       topic: C.TOPIC.AUTH,
       action: C.ACTIONS.REQUEST,
       data: '{ "token": 1234 }'
-    }], socketWrapperMock)
+    }], client.socketWrapper)
 
     expect(permissionHandler.isValidUser).toHaveBeenCalled()
     expect(permissionHandler.isValidUser.calls.mostRecent().args[1]).toEqual({ token: 1234 })
-    expect(socketWrapperMock.lastSendMessage).toEqual({ 
-      topic: C.TOPIC.AUTH, 
-      isAck: true,
-      parsedData: { firstname: 'Wolfram' } 
-    })
+
+    client.socketWrapperMock.verify()
   })
 
   it('sends a record read message', () => {
@@ -95,13 +111,13 @@ describe('permissionHandler passes additional user meta data', () => {
       topic: C.TOPIC.AUTH,
       action: C.ACTIONS.REQUEST,
       data: '{ "token": 1234 }'
-    }], socketWrapperMock)
+    }], client.socketWrapper)
 
     uwsMock.messageHandler([{
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.READ,
       name: 'recordA'
-    }], socketWrapperMock)
+    }], client.socketWrapper)
 
     expect(connectionEndpoint.onMessages).toHaveBeenCalled()
     expect(connectionEndpoint.onMessages.calls.mostRecent().args[0].authData).toEqual({ role: 'admin' })

@@ -4,7 +4,7 @@
 const ListenerRegistry = require('../../src/listen/listener-registry')
 const testHelper = require('../test-helper/test-helper')
 const SocketMock = require('../mocks/socket-mock')
-const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const SocketWrapperFactory = require('../mocks/socket-wrapper-factory-mock')
 
 const options = testHelper.getDeepstreamOptions()
 const msg = testHelper.msg
@@ -23,7 +23,7 @@ xdescribe('listener-registry errors', () => {
   })
 
   it('adds a listener without message data', () => {
-    const socketWrapper = new SocketWrapper(new SocketMock(), options)
+    const socketWrapper = SocketWrapperFactory.create(new SocketMock(), options)
     listenerRegistry.handle(socketWrapper, {
       topic: 'R',
       action: 'L',

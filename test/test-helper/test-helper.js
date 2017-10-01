@@ -3,7 +3,7 @@
 'use strict'
 
 const C = require('../../src/constants/constants')
-const SocketWrapper = require('../../src/message/uws/socket-wrapper')
+const SocketWrapperFactory = require('../../src/message/uws/socket-wrapper-factory')
 
 exports.msg = function () {
   const args = Array.from(arguments)
@@ -118,7 +118,9 @@ exports.testPermission = function (options) {
     callback = callback || function (error, result) {
       permissionResult = result
     }
-    permissionHandler.canPerformAction(username, message, callback, userdata, new SocketWrapper())
+    permissionHandler.canPerformAction(
+      username, message, callback, userdata, SocketWrapperFactory.create()
+    )
     return permissionResult
   }
 }

@@ -4,7 +4,7 @@ const C = require('../../src/constants/constants')
 const utils = require('util')
 const EventEmitter = require('events').EventEmitter
 
-module.exports = class SocketWrapperMock extends EventEmitter {
+class SocketWrapperMock extends EventEmitter {
   constructor (options) {
     super()
     this.isClosed = false
@@ -70,3 +70,5 @@ module.exports = class SocketWrapperMock extends EventEmitter {
     return this._handshakeData
   }
 }
+
+module.exports.create = options => new SocketWrapperMock(options)

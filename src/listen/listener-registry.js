@@ -129,7 +129,7 @@ module.exports = class ListenerRegistry {
       this._providerRegistry.unsubscribe(message, socketWrapper)
       this._removeListener(socketWrapper, message)
       return
-    } 
+    }
 
     if (this._listenerTimeoutRegistry.isALateResponder(socketWrapper, message)) {
       this._listenerTimeoutRegistry.handle(socketWrapper, message)
@@ -139,7 +139,7 @@ module.exports = class ListenerRegistry {
     if (this._localListenInProgress[subscriptionName]) {
       this._processResponseForListenInProgress(socketWrapper, subscriptionName, message)
       return
-    }    
+    }
 
     console.log('>>', message, message.action)
   }

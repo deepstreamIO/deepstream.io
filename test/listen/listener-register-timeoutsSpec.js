@@ -27,7 +27,7 @@ describe('listener-registry-local-timeouts', () => {
   it('provider 1 times out, provider 2 accepts', (done) => {
     tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
     tu.publishUpdateWillBeSentToSubscribers('a/1', true)
-  
+
     setTimeout(() => {
       tu.providerAccepts(1, 'a/[0-9]', 'a/1')
       tu.subscriptionHasActiveProvider('a/1', true)

@@ -1,137 +1,181 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
+const sinon = require('sinon')
+
+const C = require('../../src/constants/constants')
 const testHelper = require('../test-helper/test-helper')
-const SocketWrapper = require('../mocks/socket-wrapper-mock')
-const SocketMock = require('../mocks/socket-mock')
+const getTestMocks = require('../test-helper/test-mocks')
+
 const SubscriptionRegistry = require('../../src/utils/subscription-registry')
 
-const _msg = testHelper.msg
 const options = testHelper.getDeepstreamOptions()
 
-const subscriptionListenerMock = {
-  onSubscriptionMade: jasmine.createSpy('onSubscriptionMade'),
-  onSubscriptionRemoved: jasmine.createSpy('onSubscriptionRemoved'),
-  onLastSubscriptionRemoved: jasmine.createSpy('onLastSubscriptionRemoved'),
-  onFirstSubscriptionMade: jasmine.createSpy('onFirstSubscriptionMade')
+const subscriptionListener = {
+  onSubscriptionMade: () => {},
+  onSubscriptionRemoved: () => {},
+  onLastSubscriptionRemoved: () => {},
+  onFirstSubscriptionMade: () => {},
 }
 
-const subscriptionRegistry = new SubscriptionRegistry(options, 'E')
-subscriptionRegistry.setSubscriptionListener(subscriptionListenerMock)
+let subscriptionRegistry
+let subscriptionListenerMock
 
-xdescribe('subscription registry', () => {
+let clientA
+let clientB
+
+let testMocks
+
+describe('subscription registry', () => {
+
+  beforeEach(() => {
+    testMocks = getTestMocks()
+
+    subscriptionListenerMock = sinon.mock(subscriptionListener)
+    subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.EVENT)
+    subscriptionRegistry.setSubscriptionListener(subscriptionListener)
+
+    clientA = testMocks.getSocketWrapper('client a')
+    clientB = testMocks.getSocketWrapper('client b')
+  })
+
+  afterEach(() => {
+    subscriptionListenerMock.verify()
+    clientA.socketWrapperMock.verify()
+    clientB.socketWrapperMock.verify()
+  })
+
+  const subscribeMessage = {
+    topic: C.TOPIC.EVENT,
+    action: C.ACTIONS.SUBSCRIBE,
+    name: 'someName'
+  }
+
+  const unsubscribeMessage = {
+    topic: C.TOPIC.EVENT,
+    action: C.ACTIONS.UNSUBSCRIBE,
+    name: 'someName'
+  }
+
+  const eventMessage = {
+    topic: C.TOPIC.EVENT,
+    action: C.ACTIONS.EVENT,
+    name: 'someName'
+  }
 
   describe('subscription-registry manages subscriptions', () => {
-    const socketWrapperA = new SocketWrapper(new SocketMock(), options)
-    const socketWrapperB = new SocketWrapper(new SocketMock(), options)
-
-    const fakeEvent = (name, data) => ({ topic: 'E', action: 'EVT', data: [name, data] })
-
     it('subscribes to names', () => {
-      expect(socketWrapperA.socket.lastSendMessage).toBe(null)
+      clientA.socketWrapperMock
+        .expects('sendAckMessage')
+        .once()
+        .withExactArgs(subscribeMessage)
 
-      subscriptionRegistry.subscribe('someName', socketWrapperA)
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|S|someName+'))
-      subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'SsomeString'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|SsomeString+'))
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
+
+      // expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|S|someName+'))
+
+      // subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'SsomeString'))
+      // expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|SsomeString+'))
     })
 
     it('doesn\'t subscribe twice to the same name', () => {
-      expect(options.logger.lastLogEvent).toBe('S')
-      subscriptionRegistry.subscribe('someName', socketWrapperA)
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|E|MULTIPLE_SUBSCRIPTIONS|someName+'))
+      clientA.socketWrapperMock
+        .expects('sendAckMessage')
+        .once()
+        .withExactArgs(subscribeMessage)
+
+      clientA.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.EVENT
+        }, C.EVENT.MULTIPLE_SUBSCRIPTIONS, 'someName')
+
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
       expect(options.logger.lastLogEvent).toBe('MULTIPLE_SUBSCRIPTIONS')
     })
 
     it('returns the subscribed socket', () => {
-      expect(subscriptionRegistry.getLocalSubscribers('someName')).toEqual(new Set([socketWrapperA]))
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
+      expect(subscriptionRegistry.getLocalSubscribers('someName')).toEqual(new Set([clientA.socketWrapper]))
     })
 
     it('determines if it has subscriptions', () => {
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
       expect(subscriptionRegistry.hasLocalSubscribers('someName')).toBe(true)
       expect(subscriptionRegistry.hasLocalSubscribers('someOtherName')).toBe(false)
     })
 
     it('distributes messages to multiple subscribers', () => {
-      subscriptionRegistry.subscribe('someName', socketWrapperB)
-      subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg2'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg2+'))
-      expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg2+'))
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
+      subscriptionRegistry.subscribe(subscribeMessage, clientB.socketWrapper)
+
+      clientA.socketWrapperMock
+        .expects('sendPrepared')
+        .once()
+
+      clientB.socketWrapperMock
+        .expects('sendPrepared')
+        .once()
+
+      subscriptionRegistry.sendToSubscribers('someName', eventMessage)
     })
 
     it('doesn\'t send message to sender', () => {
-      const message = fakeEvent('someName', 'msg3')
-      subscriptionRegistry.sendToSubscribers('someName', message, false, socketWrapperA)
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg2+'))
-      expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg3+'))
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
+      subscriptionRegistry.subscribe(subscribeMessage, clientB.socketWrapper)
+
+      clientA.socketWrapperMock
+        .expects('sendPrepared')
+        .never()
+
+      clientB.socketWrapperMock
+        .expects('sendPrepared')
+        .once()
+
+      subscriptionRegistry.sendToSubscribers('someName', eventMessage, false, clientA.socketWrapper)
     })
 
     it('unsubscribes', () => {
-      subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg4'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg4+'))
-      expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg4+'))
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
 
-      subscriptionRegistry.unsubscribe('someName', socketWrapperB)
-      expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
-      subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg5'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg5+'))
-      expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
+      clientA.socketWrapperMock
+        .expects('sendAckMessage')
+        .once()
+        .withExactArgs(unsubscribeMessage)
+
+      subscriptionRegistry.unsubscribe(unsubscribeMessage, clientA.socketWrapper)
     })
 
     it('handles unsubscribes for non existant topics', () => {
-      subscriptionRegistry.unsubscribe('giberish', socketWrapperB)
-      expect(socketWrapperB.socket.lastSendMessage).toBe(_msg('E|E|NOT_SUBSCRIBED|giberish+'))
-    })
+      clientA.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.EVENT
+        }, C.EVENT.NOT_SUBSCRIBED, 'someName')
 
-    it('handles unsubscribes for non existant subscriptions', () => {
-      const newSocketWrapper = new SocketWrapper(new SocketMock(), options)
-      subscriptionRegistry.unsubscribe('someName', newSocketWrapper)
-      expect(newSocketWrapper.socket.lastSendMessage).toBe(_msg('E|E|NOT_SUBSCRIBED|someName+'))
-    })
-
-    it('routes the events', () => {
-      subscriptionListenerMock.onSubscriptionRemoved.calls.reset()
-
-      subscriptionRegistry.subscribe('someOtherName', socketWrapperA)
-      subscriptionRegistry.sendToSubscribers('someOtherName', fakeEvent('someOtherName', 'msg6'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someOtherName|msg6+'))
-
-      subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg7'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg7+'))
-
-      subscriptionRegistry.unsubscribe('someName', socketWrapperA)
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
-      subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg8'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
-
-      subscriptionRegistry.sendToSubscribers('someOtherName', fakeEvent('someOtherName', 'msg9'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someOtherName|msg9+'))
+      subscriptionRegistry.unsubscribe(unsubscribeMessage, clientA.socketWrapper)
     })
 
     it('removes all subscriptions on socket.close', () => {
-      subscriptionRegistry.subscribe('nameA', socketWrapperA)
-      subscriptionRegistry.subscribe('nameB', socketWrapperA)
+      subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
+      subscriptionRegistry.subscribe(Object.assign({}, subscribeMessage, { name: 'eventB' }), clientA.socketWrapper)
 
-      subscriptionRegistry.sendToSubscribers('nameA', fakeEvent('nameA', 'msgA'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|nameA|msgA+'))
+      clientA.socketWrapper.emit('close', clientA.socketWrapper)
 
-      subscriptionRegistry.sendToSubscribers('nameB', fakeEvent('nameB', 'msgB'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|nameB|msgB+'))
+      clientA.socketWrapperMock
+        .expects('sendPrepared')
+        .never()
 
-      socketWrapperA.socket.emit('close')
-
-      subscriptionRegistry.sendToSubscribers('nameA', fakeEvent('nameA', 'msgC'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|nameB|msgB+'))
-
-      subscriptionRegistry.sendToSubscribers('nameB', fakeEvent('nameB', 'msgD'))
-      expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|nameB|msgB+'))
+      subscriptionRegistry.sendToSubscribers('nameA', eventMessage)
+      subscriptionRegistry.sendToSubscribers('nameB', eventMessage)
     })
   })
 
   describe('subscription-registry allows custom actions to be set', () => {
-    const socketWrapper = new SocketWrapper(new SocketMock(), options)
-
-    it('overrides the default actions', () => {
+    beforeEach(() => {
       subscriptionRegistry.setAction('subscribe', 'make-aware')
       subscriptionRegistry.setAction('unsubscribe', 'be-unaware')
       subscriptionRegistry.setAction('multiple_subscriptions', 'too-aware')
@@ -139,36 +183,83 @@ xdescribe('subscription registry', () => {
     })
 
     it('subscribes to names', () => {
-      subscriptionRegistry.subscribe('someName', socketWrapper)
-      expect(socketWrapper.socket.lastSendMessage).toBe(_msg('E|A|make-aware|someName+'))
+      clientA.socketWrapperMock
+        .expects('sendAckMessage')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.EVENT,
+          action: 'make-aware',
+          name: 'someName'
+        })
+
+      subscriptionRegistry.subscribe({
+        topic: C.TOPIC.EVENT,
+        action: 'make-aware',
+        name: 'someName'
+      }, clientA.socketWrapper)
     })
 
     it('doesn\'t subscribe twice to the same name', () => {
-      expect(options.logger.lastLogEvent).toBe('make-aware')
-      subscriptionRegistry.subscribe('someName', socketWrapper)
-      expect(socketWrapper.socket.lastSendMessage).toBe(_msg('E|E|too-aware|someName+'))
+      clientA.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.EVENT
+        }, 'too-aware', 'someName')
+
+      subscriptionRegistry.subscribe({
+        topic: C.TOPIC.EVENT,
+        action: 'too-aware',
+        name: 'someName'
+      }, clientA.socketWrapper)
+      subscriptionRegistry.subscribe({
+        topic: C.TOPIC.EVENT,
+        action: 'too-aware',
+        name: 'someName'
+      }, clientA.socketWrapper)
       expect(options.logger.lastLogEvent).toBe('too-aware')
     })
 
     it('unsubscribes', () => {
-      subscriptionRegistry.unsubscribe('someName', socketWrapper)
-      expect(socketWrapper.socket.lastSendMessage).toBe(_msg('E|A|be-unaware|someName+'))
+      subscriptionRegistry.subscribe({
+        topic: C.TOPIC.EVENT,
+        action: 'make-aware',
+        name: 'someName'
+      }, clientA.socketWrapper)
+
+      clientA.socketWrapperMock
+        .expects('sendAckMessage')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.EVENT,
+          action: 'be-unaware',
+          name: 'someName'
+        })
+
+      subscriptionRegistry.unsubscribe({
+        topic: C.TOPIC.EVENT,
+        action: 'be-unaware',
+        name: 'someName'
+      }, clientA.socketWrapper)
     })
 
     it('handles unsubscribes for non existant subscriptions', () => {
-      const newSocketWrapper = new SocketWrapper(new SocketMock(), options)
-      subscriptionRegistry.unsubscribe('someName', newSocketWrapper)
-      expect(newSocketWrapper.socket.lastSendMessage).toBe(_msg('E|E|unaware|someName+'))
+      clientA.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.EVENT
+        }, 'unaware', 'someName')
+
+      subscriptionRegistry.unsubscribe(unsubscribeMessage, clientA.socketWrapper)
     })
   })
 
   describe('subscription-registry unbinds all events on unsubscribe', () => {
-    const socketWrapper = new SocketWrapper(new SocketMock(), options)
-
     it('subscribes and unsubscribes 30 times', () => {
       for (let i = 0; i < 30; i++) {
-        subscriptionRegistry.subscribe('repeated-test', socketWrapper)
-        subscriptionRegistry.unsubscribe('repeated-test', socketWrapper)
+        subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
+        subscriptionRegistry.unsubscribe(unsubscribeMessage, clientA.socketWrapper)
       }
     })
   })

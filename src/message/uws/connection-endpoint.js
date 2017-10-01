@@ -1,9 +1,8 @@
 'use strict'
 
 const C = require('../../constants/constants')
-const messageParser = require('../../protocol/message-parser')
 const messageBuilder = require('../../protocol/message-builder')
-const SocketWrapper = require('./socket-wrapper')
+const SocketWrapperFactory = require('./socket-wrapper-factory')
 const events = require('events')
 const http = require('http')
 const https = require('https')
@@ -291,7 +290,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
 
     this._upgradeRequest = null
 
-    const socketWrapper = new SocketWrapper(
+    const socketWrapper = SocketWrapperFactory.create(
       external, handshakeData, this._logger, this._options, this
     )
     uws.native.setUserData(external, socketWrapper)
@@ -381,13 +380,12 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
   _authenticateConnection (socketWrapper, disconnectTimeout, parsedMessages) {
     const msg = parsedMessages[0]
 
-    let authData
     let errorMsg
 
     if (msg.parseError) {
       this._logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, `error parsing auth message ${msg.raw}`)
       socketWrapper.sendError({
-        topic: C.TOPIC.CONNECTION
+        topic: C.TOPIC.AUTH
       }, C.EVENT.MESSAGE_PARSE_ERROR, msg.raw)
       socketWrapper.destroy()
       return
@@ -411,7 +409,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
      * Ensure the message is a valid authentication message
      */
     if (msg.action !== C.ACTIONS.REQUEST) {
-      errorMsg = this._logInvalidAuthData === true ? authMsg : ''
+      errorMsg = this._logInvalidAuthData === true ? msg.data : ''
       this._sendInvalidAuthMsg(socketWrapper, errorMsg)
       return
     }
@@ -419,13 +417,12 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     /**
      * Ensure the authentication data is valid JSON
      */
-    try {
-      authData = this._getValidAuthData(msg.data)
-    } catch (e) {
+    const result = socketWrapper.parseData(msg)
+    if (result instanceof Error || !msg.parsedData || typeof msg.parsedData !== 'object') {
       errorMsg = 'Error parsing auth message'
 
       if (this._logInvalidAuthData === true) {
-        errorMsg += ` "${authMsg}": ${e.toString()}`
+        errorMsg += ` "${msg.data}": ${result.toString()}`
       }
 
       this._sendInvalidAuthMsg(socketWrapper, errorMsg)
@@ -437,8 +434,8 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
      */
     this._authenticationHandler.isValidUser(
       socketWrapper.getHandshakeData(),
-      authData,
-      this._processAuthResult.bind(this, authData, socketWrapper, disconnectTimeout)
+      msg.parsedData,
+      this._processAuthResult.bind(this, msg.parsedData, socketWrapper, disconnectTimeout)
     )
   }
 
@@ -621,22 +618,6 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
 
     uws.native.clearUserData(socketWrapper._external)
     this._authenticatedSockets.delete(socketWrapper)
-  }
-
-  /**
-   * Checks for authentication data and throws if null or not well formed
-   *
-   * @throws Will throw an error on invalid auth data
-   *
-   * @private
-   * @returns {void}
-   */
-  _getValidAuthData (authData) { // eslint-disable-line
-    const parsedData = JSON.parse(authData)
-    if (parsedData === null || parsedData === undefined || typeof parsedData !== 'object') {
-      throw new Error(`invalid authentication data ${authData}`)
-    }
-    return parsedData
   }
 
   /**

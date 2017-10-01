@@ -293,7 +293,7 @@ module.exports = class SubscriptionRegistry {
     } else if (subscription.sockets.has(socket)) {
       const msg = `repeat supscription to "${name}" by ${socket.user}`
       this._options.logger.warn(this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
-      socket.sendError(this._topic, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
+      socket.sendError({ topic: this._topic }, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
@@ -329,7 +329,7 @@ module.exports = class SubscriptionRegistry {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
         this._options.logger.warn(this._constants.NOT_SUBSCRIBED, msg)
-        socket.sendError(this._topic, this._constants.NOT_SUBSCRIBED, name)
+        socket.sendError({ topic: this._topic }, this._constants.NOT_SUBSCRIBED, name)
       }
       return
     }
@@ -403,6 +403,7 @@ module.exports = class SubscriptionRegistry {
       if (idx !== -1) {
         this._pending.splice(idx, 1)
       }
+      socket.removeListener('close', this._onSocketClose)
     } else {
       subscription.uniqueSenders.delete(socket)
     }

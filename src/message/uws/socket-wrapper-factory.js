@@ -158,7 +158,7 @@ class UwsSocketWrapper extends EventEmitter {
 
   // eslint-disable-next-line
   parseMessage (message) {
-    return messageParser.getMessage(message)
+    return messageParser.parse(message)
   }
 
   /**
@@ -220,4 +220,5 @@ class UwsSocketWrapper extends EventEmitter {
 }
 
 UwsSocketWrapper.lastPreparedMessage = null
-module.exports = UwsSocketWrapper
+
+module.exports.create = (external, handshakeData, logger, config, connectionEndpoint) => new UwsSocketWrapper(external, handshakeData, logger, config, connectionEndpoint)

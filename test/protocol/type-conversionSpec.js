@@ -12,7 +12,9 @@
 //   })
 
 //   it('processes objects correctly', () => {
-//     expect(messageParser.convertTyped('O{"firstname":"Wolfram"}')).toEqual({ firstname: 'Wolfram' })
+//     expect(messageParser.convertTyped(
+//       'O{"firstname":"Wolfram"}')).toEqual({ firstname: 'Wolfram' }
+//     )
 //   })
 
 //   it('processes arrays correctly', () => {

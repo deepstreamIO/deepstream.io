@@ -1,5 +1,5 @@
 /* eslint-disable max-len, import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* global jasmine, xit, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const RecordHandler = require('../../src/record/record-handler')
@@ -330,7 +330,7 @@ describe('record handler handles messages', () => {
 
       recordHandler.handle(client.socketWrapper, recordUpdate)
 
-      expect(options.logger.lastLogMessage).toBe(msg('someUser tried to update record existingRecord to version 5 but it already was 5'))
+      expect(options.logger.lastLogMessage).toBe('someUser tried to update record existingRecord to version 5 but it already was 5')
     })
   })
 

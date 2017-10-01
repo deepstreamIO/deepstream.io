@@ -5,7 +5,7 @@
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../mocks/uws-mock')
 
-const SocketWrapper = proxyquire('../../src/message/uws/socket-wrapper', {
+const SocketWrapperFactory = proxyquire('../../src/message/uws/socket-wrapper-factory', {
   uws: uwsMock
 })
 
@@ -19,7 +19,7 @@ describe('uws socket-wrapper creates a unified interface for sockets', () => {
   }
 
   it('creates a SocketWrapper', () => {
-    socketWrapper = new SocketWrapper({}, handshakeData, {})
+    socketWrapper = SocketWrapperFactory.create({}, handshakeData, {})
     expect(socketWrapper.getHandshakeData()).toEqual({
       headers: { referer: 'some-referer' },
       referer: 'some-referer',

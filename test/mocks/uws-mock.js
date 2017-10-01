@@ -112,9 +112,6 @@ class UWSMock extends EventEmitter {
   }
 
   close () {
-    for (const clientIndex in this.clients) {
-      this.clients[clientIndex].close()
-    }
   }
 }
 

@@ -2,16 +2,18 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, beforeAll, afterEach, afterAll */
 'use strict'
 
+const C = require('../../src/constants/constants')
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../mocks/uws-mock')
 const HttpMock = require('../mocks/http-mock')
 const LoggerMock = require('../mocks/logger-mock')
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
-const _msg = require('../test-helper/test-helper').msg
 const permissionHandlerMock = require('../mocks/permission-handler-mock')
 const authenticationHandlerMock = require('../mocks/authentication-handler-mock')
 const SocketMock = require('../mocks/socket-mock')
-const SocketWrapperMock = require('../mocks/socket-wrapper-mock')
+
+const testHelper = require('../test-helper/test-helper')
+const getTestMocks = require('../test-helper/test-mocks')
 
 const httpMock = new HttpMock()
 const httpsMock = new HttpMock()
@@ -19,12 +21,20 @@ const httpsMock = new HttpMock()
 httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
 
+let client
+let handshakeData
+
 const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
   uws: uwsMock,
   http: httpMock,
   https: httpsMock,
-
-  './socket-wrapper': SocketWrapperMock
+  './socket-wrapper-factory': {
+    create: (options, data) => {
+      handshakeData = data
+      client = getTestMocks().getSocketWrapper('client')
+      return client.socketWrapper
+    }
+  }
 })
 
 let lastAuthenticatedMessage = null
@@ -43,173 +53,151 @@ const options = {
 
 const mockDs = { _options: options }
 
-xdescribe('connection endpoint', () => {
-  beforeAll(() => {
+describe('connection endpoint', () => {
+  beforeEach((done) => {
     authenticationHandlerMock.reset()
 
     connectionEndpoint = new ConnectionEndpoint(options, () => {})
     const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
+      connectionEndpoint._unauthenticatedClientTimeout = 100
       connectionEndpoint.onMessages()
-      connectionEndpoint.onMessages = function (socket, messages) {
-        lastAuthenticatedMessage = messages[messages.length - 1]
+      connectionEndpoint.onMessages = function (socket, parsedMessages) {
+        lastAuthenticatedMessage = parsedMessages[parsedMessages.length - 1]
       }
-    })
-  })
-
-  afterAll((done) => {
-    connectionEndpoint.once('close', done)
-    connectionEndpoint.close()
-  })
-
-  it('sets autopings on the websocket server', () => {
-    expect(uwsMock.heartbeatInterval).toBe(options.heartbeatInterval)
-    expect(uwsMock.pingMessage).toBe(_msg('C|PI+'))
-  })
-
-  describe('the connection endpoint handles invalid connection messages', () => {
-    beforeEach(() => {
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
       socketWrapperMock = uwsMock.simulateConnection()
       expect(uwsMock._lastUserData).not.toBe(null)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|CH+'))
+      done()
     })
+  })
 
+  afterEach((done) => {
+    connectionEndpoint.once('close', done)
+    connectionEndpoint.close()
+    client.socketWrapperMock.verify()
+  })
+
+  xit('sets autopings on the websocket server', () => {
+    expect(uwsMock.heartbeatInterval).toBe(options.heartbeatInterval)
+    expect(uwsMock.pingMessage).toBe({
+      topic: C.TOPIC.CONNECTION,
+      action: C.ACTIONS.PING
+    })
+  })
+
+  describe('the connection endpoint handles invalid connection messages', () => {
     it('handles gibberish messages', () => {
-      uwsMock._messageHandler('gibberish', socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|E|MESSAGE_PARSE_ERROR|gibberish+'))
-      expect(socketWrapperMock.isClosed).toBe(true)
+      client.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.CONNECTION,
+        }, C.EVENT.MESSAGE_PARSE_ERROR, 'gibbeerish')
+
+      client.socketWrapperMock
+        .expects('destroy')
+        .once()
+        .withExactArgs()
+
+      uwsMock.messageHandler([{ parseError: true, raw: 'gibbeerish' }], client.socketWrapper)
     })
 
     it('handles invalid connection topic', () => {
-      uwsMock._messageHandler(_msg('A|REQ|{}+'), socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
+      client.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.CONNECTION,
+        }, C.EVENT.INVALID_MESSAGE, 'gibbeerish')
 
-    it('handles non text based connection messages', () => {
-      uwsMock._messageHandler([], socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|E|INVALID_MESSAGE|invalid connection message+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
-  })
+      client.socketWrapperMock
+        .expects('destroy')
+        .never()
 
-  describe('the connection endpoint handles invalid auth messages', () => {
-    it('creates the connection endpoint', () => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|CH+'))
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|A+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
-
-    it('handles invalid auth messages', () => {
-      uwsMock._messageHandler('gibberish', socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
-      expect(socketWrapperMock.isClosed).toBe(true)
-    })
-
-    it('handles non text based auth messages', () => {
-      uwsMock._messageHandler([], socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
-      expect(socketWrapperMock.isClosed).toBe(true)
-    })
-
-    it('has discarded the invalid socket', () => {
-      socketWrapperMock.lastSendMessage = null
-      uwsMock._messageHandler('some more gibberish', socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(null)
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, raw: 'gibbeerish' }], client.socketWrapper)
     })
   })
 
-  describe('the connection endpoint handles null values', () => {
-    it('creates the connection endpoint', () => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
+  it('the connection endpoint handles invalid auth messages', () => {
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+      }, C.EVENT.MESSAGE_PARSE_ERROR, 'gibbeerish')
 
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|CH+'))
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
+    client.socketWrapperMock
+      .expects('destroy')
+      .once()
+      .withExactArgs()
 
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|A+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
-
-    it('handles invalid auth messages', () => {
-      uwsMock._messageHandler('A|REQ|null+', socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_MSG|invalid authentication message+'))
-      expect(socketWrapperMock.isClosed).toBe(true)
-    })
-
-    it('has discarded the invalid socket', () => {
-      socketWrapperMock.lastSendMessage = null
-      uwsMock._messageHandler('some more gibberish', socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(null)
-    })
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ parseError: true, raw: 'gibbeerish' }], client.socketWrapper)
   })
 
-  describe('the connection endpoint handles invalid json', () => {
-    it('creates the connection endpoint', () => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|CH+'))
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|A+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
+  it('the connection endpoint handles auth null data', () => {
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+      }, C.EVENT.INVALID_AUTH_MSG)
 
-    it('handles invalid json messages', () => {
-      uwsMock._messageHandler(_msg('A|REQ|{"a":"b}+'), socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(
-        _msg('A|E|INVALID_AUTH_MSG|invalid authentication message+')
-      )
-      expect(socketWrapperMock.isClosed).toBe(true)
-    })
+    client.socketWrapperMock
+      .expects('destroy')
+      .once()
+      .withExactArgs()
+
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: 'null' }], client.socketWrapper)
   })
 
-  describe('the connection endpoint does not route invalid auth messages to the permissionHandler', () => {
-    it('creates the connection endpoint', () => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
+  it('the connection endpoint handles invalid auth json', () => {
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+      }, C.EVENT.INVALID_AUTH_MSG)
 
-    it('handles invalid auth messages', () => {
-      expect(authenticationHandlerMock.lastUserValidationQueryArgs).toBe(null)
+    client.socketWrapperMock
+      .expects('destroy')
+      .once()
+      .withExactArgs()
 
-      authenticationHandlerMock.nextUserValidationResult = false
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{ invalid }' }], client.socketWrapper)
+  })
 
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
+  it('the connection endpoint does not route invalid auth messages to the permissionHandler', () => {
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+        parsedData: 'Invalid User'
+      }, C.EVENT.INVALID_AUTH_DATA)
 
-      expect(authenticationHandlerMock.lastUserValidationQueryArgs.length).toBe(3)
-      expect(authenticationHandlerMock.lastUserValidationQueryArgs[1].user).toBe('wolfram')
-      expect(options.logger.lastLogMessage.indexOf('wolfram')).not.toBe(-1)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
+    expect(authenticationHandlerMock.lastUserValidationQueryArgs).toBe(null)
+    authenticationHandlerMock.nextUserValidationResult = false
+
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"wolfram"}' }], client.socketWrapper)
+
+    expect(authenticationHandlerMock.lastUserValidationQueryArgs.length).toBe(3)
+    expect(authenticationHandlerMock.lastUserValidationQueryArgs[1].user).toBe('wolfram')
+    expect(options.logger.lastLogMessage.indexOf('wolfram')).not.toBe(-1)
   })
 
   describe('the connection endpoint emits a client events for user with name', () => {
-    beforeAll(() => {
-      authenticationHandlerMock.nextUserValidationResult = true
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
+    beforeEach(() => {
+      uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
     })
 
     it('client has the correct connection data', () => {
-      // {
-      //    remoteAddress: 'xxx',
-      //    headers: {
-      //    },
-      //    referrer: 'xxx'
-      // }
-      const connectionData = socketWrapperMock.getHandshakeData()
-      expect(connectionData.remoteAddress).toBe('127.0.0.1')
-      expect(connectionData.headers).toBeDefined()
+      expect(handshakeData.remoteAddress).toBe('127.0.0.1')
+      expect(handshakeData.headers).toBeDefined()
     })
 
     it('emits connected event for user with name', (done) => {
@@ -217,40 +205,32 @@ xdescribe('connection endpoint', () => {
         expect(socketWrapper.user).toBe('test-user')
         done()
       })
-
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
     })
 
-    it('emits disconnected event for user with name', (done) => {
+    xit('emits disconnected event for user with name', (done) => {
       connectionEndpoint.once('client-disconnected', (socketWrapper) => {
         expect(socketWrapper.user).toBe('test-user')
         done()
       })
 
-      socketWrapperMock.socket.close()
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+      client.socketWrapper.close()
     })
   })
 
-
-  describe('the connection endpoint deosn\'t emit client events for user without a name', () => {
-    beforeAll(() => {
+  describe('the connection endpoint doesn\'t emit client events for user without a name', () => {
+    beforeEach(() => {
       authenticationHandlerMock.nextUserIsAnonymous = true
       authenticationHandlerMock.nextUserValidationResult = true
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-    })
-
-    afterAll(() => {
-      authenticationHandlerMock.nextUserIsAnonymous = false
+      uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
     })
 
     it('does not emit connected event', () => {
-      authenticationHandlerMock.nextUserIsAnonymous = true
       const spy = jasmine.createSpy('client-connected')
-
       connectionEndpoint.once('client-connected', spy)
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
+
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 
       expect(spy).not.toHaveBeenCalled()
     })
@@ -260,164 +240,127 @@ xdescribe('connection endpoint', () => {
       const spy = jasmine.createSpy('client-disconnected')
 
       connectionEndpoint.once('client-disconnected', spy)
-      socketWrapperMock.socket.close()
+
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+      client.socketWrapper.close()
 
       expect(spy).not.toHaveBeenCalled()
     })
   })
 
+  it('disconnects if the number of invalid authentication attempts is exceeded', () => {
+    authenticationHandlerMock.nextUserValidationResult = false
+    options.maxAuthAttempts = 3
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
 
-  describe('disconnects if the number of invalid authentication attempts is exceeded', () => {
-    it('creates the connection endpoint', () => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .thrice()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+        parsedData: 'Invalid User'
+      }, C.EVENT.INVALID_AUTH_DATA)
 
-    it('handles valid auth messages', () => {
-      authenticationHandlerMock.nextUserValidationResult = false
-      options.maxAuthAttempts = 3
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH
+      }, C.EVENT.TOO_MANY_AUTH_ATTEMPTS)
 
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|INVALID_AUTH_DATA|SInvalid User+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
+    client.socketWrapperMock
+      .expects('destroy')
+      .once()
+      .withExactArgs()
 
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|E|TOO_MANY_AUTH_ATTEMPTS|Stoo many authentication attempts+'))
-      expect(socketWrapperMock.isClosed).toBe(true)
-    })
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
   })
 
-  describe('disconnects client if authentication timeout is exceeded', () => {
-    beforeAll(() => {
-      connectionEndpoint._unauthenticatedClientTimeout = 100
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-    })
+  it('disconnects client if authentication timeout is exceeded', (done) => {
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.CONNECTION
+      }, C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT)
 
-    afterAll(() => {
-      connectionEndpoint._unauthenticatedClientTimeout = null
-    })
+    client.socketWrapperMock
+      .expects('destroy')
+      .once()
+      .withExactArgs()
 
-    it('disconnects client after timeout and sends force close', (done) => {
-      setTimeout(() => {
-        expect(socketWrapperMock.lastSendMessage).toBe(_msg('C|E|CONNECTION_AUTHENTICATION_TIMEOUT|Sconnection has not authenticated successfully in the expected time+'))
-        expect(socketWrapperMock.isClosed).toBe(true)
-        done()
-      }, 150)
-    })
+    setTimeout(done, 150)
   })
 
-  describe('the connection endpoint routes valid auth messages to the permissionHandler', () => {
-    it('creates the connection endpoint', () => {
-      authenticationHandlerMock.onClientDisconnectCalledWith = null
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-    })
+  it('authenticates valid sockets', () => {
+    authenticationHandlerMock.nextUserValidationResult = true
 
-    it('authenticates valid sockets', () => {
-      authenticationHandlerMock.nextUserValidationResult = true
+    client.socketWrapperMock
+      .expects('sendError')
+      .never()
 
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
+    client.socketWrapperMock
+      .expects('destroy')
+      .never()
 
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|A+'))
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
-
-    it('forwards messages from authenticated sockets', () => {
-      expect(lastAuthenticatedMessage).toBe(null)
-      uwsMock._messageHandler(_msg('E|EVT|testMsg+'), socketWrapperMock)
-      expect(lastAuthenticatedMessage).toEqual({ raw: _msg('E|EVT|testMsg'), topic: 'E', action: 'EVT', data: ['testMsg'] })
-    })
-
-    it('notifies the permissionHandler when a client disconnects', () => {
-      socketWrapperMock.socket.close()
-      expect(authenticationHandlerMock.onClientDisconnectCalledWith).toBe('test-user')
-    })
-  })
-
-  describe('forwards additional data for positive authentications', () => {
-    it('creates the connection endpoint', () => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-
-      authenticationHandlerMock.reset()
-      authenticationHandlerMock.nextUserValidationResult = true
-      authenticationHandlerMock.sendNextValidAuthWithData = true
-    })
-
-    it('authenticates valid sockets', () => {
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
-      expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|A|Stest-data+'))
-    })
-  })
-
-  describe('closes all client connections on close', () => {
-    const closeSpy = jasmine.createSpy('close-event')
-    let unclosedSocket
-
-    beforeAll(() => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      unclosedSocket.autoClose = false
-      connectionEndpoint.once('close', closeSpy)
-      connectionEndpoint.close()
-    })
-
-    it('did not emit close event', () => {
-      expect(closeSpy).not.toHaveBeenCalled()
-    })
-
-    it('closes the last remaining client connection', (done) => {
-      connectionEndpoint.once('close', done)
-      expect(closeSpy).not.toHaveBeenCalled()
-      unclosedSocket.doClose()
-    })
-
-    it('has closed the server', () => {
-      expect(closeSpy).toHaveBeenCalled()
-    })
-
-    it('does not allow future connections', () => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-
-      expect(socketWrapperMock.lastSendMessage).toBe(null)
-      expect(socketWrapperMock.isClosed).toBe(false)
-
-      uwsMock._messageHandler('gibberish', socketWrapperMock)
-
-      expect(socketWrapperMock.lastSendMessage).toBe(null)
-      expect(socketWrapperMock.isClosed).toBe(false)
-    })
-  }).pend('Test manually to see behaviour, UTs doesn\'t work')
-
-
-  describe('connection endpoint doesn\'t log credentials if logInvalidAuthData is set to false', () => {
-    it('creates the connection endpoint', (done) => {
-    // re-initialize ConnectionEndpoint to get modified config
-      const options2 = Object.assign({}, options)
-      options2.logInvalidAuthData = false
-      const connectionEndpoint2 = new ConnectionEndpoint(options2, () => {})
-      const depInit = new DependencyInitialiser({ _options: options2 }, options2, connectionEndpoint2, 'connectionEndpoint')
-      depInit.on('ready', () => {
-        connectionEndpoint2._server._simulateUpgrade(new SocketMock())
-        socketWrapperMock = uwsMock.simulateConnection()
-        uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-        done()
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+        isAck: true,
+        parsedData: undefined
       })
-    })
 
-    it('handles valid auth messages', () => {
-      authenticationHandlerMock.nextUserValidationResult = false
-      uwsMock._messageHandler(_msg('A|REQ|{"user":"wolfram"}+'), socketWrapperMock)
-      expect(options.logger.lastLogMessage.indexOf('wolfram')).toBe(-1)
-    })
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+  })
+
+  xit('notifies the permissionHandler when a client disconnects', () => {
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+
+    client.socketWrapper.close()
+
+    expect(authenticationHandlerMock.onClientDisconnectCalledWith).toBe('test-user')
+  })
+
+  it('routes valid auth messages to the permissionHandler', () => {
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.EVENT, action: C.ACTIONS.EVENT, data: 'test' }], client.socketWrapper)
+
+    expect(lastAuthenticatedMessage).toEqual({ topic: C.TOPIC.EVENT, action: C.ACTIONS.EVENT, data: 'test' })
+  })
+
+  it('forwards additional data for positive authentications', () => {
+    authenticationHandlerMock.nextUserValidationResult = true
+    authenticationHandlerMock.sendNextValidAuthWithData = true
+
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+        isAck: true,
+        parsedData: 'test-data'
+      })
+
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+  })
+
+  it('connection endpoint doesn\'t log credentials if logInvalidAuthData is set to false', () => {
+    options.logInvalidAuthData = false
+    authenticationHandlerMock.nextUserValidationResult = false
+
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+
+    expect(options.logger.lastLogMessage.indexOf('wolfram')).toBe(-1)
   })
 })
