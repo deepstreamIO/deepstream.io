@@ -67,8 +67,10 @@ module.exports = class ListenerRegistry {
     this._providerRegistry.setAction('subscribe', C.ACTIONS.LISTEN)
     this._providerRegistry.setAction('unsubscribe', C.ACTIONS.UNLISTEN)
     this._providerRegistry.setSubscriptionListener({
+      onLastSubscriptionRemoved: this._removeLastPattern.bind(this),
       onSubscriptionRemoved: this._removePattern.bind(this),
-      onSubscriptionMade: this._addPattern.bind(this)
+      onFirstSubscriptionMade: this._addPattern.bind(this),
+      onSubscriptionMade: () => {}
     })
   }
 
@@ -154,13 +156,6 @@ module.exports = class ListenerRegistry {
       this._startLocalDiscoveryStage(message.data[1])
     } else if (message.isAck) {
       this._nextDiscoveryStage(message.data[1])
-    } else if (message.action === C.ACTIONS.UNSUBSCRIBE) {
-      this.onSubscriptionRemoved(
-        message.data[1],
-        null,
-        this._clientRegistry.getLocalSubscribers(message.data[1]).size,
-        this._clientRegistry.getAllServers(message.data[1]).length - 1
-      )
     }
   }
 
@@ -193,7 +188,7 @@ module.exports = class ListenerRegistry {
   }
 
   /**
-  * Called by the record subscription registry whenever the subscription count decrements.
+  * Called by the record subscription registry whenever a subscription count goes down to zero
   * Part of the subscriptionListener interface.
   *
   * @param   {String} name
@@ -201,17 +196,26 @@ module.exports = class ListenerRegistry {
   * @public
   * @returns {void}
   */
-  onSubscriptionMade (subscriptionName, socketWrapper, localCount) {
+  onFirstSubscriptionMade (subscriptionName) {
+    this._startDiscoveryStage(subscriptionName)
+  }
+
+  onSubscriptionMade (subscriptionName, socketWrapper) {
     if (this.hasActiveProvider(subscriptionName)) {
       this._sendHasProviderUpdateToSingleSubscriber(true, socketWrapper, subscriptionName)
       return
     }
+  }
 
-    if (localCount > 1) {
+  onLastSubscriptionRemoved (subscriptionName) {
+    const provider = this._locallyProvidedRecords[subscriptionName]
+
+    if (!provider) {
       return
     }
 
-    this._startDiscoveryStage(subscriptionName)
+    this._sendSubscriptionForPatternRemoved(provider, subscriptionName)
+    this._removeActiveListener(subscriptionName)
   }
 
   /**
@@ -223,36 +227,8 @@ module.exports = class ListenerRegistry {
   * @public
   * @returns {void}
   */
-  onSubscriptionRemoved (subscriptionName, socketWrapper, localCount, remoteCount) {
-    const provider = this._locallyProvidedRecords[subscriptionName]
-
-    if (this.hasActiveProvider(subscriptionName) && !provider) {
-      const serverName = this._clusterProvidedRecords.getAllServers(subscriptionName)[0]
-      this._sendLastSubscriberRemoved(serverName, subscriptionName)
-      return
-    }
-
-    if (!provider) {
-      return
-    }
-
-    if (localCount > 1 || remoteCount > 0) {
-      return
-    }
-
-    // provider discarded, but there is still another active subscriber
-    if (localCount === 1 && provider.socketWrapper === socketWrapper) {
-      return
-    }
-
-    // provider isn't a subscriber, meaning we should wait for 0
-    const subscribers = this._clientRegistry.getLocalSubscribers(subscriptionName)
-    if (localCount === 1 && !subscribers.has(provider.socketWrapper)) {
-      return
-    }
-
-    this._sendSubscriptionForPatternRemoved(provider, subscriptionName)
-    this._removeActiveListener(subscriptionName)
+  // eslint-disable-next-line
+  onSubscriptionRemoved (/* subscriptionName, socketWrapper */) {
   }
 
   /**
@@ -294,10 +270,7 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    if (!this._providerRegistry.getLocalSubscribers(pattern).has(socketWrapper)) {
-      this._providerRegistry.subscribe(message, socketWrapper)
-    }
-
+    this._providerRegistry.subscribe(pattern, socketWrapper)
     this._reconcileSubscriptionsToPatterns(regExp, pattern, socketWrapper)
   }
 
@@ -313,12 +286,15 @@ module.exports = class ListenerRegistry {
   * @returns {Message}
   */
   _reconcileSubscriptionsToPatterns (regExp, pattern, socketWrapper) {
-    for (const subscriptionName of this._clientRegistry.getNames()) {
-      if (!subscriptionName.match(regExp)) {
+    const names = this._clientRegistry.getNames()
+    for (let i = 0; i < names.length; i++) {
+      const subscriptionName = names[i]
+
+      if (this._locallyProvidedRecords[subscriptionName]) {
         continue
       }
 
-      if (this._locallyProvidedRecords[subscriptionName]) {
+      if (!subscriptionName.match(regExp)) {
         continue
       }
 
@@ -395,12 +371,12 @@ module.exports = class ListenerRegistry {
       this._providerRegistry,
       subscriptionName
     )
-
     if (localListenArray.length === 0) {
       return
     }
 
     this._options.uniqueRegistry.get(this._getUniqueLockName(subscriptionName), (success) => {
+
       if (!success) {
         return
       }
@@ -604,7 +580,7 @@ module.exports = class ListenerRegistry {
   * @private
   * @returns {void}
   */
-  _addPattern (pattern /* , socketWrapper, count */) {
+  _addPattern (pattern) {
     if (!this._patterns[pattern]) {
       this._patterns[pattern] = new RegExp(pattern)
     }
@@ -620,16 +596,14 @@ module.exports = class ListenerRegistry {
   * @private
   * @returns {void}
   */
-  _removePattern (pattern, socketWrapper, count) {
-    if (socketWrapper) {
-      this._listenerTimeoutRegistry.removeProvider(socketWrapper)
-      this._removeListenerFromInProgress(this._localListenInProgress, pattern, socketWrapper)
-      this._removeListenerIfActive(pattern, socketWrapper)
-    }
+  _removePattern (pattern, socketWrapper) {
+    this._listenerTimeoutRegistry.removeProvider(socketWrapper)
+    this._removeListenerFromInProgress(this._localListenInProgress, pattern, socketWrapper)
+    this._removeListenerIfActive(pattern, socketWrapper)
+  }
 
-    if (count === 0) {
-      delete this._patterns[pattern]
-    }
+  _removeLastPattern (pattern) {
+    delete this._patterns[pattern]
   }
 
   /**

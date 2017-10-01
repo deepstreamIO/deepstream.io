@@ -114,6 +114,17 @@ Then(/^(.+) gets? told record "([^"]*)" (.*)exists?$/, (clientExpression, record
   record.assert.has(clientExpression, recordName, adjective.indexOf('not') === -1)
 })
 
+Then(/^(.+) asks? for the version of record "([^"]*)"$/, (clientExpression, recordName, done) => {
+  record.head(clientExpression, recordName)
+  setTimeout(done, utils.defaultDelay)
+})
+
+Then(/^(.+) gets? told record "([^"]*)" has version (.*)$/, (clientExpression, recordName, version) => {
+  record.assert.headSuccess(clientExpression, recordName, Number(version))
+})
+Then(/^(.+) gets? a head response for "([^"]*)" with error '([^']+)'$/, record.assert.headError)
+
+
   /** ******************************************************************************************************************************
    *********************************************************** Lists ************************************************************
    ********************************************************************************************************************************/

@@ -52,6 +52,7 @@ function createClient (clientName, server, options) {
       anonymousRecord: null,
       snapshotCallback: sinon.spy(),
       hasCallback: sinon.spy(),
+      headCallback: sinon.spy(),
       callbacksListeners: {},
       callbacksListenersSpies: {},
       callbacksListenersResponse: {},

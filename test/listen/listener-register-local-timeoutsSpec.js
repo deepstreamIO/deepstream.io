@@ -16,7 +16,7 @@ xdescribe('listener-registry-local-timeouts', () => {
     // 2. provider 2 does listen a/[0-9]
     tu.providerListensTo(2, 'a/[0-9]')
     // 3.  client 1 requests a/1
-    tu.clientSubscribesTo(1, 'a/1')
+    tu.clientSubscribesTo(1, 'a/1', true)
     // 4. provider 1 gets a SP and provider 2 should not get a SP
     tu.providerGetsSubscriptionFound(1, 'a/.*', 'a/1')
     tu.providerRecievedNoNewMessages(2)
@@ -133,10 +133,10 @@ xdescribe('listener-registry-local-timeouts', () => {
     // 11. provider 2 responds with ACCEPT
         tu.providerAcceptsButIsntAcknowledged(2, 'a/[0-9]', 'a/1')
     // 12. provider 2 dies
-        tu.providerLosesItsConnection(2)
-    // 13. provider 3 responds with reject
+        tu.providerLosesItsConnection(2, 'a/[0-9]')
+    // // 13. provider 3 responds with reject
         tu.providerRejects(3, 'a/[1]', 'a/1')
-    // 14. send publishing=true to the clients
+    // // 14. send publishing=true to the clients
         tu.publishUpdateIsNotSentToSubscribers()
         done()
       }, 40)

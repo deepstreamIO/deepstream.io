@@ -11,7 +11,9 @@ const options = testHelper.getDeepstreamOptions()
 
 const subscriptionListenerMock = {
   onSubscriptionMade: jasmine.createSpy('onSubscriptionMade'),
-  onSubscriptionRemoved: jasmine.createSpy('onSubscriptionRemoved')
+  onSubscriptionRemoved: jasmine.createSpy('onSubscriptionRemoved'),
+  onLastSubscriptionRemoved: jasmine.createSpy('onLastSubscriptionRemoved'),
+  onFirstSubscriptionMade: jasmine.createSpy('onFirstSubscriptionMade')
 }
 
 const subscriptionRegistry = new SubscriptionRegistry(options, 'E')
@@ -29,7 +31,6 @@ xdescribe('subscription registry', () => {
       expect(socketWrapperA.socket.lastSendMessage).toBe(null)
 
       subscriptionRegistry.subscribe('someName', socketWrapperA)
-      expect(subscriptionListenerMock.onSubscriptionMade).toHaveBeenCalledWith('someName', socketWrapperA, 1)
       expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|S|someName+'))
       subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'SsomeString'))
       expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|SsomeString+'))
@@ -38,7 +39,6 @@ xdescribe('subscription registry', () => {
     it('doesn\'t subscribe twice to the same name', () => {
       expect(options.logger.lastLogEvent).toBe('S')
       subscriptionRegistry.subscribe('someName', socketWrapperA)
-      expect(subscriptionListenerMock.onSubscriptionMade.calls.count()).toBe(1)
       expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|E|MULTIPLE_SUBSCRIPTIONS|someName+'))
       expect(options.logger.lastLogEvent).toBe('MULTIPLE_SUBSCRIPTIONS')
     })
@@ -99,9 +99,7 @@ xdescribe('subscription registry', () => {
       subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg7'))
       expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|EVT|someName|msg7+'))
 
-      expect(subscriptionListenerMock.onSubscriptionRemoved).not.toHaveBeenCalled()
       subscriptionRegistry.unsubscribe('someName', socketWrapperA)
-      expect(subscriptionListenerMock.onSubscriptionRemoved).toHaveBeenCalledWith('someName', socketWrapperA, 0, 0)
       expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))
       subscriptionRegistry.sendToSubscribers('someName', fakeEvent('someName', 'msg8'))
       expect(socketWrapperA.socket.lastSendMessage).toBe(_msg('E|A|US|someName+'))

@@ -133,18 +133,6 @@ class ListenerTestUtils {
     }
   }
 
-  providerSubscribesTo (provider, subscriptionName) {
-    listenerRegistry.onSubscriptionMade(subscriptionName, providers[provider], undefined)
-    subscribedTopics.push(subscriptionName)
-    subscribers.add(providers[provider])
-  }
-
-  providerUnsubscribesTo (provider, subscriptionName, subscriptionCount) {
-    listenerRegistry.onSubscriptionRemoved(subscriptionName, providers[provider], subscriptionCount || 0)
-    subscribedTopics.splice(subscribedTopics.indexOf(subscriptionName), 1)
-    subscribers.delete(providers[provider])
-  }
-
   providerRecievedNoNewMessages (provider) {
     verify(providers[provider], null)
   }
@@ -162,7 +150,7 @@ class ListenerTestUtils {
   }
 
   providerLosesItsConnection (provider) {
-    providers[provider].socket.emit('close')
+    providers[provider].socket.emit('close', providers[provider])
   }
 
   providerRecievesPublishedUpdate (provider, subscription, state) {
@@ -176,26 +164,22 @@ class ListenerTestUtils {
     subscribedTopics.push(subscriptionName)
   }
 
-  clientSubscribesToButIsNotFirstSubscriber (client, subscriptionName) {
-    listenerRegistry.onSubscriptionMade(subscriptionName, clients[client], 5)
+  clientSubscribesTo (client, subscriptionName, firstSubscription) {
+    if (firstSubscription) {
+      listenerRegistry.onFirstSubscriptionMade(subscriptionName)
+    }
+    listenerRegistry.onSubscriptionMade(subscriptionName, clients[client])
     subscribedTopics.push(subscriptionName)
+    subscribers.add(clients[client])
   }
 
-  clientSubscribesTo (client, subscriptionName, currentSusbcriptions) {
-    listenerRegistry.onSubscriptionMade(subscriptionName, clients[client], currentSusbcriptions || 1)
-    subscribedTopics.push(subscriptionName)
-  }
-
-  clientUnsubscribesAndOnlyRemainingSubscriberIsProvider (client, subscriptionName) {
-    listenerRegistry.onSubscriptionRemoved(subscriptionName, clients[client], 1)
-  }
-
-  clientUnSubscribesToButIsNotLastSubscriber (client, subscriptionName) {
-    this.clientUnsubscribesTo(client, subscriptionName, 1)
-  }
-
-  clientUnsubscribesTo (client, subscriptionName, remainingSubscriptions) {
-    listenerRegistry.onSubscriptionRemoved(subscriptionName, clients[client], remainingSubscriptions || 0)
+  clientUnsubscribesTo (client, subscriptionName, lastSubscription) {
+    if (lastSubscription) {
+      listenerRegistry.onLastSubscriptionRemoved(subscriptionName)
+    }
+    listenerRegistry.onSubscriptionRemoved(subscriptionName, clients[client])
+    subscribedTopics.splice(subscribedTopics.indexOf(subscriptionName), 1)
+    subscribers.delete(clients[client])
   }
 
   clientRecievedNoNewMessages (client) {

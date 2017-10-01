@@ -54,8 +54,6 @@ module.exports = class SubscriptionRegistry {
     this._clusterSubscriptions = this._options.message.getStateRegistry(
       clusterTopic || `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`
     )
-    this._clusterSubscriptions.on('add', this._onClusterSubscriptionAdded.bind(this))
-    this._clusterSubscriptions.on('remove', this._onClusterSubscriptionRemoved.bind(this))
   }
 
   /**
@@ -97,6 +95,17 @@ module.exports = class SubscriptionRegistry {
    */
   getNames () {
     return this._clusterSubscriptions.getAll()
+  }
+
+  /**
+   * Returns a list of all the topic this registry
+   * currently has subscribers for
+   *
+   * @public
+   * @returns {Array} names
+   */
+  getNamesMap () {
+    return this._clusterSubscriptions.getAllMap()
   }
 
   /**
@@ -294,6 +303,10 @@ module.exports = class SubscriptionRegistry {
 
     this._clusterSubscriptions.add(name)
 
+    if (this._subscriptionListener) {
+      this._subscriptionListener.onSubscriptionMade(name, socket)
+    }
+
     const logMsg = `for ${this._topic}:${name} by ${socket.user}`
     this._options.logger.debug(this._constants.SUBSCRIBE, logMsg)
     socket.sendAckMessage(message)
@@ -322,7 +335,6 @@ module.exports = class SubscriptionRegistry {
     }
 
     this._clusterSubscriptions.remove(name)
-
     this._removeSocket(subscription, socket)
 
     if (!silent) {
@@ -363,14 +375,16 @@ module.exports = class SubscriptionRegistry {
   /**
    * Allows to set a subscriptionListener after the class had been instantiated
    *
-   * @param {SubscriptionListener} subscriptionListener a class exposing a onSubscriptionMade
+   * @param {SubscriptionListener} listener a class exposing a onSubscriptionMade
    *                                                    and onSubscriptionRemoved method
    *
    * @public
    * @returns {void}
    */
-  setSubscriptionListener (subscriptionListener) {
-    this._subscriptionListener = subscriptionListener
+  setSubscriptionListener (listener) {
+    this._subscriptionListener = listener
+    this._clusterSubscriptions.on('add', listener.onFirstSubscriptionMade.bind(listener))
+    this._clusterSubscriptions.on('remove', listener.onLastSubscriptionRemoved.bind(listener))
   }
 
   _addSocket (subscription, socket) {
@@ -380,14 +394,6 @@ module.exports = class SubscriptionRegistry {
       socket.once('close', this._onSocketClose)
     }
     subscriptions.add(subscription)
-
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionMade(
-        subscription.name,
-        socket,
-        subscription.sockets.size
-      )
-    }
   }
 
   _removeSocket (subscription, socket) {
@@ -401,43 +407,11 @@ module.exports = class SubscriptionRegistry {
       subscription.uniqueSenders.delete(socket)
     }
 
+    if (this._subscriptionListener) {
+      this._subscriptionListener.onSubscriptionRemoved(subscription, socket)
+    }
+
     const subscriptions = this._sockets.get(socket)
     subscriptions.delete(subscription)
-
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionRemoved(
-        subscription.name,
-        socket,
-        subscription.sockets.size,
-        this.getAllRemoteServers(subscription.name).length
-      )
-    }
-  }
-
-  /**
-   * Called when a subscription has been added to the cluster
-   * This can be invoked locally or remotely, so we check if it
-   * is a local invocation and ignore it if so in favour of the
-   * call done from subscribe
-   * @param  {String} name the name that was added
-   */
-  _onClusterSubscriptionAdded (name) {
-    if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
-      this._subscriptionListener.onSubscriptionMade(name, null, 1)
-    }
-  }
-
-  /**
-   * Called when a subscription has been removed from the cluster
-   * This can be invoked locally or remotely, so we check if it
-   * is a local invocation and ignore it if so in favour of the
-   * call done from unsubscribe
-   * @param  {String} name the name that was removed
-   */
-  _onClusterSubscriptionRemoved (name) {
-    if (this._subscriptionListener && !this.hasLocalSubscribers(name)) {
-      this._subscriptionListener.onSubscriptionRemoved(name, null, 0, 0)
-    }
   }
 }
-
