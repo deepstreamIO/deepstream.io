@@ -4,16 +4,16 @@
 
 const C = require('../../src/constants/constants')
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
-const PluginMock = require('../mocks/plugin-mock')
-const LoggerMock = require('../mocks/logger-mock')
+const PluginMock = require('../test-mocks/plugin-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
 
 describe('dependency-initialiser', () => {
   let dependencyBInitialiser
 
   const options = {
-    pluginA: new PluginMock('A'),
-    pluginB: new PluginMock('B'),
-    pluginC: new PluginMock('C'),
+    pluginA: new PluginMock({}, 'A'),
+    pluginB: new PluginMock({}, 'B'),
+    pluginC: new PluginMock({}, 'C'),
     brokenPlugin: {},
     logger: new LoggerMock(),
     dependencyInitialisationTimeout: 50

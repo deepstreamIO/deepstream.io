@@ -6,10 +6,10 @@
 // const C = require('../../src/constants/constants')
 // const Rpc = require('../../src/rpc/rpc')
 // const msg = require('../test-helper/test-helper').msg
-// const SocketWrapper = require('../mocks/socket-wrapper-mock')
-// const SocketMock = require('../mocks/socket-mock')
+// const SocketWrapper = require('../test-mocks/socket-wrapper-mock')
+// const SocketMock = require('../test-mocks/socket-mock')
 // const RpcProxy = require('../../src/rpc/rpc-proxy')
-// const MockMessageConnector = require('../mocks/message-connector-mock')
+// const MockMessageConnector = require('../test-mocks/message-connector-mock')
 
 // const alternativeProvider = new SocketWrapper(new SocketMock(), {})
 // const mockRpcHandler = {

@@ -11,7 +11,7 @@ const expect = chai.expect
 const C = require('../../src/constants/constants')
 
 const JIFHandler = require('../../src/message/jif-handler')
-const LoggerMock = require('../mocks/logger-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
 
 describe('JIF Handler', () => {
   let jifHandler

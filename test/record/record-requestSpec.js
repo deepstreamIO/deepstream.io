@@ -5,7 +5,7 @@ const recordRequest = require('../../src/record/record-request')
 
 const getTestMocks = require('../test-helper/test-mocks')
 const testHelper = require('../test-helper/test-helper')
-const LoggerMock = require('../mocks/logger-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
 
 describe('record request', () => {
   const completeCallback = jasmine.createSpy('completeCallback')

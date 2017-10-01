@@ -2,9 +2,9 @@
 'use strict'
 
 const C = require('../../src/constants/constants')
-const permissionHandlerMock = require('../mocks/permission-handler-mock')
+const PermissionHandlerMock = require('../test-mocks/permission-handler-mock')
 const MessageProcessor = require('../../src/message/message-processor')
-const LoggerMock = require('../mocks/logger-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
 const getTestMocks = require('../test-helper/test-mocks')
 
 let messageProcessor
@@ -14,6 +14,7 @@ let lastAuthenticatedMessage = null
 describe('the message processor only forwards valid, authorized messages', () => {
   let testMocks
   let client
+  let permissionHandlerMock
 
   const message = {
     topic: C.TOPIC.RECORD,
@@ -24,7 +25,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
   beforeEach(() => {
     testMocks = getTestMocks()
     client = testMocks.getSocketWrapper('someUser')
-
+    permissionHandlerMock  = new PermissionHandlerMock()
     const loggerMock = new LoggerMock()
     log = loggerMock.log
     messageProcessor = new MessageProcessor({

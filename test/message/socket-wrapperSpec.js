@@ -3,7 +3,7 @@
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
-const uwsMock = require('../mocks/uws-mock')
+const uwsMock = require('../test-mocks/uws-mock')
 
 const SocketWrapperFactory = proxyquire('../../src/message/uws/socket-wrapper-factory', {
   uws: uwsMock

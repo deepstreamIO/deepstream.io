@@ -2,7 +2,9 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const PermissionHandlerMock = function () {
+const PermissionHandlerMock = function (options) {
+	this.isReady = true
+this.options = options
   this.reset()
 }
 
@@ -20,4 +22,4 @@ PermissionHandlerMock.prototype.canPerformAction = function (username, message, 
   }
 }
 
-module.exports = new PermissionHandlerMock()
+module.exports = PermissionHandlerMock

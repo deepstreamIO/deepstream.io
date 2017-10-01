@@ -4,13 +4,13 @@
 
 const C = require('../../src/constants/constants')
 const proxyquire = require('proxyquire').noPreserveCache()
-const uwsMock = require('../mocks/uws-mock')
-const HttpMock = require('../mocks/http-mock')
-const LoggerMock = require('../mocks/logger-mock')
+const uwsMock = require('../test-mocks/uws-mock')
+const HttpMock = require('../test-mocks/http-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
-const permissionHandlerMock = require('../mocks/permission-handler-mock')
-const authenticationHandlerMock = require('../mocks/authentication-handler-mock')
-const SocketMock = require('../mocks/socket-mock')
+const PermissionHandlerMock = require('../test-mocks/permission-handler-mock')
+const AuthenticationHandlerMock = require('../test-mocks/authentication-handler-mock')
+const SocketMock = require('../test-mocks/socket-mock')
 
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
@@ -41,21 +41,26 @@ let lastAuthenticatedMessage = null
 let socketWrapperMock
 let connectionEndpoint
 
-const options = {
-  unauthenticatedClientTimeout: null,
-  permissionHandler: permissionHandlerMock,
-  authenticationHandler: authenticationHandlerMock,
-  logger: new LoggerMock(),
-  maxAuthAttempts: 3,
-  logInvalidAuthData: true,
-  heartbeatInterval: 4000
-}
-
-const mockDs = { _options: options }
+let authenticationHandlerMock
+let permissionHandler
+let options
+let mockDs = { _options: options }
 
 describe('connection endpoint', () => {
   beforeEach((done) => {
-    authenticationHandlerMock.reset()
+    authenticationHandlerMock = new AuthenticationHandlerMock()
+
+    options = {
+      unauthenticatedClientTimeout: null,
+      permissionHandler: new PermissionHandlerMock(),
+      authenticationHandler: authenticationHandlerMock,
+      logger: new LoggerMock(),
+      maxAuthAttempts: 3,
+      logInvalidAuthData: true,
+      heartbeatInterval: 4000
+    }
+
+    mockDs = { _options: options }
 
     connectionEndpoint = new ConnectionEndpoint(options, () => {})
     const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')

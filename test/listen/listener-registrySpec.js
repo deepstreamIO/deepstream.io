@@ -3,8 +3,7 @@
 
 const ListenerRegistry = require('../../src/listen/listener-registry')
 const testHelper = require('../test-helper/test-helper')
-const SocketMock = require('../mocks/socket-mock')
-const SocketWrapperFactory = require('../mocks/socket-wrapper-factory-mock')
+const SocketMock = require('../test-mocks/socket-mock')
 
 const options = testHelper.getDeepstreamOptions()
 const msg = testHelper.msg

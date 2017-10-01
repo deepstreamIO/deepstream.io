@@ -2,9 +2,11 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-class AuthenticationHandlerMock {
+module.exports = class AuthenticationHandlerMock {
 
-  constructor () {
+  constructor (options) {
+      this.options = options
+  this.isReady = true
     this.reset()
   }
 
@@ -38,5 +40,3 @@ class AuthenticationHandlerMock {
     this.onClientDisconnectCalledWith = username
   }
 }
-
-module.exports = new AuthenticationHandlerMock()

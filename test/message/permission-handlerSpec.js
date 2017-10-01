@@ -4,9 +4,9 @@
 
 const C = require('../../src/constants/constants')
 const proxyquire = require('proxyquire').noPreserveCache()
-const uwsMock = require('../mocks/uws-mock')
-const HttpMock = require('../mocks/http-mock')
-const LoggerMock = require('../mocks/logger-mock')
+const uwsMock = require('../test-mocks/uws-mock')
+const HttpMock = require('../test-mocks/http-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
 const httpMock = new HttpMock()
 const httpsMock = new HttpMock()
 // since proxyquire.callThru is enabled, manually capture members from prototypes
@@ -30,7 +30,7 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
   }
 })
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
-const SocketMock = require('../mocks/socket-mock')
+const SocketMock = require('../test-mocks/socket-mock')
 
 const permissionHandler = {
   isValidUser (connectionData, authData, callback) {

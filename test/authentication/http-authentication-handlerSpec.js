@@ -4,7 +4,7 @@
 
 const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')
 const TestHttpServer = require('../test-helper/test-http-server')
-const MockLogger = require('../mocks/logger-mock')
+const MockLogger = require('../test-mocks/logger-mock')
 
 describe('it forwards authentication attempts as http post requests to a specified endpoint', () => {
   let authenticationHandler

@@ -4,9 +4,10 @@
 const EventEmitter = require('events').EventEmitter
 const util = require('util')
 
-const PluginMock = function (name) {
+const PluginMock = function (options, name) {
   this.isReady = false
-  this.name = name
+  this.type = name || 'mock-plugin'
+  this.options = options
 }
 
 util.inherits(PluginMock, EventEmitter)

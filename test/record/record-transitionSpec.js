@@ -21,14 +21,14 @@ const recordPatch = {
 }
 Object.freeze(recordPatch)
 
-const recordData = { _v: 5, _d: { name: 'Kowalski' } }
+const recordData = { _v: 4, _d: { name: 'Kowalski' } }
 Object.freeze(recordData)
 
 const recordUpdate = {
   topic: C.TOPIC.RECORD,
   action: C.ACTIONS.UPDATE,
   name: 'some-record',
-  version: -1,
+  version: 5,
   parsedData: recordData._d,
   isWriteAck: true
 }
@@ -62,84 +62,100 @@ xdescribe('record transitions', () => {
 
   afterEach(() => {
     client.socketWrapperMock.verify()
+    testMocks.recordHandlerMock.verify()
   })
 
-  xit('retrieves the empty record', () => {
-    expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage, false, socketWrapper)
-    expect(recordHandlerMock._$transitionComplete).toHaveBeenCalledWith('recordName')
-  })
+  it('retrieves the empty record', () => {
+    testMocks.recordHandlerMock
+      .expects('_$broadcastUpdate')
+      .once()
+      .withExactArgs(recordUpdate.name, recordUpdate, false, client.socketWrapper)
 
-  const patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 3, 'firstname', 'SLana'] }
-  const updateMessage = { topic: 'RECORD', action: 'U', data: ['recordName', 2, '{ "lastname": "Peterson" }'] }
+    testMocks.recordHandlerMock
+      .expects('_$transitionComplete')
+      .once()
+      .withExactArgs(recordUpdate.name)
+
+    recordTransition.add(client.socketWrapper, Object.assign({}, recordUpdate))
+  })
 
   it('adds an update to the queue', () => {
+    options.cache.nextGetWillBeSynchronous = false
+
+    expect(recordTransition._steps.length).toBe(0)
+    recordTransition.add(client.socketWrapper, recordUpdate)
     expect(recordTransition._steps.length).toBe(1)
-    recordTransition.add(socketWrapper, 2, updateMessage)
-    expect(recordTransition._steps.length).toBe(2)
   })
 
-  it('adds a message with invalid data to the queue', () => {
-    socketWrapper.socket.lastSendMessage = null
+  it('adds a message with invalid data to the queue', () => { 
+    const invalidMessage = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.UPDATE,
+      name: 'bob',
+      version: 1,
+      data: '{ b ]'
+    }
 
-    recordTransition.add(socketWrapper, 3, {
-      topic: 'RECORD',
-      action: 'U',
-      data: [1]
-    })
-    expect(recordTransition._steps.length).toBe(2)
-    expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
-  })
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(invalidMessage, C.EVENT.INVALID_MESSAGE_DATA)
 
-  it('adds a message with broken data to the queue', () => {
-    socketWrapper.socket.lastSendMessage = null
-    recordTransition.add(socketWrapper, 3, {
-      topic: 'RECORD',
-      action: 'U',
-      data: ['recordName', 2, '{ "lastname": "Peterson']
-    })
-    expect(recordTransition._steps.length).toBe(2)
-    expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
+    recordTransition.add(client.socketWrapper, invalidMessage)
   })
 
   it('adds a message with null data to the queue', () => {
-    socketWrapper.socket.lastSendMessage = null
-    recordTransition.add(socketWrapper, 3, {
-      topic: 'RECORD',
-      action: 'U',
-      data: ['recordName', 3, 'null']
-    })
-    expect(recordTransition._steps.length).toBe(2)
-    expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
+    const invalidMessage = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.UPDATE,
+      name: 'bob',
+      version: 1,
+      data: 'null'
+    }
+
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(invalidMessage, C.EVENT.INVALID_MESSAGE_DATA)
+
+    recordTransition.add(client.socketWrapper, invalidMessage)
   })
 
   it('adds a message with string data to the queue', () => {
-    socketWrapper.socket.lastSendMessage = null
-    recordTransition.add(socketWrapper, 3, {
-      topic: 'RECORD',
-      action: 'U',
-      data: ['recordName', 3, 'This is a string']
-    })
-    expect(recordTransition._steps.length).toBe(2)
-    expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
+    const invalidMessage = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.UPDATE,
+      name: 'bob',
+      version: 1,
+      data: 'This is a string'
+    }
+    
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(invalidMessage, C.EVENT.INVALID_MESSAGE_DATA)
+
+    recordTransition.add(client.socketWrapper, invalidMessage)
   })
 
   it('adds a message with numeric data to the queue', () => {
-    socketWrapper.socket.lastSendMessage = null
-    recordTransition.add(socketWrapper, 3, {
-      topic: 'RECORD',
-      action: 'U',
-      data: ['recordName', 3, 100.23]
-    })
-    expect(recordTransition._steps.length).toBe(2)
-    expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|undefined+'))
+    const invalidMessage = {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.UPDATE,
+      name: 'bob',
+      version: 1,
+      data: '1234'
+    }
+
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(invalidMessage, C.EVENT.INVALID_MESSAGE_DATA)
+
+    recordTransition.add(client.socketWrapper, invalidMessage)
   })
 
-  it('retrieves the empty record', (done) => {
-    expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalled()
-    expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
-    expect(recordTransition._steps.length).toBe(2)
-    expect(recordTransition._record).toBe(null)
-
+  xit('retrieves the empty record', (done) => {
     recordRequestMockCallback({ _v: 0, _d: { firstname: 'Egon' } })
 
     expect(recordTransition._record).toEqual({ _v: 1, _d: { firstname: 'Egon' } })
@@ -156,18 +172,24 @@ xdescribe('record transitions', () => {
     }, 1)
   })
 
-  it('receives a patch message whilst the transition is in progress', () => {
+  xit('receives a patch message whilst the transition is in progress', () => {
     expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
     recordTransition.add(socketWrapper, 3, patchMessage2)
   })
 
   it('returns hasVersion for 1,2 and 3', () => {
+    options.cache.nextOperationWillBeSynchronous = false
+
+    recordTransition.add(client.socketWrapper, recordUpdate)
+    
     expect(recordTransition.hasVersion(0)).toBe(true)
     expect(recordTransition.hasVersion(1)).toBe(true)
     expect(recordTransition.hasVersion(2)).toBe(true)
     expect(recordTransition.hasVersion(3)).toBe(true)
-    expect(recordTransition.hasVersion(4)).toBe(false)
-    expect(recordTransition.hasVersion(5)).toBe(false)
+    expect(recordTransition.hasVersion(4)).toBe(true)
+    expect(recordTransition.hasVersion(5)).toBe(true)
+    expect(recordTransition.hasVersion(6)).toBe(false)
+    expect(recordTransition.hasVersion(7)).toBe(false)
   })
 
   it('processes the next step in the queue', (done) => {

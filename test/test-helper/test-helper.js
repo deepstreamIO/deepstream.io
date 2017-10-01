@@ -54,9 +54,9 @@ exports.getBasePermissions = function () {
   }
 }
 
-const MessageConnectorMock = require('../mocks/message-connector-mock')
-const LoggerMock = require('../mocks/logger-mock')
-const StorageMock = require('../mocks/storage-mock')
+const MessageConnectorMock = require('../test-mocks/message-connector-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
+const StorageMock = require('../test-mocks/storage-mock')
 
 exports.getDeepstreamOptions = function (serverName) {
   const options = {

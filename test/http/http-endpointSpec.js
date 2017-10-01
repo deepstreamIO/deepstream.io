@@ -16,7 +16,7 @@ const needle = require('needle')
  */
 
 const constants = require('../../src/constants/constants')
-const LoggerMock = require('../mocks/logger-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
 
 Promise.promisifyAll(needle)
 

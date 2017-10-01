@@ -5,8 +5,8 @@
 const child_process = require('child_process')
 const path = require('path')
 const Deepstream = require('../src/deepstream.io')
-const ClosableLogger = require('./mocks/closable-logger')
-const LoggerMock = require('./mocks/logger-mock')
+const ClosableLogger = require('./test-mocks/closable-logger')
+const LoggerMock = require('./test-mocks/logger-mock')
 const http = require('http')
 
 describe('deepstream.io', () => {

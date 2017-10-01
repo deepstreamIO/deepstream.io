@@ -17,12 +17,12 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
       config.plugins = {
         cache: {
-          path: './test/test-plugins/plugin-a',
+          path: './test/test-mocks/plugin-mock',
           options: { some: 'options' }
         }
       }
       configInitialiser.initialise(config)
-      expect(config.cache.type).toBe('pluginA')
+      expect(config.cache.type).toBe('mock-plugin')
       expect(config.cache.options).toEqual({ some: 'options' })
     })
 
@@ -40,17 +40,17 @@ describe('config-initialiser', () => {
     })
 
     it('loads plugins from a relative path and lib dir', () => {
-      global.deepstreamLibDir = './test/test-plugins'
+      global.deepstreamLibDir = './test/test-mocks'
 
       const config = defaultConfig.get()
       config.plugins = {
         cache: {
-          path: './plugin-a',
+          path: './plugin-mock',
           options: { some: 'options' }
         }
       }
       configInitialiser.initialise(config)
-      expect(config.cache.type).toBe('pluginA')
+      expect(config.cache.type).toBe('mock-plugin')
       expect(config.cache.options).toEqual({ some: 'options' })
     })
   })
@@ -157,7 +157,7 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
 
       config.auth = {
-        path: '../mocks/auth-handler-mock',
+        path: '../test-mocks/authentication-handler-mock',
         options: {
           hello: 'there'
         }
@@ -241,16 +241,16 @@ describe('config-initialiser', () => {
     it('allows passing a custom permission handler', () => {
       const config = defaultConfig.get()
 
-      config.auth = {
-        path: '../mocks/perm-handler-mock',
+      config.permission = {
+        path: '../test-mocks/permission-handler-mock',
         options: {
           hello: 'there'
         }
       }
 
       configInitialiser.initialise(config)
-      expect(config.authenticationHandler.isReady).toBe(true)
-      expect(config.authenticationHandler.options).toEqual({ hello: 'there' })
+      expect(config.permissionHandler.isReady).toBe(true)
+      expect(config.permissionHandler.options).toEqual({ hello: 'there' })
     })
 
     it('tries to find a custom authentication handler from name', () => {
