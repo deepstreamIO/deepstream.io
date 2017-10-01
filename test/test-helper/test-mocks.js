@@ -51,6 +51,7 @@ module.exports = () => {
     socketWrapper.on = socketWrapperEmitter.on
     socketWrapper.once = socketWrapperEmitter.once
     socketWrapper.emit = socketWrapperEmitter.emit
+    socketWrapper.removeListener = socketWrapperEmitter.removeListener
 
     return {
       socketWrapper,

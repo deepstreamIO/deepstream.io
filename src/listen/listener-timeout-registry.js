@@ -148,7 +148,7 @@ module.exports = class ListenerTimeoutRegistry {
     const provider = this._acceptedProvider[subscriptionName]
     if (provider) {
       provider.socketWrapper.sendMessage({
-        type: this._type,
+        topic: this._type,
         action: C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
         name: provider.pattern,
         subscription: subscriptionName

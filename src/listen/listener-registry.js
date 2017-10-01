@@ -122,16 +122,26 @@ module.exports = class ListenerRegistry {
 
     if (message.action === C.ACTIONS.LISTEN) {
       this._addListener(socketWrapper, message)
-    } else if (message.action === C.ACTIONS.UNLISTEN) {
+      return
+    }
+
+    if (message.action === C.ACTIONS.UNLISTEN) {
       this._providerRegistry.unsubscribe(message, socketWrapper)
       this._removeListener(socketWrapper, message)
-    } else if (this._listenerTimeoutRegistry.isALateResponder(socketWrapper, message)) {
+      return
+    } 
+
+    if (this._listenerTimeoutRegistry.isALateResponder(socketWrapper, message)) {
       this._listenerTimeoutRegistry.handle(socketWrapper, message)
-    } else if (this._localListenInProgress[subscriptionName]) {
-      this._processResponseForListenInProgress(socketWrapper, subscriptionName, message)
-    } else {
-      console.log('>>', message, message.action)
+      return
     }
+
+    if (this._localListenInProgress[subscriptionName]) {
+      this._processResponseForListenInProgress(socketWrapper, subscriptionName, message)
+      return
+    }    
+
+    console.log('>>', message, message.action)
   }
 
   /**
@@ -249,8 +259,8 @@ module.exports = class ListenerRegistry {
     }
     socketWrapper.once('close', this._locallyProvidedRecords[subscriptionName].closeListener)
 
-    this._clusterProvidedRecords.add(subscriptionName)
     this._stopLocalDiscoveryStage(subscriptionName)
+    this._clusterProvidedRecords.add(subscriptionName)
   }
 
   /**
@@ -270,7 +280,7 @@ module.exports = class ListenerRegistry {
       return
     }
 
-    this._providerRegistry.subscribe(pattern, socketWrapper)
+    this._providerRegistry.subscribe(message, socketWrapper)
     this._reconcileSubscriptionsToPatterns(regExp, pattern, socketWrapper)
   }
 
@@ -641,7 +651,7 @@ module.exports = class ListenerRegistry {
         topic: this._topic,
         action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
         name: subscriptionName,
-        data: [hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE]
+        parsedData: hasProvider
       })
     }
   }
@@ -655,12 +665,12 @@ module.exports = class ListenerRegistry {
     if (this._topic !== C.TOPIC.RECORD) {
       return
     }
-    const message = {
+    this._clientRegistry.sendToSubscribers(subscriptionName, {
       topic: this._topic,
       action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
-      data: [subscriptionName, (hasProvider ? C.TYPES.TRUE : C.TYPES.FALSE)]
-    }
-    this._clientRegistry.sendToSubscribers(subscriptionName, message)
+      name: subscriptionName,
+      parsedData: hasProvider
+    })
   }
 
   /**
@@ -690,18 +700,6 @@ module.exports = class ListenerRegistry {
       topic: this._messageTopic,
       action: C.ACTIONS.ACK,
       data: [listenLeaderServerName, subscriptionName]
-    }, this._metaData)
-  }
-
-  /**
-    * Send by a node when all local subscriptions are discarded, allowing other nodes
-    * to do a provider cleanup if necessary
-    */
-  _sendLastSubscriberRemoved (serverName, subscriptionName) {
-    this._message.sendDirect(serverName, this._messageTopic, {
-      topic: this._messageTopic,
-      action: C.ACTIONS.UNSUBSCRIBE,
-      data: [serverName, subscriptionName]
     }, this._metaData)
   }
 
