@@ -1,4 +1,4 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants/constants'
+import { TOPIC, ACTIONS, EVENT } from '../constants'
 import { getMessage } from '../../protocol/text/src/message-builder'
 import StateRegistry from '../cluster/state-registry'
 

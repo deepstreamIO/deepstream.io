@@ -1,6 +1,6 @@
 'use strict'
 
-import { TOPIC, ACTIONS, EVENT } from '../constants/constants'
+import { TOPIC, ACTIONS, EVENT } from '../constants'
 import StateRegistry from '../cluster/state-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import TimeoutRegistry from './listener-timeout-registry'

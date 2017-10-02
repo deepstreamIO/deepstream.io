@@ -1,4 +1,4 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants/constants'
+import { TOPIC, ACTIONS, EVENT } from '../constants'
 
 export default class ListenerTimeoutRegistry {
   private topic: Topic

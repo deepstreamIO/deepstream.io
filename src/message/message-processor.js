@@ -1,6 +1,6 @@
 'use strict'
 
-const C = require('../constants/constants')
+const C = require('../constants')
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the

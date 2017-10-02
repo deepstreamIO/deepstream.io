@@ -1,6 +1,6 @@
 'use strict'
 
-const C = require('../constants/constants')
+const C = require('../constants')
 const SubscriptionRegistry = require('../utils/subscription-registry').default
 const ListenerRegistry = require('../listen/listener-registry').default
 const RecordTransition = require('./record-transition')

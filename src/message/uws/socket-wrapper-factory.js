@@ -1,6 +1,6 @@
 'use strict'
 
-const C = require('../../constants/constants')
+const C = require('../../constants')
 const messageBuilder = require('../../../protocol/text/src/message-builder')
 const messageParser = require('../../../protocol/text/src/message-parser')
 const uws = require('uws')

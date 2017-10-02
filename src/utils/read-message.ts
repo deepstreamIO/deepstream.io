@@ -1,4 +1,4 @@
-import { TOPIC, ACTIONS } from '../constants/constants'
+import { TOPIC, ACTIONS } from '../constants'
 
 export function readMessage (message: Message) {
   return {

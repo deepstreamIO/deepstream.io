@@ -4,7 +4,7 @@
 
 const proxyquire = require('proxyquire').noPreserveCache()
 const utils = require('../../dist/src/utils/utils')
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 const path = require('path')
 const jsYamlLoader = require('../../dist/src/config/js-yaml-loader')
 

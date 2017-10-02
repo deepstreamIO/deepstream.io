@@ -1,4 +1,4 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants/constants'
+import { TOPIC, ACTIONS, EVENT } from '../constants'
 import { EventEmitter } from 'events'
 /**
  * This class exposes an interface that mimicks the behaviour

@@ -2,7 +2,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, beforeAll, afterEach, afterAll */
 'use strict'
 
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../test-mocks/uws-mock')
 const HttpMock = require('../test-mocks/http-mock')

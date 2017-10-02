@@ -1,4 +1,4 @@
-import { EVENT } from '../constants/constants'
+import { EVENT } from '../constants'
 import { EventEmitter } from 'events'
 
 export default class DependencyInitialiser extends EventEmitter {

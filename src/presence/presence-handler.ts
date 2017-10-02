@@ -1,4 +1,4 @@
-import { TOPIC, ACTIONS, EVENT, PRESENCE } from '../constants/constants'
+import { TOPIC, ACTIONS, EVENT, PRESENCE } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import StateRegistry from '../cluster/state-registry'
 

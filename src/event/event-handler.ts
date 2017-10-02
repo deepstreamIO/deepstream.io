@@ -1,6 +1,6 @@
 'use strict'
 /* eslint-disable valid-typeof */
-import { TOPIC, ACTIONS, EVENT } from '../constants/constants'
+import { TOPIC, ACTIONS, EVENT } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import ListenerRegistry from '../listen/listener-registry'
 

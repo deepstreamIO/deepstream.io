@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { TOPIC, EVENT, ACTIONS } from '../constants/constants'
+import { TOPIC, EVENT, ACTIONS } from '../constants'
 import RpcProxy from './rpc-proxy'
 import RpcHandler from './rpc-handler'
 

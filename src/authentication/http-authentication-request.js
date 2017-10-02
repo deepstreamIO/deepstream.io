@@ -1,7 +1,7 @@
 'use strict'
 
 const needle = require('needle')
-const C = require('../constants/constants')
+const C = require('../constants')
 
 /**
  * This class represents a single request from deepstream to a http

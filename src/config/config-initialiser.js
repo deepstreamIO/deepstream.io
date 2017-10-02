@@ -1,9 +1,9 @@
 'use strict'
 
-const DefaultLogger = require('../default-plugins/std-out-logger')
+const DefaultLogger = require('../default-plugins/std-out-logger').default
 const fs = require('fs')
 const utils = require('../utils/utils')
-const C = require('../constants/constants')
+const C = require('../constants')
 const fileUtils = require('./file-utils')
 const UWSConnectionEndpoint = require('../message/uws/connection-endpoint')
 const HTTPConnectionEndpoint = require('../message/http/connection-endpoint')
@@ -238,16 +238,20 @@ function resolvePluginClass (plugin, type) {
   const req = global && global.require ? global.require : require
   let requirePath
   let pluginConstructor
+  let es6Adaptor
   if (plugin.path != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.path)
-    pluginConstructor = req(requirePath)
+    es6Adaptor = req(requirePath)
+    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null && type) {
     requirePath = `deepstream.io-${type}-${plugin.name}`
     requirePath = fileUtils.lookupLibRequirePath(requirePath)
-    pluginConstructor = req(requirePath)
+    es6Adaptor = req(requirePath)
+    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.name)
-    pluginConstructor = req(requirePath)
+    es6Adaptor = req(requirePath)
+    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else {
     throw new Error(`Neither name nor path property found for ${type}`)
   }

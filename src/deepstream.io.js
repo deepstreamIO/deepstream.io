@@ -16,7 +16,7 @@ const PresenceHandler = require('./presence/presence-handler')
 const MessageConnector = require('./cluster/cluster-node').default
 const LockRegistry = require('./cluster/lock-registry')
 const DependencyInitialiser = require('./utils/dependency-initialiser').default
-const C = require('./constants/constants')
+const C = require('./constants')
 const pkg = require('../../package.json')
 
 const EventEmitter = require('events').EventEmitter

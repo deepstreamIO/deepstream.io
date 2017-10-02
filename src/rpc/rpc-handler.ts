@@ -1,4 +1,4 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants/constants'
+import { TOPIC, ACTIONS, EVENT } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import Rpc from './rpc'
 import RpcProxy from './rpc-proxy'

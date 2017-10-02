@@ -2,7 +2,7 @@
 /* global jasmine */
 'use strict'
 
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 const SocketWrapperFactory = require('../../dist/src/message/uws/socket-wrapper-factory')
 
 exports.msg = function () {

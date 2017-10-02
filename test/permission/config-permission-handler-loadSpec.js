@@ -2,7 +2,7 @@
 'use strict'
 
 const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler')
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 
 const recordHandler = {
   removeRecordRequest: () => {},

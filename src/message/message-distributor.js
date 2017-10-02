@@ -1,6 +1,6 @@
 'use strict'
 
-const C = require('../constants/constants')
+const C = require('../constants')
 
 /**
  * The MessageDistributor routes valid and permissioned messages to

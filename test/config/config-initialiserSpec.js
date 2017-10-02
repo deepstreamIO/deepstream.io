@@ -301,7 +301,7 @@ describe('config-initialiser', () => {
         }
       }
       configInitialiser.initialise(config)
-      expect(config.logger._options).toEqual({ logLevel: 2 })
+      expect(config.logger.options).toEqual({ logLevel: 2 })
     })
 
     it('load a custom logger', () => {

@@ -4,7 +4,7 @@
 
 const ListenerRegistry = require('../../dist/src/listen/listener-registry').default
 const testHelper = require('../test-helper/test-helper')
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 const getTestMocks = require('../test-helper/test-mocks')
 const sinon = require('sinon')
 

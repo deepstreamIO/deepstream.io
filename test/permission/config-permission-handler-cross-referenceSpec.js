@@ -3,7 +3,7 @@
 'use strict'
 
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 const testHelper = require('../test-helper/test-helper')
 
 const noop = function () {}

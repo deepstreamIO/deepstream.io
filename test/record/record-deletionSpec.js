@@ -4,7 +4,7 @@
 
 const RecordDeletion = require('../../dist/src/record/record-deletion')
 
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 

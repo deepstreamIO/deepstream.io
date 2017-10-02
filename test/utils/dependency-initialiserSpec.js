@@ -2,7 +2,7 @@
 /* eslint-disable no-new, no-empty */
 'use strict'
 
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 const DependencyInitialiser = require('../../dist/src/utils/dependency-initialiser').default
 const PluginMock = require('../test-mocks/plugin-mock')
 const LoggerMock = require('../test-mocks/logger-mock')

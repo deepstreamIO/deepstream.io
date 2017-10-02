@@ -1,6 +1,6 @@
 'use strict'
 
-const C = require('../constants/constants')
+const C = require('../constants')
 const jsonPath = require('./json-path')
 const recordRequest = require('./record-request')
 const utils = require('../utils/utils')

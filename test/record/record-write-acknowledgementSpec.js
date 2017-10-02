@@ -5,7 +5,7 @@
 const testHelper = require('../test-helper/test-helper')
 
 const RecordTransition = require('../../dist/src/record/record-transition')
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 const getTestMocks = require('../test-helper/test-mocks')
 
 const sinon = require('sinon')

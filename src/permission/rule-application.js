@@ -7,7 +7,7 @@ const ERROR = 'error'
 const STRING = 'string'
 const EOL = require('os').EOL
 
-const C = require('../constants/constants')
+const C = require('../constants')
 const recordRequest = require('../record/record-request')
 const jsonPath = require('../record/json-path')
 

@@ -1,9 +1,14 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const localCache = require('../../dist/src/default-plugins/local-cache')
+const LocalCache = require('../../dist/src/default-plugins/local-cache').default
 
 describe('it saves values in memory', () => {
+  let localCache
+  beforeAll(() => {
+    localCache = new LocalCache()
+  })
+
   it('has created the local cache', () => {
     expect(localCache.isReady).toBe(true)
   })

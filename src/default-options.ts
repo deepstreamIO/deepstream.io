@@ -1,6 +1,8 @@
 /* eslint-disable global-require */
 import { getUid } from './utils/utils'
-import { LOG_LEVEL } from './constants/constants'
+import { LOG_LEVEL } from './constants'
+import LocalCache from './default-plugins/local-cache'
+import NoopStorage from './default-plugins/noop-storage'
 
 export function get (): DeepstreamOptions {
   return {
@@ -82,8 +84,8 @@ export function get (): DeepstreamOptions {
     /*
      * Default Plugins
      */
-    cache: require('./default-plugins/local-cache'),
-    storage: require('./default-plugins/noop-storage'),
+    cache: new LocalCache({}),
+    storage: new NoopStorage({}),
     message: null,
     uniqueRegistry: null,
     logger: null,

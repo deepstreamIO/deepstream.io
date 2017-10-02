@@ -1,6 +1,6 @@
 'use strict'
 
-const C = require('../constants/constants')
+const C = require('../constants')
 
 /**
  * Sends an error to the socketWrapper that requested the

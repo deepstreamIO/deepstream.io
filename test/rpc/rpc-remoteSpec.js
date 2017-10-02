@@ -3,7 +3,7 @@
 // /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 // 'use strict'
 
-// const C = require('../../dist/src/constants/constants')
+// const C = require('../../dist/src/constants')
 // const Rpc = require('../../dist/src/rpc/rpc')
 // const msg = require('../test-helper/test-helper').msg
 // const SocketWrapper = require('../test-mocks/socket-wrapper-mock')

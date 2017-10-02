@@ -1,6 +1,5 @@
 type Topic = string
 type Action = string
-type LogLevel = string
 
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
@@ -39,9 +38,16 @@ interface ListenMessage extends Message {
 }
 
 interface Plugin {
-  init: Function
-  isReady: Function
-  setDeepstream: Function
+  init?: Function
+  isReady: boolean
+  setDeepstream?: Function
+  description: string
+}
+
+interface StoragePlugin extends Plugin {
+  set: Function
+  get: Function
+  delete: Function
 }
 
 interface SubscriptionListener {
@@ -67,7 +73,7 @@ interface Cluster {
 
 interface DeepstreamOptions {
   showLogo: boolean
-  logLevel: LogLevel
+  logLevel: number
   serverName: string
   externalUrl: string
   sslKey: string

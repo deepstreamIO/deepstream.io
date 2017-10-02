@@ -2,7 +2,7 @@
 'use strict'
 
 const rulesMap = require('../../dist/src/permission/rules-map')
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 
 describe('returns the applicable rule for a message', () => {
   it('exposes a getRulesForMessage method', () => {

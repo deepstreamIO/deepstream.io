@@ -3,7 +3,7 @@
 
 const testHelper = require('../test-helper/test-helper')
 const RpcProxy = require('../../dist/src/rpc/rpc-proxy')
-const C = require('../../dist/src/constants/constants')
+const C = require('../../dist/src/constants')
 
 const options = testHelper.getDeepstreamOptions()
 
