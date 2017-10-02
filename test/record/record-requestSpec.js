@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const recordRequest = require('../../dist/src/record/record-request')
+const recordRequest = require('../../dist/src/record/record-request').default
 
 const getTestMocks = require('../test-helper/test-mocks')
 const testHelper = require('../test-helper/test-helper')

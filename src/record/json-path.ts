@@ -1,5 +1,3 @@
-'use strict'
-
 const SPLIT_REG_EXP = /[[\]]/g
 
 /**
@@ -11,7 +9,7 @@ const SPLIT_REG_EXP = /[[\]]/g
  *
  * @constructor
  */
-function setValue (root, path, value) {
+export function setValue (root: any, path: string, value: any) {
   const tokens = tokenize(path)
   let node = root
 
@@ -38,7 +36,7 @@ function setValue (root, path, value) {
  * @private
  * @returns {void}
  */
-function tokenize (path) {
+function tokenize (path: string) {
   const tokens = []
 
   const parts = path.split('.')
@@ -63,8 +61,4 @@ function tokenize (path) {
     }
   }
   return tokens
-}
-
-module.exports = {
-  setValue
 }

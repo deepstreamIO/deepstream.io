@@ -4,6 +4,12 @@ declare module "*.json" {
 
 type Topic = string
 type Action = string
+type Event = string
+
+interface StorageRecord {
+  _v: number
+  _d: object
+}
 
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
@@ -16,10 +22,12 @@ interface SocketWrapper extends SimpleSocketWrapper {
   user: string
   uuid: number
   __id: number
+  authData: object
   prepareMessage: Function
   finalizeMessage: Function
   sendPrepared: Function
-  sendNative: Function
+  sendNative: Function,
+  parseData: Function
 }
 
 interface Message {
@@ -29,23 +37,37 @@ interface Message {
 
   isError?: boolean
   isAck?: boolean
-  correlationId?: string
+
   data?: string
   parsedData?: any
   
-  isCompleted?: boolean
   raw?: string
+}
+
+interface RPCMessage extends Message {
+  correlationId?: string
+  isCompleted?: boolean
+}
+
+interface PresenceMessage extends Message {
+  correlationId?: string
 }
 
 interface ListenMessage extends Message {
   subscription?: string
 }
 
+interface RecordMessage extends Message {
+  path?: string
+  version?: number
+  isWriteAck?: boolean
+}
+
 interface Plugin extends NodeJS.EventEmitter {
   init?: Function
   isReady: boolean
   setDeepstream?: Function
-  description: string,
+  description: string
   close?: Function
 }
 

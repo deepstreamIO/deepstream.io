@@ -2,45 +2,14 @@
 'use strict'
 
 /* global it, describe, expect, jasmine, afterAll, beforeAll */
-const testHelper = require('../test-helper/test-helper')
-
-const RecordTransition = require('../../dist/src/record/record-transition')
-const C = require('../../dist/src/constants')
-const getTestMocks = require('../test-helper/test-mocks')
-
 const sinon = require('sinon')
 
-const recordPatch = {
-  topic: C.TOPIC.RECORD,
-  action: C.ACTIONS.PATCH,
-  name: 'some-record',
-  version: 4,
-  path: 'lastname',
-  data: 'SEgon',
-  isWriteAck: true
-}
-Object.freeze(recordPatch)
+const M = require('./messages')
+const C = require('../../dist/src/constants')
+const getTestMocks = require('../test-helper/test-mocks')
+const testHelper = require('../test-helper/test-helper')
 
-const recordData = { _v: 4, _d: { name: 'Kowalski' } }
-Object.freeze(recordData)
-
-const recordUpdate = {
-  topic: C.TOPIC.RECORD,
-  action: C.ACTIONS.UPDATE,
-  name: 'some-record',
-  version: 5,
-  parsedData: recordData._d,
-  isWriteAck: true
-}
-Object.freeze(recordUpdate)
-
-const writeAck = {
-  topic: C.TOPIC.RECORD,
-  action: C.ACTIONS.WRITE_ACKNOWLEDGEMENT,
-  name: 'some-record',
-  data: [[-1], null]
-}
-Object.freeze(writeAck)
+const RecordTransition = require('../../dist/src/record/record-transition').default
 
 xdescribe('record transitions', () => {
   let options
@@ -54,10 +23,9 @@ xdescribe('record transitions', () => {
     client = testMocks.getSocketWrapper()
 
     options = testHelper.getDeepstreamOptions()
-    recordTransition = new RecordTransition(recordUpdate.name, options, testMocks.recordHandler)
+    recordTransition = new RecordTransition(M.recordUpdate.name, options, testMocks.recordHandler)
   
-    const parsedData = { _v: 4, _d: { firstname: 'Wolfram' } }
-    options.cache.set('some-record', parsedData, () => {})
+    options.cache.set('some-record', M.recordData, () => {})
   })
 
   afterEach(() => {
@@ -67,16 +35,16 @@ xdescribe('record transitions', () => {
 
   it('retrieves the empty record', () => {
     testMocks.recordHandlerMock
-      .expects('_$broadcastUpdate')
+      .expects('broadcastUpdate')
       .once()
-      .withExactArgs(recordUpdate.name, recordUpdate, false, client.socketWrapper)
+      .withExactArgs(M.recordUpdate.name, M.recordUpdate, false, client.socketWrapper)
 
     testMocks.recordHandlerMock
-      .expects('_$transitionComplete')
+      .expects('transitionComplete')
       .once()
-      .withExactArgs(recordUpdate.name)
+      .withExactArgs(M.recordUpdate.name)
 
-    recordTransition.add(client.socketWrapper, Object.assign({}, recordUpdate))
+    recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate))
   })
 
   it('adds an update to the queue', () => {

@@ -1,8 +1,9 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const RecordHandler = require('../../dist/src/record/record-handler')
+const RecordHandler = require('../../dist/src/record/record-handler').default
 
+const M = require('./messages')
 const C = require('../../dist/src/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
@@ -24,39 +25,14 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock.verify()
   })
 
-  const createOrReadMessage = {
-    topic: C.TOPIC.RECORD,
-    action: C.ACTIONS.CREATEORREAD,
-    name: 'some-record'
-  }
-
-  const readMessage = {
-    topic: C.TOPIC.RECORD,
-    action: C.ACTIONS.READ,
-    name: 'some-record',
-    version: 0,
-    parsedData: {}
-  }
-
-  const readDeniedMessage = {
-    topic: C.TOPIC.RECORD,
-    action: C.ACTIONS.READ,
-    name: 'some-record'
-  }
-
-  const createDeniedMessage = {
-    topic: C.TOPIC.RECORD,
-    action: C.ACTIONS.CREATE,
-    name: 'some-record'
-  }
-
+ 
   it('triggers create and read actions if record doesnt exist', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(readMessage)
+      .withExactArgs(M.readMessage)
 
-    recordHandler.handle(client.socketWrapper, createOrReadMessage)
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(options.permissionHandler.lastArgs.length).toBe(2)
     expect(options.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
@@ -69,9 +45,9 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(readMessage)
+      .withExactArgs(M.readMessage)
 
-    recordHandler.handle(client.socketWrapper, createOrReadMessage)
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(options.permissionHandler.lastArgs.length).toBe(1)
     expect(options.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
@@ -83,9 +59,9 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(createDeniedMessage, C.EVENT.MESSAGE_DENIED)
+      .withExactArgs(M.createDeniedMessage, C.EVENT.MESSAGE_DENIED)
 
-    recordHandler.handle(client.socketWrapper, createOrReadMessage)
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(options.permissionHandler.lastArgs.length).toBe(1)
     expect(options.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
@@ -98,9 +74,9 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(readDeniedMessage, C.EVENT.MESSAGE_DENIED)
+      .withExactArgs(M.readDeniedMessage, C.EVENT.MESSAGE_DENIED)
 
-    recordHandler.handle(client.socketWrapper, createOrReadMessage)
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(options.permissionHandler.lastArgs.length).toBe(1)
     expect(options.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
@@ -113,9 +89,9 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(createDeniedMessage, C.EVENT.MESSAGE_PERMISSION_ERROR)
+      .withExactArgs(M.createDeniedMessage, C.EVENT.MESSAGE_PERMISSION_ERROR)
 
-    recordHandler.handle(client.socketWrapper, createOrReadMessage)
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(options.permissionHandler.lastArgs.length).toBe(1)
     expect(options.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)

@@ -2,45 +2,14 @@
 'use strict'
 
 /* global it, describe, expect, jasmine, afterAll, beforeAll */
-const testHelper = require('../test-helper/test-helper')
-
-const RecordTransition = require('../../dist/src/record/record-transition')
+const M = require('./messages')
 const C = require('../../dist/src/constants')
 const getTestMocks = require('../test-helper/test-mocks')
+const testHelper = require('../test-helper/test-helper')
+
+const RecordTransition = require('../../dist/src/record/record-transition').default
 
 const sinon = require('sinon')
-
-const recordPatch = {
-  topic: C.TOPIC.RECORD,
-  action: C.ACTIONS.PATCH,
-  name: 'some-record',
-  version: 4,
-  path: 'lastname',
-  data: 'SEgon',
-  isWriteAck: true
-}
-Object.freeze(recordPatch)
-
-const recordData = { _v: 5, _d: { name: 'Kowalski' } }
-Object.freeze(recordData)
-
-const recordUpdate = {
-  topic: C.TOPIC.RECORD,
-  action: C.ACTIONS.UPDATE,
-  name: 'some-record',
-  version: -1,
-  parsedData: recordData._d,
-  isWriteAck: true
-}
-Object.freeze(recordUpdate)
-
-const writeAck = {
-  topic: C.TOPIC.RECORD,
-  action: C.ACTIONS.WRITE_ACKNOWLEDGEMENT,
-  name: 'some-record',
-  data: [[-1], null]
-}
-Object.freeze(writeAck)
 
 xdescribe('record write acknowledgement', () => {
   let options
@@ -54,14 +23,15 @@ xdescribe('record write acknowledgement', () => {
     client = testMocks.getSocketWrapper()
 
     options = testHelper.getDeepstreamOptions()
-    recordTransition = new RecordTransition(recordUpdate.name, options, testMocks.recordHandler)
+
+    recordTransition = new RecordTransition(M.recordUpdate.name, options, testMocks.recordHandler)
   })
 
   afterEach(() => {
     client.socketWrapperMock.verify()
   })
 
-  it('sends write success to socket', () => {
+  fit('sends write success to socket', () => {
     client.socketWrapperMock
       .expects('sendError')
       .never()
@@ -69,9 +39,9 @@ xdescribe('record write acknowledgement', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(writeAck, true)
+      .withExactArgs(M.writeAck, true)
 
-    recordTransition.add(client.socketWrapper, recordUpdate, true)
+    recordTransition.add(client.socketWrapper, M.recordUpdate, true)
   })
 
   it('sends write failure to socket', () => {

@@ -28,8 +28,8 @@ module.exports = () => {
 
 
   const recordHandler = {
-    _$broadcastUpdate: () => {},
-    _$transitionComplete: () => {}
+    broadcastUpdate: () => {},
+    transitionComplete: () => {}
   }
 
   const subscriptionRegistryMock = sinon.mock(subscriptionRegistry)

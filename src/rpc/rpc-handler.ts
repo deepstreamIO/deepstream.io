@@ -39,7 +39,7 @@ export default class RpcHandler {
   * Main interface. Handles incoming messages
   * from the message distributor
   */
-  public handle (socketWrapper: SocketWrapper, message: Message): void {
+  public handle (socketWrapper: SocketWrapper, message: RPCMessage): void {
     if (message.action === ACTIONS.SUBSCRIBE) {
       this.subscriptionRegistry.subscribe(message, socketWrapper)
     } else if (message.action === ACTIONS.UNSUBSCRIBE) {
@@ -121,7 +121,7 @@ export default class RpcHandler {
   * will be routed to a random one of them, otherwise it will be routed
   * to the message connector
   */
-  private makeRpc (socketWrapper: SimpleSocketWrapper, message: Message, isRemote: boolean): void {
+  private makeRpc (socketWrapper: SimpleSocketWrapper, message: RPCMessage, isRemote: boolean): void {
     const rpcName = message.name
     const correlationId = message.correlationId
 
@@ -154,7 +154,7 @@ export default class RpcHandler {
   * NO_RPC_PROVIDER error to the requestor. The RPC won't continue from
   * thereon
   */
-  public makeRemoteRpc (requestor: SimpleSocketWrapper, message: Message): void {
+  public makeRemoteRpc (requestor: SimpleSocketWrapper, message: RPCMessage): void {
     const rpcName = message.name
     const correlationId = message.correlationId
     const rpcData =  this.rpcs.get(correlationId)
@@ -184,7 +184,7 @@ export default class RpcHandler {
   * Please note: Private messages are generic, so the RPC
   * specific ones need to be filtered out.
   */
-  private onPrivateMessage (msg: Message, originServerName: string): void {
+  private onPrivateMessage (msg: RPCMessage, originServerName: string): void {
     msg.topic = TOPIC.RPC
 
     if (!msg.data || msg.data.length < 2) {

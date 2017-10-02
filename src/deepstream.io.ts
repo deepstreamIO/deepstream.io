@@ -14,7 +14,7 @@ import * as MessageDistributor from './message/message-distributor'
 import EventHandler from './event/event-handler'
 import RpcHandler from './rpc/rpc-handler'
 import PresenceHandler from './presence/presence-handler'
-import * as RecordHandler from './record/record-handler'
+import RecordHandler from './record/record-handler'
 
 import { get as getDefaultOptions } from './default-options'
 import * as configInitialiser from './config/config-initialiser'

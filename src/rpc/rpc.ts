@@ -23,7 +23,7 @@ export default class Rpc {
 
   /**
   */
-  constructor (rpcHandler: RpcHandler, requestor: SimpleSocketWrapper, provider: SimpleSocketWrapper, options: any, message: Message) {
+  constructor (rpcHandler: RpcHandler, requestor: SimpleSocketWrapper, provider: SimpleSocketWrapper, options: any, message: RPCMessage) {
     this.rpcHandler = rpcHandler
     this.rpcName = message.name
     this.correlationId = message.correlationId
@@ -49,7 +49,7 @@ export default class Rpc {
   * Both of these messages will just be forwarded directly
   * to the requestor
   */
-  public handle (message: Message): void {
+  public handle (message: RPCMessage): void {
     if (message.correlationId !== this.correlationId) {
       return
     }
@@ -99,7 +99,7 @@ export default class Rpc {
   * If more than one Ack is received an error will be returned
   * to the provider
   */
-  private handleAck (message: Message) {
+  private handleAck (message: RPCMessage) {
     if (this.isAcknowledged === true) {
       this.provider.sendError(this.message, EVENT.MULTIPLE_ACK)
       return

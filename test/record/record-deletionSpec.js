@@ -2,22 +2,12 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const RecordDeletion = require('../../dist/src/record/record-deletion')
+const RecordDeletion = require('../../dist/src/record/record-deletion').default
 
+const M = require('./messages')
 const C = require('../../dist/src/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
-
-const deletionMsg = {
-  topic: C.TOPIC.RECORD,
-  action: C.ACTIONS.DELETE,
-  name: 'someRecord'
-}
-const anotherDeletionMsg = {
-  topic: C.TOPIC.RECORD,
-  action: C.ACTIONS.DELETE,
-  name: 'no-storage/1'
-}
 
 describe('record deletion', () => {
   let testMocks
@@ -41,16 +31,16 @@ describe('record deletion', () => {
     client.socketWrapperMock
       .expects('sendAckMessage')
       .once()
-      .withExactArgs(deletionMsg)
+      .withExactArgs(M.deletionMsg)
 
     recordDeletion = new RecordDeletion(
-      options, client.socketWrapper, deletionMsg, callback
+      options, client.socketWrapper, M.deletionMsg, callback
     )
 
     expect(options.cache.completedDeleteOperations).toBe(1)
     expect(options.storage.completedDeleteOperations).toBe(1)
 
-    expect(recordDeletion._isDestroyed).toBe(true)
+    expect(recordDeletion.isDestroyed).toBe(true)
     expect(callback).toHaveBeenCalled()
   })
 
@@ -68,11 +58,11 @@ describe('record deletion', () => {
       }, C.EVENT.RECORD_DELETE_ERROR)
 
     recordDeletion = new RecordDeletion(
-      options, client.socketWrapper, deletionMsg, callback
+      options, client.socketWrapper, M.deletionMsg, callback
     )
 
     setTimeout(() => {
-      expect(recordDeletion._isDestroyed).toBe(true)
+      expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
       expect(options.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'storageError'])
       done()
@@ -94,11 +84,11 @@ describe('record deletion', () => {
       }, C.EVENT.RECORD_DELETE_ERROR)
 
     recordDeletion = new RecordDeletion(
-      options, client.socketWrapper, deletionMsg, callback
+      options, client.socketWrapper, M.deletionMsg, callback
     )
 
     setTimeout(() => {
-      expect(recordDeletion._isDestroyed).toBe(true)
+      expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
       expect(options.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'cache timeout'])
       done()
@@ -111,15 +101,15 @@ describe('record deletion', () => {
     client.socketWrapperMock
       .expects('sendAckMessage')
       .once()
-      .withExactArgs(anotherDeletionMsg)
+      .withExactArgs(M.anotherDeletionMsg)
 
     recordDeletion = new RecordDeletion(
-      options, client.socketWrapper, anotherDeletionMsg, callback
+      options, client.socketWrapper, M.anotherDeletionMsg, callback
     )
 
     expect(options.cache.completedDeleteOperations).toBe(1)
     expect(options.storage.completedDeleteOperations).toBe(0)
-    expect(recordDeletion._isDestroyed).toBe(true)
+    expect(recordDeletion.isDestroyed).toBe(true)
     expect(callback).toHaveBeenCalled()
   })
 })

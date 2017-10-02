@@ -1,20 +1,19 @@
-'use strict'
-
-const C = require('../constants')
+import { TOPIC, EVENT } from '../constants'
 
 /**
  * Sends an error to the socketWrapper that requested the
  * record
  */
 function sendError (
-  event, message, recordName, socketWrapper, onError, options, context, metaData
-) {
+  event: Event, message: string, recordName: string, socketWrapper: SocketWrapper, 
+  onError: Function, options: DeepstreamOptions, context: any, metaData: any
+):void {
   options.logger.error(event, message, metaData)
   if (onError) {
     onError.call(context, event, message, recordName, socketWrapper)
   } else if (socketWrapper) {
     socketWrapper.sendError({
-      topic: C.TOPIC.RECORD
+      topic: TOPIC.RECORD
     }, event)
   }
 }
@@ -24,11 +23,12 @@ function sendError (
  * here, if the record couldn't be found in storage no further attempts to retrieve it will be made
  */
 function onStorageResponse (
-  error, record, recordName, socketWrapper, onComplete, onError, options, context, metaData
-) {
+  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper, 
+  onComplete: Function, onError: Function, options: DeepstreamOptions, context: any, metaData: any
+):void {
   if (error) {
     sendError(
-      C.EVENT.RECORD_LOAD_ERROR,
+      EVENT.RECORD_LOAD_ERROR,
       `error while loading ${recordName} from storage:${error.toString()}`,
       recordName,
       socketWrapper,
@@ -48,16 +48,14 @@ function onStorageResponse (
 
 /**
  * Callback for responses returned by the cache connector
- *
- * @private
- * @returns {void}
  */
 function onCacheResponse (
-  error, record, recordName, socketWrapper, onComplete, onError, options, context, metaData
-) {
+  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper, 
+  onComplete: Function, onError: Function, options: DeepstreamOptions, context: any, metaData: any
+):void {
   if (error) {
     sendError(
-      C.EVENT.RECORD_LOAD_ERROR,
+      EVENT.RECORD_LOAD_ERROR,
       `error while loading ${recordName} from cache:${error.toString()}`,
       recordName,
       socketWrapper,
@@ -77,7 +75,7 @@ function onCacheResponse (
     const storageTimeout = setTimeout(() => {
       storageTimedOut = true
       sendError(
-        C.EVENT.STORAGE_RETRIEVAL_TIMEOUT,
+        EVENT.STORAGE_RETRIEVAL_TIMEOUT,
         recordName, recordName, socketWrapper,
         onError, options, context, metaData
       )
@@ -110,24 +108,17 @@ function onCacheResponse (
  * by passing null to onComplete (but not call onError).
  *
  * It also handles all the timeout and destruction steps around this operation
- *
- * @param {String} recordName       the unique name of the record
- * @param {Object} options        deepstream options
- * @param {SocketWrapper} socketWrapper the sender whos message initiated the recordRequest
- * @param {Function} onComplete       callback for successful requests
- *                                      (even if the record wasn't found)
- * @param {[Function]} onError          callback for errors
- *
  */
-module.exports = function (
-  recordName, options, socketWrapper, onComplete, onError, context, metaData
-) {
+export default function (
+  recordName: string, options: DeepstreamOptions, socketWrapper: SocketWrapper, 
+  onComplete: Function, onError: Function, context: any, metaData: any
+):void {
   let cacheTimedOut = false
 
   const cacheTimeout = setTimeout(() => {
     cacheTimedOut = true
     sendError(
-      C.EVENT.CACHE_RETRIEVAL_TIMEOUT,
+      EVENT.CACHE_RETRIEVAL_TIMEOUT,
       recordName, recordName, socketWrapper,
       onError, options, context, metaData
     )

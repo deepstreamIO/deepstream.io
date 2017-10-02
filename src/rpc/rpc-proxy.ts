@@ -22,7 +22,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
     this.remoteServer = remoteServer
   }
 
-  public sendAckMessage (message: Message): void {
+  public sendAckMessage (message: RPCMessage): void {
 
   }
 
@@ -33,7 +33,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   * Adds additional information to the message that enables the counterparty
   * to identify the sender
   */
-  public sendMessage (message: Message): void {
+  public sendMessage (message: RPCMessage): void {
     if (message.isAck && message.action !== ACTIONS.REQUEST) {
       message.isCompleted = true
     }
@@ -47,7 +47,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   * Sends an error on the specified topic. The
   * action will automatically be set to ACTION.ERROR
   */
-  public sendError (topic: string, type: string, msg: Message): void {
+  public sendError (topic: string, type: string, msg: RPCMessage): void {
     if (type === EVENT.RESPONSE_TIMEOUT) {
       // by the time an RPC has timed out on this server, it has already timed out on the remote
       // (and has been cleaned up) so no point sending

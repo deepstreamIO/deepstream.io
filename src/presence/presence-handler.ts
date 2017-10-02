@@ -50,7 +50,7 @@ export default class PresenceHandler {
   *
   * Handles subscriptions, unsubscriptions and queries
   */
-  handle (socketWrapper: SocketWrapper, message: Message): void {
+  handle (socketWrapper: SocketWrapper, message: PresenceMessage): void {
     const users = parseUserNames(message.data)
     if (!users) {
       this.options.logger.error(EVENT.INVALID_PRESENCE_USERS, message.data, this.metaData)
