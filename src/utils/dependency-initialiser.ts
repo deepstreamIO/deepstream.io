@@ -1,14 +1,5 @@
-'use strict'
-
-const C = require('../constants/constants')
-
+import { EVENT } from '../constants/constants'
 import { EventEmitter } from 'events'
-
-interface Plugin extends EventEmitter {
-  init: Function,
-  isReady: Function,
-  setDeepstream: Function
-}
 
 export default class DependencyInitialiser extends EventEmitter {
   public isReady: boolean
@@ -23,7 +14,7 @@ export default class DependencyInitialiser extends EventEmitter {
  * an individual dependency (cache connector, persistance connector,
  * message connector, logger)
  */
-  constructor (deepstream, options, dependency: Plugin, name: string) {
+  constructor (deepstream, options: DeepstreamOptions, dependency: Plugin, name: string) {
     super()
     this.isReady = false
 
@@ -34,7 +25,7 @@ export default class DependencyInitialiser extends EventEmitter {
 
     if (typeof this.dependency.on !== 'function' && typeof this.dependency.isReady === 'undefined') {
       const errorMessage = `${this.name} needs to implement isReady or be an emitter`
-      this.options.logger.error(C.EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
+      this.options.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
       const error = (new Error(errorMessage)) as any
       error.code = 'PLUGIN_INITIALIZATION_ERROR'
       throw error
@@ -63,7 +54,7 @@ export default class DependencyInitialiser extends EventEmitter {
 /**
  * Returns the underlying dependency (e.g. the Logger, StorageConnector etc.)
  */
-  public getDependency () {
+  public getDependency (): Plugin {
     return this.dependency
   }
 
@@ -77,7 +68,7 @@ export default class DependencyInitialiser extends EventEmitter {
 
     this.dependency.type = this.dependency.description || this.dependency.type
     const dependencyType = this.dependency.type ? `: ${this.dependency.type}` : ': no dependency description provided'
-    this.options.logger.info(C.EVENT.INFO, `${this.name} ready${dependencyType}`)
+    this.options.logger.info(EVENT.INFO, `${this.name} ready${dependencyType}`)
 
     process.nextTick(this._emitReady.bind(this))
   }
@@ -89,7 +80,7 @@ export default class DependencyInitialiser extends EventEmitter {
     const message = `${this.name} wasn't initialised in time`
     this._logError(message)
     const error = (new Error(message)) as any
-    error.code = C.EVENT.PLUGIN_INITIALIZATION_TIMEOUT
+    error.code = EVENT.PLUGIN_INITIALIZATION_TIMEOUT
     throw error
   }
 
@@ -97,13 +88,11 @@ export default class DependencyInitialiser extends EventEmitter {
 * Handles errors emitted by the dependency at startup.
 *
 * Plugin errors that occur at runtime are handled by the deepstream.io main class
-*
-* @param {Error|String} error
 */
-  private _onError (error): void {
+  private _onError (error: any): void {
     if (this.isReady !== true) {
       this._logError(`Error while initialising ${this.name}: ${error.toString()}`)
-      error.code = C.EVENT.PLUGIN_INITIALIZATION_ERROR
+      error.code = EVENT.PLUGIN_INITIALIZATION_ERROR
       throw error
     }
   }
@@ -125,7 +114,7 @@ export default class DependencyInitialiser extends EventEmitter {
  */
   private _logError (message: string): void {
     if (this.options.logger && this.options.logger.isReady) {
-      this.options.logger.error(C.EVENT.PLUGIN_ERROR, message)
+      this.options.logger.error(EVENT.PLUGIN_ERROR, message)
     } else {
       console.error('Error while initialising dependency')
       console.error(message)

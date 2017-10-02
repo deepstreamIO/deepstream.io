@@ -13,9 +13,9 @@ const jsYamlLoader = require('./config/js-yaml-loader')
 const RpcHandler = require('./rpc/rpc-handler')
 const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
-const MessageConnector = require('./cluster/cluster-node')
+const MessageConnector = require('./cluster/cluster-node').default
 const LockRegistry = require('./cluster/lock-registry')
-const DependencyInitialiser = require('./utils/dependency-initialiser').defailt
+const DependencyInitialiser = require('./utils/dependency-initialiser').default
 const C = require('./constants/constants')
 const pkg = require('../../package.json')
 

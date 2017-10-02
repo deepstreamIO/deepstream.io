@@ -7,7 +7,7 @@ const C = require('../../dist/src/constants/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
-const SubscriptionRegistry = require('../../dist/src/utils/subscription-registry')
+const SubscriptionRegistry = require('../../dist/src/utils/subscription-registry').default
 
 const options = testHelper.getDeepstreamOptions()
 

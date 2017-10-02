@@ -1,7 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
-const SubscriptionRegistry = require('../utils/subscription-registry')
+const SubscriptionRegistry = require('../utils/subscription-registry').default
 const ListenerRegistry = require('../listen/listener-registry')
 const RecordTransition = require('./record-transition')
 const RecordDeletion = require('./record-deletion')
@@ -442,7 +442,7 @@ module.exports = class RecordHandler {
    * assume that the original deepstream node has already updated the record in cache and
    * storage and only broadcast the message to subscribers
    */
-    if (socketWrapper === C.SOURCE_MESSAGE_CONNECTOR) {
+    if (socketWrapper.isRemote) {
       this._$broadcastUpdate(recordName, message, false, socketWrapper)
       return
     }

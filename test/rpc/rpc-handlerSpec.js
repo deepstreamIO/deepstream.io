@@ -2,7 +2,7 @@
 /* global jasmine, xit, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const RpcHandler = require('../../dist/src/rpc/rpc-handler')
+const RpcHandler = require('../../dist/src/rpc/rpc-handler').default
 
 const C = require('../../dist/src/constants/constants')
 const testHelper = require('../test-helper/test-helper')

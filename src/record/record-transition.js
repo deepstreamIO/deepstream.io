@@ -435,7 +435,7 @@ module.exports = class RecordTransition {
     this._options.logger.error(C.EVENT.RECORD_UPDATE_ERROR, errorMessage, this._metaData)
 
     for (let i = 0; i < this._steps.length; i++) {
-      if (this._steps[i].sender !== C.SOURCE_MESSAGE_CONNECTOR) {
+      if (this._steps[i].sender.isRemote) {
         this._steps[i].sender.sendError(this._steps[i].message, C.EVENT.RECORD_UPDATE_ERROR)
       }
     }

@@ -2,7 +2,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const PresenceHandler = require('../../dist/src/presence/presence-handler')
+const PresenceHandler = require('../../dist/src/presence/presence-handler').default
 
 const C = require('../../dist/src/constants/constants')
 const testHelper = require('../test-helper/test-helper')
@@ -198,8 +198,8 @@ describe('presence handler', () => {
       .withExactArgs(C.PRESENCE.EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_JOIN,
-        data: 'Bart'
-      }, false, C.SOURCE_MESSAGE_CONNECTOR)
+        parsedData: 'Bart'
+      }, false, null, false)
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
@@ -207,8 +207,8 @@ describe('presence handler', () => {
       .withExactArgs('Bart', {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_JOIN,
-        data: 'Bart'
-      }, false, C.SOURCE_MESSAGE_CONNECTOR)
+        parsedData: 'Bart'
+      }, false, null, false)
 
     testMocks.stateRegistry.emit('add', 'Bart')
   })
@@ -220,8 +220,8 @@ describe('presence handler', () => {
       .withExactArgs(C.PRESENCE.EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_LEAVE,
-        data: 'Bart'
-      }, false, C.SOURCE_MESSAGE_CONNECTOR)
+        parsedData: 'Bart'
+      }, false, null, false)
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
@@ -229,8 +229,8 @@ describe('presence handler', () => {
       .withExactArgs('Bart', {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_LEAVE,
-        data: 'Bart'
-      }, false, C.SOURCE_MESSAGE_CONNECTOR)
+        parsedData: 'Bart'
+      }, false, null, false)
 
     testMocks.stateRegistry.emit('remove', 'Bart')
   })

@@ -4,24 +4,15 @@ import { EventEmitter } from 'events'
 
 /**
  * Returns a unique identifier
- *
- * @returns {String} uid
  */
-export let getUid = function () {
+export let getUid = function (): string {
   return `${Date.now().toString(36)}-${(Math.random() * 10000000000000000000).toString(36)}`
 }
 
 /**
  * Calls <callback> once all <emitters> have emitted <event>
- *
- * @param {Array} emitters Array of objects extending events.EventEmitter
- * @param {String} event
- * @param {Function} callback Will be called once every emitter has emitted the event
- *
- * @public
- * @returns {void}
  */
-export let combineEvents = function (emitters: Array<EventEmitter>, event: string, callback: Function) {
+export let combineEvents = function (emitters: Array<EventEmitter>, event: string, callback: Function): void {
   let i
   let count = 0
   const increment = function () {
@@ -40,13 +31,8 @@ export let combineEvents = function (emitters: Array<EventEmitter>, event: strin
 /**
  * Takes a key-value map and returns
  * a map with { value: key } of the old map
- *
- * @param  {Object} map
- *
- * @public
- * @return {Object} reversed map
  */
-export let reverseMap = function (map: Object) {
+export let reverseMap = function (map: Object): object {
   const reversedMap = {}
 
   for (const key in map) {
@@ -59,14 +45,8 @@ export let reverseMap = function (map: Object) {
 /**
  * Extended version of the typeof operator. Also supports 'array'
  * and 'url' to check for valid URL schemas
- *
- * @param   {Mixed}   input
- * @param   {String}  expectedType
- *
- * @public
- * @returns {Boolean}
  */
-export let isOfType = function (input, expectedType: string) {
+export let isOfType = function (input: any, expectedType: string): boolean {
   if (input === null) {
     return expectedType === 'null'
   } else if (expectedType === 'array') {
@@ -80,15 +60,9 @@ export let isOfType = function (input, expectedType: string) {
 /**
  * Takes a map and validates it against a basic
  * json schema in the form { key: type }
- *
- * @param   {Object}  map        the map to validate
- * @param   {Boolean} throwError if true, errors will be thrown rather than returned
- * @param   {Object}  schema     json schema in the form { key: type }
- *
- * @public
  * @returns {Boolean|Error}
  */
-export let validateMap = function (map: object, throwError: boolean, schema: object) {
+export let validateMap = function (map: object, throwError: boolean, schema: Object): any {
   let error
   let key
 
@@ -151,14 +125,8 @@ export let merge = function () {
 /**
  * Set timeout utility that adds support for disabling a timeout
  * by passing null
- *
- * @param {Function} callback        the function that will be called after the given time
- * @param {Number}   timeoutDuration the duration of the timeout in milliseconds
- *
- * @public
- * @returns {Number} timeoutId
  */
-export let setTimeout = function (callback: Function, timeoutDuration: number) {
+export let setTimeout = function (callback: Function, timeoutDuration: number): any {
   if (timeoutDuration !== null) {
     return setTimeout(callback, timeoutDuration)
   }
@@ -168,25 +136,19 @@ export let setTimeout = function (callback: Function, timeoutDuration: number) {
 /**
  * Set Interval utility that adds support for disabling an interval
  * by passing null
- *
- * @param {Function} callback        the function that will be called after the given time
- * @param {Number}   intervalDuration the duration of the interval in milliseconds
- *
- * @public
- * @returns {Number} intervalId
  */
-export let setInterval = function (callback: Function, intervalDuration: number) {
+export let setInterval = function (callback: Function, intervalDuration: number): any {
   if (intervalDuration !== null) {
     return setInterval(callback, intervalDuration)
   }
   return -1
 }
 
-export let getRandomIntInRange = function (min: number, max: number) {
+export let getRandomIntInRange = function (min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min))
 }
 
-export let spliceRandomElement = function (array: Array<any>) {
+export let spliceRandomElement = function (array: Array<any>): any {
   const randomIndex = getRandomIntInRange(0, array.length)
   return array.splice(randomIndex, 1)[0]
 }
@@ -194,10 +156,8 @@ export let spliceRandomElement = function (array: Array<any>) {
 /**
  * Randomize array element order in-place.
  * Using Durstenfeld shuffle algorithm.
- *
- * @param  {Array} array The array to shuffle
  */
-export let shuffleArray = function (array: Array<any>) {
+export let shuffleArray = function (array: Array<any>): Array<any> {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     const temp = array[i]
@@ -211,7 +171,7 @@ export let shuffleArray = function (array: Array<any>) {
  * Recursively freeze a deeply nested object
  * https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze
  */
-export let deepFreeze = function (obj: object) {
+export let deepFreeze = function (obj: object): object {
 
   // Retrieve the property names defined on obj
   const propNames = Object.getOwnPropertyNames(obj)

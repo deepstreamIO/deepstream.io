@@ -3,7 +3,6 @@
 exports.MESSAGE_SEPERATOR = String.fromCharCode(30) // ASCII Record Seperator 1E
 exports.MESSAGE_PART_SEPERATOR = String.fromCharCode(31) // ASCII Unit Separator 1F
 
-exports.SOURCE_MESSAGE_CONNECTOR = 'SOURCE_MESSAGE_CONNECTOR'
 exports.ALL = 'ALL'
 
 exports.LOG_LEVEL = {}

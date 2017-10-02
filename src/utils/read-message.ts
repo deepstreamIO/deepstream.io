@@ -1,6 +1,6 @@
 import { TOPIC, ACTIONS } from '../constants/constants'
 
-export function readMessage (message) {
+export function readMessage (message: Message) {
   return {
     isRecord: message.topic === TOPIC.RECORD,
     isEvent: message.topic === TOPIC.EVENT,

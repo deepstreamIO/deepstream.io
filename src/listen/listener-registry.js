@@ -1,7 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
-const SubscriptionRegistry = require('../utils/subscription-registry')
+const SubscriptionRegistry = require('../utils/subscription-registry').default
 const TimeoutRegistry = require('./listener-timeout-registry')
 const utils = require('../utils/utils')
 
