@@ -2,7 +2,7 @@
 
 /* eslint-disable class-methods-use-this */
 const EventEmitter = require('events').EventEmitter
-const messageParser = require('../../protocol/message-parser')
+const messageParser = require('../../../protocol/text/src/message-parser')
 
 module.exports = class HTTPSocketWrapper extends EventEmitter {
   constructor (options, onMessage, onError) {

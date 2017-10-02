@@ -1,7 +1,7 @@
 'use strict'
 
 const C = require('../constants/constants')
-const messageBuilder = require('../protocol/message-builder')
+const messageBuilder = require('../../protocol/text/src/message-builder')
 
 let idCounter = 0
 

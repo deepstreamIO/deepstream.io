@@ -1,8 +1,8 @@
 'use strict'
 
 const C = require('../../constants/constants')
-const messageBuilder = require('../../protocol/message-builder')
-const messageParser = require('../../protocol/message-parser')
+const messageBuilder = require('../../../protocol/text/src/message-builder')
+const messageParser = require('../../../protocol/text/src/message-parser')
 const uws = require('uws')
 
 const EventEmitter = require('events').EventEmitter

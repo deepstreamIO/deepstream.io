@@ -226,18 +226,4 @@ describe('utils', () => {
       })
     })
   })
-
-  describe('json parse', () => {
-    it('parses valid json and returns value', () => {
-      const result = utils.parseJSON('{"a":2}')
-      expect(result.error).toBeUndefined()
-      expect(result.value).toEqual({ a: 2 })
-    })
-
-    it('parses invalid json and returns error', () => {
-      const result = utils.parseJSON('{"a:2}')
-      expect(result.value).toBeUndefined()
-      expect(result.error).not.toBeNull()
-    })
-  })
 })

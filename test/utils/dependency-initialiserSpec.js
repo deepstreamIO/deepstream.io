@@ -29,7 +29,7 @@ describe('dependency-initialiser', () => {
   it('selects the correct plugin', () => {
     options.logger.lastLogEvent = null
     dependencyBInitialiser = new DependencyInitialiser({}, options, options.pluginB, 'pluginB')
-    expect(dependencyBInitialiser.getDependency().name).toBe('B')
+    expect(dependencyBInitialiser.getDependency().type).toBe('B')
     expect(options.logger.lastLogEvent).toBe(null)
   })
 
