@@ -198,7 +198,7 @@ describe('the rpcHandler routes events correctly', () => {
       setTimeout(done, options.rpcTimeout + 2)
     })
 
-    xit('ignores ack message if it arrives after response', (done) => {
+    it('ignores ack message if it arrives after response', (done) => {
       provider.socketWrapperMock
         .expects('sendError')
         .never()
@@ -210,7 +210,7 @@ describe('the rpcHandler routes events correctly', () => {
         rpcHandler.handle(provider.socketWrapper, ackMessage)
         done()
       }, 30)
-    }) // ('Ack for a non existant rpc should error?')
+    }).pend('Should an Ack for a non existant rpc should error?')
 
     it('doesn\'t throw error on response after timeout', (done) => {
       provider.socketWrapperMock

@@ -15,7 +15,7 @@ module.exports = class RecordTransition {
  * build an app that allows many users to collaboratively edit the same dataset, sooner or later
  * two of them will do so at the same time and clash.
  *
- * Every deepstream record therefor has a version number that's incremented with every change.
+ * Every deepstream record therefor has a  number that's incremented with every change.
  * Every client sends this version number along with the changed data. If no other update has
  * been received for the same version in the meantime, the update is accepted and not much more
  * happens.
@@ -333,8 +333,7 @@ module.exports = class RecordTransition {
  */
   _flushVersionExists () {
     for (let i = 0; i < this._sendVersionExists.length; i++) {
-      const conflict = this._sendVersionExists[i]
-      this.sendVersionExists(conflict)
+      this.sendVersionExists(this._sendVersionExists[i])
     }
     this._sendVersionExists = []
   }

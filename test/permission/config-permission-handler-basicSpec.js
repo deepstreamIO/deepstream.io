@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-/* global jasmine, xit, spyOn, describe, it, expect, beforeEach, afterEach */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
@@ -252,28 +252,6 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const callback = function (error, result) {
       expect(lastError()).toContain('error when converting message data')
-      expect(result).toBe(false)
-      next()
-    }
-
-    testPermission(permissions, message, 'user', null, callback)
-  })
-
-  xit('deals with messages without name', (next) => {
-    const permissions = getBasePermissions()
-
-    permissions.event['some-event'] = {
-      publish: 'data.manufacturer === "mercedes-benz"'
-    }
-
-    const message = {
-      topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      data: []
-    }
-
-    const callback = function (error, result) {
-      expect(error).toContain('invalid message')
       expect(result).toBe(false)
       next()
     }
