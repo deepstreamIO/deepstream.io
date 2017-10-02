@@ -1,3 +1,7 @@
+type Topic = string
+type Action = string
+type LogLevel = string
+
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
   sendMessage: Function
@@ -62,7 +66,34 @@ interface Cluster {
 }
 
 interface DeepstreamOptions {
+  showLogo: boolean
+  logLevel: LogLevel
   serverName: string
+  externalUrl: string
+  sslKey: string
+  sslCert: string
+  sslCa: string
+  auth: any
+  permission: any
+  connectionEndpoints: any
+  cache: any
+  storage: any
+  storageExclusion: RegExp
+
+  rpcAckTimeout: number
+  rpcTimeout: number
+  cacheRetrievalTimeout: number
+  storageRetrievalTimeout: number
+  storageHotPathPatterns: Array<string>
+  dependencyInitialisationTimeout: number
+  stateReconciliationTimeout: number
+  clusterKeepAliveInterval: number
+  clusterActiveCheckInterval: number
+  clusterNodeInactiveTimeout: number
+  listenResponseTimeout: number
+  lockTimeout: number
+  lockRequestTimeout: number
+
   broadcastTimeout: number
   message: Cluster
   uniqueRegistry: {
@@ -71,13 +102,9 @@ interface DeepstreamOptions {
   }
   logger: Logger,
   shuffleListenProviders: boolean,
-  listenResponseTimeout: number
 }
 
 interface Provider {
   socketWrapper: SocketWrapper
   pattern: String
 }
-
-type Topic = string
-type Action = string

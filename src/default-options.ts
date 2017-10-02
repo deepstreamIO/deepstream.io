@@ -1,16 +1,15 @@
-'use strict'
 /* eslint-disable global-require */
-const utils = require('./utils/utils')
-const C = require('./constants/constants')
+import { getUid } from './utils/utils'
+import { LOG_LEVEL } from './constants/constants'
 
-exports.get = function () {
-  const options = {
+export function get (): DeepstreamOptions {
+  return {
     /*
      * General
      */
-    serverName: utils.getUid(),
+    serverName: getUid(),
     showLogo: true,
-    logLevel: C.LOG_LEVEL.INFO,
+    logLevel: LOG_LEVEL.INFO,
 
     /*
      * Connectivity
@@ -85,6 +84,9 @@ exports.get = function () {
      */
     cache: require('./default-plugins/local-cache'),
     storage: require('./default-plugins/noop-storage'),
+    message: null,
+    uniqueRegistry: null,
+    logger: null,
 
     /*
      * Storage options
@@ -114,6 +116,4 @@ exports.get = function () {
     lockRequestTimeout: 1000,
     broadcastTimeout: 0
   }
-
-  return options
 }
