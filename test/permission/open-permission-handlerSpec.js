@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const PermissionHandler = require('../../src/permission/open-permission-handler')
+const PermissionHandler = require('../../dist/src/permission/open-permission-handler')
 
 describe('open permission handler', () => {
   let permissionHandler

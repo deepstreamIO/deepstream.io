@@ -1,8 +1,8 @@
 /* global jasmine, spyOn, describe, it, expect, beforeAll, beforeEach, afterEach */
 'use strict'
 
-const defaultConfig = require('../../src/default-options')
-const configInitialiser = require('../../src/config/config-initialiser')
+const defaultConfig = require('../../dist/src/default-options')
+const configInitialiser = require('../../dist/src/config/config-initialiser')
 const path = require('path')
 
 describe('config-initialiser', () => {

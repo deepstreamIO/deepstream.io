@@ -4,7 +4,7 @@
 /* eslint-disable no-param-reassign */
 
 const testHelper = require('../test-helper/test-helper')
-const C = require('../../src/constants/constants')
+const C = require('../../dist/src/constants/constants')
 
 const noop = function () {}
 const options = testHelper.getDeepstreamPermissionOptions()

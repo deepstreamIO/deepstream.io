@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const Deepstream = require('../../src/deepstream.io')
+const Deepstream = require('../../dist/src/deepstream.io')
 
 describe('parses low level authData to simpler output', () => {
   let message

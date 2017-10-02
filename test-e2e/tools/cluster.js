@@ -1,12 +1,12 @@
 'use strict'
 
-const DeepstreamServer = require('../../src/deepstream.io')
+const DeepstreamServer = require('../../dist/src/deepstream.io')
 
 const util = require('util')
 const EventEmitter = require('events').EventEmitter
 const Logger = require('./test-logger')
 
-const getUid = require('../../src/utils/utils').getUid
+const getUid = require('../../dist/src/utils/utils').getUid
 
 const path = require('path')
 

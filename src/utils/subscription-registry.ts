@@ -1,11 +1,76 @@
 'use strict'
 
-const C = require('../constants/constants')
-const messageBuilder = require('../../protocol/text/src/message-builder')
+import { TOPIC, ACTIONS, EVENT, SOURCE_MESSAGE_CONNECTOR } from '../constants/constants'
+import { getMessage } from '../../protocol/text/src/message-builder'
+import StateRegistry from '../cluster/state-registry'
 
 let idCounter = 0
 
+interface Message {
+  topic: string
+  name: string
+}
+
+interface SocketWrapper {
+  type: String,
+  prepareMessage: Function
+  finalizeMessage: Function
+  sendPrepared: Function
+  __id: number
+  sendNative: Function,
+  user: string,
+  sendAckMessage: Function,
+  sendError: Function,
+  uuid: number
+}
+
+interface SubscriptionListener {
+  onSubscriptionRemoved: Function
+  onLastSubscriptionRemoved: Function
+  onSubscriptionMade: Function
+  onFirstSubscriptionMade: Function
+}
+
+interface options {
+  serverName: string
+  broadcastTimeout: number
+  message: {
+    getStateRegistry: Function
+    send: Function
+  },
+  logger: {
+    info: Function
+    debug: Function
+    warn: Function
+    error: Function
+  }
+}
+
+interface constants {
+  MULTIPLE_SUBSCRIPTIONS: string
+  SUBSCRIBE: string
+  UNSUBSCRIBE: string
+  NOT_SUBSCRIBED: string
+}
+
+interface Subscription {
+  name: string
+  sockets: Set<SocketWrapper>,
+  uniqueSenders: Map<SocketWrapper, Array<number>>,
+  sharedMessages: string
+}
+
 module.exports = class SubscriptionRegistry {
+  private pending: Array<Subscription>
+  private delay: number
+  private sockets: Map<SocketWrapper, Set<Subscription>>
+  private subscriptions: Map<string, Subscription>
+  private options: options
+  private topic: string
+  private subscriptionListener: SubscriptionListener
+  private constants: constants
+  private clusterSubscriptions: StateRegistry
+  private delayedBroadcastsTimer: any
 
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
@@ -15,73 +80,64 @@ module.exports = class SubscriptionRegistry {
    * @constructor
    *
    * @param {Object} options deepstream options
-   * @param {String} topic one of C.TOPIC
+   * @param {String} topic one of TOPIC
    * @param {[String]} clusterTopic A unique cluster topic, if not created uses format:
    *                                topic_SUBSCRIPTIONS
    */
-  constructor (options, topic, clusterTopic) {
-    this._pending = []
-    this._delay = -1
+  constructor (options: options, topic: string, clusterTopic: string) {
+    this.pending = []
+    this.delay = -1
     if (options.broadcastTimeout !== undefined) {
-      this._delay = options.broadcastTimeout
+      this.delay = options.broadcastTimeout
     }
-    this._sockets = new Map()
-    this._subscriptions = new Map()
-    this._options = options
-    this._topic = topic
-    this._subscriptionListener = null
-    this._constants = {
-      MULTIPLE_SUBSCRIPTIONS: C.EVENT.MULTIPLE_SUBSCRIPTIONS,
-      SUBSCRIBE: C.ACTIONS.SUBSCRIBE,
-      UNSUBSCRIBE: C.ACTIONS.UNSUBSCRIBE,
-      NOT_SUBSCRIBED: C.EVENT.NOT_SUBSCRIBED
+    this.sockets = new Map()
+    this.subscriptions = new Map()
+    this.options = options
+    this.topic = topic
+    this.subscriptionListener = null
+    this.constants = {
+      MULTIPLE_SUBSCRIPTIONS: EVENT.MULTIPLE_SUBSCRIPTIONS,
+      SUBSCRIBE: ACTIONS.SUBSCRIBE,
+      UNSUBSCRIBE: ACTIONS.UNSUBSCRIBE,
+      NOT_SUBSCRIBED: EVENT.NOT_SUBSCRIBED
     }
+
     this._onBroadcastTimeout = this._onBroadcastTimeout.bind(this)
     this._onSocketClose = this._onSocketClose.bind(this)
 
     this._setupRemoteComponents(clusterTopic)
   }
 
-  whenReady (callback) {
-    this._clusterSubscriptions.whenReady(callback)
+  whenReady (callback: Function) : void {
+    this.clusterSubscriptions.whenReady(callback)
   }
 
   /**
    * Setup all the remote components and actions required to deal with the subscription
    * via the cluster.
    */
-  _setupRemoteComponents (clusterTopic) {
-    this._clusterSubscriptions = this._options.message.getStateRegistry(
-      clusterTopic || `${this._topic}_${C.TOPIC.SUBSCRIPTIONS}`
+  protected _setupRemoteComponents (clusterTopic: string): void {
+    this.clusterSubscriptions = this.options.message.getStateRegistry(
+      clusterTopic || `${this.topic}_${TOPIC.SUBSCRIPTIONS}`
     )
   }
 
   /**
    * Return all the servers that have this subscription.
-   *
-   * @param  {String} subscriptionName the subscriptionName to look for
-   *
-   * @public
-   * @return {Array}  An array of all the servernames with this subscription
    */
-  getAllServers (subscriptionName) {
-    return this._clusterSubscriptions.getAllServers(subscriptionName)
+  public getAllServers (subscriptionName: string): Array<string> {
+    return this.clusterSubscriptions.getAllServers(subscriptionName)
   }
 
   /**
    * Return all the servers that have this subscription excluding the current
    * server name
-   *
-   * @param  {String} subscriptionName the subscriptionName to look for
-   *
-   * @public
-   * @return {Array}  An array of all the servernames with this subscription
    */
-  getAllRemoteServers (subscriptionName) {
-    const serverNames = this._clusterSubscriptions.getAllServers(subscriptionName)
-    const localServerIndex = serverNames.indexOf(this._options.serverName)
+  public getAllRemoteServers (subscriptionName: string): Array<string> {
+    const serverNames = this.clusterSubscriptions.getAllServers(subscriptionName)
+    const localServerIndex = serverNames.indexOf(this.options.serverName)
     if (localServerIndex > -1) {
-      serverNames.splice(serverNames.indexOf(this._options.serverName), 1)
+      serverNames.splice(serverNames.indexOf(this.options.serverName), 1)
     }
     return serverNames
   }
@@ -89,60 +145,48 @@ module.exports = class SubscriptionRegistry {
   /**
    * Returns a list of all the topic this registry
    * currently has subscribers for
-   *
-   * @public
-   * @returns {Array} names
    */
-  getNames () {
-    return this._clusterSubscriptions.getAll()
+  public getNames (): Array<string> {
+    return this.clusterSubscriptions.getAll()
   }
 
   /**
-   * Returns a list of all the topic this registry
+   * Returns a map of all the topic this registry
    * currently has subscribers for
-   *
-   * @public
-   * @returns {Array} names
    */
-  getNamesMap () {
-    return this._clusterSubscriptions.getAllMap()
+  public getNamesMap (): Map<string, any> {
+    return this.clusterSubscriptions.getAllMap()
   }
 
   /**
    * Returns true if the subscription exists somewhere
    * in the cluster
-   *
-   * @public
-   * @returns {Array} names
    */
-  hasName (subscriptionName) {
-    return this._clusterSubscriptions.has(subscriptionName)
+  public hasName (subscriptionName: string): boolean {
+    return this.clusterSubscriptions.has(subscriptionName)
   }
 
   /**
   * This method allows you to customise the SubscriptionRegistry so that it can send
   * custom events and ack messages back.
-  * For example, when using the C.ACTIONS.LISTEN, you would override SUBSCRIBE with
-  * C.ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
+  * For example, when using the ACTIONS.LISTEN, you would override SUBSCRIBE with
+  * ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
   *
   * @param {string} name The name of the the variable to override. This can be either
   * MULTIPLE_SUBSCRIPTIONS, SUBSCRIBE, UNSUBSCRIBE, NOT_SUBSCRIBED
   *
   * @param {string} value The value to override with.
-  *
-  * @public
-  * @returns {void}
   */
-  setAction (name, value) {
-    this._constants[name.toUpperCase()] = value
+  public setAction (name, value): void {
+    this.constants[name.toUpperCase()] = value
   }
 
   /**
   * Called whenever a socket closes to remove all of its subscriptions
   * @param {SockerWrapper} the socket that closed
   */
-  _onSocketClose (socket) {
-    for (const subscription of this._sockets.get(socket)) {
+  private _onSocketClose (socket: SocketWrapper): void {
+    for (const subscription of this.sockets.get(socket)) {
       subscription.sockets.delete(socket)
       this._removeSocket(subscription, socket)
     }
@@ -150,16 +194,11 @@ module.exports = class SubscriptionRegistry {
 
   /**
    * Broadcasts the enqueued messages for the timed out subscription room.
-   *
-   * @param   {Object} delayedBroadcasts holds information of what messages to send and where
-   *
-   * @public
-   * @returns {void}
    */
-  _onBroadcastTimeout () {
-    this._delayedBroadcastsTimer = null
+  private _onBroadcastTimeout (): void {
+    this.delayedBroadcastsTimer = null
 
-    for (const subscription of this._pending) {
+    for (const subscription of this.pending) {
       const uniqueSenders = subscription.uniqueSenders
       const sharedMessages = subscription.sharedMessages
       const sockets = subscription.sockets
@@ -205,7 +244,7 @@ module.exports = class SubscriptionRegistry {
       subscription.uniqueSenders.clear()
     }
 
-    this._pending.length = 0
+    this.pending.length = 0
   }
 
   /**
@@ -213,30 +252,22 @@ module.exports = class SubscriptionRegistry {
    * be reordered in relation to *other* subscription names, but never in relation to the same
    * subscription name. Each broadcast is given 'broadcastTimeout' ms to coalesce into one big
    * broadcast.
-   *
-   * @param   {String} name      the name/topic the subscriber was previously registered for
-   * @param   {String} msgString the message as string
-   * @param   {Boolean} noDelay flay to disable broadcast delay for message
-   * @param   {[SocketWrapper]} socket an optional socket that shouldn't receive the message
-   *
-   * @public
-   * @returns {void}
    */
-  sendToSubscribers (name, message, noDelay, socket) {
-    if (socket !== C.SOURCE_MESSAGE_CONNECTOR) {
-      this._options.message.send(message.topic, message)
+  public sendToSubscribers (name: string, message: Message, noDelay: boolean, socket?: SocketWrapper): void {
+    if (socket && socket.type !== SOURCE_MESSAGE_CONNECTOR) {
+      this.options.message.send(message.topic, message)
     }
 
-    const subscription = this._subscriptions.get(name)
+    const subscription = this.subscriptions.get(name)
 
     if (!subscription) {
       return
     }
 
-    const msgString = messageBuilder.getMessage(message)
+    const msgString = getMessage(message, false)
 
     if (subscription.sharedMessages.length === 0) {
-      this._pending.push(subscription)
+      this.pending.push(subscription)
     }
 
     // append this message to the sharedMessage, the message that
@@ -261,9 +292,9 @@ module.exports = class SubscriptionRegistry {
     }
 
     // reuse the same timer if already started
-    if (!this._delayedBroadcastsTimer) {
-      if (this._delay !== -1 && !noDelay) {
-        this._delayedBroadcastsTimer = setTimeout(this._onBroadcastTimeout, this._delay)
+    if (!this.delayedBroadcastsTimer) {
+      if (this.delay !== -1 && !noDelay) {
+        this.delayedBroadcastsTimer = setTimeout(this._onBroadcastTimeout, this.delay)
       } else {
         this._onBroadcastTimeout()
       }
@@ -272,16 +303,10 @@ module.exports = class SubscriptionRegistry {
 
   /**
    * Adds a SocketWrapper as a subscriber to a topic
-   *
-   * @param   {String} name
-   * @param   {SocketWrapper} socket
-   *
-   * @public
-   * @returns {void}
    */
-  subscribe (message, socket) {
+  public subscribe (message: Message, socket: SocketWrapper): void {
     const name = message.name
-    const subscription = this._subscriptions.get(name) || {
+    const subscription = this.subscriptions.get(name) || {
       name,
       sockets: new Set(),
       uniqueSenders: new Map(),
@@ -289,11 +314,11 @@ module.exports = class SubscriptionRegistry {
     }
 
     if (subscription.sockets.size === 0) {
-      this._subscriptions.set(name, subscription)
+      this.subscriptions.set(name, subscription)
     } else if (subscription.sockets.has(socket)) {
       const msg = `repeat supscription to "${name}" by ${socket.user}`
-      this._options.logger.warn(this._constants.MULTIPLE_SUBSCRIPTIONS, msg)
-      socket.sendError({ topic: this._topic }, this._constants.MULTIPLE_SUBSCRIPTIONS, name)
+      this.options.logger.warn(this.constants.MULTIPLE_SUBSCRIPTIONS, msg)
+      socket.sendError({ topic: this.topic }, this.constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
 
@@ -301,45 +326,39 @@ module.exports = class SubscriptionRegistry {
 
     this._addSocket(subscription, socket)
 
-    this._clusterSubscriptions.add(name)
+    this.clusterSubscriptions.add(name)
 
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionMade(name, socket)
+    if (this.subscriptionListener) {
+      this.subscriptionListener.onSubscriptionMade(name, socket)
     }
 
-    const logMsg = `for ${this._topic}:${name} by ${socket.user}`
-    this._options.logger.debug(this._constants.SUBSCRIBE, logMsg)
+    const logMsg = `for ${this.topic}:${name} by ${socket.user}`
+    this.options.logger.debug(this.constants.SUBSCRIBE, logMsg)
     socket.sendAckMessage(message)
   }
 
   /**
    * Removes a SocketWrapper from the list of subscriptions for a topic
-   *
-   * @param   {String} name
-   * @param   {SocketWrapper} socket
-   *
-   * @public
-   * @returns {void}
    */
-  unsubscribe (message, socket, silent) {
+  public unsubscribe (message: Message, socket: SocketWrapper, silent: boolean): void {
     const name = message.name
-    const subscription = this._subscriptions.get(name)
+    const subscription = this.subscriptions.get(name)
 
     if (!subscription || !subscription.sockets.delete(socket)) {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
-        this._options.logger.warn(this._constants.NOT_SUBSCRIBED, msg)
-        socket.sendError({ topic: this._topic }, this._constants.NOT_SUBSCRIBED, name)
+        this.options.logger.warn(this.constants.NOT_SUBSCRIBED, msg)
+        socket.sendError({ topic: this.topic }, this.constants.NOT_SUBSCRIBED, name)
       }
       return
     }
 
-    this._clusterSubscriptions.remove(name)
+    this.clusterSubscriptions.remove(name)
     this._removeSocket(subscription, socket)
 
     if (!silent) {
-      const logMsg = `for ${this._topic}:${name} by ${socket.user}`
-      this._options.logger.debug(this._constants.UNSUBSCRIBE, logMsg)
+      const logMsg = `for ${this.topic}:${name} by ${socket.user}`
+      this.options.logger.debug(this.constants.UNSUBSCRIBE, logMsg)
       socket.sendAckMessage(message)
     }
   }
@@ -347,14 +366,9 @@ module.exports = class SubscriptionRegistry {
   /**
    * Returns an array of SocketWrappers that are subscribed
    * to <name> or null if there are no subscribers
-   *
-   * @param   {String} name
-   *
-   * @public
-   * @returns {Array} SocketWrapper[]
    */
-  getLocalSubscribers (name) {
-    const subscription = this._subscriptions.get(name)
+  public getLocalSubscribers (name: string): Set<SocketWrapper> {
+    const subscription = this.subscriptions.get(name)
     return subscription ? subscription.sockets : new Set()
   }
 
@@ -362,57 +376,46 @@ module.exports = class SubscriptionRegistry {
    * Returns true if there are SocketWrappers that
    * are subscribed to <name> or false if there
    * aren't any subscribers
-   *
-   * @param   {String}  name
-   *
-   * @public
-   * @returns {Boolean} hasLocalSubscribers
    */
-  hasLocalSubscribers (name) {
-    return this._subscriptions.has(name)
+  public hasLocalSubscribers (name: string): boolean {
+    return this.subscriptions.has(name)
   }
 
   /**
    * Allows to set a subscriptionListener after the class had been instantiated
-   *
-   * @param {SubscriptionListener} listener a class exposing a onSubscriptionMade
-   *                                                    and onSubscriptionRemoved method
-   *
-   * @public
-   * @returns {void}
    */
-  setSubscriptionListener (listener) {
-    this._subscriptionListener = listener
-    this._clusterSubscriptions.on('add', listener.onFirstSubscriptionMade.bind(listener))
-    this._clusterSubscriptions.on('remove', listener.onLastSubscriptionRemoved.bind(listener))
+  public setSubscriptionListener (listener: SubscriptionListener): void {
+    this.subscriptionListener = listener
+    this.clusterSubscriptions.on('add', listener.onFirstSubscriptionMade.bind(listener))
+    this.clusterSubscriptions.on('remove', listener.onLastSubscriptionRemoved.bind(listener))
   }
 
-  _addSocket (subscription, socket) {
-    const subscriptions = this._sockets.get(socket) || new Set()
+  private _addSocket (subscription, socket): void {
+    const subscriptions = this.sockets.get(socket) || new Set()
     if (subscriptions.size === 0) {
-      this._sockets.set(socket, subscriptions)
+      this.sockets.set(socket, subscriptions)
       socket.once('close', this._onSocketClose)
     }
     subscriptions.add(subscription)
   }
 
-  _removeSocket (subscription, socket) {
+  private _removeSocket (subscription, socket): void {
     if (subscription.sockets.size === 0) {
-      this._subscriptions.delete(subscription.name)
-      const idx = this._pending.indexOf(subscription)
+      this.subscriptions.delete(subscription.name)
+      const idx = this.pending.indexOf(subscription)
       if (idx !== -1) {
-        this._pending.splice(idx, 1)
+        this.pending.splice(idx, 1)
       }
       socket.removeListener('close', this._onSocketClose)
     } else {
       subscription.uniqueSenders.delete(socket)
     }
 
-    if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionRemoved(subscription, socket)
+    if (this.subscriptionListener) {
+      this.subscriptionListener.onSubscriptionRemoved(subscription, socket)
     }
 
-    const subscriptions = this._sockets.get(socket)
+    const subscriptions = this.sockets.get(socket)
     subscriptions.delete(subscription)
   }
 }

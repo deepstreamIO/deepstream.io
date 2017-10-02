@@ -10,14 +10,15 @@
     "test": "test"
   },
   "scripts": {
+    "tsc": "tsc",
     "precommit": "npm run lint",
     "lint": "node_modules/.bin/eslint src/ test/",
     "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
-    "reporter": "istanbul cover jasmine-runner.js",
-    "test": "jasmine JASMINE_CONFIG_PATH=jasmine.json",
+    "reporter": "tsc && istanbul cover jasmine-runner.js",
+    "test": "rm -rf dist && tsc && jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "test-http-server": "node test/test-helper/start-test-server.js",
-    "e2e": "node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps --tags \"not @cluster\"",
+    "e2e": "tsc && node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps --tags \"not @cluster\"",
     "rpc-e2e": "npm run e2e -- --tags \"not @cluster and @rpcs\"",
     "event-e2e": "npm run e2e -- --tags \"not @cluster and @events\"",
     "record-e2e": "npm run e2e -- --tags \"not @cluster and @records\"",
@@ -46,9 +47,11 @@
     "mkdirp": "^0.5.1",
     "needle": "^2.0.0",
     "sinon": "^3.3.0",
+    "typescript": "^2.5.3",
     "uws": "8.14.1"
   },
   "devDependencies": {
+    "@types/node": "^8.0.31",
     "async": "^2.5.0",
     "chai": "^4.1.1",
     "coveralls": "^2.13.1",

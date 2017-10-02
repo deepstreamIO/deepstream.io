@@ -4,8 +4,8 @@
 /* global it, describe, expect, jasmine, afterAll, beforeAll */
 const testHelper = require('../test-helper/test-helper')
 
-const RecordTransition = require('../../src/record/record-transition')
-const C = require('../../src/constants/constants')
+const RecordTransition = require('../../dist/src/record/record-transition')
+const C = require('../../dist/src/constants/constants')
 const getTestMocks = require('../test-helper/test-mocks')
 
 const sinon = require('sinon')

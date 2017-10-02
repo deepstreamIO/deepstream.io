@@ -1,7 +1,7 @@
 /* eslint-disable */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
-const C = require('../../src/constants/constants')
+const C = require('../../dist/src/constants/constants')
 module.exports = class LoggerMock {
 	constructor () {
 	  this.isReady = true

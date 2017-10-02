@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const jsonPath = require('../../src/record/json-path')
+const jsonPath = require('../../dist/src/record/json-path')
 
 describe('objects are created from paths and their value is set correctly', () => {
   it('sets simple values', () => {

@@ -1,10 +1,6 @@
-'use strict'
+import { TOPIC, ACTIONS } from '../constants/constants'
 
-const C = require('../constants/constants')
-
-function readMessage (message) {
-  const TOPIC = C.TOPIC
-  const ACTIONS = C.ACTIONS
+export function readMessage (message) {
   return {
     isRecord: message.topic === TOPIC.RECORD,
     isEvent: message.topic === TOPIC.EVENT,
@@ -28,5 +24,3 @@ function readMessage (message) {
     data: message.action === ACTIONS.PATCH ? message.data[3] : message.data[2]
   }
 }
-
-module.exports = readMessage

@@ -1,6 +1,4 @@
-'use strict'
-
-const EventEmitter = require('events').EventEmitter
+import { EventEmitter } from 'events'
 
 /**
  * This class provides a generic mechanism that allows to maintain
@@ -13,50 +11,41 @@ const EventEmitter = require('events').EventEmitter
  *
  * @author DeepstreamHub GmbH 2016
  */
-module.exports = class StateRegistry extends EventEmitter {
+export default class StateRegistry extends EventEmitter {
+  private topic: string
+  private options: any
+  private data: any
 
   /**
   * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
-  *
-  * @param   {String} topic   A TOPIC constant
-  * @param   {Object} options Global deepstream server options
-  *
-  * @constructor
   */
-  constructor (topic, options) {
+  constructor (topic: string, options: any) {
     super()
-    this._topic = topic
-    this._options = options
-    this._data = {}
+    this.topic = topic
+    this.options = options
+    this.data = {}
+  }
+
+  whenReady (callback: Function): void {
   }
 
   /**
   * Checks if a given entry exists within the registry
-  *
-  * @param   {String}  name       the name of the entry
-  *
-  * @public
-  * @returns {Boolean} exists
   */
-  has (name) {
-    return !!this._data[name]
+  has (name: string): boolean {
+    return !!this.data[name]
   }
 
   /**
   * Add a name/entry to the registry. If the entry doesn't exist yet,
   * this will notify the other nodes within the cluster
-  *
-  * @param {String} name any string key
-  *
-  * @public
-  * @returns {void}
   */
-  add (name) {
-    if (!this._data[name]) {
-      this._data[name] = 1
+  add (name: string): void {
+    if (!this.data[name]) {
+      this.data[name] = 1
       this.emit('add', name)
     } else {
-      this._data[name]++
+      this.data[name]++
     }
   }
 
@@ -69,10 +58,10 @@ module.exports = class StateRegistry extends EventEmitter {
   * @public
   * @returns {void}
   */
-  remove (name) {
-    this._data[name]--
-    if (!this._data[name]) {
-      delete this._data[name]
+  remove (name: string): void {
+    this.data[name]--
+    if (!this.data[name]) {
+      delete this.data[name]
       this.emit('remove', name)
     }
   }
@@ -80,23 +69,14 @@ module.exports = class StateRegistry extends EventEmitter {
   /**
   * Removes all entries for a given serverName. This is intended to be called
   * whenever a node leaves the cluster
-  *
-  * @param   {String} serverName The serverName of a node within the cluster
-  *
-  * @returns {[type]}
   */
-  // eslint-disable-next-line
-  removeAll () {
+  removeAll (serverName: string): void {
   }
 
   /**
   * Returns all the servers that hold a given state
-  *
-  * @public
-  * @returns {Object} entries
   */
-  // eslint-disable-next-line
-  getAllServers () {
+  getAllServers (subscriptionName: string): Array<string> {
     return []
   }
 
@@ -106,11 +86,11 @@ module.exports = class StateRegistry extends EventEmitter {
   * @public
   * @returns {Array} entries
   */
-  getAll () {
-    return Object.keys(this._data)
+  getAll (): Array<string> {
+    return Object.keys(this.data)
   }
 
-  getAllMap () {
-    return this._data
+  getAllMap (): any {
+    return this.data
   }
 }

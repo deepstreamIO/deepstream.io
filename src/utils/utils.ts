@@ -1,13 +1,13 @@
-'use strict'
 /* eslint-disable valid-typeof */
-const url = require('url')
+import * as url from 'url';
+import { EventEmitter } from 'events'
 
 /**
  * Returns a unique identifier
  *
  * @returns {String} uid
  */
-exports.getUid = function () {
+export let getUid = function () {
   return `${Date.now().toString(36)}-${(Math.random() * 10000000000000000000).toString(36)}`
 }
 
@@ -21,7 +21,7 @@ exports.getUid = function () {
  * @public
  * @returns {void}
  */
-exports.combineEvents = function (emitters, event, callback) {
+export let combineEvents = function (emitters: Array<EventEmitter>, event: string, callback: Function) {
   let i
   let count = 0
   const increment = function () {
@@ -46,7 +46,7 @@ exports.combineEvents = function (emitters, event, callback) {
  * @public
  * @return {Object} reversed map
  */
-exports.reverseMap = function (map) {
+export let reverseMap = function (map: Object) {
   const reversedMap = {}
 
   for (const key in map) {
@@ -66,7 +66,7 @@ exports.reverseMap = function (map) {
  * @public
  * @returns {Boolean}
  */
-exports.isOfType = function (input, expectedType) {
+export let isOfType = function (input, expectedType: string) {
   if (input === null) {
     return expectedType === 'null'
   } else if (expectedType === 'array') {
@@ -88,7 +88,7 @@ exports.isOfType = function (input, expectedType) {
  * @public
  * @returns {Boolean|Error}
  */
-exports.validateMap = function (map, throwError, schema) {
+export let validateMap = function (map: object, throwError: boolean, schema: object) {
   let error
   let key
 
@@ -98,7 +98,7 @@ exports.validateMap = function (map, throwError, schema) {
       break
     }
 
-    if (!exports.isOfType(map[key], schema[key])) {
+    if (!isOfType(map[key], schema[key])) {
       error = new Error(`Invalid type ${typeof map[key]} for ${key}`)
       break
     }
@@ -123,7 +123,7 @@ exports.validateMap = function (map, throwError, schema) {
  * @public
  * @returns {Object} merged result
  */
-exports.merge = function () {
+export let merge = function () {
   const result = {}
   const objs = Array.prototype.slice.apply(arguments) // eslint-disable-line
   let i
@@ -158,7 +158,7 @@ exports.merge = function () {
  * @public
  * @returns {Number} timeoutId
  */
-exports.setTimeout = function (callback, timeoutDuration) {
+export let setTimeout = function (callback: Function, timeoutDuration: number) {
   if (timeoutDuration !== null) {
     return setTimeout(callback, timeoutDuration)
   }
@@ -175,19 +175,19 @@ exports.setTimeout = function (callback, timeoutDuration) {
  * @public
  * @returns {Number} intervalId
  */
-exports.setInterval = function (callback, intervalDuration) {
+export let setInterval = function (callback: Function, intervalDuration: number) {
   if (intervalDuration !== null) {
     return setInterval(callback, intervalDuration)
   }
   return -1
 }
 
-exports.getRandomIntInRange = function (min, max) {
+export let getRandomIntInRange = function (min: number, max: number) {
   return min + Math.floor(Math.random() * (max - min))
 }
 
-exports.spliceRandomElement = function (array) {
-  const randomIndex = exports.getRandomIntInRange(0, array.length)
+export let spliceRandomElement = function (array: Array<any>) {
+  const randomIndex = getRandomIntInRange(0, array.length)
   return array.splice(randomIndex, 1)[0]
 }
 
@@ -197,7 +197,7 @@ exports.spliceRandomElement = function (array) {
  *
  * @param  {Array} array The array to shuffle
  */
-exports.shuffleArray = function (array) {
+export let shuffleArray = function (array: Array<any>) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     const temp = array[i]
@@ -211,7 +211,7 @@ exports.shuffleArray = function (array) {
  * Recursively freeze a deeply nested object
  * https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze
  */
-function deepFreeze (obj) {
+export let deepFreeze = function (obj: object) {
 
   // Retrieve the property names defined on obj
   const propNames = Object.getOwnPropertyNames(obj)
@@ -229,5 +229,3 @@ function deepFreeze (obj) {
   // Freeze self (no-op if already frozen)
   return Object.freeze(obj)
 }
-
-exports.deepFreeze = deepFreeze

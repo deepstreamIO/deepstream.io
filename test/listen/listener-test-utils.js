@@ -2,9 +2,9 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const ListenerRegistry = require('../../src/listen/listener-registry')
+const ListenerRegistry = require('../../dist/src/listen/listener-registry')
 const testHelper = require('../test-helper/test-helper')
-const C = require('../../src/constants/constants')
+const C = require('../../dist/src/constants/constants')
 const getTestMocks = require('../test-helper/test-mocks')
 const sinon = require('sinon')
 

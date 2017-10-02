@@ -1,9 +1,9 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const C = require('../../src/constants/constants')
+const C = require('../../dist/src/constants/constants')
 const PermissionHandlerMock = require('../test-mocks/permission-handler-mock')
-const MessageProcessor = require('../../src/message/message-processor')
+const MessageProcessor = require('../../dist/src/message/message-processor')
 const LoggerMock = require('../test-mocks/logger-mock')
 const getTestMocks = require('../test-helper/test-mocks')
 

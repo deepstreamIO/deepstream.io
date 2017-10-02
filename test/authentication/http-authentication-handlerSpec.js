@@ -2,7 +2,7 @@
 /* eslint-disable no-undef */
 'use strict'
 
-const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')
+const AuthenticationHandler = require('../../dist/src/authentication/http-authentication-handler')
 const TestHttpServer = require('../test-helper/test-http-server')
 const MockLogger = require('../test-mocks/logger-mock')
 

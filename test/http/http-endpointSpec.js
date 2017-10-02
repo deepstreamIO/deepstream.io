@@ -15,12 +15,12 @@ const needle = require('needle')
  *const url = require('url')
  */
 
-const constants = require('../../src/constants/constants')
+const constants = require('../../dist/src/constants/constants')
 const LoggerMock = require('../test-mocks/logger-mock')
 
 Promise.promisifyAll(needle)
 
-const ConnectionEndpoint = require('../../src/message/http/connection-endpoint')
+const ConnectionEndpoint = require('../../dist/src/message/http/connection-endpoint')
 
 const conf = {
   healthCheckPath: '/health-check',

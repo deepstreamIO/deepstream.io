@@ -1,7 +1,7 @@
 /* global jasmine, describe, it, expect */
 'use strict'
 
-const AuthenticationHandler = require('../../src/authentication/open-authentication-handler')
+const AuthenticationHandler = require('../../dist/src/authentication/open-authentication-handler')
 
 describe('open authentication handler', () => {
   let authenticationHandler

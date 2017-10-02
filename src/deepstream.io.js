@@ -3,7 +3,7 @@
 const MessageProcessor = require('./message/message-processor')
 const MessageDistributor = require('./message/message-distributor')
 const EventHandler = require('./event/event-handler')
-const readMessage = require('./utils/read-message')
+const { readMessage } = require('./utils/read-message')
 const fs = require('fs')
 const path = require('path')
 const utils = require('./utils/utils')
@@ -15,9 +15,9 @@ const RecordHandler = require('./record/record-handler')
 const PresenceHandler = require('./presence/presence-handler')
 const MessageConnector = require('./cluster/cluster-node')
 const LockRegistry = require('./cluster/lock-registry')
-const DependencyInitialiser = require('./utils/dependency-initialiser')
+const DependencyInitialiser = require('./utils/dependency-initialiser').defailt
 const C = require('./constants/constants')
-const pkg = require('../package.json')
+const pkg = require('../../package.json')
 
 const EventEmitter = require('events').EventEmitter
 const EOL = require('os').EOL
@@ -451,7 +451,7 @@ module.exports = class Deepstream extends EventEmitter {
     const nexeres = require('nexeres') // eslint-disable-line
       logo = nexeres.get('ascii-logo.txt').toString('ascii')
     } catch (e) {
-      logo = fs.readFileSync(path.join(__dirname, '..', '/ascii-logo.txt'), 'utf8')
+      logo = fs.readFileSync(path.join(__dirname, '..', '..', '/ascii-logo.txt'), 'utf8')
     }
 
   /* istanbul ignore next */

@@ -3,7 +3,7 @@
   "spec_files": [
     "test/**/*[sS]pec.js",
     "test/*[sS]pec.js",
-	"protocol/**/test/*[sS]pec.js"
+	  "protocol/**/test/*[sS]pec.js"
   ],
   "helpers": [
   ],
