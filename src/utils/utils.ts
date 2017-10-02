@@ -91,13 +91,9 @@ export let validateMap = function (map: object, throwError: boolean, schema: Obj
 
 /**
  * Multi Object recoursive merge
- *
  * @param {Object} multiple objects to be merged into each other recoursively
- *
- * @public
- * @returns {Object} merged result
  */
-export let merge = function () {
+export let merge = function (...args) {
   const result = {}
   const objs = Array.prototype.slice.apply(arguments) // eslint-disable-line
   let i

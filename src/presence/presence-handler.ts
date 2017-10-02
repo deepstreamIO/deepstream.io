@@ -31,7 +31,7 @@ export default class PresenceHandler {
   private subscriptionRegistry: SubscriptionRegistry
   private connectedClients: StateRegistry
 
-  constructor (options: DeepstreamOptions, subscriptionRegistry: SubscriptionRegistry, stateRegistry: StateRegistry, metaData: any) {
+  constructor (options: DeepstreamOptions, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, metaData?: any) {
     this.metaData = metaData
     this.options = options
     this.localClients = new Map()

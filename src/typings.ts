@@ -1,3 +1,7 @@
+declare module "*.json" {
+  const version: number;
+}
+
 type Topic = string
 type Action = string
 
@@ -37,11 +41,12 @@ interface ListenMessage extends Message {
   subscription?: string
 }
 
-interface Plugin {
+interface Plugin extends NodeJS.EventEmitter {
   init?: Function
   isReady: boolean
   setDeepstream?: Function
-  description: string
+  description: string,
+  close?: Function
 }
 
 interface StoragePlugin extends Plugin {
@@ -57,7 +62,7 @@ interface SubscriptionListener {
   onFirstSubscriptionMade: Function
 }
 
-interface Logger {
+interface Logger extends Plugin {
   info: Function
   debug: Function
   warn: Function
@@ -68,7 +73,8 @@ interface Cluster {
   getStateRegistry: Function,
   send: Function,
   sendDirect: Function,
-  subscribe: Function
+  subscribe: Function,
+  close: Function
 }
 
 interface DeepstreamOptions {
@@ -84,8 +90,10 @@ interface DeepstreamOptions {
   connectionEndpoints: any
   cache: any
   storage: any
+  permissionHandler: any
   storageExclusion: RegExp
 
+  pluginTypes: Array<string>
   rpcAckTimeout: number
   rpcTimeout: number
   cacheRetrievalTimeout: number
@@ -99,7 +107,6 @@ interface DeepstreamOptions {
   listenResponseTimeout: number
   lockTimeout: number
   lockRequestTimeout: number
-
   broadcastTimeout: number
   message: Cluster
   uniqueRegistry: {
@@ -113,4 +120,10 @@ interface DeepstreamOptions {
 interface Provider {
   socketWrapper: SocketWrapper
   pattern: String
+}
+
+declare module NodeJS  {
+  interface Global {
+    deepstreamLibDir: string
+  }
 }

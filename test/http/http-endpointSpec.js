@@ -10,10 +10,6 @@ const Promise = require('bluebird')
 const expect = chai.expect
 
 const needle = require('needle')
-/*
- *const http = require('http')
- *const url = require('url')
- */
 
 const constants = require('../../dist/src/constants')
 const LoggerMock = require('../test-mocks/logger-mock')
@@ -34,7 +30,7 @@ const conf = {
   requestTimeout: 30
 }
 const mockDS = {
-  _options: {
+  options: {
     serverName: `server_${Math.round(Math.random() * 1000)}`,
     logger: new LoggerMock(),
     authenticationHandler: { isValidUser (headers, authData, callback) { callback(true, {}) } },
@@ -43,7 +39,7 @@ const mockDS = {
     } }
   },
   constants,
-  _messageDistributor: { distribute () {} }
+  messageDistributor: { distribute () {} }
 }
 
 describe('http plugin', () => {
@@ -165,11 +161,11 @@ describe('http plugin', () => {
     describe('authentication', () => {
       let canPerformActionStub // eslint-disable-line
       beforeAll(() => {
-        canPerformActionStub = sinon.stub(mockDS._options.permissionHandler, 'canPerformAction')
+        canPerformActionStub = sinon.stub(mockDS.options.permissionHandler, 'canPerformAction')
       })
 
       afterAll(() => {
-        mockDS._options.permissionHandler.canPerformAction.restore()
+        mockDS.options.permissionHandler.canPerformAction.restore()
       })
 
       it('should reject a request that times out', (done) => {

@@ -1,6 +1,6 @@
 'use strict'
 
-const DeepstreamServer = require('../../dist/src/deepstream.io')
+const DeepstreamServer = require('../../dist/src/deepstream.io').default
 
 const util = require('util')
 const EventEmitter = require('events').EventEmitter
@@ -34,8 +34,8 @@ module.exports = class DeepstreamTest extends EventEmitter {
   }
 
   updatePermissions (type, done) {
-    this._server._options.permissionHandler.once('config-loaded', () => done())
-    this._server._options.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
+    this._server.options.permissionHandler.once('config-loaded', () => done())
+    this._server.options.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
   }
 
   start () {

@@ -14,7 +14,7 @@ export default class EventHandler {
   /**
    * Handles incoming and outgoing messages for the EVENT topic.
    */
-  constructor (options: DeepstreamOptions, subscriptionRegistry: SubscriptionRegistry, listenerRegistry: ListenerRegistry) {
+  constructor (options: DeepstreamOptions, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry) {
     this.options = options
     this.subscriptionRegistry =
       subscriptionRegistry || new SubscriptionRegistry(options, TOPIC.EVENT)

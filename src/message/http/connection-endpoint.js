@@ -5,6 +5,7 @@ const JIFHandler = require('../jif-handler')
 const HTTPSocketWrapper = require('./socket-wrapper')
 const HTTPStatus = require('http-status')
 const events = require('events')
+const C = require('../../constants')
 
 module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
   constructor (options) {
@@ -26,14 +27,13 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {Void}
    */
   setDeepstream (deepstream) {
-    this._logger = deepstream._options.logger
-    this._authenticationHandler = deepstream._options.authenticationHandler
-    this._messageDistributor = deepstream._messageDistributor
-    this._permissionHandler = deepstream._options.permissionHandler
-    this._dsOptions = deepstream._options
-    this._constants = deepstream.constants
+    this._logger = deepstream.options.logger
+    this._authenticationHandler = deepstream.options.authenticationHandler
+    this._messageDistributor = deepstream.messageDistributor
+    this._permissionHandler = deepstream.options.permissionHandler
+    this._dsOptions = deepstream.options
     const jifHandlerOptions = {
-      logger: deepstream._options.logger,
+      logger: deepstream.options.logger,
       constants: deepstream.constants
     }
     this._jifHandler = new JIFHandler(jifHandlerOptions)
@@ -66,7 +66,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       allowAllOrigins: this._options.allowAllOrigins,
       enableAuthEndpoint: this._options.enableAuthEndpoint
     }
-    this._server = new Server(serverConfig, this._constants, this._logger)
+    this._server = new Server(serverConfig, this._logger)
 
     this._server.on('auth-message', this._onAuthMessage.bind(this))
     this._server.on('post-message', this._onPostMessage.bind(this))
@@ -179,9 +179,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       error += `: ${JSON.stringify(authData)}`
     }
 
-    const C = this._constants
     this._logger.debug(C.EVENT.INVALID_AUTH_DATA, error)
-
   }
 
   /**
@@ -198,7 +196,6 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onPostMessage (messageData, metadata, responseCallback) {
-    const C = this._constants
     if (!Array.isArray(messageData.body) || messageData.body.length < 1) {
       const error = `Invalid message: the "body" parameter must ${
         messageData.body ? 'be a non-empty array of Objects.' : 'exist.'
@@ -307,8 +304,6 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       })
       return
     }
-    const C = this._constants
-
     const messageCount = messageData.body.length
     const messageResults = new Array(messageCount).fill(null)
 
@@ -390,7 +385,6 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
   ) {
     const parseResult = this._jifHandler.toJIF(message)
     if (!parseResult) {
-      const C = this._constants
       const errorMessage = `${message.topic} ${message.action} ${JSON.stringify(message.data)}`
       this._logger.error(C.EVENT.MESSAGE_PARSE_ERROR, errorMessage)
       return
@@ -467,8 +461,6 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onRequestTimeout (responseCallback, messageResults) {
-    const C = this._constants
-
     let numTimeouts = 0
     for (let i = 0; i < messageResults.length; i++) {
       if (messageResults[i] === null) {
@@ -571,7 +563,6 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
   _onPermissionResponse (
     socketWrapper, message, messageResults, messageIndex, error, permissioned
   ) {
-    const C = this._constants
     if (error !== null) {
       this._options.logger.warn(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
     }

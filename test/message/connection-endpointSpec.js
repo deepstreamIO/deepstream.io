@@ -44,7 +44,7 @@ let connectionEndpoint
 let authenticationHandlerMock
 let permissionHandler
 let options
-let mockDs = { _options: options }
+let mockDs = { options }
 
 describe('connection endpoint', () => {
   beforeEach((done) => {
@@ -60,7 +60,7 @@ describe('connection endpoint', () => {
       heartbeatInterval: 4000
     }
 
-    mockDs = { _options: options }
+    mockDs = { options: options }
 
     connectionEndpoint = new ConnectionEndpoint(options, () => {})
     const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')

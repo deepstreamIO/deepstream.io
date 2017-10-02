@@ -9,8 +9,10 @@ const ajv = new Ajv()
 
 const validateJIF = ajv.compile(jifSchema)
 
+const C = require('../constants')
+
 // jif -> message lookup table
-function getJifToMsg (C) {
+function getJifToMsg () {
   const JIF_TO_MSG = {}
 
   JIF_TO_MSG.event = {}
@@ -112,7 +114,7 @@ function getJifToMsg (C) {
 // message type enumeration
 const TYPE = { ACK: 'A', NORMAL: 'N' }
 
-function getMsgToJif (C) {
+function getMsgToJif () {
   // message -> jif lookup table
   const MSG_TO_JIF = {}
   MSG_TO_JIF[C.TOPIC.RPC] = {}
@@ -180,12 +182,11 @@ function getMsgToJif (C) {
 module.exports = class JIFHandler {
 
   constructor (options) {
-    this._constants = options.constants
-    this.JIF_TO_MSG = getJifToMsg(this._constants)
-    this.MSG_TO_JIF = getMsgToJif(this._constants)
+    this.JIF_TO_MSG = getJifToMsg()
+    this.MSG_TO_JIF = getMsgToJif()
 
-    this.topicToKey = utils.reverseMap(this._constants.TOPIC)
-    this.actionToKey = utils.reverseMap(this._constants.ACTIONS)
+    this.topicToKey = utils.reverseMap(C.TOPIC)
+    this.actionToKey = utils.reverseMap(C.ACTIONS)
 
     this._logger = options.logger
   }
@@ -267,7 +268,6 @@ module.exports = class JIFHandler {
   errorToJIF (message, event) {
     // convert topic enum to human-readable key
     const topicKey = this.topicToKey[message.topic]
-    const C = this._constants
 
     const result = {
       errorTopic: topicKey && topicKey.toLowerCase(),

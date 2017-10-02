@@ -84,11 +84,19 @@ export function get (): DeepstreamOptions {
     /*
      * Default Plugins
      */
+    pluginTypes: [
+     'storage',
+     'cache',
+     'authenticationHandler',
+     'permissionHandler'
+    ],
+
     cache: new LocalCache({}),
     storage: new NoopStorage({}),
     message: null,
     uniqueRegistry: null,
     logger: null,
+    permissionHandler: null,
 
     /*
      * Storage options

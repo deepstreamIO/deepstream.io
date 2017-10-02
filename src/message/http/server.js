@@ -8,6 +8,7 @@ const HTTPStatus = require('http-status')
 const contentType = require('content-type')
 const bodyParser = require('body-parser')
 const httpShutdown = require('http-shutdown')
+const C = require('../../constants')
 
 function checkConfigOption (config, option, expectedType) {
   if ((expectedType && typeof config[option] !== expectedType) || config[option] === undefined) {
@@ -16,11 +17,10 @@ function checkConfigOption (config, option, expectedType) {
 }
 
 module.exports = class Server extends EventEmitter {
-  constructor (config, constants, logger) {
+  constructor (config, logger) {
     super()
 
     this._config = config
-    this._constants = constants
     this._logger = logger
 
     checkConfigOption(config, 'port', 'number')
@@ -78,7 +78,6 @@ module.exports = class Server extends EventEmitter {
     const serverAddress = this._httpServer.address()
     const address = serverAddress.address
     const port = serverAddress.port
-    const C = this._constants
     const wsMsg = `Listening for http connections on ${address}:${port}`
     this._logger.info(C.EVENT.INFO, wsMsg)
     const hcMsg = `Listening for health checks on path ${this._config.healthCheckPath} `
@@ -308,7 +307,6 @@ module.exports = class Server extends EventEmitter {
    * @returns {void}
    */
   _onError (error) {
-    const C = this._constants
     this._logger.error(C.EVENT.CONNECTION_ERROR, error.toString())
   }
 }

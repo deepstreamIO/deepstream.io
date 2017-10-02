@@ -25,7 +25,7 @@ const OPEN = 'OPEN'
 module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
   constructor (options) {
     super()
-    this._options = options
+    this.options = options
     this.isReady = false
     this.description = 'µWebSocket Connection Endpoint'
     this.initialised = false
@@ -46,9 +46,9 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * @returns {Void}
    */
   setDeepstream (deepstream) {
-    this._logger = deepstream._options.logger
-    this._authenticationHandler = deepstream._options.authenticationHandler
-    this._dsOptions = deepstream._options
+    this._logger = deepstream.options.logger
+    this._authenticationHandler = deepstream.options.authenticationHandler
+    this._dsOptions = deepstream.options
   }
 
   /**
@@ -98,7 +98,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
   scheduleFlush (socketWrapper) {
     this._scheduledSocketWrapperWrites.add(socketWrapper)
     if (!this._flushTimeout) {
-      this._flushTimeout = setTimeout(this._flushSockets, this._options.outgoingBufferTimeout)
+      this._flushTimeout = setTimeout(this._flushSockets, this.options.outgoingBufferTimeout)
     }
   }
 
@@ -124,8 +124,8 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    */
   _getOption (option) {
     const value = this._dsOptions[option]
-    if ((value === null || value === undefined) && (this._options[option] !== undefined)) {
-      return this._options[option]
+    if ((value === null || value === undefined) && (this.options[option] !== undefined)) {
+      return this.options[option]
     }
     return value
   }
@@ -291,7 +291,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     this._upgradeRequest = null
 
     const socketWrapper = SocketWrapperFactory.create(
-      external, handshakeData, this._logger, this._options, this
+      external, handshakeData, this._logger, this.options, this
     )
     uws.native.setUserData(external, socketWrapper)
 

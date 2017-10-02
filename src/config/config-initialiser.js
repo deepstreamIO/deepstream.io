@@ -23,14 +23,6 @@ let commandLineArguments
 exports.initialise = function (config) {
   commandLineArguments = global.deepstreamCLI || {}
 
-  // The default plugins required by deepstream to run
-  config.pluginTypes = [
-    'storage',
-    'cache',
-    'authenticationHandler',
-    'permissionHandler'
-  ]
-
   handleUUIDProperty(config)
   handleSSLProperties(config)
   handleLogger(config)

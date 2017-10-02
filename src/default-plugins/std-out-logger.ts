@@ -1,9 +1,11 @@
+import { EventEmitter } from 'events'
+
 require('colors')
 import { LOG_LEVEL } from '../constants'
 
 const EOL = require('os').EOL
 
-export default class StdOutLogger {
+export default class StdOutLogger extends EventEmitter implements Plugin {
   private options: any
   public isReady: boolean
   public description: string
@@ -18,6 +20,7 @@ export default class StdOutLogger {
    * consume messages from these streams
    */
   constructor (options: any) {
+    super()
     this.options = options || {}
     this.isReady = true
     this.useColors = this.options.colors === undefined ? true : this.options.colors

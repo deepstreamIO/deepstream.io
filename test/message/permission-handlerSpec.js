@@ -54,17 +54,13 @@ const options = {
   logInvalidAuthData: true
 }
 
-const mockDs = {
-  _options: options
-}
-
 describe('permissionHandler passes additional user meta data', () => {
   let socketWrapperMock
   let connectionEndpoint
 
   beforeEach((done) => {
     connectionEndpoint = new ConnectionEndpoint(options)
-    const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')
+    const depInit = new DependencyInitialiser({ options }, options, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
       connectionEndpoint.onMessages = function () {}
       connectionEndpoint._server._simulateUpgrade(new SocketMock())

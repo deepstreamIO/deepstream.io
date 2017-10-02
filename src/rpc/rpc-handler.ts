@@ -21,7 +21,7 @@ export default class RpcHandler {
   *
   * @param {Object} options deepstream options
   */
-  constructor (options: any, subscriptionRegistry: SubscriptionRegistry, metaData: any) {
+  constructor (options: any, subscriptionRegistry?: SubscriptionRegistry, metaData?: any) {
      this.metaData = metaData
      this.options = options
      this.subscriptionRegistry =

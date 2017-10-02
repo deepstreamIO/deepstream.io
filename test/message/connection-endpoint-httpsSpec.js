@@ -26,7 +26,7 @@ const options = {
   logInvalidAuthData: true
 }
 
-const mockDs = { _options: options }
+const mockDs = { options }
 
 const connectionEndpointInit = (endpointOptions, onReady) => {
   options.connectionEndpoint = new ConnectionEndpoint(endpointOptions)
