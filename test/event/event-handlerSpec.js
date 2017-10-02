@@ -2,7 +2,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const EventHandler = require('../../dist/src/event/event-handler')
+const EventHandler = require('../../dist/src/event/event-handler').default
 
 const C = require('../../dist/src/constants/constants')
 const testHelper = require('../test-helper/test-helper')

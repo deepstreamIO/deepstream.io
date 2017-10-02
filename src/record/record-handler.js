@@ -2,7 +2,7 @@
 
 const C = require('../constants/constants')
 const SubscriptionRegistry = require('../utils/subscription-registry').default
-const ListenerRegistry = require('../listen/listener-registry')
+const ListenerRegistry = require('../listen/listener-registry').default
 const RecordTransition = require('./record-transition')
 const RecordDeletion = require('./record-deletion')
 const recordRequest = require('./record-request')

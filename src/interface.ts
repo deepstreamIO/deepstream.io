@@ -1,4 +1,4 @@
-interface SimpleSocketWrapper {
+interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
   sendMessage: Function
   sendAckMessage: Function
@@ -16,8 +16,8 @@ interface SocketWrapper extends SimpleSocketWrapper {
 }
 
 interface Message {
-  topic: string
-  action: string
+  topic: Topic
+  action: Action
   name?: string
 
   isError?: boolean
@@ -27,6 +27,11 @@ interface Message {
   parsedData?: any
   
   isCompleted?: boolean
+  raw?: string
+}
+
+interface ListenMessage extends Message {
+  subscription?: string
 }
 
 interface Plugin {
@@ -42,17 +47,37 @@ interface SubscriptionListener {
   onFirstSubscriptionMade: Function
 }
 
+interface Logger {
+  info: Function
+  debug: Function
+  warn: Function
+  error: Function
+}
+
+interface Cluster {
+  getStateRegistry: Function,
+  send: Function,
+  sendDirect: Function,
+  subscribe: Function
+}
+
 interface DeepstreamOptions {
   serverName: string
   broadcastTimeout: number
-  message: {
-    getStateRegistry: Function
-    send: Function
-  },
-  logger: {
-    info: Function
-    debug: Function
-    warn: Function
-    error: Function
+  message: Cluster
+  uniqueRegistry: {
+  	release: Function
+  	get: Function
   }
+  logger: Logger,
+  shuffleListenProviders: boolean,
+  listenResponseTimeout: number
 }
+
+interface Provider {
+  socketWrapper: SocketWrapper
+  pattern: String
+}
+
+type Topic = string
+type Action = string

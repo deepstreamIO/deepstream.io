@@ -2,19 +2,19 @@
 import StateRegistry from './state-registry'
 
 export default class ClusterNode {
-  private stateRegistries: Map<string, StateRegistry>
+  public stateRegistries: Map<string, StateRegistry>
 
   constructor () {
     this.stateRegistries = new Map()
   }
 
-  sendDirect () {}
+  sendDirect (serverName: string, topic: string, message: any, metaData: any) {}
 
   sendState () {}
 
   send () {}
 
-  subscribe () {}
+  subscribe (topic: string, callback: Function) {}
 
   isLeader () { throw new Error('Leader not used in single state') }
 

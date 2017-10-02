@@ -2,7 +2,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const ListenerRegistry = require('../../dist/src/listen/listener-registry')
+const ListenerRegistry = require('../../dist/src/listen/listener-registry').default
 const testHelper = require('../test-helper/test-helper')
 const C = require('../../dist/src/constants/constants')
 const getTestMocks = require('../test-helper/test-mocks')
@@ -259,7 +259,7 @@ module.exports = class ListenerTestUtils {
         action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
         name: subscription,
         parsedData: state
-      })
+      }, false, null)
   }
 
   subscriptionHasActiveProvider (subscription, value) {
