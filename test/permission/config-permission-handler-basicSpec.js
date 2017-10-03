@@ -3,9 +3,9 @@
 'use strict'
 
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
-const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler').default
+const ConfigPermissionHandler = require('../../src/permission/config-permission-handler').default
 
 const options = testHelper.getDeepstreamPermissionOptions()
 const testPermission = testHelper.testPermission(options)

@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const configCompiler = require('../../dist/src/permission/config-compiler')
+const configCompiler = require('../../src/permission/config-compiler')
 
 describe('compiles user entered config specs into an optimized format', () => {
   it('exposes a compile method', () => {

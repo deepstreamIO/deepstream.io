@@ -3,11 +3,11 @@
 
 /* global it, describe, expect, jasmine, afterAll, beforeAll */
 const M = require('./messages')
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const getTestMocks = require('../test-helper/test-mocks')
 const testHelper = require('../test-helper/test-helper')
 
-const RecordTransition = require('../../dist/src/record/record-transition').default
+const RecordTransition = require('../../src/record/record-transition').default
 
 const sinon = require('sinon')
 

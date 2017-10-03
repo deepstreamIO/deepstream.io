@@ -1,8 +1,8 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const rulesMap = require('../../dist/src/permission/rules-map')
-const C = require('../../dist/src/constants')
+const rulesMap = require('../../src/permission/rules-map')
+const C = require('../../src/constants')
 
 describe('returns the applicable rule for a message', () => {
   it('exposes a getRulesForMessage method', () => {

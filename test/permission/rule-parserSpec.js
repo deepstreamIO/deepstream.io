@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const ruleParser = require('../../dist/src/permission/rule-parser')
+const ruleParser = require('../../src/permission/rule-parser')
 
 describe('validates rule strings from permissions.json', () => {
   it('exposes a validate method', () => {

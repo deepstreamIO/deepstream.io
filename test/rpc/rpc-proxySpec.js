@@ -2,8 +2,8 @@
 'use strict'
 
 const testHelper = require('../test-helper/test-helper')
-const RpcProxy = require('../../dist/src/rpc/rpc-proxy')
-const C = require('../../dist/src/constants')
+const RpcProxy = require('../../src/rpc/rpc-proxy')
+const C = require('../../src/constants')
 
 const options = testHelper.getDeepstreamOptions()
 

@@ -8,9 +8,9 @@ const sinon = require('sinon') // eslint-disable-line
 
 const expect = chai.expect
 
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 
-const JIFHandler = require('../../dist/src/message/jif-handler')
+const JIFHandler = require('../../src/message/jif-handler')
 const LoggerMock = require('../test-mocks/logger-mock')
 
 xdescribe('JIF Handler', () => {

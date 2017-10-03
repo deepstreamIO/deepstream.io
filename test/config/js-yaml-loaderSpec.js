@@ -3,10 +3,10 @@
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
-const utils = require('../../dist/src/utils/utils')
-const C = require('../../dist/src/constants')
+const utils = require('../../src/utils/utils')
+const C = require('../../src/constants')
 const path = require('path')
-const jsYamlLoader = require('../../dist/src/config/js-yaml-loader')
+const jsYamlLoader = require('../../src/config/js-yaml-loader')
 
 function setUpStub (fileExists, fileContent) {
   const fileMock = {}
@@ -22,7 +22,7 @@ function setUpStub (fileExists, fileContent) {
     }
   }
 
-  const configLoader = proxyquire('../../dist/src/config/js-yaml-loader', {
+  const configLoader = proxyquire('../../src/config/js-yaml-loader', {
     './file-utils': fileMock,
     fs: fsMock
   })
@@ -281,7 +281,7 @@ describe('js-yaml-loader', () => {
       class CacheModule { constructor (options) { this.options = options }}
       CacheModule['@noCallThru'] = true
       CacheModule['@global'] = true
-      const configLoader = proxyquire('../../dist/src/config/js-yaml-loader', {
+      const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
         [path.resolve('./logger')]: loggerModule,
@@ -324,7 +324,7 @@ describe('js-yaml-loader', () => {
       }
       FooBar['@noCallThru'] = true
       FooBar['@global'] = true
-      const configLoader = proxyquire('../../dist/src/config/js-yaml-loader', {
+      const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
         'foo-bar-qox': FooBar
@@ -375,7 +375,7 @@ describe('js-yaml-loader', () => {
       }
       SuperStorage['@noCallThru'] = true
       SuperStorage['@global'] = true
-      const configLoader = proxyquire('../../dist/src/config/js-yaml-loader', {
+      const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
         'deepstream.io-cache-super-cache': SuperCache,
@@ -435,7 +435,7 @@ describe('js-yaml-loader', () => {
       }
       HTTPMock['@noCallThru'] = true
       HTTPMock['@global'] = true
-      const configLoader = proxyquire('../../dist/src/config/js-yaml-loader', {
+      const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
         [path.resolve(process.cwd(), 'foobar', 'deepstream.io-cache-super-cache')]: SuperCache,
@@ -497,7 +497,7 @@ describe('js-yaml-loader', () => {
       }
       HTTPMock['@noCallThru'] = true
       HTTPMock['@global'] = true
-      const configLoader = proxyquire('../../dist/src/config/js-yaml-loader', {
+      const configLoader = proxyquire('../../src/config/js-yaml-loader', {
         fs: fsMock,
         './file-utils': fileMock,
         [path.resolve('/foobar', 'deepstream.io-cache-super-cache')]: SuperCache,

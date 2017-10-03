@@ -11,12 +11,12 @@ const expect = chai.expect
 
 const needle = require('needle')
 
-const constants = require('../../dist/src/constants')
+const constants = require('../../src/constants')
 const LoggerMock = require('../test-mocks/logger-mock')
 
 Promise.promisifyAll(needle)
 
-const ConnectionEndpoint = require('../../dist/src/message/http/connection-endpoint')
+const ConnectionEndpoint = require('../../src/message/http/connection-endpoint')
 
 const conf = {
   healthCheckPath: '/health-check',

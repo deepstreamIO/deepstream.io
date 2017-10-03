@@ -2,7 +2,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeAll, afterEach */
 'use strict'
 
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../test-mocks/uws-mock')
 const HttpMock = require('../test-mocks/http-mock')
@@ -18,7 +18,7 @@ const getTestMocks = require('../test-helper/test-mocks')
 
 let client
 
-const ConnectionEndpoint = proxyquire('../../dist/src/message/uws/connection-endpoint', {
+const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
   uws: uwsMock,
   http: httpMock,
   https: httpsMock,
@@ -29,7 +29,7 @@ const ConnectionEndpoint = proxyquire('../../dist/src/message/uws/connection-end
     }
   }
 })
-const DependencyInitialiser = require('../../dist/src/utils/dependency-initialiser').default
+const DependencyInitialiser = require('../../src/utils/dependency-initialiser').default
 const SocketMock = require('../test-mocks/socket-mock')
 
 const permissionHandler = {

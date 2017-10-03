@@ -2,8 +2,8 @@
 /* global jasmine */
 'use strict'
 
-const C = require('../../dist/src/constants')
-const SocketWrapperFactory = require('../../dist/src/message/uws/socket-wrapper-factory')
+const C = require('../../src/constants')
+const SocketWrapperFactory = require('../../src/message/uws/socket-wrapper-factory')
 
 exports.msg = function () {
   const args = Array.from(arguments)
@@ -103,7 +103,7 @@ exports.getDeepstreamPermissionOptions = function () {
   return { config: options.config, services: options.services }
 }
 
-const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler').default
+const ConfigPermissionHandler = require('../../src/permission/config-permission-handler').default
 
 exports.testPermission = function (options) {
   return function (permissions, message, username, userdata, callback) {

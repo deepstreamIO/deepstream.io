@@ -2,12 +2,12 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, beforeAll, afterEach, afterAll */
 'use strict'
 
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../test-mocks/uws-mock')
 const HttpMock = require('../test-mocks/http-mock')
 const LoggerMock = require('../test-mocks/logger-mock')
-const DependencyInitialiser = require('../../dist/src/utils/dependency-initialiser').default
+const DependencyInitialiser = require('../../src/utils/dependency-initialiser').default
 const PermissionHandlerMock = require('../test-mocks/permission-handler-mock')
 const AuthenticationHandlerMock = require('../test-mocks/authentication-handler-mock')
 const SocketMock = require('../test-mocks/socket-mock')
@@ -24,7 +24,7 @@ httpsMock.createServer = httpsMock.createServer
 let client
 let handshakeData
 
-const ConnectionEndpoint = proxyquire('../../dist/src/message/uws/connection-endpoint', {
+const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
   uws: uwsMock,
   http: httpMock,
   https: httpsMock,

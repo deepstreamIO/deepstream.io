@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const configValidator = require('../../dist/src/permission/config-validator')
+const configValidator = require('../../src/permission/config-validator')
 const testHelper = require('../test-helper/test-helper')
 
 describe('it validates permission.json files', () => {

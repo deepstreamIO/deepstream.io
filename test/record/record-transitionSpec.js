@@ -5,11 +5,11 @@
 const sinon = require('sinon')
 
 const M = require('./messages')
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const getTestMocks = require('../test-helper/test-mocks')
 const testHelper = require('../test-helper/test-helper')
 
-const RecordTransition = require('../../dist/src/record/record-transition').default
+const RecordTransition = require('../../src/record/record-transition').default
 
 xdescribe('record transitions', () => {
   let options

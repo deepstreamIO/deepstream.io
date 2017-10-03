@@ -2,10 +2,10 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const RecordDeletion = require('../../dist/src/record/record-deletion').default
+const RecordDeletion = require('../../src/record/record-deletion').default
 
 const M = require('./messages')
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 

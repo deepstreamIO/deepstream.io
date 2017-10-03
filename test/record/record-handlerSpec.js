@@ -1,11 +1,11 @@
 /* eslint-disable max-len, import/no-extraneous-dependencies */
 /* global jasmine, xit, spyOn, describe, it, expect, beforeEach, afterEach */
-'use strict'
+require('source-map-support').install()
 
-const RecordHandler = require('../../dist/src/record/record-handler').default
+const RecordHandler = require('../../src/record/record-handler').default
 
 const M = require('./messages')
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
@@ -212,7 +212,7 @@ describe('record handler handles messages', () => {
     })
   })
 
-  fit('updates a record', () => {
+  it('updates a record', () => {
     options.services.cache.set('some-record', M.recordData, () => {})
 
     testMocks.subscriptionRegistryMock

@@ -1,4 +1,4 @@
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 
 module.exports.deletionMsg = {
   topic: C.TOPIC.RECORD,

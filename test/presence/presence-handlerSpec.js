@@ -2,9 +2,9 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const PresenceHandler = require('../../dist/src/presence/presence-handler').default
+const PresenceHandler = require('../../src/presence/presence-handler').default
 
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 

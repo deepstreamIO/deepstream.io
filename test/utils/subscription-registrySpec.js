@@ -3,11 +3,11 @@
 
 const sinon = require('sinon')
 
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
-const SubscriptionRegistry = require('../../dist/src/utils/subscription-registry').default
+const SubscriptionRegistry = require('../../src/utils/subscription-registry').default
 
 const options = testHelper.getDeepstreamOptions()
 const services = options.services

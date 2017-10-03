@@ -1,6 +1,6 @@
 'use strict'
 
-const C = require('../../dist/src/constants')
+const C = require('../../src/constants')
 const utils = require('util')
 const EventEmitter = require('events').EventEmitter
 

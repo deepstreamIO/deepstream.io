@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const utils = require('../../dist/src/utils/utils')
+const utils = require('../../src/utils/utils')
 const EventEmitter = require('events').EventEmitter
 
 describe('utils', () => {

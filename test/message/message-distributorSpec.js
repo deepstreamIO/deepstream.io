@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll */
 'use strict'
 
-const MessageDistributor = require('../../dist/src/message/message-distributor')
+const MessageDistributor = require('../../src/message/message-distributor')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 

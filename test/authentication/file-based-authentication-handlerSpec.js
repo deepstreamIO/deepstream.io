@@ -1,8 +1,8 @@
 /* global describe, it, expect */
 /* eslint-disable no-new */
 'use strict'
-
-const AuthenticationHandler = require('../../dist/src/authentication/file-based-authentication-handler')
+require('source-map-support').install()
+const AuthenticationHandler = require('../../src/authentication/file-based-authentication-handler')
 
 const testAuthentication = function (settings) {
   const authData = {
