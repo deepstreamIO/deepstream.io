@@ -15,7 +15,7 @@ export default class RecordHandler {
 /**
  * The entry point for record related operations
  */
-  constructor (options: DeepstreamOptions, subscriptionRegistry: SubscriptionRegistry, listenerRegistry: ListenerRegistry, metaData: any) {
+  constructor (options: DeepstreamOptions, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, metaData?: any) {
     this.metaData = metaData
     this.options = options
     this.subscriptionRegistry =
@@ -34,7 +34,7 @@ export default class RecordHandler {
  * client send action. Instead the client sends CREATEORREAD
  * and deepstream works which one it will be
  */
-  handle (socketWrapper: SocketWrapper, message: RecordMessage): void {
+  handle (socketWrapper: SocketWrapper, message: Message): void {
     if (message.action === ACTIONS.CREATEORREAD) {
     /*
      * Return the record's contents and subscribes for future updates.
@@ -46,7 +46,7 @@ export default class RecordHandler {
      * Allows updates to the record without being subscribed, creates
      * the record if it doesn't exist
      */
-      this.createAndUpdate(socketWrapper, message)
+      this.createAndUpdate(socketWrapper, message as RecordWriteMessage)
     } else if (message.action === ACTIONS.SNAPSHOT) {
     /*
      * Return the current state of the record in cache or db
@@ -66,7 +66,7 @@ export default class RecordHandler {
     /*
      * Handle complete (UPDATE) or partial (PATCH) updates
      */
-      this.update(socketWrapper, message, false)
+      this.update(socketWrapper, message as RecordWriteMessage, false)
     } else if (message.action === ACTIONS.DELETE) {
     /*
      * Deletes the record
@@ -92,7 +92,7 @@ export default class RecordHandler {
     message.action === ACTIONS.UNLISTEN ||
     message.action === ACTIONS.LISTEN_ACCEPT ||
     message.action === ACTIONS.LISTEN_REJECT) {
-      this.listenerRegistry.handle(socketWrapper, message)
+      this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
     } else {
   /*
    * Default for invalid messages
@@ -227,7 +227,7 @@ export default class RecordHandler {
  * the CREATEANDUPDATE action, it will be permissioned for both CREATE and UPDATE, then
  * inserted into the cache and storage.
  */
-  private createAndUpdate (socketWrapper: SocketWrapper, message: RecordMessage): void {
+  private createAndUpdate (socketWrapper: SocketWrapper, message: RecordWriteMessage): void {
     const recordName = message.name
     const isPatch = message.path !== null
     message = Object.assign({}, message, { action: isPatch ? ACTIONS.PATCH : ACTIONS.UPDATE })
@@ -271,7 +271,7 @@ export default class RecordHandler {
  * case of a hot path write acknowledgement we need to handle that
  * case here.
  */
-  private forceWrite (recordName: string, message: RecordMessage, socketWrapper: SocketWrapper): void {
+  private forceWrite (recordName: string, message: RecordWriteMessage, socketWrapper: SocketWrapper): void {
     socketWrapper.parseData(message)
     const record = { _v: 0, _d: message.parsedData }
     const writeAck = message.isWriteAck
@@ -307,7 +307,7 @@ export default class RecordHandler {
  * this case is handled via the record transition.
  */
   public handleForceWriteAcknowledgement (
-    socketWrapper: SocketWrapper, message: RecordMessage, cacheResponse: boolean, storageResponse: boolean, error: Error
+    socketWrapper: SocketWrapper, message: RecordAckMessage, cacheResponse: boolean, storageResponse: boolean, error: Error
   ): void {
     if (storageResponse && cacheResponse) {
       socketWrapper.sendMessage({
@@ -362,7 +362,7 @@ export default class RecordHandler {
  * Applies both full and partial updates. Creates a new record transition that will live as
  * long as updates are in flight and new updates come in
  */
-  private update (socketWrapper: SocketWrapper, message: RecordMessage, upsert: boolean): void {
+  private update (socketWrapper: SocketWrapper, message: RecordWriteMessage, upsert: boolean): void {
     const recordName = message.name
     const version = message.version
 

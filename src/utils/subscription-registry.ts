@@ -45,7 +45,6 @@ export default class SubscriptionRegistry {
     this.subscriptions = new Map()
     this.options = options
     this.topic = topic
-    this.subscriptionListener = null
     this.constants = {
       MULTIPLE_SUBSCRIPTIONS: EVENT.MULTIPLE_SUBSCRIPTIONS,
       SUBSCRIBE: ACTIONS.SUBSCRIBE,
@@ -67,7 +66,7 @@ export default class SubscriptionRegistry {
    * Setup all the remote components and actions required to deal with the subscription
    * via the cluster.
    */
-  protected setupRemoteComponents (clusterTopic: string): void {
+  protected setupRemoteComponents (clusterTopic?: string): void {
     this.clusterSubscriptions = this.options.message.getStateRegistry(
       clusterTopic || `${this.topic}_${TOPIC.SUBSCRIPTIONS}`
     )
@@ -138,7 +137,7 @@ export default class SubscriptionRegistry {
    * subscription name. Each broadcast is given 'broadcastTimeout' ms to coalesce into one big
    * broadcast.
    */
-  public sendToSubscribers (name: string, message: Message, noDelay: boolean, socket: SocketWrapper, isRemote: boolean = false): void {
+  public sendToSubscribers (name: string, message: Message, noDelay: boolean, socket: SocketWrapper | null, isRemote: boolean = false): void {
     if (socket && !isRemote) {
       this.options.message.send(message.topic, message)
     }
@@ -301,14 +300,23 @@ export default class SubscriptionRegistry {
     }
 
     const subscriptions = this.sockets.get(socket)
-    subscriptions.delete(subscription)
+    if (subscriptions) {
+      subscriptions.delete(subscription)
+    } else {
+      // log error
+    }
   }
 
   /**
   * Called whenever a socket closes to remove all of its subscriptions
   */
   private onSocketClose (socket: SocketWrapper): void {
-    for (const subscription of this.sockets.get(socket)) {
+    const subscriptions = this.sockets.get(socket)
+    if (!subscriptions) {
+      // log error
+      return
+    }
+    for (const subscription of subscriptions) {
       subscription.sockets.delete(socket)
       this.removeSocket(subscription, socket)
     }

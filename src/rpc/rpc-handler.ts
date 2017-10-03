@@ -6,7 +6,7 @@ import { getRandomIntInRange } from '../utils/utils'
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,
-  servers: Set<string>,
+  servers: Set<string> | null,
   rpc: Rpc
 }
 
@@ -85,8 +85,14 @@ export default class RpcHandler {
   * this method will return null - which in turn will prompt the RPC to send a NO_RPC_PROVIDER
   * error to the client
   */
-  public getAlternativeProvider (rpcName: string, correlationId: string): SimpleSocketWrapper {
+  public getAlternativeProvider (rpcName: string, correlationId: string): SimpleSocketWrapper | null {
     const rpcData =  this.rpcs.get(correlationId)
+
+    if (!rpcData) {
+      // log error
+      return null
+    }
+
     const subscribers = Array.from( this.subscriptionRegistry.getLocalSubscribers(rpcName))
     let index = getRandomIntInRange(0, subscribers.length)
 
@@ -125,19 +131,17 @@ export default class RpcHandler {
     const rpcName = message.name
     const correlationId = message.correlationId
 
-    const rpcData = {
-      providers: new Set(),
-      servers: !isRemote ? new Set() : null,
-      rpc: null
-    } as RpcData
-    this.rpcs.set(correlationId, rpcData)
-
     const subscribers = Array.from( this.subscriptionRegistry.getLocalSubscribers(rpcName))
     const provider = subscribers[getRandomIntInRange(0, subscribers.length)]
-
+    
     if (provider) {
+      const rpcData = {
+        providers: new Set(),
+        servers: !isRemote ? new Set() : null,
+        rpc: new Rpc(this, socketWrapper, provider,  this.options, message)
+      } as RpcData
+      this.rpcs.set(correlationId, rpcData)
       rpcData.providers.add(provider)
-      rpcData.rpc = new Rpc(this, socketWrapper, provider,  this.options, message)
     } else if (isRemote) {
       socketWrapper.sendError(TOPIC.RPC, EVENT.NO_RPC_PROVIDER, [rpcName, correlationId])
     } else {
@@ -157,14 +161,18 @@ export default class RpcHandler {
   public makeRemoteRpc (requestor: SimpleSocketWrapper, message: RPCMessage): void {
     const rpcName = message.name
     const correlationId = message.correlationId
-    const rpcData =  this.rpcs.get(correlationId)
 
     const servers =  this.subscriptionRegistry.getAllRemoteServers(rpcName)
     const server = servers[getRandomIntInRange(0, servers.length)]
 
     if (server) {
       const rpcProxy = new RpcProxy(this.options, server, this.metaData)
-      rpcData.rpc = new Rpc(this, requestor, rpcProxy, this.options, message)
+      const rpcData = {
+        providers: new Set(),
+        servers: new Set(),
+        rpc: new Rpc(this, requestor, rpcProxy, this.options, message)
+      } as RpcData
+      this.rpcs.set(correlationId, rpcData)
       return
     }
 
@@ -199,10 +207,13 @@ export default class RpcHandler {
 
     if (msg.action === ACTIONS.REQUEST) {
       const proxy = new RpcProxy(this.options, originServerName, this.metaData)
-       this.makeRpc(proxy, msg, true)
-    } else if ((msg.isAck || msg.isError) && msg.correlationId) {
-      const rpc =  this.rpcs.get(msg.correlationId)
-      if (!rpc) {
+      this.makeRpc(proxy, msg, true)
+      return
+    }  
+
+    if ((msg.isAck || msg.isError) && msg.correlationId) {
+      const rpcData =  this.rpcs.get(msg.correlationId)
+      if (!rpcData) {
          this.options.logger.warn(
           EVENT.INVALID_RPC_CORRELATION_ID,
           `Message bus response for RPC that may have been destroyed: ${JSON.stringify(msg)}`,
@@ -210,11 +221,15 @@ export default class RpcHandler {
         )
         return
       }
-      rpc.rpc.handle(msg)
-    } else if ( this.rpcs.get(msg.data[1])) {
-       this.rpcs.get(msg.data[1]).rpc.handle(msg)
+      rpcData.rpc.handle(msg)
+      return
+    }
+
+    const rpcData = this.rpcs.get(msg.correlationId)
+    if (rpcData) {
+       rpcData.rpc.handle(msg)
     } else {
-       this.options.logger.warn(EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg,  this.metaData)
+       this.options.logger.warn(EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg, this.metaData)
     }
   }
 

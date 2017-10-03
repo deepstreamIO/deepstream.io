@@ -39,7 +39,7 @@ export default class EventHandler {
       message.action === ACTIONS.UNLISTEN ||
       message.action === ACTIONS.LISTEN_ACCEPT ||
       message.action === ACTIONS.LISTEN_REJECT) {
-      this.listenerRegistry.handle(socket, message)
+      this.listenerRegistry.handle(socket, message as ListenMessage)
     } else {
       console.log('unknown action', message)
     }

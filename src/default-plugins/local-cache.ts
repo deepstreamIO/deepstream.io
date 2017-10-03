@@ -1,9 +1,10 @@
 import { EventEmitter } from 'events'
 
 export default class LocalCache extends EventEmitter implements StoragePlugin {
-  private data: any
   public description: string
   public isReady: boolean
+  
+  private data: any
 
   constructor (options: any) {
     super()

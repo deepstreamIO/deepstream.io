@@ -5,7 +5,7 @@ import { TOPIC, EVENT } from '../constants'
  * record
  */
 function sendError (
-  event: Event, message: string, recordName: string, socketWrapper: SocketWrapper, 
+  event: any, message: string, recordName: string, socketWrapper: SocketWrapper, 
   onError: Function, options: DeepstreamOptions, context: any, metaData: any
 ):void {
   options.logger.error(event, message, metaData)

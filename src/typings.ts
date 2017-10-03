@@ -4,7 +4,6 @@ declare module "*.json" {
 
 type Topic = string
 type Action = string
-type Event = string
 
 interface StorageRecord {
   _v: number
@@ -33,7 +32,7 @@ interface SocketWrapper extends SimpleSocketWrapper {
 interface Message {
   topic: Topic
   action: Action
-  name?: string
+  name: string
 
   isError?: boolean
   isAck?: boolean
@@ -45,36 +44,59 @@ interface Message {
 }
 
 interface RPCMessage extends Message {
-  correlationId?: string
-  isCompleted?: boolean
+  correlationId: string
+  isCompleted: boolean
 }
 
 interface PresenceMessage extends Message {
-  correlationId?: string
+  correlationId: string
 }
 
-interface ListenMessage extends Message {
-  subscription?: string
+interface ListenMessage {
+  topic: Topic
+  action: Action
+  name: string
+  subscription: string
+
+  raw?: string
 }
 
 interface RecordMessage extends Message {
-  path?: string
-  version?: number
-  isWriteAck?: boolean
+}
+
+interface RecordWriteMessage extends Message {
+  path: string
+  version: number
+  isWriteAck: boolean
+}
+
+interface RecordAckMessage extends Message {
+  path: string
+  version: number
+  isWriteAck: boolean
 }
 
 interface Plugin extends NodeJS.EventEmitter {
   init?: Function
   isReady: boolean
   setDeepstream?: Function
-  description: string
   close?: Function
+  setRecordHandler?: Function
+  description: string
 }
 
 interface StoragePlugin extends Plugin {
   set: Function
   get: Function
   delete: Function
+}
+
+interface PermissionHandler extends Plugin {
+  canPerformAction: Function
+}
+
+interface AuthenticationHandler extends Plugin {
+  isValidUser: Function
 }
 
 interface SubscriptionListener {
@@ -103,18 +125,21 @@ interface DeepstreamOptions {
   showLogo: boolean
   logLevel: number
   serverName: string
-  externalUrl: string
-  sslKey: string
-  sslCert: string
-  sslCa: string
+  externalUrl: string | null
+  sslKey: string | null
+  sslCert: string | null
+  sslCa: string | null
   auth: any
   permission: any
   connectionEndpoints: any
-  cache: any
-  storage: any
-  permissionHandler: any
-  storageExclusion: RegExp
 
+  cache: StoragePlugin
+  storage: StoragePlugin
+  permissionHandler: PermissionHandler
+  authenticationHandler: AuthenticationHandler
+  logger: Logger,
+  
+  storageExclusion: RegExp | null
   pluginTypes: Array<string>
   rpcAckTimeout: number
   rpcTimeout: number
@@ -132,10 +157,9 @@ interface DeepstreamOptions {
   broadcastTimeout: number
   message: Cluster
   uniqueRegistry: {
-  	release: Function
-  	get: Function
+    release: Function
+    get: Function
   }
-  logger: Logger,
   shuffleListenProviders: boolean,
 }
 

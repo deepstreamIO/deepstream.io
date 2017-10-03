@@ -1,14 +1,12 @@
 import { EventEmitter } from 'events'
 
 export default class NoopStorage extends EventEmitter implements StoragePlugin {
-  private data: any
   public description: string
   public isReady: boolean
 
   constructor (options: any) {
     super()
     this.isReady = true
-    this.data = {}
     this.description = 'noop storage'
   }
 

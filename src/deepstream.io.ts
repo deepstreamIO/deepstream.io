@@ -4,7 +4,6 @@ import { join as joinPath } from 'path'
 import { EventEmitter } from 'events'
 
 import * as pkg from '../package.json'
-import { readMessage as readMessageUtil } from './utils/read-message'
 import { combineEvents, merge } from './utils/utils'
 import { STATES, EVENT, TOPIC } from './constants'
 
@@ -28,8 +27,6 @@ import DependencyInitialiser from './utils/dependency-initialiser'
  * Sets the name of the process
  */
 process.title = 'deepstream server'
-
-export const readMessage = readMessageUtil
 
 export default class Deepstream extends EventEmitter {
   public constants: any
@@ -63,9 +60,6 @@ export default class Deepstream extends EventEmitter {
     this.loadConfig(config)
     this.messageProcessor = null
     this.messageDistributor = null
-    this.eventHandler = null
-    this.rpcHandler = null
-    this.recordHandler = null
 
     this.stateMachine = {
       init: STATES.STOPPED,
@@ -257,7 +251,7 @@ export default class Deepstream extends EventEmitter {
   )
 
     // TODO
-    this.recordHandler = new RecordHandler(this.options, null, null, null)
+    this.recordHandler = new RecordHandler(this.options)
     this.messageDistributor.registerForTopic(
     TOPIC.RECORD,
     this.recordHandler.handle.bind(this.recordHandler)
@@ -285,7 +279,7 @@ export default class Deepstream extends EventEmitter {
  */
   private connectionEndpointInit (): void {
     const endpoints = this.options.connectionEndpoints
-    const initialisers = []
+    const initialisers: Array<any> = []
 
     for (let i = 0; i < endpoints.length; i++) {
       const connectionEndpoint = endpoints[i]
@@ -342,7 +336,7 @@ export default class Deepstream extends EventEmitter {
  * Close any (perhaps partially initialised) plugins.
  */
   private pluginShutdown (): void {
-    const closeablePlugins = []
+    const closeablePlugins: Array<Plugin> = []
     this.options.pluginTypes.forEach((pluginType) => {
       const plugin = this.options[pluginType]
       if (typeof plugin.close === 'function') {

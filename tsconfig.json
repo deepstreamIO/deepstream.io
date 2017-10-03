@@ -5,7 +5,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "allowJs": true,
-    "lib": ["es2015"]
+    "strictNullChecks": true 
   },
   "files": [
     "./node_modules/@types/node/index.d.ts",

@@ -5,7 +5,7 @@ import recordRequest from './record-request'
 import { isOfType } from '../utils/utils'
 
 interface Step {
-  message: RecordMessage
+  message: RecordWriteMessage
   sender: SocketWrapper
 }
 
@@ -65,17 +65,19 @@ export default class RecordTransition {
     this.options = options
     this.recordHandler = recordHandler
     this.steps = []
-    this.record = null
-    this.currentStep = null
-    this.recordRequest = null
+    
+    // this.record = null
+    // this.currentStep = null
+    // this.recordRequest = null
+    // this.lastVersion = null
+    // this.lastError = null
+    
     this.existingVersions = []
     this.isDestroyed = false
     this.pendingUpdates = {}
     this.ending = false
     this.storageResponses = 0
     this.cacheResponses = 0
-    this.lastVersion = null
-    this.lastError = null
 
     this.onCacheResponse = this.onCacheResponse.bind(this)
     this.onStorageResponse = this.onStorageResponse.bind(this)
@@ -127,7 +129,7 @@ export default class RecordTransition {
  * This method will also retrieve the current record's data when called
  * for the first time
  */
-  public add (socketWrapper: SocketWrapper, message: RecordMessage, upsert: boolean): void {
+  public add (socketWrapper: SocketWrapper, message: RecordWriteMessage, upsert: boolean): void {
     const version = message.version
     const update = {
       message,
@@ -178,7 +180,7 @@ export default class RecordTransition {
  * JSON parsing is expensive we want to push these to the lowest level
  * of execution.
  */
-  private applyConfigAndData (socketWrapper: SocketWrapper, message: RecordMessage, step: Step): boolean {
+  private applyConfigAndData (socketWrapper: SocketWrapper, message: RecordWriteMessage, step: Step): boolean {
     const result = socketWrapper.parseData(message)
     if (result instanceof Error) {
       return false
@@ -201,7 +203,7 @@ export default class RecordTransition {
 /**
  * Destroys the instance
  */
-  private destroy (errorMessage: string): void {
+  private destroy (errorMessage: string | null): void {
     if (this.isDestroyed) {
       return
     }
@@ -209,17 +211,19 @@ export default class RecordTransition {
     this.sendWriteAcknowledgements(errorMessage || this.writeError)
     this.recordHandler.transitionComplete(this.name)
     this.isDestroyed = true
-    this.options = null
-    this.name = null
-    this.record = null
-    this.recordHandler = null
-    this.steps = null
-    this.currentStep = null
-    this.recordRequest = null
-    this.pendingUpdates = null
-    this.lastVersion = null
-    this.cacheResponses = 0
-    this.storageResponses = 0
+    
+    // this.options = null
+    // this.name = null
+    // this.record = null
+    // this.recordHandler = null
+    // this.steps = null
+    // this.currentStep = null
+    // this.recordRequest = null
+    // this.lastVersion = null
+    
+    // this.pendingUpdates = null
+    // this.cacheResponses = 0
+    // this.storageResponses = 0
   }
 
 /**
@@ -252,14 +256,15 @@ export default class RecordTransition {
       return
     }
 
-    if (this.steps.length === 0) {
+    const currentStep = this.steps.shift()
+    if (!currentStep) {
       if (this.cacheResponses === 0 && this.storageResponses === 0) {
         this.destroy(null)
       }
       return
     }
 
-    this.currentStep = this.steps.shift()
+    this.currentStep = currentStep
     let message = this.currentStep.message
 
     if (message.version === -1) {
@@ -366,8 +371,7 @@ export default class RecordTransition {
 /**
  * Sends all write acknowledgement messages at the end of a transition
  */
-  private sendWriteAcknowledgements (errorMessage: string) {
-    errorMessage = errorMessage === undefined ? null : errorMessage // eslint-disable-line
+  private sendWriteAcknowledgements (errorMessage: string | null) {
     for (const uid in this.pendingUpdates) {
       const update = this.pendingUpdates[uid]
       update.socketWrapper.sendMessage({

@@ -156,15 +156,15 @@ export default class ListenerRegistry implements SubscriptionListener {
   * to move on and release its lock
   */
   private onIncomingMessage (message: ListenMessage): void {
-    if (this.options.serverName !== message.data[0]) {
-      return
-    }
-    if (message.action === ACTIONS.LISTEN) {
-      this.leadListen[message.data[1]] = message.data[2]
-      this.startLocalDiscoveryStage(message.data[1])
-    } else if (message.isAck) {
-      this.nextDiscoveryStage(message.data[1])
-    }
+    // if (this.options.serverName !== message.data[0]) {
+    //   return
+    // }
+    // if (message.action === ACTIONS.LISTEN) {
+    //   this.leadListen[message.data[1]] = message.data[2]
+    //   this.startLocalDiscoveryStage(message.data[1])
+    // } else if (message.isAck) {
+    //   this.nextDiscoveryStage(message.data[1])
+    // }
   }
 
   /**
@@ -385,7 +385,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Start discovery phase once a lock is obtained from the leader within
   * the cluster
   */
-  private startLocalDiscoveryStage (subscriptionName: string, localListenArray?: Array<SocketWrapper>): void {
+  private startLocalDiscoveryStage (subscriptionName: string, localListenArray?: Array<Provider>): void {
     if (!localListenArray) {
       localListenArray = this.createLocalListenArray(subscriptionName)
     }
@@ -603,11 +603,11 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Create a map of all the listeners that patterns match the subscriptionName locally
   */
-  private createRemoteListenArray (subscriptionName: string): Array<SocketWrapper> {
+  private createRemoteListenArray (subscriptionName: string): Array<string> {
     const patterns = this.patterns
     const providerRegistry = this.providerRegistry
 
-    let servers = []
+    let servers: Array<string> = []
     const providerPatterns = providerRegistry.getNames()
 
     for (let i = 0; i < providerPatterns.length; i++) {
@@ -635,10 +635,10 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Create a map of all the listeners that patterns match the subscriptionName locally
   */
-  private createLocalListenArray (subscriptionName): Array<SocketWrapper> {
+  private createLocalListenArray (subscriptionName): Array<Provider> {
     const patterns = this.patterns
     const providerRegistry = this.providerRegistry
-    const providers = []
+    const providers: Array<Provider> = []
     for (const pattern in patterns) {
       if (patterns[pattern].test(subscriptionName)) {
         for (const socketWrapper of providerRegistry.getLocalSubscribers(pattern)) {
@@ -656,12 +656,13 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Validates that the pattern is not empty and is a valid regular expression
   */
-  private validatePattern (socketWrapper: SocketWrapper, message: ListenMessage): RegExp {
+  private validatePattern (socketWrapper: SocketWrapper, message: ListenMessage): RegExp | null {
     try {
       return new RegExp(message.name)
     } catch (e) {
       socketWrapper.sendError({ topic: this.topic }, EVENT.INVALID_MESSAGE_DATA, e.toString())
       this.options.logger.error(EVENT.INVALID_MESSAGE_DATA, e.toString(), this.metaData)
+      return null
     }
   }
     /**

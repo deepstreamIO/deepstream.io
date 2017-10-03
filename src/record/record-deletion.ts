@@ -9,8 +9,8 @@ export default class RecordDeletion {
   private recordName: string
   private completed: 0
   private isDestroyed: boolean
-  private cacheTimeout: NodeJS.Timer
-  private storageTimeout: NodeJS.Timer
+  private cacheTimeout: number
+  private storageTimeout: number
 
 /**
  * This class represents the deletion of a single record. It handles it's removal
@@ -55,8 +55,10 @@ export default class RecordDeletion {
  * Callback for completed cache and storage interactions. Will invoke
  * _done() once both are completed
  */
-  private checkIfDone (timeoutId: NodeJS.Timer, error: Error): void {
-    clearTimeout(timeoutId)
+  private checkIfDone (timeoutId: NodeJS.Timer | null, error: Error | null): void {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+    }
     this.completed++
 
     if (this.isDestroyed) {
@@ -92,10 +94,10 @@ export default class RecordDeletion {
   private destroy (): void {
     clearTimeout(this.cacheTimeout)
     clearTimeout(this.storageTimeout)
-    this.options = null
-    this.socketWrapper = null
-    this.message = null
     this.isDestroyed = true
+    // this.options = null
+    // this.socketWrapper = null
+    // this.message = null
   }
 
 /**

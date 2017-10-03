@@ -2,7 +2,7 @@ import { TOPIC, ACTIONS, EVENT, PRESENCE } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import StateRegistry from '../cluster/state-registry'
 
-function parseUserNames (data: any): Array<string> {
+function parseUserNames (data: any): Array<string> | null {
   // Returns all users for backwards compatability
   if (
     !data ||
@@ -84,12 +84,12 @@ export default class PresenceHandler {
   * Called whenever a client has succesfully logged in with a username
   */
   public handleJoin (socketWrapper: SocketWrapper): void {
-    let currentCount = this.localClients.get(socketWrapper.user)
+    const currentCount = this.localClients.get(socketWrapper.user)
     if (currentCount === undefined) {
       this.localClients.set(socketWrapper.user, 1)
       this.connectedClients.add(socketWrapper.user)
     } else {
-      this.localClients.set(socketWrapper.user, ++currentCount)
+      this.localClients.set(socketWrapper.user, currentCount + 1)
     }
   }
 
@@ -97,12 +97,14 @@ export default class PresenceHandler {
   * Called whenever a client has disconnected
   */
   public handleLeave (socketWrapper: SocketWrapper): void {
-    let currentCount = this.localClients.get(socketWrapper.user)
-    if (currentCount === 1) {
+    const currentCount = this.localClients.get(socketWrapper.user)
+    if (!currentCount) {
+      // TODO: Log Error
+    } else if (currentCount === 1) {
       this.localClients.delete(socketWrapper.user)
       this.connectedClients.remove(socketWrapper.user)
     } else {
-      this.localClients.set(socketWrapper.user, --currentCount)
+      this.localClients.set(socketWrapper.user, currentCount - 1)
     }
   }
 
@@ -144,7 +146,8 @@ export default class PresenceHandler {
   private onClientAdded (username: string) {
     const message = { 
       topic: TOPIC.PRESENCE, 
-      action: ACTIONS.PRESENCE_JOIN, 
+      action: ACTIONS.PRESENCE_JOIN,
+      name: ACTIONS.PRESENCE_LEAVE, 
       parsedData: username 
     }
 
@@ -163,7 +166,8 @@ export default class PresenceHandler {
   private onClientRemoved (username: string) {
     const message = { 
       topic: TOPIC.PRESENCE, 
-      action: ACTIONS.PRESENCE_LEAVE, 
+      action: ACTIONS.PRESENCE_LEAVE,
+      name: ACTIONS.PRESENCE_LEAVE,
       parsedData: username 
     }
     this.subscriptionRegistry.sendToSubscribers(

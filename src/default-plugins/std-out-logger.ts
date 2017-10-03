@@ -6,9 +6,10 @@ import { LOG_LEVEL } from '../constants'
 const EOL = require('os').EOL
 
 export default class StdOutLogger extends EventEmitter implements Plugin {
-  private options: any
-  public isReady: boolean
   public description: string
+  public isReady: boolean
+
+  private options: any
   private useColors: boolean
   private currentLogLevel: LOG_LEVEL
   private logLevelColors: Array<String>

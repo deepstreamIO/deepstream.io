@@ -4,12 +4,8 @@ const SPLIT_REG_EXP = /[[\]]/g
  * This class allows to set or get specific
  * values within a json data structure using
  * string-based paths
- *
- * @param {String} path A path, e.g. users[2].firstname
- *
- * @constructor
  */
-export function setValue (root: any, path: string, value: any) {
+export function setValue (root: any, path: string, value: any): void {
   const tokens = tokenize(path)
   let node = root
 
@@ -32,12 +28,9 @@ export function setValue (root: any, path: string, value: any) {
 /**
  * Parses the path. Splits it into
  * keys for objects and indices for arrays.
- *
- * @private
- * @returns {void}
  */
-function tokenize (path: string) {
-  const tokens = []
+function tokenize (path: string): Array<string | number> {
+  const tokens: Array<string | number> = []
 
   const parts = path.split('.')
 
@@ -48,7 +41,12 @@ function tokenize (path: string) {
       continue
     }
 
-    const arrayIndexes = part.split(SPLIT_REG_EXP)
+    const arrayIndexes: Array<string> = part.split(SPLIT_REG_EXP)
+
+    if (arrayIndexes.length === 0) {
+      // TODO
+      continue
+    }
 
     tokens.push(arrayIndexes[0])
 
