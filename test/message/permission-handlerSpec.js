@@ -46,21 +46,24 @@ const permissionHandler = {
   onClientDisconnect (username) {}
 }
 
-const options = {
-  permissionHandler,
-  authenticationHandler: permissionHandler,
-  logger: new LoggerMock(),
+const config = {
   maxAuthAttempts: 3,
   logInvalidAuthData: true
 }
 
-describe('permissionHandler passes additional user meta data', () => {
+const services = {
+  permissionHandler,
+  authenticationHandler: permissionHandler,
+  logger: new LoggerMock()
+}
+
+xdescribe('permissionHandler passes additional user meta data', () => {
   let socketWrapperMock
   let connectionEndpoint
 
   beforeEach((done) => {
-    connectionEndpoint = new ConnectionEndpoint(options)
-    const depInit = new DependencyInitialiser({ options }, options, connectionEndpoint, 'connectionEndpoint')
+    connectionEndpoint = new ConnectionEndpoint({ config, services })
+    const depInit = new DependencyInitialiser({ config, services }, config, services, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
       connectionEndpoint.onMessages = function () {}
       connectionEndpoint._server._simulateUpgrade(new SocketMock())

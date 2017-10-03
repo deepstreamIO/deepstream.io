@@ -1,18 +1,11 @@
-'use strict'
-
-const pathParser = require('./path-parser')
-const ruleParser = require('./rule-parser')
+import * as pathParser from './path-parser'
+import * as ruleParser from './rule-parser'
 
 /**
  * Compiles a pre-validated config into a format that allows for quicker access
  * and execution
- *
- * @param   {Object} config parsed and validated permission config
- *
- * @public
- * @returns {Object} compiledConfig
  */
-exports.compile = function (config) {
+export const compile = function (config: ValveConfig) {
   const compiledConfig = {}
   let compiledRuleset
   let section
@@ -32,14 +25,8 @@ exports.compile = function (config) {
 
 /**
  * Compiles an individual ruleset
- *
- * @param   {String} path
- * @param   {Object} rules
- *
- * @private
- * @returns {Object} compiledRuleset
  */
-function compileRuleset (path, rules) {
+function compileRuleset (path: string, rules) {
   const ruleset = pathParser.parse(path)
 
   ruleset.rules = {}

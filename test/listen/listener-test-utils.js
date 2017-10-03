@@ -42,9 +42,9 @@ module.exports = class ListenerTestUtils {
     }
     clientRegistryMock = sinon.mock(clientRegistry)
 
-    options.listenResponseTimeout = 30
-    options.shuffleListenProviders = false
-    options.stateReconciliationTimeout = 10
+    options.config.listenResponseTimeout = 30
+    options.config.shuffleListenProviders = false
+    options.config.stateReconciliationTimeout = 10
 
     clients = [
       null, // to make tests start from 1
@@ -60,11 +60,7 @@ module.exports = class ListenerTestUtils {
       getTestMocks().getSocketWrapper('p3')
     ]
 
-    options.logger = {
-      debug: () => {},
-      warn: console.log
-    }
-    listenerRegistry = new ListenerRegistry(topic, options, clientRegistry)
+    listenerRegistry = new ListenerRegistry(topic, options.config, options.services, clientRegistry)
     expect(typeof listenerRegistry.handle).toBe('function')
   }
 

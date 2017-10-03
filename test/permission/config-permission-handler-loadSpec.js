@@ -1,7 +1,7 @@
 /* global fail, jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler')
+const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler').default
 const C = require('../../dist/src/constants')
 
 const recordHandler = {
@@ -19,7 +19,7 @@ describe('permission handler loading', () => {
             cacheEvacuationInterval: 60000
           }
         }
-      })
+      }, {})
       permissionHandler.on('error', (error) => {
         expect(`it should not have had this ${error}`).toBe(true)
         next()
@@ -42,7 +42,7 @@ describe('permission handler loading', () => {
             maxRuleIterations: 0
           }
         }
-      })
+      }, {})
       permissionHandler.setRecordHandler(recordHandler)
       permissionHandler.on('error', (error) => {
         expect(error).toContain('Maximum rule iteration has to be at least one')
@@ -64,7 +64,7 @@ describe('permission handler loading', () => {
             cacheEvacuationInterval: 60000
           }
         }
-      })
+      }, {})
       permissionHandler.setRecordHandler(recordHandler)
       permissionHandler.on('error', (error) => {
         expect(error).toContain('ENOENT')
@@ -86,7 +86,7 @@ describe('permission handler loading', () => {
             cacheEvacuationInterval: 60000
           }
         }
-      })
+      }, {})
       permissionHandler.setRecordHandler(recordHandler)
       permissionHandler.on('error', (error) => {
         expect(error).toContain('SyntaxError')
@@ -108,7 +108,7 @@ describe('permission handler loading', () => {
             cacheEvacuationInterval: 60000
           }
         }
-      })
+      }, {})
       permissionHandler.setRecordHandler(recordHandler)
       permissionHandler.on('error', (error) => {
         expect(error).toBe('invalid permission config - empty section "record"')
@@ -135,7 +135,7 @@ describe('permission handler loading', () => {
             cacheEvacuationInterval: 60000
           }
         }
-      })
+      }, {})
       permissionHandler.setRecordHandler(recordHandler)
       permissionHandler.on('error', onError)
       permissionHandler.on('error', (error) => {

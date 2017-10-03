@@ -6,7 +6,8 @@ import { EventEmitter } from 'events'
  * infact relays calls from and to the message connector - sneaky.
  */
 export default class RpcProxy extends EventEmitter implements SimpleSocketWrapper {
-  private options: any
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private remoteServer: string
   private metaData: any
   public type: string
@@ -14,11 +15,12 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
 
   /**
   */
-  constructor (options: DeepstreamOptions, remoteServer: string, metaData: any) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, remoteServer: string, metaData: any) {
     super()
     this.isRemote = true
     this.metaData = metaData
-    this.options = options
+    this.config = config
+    this.services = services
     this.remoteServer = remoteServer
   }
 
@@ -37,7 +39,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
     if (message.isAck && message.action !== ACTIONS.REQUEST) {
       message.isCompleted = true
     }
-    this.options.message.sendDirect(
+    this.services.message.sendDirect(
       this.remoteServer, TOPIC.RPC_PRIVATE, message, this.metaData
     )
   }
@@ -53,7 +55,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
       // (and has been cleaned up) so no point sending
       return
     }
-    this.options.message.sendDirect(this.remoteServer, TOPIC.RPC_PRIVATE, {
+    this.services.message.sendDirect(this.remoteServer, TOPIC.RPC_PRIVATE, {
       topic: TOPIC.RPC_PRIVATE,
       action: ACTIONS.ERROR,
       data: [type, msg]

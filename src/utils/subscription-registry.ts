@@ -23,7 +23,8 @@ export default class SubscriptionRegistry {
   private delay: number
   private sockets: Map<SocketWrapper, Set<Subscription>>
   private subscriptions: Map<string, Subscription>
-  private options: DeepstreamOptions
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private topic: string
   private subscriptionListener: SubscriptionListener
   private constants: constants
@@ -35,15 +36,16 @@ export default class SubscriptionRegistry {
    * A bit like an event-hub, only that it registers SocketWrappers rather
    * than functions
    */
-  constructor (options: DeepstreamOptions, topic: string, clusterTopic?: string) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, topic: string, clusterTopic?: string) {
     this.pending = []
     this.delay = -1
-    if (options.broadcastTimeout !== undefined) {
-      this.delay = options.broadcastTimeout
+    if (config.broadcastTimeout !== undefined) {
+      this.delay = config.broadcastTimeout
     }
     this.sockets = new Map()
     this.subscriptions = new Map()
-    this.options = options
+    this.config = config
+    this.services = services
     this.topic = topic
     this.constants = {
       MULTIPLE_SUBSCRIPTIONS: EVENT.MULTIPLE_SUBSCRIPTIONS,
@@ -67,7 +69,7 @@ export default class SubscriptionRegistry {
    * via the cluster.
    */
   protected setupRemoteComponents (clusterTopic?: string): void {
-    this.clusterSubscriptions = this.options.message.getStateRegistry(
+    this.clusterSubscriptions = this.services.message.getStateRegistry(
       clusterTopic || `${this.topic}_${TOPIC.SUBSCRIPTIONS}`
     )
   }
@@ -85,9 +87,9 @@ export default class SubscriptionRegistry {
    */
   public getAllRemoteServers (subscriptionName: string): Array<string> {
     const serverNames = this.clusterSubscriptions.getAllServers(subscriptionName)
-    const localServerIndex = serverNames.indexOf(this.options.serverName)
+    const localServerIndex = serverNames.indexOf(this.config.serverName)
     if (localServerIndex > -1) {
-      serverNames.splice(serverNames.indexOf(this.options.serverName), 1)
+      serverNames.splice(serverNames.indexOf(this.config.serverName), 1)
     }
     return serverNames
   }
@@ -139,7 +141,7 @@ export default class SubscriptionRegistry {
    */
   public sendToSubscribers (name: string, message: Message, noDelay: boolean, socket: SocketWrapper | null, isRemote: boolean = false): void {
     if (socket && !isRemote) {
-      this.options.message.send(message.topic, message)
+      this.services.message.send(message.topic, message)
     }
 
     const subscription = this.subscriptions.get(name)
@@ -201,7 +203,7 @@ export default class SubscriptionRegistry {
       this.subscriptions.set(name, subscription)
     } else if (subscription.sockets.has(socket)) {
       const msg = `repeat supscription to "${name}" by ${socket.user}`
-      this.options.logger.warn(this.constants.MULTIPLE_SUBSCRIPTIONS, msg)
+      this.services.logger.warn(this.constants.MULTIPLE_SUBSCRIPTIONS, msg)
       socket.sendError({ topic: this.topic }, this.constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
@@ -217,7 +219,7 @@ export default class SubscriptionRegistry {
     }
 
     const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-    this.options.logger.debug(this.constants.SUBSCRIBE, logMsg)
+    this.services.logger.debug(this.constants.SUBSCRIBE, logMsg)
     socket.sendAckMessage(message)
   }
 
@@ -231,7 +233,7 @@ export default class SubscriptionRegistry {
     if (!subscription || !subscription.sockets.delete(socket)) {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
-        this.options.logger.warn(this.constants.NOT_SUBSCRIBED, msg)
+        this.services.logger.warn(this.constants.NOT_SUBSCRIBED, msg)
         socket.sendError({ topic: this.topic }, this.constants.NOT_SUBSCRIBED, name)
       }
       return
@@ -242,7 +244,7 @@ export default class SubscriptionRegistry {
 
     if (!silent) {
       const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-      this.options.logger.debug(this.constants.UNSUBSCRIBE, logMsg)
+      this.services.logger.debug(this.constants.UNSUBSCRIBE, logMsg)
       socket.sendAckMessage(message)
     }
   }

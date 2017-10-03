@@ -35,7 +35,7 @@ const connectionEndpointInit = (endpointOptions, onReady) => {
   options.connectionEndpoint.on('ready', onReady)
 }
 
-describe('validates HTTPS server conditions', () => {
+xdescribe('validates HTTPS server conditions', () => {
   let error
   let sslOptions
   options.connectionEndpoint = null

@@ -28,7 +28,7 @@ describe('rpc handler returns alternative providers for the same rpc', () => {
     providerForA2 = testMocks.getSocketWrapper('a2')
     providerForA3 = testMocks.getSocketWrapper('a3')
 
-    rpcHandler = new RpcHandler(options, testMocks.subscriptionRegistry)
+    rpcHandler = new RpcHandler(options.config, options.services, testMocks.subscriptionRegistry)
 
     testMocks.subscriptionRegistryMock
       .expects('getLocalSubscribers')

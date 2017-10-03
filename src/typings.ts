@@ -2,6 +2,9 @@ declare module "*.json" {
   const version: number;
 }
 
+type RuleType = string
+type ValveSection = string
+
 type Topic = string
 type Action = string
 
@@ -76,7 +79,7 @@ interface RecordAckMessage extends Message {
   isWriteAck: boolean
 }
 
-interface Plugin extends NodeJS.EventEmitter {
+interface DeepstreamPlugin extends NodeJS.EventEmitter {
   init?: Function
   isReady: boolean
   setDeepstream?: Function
@@ -85,17 +88,17 @@ interface Plugin extends NodeJS.EventEmitter {
   description: string
 }
 
-interface StoragePlugin extends Plugin {
+interface StoragePlugin extends DeepstreamPlugin {
   set: Function
   get: Function
   delete: Function
 }
 
-interface PermissionHandler extends Plugin {
+interface PermissionHandler extends DeepstreamPlugin {
   canPerformAction: Function
 }
 
-interface AuthenticationHandler extends Plugin {
+interface AuthenticationHandler extends DeepstreamPlugin {
   isValidUser: Function
 }
 
@@ -106,11 +109,25 @@ interface SubscriptionListener {
   onFirstSubscriptionMade: Function
 }
 
-interface Logger extends Plugin {
+interface Logger extends DeepstreamPlugin {
+  setLogLevel: Function
   info: Function
   debug: Function
   warn: Function
   error: Function
+  log?: Function
+}
+
+interface ConnectionEndpoint extends DeepstreamPlugin {
+  onMessages: Function
+  close: Function
+}
+
+interface PluginConfig {
+  name?: string
+  path?: string
+  type?: string
+  options: any
 }
 
 interface Cluster {
@@ -121,26 +138,27 @@ interface Cluster {
   close: Function
 }
 
-interface DeepstreamOptions {
+interface DeepstreamConfig {
   showLogo: boolean
+  libDir: string | null
   logLevel: number
   serverName: string
   externalUrl: string | null
   sslKey: string | null
   sslCert: string | null
   sslCa: string | null
-  auth: any
-  permission: any
   connectionEndpoints: any
 
-  cache: StoragePlugin
-  storage: StoragePlugin
-  permissionHandler: PermissionHandler
-  authenticationHandler: AuthenticationHandler
-  logger: Logger,
-  
+  plugins: {
+    cache: PluginConfig
+    storage: PluginConfig
+  }
+
+  logger: PluginConfig
+  auth: PluginConfig
+  permission: PluginConfig
+
   storageExclusion: RegExp | null
-  pluginTypes: Array<string>
   rpcAckTimeout: number
   rpcTimeout: number
   cacheRetrievalTimeout: number
@@ -155,12 +173,28 @@ interface DeepstreamOptions {
   lockTimeout: number
   lockRequestTimeout: number
   broadcastTimeout: number
+  shuffleListenProviders: boolean
+}
+
+interface DeepstreamServices {
+  registeredPlugins: Array<string>
+  connectionEndpoints: Array<ConnectionEndpoint>
+  cache: StoragePlugin
+  storage: StoragePlugin
+  permissionHandler: PermissionHandler
+  authenticationHandler: AuthenticationHandler
+  logger: Logger
   message: Cluster
   uniqueRegistry: {
     release: Function
     get: Function
   }
-  shuffleListenProviders: boolean,
+}
+
+interface ValveConfig {
+  cacheEvacuationInterval: number
+  maxRuleIterations: number
+  path: string
 }
 
 interface Provider {
@@ -171,5 +205,8 @@ interface Provider {
 declare module NodeJS  {
   interface Global {
     deepstreamLibDir: string
+    deepstreamCLI: string
+    deepstreamConfDir: string
+    require: Function
   }
 }

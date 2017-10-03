@@ -12,8 +12,9 @@ const C = require('../constants')
  * @param {Object} options deepstream options
  */
 module.exports = class MessageProcessor {
-  constructor (options) {
-    this._options = options
+  constructor (config, services) {
+    this._config = config
+    this._services = services
   }
 
   /**
@@ -58,7 +59,7 @@ module.exports = class MessageProcessor {
       if (message === null ||
         !message.action ||
         !message.topic) {
-        this._options.logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, message)
+        this._services.logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, message)
         socketWrapper.sendError({
           topic: C.TOPIC.ERROR
         }, C.EVENT.MESSAGE_PARSE_ERROR, message)
@@ -70,7 +71,7 @@ module.exports = class MessageProcessor {
         return
       }
 
-      this._options.permissionHandler.canPerformAction(
+      this._services.permissionHandler.canPerformAction(
         socketWrapper.user,
         message,
         this._onPermissionResponse.bind(this, socketWrapper, message),
@@ -94,7 +95,7 @@ module.exports = class MessageProcessor {
    */
   _onPermissionResponse (socketWrapper, message, error, result) {
     if (error !== null) {
-      this._options.logger.warn(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
+      this._services.logger.warn(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
       socketWrapper.sendError(message, C.EVENT.MESSAGE_PERMISSION_ERROR)
       return
     }

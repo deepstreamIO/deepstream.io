@@ -1,48 +1,46 @@
 'use strict'
 
-const DefaultLogger = require('../default-plugins/std-out-logger').default
-const fs = require('fs')
-const utils = require('../utils/utils')
-const C = require('../constants')
-const fileUtils = require('./file-utils')
-const UWSConnectionEndpoint = require('../message/uws/connection-endpoint')
-const HTTPConnectionEndpoint = require('../message/http/connection-endpoint')
-
-const LOG_LEVEL_KEYS = Object.keys(C.LOG_LEVEL)
+import * as fs from 'fs'
+import * as utils from '../utils/utils'
+import { LOG_LEVEL } from '../constants'
+import * as fileUtils from './file-utils'
+import * as UWSConnectionEndpoint from '../message/uws/connection-endpoint'
+import * as HTTPConnectionEndpoint from '../message/http/connection-endpoint'
+import DefaultCache from '../default-plugins/local-cache'
+import DefaultStorage from '../default-plugins/noop-storage'
+import DefaultLogger from '../default-plugins/std-out-logger'
+import OpenPermissionHandler from '../permission/open-permission-handler'
+import ConfigPermissionHandler from '../permission/config-permission-handler'
+import OpenAuthenticationHandler from '../authentication/open-authentication-handler'
 
 let commandLineArguments
 
 /**
  * Takes a configuration object and instantiates functional properties.
  * CLI arguments will be considered.
- *
- * @param   {Object} config configuration
- *
- * @returns {Object} configuration
  */
-exports.initialise = function (config) {
+export const initialise = function (config: DeepstreamConfig): { config: DeepstreamConfig, services: DeepstreamServices } {
   commandLineArguments = global.deepstreamCLI || {}
-
   handleUUIDProperty(config)
   handleSSLProperties(config)
-  handleLogger(config)
-  handlePlugins(config)
-  handleConnectionEndpoints(config)
-  handleAuthStrategy(config)
-  handlePermissionStrategy(config)
 
-  return config
+  const services: any = {
+    registeredPlugins: ['authenticationHandler','permissionHandler']
+  }
+
+  services.logger = handleLogger(config)
+  handlePlugins(config, services)
+  services.connectionEndpoints = handleConnectionEndpoints(config)
+  services.authenticationHandler = handleAuthStrategy(config, services.logger)
+  services.permissionHandler = handlePermissionStrategy(config, services)
+
+  return { config, services }
 }
 
 /**
  * Transform the UUID string config to a UUID in the config object.
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
  */
-function handleUUIDProperty (config) {
+function handleUUIDProperty (config: DeepstreamConfig): void {
   if (config.serverName === 'UUID') {
     config.serverName = utils.getUid()
   }
@@ -51,13 +49,8 @@ function handleUUIDProperty (config) {
 /**
  * Load the SSL files
  * CLI arguments will be considered.
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
  */
-function handleSSLProperties (config) {
+function handleSSLProperties (config: DeepstreamConfig): void {
   const sslFiles = ['sslKey', 'sslCert', 'sslCa']
   let key
   let resolvedFilePath
@@ -80,16 +73,11 @@ function handleSSLProperties (config) {
 /**
  * Initialize the logger and overwrite the root logLevel if it's set
  * CLI arguments will be considered.
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
  */
-function handleLogger (config) {
+function handleLogger (config: DeepstreamConfig): Logger {
   const configOptions = (config.logger || {}).options
   let Logger
-  if (config.logger == null || config.logger.name === 'default') {
+  if (config.logger.type === 'default') {
     Logger = DefaultLogger
   } else {
     Logger = resolvePluginClass(config.logger, 'logger')
@@ -107,19 +95,23 @@ function handleLogger (config) {
     }
   }
 
-  config.logger = new Logger(configOptions)
-  if (!config.logger.info) {
-    config.logger.debug = config.logger.log.bind(config.logger, C.LOG_LEVEL.DEBUG)
-    config.logger.info = config.logger.log.bind(config.logger, C.LOG_LEVEL.INFO)
-    config.logger.warn = config.logger.log.bind(config.logger, C.LOG_LEVEL.WARN)
-    config.logger.error = config.logger.log.bind(config.logger, C.LOG_LEVEL.ERROR)
+  const logger = new Logger(configOptions)
+  if (logger.log) {
+    logger.debug = logger.log.bind(config.logger, LOG_LEVEL.DEBUG)
+    logger.info = logger.log.bind(config.logger, LOG_LEVEL.INFO)
+    logger.warn = logger.log.bind(config.logger, LOG_LEVEL.WARN)
+    logger.error = logger.log.bind(config.logger, LOG_LEVEL.ERROR)
   }
-  if (LOG_LEVEL_KEYS.indexOf(config.logLevel) !== -1) {
+
+  const LOG_LEVEL_KEYS = Object.keys(LOG_LEVEL)
+  if (LOG_LEVEL_KEYS[config.logLevel]) {
     // NOTE: config.logLevel has highest priority, compare to the level defined
     // in the nested logger object
-    config.logLevel = C.LOG_LEVEL[config.logLevel]
-    config.logger.setLogLevel(config.logLevel)
+    config.logLevel = config.logLevel
+    logger.setLogLevel(config.logLevel)
   }
+
+  return logger
 }
 
 /**
@@ -131,13 +123,8 @@ function handleLogger (config) {
  * Options to the constructor of the plugin can be passed as *options* object.
  *
  * CLI arguments will be considered.
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
  */
-function handlePlugins (config) {
+function handlePlugins (config: DeepstreamConfig, services: any): void {
   if (config.plugins == null) {
     return
   }
@@ -159,10 +146,10 @@ function handlePlugins (config) {
     const plugin = plugins[key]
     if (plugin) {
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
-      config[key] = new PluginConstructor(plugin.options)
-      if (config.pluginTypes.indexOf(key) === -1) {
-        config.pluginTypes.push(key)
-      }
+      services[key] = new PluginConstructor(plugin.options)
+      services.registeredPlugins.push(key)
+      // if (config.loadedPlugins.indexOf(key) === -1) {
+      // }
     }
   }
 }
@@ -177,13 +164,8 @@ function handlePlugins (config) {
  * Options to the constructor of the plugin can be passed as *options* object.
  *
  * CLI arguments will be considered.
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
  */
-function handleConnectionEndpoints (config) {
+function handleConnectionEndpoints (config: DeepstreamConfig): Array<ConnectionEndpoint> {
   // delete any endpoints that have been set to `null`
   for (const type in config.connectionEndpoints) {
     if (!config.connectionEndpoints[type]) {
@@ -193,7 +175,7 @@ function handleConnectionEndpoints (config) {
   if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
     throw new Error('No connection endpoints configured')
   }
-  const connectionEndpoints = []
+  const connectionEndpoints: Array<ConnectionEndpoint> = []
   for (const connectionType in config.connectionEndpoints) {
     const plugin = config.connectionEndpoints[connectionType]
 
@@ -209,7 +191,7 @@ function handleConnectionEndpoints (config) {
     }
     connectionEndpoints.push(new PluginConstructor(plugin.options))
   }
-  config.connectionEndpoints = connectionEndpoints
+  return connectionEndpoints
 }
 
 /**
@@ -218,20 +200,19 @@ function handleConnectionEndpoints (config) {
  * to the constructor.
  *
  * CLI arguments will be considered.
- *
- * @param {Object} config deepstream configuration object
- *
- * @private
- * @returns {Function} Instance return be the plugin constructor
  */
-function resolvePluginClass (plugin, type) {
+function resolvePluginClass (plugin: PluginConfig, type: string): any {
   // nexe needs *global.require* for __dynamic__ modules
   // but browserify and proxyquire can't handle *global.require*
   const req = global && global.require ? global.require : require
   let requirePath
   let pluginConstructor
   let es6Adaptor
-  if (plugin.path != null) {
+  if (plugin.type === 'default-cache') {
+    pluginConstructor = DefaultCache
+  } else if (plugin.type === 'default-storage') {
+    pluginConstructor = DefaultStorage 
+  } else if (plugin.path != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.path)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
@@ -254,15 +235,12 @@ function resolvePluginClass (plugin, type) {
  * Instantiates the authentication handler registered for *config.auth.type*
  *
  * CLI arguments will be considered.
- *
- * @param   {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
  */
-function handleAuthStrategy (config) {
+function handleAuthStrategy (config: DeepstreamConfig, logger: Logger): AuthenticationHandler {
+  let AuthenticationHandler
+
   const authStrategies = {
-    none: require('../authentication/open-authentication-handler'), // eslint-disable-line
+    none: OpenAuthenticationHandler,
     file: require('../authentication/file-based-authentication-handler'), // eslint-disable-line
     http: require('../authentication/http-authentication-handler') // eslint-disable-line
   }
@@ -277,15 +255,13 @@ function handleAuthStrategy (config) {
   }
 
   if (config.auth.name || config.auth.path) {
-    const AuthHandler = resolvePluginClass(config.auth, 'authentication')
-    if (!AuthHandler) {
+    AuthenticationHandler = resolvePluginClass(config.auth, 'authentication')
+    if (!AuthenticationHandler) {
       throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
     }
-    config.authenticationHandler = new AuthHandler(config.auth.options, config.logger)
-    return
-  }
-
-  if (!authStrategies[config.auth.type]) {
+  } else if (config.auth.type) {
+    AuthenticationHandler = authStrategies[config.auth.type]
+  } else {
     throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
 
@@ -293,24 +269,20 @@ function handleAuthStrategy (config) {
     config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
   }
 
-  config.authenticationHandler =
-    new (authStrategies[config.auth.type])(config.auth.options, config.logger)
+  return new AuthenticationHandler(config.auth.options, logger)
 }
 
 /**
  * Instantiates the permission handler registered for *config.permission.type*
  *
  * CLI arguments will be considered.
- *
- * @param   {Object} config deepstream configuration object
- *
- * @private
- * @returns {void}
  */
-function handlePermissionStrategy (config) {
+function handlePermissionStrategy (config: DeepstreamConfig, services: any): PermissionHandler {
+  let PermissionHandler
+
   const permissionStrategies = {
-    config: require('../permission/config-permission-handler'), // eslint-disable-line
-    none: require('../permission/open-permission-handler') // eslint-disable-line
+    config: ConfigPermissionHandler,
+    none: OpenPermissionHandler
   }
 
   if (!config.permission) {
@@ -323,15 +295,13 @@ function handlePermissionStrategy (config) {
   }
 
   if (config.permission.name || config.permission.path) {
-    const PermHandler = resolvePluginClass(config.permission, 'permission')
-    if (!PermHandler) {
+    PermissionHandler = resolvePluginClass(config.permission, 'permission')
+    if (!PermissionHandler) {
       throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
     }
-    config.permissionHandler = new PermHandler(config.permission.options, config.logger)
-    return
-  }
-
-  if (!permissionStrategies[config.permission.type]) {
+  } else if (config.permission.type) {
+    PermissionHandler = permissionStrategies[config.permission.type]
+  } else {
     throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 
@@ -339,5 +309,5 @@ function handlePermissionStrategy (config) {
     config.permission.options.path = fileUtils.lookupConfRequirePath(config.permission.options.path)
   }
 
-  config.permissionHandler = new (permissionStrategies[config.permission.type])(config)
+  return new PermissionHandler(config, services)
 }

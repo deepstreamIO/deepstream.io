@@ -34,19 +34,19 @@ describe('record deletion', () => {
       .withExactArgs(M.deletionMsg)
 
     recordDeletion = new RecordDeletion(
-      options, client.socketWrapper, M.deletionMsg, callback
+      options.config, options.services, client.socketWrapper, M.deletionMsg, callback
     )
 
-    expect(options.cache.completedDeleteOperations).toBe(1)
-    expect(options.storage.completedDeleteOperations).toBe(1)
+    expect(options.services.cache.completedDeleteOperations).toBe(1)
+    expect(options.services.storage.completedDeleteOperations).toBe(1)
 
     expect(recordDeletion.isDestroyed).toBe(true)
     expect(callback).toHaveBeenCalled()
   })
 
   it('encounters an error during record deletion', (done) => {
-    options.cache.nextOperationWillBeSuccessful = false
-    options.cache.nextOperationWillBeSynchronous = false
+    options.services.cache.nextOperationWillBeSuccessful = false
+    options.services.cache.nextOperationWillBeSynchronous = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -58,21 +58,21 @@ describe('record deletion', () => {
       }, C.EVENT.RECORD_DELETE_ERROR)
 
     recordDeletion = new RecordDeletion(
-      options, client.socketWrapper, M.deletionMsg, callback
+      options.config, options.services, client.socketWrapper, M.deletionMsg, callback
     )
 
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
-      expect(options.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'storageError'])
+      expect(options.services.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'storageError'])
       done()
     }, 20)
   })
 
   it('encounters an ack delete timeout', (done) => {
-    options.cacheRetrievalTimeout = 10
-    options.cache.nextOperationWillBeSuccessful = false
-    options.cache.nextOperationWillBeSynchronous = false
+    options.config.cacheRetrievalTimeout = 10
+    options.services.cache.nextOperationWillBeSuccessful = false
+    options.services.cache.nextOperationWillBeSynchronous = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -84,13 +84,13 @@ describe('record deletion', () => {
       }, C.EVENT.RECORD_DELETE_ERROR)
 
     recordDeletion = new RecordDeletion(
-      options, client.socketWrapper, M.deletionMsg, callback
+      options.config, options.services, client.socketWrapper, M.deletionMsg, callback
     )
 
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
-      expect(options.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'cache timeout'])
+      expect(options.services.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'cache timeout'])
       done()
     }, 100)
   })
@@ -104,11 +104,11 @@ describe('record deletion', () => {
       .withExactArgs(M.anotherDeletionMsg)
 
     recordDeletion = new RecordDeletion(
-      options, client.socketWrapper, M.anotherDeletionMsg, callback
+      options.config, options.services, client.socketWrapper, M.anotherDeletionMsg, callback
     )
 
-    expect(options.cache.completedDeleteOperations).toBe(1)
-    expect(options.storage.completedDeleteOperations).toBe(0)
+    expect(options.services.cache.completedDeleteOperations).toBe(1)
+    expect(options.services.storage.completedDeleteOperations).toBe(0)
     expect(recordDeletion.isDestroyed).toBe(true)
     expect(callback).toHaveBeenCalled()
   })

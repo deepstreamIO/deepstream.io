@@ -4,7 +4,6 @@
  *
  */
 export default class LockRegistry {
-  private options: DeepstreamOptions
   private locks: any
 
   /**
@@ -12,8 +11,7 @@ export default class LockRegistry {
   * within deepstream.io. It is passed via
   * via the options object.
   */
-  constructor (options: DeepstreamOptions) {
-    this.options = options
+  constructor (config: DeepstreamConfig, services: DeepstreamServices) {
     this.locks = {}
   }
 

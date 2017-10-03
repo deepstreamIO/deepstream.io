@@ -5,10 +5,10 @@ import { TOPIC, EVENT } from '../constants'
  * record
  */
 function sendError (
-  event: any, message: string, recordName: string, socketWrapper: SocketWrapper, 
-  onError: Function, options: DeepstreamOptions, context: any, metaData: any
+  event: any, message: string, recordName: string, socketWrapper: SocketWrapper | null, 
+  onError: Function, services: DeepstreamServices, context: any, metaData: any
 ):void {
-  options.logger.error(event, message, metaData)
+  services.logger.error(event, message, metaData)
   if (onError) {
     onError.call(context, event, message, recordName, socketWrapper)
   } else if (socketWrapper) {
@@ -23,8 +23,8 @@ function sendError (
  * here, if the record couldn't be found in storage no further attempts to retrieve it will be made
  */
 function onStorageResponse (
-  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper, 
-  onComplete: Function, onError: Function, options: DeepstreamOptions, context: any, metaData: any
+  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null, 
+  onComplete: Function, onError: Function, services: DeepstreamServices, context: any, metaData: any
 ):void {
   if (error) {
     sendError(
@@ -33,7 +33,7 @@ function onStorageResponse (
       recordName,
       socketWrapper,
       onError,
-      options,
+      services,
       context,
       metaData
     )
@@ -41,7 +41,7 @@ function onStorageResponse (
     onComplete.call(context, record || null, recordName, socketWrapper)
 
     if (record) {
-      options.cache.set(recordName, record, () => {}, metaData)
+      services.cache.set(recordName, record, () => {}, metaData)
     }
   }
 }
@@ -50,8 +50,8 @@ function onStorageResponse (
  * Callback for responses returned by the cache connector
  */
 function onCacheResponse (
-  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper, 
-  onComplete: Function, onError: Function, options: DeepstreamOptions, context: any, metaData: any
+  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null, 
+  onComplete: Function, onError: Function, config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any
 ):void {
   if (error) {
     sendError(
@@ -60,15 +60,15 @@ function onCacheResponse (
       recordName,
       socketWrapper,
       onError,
-      options,
+      services,
       context,
       metaData
     )
   } else if (record) {
     onComplete.call(context, record, recordName, socketWrapper)
   } else if (
-      !options.storageExclusion ||
-      !options.storageExclusion.test(recordName)
+      !config.storageExclusion ||
+      !config.storageExclusion.test(recordName)
     ) {
 
     let storageTimedOut = false
@@ -77,11 +77,11 @@ function onCacheResponse (
       sendError(
         EVENT.STORAGE_RETRIEVAL_TIMEOUT,
         recordName, recordName, socketWrapper,
-        onError, options, context, metaData
+        onError, services, context, metaData
       )
-    }, options.storageRetrievalTimeout)
+    }, config.storageRetrievalTimeout)
 
-    options.storage.get(recordName, (storageError, recordData) => {
+    services.storage.get(recordName, (storageError, recordData) => {
       if (!storageTimedOut) {
         clearTimeout(storageTimeout)
         onStorageResponse(
@@ -91,7 +91,7 @@ function onCacheResponse (
           socketWrapper,
           onComplete,
           onError,
-          options,
+          services,
           context,
           metaData
         )
@@ -110,8 +110,8 @@ function onCacheResponse (
  * It also handles all the timeout and destruction steps around this operation
  */
 export default function (
-  recordName: string, options: DeepstreamOptions, socketWrapper: SocketWrapper, 
-  onComplete: Function, onError: Function, context: any, metaData: any
+  recordName: string, config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper | null, 
+  onComplete: Function, onError: Function, context: any, metaData?: any
 ):void {
   let cacheTimedOut = false
 
@@ -120,11 +120,11 @@ export default function (
     sendError(
       EVENT.CACHE_RETRIEVAL_TIMEOUT,
       recordName, recordName, socketWrapper,
-      onError, options, context, metaData
+      onError, services, context, metaData
     )
-  }, options.cacheRetrievalTimeout)
+  }, config.cacheRetrievalTimeout)
 
-  options.cache.get(recordName, (error, record) => {
+  services.cache.get(recordName, (error, record) => {
     if (!cacheTimedOut) {
       clearTimeout(cacheTimeout)
       onCacheResponse(
@@ -134,7 +134,8 @@ export default function (
         socketWrapper,
         onComplete,
         onError,
-        options,
+        config,
+        services,
         context,
         metaData
       )

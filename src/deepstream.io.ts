@@ -31,7 +31,9 @@ process.title = 'deepstream server'
 export default class Deepstream extends EventEmitter {
   public constants: any
 
-  private options: DeepstreamOptions
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
+
   private messageProcessor: any
   private messageDistributor: any
   
@@ -55,7 +57,7 @@ export default class Deepstream extends EventEmitter {
  *
  * @constructor
  */
-  constructor (config: DeepstreamOptions) {
+  constructor (config: DeepstreamConfig) {
     super()
     this.loadConfig(config)
     this.messageProcessor = null
@@ -90,11 +92,14 @@ export default class Deepstream extends EventEmitter {
  * please see default-options.
  */
   public set (key: string, value: any): any {
-    if (this.options[key] === undefined) {
-      throw new Error(`Unknown option "${key}"`)
+     if (this.services[key] !== undefined) {
+      this.services[key] = value
+    } else if (this.config[key] !== undefined) {
+      this.config[key] = value
+    } else {
+      throw new Error(`Unknown option or service "${key}"`)
     }
 
-    this.options[key] = value
     return this
   }
 
@@ -160,7 +165,7 @@ export default class Deepstream extends EventEmitter {
  * Log state transitions for debugging.
  */
   private onTransition (transition: any): void {
-    const logger = this.options.logger
+    const logger = this.services.logger
     if (logger) {
       logger.debug(
         EVENT.INFO,
@@ -173,8 +178,8 @@ export default class Deepstream extends EventEmitter {
  * First stage in the Deepstream initialisation sequence. Initialises the logger.
  */
   private loggerInit (): void {
-    const logger = this.options.logger
-    const loggerInitialiser = new DependencyInitialiser(this, this.options, logger, 'logger')
+    const logger = this.services.logger
+    const loggerInitialiser = new DependencyInitialiser(this, this.config, this.services, logger, 'logger')
     loggerInitialiser.once('ready', () => {
       if (logger instanceof EventEmitter) {
         logger.on('error', this.onPluginError.bind(this, 'logger'))
@@ -187,9 +192,9 @@ export default class Deepstream extends EventEmitter {
  * Invoked once the logger is initialised. Initialises any built-in or custom Deepstream plugins.
  */
   private pluginInit (): void {
-    this.options.message = new MessageConnector(this.options, 'deepstream')
+    this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
-    const infoLogger = message => this.options.logger.info(EVENT.INFO, message)
+    const infoLogger = message => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`deepstream version: ${pkg.version}`)
 
     // otherwise (no configFile) deepstream was invoked by API
@@ -201,9 +206,9 @@ export default class Deepstream extends EventEmitter {
       infoLogger(`library directory set to: ${global.deepstreamLibDir}`)
     }
 
-    this.options.pluginTypes.forEach((pluginType) => {
-      const plugin = this.options[pluginType]
-      const initialiser = new DependencyInitialiser(this, this.options, plugin, pluginType)
+    this.services.registeredPlugins.forEach((pluginType) => {
+      const plugin = this.services[pluginType]
+      const initialiser = new DependencyInitialiser(this, this.config, this.services, plugin, pluginType)
       initialiser.once('ready', () => {
         this.checkReady(pluginType, plugin)
       })
@@ -215,13 +220,13 @@ export default class Deepstream extends EventEmitter {
  * Called whenever a dependency emits a ready event. Once all dependencies are ready
  * deepstream moves to the init step.
  */
-  private checkReady (pluginType: string, plugin: Plugin): void {
+  private checkReady (pluginType: string, plugin: DeepstreamPlugin): void {
     if (plugin instanceof EventEmitter) {
       plugin.on('error', this.onPluginError.bind(this, pluginType))
     }
     plugin.isReady = true
 
-    const allPluginsReady = this.options.pluginTypes.every(type => this.options[type].isReady)
+    const allPluginsReady = this.services.registeredPlugins.every(type => this.services[type].isReady)
 
     if (allPluginsReady && this.currentState === STATES.PLUGIN_INIT) {
       this.transition('plugins-started')
@@ -233,31 +238,31 @@ export default class Deepstream extends EventEmitter {
  * the various handlers.
  */
   private serviceInit (): void {
-    this.messageProcessor = new MessageProcessor(this.options)
-    this.messageDistributor = new MessageDistributor(this.options)
+    this.messageProcessor = new MessageProcessor(this.config, this.services)
+    this.messageDistributor = new MessageDistributor(this.config, this.services)
 
-    this.options.uniqueRegistry = new LockRegistry(this.options)
+    this.services.uniqueRegistry = new LockRegistry(this.config, this.services)
 
-  this.eventHandler = new EventHandler(this.options)
+  this.eventHandler = new EventHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
     TOPIC.EVENT,
     this.eventHandler.handle.bind(this.eventHandler)
   )
 
-    this.rpcHandler = new RpcHandler(this.options)
+    this.rpcHandler = new RpcHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
     TOPIC.RPC,
     this.rpcHandler.handle.bind(this.rpcHandler)
   )
 
     // TODO
-    this.recordHandler = new RecordHandler(this.options)
+    this.recordHandler = new RecordHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
     TOPIC.RECORD,
     this.recordHandler.handle.bind(this.recordHandler)
   )
 
-    this.presenceHandler = new PresenceHandler(this.options)
+    this.presenceHandler = new PresenceHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
     TOPIC.PRESENCE,
     this.presenceHandler.handle.bind(this.presenceHandler)
@@ -266,8 +271,8 @@ export default class Deepstream extends EventEmitter {
     this.messageProcessor.onAuthenticatedMessage =
       this.messageDistributor.distribute.bind(this.messageDistributor)
 
-    if (this.options.permissionHandler.setRecordHandler) {
-      this.options.permissionHandler.setRecordHandler(this.recordHandler)
+    if (this.services.permissionHandler.setRecordHandler) {
+      this.services.permissionHandler.setRecordHandler(this.recordHandler)
     }
 
     process.nextTick(() => this.transition('services-started'))
@@ -278,14 +283,15 @@ export default class Deepstream extends EventEmitter {
  * The startup sequence will be complete once the connection endpoint is started and listening.
  */
   private connectionEndpointInit (): void {
-    const endpoints = this.options.connectionEndpoints
+    const endpoints = this.services.connectionEndpoints
     const initialisers: Array<any> = []
 
     for (let i = 0; i < endpoints.length; i++) {
       const connectionEndpoint = endpoints[i]
       initialisers[i] = new DependencyInitialiser(
       this,
-      this.options,
+      this.config,
+      this.services,
       connectionEndpoint,
       'connectionEndpoint'
     )
@@ -308,7 +314,7 @@ export default class Deepstream extends EventEmitter {
  * Initialization complete - Deepstream is up and running.
  */
   private run (): void {
-    this.options.logger.info(EVENT.INFO, 'Deepstream started')
+    this.services.logger.info(EVENT.INFO, 'Deepstream started')
     this.emit('started')
   }
 
@@ -317,7 +323,7 @@ export default class Deepstream extends EventEmitter {
  * Closes the (perhaps partially initialised) connectionEndpoints.
  */
   private connectionEndpointShutdown (): void {
-    const endpoints = this.options.connectionEndpoints
+    const endpoints = this.services.connectionEndpoints
     endpoints.forEach((endpoint) => {
       process.nextTick(() => endpoint.close())
     })
@@ -329,16 +335,16 @@ export default class Deepstream extends EventEmitter {
  * Shutdown the services.
  */
   private serviceShutdown (): void {
-    this.options.message.close(() => this.transition('services-closed'))
+    this.services.message.close(() => this.transition('services-closed'))
   }
 
 /**
  * Close any (perhaps partially initialised) plugins.
  */
   private pluginShutdown (): void {
-    const closeablePlugins: Array<Plugin> = []
-    this.options.pluginTypes.forEach((pluginType) => {
-      const plugin = this.options[pluginType]
+    const closeablePlugins: Array<DeepstreamPlugin> = []
+    this.services.registeredPlugins.forEach((pluginType) => {
+      const plugin = this.services[pluginType]
       if (typeof plugin.close === 'function') {
         process.nextTick(() => plugin.close())
         closeablePlugins.push(plugin)
@@ -356,7 +362,7 @@ export default class Deepstream extends EventEmitter {
  * Close the (perhaps partially initialised) logger.
  */
   private loggerShutdown (): void {
-    const logger = this.options.logger
+    const logger = this.services.logger as any
     if (typeof logger.close === 'function') {
       process.nextTick(() => logger.close())
       logger.once('close', () => this.transition('logger-closed'))
@@ -379,16 +385,17 @@ export default class Deepstream extends EventEmitter {
  * configInitialiser, but it should not block. Instead the ready events of
  * those plugins are handled through the DependencyInitialiser in this instance.
  */
-  private loadConfig (config: DeepstreamOptions): void {
+  private loadConfig (config: DeepstreamConfig): void {
     if (config === null || typeof config === 'string') {
-      // TODO
-      const result = jsYamlLoader.loadConfig(config, null) as any
+      const result = jsYamlLoader.loadConfig(config)
       this.configFile = result.file
-      this.options = result.config
+      this.config = result.config
+      this.services = result.services
     } else {
-      const rawConfig = merge(getDefaultOptions(), config)
-      // TODO
-      this.options = configInitialiser.initialise(rawConfig) as DeepstreamOptions
+      const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
+      const result = configInitialiser.initialise(rawConfig)
+      this.config = result.config
+      this.services = result.services
     }
   }
 
@@ -397,7 +404,7 @@ export default class Deepstream extends EventEmitter {
  * for the proper functioning of the server
  */
   private showStartLogo (): void {
-    if (this.options.showLogo !== true) {
+    if (this.config.showLogo !== true) {
       return
     }
   /* istanbul ignore next */
@@ -423,6 +430,6 @@ export default class Deepstream extends EventEmitter {
  */
   private onPluginError (pluginName: string, error: Error): void {
     const msg = `Error from ${pluginName} plugin: ${error.toString()}`
-    this.options.logger.error(EVENT.PLUGIN_ERROR, msg)
+    this.services.logger.error(EVENT.PLUGIN_ERROR, msg)
   }
 }

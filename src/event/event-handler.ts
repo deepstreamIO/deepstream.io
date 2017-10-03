@@ -6,7 +6,8 @@ import ListenerRegistry from '../listen/listener-registry'
 
 export default class EventHandler {
   private metaData: any
-  private options: DeepstreamOptions
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private subscriptionRegistry: SubscriptionRegistry
   private listenerRegistry: ListenerRegistry
   private logger: Logger
@@ -14,14 +15,14 @@ export default class EventHandler {
   /**
    * Handles incoming and outgoing messages for the EVENT topic.
    */
-  constructor (options: DeepstreamOptions, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry) {
-    this.options = options
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry) {
+    this.config = config
     this.subscriptionRegistry =
-      subscriptionRegistry || new SubscriptionRegistry(options, TOPIC.EVENT)
+      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.EVENT)
     this.listenerRegistry =
-      listenerRegistry || new ListenerRegistry(TOPIC.EVENT, options, this.subscriptionRegistry, null)
+      listenerRegistry || new ListenerRegistry(TOPIC.EVENT, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
-    this.logger = options.logger
+    this.logger = services.logger
   }
 
   /**

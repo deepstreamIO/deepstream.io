@@ -4,7 +4,8 @@ import { EventEmitter } from 'events'
 export default class DependencyInitialiser extends EventEmitter {
   public isReady: boolean
 
-  private options: any
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private dependency: any
   private name: string
   private timeout: any
@@ -14,18 +15,19 @@ export default class DependencyInitialiser extends EventEmitter {
  * an individual dependency (cache connector, persistance connector,
  * message connector, logger)
  */
-  constructor (deepstream, options: DeepstreamOptions, dependency: Plugin, name: string) {
+  constructor (deepstream, config: DeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
     super()
     this.isReady = false
 
-    this.options = options
+    this.config = config
+    this.services = services
     this.dependency = dependency
     this.name = name
     this.timeout = null
 
     if (typeof this.dependency.on !== 'function' && typeof this.dependency.isReady === 'undefined') {
       const errorMessage = `${this.name} needs to implement isReady or be an emitter`
-      this.options.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
+      this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
       const error = (new Error(errorMessage)) as any
       error.code = 'PLUGIN_INITIALIZATION_ERROR'
       throw error
@@ -40,7 +42,7 @@ export default class DependencyInitialiser extends EventEmitter {
     } else {
       this.timeout = setTimeout(
       this._onTimeout.bind(this),
-      this.options.dependencyInitialisationTimeout
+      this.config.dependencyInitialisationTimeout
     )
       this.dependency.once('ready', this._onReady.bind(this))
       this.dependency.on('error', this._onError.bind(this))
@@ -68,7 +70,7 @@ export default class DependencyInitialiser extends EventEmitter {
 
     this.dependency.type = this.dependency.description || this.dependency.type
     const dependencyType = this.dependency.type ? `: ${this.dependency.type}` : ': no dependency description provided'
-    this.options.logger.info(EVENT.INFO, `${this.name} ready${dependencyType}`)
+    this.services.logger.info(EVENT.INFO, `${this.name} ready${dependencyType}`)
 
     process.nextTick(this._emitReady.bind(this))
   }
@@ -113,8 +115,8 @@ export default class DependencyInitialiser extends EventEmitter {
  * straight to the console
  */
   private _logError (message: string): void {
-    if (this.options.logger && this.options.logger.isReady) {
-      this.options.logger.error(EVENT.PLUGIN_ERROR, message)
+    if (this.services.logger && this.services.logger.isReady) {
+      this.services.logger.error(EVENT.PLUGIN_ERROR, message)
     } else {
       console.error('Error while initialising dependency')
       console.error(message)

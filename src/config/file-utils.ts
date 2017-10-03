@@ -1,31 +1,19 @@
-'use strict'
-
-const fs = require('fs')
-const path = require('path')
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
 * Append the global library directory as the prefix to any path
 * used here
-*
-* @param {String} filePath
-*
-* @private
-* @returns {String} file path with the library prefix used
 */
-exports.lookupLibRequirePath = function (filePath) {
+export const lookupLibRequirePath = function (filePath: string): string {
   return exports.lookupRequirePath(filePath, global.deepstreamLibDir)
 }
 
 /**
 * Append the global configuration directory as the prefix to any path
 * used here
-*
-* @param {String} filePath
-*
-* @private
-* @returns {String} file path with the configuration prefix used
 */
-exports.lookupConfRequirePath = function (filePath) {
+export const lookupConfRequirePath = function (filePath: string): string {
   return exports.lookupRequirePath(filePath, global.deepstreamConfDir)
 }
 
@@ -42,14 +30,8 @@ exports.lookupConfRequirePath = function (filePath) {
  * *no prefix  ||  CWD + file              | file     | file (resolved by nodes require)
  *
  * *CWD = ignore CWD if prefix is absolute
- *
- * @param {String} filePath
- * @param {String} prefix
- *
- * @private
- * @returns {String} file path with the prefix
  */
-exports.lookupRequirePath = function (filePath, prefix) {
+export const lookupRequirePath = function (filePath: string, prefix: string): string {
   // filePath is absolute
   if (path.parse(filePath).root !== '') {
     return filePath
@@ -72,13 +54,8 @@ exports.lookupRequirePath = function (filePath, prefix) {
 
 /**
  * Returns true if a file exists for a given path
- *
- * @param   {String} path
- *
- * @private
- * @returns {Boolean} exists
  */
-exports.fileExistsSync = function (filePath) {
+export const fileExistsSync = function (filePath: string): boolean {
   try {
     fs.lstatSync(filePath)
     return true
@@ -90,14 +67,8 @@ exports.fileExistsSync = function (filePath) {
 /**
 * Append the prefix to the current working directory,
 * or use it as an absolute path
-*
-* @param   {String} nonAbsoluteFilePath
-* @param   {String} prefix
-*
-* @private
-* @returns {String} resolvedPath
 */
-function resolvePrefixAndFile (nonAbsoluteFilePath, prefix) {
+function resolvePrefixAndFile (nonAbsoluteFilePath: string, prefix: string): string {
   // prefix is not absolute
   if (path.parse(prefix).root === '') {
     return path.resolve(process.cwd(), prefix, nonAbsoluteFilePath)

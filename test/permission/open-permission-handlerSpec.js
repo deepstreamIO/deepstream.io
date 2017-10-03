@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const PermissionHandler = require('../../dist/src/permission/open-permission-handler')
+const PermissionHandler = require('../../dist/src/permission/open-permission-handler').default
 
 describe('open permission handler', () => {
   let permissionHandler
@@ -9,7 +9,7 @@ describe('open permission handler', () => {
   it('creates the handler', () => {
     permissionHandler = new PermissionHandler()
     expect(typeof permissionHandler.canPerformAction).toBe('function')
-    expect(permissionHandler.type).toBe('none')
+    expect(permissionHandler.description).toBe('none')
   })
 
   it('allows any action', (done) => {

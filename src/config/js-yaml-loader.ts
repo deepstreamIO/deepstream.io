@@ -1,11 +1,9 @@
-'use strict'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as yaml from 'js-yaml'
 
-const fs = require('fs')
-const path = require('path')
-const yaml = require('js-yaml')
-
-const defaultOptions = require('../default-options')
-const utils = require('../utils/utils')
+import { get as getDefaultOptions } from '../default-options'
+import { merge } from '../utils/utils'
 
 const configInitialiser = require('./config-initialiser')
 const fileUtils = require('./file-utils')
@@ -28,14 +26,8 @@ try {
 
 /**
  * Reads and parse a general configuration file content.
- *
- * @param {String} filePath
- * @param {Function} callback
- *
- * @public
- * @returns {void}
  */
-exports.readAndParseFile = function (filePath, callback) {
+export const readAndParseFile = function (filePath: string, callback: Function): void {
   try {
     fs.readFile(filePath, 'utf8', (error, fileContent) => {
       if (error) {
@@ -55,45 +47,10 @@ exports.readAndParseFile = function (filePath, callback) {
 }
 
 /**
- * Parse a general configuration file
- * These file extension ans formats are allowed:
- * .yml, .js, .json
- *
- * If no fileContent is passed the file is read synchronously
- *
- * @param {String} filePath
- * @param {String} fileContent
- *
- * @private
- * @returns {Object} config
- */
-function parseFile (filePath, fileContent) {
-  let config = null
-  const extension = path.extname(filePath)
-
-  if (extension === '.yml' || extension === '.yaml') {
-    config = yaml.safeLoad(replaceEnvironmentVariables(fileContent))
-  } else if (extension === '.js') {
-    config = require(path.resolve(filePath)) // eslint-disable-line
-  } else if (extension === '.json') {
-    config = JSON.parse(replaceEnvironmentVariables(fileContent))
-  } else {
-    throw new Error(`${extension} is not supported as configuration file`)
-  }
-
-  return config
-}
-
-/**
  * Loads a config file without having to initialise it. Useful for one
  * off operations such as generating a hash via cli
- *
- * @param {Object|String} args commander arguments or path to config
- *
- * @public
- * @returns {Object} config deepstream configuration object
  */
-module.exports.loadConfigWithoutInitialisation = function (filePath, /* test only */ args) {
+export const loadConfigWithoutInitialisation = function (filePath: string, args?: object): any {
   const argv = args || global.deepstreamCLI || {}
   const configPath = setGlobalConfigDirectory(argv, filePath)
   const configString = fs.readFileSync(configPath, { encoding: 'utf8' })
@@ -112,17 +69,35 @@ module.exports.loadConfigWithoutInitialisation = function (filePath, /* test onl
  * to default values defined in the defaultOptions.js file.
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
- *
- * @param {Object|String} args commander arguments or path to config
- *
- * @public
- * @returns {Object} config deepstream configuration object
  */
-module.exports.loadConfig = function (filePath, /* test only */ args) {
+export const loadConfig = function (filePath: string, args?: object) {
   const config = exports.loadConfigWithoutInitialisation(filePath, args)
+  const result = configInitialiser.initialise(config.config)
   return {
-    config: configInitialiser.initialise(config.config),
+    config: result.config,
+    services: result.services,
     file: config.configPath
+  }
+}
+
+/**
+ * Parse a general configuration file
+ * These file extension ans formats are allowed:
+ * .yml, .js, .json
+ *
+ * If no fileContent is passed the file is read synchronously
+ */
+function parseFile (filePath: string, fileContent: string): DeepstreamConfig {
+  const extension = path.extname(filePath)
+
+  if (extension === '.yml' || extension === '.yaml') {
+    return yaml.safeLoad(replaceEnvironmentVariables(fileContent))
+  } else if (extension === '.js') {
+    return require(path.resolve(filePath)) // eslint-disable-line
+  } else if (extension === '.json') {
+    return JSON.parse(replaceEnvironmentVariables(fileContent))
+  } else {
+    throw new Error(`${extension} is not supported as configuration file`)
   }
 }
 
@@ -130,7 +105,7 @@ module.exports.loadConfig = function (filePath, /* test only */ args) {
 * Set the globalConfig prefix that will be used as the directory for ssl, permissions and auth
 * relative files within the config file
 */
-function setGlobalConfigDirectory (argv, filePath) {
+function setGlobalConfigDirectory (argv: any, filePath: string): string {
   const customConfigPath =
       argv.c ||
       argv.config ||
@@ -147,7 +122,7 @@ function setGlobalConfigDirectory (argv, filePath) {
 * Set the globalLib prefix that will be used as the directory for the logger
 * and plugins within the config file
 */
-function setGlobalLibDirectory (argv, config) {
+function setGlobalLibDirectory (argv: any, config: DeepstreamConfig): void {
   const libDir =
       argv.l ||
       argv.libDir ||
@@ -159,19 +134,12 @@ function setGlobalLibDirectory (argv, config) {
 /**
  * Augments the basic configuration with command line parameters
  * and normalizes paths within it
- *
- * @param   {Object} config    configuration
- * @param   {Object} argv      command line arguments
- * @param   {String} configDir config directory
- *
- * @private
- * @returns {Object} extended config
  */
-function extendConfig (config, argv) {
+function extendConfig (config: any, argv: any): DeepstreamConfig {
   const cliArgs = {}
   let key
 
-  for (key in defaultOptions.get()) {
+  for (key in getDefaultOptions()) {
     cliArgs[key] = argv[key]
   }
   if (argv.port) {
@@ -187,29 +155,21 @@ function extendConfig (config, argv) {
     overrideEndpointOption('host', argv.httpHost, 'http', config)
   }
 
-  return utils.merge({ plugins: {} }, defaultOptions.get(), config, cliArgs)
+  return merge({ plugins: {} }, getDefaultOptions(), config, cliArgs) as DeepstreamConfig
 }
 
-function overrideEndpointOption (key, value, endpoint, config) {
+function overrideEndpointOption (key: string, value: string, endpoint: string, config: DeepstreamConfig) {
   try {
     config.connectionEndpoints[endpoint].options[key] = value
   } catch (exception) {
-    throw new Error(
-      `${key} could not be set: ${endpoint} connection endpoint not found`,
-      exception.message
-    )
+    throw new Error(`${key} could not be set: ${endpoint} connection endpoint not found`)
   }
 }
 
 /**
  * Checks if a config file is present at a given path
- *
- * @param   {String} configPath the path to the config file
- *
- * @private
- * @returns {String} verified path
  */
-function verifyCustomConfigPath (configPath) {
+function verifyCustomConfigPath (configPath: string): string {
   if (fileUtils.fileExistsSync(configPath)) {
     return configPath
   }
@@ -219,11 +179,8 @@ function verifyCustomConfigPath (configPath) {
 
 /**
  * Fallback if no config path is specified. Will attempt to load the file from the default directory
- *
- * @private
- * @returns {String} filePath
  */
-function getDefaultConfigPath () {
+function getDefaultConfigPath (): string {
   let filePath
   let i
   let k
@@ -249,15 +206,8 @@ function getDefaultConfigPath () {
  * host: $HOST_NAME
  * port: $HOST_PORT
  * ```
- *
- * @param {String} fileContent The loaded yml file
- *
- * @private
- * @returns {void}
  */
-function replaceEnvironmentVariables (fileContent) {
+function replaceEnvironmentVariables (fileContent: string): string {
   const environmentVariable = new RegExp(/\${([^}]+)}/g)
-  // eslint-disable-next-line
-  fileContent = fileContent.replace(environmentVariable, (a, b) => process.env[b] || '')
-  return fileContent
+  return fileContent.replace(environmentVariable, (a, b) => process.env[b] || '')
 }

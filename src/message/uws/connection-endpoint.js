@@ -46,9 +46,9 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
    * @returns {Void}
    */
   setDeepstream (deepstream) {
-    this._logger = deepstream.options.logger
-    this._authenticationHandler = deepstream.options.authenticationHandler
-    this._dsOptions = deepstream.options
+    this._logger = deepstream.services.logger
+    this._authenticationHandler = deepstream.services.authenticationHandler
+    this._dsOptions = deepstream.config
   }
 
   /**

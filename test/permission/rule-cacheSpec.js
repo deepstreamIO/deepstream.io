@@ -1,7 +1,7 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const RuleCache = require('../../dist/src/permission/rule-cache')
+const RuleCache = require('../../dist/src/permission/rule-cache').default
 
 describe('loads and retrieves values from the rule cache', () => {
   let ruleCache

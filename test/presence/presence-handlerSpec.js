@@ -9,6 +9,8 @@ const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
 const options = testHelper.getDeepstreamOptions()
+const config = options.config
+const services = options.services
 
 describe('presence handler', () => {
   let testMocks
@@ -18,7 +20,7 @@ describe('presence handler', () => {
   beforeEach(() => {
     testMocks = getTestMocks()
     presenceHandler = new PresenceHandler(
-      options, testMocks.subscriptionRegistry, testMocks.stateRegistry
+      config, services, testMocks.subscriptionRegistry, testMocks.stateRegistry
     )
     userOne = testMocks.getSocketWrapper('Marge')
   })
@@ -86,6 +88,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
+        name: C.ACTIONS.QUERY,
         parsedData: []
       })
 
@@ -160,6 +163,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
+        name: C.ACTIONS.QUERY,
         parsedData: ['Bart']
       })
 
@@ -185,6 +189,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
+        name: C.ACTIONS.QUERY,
         parsedData: ['Bart', 'Homer', 'Maggie']
       })
 
@@ -198,6 +203,7 @@ describe('presence handler', () => {
       .withExactArgs(C.PRESENCE.EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_JOIN,
+        name: C.ACTIONS.PRESENCE_JOIN,
         parsedData: 'Bart'
       }, false, null, false)
 
@@ -207,6 +213,7 @@ describe('presence handler', () => {
       .withExactArgs('Bart', {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_JOIN,
+        name: C.ACTIONS.PRESENCE_JOIN,
         parsedData: 'Bart'
       }, false, null, false)
 
@@ -220,6 +227,7 @@ describe('presence handler', () => {
       .withExactArgs(C.PRESENCE.EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_LEAVE,
+        name: C.ACTIONS.PRESENCE_LEAVE,
         parsedData: 'Bart'
       }, false, null, false)
 
@@ -229,6 +237,7 @@ describe('presence handler', () => {
       .withExactArgs('Bart', {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_LEAVE,
+        name: C.ACTIONS.PRESENCE_LEAVE,
         parsedData: 'Bart'
       }, false, null, false)
 

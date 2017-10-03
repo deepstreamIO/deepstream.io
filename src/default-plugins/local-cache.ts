@@ -4,10 +4,12 @@ export default class LocalCache extends EventEmitter implements StoragePlugin {
   public description: string
   public isReady: boolean
   
+  private config: DeepstreamConfig
   private data: any
 
-  constructor (options: any) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices) {
     super()
+    this.config = config
     this.isReady = true
     this.data = {}
     this.description = 'local cache'

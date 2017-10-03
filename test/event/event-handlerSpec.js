@@ -9,6 +9,8 @@ const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
 const options = testHelper.getDeepstreamOptions()
+const config = options.config
+const services = options.services
 
 describe('the eventHandler routes events correctly', () => {
   let testMocks
@@ -18,7 +20,7 @@ describe('the eventHandler routes events correctly', () => {
   beforeEach(() => {
     testMocks = getTestMocks()
     eventHandler = new EventHandler(
-      options, testMocks.subscriptionRegistry, testMocks.listenerRegistry
+      config, services, testMocks.subscriptionRegistry, testMocks.listenerRegistry
     )
     socketWrapper = testMocks.getSocketWrapper().socketWrapper
   })

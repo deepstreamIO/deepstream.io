@@ -23,7 +23,7 @@ describe('allows to create a record without providing data, but denies updating 
     }
 
     expect(testPermission(permissions, message)).toBe(true)
-    options.cache.set('some/tests', {}, () => {})
+    options.services.cache.set('some/tests', {}, () => {})
   })
 
   it('denies update', () => {

@@ -31,7 +31,7 @@ xdescribe('record write acknowledgement', () => {
     client.socketWrapperMock.verify()
   })
 
-  fit('sends write success to socket', () => {
+  it('sends write success to socket', () => {
     client.socketWrapperMock
       .expects('sendError')
       .never()

@@ -3,12 +3,18 @@ import { getUid } from './utils/utils'
 import { LOG_LEVEL } from './constants'
 import LocalCache from './default-plugins/local-cache'
 import NoopStorage from './default-plugins/noop-storage'
+import StdoutLogger from './default-plugins/std-out-logger'
+import OpenAuthenticationHandler from './authentication/open-authentication-handler'
+import OpenPermissionHandler from './permission/open-permission-handler'
+import ClusterNode from './cluster/cluster-node'
+import LockRegistry from './cluster/lock-registry'
 
-export function get (): DeepstreamOptions {
+export function get (): DeepstreamConfig {
   return {
     /*
      * General
      */
+    libDir: null,
     serverName: getUid(),
     showLogo: true,
     logLevel: LOG_LEVEL.INFO,
@@ -29,14 +35,16 @@ export function get (): DeepstreamOptions {
      * Authentication
      */
     auth: {
-      type: 'none'
+      type: 'none',
+      options: {}
     },
 
     /*
      * Permissioning
      */
     permission: {
-      type: 'none'
+      type: 'none',
+      options: {}
     },
 
     /*
@@ -81,22 +89,21 @@ export function get (): DeepstreamOptions {
       }
     },
 
-    /*
-     * Default Plugins
-     */
-    pluginTypes: [
-     'storage',
-     'cache',
-     'authenticationHandler',
-     'permissionHandler'
-    ],
+    logger: {
+      type: 'default',
+      options: {}
+    },
 
-    cache: new LocalCache({}),
-    storage: new NoopStorage({}),
-    message: null,
-    uniqueRegistry: null,
-    logger: null,
-    permissionHandler: null,
+    plugins: {
+      cache: {
+        type: 'default-cache',
+        options: {}
+      },
+      storage: {
+        type: 'default-storage',
+        options: {}
+      }
+    },
 
     /*
      * Storage options

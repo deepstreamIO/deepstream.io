@@ -2,7 +2,8 @@ import { TOPIC, ACTIONS, EVENT } from '../constants'
 
 export default class ListenerTimeoutRegistry {
   private topic: Topic
-  private options: DeepstreamOptions
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private timeoutMap: any
   private timedoutProviders: any
   private acceptedProvider: any
@@ -12,9 +13,10 @@ export default class ListenerTimeoutRegistry {
   * been asked whether they want to provide a certain subscription, but have not yet
   * responded.
   */
-  constructor (topic: Topic, options: DeepstreamOptions) {
+  constructor (topic: Topic, config: DeepstreamConfig, services: DeepstreamServices) {
     this.topic = topic
-    this.options = options
+    this.config = config
+    this.services = services
     this.timeoutMap = {}
     this.timedoutProviders = {}
     this.acceptedProvider = {}
@@ -90,7 +92,7 @@ export default class ListenerTimeoutRegistry {
       }
       this.timedoutProviders[subscriptionName].push(provider)
       callback(subscriptionName)
-    }, this.options.listenResponseTimeout)
+    }, this.config.listenResponseTimeout)
     this.timeoutMap[subscriptionName] = timeoutId
   }
 

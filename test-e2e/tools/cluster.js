@@ -34,8 +34,8 @@ module.exports = class DeepstreamTest extends EventEmitter {
   }
 
   updatePermissions (type, done) {
-    this._server.options.permissionHandler.once('config-loaded', () => done())
-    this._server.options.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
+    this._server.services.permissionHandler.once('config-loaded', () => done())
+    this._server.services.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
   }
 
   start () {

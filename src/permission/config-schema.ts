@@ -1,12 +1,8 @@
-'use strict'
-
 /**
  * A basic schema for permission.json files that
  * the config validater uses
- *
- * @type {Object}
  */
-module.exports = {
+export default {
   record: {
     write: true,
     read: true,

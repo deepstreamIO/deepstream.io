@@ -4,7 +4,7 @@ import StateRegistry from './state-registry'
 export default class ClusterNode {
   public stateRegistries: Map<string, StateRegistry>
 
-  constructor (options: DeepstreamOptions, type: string) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, type: string) {
     this.stateRegistries = new Map()
   }
 

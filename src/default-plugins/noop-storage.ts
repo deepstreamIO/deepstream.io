@@ -3,9 +3,13 @@ import { EventEmitter } from 'events'
 export default class NoopStorage extends EventEmitter implements StoragePlugin {
   public description: string
   public isReady: boolean
-
-  constructor (options: any) {
+  
+  private config: DeepstreamConfig
+  private data: any
+  
+  constructor (config: DeepstreamConfig, services: DeepstreamServices) {
     super()
+    this.config = config
     this.isReady = true
     this.description = 'noop storage'
   }

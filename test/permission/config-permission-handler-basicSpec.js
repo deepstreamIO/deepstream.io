@@ -5,13 +5,13 @@
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
 const C = require('../../dist/src/constants')
 const testHelper = require('../test-helper/test-helper')
-const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler')
+const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler').default
 
 const options = testHelper.getDeepstreamPermissionOptions()
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return options.logger.log.calls.mostRecent().args[2]
+  return options.services.logger.log.calls.mostRecent().args[2]
 }
 
 describe('permission handler applies basic permissions to incoming messages', () => {
@@ -288,7 +288,7 @@ describe('loads permissions repeatedly', () => {
   let permissionHandler
 
   it('creates the permissionHandler', () => {
-    permissionHandler = new ConfigPermissionHandler(options, getBasePermissions())
+    permissionHandler = new ConfigPermissionHandler(options.config, options.services, getBasePermissions())
     permissionHandler.setRecordHandler({
       removeRecordRequest: () => {},
       runWhenRecordStable: (r, c) => { c(r) }

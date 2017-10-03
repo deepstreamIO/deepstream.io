@@ -44,9 +44,8 @@ let connectionEndpoint
 let authenticationHandlerMock
 let permissionHandler
 let options
-let mockDs = { options }
 
-describe('connection endpoint', () => {
+xdescribe('connection endpoint', () => {
   beforeEach((done) => {
     authenticationHandlerMock = new AuthenticationHandlerMock()
 
@@ -60,10 +59,8 @@ describe('connection endpoint', () => {
       heartbeatInterval: 4000
     }
 
-    mockDs = { options: options }
-
     connectionEndpoint = new ConnectionEndpoint(options, () => {})
-    const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')
+    const depInit = new DependencyInitialiser({ config: options.config, services: options.services }, options.config, options.services, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
       connectionEndpoint._unauthenticatedClientTimeout = 100
       connectionEndpoint.onMessages()

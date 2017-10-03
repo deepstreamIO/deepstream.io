@@ -9,6 +9,8 @@ const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
 const options = testHelper.getDeepstreamOptions()
+const config = options.config
+const services = options.services
 
 describe('the rpcHandler routes events correctly', () => {
   let testMocks
@@ -19,7 +21,7 @@ describe('the rpcHandler routes events correctly', () => {
 
   beforeEach(() => {
     testMocks = getTestMocks()
-    rpcHandler = new RpcHandler(options, testMocks.subscriptionRegistry)
+    rpcHandler = new RpcHandler(config, services, testMocks.subscriptionRegistry)
     requestor = testMocks.getSocketWrapper('requestor')
     provider = testMocks.getSocketWrapper('provider')
   })
@@ -184,7 +186,7 @@ describe('the rpcHandler routes events correctly', () => {
         .withExactArgs(requestMessage, C.EVENT.ACK_TIMEOUT)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
-      setTimeout(done, options.rpcAckTimeout * 2)
+      setTimeout(done, config.rpcAckTimeout * 2)
     })
 
     it('times out if response is not received in time', (done) => {
@@ -195,7 +197,7 @@ describe('the rpcHandler routes events correctly', () => {
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, ackMessage)
-      setTimeout(done, options.rpcTimeout + 2)
+      setTimeout(done, config.rpcTimeout + 2)
     })
 
     it('ignores ack message if it arrives after response', (done) => {

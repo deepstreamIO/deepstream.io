@@ -1,6 +1,4 @@
-'use strict'
-
-const rulesMap = require('./rules-map')
+import * as rulesMap from './rules-map'
 
 // TODO: any of these are fine inside a string or comment context...
 const FUNCTION_REGEXP = /([\w]+(?:['"`]\])?)\s*\(/g
@@ -25,15 +23,8 @@ const SUPPORTED_FUNCTIONS = [
  * Validates a rule. Makes sure that the rule is either a boolean or a string,
  * that it doesn't contain the new keyword or unsupported function invocations
  * and that it can be compiled into a javascript function
- *
- * @param   {String|Boolean} rule the rule as read from permissions.json
- * @param   {String} section record, event or rpc
- * @param   {String} type read, write, publish, subscribe etc...
- *
- * @public
- * @returns {Boolean} isValid
  */
-exports.validate = function (rule, section, type) {
+export const validate = (rule: string | boolean, section: ValveSection, type: RuleType): boolean | string => {
   if (typeof rule === 'boolean') {
     return true
   }
@@ -93,13 +84,8 @@ exports.validate = function (rule, section, type) {
  * They can take path variables: _($someId)
  * variables from data: _(data.someValue)
  * or strings: _('user/egon')
- *
- * @param   {[type]} rule      [description]
- * @param   {[type]} variables [description]
- *
- * @returns {[type]}
  */
-exports.parse = function (rule, variables) {
+export const parse = (rule: boolean | string, variables: any) => {
   if (rule === true || rule === false) {
     return {
       fn: rule === true ? function () { return true } : function () { return false },
@@ -107,7 +93,7 @@ exports.parse = function (rule, variables) {
       hasData: false
     }
   }
-  const ruleObj = {}
+  const ruleObj:any = {}
   const args = ['_', 'user', 'data', 'oldData', 'now', 'action'].concat(variables)
   args.push(`return ${rule};`)
 

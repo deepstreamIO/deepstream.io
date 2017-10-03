@@ -9,9 +9,10 @@ const C = require('../constants')
  * @param {Object} options deepstream options
  */
 module.exports = class MessageDistributor {
-  constructor (options) {
+  constructor (options, services) {
     this._callbacks = {}
     this._options = options
+    this._services = services
   }
 
   /**
@@ -60,7 +61,7 @@ module.exports = class MessageDistributor {
     }
 
     this._callbacks[topic] = callback
-    this._options.message.subscribe(
+    this._services.message.subscribe(
       topic,
       this._onMessageConnectorMessage.bind(this, callback)
     )

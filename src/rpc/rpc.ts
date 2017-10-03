@@ -13,7 +13,8 @@ export default class Rpc {
   private rpcHandler: RpcHandler
   private requestor: SimpleSocketWrapper
   private provider: SimpleSocketWrapper
-  private options: any
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private message: Message
   private correlationId: string
   private rpcName: string
@@ -23,13 +24,14 @@ export default class Rpc {
 
   /**
   */
-  constructor (rpcHandler: RpcHandler, requestor: SimpleSocketWrapper, provider: SimpleSocketWrapper, options: any, message: RPCMessage) {
+  constructor (rpcHandler: RpcHandler, requestor: SimpleSocketWrapper, provider: SimpleSocketWrapper, config: DeepstreamConfig, services: DeepstreamServices,  message: RPCMessage) {
     this.rpcHandler = rpcHandler
     this.rpcName = message.name
     this.correlationId = message.correlationId
     this.requestor = requestor
     this.provider = provider
-    this.options = options
+    this.config = config
+    this.services = services
     this.message = message
     this.isAcknowledged = false
 
@@ -89,8 +91,8 @@ export default class Rpc {
     clearTimeout(this.responseTimeout)
 
     this.provider = provider
-    this.ackTimeout = setTimeout(this.onAckTimeout.bind(this), this.options.rpcAckTimeout)
-    this.responseTimeout = setTimeout(this.onResponseTimeout.bind(this), this.options.rpcTimeout)
+    this.ackTimeout = setTimeout(this.onAckTimeout.bind(this), this.config.rpcAckTimeout)
+    this.responseTimeout = setTimeout(this.onResponseTimeout.bind(this), this.config.rpcTimeout)
     this.provider.sendMessage(this.message)
   }
 

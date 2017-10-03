@@ -9,7 +9,8 @@ import { shuffleArray } from '../utils/utils'
 export default class ListenerRegistry implements SubscriptionListener {
   private metaData: any
   private topic: string
-  private options: DeepstreamOptions
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private providerRegistry: SubscriptionRegistry
   private clientRegistry: SubscriptionRegistry
   private message: Cluster
@@ -43,18 +44,19 @@ export default class ListenerRegistry implements SubscriptionListener {
   * This class manages the matching of patterns and record names. The subscription /
   * notification logic is handled by this.providerRegistry
   */
-  constructor (topic: Topic, options: DeepstreamOptions, clientRegistry: SubscriptionRegistry, metaData: any) {
+  constructor (topic: Topic, config: DeepstreamConfig, services: DeepstreamServices, clientRegistry: SubscriptionRegistry, metaData: any) {
     this.metaData = metaData
     this.topic = topic
-    this.options = options
+    this.config = config
+    this.services = services
     this.clientRegistry = clientRegistry
     this.uniqueLockName = `${topic}_LISTEN_LOCK`
 
-    this.message = this.options.message
+    this.message = this.services.message
 
     this.patterns = {}
     this.localListenInProgress = {}
-    this.listenerTimeoutRegistry = new TimeoutRegistry(topic, options)
+    this.listenerTimeoutRegistry = new TimeoutRegistry(topic, config, services)
 
     this.locallyProvidedRecords = {}
 
@@ -71,7 +73,8 @@ export default class ListenerRegistry implements SubscriptionListener {
    */
   protected setupProviderRegistry (): void {
     this.providerRegistry = new SubscriptionRegistry(
-      this.options,
+      this.config,
+      this.services,
       this.topic,
       `${this.topic}_${TOPIC.LISTEN_PATTERNS}`
     )
@@ -156,7 +159,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * to move on and release its lock
   */
   private onIncomingMessage (message: ListenMessage): void {
-    // if (this.options.serverName !== message.data[0]) {
+    // if (this.config.serverName !== message.data[0]) {
     //   return
     // }
     // if (message.action === ACTIONS.LISTEN) {
@@ -331,17 +334,17 @@ export default class ListenerRegistry implements SubscriptionListener {
       return
     }
 
-    this.options.uniqueRegistry.get(this.getUniqueLockName(subscriptionName), (success) => {
+    this.services.uniqueRegistry.get(this.getUniqueLockName(subscriptionName), (success) => {
       if (!success) {
         return
       }
 
       if (this.hasActiveProvider(subscriptionName)) {
-        this.options.uniqueRegistry.release(this.getUniqueLockName(subscriptionName))
+        this.services.uniqueRegistry.release(this.getUniqueLockName(subscriptionName))
         return
       }
 
-      this.options.logger.debug(
+      this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
         this.metaData
@@ -362,17 +365,17 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.hasActiveProvider(subscriptionName) ||
       this.leadingListen[subscriptionName].length === 0
     ) {
-      this.options.logger.debug(
+      this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `finished for ${this.topic}:${subscriptionName}`,
         this.metaData
       )
 
       delete this.leadingListen[subscriptionName]
-      this.options.uniqueRegistry.release(this.getUniqueLockName(subscriptionName))
+      this.services.uniqueRegistry.release(this.getUniqueLockName(subscriptionName))
     } else {
       const nextServerName = this.leadingListen[subscriptionName].shift()
-      this.options.logger.debug(
+      this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
         this.metaData
@@ -391,7 +394,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     }
 
     if (localListenArray.length > 0) {
-      this.options.logger.debug(
+      this.services.logger.debug(
         EVENT.LOCAL_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
         this.metaData
@@ -407,7 +410,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   private stopLocalDiscoveryStage (subscriptionName: string): void {
     delete this.localListenInProgress[subscriptionName]
 
-    this.options.logger.debug(
+    this.services.logger.debug(
       EVENT.LOCAL_LISTEN,
       `stopped for ${this.topic}:${subscriptionName}`,
       this.metaData
@@ -419,7 +422,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.sendRemoteDiscoveryStop(this.leadListen[subscriptionName], subscriptionName)
       delete this.leadListen[subscriptionName]
     } else {
-      this.options.logger.warn(
+      this.services.logger.warn(
         EVENT.LOCAL_LISTEN,
         `nothing to stop for ${this.topic}:${subscriptionName}`,
         this.metaData
@@ -560,7 +563,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.message.sendDirect(serverName, this.messageTopic, {
       topic: this.messageTopic,
       action: ACTIONS.LISTEN,
-      data: [serverName, subscriptionName, this.options.serverName]
+      data: [serverName, subscriptionName, this.config.serverName]
     }, this.metaData)
   }
 
@@ -614,7 +617,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       const pattern = providerPatterns[i]
       let p = this.patterns[pattern]
       if (p == null) {
-        this.options.logger.warn('', `can't handle pattern ${pattern}`, this.metaData)
+        this.services.logger.warn('', `can't handle pattern ${pattern}`, this.metaData)
         this.addPattern(pattern)
         p = this.patterns[pattern]
       }
@@ -624,9 +627,9 @@ export default class ListenerRegistry implements SubscriptionListener {
     }
 
     const set = new Set(servers)
-    set.delete(this.options.serverName)
+    set.delete(this.config.serverName)
 
-    if (!this.options.shuffleListenProviders) {
+    if (!this.config.shuffleListenProviders) {
       return Array.from(set)
     }
     return shuffleArray(Array.from(set))
@@ -647,7 +650,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       }
     }
 
-    if (!this.options.shuffleListenProviders) {
+    if (!this.config.shuffleListenProviders) {
       return providers
     }
     return shuffleArray(providers)
@@ -661,7 +664,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       return new RegExp(message.name)
     } catch (e) {
       socketWrapper.sendError({ topic: this.topic }, EVENT.INVALID_MESSAGE_DATA, e.toString())
-      this.options.logger.error(EVENT.INVALID_MESSAGE_DATA, e.toString(), this.metaData)
+      this.services.logger.error(EVENT.INVALID_MESSAGE_DATA, e.toString(), this.metaData)
       return null
     }
   }

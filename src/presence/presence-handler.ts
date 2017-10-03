@@ -26,21 +26,23 @@ function parseUserNames (data: any): Array<string> | null {
  */
 export default class PresenceHandler {
   private metaData: any
-  private options: DeepstreamOptions
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private localClients: Map<string, number>
   private subscriptionRegistry: SubscriptionRegistry
   private connectedClients: StateRegistry
 
-  constructor (options: DeepstreamOptions, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, metaData?: any) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, metaData?: any) {
     this.metaData = metaData
-    this.options = options
+    this.config = config
+    this.services = services
     this.localClients = new Map()
 
     this.subscriptionRegistry =
-      subscriptionRegistry || new SubscriptionRegistry(options, TOPIC.PRESENCE)
+      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.PRESENCE)
 
     this.connectedClients =
-      stateRegistry || this.options.message.getStateRegistry(TOPIC.ONLINE_USERS)
+      stateRegistry || this.services.message.getStateRegistry(TOPIC.ONLINE_USERS)
     this.connectedClients.on('add', this.onClientAdded.bind(this))
     this.connectedClients.on('remove', this.onClientRemoved.bind(this))
   }
@@ -53,7 +55,7 @@ export default class PresenceHandler {
   handle (socketWrapper: SocketWrapper, message: PresenceMessage): void {
     const users = parseUserNames(message.data)
     if (!users) {
-      this.options.logger.error(EVENT.INVALID_PRESENCE_USERS, message.data, this.metaData)
+      this.services.logger.error(EVENT.INVALID_PRESENCE_USERS, message.data, this.metaData)
       socketWrapper.sendError(message, EVENT.INVALID_PRESENCE_USERS)
       return
     }
@@ -76,7 +78,7 @@ export default class PresenceHandler {
     } else if (message.action === ACTIONS.QUERY) {
       this.handleQuery(users, message.correlationId, socketWrapper)
     } else {
-      this.options.logger.warn(EVENT.UNKNOWN_ACTION, message.action, this.metaData)
+      this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action, this.metaData)
     }
   }
 
@@ -122,6 +124,7 @@ export default class PresenceHandler {
       socketWrapper.sendMessage({
         topic: TOPIC.PRESENCE,
         action: ACTIONS.QUERY,
+        name: ACTIONS.QUERY,
         parsedData: clients
       })
     } else {
@@ -133,6 +136,7 @@ export default class PresenceHandler {
       socketWrapper.sendMessage({
         topic: TOPIC.PRESENCE,
         action: ACTIONS.QUERY,
+        name: ACTIONS.QUERY,
         correlationId,
         parsedData: result
       })
@@ -147,7 +151,7 @@ export default class PresenceHandler {
     const message = { 
       topic: TOPIC.PRESENCE, 
       action: ACTIONS.PRESENCE_JOIN,
-      name: ACTIONS.PRESENCE_LEAVE, 
+      name: ACTIONS.PRESENCE_JOIN, 
       parsedData: username 
     }
 

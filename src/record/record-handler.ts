@@ -7,7 +7,8 @@ import recordRequest from './record-request'
 
 export default class RecordHandler {
   private metaData: any
-  private options: DeepstreamOptions
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
   private subscriptionRegistry: SubscriptionRegistry
   private listenerRegistry: ListenerRegistry
   private transitions: any
@@ -15,13 +16,14 @@ export default class RecordHandler {
 /**
  * The entry point for record related operations
  */
-  constructor (options: DeepstreamOptions, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, metaData?: any) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, metaData?: any) {
     this.metaData = metaData
-    this.options = options
+    this.config = config
+    this.services = services
     this.subscriptionRegistry =
-    subscriptionRegistry || new SubscriptionRegistry(options, TOPIC.RECORD)
+    subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RECORD)
     this.listenerRegistry =
-    listenerRegistry || new ListenerRegistry(TOPIC.RECORD, options, this.subscriptionRegistry, null)
+    listenerRegistry || new ListenerRegistry(TOPIC.RECORD, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
     this.transitions = {}
     this.recordRequestsInProgress = {}
@@ -97,7 +99,7 @@ export default class RecordHandler {
   /*
    * Default for invalid messages
    */
-      this.options.logger.warn(EVENT.UNKNOWN_ACTION, message.action, this.metaData)
+      this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action, this.metaData)
     }
   }
 
@@ -121,7 +123,8 @@ export default class RecordHandler {
 
     recordRequest(
       message.name,
-      this.options,
+      this.config,
+      this.services,
       socketWrapper,
       onComplete,
       onError,
@@ -147,7 +150,8 @@ export default class RecordHandler {
 
     recordRequest(
       message.name,
-      this.options,
+      this.config,
+      this.services,
       socketWrapper,
       onComplete,
       onError,
@@ -178,7 +182,8 @@ export default class RecordHandler {
 
     recordRequest(
       message.name,
-      this.options,
+      this.config,
+      this.services,
       socketWrapper,
       onComplete,
       onError,
@@ -208,7 +213,8 @@ export default class RecordHandler {
 
     recordRequest(
       message.name,
-      this.options,
+      this.config,
+      this.services,
       socketWrapper,
       onComplete,
       () => {},
@@ -234,8 +240,8 @@ export default class RecordHandler {
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage
-    for (let i = 0; i < this.options.storageHotPathPatterns.length; i++) {
-      const pattern = this.options.storageHotPathPatterns[i]
+    for (let i = 0; i < this.config.storageHotPathPatterns.length; i++) {
+      const pattern = this.config.storageHotPathPatterns[i]
       if (recordName.indexOf(pattern) !== -1 && !isPatch) {
         this.permissionAction(ACTIONS.CREATE, recordName, socketWrapper, () => {
           this.permissionAction(ACTIONS.UPDATE, recordName, socketWrapper, () => {
@@ -278,7 +284,7 @@ export default class RecordHandler {
     let cacheResponse = false
     let storageResponse = false
     let writeError
-    this.options.storage.set(recordName, record, (error) => {
+    this.services.storage.set(recordName, record, (error) => {
       if (writeAck) {
         storageResponse = true
         writeError = writeError || error || null
@@ -288,7 +294,7 @@ export default class RecordHandler {
       }
     }, this.metaData)
 
-    this.options.cache.set(recordName, record, (error) => {
+    this.services.cache.set(recordName, record, (error) => {
       if (!error) {
         this.broadcastUpdate(recordName, message, false, socketWrapper)
       }
@@ -327,9 +333,9 @@ export default class RecordHandler {
     const record = { _v: 0, _d: {} }
 
     // store the records data in the cache and wait for the result
-    this.options.cache.set(recordName, record, (error) => {
+    this.services.cache.set(recordName, record, (error) => {
       if (error) {
-        this.options.logger.error(EVENT.RECORD_CREATE_ERROR, recordName, this.metaData)
+        this.services.logger.error(EVENT.RECORD_CREATE_ERROR, recordName, this.metaData)
         socketWrapper.sendError(message,EVENT.RECORD_CREATE_ERROR)
       } else if (callback) {
         callback(recordName, socketWrapper)
@@ -338,11 +344,11 @@ export default class RecordHandler {
       }
     }, this.metaData)
 
-    if (!this.options.storageExclusion || !this.options.storageExclusion.test(recordName)) {
+    if (!this.config.storageExclusion || !this.config.storageExclusion.test(recordName)) {
     // store the record data in the persistant storage independently and don't wait for the result
-      this.options.storage.set(recordName, record, (error) => {
+      this.services.storage.set(recordName, record, (error) => {
         if (error) {
-          this.options.logger.error(EVENT.RECORD_CREATE_ERROR, `storage:${error}`, this.metaData)
+          this.services.logger.error(EVENT.RECORD_CREATE_ERROR, `storage:${error}`, this.metaData)
         }
       }, this.metaData)
     }
@@ -383,7 +389,7 @@ export default class RecordHandler {
     }
 
     if (!transition) {
-      transition = new RecordTransition(recordName, this.options, this, this.metaData)
+      transition = new RecordTransition(recordName, this.config, this.services, this, this.metaData)
       this.transitions[recordName] = transition
     }
 
@@ -458,7 +464,7 @@ export default class RecordHandler {
     }
 
   // eslint-disable-next-line
-  new RecordDeletion(this.options, socketWrapper, message, this.onDeleted.bind(this), this.metaData)
+  new RecordDeletion(this.config, this.services, socketWrapper, message, this.onDeleted.bind(this), this.metaData)
   }
 
 /**
@@ -501,7 +507,7 @@ export default class RecordHandler {
       name: recordName
     }
 
-    this.options.permissionHandler.canPerformAction(
+    this.services.permissionHandler.canPerformAction(
       socketWrapper.user,
       message,
       onPermissionResponse.bind(this, socketWrapper, message, successCallback),
@@ -519,7 +525,7 @@ function onPermissionResponse (
   socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, error: Error, canPerformAction: boolean
 ):void {
   if (error !== null) {
-    this.options.logger.error(EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
+    this.services.logger.error(EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
     socketWrapper.sendError(message, EVENT.MESSAGE_PERMISSION_ERROR)
   } else if (canPerformAction !== true) {
     socketWrapper.sendError(message, EVENT.MESSAGE_DENIED)

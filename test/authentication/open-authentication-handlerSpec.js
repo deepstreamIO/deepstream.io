@@ -1,7 +1,7 @@
 /* global jasmine, describe, it, expect */
 'use strict'
 
-const AuthenticationHandler = require('../../dist/src/authentication/open-authentication-handler')
+const AuthenticationHandler = require('../../dist/src/authentication/open-authentication-handler').default
 
 describe('open authentication handler', () => {
   let authenticationHandler
@@ -9,7 +9,7 @@ describe('open authentication handler', () => {
   it('creates the handler', () => {
     authenticationHandler = new AuthenticationHandler()
     expect(typeof authenticationHandler.isValidUser).toBe('function')
-    expect(authenticationHandler.type).toBe('none')
+    expect(authenticationHandler.description).toBe('none')
   })
 
   it('permissions users without auth data', () => {

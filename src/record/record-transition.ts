@@ -44,7 +44,8 @@ export default class RecordTransition {
  
  private metaData: any
  private name: string
- private options: DeepstreamOptions
+ private config: DeepstreamConfig
+ private services: DeepstreamServices
  private recordHandler: RecordHandler
  private steps: Array<Step>
  private record: StorageRecord
@@ -59,10 +60,11 @@ export default class RecordTransition {
  private lastError: string
  private writeError: string
 
-  constructor (name, options, recordHandler, metaData) {
+  constructor (name: string, config: DeepstreamConfig, services: DeepstreamServices, recordHandler: RecordHandler, metaData) {
     this.metaData = metaData
     this.name = name
-    this.options = options
+    this.config = config
+    this.services = services
     this.recordHandler = recordHandler
     this.steps = []
     
@@ -109,7 +111,7 @@ export default class RecordTransition {
         isWriteAck: step.message.isWriteAck
       }, EVENT.VERSION_EXISTS)
 
-      this.options.logger.warn(
+      this.services.logger.warn(
         EVENT.VERSION_EXISTS,
         `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.record._v}`,
         this.metaData
@@ -163,7 +165,8 @@ export default class RecordTransition {
       this.recordRequest = true
       recordRequest(
         this.name,
-        this.options,
+        this.config,
+        this.services,
         socketWrapper,
         record => this.onRecord(record, upsert),
         this.onFatalError,
@@ -296,16 +299,16 @@ export default class RecordTransition {
    * If the storage response is asynchronous and write acknowledgement is enabled, the transition
    * will not be destroyed until writing to storage is finished
    */
-    if (!this.options.storageExclusion || !this.options.storageExclusion.test(this.name)) {
+    if (!this.config.storageExclusion || !this.config.storageExclusion.test(this.name)) {
       this.storageResponses++
-      this.options.storage.set(
+      this.services.storage.set(
       this.name,
       this.record,
       this.onStorageResponse,
       this.metaData
     )
     }
-    this.options.cache.set(
+    this.services.cache.set(
       this.name,
       this.record,
       this.onCacheResponse,
@@ -395,7 +398,7 @@ export default class RecordTransition {
     /* istanbul ignore next */
       return
     }
-    this.options.logger.error(EVENT.RECORD_UPDATE_ERROR, errorMessage, this.metaData)
+    this.services.logger.error(EVENT.RECORD_UPDATE_ERROR, errorMessage, this.metaData)
 
     for (let i = 0; i < this.steps.length; i++) {
       if (this.steps[i].sender.isRemote) {

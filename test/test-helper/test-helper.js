@@ -59,16 +59,23 @@ const LoggerMock = require('../test-mocks/logger-mock')
 const StorageMock = require('../test-mocks/storage-mock')
 
 exports.getDeepstreamOptions = function (serverName) {
-  const options = {
+  const config = {
     serverName: serverName || 'server-name-a',
     stateReconciliationTimeout: 50,
     cacheRetrievalTimeout: 30,
     storageRetrievalTimeout: 50,
-    logger: new LoggerMock(),
     storageExclusion: new RegExp('no-storage'),
+    storageHotPathPatterns: []
+  }
+  const services = {
+    logger: new LoggerMock(),
     cache: new StorageMock(),
     storage: new StorageMock(),
-    storageHotPathPatterns: [],
+    message: new MessageConnectorMock(config),
+    uniqueRegistry: {
+      get (name, cb) { cb(true) },
+      release () {}
+    },
     permissionHandler: {
       nextResult: true,
       nextError: null,
@@ -79,18 +86,12 @@ exports.getDeepstreamOptions = function (serverName) {
       }
     }
   }
-  options.message = new MessageConnectorMock(options)
-  options.uniqueRegistry = {
-    get (name, cb) { cb(true) },
-    release () {}
-  }
-  return options
+  return { config, services }
 }
 
 exports.getDeepstreamPermissionOptions = function () {
   let options = exports.getDeepstreamOptions()
-  options = Object.assign(options, {
-    logger: new LoggerMock(),
+  options.config = Object.assign(options.config, {
     cacheRetrievalTimeout: 500,
     permission: {
       options: {
@@ -99,14 +100,14 @@ exports.getDeepstreamPermissionOptions = function () {
       }
     }
   })
-  return options
+  return { config: options.config, services: options.services }
 }
 
-const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler')
+const ConfigPermissionHandler = require('../../dist/src/permission/config-permission-handler').default
 
 exports.testPermission = function (options) {
   return function (permissions, message, username, userdata, callback) {
-    const permissionHandler = new ConfigPermissionHandler(options, permissions)
+    const permissionHandler = new ConfigPermissionHandler(options.config, options.services, permissions)
     permissionHandler.setRecordHandler({
       removeRecordRequest: () => {},
       runWhenRecordStable: (r, c) => { c(r) }

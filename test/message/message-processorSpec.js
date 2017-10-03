@@ -28,7 +28,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
     permissionHandlerMock  = new PermissionHandlerMock()
     const loggerMock = new LoggerMock()
     log = loggerMock.log
-    messageProcessor = new MessageProcessor({
+    messageProcessor = new MessageProcessor({}, {
       permissionHandler: permissionHandlerMock,
       logger: loggerMock
     })

@@ -5,7 +5,7 @@ import { LOG_LEVEL } from '../constants'
 
 const EOL = require('os').EOL
 
-export default class StdOutLogger extends EventEmitter implements Plugin {
+export default class StdOutLogger extends EventEmitter implements Logger {
   public description: string
   public isReady: boolean
 

@@ -18,7 +18,7 @@ describe('message connector distributes messages to callbacks', () => {
     client = testMocks.getSocketWrapper()
     testCallback = jasmine.createSpy()
 
-    messageDistributor = new MessageDistributor(options)
+    messageDistributor = new MessageDistributor(options.config, options.services)
   })
 
   afterEach(() => {
@@ -26,11 +26,11 @@ describe('message connector distributes messages to callbacks', () => {
   })
 
   it('makes remote connection', () => {
-    expect(options.message.lastSubscribedTopic).toBe(null)
+    expect(options.services.message.lastSubscribedTopic).toBe(null)
 
     messageDistributor.registerForTopic('someTopic', testCallback)
 
-    expect(options.message.lastSubscribedTopic).toBe('someTopic')
+    expect(options.services.message.lastSubscribedTopic).toBe('someTopic')
   })
 
   it('makes local connection', () => {
@@ -44,7 +44,7 @@ describe('message connector distributes messages to callbacks', () => {
   it('routes messages from the message connector', () => {
     messageDistributor.registerForTopic('topicB', testCallback)
 
-    options.message.simulateIncomingMessage('topicB', { topic: 'topicB' })
+    options.services.message.simulateIncomingMessage('topicB', { topic: 'topicB' })
 
     expect(testCallback.calls.count()).toEqual(1)
   })

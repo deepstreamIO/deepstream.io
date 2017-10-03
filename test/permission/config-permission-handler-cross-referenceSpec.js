@@ -11,17 +11,17 @@ const options = testHelper.getDeepstreamPermissionOptions()
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return options.logger.log.calls.mostRecent().args[2]
+  return options.services.logger.log.calls.mostRecent().args[2]
 }
 
 describe('permission handler loads data for cross referencing', () => {
   beforeAll((next) => {
-    options.cache.set('item/doesExist', { isInStock: true }, next)
+    options.services.cache.set('item/doesExist', { isInStock: true }, next)
   })
 
   it('retrieves an existing record from a synchronous cache', (next) => {
     const permissions = getBasePermissions()
-    options.cache.nextGetWillBeSynchronous = true
+    options.services.cache.nextGetWillBeSynchronous = true
 
     permissions.record['purchase/$itemId'] = {
       read: '_("item/" + $itemId).isInStock === true'
@@ -36,7 +36,7 @@ describe('permission handler loads data for cross referencing', () => {
     const onDone = function (error, result) {
       expect(error).toBe(null)
       expect(result).toBe(true)
-      expect(options.cache.lastRequestedKey).toBe('item/doesExist')
+      expect(options.services.cache.lastRequestedKey).toBe('item/doesExist')
       next()
     }
 
@@ -46,10 +46,10 @@ describe('permission handler loads data for cross referencing', () => {
   it('retrieves two records from the cache for crossreferencing purposes', (next) => {
     const permissions = getBasePermissions()
 
-    options.cache.set('item/itemA', { isInStock: true }, noop)
-    options.cache.set('item/itemB', { isInStock: false }, noop)
+    options.services.cache.set('item/itemA', { isInStock: true }, noop)
+    options.services.cache.set('item/itemB', { isInStock: false }, noop)
 
-    options.cache.nextGetWillBeSynchronous = false
+    options.services.cache.nextGetWillBeSynchronous = false
     permissions.record['purchase/$itemId'] = {
       read: '_("item/" + $itemId).isInStock === true && _("item/itemB").isInStock === false'
     }
@@ -72,7 +72,7 @@ describe('permission handler loads data for cross referencing', () => {
   it('retrieves and expects a non existing record', (next) => {
     const permissions = getBasePermissions()
 
-    options.cache.nextGetWillBeSynchronous = false
+    options.services.cache.nextGetWillBeSynchronous = false
     permissions.record['purchase/$itemId'] = {
       read: '_("doesNotExist") !== null && _("doesNotExist").isInStock === true'
     }
@@ -95,7 +95,7 @@ describe('permission handler loads data for cross referencing', () => {
   it('gets a non existant record thats not expected', (next) => {
     const permissions = getBasePermissions()
 
-    options.cache.nextGetWillBeSynchronous = false
+    options.services.cache.nextGetWillBeSynchronous = false
     permissions.record['purchase/$itemId'] = {
       read: '_("doesNotExist").isInStock === true'
     }
@@ -117,10 +117,10 @@ describe('permission handler loads data for cross referencing', () => {
 
   it('mixes old data and cross references', (next) => {
     const permissions = getBasePermissions()
-    options.cache.reset()
-    options.cache.set('userA', { firstname: 'Egon' }, noop)
-    options.cache.set('userB', { firstname: 'Mike' }, noop)
-    options.cache.nextGetWillBeSynchronous = false
+    options.services.cache.reset()
+    options.services.cache.set('userA', { firstname: 'Egon' }, noop)
+    options.services.cache.set('userB', { firstname: 'Mike' }, noop)
+    options.services.cache.nextGetWillBeSynchronous = false
     permissions.record.userA = {
       read: 'oldData.firstname === "Egon" && _("userB").firstname === "Mike"'
     }
@@ -134,9 +134,9 @@ describe('permission handler loads data for cross referencing', () => {
     const onDone = function (error, result) {
       expect(error).toBe(null)
       expect(result).toBe(true)
-      expect(options.cache.getCalls.length).toBe(2)
-      expect(options.cache.hadGetFor('userA')).toBe(true)
-      expect(options.cache.hadGetFor('userB')).toBe(true)
+      expect(options.services.cache.getCalls.length).toBe(2)
+      expect(options.services.cache.hadGetFor('userA')).toBe(true)
+      expect(options.services.cache.hadGetFor('userB')).toBe(true)
       setTimeout(next, 200)
     }
 
@@ -146,7 +146,7 @@ describe('permission handler loads data for cross referencing', () => {
   it('retrieves keys from variables', (next) => {
     const permissions = getBasePermissions()
 
-    options.cache.set('userX', { firstname: 'Joe' }, noop)
+    options.services.cache.set('userX', { firstname: 'Joe' }, noop)
 
     permissions.event['some-event'] = {
       publish: '_(data.owner).firstname === "Joe"'
@@ -172,7 +172,7 @@ describe('permission handler loads data for cross referencing', () => {
   it('retrieves keys from variables again', (next) => {
     const permissions = getBasePermissions()
 
-    options.cache.set('userX', { firstname: 'Mike' }, noop)
+    options.services.cache.set('userX', { firstname: 'Mike' }, noop)
 
     permissions.event['some-event'] = {
       publish: '_(data.owner).firstname === "Joe"'
@@ -201,7 +201,7 @@ describe('permission handler loads data for cross referencing', () => {
     permissions.event['some-event'] = {
       publish: '_("bla") < 10'
     }
-    options.cache.nextOperationWillBeSuccessful = false
+    options.services.cache.nextOperationWillBeSuccessful = false
 
     const message = {
       topic: C.TOPIC.EVENT,

@@ -1,22 +1,15 @@
-'use strict'
+import * as pathParser from './path-parser'
+import * as ruleParser from './rule-parser'
+import SCHEMA from './config-schema'
 
-const pathParser = require('./path-parser')
-const ruleParser = require('./rule-parser')
-const SCHEMA = require('./config-schema')
-
-const validationSteps = {}
+const validationSteps: any = {}
 
 /**
  * Validates a configuration object. This method runs through multiple
  * individual validation steps. If any of them returns false,
  * the validation fails
- *
- * @param   {Object} config parsed permission config
- *
- * @public
- * @returns {Boolean|String} validationResult Only true is treated as pass.
  */
-exports.validate = function (config) {
+export const validate = function (config) {
   let validationStepResult
   let key
 
@@ -33,11 +26,6 @@ exports.validate = function (config) {
 
 /**
  * Checks if the configuration is an object
- *
- * @param   {Object} config parsed permission config
- *
- * @private
- * @returns {Boolean}
  */
 validationSteps.isValidType = function (config) {
   if (typeof config === 'object') {
@@ -49,11 +37,6 @@ validationSteps.isValidType = function (config) {
 
 /**
  * Makes sure all sections (record, event, rpc) are present
- *
- * @param   {Object} config parsed permission config
- *
- * @private
- * @returns {Boolean}
  */
 validationSteps.hasRequiredTopLevelKeys = function (config) {
   for (const key in SCHEMA) {
@@ -67,11 +50,6 @@ validationSteps.hasRequiredTopLevelKeys = function (config) {
 
 /**
  * Makes sure no unsupported sections were added
- *
- * @param   {Object} config parsed permission config
- *
- * @private
- * @returns {Boolean}
  */
 validationSteps.doesNotHaveAdditionalTopLevelKeys = function (config) {
   for (const key in config) {
@@ -85,11 +63,6 @@ validationSteps.doesNotHaveAdditionalTopLevelKeys = function (config) {
 
 /**
  * Checks if the configuration contains valid path definitions
- *
- * @param   {Object} config parsed permission config
- *
- * @private
- * @returns {Boolean}
  */
 validationSteps.doesOnlyContainValidPaths = function (config) {
   let key
@@ -137,11 +110,6 @@ validationSteps.doesHaveRootEntries = function (config) {
 
 /**
  * Runs the rule validator against every rule in each section
- *
- * @param   {Object} config parsed permission config
- *
- * @private
- * @returns {Boolean}
  */
 validationSteps.hasValidRules = function (config) {
   let path

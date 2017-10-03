@@ -10,6 +10,8 @@ const getTestMocks = require('../test-helper/test-mocks')
 const SubscriptionRegistry = require('../../dist/src/utils/subscription-registry').default
 
 const options = testHelper.getDeepstreamOptions()
+const services = options.services
+const config = options.config
 
 const subscriptionListener = {
   onSubscriptionMade: () => {},
@@ -32,7 +34,7 @@ describe('subscription registry', () => {
     testMocks = getTestMocks()
 
     subscriptionListenerMock = sinon.mock(subscriptionListener)
-    subscriptionRegistry = new SubscriptionRegistry(options, C.TOPIC.EVENT)
+    subscriptionRegistry = new SubscriptionRegistry(config, services, C.TOPIC.EVENT)
     subscriptionRegistry.setSubscriptionListener(subscriptionListener)
 
     clientA = testMocks.getSocketWrapper('client a')
@@ -93,7 +95,7 @@ describe('subscription registry', () => {
 
       subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
       subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
-      expect(options.logger.lastLogEvent).toBe('MULTIPLE_SUBSCRIPTIONS')
+      expect(services.logger.lastLogEvent).toBe('MULTIPLE_SUBSCRIPTIONS')
     })
 
     it('returns the subscribed socket', () => {
@@ -217,7 +219,7 @@ describe('subscription registry', () => {
         action: 'too-aware',
         name: 'someName'
       }, clientA.socketWrapper)
-      expect(options.logger.lastLogEvent).toBe('too-aware')
+      expect(services.logger.lastLogEvent).toBe('too-aware')
     })
 
     it('unsubscribes', () => {

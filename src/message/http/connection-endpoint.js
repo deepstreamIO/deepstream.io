@@ -27,13 +27,13 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {Void}
    */
   setDeepstream (deepstream) {
-    this._logger = deepstream.options.logger
-    this._authenticationHandler = deepstream.options.authenticationHandler
+    this._logger = deepstream.services.logger
+    this._authenticationHandler = deepstream.services.authenticationHandler
     this._messageDistributor = deepstream.messageDistributor
-    this._permissionHandler = deepstream.options.permissionHandler
-    this._dsOptions = deepstream.options
+    this._permissionHandler = deepstream.services.permissionHandler
+    this._dsOptions = deepstream.config
     const jifHandlerOptions = {
-      logger: deepstream.options.logger,
+      logger: deepstream.services.logger,
       constants: deepstream.constants
     }
     this._jifHandler = new JIFHandler(jifHandlerOptions)
