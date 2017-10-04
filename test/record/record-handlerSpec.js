@@ -200,14 +200,13 @@ describe('record handler handles messages', () => {
   })
 
   xit('patches a record', () => {
-    services.cache.set('some-record', recordData, () => {})
+    services.cache.set('some-record', M.recordData, () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
       .once()
-      .withExactArgs(recordPatch)
+      .withExactArgs(M.recordPatch)
 
-    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
     recordHandler.handle(client.socketWrapper, M.recordPatch)
 
     services.cache.get('some-record', (error, record) => {
@@ -230,15 +229,22 @@ describe('record handler handles messages', () => {
     })
   })
 
-  xit('rejects updates for existing versions', () => {
+  it('rejects updates for existing versions', () => {
+    services.cache.set(M.recordUpdate.name, M.recordData, () => {})
+    const ExistingVersion = Object.assign({}, M.recordUpdate, { version: M.recordData._v })
+
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .never()
+
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.recordUpdate, C.EVENT.VERSION_EXISTS)
+      .withExactArgs(ExistingVersion, C.EVENT.VERSION_EXISTS)
 
-    recordHandler.handle(client.socketWrapper, M.recordUpdate)
+    recordHandler.handle(client.socketWrapper, ExistingVersion)
 
-    expect(options.logger.lastLogMessage).toBe('someUser tried to update record existingRecord to version 5 but it already was 5')
+    expect(services.logger.lastLogMessage).toBe('someUser tried to update record some-record to version 5 but it already was 5')
   })
 
   describe('subscription registry', () => {
@@ -252,22 +258,24 @@ describe('record handler handles messages', () => {
     })
   })
 
-  xit('updates a record via same client to the same version', (done) => {
+  it('updates a record via same client to the same version', (done) => {
     options.cacheRetrievalTimeout = 50
     services.cache.nextGetWillBeSynchronous = false
-    services.cache.set(recordUpdate.name, recordData, () => {})
+    services.cache.set(M.recordUpdate.name, M.recordData, () => {})
 
     client.socketWrapperMock
       .expects('sendError')
       .twice()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        version: recordData._v,
-        parsedData: recordData._d,
-        name: recordUpdate.name,
+        action: C.ACTIONS.UPDATE,
+        version: M.recordData._v,
+        parsedData: M.recordData._d,
+        name: M.recordUpdate.name,
         isWriteAck: false
       }, C.EVENT.VERSION_EXISTS)
 
+    recordHandler.handle(client.socketWrapper, M.recordUpdate)
     recordHandler.handle(client.socketWrapper, M.recordUpdate)
     recordHandler.handle(client.socketWrapper, M.recordUpdate)
 
@@ -306,43 +314,42 @@ describe('record handler handles messages', () => {
     })
   })
 
-  xit('updates a record with a -1 version number', () => {
-    const data = Object.assign({}, recordData)
+  it('updates a record with a -1 version number', () => {
+    const data = Object.assign({}, M.recordData)
     services.cache.set(M.recordUpdate.name, data, () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
       .once()
-      .withExactArgs(data.name, Object.assign({}, data, { _v: 6 }), false, client.socketWrapper)
+      .withExactArgs(M.recordUpdate.name, Object.assign({}, M.recordUpdate, { version: 6 }), false, client.socketWrapper)
 
-    recordHandler.handle(client.socketWrapper, Object.assign({}, data, { version: -1 }))
+    recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: -1 }))
 
     services.cache.get(M.recordUpdate.name, (error, record) => {
-      record._v = 6
+      data._v = 6
       expect(record).toEqual(data)
     })
   })
 
-  xit('updates multiple updates with an -1 version number', () => {
-    const data = Object.assign({}, recordData)
-    services.cache.set(data.name, data, () => {})
+  it('updates multiple updates with an -1 version number', () => {
+    const data = Object.assign({}, M.recordData)
+    services.cache.set(M.recordUpdate.name, data, () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
       .once()
-      .withExactArgs(data.name, Object.assign({}, data, { _v: 6 }), false, client.socketWrapper)
+      .withExactArgs(M.recordUpdate.name, Object.assign({}, M.recordUpdate, { version: 6 }), false, client.socketWrapper)
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
       .once()
-      .withExactArgs(data.name, Object.assign({}, data, { _v: 7 }), false, client.socketWrapper)
+      .withExactArgs(M.recordUpdate.name, Object.assign({}, M.recordUpdate, { version: 7 }), false, client.socketWrapper)
 
+    recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: -1 }))
+    recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: -1 }))
 
-    recordHandler.handle(client.socketWrapper, Object.assign({}, data, { version: -1 }))
-    recordHandler.handle(client.socketWrapper, Object.assign({}, data, { version: -1 }))
-
-    services.cache.get(data.name, (error, record) => {
-      record._v = 7
+    services.cache.get(M.recordUpdate.name, (error, record) => {
+      data._v = 7
       expect(record).toEqual(data)
     })
   })

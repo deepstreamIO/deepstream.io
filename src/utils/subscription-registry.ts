@@ -123,13 +123,8 @@ export default class SubscriptionRegistry {
   * custom events and ack messages back.
   * For example, when using the ACTIONS.LISTEN, you would override SUBSCRIBE with
   * ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
-  *
-  * @param {string} name The name of the the variable to override. This can be either
-  * MULTIPLE_SUBSCRIPTIONS, SUBSCRIBE, UNSUBSCRIBE, NOT_SUBSCRIBED
-  *
-  * @param {string} value The value to override with.
   */
-  public setAction (name, value): void {
+  public setAction (name: string, value: string): void {
     this.constants[name.toUpperCase()] = value
   }
 
@@ -212,12 +207,6 @@ export default class SubscriptionRegistry {
 
     this.addSocket(subscription, socket)
 
-    this.clusterSubscriptions.add(name)
-
-    if (this.subscriptionListener) {
-      this.subscriptionListener.onSubscriptionMade(name, socket)
-    }
-
     const logMsg = `for ${this.topic}:${name} by ${socket.user}`
     this.services.logger.debug(this.constants.SUBSCRIBE, logMsg)
     socket.sendAckMessage(message)
@@ -239,7 +228,6 @@ export default class SubscriptionRegistry {
       return
     }
 
-    this.clusterSubscriptions.remove(name)
     this.removeSocket(subscription, socket)
 
     if (!silent) {
@@ -283,6 +271,12 @@ export default class SubscriptionRegistry {
       socket.once('close', this.onSocketClose)
     }
     subscriptions.add(subscription)
+  
+    this.clusterSubscriptions.add(subscription.name)
+
+    if (this.subscriptionListener) {
+      this.subscriptionListener.onSubscriptionMade(subscription.name, socket)
+    }
   }
 
   private removeSocket (subscription, socket): void {
@@ -298,8 +292,9 @@ export default class SubscriptionRegistry {
     }
 
     if (this.subscriptionListener) {
-      this.subscriptionListener.onSubscriptionRemoved(subscription, socket)
+      this.subscriptionListener.onSubscriptionRemoved(subscription.name, socket)
     }
+    this.clusterSubscriptions.remove(subscription.name)
 
     const subscriptions = this.sockets.get(socket)
     if (subscriptions) {

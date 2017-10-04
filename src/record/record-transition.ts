@@ -108,6 +108,7 @@ export default class RecordTransition {
     if (this.record) {
       socketWrapper.sendError({
         topic: TOPIC.RECORD,
+        action: step.message.action,
         name: this.name,
         version: this.record._v,
         parsedData: this.record._d,
