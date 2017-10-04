@@ -336,8 +336,6 @@ module.exports = class SubscriptionRegistry {
       }
       return
     }
-
-    this._clusterSubscriptions.remove(name)
     this._removeSocket(subscription, socket)
 
     if (!silent) {
@@ -411,9 +409,9 @@ module.exports = class SubscriptionRegistry {
     }
 
     if (this._subscriptionListener) {
-      this._subscriptionListener.onSubscriptionRemoved(subscription, socket)
+      this._subscriptionListener.onSubscriptionRemoved(subscription.name, socket)
     }
-
+    this._clusterSubscriptions.remove(subscription.name)
     const subscriptions = this._sockets.get(socket)
     subscriptions.delete(subscription)
   }
