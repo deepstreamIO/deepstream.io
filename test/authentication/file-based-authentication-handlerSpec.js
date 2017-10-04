@@ -39,7 +39,7 @@ describe('does authentication for cleartext passwords', () => {
   it('creates the authentication handler', (done) => {
     authenticationHandler = new AuthenticationHandler(settings)
     authenticationHandler.on('ready', done)
-    expect(authenticationHandler.type).toBe('file using ./test/test-configs/users-unhashed.json')
+    expect(authenticationHandler.description).toBe('file using ./test/test-configs/users-unhashed.json')
   })
 
   it('confirms userC with valid password', (done) => {

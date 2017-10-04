@@ -12,7 +12,8 @@ const RecordTransition = require('../../src/record/record-transition').default
 const sinon = require('sinon')
 
 xdescribe('record write acknowledgement', () => {
-  let options
+  let config
+  let services
   let socketWrapper
   let recordTransition
   let testMocks
@@ -22,9 +23,11 @@ xdescribe('record write acknowledgement', () => {
     testMocks = getTestMocks()
     client = testMocks.getSocketWrapper()
 
-    options = testHelper.getDeepstreamOptions()
+    const options = testHelper.getDeepstreamOptions()
+    config = options.config
+    services = options.services
 
-    recordTransition = new RecordTransition(M.recordUpdate.name, options, testMocks.recordHandler)
+    recordTransition = new RecordTransition(M.recordUpdate.name, config, services, testMocks.recordHandler)
   })
 
   afterEach(() => {
@@ -41,16 +44,16 @@ xdescribe('record write acknowledgement', () => {
       .once()
       .withExactArgs(M.writeAck, true)
 
-    recordTransition.add(client.socketWrapper, M.recordUpdate, true)
+    recordTransition.add(client.socketWrapper, M.recordUpdateWithAck, true)
   })
 
   it('sends write failure to socket', () => {
-    options.storage.nextOperationWillBeSuccessful = false
+    services.storage.nextOperationWillBeSuccessful = false
 
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(recordUpdate, C.EVENT.RECORD_UPDATE_ERROR)
+      .withExactArgs(M.recordUpdate, C.EVENT.RECORD_UPDATE_ERROR)
 
     client.socketWrapperMock
       .expects('sendMessage')
@@ -58,7 +61,7 @@ xdescribe('record write acknowledgement', () => {
       .withExactArgs({})
 
     // expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WA|recordName|[1]|SstorageError+'))
-    recordTransition.add(client.socketWrapper, recordUpdate, true)
+    recordTransition.add(client.socketWrapper, M.recordUpdate, true)
   })
 
   it('returns hasVersion for 1,2 and 3', () => {
@@ -77,7 +80,7 @@ xdescribe('record write acknowledgement', () => {
   it('multiple write acknowledgements', () => {
       // processes the next step in the queue
     const check = setInterval(() => {
-      if (options.cache.completedSetOperations === 2) {
+      if (services.storage.completedSetOperations === 2) {
         expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper2)
         expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
         expect(recordTransition._record).toEqual({ _v: 3, _d: { firstname: 'Lana', lastname: 'Kowalski' } })
@@ -87,13 +90,13 @@ xdescribe('record write acknowledgement', () => {
     }, 1)
 
     // processes the final step in the queue
-    if (options.cache.completedSetOperations === 3) {
+    if (services.storage.completedSetOperations === 3) {
       expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage3, false, socketWrapper)
       expect(recordHandlerMock._$transitionComplete).toHaveBeenCalled()
     }
 
     // stored each transition in storage
-    // options.storage.completedSetOperations === 3
+    // services.storage.completedSetOperations === 3
 
     // sent write acknowledgement to each client
     expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WA|recordName|[1,3]|L+'))
@@ -101,7 +104,7 @@ xdescribe('record write acknowledgement', () => {
   })
 
   it('transition version conflicts gets a version exist error on record retrieval', () => {
-  //   options.cache.nextOperationWillBeSynchronous = false
+  //   services.storage.nextOperationWillBeSynchronous = false
   //   recordTransition.add(socketWrapper, 2, updateMessage)
     expect(socketWrapper.socket.lastSendMessage).toBeNull()
     recordRequestMockCallback({ _v: 1, _d: { lastname: 'Kowalski' } })

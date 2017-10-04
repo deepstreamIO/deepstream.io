@@ -43,24 +43,28 @@ let connectionEndpoint
 
 let authenticationHandlerMock
 let permissionHandler
-let options
+let config
+let services
 
-xdescribe('connection endpoint', () => {
+describe('connection endpoint', () => {
   beforeEach((done) => {
     authenticationHandlerMock = new AuthenticationHandlerMock()
 
-    options = {
+    config = {
       unauthenticatedClientTimeout: null,
-      permissionHandler: new PermissionHandlerMock(),
-      authenticationHandler: authenticationHandlerMock,
-      logger: new LoggerMock(),
       maxAuthAttempts: 3,
       logInvalidAuthData: true,
       heartbeatInterval: 4000
     }
 
-    connectionEndpoint = new ConnectionEndpoint(options, () => {})
-    const depInit = new DependencyInitialiser({ config: config, services: services }, config, services, connectionEndpoint, 'connectionEndpoint')
+    services = {
+      authenticationHandler: authenticationHandlerMock,
+      logger: new LoggerMock(),
+      permissionHandler: new PermissionHandlerMock()
+    }
+
+    connectionEndpoint = new ConnectionEndpoint(config, services)
+    const depInit = new DependencyInitialiser({ config, services }, config, services, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
       connectionEndpoint._unauthenticatedClientTimeout = 100
       connectionEndpoint.onMessages()
@@ -81,7 +85,7 @@ xdescribe('connection endpoint', () => {
   })
 
   xit('sets autopings on the websocket server', () => {
-    expect(uwsMock.heartbeatInterval).toBe(options.heartbeatInterval)
+    expect(uwsMock.heartbeatInterval).toBe(config.heartbeatInterval)
     expect(uwsMock.pingMessage).toBe({
       topic: C.TOPIC.CONNECTION,
       action: C.ACTIONS.PING
@@ -189,7 +193,7 @@ xdescribe('connection endpoint', () => {
 
     expect(authenticationHandlerMock.lastUserValidationQueryArgs.length).toBe(3)
     expect(authenticationHandlerMock.lastUserValidationQueryArgs[1].user).toBe('wolfram')
-    expect(options.logger.lastLogMessage.indexOf('wolfram')).not.toBe(-1)
+    expect(services.logger.lastLogMessage.indexOf('wolfram')).not.toBe(-1)
   })
 
   describe('the connection endpoint emits a client events for user with name', () => {
@@ -252,7 +256,7 @@ xdescribe('connection endpoint', () => {
 
   it('disconnects if the number of invalid authentication attempts is exceeded', () => {
     authenticationHandlerMock.nextUserValidationResult = false
-    options.maxAuthAttempts = 3
+    config.maxAuthAttempts = 3
     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
 
     client.socketWrapperMock
@@ -357,12 +361,12 @@ xdescribe('connection endpoint', () => {
   })
 
   it('connection endpoint doesn\'t log credentials if logInvalidAuthData is set to false', () => {
-    options.logInvalidAuthData = false
+    config.logInvalidAuthData = false
     authenticationHandlerMock.nextUserValidationResult = false
 
     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 
-    expect(options.logger.lastLogMessage.indexOf('wolfram')).toBe(-1)
+    expect(services.logger.lastLogMessage.indexOf('wolfram')).toBe(-1)
   })
 })

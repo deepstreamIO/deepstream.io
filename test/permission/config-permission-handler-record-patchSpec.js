@@ -8,13 +8,14 @@ const testHelper = require('../test-helper/test-helper')
 const noop = function () {}
 
 const options = testHelper.getDeepstreamPermissionOptions()
+const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return options.logger.log.calls.mostRecent().args[2]
+  return services.logger.log.calls.mostRecent().args[2]
 }
 
-xdescribe('constructs data for patch message validation', () => {
+describe('constructs data for patch message validation', () => {
   it('fails to set incorrect data', (next) => {
     const permissions = testHelper.getBasePermissions()
     services.cache.nextGetWillBeSynchronous = false

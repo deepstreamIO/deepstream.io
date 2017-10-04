@@ -13,15 +13,11 @@ const C = require('../../src/constants')
 const JIFHandler = require('../../src/message/jif-handler')
 const LoggerMock = require('../test-mocks/logger-mock')
 
-xdescribe('JIF Handler', () => {
+describe('JIF Handler', () => {
   let jifHandler
   const logger = new LoggerMock()
-  const jifHandlerOptions = {
-    logger,
-    constants: C
-  }
   beforeAll(() => {
-    jifHandler = new JIFHandler(jifHandlerOptions)
+    jifHandler = new JIFHandler({ logger })
   })
   describe('fromJIF', () => {
 

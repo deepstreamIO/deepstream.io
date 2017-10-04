@@ -6,7 +6,7 @@ const util = require('util')
 
 const PluginMock = function (options, name) {
   this.isReady = false
-  this.type = name || 'mock-plugin'
+  this.description = name || 'mock-plugin'
   this.options = options
 }
 

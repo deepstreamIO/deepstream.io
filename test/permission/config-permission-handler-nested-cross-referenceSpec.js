@@ -8,13 +8,14 @@ const C = require('../../src/constants')
 
 const noop = function () {}
 const options = testHelper.getDeepstreamPermissionOptions()
+const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return options.logger.log.calls.mostRecent().args[2]
+  return services.logger.log.calls.mostRecent().args[2]
 }
 
-xdescribe('permission handler loads data for cross referencing', () => {
+describe('permission handler loads data for cross referencing', () => {
   it('retrieves data for a nested cross references', (next) => {
     const permissions = testHelper.getBasePermissions()
 

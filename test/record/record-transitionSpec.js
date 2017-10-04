@@ -12,7 +12,8 @@ const testHelper = require('../test-helper/test-helper')
 const RecordTransition = require('../../src/record/record-transition').default
 
 xdescribe('record transitions', () => {
-  let options
+  let services
+  let config
   let socketWrapper
   let recordTransition
   let testMocks
@@ -22,10 +23,13 @@ xdescribe('record transitions', () => {
     testMocks = getTestMocks()
     client = testMocks.getSocketWrapper()
 
-    options = testHelper.getDeepstreamOptions()
-    recordTransition = new RecordTransition(M.recordUpdate.name, options, testMocks.recordHandler)
+    const options = testHelper.getDeepstreamOptions()
+    services = options.services
+    config = options.config
+
+    recordTransition = new RecordTransition(M.recordUpdate.name, config, services, testMocks.recordHandler)
   
-    options.cache.set('some-record', M.recordData, () => {})
+    services.cache.set('some-record', M.recordData, () => {})
   })
 
   afterEach(() => {
@@ -48,11 +52,11 @@ xdescribe('record transitions', () => {
   })
 
   it('adds an update to the queue', () => {
-    options.cache.nextGetWillBeSynchronous = false
+    services.cache.nextGetWillBeSynchronous = false
 
-    expect(recordTransition._steps.length).toBe(0)
-    recordTransition.add(client.socketWrapper, recordUpdate)
-    expect(recordTransition._steps.length).toBe(1)
+    expect(recordTransition.steps.length).toBe(0)
+    recordTransition.add(client.socketWrapper, M.recordUpdate)
+    expect(recordTransition.steps.length).toBe(1)
   })
 
   it('adds a message with invalid data to the queue', () => { 
@@ -127,10 +131,10 @@ xdescribe('record transitions', () => {
     recordRequestMockCallback({ _v: 0, _d: { firstname: 'Egon' } })
 
     expect(recordTransition._record).toEqual({ _v: 1, _d: { firstname: 'Egon' } })
-    expect(options.cache.completedSetOperations).toBe(0)
+    expect(services.cache.completedSetOperations).toBe(0)
 
     const check = setInterval(() => {
-      if (options.cache.completedSetOperations === 1) {
+      if (services.cache.completedSetOperations === 1) {
         expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage, false, socketWrapper)
         expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
         expect(recordTransition._record).toEqual({ _v: 2, _d: { lastname: 'Peterson' } })
@@ -146,9 +150,9 @@ xdescribe('record transitions', () => {
   })
 
   it('returns hasVersion for 1,2 and 3', () => {
-    options.cache.nextOperationWillBeSynchronous = false
+    services.cache.nextOperationWillBeSynchronous = false
 
-    recordTransition.add(client.socketWrapper, recordUpdate)
+    recordTransition.add(client.socketWrapper, M.recordUpdate)
     
     expect(recordTransition.hasVersion(0)).toBe(true)
     expect(recordTransition.hasVersion(1)).toBe(true)
@@ -162,7 +166,7 @@ xdescribe('record transitions', () => {
 
   it('processes the next step in the queue', (done) => {
     const check = setInterval(() => {
-      if (options.cache.completedSetOperations === 2) {
+      if (services.cache.completedSetOperations === 2) {
         expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', updateMessage, false, socketWrapper)
         expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper)
         expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
@@ -175,7 +179,7 @@ xdescribe('record transitions', () => {
 
   it('processes the final step in the queue', (done) => {
     const check = setInterval(() => {
-      if (options.cache.completedSetOperations === 3) {
+      if (services.cache.completedSetOperations === 3) {
         expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper)
         expect(recordHandlerMock._$transitionComplete).toHaveBeenCalled()
         clearInterval(check)
@@ -186,7 +190,7 @@ xdescribe('record transitions', () => {
 
   it('stored each transition in storage', (done) => {
     const check = setInterval(() => {
-      if (options.storage.completedSetOperations === 3) {
+      if (services.storage.completedSetOperations === 3) {
         clearInterval(check)
         done()
       }
@@ -205,7 +209,7 @@ xdescribe('record transitions', () => {
 
     it('does not store transition in storage', (done) => {
       const check = setInterval(() => {
-        if (options.storage.completedSetOperations === 0) {
+        if (services.storage.completedSetOperations === 0) {
           clearInterval(check)
           done()
         }
@@ -218,7 +222,7 @@ xdescribe('record transitions', () => {
 
     beforeAll(() => {
       createRecordTransition()
-      options.cache.nextOperationWillBeSynchronous = false
+      services.cache.nextOperationWillBeSynchronous = false
     })
 
     it('adds a patch to the queue', () => {
@@ -232,27 +236,27 @@ xdescribe('record transitions', () => {
   describe('tries to set a record, but both cache and storage fail', () => {
     beforeAll(() => {
       createRecordTransition()
-      options.cache.nextOperationWillBeSynchronous = true
-      options.cache.nextOperationWillBeSuccessful = false
-      options.storage.nextOperationWillBeSuccessful = false
+      services.cache.nextOperationWillBeSynchronous = true
+      services.cache.nextOperationWillBeSuccessful = false
+      services.storage.nextOperationWillBeSuccessful = false
       recordRequestMockCallback()
     })
 
     it('logged an error', () => {
-      expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'storageError')
+      expect(services.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'storageError')
     })
   })
 
   describe('destroys the transition', () => {
     beforeAll(() => {
       createRecordTransition()
-      options.cache.nextOperationWillBeSynchronous = false
+      services.cache.nextOperationWillBeSynchronous = false
     })
 
     it('destroys the transition', (done) => {
       recordTransition.destroy()
       expect(recordTransition.isDestroyed).toBe(true)
-      expect(recordTransition._steps).toBe(null)
+      expect(recordTransition.steps).toBe(null)
       setTimeout(() => {
         // just leave this here to make sure no error is thrown when the
         // record request returns after 30ms
@@ -263,20 +267,20 @@ xdescribe('record transitions', () => {
     it('calls destroy a second time without causing problems', () => {
       recordTransition.destroy()
       expect(recordTransition.isDestroyed).toBe(true)
-      expect(recordTransition._steps).toBe(null)
+      expect(recordTransition.steps).toBe(null)
     })
   })
 
   describe('recordRequest returns an error', () => {
     beforeAll(() => {
       createRecordTransition()
-      options.cache.nextOperationWillBeSynchronous = false
+      services.cache.nextOperationWillBeSynchronous = false
     })
 
     it('receives an error', () => {
       expect(socketWrapper.socket.lastSendMessage).toBe(null)
       recordRequestMockCallback('errorMsg', true)
-      expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'errorMsg')
+      expect(services.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'errorMsg')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_UPDATE_ERROR|1+'))
     })
   })
@@ -284,13 +288,13 @@ xdescribe('record transitions', () => {
   describe('recordRequest returns null', () => {
     beforeAll(() => {
       createRecordTransition()
-      options.cache.nextOperationWillBeSynchronous = false
+      services.cache.nextOperationWillBeSynchronous = false
     })
 
     it('receives a non existant error', () => {
       expect(socketWrapper.socket.lastSendMessage).toBe(null)
       recordRequestMockCallback(null)
-      expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'Received update for non-existant record recordName')
+      expect(services.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'Received update for non-existant record recordName')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_UPDATE_ERROR|1+'))
     })
   })
@@ -300,7 +304,7 @@ xdescribe('record transitions', () => {
 
     beforeAll(() => {
       createRecordTransition('recordName', invalidPatchMessage)
-      options.cache.nextOperationWillBeSynchronous = false
+      services.cache.nextOperationWillBeSynchronous = false
     })
 
     it('receives an error', () => {
@@ -319,7 +323,7 @@ xdescribe('record transitions', () => {
 
     beforeAll(() => {
       createRecordTransition('recordName')
-      options.cache.nextOperationWillBeSynchronous = false
+      services.cache.nextOperationWillBeSynchronous = false
     })
 
     it('gets a version exist error on two seperate updates but does not send error', () => {
@@ -356,7 +360,7 @@ xdescribe('record transitions', () => {
     it('destroys the transition', (done) => {
       recordTransition.destroy()
       expect(recordTransition.isDestroyed).toBe(true)
-      expect(recordTransition._steps).toBe(null)
+      expect(recordTransition.steps).toBe(null)
       setTimeout(() => {
         // just leave this here to make sure no error is thrown when the
         // record request returns after 30ms

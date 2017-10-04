@@ -29,26 +29,30 @@ const conf = {
   allowAllOrigins: true,
   requestTimeout: 30
 }
+
+const services = {
+  logger: new LoggerMock(),
+  authenticationHandler: { isValidUser (headers, authData, callback) { callback(true, {}) } },
+  permissionHandler: { canPerformAction (user, message, callback/* , authData */) {
+    callback(null, true)
+  } }
+}
+
 const mockDS = {
-  options: {
+  config: {
     serverName: `server_${Math.round(Math.random() * 1000)}`,
-    logger: new LoggerMock(),
-    authenticationHandler: { isValidUser (headers, authData, callback) { callback(true, {}) } },
-    permissionHandler: { canPerformAction (user, message, callback/* , authData */) {
-      callback(null, true)
-    } }
   },
-  constants,
+  services,
   messageDistributor: { distribute () {} }
 }
 
-xdescribe('http plugin', () => {
+describe('http plugin', () => {
   let httpPlugin
   const apiKey = '9x5xfdxa-xxxx-4efe-a342-xxxxxxxxxxxx'
   const postUrl = `http://127.0.0.1:8888/api/v1/${apiKey}`
 
   beforeAll(() => {
-    httpPlugin = new ConnectionEndpoint(conf)
+    httpPlugin = new ConnectionEndpoint(conf, services)
     httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
   })
@@ -161,11 +165,11 @@ xdescribe('http plugin', () => {
     describe('authentication', () => {
       let canPerformActionStub // eslint-disable-line
       beforeAll(() => {
-        canPerformActionStub = sinon.stub(mockDS.options.permissionHandler, 'canPerformAction')
+        canPerformActionStub = sinon.stub(services.permissionHandler, 'canPerformAction')
       })
 
       afterAll(() => {
-        mockDS.options.permissionHandler.canPerformAction.restore()
+        services.permissionHandler.canPerformAction.restore()
       })
 
       it('should reject a request that times out', (done) => {

@@ -19,26 +19,31 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
   https: httpsMock
 })
 
-const options = {
-  permissionHandler: PermissionHandlerMock,
-  logger: new LoggerMock(),
+const config = {
   maxAuthAttempts: 3,
   logInvalidAuthData: true
 }
 
-const mockDs = { options }
-
-const connectionEndpointInit = (endpointOptions, onReady) => {
-  options.connectionEndpoint = new ConnectionEndpoint(endpointOptions)
-  options.connectionEndpoint.setDeepstream(mockDs)
-  options.connectionEndpoint.init()
-  options.connectionEndpoint.on('ready', onReady)
+const services = {
+  permissionHandler: PermissionHandlerMock,
+  logger: new LoggerMock()
 }
 
-xdescribe('validates HTTPS server conditions', () => {
+const mockDs = { config, services }
+
+let connectionEndpoint
+
+const connectionEndpointInit = (endpointOptions, onReady) => {
+  connectionEndpoint = new ConnectionEndpoint(endpointOptions)
+  connectionEndpoint.setDeepstream(mockDs)
+  connectionEndpoint.init()
+  connectionEndpoint.on('ready', onReady)
+}
+
+describe('validates HTTPS server conditions', () => {
   let error
   let sslOptions
-  options.connectionEndpoint = null
+  connectionEndpoint = null
 
   beforeAll(() => {
     spyOn(httpMock, 'createServer').and.callThrough()
@@ -54,11 +59,11 @@ xdescribe('validates HTTPS server conditions', () => {
   })
 
   afterEach((done) => {
-    if (!options.connectionEndpoint || !options.connectionEndpoint.isReady) {
+    if (!connectionEndpoint || !connectionEndpoint.isReady) {
       done()
     } else {
-      options.connectionEndpoint.once('close', done)
-      options.connectionEndpoint.close()
+      connectionEndpoint.once('close', done)
+      connectionEndpoint.close()
     }
     httpMock.createServer.calls.reset()
     httpsMock.createServer.calls.reset()

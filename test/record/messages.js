@@ -94,6 +94,15 @@ module.exports.createDeniedMessage = {
     isWriteAck: false
   }
 
+  module.exports.recordUpdateWithAck = {
+    topic: C.TOPIC.RECORD,
+    action: C.ACTIONS.UPDATE,
+    name: 'some-record',
+    version: -1,
+    parsedData: module.exports.recordData._d,
+    isWriteAck: true
+  }
+
   module.exports.recordPatch = {
     topic: C.TOPIC.RECORD,
     action: C.ACTIONS.PATCH,

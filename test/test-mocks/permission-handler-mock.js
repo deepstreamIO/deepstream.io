@@ -2,9 +2,9 @@
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const PermissionHandlerMock = function (options) {
+const PermissionHandlerMock = function (options, services) {
 	this.isReady = true
-this.options = options
+  this.options = options
   this.reset()
 }
 

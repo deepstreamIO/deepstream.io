@@ -8,9 +8,9 @@ const events = require('events')
 const C = require('../../constants')
 
 module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
-  constructor (options) {
+  constructor (config) {
     super()
-    this._options = options
+    this._options = config
     this.isReady = false
     this.description = 'HTTP connection endpoint'
 
@@ -29,14 +29,10 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
   setDeepstream (deepstream) {
     this._logger = deepstream.services.logger
     this._authenticationHandler = deepstream.services.authenticationHandler
-    this._messageDistributor = deepstream.messageDistributor
     this._permissionHandler = deepstream.services.permissionHandler
+    this._messageDistributor = deepstream.messageDistributor
     this._dsOptions = deepstream.config
-    const jifHandlerOptions = {
-      logger: deepstream.services.logger,
-      constants: deepstream.constants
-    }
-    this._jifHandler = new JIFHandler(jifHandlerOptions)
+    this._jifHandler = new JIFHandler({ logger: deepstream.services.logger })
   }
 
   /**

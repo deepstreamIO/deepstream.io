@@ -146,8 +146,6 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.processResponseForListenInProgress(socketWrapper, subscriptionName, message)
       return
     }
-
-    console.log('>>', message, message.action)
   }
 
   /**

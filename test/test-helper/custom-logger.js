@@ -19,7 +19,6 @@ class CustomLogger extends Emitter {
   }
 
   setLogLevel (level) {
-    console.log('<< new log level', level)
   }
 
 }

@@ -30,9 +30,9 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
 
   services.logger = handleLogger(config)
   handlePlugins(config, services)
-  services.connectionEndpoints = handleConnectionEndpoints(config)
   services.authenticationHandler = handleAuthStrategy(config, services.logger)
   services.permissionHandler = handlePermissionStrategy(config, services)
+  services.connectionEndpoints = handleConnectionEndpoints(config, services)
 
   return { config, services }
 }
@@ -148,8 +148,6 @@ function handlePlugins (config: DeepstreamConfig, services: any): void {
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
       services[key] = new PluginConstructor(plugin.options)
       services.registeredPlugins.push(key)
-      // if (config.loadedPlugins.indexOf(key) === -1) {
-      // }
     }
   }
 }
@@ -165,7 +163,7 @@ function handlePlugins (config: DeepstreamConfig, services: any): void {
  *
  * CLI arguments will be considered.
  */
-function handleConnectionEndpoints (config: DeepstreamConfig): Array<ConnectionEndpoint> {
+function handleConnectionEndpoints (config: DeepstreamConfig, services: any): Array<ConnectionEndpoint> {
   // delete any endpoints that have been set to `null`
   for (const type in config.connectionEndpoints) {
     if (!config.connectionEndpoints[type]) {
@@ -189,7 +187,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig): Array<ConnectionE
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection')
     }
-    connectionEndpoints.push(new PluginConstructor(plugin.options))
+    connectionEndpoints.push(new PluginConstructor(plugin.options, services))
   }
   return connectionEndpoints
 }
@@ -259,7 +257,7 @@ function handleAuthStrategy (config: DeepstreamConfig, logger: Logger): Authenti
     if (!AuthenticationHandler) {
       throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
     }
-  } else if (config.auth.type) {
+  } else if (config.auth.type && authStrategies[config.auth.type]) {
     AuthenticationHandler = authStrategies[config.auth.type]
   } else {
     throw new Error(`Unknown authentication type ${config.auth.type}`)
@@ -299,7 +297,7 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: any): Per
     if (!PermissionHandler) {
       throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
     }
-  } else if (config.permission.type) {
+  } else if (config.permission.type && permissionStrategies[config.permission.type]) {
     PermissionHandler = permissionStrategies[config.permission.type]
   } else {
     throw new Error(`Unknown permission type ${config.permission.type}`)
@@ -309,5 +307,10 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: any): Per
     config.permission.options.path = fileUtils.lookupConfRequirePath(config.permission.options.path)
   }
 
-  return new PermissionHandler(config, services)
+  if (config.permission.type === 'config') {
+    return new PermissionHandler(config, services)
+  } else {
+    return new PermissionHandler(config.permission.options, services)
+  }
+
 }

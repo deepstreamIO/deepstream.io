@@ -6,13 +6,14 @@ const RpcProxy = require('../../src/rpc/rpc-proxy')
 const C = require('../../src/constants')
 
 const options = testHelper.getDeepstreamOptions()
+const config = options.config
+const services = options.services
 
 xdescribe('rpcProxy proxies calls from and to the remote receiver', () => {
   let rpcProxy
 
-  beforeAll(() => {
-    expect(options.message.lastSubscribedTopic).toBe(null)
-    rpcProxy = new RpcProxy(options, 'serverNameA')
+  beforeEach(() => {
+    rpcProxy = new RpcProxy(config, services, 'serverNameA')
   })
 
   it('manipulates the message before sending', () => {
