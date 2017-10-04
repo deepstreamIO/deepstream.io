@@ -10,9 +10,11 @@ const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
 const options = testHelper.getDeepstreamOptions()
+const config = options.config
+const services = options.services
 
-options.rpcAckTimeout = 50
-options.rpcTimeout = 50
+config.rpcAckTimeout = 50
+config.rpcTimeout = 50
 
 describe('rpc handler returns alternative providers for the same rpc', () => {
   let testMocks
@@ -28,7 +30,7 @@ describe('rpc handler returns alternative providers for the same rpc', () => {
     providerForA2 = testMocks.getSocketWrapper('a2')
     providerForA3 = testMocks.getSocketWrapper('a3')
 
-    rpcHandler = new RpcHandler(options.config, options.services, testMocks.subscriptionRegistry)
+    rpcHandler = new RpcHandler(config, services, testMocks.subscriptionRegistry)
 
     testMocks.subscriptionRegistryMock
       .expects('getLocalSubscribers')

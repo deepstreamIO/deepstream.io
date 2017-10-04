@@ -48,16 +48,16 @@ export default class RecordTransition {
  private services: DeepstreamServices
  private recordHandler: RecordHandler
  private steps: Array<Step>
- private record: StorageRecord
+ private record: StorageRecord | null
  private currentStep: Step
- private recordRequest: boolean
+ private recordRequestMade: boolean
  private existingVersions: Array<Step>
  private pendingUpdates: any
  private ending: boolean
  private storageResponses: number
  private cacheResponses: number
- private lastVersion: number
- private lastError: string
+ private lastVersion: number | null
+ private lastError: string | null
  private writeError: string
 
   constructor (name: string, config: DeepstreamConfig, services: DeepstreamServices, recordHandler: RecordHandler, metaData) {
@@ -67,12 +67,12 @@ export default class RecordTransition {
     this.services = services
     this.recordHandler = recordHandler
     this.steps = []
+    this.recordRequestMade = false
     
-    // this.record = null
-    // this.currentStep = null
-    // this.recordRequest = null
-    // this.lastVersion = null
-    // this.lastError = null
+    this.record = null
+    //this.currentStep = null
+    this.lastVersion = null
+    this.lastError = null
     
     this.existingVersions = []
     this.isDestroyed = false
@@ -92,6 +92,9 @@ export default class RecordTransition {
  * queued for processing
  */
   public hasVersion (version: number): boolean {
+    if (this.lastVersion === null) {
+      return false
+    }
     return version !== -1 && version <= this.lastVersion
   }
 
@@ -161,8 +164,8 @@ export default class RecordTransition {
     this.cacheResponses++
     this.steps.push(update)
 
-    if (this.recordRequest === null) {
-      this.recordRequest = true
+    if (this.recordRequestMade === false) {
+      this.recordRequestMade = true
       recordRequest(
         this.name,
         this.config,
@@ -259,6 +262,10 @@ export default class RecordTransition {
       return
     }
 
+    if (this.record === null) {
+      return
+    }
+
     const currentStep = this.steps.shift()
     if (!currentStep) {
       if (this.cacheResponses === 0 && this.storageResponses === 0) {
@@ -268,23 +275,23 @@ export default class RecordTransition {
     }
 
     this.currentStep = currentStep
-    let message = this.currentStep.message
+    let message = currentStep.message
 
     if (message.version === -1) {
       message = Object.assign({}, message, { version: this.record._v + 1 })
-      this.currentStep.message = message
+      currentStep.message = message
     }
 
     if (this.record._v !== message.version - 1) {
       this.cacheResponses--
-      this.sendVersionExists(this.currentStep)
+      this.sendVersionExists(currentStep)
       this.next()
       return
     }
 
     this.record._v = message.version
 
-    if (this.currentStep.message.path) {
+    if (currentStep.message.path) {
       setPathValue(this.record._d, message.path, message.parsedData)
     } else {
       this.record._d = message.parsedData

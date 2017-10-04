@@ -88,7 +88,6 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
-        name: C.ACTIONS.QUERY,
         parsedData: []
       })
 
@@ -163,7 +162,6 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
-        name: C.ACTIONS.QUERY,
         parsedData: ['Bart']
       })
 
@@ -189,7 +187,6 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
-        name: C.ACTIONS.QUERY,
         parsedData: ['Bart', 'Homer', 'Maggie']
       })
 
@@ -203,8 +200,7 @@ describe('presence handler', () => {
       .withExactArgs(C.PRESENCE.EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_JOIN,
-        name: C.ACTIONS.PRESENCE_JOIN,
-        parsedData: 'Bart'
+        name: 'Bart'
       }, false, null, false)
 
     testMocks.subscriptionRegistryMock
@@ -213,8 +209,7 @@ describe('presence handler', () => {
       .withExactArgs('Bart', {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_JOIN,
-        name: C.ACTIONS.PRESENCE_JOIN,
-        parsedData: 'Bart'
+        name: 'Bart'
       }, false, null, false)
 
     testMocks.stateRegistry.emit('add', 'Bart')
@@ -227,8 +222,7 @@ describe('presence handler', () => {
       .withExactArgs(C.PRESENCE.EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_LEAVE,
-        name: C.ACTIONS.PRESENCE_LEAVE,
-        parsedData: 'Bart'
+        name: 'Bart'
       }, false, null, false)
 
     testMocks.subscriptionRegistryMock
@@ -237,8 +231,7 @@ describe('presence handler', () => {
       .withExactArgs('Bart', {
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.PRESENCE_LEAVE,
-        name: C.ACTIONS.PRESENCE_LEAVE,
-        parsedData: 'Bart'
+        name: 'Bart'
       }, false, null, false)
 
     testMocks.stateRegistry.emit('remove', 'Bart')

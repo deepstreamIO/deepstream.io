@@ -65,7 +65,13 @@ exports.getDeepstreamOptions = function (serverName) {
     cacheRetrievalTimeout: 30,
     storageRetrievalTimeout: 50,
     storageExclusion: new RegExp('no-storage'),
-    storageHotPathPatterns: []
+    storageHotPathPatterns: [],
+    permission: {
+      options: {
+        cacheEvacuationInterval: 60000,
+        maxRuleIterations: 3
+      }
+    }
   }
   const services = {
     logger: new LoggerMock(),
@@ -93,12 +99,6 @@ exports.getDeepstreamPermissionOptions = function () {
   let options = exports.getDeepstreamOptions()
   options.config = Object.assign(options.config, {
     cacheRetrievalTimeout: 500,
-    permission: {
-      options: {
-        cacheEvacuationInterval: 60000,
-        maxRuleIterations: 3
-      }
-    }
   })
   return { config: options.config, services: options.services }
 }

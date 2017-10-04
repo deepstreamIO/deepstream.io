@@ -6,6 +6,8 @@ const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
 const options = testHelper.getDeepstreamOptions()
+const config = options.config
+const services = options.services
 
 describe('message connector distributes messages to callbacks', () => {
   let messageDistributor
@@ -18,7 +20,7 @@ describe('message connector distributes messages to callbacks', () => {
     client = testMocks.getSocketWrapper()
     testCallback = jasmine.createSpy()
 
-    messageDistributor = new MessageDistributor(options.config, options.services)
+    messageDistributor = new MessageDistributor(config, services)
   })
 
   afterEach(() => {
@@ -26,11 +28,11 @@ describe('message connector distributes messages to callbacks', () => {
   })
 
   it('makes remote connection', () => {
-    expect(options.services.message.lastSubscribedTopic).toBe(null)
+    expect(services.message.lastSubscribedTopic).toBe(null)
 
     messageDistributor.registerForTopic('someTopic', testCallback)
 
-    expect(options.services.message.lastSubscribedTopic).toBe('someTopic')
+    expect(services.message.lastSubscribedTopic).toBe('someTopic')
   })
 
   it('makes local connection', () => {
@@ -44,7 +46,7 @@ describe('message connector distributes messages to callbacks', () => {
   it('routes messages from the message connector', () => {
     messageDistributor.registerForTopic('topicB', testCallback)
 
-    options.services.message.simulateIncomingMessage('topicB', { topic: 'topicB' })
+    services.message.simulateIncomingMessage('topicB', { topic: 'topicB' })
 
     expect(testCallback.calls.count()).toEqual(1)
   })

@@ -8,6 +8,8 @@ const testHelper = require('../test-helper/test-helper')
 const ConfigPermissionHandler = require('../../src/permission/config-permission-handler').default
 
 const options = testHelper.getDeepstreamPermissionOptions()
+const config = options.config
+const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 describe('supports spaces after variables and escaped quotes', () => {
@@ -19,7 +21,7 @@ describe('supports spaces after variables and escaped quotes', () => {
     }
 
     try {
-      new ConfigPermissionHandler(options.config, {}, permissions)
+      new ConfigPermissionHandler(config, {}, permissions)
     } catch (e) {
       expect(e.toString()).toContain('invalid permission config - rule read for record does not support data')
     }

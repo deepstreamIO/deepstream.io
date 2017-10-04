@@ -9,6 +9,8 @@ const getTestMocks = require('../test-helper/test-mocks')
 const sinon = require('sinon')
 
 const options = testHelper.getDeepstreamOptions()
+const config = options.config
+const services = options.services
 
 let topic
 let subscribedTopics
@@ -42,9 +44,9 @@ module.exports = class ListenerTestUtils {
     }
     clientRegistryMock = sinon.mock(clientRegistry)
 
-    options.config.listenResponseTimeout = 30
-    options.config.shuffleListenProviders = false
-    options.config.stateReconciliationTimeout = 10
+    config.listenResponseTimeout = 30
+    config.shuffleListenProviders = false
+    config.stateReconciliationTimeout = 10
 
     clients = [
       null, // to make tests start from 1
@@ -60,7 +62,7 @@ module.exports = class ListenerTestUtils {
       getTestMocks().getSocketWrapper('p3')
     ]
 
-    listenerRegistry = new ListenerRegistry(topic, options.config, options.services, clientRegistry)
+    listenerRegistry = new ListenerRegistry(topic, config, services, clientRegistry)
     expect(typeof listenerRegistry.handle).toBe('function')
   }
 

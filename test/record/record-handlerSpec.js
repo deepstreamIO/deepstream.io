@@ -13,14 +13,17 @@ describe('record handler handles messages', () => {
   let testMocks
   let recordHandler
   let client
-  let options
+  let config
+  let services
 
   beforeEach(() => {
     testMocks = getTestMocks()
     client = testMocks.getSocketWrapper('someUser')
     options = testHelper.getDeepstreamOptions()
+    config = options.config
+    services = options.services
     recordHandler = new RecordHandler(
-      options.config, options.services, testMocks.subscriptionRegistry, testMocks.listenerRegistry
+      config, services, testMocks.subscriptionRegistry, testMocks.listenerRegistry
     )
   })
 
@@ -37,15 +40,15 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect(options.services.cache.lastSetKey).toBe('some-record')
-    expect(options.services.cache.lastSetValue).toEqual({ _v: 0, _d: { } })
+    expect(services.cache.lastSetKey).toBe('some-record')
+    expect(services.cache.lastSetValue).toEqual({ _v: 0, _d: { } })
 
-    expect(options.services.storage.lastSetKey).toBe('some-record')
-    expect(options.services.storage.lastSetValue).toEqual({ _v: 0, _d: { } })
+    expect(services.storage.lastSetKey).toBe('some-record')
+    expect(services.storage.lastSetValue).toEqual({ _v: 0, _d: { } })
   })
 
   it('tries to create a non existing record, but receives an error from the cache', () => {
-    options.services.cache.failNextSet = true
+    services.cache.failNextSet = true
 
     client.socketWrapperMock
       .expects('sendError')
@@ -57,16 +60,16 @@ describe('record handler handles messages', () => {
   })
 
   it('does not store new record when excluded', () => {
-    options.config.storageExclusion = new RegExp('some-record')
+    config.storageExclusion = new RegExp('some-record')
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect(options.services.storage.lastSetKey).toBe(null)
-    expect(options.services.storage.lastSetValue).toBe(null)
+    expect(services.storage.lastSetKey).toBe(null)
+    expect(services.storage.lastSetValue).toBe(null)
   })
 
   it('returns an existing record', () => {
-    options.services.cache.set('some-record', M.recordData, () => {})
+    services.cache.set('some-record', M.recordData, () => {})
 
     client.socketWrapperMock
       .expects('sendMessage')
@@ -83,7 +86,7 @@ describe('record handler handles messages', () => {
   })
 
   it('returns true for HAS if message exists', () => {
-    options.services.cache.set('some-record', {}, () => {})
+    services.cache.set('some-record', {}, () => {})
 
     client.socketWrapperMock
       .expects('sendMessage')
@@ -113,7 +116,7 @@ describe('record handler handles messages', () => {
   })
 
   it('returns an error for HAS if message error occurs with record retrieval', () => {
-    options.services.cache.nextOperationWillBeSuccessful = false
+    services.cache.nextOperationWillBeSuccessful = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -124,7 +127,7 @@ describe('record handler handles messages', () => {
   })
 
   it('returns a snapshot of the data that exists with version number and data', () => {
-    options.services.cache.set('some-record', M.recordData, () => {})
+    services.cache.set('some-record', M.recordData, () => {})
 
     client.socketWrapperMock
       .expects('sendMessage')
@@ -150,7 +153,7 @@ describe('record handler handles messages', () => {
   })
 
   it('returns an error for a snapshot if message error occurs with record retrieval', () => {
-    options.services.cache.nextOperationWillBeSuccessful = false
+    services.cache.nextOperationWillBeSuccessful = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -163,7 +166,7 @@ describe('record handler handles messages', () => {
   it('returns a version of the data that exists with version number', () => {
     ['record/1', 'record/2', 'record/3'].forEach((name) => {
       const recordData = { _v: Math.random(), _d: { firstname: 'Wolfram' } }
-      options.services.cache.set(name, recordData, () => {})
+      services.cache.set(name, recordData, () => {})
 
       client.socketWrapperMock
         .expects('sendMessage')
@@ -186,7 +189,7 @@ describe('record handler handles messages', () => {
   })
 
   it('returns an error for a version if message error occurs with record retrieval', () => {
-    options.services.cache.nextOperationWillBeSuccessful = false
+    services.cache.nextOperationWillBeSuccessful = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -197,7 +200,7 @@ describe('record handler handles messages', () => {
   })
 
   xit('patches a record', () => {
-    options.services.cache.set('some-record', recordData, () => {})
+    services.cache.set('some-record', recordData, () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
@@ -207,13 +210,13 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
     recordHandler.handle(client.socketWrapper, M.recordPatch)
 
-    options.services.cache.get('some-record', (error, record) => {
+    services.cache.get('some-record', (error, record) => {
       expect(record).toEqual({ _v: 6, _d: { name: 'Kowalski', lastname: 'Egon' } })
     })
   })
 
   it('updates a record', () => {
-    options.services.cache.set('some-record', M.recordData, () => {})
+    services.cache.set('some-record', M.recordData, () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
@@ -222,7 +225,7 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.recordUpdate)
 
-    options.services.cache.get('some-record', (error, record) => {
+    services.cache.get('some-record', (error, record) => {
       expect(record).toEqual({ _v: 6, _d: { name: 'Kowalski' } })
     })
   })
@@ -251,8 +254,8 @@ describe('record handler handles messages', () => {
 
   xit('updates a record via same client to the same version', (done) => {
     options.cacheRetrievalTimeout = 50
-    options.services.cache.nextGetWillBeSynchronous = false
-    options.services.cache.set(recordUpdate.name, recordData, () => {})
+    services.cache.nextGetWillBeSynchronous = false
+    services.cache.set(recordUpdate.name, recordData, () => {})
 
     client.socketWrapperMock
       .expects('sendError')
@@ -278,8 +281,8 @@ describe('record handler handles messages', () => {
   })
 
   it('handles deletion messages', () => {
-    options.services.cache.nextGetWillBeSynchronous = false
-    options.services.cache.set(M.recordDelete.name, {}, () => {})
+    services.cache.nextGetWillBeSynchronous = false
+    services.cache.set(M.recordDelete.name, {}, () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
@@ -298,14 +301,14 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.recordDelete)
 
-    options.services.cache.get(M.recordDelete.name, (error, record) => {
+    services.cache.get(M.recordDelete.name, (error, record) => {
       expect(record).toEqual(undefined)
     })
   })
 
   xit('updates a record with a -1 version number', () => {
     const data = Object.assign({}, recordData)
-    options.services.cache.set(M.recordUpdate.name, data, () => {})
+    services.cache.set(M.recordUpdate.name, data, () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
@@ -314,7 +317,7 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, Object.assign({}, data, { version: -1 }))
 
-    options.services.cache.get(M.recordUpdate.name, (error, record) => {
+    services.cache.get(M.recordUpdate.name, (error, record) => {
       record._v = 6
       expect(record).toEqual(data)
     })
@@ -322,7 +325,7 @@ describe('record handler handles messages', () => {
 
   xit('updates multiple updates with an -1 version number', () => {
     const data = Object.assign({}, recordData)
-    options.services.cache.set(data.name, data, () => {})
+    services.cache.set(data.name, data, () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
@@ -338,7 +341,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, Object.assign({}, data, { version: -1 }))
     recordHandler.handle(client.socketWrapper, Object.assign({}, data, { version: -1 }))
 
-    options.services.cache.get(data.name, (error, record) => {
+    services.cache.get(data.name, (error, record) => {
       record._v = 7
       expect(record).toEqual(data)
     })
@@ -357,7 +360,7 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createAndUpdate)
 
-    options.services.cache.get(M.createAndUpdate.name, (error, record) => {
+    services.cache.get(M.createAndUpdate.name, (error, record) => {
       expect(record).toEqual(Object.assign({}, M.recordData, { _v: 1 }))
     })
   })

@@ -12,13 +12,16 @@ describe('record handler handles messages', () => {
   let testMocks
   let recordHandler
   let client
-  let options
+  let config
+  let services
 
   beforeEach(() => {
     testMocks = getTestMocks()
     client = testMocks.getSocketWrapper()
-    options = testHelper.getDeepstreamOptions()
-    recordHandler = new RecordHandler(options.config, options.services)
+    const options = testHelper.getDeepstreamOptions()
+    config = options.config
+    services = options.services
+    recordHandler = new RecordHandler(config, services)
   })
 
   afterEach(() => {
@@ -34,13 +37,13 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( options.services.permissionHandler.lastArgs.length).toBe(2)
-    expect( options.services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
-    expect( options.services.permissionHandler.lastArgs[1][1].action).toBe(C.ACTIONS.READ)
+    expect( services.permissionHandler.lastArgs.length).toBe(2)
+    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
+    expect( services.permissionHandler.lastArgs[1][1].action).toBe(C.ACTIONS.READ)
   })
 
   it('triggers only read action if record does exist', () => {
-    options.services.cache.set('some-record', {}, () => {})
+    services.cache.set('some-record', {}, () => {})
 
     client.socketWrapperMock
       .expects('sendMessage')
@@ -49,12 +52,12 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( options.services.permissionHandler.lastArgs.length).toBe(1)
-    expect( options.services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
+    expect( services.permissionHandler.lastArgs.length).toBe(1)
+    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
   })
 
   it('rejects a create', () => {
-     options.services.permissionHandler.nextResult = false
+     services.permissionHandler.nextResult = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -63,13 +66,13 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( options.services.permissionHandler.lastArgs.length).toBe(1)
-    expect( options.services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
+    expect( services.permissionHandler.lastArgs.length).toBe(1)
+    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
   })
 
   it('rejects a read', () => {
-    options.services.cache.set('some-record', {}, () => {})
-     options.services.permissionHandler.nextResult = false
+    services.cache.set('some-record', {}, () => {})
+     services.permissionHandler.nextResult = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -78,13 +81,13 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( options.services.permissionHandler.lastArgs.length).toBe(1)
-    expect( options.services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
+    expect( services.permissionHandler.lastArgs.length).toBe(1)
+    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
   })
 
   it('handles a permission error', () => {
-     options.services.permissionHandler.nextError = 'XXX'
-     options.services.permissionHandler.nextResult = false
+     services.permissionHandler.nextError = 'XXX'
+     services.permissionHandler.nextResult = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -93,7 +96,7 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( options.services.permissionHandler.lastArgs.length).toBe(1)
-    expect( options.services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
+    expect( services.permissionHandler.lastArgs.length).toBe(1)
+    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
   })
 })

@@ -7,6 +7,8 @@ const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
 
 const options = testHelper.getDeepstreamPermissionOptions()
+const config = options.config
+const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 describe('allows to create a record without providing data, but denies updating it', () => {
@@ -23,7 +25,7 @@ describe('allows to create a record without providing data, but denies updating 
     }
 
     expect(testPermission(permissions, message)).toBe(true)
-    options.services.cache.set('some/tests', {}, () => {})
+    services.cache.set('some/tests', {}, () => {})
   })
 
   it('denies update', () => {

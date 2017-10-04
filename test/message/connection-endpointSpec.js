@@ -60,7 +60,7 @@ xdescribe('connection endpoint', () => {
     }
 
     connectionEndpoint = new ConnectionEndpoint(options, () => {})
-    const depInit = new DependencyInitialiser({ config: options.config, services: options.services }, options.config, options.services, connectionEndpoint, 'connectionEndpoint')
+    const depInit = new DependencyInitialiser({ config: config, services: services }, config, services, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
       connectionEndpoint._unauthenticatedClientTimeout = 100
       connectionEndpoint.onMessages()
