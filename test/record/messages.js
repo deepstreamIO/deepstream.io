@@ -109,7 +109,7 @@ module.exports.createDeniedMessage = {
     name: 'some-record',
     version: module.exports.recordData._v + 1,
     path: 'lastname',
-    data: 'SEgon',
+    parsedData: 'Egon',
     isWriteAck: false
   }
 
@@ -119,7 +119,7 @@ module.exports.createDeniedMessage = {
   name: 'some-record',
   version: 4,
   path: 'lastname',
-  data: 'SEgon',
+  parsedData: 'Egon',
   isWriteAck: true
 }
 

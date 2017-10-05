@@ -84,13 +84,13 @@ describe('connection endpoint', () => {
     client.socketWrapperMock.verify()
   })
 
-  xit('sets autopings on the websocket server', () => {
+  it('sets autopings on the websocket server', () => {
     expect(uwsMock.heartbeatInterval).toBe(config.heartbeatInterval)
     expect(uwsMock.pingMessage).toBe({
       topic: C.TOPIC.CONNECTION,
       action: C.ACTIONS.PING
     })
-  })
+  }).pend('We need to figure out how to get this to work')
 
   describe('the connection endpoint handles invalid connection messages', () => {
     it('handles gibberish messages', () => {
@@ -214,7 +214,7 @@ describe('connection endpoint', () => {
       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
     })
 
-    xit('emits disconnected event for user with name', (done) => {
+    it('emits disconnected event for user with name', (done) => {
       connectionEndpoint.once('client-disconnected', (socketWrapper) => {
         expect(socketWrapper.user).toBe('test-user')
         done()
@@ -325,7 +325,7 @@ describe('connection endpoint', () => {
     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
   })
 
-  xit('notifies the permissionHandler when a client disconnects', () => {
+  it('notifies the permissionHandler when a client disconnects', () => {
     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 

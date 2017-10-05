@@ -190,6 +190,7 @@ export default class RecordTransition {
   private applyConfigAndData (socketWrapper: SocketWrapper, message: RecordWriteMessage, step: Step): boolean {
     const result = socketWrapper.parseData(message)
     if (result instanceof Error) {
+      // Log Error
       return false
     }
     if (message.isWriteAck) {
@@ -271,6 +272,8 @@ export default class RecordTransition {
     if (!currentStep) {
       if (this.cacheResponses === 0 && this.storageResponses === 0) {
         this.destroy(null)
+      } else {
+        console.error('this shouldnt reach here')
       }
       return
     }

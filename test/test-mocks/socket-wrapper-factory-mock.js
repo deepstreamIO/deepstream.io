@@ -59,7 +59,7 @@ class SocketWrapperMock extends EventEmitter {
   }
 
   close () {
-
+    this.destroy()
   }
 
   _setUpHandshakeData () {

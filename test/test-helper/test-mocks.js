@@ -63,7 +63,7 @@ module.exports = () => {
       parseMessage: message => message,
       destroy: () => {},
       getHandshakeData: () => ({}),
-      close: () => socketWrapperEmitter.emit('close', this)
+      close: () => socketWrapper.emit('close', this)
     }
     socketWrapper.on = socketWrapperEmitter.on
     socketWrapper.once = socketWrapperEmitter.once

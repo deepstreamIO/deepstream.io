@@ -1,5 +1,5 @@
 /* eslint-disable max-len, import/no-extraneous-dependencies */
-/* global jasmine, xit, spyOn, describe, it, expect, beforeEach, afterEach */
+/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 require('source-map-support').install()
 
 const RecordHandler = require('../../src/record/record-handler').default
@@ -200,14 +200,15 @@ describe('record handler handles messages', () => {
   })
 
   xit('patches a record', () => {
-    services.cache.set('some-record', M.recordData, () => {})
+    const recordPatch = Object.assign({}, M.recordPatch)
+    services.cache.set('some-record', Object.assign({}, M.recordData), () => {})
 
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
       .once()
-      .withExactArgs(M.recordPatch)
+      .withExactArgs(M.recordPatch.name, recordPatch, false, client.socketWrapper)
 
-    recordHandler.handle(client.socketWrapper, M.recordPatch)
+    recordHandler.handle(client.socketWrapper, recordPatch)
 
     services.cache.get('some-record', (error, record) => {
       expect(record).toEqual({ _v: 6, _d: { name: 'Kowalski', lastname: 'Egon' } })
