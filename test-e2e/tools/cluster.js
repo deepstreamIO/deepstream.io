@@ -1,6 +1,8 @@
 'use strict'
 
 const DeepstreamServer = require('../../dist/src/deepstream.io').default
+const LocalCache = require('../../dist/src/default-plugins/local-cache').default
+const localCache = new LocalCache()
 
 const util = require('util')
 const EventEmitter = require('events').EventEmitter
@@ -146,6 +148,8 @@ module.exports = class DeepstreamTest extends EventEmitter {
         callback(false)
       }
     })
+
+    this._server.set('cache', localCache)
 
     if (this._enableLogging !== true) {
       this._server.set('logger', new Logger())

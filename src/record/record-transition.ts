@@ -173,7 +173,7 @@ export default class RecordTransition {
         this.services,
         socketWrapper,
         record => this.onRecord(record, upsert),
-        this.onFatalError,
+        this.onCacheResponse,
         this,
         this.metaData
       )
@@ -412,7 +412,7 @@ export default class RecordTransition {
     this.services.logger.error(EVENT.RECORD_UPDATE_ERROR, errorMessage, this.metaData)
 
     for (let i = 0; i < this.steps.length; i++) {
-      if (this.steps[i].sender.isRemote) {
+      if (!this.steps[i].sender.isRemote) {
         this.steps[i].sender.sendError(this.steps[i].message, EVENT.RECORD_UPDATE_ERROR)
       }
     }

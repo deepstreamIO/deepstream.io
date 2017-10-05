@@ -11,7 +11,7 @@ const RecordTransition = require('../../src/record/record-transition').default
 
 const sinon = require('sinon')
 
-xdescribe('record write acknowledgement', () => {
+describe('record write acknowledgement', () => {
   let config
   let services
   let socketWrapper
@@ -53,31 +53,22 @@ xdescribe('record write acknowledgement', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.recordUpdate, C.EVENT.RECORD_UPDATE_ERROR)
+      .withExactArgs(M.recordUpdateWithAck, C.EVENT.RECORD_UPDATE_ERROR)
 
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs({})
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        name: M.recordUpdateWithAck.name,
+        data: [[-1], C.EVENT.RECORD_LOAD_ERROR]
+      }, true)
 
-    // expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|WA|recordName|[1]|SstorageError+'))
-    recordTransition.add(client.socketWrapper, M.recordUpdate, true)
+    recordTransition.add(client.socketWrapper, M.recordUpdateWithAck, true)
   })
 
-  it('returns hasVersion for 1,2 and 3', () => {
-    recordTransition.add(socketWrapper, 3, patchMessage3)
-
-    expect(recordTransition.hasVersion(0)).toBe(true)
-    expect(recordTransition.hasVersion(1)).toBe(true)
-    expect(recordTransition.hasVersion(2)).toBe(true)
-    expect(recordTransition.hasVersion(3)).toBe(true)
-    expect(recordTransition.hasVersion(4)).toBe(false)
-    expect(recordTransition.hasVersion(5)).toBe(false)
-
-    //
-  })
-
-  it('multiple write acknowledgements', () => {
+  xit('multiple write acknowledgements', () => {
       // processes the next step in the queue
     const check = setInterval(() => {
       if (services.storage.completedSetOperations === 2) {
@@ -103,7 +94,7 @@ xdescribe('record write acknowledgement', () => {
     expect(socketWrapper2.socket.lastSendMessage).toBe(msg('R|WA|recordName|[2]|L+'))
   })
 
-  it('transition version conflicts gets a version exist error on record retrieval', () => {
+  xit('transition version conflicts gets a version exist error on record retrieval', () => {
   //   services.storage.nextOperationWillBeSynchronous = false
   //   recordTransition.add(socketWrapper, 2, updateMessage)
     expect(socketWrapper.socket.lastSendMessage).toBeNull()

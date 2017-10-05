@@ -160,41 +160,34 @@ xdescribe('record transitions', () => {
     expect(recordTransition.hasVersion(3)).toBe(true)
     expect(recordTransition.hasVersion(4)).toBe(true)
     expect(recordTransition.hasVersion(5)).toBe(true)
-    expect(recordTransition.hasVersion(6)).toBe(false)
+    expect(recordTransition.hasVersion(6)).toBe(true)
     expect(recordTransition.hasVersion(7)).toBe(false)
+    expect(recordTransition.hasVersion(8)).toBe(false)
   })
 
-  it('processes the next step in the queue', (done) => {
-    const check = setInterval(() => {
-      if (services.cache.completedSetOperations === 2) {
-        expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', updateMessage, false, socketWrapper)
-        expect(recordHandlerMock._$broadcastUpdate).not.toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper)
-        expect(recordHandlerMock._$transitionComplete).not.toHaveBeenCalled()
-        expect(recordTransition._record).toEqual({ _v: 3, _d: { firstname: 'Lana', lastname: 'Peterson' } })
-        clearInterval(check)
-        done()
-      }
-    }, 1)
-  })
+  xit('processes a queue', (done) => {
+    testMocks.recordHandlerMock
+      .expects('broadcastUpdate')
+      .once()
+      .withExactArgs(M.recordPatch.name, M.recordPatch, false, client.socketWrapper)
+    
+    testMocks.recordHandlerMock
+      .expects('broadcastUpdate')
+      .once()
+      .withExactArgs(M.recordUpdate.name, M.recordUpdate, false, client.socketWrapper)
 
-  it('processes the final step in the queue', (done) => {
-    const check = setInterval(() => {
-      if (services.cache.completedSetOperations === 3) {
-        expect(recordHandlerMock._$broadcastUpdate).toHaveBeenCalledWith('recordName', patchMessage2, false, socketWrapper)
-        expect(recordHandlerMock._$transitionComplete).toHaveBeenCalled()
-        clearInterval(check)
-        done()
-      }
-    }, 1)
-  })
+    testMocks.recordHandlerMock
+      .expects('transitionComplete')
+      .once()
+      .withExactArgs(M.recordPatch.name)
 
-  it('stored each transition in storage', (done) => {
-    const check = setInterval(() => {
-      if (services.storage.completedSetOperations === 3) {
-        clearInterval(check)
-        done()
-      }
-    }, 1)
+    client.socketWrapperMock
+      .expects('sendError')
+      .never()
+
+    recordTransition.add(client.socketWrapper, M.recordPatch)
+    recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: M.recordUpdate.version + 1}))    
+    recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: M.recordUpdate.version + 2}))    
   })
 
   describe('does not store excluded data', () => {
@@ -312,7 +305,7 @@ xdescribe('record transitions', () => {
     })
   })
 
-  describe('transition version conflicts', () => {
+  xdescribe('transition version conflicts', () => {
     const socketMock1 = new SocketMock()
     const socketMock2 = new SocketMock()
     const socketMock3 = new SocketMock()
