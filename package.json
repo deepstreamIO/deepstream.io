@@ -10,7 +10,7 @@
     "test": "test"
   },
   "scripts": {
-    "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && mv ./dist/bin/deepstream.js ./dist/bin/deepstream",
+    "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && cp -r conf ./dist/conf && mv ./dist/bin/deepstream.js ./dist/bin/deepstream",
     "precommit": "npm run lint",
     "lint": "node_modules/.bin/eslint src/ test/",
     "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",

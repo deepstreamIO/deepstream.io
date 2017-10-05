@@ -25,8 +25,11 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
   handleSSLProperties(config)
 
   const services: any = {
-    registeredPlugins: ['authenticationHandler','permissionHandler']
+    registeredPlugins: ['authenticationHandler','permissionHandler', 'cache', 'storage']
   }
+
+  services.cache = new DefaultCache()
+  services.storage = new DefaultStorage()
 
   services.logger = handleLogger(config)
   handlePlugins(config, services)
@@ -147,7 +150,9 @@ function handlePlugins (config: DeepstreamConfig, services: any): void {
     if (plugin) {
       const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
       services[key] = new PluginConstructor(plugin.options)
-      services.registeredPlugins.push(key)
+      if (services.registeredPlugins.indexOf(key) === -1) {
+        services.registeredPlugins.push(key)
+      }
     }
   }
 }
