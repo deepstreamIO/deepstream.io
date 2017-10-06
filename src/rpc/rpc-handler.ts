@@ -145,7 +145,7 @@ export default class RpcHandler {
       this.rpcs.set(correlationId, rpcData)
       rpcData.providers.add(provider)
     } else if (isRemote) {
-      socketWrapper.sendError(TOPIC.RPC, EVENT.NO_RPC_PROVIDER, [rpcName, correlationId])
+      socketWrapper.sendError(message, EVENT.NO_RPC_PROVIDER)
     } else {
        this.makeRemoteRpc(socketWrapper, message)
     }
@@ -225,7 +225,7 @@ export default class RpcHandler {
     if (rpcData) {
        rpcData.rpc.handle(msg)
     } else {
-       this.services.logger.warn(EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg, this.metaData)
+      // this.services.logger.warn(EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg, this.metaData)
     }
   }
 

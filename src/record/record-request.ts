@@ -23,7 +23,7 @@ function sendError (
  * here, if the record couldn't be found in storage no further attempts to retrieve it will be made
  */
 function onStorageResponse (
-  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null,
+  error: Error | null, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null,
   onComplete: Function, onError: Function, services: DeepstreamServices, context: any, metaData: any,
 ): void {
   if (error) {
@@ -50,7 +50,7 @@ function onStorageResponse (
  * Callback for responses returned by the cache connector
  */
 function onCacheResponse (
-  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null,
+  error: Error | null, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null,
   onComplete: Function, onError: Function, config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any,
 ): void {
   if (error) {

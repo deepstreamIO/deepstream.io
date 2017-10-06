@@ -86,6 +86,8 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
+        name: C.ACTIONS.QUERY,
+        name: C.ACTIONS.QUERY,
         parsedData: []
       })
 
@@ -160,6 +162,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
+        name: C.ACTIONS.QUERY,
         parsedData: ['Bart']
       })
 
@@ -185,6 +188,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.ACTIONS.QUERY,
+        name: C.ACTIONS.QUERY,
         parsedData: ['Bart', 'Homer', 'Maggie']
       })
 

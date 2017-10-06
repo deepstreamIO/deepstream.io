@@ -136,7 +136,7 @@ export default class SubscriptionRegistry {
    */
   public sendToSubscribers (name: string, message: Message, noDelay: boolean, socket: SocketWrapper | null, isRemote: boolean = false): void {
     if (socket && !isRemote) {
-      this.services.message.send(message.topic, message)
+      this.services.message.send(message, {})
     }
 
     const subscription = this.subscriptions.get(name)

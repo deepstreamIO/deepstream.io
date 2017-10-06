@@ -5,13 +5,9 @@ const PermissionHandler = require('../../src/permission/open-permission-handler'
 describe('open permission handler', () => {
   let permissionHandler
 
-  it('creates the handler', () => {
-    permissionHandler = new PermissionHandler()
-    expect(typeof permissionHandler.canPerformAction).toBe('function')
-    expect(permissionHandler.description).toBe('none')
-  })
-
   it('allows any action', (done) => {
+    permissionHandler = new PermissionHandler()
+
     const message = {
       topic: 'This doesnt matter',
       action: 'Since it allows anything',

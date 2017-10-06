@@ -1,5 +1,4 @@
 'use strict'
-/* eslint-disable valid-typeof */
 
 const crypto = require('crypto')
 const jsYamlLoader = require('../config/js-yaml-loader')

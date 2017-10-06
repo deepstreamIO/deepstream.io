@@ -37,12 +37,9 @@ module.exports = class MessageConnectorMock extends EventEmitter {
 
   }
 
-  send (topic, message) {
-    if (typeof topic !== 'string') {
-      throw new Error('No topic provided')
-    }
+  send (message) {
     this.publishedMessages.push(message)
-    this.lastPublishedTopic = topic
+    this.lastPublishedTopic = message.topic
     this.lastPublishedMessage = JSON.parse(JSON.stringify(message))
   }
 
@@ -50,10 +47,9 @@ module.exports = class MessageConnectorMock extends EventEmitter {
 
   }
 
-  sendDirect (serverName, topic, message) {
+  sendDirect (serverName, message) {
     this.lastDirectSentMessage = {
       serverName,
-      topic,
       message
     }
   }

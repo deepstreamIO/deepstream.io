@@ -345,7 +345,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
-        this.metaData,
+        this.metaData
       )
 
       const remoteListenArray = this.createRemoteListenArray(subscriptionName)
@@ -558,10 +558,10 @@ export default class ListenerRegistry implements SubscriptionListener {
   * start a local discovery
   */
   private sendRemoteDiscoveryStart (serverName: string, subscriptionName: string): void  {
-    this.message.sendDirect(serverName, this.messageTopic, {
+    this.message.sendDirect(serverName, {
       topic: this.messageTopic,
       action: ACTIONS.LISTEN,
-      data: [serverName, subscriptionName, this.config.serverName],
+      name: subscriptionName
     }, this.metaData)
   }
 
@@ -570,10 +570,10 @@ export default class ListenerRegistry implements SubscriptionListener {
   * complete its local discovery start
   */
   private sendRemoteDiscoveryStop (listenLeaderServerName: string, subscriptionName: string): void  {
-    this.message.sendDirect(listenLeaderServerName, this.messageTopic, {
+    this.message.sendDirect(listenLeaderServerName, {
       topic: this.messageTopic,
       action: ACTIONS.ACK,
-      data: [listenLeaderServerName, subscriptionName],
+      name: subscriptionName
     }, this.metaData)
   }
 

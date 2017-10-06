@@ -1,5 +1,3 @@
-'use strict'
-/* eslint-disable valid-typeof */
 import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
 import RecordHandler from '../record/record-handler'

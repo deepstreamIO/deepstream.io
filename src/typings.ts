@@ -15,9 +15,9 @@ interface StorageRecord {
 
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
-  sendMessage: Function
-  sendAckMessage: Function
-  sendError: Function
+  sendMessage(message: Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, buffer?: boolean): void
+  sendAckMessage(message: Message | RPCMessage ): void
+  sendError(message: { topic: string } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: string, errorMessage?: string): void
 }
 
 interface SocketWrapper extends SimpleSocketWrapper {
@@ -48,7 +48,7 @@ interface Message {
 
 interface RPCMessage extends Message {
   correlationId: string
-  isCompleted: boolean
+  isCompleted?: boolean
 }
 
 interface PresenceMessage extends Message {
@@ -68,59 +68,35 @@ interface RecordMessage extends Message {
 }
 
 interface RecordWriteMessage extends Message {
-  path: string
   version: number
   isWriteAck: boolean
+  path?: string
 }
 
 interface RecordAckMessage extends Message {
-  path: string
-  version: number
-  isWriteAck: boolean
-}
-
-interface DeepstreamPlugin extends NodeJS.EventEmitter {
-  init?: Function
-  isReady: boolean
-  setDeepstream?: Function
-  close?: Function
-  setRecordHandler?: Function
-  description: string
-}
-
-interface StoragePlugin extends DeepstreamPlugin {
-  set: Function
-  get: Function
-  delete: Function
-}
-
-interface PermissionHandler extends DeepstreamPlugin {
-  canPerformAction: Function
-}
-
-interface AuthenticationHandler extends DeepstreamPlugin {
-  isValidUser: Function
+  path?: string
+  data: any
 }
 
 interface SubscriptionListener {
-  onSubscriptionRemoved: Function
-  onLastSubscriptionRemoved: Function
-  onSubscriptionMade: Function
-  onFirstSubscriptionMade: Function
+  onSubscriptionRemoved(name: string, socketWrapper: SocketWrapper)
+  onLastSubscriptionRemoved(name: string)
+  onSubscriptionMade(name: string, socketWrapper: SocketWrapper)
+  onFirstSubscriptionMade(name: string)
 }
 
 interface Logger extends DeepstreamPlugin {
-  setLogLevel: Function
-  info: Function
-  debug: Function
-  warn: Function
-  error: Function
-  log?: Function
+  setLogLevel(logLevel: number)
+  info(event: string, message?: string, metaData?: any): void
+  debug(event: string, message?: string, metaData?: any): void
+  warn(event: string, message?: string, metaData?: any): void
+  error(event: string, message?: string, metaData?: any): void
+  log(level: number, event: string, message: string, metaData?: any): void
 }
 
 interface ConnectionEndpoint extends DeepstreamPlugin {
-  onMessages: Function
-  close: Function
+  onMessages(messages: Array<Message>): void
+  close(): void
 }
 
 interface PluginConfig {
@@ -130,12 +106,49 @@ interface PluginConfig {
   options: any
 }
 
+interface DeepstreamPlugin extends NodeJS.EventEmitter {
+  isReady: boolean
+  description: string
+  init?(): void
+  close?(): void
+  setDeepstream?(deepstream: any): void
+  setRecordHandler?(recordHandler: any): void
+}
+
+interface StorageReadCallback {
+ (error: Error | null, result: StorageRecord): void;
+}
+
+interface StorageWriteCallback {
+ (error: Error | null): void;
+}
+
+interface StoragePlugin extends DeepstreamPlugin {
+  set(recordName: string, data: any, callback: StorageWriteCallback, metaData: any): void
+  get(recordName: string, callback: StorageReadCallback, metaData: any): void
+  delete(recordName: string, callback: StorageWriteCallback, metaData: any): void
+}
+
+interface PermissionHandler extends DeepstreamPlugin {
+  canPerformAction(username: string, message: Message, callback: Function, authData: any, socketWrapper: SocketWrapper): void
+}
+
+interface AuthenticationHandler extends DeepstreamPlugin {
+  isValidUser(connectionData: any, authData: any, callback: Function) 
+}
+
 interface Cluster {
-  getStateRegistry: Function,
-  send: Function,
-  sendDirect: Function,
-  subscribe: Function,
-  close: Function
+  getStateRegistry(stateRegistryName: string): any,
+  send(message: Message, metaData: any): void,
+  sendDirect(serverName: string, message: Message, metaData: any): void,
+  subscribe(topic: any, callback: Function): void
+  isLeader(): boolean
+  close(callback: Function): void
+}
+
+interface LockRegistry {
+  get(lock: string, callback: Function)
+  release(lock: string)
 }
 
 interface DeepstreamConfig {
@@ -185,10 +198,7 @@ interface DeepstreamServices {
   authenticationHandler: AuthenticationHandler
   logger: Logger
   message: Cluster
-  uniqueRegistry: {
-    release: Function
-    get: Function
-  }
+  uniqueRegistry: LockRegistry
 }
 
 interface ValveConfig {
@@ -199,7 +209,7 @@ interface ValveConfig {
 
 interface Provider {
   socketWrapper: SocketWrapper
-  pattern: String
+  pattern: string
 }
 
 declare module NodeJS  {
@@ -207,6 +217,6 @@ declare module NodeJS  {
     deepstreamLibDir: string
     deepstreamCLI: string
     deepstreamConfDir: string
-    require: Function
+    require(path: string): any
   }
 }

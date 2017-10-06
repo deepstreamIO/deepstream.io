@@ -312,7 +312,7 @@ export default class RecordHandler {
  * this case is handled via the record transition.
  */
   public handleForceWriteAcknowledgement (
-    socketWrapper: SocketWrapper, message: RecordAckMessage, cacheResponse: boolean, storageResponse: boolean, error: Error,
+    socketWrapper: SocketWrapper, message: RecordWriteMessage, cacheResponse: boolean, storageResponse: boolean, error: Error,
   ): void {
     if (storageResponse && cacheResponse) {
       socketWrapper.sendMessage({

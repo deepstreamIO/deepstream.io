@@ -56,7 +56,7 @@ export default class PresenceHandler {
     const users = parseUserNames(message.data)
     if (!users) {
       this.services.logger.error(EVENT.INVALID_PRESENCE_USERS, message.data, this.metaData)
-      socketWrapper.sendError(message, EVENT.INVALID_PRESENCE_USERS, 2)
+      socketWrapper.sendError(message, EVENT.INVALID_PRESENCE_USERS)
       return
     }
     if (message.action === ACTIONS.SUBSCRIBE) {
@@ -124,7 +124,7 @@ export default class PresenceHandler {
       socketWrapper.sendMessage({
         topic: TOPIC.PRESENCE,
         action: ACTIONS.QUERY,
-        // name: ACTIONS.QUERY,
+        name: ACTIONS.QUERY,
         parsedData: clients,
       })
     } else {
@@ -136,7 +136,7 @@ export default class PresenceHandler {
       socketWrapper.sendMessage({
         topic: TOPIC.PRESENCE,
         action: ACTIONS.QUERY,
-        // name: ACTIONS.QUERY,
+        name: ACTIONS.QUERY,
         correlationId,
         parsedData: result,
       })

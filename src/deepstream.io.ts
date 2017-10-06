@@ -410,7 +410,7 @@ export default class Deepstream extends EventEmitter {
     let logo
 
     try {
-    const nexeres = require('nexeres') // eslint-disable-line
+    const nexeres = require('nexeres')
       logo = nexeres.get('ascii-logo.txt').toString('ascii')
     } catch (e) {
       logo = readFileSync(joinPath(__dirname, '..', '..', '/ascii-logo.txt'), 'utf8')

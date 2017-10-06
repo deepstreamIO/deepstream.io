@@ -16,7 +16,7 @@ const DEFAULT_CONFIG_DIRS = [
 ]
 
 try {
-  require('nexeres') // eslint-disable-line
+  require('nexeres') // tslint:disable-line
   DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', 'conf', 'config'))
   DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', '..', 'conf', 'config'))
 } catch (e) {
@@ -93,7 +93,7 @@ function parseFile (filePath: string, fileContent: string): DeepstreamConfig {
   if (extension === '.yml' || extension === '.yaml') {
     return yaml.safeLoad(replaceEnvironmentVariables(fileContent))
   } else if (extension === '.js') {
-    return require(path.resolve(filePath)) // eslint-disable-line
+    return require(path.resolve(filePath))
   } else if (extension === '.json') {
     return JSON.parse(replaceEnvironmentVariables(fileContent))
   } else {

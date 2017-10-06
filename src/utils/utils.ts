@@ -1,4 +1,3 @@
-/* eslint-disable valid-typeof */
 import { EventEmitter } from 'events'
 import * as url from 'url'
 
@@ -95,7 +94,7 @@ export let validateMap = function (map: object, throwError: boolean, schema: Obj
  */
 export let merge = function (...args) {
   const result = {}
-  const objs = Array.prototype.slice.apply(arguments) // eslint-disable-line
+  const objs = Array.prototype.slice.apply(arguments)
   let i
 
   const internalMerge = (objA, objB) => {

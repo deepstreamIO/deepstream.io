@@ -1,4 +1,3 @@
-/* eslint-disable global-require */
 import { getUid } from './utils/utils'
 import { LOG_LEVEL } from './constants'
 import LocalCache from './default-plugins/local-cache'

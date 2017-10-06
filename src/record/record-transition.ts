@@ -58,7 +58,7 @@ export default class RecordTransition {
  private cacheResponses: number
  private lastVersion: number | null
  private lastError: string | null
- private writeError: string
+ private writeError: Error
 
   constructor (name: string, config: DeepstreamConfig, services: DeepstreamServices, recordHandler: RecordHandler, metaData) {
     this.metaData = metaData
@@ -211,7 +211,7 @@ export default class RecordTransition {
 /**
  * Destroys the instance
  */
-  private destroy (errorMessage: string | null): void {
+  private destroy (errorMessage: Error | null): void {
     if (this.isDestroyed) {
       return
     }
@@ -240,7 +240,7 @@ export default class RecordTransition {
   private onRecord (record: StorageRecord, upsert: boolean) {
     if (record === null) {
       if (!upsert) {
-        this.onFatalError(`Received update for non-existant record ${this.name}`)
+        this.onFatalError(new Error(`Received update for non-existant record ${this.name}`))
         return
       }
       this.record = { _v: 0, _d: {} }
@@ -295,7 +295,7 @@ export default class RecordTransition {
 
     this.record._v = message.version
 
-    if (currentStep.message.path) {
+    if (message.path) {
       setPathValue(this.record._d, message.path, message.parsedData)
     } else {
       this.record._d = message.parsedData
@@ -343,7 +343,7 @@ export default class RecordTransition {
  * the update will be broadcast to other subscribers and the
  * next step invoked
  */
-  private onCacheResponse (error: string): void {
+  private onCacheResponse (error: Error | null): void {
     this.cacheResponses--
     this.writeError = this.writeError || error
     if (error) {
@@ -368,7 +368,7 @@ export default class RecordTransition {
 /**
  * Callback for responses returned by storage.set()
  */
-  private onStorageResponse (error: string): void {
+  private onStorageResponse (error: Error | null): void {
     this.storageResponses--
     this.writeError = this.writeError || error
     if (error) {
@@ -385,7 +385,7 @@ export default class RecordTransition {
 /**
  * Sends all write acknowledgement messages at the end of a transition
  */
-  private sendWriteAcknowledgements (errorMessage: string | null) {
+  private sendWriteAcknowledgements (errorMessage: Error | null) {
     for (const uid in this.pendingUpdates) {
       const update = this.pendingUpdates[uid]
       update.socketWrapper.sendMessage({
@@ -394,7 +394,7 @@ export default class RecordTransition {
         name: this.name,
         data: [
           update.versions,
-          errorMessage,
+          errorMessage ? errorMessage.toString() : null,
         ],
       }, true)
     }
@@ -404,12 +404,11 @@ export default class RecordTransition {
  * Generic error callback. Will destroy the queue and notify the senders of all pending
  * transitions
  */
-  private onFatalError (errorMessage: string): void {
+  private onFatalError (errorMessage: Error): void {
     if (this.isDestroyed === true) {
-    /* istanbul ignore next */
       return
     }
-    this.services.logger.error(EVENT.RECORD_UPDATE_ERROR, errorMessage, this.metaData)
+    this.services.logger.error(EVENT.RECORD_UPDATE_ERROR, errorMessage.toString(), this.metaData)
 
     for (let i = 0; i < this.steps.length; i++) {
       if (!this.steps[i].sender.isRemote) {

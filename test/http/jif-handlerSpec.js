@@ -1,7 +1,6 @@
 'use strict'
 
 const chai = require('chai') // eslint-disable-line
-const proxyquire = require('proxyquire') // eslint-disable-line
 const sinon = require('sinon') // eslint-disable-line
 
 const expect = chai.expect

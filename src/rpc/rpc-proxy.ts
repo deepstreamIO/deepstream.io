@@ -35,13 +35,11 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   * Adds additional information to the message that enables the counterparty
   * to identify the sender
   */
-  public sendMessage (message: RPCMessage): void {
-    if (message.isAck && message.action !== ACTIONS.REQUEST) {
-      message.isCompleted = true
+  public sendMessage (msg: RPCMessage): void {
+    if (msg.isAck && msg.action !== ACTIONS.REQUEST) {
+      msg.isCompleted = true
     }
-    this.services.message.sendDirect(
-      this.remoteServer, TOPIC.RPC_PRIVATE, message, this.metaData,
-    )
+    this.services.message.sendDirect(this.remoteServer, msg, this.metaData)
   }
 
   /**
@@ -49,16 +47,12 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   * Sends an error on the specified topic. The
   * action will automatically be set to ACTION.ERROR
   */
-  public sendError (topic: string, type: string, msg: RPCMessage): void {
+  public sendError (msg: RPCMessage, type: string, errorMessage: string): void {
     if (type === EVENT.RESPONSE_TIMEOUT) {
       // by the time an RPC has timed out on this server, it has already timed out on the remote
       // (and has been cleaned up) so no point sending
       return
     }
-    this.services.message.sendDirect(this.remoteServer, TOPIC.RPC_PRIVATE, {
-      topic: TOPIC.RPC_PRIVATE,
-      action: ACTIONS.ERROR,
-      data: [type, msg],
-    }, this.metaData)
+    this.services.message.sendDirect(this.remoteServer, msg, this.metaData)
   }
 }

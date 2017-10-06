@@ -1,5 +1,3 @@
-'use strict'
-/* eslint-disable valid-typeof */
 import { ACTIONS, EVENT, TOPIC } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'

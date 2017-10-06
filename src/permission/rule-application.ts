@@ -1,4 +1,3 @@
-/* eslint-disable consistent-return */
 const OPEN = 'open'
 const UNDEFINED = 'undefined'
 const LOADING = 'loading'
@@ -209,6 +208,11 @@ export default class RuleApplication {
    */
   private getRecordPatchData (msg: RecordWriteMessage): any {
     if (!this.recordsData) {
+      return
+    }
+
+    if (!msg.path) {
+      // TODO: Log error
       return
     }
 
