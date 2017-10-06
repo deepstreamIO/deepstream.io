@@ -1,5 +1,5 @@
-/* eslint-disable max-len, import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+'use strict'
+
 require('source-map-support').install()
 
 const RecordHandler = require('../../src/record/record-handler').default
@@ -19,7 +19,7 @@ describe('record handler handles messages', () => {
   beforeEach(() => {
     testMocks = getTestMocks()
     client = testMocks.getSocketWrapper('someUser')
-    options = testHelper.getDeepstreamOptions()
+    const options = testHelper.getDeepstreamOptions()
     config = options.config
     services = options.services
     recordHandler = new RecordHandler(
@@ -260,7 +260,7 @@ describe('record handler handles messages', () => {
   })
 
   it('updates a record via same client to the same version', (done) => {
-    options.cacheRetrievalTimeout = 50
+    config.cacheRetrievalTimeout = 50
     services.cache.nextGetWillBeSynchronous = false
     services.cache.set(M.recordUpdate.name, M.recordData, () => {})
 

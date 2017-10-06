@@ -1,4 +1,3 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const RuleCache = require('../../src/permission/rule-cache').default

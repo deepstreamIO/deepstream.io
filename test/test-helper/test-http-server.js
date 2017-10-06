@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 'use strict'
 
 const http = require('http')

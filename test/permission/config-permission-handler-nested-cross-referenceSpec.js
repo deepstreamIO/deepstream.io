@@ -1,7 +1,4 @@
-/* no-param-reassign no-param-reassign, no-new, max-len, */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
-/* eslint-disable no-param-reassign */
 
 const testHelper = require('../test-helper/test-helper')
 const C = require('../../src/constants')

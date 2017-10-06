@@ -1,5 +1,3 @@
-/* global describe, it, expect */
-/* eslint-disable no-new */
 'use strict'
 require('source-map-support').install()
 const AuthenticationHandler = require('../../src/authentication/file-based-authentication-handler')

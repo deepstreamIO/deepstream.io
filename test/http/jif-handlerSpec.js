@@ -1,7 +1,5 @@
 'use strict'
 
-/* global describe, beforeAll, it */
-/* eslint-disable no-unused-expressions */
 const chai = require('chai') // eslint-disable-line
 const proxyquire = require('proxyquire') // eslint-disable-line
 const sinon = require('sinon') // eslint-disable-line

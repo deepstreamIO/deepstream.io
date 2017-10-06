@@ -1,0 +1,16 @@
+{
+    "extends": "deepstream",
+    rules: {
+        "import/no-unresolved": 0,
+        "import/no-extraneous-dependencies": 0,
+        "class-methods-use-this": 0,
+        "max-len": 0,
+        "no-unused-expressions": 0,
+        "no-new": 0,
+        "no-empty": 0,
+        "prefer-rest-params": 0
+    },
+    "env": {
+    	"jasmine": true
+    }
+}

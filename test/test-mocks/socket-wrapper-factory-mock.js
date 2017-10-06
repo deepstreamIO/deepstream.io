@@ -1,7 +1,5 @@
 'use strict'
 
-const C = require('../../src/constants')
-const utils = require('util')
 const EventEmitter = require('events').EventEmitter
 
 class SocketWrapperMock extends EventEmitter {
@@ -16,11 +14,11 @@ class SocketWrapperMock extends EventEmitter {
   }
 
   prepareMessage (message) {
-    SocketWrapper.lastPreparedMessage = message
+    SocketWrapperMock.lastPreparedMessage = message
     return message
   }
 
-  sendPrepared (preparedMessage) {
+  sendPrepared (/* preparedMessage */) {
   }
 
   finalizeMessage () {
@@ -38,7 +36,7 @@ class SocketWrapperMock extends EventEmitter {
     return this._handshakeData
   }
 
-  sendError (topic, type, msg) {
+  sendError (/* topic, type, msg */) {
   }
 
   sendMessage (message) {
@@ -49,7 +47,7 @@ class SocketWrapperMock extends EventEmitter {
     return message
   }
 
-  send (message) {
+  send (/* message */) {
   }
 
   destroy () {

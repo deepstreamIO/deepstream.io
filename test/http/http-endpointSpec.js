@@ -1,7 +1,5 @@
 'use strict'
 
-/* global describe, beforeAll, afterAll, it */
-/* eslint-disable no-unused-expressions, import/no-extraneous-dependencies */
 const chai = require('chai') // eslint-disable-line
 const proxyquire = require('proxyquire') // eslint-disable-line
 const sinon = require('sinon') // eslint-disable-line
@@ -11,7 +9,6 @@ const expect = chai.expect
 
 const needle = require('needle')
 
-const constants = require('../../src/constants')
 const LoggerMock = require('../test-mocks/logger-mock')
 
 Promise.promisifyAll(needle)

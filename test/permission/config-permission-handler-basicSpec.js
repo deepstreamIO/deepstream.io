@@ -1,5 +1,3 @@
-/* eslint-disable no-param-reassign */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions

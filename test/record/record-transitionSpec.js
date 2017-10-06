@@ -1,7 +1,4 @@
-/* eslint-disable import/no-extraneous-dependencies */
-'use strict'
-
-/* global it, describe, expect, jasmine, afterAll, beforeAll */
+/*
 const sinon = require('sinon')
 
 const M = require('./messages')
@@ -28,7 +25,7 @@ xdescribe('record transitions', () => {
     config = options.config
 
     recordTransition = new RecordTransition(M.recordUpdate.name, config, services, testMocks.recordHandler)
-  
+
     services.cache.set('some-record', M.recordData, () => {})
   })
 
@@ -59,7 +56,7 @@ xdescribe('record transitions', () => {
     expect(recordTransition.steps.length).toBe(1)
   })
 
-  it('adds a message with invalid data to the queue', () => { 
+  it('adds a message with invalid data to the queue', () => {
     const invalidMessage = {
       topic: C.TOPIC.RECORD,
       action: C.ACTIONS.UPDATE,
@@ -101,7 +98,7 @@ xdescribe('record transitions', () => {
       version: 1,
       data: 'This is a string'
     }
-    
+
     client.socketWrapperMock
       .expects('sendError')
       .once()
@@ -153,7 +150,7 @@ xdescribe('record transitions', () => {
     services.cache.nextOperationWillBeSynchronous = false
 
     recordTransition.add(client.socketWrapper, M.recordUpdate)
-    
+
     expect(recordTransition.hasVersion(0)).toBe(true)
     expect(recordTransition.hasVersion(1)).toBe(true)
     expect(recordTransition.hasVersion(2)).toBe(true)
@@ -170,7 +167,7 @@ xdescribe('record transitions', () => {
       .expects('broadcastUpdate')
       .once()
       .withExactArgs(M.recordPatch.name, M.recordPatch, false, client.socketWrapper)
-    
+
     testMocks.recordHandlerMock
       .expects('broadcastUpdate')
       .once()
@@ -186,8 +183,8 @@ xdescribe('record transitions', () => {
       .never()
 
     recordTransition.add(client.socketWrapper, M.recordPatch)
-    recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: M.recordUpdate.version + 1}))    
-    recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: M.recordUpdate.version + 2}))    
+    recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: M.recordUpdate.version + 1 }))
+    recordTransition.add(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: M.recordUpdate.version + 2 }))
   })
 
   describe('does not store excluded data', () => {
@@ -362,3 +359,4 @@ xdescribe('record transitions', () => {
     })
   })
 })
+*/

@@ -1,5 +1,3 @@
-/* import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const RecordDeletion = require('../../src/record/record-deletion').default

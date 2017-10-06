@@ -1,5 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies, max-len */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, beforeAll, afterEach, afterAll */
 'use strict'
 
 const C = require('../../src/constants')
@@ -12,7 +10,6 @@ const PermissionHandlerMock = require('../test-mocks/permission-handler-mock')
 const AuthenticationHandlerMock = require('../test-mocks/authentication-handler-mock')
 const SocketMock = require('../test-mocks/socket-mock')
 
-const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
 const httpMock = new HttpMock()
@@ -38,11 +35,9 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
 })
 
 let lastAuthenticatedMessage = null
-let socketWrapperMock
 let connectionEndpoint
 
 let authenticationHandlerMock
-let permissionHandler
 let config
 let services
 
@@ -72,7 +67,6 @@ describe('connection endpoint', () => {
         lastAuthenticatedMessage = parsedMessages[parsedMessages.length - 1]
       }
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
       expect(uwsMock._lastUserData).not.toBe(null)
       done()
     })

@@ -1,4 +1,3 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll */
 'use strict'
 
 const MessageDistributor = require('../../src/message/message-distributor')

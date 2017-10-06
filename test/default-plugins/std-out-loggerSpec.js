@@ -1,4 +1,3 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, afterAll, beforeAll */
 'use strict'
 
 const Logger = require('../../src/default-plugins/std-out-logger').default

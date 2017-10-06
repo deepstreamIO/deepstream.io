@@ -1,5 +1,4 @@
-/* eslint-disable no-param-reassign, prefer-rest-params */
-/* global jasmine */
+/* eslint-disable no-param-reassign */
 'use strict'
 
 const C = require('../../src/constants')
@@ -96,7 +95,7 @@ exports.getDeepstreamOptions = function (serverName) {
 }
 
 exports.getDeepstreamPermissionOptions = function () {
-  let options = exports.getDeepstreamOptions()
+  const options = exports.getDeepstreamOptions()
   options.config = Object.assign(options.config, {
     cacheRetrievalTimeout: 500,
   })

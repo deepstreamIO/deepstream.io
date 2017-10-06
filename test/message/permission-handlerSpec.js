@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars, import/no-extraneous-dependencies, import/newline-after-import */
-/* global jasmine, spyOn, describe, it, expect, beforeAll, afterEach */
 'use strict'
 
 const C = require('../../src/constants')
@@ -7,13 +5,13 @@ const proxyquire = require('proxyquire').noPreserveCache()
 const uwsMock = require('../test-mocks/uws-mock')
 const HttpMock = require('../test-mocks/http-mock')
 const LoggerMock = require('../test-mocks/logger-mock')
+
 const httpMock = new HttpMock()
 const httpsMock = new HttpMock()
 // since proxyquire.callThru is enabled, manually capture members from prototypes
 httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
 
-const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
 let client
@@ -40,10 +38,10 @@ const permissionHandler = {
       serverData: { role: 'admin' }
     })
   },
-  canPerformAction (username, message, callback, data) {
+  canPerformAction (username, message, callback) {
     callback(null, true)
   },
-  onClientDisconnect (username) {}
+  onClientDisconnect () {}
 }
 
 const config = {
@@ -58,7 +56,6 @@ const services = {
 }
 
 describe('permissionHandler passes additional user meta data', () => {
-  let socketWrapperMock
   let connectionEndpoint
 
   beforeEach((done) => {
@@ -67,7 +64,6 @@ describe('permissionHandler passes additional user meta data', () => {
     depInit.on('ready', () => {
       connectionEndpoint.onMessages = function () {}
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
 
       uwsMock.messageHandler([{
         topic: C.TOPIC.CONNECTION,

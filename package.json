@@ -12,7 +12,8 @@
   "scripts": {
     "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && cp -r conf ./dist/conf && mv ./dist/bin/deepstream.js ./dist/bin/deepstream",
     "precommit": "npm run lint",
-    "lint": "node_modules/.bin/eslint src/ test/",
+    "lint": "tslint --fix src/**/*.ts -t verbose",
+    "jslint": "node_modules/.bin/eslint test/",
     "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
     "reporter": "npm run tsc && istanbul cover jasmine-runner.js",

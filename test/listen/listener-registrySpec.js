@@ -1,4 +1,4 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/*
 'use strict'
 
 const ListenerRegistry = require('../../src/listen/listener-registry')
@@ -54,3 +54,4 @@ xdescribe('listener-registry errors', () => {
     expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|SyntaxError: Invalid regular expression: /us(/: Unterminated group+'))
   })
 })
+*/

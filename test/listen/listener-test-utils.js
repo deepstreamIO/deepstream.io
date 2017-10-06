@@ -1,5 +1,3 @@
-/* eslint-disable class-methods-use-this, max-len */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const ListenerRegistry = require('../../src/listen/listener-registry').default

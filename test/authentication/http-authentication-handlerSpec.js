@@ -1,5 +1,3 @@
-/* global jasmine, describe, it, expect */
-/* eslint-disable no-undef */
 'use strict'
 
 const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')

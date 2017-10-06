@@ -1,5 +1,4 @@
-/* eslint-disable class-methods-use-this, no-unused-vars */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
+/* eslint-disable no-unused-vars */
 'use strict'
 
 class Group {

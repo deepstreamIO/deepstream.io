@@ -1,11 +1,9 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const recordRequest = require('../../src/record/record-request').default
 
 const getTestMocks = require('../test-helper/test-mocks')
 const testHelper = require('../test-helper/test-helper')
-const LoggerMock = require('../test-mocks/logger-mock')
 
 describe('record request', () => {
   const completeCallback = jasmine.createSpy('completeCallback')
@@ -17,7 +15,7 @@ describe('record request', () => {
   let services
 
   beforeEach(() => {
-    options = testHelper.getDeepstreamOptions()
+    const options = testHelper.getDeepstreamOptions()
     services = options.services
     config = Object.assign({}, options.config, {
       cacheRetrievalTimeout: 100,

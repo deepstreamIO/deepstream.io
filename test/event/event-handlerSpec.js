@@ -1,5 +1,3 @@
-/* import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const EventHandler = require('../../src/event/event-handler').default

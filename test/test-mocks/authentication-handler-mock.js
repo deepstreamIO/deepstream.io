@@ -1,12 +1,10 @@
-/* eslint-disable prefer-rest-params */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 module.exports = class AuthenticationHandlerMock {
 
   constructor (options) {
-      this.options = options
-  this.isReady = true
+    this.options = options
+    this.isReady = true
     this.reset()
   }
 

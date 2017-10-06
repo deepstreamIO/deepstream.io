@@ -1,8 +1,6 @@
-/* eslint-disable camelcase */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, xdescribe  */
 'use strict'
 
-const child_process = require('child_process')
+const childProcess = require('child_process')
 const path = require('path')
 const Deepstream = require('../src/deepstream.io').default
 const ClosableLogger = require('./test-mocks/closable-logger')
@@ -186,7 +184,7 @@ describe('deepstream.io', () => {
     }
     it('via CLI', (done) => {
       try {
-        child_process.execSync('node deepstream start', execOptions)
+        childProcess.execSync('node deepstream start', execOptions)
       } catch (err) {
         const stderr = err.stderr.toString()
         expect(stderr).toContain('No config file found')

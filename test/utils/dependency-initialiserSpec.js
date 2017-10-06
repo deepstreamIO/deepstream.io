@@ -1,5 +1,3 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
-/* eslint-disable no-new, no-empty */
 'use strict'
 
 const C = require('../../src/constants')

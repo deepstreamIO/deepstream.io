@@ -1,4 +1,3 @@
-/* global jasmine, spyOn, describe, it, expect, beforeAll, beforeEach, afterEach */
 'use strict'
 
 const defaultConfig = require('../../src/default-options')

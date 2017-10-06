@@ -1,4 +1,3 @@
-/* global jasmine, xdescribe, beforeAll, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const testHelper = require('../test-helper/test-helper')

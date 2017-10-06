@@ -1,10 +1,7 @@
-/* eslint-disable import/no-extraneous-dependencies, no-unused-expressions */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll, afterAll */
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
 const utils = require('../../src/utils/utils')
-const C = require('../../src/constants')
 const path = require('path')
 const jsYamlLoader = require('../../src/config/js-yaml-loader')
 
@@ -245,7 +242,8 @@ describe('js-yaml-loader', () => {
     })
 
     it('does environment variable substitution for yaml', () => {
-      const config = configLoader.loadConfig().config
+      const config = configLoader.loadConfig().config // eslint-disable-line
+      // TODO
     })
   })
 

@@ -1,5 +1,3 @@
-/* eslint-disable no-param-reassign */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll */
 'use strict'
 
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
@@ -8,7 +6,6 @@ const testHelper = require('../test-helper/test-helper')
 
 const noop = function () {}
 const options = testHelper.getDeepstreamPermissionOptions()
-const config = options.config
 const services = options.services
 const testPermission = testHelper.testPermission(options)
 

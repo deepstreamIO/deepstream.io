@@ -1,7 +1,6 @@
-/* eslint-disable import/no-extraneous-dependencies */
+/*
 'use strict'
 
-/* global it, describe, expect, jasmine, afterAll, beforeAll */
 const M = require('./messages')
 const C = require('../../src/constants')
 const getTestMocks = require('../test-helper/test-mocks')
@@ -102,3 +101,4 @@ describe('record write acknowledgement', () => {
     expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|recordName|1|{"lastname":"Kowalski"}|{"writeSuccess":true}+'))
   })
 })
+*/

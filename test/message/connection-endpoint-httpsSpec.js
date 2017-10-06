@@ -1,5 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll */
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()

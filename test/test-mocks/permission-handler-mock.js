@@ -1,9 +1,8 @@
 /* eslint-disable prefer-rest-params */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const PermissionHandlerMock = function (options, services) {
-	this.isReady = true
+const PermissionHandlerMock = function (options /* , services */) {
+  this.isReady = true
   this.options = options
   this.reset()
 }

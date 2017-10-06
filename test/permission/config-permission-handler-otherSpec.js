@@ -1,5 +1,3 @@
-/* eslint-disable no-param-reassign, no-new, max-len, */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
@@ -9,7 +7,6 @@ const ConfigPermissionHandler = require('../../src/permission/config-permission-
 
 const options = testHelper.getDeepstreamPermissionOptions()
 const config = options.config
-const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 describe('supports spaces after variables and escaped quotes', () => {

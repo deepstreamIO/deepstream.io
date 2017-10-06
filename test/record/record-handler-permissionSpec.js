@@ -1,4 +1,3 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const RecordHandler = require('../../src/record/record-handler').default
@@ -28,7 +27,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock.verify()
   })
 
- 
+
   it('triggers create and read actions if record doesnt exist', () => {
     client.socketWrapperMock
       .expects('sendMessage')
@@ -37,9 +36,9 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( services.permissionHandler.lastArgs.length).toBe(2)
-    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
-    expect( services.permissionHandler.lastArgs[1][1].action).toBe(C.ACTIONS.READ)
+    expect(services.permissionHandler.lastArgs.length).toBe(2)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
+    expect(services.permissionHandler.lastArgs[1][1].action).toBe(C.ACTIONS.READ)
   })
 
   it('triggers only read action if record does exist', () => {
@@ -52,12 +51,12 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( services.permissionHandler.lastArgs.length).toBe(1)
-    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
+    expect(services.permissionHandler.lastArgs.length).toBe(1)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
   })
 
   it('rejects a create', () => {
-     services.permissionHandler.nextResult = false
+    services.permissionHandler.nextResult = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -66,13 +65,13 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( services.permissionHandler.lastArgs.length).toBe(1)
-    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
+    expect(services.permissionHandler.lastArgs.length).toBe(1)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
   })
 
   it('rejects a read', () => {
     services.cache.set('some-record', {}, () => {})
-     services.permissionHandler.nextResult = false
+    services.permissionHandler.nextResult = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -81,13 +80,13 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( services.permissionHandler.lastArgs.length).toBe(1)
-    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
+    expect(services.permissionHandler.lastArgs.length).toBe(1)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
   })
 
   it('handles a permission error', () => {
-     services.permissionHandler.nextError = 'XXX'
-     services.permissionHandler.nextResult = false
+    services.permissionHandler.nextError = 'XXX'
+    services.permissionHandler.nextResult = false
 
     client.socketWrapperMock
       .expects('sendError')
@@ -96,7 +95,7 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect( services.permissionHandler.lastArgs.length).toBe(1)
-    expect( services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
+    expect(services.permissionHandler.lastArgs.length).toBe(1)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
   })
 })
