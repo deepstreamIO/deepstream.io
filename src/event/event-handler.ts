@@ -1,8 +1,8 @@
 'use strict'
 /* eslint-disable valid-typeof */
-import { TOPIC, ACTIONS, EVENT } from '../constants'
-import SubscriptionRegistry from '../utils/subscription-registry'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
+import SubscriptionRegistry from '../utils/subscription-registry'
 
 export default class EventHandler {
   private metaData: any

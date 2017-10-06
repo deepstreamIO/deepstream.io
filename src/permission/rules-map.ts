@@ -18,9 +18,8 @@ const RULE_TYPES = {
   SUBSCRIBE: { name: 'subscribe', data: true, oldData: false },
   PROVIDE: { name: 'provide', data: false, oldData: false },
   REQUEST: { name: 'request', data: true, oldData: false },
-  ALLOW: { name: 'allow', data: false, oldData: false }
+  ALLOW: { name: 'allow', data: false, oldData: false },
 }
-
 
 /**
  * This class maps topic / action combinations to applicable
@@ -46,30 +45,30 @@ const RULES_MAP = {
       [ACTIONS.CREATE]: RULE_TYPES.CREATE,
       [ACTIONS.UPDATE]: RULE_TYPES.WRITE,
       [ACTIONS.PATCH]: RULE_TYPES.WRITE,
-      [ACTIONS.DELETE]: RULE_TYPES.DELETE
-    }
-  },  
+      [ACTIONS.DELETE]: RULE_TYPES.DELETE,
+    },
+  },
   [TOPIC.EVENT]: {
     section: 'event',
     actions: {
       [ACTIONS.LISTEN]: RULE_TYPES.LISTEN,
       [ACTIONS.SUBSCRIBE]: RULE_TYPES.SUBSCRIBE,
-      [ACTIONS.EVENT]: RULE_TYPES.PUBLISH
-    }
+      [ACTIONS.EVENT]: RULE_TYPES.PUBLISH,
+    },
   },
   [TOPIC.RPC]: {
     section: 'rpc',
     actions: {
       [ACTIONS.SUBSCRIBE]: RULE_TYPES.PROVIDE,
-      [ACTIONS.REQUEST]: RULE_TYPES.REQUEST
-    }
+      [ACTIONS.REQUEST]: RULE_TYPES.REQUEST,
+    },
   },
   [TOPIC.PRESENCE]: {
     section: 'presence',
     actions: {
       [ACTIONS.SUBSCRIBE]: RULE_TYPES.ALLOW,
-      [ACTIONS.QUERY]: RULE_TYPES.ALLOW
-    }
+      [ACTIONS.QUERY]: RULE_TYPES.ALLOW,
+    },
   },
 }
 
@@ -89,7 +88,7 @@ export const getRulesForMessage = (message: Message) => {
   return {
     section: RULES_MAP[message.topic].section,
     type: RULES_MAP[message.topic].actions[message.action].name,
-    action: actionToKey[message.action]
+    action: actionToKey[message.action],
   }
 }
 

@@ -12,7 +12,8 @@
   "scripts": {
     "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && cp -r conf ./dist/conf && mv ./dist/bin/deepstream.js ./dist/bin/deepstream",
     "precommit": "npm run lint",
-    "lint": "tslint --fix src/**/*.ts -t verbose",
+    "lint": "tslint src/**/*.ts -t verbose",
+    "lint-fix": "tslint --fix src/**/*.ts -t verbose",
     "jslint": "node_modules/.bin/eslint test/",
     "coverage": "istanbul cover node_modules/jasmine/bin/jasmine.js JASMINE_CONFIG_PATH=jasmine.json -x **/pid-helper.js",
     "watch": "node node_modules/watch/cli.js \"npm test\" ./src ./test",
@@ -73,8 +74,5 @@
   "bugs": {
     "url": "https://github.com/deepstreamIO/deepstream.io/issues"
   },
-  "homepage": "http://deepstream.io",
-  "eslintConfig": {
-    "extends": "deepstream"
-  }
+  "homepage": "http://deepstream.io"
 }

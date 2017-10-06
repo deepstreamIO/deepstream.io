@@ -6,10 +6,10 @@ const ERROR = 'error'
 const STRING = 'string'
 import { EOL } from 'os'
 
-import { TOPIC, ACTIONS, EVENT } from '../constants'
-import recordRequest from '../record/record-request'
-import RecordHandler from '../record/record-handler'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 import * as jsonPath from '../record/json-path'
+import RecordHandler from '../record/record-handler'
+import recordRequest from '../record/record-request'
 
 interface RuleApplicationParams {
    username: string
@@ -261,7 +261,7 @@ export default class RuleApplication {
       this.getCurrentData(),
       this.getOldData(),
       Date.now(),
-      this.params ? this.params.action : null
+      this.params ? this.params.action : null,
     ].concat(this.pathVars)
   }
 
@@ -273,7 +273,7 @@ export default class RuleApplication {
     return {
       isAuthenticated: this.params.username !== OPEN,
       id: this.params.username,
-      data: this.params.authData
+      data: this.params.authData,
     }
   }
 
@@ -331,7 +331,7 @@ export default class RuleApplication {
 
     this.params.recordHandler.runWhenRecordStable(
       recordName,
-      this.createNewRecordRequest
+      this.createNewRecordRequest,
     )
   }
 
@@ -348,7 +348,7 @@ export default class RuleApplication {
       null,
       this.onLoadComplete,
       this.onLoadError,
-      this
+      this,
     )
   }
 

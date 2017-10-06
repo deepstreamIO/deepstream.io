@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
-import { TOPIC, EVENT, ACTIONS } from '../constants'
-import RpcProxy from './rpc-proxy'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 import RpcHandler from './rpc-handler'
+import RpcProxy from './rpc-proxy'
 
 /**
  * Relays a remote procedure call from a requestor to a provider and routes
@@ -73,7 +73,7 @@ export default class Rpc {
   public destroy (): void {
     clearTimeout(this.ackTimeout)
     clearTimeout(this.responseTimeout)
-    this.rpcHandler._$onDestroy(this.correlationId)
+    this.rpcHandler.onRPCDestroyed(this.correlationId)
   }
 
   /**

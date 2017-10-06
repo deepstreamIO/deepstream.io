@@ -23,7 +23,7 @@ export default class OpenAuthenticationHandler extends EventEmitter implements A
   /**
   * Grants access to any user. Registeres them with username or open
   */
-  isValidUser (connectionData: any, authData: any, callback: Function) {
+  public isValidUser (connectionData: any, authData: any, callback: Function) {
     callback(true, { username: authData.username || OPEN })
   }
 }

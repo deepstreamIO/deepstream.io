@@ -1,5 +1,5 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants'
 import { EventEmitter } from 'events'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 /**
  * This class exposes an interface that mimicks the behaviour
  * of a SocketWrapper, connected to a local rpc provider, but
@@ -40,7 +40,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
       message.isCompleted = true
     }
     this.services.message.sendDirect(
-      this.remoteServer, TOPIC.RPC_PRIVATE, message, this.metaData
+      this.remoteServer, TOPIC.RPC_PRIVATE, message, this.metaData,
     )
   }
 
@@ -58,7 +58,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
     this.services.message.sendDirect(this.remoteServer, TOPIC.RPC_PRIVATE, {
       topic: TOPIC.RPC_PRIVATE,
       action: ACTIONS.ERROR,
-      data: [type, msg]
+      data: [type, msg],
     }, this.metaData)
   }
 }

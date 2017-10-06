@@ -26,13 +26,13 @@ export default class StateRegistry extends EventEmitter {
     this.data = {}
   }
 
-  whenReady (callback: Function): void {
+  public whenReady (callback: Function): void {
   }
 
   /**
   * Checks if a given entry exists within the registry
   */
-  has (name: string): boolean {
+  public has (name: string): boolean {
     return !!this.data[name]
   }
 
@@ -40,7 +40,7 @@ export default class StateRegistry extends EventEmitter {
   * Add a name/entry to the registry. If the entry doesn't exist yet,
   * this will notify the other nodes within the cluster
   */
-  add (name: string): void {
+  public add (name: string): void {
     if (!this.data[name]) {
       this.data[name] = 1
       this.emit('add', name)
@@ -58,7 +58,7 @@ export default class StateRegistry extends EventEmitter {
   * @public
   * @returns {void}
   */
-  remove (name: string): void {
+  public remove (name: string): void {
     this.data[name]--
     if (!this.data[name]) {
       delete this.data[name]
@@ -70,13 +70,13 @@ export default class StateRegistry extends EventEmitter {
   * Removes all entries for a given serverName. This is intended to be called
   * whenever a node leaves the cluster
   */
-  removeAll (serverName: string): void {
+  public removeAll (serverName: string): void {
   }
 
   /**
   * Returns all the servers that hold a given state
   */
-  getAllServers (subscriptionName: string): Array<string> {
+  public getAllServers (subscriptionName: string): Array<string> {
     return []
   }
 
@@ -86,11 +86,11 @@ export default class StateRegistry extends EventEmitter {
   * @public
   * @returns {Array} entries
   */
-  getAll (): Array<string> {
+  public getAll (): Array<string> {
     return Object.keys(this.data)
   }
 
-  getAllMap (): any {
+  public getAllMap (): any {
     return this.data
   }
 }

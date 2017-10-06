@@ -1,10 +1,10 @@
 'use strict'
 
-import { TOPIC, ACTIONS, EVENT } from '../constants'
 import StateRegistry from '../cluster/state-registry'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
-import TimeoutRegistry from './listener-timeout-registry'
 import { shuffleArray } from '../utils/utils'
+import TimeoutRegistry from './listener-timeout-registry'
 
 export default class ListenerRegistry implements SubscriptionListener {
   private metaData: any
@@ -76,7 +76,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.config,
       this.services,
       this.topic,
-      `${this.topic}_${TOPIC.LISTEN_PATTERNS}`
+      `${this.topic}_${TOPIC.LISTEN_PATTERNS}`,
     )
     this.providerRegistry.setAction('subscribe', ACTIONS.LISTEN)
     this.providerRegistry.setAction('unsubscribe', ACTIONS.UNLISTEN)
@@ -84,7 +84,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       onLastSubscriptionRemoved: this.removeLastPattern.bind(this),
       onSubscriptionRemoved: this.removePattern.bind(this),
       onFirstSubscriptionMade: this.addPattern.bind(this),
-      onSubscriptionMade: () => {}
+      onSubscriptionMade: () => {},
     })
   }
 
@@ -95,14 +95,14 @@ export default class ListenerRegistry implements SubscriptionListener {
   protected setupRemoteComponents (): void {
     this.messageTopic = this.topic + ACTIONS.LISTEN
     this.clusterProvidedRecords = this.message.getStateRegistry(
-      `${this.topic}_${TOPIC.PUBLISHED_SUBSCRIPTIONS}`
+      `${this.topic}_${TOPIC.PUBLISHED_SUBSCRIPTIONS}`,
     )
     this.clusterProvidedRecords.on('add', this.onRecordStartProvided.bind(this))
     this.clusterProvidedRecords.on('remove', this.onRecordStopProvided.bind(this))
 
     this.message.subscribe(
       this.messageTopic,
-      this.onIncomingMessage.bind(this)
+      this.onIncomingMessage.bind(this),
     )
   }
 
@@ -110,7 +110,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Returns whether or not a provider exists for
   * the specific subscriptionName
   */
-  hasActiveProvider (susbcriptionName: string): boolean {
+  public hasActiveProvider (susbcriptionName: string): boolean {
     return this.clusterProvidedRecords.has(susbcriptionName)
   }
 
@@ -123,7 +123,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * 3) ACTIONS.LISTEN_ACCEPT
   * 4) ACTIONS.LISTEN_REJECT
   */
-  handle (socketWrapper: SocketWrapper, message: ListenMessage): void {
+  public handle (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const subscriptionName = message.subscription
 
     if (message.action === ACTIONS.LISTEN) {
@@ -232,7 +232,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.locallyProvidedRecords[subscriptionName] = {
       socketWrapper,
       pattern: message.name,
-      closeListener: this.removeListener.bind(this, socketWrapper, message)
+      closeListener: this.removeListener.bind(this, socketWrapper, message),
     }
     socketWrapper.once('close', this.locallyProvidedRecords[subscriptionName].closeListener)
 
@@ -345,7 +345,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
-        this.metaData
+        this.metaData,
       )
 
       const remoteListenArray = this.createRemoteListenArray(subscriptionName)
@@ -366,7 +366,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `finished for ${this.topic}:${subscriptionName}`,
-        this.metaData
+        this.metaData,
       )
 
       delete this.leadingListen[subscriptionName]
@@ -376,7 +376,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
-        this.metaData
+        this.metaData,
       )
       this.sendRemoteDiscoveryStart(nextServerName, subscriptionName)
     }
@@ -395,7 +395,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.services.logger.debug(
         EVENT.LOCAL_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
-        this.metaData
+        this.metaData,
       )
       this.localListenInProgress[subscriptionName] = localListenArray
       this.triggerNextProvider(subscriptionName)
@@ -411,7 +411,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.services.logger.debug(
       EVENT.LOCAL_LISTEN,
       `stopped for ${this.topic}:${subscriptionName}`,
-      this.metaData
+      this.metaData,
     )
 
     if (this.leadingListen[subscriptionName]) {
@@ -423,7 +423,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.services.logger.warn(
         EVENT.LOCAL_LISTEN,
         `nothing to stop for ${this.topic}:${subscriptionName}`,
-        this.metaData
+        this.metaData,
       )
     }
   }
@@ -455,7 +455,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.listenerTimeoutRegistry.addTimeout(
       subscriptionName,
       provider,
-      this.triggerNextProvider.bind(this)
+      this.triggerNextProvider.bind(this),
     )
 
     this.sendSubscriptionForPatternFound(provider, subscriptionName)
@@ -487,7 +487,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Compiles a regular expression from an incoming pattern
   */
-  private addPattern (pattern: string):void {
+  private addPattern (pattern: string): void {
     if (!this.patterns[pattern]) {
       this.patterns[pattern] = new RegExp(pattern)
     }
@@ -496,13 +496,13 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Deletes the pattern regex when removed
   */
-  private removePattern (pattern: string, socketWrapper: SocketWrapper):void {
+  private removePattern (pattern: string, socketWrapper: SocketWrapper): void {
     this.listenerTimeoutRegistry.removeProvider(socketWrapper)
     this.removeListenerFromInProgress(this.localListenInProgress, pattern, socketWrapper)
     this.removeListenerIfActive(pattern, socketWrapper)
   }
 
-  private removeLastPattern (pattern: string):void {
+  private removeLastPattern (pattern: string): void {
     delete this.patterns[pattern]
   }
 
@@ -533,7 +533,7 @@ export default class ListenerRegistry implements SubscriptionListener {
         topic: this.topic,
         action: ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
         name: subscriptionName,
-        parsedData: hasProvider
+        parsedData: hasProvider,
       })
     }
   }
@@ -549,7 +549,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       topic: this.topic,
       action: ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
       name: subscriptionName,
-      parsedData: hasProvider
+      parsedData: hasProvider,
     }, false, null)
   }
 
@@ -561,7 +561,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.message.sendDirect(serverName, this.messageTopic, {
       topic: this.messageTopic,
       action: ACTIONS.LISTEN,
-      data: [serverName, subscriptionName, this.config.serverName]
+      data: [serverName, subscriptionName, this.config.serverName],
     }, this.metaData)
   }
 
@@ -573,7 +573,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.message.sendDirect(listenLeaderServerName, this.messageTopic, {
       topic: this.messageTopic,
       action: ACTIONS.ACK,
-      data: [listenLeaderServerName, subscriptionName]
+      data: [listenLeaderServerName, subscriptionName],
     }, this.metaData)
   }
 
@@ -585,7 +585,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       topic: this.topic,
       action: ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
       name: provider.pattern,
-      subscription: subscriptionName
+      subscription: subscriptionName,
     })
   }
 
@@ -597,7 +597,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       topic: this.topic,
       action: ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
       name: provider.pattern,
-      subscription: subscriptionName
+      subscription: subscriptionName,
     })
   }
 

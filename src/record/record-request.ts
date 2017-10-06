@@ -1,19 +1,19 @@
-import { TOPIC, EVENT } from '../constants'
+import { EVENT, TOPIC } from '../constants'
 
 /**
  * Sends an error to the socketWrapper that requested the
  * record
  */
 function sendError (
-  event: any, message: string, recordName: string, socketWrapper: SocketWrapper | null, 
-  onError: Function, services: DeepstreamServices, context: any, metaData: any
-):void {
+  event: any, message: string, recordName: string, socketWrapper: SocketWrapper | null,
+  onError: Function, services: DeepstreamServices, context: any, metaData: any,
+): void {
   services.logger.error(event, message, metaData)
   if (onError) {
     onError.call(context, event, message, recordName, socketWrapper)
   } else if (socketWrapper) {
     socketWrapper.sendError({
-      topic: TOPIC.RECORD
+      topic: TOPIC.RECORD,
     }, event)
   }
 }
@@ -23,9 +23,9 @@ function sendError (
  * here, if the record couldn't be found in storage no further attempts to retrieve it will be made
  */
 function onStorageResponse (
-  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null, 
-  onComplete: Function, onError: Function, services: DeepstreamServices, context: any, metaData: any
-):void {
+  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null,
+  onComplete: Function, onError: Function, services: DeepstreamServices, context: any, metaData: any,
+): void {
   if (error) {
     sendError(
       EVENT.RECORD_LOAD_ERROR,
@@ -35,7 +35,7 @@ function onStorageResponse (
       onError,
       services,
       context,
-      metaData
+      metaData,
     )
   } else {
     onComplete.call(context, record || null, recordName, socketWrapper)
@@ -50,9 +50,9 @@ function onStorageResponse (
  * Callback for responses returned by the cache connector
  */
 function onCacheResponse (
-  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null, 
-  onComplete: Function, onError: Function, config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any
-):void {
+  error: Error, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null,
+  onComplete: Function, onError: Function, config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any,
+): void {
   if (error) {
     sendError(
       EVENT.RECORD_LOAD_ERROR,
@@ -62,7 +62,7 @@ function onCacheResponse (
       onError,
       services,
       context,
-      metaData
+      metaData,
     )
   } else if (record) {
     onComplete.call(context, record, recordName, socketWrapper)
@@ -77,7 +77,7 @@ function onCacheResponse (
       sendError(
         EVENT.STORAGE_RETRIEVAL_TIMEOUT,
         recordName, recordName, socketWrapper,
-        onError, services, context, metaData
+        onError, services, context, metaData,
       )
     }, config.storageRetrievalTimeout)
 
@@ -93,7 +93,7 @@ function onCacheResponse (
           onError,
           services,
           context,
-          metaData
+          metaData,
         )
       }
     }, metaData)
@@ -110,9 +110,9 @@ function onCacheResponse (
  * It also handles all the timeout and destruction steps around this operation
  */
 export default function (
-  recordName: string, config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper | null, 
-  onComplete: Function, onError: Function, context: any, metaData?: any
-):void {
+  recordName: string, config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper | null,
+  onComplete: Function, onError: Function, context: any, metaData?: any,
+): void {
   let cacheTimedOut = false
 
   const cacheTimeout = setTimeout(() => {
@@ -120,7 +120,7 @@ export default function (
     sendError(
       EVENT.CACHE_RETRIEVAL_TIMEOUT,
       recordName, recordName, socketWrapper,
-      onError, services, context, metaData
+      onError, services, context, metaData,
     )
   }, config.cacheRetrievalTimeout)
 
@@ -137,7 +137,7 @@ export default function (
         config,
         services,
         context,
-        metaData
+        metaData,
       )
     }
   }, metaData)

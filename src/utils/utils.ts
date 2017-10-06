@@ -1,6 +1,6 @@
 /* eslint-disable valid-typeof */
-import * as url from 'url';
 import { EventEmitter } from 'events'
+import * as url from 'url'
 
 /**
  * Returns a unique identifier
@@ -98,13 +98,13 @@ export let merge = function (...args) {
   const objs = Array.prototype.slice.apply(arguments) // eslint-disable-line
   let i
 
-  const _merge = (objA, objB) => {
+  const internalMerge = (objA, objB) => {
     let key
 
     for (key in objB) {
       if (objB[key] && objB[key].constructor === Object) {
         objA[key] = objA[key] || {}
-        _merge(objA[key], objB[key])
+        internalMerge(objA[key], objB[key])
       } else if (objB[key] !== undefined) {
         objA[key] = objB[key]
       }
@@ -112,7 +112,7 @@ export let merge = function (...args) {
   }
 
   for (i = 0; i < objs.length; i++) {
-    _merge(result, objs[i])
+    internalMerge(result, objs[i])
   }
 
   return result

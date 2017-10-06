@@ -17,7 +17,7 @@ export default class OpenPermissionHandler extends EventEmitter implements Permi
   /**
   * Allows any action by an user
   */
-  canPerformAction (username: string, message: Message, callback: Function, authData: object, socketWrapper: SocketWrapper) {
+  public canPerformAction (username: string, message: Message, callback: Function, authData: object, socketWrapper: SocketWrapper) {
     callback(null, true)
   }
 }

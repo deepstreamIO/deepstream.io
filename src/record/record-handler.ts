@@ -1,9 +1,9 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants'
-import SubscriptionRegistry from '../utils/subscription-registry'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
-import RecordTransition from './record-transition'
+import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'
 import recordRequest from './record-request'
+import RecordTransition from './record-transition'
 
 export default class RecordHandler {
   private metaData: any
@@ -36,7 +36,7 @@ export default class RecordHandler {
  * client send action. Instead the client sends CREATEORREAD
  * and deepstream works which one it will be
  */
-  handle (socketWrapper: SocketWrapper, message: Message): void {
+  public handle (socketWrapper: SocketWrapper, message: Message): void {
     if (message.action === ACTIONS.CREATEORREAD) {
     /*
      * Return the record's contents and subscribes for future updates.
@@ -113,7 +113,7 @@ export default class RecordHandler {
         topic: TOPIC.RECORD,
         action: ACTIONS.HAS,
         name: recordName,
-        parsedData: !!record
+        parsedData: !!record,
       })
     }
 
@@ -129,7 +129,7 @@ export default class RecordHandler {
       onComplete,
       onError,
       this,
-      this.metaData
+      this.metaData,
     )
   }
 
@@ -156,7 +156,7 @@ export default class RecordHandler {
       onComplete,
       onError,
       this,
-      this.metaData
+      this.metaData,
     )
   }
 
@@ -170,7 +170,7 @@ export default class RecordHandler {
           topic: TOPIC.RECORD,
           action: ACTIONS.HEAD,
           name: recordName,
-          version: record._v
+          version: record._v,
         })
       } else {
         socket.sendError(message, EVENT.RECORD_NOT_FOUND)
@@ -188,10 +188,9 @@ export default class RecordHandler {
       onComplete,
       onError,
       this,
-      this.metaData
+      this.metaData,
     )
   }
-
 
 /**
  * Tries to retrieve the record and creates it if it doesn't exist. Please
@@ -206,7 +205,7 @@ export default class RecordHandler {
           ACTIONS.CREATE,
           recordName,
           socket,
-          this.create.bind(this, message, socket)
+          this.create.bind(this, message, socket),
         )
       }
     }
@@ -219,7 +218,7 @@ export default class RecordHandler {
       onComplete,
       () => {},
       this,
-      this.metaData
+      this.metaData,
     )
   }
 
@@ -289,7 +288,7 @@ export default class RecordHandler {
         storageResponse = true
         writeError = writeError || error || null
         this.handleForceWriteAcknowledgement(
-          socketWrapper, message, cacheResponse, storageResponse, writeError
+          socketWrapper, message, cacheResponse, storageResponse, writeError,
         )
       }
     }, this.metaData)
@@ -302,7 +301,7 @@ export default class RecordHandler {
         cacheResponse = true
         writeError = writeError || error || null
         this.handleForceWriteAcknowledgement(
-        socketWrapper, message, cacheResponse, storageResponse, writeError
+        socketWrapper, message, cacheResponse, storageResponse, writeError,
       )
       }
     }, this.metaData)
@@ -313,14 +312,14 @@ export default class RecordHandler {
  * this case is handled via the record transition.
  */
   public handleForceWriteAcknowledgement (
-    socketWrapper: SocketWrapper, message: RecordAckMessage, cacheResponse: boolean, storageResponse: boolean, error: Error
+    socketWrapper: SocketWrapper, message: RecordAckMessage, cacheResponse: boolean, storageResponse: boolean, error: Error,
   ): void {
     if (storageResponse && cacheResponse) {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
         action: ACTIONS.WRITE_ACKNOWLEDGEMENT,
         name: message.name,
-        data: [message.version, error]
+        data: [message.version, error],
       }, true)
     }
   }
@@ -336,7 +335,7 @@ export default class RecordHandler {
     this.services.cache.set(recordName, record, (error) => {
       if (error) {
         this.services.logger.error(EVENT.RECORD_CREATE_ERROR, recordName, this.metaData)
-        socketWrapper.sendError(message,EVENT.RECORD_CREATE_ERROR)
+        socketWrapper.sendError(message, EVENT.RECORD_CREATE_ERROR)
       } else if (callback) {
         callback(recordName, socketWrapper)
       } else {
@@ -419,7 +418,7 @@ export default class RecordHandler {
  * could occur in cases where 'runWhenRecordStable' is never called,
  * such as when no cross referencing or data loading is used.
  */
-  removeRecordRequest (recordName: string): void {
+  public removeRecordRequest (recordName: string): void {
     if (!this.recordRequestsInProgress[recordName]) {
       return
     }
@@ -439,7 +438,7 @@ export default class RecordHandler {
  * only from permissions when a rule is required to be run and the cache has not
  * verified it has the latest version
  */
-  runWhenRecordStable (recordName: string, callback: Function): void {
+  public runWhenRecordStable (recordName: string, callback: Function): void {
     if (
     !this.recordRequestsInProgress[recordName] ||
     this.recordRequestsInProgress[recordName].length === 0
@@ -463,8 +462,8 @@ export default class RecordHandler {
       delete this.transitions[recordName]
     }
 
-  // eslint-disable-next-line
-  new RecordDeletion(this.config, this.services, socketWrapper, message, this.onDeleted.bind(this), this.metaData)
+    // tslint:disable-next-line
+    new RecordDeletion(this.config, this.services, socketWrapper, message, this.onDeleted.bind(this), this.metaData)
   }
 
 /**
@@ -504,7 +503,7 @@ export default class RecordHandler {
     const message = {
       topic: TOPIC.RECORD,
       action,
-      name: recordName
+      name: recordName,
     }
 
     this.services.permissionHandler.canPerformAction(
@@ -512,7 +511,7 @@ export default class RecordHandler {
       message,
       onPermissionResponse.bind(this, socketWrapper, message, successCallback),
       socketWrapper.authData,
-      socketWrapper
+      socketWrapper,
     )
   }
 
@@ -522,8 +521,8 @@ export default class RecordHandler {
  * Callback for complete permissions. Notifies socket if permission has failed
  */
 function onPermissionResponse (
-  socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, error: Error, canPerformAction: boolean
-):void {
+  socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, error: Error, canPerformAction: boolean,
+): void {
   if (error !== null) {
     this.services.logger.error(EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
     socketWrapper.sendError(message, EVENT.MESSAGE_PERMISSION_ERROR)
@@ -543,6 +542,6 @@ function sendRecord (recordName: string, record: StorageRecord, socketWrapper: S
     action: ACTIONS.READ,
     name: recordName,
     version: record._v,
-    parsedData: record._d
+    parsedData: record._d,
   })
 }

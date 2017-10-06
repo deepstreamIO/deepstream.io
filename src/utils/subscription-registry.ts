@@ -1,10 +1,10 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants'
 import { getMessage } from '../../protocol/text/src/message-builder'
 import StateRegistry from '../cluster/state-registry'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 
 let idCounter = 0
 
-interface constants {
+interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: string
   SUBSCRIBE: string
   UNSUBSCRIBE: string
@@ -27,7 +27,7 @@ export default class SubscriptionRegistry {
   private services: DeepstreamServices
   private topic: string
   private subscriptionListener: SubscriptionListener
-  private constants: constants
+  private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry
   private delayedBroadcastsTimer: any
 
@@ -51,7 +51,7 @@ export default class SubscriptionRegistry {
       MULTIPLE_SUBSCRIPTIONS: EVENT.MULTIPLE_SUBSCRIPTIONS,
       SUBSCRIBE: ACTIONS.SUBSCRIBE,
       UNSUBSCRIBE: ACTIONS.UNSUBSCRIBE,
-      NOT_SUBSCRIBED: EVENT.NOT_SUBSCRIBED
+      NOT_SUBSCRIBED: EVENT.NOT_SUBSCRIBED,
     }
 
     this.onBroadcastTimeout = this.onBroadcastTimeout.bind(this)
@@ -60,7 +60,7 @@ export default class SubscriptionRegistry {
     this.setupRemoteComponents(clusterTopic)
   }
 
-  whenReady (callback: Function) : void {
+  public whenReady (callback: Function): void {
     this.clusterSubscriptions.whenReady(callback)
   }
 
@@ -70,7 +70,7 @@ export default class SubscriptionRegistry {
    */
   protected setupRemoteComponents (clusterTopic?: string): void {
     this.clusterSubscriptions = this.services.message.getStateRegistry(
-      clusterTopic || `${this.topic}_${TOPIC.SUBSCRIPTIONS}`
+      clusterTopic || `${this.topic}_${TOPIC.SUBSCRIPTIONS}`,
     )
   }
 
@@ -191,7 +191,7 @@ export default class SubscriptionRegistry {
       name,
       sockets: new Set(),
       uniqueSenders: new Map(),
-      sharedMessages: ''
+      sharedMessages: '',
     }
 
     if (subscription.sockets.size === 0) {
@@ -271,7 +271,7 @@ export default class SubscriptionRegistry {
       socket.once('close', this.onSocketClose)
     }
     subscriptions.add(subscription)
-  
+
     this.clusterSubscriptions.add(subscription.name)
 
     if (this.subscriptionListener) {

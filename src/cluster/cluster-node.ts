@@ -8,17 +8,17 @@ export default class ClusterNode {
     this.stateRegistries = new Map()
   }
 
-  sendDirect (serverName: string, topic: string, message: any, metaData: any) {}
+  public sendDirect (serverName: string, topic: string, message: any, metaData: any) {}
 
-  sendState () {}
+  public sendState () {}
 
-  send () {}
+  public send () {}
 
-  subscribe (topic: string, callback: Function) {}
+  public subscribe (topic: string, callback: Function) {}
 
-  isLeader () { throw new Error('Leader not used in single state') }
+  public isLeader () { throw new Error('Leader not used in single state') }
 
-  getStateRegistry (name: string) {
+  public getStateRegistry (name: string) {
     let stateRegistry = this.stateRegistries.get(name)
     if (!stateRegistry) {
       stateRegistry = new StateRegistry(name, {})
@@ -27,7 +27,7 @@ export default class ClusterNode {
     return stateRegistry
   }
 
-  close (callback: Function) {
+  public close (callback: Function) {
     callback()
   }
 }

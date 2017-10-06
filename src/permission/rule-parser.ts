@@ -16,7 +16,7 @@ const SUPPORTED_FUNCTIONS = [
   'match',
   'toUpperCase',
   'toLowerCase',
-  'trim'
+  'trim',
 ]
 
 /**
@@ -60,7 +60,7 @@ export const validate = (rule: string | boolean, section: ValveSection, type: Ru
   }
 
   try {
-    // eslint-disable-next-line
+    // tslint:disable-next-line
     new Function(rule)
   } catch (e) {
     return e.toString()
@@ -90,10 +90,10 @@ export const parse = (rule: boolean | string, variables: any) => {
     return {
       fn: rule === true ? function () { return true } : function () { return false },
       hasOldData: false,
-      hasData: false
+      hasData: false,
     }
   }
-  const ruleObj:any = {}
+  const ruleObj: any = {}
   const args = ['_', 'user', 'data', 'oldData', 'now', 'action'].concat(variables)
   args.push(`return ${rule};`)
 

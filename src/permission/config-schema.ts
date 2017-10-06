@@ -8,18 +8,18 @@ export default {
     read: true,
     create: true,
     delete: true,
-    listen: true
+    listen: true,
   },
   event: {
     publish: true,
     subscribe: true,
-    listen: true
+    listen: true,
   },
   rpc: {
     provide: true,
-    request: true
+    request: true,
   },
   presence: {
-    allow: true
-  }
+    allow: true,
+  },
 }

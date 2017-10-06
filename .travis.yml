@@ -37,6 +37,7 @@ matrix:
 script:
   # This fails on node 4
   - if [[ "$TRAVIS_NODE_VERSION" == "6.11"* ]]; then
+      npm run js-lint;
       npm run lint;
     fi
   - npm run reporter

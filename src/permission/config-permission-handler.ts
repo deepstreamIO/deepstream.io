@@ -1,13 +1,13 @@
 'use strict'
 /* eslint-disable valid-typeof */
-import * as configValidator from './config-validator'
-import * as configCompiler from './config-compiler'
-import * as rulesMap from './rules-map'
-import RuleApplication from './rule-application'
-import RuleCache from './rule-cache'
 import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
 import RecordHandler from '../record/record-handler'
+import * as configCompiler from './config-compiler'
+import * as configValidator from './config-validator'
+import RuleApplication from './rule-application'
+import RuleCache from './rule-cache'
+import * as rulesMap from './rules-map'
 
 const UNDEFINED = 'undefined'
 
@@ -128,6 +128,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
       return
     }
 
+    // tslint:disable-next-line
     new RuleApplication({
       recordHandler: this.recordHandler,
       socketWrapper,
@@ -144,7 +145,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
       logger: this.logger,
       permissionOptions: this.permissionOptions,
       config: this.config,
-      services: this.services
+      services: this.services,
     })
   }
 
@@ -173,7 +174,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
         result = {
           path: section[i].path,
           regexp: section[i].regexp,
-          rule: section[i].rules[ruleSpecification.type]
+          rule: section[i].rules[ruleSpecification.type],
         }
       }
     }

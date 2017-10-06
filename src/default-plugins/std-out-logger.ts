@@ -29,7 +29,7 @@ export default class StdOutLogger extends EventEmitter implements Logger {
       'white',
       'green',
       'yellow',
-      'red'
+      'red',
     ]
 
     this.currentLogLevel = this.options.logLevel || LOG_LEVEL.DEBUG
@@ -39,7 +39,7 @@ export default class StdOutLogger extends EventEmitter implements Logger {
   /**
    * Logs a line
    */
-  log (logLevel: LOG_LEVEL, event: string, logMessage: string): void {
+  public log (logLevel: LOG_LEVEL, event: string, logMessage: string): void {
     if (logLevel < this.currentLogLevel) {
       return
     }
@@ -56,31 +56,30 @@ export default class StdOutLogger extends EventEmitter implements Logger {
     // if (this.useColors) {
     // process[outputStream].write(msg[this.logLevelColors[logLevel]] + EOL)
     // } else {
-      process[outputStream].write(msg + EOL)
+    process[outputStream].write(msg + EOL)
     // }
   }
 
-  debug (event, logMessage): void {
+  public debug (event, logMessage): void {
     this.log(LOG_LEVEL.DEBUG, event, logMessage)
   }
 
-  info (event, logMessage): void {
+  public info (event, logMessage): void {
     this.log(LOG_LEVEL.INFO, event, logMessage)
   }
 
-  warn (event, logMessage): void {
+  public warn (event, logMessage): void {
     this.log(LOG_LEVEL.WARN, event, logMessage)
   }
 
-  error (event, logMessage): void {
+  public error (event, logMessage): void {
     this.log(LOG_LEVEL.ERROR, event, logMessage)
   }
 
   /**
    * Sets the log-level. This can be called at runtime.
    */
-  setLogLevel (logLevel: LOG_LEVEL) {
+  public setLogLevel (logLevel: LOG_LEVEL) {
     this.currentLogLevel = logLevel
   }
 }
-

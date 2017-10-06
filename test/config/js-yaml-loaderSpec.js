@@ -241,9 +241,9 @@ describe('js-yaml-loader', () => {
       delete process.env.deepstreamCLI
     })
 
-    it('does environment variable substitution for yaml', () => {
-      const config = configLoader.loadConfig().config // eslint-disable-line
-      // TODO
+    it('does cli substitution', () => {
+      const config = configLoader.loadConfig().config
+      expect(config.connectionEndpoints.websocket.options.port).toEqual(5555)
     })
   })
 

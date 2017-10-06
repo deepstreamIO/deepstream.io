@@ -43,7 +43,7 @@ export default class RuleCache {
   public set (section: string, name: string, type: string, rule: any): void {
     this.data[toKey(section, name, type)] = {
       rule,
-      isUsed: true
+      isUsed: true,
     }
   }
 

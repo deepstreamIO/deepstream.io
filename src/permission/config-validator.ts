@@ -1,6 +1,6 @@
+import SCHEMA from './config-schema'
 import * as pathParser from './path-parser'
 import * as ruleParser from './rule-parser'
-import SCHEMA from './config-schema'
 
 const validationSteps: any = {}
 

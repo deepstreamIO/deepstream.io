@@ -1,8 +1,8 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { isOfType } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
 import recordRequest from './record-request'
-import { isOfType } from '../utils/utils'
 
 interface Step {
   message: RecordWriteMessage
@@ -41,7 +41,7 @@ export default class RecordTransition {
  * update and delete the instance of this class.
  */
  public isDestroyed: boolean
- 
+
  private metaData: any
  private name: string
  private config: DeepstreamConfig
@@ -68,12 +68,12 @@ export default class RecordTransition {
     this.recordHandler = recordHandler
     this.steps = []
     this.recordRequestMade = false
-    
+
     this.record = null
-    //this.currentStep = null
+    // this.currentStep = null
     this.lastVersion = null
     this.lastError = null
-    
+
     this.existingVersions = []
     this.isDestroyed = false
     this.pendingUpdates = {}
@@ -112,18 +112,18 @@ export default class RecordTransition {
         name: this.name,
         version: this.record._v,
         parsedData: this.record._d,
-        isWriteAck: step.message.isWriteAck
+        isWriteAck: step.message.isWriteAck,
       }, EVENT.VERSION_EXISTS)
 
       this.services.logger.warn(
         EVENT.VERSION_EXISTS,
         `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.record._v}`,
-        this.metaData
+        this.metaData,
       )
     } else {
       this.existingVersions.push({
         sender: socketWrapper,
-        message: step.message
+        message: step.message,
       })
     }
   }
@@ -139,7 +139,7 @@ export default class RecordTransition {
     const version = message.version
     const update = {
       message,
-      sender: socketWrapper
+      sender: socketWrapper,
     }
     const valid = this.applyConfigAndData(socketWrapper, message, update)
     if (!valid) {
@@ -172,10 +172,10 @@ export default class RecordTransition {
         this.config,
         this.services,
         socketWrapper,
-        record => this.onRecord(record, upsert),
+        (record) => this.onRecord(record, upsert),
         this.onCacheResponse,
         this,
-        this.metaData
+        this.metaData,
       )
     } else if (this.steps.length === 1 && this.cacheResponses === 1) {
       this.next()
@@ -197,7 +197,7 @@ export default class RecordTransition {
       if (this.pendingUpdates[step.sender.uuid] === undefined) {
         this.pendingUpdates[step.sender.uuid] = {
           socketWrapper: step.sender,
-          versions: [step.message.version]
+          versions: [step.message.version],
         }
       } else {
         const update = this.pendingUpdates[step.sender.uuid]
@@ -219,7 +219,7 @@ export default class RecordTransition {
     this.sendWriteAcknowledgements(errorMessage || this.writeError)
     this.recordHandler.transitionComplete(this.name)
     this.isDestroyed = true
-    
+
     // this.options = null
     // this.name = null
     // this.record = null
@@ -228,7 +228,7 @@ export default class RecordTransition {
     // this.currentStep = null
     // this.recordRequest = null
     // this.lastVersion = null
-    
+
     // this.pendingUpdates = null
     // this.cacheResponses = 0
     // this.storageResponses = 0
@@ -316,14 +316,14 @@ export default class RecordTransition {
       this.name,
       this.record,
       this.onStorageResponse,
-      this.metaData
+      this.metaData,
     )
     }
     this.services.cache.set(
       this.name,
       this.record,
       this.onCacheResponse,
-      this.metaData
+      this.metaData,
     )
   }
 
@@ -353,7 +353,7 @@ export default class RecordTransition {
         this.name,
         this.currentStep.message,
         false,
-        this.currentStep.sender
+        this.currentStep.sender,
       )
       this.next()
     } else if (
@@ -394,8 +394,8 @@ export default class RecordTransition {
         name: this.name,
         data: [
           update.versions,
-          errorMessage
-        ]
+          errorMessage,
+        ],
       }, true)
     }
   }

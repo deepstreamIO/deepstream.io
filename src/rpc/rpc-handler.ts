@@ -1,8 +1,8 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
+import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
 import RpcProxy from './rpc-proxy'
-import { getRandomIntInRange } from '../utils/utils'
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,
@@ -15,7 +15,7 @@ export default class RpcHandler {
   private subscriptionRegistry: SubscriptionRegistry
   private config: DeepstreamConfig
   private services: DeepstreamServices
-  private rpcs: Map<string,RpcData>
+  private rpcs: Map<string, RpcData>
 
   /**
   * Handles incoming messages for the RPC Topic.
@@ -31,7 +31,7 @@ export default class RpcHandler {
 
      this.services.message.subscribe(
       TOPIC.RPC_PRIVATE,
-       this.onPrivateMessage.bind(this)
+       this.onPrivateMessage.bind(this),
     )
 
      this.rpcs = new Map()
@@ -60,7 +60,7 @@ export default class RpcHandler {
       } else {
         socketWrapper.sendError(
           message,
-          EVENT.INVALID_RPC_CORRELATION_ID
+          EVENT.INVALID_RPC_CORRELATION_ID,
         )
       }
     } else {
@@ -95,7 +95,7 @@ export default class RpcHandler {
       return null
     }
 
-    const subscribers = Array.from( this.subscriptionRegistry.getLocalSubscribers(rpcName))
+    const subscribers = Array.from(this.subscriptionRegistry.getLocalSubscribers(rpcName))
     let index = getRandomIntInRange(0, subscribers.length)
 
     for (let n = 0; n < subscribers.length; ++n) {
@@ -133,14 +133,14 @@ export default class RpcHandler {
     const rpcName = message.name
     const correlationId = message.correlationId
 
-    const subscribers = Array.from( this.subscriptionRegistry.getLocalSubscribers(rpcName))
+    const subscribers = Array.from(this.subscriptionRegistry.getLocalSubscribers(rpcName))
     const provider = subscribers[getRandomIntInRange(0, subscribers.length)]
-    
+
     if (provider) {
       const rpcData = {
         providers: new Set(),
         servers: !isRemote ? new Set() : null,
-        rpc: new Rpc(this, socketWrapper, provider, this.config, this.services, message)
+        rpc: new Rpc(this, socketWrapper, provider, this.config, this.services, message),
       } as RpcData
       this.rpcs.set(correlationId, rpcData)
       rpcData.providers.add(provider)
@@ -172,15 +172,15 @@ export default class RpcHandler {
       const rpcData = {
         providers: new Set(),
         servers: new Set(),
-        rpc: new Rpc(this, requestor, rpcProxy, this.config, this.services, message)
+        rpc: new Rpc(this, requestor, rpcProxy, this.config, this.services, message),
       } as RpcData
       this.rpcs.set(correlationId, rpcData)
       return
     }
 
-     this.rpcs.delete(correlationId)
+    this.rpcs.delete(correlationId)
 
-     this.services.logger.warn(EVENT.NO_RPC_PROVIDER, rpcName, this.metaData)
+    this.services.logger.warn(EVENT.NO_RPC_PROVIDER, rpcName, this.metaData)
 
     if (!requestor.isRemote) {
       requestor.sendError(message, EVENT.NO_RPC_PROVIDER)
@@ -199,7 +199,7 @@ export default class RpcHandler {
 
     if (!msg.data || msg.data.length < 2) {
        this.services.logger.warn(EVENT.INVALID_MSGBUS_MESSAGE, msg.data,  this.metaData)
-      return
+       return
     }
 
     if (msg.action === ACTIONS.ERROR && msg.data[0] === EVENT.NO_RPC_PROVIDER) {
@@ -211,23 +211,17 @@ export default class RpcHandler {
       const proxy = new RpcProxy(this.config, this.services, originServerName, this.metaData)
       this.makeRpc(proxy, msg, true)
       return
-    }  
-
-    if ((msg.isAck || msg.isError) && msg.correlationId) {
-      const rpcData =  this.rpcs.get(msg.correlationId)
-      if (!rpcData) {
-         this.services.logger.warn(
-          EVENT.INVALID_RPC_CORRELATION_ID,
-          `Message bus response for RPC that may have been destroyed: ${JSON.stringify(msg)}`,
-           this.metaData
-        )
-        return
-      }
-      rpcData.rpc.handle(msg)
-      return
     }
 
-    const rpcData = this.rpcs.get(msg.correlationId)
+    const rpcData =  this.rpcs.get(msg.correlationId)
+    if ((msg.isAck || msg.isError) && !rpcData) {
+      this.services.logger.warn(
+        EVENT.INVALID_RPC_CORRELATION_ID,
+        `Message bus response for RPC that may have been destroyed: ${JSON.stringify(msg)}`,
+        this.metaData,
+      )
+    }
+
     if (rpcData) {
        rpcData.rpc.handle(msg)
     } else {
@@ -239,7 +233,7 @@ export default class RpcHandler {
    * Called by the RPC with correlationId to destroy itself
    * when lifecycle is over.
    */
-  public _$onDestroy (correlationId: string): void {
+  public onRPCDestroyed (correlationId: string): void {
      this.rpcs.delete(correlationId)
   }
 }

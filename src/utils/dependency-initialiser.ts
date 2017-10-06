@@ -1,5 +1,5 @@
-import { EVENT } from '../constants'
 import { EventEmitter } from 'events'
+import { EVENT } from '../constants'
 
 export default class DependencyInitialiser extends EventEmitter {
   public isReady: boolean
@@ -42,7 +42,7 @@ export default class DependencyInitialiser extends EventEmitter {
     } else {
       this.timeout = setTimeout(
       this._onTimeout.bind(this),
-      this.config.dependencyInitialisationTimeout
+      this.config.dependencyInitialisationTimeout,
     )
       this.dependency.once('ready', this._onReady.bind(this))
       this.dependency.on('error', this._onError.bind(this))
@@ -124,4 +124,3 @@ export default class DependencyInitialiser extends EventEmitter {
   }
 
 }
-

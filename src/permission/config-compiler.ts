@@ -33,7 +33,7 @@ function compileRuleset (path: string, rules) {
 
   for (const ruleType in rules) {
     ruleset.rules[ruleType] = ruleParser.parse(
-      rules[ruleType], ruleset.variables
+      rules[ruleType], ruleset.variables,
     )
   }
 

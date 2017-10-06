@@ -1,4 +1,4 @@
-import { TOPIC, ACTIONS, EVENT } from '../constants'
+import { ACTIONS, EVENT, TOPIC } from '../constants'
 
 export default class ListenerTimeoutRegistry {
   private topic: Topic
@@ -41,7 +41,7 @@ export default class ListenerTimeoutRegistry {
           topic: this.topic,
           action: ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
           name: provider.pattern,
-          subscription: subscriptionName
+          subscription: subscriptionName,
         })
       }
     } else if (message.action === ACTIONS.LISTEN_REJECT) {
@@ -123,7 +123,7 @@ export default class ListenerTimeoutRegistry {
         topic: this.topic,
         action: ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
         name: provider.pattern,
-        subscription: subscriptionName
+        subscription: subscriptionName,
       })
     }
   }

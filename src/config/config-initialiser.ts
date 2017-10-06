@@ -1,17 +1,17 @@
 'use strict'
 
 import * as fs from 'fs'
-import * as utils from '../utils/utils'
+import OpenAuthenticationHandler from '../authentication/open-authentication-handler'
 import { LOG_LEVEL } from '../constants'
-import * as fileUtils from './file-utils'
-import * as UWSConnectionEndpoint from '../message/uws/connection-endpoint'
-import * as HTTPConnectionEndpoint from '../message/http/connection-endpoint'
 import DefaultCache from '../default-plugins/local-cache'
 import DefaultStorage from '../default-plugins/noop-storage'
 import DefaultLogger from '../default-plugins/std-out-logger'
-import OpenPermissionHandler from '../permission/open-permission-handler'
+import * as HTTPConnectionEndpoint from '../message/http/connection-endpoint'
+import * as UWSConnectionEndpoint from '../message/uws/connection-endpoint'
 import ConfigPermissionHandler from '../permission/config-permission-handler'
-import OpenAuthenticationHandler from '../authentication/open-authentication-handler'
+import OpenPermissionHandler from '../permission/open-permission-handler'
+import * as utils from '../utils/utils'
+import * as fileUtils from './file-utils'
 
 let commandLineArguments
 
@@ -25,7 +25,7 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
   handleSSLProperties(config)
 
   const services: any = {
-    registeredPlugins: ['authenticationHandler','permissionHandler', 'cache', 'storage']
+    registeredPlugins: ['authenticationHandler', 'permissionHandler', 'cache', 'storage'],
   }
 
   services.cache = new DefaultCache()
@@ -135,13 +135,13 @@ function handlePlugins (config: DeepstreamConfig, services: any): void {
   // and the plugin configuration objects
   const connectorMap = {
     cache: 'cache',
-    storage: 'storage'
+    storage: 'storage',
   }
   // mapping between the plugin configuration properties and the npm module
   // name resolution
   const typeMap = {
     cache: 'cache',
-    storage: 'storage'
+    storage: 'storage',
   }
   const plugins = Object.assign({}, config.plugins)
 
@@ -214,7 +214,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
   if (plugin.type === 'default-cache') {
     pluginConstructor = DefaultCache
   } else if (plugin.type === 'default-storage') {
-    pluginConstructor = DefaultStorage 
+    pluginConstructor = DefaultStorage
   } else if (plugin.path != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.path)
     es6Adaptor = req(requirePath)
@@ -245,7 +245,7 @@ function handleAuthStrategy (config: DeepstreamConfig, logger: Logger): Authenti
   const authStrategies = {
     none: OpenAuthenticationHandler,
     file: require('../authentication/file-based-authentication-handler'), // eslint-disable-line
-    http: require('../authentication/http-authentication-handler') // eslint-disable-line
+    http: require('../authentication/http-authentication-handler'), // eslint-disable-line
   }
 
   if (!config.auth) {
@@ -285,7 +285,7 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: any): Per
 
   const permissionStrategies = {
     config: ConfigPermissionHandler,
-    none: OpenPermissionHandler
+    none: OpenPermissionHandler,
   }
 
   if (!config.permission) {

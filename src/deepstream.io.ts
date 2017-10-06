@@ -255,7 +255,6 @@ export default class Deepstream extends EventEmitter {
     this.rpcHandler.handle.bind(this.rpcHandler)
   )
 
-    // TODO
     this.recordHandler = new RecordHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
     TOPIC.RECORD,

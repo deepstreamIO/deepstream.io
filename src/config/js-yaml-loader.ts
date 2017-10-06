@@ -1,6 +1,6 @@
 import * as fs from 'fs'
-import * as path from 'path'
 import * as yaml from 'js-yaml'
+import * as path from 'path'
 
 import { get as getDefaultOptions } from '../default-options'
 import { merge } from '../utils/utils'
@@ -12,7 +12,7 @@ const SUPPORTED_EXTENSIONS = ['.yml', '.yaml', '.json', '.js']
 const DEFAULT_CONFIG_DIRS = [
   path.join('.', 'conf', 'config'), path.join('..', 'conf', 'config'),
   '/etc/deepstream/config', '/usr/local/etc/deepstream/config',
-  '/usr/local/etc/deepstream/conf/config'
+  '/usr/local/etc/deepstream/conf/config',
 ]
 
 try {
@@ -59,7 +59,7 @@ export const loadConfigWithoutInitialisation = function (filePath: string, args?
   setGlobalLibDirectory(argv, config)
   return {
     config,
-    configPath
+    configPath,
   }
 }
 
@@ -76,7 +76,7 @@ export const loadConfig = function (filePath: string, args?: object) {
   return {
     config: result.config,
     services: result.services,
-    file: config.configPath
+    file: config.configPath,
   }
 }
 
