@@ -51,7 +51,7 @@
     "async": "^2.5.0",
     "chai": "^4.1.1",
     "coveralls": "^2.13.1",
-    "cucumber": "^3",
+    "cucumber": "https://github.com/deepstreamIO/cucumber-js.git",
     "deepstream.io-client-js": "https://github.com/deepstreamIO/deepstream.io-client-js.git",
     "eslint-config-deepstream": "^2.2.1",
     "istanbul": "^0.4.5",
