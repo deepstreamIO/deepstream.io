@@ -2,7 +2,7 @@
 
 const C = require('../../src/constants')
 const PermissionHandlerMock = require('../test-mocks/permission-handler-mock')
-const MessageProcessor = require('../../src/message/message-processor')
+const MessageProcessor = require('../../src/message/message-processor').default
 const LoggerMock = require('../test-mocks/logger-mock')
 const getTestMocks = require('../test-helper/test-mocks')
 

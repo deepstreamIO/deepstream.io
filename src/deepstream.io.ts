@@ -7,8 +7,8 @@ import * as pkg from '../package.json'
 import { combineEvents, merge } from './utils/utils'
 import { STATES, EVENT, TOPIC } from './constants'
 
-import * as MessageProcessor from './message/message-processor'
-import * as MessageDistributor from './message/message-distributor'
+import MessageProcessor from './message/message-processor'
+import MessageDistributor from './message/message-distributor'
 
 import EventHandler from './event/event-handler'
 import RpcHandler from './rpc/rpc-handler'

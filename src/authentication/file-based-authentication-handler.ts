@@ -1,35 +1,38 @@
-'use strict'
-
-const crypto = require('crypto')
-const jsYamlLoader = require('../config/js-yaml-loader')
-const utils = require('../utils/utils')
-const EventEmitter = require('events').EventEmitter
+import * as crypto from 'crypto'
+import * as jsYamlLoader from '../config/js-yaml-loader'
+import * as utils from '../utils/utils'
+import { EventEmitter } from 'events'
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'
+
+interface FileAuthConfig {
+  //  path to the user file
+  path: string
+  // the name of a HMAC digest algorithm, a.g. 'sha512'
+  hash: string
+  // the amount of times the algorithm should be applied
+  iterations: number
+  // the length of the resulting key
+  keyLength: number
+}
 
 /**
  * This authentication handler reads a list of users and their associated password (either
  * hashed or in cleartext ) from a json file. This can be useful to authenticate smaller amounts
  * of clients with static credentials, e.g. backend provider that write to publicly readable records
- *
- * @public
- * @extends {EventEmitter}
  */
-module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
+export default class FileBasedAuthenticationHandler extends EventEmitter implements AuthenticationHandler {
+  public isReady: boolean
+  public description: string
+  private _settings: FileAuthConfig
+  private _base64KeyLength: number
+  private _data: any
+
   /**
   * Creates the class, reads and validates the users.json file
-  *
-  * @param   {Object} settings
-  * @param   {String} settings.path path to the user file
-  * @param   {String} settings.hash the name of a HMAC digest algorithm, a.g. 'sha512'
-  * @param   {Int} settings.iterations the amount of times the algorithm should be applied
-  * @param   {Int} settings.keyLength the length of the resulting key
-  *
-  * @constructor
-  * @returns {void}
   */
-  constructor (settings) {
+  constructor (settings: FileAuthConfig) {
     super()
     this.isReady = false
     this.description = `file using ${settings.path}`
@@ -41,16 +44,8 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 
   /**
   * Main interface. Authenticates incoming connections
-  *
-  * @param   {Object}   connectionData
-  * @param   {Object}   authData
-  * @param   {Function} callback
-  *
-  * @public
-  * @implements {PermissionHandler.isValidUser}
-  * @returns {void}
   */
-  isValidUser (connectionData, authData, callback) {
+  isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback):void {
     if (typeof authData.username !== STRING) {
       callback(false, { clientData: 'missing authentication parameter username' })
       return
@@ -91,41 +86,27 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   /**
   * Utility method for creating hashes including salts based on
   * the provided parameters
-  *
-  * @todo  this needs to be exposed to users, maybe via CLI?
-  *
-  * @param   {String}   password the password that should be hashed
-  * @param   {Function} callback will be invoked with error, hash once hashing is completed
-  *
-  * @public
-  * @returns {void}
   */
-  createHash (password, callback) {
+  createHash (password: string, callback: Function): void {
     const salt = crypto.randomBytes(16).toString(STRING_CHARSET)
 
     crypto.pbkdf2(
-            password,
-            salt,
-            this._settings.iterations,
-            this._settings.keyLength,
-            this._settings.hash,
-            (err, hash) => {
-              callback(err || null, hash.toString(STRING_CHARSET) + salt)
-            }
-        )
+        password,
+        salt,
+        this._settings.iterations,
+        this._settings.keyLength,
+        this._settings.hash,
+        (err, hash) => {
+          callback(err || null, hash.toString(STRING_CHARSET) + salt)
+        }
+    )
   }
 
   /**
   * Callback for loaded JSON files. Makes sure that
   * no errors occured and every user has an associated password
-  *
-  * @param   {Error}     error an error that occured during loading or parsing the file
-  * @param   {Object}    data  parsed contents of the file
-  *
-  * @private
-  * @returns {void}
   */
-  _onFileLoad (error, data) {
+  private _onFileLoad (error: Error | null, data: any): void {
     if (error) {
       this.emit('error', `Error loading file ${this._settings.path}: ${error.toString()}`)
       return
@@ -150,13 +131,8 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
 
   /**
   * Called initially to validate the user provided settings
-  *
-  * @param   {Object} settings
-  *
-  * @private
-  * @returns {void}
   */
-  _validateSettings (settings) { // eslint-disable-line
+  _validateSettings (settings: any) {
     if (!settings.hash) {
       utils.validateMap(settings, true, {
         path: 'string'
@@ -192,7 +168,7 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @private
   * @returns {void}
   */
-  _isValid (password, passwordHashWithSalt, username, serverData, clientData, callback) {
+  _isValid (password: string, passwordHashWithSalt: string, username: string, serverData: object, clientData: object, callback: Function) {
     const expectedHash = passwordHashWithSalt.substr(0, this._base64KeyLength)
     const salt = passwordHashWithSalt.substr(this._base64KeyLength)
 
@@ -217,13 +193,9 @@ module.exports = class FileBasedAuthenticationHandler extends EventEmitter {
   * @param   {Function} callback         callback from isValidUser
   * @param   {Error}    error            error that occured during hashing
   * @param   {Buffer}   actualHashBuffer the buffer containing the bytes for the new hash
-  *
-  * @private
-  * @returns {void}
   */
-  // eslint-disable-next-line
-  _compareHashResult (
-    expectedHash, username, serverData, clientData, callback, error, actualHashBuffer
+  private _compareHashResult (
+    expectedHash: string, username: string, serverData: object, clientData: object, callback: Function, error: Error | null, actualHashBuffer: Buffer
   ) {
     if (expectedHash === actualHashBuffer.toString(STRING_CHARSET)) {
       // todo log error

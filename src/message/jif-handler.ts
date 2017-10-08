@@ -1,26 +1,24 @@
-'use strict'
+import * as Ajv from 'ajv'
 
-const Ajv = require('ajv')
+import jifSchema from './jif-schema'
+import * as utils from '../utils/utils'
 
-const jifSchema = require('./jif-schema')
-const utils = require('../utils/utils')
+import { TOPIC, ACTIONS, EVENT } from '../constants'
 
 const ajv = new Ajv()
 
-const validateJIF = ajv.compile(jifSchema)
-
-const C = require('../constants')
+const validateJIF: any = ajv.compile(jifSchema)
 
 // jif -> message lookup table
 function getJifToMsg () {
-  const JIF_TO_MSG = {}
+  const JIF_TO_MSG: any = {}
 
   JIF_TO_MSG.event = {}
   JIF_TO_MSG.event.emit = msg => ({
     done: true,
     message: {
-      topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      topic: TOPIC.EVENT,
+      action: ACTIONS.EVENT,
       name: msg.eventName,
       parsedData: msg.data
     }
@@ -31,8 +29,8 @@ function getJifToMsg () {
   JIF_TO_MSG.rpc.make = msg => ({
     done: false,
     message: {
-      topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
+      topic: TOPIC.RPC,
+      action: ACTIONS.REQUEST,
       name: msg.rpcName,
       correlationId: utils.getUid(),
       parsedData: msg.data
@@ -43,8 +41,8 @@ function getJifToMsg () {
   JIF_TO_MSG.record.read = msg => ({
     done: false,
     message: {
-      topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.SNAPSHOT,
+      topic: TOPIC.RECORD,
+      action: ACTIONS.SNAPSHOT,
       name: msg.recordName
     }
   })
@@ -56,8 +54,8 @@ function getJifToMsg () {
   JIF_TO_MSG.record.patch = msg => ({
     done: false,
     message: {
-      topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.CREATEANDUPDATE,
+      topic: TOPIC.RECORD,
+      action: ACTIONS.CREATEANDUPDATE,
       name: msg.recordName,
       version: msg.version || -1,
       path: msg.path,
@@ -69,8 +67,8 @@ function getJifToMsg () {
   JIF_TO_MSG.record.update = msg => ({
     done: false,
     message: {
-      topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.CREATEANDUPDATE,
+      topic: TOPIC.RECORD,
+      action: ACTIONS.CREATEANDUPDATE,
       name: msg.recordName,
       version: msg.version || -1,
       path: null,
@@ -82,8 +80,8 @@ function getJifToMsg () {
   JIF_TO_MSG.record.head = msg => ({
     done: false,
     message: {
-      topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.HEAD,
+      topic: TOPIC.RECORD,
+      action: ACTIONS.HEAD,
       name: msg.recordName
     }
   })
@@ -91,8 +89,8 @@ function getJifToMsg () {
   JIF_TO_MSG.record.delete = msg => ({
     done: false,
     message: {
-      topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.DELETE,
+      topic: TOPIC.RECORD,
+      action: ACTIONS.DELETE,
       name: msg.recordName
     }
   })
@@ -101,10 +99,10 @@ function getJifToMsg () {
   JIF_TO_MSG.presence.query = () => ({
     done: false,
     message: {
-      topic: C.TOPIC.PRESENCE,
-      action: C.ACTIONS.QUERY,
-      name: C.ACTIONS.QUERY, // required by permissions
-      parsedData: C.ACTIONS.QUERY
+      topic: TOPIC.PRESENCE,
+      action: ACTIONS.QUERY,
+      name: ACTIONS.QUERY, // required by permissions
+      parsedData: ACTIONS.QUERY
     }
   })
 
@@ -117,9 +115,9 @@ const TYPE = { ACK: 'A', NORMAL: 'N' }
 function getMsgToJif () {
   // message -> jif lookup table
   const MSG_TO_JIF = {}
-  MSG_TO_JIF[C.TOPIC.RPC] = {}
-  MSG_TO_JIF[C.TOPIC.RPC][C.ACTIONS.RESPONSE] = {}
-  MSG_TO_JIF[C.TOPIC.RPC][C.ACTIONS.RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RPC] = {}
+  MSG_TO_JIF[TOPIC.RPC][ACTIONS.RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.RPC][ACTIONS.RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       data: message.parsedData,
@@ -127,12 +125,12 @@ function getMsgToJif () {
     }
   })
 
-  MSG_TO_JIF[C.TOPIC.RPC][C.ACTIONS.REQUEST] = {}
-  MSG_TO_JIF[C.TOPIC.RPC][C.ACTIONS.REQUEST][TYPE.ACK] = () => ({ done: false })
+  MSG_TO_JIF[TOPIC.RPC][ACTIONS.REQUEST] = {}
+  MSG_TO_JIF[TOPIC.RPC][ACTIONS.REQUEST][TYPE.ACK] = () => ({ done: false })
 
-  MSG_TO_JIF[C.TOPIC.RECORD] = {}
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.READ] = {}
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.READ][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD] = {}
+  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.READ] = {}
+  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.READ][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       version: message.version,
@@ -141,8 +139,8 @@ function getMsgToJif () {
     }
   })
 
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.WRITE_ACKNOWLEDGEMENT] = {}
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.WRITE_ACKNOWLEDGEMENT] = {}
+  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       error: message.data[1] || undefined,
@@ -150,15 +148,15 @@ function getMsgToJif () {
     }
   })
 
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.DELETE] = {}
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.DELETE][TYPE.ACK] = () => ({
+  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.DELETE] = {}
+  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.DELETE][TYPE.ACK] = () => ({
     done: true,
     message: {
       success: true
     }
   })
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.HEAD] = {}
-  MSG_TO_JIF[C.TOPIC.RECORD][C.ACTIONS.HEAD][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.HEAD] = {}
+  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.HEAD][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       version: message.version,
@@ -166,9 +164,9 @@ function getMsgToJif () {
     }
   })
 
-  MSG_TO_JIF[C.TOPIC.PRESENCE] = {}
-  MSG_TO_JIF[C.TOPIC.PRESENCE][C.ACTIONS.QUERY] = {}
-  MSG_TO_JIF[C.TOPIC.PRESENCE][C.ACTIONS.QUERY][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.PRESENCE] = {}
+  MSG_TO_JIF[TOPIC.PRESENCE][ACTIONS.QUERY] = {}
+  MSG_TO_JIF[TOPIC.PRESENCE][ACTIONS.QUERY][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       users: message.parsedData,
@@ -179,14 +177,19 @@ function getMsgToJif () {
   return utils.deepFreeze(MSG_TO_JIF)
 }
 
-module.exports = class JIFHandler {
+export default class JIFHandler {
+  private JIF_TO_MSG: any
+  private MSG_TO_JIF: any
+  private topicToKey: any
+  private actionToKey: any
+  private _logger: Logger
 
   constructor (options) {
     this.JIF_TO_MSG = getJifToMsg()
     this.MSG_TO_JIF = getMsgToJif()
 
-    this.topicToKey = utils.reverseMap(C.TOPIC)
-    this.actionToKey = utils.reverseMap(C.ACTIONS)
+    this.topicToKey = utils.reverseMap(TOPIC)
+    this.actionToKey = utils.reverseMap(ACTIONS)
 
     this._logger = options.logger
   }
@@ -269,29 +272,29 @@ module.exports = class JIFHandler {
     // convert topic enum to human-readable key
     const topicKey = this.topicToKey[message.topic]
 
-    const result = {
+    const result: any = {
       errorTopic: topicKey && topicKey.toLowerCase(),
       errorEvent: event,
       success: false
     }
 
-    if (event === C.EVENT.MESSAGE_DENIED) {
+    if (event === EVENT.MESSAGE_DENIED) {
       let action = this.actionToKey[message.action]
       action = action && action.toLowerCase()
       result.action = action
       result.error = `Message denied. Action "${action}" is not permitted.`
 
-    } else if (event === C.EVENT.VERSION_EXISTS) {
+    } else if (event === EVENT.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version
       result.currentData = message.parsedData
-    } else if (event === C.EVENT.RECORD_NOT_FOUND) {
+    } else if (event === EVENT.RECORD_NOT_FOUND) {
       result.error = `Record read failed. Record "${message.name}" could not be found.`
       result.errorEvent = message.event
-    } else if (event === C.EVENT.NO_RPC_PROVIDER) {
+    } else if (event === EVENT.NO_RPC_PROVIDER) {
       result.error = `No provider was available to handle the RPC "${message.name}".`
       // message.correlationId = data[1]
-    } else if (message.topic === C.TOPIC.RPC && event === C.EVENT.RESPONSE_TIMEOUT) {
+    } else if (message.topic === TOPIC.RPC && event === EVENT.RESPONSE_TIMEOUT) {
       result.error = 'The RPC response timeout was exceeded by the provider.'
 
     } else {

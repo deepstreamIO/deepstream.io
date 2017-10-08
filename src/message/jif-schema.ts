@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   "title": "JSON Interchange Format",
   "description": "A JSON format for interaction with DeepstreamIO.",
   "type": "object",

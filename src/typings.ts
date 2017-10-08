@@ -134,7 +134,11 @@ interface PermissionHandler extends DeepstreamPlugin {
 }
 
 interface AuthenticationHandler extends DeepstreamPlugin {
-  isValidUser(connectionData: any, authData: any, callback: Function) 
+  isValidUser(connectionData: any, authData: any, callback: UserAuthenticationCallback) 
+}
+
+interface UserAuthenticationCallback {
+  (isValid: boolean, clientData?: any)
 }
 
 interface Cluster {

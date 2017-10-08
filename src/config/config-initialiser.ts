@@ -10,6 +10,7 @@ import * as HTTPConnectionEndpoint from '../message/http/connection-endpoint'
 import * as UWSConnectionEndpoint from '../message/uws/connection-endpoint'
 import ConfigPermissionHandler from '../permission/config-permission-handler'
 import OpenPermissionHandler from '../permission/open-permission-handler'
+import FileAuthenticationHandler from '../authentication/file-based-authentication-handler'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
 
@@ -244,7 +245,7 @@ function handleAuthStrategy (config: DeepstreamConfig, logger: Logger): Authenti
 
   const authStrategies = {
     none: OpenAuthenticationHandler,
-    file: require('../authentication/file-based-authentication-handler'), // eslint-disable-line
+    file: FileAuthenticationHandler, // eslint-disable-line
     http: require('../authentication/http-authentication-handler'), // eslint-disable-line
   }
 

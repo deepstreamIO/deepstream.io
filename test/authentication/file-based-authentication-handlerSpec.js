@@ -1,6 +1,6 @@
 'use strict'
 require('source-map-support').install()
-const AuthenticationHandler = require('../../src/authentication/file-based-authentication-handler')
+const AuthenticationHandler = require('../../src/authentication/file-based-authentication-handler').default
 
 const testAuthentication = function (settings) {
   const authData = {

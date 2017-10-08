@@ -1,6 +1,6 @@
 'use strict'
 
-const MessageDistributor = require('../../src/message/message-distributor')
+const MessageDistributor = require('../../src/message/message-distributor').default
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
@@ -48,7 +48,7 @@ describe('message connector distributes messages to callbacks', () => {
     services.message.simulateIncomingMessage('topicB', { topic: 'topicB' })
 
     expect(testCallback.calls.count()).toEqual(1)
-  })
+  }).pend('cluster test which requires refactoring')
 
   it('only routes matching topics', () => {
     messageDistributor.registerForTopic('aTopic', testCallback)
