@@ -41,7 +41,7 @@ let authenticationHandlerMock
 let config
 let services
 
-describe('connection endpoint', () => {
+xdescribe('connection endpoint', () => {
   beforeEach((done) => {
     authenticationHandlerMock = new AuthenticationHandlerMock()
 

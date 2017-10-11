@@ -1,7 +1,7 @@
+import { LOG_LEVEL, EVENT, TOPIC } from '../constants'
 import { EventEmitter } from 'events'
 
 require('colors')
-import { LOG_LEVEL } from '../constants'
 
 const EOL = require('os').EOL
 
@@ -39,7 +39,7 @@ export default class StdOutLogger extends EventEmitter implements Logger {
   /**
    * Logs a line
    */
-  public log (logLevel: LOG_LEVEL, event: string, logMessage: string): void {
+  public log (logLevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
     if (logLevel < this.currentLogLevel) {
       return
     }
@@ -60,19 +60,19 @@ export default class StdOutLogger extends EventEmitter implements Logger {
     // }
   }
 
-  public debug (event, logMessage): void {
+  public debug (event: EVENT, logMessage: string): void {
     this.log(LOG_LEVEL.DEBUG, event, logMessage)
   }
 
-  public info (event, logMessage): void {
+  public info (event: EVENT, logMessage: string): void {
     this.log(LOG_LEVEL.INFO, event, logMessage)
   }
 
-  public warn (event, logMessage): void {
+  public warn (event: EVENT, logMessage: string): void {
     this.log(LOG_LEVEL.WARN, event, logMessage)
   }
 
-  public error (event, logMessage): void {
+  public error (event: EVENT, logMessage: string): void {
     this.log(LOG_LEVEL.ERROR, event, logMessage)
   }
 

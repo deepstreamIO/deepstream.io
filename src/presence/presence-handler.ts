@@ -1,16 +1,17 @@
+import { PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
 import StateRegistry from '../cluster/state-registry'
-import { ACTIONS, EVENT, PRESENCE, TOPIC } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
+
+const EVERYONE = PRESENCE_ACTIONS[PRESENCE_ACTIONS.EVERYONE]
 
 function parseUserNames (data: any): Array<string> | null {
   // Returns all users for backwards compatability
   if (
     !data ||
-    data === ACTIONS.QUERY ||
-    data === ACTIONS.SUBSCRIBE ||
+    data === PRESENCE_ACTIONS.SUBSCRIBE ||
     data === TOPIC.PRESENCE
   ) {
-    return [PRESENCE.EVERYONE]
+    return [EVERYONE]
   }
   try {
     return JSON.parse(data)
@@ -39,7 +40,7 @@ export default class PresenceHandler {
     this.localClients = new Map()
 
     this.subscriptionRegistry =
-      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.PRESENCE)
+      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.PRESENCE, TOPIC.PRESENCE_SUBSCRIPTIONS)
 
     this.connectedClients =
       stateRegistry || this.services.message.getStateRegistry(TOPIC.ONLINE_USERS)
@@ -53,32 +54,37 @@ export default class PresenceHandler {
   * Handles subscriptions, unsubscriptions and queries
   */
   public handle (socketWrapper: SocketWrapper, message: PresenceMessage): void {
+    if (message.action === PRESENCE_ACTIONS.QUERY_ALL) {
+      this.handleQueryAll(message.correlationId, socketWrapper)
+      return
+    }
+
     const users = parseUserNames(message.data)
     if (!users) {
       this.services.logger.error(EVENT.INVALID_PRESENCE_USERS, message.data, this.metaData)
       socketWrapper.sendError(message, EVENT.INVALID_PRESENCE_USERS)
       return
     }
-    if (message.action === ACTIONS.SUBSCRIBE) {
+    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.subscribe({
           topic: TOPIC.PRESENCE,
-          action: ACTIONS.SUBSCRIBE,
+          action: PRESENCE_ACTIONS.SUBSCRIBE,
           name: users[i],
         }, socketWrapper)
       }
-    } else if (message.action === ACTIONS.UNSUBSCRIBE) {
+    } else if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.unsubscribe({
           topic: TOPIC.PRESENCE,
-          action: ACTIONS.UNSUBSCRIBE,
+          action: PRESENCE_ACTIONS.UNSUBSCRIBE,
           name: users[i],
         }, socketWrapper)
       }
-    } else if (message.action === ACTIONS.QUERY) {
+    } else if (message.action === PRESENCE_ACTIONS.QUERY) {
       this.handleQuery(users, message.correlationId, socketWrapper)
     } else {
-      this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action, this.metaData)
+      this.services.logger.warn(EVENT.UNKNOWN_ACTION, PRESENCE_ACTIONS[message.action], this.metaData)
     }
   }
 
@@ -110,37 +116,37 @@ export default class PresenceHandler {
     }
   }
 
+  private handleQueryAll (correlationId: string, socketWrapper: SocketWrapper): void {
+    const clients = this.connectedClients.getAll()
+    const index = clients.indexOf(socketWrapper.user)
+    if (index !== -1) {
+      clients.splice(index, 1)
+    }
+    socketWrapper.sendMessage({
+      topic: TOPIC.PRESENCE,
+      action: PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
+      name: PRESENCE_ACTIONS[PRESENCE_ACTIONS.QUERY_ALL_RESPONSE],
+      parsedData: clients,
+    })
+  }
+
   /**
   * Handles finding clients who are connected and splicing out the client
   * querying for users
   */
   private handleQuery (users: Array<string>, correlationId: string, socketWrapper: SocketWrapper): void {
-    if (users[0] === PRESENCE.EVERYONE) {
-      const clients = this.connectedClients.getAll()
-      const index = clients.indexOf(socketWrapper.user)
-      if (index !== -1) {
-        clients.splice(index, 1)
-      }
-      socketWrapper.sendMessage({
-        topic: TOPIC.PRESENCE,
-        action: ACTIONS.QUERY,
-        name: ACTIONS.QUERY,
-        parsedData: clients,
-      })
-    } else {
-      const result = {}
-      const clients = this.connectedClients.getAllMap()
-      for (let i = 0; i < users.length; i++) {
-        result[users[i]] = !!clients[users[i]]
-      }
-      socketWrapper.sendMessage({
-        topic: TOPIC.PRESENCE,
-        action: ACTIONS.QUERY,
-        name: ACTIONS.QUERY,
-        correlationId,
-        parsedData: result,
-      })
+    const result = {}
+    const clients = this.connectedClients.getAll()
+    for (let i = 0; i < users.length; i++) {
+      result[users[i]] = !!clients[users[i]]
     }
+    socketWrapper.sendMessage({
+      topic: TOPIC.PRESENCE,
+      action: PRESENCE_ACTIONS.QUERY,
+      name: PRESENCE_ACTIONS[PRESENCE_ACTIONS.QUERY],
+      correlationId,
+      parsedData: result,
+    })
   }
 
   /**
@@ -150,12 +156,12 @@ export default class PresenceHandler {
   private onClientAdded (username: string) {
     const message = {
       topic: TOPIC.PRESENCE,
-      action: ACTIONS.PRESENCE_JOIN,
+      action: PRESENCE_ACTIONS.PRESENCE_JOIN,
       name : username,
     }
 
     this.subscriptionRegistry.sendToSubscribers(
-      PRESENCE.EVERYONE, message, false, null, false,
+      EVERYONE, message, false, null, false,
     )
     this.subscriptionRegistry.sendToSubscribers(
       username, message, false, null, false,
@@ -169,11 +175,11 @@ export default class PresenceHandler {
   private onClientRemoved (username: string) {
     const message = {
       topic: TOPIC.PRESENCE,
-      action: ACTIONS.PRESENCE_LEAVE,
+      action: PRESENCE_ACTIONS.PRESENCE_LEAVE,
       name: username,
     }
     this.subscriptionRegistry.sendToSubscribers(
-      PRESENCE.EVERYONE, message, false, null, false,
+      EVERYONE, message, false, null, false,
     )
     this.subscriptionRegistry.sendToSubscribers(
       username, message, false, null, false,

@@ -31,11 +31,11 @@ describe('supports spaces after variables and escaped quotes', () => {
     }
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTIONS.UPDATE,
       name: 'someUser',
       version: 1,
       data: '{"firstname":"Yasser"}',
-      dataEncoding: C.ENCODING_TYPES.JSON
+      dataEncoding: C.PAYLOAD_ENCODING.JSON
     }
 
     const callback = function (error, result) {
@@ -55,7 +55,7 @@ describe('supports spaces after variables and escaped quotes', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTIONS.UPDATE,
       name: 'someUser',
       version: 1,
       data: '{"firstname":"Wolfram"}'

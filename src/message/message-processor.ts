@@ -1,4 +1,4 @@
-import { TOPIC, EVENT, ACTIONS } from '../constants'
+import { CONNECTION_ACTIONS, EVENT, TOPIC } from '../constants'
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -37,7 +37,7 @@ export default class MessageProcessor {
     for (let i = 0; i < length; i++) {
       message = parsedMessages[i]
 
-      if (message.topic === TOPIC.CONNECTION && message.action === ACTIONS.PONG) {
+      if (message.topic === TOPIC.CONNECTION && message.action === CONNECTION_ACTIONS.PONG) {
         continue
       }
 

@@ -1,3 +1,5 @@
+import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
+
 const OPEN = 'open'
 const UNDEFINED = 'undefined'
 const LOADING = 'loading'
@@ -5,7 +7,6 @@ const ERROR = 'error'
 const STRING = 'string'
 import { EOL } from 'os'
 
-import { ACTIONS, EVENT, TOPIC } from '../constants'
 import * as jsonPath from '../record/json-path'
 import RecordHandler from '../record/record-handler'
 import recordRequest from '../record/record-request'
@@ -16,7 +17,7 @@ interface RuleApplicationParams {
    path: string
    ruleSpecification: any
    message: Message
-   action: Action
+   action: RECORD_ACTIONS | PRESENCE_ACTIONS | EVENT_ACTIONS | RPC_ACTIONS
    regexp: RegExp
    rule: any
    name: string
@@ -183,7 +184,7 @@ export default class RuleApplication {
     if (
       (msg.topic === TOPIC.RPC) ||
       (msg.topic === TOPIC.EVENT && msg.data) ||
-      (msg.topic === TOPIC.RECORD && msg.action === ACTIONS.UPDATE)
+      (msg.topic === TOPIC.RECORD && msg.action === RECORD_ACTIONS.UPDATE)
     ) {
       result = this.params.socketWrapper.parseData(msg)
       if (result instanceof Error) {
@@ -191,7 +192,7 @@ export default class RuleApplication {
       } else {
         return msg.parsedData
       }
-    } else if (msg.topic === TOPIC.RECORD && msg.action === ACTIONS.PATCH) {
+    } else if (msg.topic === TOPIC.RECORD && msg.action === RECORD_ACTIONS.PATCH) {
       result = this.getRecordPatchData(msg as RecordWriteMessage)
       if (result instanceof Error) {
         this.onRuleError(`error when converting message data ${result.toString()}`)

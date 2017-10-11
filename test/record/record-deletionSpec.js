@@ -54,7 +54,7 @@ describe('record deletion', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.ACTIONS.DELETE,
+        action: C.RECORD_ACTIONS.DELETE,
         name: 'someRecord'
       }, C.EVENT.RECORD_DELETE_ERROR)
 
@@ -65,7 +65,7 @@ describe('record deletion', () => {
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
-      expect(services.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'storageError'])
+      expect(services.logger.log.calls.argsFor(0)).toEqual([3, C.EVENT.RECORD_DELETE_ERROR, 'storageError'])
       done()
     }, 20)
   })
@@ -80,7 +80,7 @@ describe('record deletion', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.ACTIONS.DELETE,
+        action: C.RECORD_ACTIONS.DELETE,
         name: 'someRecord'
       }, C.EVENT.RECORD_DELETE_ERROR)
 
@@ -91,7 +91,7 @@ describe('record deletion', () => {
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
-      expect(services.logger.log.calls.argsFor(0)).toEqual([3, 'RECORD_DELETE_ERROR', 'cache timeout'])
+      expect(services.logger.log.calls.argsFor(0)).toEqual([3, C.EVENT.RECORD_DELETE_ERROR, 'cache timeout'])
       done()
     }, 100)
   })

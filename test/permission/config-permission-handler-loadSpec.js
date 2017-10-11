@@ -152,7 +152,7 @@ describe('permission handler loading', () => {
     it('allows publishing of a private event', (next) => {
       const message = {
         topic: C.TOPIC.EVENT,
-        action: C.ACTIONS.EVENT,
+        action: C.EVENT_ACTIONS.EVENT,
         name: 'private/event',
         data: 'somedata'
       }
@@ -182,7 +182,7 @@ describe('permission handler loading', () => {
 
       const message = {
         topic: C.TOPIC.EVENT,
-        action: C.ACTIONS.EVENT,
+        action: C.EVENT_ACTIONS.EVENT,
         name: 'private/event',
         data: 'somedata'
       }

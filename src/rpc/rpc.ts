@@ -1,5 +1,4 @@
-/* eslint-disable max-len */
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
 import RpcHandler from './rpc-handler'
 import RpcProxy from './rpc-proxy'
 
@@ -58,9 +57,9 @@ export default class Rpc {
 
     if (message.isAck) {
       this.handleAck(message)
-    } else if (message.action === ACTIONS.REJECTION) {
+    } else if (message.action === RPC_ACTIONS.REJECT) {
       this.reroute()
-    } else if (message.action === ACTIONS.RESPONSE || message.isError) {
+    } else if (message.action === RPC_ACTIONS.RESPONSE || message.isError) {
       this.requestor.sendMessage(message)
       this.destroy()
     }

@@ -20,7 +20,7 @@ describe('utils', () => {
       new EventEmitter(),
       new EventEmitter()
     ]
-    const callback = jasmine.createSpy('eventCallback')
+    const callback = jasmine.createSpy()
 
     utils.combineEvents(emitters, 'someEvent', callback)
     expect(callback).not.toHaveBeenCalled()

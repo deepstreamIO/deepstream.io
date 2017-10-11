@@ -26,12 +26,12 @@ describe('constructs data for patch message validation', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.PATCH,
+      action: C.RECORD_ACTIONS.PATCH,
       name: 'user/wh',
       version: 123,
       path: 'lastname',
       data: 'SMiller',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const onDone = function (error, result) {
@@ -55,12 +55,12 @@ describe('constructs data for patch message validation', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.PATCH,
+      action: C.RECORD_ACTIONS.PATCH,
       name: 'user/wh',
       version: 123,
       path: 'lastname',
       data: 'SHempel',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const onDone = function (error, result) {
@@ -82,12 +82,12 @@ describe('constructs data for patch message validation', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.PATCH,
+      action: C.RECORD_ACTIONS.PATCH,
       name: 'user/wh',
       version: 123,
       path: 'lastname',
       data: 'QHempel',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const onDone = function (error, result) {
@@ -107,12 +107,12 @@ describe('constructs data for patch message validation', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.PATCH,
+      action: C.RECORD_ACTIONS.PATCH,
       name: 'somerecord',
       version: 1,
       path: 'lastname',
       data: 'SHempel',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const onDone = function (error, result) {

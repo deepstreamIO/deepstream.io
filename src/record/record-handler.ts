@@ -1,4 +1,4 @@
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { RECORD_ACTIONS, TOPIC, EVENT } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'
@@ -21,7 +21,7 @@ export default class RecordHandler {
     this.config = config
     this.services = services
     this.subscriptionRegistry =
-    subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RECORD)
+    subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RECORD, TOPIC.RECORD_SUBSCRIPTIONS)
     this.listenerRegistry =
     listenerRegistry || new ListenerRegistry(TOPIC.RECORD, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
@@ -36,70 +36,71 @@ export default class RecordHandler {
  * client send action. Instead the client sends CREATEORREAD
  * and deepstream works which one it will be
  */
-  public handle (socketWrapper: SocketWrapper, message: Message): void {
-    if (message.action === ACTIONS.CREATEORREAD) {
+  public handle (socketWrapper: SocketWrapper, message: RecordMessage): void {
+    if (message.action === RECORD_ACTIONS.SUBSCRIBECREATEANDREAD) {
     /*
      * Return the record's contents and subscribes for future updates.
      * Creates the record if it doesn't exist
      */
       this.createOrRead(socketWrapper, message)
-    } else if (message.action === ACTIONS.CREATEANDUPDATE) {
+    } else if (message.action === RECORD_ACTIONS.CREATEANDUPDATE) {
     /*
      * Allows updates to the record without being subscribed, creates
      * the record if it doesn't exist
      */
       this.createAndUpdate(socketWrapper, message as RecordWriteMessage)
-    } else if (message.action === ACTIONS.SNAPSHOT) {
+    } else if (message.action === RECORD_ACTIONS.READ) {
     /*
      * Return the current state of the record in cache or db
      */
       this.snapshot(socketWrapper, message)
-    } else if (message.action === ACTIONS.HEAD) {
+    } else if (message.action === RECORD_ACTIONS.HEAD) {
     /*
      * Return the current state of the record in cache or db
      */
       this.head(socketWrapper, message)
-    } else if (message.action === ACTIONS.HAS) {
+    } else if (message.action === RECORD_ACTIONS.HAS) {
     /*
      * Return a Boolean to indicate if record exists in cache or database
      */
       this.hasRecord(socketWrapper, message)
-    } else if (message.action === ACTIONS.UPDATE || message.action === ACTIONS.PATCH) {
+    } else if (message.action === RECORD_ACTIONS.UPDATE || message.action === RECORD_ACTIONS.PATCH) {
     /*
      * Handle complete (UPDATE) or partial (PATCH) updates
      */
       this.update(socketWrapper, message as RecordWriteMessage, false)
-    } else if (message.action === ACTIONS.DELETE) {
+    } else if (message.action === RECORD_ACTIONS.DELETE) {
     /*
      * Deletes the record
      */
       this.delete(socketWrapper, message)
-    } else if (message.isAck && message.action === ACTIONS.DELETE) {
+    } else if (message.action === RECORD_ACTIONS.DELETE_ACK) {
     /*
      * Handle delete acknowledgement from message bus
      * TODO: Different action
      */
       this.deleteAck(socketWrapper, message)
-    } else if (message.action === ACTIONS.UNSUBSCRIBE) {
+    } else if (message.action === RECORD_ACTIONS.UNSUBSCRIBE) {
   /*
    * Unsubscribes (discards) a record that was previously subscribed to
    * using read()
    */
       this.subscriptionRegistry.unsubscribe(message, socketWrapper)
-    } else if (message.action === ACTIONS.LISTEN ||
+    } else if (message.action === RECORD_ACTIONS.LISTEN ||
   /*
    * Listen to requests for a particular record or records
    * whose names match a pattern
    */
-    message.action === ACTIONS.UNLISTEN ||
-    message.action === ACTIONS.LISTEN_ACCEPT ||
-    message.action === ACTIONS.LISTEN_REJECT) {
+    message.action === RECORD_ACTIONS.UNLISTEN ||
+    message.action === RECORD_ACTIONS.LISTEN_ACCEPT ||
+    message.action === RECORD_ACTIONS.LISTEN_REJECT) {
       this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
     } else {
   /*
    * Default for invalid messages
    */
-      this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action, this.metaData)
+    console.log(message.action)
+      this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action.toString(), this.metaData)
     }
   }
 
@@ -111,7 +112,7 @@ export default class RecordHandler {
     function onComplete (record, recordName, socket) {
       socket.sendMessage({
         topic: TOPIC.RECORD,
-        action: ACTIONS.HAS,
+        action: RECORD_ACTIONS.HAS_RESPONSE,
         name: recordName,
         parsedData: !!record,
       })
@@ -168,7 +169,7 @@ export default class RecordHandler {
       if (record) {
         socket.sendMessage({
           topic: TOPIC.RECORD,
-          action: ACTIONS.HEAD,
+          action: RECORD_ACTIONS.HEAD,
           name: recordName,
           version: record._v,
         })
@@ -202,7 +203,7 @@ export default class RecordHandler {
         this.read(message, record, socket)
       } else {
         this.permissionAction(
-          ACTIONS.CREATE,
+          RECORD_ACTIONS.CREATE,
           recordName,
           socket,
           this.create.bind(this, message, socket),
@@ -235,15 +236,15 @@ export default class RecordHandler {
   private createAndUpdate (socketWrapper: SocketWrapper, message: RecordWriteMessage): void {
     const recordName = message.name
     const isPatch = message.path !== null
-    message = Object.assign({}, message, { action: isPatch ? ACTIONS.PATCH : ACTIONS.UPDATE })
+    message = Object.assign({}, message, { action: isPatch ? RECORD_ACTIONS.PATCH : RECORD_ACTIONS.UPDATE })
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage
     for (let i = 0; i < this.config.storageHotPathPatterns.length; i++) {
       const pattern = this.config.storageHotPathPatterns[i]
       if (recordName.indexOf(pattern) !== -1 && !isPatch) {
-        this.permissionAction(ACTIONS.CREATE, recordName, socketWrapper, () => {
-          this.permissionAction(ACTIONS.UPDATE, recordName, socketWrapper, () => {
+        this.permissionAction(RECORD_ACTIONS.CREATE, recordName, socketWrapper, () => {
+          this.permissionAction(RECORD_ACTIONS.UPDATE, recordName, socketWrapper, () => {
             this.forceWrite(recordName, message, socketWrapper)
           })
         })
@@ -262,8 +263,8 @@ export default class RecordHandler {
       return
     }
 
-    this.permissionAction(ACTIONS.CREATE, recordName, socketWrapper, () => {
-      this.permissionAction(ACTIONS.UPDATE, recordName, socketWrapper, () => {
+    this.permissionAction(RECORD_ACTIONS.CREATE, recordName, socketWrapper, () => {
+      this.permissionAction(RECORD_ACTIONS.UPDATE, recordName, socketWrapper, () => {
         this.update(socketWrapper, message, true)
       })
     })
@@ -317,7 +318,7 @@ export default class RecordHandler {
     if (storageResponse && cacheResponse) {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
-        action: ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        action: RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
         name: message.name,
         data: [message.version, error],
       }, true)
@@ -357,7 +358,7 @@ export default class RecordHandler {
  * Subscribes to updates for a record and sends its current data once done
  */
   private read (message: RecordMessage, record: StorageRecord, socketWrapper: SocketWrapper): void {
-    this.permissionAction(ACTIONS.READ, message.name, socketWrapper, () => {
+    this.permissionAction(RECORD_ACTIONS.READ, message.name, socketWrapper, () => {
       this.subscriptionRegistry.subscribe(message, socketWrapper)
       sendRecord(message.name, record, socketWrapper)
     })
@@ -499,7 +500,7 @@ export default class RecordHandler {
  * A secondary permissioning step that is performed once we know if the record exists (READ)
  * or if it should be created (CREATE)
  */
-  private permissionAction (action: Action, recordName: string, socketWrapper: SocketWrapper, successCallback: Function) {
+  private permissionAction (action: RECORD_ACTIONS, recordName: string, socketWrapper: SocketWrapper, successCallback: Function) {
     const message = {
       topic: TOPIC.RECORD,
       action,
@@ -539,7 +540,7 @@ function onPermissionResponse (
 function sendRecord (recordName: string, record: StorageRecord, socketWrapper: SocketWrapper) {
   socketWrapper.sendMessage({
     topic: TOPIC.RECORD,
-    action: ACTIONS.READ,
+    action: RECORD_ACTIONS.READ,
     name: recordName,
     version: record._v,
     parsedData: record._d,

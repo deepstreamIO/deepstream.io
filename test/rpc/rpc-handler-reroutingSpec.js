@@ -40,7 +40,7 @@ describe('rpc handler returns alternative providers for the same rpc', () => {
 
     rpcHandler.handle(providerForA1.socketWrapper, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.REQUEST,
       name: 'rpcA',
       correlationId: '1234',
       data: 'U'

@@ -1,14 +1,14 @@
 'use strict'
 
+import { RECORD_ACTIONS, EVENT_ACTIONS, TOPIC, EVENT } from '../constants'
 import StateRegistry from '../cluster/state-registry'
-import { ACTIONS, EVENT, TOPIC } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
 import TimeoutRegistry from './listener-timeout-registry'
 
 export default class ListenerRegistry implements SubscriptionListener {
   private metaData: any
-  private topic: string
+  private topic: TOPIC
   private config: DeepstreamConfig
   private services: DeepstreamServices
   private providerRegistry: SubscriptionRegistry
@@ -21,7 +21,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   private locallyProvidedRecords: any
   private leadListen: any
   private leadingListen: any
-  private messageTopic: string
+  private messageTopic: TOPIC
+  private actions: any
 
   private clusterProvidedRecords: StateRegistry
 
@@ -44,9 +45,10 @@ export default class ListenerRegistry implements SubscriptionListener {
   * This class manages the matching of patterns and record names. The subscription /
   * notification logic is handled by this.providerRegistry
   */
-  constructor (topic: Topic, config: DeepstreamConfig, services: DeepstreamServices, clientRegistry: SubscriptionRegistry, metaData: any) {
+  constructor (topic: TOPIC, config: DeepstreamConfig, services: DeepstreamServices, clientRegistry: SubscriptionRegistry, metaData: any) {
     this.metaData = metaData
     this.topic = topic
+    this.actions = topic === TOPIC.RECORD ? RECORD_ACTIONS : EVENT_ACTIONS
     this.config = config
     this.services = services
     this.clientRegistry = clientRegistry
@@ -72,14 +74,23 @@ export default class ListenerRegistry implements SubscriptionListener {
    * via the cluster.
    */
   protected setupProviderRegistry (): void {
-    this.providerRegistry = new SubscriptionRegistry(
-      this.config,
-      this.services,
-      this.topic,
-      `${this.topic}_${TOPIC.LISTEN_PATTERNS}`,
-    )
-    this.providerRegistry.setAction('subscribe', ACTIONS.LISTEN)
-    this.providerRegistry.setAction('unsubscribe', ACTIONS.UNLISTEN)
+    if (this.topic === TOPIC.RECORD) {
+      this.providerRegistry = new SubscriptionRegistry(
+        this.config,
+        this.services,
+        this.topic,
+        TOPIC.RECORD_LISTEN_PATTERNS
+      )
+    } else {
+      this.providerRegistry = new SubscriptionRegistry(
+        this.config,
+        this.services,
+        this.topic,
+        TOPIC.EVENT_LISTEN_PATTERNS
+      )
+    }
+    this.providerRegistry.setAction('subscribe', this.actions.LISTEN)
+    this.providerRegistry.setAction('unsubscribe', this.actions.UNLISTEN)  
     this.providerRegistry.setSubscriptionListener({
       onLastSubscriptionRemoved: this.removeLastPattern.bind(this),
       onSubscriptionRemoved: this.removePattern.bind(this),
@@ -93,16 +104,19 @@ export default class ListenerRegistry implements SubscriptionListener {
    * via the cluster.
    */
   protected setupRemoteComponents (): void {
-    this.messageTopic = this.topic + ACTIONS.LISTEN
-    this.clusterProvidedRecords = this.message.getStateRegistry(
-      `${this.topic}_${TOPIC.PUBLISHED_SUBSCRIPTIONS}`,
-    )
+    if (this.topic === TOPIC.RECORD) {
+      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
+      this.messageTopic = TOPIC.RECORD_LISTENING
+    } else {
+      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)      
+      this.messageTopic = TOPIC.EVENT_LISTENING
+    }
     this.clusterProvidedRecords.on('add', this.onRecordStartProvided.bind(this))
     this.clusterProvidedRecords.on('remove', this.onRecordStopProvided.bind(this))
 
     this.message.subscribe(
       this.messageTopic,
-      this.onIncomingMessage.bind(this),
+      this.onIncomingMessage.bind(this)
     )
   }
 
@@ -126,12 +140,12 @@ export default class ListenerRegistry implements SubscriptionListener {
   public handle (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const subscriptionName = message.subscription
 
-    if (message.action === ACTIONS.LISTEN) {
+    if (message.action === this.actions.LISTEN) {
       this.addListener(socketWrapper, message)
       return
     }
 
-    if (message.action === ACTIONS.UNLISTEN) {
+    if (message.action === this.actions.UNLISTEN) {
       this.providerRegistry.unsubscribe(message, socketWrapper)
       this.removeListener(socketWrapper, message)
       return
@@ -173,11 +187,11 @@ export default class ListenerRegistry implements SubscriptionListener {
   * and hasn't timed out yet.
   */
   private processResponseForListenInProgress (socketWrapper: SocketWrapper, subscriptionName: string, message: ListenMessage): void {
-    if (message.action === ACTIONS.LISTEN_ACCEPT) {
+    if (message.action === this.actions.LISTEN_ACCEPT) {
       this.accept(socketWrapper, message)
       this.listenerTimeoutRegistry.rejectLateResponderThatAccepted(subscriptionName)
       this.listenerTimeoutRegistry.clear(subscriptionName)
-    } else if (message.action === ACTIONS.LISTEN_REJECT) {
+    } else if (message.action === this.actions.LISTEN_REJECT) {
       const provider = this.listenerTimeoutRegistry.getLateResponderThatAccepted(subscriptionName)
       if (provider) {
         this.accept(provider.socketWrapper, message)
@@ -531,7 +545,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     if (socketWrapper && this.topic === TOPIC.RECORD) {
       socketWrapper.sendMessage({
         topic: this.topic,
-        action: ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+        action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
         name: subscriptionName,
         parsedData: hasProvider,
       })
@@ -547,7 +561,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     }
     this.clientRegistry.sendToSubscribers(subscriptionName, {
       topic: this.topic,
-      action: ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+      action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
       name: subscriptionName,
       parsedData: hasProvider,
     }, false, null)
@@ -560,7 +574,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   private sendRemoteDiscoveryStart (serverName: string, subscriptionName: string): void  {
     this.message.sendDirect(serverName, {
       topic: this.messageTopic,
-      action: ACTIONS.LISTEN,
+      action: this.actions.LISTEN,
       name: subscriptionName
     }, this.metaData)
   }
@@ -572,7 +586,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   private sendRemoteDiscoveryStop (listenLeaderServerName: string, subscriptionName: string): void  {
     this.message.sendDirect(listenLeaderServerName, {
       topic: this.messageTopic,
-      action: ACTIONS.ACK,
+      action: this.actions.ACK,
       name: subscriptionName
     }, this.metaData)
   }
@@ -583,7 +597,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   private sendSubscriptionForPatternFound (provider: Provider, subscriptionName: string): void  {
     provider.socketWrapper.sendMessage({
       topic: this.topic,
-      action: ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+      action: this.actions.SUBSCRIPTION_FOR_PATTERN_FOUND,
       name: provider.pattern,
       subscription: subscriptionName,
     })
@@ -595,7 +609,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   private sendSubscriptionForPatternRemoved (provider: Provider, subscriptionName: string): void {
     provider.socketWrapper.sendMessage({
       topic: this.topic,
-      action: ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+      action: this.actions.SUBSCRIPTION_FOR_PATTERN_REMOVED,
       name: provider.pattern,
       subscription: subscriptionName,
     })
@@ -615,7 +629,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       const pattern = providerPatterns[i]
       let p = this.patterns[pattern]
       if (p == null) {
-        this.services.logger.warn('', `can't handle pattern ${pattern}`, this.metaData)
+        this.services.logger.warn(EVENT.INFO, `can't handle pattern ${pattern}`, this.metaData)
         this.addPattern(pattern)
         p = this.patterns[pattern]
       }

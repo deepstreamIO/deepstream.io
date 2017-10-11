@@ -1,9 +1,9 @@
+import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, EVENT, PRESENCE_ACTIONS, TOPIC } from '../constants'
+
 import * as Ajv from 'ajv'
 
 import jifSchema from './jif-schema'
 import * as utils from '../utils/utils'
-
-import { TOPIC, ACTIONS, EVENT } from '../constants'
 
 const ajv = new Ajv()
 
@@ -18,7 +18,7 @@ function getJifToMsg () {
     done: true,
     message: {
       topic: TOPIC.EVENT,
-      action: ACTIONS.EVENT,
+      action: EVENT_ACTIONS.EMIT,
       name: msg.eventName,
       parsedData: msg.data
     }
@@ -30,7 +30,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RPC,
-      action: ACTIONS.REQUEST,
+      action: RPC_ACTIONS.REQUEST,
       name: msg.rpcName,
       correlationId: utils.getUid(),
       parsedData: msg.data
@@ -42,7 +42,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: ACTIONS.SNAPSHOT,
+      action: RECORD_ACTIONS.READ,
       name: msg.recordName
     }
   })
@@ -55,7 +55,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: ACTIONS.CREATEANDUPDATE,
+      action: RECORD_ACTIONS.CREATEANDUPDATE,
       name: msg.recordName,
       version: msg.version || -1,
       path: msg.path,
@@ -68,7 +68,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: ACTIONS.CREATEANDUPDATE,
+      action: RECORD_ACTIONS.CREATEANDUPDATE,
       name: msg.recordName,
       version: msg.version || -1,
       path: null,
@@ -81,7 +81,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: ACTIONS.HEAD,
+      action: RECORD_ACTIONS.HEAD,
       name: msg.recordName
     }
   })
@@ -90,7 +90,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: ACTIONS.DELETE,
+      action: RECORD_ACTIONS.DELETE,
       name: msg.recordName
     }
   })
@@ -100,9 +100,9 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.PRESENCE,
-      action: ACTIONS.QUERY,
-      name: ACTIONS.QUERY, // required by permissions
-      parsedData: ACTIONS.QUERY
+      action: PRESENCE_ACTIONS.QUERY,
+      name: PRESENCE_ACTIONS.QUERY, // required by permissions
+      parsedData: PRESENCE_ACTIONS.QUERY
     }
   })
 
@@ -116,8 +116,8 @@ function getMsgToJif () {
   // message -> jif lookup table
   const MSG_TO_JIF = {}
   MSG_TO_JIF[TOPIC.RPC] = {}
-  MSG_TO_JIF[TOPIC.RPC][ACTIONS.RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RPC][ACTIONS.RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       data: message.parsedData,
@@ -125,12 +125,12 @@ function getMsgToJif () {
     }
   })
 
-  MSG_TO_JIF[TOPIC.RPC][ACTIONS.REQUEST] = {}
-  MSG_TO_JIF[TOPIC.RPC][ACTIONS.REQUEST][TYPE.ACK] = () => ({ done: false })
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.REQUEST] = {}
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.REQUEST][TYPE.ACK] = () => ({ done: false })
 
   MSG_TO_JIF[TOPIC.RECORD] = {}
-  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.READ] = {}
-  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.READ][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       version: message.version,
@@ -139,8 +139,8 @@ function getMsgToJif () {
     }
   })
 
-  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.WRITE_ACKNOWLEDGEMENT] = {}
-  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       error: message.data[1] || undefined,
@@ -148,15 +148,15 @@ function getMsgToJif () {
     }
   })
 
-  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.DELETE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.DELETE][TYPE.ACK] = () => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE][TYPE.ACK] = () => ({
     done: true,
     message: {
       success: true
     }
   })
-  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.HEAD] = {}
-  MSG_TO_JIF[TOPIC.RECORD][ACTIONS.HEAD][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       version: message.version,
@@ -165,8 +165,8 @@ function getMsgToJif () {
   })
 
   MSG_TO_JIF[TOPIC.PRESENCE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][ACTIONS.QUERY] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][ACTIONS.QUERY][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY] = {}
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       users: message.parsedData,
@@ -181,7 +181,6 @@ export default class JIFHandler {
   private JIF_TO_MSG: any
   private MSG_TO_JIF: any
   private topicToKey: any
-  private actionToKey: any
   private _logger: Logger
 
   constructor (options) {
@@ -189,7 +188,6 @@ export default class JIFHandler {
     this.MSG_TO_JIF = getMsgToJif()
 
     this.topicToKey = utils.reverseMap(TOPIC)
-    this.actionToKey = utils.reverseMap(ACTIONS)
 
     this._logger = options.logger
   }
@@ -279,8 +277,7 @@ export default class JIFHandler {
     }
 
     if (event === EVENT.MESSAGE_DENIED) {
-      let action = this.actionToKey[message.action]
-      action = action && action.toLowerCase()
+      let action = message.action.toString().toLowerCase()
       result.action = action
       result.error = `Message denied. Action "${action}" is not permitted.`
 
@@ -299,9 +296,10 @@ export default class JIFHandler {
 
     } else {
       this._logger.warn(
-        `Unhandled request error occurred: ${message.topic} ${event} ${JSON.stringify(message)}`
+        EVENT.INFO,
+        `Unhandled request error occurred: ${TOPIC[message.topic]} ${EVENT[event]} ${JSON.stringify(message)}`
       )
-      result.error = `An error occurred: ${event}.`
+      result.error = `An error occurred: ${EVENT[event]}.`
       result.errorParams = message.name
     }
 

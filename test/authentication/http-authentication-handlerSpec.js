@@ -124,7 +124,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
 
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).toBe(false)
-      expect(logger.log).toHaveBeenCalledWith(2, 'AUTH_ERROR', 'http auth server error: oh dear')
+      expect(logger.log).toHaveBeenCalledWith(2, C.EVENT.AUTH_ERROR, 'http auth server error: oh dear')
       expect(data).toBe('oh dear')
       done()
     })
@@ -142,7 +142,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
 
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).toBe(false)
-      expect(logger.log).toHaveBeenCalledWith(2, 'AUTH_ERROR', 'http auth error: Error: socket hang up')
+      expect(logger.log).toHaveBeenCalledWith(2, C.EVENT.AUTH_ERROR, 'http auth error: Error: socket hang up')
       expect(data).toBeNull()
       server.respondWith(200)
       done()

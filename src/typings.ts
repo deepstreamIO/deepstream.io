@@ -5,8 +5,15 @@ declare module "*.json" {
 type RuleType = string
 type ValveSection = string
 
-type Topic = string
-type Action = string
+type LOG_LEVEL = any
+type TOPIC = any
+type RECORD_ACTIONS = any
+type PRESENCE_ACTIONS = any
+type EVENT_ACTIONS = any
+type RPC_ACTIONS = any
+type AUTH_ACTIONS = any
+type CONNECTION_ACTIONS = any
+type EVENT = any
 
 interface StorageRecord {
   _v: number
@@ -17,7 +24,7 @@ interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
   sendMessage(message: Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, buffer?: boolean): void
   sendAckMessage(message: Message | RPCMessage ): void
-  sendError(message: { topic: string } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: string, errorMessage?: string): void
+  sendError(message: { topic: TOPIC } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: EVENT, errorMessage?: string): void
 }
 
 interface SocketWrapper extends SimpleSocketWrapper {
@@ -33,8 +40,8 @@ interface SocketWrapper extends SimpleSocketWrapper {
 }
 
 interface Message {
-  topic: Topic
-  action: Action
+  topic: TOPIC
+  action: RECORD_ACTIONS | PRESENCE_ACTIONS | RPC_ACTIONS | EVENT_ACTIONS | AUTH_ACTIONS | CONNECTION_ACTIONS
   name: string
 
   isError?: boolean
@@ -56,8 +63,8 @@ interface PresenceMessage extends Message {
 }
 
 interface ListenMessage {
-  topic: Topic
-  action: Action
+  topic: TOPIC
+  action: RECORD_ACTIONS | EVENT_ACTIONS
   name: string
   subscription: string
 
@@ -87,11 +94,11 @@ interface SubscriptionListener {
 
 interface Logger extends DeepstreamPlugin {
   setLogLevel(logLevel: number)
-  info(event: string, message?: string, metaData?: any): void
-  debug(event: string, message?: string, metaData?: any): void
-  warn(event: string, message?: string, metaData?: any): void
-  error(event: string, message?: string, metaData?: any): void
-  log(level: number, event: string, message: string, metaData?: any): void
+  info(event: EVENT, message?: string, metaData?: any): void
+  debug(event: EVENT, message?: string, metaData?: any): void
+  warn(event: EVENT, message?: string, metaData?: any): void
+  error(event: EVENT, message?: string, metaData?: any): void
+  log(level: LOG_LEVEL, event: EVENT, message: string, metaData?: any): void
 }
 
 interface ConnectionEndpoint extends DeepstreamPlugin {
@@ -142,10 +149,10 @@ interface UserAuthenticationCallback {
 }
 
 interface Cluster {
-  getStateRegistry(stateRegistryName: string): any,
+  getStateRegistry(stateRegistryName: TOPIC): any,
   send(message: Message, metaData: any): void,
   sendDirect(serverName: string, message: Message, metaData: any): void,
-  subscribe(topic: any, callback: Function): void
+  subscribe(topic: TOPIC, callback: Function): void
   isLeader(): boolean
   close(callback: Function): void
 }

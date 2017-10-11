@@ -41,7 +41,7 @@ describe('dependency-initialiser', () => {
     config.pluginB.setReady()
 
     setTimeout(() => {
-      expect(services.logger.lastLogEvent).toBe('INFO')
+      expect(services.logger.lastLogEvent).toBe(C.EVENT.INFO)
       expect(readySpy.calls.count()).toBe(1)
       done()
     }, 5)
@@ -89,7 +89,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
     expect(config.plugin.isReady).toBe(false)
     process.removeAllListeners('uncaughtException')
     process.once('uncaughtException', () => {
-      expect(services.logger.log).toHaveBeenCalledWith(3, 'PLUGIN_ERROR', 'plugin wasn\'t initialised in time')
+      expect(services.logger.log).toHaveBeenCalledWith(3, C.EVENT.PLUGIN_ERROR, 'plugin wasn\'t initialised in time')
       done()
     })
     expect(onReady).not.toHaveBeenCalled()

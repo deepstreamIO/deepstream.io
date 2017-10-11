@@ -28,7 +28,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'purchase/doesExist'
     }
 
@@ -55,7 +55,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'purchase/itemA'
     }
 
@@ -78,7 +78,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'purchase/itemA'
     }
 
@@ -101,7 +101,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'purchase/itemA'
     }
 
@@ -126,7 +126,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'userA'
     }
 
@@ -153,10 +153,10 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event',
       data: 'O{"owner":"userX"}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const callback = function (error, result) {
@@ -179,10 +179,10 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event',
       data: 'O{"owner":"userX"}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const callback = function (error, result) {
@@ -204,10 +204,10 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event',
       data: 'O{"price":15}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const callback = function (error, result) {

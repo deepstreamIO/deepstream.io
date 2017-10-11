@@ -37,8 +37,8 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(services.permissionHandler.lastArgs.length).toBe(2)
-    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
-    expect(services.permissionHandler.lastArgs[1][1].action).toBe(C.ACTIONS.READ)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE)
+    expect(services.permissionHandler.lastArgs[1][1].action).toBe(C.RECORD_ACTIONS.READ)
   })
 
   it('triggers only read action if record does exist', () => {
@@ -52,7 +52,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(services.permissionHandler.lastArgs.length).toBe(1)
-    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.READ)
   })
 
   it('rejects a create', () => {
@@ -66,7 +66,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(services.permissionHandler.lastArgs.length).toBe(1)
-    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE)
   })
 
   it('rejects a read', () => {
@@ -81,7 +81,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(services.permissionHandler.lastArgs.length).toBe(1)
-    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.READ)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.READ)
   })
 
   it('handles a permission error', () => {
@@ -96,6 +96,6 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
     expect(services.permissionHandler.lastArgs.length).toBe(1)
-    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.ACTIONS.CREATE)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE)
   })
 })

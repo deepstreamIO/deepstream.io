@@ -8,8 +8,7 @@
     "strictNullChecks": true 
   },
   "files": [
-    "./node_modules/@types/node/index.d.ts",
-    "./src/typings.ts"
+    "./node_modules/@types/node/index.d.ts"
   ],
   "include": [
     "bin/*",

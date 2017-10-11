@@ -1,14 +1,14 @@
 import { getMessage } from '../../protocol/text/src/message-builder'
 import StateRegistry from '../cluster/state-registry'
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
 
 let idCounter = 0
 
 interface SubscriptionActions {
-  MULTIPLE_SUBSCRIPTIONS: string
-  SUBSCRIBE: string
-  UNSUBSCRIBE: string
-  NOT_SUBSCRIBED: string
+  MULTIPLE_SUBSCRIPTIONS: EVENT
+  NOT_SUBSCRIBED: EVENT
+  SUBSCRIBE: RECORD_ACTIONS.SUBSCRIBE | EVENT_ACTIONS.SUBSCRIBE | RPC_ACTIONS.PROVIDE | PRESENCE_ACTIONS.SUBSCRIBE
+  UNSUBSCRIBE: RECORD_ACTIONS.UNSUBSCRIBE | EVENT_ACTIONS.UNSUBSCRIBE | RPC_ACTIONS.UNPROVIDE | PRESENCE_ACTIONS.UNSUBSCRIBE
 }
 
 interface Subscription {
@@ -25,18 +25,19 @@ export default class SubscriptionRegistry {
   private subscriptions: Map<string, Subscription>
   private config: DeepstreamConfig
   private services: DeepstreamServices
-  private topic: string
+  private topic: TOPIC
   private subscriptionListener: SubscriptionListener
   private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry
   private delayedBroadcastsTimer: any
+  private actions: any
 
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
    * A bit like an event-hub, only that it registers SocketWrappers rather
    * than functions
    */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, topic: string, clusterTopic?: string) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, topic: TOPIC, clusterTopic: TOPIC) {
     this.pending = []
     this.delay = -1
     if (config.broadcastTimeout !== undefined) {
@@ -47,11 +48,27 @@ export default class SubscriptionRegistry {
     this.config = config
     this.services = services
     this.topic = topic
+
+    switch (topic) {
+      case TOPIC.RECORD:
+        this.actions = RECORD_ACTIONS
+        break      
+      case TOPIC.EVENT:
+        this.actions = EVENT_ACTIONS
+        break      
+      case TOPIC.RPC:
+        this.actions = RPC_ACTIONS
+        break
+      case TOPIC.PRESENCE:
+        this.actions = PRESENCE_ACTIONS
+        break
+    }
+
     this.constants = {
       MULTIPLE_SUBSCRIPTIONS: EVENT.MULTIPLE_SUBSCRIPTIONS,
-      SUBSCRIBE: ACTIONS.SUBSCRIBE,
-      UNSUBSCRIBE: ACTIONS.UNSUBSCRIBE,
       NOT_SUBSCRIBED: EVENT.NOT_SUBSCRIBED,
+      SUBSCRIBE: this.actions.SUBSCRIBE,
+      UNSUBSCRIBE: this.actions.UNSUBSCRIBE,
     }
 
     this.onBroadcastTimeout = this.onBroadcastTimeout.bind(this)
@@ -68,10 +85,8 @@ export default class SubscriptionRegistry {
    * Setup all the remote components and actions required to deal with the subscription
    * via the cluster.
    */
-  protected setupRemoteComponents (clusterTopic?: string): void {
-    this.clusterSubscriptions = this.services.message.getStateRegistry(
-      clusterTopic || `${this.topic}_${TOPIC.SUBSCRIPTIONS}`,
-    )
+  protected setupRemoteComponents (clusterTopic: TOPIC): void {
+    this.clusterSubscriptions = this.services.message.getStateRegistry(clusterTopic)
   }
 
   /**
@@ -124,7 +139,7 @@ export default class SubscriptionRegistry {
   * For example, when using the ACTIONS.LISTEN, you would override SUBSCRIBE with
   * ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
   */
-  public setAction (name: string, value: string): void {
+  public setAction (name: string, value: EVENT_ACTIONS | RECORD_ACTIONS | RPC_ACTIONS): void {
     this.constants[name.toUpperCase()] = value
   }
 
@@ -208,7 +223,7 @@ export default class SubscriptionRegistry {
     this.addSocket(subscription, socket)
 
     const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-    this.services.logger.debug(this.constants.SUBSCRIBE, logMsg)
+    this.services.logger.debug(EVENT.SUBSCRIBE, logMsg)
     socket.sendAckMessage(message)
   }
 
@@ -232,7 +247,7 @@ export default class SubscriptionRegistry {
 
     if (!silent) {
       const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-      this.services.logger.debug(this.constants.UNSUBSCRIBE, logMsg)
+      this.services.logger.debug(EVENT.SUBSCRIBE, logMsg)
       socket.sendAckMessage(message)
     }
   }

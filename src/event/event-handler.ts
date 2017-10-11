@@ -1,4 +1,4 @@
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, EVENT, PRESENCE_ACTIONS, TOPIC } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 
@@ -16,7 +16,7 @@ export default class EventHandler {
   constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry) {
     this.config = config
     this.subscriptionRegistry =
-      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.EVENT)
+      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.EVENT, TOPIC.EVENT_SUBSCRIPTIONS)
     this.listenerRegistry =
       listenerRegistry || new ListenerRegistry(TOPIC.EVENT, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
@@ -28,16 +28,16 @@ export default class EventHandler {
    * based on the provided action parameter of the message
    */
   public handle (socket: SocketWrapper, message: Message) {
-    if (message.action === ACTIONS.SUBSCRIBE) {
+    if (message.action === EVENT_ACTIONS.SUBSCRIBE) {
       this.subscriptionRegistry.subscribe(message, socket)
-    } else if (message.action === ACTIONS.UNSUBSCRIBE) {
+    } else if (message.action === EVENT_ACTIONS.UNSUBSCRIBE) {
       this.subscriptionRegistry.unsubscribe(message, socket)
-    } else if (message.action === ACTIONS.EVENT) {
+    } else if (message.action === EVENT_ACTIONS.EMIT) {
       this.triggerEvent(socket, message)
-    } else if (message.action === ACTIONS.LISTEN ||
-      message.action === ACTIONS.UNLISTEN ||
-      message.action === ACTIONS.LISTEN_ACCEPT ||
-      message.action === ACTIONS.LISTEN_REJECT) {
+    } else if (message.action === EVENT_ACTIONS.LISTEN ||
+      message.action === EVENT_ACTIONS.UNLISTEN ||
+      message.action === EVENT_ACTIONS.LISTEN_ACCEPT ||
+      message.action === EVENT_ACTIONS.LISTEN_REJECT) {
       this.listenerRegistry.handle(socket, message as ListenMessage)
     } else {
       console.log('unknown action', message)

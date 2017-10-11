@@ -1,7 +1,8 @@
+import { TOPIC, EVENT } from '../constants'
 import StateRegistry from './state-registry'
 
 export default class ClusterNode implements Cluster {
-  public stateRegistries: Map<string, StateRegistry>
+  public stateRegistries: Map<TOPIC, StateRegistry>
 
   constructor (config: DeepstreamConfig, services: DeepstreamServices, type: string) {
     this.stateRegistries = new Map()
@@ -17,7 +18,7 @@ export default class ClusterNode implements Cluster {
 
   public isLeader ():boolean { throw new Error('Leader not used in single state') }
 
-  public getStateRegistry (name: string) {
+  public getStateRegistry (name: TOPIC) {
     let stateRegistry = this.stateRegistries.get(name)
     if (!stateRegistry) {
       stateRegistry = new StateRegistry(name, {})

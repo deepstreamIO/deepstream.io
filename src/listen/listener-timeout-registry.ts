@@ -1,20 +1,22 @@
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { RECORD_ACTIONS, EVENT_ACTIONS, TOPIC } from '../constants'
 
 export default class ListenerTimeoutRegistry {
-  private topic: Topic
+  private topic: TOPIC
   private config: DeepstreamConfig
   private services: DeepstreamServices
   private timeoutMap: any
   private timedoutProviders: any
   private acceptedProvider: any
+  private actions: any
 
   /**
   * The ListenerTimeoutRegistry is responsible for keeping track of listeners that have
   * been asked whether they want to provide a certain subscription, but have not yet
   * responded.
   */
-  constructor (topic: Topic, config: DeepstreamConfig, services: DeepstreamServices) {
+  constructor (topic: TOPIC, config: DeepstreamConfig, services: DeepstreamServices) {
     this.topic = topic
+    this.actions = topic === TOPIC.RECORD ? RECORD_ACTIONS : EVENT_ACTIONS
     this.config = config
     this.services = services
     this.timeoutMap = {}
@@ -33,18 +35,18 @@ export default class ListenerTimeoutRegistry {
     const subscriptionName = message.subscription
     const index = this.getIndex(socketWrapper, message)
     const provider = this.timedoutProviders[subscriptionName][index]
-    if (message.action === ACTIONS.LISTEN_ACCEPT) {
+    if (message.action === this.actions.LISTEN_ACCEPT) {
       if (!this.acceptedProvider[subscriptionName]) {
         this.acceptedProvider[subscriptionName] = this.timedoutProviders[subscriptionName][index]
       } else {
         provider.socketWrapper.sendMessage({
           topic: this.topic,
-          action: ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+          action: this.actions.SUBSCRIPTION_FOR_PATTERN_REMOVED,
           name: provider.pattern,
           subscription: subscriptionName,
         })
       }
-    } else if (message.action === ACTIONS.LISTEN_REJECT) {
+    } else if (message.action === this.actions.LISTEN_REJECT) {
       this.timedoutProviders[subscriptionName].splice(index, 1)
     }
   }
@@ -121,7 +123,7 @@ export default class ListenerTimeoutRegistry {
     if (provider) {
       provider.socketWrapper.sendMessage({
         topic: this.topic,
-        action: ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+        action: this.actions.SUBSCRIPTION_FOR_PATTERN_REMOVED,
         name: provider.pattern,
         subscription: subscriptionName,
       })

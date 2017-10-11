@@ -1,3 +1,4 @@
+import { TOPIC, EVENT } from '../constants'
 import { EventEmitter } from 'events'
 
 /**
@@ -12,14 +13,14 @@ import { EventEmitter } from 'events'
  * @author DeepstreamHub GmbH 2016
  */
 export default class StateRegistry extends EventEmitter {
-  private topic: string
+  private topic: TOPIC
   private options: any
   private data: any
 
   /**
   * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
   */
-  constructor (topic: string, options: any) {
+  constructor (topic: TOPIC, options: any) {
     super()
     this.topic = topic
     this.options = options

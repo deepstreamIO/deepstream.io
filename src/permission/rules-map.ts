@@ -1,7 +1,4 @@
-import { ACTIONS, TOPIC } from '../constants'
-import { reverseMap } from '../utils/utils'
-
-const actionToKey = reverseMap(ACTIONS)
+import { RECORD_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS, EVENT_ACTIONS, TOPIC, EVENT } from '../constants'
 
 /**
  * Different rule types support different features. Generally, all rules can
@@ -38,36 +35,35 @@ const RULES_MAP = {
   [TOPIC.RECORD]: {
     section: 'record',
     actions: {
-      [ACTIONS.READ]: RULE_TYPES.READ,
-      [ACTIONS.HAS]: RULE_TYPES.READ,
-      [ACTIONS.SNAPSHOT]: RULE_TYPES.READ,
-      [ACTIONS.LISTEN]: RULE_TYPES.LISTEN,
-      [ACTIONS.CREATE]: RULE_TYPES.CREATE,
-      [ACTIONS.UPDATE]: RULE_TYPES.WRITE,
-      [ACTIONS.PATCH]: RULE_TYPES.WRITE,
-      [ACTIONS.DELETE]: RULE_TYPES.DELETE,
+      [RECORD_ACTIONS.READ]: RULE_TYPES.READ,
+      [RECORD_ACTIONS.HAS]: RULE_TYPES.READ,
+      [RECORD_ACTIONS.LISTEN]: RULE_TYPES.LISTEN,
+      [RECORD_ACTIONS.CREATE]: RULE_TYPES.CREATE,
+      [RECORD_ACTIONS.UPDATE]: RULE_TYPES.WRITE,
+      [RECORD_ACTIONS.PATCH]: RULE_TYPES.WRITE,
+      [RECORD_ACTIONS.DELETE]: RULE_TYPES.DELETE,
     },
   },
   [TOPIC.EVENT]: {
     section: 'event',
     actions: {
-      [ACTIONS.LISTEN]: RULE_TYPES.LISTEN,
-      [ACTIONS.SUBSCRIBE]: RULE_TYPES.SUBSCRIBE,
-      [ACTIONS.EVENT]: RULE_TYPES.PUBLISH,
+      [EVENT_ACTIONS.LISTEN]: RULE_TYPES.LISTEN,
+      [EVENT_ACTIONS.SUBSCRIBE]: RULE_TYPES.SUBSCRIBE,
+      [EVENT_ACTIONS.EMIT]: RULE_TYPES.PUBLISH,
     },
   },
   [TOPIC.RPC]: {
     section: 'rpc',
     actions: {
-      [ACTIONS.SUBSCRIBE]: RULE_TYPES.PROVIDE,
-      [ACTIONS.REQUEST]: RULE_TYPES.REQUEST,
+      [RPC_ACTIONS.PROVIDE]: RULE_TYPES.PROVIDE,
+      [RPC_ACTIONS.REQUEST]: RULE_TYPES.REQUEST,
     },
   },
   [TOPIC.PRESENCE]: {
     section: 'presence',
     actions: {
-      [ACTIONS.SUBSCRIBE]: RULE_TYPES.ALLOW,
-      [ACTIONS.QUERY]: RULE_TYPES.ALLOW,
+      [PRESENCE_ACTIONS.SUBSCRIBE]: RULE_TYPES.ALLOW,
+      [PRESENCE_ACTIONS.QUERY]: RULE_TYPES.ALLOW,
     },
   },
 }
@@ -88,7 +84,7 @@ export const getRulesForMessage = (message: Message) => {
   return {
     section: RULES_MAP[message.topic].section,
     type: RULES_MAP[message.topic].actions[message.action].name,
-    action: actionToKey[message.action],
+    action: message.action
   }
 }
 

@@ -48,19 +48,19 @@ describe('subscription registry', () => {
 
   const subscribeMessage = {
     topic: C.TOPIC.EVENT,
-    action: C.ACTIONS.SUBSCRIBE,
+    action: C.EVENT_ACTIONS.SUBSCRIBE,
     name: 'someName'
   }
 
   const unsubscribeMessage = {
     topic: C.TOPIC.EVENT,
-    action: C.ACTIONS.UNSUBSCRIBE,
+    action: C.EVENT_ACTIONS.UNSUBSCRIBE,
     name: 'someName'
   }
 
   const eventMessage = {
     topic: C.TOPIC.EVENT,
-    action: C.ACTIONS.EVENT,
+    action: C.EVENT_ACTIONS.EMIT,
     name: 'someName'
   }
 
@@ -94,7 +94,7 @@ describe('subscription registry', () => {
 
       subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
       subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
-      expect(services.logger.lastLogEvent).toBe('MULTIPLE_SUBSCRIPTIONS')
+      expect(services.logger.lastLogEvent).toBe(C.EVENT.MULTIPLE_SUBSCRIPTIONS)
     })
 
     it('returns the subscribed socket', () => {

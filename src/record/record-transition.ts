@@ -1,4 +1,4 @@
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { RECORD_ACTIONS, TOPIC, EVENT } from '../constants'
 import { isOfType } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
@@ -147,7 +147,7 @@ export default class RecordTransition {
       return
     }
 
-    if (message.action === ACTIONS.UPDATE) {
+    if (message.action === RECORD_ACTIONS.UPDATE) {
       if (!isOfType(message.parsedData, 'object') && !isOfType(message.parsedData, 'array')) {
         socketWrapper.sendError(message, EVENT.INVALID_MESSAGE_DATA)
         return
@@ -390,7 +390,7 @@ export default class RecordTransition {
       const update = this.pendingUpdates[uid]
       update.socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
-        action: ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        action: RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
         name: this.name,
         data: [
           update.versions,

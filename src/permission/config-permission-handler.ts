@@ -1,3 +1,4 @@
+import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS } from '../constants'
 import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
 import RecordHandler from '../record/record-handler'
@@ -135,7 +136,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
       path: ruleData,
       ruleSpecification,
       message,
-      action: ruleSpecification.action,
+      action: ruleSpecification.action as (RECORD_ACTIONS | EVENT_ACTIONS | RPC_ACTIONS | PRESENCE_ACTIONS),
       regexp: ruleData.regexp,
       rule: ruleData.rule,
       name: message.name,

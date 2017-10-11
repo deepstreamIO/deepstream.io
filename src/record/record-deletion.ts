@@ -1,4 +1,4 @@
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { RECORD_ACTIONS, TOPIC, EVENT } from '../constants'
 
 export default class RecordDeletion {
   private metaData: any
@@ -35,7 +35,7 @@ export default class RecordDeletion {
     this.services.cache.delete(
     this.recordName,
     this.checkIfDone.bind(this, this.cacheTimeout),
-    metaData,
+    metaData
   )
 
     if (!this.config.storageExclusion || !this.config.storageExclusion.test(this.recordName)) {

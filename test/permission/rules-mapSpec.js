@@ -18,7 +18,7 @@ describe('returns the applicable rule for a message', () => {
   it('returns null for actions without rules', () => {
     const msg = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.UNSUBSCRIBE
+      action: C.EVENT_ACTIONS.UNSUBSCRIBE
     }
     expect(rulesMap.getRulesForMessage(msg)).toBe(null)
   })
@@ -26,24 +26,24 @@ describe('returns the applicable rule for a message', () => {
   it('returns ruletypes for event subscribe messages', () => {
     const msg = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.SUBSCRIBE
+      action: C.EVENT_ACTIONS.SUBSCRIBE
     }
     expect(rulesMap.getRulesForMessage(msg)).toEqual({
       section: 'event',
       type: 'subscribe',
-      action: 'SUBSCRIBE'
+      action: C.EVENT_ACTIONS.SUBSCRIBE
     })
   })
 
   it('returns ruletypes for record patch messages', () => {
     const msg = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.PATCH
+      action: C.RECORD_ACTIONS.PATCH
     }
     expect(rulesMap.getRulesForMessage(msg)).toEqual({
       section: 'record',
       type: 'write',
-      action: 'PATCH'
+      action: C.RECORD_ACTIONS.PATCH
     })
   })
 })

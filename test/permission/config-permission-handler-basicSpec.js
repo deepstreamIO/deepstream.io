@@ -20,7 +20,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
     const permissions = getBasePermissions()
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'someRecord'
     }
     expect(testPermission(permissions, message)).toBe(true)
@@ -35,7 +35,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'private/userA'
     }
 
@@ -51,7 +51,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UNSUBSCRIBE,
+      action: C.RECORD_ACTIONS.UNSUBSCRIBE,
       name: 'private/userA'
     }
 
@@ -67,7 +67,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'private/userA'
     }
 
@@ -83,7 +83,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.SNAPSHOT,
+      action: C.RECORD_ACTIONS.SNAPSHOT,
       name: 'private/userA'
     }
 
@@ -102,18 +102,18 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event',
       data: 'O{"price":15}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event',
       data: 'O{"price":5}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     })).toBe(true)
   })
 
@@ -125,7 +125,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event'
     })).toBe(false)
   })
@@ -143,38 +143,38 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
       data: 'O{"assetClass": "equity"}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }, null, { role: 'eq-trader' })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
       data: 'O{"assetClass": "fx"}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }, null, { role: 'fx-trader' })).toBe(true)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
       data: 'O{"assetClass": "fx"}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }, null, { role: 'eq-trader' })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.REQUEST,
       name: 'trade/cancel',
       correlationId: '1234',
       data: 'O{"assetClass": "fx"}',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }, null, { role: 'fx-trader' })).toBe(false)
   })
 
@@ -191,47 +191,47 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/mercedes',
       version: 1,
       data: '{"manufacturer":"mercedes-benz"}',
-      dataEncoding: C.ENCODING_TYPES.JSON
+      dataEncoding: C.PAYLOAD_ENCODING.JSON
     })).toBe(true)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/mercedes',
       version: 1,
       data: '{"manufacturer":"BMW"}',
-      dataEncoding: C.ENCODING_TYPES.JSON
+      dataEncoding: C.PAYLOAD_ENCODING.JSON
     })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
       data: '{"model": "911", "price": 60000 }',
-      dataEncoding: C.ENCODING_TYPES.JSON
+      dataEncoding: C.PAYLOAD_ENCODING.JSON
     })).toBe(true)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
       data: '{"model": "911", "price": 40000 }',
-      dataEncoding: C.ENCODING_TYPES.JSON
+      dataEncoding: C.PAYLOAD_ENCODING.JSON
     })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
       data: '{"model": "Boxter", "price": 70000 }',
-      dataEncoding: C.ENCODING_TYPES.JSON
+      dataEncoding: C.PAYLOAD_ENCODING.JSON
     })).toBe(false)
   })
 
@@ -244,11 +244,11 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
+      action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/mercedes',
       version: 1,
       data: '{"manufacturer":"mercedes-benz"',
-      dataEncoding: C.ENCODING_TYPES.JSON
+      dataEncoding: C.PAYLOAD_ENCODING.JSON
     }
 
     const callback = function (error, result) {
@@ -269,10 +269,10 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event',
       data: 'xxx',
-      dataEncoding: C.ENCODING_TYPES.DEEPSTREAM
+      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const callback = function (error, result) {
@@ -300,7 +300,7 @@ describe('loads permissions repeatedly', () => {
   it('requests permissions initally, causing a lookup', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event',
       data: 'some-data'
     }
@@ -317,7 +317,7 @@ describe('loads permissions repeatedly', () => {
   it('requests permissions a second time, causing a cache retriaval', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EVENT,
       name: 'some-event',
       data: 'some-data'
     }

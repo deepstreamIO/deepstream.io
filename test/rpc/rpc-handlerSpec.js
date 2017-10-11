@@ -33,7 +33,7 @@ describe('the rpcHandler routes events correctly', () => {
   it('routes subscription messages', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.SUBSCRIBE,
+      action: C.RPC_ACTIONS.PROVIDE,
       name: 'someRPC'
     }
     testMocks.subscriptionRegistryMock
@@ -47,7 +47,7 @@ describe('the rpcHandler routes events correctly', () => {
   describe('when recieving a request', () => {
     const requestMessage = {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.REQUEST,
       name: 'addTwo',
       correlationId: 1234,
       data: '{"numA":5, "numB":7}'
@@ -55,7 +55,7 @@ describe('the rpcHandler routes events correctly', () => {
 
     const ackMessage = {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.REQUEST,
       name: 'addTwo',
       correlationId: 1234,
       isAck: true
@@ -63,7 +63,7 @@ describe('the rpcHandler routes events correctly', () => {
 
     const responseMessage = {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.RESPONSE,
+      action: C.RPC_ACTIONS.RESPONSE,
       name: 'addTwo',
       correlationId: 1234,
       data: '12'
@@ -71,7 +71,7 @@ describe('the rpcHandler routes events correctly', () => {
 
     const errorMessage = {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.ERROR,
+      action: C.RPC_ACTIONS.ERROR,
       isError: true,
       name: 'addTwo',
       correlationId: 1234,

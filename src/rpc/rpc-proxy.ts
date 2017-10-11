@@ -1,5 +1,6 @@
+import { RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
 import { EventEmitter } from 'events'
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+
 /**
  * This class exposes an interface that mimicks the behaviour
  * of a SocketWrapper, connected to a local rpc provider, but
@@ -25,7 +26,6 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   }
 
   public sendAckMessage (message: RPCMessage): void {
-
   }
 
   /**
@@ -36,7 +36,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   * to identify the sender
   */
   public sendMessage (msg: RPCMessage): void {
-    if (msg.isAck && msg.action !== ACTIONS.REQUEST) {
+    if (msg.isAck && msg.action !== RPC_ACTIONS.REQUEST) {
       msg.isCompleted = true
     }
     this.services.message.sendDirect(this.remoteServer, msg, this.metaData)
@@ -47,7 +47,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   * Sends an error on the specified topic. The
   * action will automatically be set to ACTION.ERROR
   */
-  public sendError (msg: RPCMessage, type: string, errorMessage: string): void {
+  public sendError (msg: RPCMessage, type: EVENT, errorMessage: string): void {
     if (type === EVENT.RESPONSE_TIMEOUT) {
       // by the time an RPC has timed out on this server, it has already timed out on the remote
       // (and has been cleaned up) so no point sending

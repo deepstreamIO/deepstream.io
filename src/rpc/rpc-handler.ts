@@ -1,4 +1,4 @@
-import { ACTIONS, EVENT, TOPIC } from '../constants'
+import { RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
@@ -27,10 +27,10 @@ export default class RpcHandler {
      this.config = config
      this.services = services
      this.subscriptionRegistry =
-      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RPC)
+      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RPC, TOPIC.RPC_SUBSCRIPTIONS)
 
      this.services.message.subscribe(
-      TOPIC.RPC_PRIVATE,
+       TOPIC.RPC,
        this.onPrivateMessage.bind(this),
     )
 
@@ -42,15 +42,15 @@ export default class RpcHandler {
   * from the message distributor
   */
   public handle (socketWrapper: SocketWrapper, message: RPCMessage): void {
-    if (message.action === ACTIONS.SUBSCRIBE) {
+    if (message.action === RPC_ACTIONS.PROVIDE) {
       this.subscriptionRegistry.subscribe(message, socketWrapper)
-    } else if (message.action === ACTIONS.UNSUBSCRIBE) {
+    } else if (message.action === RPC_ACTIONS.UNPROVIDE) {
       this.subscriptionRegistry.unsubscribe(message, socketWrapper)
-    } else if (message.action === ACTIONS.REQUEST && !message.isAck) {
+    } else if (message.action === RPC_ACTIONS.REQUEST && !message.isAck) {
        this.makeRpc(socketWrapper, message, false)
     } else if (
-      message.action === ACTIONS.RESPONSE ||
-      message.action === ACTIONS.REJECTION ||
+      message.action === RPC_ACTIONS.RESPONSE ||
+      message.action === RPC_ACTIONS.REJECT ||
       message.isAck ||
       message.isError
     ) {
@@ -60,7 +60,7 @@ export default class RpcHandler {
       } else {
         socketWrapper.sendError(
           message,
-          EVENT.INVALID_RPC_CORRELATION_ID,
+          EVENT.INVALID_RPC_CORRELATION_ID
         )
       }
     } else {
@@ -68,7 +68,7 @@ export default class RpcHandler {
       *  RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
       * by the Rpc class directly
       */
-       this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action, this.metaData)
+       this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action.toString(), this.metaData)
     }
   }
 
@@ -202,12 +202,7 @@ export default class RpcHandler {
        return
     }
 
-    if (msg.action === ACTIONS.ERROR && msg.data[0] === EVENT.NO_RPC_PROVIDER) {
-      msg.action = ACTIONS.REJECTION
-      msg.data = msg.data[1]
-    }
-
-    if (msg.action === ACTIONS.REQUEST) {
+    if (msg.action === RPC_ACTIONS.REQUEST) {
       const proxy = new RpcProxy(this.config, this.services, originServerName, this.metaData)
       this.makeRpc(proxy, msg, true)
       return
