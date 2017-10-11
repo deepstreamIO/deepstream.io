@@ -36,7 +36,8 @@ interface SocketWrapper extends SimpleSocketWrapper {
   finalizeMessage: Function
   sendPrepared: Function
   sendNative: Function,
-  parseData: Function
+  parseData: Function,
+  flush: Function
 }
 
 interface Message {
@@ -49,7 +50,7 @@ interface Message {
 
   data?: string
   parsedData?: any
-  
+
   raw?: string
 }
 
@@ -141,7 +142,8 @@ interface PermissionHandler extends DeepstreamPlugin {
 }
 
 interface AuthenticationHandler extends DeepstreamPlugin {
-  isValidUser(connectionData: any, authData: any, callback: UserAuthenticationCallback) 
+  isValidUser(connectionData: any, authData: any, callback: UserAuthenticationCallback)
+  onClientDisconnect?(username: string)
 }
 
 interface UserAuthenticationCallback {

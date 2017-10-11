@@ -1,3 +1,5 @@
+require('source-map-support').install()
+
 import { EOL }  from 'os'
 import { readFileSync } from 'fs'
 import { join as joinPath } from 'path'
@@ -36,7 +38,7 @@ export default class Deepstream extends EventEmitter {
 
   private messageProcessor: any
   private messageDistributor: any
-  
+
   private eventHandler: EventHandler
   private rpcHandler: RpcHandler
   private recordHandler: any

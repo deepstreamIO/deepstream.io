@@ -46,6 +46,7 @@
     "js-yaml": "^3.10.0",
     "mkdirp": "^0.5.1",
     "needle": "^2.0.1",
+    "source-map-support": "^0.5.0",
     "uws": "8.14.1"
   },
   "devDependencies": {
@@ -62,7 +63,6 @@
     "nexe": "^2.0.0-rc.11",
     "proxyquire": "1.8.0",
     "sinon": "^4.0.1",
-    "source-map-support": "^0.5.0",
     "ts-node": "^3.3.0",
     "typescript": "^2.5.3",
     "watch": "^1.0.2"
