@@ -168,7 +168,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       this._getOption('heartbeatInterval'),
       messageBuilder.getMessage({
         topic: C.TOPIC.CONNECTION,
-        action: C.ACTIONS.PING
+        action: C.CONNECTION_ACTIONS.PING
       })
     )
   }
@@ -317,7 +317,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
 
     socketWrapper.sendMessage({
       topic: C.TOPIC.CONNECTION,
-      action: C.ACTIONS.CHALLENGE
+      action: C.CONNECTION_ACTIONS.CHALLENGE
     })
 
     socketWrapper.onMessage = this._processConnectionMessage.bind(this, socketWrapper)
@@ -353,7 +353,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
       return
     }
 
-    if (msg.action === C.ACTIONS.CHALLENGE_RESPONSE) {
+    if (msg.action === C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE) {
       socketWrapper.onMessage = socketWrapper.authCallBack
       socketWrapper.sendAckMessage({
         topic: C.TOPIC.CONNECTION
@@ -408,7 +408,7 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     /**
      * Ensure the message is a valid authentication message
      */
-    if (msg.action !== C.ACTIONS.REQUEST) {
+    if (msg.action !== C.AUTH_ACTIONS.REQUEST) {
       errorMsg = this._logInvalidAuthData === true ? msg.data : ''
       this._sendInvalidAuthMsg(socketWrapper, errorMsg)
       return

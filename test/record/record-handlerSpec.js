@@ -10,7 +10,7 @@ const M = require('./messages')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
-xdescribe('record handler handles messages', () => {
+describe('record handler handles messages', () => {
   let testMocks
   let recordHandler
   let client
@@ -94,7 +94,7 @@ xdescribe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.HAS,
+        action: C.RECORD_ACTIONS.HAS_RESPONSE,
         name: 'some-record',
         parsedData: true
       })
@@ -108,7 +108,7 @@ xdescribe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.HAS,
+        action: C.RECORD_ACTIONS.HAS_RESPONSE,
         name: 'some-record',
         parsedData: false
       })

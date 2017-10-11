@@ -1,5 +1,5 @@
 'use strict'
-
+const C = require('../../src/constants')
 const ListenerTestUtils = require('./listener-test-utils')
 
 let tu
@@ -214,7 +214,7 @@ describe('listener-registry-local-load-balancing', () => {
 
 describe('listener-registry-local-load-balancing does not send publishing updates for events', () => {
   beforeEach(() => {
-    tu = new ListenerTestUtils('E')
+    tu = new ListenerTestUtils(C.TOPIC.EVENT)
   })
 
   afterEach(() => {

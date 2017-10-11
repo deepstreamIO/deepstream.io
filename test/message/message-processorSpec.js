@@ -17,7 +17,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
 
   const message = {
     topic: C.TOPIC.RECORD,
-    action: C.ACTIONS.READ,
+    action: C.RECORD_ACTIONS.READ,
     name: 'record/name'
   }
 
@@ -59,7 +59,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
     messageProcessor.process(client.socketWrapper, [message])
 
     expect(log).toHaveBeenCalled()
-    expect(log).toHaveBeenCalledWith(2, 'MESSAGE_PERMISSION_ERROR', 'someError')
+    expect(log).toHaveBeenCalledWith(2, C.EVENT.MESSAGE_PERMISSION_ERROR, 'someError')
   })
 
   it('handles denied messages', () => {

@@ -67,7 +67,7 @@ describe('permissionHandler passes additional user meta data', () => {
 
       uwsMock.messageHandler([{
         topic: C.TOPIC.CONNECTION,
-        action: C.ACTIONS.CHALLENGE_RESPONSE,
+        action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE,
         data: 'localhost:6021'
       }], client.socketWrapper)
 
@@ -89,7 +89,7 @@ describe('permissionHandler passes additional user meta data', () => {
 
     uwsMock.messageHandler([{
       topic: C.TOPIC.AUTH,
-      action: C.ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.REQUEST,
       data: '{ "token": 1234 }'
     }], client.socketWrapper)
 
@@ -104,13 +104,13 @@ describe('permissionHandler passes additional user meta data', () => {
 
     uwsMock.messageHandler([{
       topic: C.TOPIC.AUTH,
-      action: C.ACTIONS.REQUEST,
+      action: C.AUTH_ACTIONS.REQUEST,
       data: '{ "token": 1234 }'
     }], client.socketWrapper)
 
     uwsMock.messageHandler([{
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
+      action: C.RECORD_ACTIONS.READ,
       name: 'recordA'
     }], client.socketWrapper)
 

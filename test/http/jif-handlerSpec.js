@@ -62,7 +62,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.EVENT)
-        expect(message.action).to.equal(C.ACTIONS.EVENT)
+        expect(message.action).to.equal(C.EVENT_ACTIONS.EMIT)
         expect(message.name).to.equal('time/berlin')
         expect(message.parsedData).to.deep.equal({ a:['b', 2] })
       })
@@ -79,7 +79,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.EVENT)
-        expect(message.action).to.equal(C.ACTIONS.EVENT)
+        expect(message.action).to.equal(C.EVENT_ACTIONS.EMIT)
         expect(message.name).to.equal('time/berlin')
         expect(message.parsedData).to.equal(undefined)
       })
@@ -163,7 +163,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RPC)
-        expect(message.action).to.equal(C.ACTIONS.REQUEST)
+        expect(message.action).to.equal(C.RPC_ACTIONS.REQUEST)
         expect(message.name).to.equal('add-two')
         expect(message.correlationId).to.be.a('string')
         expect(message.correlationId).to.have.length.above(12)
@@ -182,7 +182,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RPC)
-        expect(message.action).to.equal(C.ACTIONS.REQUEST)
+        expect(message.action).to.equal(C.RPC_ACTIONS.REQUEST)
         expect(message.name).to.equal('add-two')
         expect(message.correlationId).to.be.a('string')
         expect(message.correlationId).to.have.length.above(12)
@@ -204,7 +204,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
         expect(message.name).to.equal('car/bmw')
         expect(message.version).to.equal(-1)
         expect(message.parsedData).to.deep.equal({ tyres:2, wheels:4 })
@@ -224,7 +224,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
         expect(message.name).to.equal('car/bmw')
         expect(message.version).to.equal(-1)
         expect(message.parsedData).to.deep.equal([{ model:'M6', hp:560 }, { model:'X6', hp:306 }])
@@ -245,7 +245,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
         expect(message.name).to.equal('car/bmw')
         expect(message.version).to.equal(-1)
         expect(message.path).to.equal('tyres')
@@ -265,7 +265,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.SNAPSHOT)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.READ)
         expect(message.name).to.equal('car/bmw')
       })
 
@@ -281,7 +281,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.DELETE)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.DELETE)
         expect(message.name).to.equal('car/bmw')
       })
 
@@ -297,7 +297,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.HEAD)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.HEAD)
         expect(message.name).to.equal('car/bmw')
       })
 
@@ -344,8 +344,8 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.PRESENCE)
-        expect(message.action).to.equal(C.ACTIONS.QUERY)
-        expect(message.name).to.equal(C.ACTIONS.QUERY)
+        expect(message.action).to.equal(C.PRESENCE_ACTIONS.QUERY_ALL)
+        expect(message.name).to.equal(C.PRESENCE_ACTIONS.QUERY_ALL)
       })
     })
   })
@@ -355,7 +355,7 @@ describe('JIF Handler', () => {
       it('should build a valid rpc response', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RPC,
-          action: C.ACTIONS.RESPONSE,
+          action: C.RPC_ACTIONS.RESPONSE,
           name: 'addTwo',
           correlationId: '1234',
           parsedData: 12
@@ -370,7 +370,7 @@ describe('JIF Handler', () => {
       it('should ignore an rpc request ack', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RPC,
-          action: C.ACTIONS.REQUEST,
+          action: C.RPC_ACTIONS.REQUEST,
           name: 'addTwo',
           correlationId: 1234,
           isAck: true
@@ -381,7 +381,7 @@ describe('JIF Handler', () => {
       it('should build a valid rpc response', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RPC,
-          action: C.ACTIONS.RESPONSE,
+          action: C.RPC_ACTIONS.RESPONSE,
           name: 'addTwo',
           correlationId: 1234,
           parsedData: 12
@@ -399,7 +399,7 @@ describe('JIF Handler', () => {
       it('should build a valid record write ack', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RECORD,
-          action: C.ACTIONS.WRITE_ACKNOWLEDGEMENT,
+          action: C.RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
           name: 'car/fiat',
           data: [[2, 3], null]
         })
@@ -413,7 +413,7 @@ describe('JIF Handler', () => {
       it('should build a valid record delete ack', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RECORD,
-          action: C.ACTIONS.DELETE,
+          action: C.RECORD_ACTIONS.DELETE,
           name: 'car/fiat',
           isAck: true
         })
@@ -427,7 +427,7 @@ describe('JIF Handler', () => {
       it('should build a valid record read response', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RECORD,
-          action: C.ACTIONS.READ,
+          action: C.RECORD_ACTIONS.READ,
           name: 'car/fiat',
           version: 2,
           parsedData: { car: true }
@@ -444,7 +444,7 @@ describe('JIF Handler', () => {
       it('should handle a valid record head response', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RECORD,
-          action: C.ACTIONS.HEAD,
+          action: C.RECORD_ACTIONS.HEAD,
           name: 'car/fiat',
           version: 2
         })
@@ -459,7 +459,7 @@ describe('JIF Handler', () => {
       it('should handle a valid record head error', () => {
         const result = jifHandler.errorToJIF({
           topic: C.TOPIC.RECORD,
-          action: C.ACTIONS.HEAD,
+          action: C.RECORD_ACTIONS.HEAD,
           name: 'car/fiat'
         }, C.EVENT.RECORD_LOAD_ERROR)
         const jif = result.message
@@ -477,7 +477,7 @@ describe('JIF Handler', () => {
       it('should build a valid presence response', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.PRESENCE,
-          action: C.ACTIONS.QUERY,
+          action: C.PRESENCE_ACTIONS.QUERY,
           parsedData: ['john', 'alex', 'yasser']
         })
         const jif = result.message

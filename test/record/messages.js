@@ -75,7 +75,7 @@ module.exports.recordHasMessage = {
 
 module.exports.recordSnapshotMessage = {
   topic: C.TOPIC.RECORD,
-  action: C.RECORD_ACTIONS.SNAPSHOT,
+  action: C.RECORD_ACTIONS.READ,
   name: 'some-record'
 }
 

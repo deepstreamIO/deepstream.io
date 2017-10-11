@@ -96,13 +96,27 @@ function getJifToMsg () {
   })
 
   JIF_TO_MSG.presence = {}
-  JIF_TO_MSG.presence.query = () => ({
+
+  JIF_TO_MSG.presence.query = msg => (
+    msg.parsedData ? JIF_TO_MSG.presence.queryUsers(msg) : JIF_TO_MSG.presence.queryAll(msg)
+  )
+
+  JIF_TO_MSG.presence.queryAll = () => ({
+    done: false,
+    message: {
+      topic: TOPIC.PRESENCE,
+      action: PRESENCE_ACTIONS.QUERY_ALL,
+      name: PRESENCE_ACTIONS.QUERY_ALL
+    }
+  })
+
+  JIF_TO_MSG.presence.queryUsers = msg => ({
     done: false,
     message: {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY,
-      name: PRESENCE_ACTIONS.QUERY, // required by permissions
-      parsedData: PRESENCE_ACTIONS.QUERY
+      name: PRESENCE_ACTIONS.QUERY,
+      parsedData: msg.data
     }
   })
 

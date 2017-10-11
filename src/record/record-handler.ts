@@ -96,11 +96,7 @@ export default class RecordHandler {
     message.action === RECORD_ACTIONS.LISTEN_REJECT) {
       this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
     } else {
-  /*
-   * Default for invalid messages
-   */
-    console.log(message.action)
-      this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action.toString(), this.metaData)
+      this.services.logger.error(EVENT.UNKNOWN_ACTION, RECORD_ACTIONS[message.action], this.metaData)
     }
   }
 
