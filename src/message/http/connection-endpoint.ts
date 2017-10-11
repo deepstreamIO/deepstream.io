@@ -1,19 +1,36 @@
 'use strict'
 
-const Server = require('./server')
-const JIFHandler = require('../jif-handler').default
-const HTTPSocketWrapper = require('./socket-wrapper')
-const HTTPStatus = require('http-status')
-const events = require('events')
-const C = require('../../constants')
+import Server from './server'
+import JIFHandler from '../jif-handler'
+import HTTPSocketWrapper from './socket-wrapper'
+import * as HTTPStatus from 'http-status'
+import { EventEmitter } from 'events'
+import MessageDistributor from '../message-distributor'
+import { EVENT } from '../../constants'
 
-module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
-  constructor (config) {
+export default class HTTPConnectionEndpoint extends EventEmitter implements ConnectionEndpoint {
+
+  public isReady: boolean = false
+  public description: string = 'HTTP connection endpoint'
+
+  private _options: any
+  private _initialised: boolean = false
+  private _logger: Logger
+  private _authenticationHandler: AuthenticationHandler
+  private _permissionHandler: PermissionHandler
+  private _messageDistributor: MessageDistributor
+  private _dsOptions: DeepstreamConfig
+  private _jifHandler: JIFHandler
+  private _onSocketMessageBound: Function
+  private _onSocketErrorBound: Function
+  private _server: Server
+  private _logInvalidAuthData: boolean
+  private _requestTimeout: number
+
+  constructor (private options: any, private services: DeepstreamServices) {
     super()
-    this._options = config
-    this.isReady = false
-    this.description = 'HTTP connection endpoint'
 
+    this._options = options
     this._onSocketMessageBound = this._onSocketMessage.bind(this)
     this._onSocketErrorBound = this._onSocketError.bind(this)
   }
@@ -26,7 +43,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @public
    * @returns {Void}
    */
-  setDeepstream (deepstream) {
+  public setDeepstream (deepstream): void {
     this._logger = deepstream.services.logger
     this._authenticationHandler = deepstream.services.authenticationHandler
     this._permissionHandler = deepstream.services.permissionHandler
@@ -43,14 +60,14 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @public
    * @returns {Void}
    */
-  init () {
+  public init (): void {
     if (!this._dsOptions) {
       throw new Error('setDeepstream must be called before init()')
     }
-    if (this.initialised) {
+    if (this._initialised) {
       throw new Error('init() must only be called once')
     }
-    this.initialised = true
+    this._initialised = true
 
     const serverConfig = {
       port: this._getOption('port'),
@@ -75,8 +92,8 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
 
     this._server.start()
 
-    this._logInvalidAuthData = this._getOption('logInvalidAuthData')
-    this._requestTimeout = this._getOption('requestTimeout')
+    this._logInvalidAuthData = this._getOption('logInvalidAuthData') as boolean
+    this._requestTimeout = this._getOption('requestTimeout') as number
     if (this._requestTimeout === undefined) {
       this._requestTimeout = 20000
     }
@@ -91,7 +108,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @private
    * @returns {Value} value
    */
-  _getOption (option) {
+  private _getOption (option): string | boolean | number {
     const value = this._dsOptions[option]
     if ((value === null || value === undefined) && (this._options[option] !== undefined)) {
       return this._options[option]
@@ -117,7 +134,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  onMessages (socketWrapper, messages) { // eslint-disable-line
+  public onMessages (socketWrapper: SimpleSocketWrapper, messages: Array<Message>): void { // eslint-disable-line
   }
 
   /**
@@ -133,7 +150,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _onAuthMessage (authData, metadata, responseCallback) {
+  private _onAuthMessage (authData: object, metadata: object, responseCallback: Function): void {
     this._authenticationHandler.isValidUser(
       metadata,
       authData,
@@ -155,7 +172,12 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _processAuthResult (responseCallback, authData, isAllowed, data) {
+  private _processAuthResult (
+    responseCallback: Function,
+    authData: object,
+    isAllowed: boolean,
+    data: { token: string, clientData: object }
+  ): void {
     if (isAllowed === true) {
       responseCallback(null, {
         token: data.token,
@@ -175,7 +197,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       error += `: ${JSON.stringify(authData)}`
     }
 
-    this._logger.debug(C.EVENT.INVALID_AUTH_DATA, error)
+    this._logger.debug(EVENT.INVALID_AUTH_DATA, error)
   }
 
   /**
@@ -191,7 +213,11 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _onPostMessage (messageData, metadata, responseCallback) {
+  _onPostMessage (
+    messageData: { token?: string, authData?: object, body: Array<object> },
+    metadata: object,
+    responseCallback: Function
+  ): void {
     if (!Array.isArray(messageData.body) || messageData.body.length < 1) {
       const error = `Invalid message: the "body" parameter must ${
         messageData.body ? 'be a non-empty array of Objects.' : 'exist.'
@@ -201,7 +227,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
         message: error
       })
       this._logger.debug(
-        C.EVENT.INVALID_MESSAGE,
+        EVENT.INVALID_MESSAGE,
         JSON.stringify(messageData.body)
       )
       return
@@ -212,7 +238,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
         const error = 'Authentication using authData is disabled. Try using a token instead.'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this._logger.debug(
-          C.EVENT.INVALID_AUTH_DATA,
+          EVENT.INVALID_AUTH_DATA,
           'Auth rejected because allowAuthData was disabled'
         )
         return
@@ -221,7 +247,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
         const error = 'Invalid message: the "authData" parameter must be an object'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this._logger.debug(
-          C.EVENT.INVALID_AUTH_DATA,
+          EVENT.INVALID_AUTH_DATA,
           `authData was not an object: ${
             this._logInvalidAuthData === true ? JSON.stringify(messageData.authData) : '-'
           }`
@@ -234,14 +260,14 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
         const error = 'Invalid message: the "token" parameter must be a non-empty string'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this._logger.debug(
-          C.EVENT.INVALID_AUTH_DATA,
+          EVENT.INVALID_AUTH_DATA,
           `auth token was not a string: ${
             this._logInvalidAuthData === true ? messageData.token : '-'
           }`
         )
         return
       }
-      authData.token = messageData.token
+      authData = Object.assign({}, authData, { token: messageData.token })
     }
 
     this._authenticationHandler.isValidUser(
@@ -265,8 +291,12 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _createSocketWrapper (
-    authResponseData, messageIndex, messageResults, responseCallback, requestTimeoutId
-  ) {
+    authResponseData: object,
+    messageIndex,
+    messageResults,
+    responseCallback,
+    requestTimeoutId
+  ): SocketWrapper {
     const socketWrapper = new HTTPSocketWrapper(
       {}, this._onSocketMessageBound, this._onSocketErrorBound
     )
@@ -291,7 +321,12 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _onMessageAuthResponse (responseCallback, messageData, success, authResponseData) {
+  _onMessageAuthResponse (
+    responseCallback: Function,
+    messageData: { body: Array<object> },
+    success: boolean,
+    authResponseData: object
+  ): void {
     if (success !== true) {
       const error = typeof authResponseData === 'string' ? authResponseData : 'Unsuccessful authentication attempt.'
       responseCallback({
@@ -313,7 +348,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
           statusCode: HTTPStatus.BAD_REQUEST,
           message: parseResult.error ? `${message} Reason: ${parseResult.error}` : message
         })
-        this._logger.debug(C.EVENT.MESSAGE_PARSE_ERROR, parseResult.error)
+        this._logger.debug(EVENT.MESSAGE_PARSE_ERROR, parseResult.error)
         return
       }
     }
@@ -323,7 +358,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       this._requestTimeout
     )
 
-    const dummySocketWrapper = this._createSocketWrapper(authResponseData)
+    const dummySocketWrapper = this._createSocketWrapper(authResponseData, null, null, null, null)
 
     for (let messageIndex = 0; messageIndex < messageCount; messageIndex++) {
       const parseResult = parseResults[messageIndex]
@@ -377,12 +412,12 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onSocketMessage (
-    messageResults, index, message, responseCallback, requestTimeoutId
-  ) {
+    messageResults: Array<JifResult>, index: number, message: Message, responseCallback: Function, requestTimeoutId: NodeJS.Timer
+  ): void {
     const parseResult = this._jifHandler.toJIF(message)
     if (!parseResult) {
       const errorMessage = `${message.topic} ${message.action} ${JSON.stringify(message.data)}`
-      this._logger.error(C.EVENT.MESSAGE_PARSE_ERROR, errorMessage)
+      this._logger.error(EVENT.MESSAGE_PARSE_ERROR, errorMessage)
       return
     }
     if (parseResult.done !== true) {
@@ -411,9 +446,15 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onSocketError (
-    messageResults, index, message, event, errorMessage, responseCallback, requestTimeoutId
-  ) {
-    const parseResult = this._jifHandler.errorToJIF(message, event, errorMessage)
+    messageResults: Array<JifResult>,
+    index: number,
+    message: Message,
+    event: string,
+    errorMessage: string,
+    responseCallback: Function,
+    requestTimeoutId: NodeJS.Timer
+  ): void {
+    const parseResult = this._jifHandler.errorToJIF(message, event)
     if (parseResult.done && messageResults[index] === null) {
       messageResults[index] = parseResult.message
       HTTPConnectionEndpoint._checkComplete(messageResults, responseCallback, requestTimeoutId)
@@ -431,7 +472,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  static _checkComplete (messageResults, responseCallback, requestTimeoutId) {
+  static _checkComplete (messageResults: Array<JifResult>, responseCallback: Function, requestTimeoutId: NodeJS.Timer): void {
     const messageResult = HTTPConnectionEndpoint.calculateMessageResult(messageResults)
     if (messageResult === null) {
       // insufficient responses received
@@ -456,15 +497,15 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _onRequestTimeout (responseCallback, messageResults) {
+  _onRequestTimeout (responseCallback: Function, messageResults: Array<JifResult>): void {
     let numTimeouts = 0
     for (let i = 0; i < messageResults.length; i++) {
       if (messageResults[i] === null) {
         messageResults[i] = {
           success: false,
           error: 'Request exceeded timeout before a response was received.',
-          errorTopic: 'connection',
-          errorEvent: C.EVENT.TIMEOUT
+          // errorTopic: 'connection',
+          // errorEvent: EVENT.TIMEOUT
         }
         numTimeouts++
       }
@@ -473,7 +514,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       return
     }
 
-    this._logger.warn(C.EVENT.TIMEOUT, 'HTTP Request timeout')
+    this._logger.warn(EVENT.TIMEOUT, 'HTTP Request timeout')
 
     const result = HTTPConnectionEndpoint.calculateMessageResult(messageResults)
 
@@ -493,11 +534,13 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  static calculateMessageResult (messageResults) {
+  static calculateMessageResult (messageResults: Array<JifResult>): string {
     let numSucceeded = 0
     for (let i = 0; i < messageResults.length; i++) {
       if (!messageResults[i]) {
-        return null
+        // todo: when does this happen
+        console.log(messageResults[i])
+        return ''
       }
       if (messageResults[i].success) {
         numSucceeded++
@@ -530,7 +573,12 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    *
    * @returns {void}
    */
-  _permissionEventEmit (socketWrapper, parsedMessage, messageResults, messageIndex) {
+  _permissionEventEmit (
+    socketWrapper: SocketWrapper,
+    parsedMessage: Message,
+    messageResults: Array<JifResult>,
+    messageIndex: number
+  ): void {
     this._permissionHandler.canPerformAction(
       socketWrapper.user,
       parsedMessage,
@@ -557,18 +605,23 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onPermissionResponse (
-    socketWrapper, message, messageResults, messageIndex, error, permissioned
-  ) {
+    socketWrapper: SocketWrapper,
+    message: Message,
+    messageResults: Array<JifResult>,
+    messageIndex: number,
+    error: string,
+    permissioned: boolean
+  ): void {
     if (error !== null) {
-      this._options.logger.warn(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
+      this._options.logger.warn(EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
     }
     if (permissioned !== true) {
       messageResults[messageIndex] = {
         success: false,
         error: 'Message denied. Action \'emit\' is not permitted.',
-        errorEvent: C.EVENT.MESSAGE_DENIED,
-        errorAction: 'emit',
-        errorTopic: 'event'
+        // errorEvent: C.EVENT.MESSAGE_DENIED,
+        // errorAction: 'emit',
+        // errorTopic: 'event'
       }
       return
     }

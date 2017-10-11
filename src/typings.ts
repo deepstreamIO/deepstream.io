@@ -85,6 +85,19 @@ interface RecordAckMessage extends Message {
   data: any
 }
 
+interface JifMessage {
+  done: boolean
+  message: JifResult
+}
+
+interface JifResult {
+  success: boolean
+  data?: any
+  error?: string
+  version?: number
+  users?: Array<string>
+}
+
 interface SubscriptionListener {
   onSubscriptionRemoved(name: string, socketWrapper: SocketWrapper)
   onLastSubscriptionRemoved(name: string)
