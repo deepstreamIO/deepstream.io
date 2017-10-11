@@ -37,7 +37,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(M.readMessage)
+      .withExactArgs(M.readResponseMessage)
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
@@ -77,7 +77,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.READ,
+        action: C.RECORD_ACTIONS.READ_RESPONSE,
         name: 'some-record',
         version: M.recordData._v,
         parsedData: M.recordData._d
@@ -135,7 +135,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.READ,
+        action: C.RECORD_ACTIONS.READ_RESPONSE,
         name: 'some-record',
         parsedData: M.recordData._d,
         version: M.recordData._v
@@ -172,7 +172,7 @@ describe('record handler handles messages', () => {
       client.socketWrapperMock
         .expects('sendMessage')
         .once()
-        .withExactArgs(Object.assign({}, M.recordHeadMessage, { name, version: recordData._v }))
+        .withExactArgs(Object.assign({}, M.recordHeadResponseMessage, { name, version: recordData._v }))
 
       recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordHeadMessage, { name }))
     })
@@ -299,8 +299,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs(M.recordDelete.name, {
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.DELETE,
-        isAck: true,
+        action: C.RECORD_ACTIONS.DELETED,
         name: M.recordDelete.name
       }, true, client.socketWrapper)
 

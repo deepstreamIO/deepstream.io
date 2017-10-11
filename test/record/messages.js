@@ -20,9 +20,9 @@ module.exports.createOrReadMessage = {
   name: 'some-record'
 }
 
-module.exports.readMessage = {
+module.exports.readResponseMessage = {
   topic: C.TOPIC.RECORD,
-  action: C.RECORD_ACTIONS.READ,
+  action: C.RECORD_ACTIONS.READ_RESPONSE,
   name: 'some-record',
   version: 0,
   parsedData: {}
@@ -39,7 +39,6 @@ module.exports.createDeniedMessage = {
   action: C.RECORD_ACTIONS.CREATE,
   name: 'some-record'
 }
-
 
 module.exports.subscribeMessage = {
   topic: C.TOPIC.RECORD,
@@ -59,14 +58,6 @@ module.exports.createOrReadMessage = {
   name: 'some-record'
 }
 
-module.exports.readMessage = {
-  topic: C.TOPIC.RECORD,
-  action: C.RECORD_ACTIONS.READ,
-  name: 'some-record',
-  version: 0,
-  parsedData: {}
-}
-
 module.exports.recordHasMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.HAS,
@@ -82,6 +73,12 @@ module.exports.recordSnapshotMessage = {
 module.exports.recordHeadMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.HEAD,
+  name: 'some-record'
+}
+
+module.exports.recordHeadResponseMessage = {
+  topic: C.TOPIC.RECORD,
+  action: C.RECORD_ACTIONS.HEAD_RESPONSE,
   name: 'some-record'
 }
 
@@ -125,7 +122,6 @@ module.exports.recordPatchWithAck = {
   isWriteAck: true
 }
 
-
 module.exports.recordDelete = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.DELETE,
@@ -155,11 +151,13 @@ module.exports.listenRejectMessage = {
   name: 'record/.*',
   subscription: 'record/A'
 }
+
 module.exports.unlistenMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.UNLISTEN,
   name: 'record/.*'
 }
+
 module.exports.listenMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.LISTEN,

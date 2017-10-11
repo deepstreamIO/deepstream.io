@@ -17,8 +17,8 @@ export default class Rpc {
   private message: Message
   private correlationId: string
   private rpcName: string
-  private isAcknowledged: boolean
-  private ackTimeout: any
+  private isAccepted: boolean
+  private acceptTimeout: any
   private responseTimeout: any
 
   /**
@@ -32,7 +32,7 @@ export default class Rpc {
     this.config = config
     this.services = services
     this.message = message
-    this.isAcknowledged = false
+    this.isAccepted = false
 
     this.setProvider(provider)
   }
@@ -55,11 +55,11 @@ export default class Rpc {
       return
     }
 
-    if (message.isAck) {
-      this.handleAck(message)
+    if (message.action === RPC_ACTIONS.ACCEPT) {
+      this.handleAccept(message)
     } else if (message.action === RPC_ACTIONS.REJECT) {
       this.reroute()
-    } else if (message.action === RPC_ACTIONS.RESPONSE || message.isError) {
+    } else if (message.action === RPC_ACTIONS.RESPONSE || message.action ===  RPC_ACTIONS.ERROR) {
       this.requestor.sendMessage(message)
       this.destroy()
     }
@@ -70,7 +70,7 @@ export default class Rpc {
   * or because a timeout has occured
   */
   public destroy (): void {
-    clearTimeout(this.ackTimeout)
+    clearTimeout(this.acceptTimeout)
     clearTimeout(this.responseTimeout)
     this.rpcHandler.onRPCDestroyed(this.correlationId)
   }
@@ -86,11 +86,11 @@ export default class Rpc {
   * the second leg of the rpc
   */
   private setProvider (provider: SimpleSocketWrapper): void {
-    clearTimeout(this.ackTimeout)
+    clearTimeout(this.acceptTimeout)
     clearTimeout(this.responseTimeout)
 
     this.provider = provider
-    this.ackTimeout = setTimeout(this.onAckTimeout.bind(this), this.config.rpcAckTimeout)
+    this.acceptTimeout = setTimeout(this.onAcceptTimeout.bind(this), this.config.rpcAckTimeout)
     this.responseTimeout = setTimeout(this.onResponseTimeout.bind(this), this.config.rpcTimeout)
     this.provider.sendMessage(this.message)
   }
@@ -100,14 +100,14 @@ export default class Rpc {
   * If more than one Ack is received an error will be returned
   * to the provider
   */
-  private handleAck (message: RPCMessage) {
-    if (this.isAcknowledged === true) {
-      this.provider.sendError(this.message, EVENT.MULTIPLE_ACK)
+  private handleAccept (message: RPCMessage) {
+    if (this.isAccepted === true) {
+      this.provider.sendError(this.message, EVENT.MULTIPLE_ACCEPT)
       return
     }
 
-    clearTimeout(this.ackTimeout)
-    this.isAcknowledged = true
+    clearTimeout(this.acceptTimeout)
+    this.isAccepted = true
     this.requestor.sendMessage(message)
   }
 
@@ -131,11 +131,11 @@ export default class Rpc {
   }
 
   /**
-  * Callback if the acknowledge message hasn't been returned
+  * Callback if the accept message hasn't been returned
   * in time by the provider
   */
-  private onAckTimeout (): void {
-    this.requestor.sendError(this.message, EVENT.ACK_TIMEOUT)
+  private onAcceptTimeout (): void {
+    this.requestor.sendError(this.message, EVENT.ACCEPT_TIMEOUT)
     this.destroy()
   }
 

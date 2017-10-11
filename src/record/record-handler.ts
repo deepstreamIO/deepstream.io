@@ -165,7 +165,7 @@ export default class RecordHandler {
       if (record) {
         socket.sendMessage({
           topic: TOPIC.RECORD,
-          action: RECORD_ACTIONS.HEAD,
+          action: RECORD_ACTIONS.HEAD_RESPONSE,
           name: recordName,
           version: record._v,
         })
@@ -536,7 +536,7 @@ function onPermissionResponse (
 function sendRecord (recordName: string, record: StorageRecord, socketWrapper: SocketWrapper) {
   socketWrapper.sendMessage({
     topic: TOPIC.RECORD,
-    action: RECORD_ACTIONS.READ,
+    action: RECORD_ACTIONS.READ_RESPONSE,
     name: recordName,
     version: record._v,
     parsedData: record._d,

@@ -32,7 +32,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(M.readMessage)
+      .withExactArgs(M.readResponseMessage)
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
@@ -47,7 +47,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(M.readMessage)
+      .withExactArgs(M.readResponseMessage)
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
