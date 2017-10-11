@@ -46,13 +46,13 @@ export default class RpcHandler {
       this.subscriptionRegistry.subscribe(message, socketWrapper)
     } else if (message.action === RPC_ACTIONS.UNPROVIDE) {
       this.subscriptionRegistry.unsubscribe(message, socketWrapper)
-    } else if (message.action === RPC_ACTIONS.REQUEST && !message.isAck) {
+    } else if (message.action === RPC_ACTIONS.REQUEST) {
        this.makeRpc(socketWrapper, message, false)
     } else if (
       message.action === RPC_ACTIONS.RESPONSE ||
       message.action === RPC_ACTIONS.REJECT ||
-      message.isAck ||
-      message.isError
+      message.action === RPC_ACTIONS.ACCEPT ||
+      message.action === RPC_ACTIONS.ERROR
     ) {
       const rpcData =  this.rpcs.get(message.correlationId)
       if (rpcData) {

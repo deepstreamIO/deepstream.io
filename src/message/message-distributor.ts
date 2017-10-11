@@ -31,9 +31,7 @@ export default class MessageDistributor {
     // TODO: Can we remove this? A general emit is quite expensive
     // socketWrapper.emit(message.topic, message)
 
-    // if (message.isCompleted !== true) {
-      this._callbacks[message.topic](socketWrapper, message)
-    // }
+    this._callbacks[message.topic](socketWrapper, message)
   }
 
   /**

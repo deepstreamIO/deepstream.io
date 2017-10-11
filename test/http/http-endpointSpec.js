@@ -1,5 +1,6 @@
 'use strict'
 
+const C = require('../../src/constants')
 const chai = require('chai') // eslint-disable-line
 const proxyquire = require('proxyquire') // eslint-disable-line
 const sinon = require('sinon') // eslint-disable-line
@@ -176,7 +177,7 @@ describe('http plugin', () => {
           expect(resp.result).to.equal('FAILURE')
           expect(resp.body[0].success).to.be.false
           expect(resp.body[0].errorTopic).to.equal('connection')
-          expect(resp.body[0].errorEvent).to.equal('TIMEOUT')
+          expect(resp.body[0].errorEvent).to.equal(C.EVENT.TIMEOUT)
           done()
         })
       })

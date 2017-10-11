@@ -153,7 +153,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
       data: 'O{"owner":"userX"}',
       dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
@@ -179,7 +179,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
       data: 'O{"owner":"userX"}',
       dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
@@ -204,14 +204,14 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
       data: 'O{"price":15}',
       dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
     }
 
     const callback = function (error, result) {
-      expect(error).toContain('RECORD_LOAD_ERROR')
+      expect(error).toBe(C.EVENT.RECORD_LOAD_ERROR)
       expect(result).toBe(false)
       next()
     }

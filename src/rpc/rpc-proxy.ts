@@ -36,9 +36,6 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   * to identify the sender
   */
   public sendMessage (msg: RPCMessage): void {
-    if (msg.isAck && msg.action !== RPC_ACTIONS.REQUEST) {
-      msg.isCompleted = true
-    }
     this.services.message.sendDirect(this.remoteServer, msg, this.metaData)
   }
 

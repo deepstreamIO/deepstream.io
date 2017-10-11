@@ -1,5 +1,5 @@
 'use strict'
-
+const C = require('../../src/constants')
 const AuthenticationHandler = require('../../src/authentication/http-authentication-handler')
 const TestHttpServer = require('../test-helper/test-http-server')
 const MockLogger = require('../test-mocks/logger-mock')

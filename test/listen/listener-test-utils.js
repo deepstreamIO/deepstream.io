@@ -23,6 +23,12 @@ module.exports = class ListenerTestUtils {
   constructor (listenerTopic) {
     topic = listenerTopic || C.TOPIC.RECORD
 
+    if (topic === C.TOPIC.RECORD) {
+      this.actions = C.RECORD_ACTIONS
+    } else {
+      this.actions = C.EVENT_ACTIONS
+    }
+    
     subscribedTopics = []
 
     clientRegistry = {
@@ -94,13 +100,13 @@ module.exports = class ListenerTestUtils {
       .once()
       .withExactArgs({
         topic,
-        action: C.ACTIONS.LISTEN,
+        action: this.actions.LISTEN,
         name: pattern
       })
 
     listenerRegistry.handle(providers[provider].socketWrapper, {
       topic,
-      action: C.ACTIONS.LISTEN,
+      action: this.actions.LISTEN,
       name: pattern
     })
   }
@@ -111,13 +117,13 @@ module.exports = class ListenerTestUtils {
       .once()
       .withExactArgs({
         topic,
-        action: C.ACTIONS.UNLISTEN,
+        action: this.actions.UNLISTEN,
         name: pattern
       })
 
     listenerRegistry.handle(providers[provider].socketWrapper, {
       topic,
-      action: C.ACTIONS.UNLISTEN,
+      action: this.actions.UNLISTEN,
       name: pattern
     })
   }
@@ -128,7 +134,7 @@ module.exports = class ListenerTestUtils {
       .once()
       .withExactArgs({
         topic,
-        action: C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_FOUND,
+        action: this.actions.SUBSCRIPTION_FOR_PATTERN_FOUND,
         name: pattern,
         subscription
       })
@@ -140,7 +146,7 @@ module.exports = class ListenerTestUtils {
       .once()
       .withExactArgs({
         topic,
-        action: C.ACTIONS.SUBSCRIPTION_FOR_PATTERN_REMOVED,
+        action: this.actions.SUBSCRIPTION_FOR_PATTERN_REMOVED,
         name: pattern,
         subscription
       })
@@ -153,7 +159,7 @@ module.exports = class ListenerTestUtils {
   providerAccepts (provider, pattern, subscription, doesnthaveActiveProvider) {
     listenerRegistry.handle(providers[provider].socketWrapper, {
       topic,
-      action: C.ACTIONS.LISTEN_ACCEPT,
+      action: this.actions.LISTEN_ACCEPT,
       name: pattern,
       subscription
     })
@@ -172,7 +178,7 @@ module.exports = class ListenerTestUtils {
   providerRejects (provider, pattern, subscription, doNotCheckActiveProvider) {
     listenerRegistry.handle(providers[provider].socketWrapper, {
       topic,
-      action: C.ACTIONS.LISTEN_REJECT,
+      action: this.actions.LISTEN_REJECT,
       name: pattern,
       subscription
     })
@@ -185,24 +191,24 @@ module.exports = class ListenerTestUtils {
   acceptMessageThrowsError (provider, pattern, subscription) {
     listenerRegistry.handle(providers[provider].socketWrapper, {
       topic,
-      action: C.ACTIONS.LISTEN_ACCEPT,
+      action: this.actions.LISTEN_ACCEPT,
       name: pattern,
       subscription
     })
     // TODO
-    // verify( providers[ provider], C.ACTIONS.ERROR, [ C.EVENT.INVALID_MESSAGE, C.ACTIONS.LISTEN_ACCEPT, pattern, subscriptionName ] );
+    // verify( providers[ provider], this.actions.ERROR, [ C.EVENT.INVALID_MESSAGE, this.actions.LISTEN_ACCEPT, pattern, subscriptionName ] );
   }
 
   rejectMessageThrowsError (provider, pattern, subscription) {
     listenerRegistry.handle(providers[provider].socketWrapper, {
       topic,
-      action: C.ACTIONS.LISTEN_REJECT,
+      action: this.actions.LISTEN_REJECT,
       name: pattern,
       subscription
     })
 
     // TODO
-    // verify( providers[ provider], C.ACTIONS.ERROR, [ C.EVENT.INVALID_MESSAGE, C.ACTIONS.LISTEN_REJECT, pattern, subscriptionName ] );
+    // verify( providers[ provider], this.actions.ERROR, [ C.EVENT.INVALID_MESSAGE, this.actions.LISTEN_REJECT, pattern, subscriptionName ] );
   }
 
   providerLosesItsConnection (provider) {
@@ -240,7 +246,7 @@ module.exports = class ListenerTestUtils {
       .once()
       .withExactArgs({
         topic,
-        action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+        action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
         name: subscription,
         parsedData: state
       })
@@ -252,7 +258,7 @@ module.exports = class ListenerTestUtils {
       .once()
       .withExactArgs(subscription, {
         topic,
-        action: C.ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+        action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
         name: subscription,
         parsedData: state
       }, false, null)

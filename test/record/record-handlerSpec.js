@@ -10,7 +10,7 @@ const M = require('./messages')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
 
-xdescribe('record handler handles messages', () => {
+describe('record handler handles messages', () => {
   let testMocks
   let recordHandler
   let client
@@ -37,7 +37,7 @@ xdescribe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(M.readMessage)
+      .withExactArgs(M.readResponseMessage)
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
@@ -77,7 +77,7 @@ xdescribe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.READ,
+        action: C.RECORD_ACTIONS.READ_RESPONSE,
         name: 'some-record',
         version: M.recordData._v,
         parsedData: M.recordData._d
@@ -94,7 +94,7 @@ xdescribe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.HAS,
+        action: C.RECORD_ACTIONS.HAS_RESPONSE,
         name: 'some-record',
         parsedData: true
       })
@@ -108,7 +108,7 @@ xdescribe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.HAS,
+        action: C.RECORD_ACTIONS.HAS_RESPONSE,
         name: 'some-record',
         parsedData: false
       })
@@ -135,7 +135,7 @@ xdescribe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.READ,
+        action: C.RECORD_ACTIONS.READ_RESPONSE,
         name: 'some-record',
         parsedData: M.recordData._d,
         version: M.recordData._v
@@ -172,7 +172,7 @@ xdescribe('record handler handles messages', () => {
       client.socketWrapperMock
         .expects('sendMessage')
         .once()
-        .withExactArgs(Object.assign({}, M.recordHeadMessage, { name, version: recordData._v }))
+        .withExactArgs(Object.assign({}, M.recordHeadResponseMessage, { name, version: recordData._v }))
 
       recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordHeadMessage, { name }))
     })
@@ -299,8 +299,7 @@ xdescribe('record handler handles messages', () => {
       .once()
       .withExactArgs(M.recordDelete.name, {
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.DELETE,
-        isAck: true,
+        action: C.RECORD_ACTIONS.DELETED,
         name: M.recordDelete.name
       }, true, client.socketWrapper)
 

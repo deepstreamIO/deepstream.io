@@ -96,11 +96,7 @@ export default class RecordHandler {
     message.action === RECORD_ACTIONS.LISTEN_REJECT) {
       this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
     } else {
-  /*
-   * Default for invalid messages
-   */
-    console.log(message.action)
-      this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action.toString(), this.metaData)
+      this.services.logger.error(EVENT.UNKNOWN_ACTION, RECORD_ACTIONS[message.action], this.metaData)
     }
   }
 
@@ -169,7 +165,7 @@ export default class RecordHandler {
       if (record) {
         socket.sendMessage({
           topic: TOPIC.RECORD,
-          action: RECORD_ACTIONS.HEAD,
+          action: RECORD_ACTIONS.HEAD_RESPONSE,
           name: recordName,
           version: record._v,
         })
@@ -540,7 +536,7 @@ function onPermissionResponse (
 function sendRecord (recordName: string, record: StorageRecord, socketWrapper: SocketWrapper) {
   socketWrapper.sendMessage({
     topic: TOPIC.RECORD,
-    action: RECORD_ACTIONS.READ,
+    action: RECORD_ACTIONS.READ_RESPONSE,
     name: recordName,
     version: record._v,
     parsedData: record._d,

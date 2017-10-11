@@ -25,7 +25,7 @@
 // }
 // const requestMessage = {
 //   topic: C.TOPIC.RPC,
-//   action: C.ACTIONS.REQUEST,
+//   action: C.RPC_ACTIONS.REQUEST,
 //   raw: msg('P|REQ|addTwo|1234|O{"numA":5, "numB":7}+'),
 //   data: ['addTwo', '1234', 'O{"numA":5, "numB":7}']
 // }
@@ -84,7 +84,7 @@
 //     it('receives a unrelated message from the provider', () => {
 //       rpc.handle({
 //         topic: C.TOPIC.RPC,
-//         action: C.ACTIONS.REQUEST,
+//         action: C.RPC_ACTIONS.REQUEST,
 //         raw: msg('P|REQ|addTwo|1234|O{"numA":5, "numB":7}+'),
 //         data: ['not', 'related', 'O{"numA":5, "numB":7}']
 //       })
@@ -129,7 +129,7 @@
 
   //   options.message.simulateIncomingMessage('PRIVATE/P', {
   //     topic: C.TOPIC.RPC,
-  //     action: C.ACTIONS.REQUEST,
+  //     action: C.RPC_ACTIONS.REQUEST,
   //     data: ['rpcB', '1234', 'O{"numA":5, "numB":7}']
   //   })
 

@@ -55,7 +55,6 @@ interface Message {
 
 interface RPCMessage extends Message {
   correlationId: string
-  isCompleted?: boolean
 }
 
 interface PresenceMessage extends Message {

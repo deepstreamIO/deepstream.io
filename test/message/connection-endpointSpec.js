@@ -41,7 +41,7 @@ let authenticationHandlerMock
 let config
 let services
 
-xdescribe('connection endpoint', () => {
+describe('connection endpoint', () => {
   beforeEach((done) => {
     authenticationHandlerMock = new AuthenticationHandlerMock()
 
@@ -82,7 +82,7 @@ xdescribe('connection endpoint', () => {
     expect(uwsMock.heartbeatInterval).toBe(config.heartbeatInterval)
     expect(uwsMock.pingMessage).toBe({
       topic: C.TOPIC.CONNECTION,
-      action: C.ACTIONS.PING
+      action: C.CONNECTION_ACTIONS.PING
     })
   }).pend('We need to figure out how to get this to work')
 
@@ -132,7 +132,7 @@ xdescribe('connection endpoint', () => {
       .once()
       .withExactArgs()
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
     uwsMock.messageHandler([{ parseError: true, raw: 'gibbeerish' }], client.socketWrapper)
   })
 
@@ -149,8 +149,8 @@ xdescribe('connection endpoint', () => {
       .once()
       .withExactArgs()
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: 'null' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: 'null' }], client.socketWrapper)
   })
 
   it('the connection endpoint handles invalid auth json', () => {
@@ -166,8 +166,8 @@ xdescribe('connection endpoint', () => {
       .once()
       .withExactArgs()
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{ invalid }' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{ invalid }' }], client.socketWrapper)
   })
 
   it('the connection endpoint does not route invalid auth messages to the permissionHandler', () => {
@@ -182,8 +182,8 @@ xdescribe('connection endpoint', () => {
     expect(authenticationHandlerMock.lastUserValidationQueryArgs).toBe(null)
     authenticationHandlerMock.nextUserValidationResult = false
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"wolfram"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"wolfram"}' }], client.socketWrapper)
 
     expect(authenticationHandlerMock.lastUserValidationQueryArgs.length).toBe(3)
     expect(authenticationHandlerMock.lastUserValidationQueryArgs[1].user).toBe('wolfram')
@@ -192,7 +192,7 @@ xdescribe('connection endpoint', () => {
 
   describe('the connection endpoint emits a client events for user with name', () => {
     beforeEach(() => {
-      uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+      uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
     })
 
     it('client has the correct connection data', () => {
@@ -205,7 +205,7 @@ xdescribe('connection endpoint', () => {
         expect(socketWrapper.user).toBe('test-user')
         done()
       })
-      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
     })
 
     it('emits disconnected event for user with name', (done) => {
@@ -214,7 +214,7 @@ xdescribe('connection endpoint', () => {
         done()
       })
 
-      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
       client.socketWrapper.close()
     })
   })
@@ -223,14 +223,14 @@ xdescribe('connection endpoint', () => {
     beforeEach(() => {
       authenticationHandlerMock.nextUserIsAnonymous = true
       authenticationHandlerMock.nextUserValidationResult = true
-      uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+      uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
     })
 
     it('does not emit connected event', () => {
       const spy = jasmine.createSpy('client-connected')
       connectionEndpoint.once('client-connected', spy)
 
-      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 
       expect(spy).not.toHaveBeenCalled()
     })
@@ -241,7 +241,7 @@ xdescribe('connection endpoint', () => {
 
       connectionEndpoint.once('client-disconnected', spy)
 
-      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
       client.socketWrapper.close()
 
       expect(spy).not.toHaveBeenCalled()
@@ -251,7 +251,7 @@ xdescribe('connection endpoint', () => {
   it('disconnects if the number of invalid authentication attempts is exceeded', () => {
     authenticationHandlerMock.nextUserValidationResult = false
     config.maxAuthAttempts = 3
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
 
     client.socketWrapperMock
       .expects('sendError')
@@ -261,8 +261,8 @@ xdescribe('connection endpoint', () => {
         parsedData: 'Invalid User'
       }, C.EVENT.INVALID_AUTH_DATA)
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 
     client.socketWrapperMock
       .expects('sendError')
@@ -276,7 +276,7 @@ xdescribe('connection endpoint', () => {
       .once()
       .withExactArgs()
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
   })
 
   it('disconnects client if authentication timeout is exceeded', (done) => {
@@ -315,13 +315,13 @@ xdescribe('connection endpoint', () => {
         parsedData: undefined
       })
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
   })
 
   it('notifies the permissionHandler when a client disconnects', () => {
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 
     client.socketWrapper.close()
 
@@ -329,18 +329,18 @@ xdescribe('connection endpoint', () => {
   })
 
   it('routes valid auth messages to the permissionHandler', () => {
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.EVENT, action: C.ACTIONS.EVENT, data: 'test' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.EVENT, action: C.EVENT_ACTIONS.EMIT, data: 'test' }], client.socketWrapper)
 
-    expect(lastAuthenticatedMessage).toEqual({ topic: C.TOPIC.EVENT, action: C.ACTIONS.EVENT, data: 'test' })
+    expect(lastAuthenticatedMessage).toEqual({ topic: C.TOPIC.EVENT, action: C.EVENT_ACTIONS.EMIT, data: 'test' })
   })
 
   it('forwards additional data for positive authentications', () => {
     authenticationHandlerMock.nextUserValidationResult = true
     authenticationHandlerMock.sendNextValidAuthWithData = true
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
 
     client.socketWrapperMock
       .expects('sendMessage')
@@ -351,15 +351,15 @@ xdescribe('connection endpoint', () => {
         parsedData: 'test-data'
       })
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
   })
 
   it('connection endpoint doesn\'t log credentials if logInvalidAuthData is set to false', () => {
     config.logInvalidAuthData = false
     authenticationHandlerMock.nextUserValidationResult = false
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
-    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE, data: '' }], client.socketWrapper)
+    uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 
     expect(services.logger.lastLogMessage.indexOf('wolfram')).toBe(-1)
   })

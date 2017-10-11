@@ -53,12 +53,11 @@ describe('the rpcHandler routes events correctly', () => {
       data: '{"numA":5, "numB":7}'
     }
 
-    const ackMessage = {
+    const acceptMessage = {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST,
+      action: C.RPC_ACTIONS.ACCEPT,
       name: 'addTwo',
-      correlationId: 1234,
-      isAck: true
+      correlationId: 1234
     }
 
     const responseMessage = {
@@ -95,21 +94,21 @@ describe('the rpcHandler routes events correctly', () => {
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
     })
 
-    it('accepts first ack', () => {
+    it('accepts first accept', () => {
       requestor.socketWrapperMock
         .expects('sendMessage')
         .once()
-        .withExactArgs(ackMessage)
+        .withExactArgs(acceptMessage)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
-      rpcHandler.handle(provider.socketWrapper, ackMessage)
+      rpcHandler.handle(provider.socketWrapper, acceptMessage)
     })
 
     it('errors when recieving more than one ack', () => {
       provider.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(requestMessage, C.EVENT.MULTIPLE_ACK)
+        .withExactArgs(requestMessage, C.EVENT.MULTIPLE_ACCEPT)
 
       provider.socketWrapperMock
         .expects('sendMessage')
@@ -117,8 +116,8 @@ describe('the rpcHandler routes events correctly', () => {
         .withExactArgs(requestMessage)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
-      rpcHandler.handle(provider.socketWrapper, ackMessage)
-      rpcHandler.handle(provider.socketWrapper, ackMessage)
+      rpcHandler.handle(provider.socketWrapper, acceptMessage)
+      rpcHandler.handle(provider.socketWrapper, acceptMessage)
     })
 
     it('gets a response', () => {
@@ -181,7 +180,7 @@ describe('the rpcHandler routes events correctly', () => {
       requestor.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(requestMessage, C.EVENT.ACK_TIMEOUT)
+        .withExactArgs(requestMessage, C.EVENT.ACCEPT_TIMEOUT)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       setTimeout(done, config.rpcAckTimeout * 2)
@@ -194,7 +193,7 @@ describe('the rpcHandler routes events correctly', () => {
         .withExactArgs(requestMessage, C.EVENT.RESPONSE_TIMEOUT)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
-      rpcHandler.handle(provider.socketWrapper, ackMessage)
+      rpcHandler.handle(provider.socketWrapper, acceptMessage)
       setTimeout(done, config.rpcTimeout + 2)
     })
 
@@ -207,7 +206,7 @@ describe('the rpcHandler routes events correctly', () => {
       rpcHandler.handle(provider.socketWrapper, responseMessage)
 
       setTimeout(() => {
-        rpcHandler.handle(provider.socketWrapper, ackMessage)
+        rpcHandler.handle(provider.socketWrapper, acceptMessage)
         done()
       }, 30)
     }).pend('Should an Ack for a non existant rpc should error?')
@@ -219,7 +218,7 @@ describe('the rpcHandler routes events correctly', () => {
         .withExactArgs(responseMessage, C.EVENT.INVALID_RPC_CORRELATION_ID)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
-      rpcHandler.handle(provider.socketWrapper, ackMessage)
+      rpcHandler.handle(provider.socketWrapper, acceptMessage)
 
       setTimeout(() => {
         rpcHandler.handle(provider.socketWrapper, responseMessage)

@@ -83,7 +83,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.SNAPSHOT,
+      action: C.RECORD_ACTIONS.READ,
       name: 'private/userA'
     }
 
@@ -102,7 +102,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
       data: 'O{"price":15}',
       dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
@@ -110,7 +110,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
       data: 'O{"price":5}',
       dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
@@ -125,7 +125,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event'
     })).toBe(false)
   })
@@ -269,7 +269,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
       data: 'xxx',
       dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
@@ -300,7 +300,7 @@ describe('loads permissions repeatedly', () => {
   it('requests permissions initally, causing a lookup', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
       data: 'some-data'
     }
@@ -317,7 +317,7 @@ describe('loads permissions repeatedly', () => {
   it('requests permissions a second time, causing a cache retriaval', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
       data: 'some-data'
     }

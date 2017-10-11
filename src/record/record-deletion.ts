@@ -85,7 +85,7 @@ export default class RecordDeletion {
     this.services.logger.info(EVENT.RECORD_DELETION, this.recordName, this.metaData)
     this.socketWrapper.sendAckMessage(this.message)
     // Will change with new protocol
-    this.message = Object.assign({}, this.message, { isAck: true })
+    this.message = Object.assign({}, this.message, { action: RECORD_ACTIONS.DELETED })
     this.successCallback(this.recordName, this.message, this.socketWrapper)
     this.destroy()
   }
