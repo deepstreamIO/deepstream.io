@@ -22,9 +22,9 @@ interface StorageRecord {
 
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
-  sendMessage(message: Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, buffer?: boolean): void
-  sendAckMessage(message: Message | RPCMessage ): void
-  sendError(message: { topic: TOPIC } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: EVENT, errorMessage?: string): void
+  sendMessage(message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, buffer?: boolean): void
+  sendAckMessage(message: Message | RPCMessage, buffer?: boolean): void
+  sendError(message: { topic: TOPIC } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: EVENT, errorMessage?: string, buffer?: boolean): void
 }
 
 interface SocketWrapper extends SimpleSocketWrapper {
@@ -44,7 +44,6 @@ interface Message {
   topic: TOPIC
   action: RECORD_ACTIONS | PRESENCE_ACTIONS | RPC_ACTIONS | EVENT_ACTIONS | AUTH_ACTIONS | CONNECTION_ACTIONS
   name: string
-
   isError?: boolean
   isAck?: boolean
 
@@ -103,8 +102,9 @@ interface Logger extends DeepstreamPlugin {
 }
 
 interface ConnectionEndpoint extends DeepstreamPlugin {
-  onMessages(messages: Array<Message>): void
+  onMessages(socketWrapper: SocketWrapper, messages: Array<Message>): void
   close(): void
+  scheduleFlush?(socketWrapper: SocketWrapper)
 }
 
 interface PluginConfig {

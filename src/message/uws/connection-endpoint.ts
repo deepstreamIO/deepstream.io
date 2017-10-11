@@ -2,7 +2,7 @@
 
 import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS } from '../../constants'
 import * as messageBuilder from '../../../protocol/text/src/message-builder'
-import * as SocketWrapperFactory from './socket-wrapper-factory'
+import { createSocketWrapper } from './socket-wrapper-factory'
 import { EventEmitter } from 'events'
 import * as https from 'https'
 import * as http from 'http'
@@ -22,10 +22,10 @@ const OPEN = 'OPEN'
  * @param {Object} options the extended default options
  * @param {Function} readyCallback will be invoked once both the ws is ready
  */
-export default class UWSConnectionEndpoint extends EventEmitter {
+export default class UWSConnectionEndpoint extends EventEmitter implements ConnectionEndpoint {
 
   public isReady: boolean = false
-  public description: String = 'µWebSocket Connection Endpoint'
+  public description: string = 'µWebSocket Connection Endpoint'
 
   private _dsOptions: any
   private initialised: boolean = false
@@ -44,7 +44,7 @@ export default class UWSConnectionEndpoint extends EventEmitter {
   private _scheduledSocketWrapperWrites: Set<SocketWrapper>
   private _upgradeRequest: any
 
-  constructor (private options, private services: DeepstreamServices) {
+  constructor (private options: any, private services: DeepstreamServices) {
     super()
     this._flushSockets = this._flushSockets.bind(this)
   }
@@ -297,7 +297,7 @@ export default class UWSConnectionEndpoint extends EventEmitter {
 
     this._upgradeRequest = null
 
-    const socketWrapper = SocketWrapperFactory.create(
+    const socketWrapper = createSocketWrapper(
       external, handshakeData, this._logger, this.options, this
     )
     uws.native.setUserData(external, socketWrapper)
@@ -316,7 +316,7 @@ export default class UWSConnectionEndpoint extends EventEmitter {
       socketWrapper.once('close', clearTimeout.bind(null, disconnectTimer))
     }
 
-    socketWrapper.authCallBack = this._authenticateConnection.bind(
+    socketWrapper.authCallback = this._authenticateConnection.bind(
       this,
       socketWrapper,
       disconnectTimer
