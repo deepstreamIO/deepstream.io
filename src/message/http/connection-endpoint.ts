@@ -539,7 +539,6 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     for (let i = 0; i < messageResults.length; i++) {
       if (!messageResults[i]) {
         // todo: when does this happen
-        console.log(messageResults[i])
         return null
       }
       if (messageResults[i].success) {

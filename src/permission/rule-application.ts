@@ -188,7 +188,6 @@ export default class RuleApplication {
       (msg.topic === TOPIC.RECORD && msg.action === RECORD_ACTIONS.UPDATE)
     ) {
       result = this.params.socketWrapper.parseData(msg)
-    console.log(result)
       if (result instanceof Error) {
         this.onRuleError(`error when converting message data ${result.toString()}`)
       } else {

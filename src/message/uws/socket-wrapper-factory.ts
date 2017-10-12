@@ -166,7 +166,7 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   }
 
   // eslint-disable-next-line
-  public getMessage (message: Message): string {
+  public getMessage (message: Message): string | void {
     return messageBuilder.getMessage(message, false)
   }
 
