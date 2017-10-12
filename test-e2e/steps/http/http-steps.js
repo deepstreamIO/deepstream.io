@@ -195,27 +195,24 @@ When(/^(.+) queues? (?:an|the) RPC call to "([^"]*)"(?: with arguments ("[^"]*"|
   })
 })
 
-When(/^(.+) queues? a fetch for record "([^"]*)"$/, (clientExpression, recordName) => {
+When(/^(.+) queues? a fetch for (record|list) "([^"]*)"$/, (clientExpression, recordOrList, recordName) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     const client = httpClients[clientName]
-    const jifMessage = {
-      topic: 'record',
-      action: 'read',
-      recordName,
-    }
+    const jifMessage = recordOrList === 'record'
+      ? { topic: 'record', action: 'read', recordName }
+      : { topic: 'list', action: 'read', listName: recordName }
 
     client.queue.push(jifMessage)
   })
 })
 
-When(/^(.+) queues? a write to record "([^"]*)"(?: and path "([^"]*)")? with data '([^']*)'(?: and version "(-?\d+)")?$/, (clientExpression, recordName, path, rawData, version) => {
+When(/^(.+) queues? a write to (record|list) "([^"]*)"(?: and path "([^"]*)")? with data '([^']*)'(?: and version "(-?\d+)")?$/, (clientExpression, recordOrList, recordName, path, rawData, version) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     const client = httpClients[clientName]
-    const jifMessage = {
-      topic: 'record',
-      action: 'write',
-      recordName,
-    }
+    const jifMessage = recordOrList === 'record'
+      ? { topic: 'record', action: 'write', recordName }
+      : { topic: 'list', action: 'write', listName: recordName }
+
     if (path !== undefined) {
       jifMessage.path = path
     }
@@ -226,18 +223,17 @@ When(/^(.+) queues? a write to record "([^"]*)"(?: and path "([^"]*)")? with dat
     if (version !== undefined) {
       jifMessage.version = parseInt(version, 10)
     }
+
     client.queue.push(jifMessage)
   })
 })
 
-When(/^(.+) queues? a delete for record "([^"]*)"$/, (clientExpression, recordName) => {
+When(/^(.+) queues? a delete for (record|list) "([^"]*)"$/, (clientExpression, recordOrList, recordName) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     const client = httpClients[clientName]
-    const jifMessage = {
-      topic: 'record',
-      action: 'delete',
-      recordName,
-    }
+    const jifMessage = recordOrList === 'record'
+      ? { topic: 'record', action: 'delete', recordName }
+      : { topic: 'list', action: 'delete', listName: recordName }
 
     client.queue.push(jifMessage)
   })
@@ -321,7 +317,7 @@ Then(/^(.+) receives? an RPC response(?: with data ("[^"]*"|\d+|\{.*\}))?(?: at 
   })
 })
 
-Then(/^(.+) receives? the record (?:head )?"([^"]*)"(?: with data '([^']+)')?(?: (?:with|and) version "(\d+)")?(?: at index "(\d+)")?$/, (clientExpression, recordName, rawData, version, rawIndex) => {
+Then(/^(.+) receives? the (?:record|list) (?:head )?"([^"]*)"(?: with data '([^']+)')?(?: (?:with|and) version "(\d+)")?(?: at index "(\d+)")?$/, (clientExpression, recordName, rawData, version, rawIndex) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]

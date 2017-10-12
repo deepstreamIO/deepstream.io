@@ -97,6 +97,39 @@ function getJifToMsg (C, toTyped) {
     }
   })
 
+  JIF_TO_MSG.list = {}
+  JIF_TO_MSG.list.read = msg => ({
+    done: false,
+    message: {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.SNAPSHOT,
+      data: [msg.listName]
+    }
+  })
+
+  JIF_TO_MSG.list.write = msg => ({
+    done: false,
+    message: {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.CREATEANDUPDATE,
+      data: [
+        msg.listName,
+        msg.version || -1,
+        JSON.stringify(msg.data),
+        enableWriteAcks
+      ]
+    }
+  })
+
+  JIF_TO_MSG.list.delete = msg => ({
+    done: false,
+    message: {
+      topic: C.TOPIC.RECORD,
+      action: C.ACTIONS.DELETE,
+      data: [msg.listName]
+    }
+  })
+
   JIF_TO_MSG.presence = {}
   JIF_TO_MSG.presence.query = () => ({
     done: false,
