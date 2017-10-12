@@ -49,6 +49,7 @@
     "uws": "8.14.1"
   },
   "devDependencies": {
+    "@types/jasmine": "^2.6.0",
     "@types/node": "^8.0.32",
     "async": "^2.5.0",
     "chai": "^4.1.2",

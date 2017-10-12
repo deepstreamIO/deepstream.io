@@ -4,21 +4,6 @@
 const C = require('../../src/constants')
 const SocketWrapperFactory = require('../../src/message/uws/socket-wrapper-factory')
 
-exports.msg = function () {
-  const args = Array.from(arguments)
-  const result = []
-  let i
-
-  for (i = 0; i < args.length; i++) {
-    result.push(args[i]
-      .replace(/\|/g, C.MESSAGE_PART_SEPERATOR)
-      .replace(/\+/g, C.MESSAGE_SEPERATOR)
-    )
-  }
-
-  return result.join(C.MESSAGE_SEPERATOR)
-}
-
 exports.showChars = function (input) {
   return input
     .replace(new RegExp(String.fromCharCode(31), 'g'), '|')
