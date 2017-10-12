@@ -23,7 +23,7 @@ interface StorageRecord {
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
   sendMessage(message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, buffer?: boolean): void
-  sendAckMessage(message: Message | RPCMessage, buffer?: boolean): void
+  sendAckMessage(message: { topic: TOPIC } | Message | RPCMessage, buffer?: boolean): void
   sendError(message: { topic: TOPIC } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: EVENT, errorMessage?: string, buffer?: boolean): void
 }
 
@@ -32,22 +32,27 @@ interface SocketWrapper extends SimpleSocketWrapper {
   uuid: number
   __id: number
   authData: object
+  onMessage: Function
+  authCallback: Function
   prepareMessage: Function
   finalizeMessage: Function
   sendPrepared: Function
   sendNative: Function,
   parseData: Function,
   flush: Function
+  destroy: Function
 }
 
 interface Message {
   topic: TOPIC
   action: RECORD_ACTIONS | PRESENCE_ACTIONS | RPC_ACTIONS | EVENT_ACTIONS | AUTH_ACTIONS | CONNECTION_ACTIONS
   name: string
+
   isError?: boolean
   isAck?: boolean
 
   data?: string
+  parseError?: boolean
   parsedData?: any
 
   raw?: string
@@ -61,8 +66,7 @@ interface PresenceMessage extends Message {
   correlationId: string
 }
 
-interface ListenMessage {
-  topic: TOPIC
+interface ListenMessage extends Message {
   action: RECORD_ACTIONS | EVENT_ACTIONS
   name: string
   subscription: string
@@ -95,6 +99,9 @@ interface JifResult {
   error?: string
   version?: number
   users?: Array<string>
+  errorTopic?: string
+  errorAction?: string
+  errorEvent?: EVENT
 }
 
 interface SubscriptionListener {

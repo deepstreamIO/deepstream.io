@@ -119,7 +119,7 @@ exports.testPermission = function (options) {
       permissionResult = result
     }
     permissionHandler.canPerformAction(
-      username, message, callback, userdata, SocketWrapperFactory.create()
+      username, message, callback, userdata, SocketWrapperFactory.createSocketWrapper()
     )
     return permissionResult
   }

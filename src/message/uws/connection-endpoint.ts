@@ -152,7 +152,6 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     const maxMessageSize = this._getOption('maxMessageSize')
     const perMessageDeflate = this._getOption('perMessageDeflate')
     this._serverGroup = uws.native.server.group.create(perMessageDeflate, maxMessageSize)
-
     this._noDelay = this._getOption('noDelay')
 
     uws.native.server.group.onDisconnection(
@@ -191,7 +190,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @private
    * @returns {void}
    */
-  _onReady (): void {
+  private _onReady (): void {
     const serverAddress = this._server.address()
     const address = serverAddress.address
     const port = serverAddress.port
@@ -227,7 +226,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @private
    * @returns {http.HttpServer | http.HttpsServer}
    */
-  _createHttpServer (): http.Server | https.Server {
+  private _createHttpServer (): http.Server | https.Server {
     const httpsParams = this._getHttpsParams()
     if (httpsParams) {
       return https.createServer(httpsParams)
@@ -247,7 +246,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   *   {String|undefined} ca    ssl certificate authority (if it's present in options)
   * }
   */
-  _getHttpsParams (): any {
+  private _getHttpsParams (): { key: string, cert: string, ca: string | undefined } | null {
     const key = this._getOption('sslKey')
     const cert = this._getOption('sslCert')
     const ca = this._getOption('sslCa')
@@ -270,7 +269,10 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @private
    * @returns {void}
    */
-  _handleHealthCheck (req, res) {
+  private _handleHealthCheck (
+    req: http.IncomingMessage | https.IncomingMessage,
+    res: http.ServerResponse | https.ServerResponse
+  ) {
     if (req.method === 'GET' && req.url === this._healthCheckPath) {
       res.writeHead(200)
       res.end()
@@ -321,12 +323,10 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       socketWrapper,
       disconnectTimer
     )
-
     socketWrapper.sendMessage({
       topic: TOPIC.CONNECTION,
       action: CONNECTION_ACTIONS.CHALLENGE
     }, false)
-
     socketWrapper.onMessage = this._processConnectionMessage.bind(this, socketWrapper)
   }
 
@@ -340,7 +340,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @private
    * @returns {void}
    */
-  _processConnectionMessage (socketWrapper, parsedMessages) {
+  _processConnectionMessage (socketWrapper: SocketWrapper, parsedMessages: Array<Message>) {
     const msg = parsedMessages[0]
 
     if (msg.parseError) {
@@ -361,7 +361,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     }
 
     if (msg.action === CONNECTION_ACTIONS.CHALLENGE_RESPONSE) {
-      socketWrapper.onMessage = socketWrapper.authCallBack
+      socketWrapper.onMessage = socketWrapper.authCallback
       socketWrapper.sendAckMessage({
         topic: TOPIC.CONNECTION
       })

@@ -121,7 +121,6 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
     }
 
     const ruleData = this.getCompiledRulesForName(message.name, ruleSpecification)
-
     if (!ruleData) {
       callback(null, false)
       return

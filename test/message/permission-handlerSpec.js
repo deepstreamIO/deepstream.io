@@ -21,12 +21,12 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
   http: httpMock,
   https: httpsMock,
   './socket-wrapper-factory': {
-    create: () => {
+    createSocketWrapper: () => {
       client = getTestMocks().getSocketWrapper('client')
       return client.socketWrapper
     }
   }
-})
+}).default
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser').default
 const SocketMock = require('../test-mocks/socket-mock')
 

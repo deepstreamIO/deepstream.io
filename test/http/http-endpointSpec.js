@@ -14,7 +14,7 @@ const LoggerMock = require('../test-mocks/logger-mock')
 
 Promise.promisifyAll(needle)
 
-const ConnectionEndpoint = require('../../src/message/http/connection-endpoint')
+const ConnectionEndpoint = require('../../src/message/http/connection-endpoint').default
 
 const conf = {
   healthCheckPath: '/health-check',

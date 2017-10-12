@@ -17,7 +17,7 @@ describe('uws socket-wrapper creates a unified interface for sockets', () => {
   }
 
   it('creates a SocketWrapper', () => {
-    socketWrapper = SocketWrapperFactory.create({}, handshakeData, {})
+    socketWrapper = SocketWrapperFactory.createSocketWrapper({}, handshakeData, {})
     expect(socketWrapper.getHandshakeData()).toEqual({
       headers: { referer: 'some-referer' },
       referer: 'some-referer',

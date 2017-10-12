@@ -504,8 +504,8 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
         messageResults[i] = {
           success: false,
           error: 'Request exceeded timeout before a response was received.',
-          // errorTopic: 'connection',
-          // errorEvent: EVENT.TIMEOUT
+          errorTopic: 'connection',
+          errorEvent: EVENT.TIMEOUT
         }
         numTimeouts++
       }
@@ -534,13 +534,13 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    *
    * @returns {void}
    */
-  static calculateMessageResult (messageResults: Array<JifResult>): string {
+  static calculateMessageResult (messageResults: Array<JifResult>): string | null {
     let numSucceeded = 0
     for (let i = 0; i < messageResults.length; i++) {
       if (!messageResults[i]) {
         // todo: when does this happen
         console.log(messageResults[i])
-        return ''
+        return null
       }
       if (messageResults[i].success) {
         numSucceeded++
@@ -619,9 +619,9 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       messageResults[messageIndex] = {
         success: false,
         error: 'Message denied. Action \'emit\' is not permitted.',
-        // errorEvent: C.EVENT.MESSAGE_DENIED,
-        // errorAction: 'emit',
-        // errorTopic: 'event'
+        errorEvent: EVENT.MESSAGE_DENIED,
+        errorAction: 'emit',
+        errorTopic: 'event'
       }
       return
     }

@@ -26,13 +26,13 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
   http: httpMock,
   https: httpsMock,
   './socket-wrapper-factory': {
-    create: (options, data) => {
+    createSocketWrapper: (options, data) => {
       handshakeData = data
       client = getTestMocks().getSocketWrapper('client')
       return client.socketWrapper
     }
   }
-})
+}).default
 
 let lastAuthenticatedMessage = null
 let connectionEndpoint

@@ -18,6 +18,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
 
   __id: number
   authData: object
+  authCallback: Function
   isRemote: boolean
   isClosed: boolean = false
 
@@ -35,10 +36,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
     responseCallback,
     requestTimeoutId
    ) {
-    this.user = authResponseData.userId || authResponseData.username || ''
-    if (!this.user) {
-      throw new Error('tried to initialise socketwrapper without user')
-    }
+    this.user = authResponseData.userId || authResponseData.username || 'OPEN'
     this.authData = authResponseData.serverData
 
     this._correlationIndex = messageIndex
@@ -64,6 +62,9 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
   }
 
   flush () {
+  }
+
+  onMessage () {
   }
 
   /**

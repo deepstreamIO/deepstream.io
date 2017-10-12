@@ -55,19 +55,17 @@ export default class Server extends EventEmitter {
       checkConfigOption(config, 'origins', 'string')
       this._origins = config.origins
     }
-
     this.authPathRegExp = new RegExp(`^${config.authPath}/?(.*)$`, 'i')
     this.postPathRegExp = new RegExp(`^${config.postPath}/?(.*)$`, 'i')
     this.getPathRegExp = new RegExp(`^${config.getPath}/?(.*)$`, 'i')
   }
 
   public start (): void {
-    this._httpServer = httpShutdown(this._createHttpServer())
+    const server = this._createHttpServer()
+    this._httpServer = httpShutdown(server)
     this._httpServer.on('request', this._onRequest.bind(this))
-
     this._httpServer.once('listening', this._onReady.bind(this))
     this._httpServer.on('error', this._onError.bind(this))
-
     this._httpServer.listen(this.config.port, this.config.host)
   }
 
@@ -85,10 +83,12 @@ export default class Server extends EventEmitter {
     const serverAddress = this._httpServer.address()
     const address = serverAddress.address
     const port = serverAddress.port
-    const wsMsg = `Listening for http connections on ${address}:${port}`
-    this.logger.info(EVENT.INFO, wsMsg)
-    const hcMsg = `Listening for health checks on path ${this.config.healthCheckPath} `
-    this.logger.info(EVENT.INFO, hcMsg)
+    this.logger.info(
+      EVENT.INFO, `Listening for http connections on ${address}:${port}`
+    )
+    this.logger.info(
+      EVENT.INFO, `Listening for health checks on path ${this.config.healthCheckPath}`
+    )
     this.emit('ready')
     this.isReady = true
   }
@@ -126,7 +126,7 @@ export default class Server extends EventEmitter {
   *   {String|undefined} ca    ssl certificate authority (if it's present in options)
   * }
   */
-  private _getHttpsParams (): object {
+  private _getHttpsParams (): { key: string, cert: string, ca: string | undefined } | null {
     const key = this._sslKey
     const cert = this._sslCert
     const ca = this._sslCa
@@ -140,7 +140,7 @@ export default class Server extends EventEmitter {
 
       return { key, cert, ca }
     }
-    return {}
+    return null
   }
 
   private _onRequest (
@@ -151,7 +151,6 @@ export default class Server extends EventEmitter {
       if (!this._verifyOrigin(request, response)) {
         return
       }
-
     } else {
       response.setHeader('Access-Control-Allow-Origin', '*')
     }
@@ -175,7 +174,7 @@ export default class Server extends EventEmitter {
     }
   }
 
-  _verifyOrigin (
+  private _verifyOrigin (
     request: http.IncomingMessage | https.IncomingMessage,
     response: http.ServerResponse | https.ServerResponse
   ): boolean {
@@ -210,10 +209,7 @@ export default class Server extends EventEmitter {
     return true
   }
 
-  _handlePost (
-    request,
-    response
-  ): void {
+  private _handlePost (request, response): void {
     let parsedContentType
     try {
       parsedContentType = contentType.parse(request)
@@ -253,7 +249,7 @@ export default class Server extends EventEmitter {
     })
   }
 
-  _handleGet (
+  private _handleGet (
     request: http.IncomingMessage | https.IncomingMessage,
     response: http.ServerResponse | https.ServerResponse
    ): void {
@@ -273,7 +269,7 @@ export default class Server extends EventEmitter {
     }
   }
 
-  _handleOptions (
+  private _handleOptions (
     request: http.IncomingMessage | https.IncomingMessage,
     response: http.ServerResponse | https.ServerResponse
   ): void {
@@ -330,7 +326,7 @@ export default class Server extends EventEmitter {
    * @private
    * @returns {void}
    */
-  _onError (error: string): void {
+  private _onError (error: string): void {
     this.logger.error(EVENT.CONNECTION_ERROR, error.toString())
   }
 }

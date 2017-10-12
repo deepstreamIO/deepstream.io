@@ -15,7 +15,7 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
   uws: uwsMock,
   http: httpMock,
   https: httpsMock
-})
+}).default
 
 const config = {
   maxAuthAttempts: 3,
@@ -80,7 +80,7 @@ describe('validates HTTPS server conditions', () => {
     sslOptions.sslCert = 'sslCertificate'
     connectionEndpointInit(sslOptions, () => {
       expect(httpMock.createServer).not.toHaveBeenCalled()
-      expect(httpsMock.createServer).toHaveBeenCalledWith({ key: 'sslPrivateKey', cert: 'sslCertificate' })
+      expect(httpsMock.createServer).toHaveBeenCalledWith({ key: 'sslPrivateKey', cert: 'sslCertificate', ca: undefined })
       done()
     })
   })

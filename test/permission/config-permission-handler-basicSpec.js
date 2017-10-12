@@ -93,7 +93,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
 
 describe('permission handler applies basic permissions referencing their own data', () => {
-  it('checks incoming data against a value for events', () => {
+  fit('checks incoming data against a value for events', () => {
     const permissions = getBasePermissions()
 
     permissions.event['some-event'] = {
