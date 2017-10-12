@@ -1,22 +1,44 @@
 'use strict'
 
 /* eslint-disable class-methods-use-this */
-const EventEmitter = require('events').EventEmitter
-const messageParser = require('../../../protocol/text/src/message-parser')
+import { EventEmitter } from 'events'
+import * as messageParser from '../../../protocol/text/src/message-parser'
 
-module.exports = class HTTPSocketWrapper extends EventEmitter {
+export default class HTTPSocketWrapper extends EventEmitter implements SocketWrapper {
+
+  public user: string
+  public uuid: number = Math.random()
+
+  private _onMessage: Function
+  private _onError: Function
+  private _correlationIndex
+  private _messageResults
+  private _responseCallback
+  private _requestTimeout
+
+  __id: number
+  authData: object
+  isRemote: boolean
+  isClosed: boolean = false
+
   constructor (options, onMessage, onError) {
     super()
 
-    this.uuid = Math.random()
     this._onMessage = onMessage
     this._onError = onError
   }
 
-  init (authResponseData, messageIndex, messageResults, responseCallback, requestTimeoutId) {
-    this.isClosed = false
-
-    this.user = authResponseData.userId || authResponseData.username
+  init (
+    authResponseData: any,
+    messageIndex,
+    messageResults,
+    responseCallback,
+    requestTimeoutId
+   ) {
+    this.user = authResponseData.userId || authResponseData.username || ''
+    if (!this.user) {
+      throw new Error('tried to initialise socketwrapper without user')
+    }
     this.authData = authResponseData.serverData
 
     this._correlationIndex = messageIndex
@@ -29,7 +51,7 @@ module.exports = class HTTPSocketWrapper extends EventEmitter {
     this.isClosed = true
   }
 
-  static prepareMessage () {
+  prepareMessage () {
   }
 
   sendPrepared () {
@@ -38,7 +60,10 @@ module.exports = class HTTPSocketWrapper extends EventEmitter {
   sendNative () {
   }
 
-  static finalizeMessage () {
+  finalizeMessage () {
+  }
+
+  flush () {
   }
 
   /**

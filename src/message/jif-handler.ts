@@ -259,7 +259,7 @@ export default class JIFHandler {
    *    {Boolean} done      false iff message should await another result/acknowledgement
    * }
    */
-  toJIF (message) {
+  toJIF (message: Message): JifMessage {
     let type
     if (message.isAck) {
       type = TYPE.ACK

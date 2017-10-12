@@ -1,11 +1,10 @@
 'use strict'
 
-const C = require('../../constants')
-const messageBuilder = require('../../../protocol/text/src/message-builder')
-const messageParser = require('../../../protocol/text/src/message-parser')
-const uws = require('uws')
-
-const EventEmitter = require('events').EventEmitter
+import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS } from '../../constants'
+import * as messageBuilder from '../../../protocol/text/src/message-builder'
+import * as messageParser from '../../../protocol/text/src/message-parser'
+import * as uws from 'uws'
+import { EventEmitter } from 'events'
 
 /**
  * This class wraps around a websocket
@@ -22,23 +21,31 @@ const EventEmitter = require('events').EventEmitter
  *
  * @constructor
  */
-class UwsSocketWrapper extends EventEmitter {
+class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
 
-  constructor (external, handshakeData, logger, config, connectionEndpoint) {
+  public isClosed: boolean = false
+  public user: string
+  public uuid: number = Math.random()
+  public __id: number
+  public authCallback: Function
+
+  private authAttempts: number = 0
+  private bufferedWrites: string = ''
+
+  static lastPreparedMessage: any
+
+  authData: object
+  isRemote: boolean
+
+  constructor (
+    private external: any,
+    private handshakeData: any,
+    private logger: Logger,
+    private config: any,
+    private connectionEndpoint: ConnectionEndpoint
+   ) {
     super()
-    this.isClosed = false
-    this._logger = logger
-    this.user = null
-    this.authCallBack = null
-    this.authAttempts = 0
     this.setMaxListeners(0)
-    this.uuid = Math.random()
-    this._handshakeData = handshakeData
-    this._external = external
-
-    this._bufferedWrites = ''
-    this._config = config
-    this._connectionEndpoint = connectionEndpoint
   }
 
   /**
@@ -50,9 +57,9 @@ class UwsSocketWrapper extends EventEmitter {
    * @returns {External} prepared message
    */
   // eslint-disable-next-line class-methods-use-this
-  prepareMessage (message) {
-    UwsSocketWrapper.lastPreparedMessage = message
-    return uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
+  public prepareMessage (message: string) {
+    UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
+    return UwsSocketWrapper.lastPreparedMessage
   }
 
   /**
@@ -64,9 +71,9 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendPrepared (preparedMessage) {
+  public sendPrepared (preparedMessage) {
     this.flush()
-    uws.native.server.sendPrepared(this._external, preparedMessage)
+    uws.native.server.sendPrepared(this.external, preparedMessage)
   }
 
   /**
@@ -78,7 +85,7 @@ class UwsSocketWrapper extends EventEmitter {
    * @returns {void}
    */
   // eslint-disable-next-line class-methods-use-this
-  finalizeMessage (preparedMessage) {
+  public finalizeMessage (preparedMessage: any): void {
     uws.native.server.finalizeMessage(preparedMessage)
   }
 
@@ -90,15 +97,17 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendNative (message, allowBuffering) {
-    if (this._config.outgoingBufferTimeout === 0) {
-      uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
+  public sendNative (message: any, allowBuffering: boolean): void {
+    if (this.config.outgoingBufferTimeout === 0) {
+      uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
     } else if (!allowBuffering) {
       this.flush()
-      uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
+      uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
     } else {
-      this._bufferedWrites += message
-      this._connectionEndpoint.scheduleFlush(this)
+      this.bufferedWrites += message
+      if (this.connectionEndpoint.scheduleFlush) {
+        this.connectionEndpoint.scheduleFlush(this)
+      }
     }
   }
 
@@ -107,10 +116,10 @@ class UwsSocketWrapper extends EventEmitter {
    * A buffered write is a write that is not a high priority, such as an ack
    * and can wait to be bundled into another message if necessary
    */
-  flush () {
-    if (this._bufferedWrites !== '') {
-      uws.native.server.send(this._external, this._bufferedWrites, uws.OPCODE_TEXT)
-      this._bufferedWrites = ''
+  public flush () {
+    if (this.bufferedWrites !== '') {
+      uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_TEXT)
+      this.bufferedWrites = ''
     }
   }
 
@@ -125,7 +134,12 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendError (message, event, errorMessage, allowBuffering) {
+  public sendError (
+    message: Message,
+    event: EVENT,
+    errorMessage: string,
+    allowBuffering: boolean
+  ): void {
     if (this.isClosed === false) {
       this.sendNative(
         messageBuilder.getErrorMessage(message, event, errorMessage),
@@ -142,22 +156,22 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendMessage (message, allowBuffering) {
+  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering) {
     if (this.isClosed === false) {
       this.sendNative(
-        messageBuilder.getMessage(message),
+        messageBuilder.getMessage(message, false),
         allowBuffering
       )
     }
   }
 
   // eslint-disable-next-line
-  getMessage (message) {
-    return messageBuilder.getMessage(message)
+  public getMessage (message: Message): string {
+    return messageBuilder.getMessage(message, false)
   }
 
   // eslint-disable-next-line
-  parseMessage (message) {
+  public parseMessage (message: string): Array<Message> {
     return messageParser.parse(message)
   }
 
@@ -169,7 +183,7 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  sendAckMessage (message, allowBuffering) {
+  public sendAckMessage (message: Message, allowBuffering: boolean): void {
     if (this.isClosed === false) {
       this.sendNative(
         messageBuilder.getMessage(message, true),
@@ -179,12 +193,12 @@ class UwsSocketWrapper extends EventEmitter {
   }
 
   // eslint-disable-next-line
-  parseData (message) {
+  public parseData (message): void {
     return messageParser.parseData(message)
   }
 
   // eslint-disable-next-line class-methods-use-this
-  onMessage () {
+  public onMessage (): void {
   }
 
   /**
@@ -194,15 +208,15 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {void}
    */
-  destroy () {
-    uws.native.server.terminate(this._external)
+  public destroy (): void {
+    uws.native.server.terminate(this.external)
   }
 
-  close () {
+  public close (): void {
     this.isClosed = true
-    delete this.authCallBack
+    delete this.authCallback
     this.emit('close', this)
-    this._logger.info(C.EVENT.CLIENT_DISCONNECTED, this.user)
+    this.logger.info(EVENT.CLIENT_DISCONNECTED, this.user)
     this.removeAllListeners()
   }
 
@@ -214,11 +228,17 @@ class UwsSocketWrapper extends EventEmitter {
    * @public
    * @returns {Object} handshakeData
    */
-  getHandshakeData () {
-    return this._handshakeData
+  public getHandshakeData (): string {
+    return this.handshakeData
   }
 }
 
 UwsSocketWrapper.lastPreparedMessage = null
 
-module.exports.create = (external, handshakeData, logger, config, connectionEndpoint) => new UwsSocketWrapper(external, handshakeData, logger, config, connectionEndpoint)
+export function createSocketWrapper (
+  external: any,
+  handshakeData: any,
+  logger: Logger,
+  config: DeepstreamConfig,
+  connectionEndpoint: ConnectionEndpoint
+) { return new UwsSocketWrapper(external, handshakeData, logger, config, connectionEndpoint) }
