@@ -83,13 +83,13 @@ describe('permissionHandler passes additional user meta data', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.AUTH,
-        isAck: true,
+        action: C.AUTH_ACTIONS.AUTH_SUCCESSFUL,
         parsedData: { firstname: 'Wolfram' }
       })
 
     uwsMock.messageHandler([{
       topic: C.TOPIC.AUTH,
-      action: C.RPC_ACTIONS.REQUEST,
+      action: C.AUTH_ACTIONS.REQUEST,
       data: '{ "token": 1234 }'
     }], client.socketWrapper)
 

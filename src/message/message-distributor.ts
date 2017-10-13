@@ -1,4 +1,4 @@
-import { EVENT, TOPIC } from '../constants'
+import { EVENT, TOPIC, PARSER_ACTIONS } from '../constants'
 
 /**
  * The MessageDistributor routes valid and permissioned messages to
@@ -21,10 +21,10 @@ export default class MessageDistributor {
    */
   public distribute (socketWrapper: SocketWrapper, message: Message) {
     if (this._callbacks[message.topic] === undefined) {
-      this._services.logger.warn(EVENT.UNKNOWN_TOPIC, TOPIC[message.topic])
+      this._services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_TOPIC], TOPIC[message.topic])
       socketWrapper.sendError({
         topic: TOPIC.ERROR
-      }, EVENT.UNKNOWN_TOPIC, TOPIC[message.topic])
+      }, PARSER_ACTIONS.UNKNOWN_TOPIC, TOPIC[message.topic])
       return
     }
 

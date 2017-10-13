@@ -1,6 +1,4 @@
-'use strict'
-
-import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS } from '../../constants'
+import { TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS, EVENT, PARSER_ACTIONS } from '../../constants'
 import * as messageBuilder from '../../../protocol/text/src/message-builder'
 import { createSocketWrapper } from './socket-wrapper-factory'
 import { EventEmitter } from 'events'
@@ -158,7 +156,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       this._serverGroup,
       (external, code, message, socketWrapper) => {
         if (socketWrapper) {
-          socketWrapper.close()
+          // socketWrapper.close()
         }
       }
     )
@@ -344,31 +342,32 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     const msg = parsedMessages[0]
 
     if (msg.parseError) {
-      this._logger.warn(EVENT.MESSAGE_PARSE_ERROR, `error parsing connection message ${msg.raw}`)
+      this._logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${msg.raw}`)
       socketWrapper.sendError({
         topic: TOPIC.CONNECTION
-      }, EVENT.MESSAGE_PARSE_ERROR, msg.raw)
+      }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, msg.raw)
       socketWrapper.destroy()
       return
     }
 
     if (msg.topic !== TOPIC.CONNECTION) {
-      this._logger.warn(EVENT.INVALID_MESSAGE, `invalid connection message ${msg.raw}`)
+      this._logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid connection message ${msg.raw}`)
       socketWrapper.sendError({
         topic: TOPIC.CONNECTION,
-      }, EVENT.INVALID_MESSAGE, msg.raw)
+      }, PARSER_ACTIONS.INVALID_MESSAGE, msg.raw)
       return
     }
 
     if (msg.action === CONNECTION_ACTIONS.CHALLENGE_RESPONSE) {
       socketWrapper.onMessage = socketWrapper.authCallback
-      socketWrapper.sendAckMessage({
-        topic: TOPIC.CONNECTION
+      socketWrapper.sendMessage({
+        topic: TOPIC.CONNECTION,
+        action: CONNECTION_ACTIONS.ACCEPT
       })
       return
     }
 
-    this._logger.error(EVENT.UNKNOWN_ACTION, msg.action)
+    this._logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], msg.action)
   }
 
   /**
@@ -390,19 +389,19 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     let errorMsg
 
     if (msg.parseError) {
-      this._logger.warn(EVENT.MESSAGE_PARSE_ERROR, `error parsing auth message ${msg.raw}`)
+      this._logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing auth message ${msg.raw}`)
       socketWrapper.sendError({
         topic: TOPIC.AUTH
-      }, EVENT.MESSAGE_PARSE_ERROR, msg.raw)
+      }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, msg.raw)
       socketWrapper.destroy()
       return
     }
 
     if (msg.topic !== TOPIC.AUTH) {
-      this._logger.warn(EVENT.INVALID_MESSAGE, `invalid auth message ${msg.raw}`)
+      this._logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid auth message ${msg.raw}`)
       socketWrapper.sendError({
         topic: TOPIC.AUTH,
-      }, EVENT.INVALID_MESSAGE, msg.raw)
+      }, PARSER_ACTIONS.INVALID_MESSAGE, msg.raw)
       return
     }
 
@@ -410,7 +409,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
      * Log the authentication attempt
      */
     const logMsg = socketWrapper.getHandshakeData().remoteAddress
-    this._logger.debug(EVENT.AUTH_ATTEMPT, logMsg)
+    this._logger.debug(AUTH_ACTIONS[AUTH_ACTIONS.REQUEST], logMsg)
 
     /**
      * Ensure the message is a valid authentication message
@@ -458,10 +457,10 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @returns {void}
    */
   _sendInvalidAuthMsg (socketWrapper, msg) {
-    this._logger.warn(EVENT.INVALID_AUTH_MSG, this._logInvalidAuthData ? msg : '')
+    this._logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_AUTH_DATA], this._logInvalidAuthData ? msg : '')
     socketWrapper.sendError({
       topic: TOPIC.AUTH
-    }, EVENT.INVALID_AUTH_MSG)
+    }, AUTH_ACTIONS.INVALID_AUTH_DATA)
     socketWrapper.destroy()
   }
 
@@ -487,7 +486,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
-      isAck: true,
+      action: AUTH_ACTIONS.AUTH_SUCCESSFUL,
       parsedData: userData.clientData
     })
 
@@ -496,7 +495,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     }
 
     this._authenticatedSockets.add(socketWrapper)
-    this._logger.info(EVENT.AUTH_SUCCESSFUL, socketWrapper.user)
+    this._logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_SUCCESSFUL], socketWrapper.user)
   }
 
   /**
@@ -534,18 +533,18 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       logMsg += `: ${JSON.stringify(authData)}`
     }
 
-    this._logger.info(EVENT.INVALID_AUTH_DATA, logMsg)
+    this._logger.info(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_AUTH_DATA], logMsg)
     socketWrapper.sendError({
       topic: TOPIC.AUTH,
       parsedData: clientData
-    }, EVENT.INVALID_AUTH_DATA)
+    }, AUTH_ACTIONS.INVALID_AUTH_DATA)
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this._maxAuthAttempts) {
-      this._logger.info(EVENT.TOO_MANY_AUTH_ATTEMPTS, 'too many authentication attempts')
+      this._logger.info(AUTH_ACTIONS[AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
       socketWrapper.sendError({
         topic: TOPIC.AUTH
-      }, EVENT.TOO_MANY_AUTH_ATTEMPTS)
+      }, AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS)
       socketWrapper.destroy()
     }
   }
@@ -562,10 +561,10 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    */
   _processConnectionTimeout (socketWrapper) {
     const log = 'connection has not authenticated successfully in the expected time'
-    this._logger.info(EVENT.CONNECTION_AUTHENTICATION_TIMEOUT, log)
+    this._logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT], log)
     socketWrapper.sendError({
       topic: TOPIC.CONNECTION
-    }, EVENT.CONNECTION_AUTHENTICATION_TIMEOUT)
+    }, CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT)
     socketWrapper.destroy()
   }
 
@@ -595,26 +594,16 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Generic callback for connection errors. This will most often be called
    * if the configured port number isn't available
-   *
-   * @param   {String} error
-   *
-   * @private
-   * @returns {void}
    */
-  _onError (error) {
+  private _onError (error): void {
     this._logger.error(EVENT.CONNECTION_ERROR, error.toString())
   }
 
   /**
   * Notifies the (optional) onClientDisconnect method of the permissionHandler
   * that the specified client has disconnected
-  *
-  * @param {SocketWrapper} socketWrapper
-  *
-  * @private
-  * @returns {void}
   */
-  _onSocketClose (socketWrapper) {
+  private _onSocketClose (socketWrapper):void {
     if (this._authenticationHandler.onClientDisconnect) {
       this._authenticationHandler.onClientDisconnect(socketWrapper.user)
     }
@@ -629,14 +618,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   /**
    * HTTP upgrade request listener
-   *
-   * @param {Request} request
-   * @param {Socket}  socket
-   *
-   * @private
-   * @returns {void}
    */
-  _onUpgradeRequest (request, socket) {
+  private _onUpgradeRequest (request, socket):void {
     const requestPath = request.url.split('?')[0].split('#')[0]
     if (!this._urlPath || this._urlPath === requestPath) {
       this._handleUpgrade(request, socket)
@@ -646,28 +629,15 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   /**
    * Terminate an HTTP socket with some error code and error message
-   *
-   * @param {Socket}  socket
-   * @param {Number}  code
-   * @param {String}  name
-   *
-   * @private
-   * @returns {void}
    */
-  static _terminateSocket (socket, code, name) {
+  static _terminateSocket (socket, code:number, name:string):void {
     socket.end(`HTTP/1.1 ${code}  ${name}\r\n\r\n`)
   }
 
   /**
    * Process websocket upgrade
-   *
-   * @param {Request} request
-   * @param {Socket}  socket
-   *
-   * @private
-   * @returns {void}
    */
-  _handleUpgrade (request, socket) {
+  private _handleUpgrade (request, socket):void {
     const secKey = request.headers['sec-websocket-key']
     const socketHandle = socket.ssl ? socket._parent._handle : socket._handle
     const sslState = socket.ssl ? socket.ssl._external : null
@@ -695,10 +665,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Closes the ws server connection. The ConnectionEndpoint
    * will emit a close event once succesfully shut down
-   * @public
-   * @returns {void}
    */
-  close () {
+  public close () {
     this._server.removeAllListeners('request')
     this._server.removeAllListeners('upgrade')
     if (this._serverGroup) {

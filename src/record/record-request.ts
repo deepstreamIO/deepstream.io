@@ -1,11 +1,11 @@
-import { EVENT, TOPIC } from '../constants'
+import { RECORD_ACTIONS, TOPIC } from '../constants'
 
 /**
  * Sends an error to the socketWrapper that requested the
  * record
  */
 function sendError (
-  event: any, message: string, recordName: string, socketWrapper: SocketWrapper | null,
+  event: RECORD_ACTIONS, message: string, recordName: string, socketWrapper: SocketWrapper | null,
   onError: Function, services: DeepstreamServices, context: any, metaData: any,
 ): void {
   services.logger.error(event, message, metaData)
@@ -28,7 +28,7 @@ function onStorageResponse (
 ): void {
   if (error) {
     sendError(
-      EVENT.RECORD_LOAD_ERROR,
+      RECORD_ACTIONS.RECORD_LOAD_ERROR,
       `error while loading ${recordName} from storage:${error.toString()}`,
       recordName,
       socketWrapper,
@@ -55,7 +55,7 @@ function onCacheResponse (
 ): void {
   if (error) {
     sendError(
-      EVENT.RECORD_LOAD_ERROR,
+      RECORD_ACTIONS.RECORD_LOAD_ERROR,
       `error while loading ${recordName} from cache:${error.toString()}`,
       recordName,
       socketWrapper,
@@ -75,7 +75,7 @@ function onCacheResponse (
     const storageTimeout = setTimeout(() => {
       storageTimedOut = true
       sendError(
-        EVENT.STORAGE_RETRIEVAL_TIMEOUT,
+        RECORD_ACTIONS.STORAGE_RETRIEVAL_TIMEOUT,
         recordName, recordName, socketWrapper,
         onError, services, context, metaData,
       )
@@ -118,7 +118,7 @@ export default function (
   const cacheTimeout = setTimeout(() => {
     cacheTimedOut = true
     sendError(
-      EVENT.CACHE_RETRIEVAL_TIMEOUT,
+      RECORD_ACTIONS.CACHE_RETRIEVAL_TIMEOUT,
       recordName, recordName, socketWrapper,
       onError, services, context, metaData,
     )

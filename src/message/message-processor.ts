@@ -1,4 +1,4 @@
-import { CONNECTION_ACTIONS, EVENT, TOPIC } from '../constants'
+import { PARSER_ACTIONS, AUTH_ACTIONS, CONNECTION_ACTIONS, EVENT, TOPIC } from '../constants'
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -6,12 +6,12 @@ import { CONNECTION_ACTIONS, EVENT, TOPIC } from '../constants'
  * are - forwards them.
  */
 export default class MessageProcessor {
-  private _config: DeepstreamConfig
-  private _services: DeepstreamServices
+  private config: DeepstreamConfig
+  private services: DeepstreamServices
 
   constructor (config: DeepstreamConfig, services: DeepstreamServices) {
-    this._config = config
-    this._services = services
+    this.config = config
+    this.services = services
   }
 
   /**
@@ -44,22 +44,17 @@ export default class MessageProcessor {
       if (message === null ||
         !message.action ||
         !message.topic) {
-        this._services.logger.warn(EVENT.MESSAGE_PARSE_ERROR, message)
+        this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], message)
         socketWrapper.sendError({
           topic: TOPIC.ERROR
-        }, EVENT.MESSAGE_PARSE_ERROR, message)
+        }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, message)
         continue
       }
 
-      if (message.isAck) {
-        this._onPermissionResponse(socketWrapper, message, null, true)
-        return
-      }
-
-      this._services.permissionHandler.canPerformAction(
+      this.services.permissionHandler.canPerformAction(
         socketWrapper.user,
         message,
-        this._onPermissionResponse.bind(this, socketWrapper, message),
+        this.onPermissionResponse.bind(this, socketWrapper, message),
         socketWrapper.authData,
         socketWrapper
       )
@@ -76,15 +71,15 @@ export default class MessageProcessor {
    *                            by setting result to false
    * @param   {Boolean} result    true if permissioned
    */
-  private _onPermissionResponse (socketWrapper: SocketWrapper, message: Message, error: Error | null, result: boolean): void {
+  private onPermissionResponse (socketWrapper: SocketWrapper, message: Message, error: Error | null, result: boolean): void {
     if (error !== null) {
-      this._services.logger.warn(EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-      socketWrapper.sendError(message, EVENT.MESSAGE_PERMISSION_ERROR)
+      this.services.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
+      socketWrapper.sendError(message, AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR)
       return
     }
 
     if (result !== true) {
-      socketWrapper.sendError(message, EVENT.MESSAGE_DENIED)
+      socketWrapper.sendError(message, AUTH_ACTIONS.MESSAGE_DENIED)
       return
     }
 

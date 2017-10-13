@@ -54,12 +54,12 @@ describe('the message processor only forwards valid, authorized messages', () =>
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(message, C.EVENT.MESSAGE_PERMISSION_ERROR)
+      .withExactArgs(message, C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR)
 
     messageProcessor.process(client.socketWrapper, [message])
 
     expect(log).toHaveBeenCalled()
-    expect(log).toHaveBeenCalledWith(2, C.EVENT.MESSAGE_PERMISSION_ERROR, 'someError')
+    expect(log).toHaveBeenCalledWith(2, C.RECORD_ACTIONS[C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR], 'someError')
   })
 
   it('handles denied messages', () => {
@@ -68,7 +68,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(message, C.EVENT.MESSAGE_DENIED)
+      .withExactArgs(message, C.RECORD_ACTIONS.MESSAGE_DENIED)
 
     messageProcessor.process(client.socketWrapper, [message])
   })

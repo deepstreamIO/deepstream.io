@@ -211,7 +211,7 @@ describe('permission handler loads data for cross referencing', () => {
     }
 
     const callback = function (error, result) {
-      expect(error).toBe(C.EVENT.RECORD_LOAD_ERROR)
+      expect(error).toBe(C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
       expect(result).toBe(false)
       next()
     }

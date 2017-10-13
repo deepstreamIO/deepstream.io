@@ -54,7 +54,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.createOrReadMessage, C.EVENT.RECORD_CREATE_ERROR)
+      .withExactArgs(M.createOrReadMessage, C.RECORD_ACTIONS.RECORD_CREATE_ERROR)
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
     // expect(options.logger.lastLogMessage).toBe('storage:storageError')
@@ -122,7 +122,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.recordHasMessage, C.EVENT.RECORD_LOAD_ERROR)
+      .withExactArgs(M.recordHasMessage, C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
 
     recordHandler.handle(client.socketWrapper, M.recordHasMessage)
   })
@@ -148,7 +148,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.recordSnapshotMessage, C.EVENT.RECORD_NOT_FOUND)
+      .withExactArgs(M.recordSnapshotMessage, C.RECORD_ACTIONS.RECORD_NOT_FOUND)
 
     recordHandler.handle(client.socketWrapper, M.recordSnapshotMessage)
   })
@@ -159,7 +159,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.recordSnapshotMessage, C.EVENT.RECORD_LOAD_ERROR)
+      .withExactArgs(M.recordSnapshotMessage, C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
 
     recordHandler.handle(client.socketWrapper, M.recordSnapshotMessage)
   })
@@ -183,7 +183,7 @@ describe('record handler handles messages', () => {
       client.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(Object.assign({}, M.recordHeadMessage, { name }), C.EVENT.RECORD_NOT_FOUND)
+        .withExactArgs(Object.assign({}, M.recordHeadMessage, { name }), C.RECORD_ACTIONS.RECORD_NOT_FOUND)
 
       recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordHeadMessage, { name }))
     })
@@ -195,7 +195,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.recordHeadMessage, C.EVENT.RECORD_LOAD_ERROR)
+      .withExactArgs(M.recordHeadMessage, C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
 
     recordHandler.handle(client.socketWrapper, M.recordHeadMessage)
   })
@@ -242,7 +242,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(ExistingVersion, C.EVENT.VERSION_EXISTS)
+      .withExactArgs(ExistingVersion, C.RECORD_ACTIONS.VERSION_EXISTS)
 
     recordHandler.handle(client.socketWrapper, ExistingVersion)
 
@@ -275,7 +275,7 @@ describe('record handler handles messages', () => {
         parsedData: M.recordData._d,
         name: M.recordUpdate.name,
         isWriteAck: false
-      }, C.EVENT.VERSION_EXISTS)
+      }, C.RECORD_ACTIONS.VERSION_EXISTS)
 
     recordHandler.handle(client.socketWrapper, M.recordUpdate)
     recordHandler.handle(client.socketWrapper, M.recordUpdate)

@@ -108,7 +108,7 @@ describe('the rpcHandler routes events correctly', () => {
       provider.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(requestMessage, C.EVENT.MULTIPLE_ACCEPT)
+        .withExactArgs(requestMessage, C.RPC_ACTIONS.MULTIPLE_ACCEPT)
 
       provider.socketWrapperMock
         .expects('sendMessage')
@@ -134,7 +134,7 @@ describe('the rpcHandler routes events correctly', () => {
       provider.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(responseMessage, C.EVENT.INVALID_RPC_CORRELATION_ID)
+        .withExactArgs(responseMessage, C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, responseMessage)
@@ -155,7 +155,7 @@ describe('the rpcHandler routes events correctly', () => {
       provider.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(errorMessage, C.EVENT.INVALID_RPC_CORRELATION_ID)
+        .withExactArgs(errorMessage, C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, errorMessage)
@@ -180,7 +180,7 @@ describe('the rpcHandler routes events correctly', () => {
       requestor.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(requestMessage, C.EVENT.ACCEPT_TIMEOUT)
+        .withExactArgs(requestMessage, C.RPC_ACTIONS.ACCEPT_TIMEOUT)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       setTimeout(done, config.rpcAckTimeout * 2)
@@ -190,7 +190,7 @@ describe('the rpcHandler routes events correctly', () => {
       requestor.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(requestMessage, C.EVENT.RESPONSE_TIMEOUT)
+        .withExactArgs(requestMessage, C.RPC_ACTIONS.RESPONSE_TIMEOUT)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)
@@ -215,7 +215,7 @@ describe('the rpcHandler routes events correctly', () => {
       provider.socketWrapperMock
         .expects('sendError')
         .once()
-        .withExactArgs(responseMessage, C.EVENT.INVALID_RPC_CORRELATION_ID)
+        .withExactArgs(responseMessage, C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)

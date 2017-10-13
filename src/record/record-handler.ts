@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC, EVENT } from '../constants'
+import { RECORD_ACTIONS, TOPIC, PARSER_ACTIONS } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'
@@ -96,7 +96,7 @@ export default class RecordHandler {
     message.action === RECORD_ACTIONS.LISTEN_REJECT) {
       this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
     } else {
-      this.services.logger.error(EVENT.UNKNOWN_ACTION, RECORD_ACTIONS[message.action], this.metaData)
+      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RECORD_ACTIONS[message.action], this.metaData)
     }
   }
 
@@ -138,7 +138,7 @@ export default class RecordHandler {
       if (record) {
         sendRecord(recordName, record, socket)
       } else {
-        socket.sendError(message, EVENT.RECORD_NOT_FOUND)
+        socket.sendError(message, RECORD_ACTIONS.RECORD_NOT_FOUND)
       }
     }
     const onError = function (event, errorMessage, recordName, socket) {
@@ -170,7 +170,7 @@ export default class RecordHandler {
           version: record._v,
         })
       } else {
-        socket.sendError(message, EVENT.RECORD_NOT_FOUND)
+        socket.sendError(message, RECORD_ACTIONS.RECORD_NOT_FOUND)
       }
     }
     const onError = function (event, errorMessage, recordName, socket) {
@@ -246,7 +246,7 @@ export default class RecordHandler {
         })
         return
       } else if (isPatch) {
-        socketWrapper.sendError(message, EVENT.INVALID_PATCH_ON_HOTPATH)
+        socketWrapper.sendError(message, RECORD_ACTIONS.INVALID_PATCH_ON_HOTPATH)
         return
       }
     }
@@ -331,8 +331,8 @@ export default class RecordHandler {
     // store the records data in the cache and wait for the result
     this.services.cache.set(recordName, record, (error) => {
       if (error) {
-        this.services.logger.error(EVENT.RECORD_CREATE_ERROR, recordName, this.metaData)
-        socketWrapper.sendError(message, EVENT.RECORD_CREATE_ERROR)
+        this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_CREATE_ERROR], recordName, this.metaData)
+        socketWrapper.sendError(message, RECORD_ACTIONS.RECORD_CREATE_ERROR)
       } else if (callback) {
         callback(recordName, socketWrapper)
       } else {
@@ -344,7 +344,7 @@ export default class RecordHandler {
     // store the record data in the persistant storage independently and don't wait for the result
       this.services.storage.set(recordName, record, (error) => {
         if (error) {
-          this.services.logger.error(EVENT.RECORD_CREATE_ERROR, `storage:${error}`, this.metaData)
+          this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_CREATE_ERROR], `storage:${error}`, this.metaData)
         }
       }, this.metaData)
     }
@@ -521,10 +521,10 @@ function onPermissionResponse (
   socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, error: Error, canPerformAction: boolean,
 ): void {
   if (error !== null) {
-    this.services.logger.error(EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
-    socketWrapper.sendError(message, EVENT.MESSAGE_PERMISSION_ERROR)
+    this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
+    socketWrapper.sendError(message, RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR)
   } else if (canPerformAction !== true) {
-    socketWrapper.sendError(message, EVENT.MESSAGE_DENIED)
+    socketWrapper.sendError(message, RECORD_ACTIONS.MESSAGE_DENIED)
   } else {
     successCallback()
   }

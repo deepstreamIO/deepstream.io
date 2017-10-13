@@ -56,7 +56,7 @@ describe('record deletion', () => {
         topic: C.TOPIC.RECORD,
         action: C.RECORD_ACTIONS.DELETE,
         name: 'someRecord'
-      }, C.EVENT.RECORD_DELETE_ERROR)
+      }, C.RECORD_ACTIONS.RECORD_DELETE_ERROR)
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.deletionMsg, callback
@@ -65,7 +65,7 @@ describe('record deletion', () => {
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
-      expect(services.logger.log.calls.argsFor(0)).toEqual([3, C.EVENT.RECORD_DELETE_ERROR, 'storageError'])
+      expect(services.logger.log.calls.argsFor(0)).toEqual([3, C.RECORD_ACTIONS[C.RECORD_ACTIONS.RECORD_DELETE_ERROR], 'storageError'])
       done()
     }, 20)
   })
@@ -82,7 +82,7 @@ describe('record deletion', () => {
         topic: C.TOPIC.RECORD,
         action: C.RECORD_ACTIONS.DELETE,
         name: 'someRecord'
-      }, C.EVENT.RECORD_DELETE_ERROR)
+      }, C.RECORD_ACTIONS.RECORD_DELETE_ERROR)
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.deletionMsg, callback
@@ -91,7 +91,7 @@ describe('record deletion', () => {
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
-      expect(services.logger.log.calls.argsFor(0)).toEqual([3, C.EVENT.RECORD_DELETE_ERROR, 'cache timeout'])
+      expect(services.logger.log.calls.argsFor(0)).toEqual([3, C.RECORD_ACTIONS[C.RECORD_ACTIONS.RECORD_DELETE_ERROR], 'cache timeout'])
       done()
     }, 100)
   })

@@ -175,7 +175,7 @@ describe('record request', () => {
         )
 
       expect(errorCallback).toHaveBeenCalledWith(
-        C.EVENT.RECORD_LOAD_ERROR,
+        C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
         'error while loading cacheError from cache:storageError',
         'cacheError',
         client.socketWrapper
@@ -183,7 +183,7 @@ describe('record request', () => {
       expect(completeCallback).not.toHaveBeenCalled()
 
       expect(services.logger.log).toHaveBeenCalledWith(
-        3, C.EVENT.RECORD_LOAD_ERROR, 'error while loading cacheError from cache:storageError'
+        3, C.RECORD_ACTIONS.RECORD_LOAD_ERROR, 'error while loading cacheError from cache:storageError'
       )
       // expect(client.socketWrapper.socket.lastSendMessage).toBe(
       //   msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'
@@ -207,14 +207,14 @@ describe('record request', () => {
         )
 
       expect(errorCallback).toHaveBeenCalledWith(
-        C.EVENT.RECORD_LOAD_ERROR,
+        C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
         'error while loading storageError from storage:storageError',
         'storageError',
         client.socketWrapper
         )
       expect(completeCallback).not.toHaveBeenCalled()
 
-      expect(services.logger.log).toHaveBeenCalledWith(3, C.EVENT.RECORD_LOAD_ERROR, 'error while loading storageError from storage:storageError')
+      expect(services.logger.log).toHaveBeenCalledWith(3, C.RECORD_ACTIONS.RECORD_LOAD_ERROR, 'error while loading storageError from storage:storageError')
       // expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+'))
     })
 
@@ -242,7 +242,7 @@ describe('record request', () => {
 
         setTimeout(() => {
           expect(errorCallback).toHaveBeenCalledWith(
-            C.EVENT.CACHE_RETRIEVAL_TIMEOUT,
+            C.RECORD_ACTIONS.CACHE_RETRIEVAL_TIMEOUT,
             'willTimeoutCache',
             'willTimeoutCache',
             client.socketWrapper
@@ -280,7 +280,7 @@ describe('record request', () => {
 
         setTimeout(() => {
           expect(errorCallback).toHaveBeenCalledWith(
-            C.EVENT.STORAGE_RETRIEVAL_TIMEOUT,
+            C.RECORD_ACTIONS.STORAGE_RETRIEVAL_TIMEOUT,
             'willTimeoutStorage',
             'willTimeoutStorage',
             client.socketWrapper

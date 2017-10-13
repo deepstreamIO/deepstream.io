@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC, EVENT } from '../constants'
+import { RECORD_ACTIONS, TOPIC } from '../constants'
 import { isOfType } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
@@ -113,10 +113,10 @@ export default class RecordTransition {
         version: this.record._v,
         parsedData: this.record._d,
         isWriteAck: step.message.isWriteAck,
-      }, EVENT.VERSION_EXISTS)
+      }, RECORD_ACTIONS.VERSION_EXISTS)
 
       this.services.logger.warn(
-        EVENT.VERSION_EXISTS,
+        RECORD_ACTIONS.VERSION_EXISTS,
         `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.record._v}`,
         this.metaData,
       )
@@ -143,13 +143,13 @@ export default class RecordTransition {
     }
     const valid = this.applyConfigAndData(socketWrapper, message, update)
     if (!valid) {
-      socketWrapper.sendError(message, EVENT.INVALID_MESSAGE_DATA)
+      socketWrapper.sendError(message, RECORD_ACTIONS.INVALID_MESSAGE_DATA)
       return
     }
 
     if (message.action === RECORD_ACTIONS.UPDATE) {
       if (!isOfType(message.parsedData, 'object') && !isOfType(message.parsedData, 'array')) {
-        socketWrapper.sendError(message, EVENT.INVALID_MESSAGE_DATA)
+        socketWrapper.sendError(message, RECORD_ACTIONS.INVALID_MESSAGE_DATA)
         return
       }
     }
@@ -408,11 +408,11 @@ export default class RecordTransition {
     if (this.isDestroyed === true) {
       return
     }
-    this.services.logger.error(EVENT.RECORD_UPDATE_ERROR, errorMessage.toString(), this.metaData)
+    this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_UPDATE_ERROR], errorMessage.toString(), this.metaData)
 
     for (let i = 0; i < this.steps.length; i++) {
       if (!this.steps[i].sender.isRemote) {
-        this.steps[i].sender.sendError(this.steps[i].message, EVENT.RECORD_UPDATE_ERROR)
+        this.steps[i].sender.sendError(this.steps[i].message, RECORD_ACTIONS.RECORD_UPDATE_ERROR)
       }
     }
 

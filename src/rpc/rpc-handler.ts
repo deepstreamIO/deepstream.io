@@ -1,4 +1,4 @@
-import { RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
+import { RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT, PARSER_ACTIONS } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
@@ -60,7 +60,7 @@ export default class RpcHandler {
       } else {
         socketWrapper.sendError(
           message,
-          EVENT.INVALID_RPC_CORRELATION_ID
+          RPC_ACTIONS.INVALID_RPC_CORRELATION_ID
         )
       }
     } else {
@@ -68,7 +68,7 @@ export default class RpcHandler {
       *  RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
       * by the Rpc class directly
       */
-       this.services.logger.warn(EVENT.UNKNOWN_ACTION, message.action.toString(), this.metaData)
+       this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], message.action.toString(), this.metaData)
     }
   }
 
@@ -145,7 +145,7 @@ export default class RpcHandler {
       this.rpcs.set(correlationId, rpcData)
       rpcData.providers.add(provider)
     } else if (isRemote) {
-      socketWrapper.sendError(message, EVENT.NO_RPC_PROVIDER)
+      socketWrapper.sendError(message, RPC_ACTIONS.NO_RPC_PROVIDER)
     } else {
        this.makeRemoteRpc(socketWrapper, message)
     }
@@ -180,10 +180,10 @@ export default class RpcHandler {
 
     this.rpcs.delete(correlationId)
 
-    this.services.logger.warn(EVENT.NO_RPC_PROVIDER, rpcName, this.metaData)
+    this.services.logger.warn(RPC_ACTIONS.NO_RPC_PROVIDER, rpcName, this.metaData)
 
     if (!requestor.isRemote) {
-      requestor.sendError(message, EVENT.NO_RPC_PROVIDER)
+      requestor.sendError(message, RPC_ACTIONS.NO_RPC_PROVIDER)
     }
   }
 
@@ -198,7 +198,7 @@ export default class RpcHandler {
     msg.topic = TOPIC.RPC
 
     if (!msg.data || msg.data.length < 2) {
-       this.services.logger.warn(EVENT.INVALID_MSGBUS_MESSAGE, msg.data,  this.metaData)
+       // this.services.logger.warn(INVALID_MSGBUS_MESSAGE, msg.data,  this.metaData)
        return
     }
 
@@ -209,9 +209,9 @@ export default class RpcHandler {
     }
 
     const rpcData =  this.rpcs.get(msg.correlationId)
-    if ((msg.isAck || msg.isError) && !rpcData) {
+    if (!rpcData) {
       this.services.logger.warn(
-        EVENT.INVALID_RPC_CORRELATION_ID,
+        RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
         `Message bus response for RPC that may have been destroyed: ${JSON.stringify(msg)}`,
         this.metaData,
       )
@@ -220,7 +220,7 @@ export default class RpcHandler {
     if (rpcData) {
        rpcData.rpc.handle(msg)
     } else {
-      // this.services.logger.warn(EVENT.UNSOLICITED_MSGBUS_MESSAGE, msg, this.metaData)
+      // this.services.logger.warn(UNSOLICITED_MSGBUS_MESSAGE, msg, this.metaData)
     }
   }
 

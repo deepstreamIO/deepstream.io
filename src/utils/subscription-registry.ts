@@ -5,8 +5,8 @@ import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EV
 let idCounter = 0
 
 interface SubscriptionActions {
-  MULTIPLE_SUBSCRIPTIONS: EVENT
-  NOT_SUBSCRIBED: EVENT
+  MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_SUBSCRIPTIONS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
+  NOT_SUBSCRIBED: RECORD_ACTIONS.NOT_SUBSCRIBED | EVENT_ACTIONS.NOT_SUBSCRIBED | RPC_ACTIONS.NOT_SUBSCRIBED | PRESENCE_ACTIONS.NOT_SUBSCRIBED
   SUBSCRIBE: RECORD_ACTIONS.SUBSCRIBE | EVENT_ACTIONS.SUBSCRIBE | RPC_ACTIONS.PROVIDE | PRESENCE_ACTIONS.SUBSCRIBE
   UNSUBSCRIBE: RECORD_ACTIONS.UNSUBSCRIBE | EVENT_ACTIONS.UNSUBSCRIBE | RPC_ACTIONS.UNPROVIDE | PRESENCE_ACTIONS.UNSUBSCRIBE
 }
@@ -65,8 +65,8 @@ export default class SubscriptionRegistry {
     }
 
     this.constants = {
-      MULTIPLE_SUBSCRIPTIONS: EVENT.MULTIPLE_SUBSCRIPTIONS,
-      NOT_SUBSCRIBED: EVENT.NOT_SUBSCRIBED,
+      MULTIPLE_SUBSCRIPTIONS: this.actions.MULTIPLE_SUBSCRIPTIONS,
+      NOT_SUBSCRIBED: this.actions.NOT_SUBSCRIBED,
       SUBSCRIBE: this.actions.SUBSCRIBE,
       UNSUBSCRIBE: this.actions.UNSUBSCRIBE,
     }
@@ -213,7 +213,7 @@ export default class SubscriptionRegistry {
       this.subscriptions.set(name, subscription)
     } else if (subscription.sockets.has(socket)) {
       const msg = `repeat supscription to "${name}" by ${socket.user}`
-      this.services.logger.warn(this.constants.MULTIPLE_SUBSCRIPTIONS, msg)
+      this.services.logger.warn(EVENT_ACTIONS[this.constants.MULTIPLE_SUBSCRIPTIONS], msg)
       socket.sendError({ topic: this.topic }, this.constants.MULTIPLE_SUBSCRIPTIONS, name)
       return
     }
@@ -223,7 +223,7 @@ export default class SubscriptionRegistry {
     this.addSocket(subscription, socket)
 
     const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-    this.services.logger.debug(EVENT.SUBSCRIBE, logMsg)
+    this.services.logger.debug(EVENT_ACTIONS[this.actions.SUBSCRIBE], logMsg)
     socket.sendAckMessage(message)
   }
 
@@ -237,7 +237,7 @@ export default class SubscriptionRegistry {
     if (!subscription || !subscription.sockets.delete(socket)) {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
-        this.services.logger.warn(this.constants.NOT_SUBSCRIBED, msg)
+        this.services.logger.warn(EVENT_ACTIONS[this.constants.NOT_SUBSCRIBED], msg)
         socket.sendError({ topic: this.topic }, this.constants.NOT_SUBSCRIBED, name)
       }
       return
@@ -247,7 +247,7 @@ export default class SubscriptionRegistry {
 
     if (!silent) {
       const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-      this.services.logger.debug(EVENT.SUBSCRIBE, logMsg)
+      this.services.logger.debug(EVENT_ACTIONS[this.actions.SUBSCRIBE], logMsg)
       socket.sendAckMessage(message)
     }
   }

@@ -90,11 +90,11 @@ describe('subscription registry', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.EVENT
-        }, C.EVENT.MULTIPLE_SUBSCRIPTIONS, 'someName')
+        }, C.EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS, 'someName')
 
       subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
       subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
-      expect(services.logger.lastLogEvent).toBe(C.EVENT.MULTIPLE_SUBSCRIPTIONS)
+      expect(services.logger.lastLogEvent).toBe(C.EVENT_ACTIONS[C.EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS])
     })
 
     it('returns the subscribed socket', () => {
@@ -155,7 +155,7 @@ describe('subscription registry', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.EVENT
-        }, C.EVENT.NOT_SUBSCRIBED, 'someName')
+        }, C.EVENT_ACTIONS.NOT_SUBSCRIBED, 'someName')
 
       subscriptionRegistry.unsubscribe(unsubscribeMessage, clientA.socketWrapper)
     })
@@ -218,7 +218,6 @@ describe('subscription registry', () => {
         action: 'too-aware',
         name: 'someName'
       }, clientA.socketWrapper)
-      expect(services.logger.lastLogEvent).toBe('too-aware')
     })
 
     it('unsubscribes', () => {

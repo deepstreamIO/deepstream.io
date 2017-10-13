@@ -1,4 +1,12 @@
-import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
+import { 
+  AUTH_ACTIONS,
+  RECORD_ACTIONS, 
+  EVENT_ACTIONS, 
+  RPC_ACTIONS, 
+  PRESENCE_ACTIONS, 
+  TOPIC, 
+  EVENT 
+} from '../constants'
 
 const OPEN = 'open'
 const UNDEFINED = 'undefined'
@@ -115,8 +123,9 @@ export default class RuleApplication {
     }
     const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL
              }for ${this.params.path}: ${error.toString()}`
-    this.params.logger.warn(EVENT.MESSAGE_PERMISSION_ERROR, errorMsg)
-    this.params.callback(EVENT.MESSAGE_PERMISSION_ERROR, false)
+
+    this.params.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg)
+    this.params.callback(AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
     this.destroy()
   }
 
@@ -140,8 +149,8 @@ export default class RuleApplication {
   private onLoadError (error: string | Error, message: Message, recordName: string) {
     this.recordsData[recordName] = ERROR
     const errorMsg = `failed to load record ${this.params.name} for permissioning:${error.toString()}`
-    this.params.logger.error(EVENT.RECORD_LOAD_ERROR, errorMsg)
-    this.params.callback(EVENT.RECORD_LOAD_ERROR, false)
+    this.params.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], errorMsg)
+    this.params.callback(RECORD_ACTIONS.RECORD_LOAD_ERROR, false)
     this.destroy()
   }
 

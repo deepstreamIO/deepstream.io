@@ -1,5 +1,3 @@
-'use strict'
-
 import { RECORD_ACTIONS, EVENT_ACTIONS, TOPIC, EVENT } from '../constants'
 import StateRegistry from '../cluster/state-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
@@ -675,8 +673,8 @@ export default class ListenerRegistry implements SubscriptionListener {
     try {
       return new RegExp(message.name)
     } catch (e) {
-      socketWrapper.sendError({ topic: this.topic }, EVENT.INVALID_MESSAGE_DATA, e.toString())
-      this.services.logger.error(EVENT.INVALID_MESSAGE_DATA, e.toString(), this.metaData)
+      socketWrapper.sendError({ topic: this.topic }, this.actions.INVALID_LISTEN_REGEX)
+      this.services.logger.error(this.actions[this.actions.INVALID_LISTEN_REGEX], e.toString(), this.metaData)
       return null
     }
   }

@@ -102,7 +102,7 @@ export default class Rpc {
   */
   private handleAccept (message: RPCMessage) {
     if (this.isAccepted === true) {
-      this.provider.sendError(this.message, EVENT.MULTIPLE_ACCEPT)
+      this.provider.sendError(this.message, RPC_ACTIONS.MULTIPLE_ACCEPT)
       return
     }
 
@@ -125,7 +125,7 @@ export default class Rpc {
     if (alternativeProvider) {
       this.setProvider(alternativeProvider)
     } else {
-      this.requestor.sendError(this.message, EVENT.NO_RPC_PROVIDER)
+      this.requestor.sendError(this.message, RPC_ACTIONS.NO_RPC_PROVIDER)
       this.destroy()
     }
   }
@@ -135,7 +135,7 @@ export default class Rpc {
   * in time by the provider
   */
   private onAcceptTimeout (): void {
-    this.requestor.sendError(this.message, EVENT.ACCEPT_TIMEOUT)
+    this.requestor.sendError(this.message, RPC_ACTIONS.ACCEPT_TIMEOUT)
     this.destroy()
   }
 
@@ -144,7 +144,7 @@ export default class Rpc {
   * in time by the provider
   */
   public onResponseTimeout (): void {
-    this.requestor.sendError(this.message, EVENT.RESPONSE_TIMEOUT)
+    this.requestor.sendError(this.message, RPC_ACTIONS.RESPONSE_TIMEOUT)
     this.destroy()
   }
 }

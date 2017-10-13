@@ -1,4 +1,4 @@
-import { PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
+import { PRESENCE_ACTIONS, TOPIC, PARSER_ACTIONS } from '../constants'
 import StateRegistry from '../cluster/state-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 
@@ -61,8 +61,8 @@ export default class PresenceHandler {
 
     const users = parseUserNames(message.data)
     if (!users) {
-      this.services.logger.error(EVENT.INVALID_PRESENCE_USERS, message.data, this.metaData)
-      socketWrapper.sendError(message, EVENT.INVALID_PRESENCE_USERS)
+      this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], message.data, this.metaData)
+      socketWrapper.sendError(message, PRESENCE_ACTIONS.INVALID_PRESENCE_USERS)
       return
     }
     if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
@@ -84,7 +84,7 @@ export default class PresenceHandler {
     } else if (message.action === PRESENCE_ACTIONS.QUERY) {
       this.handleQuery(users, message.correlationId, socketWrapper)
     } else {
-      this.services.logger.warn(EVENT.UNKNOWN_ACTION, PRESENCE_ACTIONS[message.action], this.metaData)
+      this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], PRESENCE_ACTIONS[message.action], this.metaData)
     }
   }
 

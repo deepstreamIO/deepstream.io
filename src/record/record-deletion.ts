@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC, EVENT } from '../constants'
+import { RECORD_ACTIONS, TOPIC } from '../constants'
 
 export default class RecordDeletion {
   private metaData: any
@@ -82,9 +82,8 @@ export default class RecordDeletion {
  * the callback to allow the recordHandler to broadcast the deletion
  */
   private done (): void {
-    this.services.logger.info(EVENT.RECORD_DELETION, this.recordName, this.metaData)
+    this.services.logger.info(RECORD_ACTIONS[RECORD_ACTIONS.DELETE], this.recordName, this.metaData)
     this.socketWrapper.sendAckMessage(this.message)
-    // Will change with new protocol
     this.message = Object.assign({}, this.message, { action: RECORD_ACTIONS.DELETED })
     this.successCallback(this.recordName, this.message, this.socketWrapper)
     this.destroy()
@@ -106,8 +105,8 @@ export default class RecordDeletion {
  * Handle errors that occured during deleting the record
  */
   private handleError (errorMsg: string) {
-    this.socketWrapper.sendError(this.message, EVENT.RECORD_DELETE_ERROR)
-    this.services.logger.error(EVENT.RECORD_DELETE_ERROR, errorMsg, this.metaData)
+    this.socketWrapper.sendError(this.message, RECORD_ACTIONS.RECORD_DELETE_ERROR)
+    this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_DELETE_ERROR], errorMsg, this.metaData)
     this.destroy()
   }
 }

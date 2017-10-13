@@ -1,5 +1,3 @@
-'use strict'
-
 import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS } from '../../constants'
 import * as messageBuilder from '../../../protocol/text/src/message-builder'
 import * as messageParser from '../../../protocol/text/src/message-parser'
@@ -50,14 +48,9 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
 
   /**
    * Updates lastPreparedMessage and returns the [uws] prepared message.
-   *
-   * @param {String} message the message to be prepared
-   *
-   * @public
-   * @returns {External} prepared message
    */
-  // eslint-disable-next-line class-methods-use-this
-  public prepareMessage (message: string) {
+  public prepareMessage (message: string): string {
+    console.log('preparing message', message)
     UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
     return UwsSocketWrapper.lastPreparedMessage
   }
@@ -65,39 +58,29 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   /**
    * Sends the [uws] prepared message, or in case of testing sends the
    * last prepared message.
-   *
-   * @param {External} preparedMessage the prepared message
-   *
-   * @public
-   * @returns {void}
    */
-  public sendPrepared (preparedMessage) {
+  public sendPrepared (preparedMessage):void {
+        console.log('sendPrepared', preparedMessage)
     this.flush()
     uws.native.server.sendPrepared(this.external, preparedMessage)
   }
 
   /**
    * Finalizes the [uws] prepared message.
-   *
-   * @param {External} preparedMessage the prepared message to finalize
-   *
-   * @public
-   * @returns {void}
    */
-  // eslint-disable-next-line class-methods-use-this
-  public finalizeMessage (preparedMessage: any): void {
+  public finalizeMessage (preparedMessage: string):void {
+        console.log('finalizeMessage')
     uws.native.server.finalizeMessage(preparedMessage)
   }
 
   /**
    * Variant of send with no particular checks or appends of message.
-   *
-   * @param {String} message the message to send
-   *
-   * @public
-   * @returns {void}
    */
-  public sendNative (message: any, allowBuffering: boolean): void {
+  public sendNative (message: string, allowBuffering: boolean): void {
+    console.log('sendNative', message)
+    if (!message) {
+      console.trace()
+    }
     if (this.config.outgoingBufferTimeout === 0) {
       uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
     } else if (!allowBuffering) {
@@ -126,13 +109,6 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   /**
    * Sends an error on the specified topic. The
    * action will automatically be set to C.ACTION.ERROR
-   *
-   * @param {String} topic one of C.TOPIC
-   * @param {String} type one of C.EVENT
-   * @param {String} msg generic error message
-   *
-   * @public
-   * @returns {void}
    */
   public sendError (
     message: Message,
@@ -152,11 +128,8 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Sends a message based on the provided action and topic
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
    *                                 this message type
-   *
-   * @public
-   * @returns {void}
    */
-  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering) {
+  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean): void {
     if (this.isClosed === false) {
       this.sendNative(
         messageBuilder.getMessage(message, false),
@@ -165,12 +138,10 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
     }
   }
 
-  // eslint-disable-next-line
   public getMessage (message: Message): string | void {
     return messageBuilder.getMessage(message, false)
   }
 
-  // eslint-disable-next-line
   public parseMessage (message: string): Array<Message> {
     return messageParser.parse(message)
   }
@@ -179,9 +150,6 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Sends a message based on the provided action and topic
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
    *                                 this message type
-   *
-   * @public
-   * @returns {void}
    */
   public sendAckMessage (message: Message, allowBuffering: boolean): void {
     if (this.isClosed === false) {
@@ -192,23 +160,19 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
     }
   }
 
-  // eslint-disable-next-line
-  public parseData (message): void {
+  public parseData (message: Message): void {
     return messageParser.parseData(message)
   }
 
-  // eslint-disable-next-line class-methods-use-this
   public onMessage (): void {
   }
 
   /**
    * Destroys the socket. Removes all deepstream specific
    * logic and closes the connection
-   *
-   * @public
-   * @returns {void}
    */
   public destroy (): void {
+    console.log('terminating')
     uws.native.server.terminate(this.external)
   }
 
@@ -224,11 +188,8 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Returns a map of parameters that were collected
    * during the initial http request that established the
    * connection
-   *
-   * @public
-   * @returns {Object} handshakeData
    */
-  public getHandshakeData (): string {
+  public getHandshakeData (): any {
     return this.handshakeData
   }
 }

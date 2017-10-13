@@ -1,4 +1,12 @@
-import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, EVENT, PRESENCE_ACTIONS, TOPIC } from '../constants'
+import { 
+  AUTH_ACTIONS, 
+  RECORD_ACTIONS, 
+  EVENT_ACTIONS, 
+  PRESENCE_ACTIONS, 
+  RPC_ACTIONS, 
+  TOPIC, 
+  EVENT 
+} from '../constants'
 
 import * as Ajv from 'ajv'
 
@@ -290,22 +298,22 @@ export default class JIFHandler {
       success: false
     }
 
-    if (event === EVENT.MESSAGE_DENIED) {
+    if (event === AUTH_ACTIONS.MESSAGE_DENIED) {
       let action = message.action.toString().toLowerCase()
       result.action = action
       result.error = `Message denied. Action "${action}" is not permitted.`
 
-    } else if (event === EVENT.VERSION_EXISTS) {
+    } else if (event === RECORD_ACTIONS.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version
       result.currentData = message.parsedData
-    } else if (event === EVENT.RECORD_NOT_FOUND) {
+    } else if (event === RECORD_ACTIONS.RECORD_NOT_FOUND) {
       result.error = `Record read failed. Record "${message.name}" could not be found.`
       result.errorEvent = message.event
-    } else if (event === EVENT.NO_RPC_PROVIDER) {
+    } else if (event === RPC_ACTIONS.NO_RPC_PROVIDER) {
       result.error = `No provider was available to handle the RPC "${message.name}".`
       // message.correlationId = data[1]
-    } else if (message.topic === TOPIC.RPC && event === EVENT.RESPONSE_TIMEOUT) {
+    } else if (message.topic === TOPIC.RPC && event === RPC_ACTIONS.RESPONSE_TIMEOUT) {
       result.error = 'The RPC response timeout was exceeded by the provider.'
 
     } else {

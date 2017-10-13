@@ -61,7 +61,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.createDeniedMessage, C.EVENT.MESSAGE_DENIED)
+      .withExactArgs(M.createDeniedMessage, C.RECORD_ACTIONS.MESSAGE_DENIED)
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
@@ -76,7 +76,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.readDeniedMessage, C.EVENT.MESSAGE_DENIED)
+      .withExactArgs(M.readDeniedMessage, C.RECORD_ACTIONS.MESSAGE_DENIED)
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
@@ -91,7 +91,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendError')
       .once()
-      .withExactArgs(M.createDeniedMessage, C.EVENT.MESSAGE_PERMISSION_ERROR)
+      .withExactArgs(M.createDeniedMessage, C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR)
 
     recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 

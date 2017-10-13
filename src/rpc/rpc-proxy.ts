@@ -44,8 +44,8 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   * Sends an error on the specified topic. The
   * action will automatically be set to ACTION.ERROR
   */
-  public sendError (msg: RPCMessage, type: EVENT, errorMessage: string): void {
-    if (type === EVENT.RESPONSE_TIMEOUT) {
+  public sendError (msg: RPCMessage, type: RPC_ACTIONS, errorMessage: string): void {
+    if (type === RPC_ACTIONS.RESPONSE_TIMEOUT) {
       // by the time an RPC has timed out on this server, it has already timed out on the remote
       // (and has been cleaned up) so no point sending
       return
