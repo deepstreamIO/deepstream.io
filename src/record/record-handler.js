@@ -41,7 +41,7 @@ module.exports = class RecordHandler {
  * @public
  * @returns {void}
  */
-  handle (socketWrapper, message, return_revoker) {
+  handle (socketWrapper, message, returnRevoker) {
   /*
    * All messages have to provide at least the name of the record they relate to
    * or a pattern in case of listen
@@ -57,8 +57,8 @@ module.exports = class RecordHandler {
      * Creates the record if it doesn't exist
      */
       this._createOrRead(socketWrapper, message)
-      if (return_revoker) {
-        return_revoker(() => {
+      if (returnRevoker) {
+        returnRevoker(() => {
           this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
         });
       }

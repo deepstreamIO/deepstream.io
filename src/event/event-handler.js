@@ -33,11 +33,11 @@ module.exports = class EventHandler {
    * @public
    * @returns {void}
    */
-  handle (socket, message, return_revoker) {
+  handle (socket, message, returnRevoker) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._addSubscriber(socket, message)
-      if (return_revoker) {
-        return_revoker(()=>{
+      if (returnRevoker) {
+        returnRevoker(()=>{
           this._removeSubscriber(socket, message);
         })
       }

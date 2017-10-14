@@ -36,11 +36,11 @@ module.exports = class RpcHandler {
   * @public
   * @returns {void}
   */
-  handle (socketWrapper, message, return_revoker) {
+  handle (socketWrapper, message, returnRevoker) {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._registerProvider(socketWrapper, message)
-      if (return_revoker) {
-        return_revoker(()=>{
+      if (returnRevoker) {
+        returnRevoker(()=>{
           this._unregisterProvider(socketWrapper, message)
         })
       }
