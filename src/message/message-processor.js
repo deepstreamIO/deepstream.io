@@ -85,7 +85,7 @@ module.exports = class MessageProcessor {
    *
    * @returns {void}
    */
-  _onPermissionResponse (socketWrapper, message, error, result) {
+  _onPermissionResponse (socketWrapper, message, error, result, return_revoker) {
     if (error !== null) {
       this._options.logger.warn(C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
       socketWrapper.sendError(
@@ -105,7 +105,7 @@ module.exports = class MessageProcessor {
       return
     }
 
-    this.onAuthenticatedMessage(socketWrapper, message)
+    this.onAuthenticatedMessage(socketWrapper, message, return_revoker)
   }
 
   /**
