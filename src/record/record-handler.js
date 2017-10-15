@@ -60,7 +60,7 @@ module.exports = class RecordHandler {
       if (returnRevoker) {
         returnRevoker(() => {
           this._subscriptionRegistry.unsubscribe(message.data[0], socketWrapper)
-        });
+        })
       }
     } else if (message.action === C.ACTIONS.CREATEANDUPDATE) {
     /*

@@ -40,7 +40,7 @@ module.exports = class RpcHandler {
     if (message.action === C.ACTIONS.SUBSCRIBE) {
       this._registerProvider(socketWrapper, message)
       if (returnRevoker) {
-        returnRevoker(()=>{
+        returnRevoker(() => {
           this._unregisterProvider(socketWrapper, message)
         })
       }
