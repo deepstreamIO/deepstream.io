@@ -49,13 +49,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   /**
    * Called on initialization with a reference to the instantiating deepstream server.
-   *
-   * @param {Deepstream} deepstream
-   *
-   * @public
-   * @returns {Void}
    */
-  setDeepstream (deepstream): void {
+  public setDeepstream (deepstream): void {
     this._dsOptions = deepstream.config
     this._logger = deepstream.services.logger
     this._authenticationHandler = deepstream.services.authenticationHandler
@@ -65,11 +60,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Initialise and setup the http and WebSocket servers.
    *
    * @throws Will throw if called before `setDeepstream()`.
-   *
-   * @public
-   * @returns {Void}
    */
-  init () {
+  public init (): void {
     if (!this._dsOptions) {
       throw new Error('setDeepstream must be called before init()')
     }
@@ -105,7 +97,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * messages
    * @param  {UwsSocketWrapper} socketWrapper SocketWrapper with a flush
    */
-  scheduleFlush (socketWrapper) {
+  public scheduleFlush (socketWrapper) {
     this._scheduledSocketWrapperWrites.add(socketWrapper)
     if (!this._flushTimeout) {
       this._flushTimeout = setTimeout(this._flushSockets, this.options.outgoingBufferTimeout)
@@ -115,7 +107,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Called when the flushTimeout occurs in order to send  all pending socket acks
    */
-  _flushSockets () {
+  private _flushSockets () {
     for (const socketWrapper of this._scheduledSocketWrapperWrites) {
       socketWrapper.flush()
     }
@@ -128,11 +120,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * plugin config. If neither is present, default to the optionally provided default.
    *
    * @param {String} option  The name of the option to be fetched
-   *
-   * @private
-   * @returns {Value} value
    */
-  _getOption (option) {
+  private _getOption (option) {
     const value = this._dsOptions[option]
     if ((value === null || value === undefined) && (this.options[option] !== undefined)) {
       return this.options[option]
@@ -142,11 +131,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   /**
    * Initialize the uws endpoint, setup callbacks etc.
-   *
-   * @private
-   * @returns {void}
    */
-  _uwsInit () {
+  private _uwsInit () {
     const maxMessageSize = this._getOption('maxMessageSize')
     const perMessageDeflate = this._getOption('perMessageDeflate')
     this._serverGroup = uws.native.server.group.create(perMessageDeflate, maxMessageSize)
@@ -156,7 +142,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       this._serverGroup,
       (external, code, message, socketWrapper) => {
         if (socketWrapper) {
-          // socketWrapper.close()
+          socketWrapper.close()
         }
       }
     )
@@ -184,9 +170,6 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   /**
    * Called for the ready event of the ws server.
-   *
-   * @private
-   * @returns {void}
    */
   private _onReady (): void {
     const serverAddress = this._server.address()
@@ -206,15 +189,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    *
    * This method will be overridden by an external class and is used instead
    * of an event emitter to improve the performance of the messaging pipeline
-   *
-   * @param   {SocketWrapper} socketWrapper
-   * @param   {Array} messages the parsed messages as sent by the client
-   *
-   * @public
-   *
-   * @returns {void}
    */
-  onMessages (socketWrapper: SocketWrapper, messages: Array<Message>) { // eslint-disable-line
+  public onMessages (socketWrapper: SocketWrapper, messages: Array<Message>) { // eslint-disable-line
   }
 
   /**
@@ -287,7 +263,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @private
    * @returns {void}
    */
-  _onConnection (external) {
+  private _onConnection (external) {
     const address = uws.native.getAddress(external)
     const handshakeData = {
       remoteAddress: address[1],
@@ -331,14 +307,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Always challenges the client that connects. This will be opened up later to allow users
    * to put in their own challenge authentication.
-   *
-   * @param  {SocketWrapper} socketWrapper Socket
-   * @param  {Message} connectionMessage Message recieved from server
-   *
-   * @private
-   * @returns {void}
    */
-  _processConnectionMessage (socketWrapper: SocketWrapper, parsedMessages: Array<Message>) {
+  private _processConnectionMessage (socketWrapper: SocketWrapper, parsedMessages: Array<Message>) {
     const msg = parsedMessages[0]
 
     if (msg.parseError) {
@@ -374,16 +344,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Callback for the first message that's received from the socket.
    * This is expected to be an auth-message. This method makes sure that's
    * the case and - if so - forwards it to the permission handler for authentication
-   *
-   * @param   {SocketWrapper} socketWrapper
-   * @param   {Timeout} disconnectTimeout
-   * @param   {String} authMsg
-   *
-   * @private
-   *
-   * @returns {void}
    */
-  _authenticateConnection (socketWrapper, disconnectTimeout, parsedMessages) {
+  private _authenticateConnection (socketWrapper: SocketWrapper, disconnectTimeout, parsedMessages: Array<Message>): void {
     const msg = parsedMessages[0]
 
     let errorMsg
@@ -448,19 +410,12 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Will be called for syntactically incorrect auth messages. Logs
    * the message, sends an error to the client and closes the socket
-   *
-   * @param   {SocketWrapper} socketWrapper
-   * @param   {String} msg the raw message as sent by the client
-   *
-   * @private
-   *
-   * @returns {void}
    */
-  _sendInvalidAuthMsg (socketWrapper, msg) {
-    this._logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_AUTH_DATA], this._logInvalidAuthData ? msg : '')
+  private _sendInvalidAuthMsg (socketWrapper: SocketWrapper, msg: string): void {
+    this._logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA], this._logInvalidAuthData ? msg : '')
     socketWrapper.sendError({
       topic: TOPIC.AUTH
-    }, AUTH_ACTIONS.INVALID_AUTH_DATA)
+    }, AUTH_ACTIONS.INVALID_MESSAGE_DATA)
     socketWrapper.destroy()
   }
 
@@ -468,16 +423,9 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Callback for succesfully validated sockets. Removes
    * all authentication specific logic and registeres the
    * socket with the authenticated sockets
-   *
-   * @param   {SocketWrapper} socketWrapper
-   * @param   {String} username
-   *
-   * @private
-   *
-   * @returns {void}
    */
-  _registerAuthenticatedSocket (socketWrapper, userData) {
-    delete socketWrapper.authCallBack
+  private _registerAuthenticatedSocket (socketWrapper: SocketWrapper, userData: any): void {
+    delete socketWrapper.authCallback
     socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
     socketWrapper.onMessage = (parsedMessages) => {
       this.onMessages(socketWrapper, parsedMessages)
@@ -500,15 +448,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   /**
    * Append connection data to the socket wrapper
-   *
-   * @param   {SocketWrapper} socketWrapper
-   * @param   {Object} userData the data to append to the socket wrapper
-   *
-   * @private
-   *
-   * @returns {void}
    */
-  _appendDataToSocketWrapper (socketWrapper, userData) { // eslint-disable-line
+  private _appendDataToSocketWrapper (socketWrapper: SocketWrapper, userData: any): void {
     socketWrapper.user = userData.username || OPEN
     socketWrapper.authData = userData.serverData || null
   }
@@ -518,26 +459,19 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * of the invalid auth attempt. If the number of invalid attempts
    * exceed the threshold specified in options.maxAuthAttempts
    * the client will be notified and the socket destroyed.
-   *
-   * @param   {Object} authData the (invalid) auth data
-   * @param   {SocketWrapper} socketWrapper
-   *
-   * @private
-   *
-   * @returns {void}
    */
-  _processInvalidAuth (clientData, authData, socketWrapper) {
+  private _processInvalidAuth (clientData: any, authData: any, socketWrapper: any): void {
     let logMsg = 'invalid authentication data'
 
     if (this._logInvalidAuthData === true) {
       logMsg += `: ${JSON.stringify(authData)}`
     }
 
-    this._logger.info(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_AUTH_DATA], logMsg)
+    this._logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg)
     socketWrapper.sendError({
       topic: TOPIC.AUTH,
       parsedData: clientData
-    }, AUTH_ACTIONS.INVALID_AUTH_DATA)
+    }, AUTH_ACTIONS.AUTH_UNSUCCESSFUL)
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this._maxAuthAttempts) {
@@ -552,14 +486,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Callback for connections that have not authenticated succesfully within
    * the expected timeframe
-   *
-   * @param   {SocketWrapper} socketWrapper
-   *
-   * @private
-   *
-   * @returns {void}
    */
-  _processConnectionTimeout (socketWrapper) {
+  private _processConnectionTimeout (socketWrapper: SocketWrapper): void {
     const log = 'connection has not authenticated successfully in the expected time'
     this._logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT], log)
     socketWrapper.sendError({
@@ -570,18 +498,9 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   /**
    * Callback for the results returned by the permissionHandler
-   *
-   * @param   {Object} authData
-   * @param   {SocketWrapper} socketWrapper
-   * @param   {Boolean} isAllowed
-   * @param   {Object} userData
-   *
-   * @private
-   *
-   * @returns {void}
    */
-  _processAuthResult (authData, socketWrapper, disconnectTimeout, isAllowed, userData) {
-    userData = userData || {} // eslint-disable-line
+  private _processAuthResult (authData: any, socketWrapper: SocketWrapper, disconnectTimeout, isAllowed: boolean, userData: any): void {
+    userData = userData || {}
     clearTimeout(disconnectTimeout)
 
     if (isAllowed === true) {
@@ -595,7 +514,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Generic callback for connection errors. This will most often be called
    * if the configured port number isn't available
    */
-  private _onError (error): void {
+  private _onError (error: Error): void {
     this._logger.error(EVENT.CONNECTION_ERROR, error.toString())
   }
 
@@ -603,7 +522,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   * Notifies the (optional) onClientDisconnect method of the permissionHandler
   * that the specified client has disconnected
   */
-  private _onSocketClose (socketWrapper):void {
+  private _onSocketClose (socketWrapper: any):void {
     if (this._authenticationHandler.onClientDisconnect) {
       this._authenticationHandler.onClientDisconnect(socketWrapper.user)
     }
@@ -612,7 +531,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       this.emit('client-disconnected', socketWrapper)
     }
 
-    uws.native.clearUserData(socketWrapper._external)
+    // uws.native.clearUserData(socketWrapper._external)
+
     this._authenticatedSockets.delete(socketWrapper)
   }
 

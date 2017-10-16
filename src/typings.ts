@@ -32,13 +32,14 @@ interface SocketWrapper extends SimpleSocketWrapper {
   uuid: number
   __id: number
   authData: object
+  getHandshakeData: Function
   onMessage: Function
   authCallback: Function
   prepareMessage: Function
   finalizeMessage: Function
   sendPrepared: Function
-  sendNative: Function,
-  parseData: Function,
+  sendNative: Function
+  parseData: Function
   flush: Function
   destroy: Function
 }
@@ -242,6 +243,11 @@ interface ValveConfig {
 interface Provider {
   socketWrapper: SocketWrapper
   pattern: string
+}
+
+interface UserData {
+ clientData: any
+ serverData: any
 }
 
 declare module NodeJS  {

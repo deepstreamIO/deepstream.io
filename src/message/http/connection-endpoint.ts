@@ -160,7 +160,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       error += `: ${JSON.stringify(authData)}`
     }
 
-    this.logger.debug(AUTH_ACTIONS.INVALID_AUTH_DATA, error)
+    this.logger.debug(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], error)
   }
 
   /**
@@ -193,7 +193,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
         const error = 'Authentication using authData is disabled. Try using a token instead.'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this.logger.debug(
-          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_AUTH_DATA],
+          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
           'Auth rejected because allowAuthData was disabled'
         )
         return
@@ -202,7 +202,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
         const error = 'Invalid message: the "authData" parameter must be an object'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this.logger.debug(
-          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_AUTH_DATA],
+          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
           `authData was not an object: ${
             this.logInvalidAuthData === true ? JSON.stringify(messageData.authData) : '-'
           }`
@@ -215,7 +215,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
         const error = 'Invalid message: the "token" parameter must be a non-empty string'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this.logger.debug(
-          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_AUTH_DATA],
+          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
           `auth token was not a string: ${
             this.logInvalidAuthData === true ? messageData.token : '-'
           }`

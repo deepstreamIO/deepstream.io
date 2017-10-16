@@ -1,4 +1,5 @@
-import { 
+import {
+  ACTIONS,
   AUTH_ACTIONS, 
   RECORD_ACTIONS, 
   EVENT_ACTIONS, 
@@ -147,12 +148,15 @@ function getMsgToJif () {
     }
   })
 
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.ACCEPT] = {}
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.ACCEPT][TYPE.NORMAL] = () => ({ done: false })
+
   MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.REQUEST] = {}
   MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.REQUEST][TYPE.ACK] = () => ({ done: false })
 
   MSG_TO_JIF[TOPIC.RECORD] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       version: message.version,
@@ -177,8 +181,8 @@ function getMsgToJif () {
       success: true
     }
   })
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       version: message.version,
@@ -187,8 +191,16 @@ function getMsgToJif () {
   })
 
   MSG_TO_JIF[TOPIC.PRESENCE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = message => ({
+    done: true,
+    message: {
+      users: message.parsedData,
+      success: true
+    }
+  })
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
       users: message.parsedData,
@@ -299,10 +311,8 @@ export default class JIFHandler {
     }
 
     if (event === AUTH_ACTIONS.MESSAGE_DENIED) {
-      let action = message.action.toString().toLowerCase()
-      result.action = action
-      result.error = `Message denied. Action "${action}" is not permitted.`
-
+      result.action = message.action
+      result.error = `Message denied. Action "${ACTIONS[message.topic][message.action]}" is not permitted.`
     } else if (event === RECORD_ACTIONS.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version

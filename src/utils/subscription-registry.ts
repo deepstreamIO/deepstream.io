@@ -237,7 +237,7 @@ export default class SubscriptionRegistry {
     if (!subscription || !subscription.sockets.delete(socket)) {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
-        this.services.logger.warn(EVENT_ACTIONS[this.constants.NOT_SUBSCRIBED], msg)
+        this.services.logger.warn(this.actions[this.constants.NOT_SUBSCRIBED], msg)
         socket.sendError({ topic: this.topic }, this.constants.NOT_SUBSCRIBED, name)
       }
       return

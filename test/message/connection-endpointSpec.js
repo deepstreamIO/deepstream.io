@@ -142,7 +142,7 @@ describe('connection endpoint', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.AUTH,
-      }, C.AUTH_ACTIONS.INVALID_AUTH_DATA)
+      }, C.AUTH_ACTIONS.INVALID_MESSAGE_DATA)
 
     client.socketWrapperMock
       .expects('destroy')
@@ -159,7 +159,7 @@ describe('connection endpoint', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.AUTH,
-      }, C.AUTH_ACTIONS.INVALID_AUTH_DATA)
+      }, C.AUTH_ACTIONS.INVALID_MESSAGE_DATA)
 
     client.socketWrapperMock
       .expects('destroy')
@@ -177,7 +177,7 @@ describe('connection endpoint', () => {
       .withExactArgs({
         topic: C.TOPIC.AUTH,
         parsedData: 'Invalid User'
-      }, C.AUTH_ACTIONS.INVALID_AUTH_DATA)
+      }, C.AUTH_ACTIONS.AUTH_UNSUCCESSFUL)
 
     expect(authenticationHandlerMock.lastUserValidationQueryArgs).toBe(null)
     authenticationHandlerMock.nextUserValidationResult = false
@@ -259,7 +259,7 @@ describe('connection endpoint', () => {
       .withExactArgs({
         topic: C.TOPIC.AUTH,
         parsedData: 'Invalid User'
-      }, C.AUTH_ACTIONS.INVALID_AUTH_DATA)
+      }, C.AUTH_ACTIONS.AUTH_UNSUCCESSFUL)
 
     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)

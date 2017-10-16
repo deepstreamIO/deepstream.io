@@ -8,8 +8,8 @@ function parseUserNames (data: any): Array<string> | null {
   // Returns all users for backwards compatability
   if (
     !data ||
-    data === PRESENCE_ACTIONS.SUBSCRIBE ||
-    data === TOPIC.PRESENCE
+    data === 'S' ||
+    data === 'U'
   ) {
     return [EVERYONE]
   }
@@ -59,6 +59,7 @@ export default class PresenceHandler {
       return
     }
 
+    console.log(message)
     const users = parseUserNames(message.data)
     if (!users) {
       this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], message.data, this.metaData)

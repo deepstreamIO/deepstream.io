@@ -23,7 +23,7 @@
     "e2e:rpc": "npm run e2e -- --tags \"not @cluster and @rpcs\"",
     "e2e:event": "npm run e2e -- --tags \"not @cluster and @events\"",
     "e2e:record": "npm run e2e -- --tags \"not @cluster and @records\"",
-    "e2e:log": "npm run e2e -- --tags \"not @cluster and @login\"",
+    "e2e:login": "npm run e2e -- --tags \"not @cluster and @login\"",
     "e2e:presence": "npm run e2e -- --tags \"not @cluster and @presence\"",
     "e2e:http": "npm run e2e -- --tags \"not @cluster and @http\""
   },

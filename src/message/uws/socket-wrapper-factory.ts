@@ -26,8 +26,8 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   public uuid: number = Math.random()
   public __id: number
   public authCallback: Function
-
-  private authAttempts: number = 0
+  public authAttempts: number = 0
+  
   private bufferedWrites: string = ''
 
   static lastPreparedMessage: any
@@ -50,7 +50,6 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Updates lastPreparedMessage and returns the [uws] prepared message.
    */
   public prepareMessage (message: string): string {
-    console.log('preparing message', message)
     UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
     return UwsSocketWrapper.lastPreparedMessage
   }
@@ -60,7 +59,6 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * last prepared message.
    */
   public sendPrepared (preparedMessage):void {
-        console.log('sendPrepared', preparedMessage)
     this.flush()
     uws.native.server.sendPrepared(this.external, preparedMessage)
   }
@@ -69,7 +67,6 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Finalizes the [uws] prepared message.
    */
   public finalizeMessage (preparedMessage: string):void {
-        console.log('finalizeMessage')
     uws.native.server.finalizeMessage(preparedMessage)
   }
 
@@ -77,10 +74,6 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Variant of send with no particular checks or appends of message.
    */
   public sendNative (message: string, allowBuffering: boolean): void {
-    console.log('sendNative', message)
-    if (!message) {
-      console.trace()
-    }
     if (this.config.outgoingBufferTimeout === 0) {
       uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
     } else if (!allowBuffering) {
@@ -112,13 +105,13 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    */
   public sendError (
     message: Message,
-    event: EVENT,
+    action: EVENT,
     errorMessage: string,
     allowBuffering: boolean
   ): void {
     if (this.isClosed === false) {
       this.sendNative(
-        messageBuilder.getErrorMessage(message, event, errorMessage),
+        messageBuilder.getErrorMessage(message, action, errorMessage),
         allowBuffering
       )
     }

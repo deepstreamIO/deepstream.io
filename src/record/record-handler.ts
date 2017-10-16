@@ -43,7 +43,10 @@ export default class RecordHandler {
      * Creates the record if it doesn't exist
      */
       this.createOrRead(socketWrapper, message)
-    } else if (message.action === RECORD_ACTIONS.CREATEANDUPDATE) {
+    } else if (
+      message.action === RECORD_ACTIONS.CREATEANDUPDATE ||
+      message.action === RECORD_ACTIONS.CREATEANDPATCH
+    ) {
     /*
      * Allows updates to the record without being subscribed, creates
      * the record if it doesn't exist

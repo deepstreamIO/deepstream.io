@@ -42,13 +42,14 @@ export enum EVENT {
 }
 
 export enum TOPIC {
-    CONNECTION = 0x00,
-    AUTH = 0x01,
-    ERROR = 0x02,
-    EVENT = 0x03,
-    RECORD = 0x04,
-    RPC = 0x05,
-    PRESENCE = 0x06,
+    ERROR = 0x00,
+    PARSER = 0x01,
+    CONNECTION = 0x02,
+    AUTH = 0x03,
+    EVENT = 0x04,
+    RECORD = 0x05,
+    RPC = 0x06,
+    PRESENCE = 0x07,
 
     SUBSCRIPTIONS = 0x10,
     ONLINE_USERS = 0x11,
@@ -87,12 +88,12 @@ export enum CONNECTION_ACTIONS {
 }
 
 export enum AUTH_ACTIONS {
+    ERROR = 0x00,
     REQUEST = 0x01,
     AUTH_SUCCESSFUL = 0x02,
     AUTH_UNSUCCESSFUL = 0x03,
 
-    INVALID_AUTH_DATA = 0x40,
-    TOO_MANY_AUTH_ATTEMPTS = 0x41,
+    TOO_MANY_AUTH_ATTEMPTS = 0x40,
 
     MESSAGE_PERMISSION_ERROR = 0xE0,
     MESSAGE_DENIED = 0xE1,
@@ -100,6 +101,7 @@ export enum AUTH_ACTIONS {
 }
 
 export enum EVENT_ACTIONS {
+    ERROR = 0x00,
     EMIT = 0x01,
     SUBSCRIBE = 0x02,
     SUBSCRIBE_ACK = 0x03,
@@ -122,6 +124,7 @@ export enum EVENT_ACTIONS {
 }
 
 export enum RECORD_ACTIONS {
+    ERROR = 0x00,
     CREATE = 0x01,
     READ = 0x02,
     READ_RESPONSE = 0x03,
@@ -190,18 +193,18 @@ export enum RECORD_ACTIONS {
 }
 
 export enum RPC_ACTIONS {
+    ERROR = 0x00,
     REQUEST = 0x01,
     ACCEPT = 0x02,
     RESPONSE = 0x03,
     REJECT = 0x04,
-    ERROR = 0x05,
+    REQUEST_ERROR = 0x05,
     PROVIDE = 0x06,
     PROVIDE_ACK = 0x07,
     UNPROVIDE = 0x08,
     UNPROVIDE_ACK = 0x09,
 
     NO_RPC_PROVIDER = 0x40,
-    RPC_TIMEOUT = 0x41,
     ACCEPT_TIMEOUT = 0x42,
     MULTIPLE_ACCEPT = 0x43,
     INVALID_RPC_CORRELATION_ID = 0x44,
@@ -216,6 +219,7 @@ export enum RPC_ACTIONS {
 }
 
 export enum PRESENCE_ACTIONS {
+    ERROR = 0x00,
     QUERY_ALL = 0x01,
     QUERY_ALL_RESPONSE = 0x02,
     QUERY = 0x03,
@@ -241,4 +245,14 @@ export enum PRESENCE_ACTIONS {
 export enum PAYLOAD_ENCODING {
     JSON = 0x00,
     DEEPSTREAM = 0x01
+}
+
+export const ACTIONS = {
+    [TOPIC.PARSER]: PARSER_ACTIONS,
+    [TOPIC.CONNECTION]: CONNECTION_ACTIONS,
+    [TOPIC.AUTH]: AUTH_ACTIONS,
+    [TOPIC.EVENT]: EVENT_ACTIONS,
+    [TOPIC.RECORD]: RECORD_ACTIONS,
+    [TOPIC.RPC]: RPC_ACTIONS,
+    [TOPIC.PRESENCE]: PRESENCE_ACTIONS
 }
