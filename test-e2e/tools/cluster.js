@@ -117,9 +117,8 @@ module.exports = class DeepstreamTest extends EventEmitter {
         }
         const username = authData.username
         const token = Math.random().toString()
-        const clientData = {}
+        let clientData = null
         const serverData = {}
-        const authResponseData = { username, token, clientData, serverData }
         let success
 
         // authenicate auth data
@@ -131,12 +130,13 @@ module.exports = class DeepstreamTest extends EventEmitter {
           serverData.role = 'user'
         } else if (username === 'userB' && authData.password === '123456789') {
           success = true
-          clientData['favorite color'] = 'orange'
+          clientData = { 'favorite color': 'orange', id: username }
           serverData.role = 'admin'
         } else {
           success = false
-          return
         }
+
+        const authResponseData = { username, token, clientData, serverData }
 
         if (success) {
           tokens.set(token, authResponseData)
