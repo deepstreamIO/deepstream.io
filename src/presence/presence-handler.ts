@@ -54,7 +54,7 @@ export default class PresenceHandler {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
     }
-    const users = parseUserNames(message.name)
+    const users = parseUserNames(message.data)
     if (!users) {
       this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], message.data, this.metaData)
       socketWrapper.sendError(message, PRESENCE_ACTIONS.INVALID_PRESENCE_USERS)
@@ -120,7 +120,6 @@ export default class PresenceHandler {
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-      name: PRESENCE_ACTIONS[PRESENCE_ACTIONS.QUERY_ALL_RESPONSE],
       parsedData: clients,
     })
   }
@@ -138,7 +137,6 @@ export default class PresenceHandler {
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY_RESPONSE,
-      name: PRESENCE_ACTIONS[PRESENCE_ACTIONS.QUERY],
       correlationId,
       parsedData: result,
     })

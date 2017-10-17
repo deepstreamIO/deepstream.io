@@ -35,7 +35,7 @@ describe('presence handler', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.EVENT,
       action: C.PRESENCE_ACTIONS.SUBSCRIBE,
-      name: 'S'
+      data: 'S'
     }
 
     testMocks.subscriptionRegistryMock
@@ -54,7 +54,7 @@ describe('presence handler', () => {
     const unsubscriptionMessage = {
       topic: C.TOPIC.EVENT,
       action: C.PRESENCE_ACTIONS.UNSUBSCRIBE,
-      name: 'S'
+      data: 'S'
     }
 
     testMocks.subscriptionRegistryMock
@@ -88,7 +88,6 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-        name: C.PRESENCE_ACTIONS[C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE],
         parsedData: []
       })
 
@@ -148,7 +147,6 @@ describe('presence handler', () => {
     const queryMessage = {
       topic: C.TOPIC.PRESENCE,
       action: C.PRESENCE_ACTIONS.QUERY_ALL,
-      name: C.PRESENCE_ACTIONS.QUERY_ALL
     }
 
     testMocks.stateRegistryMock
@@ -163,7 +161,6 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-        name: C.PRESENCE_ACTIONS[C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE],
         parsedData: ['Bart']
       })
 
@@ -189,7 +186,6 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-        name: C.PRESENCE_ACTIONS[C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE],
         parsedData: ['Bart', 'Homer', 'Maggie']
       })
 
