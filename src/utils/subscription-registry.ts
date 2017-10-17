@@ -222,7 +222,7 @@ export default class SubscriptionRegistry {
 
     this.addSocket(subscription, socket)
 
-    const logMsg = `for ${this.topic}:${name} by ${socket.user}`
+    const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
     this.services.logger.debug(EVENT_ACTIONS[this.actions.SUBSCRIBE], logMsg)
     socket.sendAckMessage(message)
   }

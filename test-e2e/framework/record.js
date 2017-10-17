@@ -254,7 +254,6 @@ module.exports.assert = {
   hasDataAtPath (clientExpression, recordName, path, data) {
     data = utils.parseData(data)
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      console.log(recordData.record.get())
       assert.deepEqual(recordData.record.get(path), data)
     })
   },

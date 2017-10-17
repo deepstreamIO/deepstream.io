@@ -16,7 +16,7 @@ export function get (): DeepstreamConfig {
     libDir: null,
     serverName: getUid(),
     showLogo: true,
-    logLevel: LOG_LEVEL.INFO,
+    logLevel: LOG_LEVEL.DEBUG,
 
     /*
      * Connectivity

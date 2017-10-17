@@ -2,19 +2,15 @@ import { PRESENCE_ACTIONS, TOPIC, PARSER_ACTIONS } from '../constants'
 import StateRegistry from '../cluster/state-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 
-const EVERYONE = PRESENCE_ACTIONS[PRESENCE_ACTIONS.EVERYONE]
+const EVERYONE = '%_EVERYONE_%'
 
-function parseUserNames (data: any): Array<string> | null {
+function parseUserNames (names: any): Array<string> | null {
   // Returns all users for backwards compatability
-  if (
-    !data ||
-    data === 'S' ||
-    data === 'U'
-  ) {
+  if (names === 'S') {
     return [EVERYONE]
   }
   try {
-    return JSON.parse(data)
+    return JSON.parse(names)
   } catch (e) {
     return null
   }
@@ -58,9 +54,7 @@ export default class PresenceHandler {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
     }
-
-    console.log(message)
-    const users = parseUserNames(message.data)
+    const users = parseUserNames(message.name)
     if (!users) {
       this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], message.data, this.metaData)
       socketWrapper.sendError(message, PRESENCE_ACTIONS.INVALID_PRESENCE_USERS)
@@ -137,13 +131,13 @@ export default class PresenceHandler {
   */
   private handleQuery (users: Array<string>, correlationId: string, socketWrapper: SocketWrapper): void {
     const result = {}
-    const clients = this.connectedClients.getAll()
+    const clients = this.connectedClients.getAllMap()
     for (let i = 0; i < users.length; i++) {
       result[users[i]] = !!clients[users[i]]
     }
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.QUERY,
+      action: PRESENCE_ACTIONS.QUERY_RESPONSE,
       name: PRESENCE_ACTIONS[PRESENCE_ACTIONS.QUERY],
       correlationId,
       parsedData: result,

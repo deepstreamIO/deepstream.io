@@ -392,7 +392,7 @@ export default class RecordTransition {
         topic: TOPIC.RECORD,
         action: RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
         name: this.name,
-        data: [
+        parsedData: [
           update.versions,
           errorMessage ? errorMessage.toString() : null,
         ],

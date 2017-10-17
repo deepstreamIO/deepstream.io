@@ -165,7 +165,6 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * logic and closes the connection
    */
   public destroy (): void {
-    console.log('terminating')
     uws.native.server.terminate(this.external)
   }
 

@@ -115,7 +115,7 @@ function getJifToMsg () {
     message: {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY_ALL,
-      name: PRESENCE_ACTIONS.QUERY_ALL
+      name: PRESENCE_ACTIONS.QUERY_ALL.toString()
     }
   })
 
@@ -124,7 +124,7 @@ function getJifToMsg () {
     message: {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY,
-      name: PRESENCE_ACTIONS.QUERY,
+      name: PRESENCE_ACTIONS.QUERY.toString(),
       parsedData: msg.data
     }
   })
@@ -169,8 +169,8 @@ function getMsgToJif () {
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      error: message.data[1] || undefined,
-      success: message.data[1] === null
+      error: message.parsedData[1] || undefined,
+      success: message.parsedData[1] === null
     }
   })
 

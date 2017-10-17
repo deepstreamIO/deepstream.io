@@ -171,7 +171,7 @@ export default class Deepstream extends EventEmitter {
     if (logger) {
       logger.debug(
         EVENT.INFO,
-        `State transition (${transition.name}): ${transition.from} -> ${transition.to}`
+        `State transition (${transition.name}): ${STATES[transition.from]} -> ${STATES[transition.to]}`
       )
     }
   }
