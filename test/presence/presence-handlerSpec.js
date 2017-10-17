@@ -2,6 +2,8 @@
 
 const PresenceHandler = require('../../src/presence/presence-handler').default
 
+const EVERYONE = '%_EVERYONE_%'
+
 const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
 const getTestMocks = require('../test-helper/test-mocks')
@@ -33,7 +35,7 @@ describe('presence handler', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.EVENT,
       action: C.PRESENCE_ACTIONS.SUBSCRIBE,
-      name: C.PRESENCE_ACTIONS.SUBSCRIBE
+      name: 'S'
     }
 
     testMocks.subscriptionRegistryMock
@@ -42,7 +44,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.SUBSCRIBE,
-        name: C.PRESENCE_ACTIONS[C.PRESENCE_ACTIONS.EVERYONE]
+        name: EVERYONE
       }, userOne.socketWrapper)
 
     presenceHandler.handle(userOne.socketWrapper, subscriptionMessage)
@@ -52,7 +54,7 @@ describe('presence handler', () => {
     const unsubscriptionMessage = {
       topic: C.TOPIC.EVENT,
       action: C.PRESENCE_ACTIONS.UNSUBSCRIBE,
-      name: C.PRESENCE_ACTIONS.UNSUBSCRIBE
+      name: 'S'
     }
 
     testMocks.subscriptionRegistryMock
@@ -61,7 +63,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.UNSUBSCRIBE,
-        name: C.PRESENCE_ACTIONS[C.PRESENCE_ACTIONS.EVERYONE]
+        name: EVERYONE
       }, userOne.socketWrapper)
 
     presenceHandler.handle(userOne.socketWrapper, unsubscriptionMessage)
@@ -198,7 +200,7 @@ describe('presence handler', () => {
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
       .once()
-      .withExactArgs(C.PRESENCE_ACTIONS[C.PRESENCE_ACTIONS.EVERYONE], {
+      .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.PRESENCE_JOIN,
         name: 'Bart'
@@ -220,7 +222,7 @@ describe('presence handler', () => {
     testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
       .once()
-      .withExactArgs(C.PRESENCE_ACTIONS[C.PRESENCE_ACTIONS.EVERYONE], {
+      .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.PRESENCE_LEAVE,
         name: 'Bart'

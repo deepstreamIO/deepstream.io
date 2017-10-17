@@ -1,4 +1,4 @@
-import { RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT, PARSER_ACTIONS } from '../constants'
+import { RPC_ACTIONS, TOPIC, EVENT, PARSER_ACTIONS } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
@@ -28,6 +28,11 @@ export default class RpcHandler {
      this.services = services
      this.subscriptionRegistry =
       subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RPC, TOPIC.RPC_SUBSCRIPTIONS)
+
+     this.subscriptionRegistry.setAction('NOT_SUBSCRIBED', RPC_ACTIONS.NOT_PROVIDED)
+     this.subscriptionRegistry.setAction('MULTIPLE_SUBSCRIPTIONS', RPC_ACTIONS.MULTIPLE_PROVIDERS)
+     this.subscriptionRegistry.setAction('SUBSCRIBE', RPC_ACTIONS.PROVIDE)
+     this.subscriptionRegistry.setAction('UNSUBSCRIBE', RPC_ACTIONS.UNPROVIDE)
 
      this.services.message.subscribe(
        TOPIC.RPC,

@@ -345,7 +345,7 @@ describe('JIF Handler', () => {
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.PRESENCE)
         expect(message.action).to.equal(C.PRESENCE_ACTIONS.QUERY_ALL)
-        expect(message.name).to.equal(C.PRESENCE_ACTIONS.QUERY_ALL)
+        expect(message.name).to.equal(C.PRESENCE_ACTIONS.QUERY_ALL.toString())
       })
     })
   })
@@ -401,7 +401,7 @@ describe('JIF Handler', () => {
           topic: C.TOPIC.RECORD,
           action: C.RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
           name: 'car/fiat',
-          data: [[2, 3], null]
+          parsedData: [[2, 3], null]
         })
         const jif = result.message
         expect(result.done).to.be.true
@@ -427,7 +427,7 @@ describe('JIF Handler', () => {
       it('should build a valid record read response', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RECORD,
-          action: C.RECORD_ACTIONS.READ,
+          action: C.RECORD_ACTIONS.READ_RESPONSE,
           name: 'car/fiat',
           version: 2,
           parsedData: { car: true }
@@ -444,7 +444,7 @@ describe('JIF Handler', () => {
       it('should handle a valid record head response', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RECORD,
-          action: C.RECORD_ACTIONS.HEAD,
+          action: C.RECORD_ACTIONS.HEAD_RESPONSE,
           name: 'car/fiat',
           version: 2
         })
@@ -477,7 +477,7 @@ describe('JIF Handler', () => {
       it('should build a valid presence response', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.PRESENCE,
-          action: C.PRESENCE_ACTIONS.QUERY,
+          action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
           parsedData: ['john', 'alex', 'yasser']
         })
         const jif = result.message

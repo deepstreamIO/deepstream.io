@@ -234,7 +234,7 @@ export default class RecordHandler {
  */
   private createAndUpdate (socketWrapper: SocketWrapper, message: RecordWriteMessage): void {
     const recordName = message.name
-    const isPatch = message.path !== null
+    const isPatch = message.path !== undefined
     message = Object.assign({}, message, { action: isPatch ? RECORD_ACTIONS.PATCH : RECORD_ACTIONS.UPDATE })
 
     // allow writes on the hot path to bypass the record transition

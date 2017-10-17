@@ -80,7 +80,6 @@ function getJifToMsg () {
       action: RECORD_ACTIONS.CREATEANDUPDATE,
       name: msg.recordName,
       version: msg.version || -1,
-      path: null,
       parsedData: msg.data,
       isWriteAck: true
     }

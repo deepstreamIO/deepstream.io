@@ -11,7 +11,8 @@ module.exports = () => {
     sendToSubscribers: () => {},
     setSubscriptionListener: () => {},
     getLocalSubscribers: () => {},
-    getAllRemoteServers: () => {}
+    getAllRemoteServers: () => {},
+    setAction: () => {}
   }
 
   const listenerRegistry = {

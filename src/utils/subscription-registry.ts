@@ -5,8 +5,8 @@ import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EV
 let idCounter = 0
 
 interface SubscriptionActions {
-  MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_SUBSCRIPTIONS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
-  NOT_SUBSCRIBED: RECORD_ACTIONS.NOT_SUBSCRIBED | EVENT_ACTIONS.NOT_SUBSCRIBED | RPC_ACTIONS.NOT_SUBSCRIBED | PRESENCE_ACTIONS.NOT_SUBSCRIBED
+  MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
+  NOT_SUBSCRIBED: RECORD_ACTIONS.NOT_SUBSCRIBED | EVENT_ACTIONS.NOT_SUBSCRIBED | RPC_ACTIONS.NOT_PROVIDED | PRESENCE_ACTIONS.NOT_SUBSCRIBED
   SUBSCRIBE: RECORD_ACTIONS.SUBSCRIBE | EVENT_ACTIONS.SUBSCRIBE | RPC_ACTIONS.PROVIDE | PRESENCE_ACTIONS.SUBSCRIBE
   UNSUBSCRIBE: RECORD_ACTIONS.UNSUBSCRIBE | EVENT_ACTIONS.UNSUBSCRIBE | RPC_ACTIONS.UNPROVIDE | PRESENCE_ACTIONS.UNSUBSCRIBE
 }
@@ -223,7 +223,7 @@ export default class SubscriptionRegistry {
     this.addSocket(subscription, socket)
 
     const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
-    this.services.logger.debug(EVENT_ACTIONS[this.actions.SUBSCRIBE], logMsg)
+    this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
     socket.sendAckMessage(message)
   }
 
@@ -247,7 +247,7 @@ export default class SubscriptionRegistry {
 
     if (!silent) {
       const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-      this.services.logger.debug(EVENT_ACTIONS[this.actions.SUBSCRIBE], logMsg)
+      this.services.logger.debug(this.actions[this.constants.UNSUBSCRIBE], logMsg)
       socket.sendAckMessage(message)
     }
   }
