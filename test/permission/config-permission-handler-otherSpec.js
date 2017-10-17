@@ -34,8 +34,7 @@ describe('supports spaces after variables and escaped quotes', () => {
       action: C.RECORD_ACTIONS.UPDATE,
       name: 'someUser',
       version: 1,
-      data: '{"firstname":"Yasser"}',
-      dataEncoding: C.PAYLOAD_ENCODING.JSON
+      data: '{"firstname":"Yasser"}'
     }
 
     const callback = function (error, result) {

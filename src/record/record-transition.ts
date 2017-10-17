@@ -190,7 +190,7 @@ export default class RecordTransition {
   private applyConfigAndData (socketWrapper: SocketWrapper, message: RecordWriteMessage, step: Step): boolean {
     const result = socketWrapper.parseData(message)
     if (result instanceof Error) {
-      // Log Error
+      console.error(result, message)
       return false
     }
     if (message.isWriteAck) {

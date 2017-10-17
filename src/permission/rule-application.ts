@@ -301,6 +301,9 @@ export default class RuleApplication {
    * to change
    */
   private getPathVars (): Array<string> {
+    if (!this.params.name) {
+      return []
+    }
     const matches = this.params.name.match(this.params.regexp)
     if (matches) {
       return matches.slice(1)

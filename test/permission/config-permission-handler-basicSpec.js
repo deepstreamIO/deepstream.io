@@ -104,16 +104,14 @@ describe('permission handler applies basic permissions referencing their own dat
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
-      data: 'O{"price":15}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"price":15}'
     })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
-      data: 'O{"price":5}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"price":5}'
     })).toBe(true)
   })
 
@@ -146,8 +144,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RPC_ACTIONS.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
-      data: 'O{"assetClass": "equity"}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"assetClass": "equity"}'
     }, null, { role: 'eq-trader' })).toBe(false)
 
     expect(testPermission(permissions, {
@@ -155,8 +152,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RPC_ACTIONS.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
-      data: 'O{"assetClass": "fx"}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"assetClass": "fx"}'
     }, null, { role: 'fx-trader' })).toBe(true)
 
     expect(testPermission(permissions, {
@@ -164,8 +160,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RPC_ACTIONS.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
-      data: 'O{"assetClass": "fx"}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"assetClass": "fx"}'
     }, null, { role: 'eq-trader' })).toBe(false)
 
     expect(testPermission(permissions, {
@@ -173,8 +168,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RPC_ACTIONS.REQUEST,
       name: 'trade/cancel',
       correlationId: '1234',
-      data: 'O{"assetClass": "fx"}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"assetClass": "fx"}'
     }, null, { role: 'fx-trader' })).toBe(false)
   })
 
@@ -194,8 +188,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/mercedes',
       version: 1,
-      data: '{"manufacturer":"mercedes-benz"}',
-      dataEncoding: C.PAYLOAD_ENCODING.JSON
+      data: '{"manufacturer":"mercedes-benz"}'
     })).toBe(true)
 
     expect(testPermission(permissions, {
@@ -203,8 +196,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/mercedes',
       version: 1,
-      data: '{"manufacturer":"BMW"}',
-      dataEncoding: C.PAYLOAD_ENCODING.JSON
+      data: '{"manufacturer":"BMW"}'
     })).toBe(false)
 
     expect(testPermission(permissions, {
@@ -212,8 +204,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
-      data: '{"model": "911", "price": 60000 }',
-      dataEncoding: C.PAYLOAD_ENCODING.JSON
+      data: '{"model": "911", "price": 60000 }'
     })).toBe(true)
 
     expect(testPermission(permissions, {
@@ -221,8 +212,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
-      data: '{"model": "911", "price": 40000 }',
-      dataEncoding: C.PAYLOAD_ENCODING.JSON
+      data: '{"model": "911", "price": 40000 }'
     })).toBe(false)
 
     expect(testPermission(permissions, {
@@ -230,8 +220,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
-      data: '{"model": "Boxter", "price": 70000 }',
-      dataEncoding: C.PAYLOAD_ENCODING.JSON
+      data: '{"model": "Boxter", "price": 70000 }'
     })).toBe(false)
   })
 
@@ -247,8 +236,7 @@ describe('permission handler applies basic permissions referencing their own dat
       action: C.RECORD_ACTIONS.UPDATE,
       name: 'cars/mercedes',
       version: 1,
-      data: '{"manufacturer":"mercedes-benz"',
-      dataEncoding: C.PAYLOAD_ENCODING.JSON
+      data: '{"manufacturer":"mercedes-benz"'
     }
 
     const callback = function (error, result) {
@@ -271,8 +259,7 @@ describe('permission handler applies basic permissions referencing their own dat
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
-      data: 'xxx',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: 'xxx'
     }
 
     const callback = function (error, result) {

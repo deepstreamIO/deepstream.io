@@ -30,8 +30,7 @@ describe('constructs data for patch message validation', () => {
       name: 'user/wh',
       version: 123,
       path: 'lastname',
-      data: 'SMiller',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '"Miller"'
     }
 
     const onDone = function (error, result) {
@@ -59,8 +58,7 @@ describe('constructs data for patch message validation', () => {
       name: 'user/wh',
       version: 123,
       path: 'lastname',
-      data: 'SHempel',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '"Hempel"'
     }
 
     const onDone = function (error, result) {
@@ -72,7 +70,7 @@ describe('constructs data for patch message validation', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('errors if the patch message has data with an invalid type', (next) => {
+  it('errors if the patch message has data with an invalid json', (next) => {
     const permissions = testHelper.getBasePermissions()
     services.cache.nextGetWillBeSynchronous = false
 
@@ -86,12 +84,11 @@ describe('constructs data for patch message validation', () => {
       name: 'user/wh',
       version: 123,
       path: 'lastname',
-      data: 'QHempel',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '['
     }
 
     const onDone = function (error, result) {
-      expect(lastError()).toContain('Unknown type')
+      expect(lastError()).toContain('SyntaxError: Unexpected end of JSON input')
       expect(result).toBe(false)
       next()
     }
@@ -111,8 +108,7 @@ describe('constructs data for patch message validation', () => {
       name: 'somerecord',
       version: 1,
       path: 'lastname',
-      data: 'SHempel',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '"Hempel"'
     }
 
     const onDone = function (error, result) {

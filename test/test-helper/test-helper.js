@@ -3,6 +3,7 @@
 
 const C = require('../../src/constants')
 const SocketWrapperFactory = require('../../src/message/uws/socket-wrapper-factory')
+const SocketWrapperFactoryMock = require('../test-mocks/socket-wrapper-factory-mock')
 
 exports.showChars = function (input) {
   return input
@@ -104,7 +105,7 @@ exports.testPermission = function (options) {
       permissionResult = result
     }
     permissionHandler.canPerformAction(
-      username, message, callback, userdata, SocketWrapperFactory.createSocketWrapper()
+      username, message, callback, userdata, SocketWrapperFactoryMock.createSocketWrapper()
     )
     return permissionResult
   }

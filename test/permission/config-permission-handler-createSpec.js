@@ -14,6 +14,10 @@ describe('allows to create a record without providing data, but denies updating 
     write: 'data.name === "Wolfram"'
   }
 
+  beforeEach(() => {
+    services.cache.set('some/tests', {}, () => {})
+  })
+
   it('allows creating the record', () => {
     const message = {
       topic: C.TOPIC.RECORD,
@@ -22,7 +26,6 @@ describe('allows to create a record without providing data, but denies updating 
     }
 
     expect(testPermission(permissions, message)).toBe(true)
-    services.cache.set('some/tests', {}, () => {})
   })
 
   it('denies update', () => {
@@ -49,7 +52,7 @@ describe('allows to create a record without providing data, but denies updating 
       name: 'some/tests',
       version: 2,
       path: 'apath',
-      data: 'SaValue'
+      data: '"aValue"'
     }
 
     const callback = function (error, result) {

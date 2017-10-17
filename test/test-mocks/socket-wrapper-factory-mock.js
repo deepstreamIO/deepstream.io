@@ -43,8 +43,16 @@ class SocketWrapperMock extends EventEmitter {
     this.lastSendMessage = message
   }
 
-  parseMessage (message) {
-    return message
+  parseData (message) {
+    if (message.parsedData || !message.data) {
+      return
+    }
+    try {
+      message.parsedData = JSON.parse(message.data)
+      return true
+    } catch (e) {
+      return e
+    }
   }
 
   send (/* message */) {
@@ -69,4 +77,4 @@ class SocketWrapperMock extends EventEmitter {
   }
 }
 
-module.exports.create = options => new SocketWrapperMock(options)
+module.exports.createSocketWrapper = options => new SocketWrapperMock(options)

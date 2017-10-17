@@ -155,8 +155,7 @@ describe('permission handler loads data for cross referencing', () => {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
-      data: 'O{"owner":"userX"}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"owner":"userX"}'
     }
 
     const callback = function (error, result) {
@@ -181,8 +180,7 @@ describe('permission handler loads data for cross referencing', () => {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
-      data: 'O{"owner":"userX"}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"owner":"userX"}'
     }
 
     const callback = function (error, result) {
@@ -206,8 +204,7 @@ describe('permission handler loads data for cross referencing', () => {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
       name: 'some-event',
-      data: 'O{"price":15}',
-      dataEncoding: C.PAYLOAD_ENCODING.DEEPSTREAM
+      data: '{"price":15}'
     }
 
     const callback = function (error, result) {
