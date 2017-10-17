@@ -1,4 +1,4 @@
-import { RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
+import { EVENT, PRESENCE_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
 import RpcHandler from './rpc-handler'
 import RpcProxy from './rpc-proxy'
 

@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS, EVENT_ACTIONS, TOPIC, EVENT } from '../constants'
+import { EVENT, EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
 
 /**
  * Different rule types support different features. Generally, all rules can
@@ -64,7 +64,7 @@ const RULES_MAP = {
     actions: {
       [PRESENCE_ACTIONS.SUBSCRIBE]: RULE_TYPES.ALLOW,
       [PRESENCE_ACTIONS.QUERY]: RULE_TYPES.ALLOW,
-      [PRESENCE_ACTIONS.QUERY_ALL]: RULE_TYPES.ALLOW
+      [PRESENCE_ACTIONS.QUERY_ALL]: RULE_TYPES.ALLOW,
     },
   },
 }
@@ -85,7 +85,7 @@ export const getRulesForMessage = (message: Message) => {
   return {
     section: RULES_MAP[message.topic].section,
     type: RULES_MAP[message.topic].actions[message.action].name,
-    action: message.action
+    action: message.action,
   }
 }
 

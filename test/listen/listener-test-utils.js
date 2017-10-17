@@ -28,7 +28,7 @@ module.exports = class ListenerTestUtils {
     } else {
       this.actions = C.EVENT_ACTIONS
     }
-    
+
     subscribedTopics = []
 
     clientRegistry = {

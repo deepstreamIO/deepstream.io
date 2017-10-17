@@ -1,8 +1,6 @@
 /* eslint-disable no-param-reassign */
 'use strict'
 
-const C = require('../../src/constants')
-const SocketWrapperFactory = require('../../src/message/uws/socket-wrapper-factory')
 const SocketWrapperFactoryMock = require('../test-mocks/socket-wrapper-factory-mock')
 
 exports.showChars = function (input) {

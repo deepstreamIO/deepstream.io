@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC, PARSER_ACTIONS } from '../constants'
+import { PARSER_ACTIONS, RECORD_ACTIONS, TOPIC } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'

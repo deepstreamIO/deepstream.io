@@ -1,5 +1,5 @@
-import { LOG_LEVEL, EVENT, TOPIC } from '../constants'
 import { EventEmitter } from 'events'
+import { EVENT, LOG_LEVEL, TOPIC } from '../constants'
 
 require('colors')
 

@@ -1,4 +1,4 @@
-import { PARSER_ACTIONS, AUTH_ACTIONS, CONNECTION_ACTIONS, EVENT, TOPIC } from '../constants'
+import { AUTH_ACTIONS, CONNECTION_ACTIONS, EVENT, PARSER_ACTIONS, TOPIC } from '../constants'
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -30,7 +30,7 @@ export default class MessageProcessor {
    * @todo The responses from the permissionHandler might arive in any arbitrary order - order them
    * @todo Handle permission handler timeouts
    */
-  process (socketWrapper: SocketWrapper, parsedMessages: Array<Message>): void {
+  public process (socketWrapper: SocketWrapper, parsedMessages: Array<Message>): void {
     let message
 
     const length = parsedMessages.length
@@ -46,7 +46,7 @@ export default class MessageProcessor {
         !message.topic) {
         this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], message)
         socketWrapper.sendError({
-          topic: TOPIC.ERROR
+          topic: TOPIC.ERROR,
         }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, message)
         continue
       }
@@ -56,7 +56,7 @@ export default class MessageProcessor {
         message,
         this.onPermissionResponse.bind(this, socketWrapper, message),
         socketWrapper.authData,
-        socketWrapper
+        socketWrapper,
       )
     }
   }

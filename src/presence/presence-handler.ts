@@ -1,5 +1,5 @@
-import { PRESENCE_ACTIONS, TOPIC, PARSER_ACTIONS } from '../constants'
 import StateRegistry from '../cluster/state-registry'
+import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 
 const EVERYONE = '%_EVERYONE_%'

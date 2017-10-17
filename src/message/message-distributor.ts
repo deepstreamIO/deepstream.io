@@ -1,18 +1,18 @@
-import { EVENT, TOPIC, PARSER_ACTIONS } from '../constants'
+import { EVENT, PARSER_ACTIONS, TOPIC } from '../constants'
 
 /**
  * The MessageDistributor routes valid and permissioned messages to
  * various, previously registered handlers, e.g. event-, rpc- or recordHandler
  */
 export default class MessageDistributor {
-  private _callbacks: any
-  private _options: DeepstreamConfig
-  private _services: DeepstreamServices
+  private callbacks: any
+  private options: DeepstreamConfig
+  private services: DeepstreamServices
 
   constructor (options: DeepstreamConfig, services: DeepstreamServices) {
-    this._callbacks = {}
-    this._options = options
-    this._services = services
+    this.callbacks = {}
+    this.options = options
+    this.services = services
   }
 
   /**
@@ -20,10 +20,10 @@ export default class MessageDistributor {
    * it to its subscriber, based on the message's topic
    */
   public distribute (socketWrapper: SocketWrapper, message: Message) {
-    if (this._callbacks[message.topic] === undefined) {
-      this._services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_TOPIC], TOPIC[message.topic])
+    if (this.callbacks[message.topic] === undefined) {
+      this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_TOPIC], TOPIC[message.topic])
       socketWrapper.sendError({
-        topic: TOPIC.ERROR
+        topic: TOPIC.ERROR,
       }, PARSER_ACTIONS.UNKNOWN_TOPIC, TOPIC[message.topic])
       return
     }
@@ -31,7 +31,7 @@ export default class MessageDistributor {
     // TODO: Can we remove this? A general emit is quite expensive
     // socketWrapper.emit(message.topic, message)
 
-    this._callbacks[message.topic](socketWrapper, message)
+    this.callbacks[message.topic](socketWrapper, message)
   }
 
   /**
@@ -40,14 +40,14 @@ export default class MessageDistributor {
    * from the messageConnector
    */
   public registerForTopic (topic: string, callback: Function) {
-    if (this._callbacks[topic] !== undefined) {
+    if (this.callbacks[topic] !== undefined) {
       throw new Error(`Callback already registered for topic ${topic}`)
     }
 
-    this._callbacks[topic] = callback
-    this._services.message.subscribe(
+    this.callbacks[topic] = callback
+    this.services.message.subscribe(
       topic,
-      this._onMessageConnectorMessage.bind(this, callback)
+      this.onMessageConnectorMessage.bind(this, callback),
     )
   }
 
@@ -56,7 +56,7 @@ export default class MessageDistributor {
    * to the relevant handler, but with SOURCE_MESSAGE_CONNECTOR instead of
    * a socketWrapper as sender
    */
-  private _onMessageConnectorMessage (callback: Function, message: Message, originServer: string) {
+  private onMessageConnectorMessage (callback: Function, message: Message, originServer: string) {
     // callback(SOURCE_MESSAGE_CONNECTOR, message, originServer)
   }
 }

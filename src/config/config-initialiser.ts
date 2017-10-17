@@ -1,6 +1,7 @@
 'use strict'
 
 import * as fs from 'fs'
+import FileAuthenticationHandler from '../authentication/file-based-authentication-handler'
 import OpenAuthenticationHandler from '../authentication/open-authentication-handler'
 import { LOG_LEVEL } from '../constants'
 import DefaultCache from '../default-plugins/local-cache'
@@ -10,7 +11,6 @@ import HTTPConnectionEndpoint from '../message/http/connection-endpoint'
 import UWSConnectionEndpoint from '../message/uws/connection-endpoint'
 import ConfigPermissionHandler from '../permission/config-permission-handler'
 import OpenPermissionHandler from '../permission/open-permission-handler'
-import FileAuthenticationHandler from '../authentication/file-based-authentication-handler'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
 

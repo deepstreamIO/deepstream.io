@@ -1,5 +1,5 @@
-import { TOPIC, EVENT } from '../constants'
 import { EventEmitter } from 'events'
+import { EVENT, TOPIC } from '../constants'
 
 /**
  * This class provides a generic mechanism that allows to maintain

@@ -1,6 +1,6 @@
-import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS } from '../constants'
 import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
+import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS } from '../constants'
 import RecordHandler from '../record/record-handler'
 import * as configCompiler from './config-compiler'
 import * as configValidator from './config-validator'

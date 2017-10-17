@@ -45,7 +45,7 @@ class SocketWrapperMock extends EventEmitter {
 
   parseData (message) {
     if (message.parsedData || !message.data) {
-      return
+      return null
     }
     try {
       message.parsedData = JSON.parse(message.data)

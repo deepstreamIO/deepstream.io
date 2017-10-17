@@ -1,5 +1,5 @@
-import { RECORD_ACTIONS, EVENT_ACTIONS, TOPIC, EVENT } from '../constants'
 import StateRegistry from '../cluster/state-registry'
+import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
 import TimeoutRegistry from './listener-timeout-registry'
@@ -77,18 +77,18 @@ export default class ListenerRegistry implements SubscriptionListener {
         this.config,
         this.services,
         this.topic,
-        TOPIC.RECORD_LISTEN_PATTERNS
+        TOPIC.RECORD_LISTEN_PATTERNS,
       )
     } else {
       this.providerRegistry = new SubscriptionRegistry(
         this.config,
         this.services,
         this.topic,
-        TOPIC.EVENT_LISTEN_PATTERNS
+        TOPIC.EVENT_LISTEN_PATTERNS,
       )
     }
     this.providerRegistry.setAction('subscribe', this.actions.LISTEN)
-    this.providerRegistry.setAction('unsubscribe', this.actions.UNLISTEN)  
+    this.providerRegistry.setAction('unsubscribe', this.actions.UNLISTEN)
     this.providerRegistry.setSubscriptionListener({
       onLastSubscriptionRemoved: this.removeLastPattern.bind(this),
       onSubscriptionRemoved: this.removePattern.bind(this),
@@ -106,7 +106,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.RECORD_LISTENING
     } else {
-      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)      
+      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.EVENT_LISTENING
     }
     this.clusterProvidedRecords.on('add', this.onRecordStartProvided.bind(this))
@@ -114,7 +114,7 @@ export default class ListenerRegistry implements SubscriptionListener {
 
     this.message.subscribe(
       this.messageTopic,
-      this.onIncomingMessage.bind(this)
+      this.onIncomingMessage.bind(this),
     )
   }
 
@@ -357,7 +357,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
-        this.metaData
+        this.metaData,
       )
 
       const remoteListenArray = this.createRemoteListenArray(subscriptionName)
@@ -573,7 +573,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.message.sendDirect(serverName, {
       topic: this.messageTopic,
       action: this.actions.LISTEN,
-      name: subscriptionName
+      name: subscriptionName,
     }, this.metaData)
   }
 
@@ -585,7 +585,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.message.sendDirect(listenLeaderServerName, {
       topic: this.messageTopic,
       action: this.actions.ACK,
-      name: subscriptionName
+      name: subscriptionName,
     }, this.metaData)
   }
 

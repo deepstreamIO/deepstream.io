@@ -1,6 +1,6 @@
 import { getMessage } from '../../protocol/text/src/message-builder'
 import StateRegistry from '../cluster/state-registry'
-import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
+import { EVENT, EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
 
 let idCounter = 0
 
@@ -52,10 +52,10 @@ export default class SubscriptionRegistry {
     switch (topic) {
       case TOPIC.RECORD:
         this.actions = RECORD_ACTIONS
-        break      
+        break
       case TOPIC.EVENT:
         this.actions = EVENT_ACTIONS
-        break      
+        break
       case TOPIC.RPC:
         this.actions = RPC_ACTIONS
         break

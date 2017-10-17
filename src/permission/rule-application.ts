@@ -1,11 +1,11 @@
-import { 
+import {
   AUTH_ACTIONS,
-  RECORD_ACTIONS, 
-  EVENT_ACTIONS, 
-  RPC_ACTIONS, 
-  PRESENCE_ACTIONS, 
-  TOPIC, 
-  EVENT 
+  EVENT,
+  EVENT_ACTIONS,
+  PRESENCE_ACTIONS,
+  RECORD_ACTIONS,
+  RPC_ACTIONS,
+  TOPIC,
 } from '../constants'
 
 const OPEN = 'open'

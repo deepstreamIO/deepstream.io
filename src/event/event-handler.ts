@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, EVENT, PRESENCE_ACTIONS, TOPIC } from '../constants'
+import { EVENT, EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 

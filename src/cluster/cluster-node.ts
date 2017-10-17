@@ -1,4 +1,4 @@
-import { TOPIC, EVENT } from '../constants'
+import { EVENT, TOPIC } from '../constants'
 import StateRegistry from './state-registry'
 
 export default class ClusterNode implements Cluster {
@@ -16,7 +16,7 @@ export default class ClusterNode implements Cluster {
 
   public subscribe (topic: string, callback: Function) {}
 
-  public isLeader ():boolean { throw new Error('Leader not used in single state') }
+  public isLeader (): boolean { throw new Error('Leader not used in single state') }
 
   public getStateRegistry (name: TOPIC) {
     let stateRegistry = this.stateRegistries.get(name)

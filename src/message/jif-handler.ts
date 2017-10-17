@@ -1,18 +1,18 @@
 import {
   ACTIONS,
-  AUTH_ACTIONS, 
-  RECORD_ACTIONS, 
-  EVENT_ACTIONS, 
-  PRESENCE_ACTIONS, 
-  RPC_ACTIONS, 
-  TOPIC, 
-  EVENT 
+  AUTH_ACTIONS,
+  EVENT,
+  EVENT_ACTIONS,
+  PRESENCE_ACTIONS,
+  RECORD_ACTIONS,
+  RPC_ACTIONS,
+  TOPIC,
 } from '../constants'
 
 import * as Ajv from 'ajv'
 
-import jifSchema from './jif-schema'
 import * as utils from '../utils/utils'
+import jifSchema from './jif-schema'
 
 const ajv = new Ajv()
 
@@ -23,44 +23,43 @@ function getJifToMsg () {
   const JIF_TO_MSG: any = {}
 
   JIF_TO_MSG.event = {}
-  JIF_TO_MSG.event.emit = msg => ({
+  JIF_TO_MSG.event.emit = (msg) => ({
     done: true,
     message: {
       topic: TOPIC.EVENT,
       action: EVENT_ACTIONS.EMIT,
       name: msg.eventName,
-      parsedData: msg.data
-    }
+      parsedData: msg.data,
+    },
   })
 
-
   JIF_TO_MSG.rpc = {}
-  JIF_TO_MSG.rpc.make = msg => ({
+  JIF_TO_MSG.rpc.make = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RPC,
       action: RPC_ACTIONS.REQUEST,
       name: msg.rpcName,
       correlationId: utils.getUid(),
-      parsedData: msg.data
-    }
+      parsedData: msg.data,
+    },
   })
 
   JIF_TO_MSG.record = {}
-  JIF_TO_MSG.record.read = msg => ({
+  JIF_TO_MSG.record.read = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
       action: RECORD_ACTIONS.READ,
-      name: msg.recordName
-    }
+      name: msg.recordName,
+    },
   })
 
-  JIF_TO_MSG.record.write = msg => (
+  JIF_TO_MSG.record.write = (msg) => (
     msg.path ? JIF_TO_MSG.record.patch(msg) : JIF_TO_MSG.record.update(msg)
   )
 
-  JIF_TO_MSG.record.patch = msg => ({
+  JIF_TO_MSG.record.patch = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -69,11 +68,11 @@ function getJifToMsg () {
       version: msg.version || -1,
       path: msg.path,
       parsedData: msg.data,
-      isWriteAck: true
-    }
+      isWriteAck: true,
+    },
   })
 
-  JIF_TO_MSG.record.update = msg => ({
+  JIF_TO_MSG.record.update = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -81,31 +80,31 @@ function getJifToMsg () {
       name: msg.recordName,
       version: msg.version || -1,
       parsedData: msg.data,
-      isWriteAck: true
-    }
+      isWriteAck: true,
+    },
   })
 
-  JIF_TO_MSG.record.head = msg => ({
+  JIF_TO_MSG.record.head = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
       action: RECORD_ACTIONS.HEAD,
-      name: msg.recordName
-    }
+      name: msg.recordName,
+    },
   })
 
-  JIF_TO_MSG.record.delete = msg => ({
+  JIF_TO_MSG.record.delete = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
       action: RECORD_ACTIONS.DELETE,
-      name: msg.recordName
-    }
+      name: msg.recordName,
+    },
   })
 
   JIF_TO_MSG.presence = {}
 
-  JIF_TO_MSG.presence.query = msg => (
+  JIF_TO_MSG.presence.query = (msg) => (
     msg.parsedData ? JIF_TO_MSG.presence.queryUsers(msg) : JIF_TO_MSG.presence.queryAll(msg)
   )
 
@@ -114,18 +113,18 @@ function getJifToMsg () {
     message: {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY_ALL,
-      name: PRESENCE_ACTIONS.QUERY_ALL.toString()
-    }
+      name: PRESENCE_ACTIONS.QUERY_ALL.toString(),
+    },
   })
 
-  JIF_TO_MSG.presence.queryUsers = msg => ({
+  JIF_TO_MSG.presence.queryUsers = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY,
       name: PRESENCE_ACTIONS.QUERY.toString(),
-      parsedData: msg.data
-    }
+      parsedData: msg.data,
+    },
   })
 
   return utils.deepFreeze(JIF_TO_MSG)
@@ -139,12 +138,12 @@ function getMsgToJif () {
   const MSG_TO_JIF = {}
   MSG_TO_JIF[TOPIC.RPC] = {}
   MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       data: message.parsedData,
-      success: true
-    }
+      success: true,
+    },
   })
 
   MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.ACCEPT] = {}
@@ -155,56 +154,56 @@ function getMsgToJif () {
 
   MSG_TO_JIF[TOPIC.RECORD] = {}
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       version: message.version,
       data: message.parsedData,
-      success: true
-    }
+      success: true,
+    },
   })
 
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       error: message.parsedData[1] || undefined,
-      success: message.parsedData[1] === null
-    }
+      success: message.parsedData[1] === null,
+    },
   })
 
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE] = {}
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE][TYPE.ACK] = () => ({
     done: true,
     message: {
-      success: true
-    }
+      success: true,
+    },
   })
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       version: message.version,
-      success: true
-    }
+      success: true,
+    },
   })
 
   MSG_TO_JIF[TOPIC.PRESENCE] = {}
   MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       users: message.parsedData,
-      success: true
-    }
+      success: true,
+    },
   })
   MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       users: message.parsedData,
-      success: true
-    }
+      success: true,
+    },
   })
 
   return utils.deepFreeze(MSG_TO_JIF)
@@ -214,7 +213,7 @@ export default class JIFHandler {
   private JIF_TO_MSG: any
   private MSG_TO_JIF: any
   private topicToKey: any
-  private _logger: Logger
+  private logger: Logger
 
   constructor (options) {
     this.JIF_TO_MSG = getJifToMsg()
@@ -222,7 +221,7 @@ export default class JIFHandler {
 
     this.topicToKey = utils.reverseMap(TOPIC)
 
-    this._logger = options.logger
+    this.logger = options.logger
   }
 
   /*
@@ -236,7 +235,7 @@ export default class JIFHandler {
    *    {Boolean} done      false iff message should await a result/acknowledgement
    * }
    */
-  fromJIF (jifMessage) {
+  public fromJIF (jifMessage) {
     if (!validateJIF(jifMessage)) {
       let error = validateJIF.errors[0]
       switch (error.keyword) {
@@ -260,7 +259,7 @@ export default class JIFHandler {
       return {
         success: false,
         error,
-        done: true
+        done: true,
       }
     }
 
@@ -278,7 +277,7 @@ export default class JIFHandler {
    *    {Boolean} done      false iff message should await another result/acknowledgement
    * }
    */
-  toJIF (message: Message): JifMessage {
+  public toJIF (message: Message): JifMessage {
     let type
     if (message.isAck) {
       type = TYPE.ACK
@@ -299,14 +298,14 @@ export default class JIFHandler {
    *    {Boolean} done      false iff message should await another result/acknowledgement
    * }
    */
-  errorToJIF (message, event) {
+  public errorToJIF (message, event) {
     // convert topic enum to human-readable key
     const topicKey = this.topicToKey[message.topic]
 
     const result: any = {
       errorTopic: topicKey && topicKey.toLowerCase(),
       errorEvent: event,
-      success: false
+      success: false,
     }
 
     if (event === AUTH_ACTIONS.MESSAGE_DENIED) {
@@ -326,9 +325,9 @@ export default class JIFHandler {
       result.error = 'The RPC response timeout was exceeded by the provider.'
 
     } else {
-      this._logger.warn(
+      this.logger.warn(
         EVENT.INFO,
-        `Unhandled request error occurred: ${TOPIC[message.topic]} ${EVENT[event]} ${JSON.stringify(message)}`
+        `Unhandled request error occurred: ${TOPIC[message.topic]} ${EVENT[event]} ${JSON.stringify(message)}`,
       )
       result.error = `An error occurred: ${EVENT[event]}.`
       result.errorParams = message.name
@@ -336,7 +335,7 @@ export default class JIFHandler {
 
     return {
       message: result,
-      done: true
+      done: true,
     }
   }
 }

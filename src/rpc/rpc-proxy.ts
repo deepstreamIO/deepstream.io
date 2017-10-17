@@ -1,5 +1,5 @@
-import { RPC_ACTIONS, PRESENCE_ACTIONS, TOPIC, EVENT } from '../constants'
 import { EventEmitter } from 'events'
+import { EVENT, PRESENCE_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
 
 /**
  * This class exposes an interface that mimicks the behaviour
