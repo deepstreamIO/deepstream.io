@@ -136,62 +136,62 @@ export default {
       additionalProperties: false,
     },
      {
-      "title": "List",
-      "description": "Fetch and delete lists.",
-      "properties": {
-        "topic": {
-          "const": "list"
+      title: 'List',
+      description: 'Fetch and delete lists.',
+      properties: {
+        topic: {
+          const: 'list',
         },
-        "action": {
-          "enum": [
-            "read",
-            "delete"
-          ]
+        action: {
+          enum: [
+            'read',
+            'delete',
+          ],
         },
-        "listName": {
-          "type": "string",
-          "minLength": 1
-        }
+        listName: {
+          type: 'string',
+          minLength: 1,
+        },
       },
-      "required": [
-        "topic",
-        "action",
-        "listName"
+      required: [
+        'topic',
+        'action',
+        'listName',
       ],
-      "additionalProperties": false
+      additionalProperties: false,
     },
     {
-      "title": "List Writes",
-      "description": "Create or write to a list.",
-      "properties": {
-        "topic": {
-          "const": "list"
+      title: 'List Writes',
+      description: 'Create or write to a list.',
+      properties: {
+        topic: {
+          const: 'list',
         },
-        "action": {
-          "const": "write"
+        action: {
+          const: 'write',
         },
-        "listName": {
-          "type": "string",
-          "minLength": 1
+        listName: {
+          type: 'string',
+          minLength: 1,
         },
-        "data": {
-          "type": ["array"],
-          "items": {
-            "type": "string"
-          }
+        data: {
+          type: ['array'],
+          items: {
+            type: 'string',
+          },
         },
-        "version": {
-          "type": "integer",
-          "minimum": -1
-        }
+        version: {
+          type: 'integer',
+          minimum: -1,
+        },
       },
-      "required": [
-        "topic",
-        "action",
-        "listName",
-        "data"
+      required: [
+        'topic',
+        'action',
+        'listName',
+        'data',
       ],
-      "additionalProperties": false
+      additionalProperties: false,
     },
     {
       title: 'Presence',
