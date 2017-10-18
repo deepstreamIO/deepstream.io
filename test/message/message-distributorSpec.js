@@ -1,47 +1,61 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll */
 'use strict'
 
-const SocketMock = require('../mocks/socket-mock')
-const SocketWrapper = require('../mocks/socket-wrapper-mock')
-const MessageDistributor = require('../../src/message/message-distributor')
+const MessageDistributor = require('../../src/message/message-distributor').default
 const testHelper = require('../test-helper/test-helper')
+const getTestMocks = require('../test-helper/test-mocks')
 
 const options = testHelper.getDeepstreamOptions()
-const _msg = testHelper.msg
+const config = options.config
+const services = options.services
 
 describe('message connector distributes messages to callbacks', () => {
   let messageDistributor
-  const testCallback = jasmine.createSpy('testCallback')
+  let testMocks
+  let client
+  let testCallback
 
-  beforeAll(() => {
-    messageDistributor = new MessageDistributor(options)
+  beforeEach(() => {
+    testMocks = getTestMocks()
+    client = testMocks.getSocketWrapper()
+    testCallback = jasmine.createSpy()
+
+    messageDistributor = new MessageDistributor(config, services)
   })
 
-  it('routes topics to subscribers', () => {
-    expect(testCallback).not.toHaveBeenCalled()
-    expect(options.message.lastSubscribedTopic).toBe(null)
+  afterEach(() => {
+    client.socketWrapperMock.verify()
+  })
+
+  it('makes remote connection', () => {
+    expect(services.message.lastSubscribedTopic).toBe(null)
+
     messageDistributor.registerForTopic('someTopic', testCallback)
-    expect(options.message.lastSubscribedTopic).toBe('someTopic')
-    const socketWrapper = new SocketWrapper(new SocketMock(), {})
-    messageDistributor.distribute(socketWrapper, { topic: 'someTopic' })
+
+    expect(services.message.lastSubscribedTopic).toBe('someTopic')
+  })
+
+  it('makes local connection', () => {
+    messageDistributor.registerForTopic('someTopic', testCallback)
+
+    messageDistributor.distribute(client.socketWrapper, { topic: 'someTopic' })
+
     expect(testCallback.calls.count()).toEqual(1)
   })
 
   it('routes messages from the message connector', () => {
-    const cb = jasmine.createSpy('callback')
-    messageDistributor.registerForTopic('topicB', cb)
-    expect(options.message.lastSubscribedTopic).toBe('topicB')
-    expect(cb).not.toHaveBeenCalled()
-    options.message.simulateIncomingMessage('topicB', { topic: 'topicB' })
-    expect(cb).toHaveBeenCalled()
-  })
+    messageDistributor.registerForTopic('topicB', testCallback)
+
+    services.message.simulateIncomingMessage('topicB', { topic: 'topicB' })
+
+    expect(testCallback.calls.count()).toEqual(1)
+  }).pend('cluster test which requires refactoring')
 
   it('only routes matching topics', () => {
-    expect(testCallback.calls.count()).toEqual(1)
+    messageDistributor.registerForTopic('aTopic', testCallback)
+    messageDistributor.registerForTopic('anotherTopic', testCallback)
 
-    const socketWrapper = new SocketWrapper(new SocketMock(), {})
+    messageDistributor.distribute(client.socketWrapper, { topic: 'aTopic' })
 
-    messageDistributor.distribute(socketWrapper, { topic: 'someOtherTopic' })
     expect(testCallback.calls.count()).toEqual(1)
   })
 
@@ -50,17 +64,11 @@ describe('message connector distributes messages to callbacks', () => {
 
     try {
       messageDistributor.registerForTopic('someTopic', testCallback)
+      messageDistributor.registerForTopic('someTopic', testCallback)
     } catch (e) {
       hasErrored = true
     }
 
     expect(hasErrored).toBe(true)
-  })
-
-  it('sends errors for messages to unknown topics', () => {
-    const socketWrapper = new SocketWrapper(new SocketMock(), {})
-    expect(socketWrapper.socket.lastSendMessage).toBe(null)
-    messageDistributor.distribute(socketWrapper, { topic: 'gibberish' })
-    expect(socketWrapper.socket.lastSendMessage).toBe(_msg('X|E|UNKNOWN_TOPIC|gibberish+'))
   })
 })

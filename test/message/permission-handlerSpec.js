@@ -1,65 +1,75 @@
-/* eslint-disable no-unused-vars, import/no-extraneous-dependencies, import/newline-after-import */
-/* global jasmine, spyOn, describe, it, expect, beforeAll, afterEach */
 'use strict'
 
+const C = require('../../src/constants')
 const proxyquire = require('proxyquire').noPreserveCache()
-const uwsMock = require('../mocks/uws-mock')
-const HttpMock = require('../mocks/http-mock')
-const LoggerMock = require('../mocks/logger-mock')
+const uwsMock = require('../test-mocks/uws-mock')
+const HttpMock = require('../test-mocks/http-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
+
 const httpMock = new HttpMock()
 const httpsMock = new HttpMock()
 // since proxyquire.callThru is enabled, manually capture members from prototypes
 httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
-const SocketWrapperMock = require('../mocks/socket-wrapper-mock')
+
+const getTestMocks = require('../test-helper/test-mocks')
+
+let client
+
 const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
   uws: uwsMock,
   http: httpMock,
   https: httpsMock,
-  './socket-wrapper': SocketWrapperMock
-})
-const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
-const SocketMock = require('../mocks/socket-mock')
-const _msg = require('../test-helper/test-helper').msg
+  './socket-wrapper-factory': {
+    createSocketWrapper: () => {
+      client = getTestMocks().getSocketWrapper('client')
+      return client.socketWrapper
+    }
+  }
+}).default
+const DependencyInitialiser = require('../../src/utils/dependency-initialiser').default
+const SocketMock = require('../test-mocks/socket-mock')
 
 const permissionHandler = {
   isValidUser (connectionData, authData, callback) {
     callback(true, {
       username: 'someUser',
       clientData: { firstname: 'Wolfram' },
-      serverData: { role: authData.role }
+      serverData: { role: 'admin' }
     })
   },
-  canPerformAction (username, message, callback, data) {
+  canPerformAction (username, message, callback) {
     callback(null, true)
   },
-  onClientDisconnect (username) {}
+  onClientDisconnect () {}
 }
 
-const options = {
-  permissionHandler,
-  authenticationHandler: permissionHandler,
-  logger: new LoggerMock(),
+const config = {
   maxAuthAttempts: 3,
   logInvalidAuthData: true
 }
 
-const mockDs = {
-  _options: options
+const services = {
+  permissionHandler,
+  authenticationHandler: permissionHandler,
+  logger: new LoggerMock()
 }
 
 describe('permissionHandler passes additional user meta data', () => {
-  let socketWrapperMock
   let connectionEndpoint
 
-  beforeAll((done) => {
-    connectionEndpoint = new ConnectionEndpoint(options)
-    const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')
+  beforeEach((done) => {
+    connectionEndpoint = new ConnectionEndpoint(config)
+    const depInit = new DependencyInitialiser({ config, services }, config, services, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
       connectionEndpoint.onMessages = function () {}
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
+
+      uwsMock.messageHandler([{
+        topic: C.TOPIC.CONNECTION,
+        action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE,
+        data: 'localhost:6021'
+      }], client.socketWrapper)
 
       done()
     })
@@ -67,15 +77,43 @@ describe('permissionHandler passes additional user meta data', () => {
 
   it('sends an authentication message', () => {
     spyOn(permissionHandler, 'isValidUser').and.callThrough()
-    uwsMock._messageHandler(_msg('A|REQ|{"role": "admin"}+'), socketWrapperMock)
+
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.AUTH,
+        action: C.AUTH_ACTIONS.AUTH_SUCCESSFUL,
+        parsedData: { firstname: 'Wolfram' }
+      })
+
+    uwsMock.messageHandler([{
+      topic: C.TOPIC.AUTH,
+      action: C.AUTH_ACTIONS.REQUEST,
+      data: '{ "token": 1234 }'
+    }], client.socketWrapper)
+
     expect(permissionHandler.isValidUser).toHaveBeenCalled()
-    expect(permissionHandler.isValidUser.calls.mostRecent().args[1]).toEqual({ role: 'admin' })
-    expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|A|O{"firstname":"Wolfram"}+'))
+    expect(permissionHandler.isValidUser.calls.mostRecent().args[1]).toEqual({ token: 1234 })
+
+    client.socketWrapperMock.verify()
   })
 
   it('sends a record read message', () => {
     spyOn(connectionEndpoint, 'onMessages')
-    uwsMock._messageHandler(_msg('R|CR|someRecord+'), socketWrapperMock)
+
+    uwsMock.messageHandler([{
+      topic: C.TOPIC.AUTH,
+      action: C.AUTH_ACTIONS.REQUEST,
+      data: '{ "token": 1234 }'
+    }], client.socketWrapper)
+
+    uwsMock.messageHandler([{
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTIONS.READ,
+      name: 'recordA'
+    }], client.socketWrapper)
+
     expect(connectionEndpoint.onMessages).toHaveBeenCalled()
     expect(connectionEndpoint.onMessages.calls.mostRecent().args[0].authData).toEqual({ role: 'admin' })
   })

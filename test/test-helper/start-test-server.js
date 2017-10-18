@@ -1,4 +1,3 @@
-/* eslint-disable no-new */
 'use strict'
 
 const TestServer = require('./test-http-server')

@@ -32,7 +32,9 @@ When(/^server (\S)* comes back up$/, (server, done) => {
     done()
     return
   }
-  global.cluster.once('started', done)
+  global.cluster.once('started', () => {
+    setTimeout(done, 250)
+  })
   global.cluster.start()
 })
 
@@ -48,11 +50,11 @@ BeforeAll((callback) => {
   global.cluster.start()
 })
 
-AfterAll((callback) => {
-  setTimeout(() => {
-    global.cluster.once('stopped', () => {
-      callback()
-    })
-    global.cluster.stop()
-  }, 500)
-})
+// AfterAll((callback) => {
+//   setTimeout(() => {
+//     global.cluster.once('stopped', () => {
+//       callback()
+//     })
+//     global.cluster.stop()
+//   }, 500)
+// })

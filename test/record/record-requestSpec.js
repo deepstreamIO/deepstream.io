@@ -1,69 +1,71 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const recordRequest = require('../../src/record/record-request')
-const SocketWrapper = require('../mocks/socket-wrapper-mock')
-const SocketMock = require('../mocks/socket-mock')
-const testHelper = require('../test-helper/test-helper')
-const LoggerMock = require('../mocks/logger-mock')
+const C = require('../../src/constants')
+const recordRequest = require('../../src/record/record-request').default
 
-const msg = testHelper.msg
+const getTestMocks = require('../test-helper/test-mocks')
+const testHelper = require('../test-helper/test-helper')
 
 describe('record request', () => {
   const completeCallback = jasmine.createSpy('completeCallback')
   const errorCallback = jasmine.createSpy('errorCallback')
 
-  let socketWrapper
-  let options
+  let testMocks
+  let client
+  let config
+  let services
 
   beforeEach(() => {
-    options = testHelper.getDeepstreamOptions()
-    options = Object.assign(options, {
+    const options = testHelper.getDeepstreamOptions()
+    services = options.services
+    config = Object.assign({}, options.config, {
       cacheRetrievalTimeout: 100,
       storageRetrievalTimeout: 100,
-      logger: new LoggerMock(),
       storageExclusion: new RegExp('dont-save')
     })
-    options.cache.set('existingRecord', { _v: 1, _d: {} }, () => {})
-    options.storage.set('onlyExistsInStorage', { _v: 1, _d: {} }, () => {})
+    services.cache.set('existingRecord', { _v: 1, _d: {} }, () => {})
+    services.storage.set('onlyExistsInStorage', { _v: 1, _d: {} }, () => {})
+
+    testMocks = getTestMocks()
+    client = testMocks.getSocketWrapper('someUser')
 
     completeCallback.calls.reset()
     errorCallback.calls.reset()
-
-    socketWrapper = new SocketWrapper(new SocketMock(), {})
   })
 
   describe('records are requested from cache and storage sequentially', () => {
     it('requests a record that exists in a synchronous cache', () => {
-      options.cache.nextOperationWillBeSynchronous = true
+      services.cache.nextOperationWillBeSynchronous = true
 
       recordRequest(
         'existingRecord',
-        options,
-        socketWrapper,
+        config,
+        services,
+        client.socketWrapper,
         completeCallback,
         errorCallback,
         null
         )
 
-      expect(options.cache.lastRequestedKey).toBe('existingRecord')
-      expect(options.storage.lastRequestedKey).toBe(null)
+      expect(services.cache.lastRequestedKey).toBe('existingRecord')
+      expect(services.storage.lastRequestedKey).toBe(null)
 
       expect(completeCallback).toHaveBeenCalledWith(
         { _v: 1, _d: {} },
         'existingRecord',
-        socketWrapper
+        client.socketWrapper
         )
       expect(errorCallback).not.toHaveBeenCalled()
     })
 
     it('requests a record that exists in an asynchronous cache', (done) => {
-      options.cache.nextGetWillBeSynchronous = false
+      services.cache.nextGetWillBeSynchronous = false
 
       recordRequest(
         'existingRecord',
-        options,
-        socketWrapper,
+        config,
+        services,
+        client.socketWrapper,
         completeCallback,
         errorCallback,
         null
@@ -73,72 +75,75 @@ describe('record request', () => {
         expect(completeCallback).toHaveBeenCalledWith(
           { _v: 1, _d: {} },
           'existingRecord',
-          socketWrapper
+          client.socketWrapper
           )
         expect(errorCallback).not.toHaveBeenCalled()
-        expect(options.cache.lastRequestedKey).toBe('existingRecord')
-        expect(options.storage.lastRequestedKey).toBe(null)
+        expect(services.cache.lastRequestedKey).toBe('existingRecord')
+        expect(services.storage.lastRequestedKey).toBe(null)
         done()
       }, 30)
     })
 
     it('requests a record that doesn\'t exists in a synchronous cache, but in storage', () => {
-      options.cache.nextGetWillBeSynchronous = true
+      services.cache.nextGetWillBeSynchronous = true
 
       recordRequest(
         'onlyExistsInStorage',
-        options,
-        socketWrapper,
+        config,
+        services,
+        client.socketWrapper,
         completeCallback,
         errorCallback,
         null
         )
 
-      expect(options.cache.lastRequestedKey).toBe('onlyExistsInStorage')
-      expect(options.storage.lastRequestedKey).toBe('onlyExistsInStorage')
+      expect(services.cache.lastRequestedKey).toBe('onlyExistsInStorage')
+      expect(services.storage.lastRequestedKey).toBe('onlyExistsInStorage')
 
       expect(completeCallback).toHaveBeenCalledWith(
         { _v: 1, _d: {} },
         'onlyExistsInStorage',
-        socketWrapper
+        client.socketWrapper
         )
       expect(errorCallback).not.toHaveBeenCalled()
     })
 
     it('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', (done) => {
-      options.cache.nextGetWillBeSynchronous = false
-      options.storage.nextGetWillBeSynchronous = false
+      services.cache.nextGetWillBeSynchronous = false
+      services.storage.nextGetWillBeSynchronous = false
 
       recordRequest(
         'onlyExistsInStorage',
-        options,
-        socketWrapper,
+        config,
+        services,
+        client.socketWrapper,
         completeCallback,
         errorCallback,
         null
         )
 
       setTimeout(() => {
-        expect(options.cache.lastRequestedKey).toBe('onlyExistsInStorage')
-        expect(options.storage.lastRequestedKey).toBe('onlyExistsInStorage')
+        expect(services.cache.lastRequestedKey).toBe('onlyExistsInStorage')
+        expect(services.storage.lastRequestedKey).toBe('onlyExistsInStorage')
 
         expect(errorCallback).not.toHaveBeenCalled()
         expect(completeCallback).toHaveBeenCalledWith(
           { _v: 1, _d: {} },
           'onlyExistsInStorage',
-          socketWrapper
+          client.socketWrapper
           )
         done()
       }, 75)
     })
 
     it('returns null for non existent records', () => {
-      options.cache.nextGetWillBeSynchronous = true
+      services.cache.nextGetWillBeSynchronous = true
 
       recordRequest(
         'doesNotExist',
-        options,
-        socketWrapper,
+        config,
+        services,
+        client.socketWrapper,
         completeCallback,
         errorCallback,
         null
@@ -147,82 +152,89 @@ describe('record request', () => {
       expect(completeCallback).toHaveBeenCalledWith(
         null,
         'doesNotExist',
-        socketWrapper
+        client.socketWrapper
         )
       expect(errorCallback).not.toHaveBeenCalled()
 
-      expect(options.cache.lastRequestedKey).toBe('doesNotExist')
-      expect(options.storage.lastRequestedKey).toBe('doesNotExist')
+      expect(services.cache.lastRequestedKey).toBe('doesNotExist')
+      expect(services.storage.lastRequestedKey).toBe('doesNotExist')
     })
 
     it('handles cache errors', () => {
-      options.cache.nextGetWillBeSynchronous = true
-      options.cache.nextOperationWillBeSuccessful = false
+      services.cache.nextGetWillBeSynchronous = true
+      services.cache.nextOperationWillBeSuccessful = false
 
       recordRequest(
         'cacheError',
-        options,
-        socketWrapper,
+        config,
+        services,
+        client.socketWrapper,
         completeCallback,
         errorCallback,
         null
         )
 
       expect(errorCallback).toHaveBeenCalledWith(
-        'RECORD_LOAD_ERROR',
+        C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
         'error while loading cacheError from cache:storageError',
         'cacheError',
-        socketWrapper
+        client.socketWrapper
         )
       expect(completeCallback).not.toHaveBeenCalled()
 
-      expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_LOAD_ERROR', 'error while loading cacheError from cache:storageError')
-      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'))
+      expect(services.logger.log).toHaveBeenCalledWith(
+        3, C.RECORD_ACTIONS.RECORD_LOAD_ERROR, 'error while loading cacheError from cache:storageError'
+      )
+      // expect(client.socketWrapper.socket.lastSendMessage).toBe(
+      //   msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'
+      // ))
     })
 
     it('handles storage errors', () => {
-      options.cache.nextGetWillBeSynchronous = true
-      options.cache.nextOperationWillBeSuccessful = true
-      options.storage.nextGetWillBeSynchronous = true
-      options.storage.nextOperationWillBeSuccessful = false
+      services.cache.nextGetWillBeSynchronous = true
+      services.cache.nextOperationWillBeSuccessful = true
+      services.storage.nextGetWillBeSynchronous = true
+      services.storage.nextOperationWillBeSuccessful = false
 
       recordRequest(
         'storageError',
-        options,
-        socketWrapper,
+        config,
+        services,
+        client.socketWrapper,
         completeCallback,
         errorCallback,
         null
         )
 
       expect(errorCallback).toHaveBeenCalledWith(
-        'RECORD_LOAD_ERROR',
+        C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
         'error while loading storageError from storage:storageError',
         'storageError',
-        socketWrapper
+        client.socketWrapper
         )
       expect(completeCallback).not.toHaveBeenCalled()
 
-      expect(options.logger.log).toHaveBeenCalledWith(3, 'RECORD_LOAD_ERROR', 'error while loading storageError from storage:storageError')
-      expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+'))
+      expect(services.logger.log).toHaveBeenCalledWith(3, C.RECORD_ACTIONS.RECORD_LOAD_ERROR, 'error while loading storageError from storage:storageError')
+      // expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+'))
     })
 
     describe('handles cache timeouts', () => {
       beforeEach(() => {
-        options.cacheRetrievalTimeout = 1
-        options.cache.nextGetWillBeSynchronous = false
-        options.cache.nextOperationWillBeSuccessful = true
+        config.cacheRetrievalTimeout = 1
+        services.cache.nextGetWillBeSynchronous = false
+        services.cache.nextOperationWillBeSuccessful = true
       })
 
       afterEach(() => {
-        options.cacheRetrievalTimeout = 10
+        config.cacheRetrievalTimeout = 10
       })
 
       it('sends a CACHE_RETRIEVAL_TIMEOUT message when cache times out', (done) => {
         recordRequest(
           'willTimeoutCache',
-          options,
-          socketWrapper,
+          config,
+          services,
+          client.socketWrapper,
           completeCallback,
           errorCallback,
           null
@@ -230,15 +242,15 @@ describe('record request', () => {
 
         setTimeout(() => {
           expect(errorCallback).toHaveBeenCalledWith(
-            'CACHE_RETRIEVAL_TIMEOUT',
+            C.RECORD_ACTIONS.CACHE_RETRIEVAL_TIMEOUT,
             'willTimeoutCache',
             'willTimeoutCache',
-            socketWrapper
+            client.socketWrapper
             )
           expect(completeCallback).not.toHaveBeenCalled()
 
           // ignores update from cache that may occur afterwards
-          options.cache.triggerLastGetCallback(null, '{ data: "value" }')
+          services.cache.triggerLastGetCallback(null, '{ data: "value" }')
           expect(completeCallback).not.toHaveBeenCalled()
 
           done()
@@ -248,18 +260,19 @@ describe('record request', () => {
 
     describe('handles storage timeouts', () => {
       beforeEach(() => {
-        options.storageRetrievalTimeout = 1
-        options.cache.nextGetWillBeSynchronous = true
-        options.cache.nextOperationWillBeSuccessful = true
-        options.storage.nextGetWillBeSynchronous = false
-        options.storage.nextOperationWillBeSuccessful = true
+        config.storageRetrievalTimeout = 1
+        services.cache.nextGetWillBeSynchronous = true
+        services.cache.nextOperationWillBeSuccessful = true
+        services.storage.nextGetWillBeSynchronous = false
+        services.storage.nextOperationWillBeSuccessful = true
       })
 
       it('sends a STORAGE_RETRIEVAL_TIMEOUT message when storage times out', (done) => {
         recordRequest(
           'willTimeoutStorage',
-          options,
-          socketWrapper,
+          config,
+          services,
+          client.socketWrapper,
           completeCallback,
           errorCallback,
           null
@@ -267,15 +280,15 @@ describe('record request', () => {
 
         setTimeout(() => {
           expect(errorCallback).toHaveBeenCalledWith(
-            'STORAGE_RETRIEVAL_TIMEOUT',
+            C.RECORD_ACTIONS.STORAGE_RETRIEVAL_TIMEOUT,
             'willTimeoutStorage',
             'willTimeoutStorage',
-            socketWrapper
+            client.socketWrapper
           )
           expect(completeCallback).not.toHaveBeenCalled()
 
           // ignores update from storage that may occur afterwards
-          options.storage.triggerLastGetCallback(null, '{ data: "value" }')
+          services.storage.triggerLastGetCallback(null, '{ data: "value" }')
           expect(completeCallback).not.toHaveBeenCalled()
 
           done()
@@ -286,17 +299,18 @@ describe('record request', () => {
 
   describe('excluded records are not put into storage', () => {
     beforeEach(() => {
-      options.cache.nextGetWillBeSynchronous = true
-      options.storage.nextGetWillBeSynchronous = true
-      options.storage.delete = jasmine.createSpy('storage.delete')
-      options.storage.set('dont-save/1', { _v: 1, _d: {} }, () => {})
+      services.cache.nextGetWillBeSynchronous = true
+      services.storage.nextGetWillBeSynchronous = true
+      services.storage.delete = jasmine.createSpy('storage.delete')
+      services.storage.set('dont-save/1', { _v: 1, _d: {} }, () => {})
     })
 
     it('returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', (done) => {
       recordRequest(
         'dont-save/1',
-        options,
-        socketWrapper,
+        config,
+        services,
+        client.socketWrapper,
         completeCallback,
         errorCallback,
         null
@@ -305,10 +319,10 @@ describe('record request', () => {
       expect(completeCallback).toHaveBeenCalledWith(
         null,
         'dont-save/1',
-        socketWrapper
+        client.socketWrapper
       )
       expect(errorCallback).not.toHaveBeenCalled()
-      expect(options.storage.lastRequestedKey).toBeNull()
+      expect(services.storage.lastRequestedKey).toBeNull()
       done()
     })
   })

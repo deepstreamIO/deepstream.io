@@ -1,598 +1,411 @@
-/* eslint-disable max-len, import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const proxyquire = require('proxyquire').noCallThru().noPreserveCache()
-const SocketWrapper = require('../mocks/socket-wrapper-mock')
-const SubscriptionRegistry = require('../../src/utils/subscription-registry')
-const SocketMock = require('../mocks/socket-mock')
+require('source-map-support').install()
+
+const RecordHandler = require('../../src/record/record-handler').default
+
+const C = require('../../src/constants')
+const M = require('./messages')
+
 const testHelper = require('../test-helper/test-helper')
-
-const RecordHandler = proxyquire('../../src/record/record-handler', {
-  '../utils/subscription-registry': SubscriptionRegistry
-})
-
-const msg = testHelper.msg
+const getTestMocks = require('../test-helper/test-mocks')
 
 describe('record handler handles messages', () => {
+  let testMocks
   let recordHandler
-  const clientA = new SocketWrapper(new SocketMock(), {})
-  const clientB = new SocketWrapper(new SocketMock(), {})
-  const options = testHelper.getDeepstreamOptions()
+  let client
+  let config
+  let services
 
-  it('creates the record handler', () => {
-    recordHandler = new RecordHandler(options)
-    expect(recordHandler.handle).toBeDefined()
+  beforeEach(() => {
+    testMocks = getTestMocks()
+    client = testMocks.getSocketWrapper('someUser')
+    const options = testHelper.getDeepstreamOptions()
+    config = options.config
+    services = options.services
+    recordHandler = new RecordHandler(
+      config, services, testMocks.subscriptionRegistry, testMocks.listenerRegistry
+    )
   })
 
-  it('rejects messages with invalid data', () => {
-    recordHandler.handle(clientA, {
-      raw: 'raw-message',
-      topic: 'R',
-      action: 'CR',
-      data: []
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|raw-message+'))
-  })
-
-  it('handles unknown actions', () => {
-    recordHandler.handle(clientA, {
-      raw: 'raw-message',
-      topic: 'R',
-      action: 'DOES_NOT_EXIST',
-      data: ['someRecord']
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|UNKNOWN_ACTION|unknown action DOES_NOT_EXIST+'))
+  afterEach(() => {
+    client.socketWrapperMock.verify()
+    testMocks.subscriptionRegistryMock.verify()
   })
 
   it('creates a non existing record', () => {
-    recordHandler.handle(clientA, {
-      topic: 'R',
-      action: 'CR',
-      data: ['someRecord']
-    })
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs(M.readResponseMessage)
 
-    expect(options.cache.lastSetKey).toBe('someRecord')
-    expect(options.cache.lastSetValue).toEqual({ _v: 0, _d: { } })
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect(options.storage.lastSetKey).toBe('someRecord')
-    expect(options.storage.lastSetValue).toEqual({ _v: 0, _d: { } })
+    expect(services.cache.lastSetKey).toBe('some-record')
+    expect(services.cache.lastSetValue).toEqual({ _v: 0, _d: { } })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|someRecord|0|{}+'))
+    expect(services.storage.lastSetKey).toBe('some-record')
+    expect(services.storage.lastSetValue).toEqual({ _v: 0, _d: { } })
   })
 
   it('tries to create a non existing record, but receives an error from the cache', () => {
-    options.cache.failNextSet = true
+    services.cache.failNextSet = true
 
-    recordHandler.handle(clientA, {
-      topic: 'R',
-      action: 'CR',
-      data: ['someRecord7']
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(M.createOrReadMessage, C.RECORD_ACTIONS.RECORD_CREATE_ERROR)
 
-    expect(clientA.socket.sendMessages).toContain(msg('R|E|RECORD_CREATE_ERROR|someRecord7+'))
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
+    // expect(options.logger.lastLogMessage).toBe('storage:storageError')
   })
-
-  it('tries to create a non existing record, but receives an error from the cache', () => {
-    options.storage.failNextSet = true
-    options.logger.lastLogMessage = null
-    recordHandler.handle(clientA, {
-      topic: 'R',
-      action: 'CR',
-      data: ['someRecord8']
-    })
-
-    expect(options.logger.lastLogMessage).toBe('storage:storageError')
-  })
-
 
   it('does not store new record when excluded', () => {
-    options.storage.lastSetKey = null
-    options.storage.lastSetValue = null
+    config.storageExclusion = new RegExp('some-record')
 
-    recordHandler.handle(clientA, {
-      topic: 'R',
-      action: 'CR',
-      data: ['no-storage']
-    })
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
 
-    expect(options.storage.lastSetKey).toBe(null)
-    expect(options.storage.lastSetValue).toBe(null)
+    expect(services.storage.lastSetKey).toBe(null)
+    expect(services.storage.lastSetValue).toBe(null)
   })
 
   it('returns an existing record', () => {
-    options.cache.set('existingRecord', { _v: 3, _d: { firstname: 'Wolfram' } }, () => {})
-    recordHandler.handle(clientA, {
-      topic: 'R',
-      action: 'CR',
-      data: ['existingRecord']
-    })
+    services.cache.set('some-record', M.recordData, () => {})
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|existingRecord|3|{"firstname":"Wolfram"}+'))
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.READ_RESPONSE,
+        name: 'some-record',
+        version: M.recordData._v,
+        parsedData: M.recordData._d
+      })
+
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
   })
 
   it('returns true for HAS if message exists', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|H|existingRecord'),
-      topic: 'R',
-      action: 'H',
-      data: ['existingRecord']
-    })
+    services.cache.set('some-record', {}, () => {})
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|H|existingRecord|T+'))
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.HAS_RESPONSE,
+        name: 'some-record',
+        parsedData: true
+      })
+
+    recordHandler.handle(client.socketWrapper, M.recordHasMessage)
   })
 
   it('returns false for HAS if message doesn\'t exists', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|H|nonExistingRecord'),
-      topic: 'R',
-      action: 'H',
-      data: ['nonExistingRecord']
-    })
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.HAS_RESPONSE,
+        name: 'some-record',
+        parsedData: false
+      })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|H|nonExistingRecord|F+'))
+    recordHandler.handle(client.socketWrapper, M.recordHasMessage)
   })
 
   it('returns an error for HAS if message error occurs with record retrieval', () => {
-    options.cache.nextOperationWillBeSuccessful = false
+    services.cache.nextOperationWillBeSuccessful = false
 
-    recordHandler.handle(clientA, {
-      raw: msg('R|H|existingRecord'),
-      topic: 'R',
-      action: 'H',
-      data: ['existingRecord']
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(M.recordHasMessage, C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|H|existingRecord|RECORD_LOAD_ERROR+'))
-
-    options.cache.nextOperationWillBeSuccessful = true
+    recordHandler.handle(client.socketWrapper, M.recordHasMessage)
   })
 
   it('returns a snapshot of the data that exists with version number and data', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|SN|existingRecord'),
-      topic: 'R',
-      action: 'SN',
-      data: ['existingRecord']
-    })
+    services.cache.set('some-record', M.recordData, () => {})
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|existingRecord|3|{"firstname":"Wolfram"}+'))
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.READ_RESPONSE,
+        name: 'some-record',
+        parsedData: M.recordData._d,
+        version: M.recordData._v
+      })
+
+    recordHandler.handle(client.socketWrapper, M.recordSnapshotMessage)
   })
 
-
   it('returns an error for a snapshot of data that doesn\'t exists', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|SN|nonExistingRecord'),
-      topic: 'R',
-      action: 'SN',
-      data: ['nonExistingRecord']
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(M.recordSnapshotMessage, C.RECORD_ACTIONS.RECORD_NOT_FOUND)
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|SN|nonExistingRecord|RECORD_NOT_FOUND+'))
+    recordHandler.handle(client.socketWrapper, M.recordSnapshotMessage)
   })
 
   it('returns an error for a snapshot if message error occurs with record retrieval', () => {
-    options.cache.nextOperationWillBeSuccessful = false
+    services.cache.nextOperationWillBeSuccessful = false
 
-    recordHandler.handle(clientA, {
-      raw: msg('R|SN|existingRecord'),
-      topic: 'R',
-      action: 'SN',
-      data: ['existingRecord']
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(M.recordSnapshotMessage, C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|SN|existingRecord|RECORD_LOAD_ERROR+'))
-
-    options.cache.nextOperationWillBeSuccessful = true
+    recordHandler.handle(client.socketWrapper, M.recordSnapshotMessage)
   })
-
 
   it('returns a version of the data that exists with version number', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|HD|existingRecord'),
-      topic: 'R',
-      action: 'HD',
-      data: ['existingRecord']
-    })
+    ['record/1', 'record/2', 'record/3'].forEach((name) => {
+      const recordData = { _v: Math.random(), _d: { firstname: 'Wolfram' } }
+      services.cache.set(name, recordData, () => {})
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|HD|existingRecord|3+'))
+      client.socketWrapperMock
+        .expects('sendMessage')
+        .once()
+        .withExactArgs(Object.assign({}, M.recordHeadResponseMessage, { name, version: recordData._v }))
+
+      recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordHeadMessage, { name }))
+    })
   })
 
-
   it('returns an error for a head request of data that doesn\'t exists', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|HD|nonExistingRecord'),
-      topic: 'R',
-      action: 'HD',
-      data: ['nonExistingRecord']
-    })
+    ['record/1', 'record/2', 'record/3'].forEach((name) => {
+      client.socketWrapperMock
+        .expects('sendError')
+        .once()
+        .withExactArgs(Object.assign({}, M.recordHeadMessage, { name }), C.RECORD_ACTIONS.RECORD_NOT_FOUND)
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|HD|nonExistingRecord|RECORD_NOT_FOUND+'))
+      recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordHeadMessage, { name }))
+    })
   })
 
   it('returns an error for a version if message error occurs with record retrieval', () => {
-    options.cache.nextOperationWillBeSuccessful = false
+    services.cache.nextOperationWillBeSuccessful = false
 
-    recordHandler.handle(clientA, {
-      raw: msg('R|HD|existingRecord'),
-      topic: 'R',
-      action: 'HD',
-      data: ['existingRecord']
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(M.recordHeadMessage, C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|HD|existingRecord|RECORD_LOAD_ERROR+'))
-
-    options.cache.nextOperationWillBeSuccessful = true
+    recordHandler.handle(client.socketWrapper, M.recordHeadMessage)
   })
 
-  it('patches a record', () => {
-    recordHandler.handle(clientB, {
-      raw: msg('R|P|existingRecord|4|lastname|SEgon'),
-      topic: 'R',
-      action: 'P',
-      data: ['existingRecord', 4, 'lastname', 'SEgon']
+  xit('patches a record', () => {
+    const recordPatch = Object.assign({}, M.recordPatch)
+    services.cache.set('some-record', Object.assign({}, M.recordData), () => {})
+
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(M.recordPatch.name, recordPatch, false, client.socketWrapper)
+
+    recordHandler.handle(client.socketWrapper, recordPatch)
+
+    services.cache.get('some-record', (error, record) => {
+      expect(record).toEqual({ _v: 6, _d: { name: 'Kowalski', lastname: 'Egon' } })
     })
-
-    expect(clientB.socket.lastSendMessage).toBe(null)
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|P|existingRecord|4|lastname|SEgon+'))
-  })
-
-  it('returns the patched record', () => {
-    recordHandler.handle(clientB, {
-      topic: 'R',
-      action: 'CR',
-      data: ['existingRecord']
-    })
-
-    expect(clientB.socket.lastSendMessage).toBe(msg('R|R|existingRecord|4|{"firstname":"Wolfram","lastname":"Egon"}+'))
   })
 
   it('updates a record', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|5|{"name":"Kowalski"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 5, '{"name":"Kowalski"}']
+    services.cache.set('some-record', M.recordData, () => {})
+
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(M.recordUpdate.name, M.recordUpdate, false, client.socketWrapper)
+
+    recordHandler.handle(client.socketWrapper, M.recordUpdate)
+
+    services.cache.get('some-record', (error, record) => {
+      expect(record).toEqual({ _v: 6, _d: { name: 'Kowalski' } })
     })
-
-    expect(clientB.socket.lastSendMessage).toBe(msg('R|U|existingRecord|5|{"name":"Kowalski"}+'))
-    options.cache.get('existingRecord', (error, record) => {
-      expect(record).toEqual({ _v: 5, _d: { name: 'Kowalski' } })
-    })
-  })
-
-  it('updates a record with an invalid version number', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|x|{"name":"Kowalski"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 'x', '{"name":"Kowalski"}']
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_VERSION|existingRecord|NaN+'))
-  })
-
-  it('handles unsubscribe messages', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|US|someRecord'),
-      topic: 'R',
-      action: 'US',
-      data: ['someRecord']
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|A|US|someRecord+'))
-
-    recordHandler.handle(clientB, {
-      raw: msg('R|US|someRecord'),
-      topic: 'R',
-      action: 'U',
-      data: ['someRecord', 1, '{"bla":"blub"}']
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|A|US|someRecord+'))
   })
 
   it('rejects updates for existing versions', () => {
-    clientA.user = 'someUser'
-    recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|5|{"name":"Kowalski"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 5, '{"name":"Kowalski"}']
-    })
+    services.cache.set(M.recordUpdate.name, M.recordData, () => {})
+    const ExistingVersion = Object.assign({}, M.recordUpdate, { version: M.recordData._v })
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|existingRecord|5|{"name":"Kowalski"}+'))
-    expect(options.logger.lastLogMessage).toBe(msg('someUser tried to update record existingRecord to version 5 but it already was 5'))
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .never()
+
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(ExistingVersion, C.RECORD_ACTIONS.VERSION_EXISTS)
+
+    recordHandler.handle(client.socketWrapper, ExistingVersion)
+
+    expect(services.logger.lastLogMessage).toBe('someUser tried to update record some-record to version 5 but it already was 5')
   })
 
-  it('handles invalid update messages', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|6'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 6]
+  describe('subscription registry', () => {
+    it('handles unsubscribe messages', () => {
+      testMocks.subscriptionRegistryMock
+        .expects('unsubscribe')
+        .once()
+        .withExactArgs(M.unsubscribeMessage, client.socketWrapper)
+
+      recordHandler.handle(client.socketWrapper, M.unsubscribeMessage)
     })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|existingRecord|6+'))
-  })
-
-  it('handles invalid patch messages', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|P|existingRecord|6|bla'),
-      topic: 'R',
-      action: 'P',
-      data: ['existingRecord', 6, 'bla']
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|INVALID_MESSAGE_DATA|existingRecord|6|bla+'))
   })
 
   it('updates a record via same client to the same version', (done) => {
-    options.cacheRetrievalTimeout = 50
-    options.cache.nextGetWillBeSynchronous = false
-    clientA.socket.lastSendMessage = null
-    clientB.socket.lastSendMessage = null
-    recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|6|{"name":"Kowalski"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 6, '{"name":"Kowalski"}']
-    })
+    config.cacheRetrievalTimeout = 50
+    services.cache.nextGetWillBeSynchronous = false
+    services.cache.set(M.recordUpdate.name, M.recordData, () => {})
 
-    recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|6|{"name":"Kowalski"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 6, '{"name":"Kowalski"}']
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .twice()
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.UPDATE,
+        version: M.recordData._v,
+        parsedData: M.recordData._d,
+        name: M.recordUpdate.name,
+        isWriteAck: false
+      }, C.RECORD_ACTIONS.VERSION_EXISTS)
+
+    recordHandler.handle(client.socketWrapper, M.recordUpdate)
+    recordHandler.handle(client.socketWrapper, M.recordUpdate)
+    recordHandler.handle(client.socketWrapper, M.recordUpdate)
 
     setTimeout(() => {
-      expect(clientB.socket.lastSendMessage).toBe(msg('R|U|existingRecord|6|{"name":"Kowalski"}+'))
-
       /**
       * Important to note this is a race condition since version exists errors are sent as soon as record is retrieved,
       * which means it hasn't yet been written to cache.
       */
-      expect(clientA.socket.lastSendMessage).toBe(msg('R|E|VERSION_EXISTS|existingRecord|5|{"name":"Kowalski"}+'))
-      done()
-    }, 50)
-  })
-
-  it('updates a record via different clients to the same version', (done) => {
-    options.cacheRetrievalTimeout = 50
-    options.cache.nextGetWillBeSynchronous = false
-    clientA.socket.lastSendMessage = null
-    clientB.socket.lastSendMessage = null
-
-    recordHandler.handle(clientA, {
-      raw: msg('R|U|existingRecord|7|{"name":"Kowalski"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 7, '{"name":"Kowalski"}']
-    })
-
-    recordHandler.handle(clientB, {
-      raw: msg('R|U|existingRecord|7|{"name":"Kowalski"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 7, '{"name":"Kowalski"}']
-    })
-
-    setTimeout(() => {
-      expect(clientA.socket.lastSendMessage).toBeNull()
-      /**
-      * Important to note this is a race condition since version exists flushes happen before the new record is
-      * written to cache.
-      */
-      expect(clientB.socket.getMsg(1)).toBe(msg('R|E|VERSION_EXISTS|existingRecord|6|{"name":"Kowalski"}+'))
-      expect(clientB.socket.lastSendMessage).toBe(msg('R|U|existingRecord|7|{"name":"Kowalski"}+'))
       done()
     }, 50)
   })
 
   it('handles deletion messages', () => {
-    options.cache.nextGetWillBeSynchronous = false
-    recordHandler.handle(clientB, {
-      raw: msg('R|U|existingRecord|8|{"name":"Kowalski"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['existingRecord', 8, '{"name":"Kowalski"}']
-    })
+    services.cache.nextGetWillBeSynchronous = false
+    services.cache.set(M.recordDelete.name, {}, () => {})
 
-    recordHandler.handle(clientA, {
-      raw: msg('R|D|existingRecord'),
-      topic: 'R',
-      action: 'D',
-      data: ['existingRecord']
-    })
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(M.recordDelete.name, {
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.DELETED,
+        name: M.recordDelete.name
+      }, true, client.socketWrapper)
 
+    testMocks.subscriptionRegistryMock
+      .expects('getLocalSubscribers')
+      .once()
+      .returns(new Set())
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|A|D|existingRecord+'))
-    expect(clientB.socket.lastSendMessage).toBe(msg('R|A|D|existingRecord+'))
+    recordHandler.handle(client.socketWrapper, M.recordDelete)
 
-    options.cache.get('existingRecord', (error, record) => {
+    services.cache.get(M.recordDelete.name, (error, record) => {
       expect(record).toEqual(undefined)
     })
   })
 
-  it('creates another record', () => {
-    options.cache.nextGetWillBeSynchronous = true
-    recordHandler.handle(clientA, {
-      topic: 'R',
-      action: 'CR',
-      data: ['anotherRecord']
-    })
+  it('updates a record with a -1 version number', () => {
+    const data = Object.assign({}, M.recordData)
+    services.cache.set(M.recordUpdate.name, data, () => {})
 
-    expect(options.cache.lastSetKey).toBe('anotherRecord')
-    expect(options.cache.lastSetValue).toEqual({ _v: 0, _d: { } })
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(M.recordUpdate.name, Object.assign({}, M.recordUpdate, { version: 6 }), false, client.socketWrapper)
 
-    expect(options.storage.lastSetKey).toBe('anotherRecord')
-    expect(options.storage.lastSetValue).toEqual({ _v: 0, _d: { } })
+    recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: -1 }))
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|anotherRecord|0|{}+'))
-  })
-
-  it('receives a deletion ack from the message connector for anotherRecord', () => {
-    recordHandler.handle('SOURCE_MESSAGE_CONNECTOR', {
-      raw: msg('R|A|D|anotherRecord'),
-      topic: 'R',
-      action: 'A',
-      data: ['D', 'anotherRecord']
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|A|D|anotherRecord+'))
-  })
-
-  it('creates another record', () => {
-    options.cache.nextGetWillBeSynchronous = true
-    recordHandler.handle(clientA, {
-      topic: 'R',
-      action: 'CR',
-      data: ['overrideRecord']
-    })
-
-    expect(options.cache.lastSetKey).toBe('overrideRecord')
-    expect(options.cache.lastSetValue).toEqual({ _v: 0, _d: { } })
-
-    expect(options.storage.lastSetKey).toBe('overrideRecord')
-    expect(options.storage.lastSetValue).toEqual({ _v: 0, _d: { } })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|overrideRecord|0|{}+'))
-  })
-
-
-  it('updates a record with an -1 version number', () => {
-    options.cache.nextGetWillBeSynchronous = true
-    clientA.socket.lastSendMessage = null
-    clientB.socket.lastSendMessage = null
-
-    recordHandler.handle(clientB, {
-      raw: msg('R|U|overrideRecord|-1|{"name":"Johansson"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['overrideRecord', -1, '{"name":"Johansson"}']
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|U|overrideRecord|1|{"name":"Johansson"}+'))
-    options.cache.get('overrideRecord', (error, record) => {
-      expect(record).toEqual({ _v: 1, _d: { name: 'Johansson' } })
+    services.cache.get(M.recordUpdate.name, (error, record) => {
+      data._v = 6
+      expect(record).toEqual(data)
     })
   })
 
-  it('updates a record again with an -1 version number', () => {
+  it('updates multiple updates with an -1 version number', () => {
+    const data = Object.assign({}, M.recordData)
+    services.cache.set(M.recordUpdate.name, data, () => {})
 
-    recordHandler.handle(clientB, {
-      raw: msg('R|U|overrideRecord|-1|{"name":"Tom"}'),
-      topic: 'R',
-      action: 'U',
-      data: ['overrideRecord', -1, '{"name":"Tom"}']
-    })
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(M.recordUpdate.name, Object.assign({}, M.recordUpdate, { version: 6 }), false, client.socketWrapper)
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|U|overrideRecord|2|{"name":"Tom"}+'))
-    options.cache.get('overrideRecord', (error, record) => {
-      expect(record).toEqual({ _v: 2, _d: { name: 'Tom' } })
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(M.recordUpdate.name, Object.assign({}, M.recordUpdate, { version: 7 }), false, client.socketWrapper)
+
+    recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: -1 }))
+    recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordUpdate, { version: -1 }))
+
+    services.cache.get(M.recordUpdate.name, (error, record) => {
+      data._v = 7
+      expect(record).toEqual(data)
     })
   })
 
   it('creates records when using CREATEANDUPDATE', () => {
-    options.cache.nextGetWillBeSynchronous = true
-    clientA.socket.lastSendMessage = null
-    clientB.socket.lastSendMessage = null
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(
+        M.createAndUpdate.name,
+        Object.assign({}, M.createAndUpdate, { action: C.RECORD_ACTIONS.UPDATE, version: 1 }),
+        false,
+        client.socketWrapper
+      )
 
-    recordHandler.handle(clientB, {
-      raw: msg('R|CU|upsertedRecord|-1|{"name":"Tom"}'),
-      topic: 'R',
-      action: 'CU',
-      data: ['upsertedRecord', -1, '{"name":"Tom"}', '{}']
-    })
+    recordHandler.handle(client.socketWrapper, M.createAndUpdate)
 
-    options.cache.get('upsertedRecord', (error, record) => {
-      expect(record).toEqual({ _v: 1, _d: { name: 'Tom' } })
+    services.cache.get(M.createAndUpdate.name, (error, record) => {
+      expect(record).toEqual(Object.assign({}, M.recordData, { _v: 1 }))
     })
   })
-})
 
-describe('record handler handles messages', () => {
-  let recordHandler
-  const clientA = new SocketWrapper(new SocketMock(), {})
-  const clientB = new SocketWrapper(new SocketMock(), {})
-  const options = testHelper.getDeepstreamOptions()
+  it('registers a listener', () => {
+    testMocks.listenerRegistryMock
+      .expects('handle')
+      .once()
+      .withExactArgs(client.socketWrapper, M.listenMessage)
 
-  options.cache.nextGetWillBeSynchronous = true
-
-  it('creates the record handler', () => {
-    recordHandler = new RecordHandler(options)
-    expect(recordHandler.handle).toBeDefined()
+    recordHandler.handle(client.socketWrapper, M.listenMessage)
   })
 
-  it('creates record test', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|CR|test'),
-      topic: 'R',
-      action: 'CR',
-      data: ['test']
-    })
+  it('removes listeners', () => {
+    testMocks.listenerRegistryMock
+      .expects('handle')
+      .once()
+      .withExactArgs(client.socketWrapper, M.unlistenMessage)
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|test|0|{}+'))
+    recordHandler.handle(client.socketWrapper, M.unlistenMessage)
   })
 
-  it('deletes record test', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|D|test'),
-      topic: 'R',
-      action: 'D',
-      data: ['test']
-    })
+  it('processes listen accepts', () => {
+    testMocks.listenerRegistryMock
+      .expects('handle')
+      .once()
+      .withExactArgs(client.socketWrapper, M.listenAcceptMessage)
 
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|A|D|test+'))
+    recordHandler.handle(client.socketWrapper, M.listenAcceptMessage)
   })
 
+  it('processes listen rejects', () => {
+    testMocks.listenerRegistryMock
+      .expects('handle')
+      .once()
+      .withExactArgs(client.socketWrapper, M.listenRejectMessage)
 
-  it('creates record test', () => {
-    clientA.socket.sendMessages = []
-    recordHandler.handle(clientA, {
-      raw: msg('R|CR|test'),
-      topic: 'R',
-      action: 'CR',
-      data: ['test']
-    })
-
-    expect(clientA.socket.sendMessages[0]).not.toContain('MULTIPLE_SUBSCRIPTIONS')
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|test|0|{}+'))
-  })
-
-  it('creates record deleteEvent', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|CR|deleteEvent'),
-      topic: 'R',
-      action: 'CR',
-      data: ['deleteEvent']
-    })
-
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|deleteEvent|0|{}+'))
-  })
-
-  it('subscribes record deleteEvent', () => {
-    recordHandler.handle(clientB, {
-      raw: msg('R|CR|deleteEvent'),
-      topic: 'R',
-      action: 'CR',
-      data: ['deleteEvent']
-    })
-
-    expect(clientB.socket.lastSendMessage).toBe(msg('R|R|deleteEvent|0|{}+'))
-  })
-
-  it('deletes record deleteEvent and receives event', () => {
-    recordHandler.handle(clientA, {
-      raw: msg('R|D|deleteEvent'),
-      topic: 'R',
-      action: 'D',
-      data: ['deleteEvent']
-    })
-
-    expect(clientB.socket.lastSendMessage).toBe(msg('R|A|D|deleteEvent+'))
+    recordHandler.handle(client.socketWrapper, M.listenRejectMessage)
   })
 })

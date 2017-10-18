@@ -1,33 +1,20 @@
 'use strict'
 
-/* global describe, beforeAll, it */
-/* eslint-disable no-unused-expressions */
 const chai = require('chai') // eslint-disable-line
-const proxyquire = require('proxyquire') // eslint-disable-line
 const sinon = require('sinon') // eslint-disable-line
 
 const expect = chai.expect
 
-const C = require('../../src/constants/constants')
-const MessageBuilder = require('../../src/message/message-builder')
-const MessageParser = require('../../src/message/message-parser')
-const msg = require('../test-helper/test-helper').msg
+const C = require('../../src/constants')
 
-const JIFHandler = require('../../src/message/jif-handler')
-const LoggerMock = require('../mocks/logger-mock')
+const JIFHandler = require('../../src/message/jif-handler').default
+const LoggerMock = require('../test-mocks/logger-mock')
 
 describe('JIF Handler', () => {
   let jifHandler
   const logger = new LoggerMock()
-  const jifHandlerOptions = {
-    logger,
-    constants: C,
-    toTyped: MessageBuilder.typed,
-    convertTyped: MessageParser.convertTyped,
-    buildMessage: MessageBuilder.getMsg
-  }
   beforeAll(() => {
-    jifHandler = new JIFHandler(jifHandlerOptions)
+    jifHandler = new JIFHandler({ logger })
   })
   describe('fromJIF', () => {
 
@@ -75,9 +62,9 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.EVENT)
-        expect(message.action).to.equal(C.ACTIONS.EVENT)
-        expect(message.data).to.deep.equal(['time/berlin', `${C.TYPES.OBJECT}{"a":["b",2]}`])
-        expect(message.raw).to.equal(msg('E|EVT|time/berlin|O{"a":["b",2]}+'))
+        expect(message.action).to.equal(C.EVENT_ACTIONS.EMIT)
+        expect(message.name).to.equal('time/berlin')
+        expect(message.parsedData).to.deep.equal({ a:['b', 2] })
       })
 
       it('should support events without payloads', () => {
@@ -91,10 +78,10 @@ describe('JIF Handler', () => {
 
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
-        expect(message.raw).to.be.a('string')
         expect(message.topic).to.equal(C.TOPIC.EVENT)
-        expect(message.action).to.equal(C.ACTIONS.EVENT)
-        expect(message.data).to.deep.equal(['time/berlin', C.TYPES.UNDEFINED])
+        expect(message.action).to.equal(C.EVENT_ACTIONS.EMIT)
+        expect(message.name).to.equal('time/berlin')
+        expect(message.parsedData).to.equal(undefined)
       })
 
       it('should reject malformed topics', () => {
@@ -176,11 +163,11 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RPC)
-        expect(message.action).to.equal(C.ACTIONS.REQUEST)
-        expect(message.data[0]).to.equal('add-two')
-        expect(message.data[1]).to.be.a('string')
-        expect(message.data[1]).to.have.length.above(12)
-        expect(message.data[2]).to.equal(`${C.TYPES.OBJECT}{"numA":6,"numB":3}`)
+        expect(message.action).to.equal(C.RPC_ACTIONS.REQUEST)
+        expect(message.name).to.equal('add-two')
+        expect(message.correlationId).to.be.a('string')
+        expect(message.correlationId).to.have.length.above(12)
+        expect(message.parsedData).to.deep.equal({ numA:6, numB:3 })
       })
 
       it('should handle an rpc without data', () => {
@@ -195,11 +182,11 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RPC)
-        expect(message.action).to.equal(C.ACTIONS.REQUEST)
-        expect(message.data[0]).to.equal('add-two')
-        expect(message.data[1]).to.be.a('string')
-        expect(message.data[1]).to.have.length.above(12)
-        expect(message.data[2]).to.equal(C.TYPES.UNDEFINED)
+        expect(message.action).to.equal(C.RPC_ACTIONS.REQUEST)
+        expect(message.name).to.equal('add-two')
+        expect(message.correlationId).to.be.a('string')
+        expect(message.correlationId).to.have.length.above(12)
+        expect(message.parsedData).to.equal(undefined)
       })
     })
 
@@ -217,10 +204,11 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
-        expect(message.data).to.deep.equal(
-          ['car/bmw', -1, '{"tyres":2,"wheels":4}', '{"writeSuccess":true}']
-        )
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
+        expect(message.name).to.equal('car/bmw')
+        expect(message.version).to.equal(-1)
+        expect(message.parsedData).to.deep.equal({ tyres:2, wheels:4 })
+        expect(message.isWriteAck).to.equal(true)
       })
 
       it('should handle a record write (array type) without path', () => {
@@ -236,10 +224,11 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
-        expect(message.data).to.deep.equal(
-          ['car/bmw', -1, '[{"model":"M6","hp":560},{"model":"X6","hp":306}]', '{"writeSuccess":true}']
-        )
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
+        expect(message.name).to.equal('car/bmw')
+        expect(message.version).to.equal(-1)
+        expect(message.parsedData).to.deep.equal([{ model:'M6', hp:560 }, { model:'X6', hp:306 }])
+        expect(message.isWriteAck).to.equal(true)
       })
 
       it('should handle a record write with path', () => {
@@ -256,10 +245,12 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.CREATEANDUPDATE)
-        expect(message.data).to.deep.equal(
-          ['car/bmw', -1, 'tyres', `${C.TYPES.NUMBER}3`, '{"writeSuccess":true}']
-        )
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
+        expect(message.name).to.equal('car/bmw')
+        expect(message.version).to.equal(-1)
+        expect(message.path).to.equal('tyres')
+        expect(message.parsedData).to.deep.equal(3)
+        expect(message.isWriteAck).to.equal(true)
       })
 
       it('should handle a record read', () => {
@@ -274,8 +265,8 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.SNAPSHOT)
-        expect(message.data).to.deep.equal(['car/bmw'])
+        expect(message.action).to.equal(C.RECORD_ACTIONS.READ)
+        expect(message.name).to.equal('car/bmw')
       })
 
       it('should handle a record delete', () => {
@@ -290,8 +281,8 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.DELETE)
-        expect(message.data).to.deep.equal(['car/bmw'])
+        expect(message.action).to.equal(C.RECORD_ACTIONS.DELETE)
+        expect(message.name).to.equal('car/bmw')
       })
 
       it('should handle a record head', () => {
@@ -306,8 +297,8 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.ACTIONS.HEAD)
-        expect(message.data).to.deep.equal(['car/bmw'])
+        expect(message.action).to.equal(C.RECORD_ACTIONS.HEAD)
+        expect(message.name).to.equal('car/bmw')
       })
 
       it('should only allow writes to have a path field', () => {
@@ -353,8 +344,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.be.true
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.PRESENCE)
-        expect(message.action).to.equal(C.ACTIONS.QUERY)
-        expect(message.data).to.deep.equal([C.ACTIONS.QUERY])
+        expect(message.action).to.equal(C.PRESENCE_ACTIONS.QUERY_ALL)
       })
     })
   })
@@ -362,10 +352,13 @@ describe('JIF Handler', () => {
   describe('toJIF', () => {
     describe('rpcs', () => {
       it('should build a valid rpc response', () => {
-        const topic = C.TOPIC.RPC
-        const action = C.ACTIONS.RESPONSE
-        const data = ['addTwo', '1234', 'N12']
-        const result = jifHandler.toJIF(topic, action, data)
+        const result = jifHandler.toJIF({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.RESPONSE,
+          name: 'addTwo',
+          correlationId: '1234',
+          parsedData: 12
+        })
         const jif = result.message
         expect(result.done).to.be.true
         expect(jif).to.be.an('object')
@@ -374,18 +367,24 @@ describe('JIF Handler', () => {
         expect(jif.data).to.equal(12)
       })
       it('should ignore an rpc request ack', () => {
-        const topic = C.TOPIC.RPC
-        const action = C.ACTIONS.ACK
-        const data = [C.ACTIONS.REQUEST, 'addTwo', '1234']
-        const result = jifHandler.toJIF(topic, action, data)
+        const result = jifHandler.toJIF({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.REQUEST,
+          name: 'addTwo',
+          correlationId: 1234,
+          isAck: true
+        })
         expect(result.done).to.be.false
       })
 
       it('should build a valid rpc response', () => {
-        const topic = C.TOPIC.RPC
-        const action = C.ACTIONS.RESPONSE
-        const data = ['addTwo', '1234', 'N12']
-        const result = jifHandler.toJIF(topic, action, data)
+        const result = jifHandler.toJIF({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.RESPONSE,
+          name: 'addTwo',
+          correlationId: 1234,
+          parsedData: 12
+        })
         const jif = result.message
         expect(result.done).to.be.true
         expect(jif).to.be.an('object')
@@ -397,10 +396,12 @@ describe('JIF Handler', () => {
 
     describe('records', () => {
       it('should build a valid record write ack', () => {
-        const topic = C.TOPIC.RECORD
-        const action = C.ACTIONS.WRITE_ACKNOWLEDGEMENT
-        const data = ['car/fiat', '[2,3]', C.TYPES.NULL]
-        const result = jifHandler.toJIF(topic, action, data)
+        const result = jifHandler.toJIF({
+          topic: C.TOPIC.RECORD,
+          action: C.RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
+          name: 'car/fiat',
+          parsedData: [[2, 3], null]
+        })
         const jif = result.message
         expect(result.done).to.be.true
         expect(jif).to.be.an('object')
@@ -409,10 +410,12 @@ describe('JIF Handler', () => {
       })
 
       it('should build a valid record delete ack', () => {
-        const topic = C.TOPIC.RECORD
-        const action = C.ACTIONS.ACK
-        const data = [C.ACTIONS.DELETE, 'car/fiat']
-        const result = jifHandler.toJIF(topic, action, data)
+        const result = jifHandler.toJIF({
+          topic: C.TOPIC.RECORD,
+          action: C.RECORD_ACTIONS.DELETE,
+          name: 'car/fiat',
+          isAck: true
+        })
         const jif = result.message
         expect(result.done).to.be.true
         expect(jif).to.be.an('object')
@@ -421,54 +424,61 @@ describe('JIF Handler', () => {
       })
 
       it('should build a valid record read response', () => {
-        const topic = C.TOPIC.RECORD
-        const action = C.ACTIONS.WRITE_ACKNOWLEDGEMENT
-        const data = ['car/fiat', '[2,3]', C.TYPES.NULL]
-        const result = jifHandler.toJIF(topic, action, data)
+        const result = jifHandler.toJIF({
+          topic: C.TOPIC.RECORD,
+          action: C.RECORD_ACTIONS.READ_RESPONSE,
+          name: 'car/fiat',
+          version: 2,
+          parsedData: { car: true }
+        })
         const jif = result.message
         expect(result.done).to.be.true
         expect(jif).to.be.an('object')
         expect(jif).to.contain.keys(['success'])
         expect(jif.success).to.be.true
-
+        expect(jif.data).to.deep.equal({ car: true })
+        expect(jif.version).to.equal(2)
       })
 
       it('should handle a valid record head response', () => {
-        const topic = C.TOPIC.RECORD
-        const action = C.ACTIONS.HEAD
-        const data = ['car/fiat', '2']
-        const result = jifHandler.toJIF(topic, action, data)
+        const result = jifHandler.toJIF({
+          topic: C.TOPIC.RECORD,
+          action: C.RECORD_ACTIONS.HEAD_RESPONSE,
+          name: 'car/fiat',
+          version: 2
+        })
         const jif = result.message
         expect(result.done).to.be.true
         expect(jif).to.be.an('object')
         expect(jif).to.have.all.keys(['success', 'version'])
         expect(jif.success).to.be.true
         expect(jif.version).to.equal(2)
-
       })
 
       it('should handle a valid record head error', () => {
-        const topic = C.TOPIC.RECORD
-        const type = C.ACTIONS.HEAD
-        const message = ['car/fiat', C.EVENT.RECORD_LOAD_ERROR]
-        const result = jifHandler.errorToJIF(topic, type, message)
+        const result = jifHandler.errorToJIF({
+          topic: C.TOPIC.RECORD,
+          action: C.RECORD_ACTIONS.HEAD,
+          name: 'car/fiat'
+        }, C.EVENT.RECORD_LOAD_ERROR)
         const jif = result.message
         expect(result.done).to.be.true
         expect(jif).to.be.an('object')
         expect(jif).to.include.all.keys(['error', 'errorEvent', 'errorTopic', 'success'])
         expect(jif.success).to.be.false
         expect(jif.errorTopic).to.equal('record')
-        expect(jif.errorEvent).to.equal(C.ACTIONS.HEAD)
-        expect(jif.errorParams).to.contain(C.EVENT.RECORD_LOAD_ERROR)
+        expect(jif.errorEvent).to.equal(C.EVENT.RECORD_LOAD_ERROR)
+        expect(jif.errorParams).to.equal('car/fiat') // TODO: review
       })
     })
 
     describe('presence', () => {
       it('should build a valid presence response', () => {
-        const topic = C.TOPIC.PRESENCE
-        const action = C.ACTIONS.QUERY
-        const data = ['john', 'alex', 'yasser']
-        const result = jifHandler.toJIF(topic, action, data)
+        const result = jifHandler.toJIF({
+          topic: C.TOPIC.PRESENCE,
+          action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
+          parsedData: ['john', 'alex', 'yasser']
+        })
         const jif = result.message
         expect(result.done).to.be.true
         expect(jif).to.be.an('object')

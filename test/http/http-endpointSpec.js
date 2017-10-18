@@ -1,7 +1,6 @@
 'use strict'
 
-/* global describe, beforeAll, afterAll, it */
-/* eslint-disable no-unused-expressions, import/no-extraneous-dependencies */
+const C = require('../../src/constants')
 const chai = require('chai') // eslint-disable-line
 const proxyquire = require('proxyquire') // eslint-disable-line
 const sinon = require('sinon') // eslint-disable-line
@@ -10,19 +9,12 @@ const Promise = require('bluebird')
 const expect = chai.expect
 
 const needle = require('needle')
-/*
- *const http = require('http')
- *const url = require('url')
- */
 
-const constants = require('../../src/constants/constants')
-const MessageBuilder = require('../../src/message/message-builder')
-const MessageParser = require('../../src/message/message-parser')
-const LoggerMock = require('../mocks/logger-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
 
 Promise.promisifyAll(needle)
 
-const ConnectionEndpoint = require('../../src/message/http/connection-endpoint')
+const ConnectionEndpoint = require('../../src/message/http/connection-endpoint').default
 
 const conf = {
   healthCheckPath: '/health-check',
@@ -35,20 +27,21 @@ const conf = {
   allowAllOrigins: true,
   requestTimeout: 30
 }
+
+const services = {
+  logger: new LoggerMock(),
+  authenticationHandler: { isValidUser (headers, authData, callback) { callback(true, {}) } },
+  permissionHandler: { canPerformAction (user, message, callback/* , authData */) {
+    callback(null, true)
+  } }
+}
+
 const mockDS = {
-  _options: {
+  config: {
     serverName: `server_${Math.round(Math.random() * 1000)}`,
-    logger: new LoggerMock(),
-    authenticationHandler: { isValidUser (headers, authData, callback) { callback(true, {}) } },
-    permissionHandler: { canPerformAction (user, message, callback/* , authData */) {
-      callback(null, true)
-    } }
   },
-  constants,
-  toTyped: MessageBuilder.typed,
-  convertTyped: MessageParser.convertTyped,
-  _messageBuilder: MessageBuilder,
-  _messageDistributor: { distribute () {} }
+  services,
+  messageDistributor: { distribute () {} }
 }
 
 describe('http plugin', () => {
@@ -57,7 +50,7 @@ describe('http plugin', () => {
   const postUrl = `http://127.0.0.1:8888/api/v1/${apiKey}`
 
   beforeAll(() => {
-    httpPlugin = new ConnectionEndpoint(conf)
+    httpPlugin = new ConnectionEndpoint(conf, services)
     httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
   })
@@ -170,11 +163,11 @@ describe('http plugin', () => {
     describe('authentication', () => {
       let canPerformActionStub // eslint-disable-line
       beforeAll(() => {
-        canPerformActionStub = sinon.stub(mockDS._options.permissionHandler, 'canPerformAction')
+        canPerformActionStub = sinon.stub(services.permissionHandler, 'canPerformAction')
       })
 
       afterAll(() => {
-        mockDS._options.permissionHandler.canPerformAction.restore()
+        services.permissionHandler.canPerformAction.restore()
       })
 
       it('should reject a request that times out', (done) => {
@@ -184,7 +177,7 @@ describe('http plugin', () => {
           expect(resp.result).to.equal('FAILURE')
           expect(resp.body[0].success).to.be.false
           expect(resp.body[0].errorTopic).to.equal('connection')
-          expect(resp.body[0].errorEvent).to.equal('TIMEOUT')
+          expect(resp.body[0].errorEvent).to.equal(C.EVENT.TIMEOUT)
           done()
         })
       })

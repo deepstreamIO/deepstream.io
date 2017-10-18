@@ -1,83 +1,101 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const RecordHandler = require('../../src/record/record-handler')
-const SocketMock = require('../mocks/socket-mock')
-const SocketWrapper = require('../mocks/socket-wrapper-mock')
+const RecordHandler = require('../../src/record/record-handler').default
 
+const M = require('./messages')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
-
-const msg = testHelper.msg
+const getTestMocks = require('../test-helper/test-mocks')
 
 describe('record handler handles messages', () => {
+  let testMocks
   let recordHandler
-  const clientA = new SocketWrapper(new SocketMock(), {})
-  const options = testHelper.getDeepstreamOptions()
+  let client
+  let config
+  let services
 
-  it('creates the record handler', () => {
-    recordHandler = new RecordHandler(options)
-    expect(recordHandler.handle).toBeDefined()
+  beforeEach(() => {
+    testMocks = getTestMocks()
+    client = testMocks.getSocketWrapper()
+    const options = testHelper.getDeepstreamOptions()
+    config = options.config
+    services = options.services
+    recordHandler = new RecordHandler(config, services)
   })
 
-  it('triggers create and read actions if record doesnt exist', () => {
-    recordHandler.handle(clientA, {
-      raw: 'raw-message',
-      topic: 'R',
-      action: 'CR',
-      data: ['some-record']
-    })
+  afterEach(() => {
+    client.socketWrapperMock.verify()
+  })
 
-    expect(options.permissionHandler.lastArgs.length).toBe(2)
-    expect(options.permissionHandler.lastArgs[0][1].action).toBe('C')
-    expect(options.permissionHandler.lastArgs[1][1].action).toBe('R')
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|some-record|0|{}+'))
+
+  it('triggers create and read actions if record doesnt exist', () => {
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs(M.readResponseMessage)
+
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
+
+    expect(services.permissionHandler.lastArgs.length).toBe(2)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE)
+    expect(services.permissionHandler.lastArgs[1][1].action).toBe(C.RECORD_ACTIONS.READ)
   })
 
   it('triggers only read action if record does exist', () => {
-    options.permissionHandler.lastArgs = []
+    services.cache.set('some-record', {}, () => {})
 
-    recordHandler.handle(clientA, {
-      raw: 'raw-message',
-      topic: 'R',
-      action: 'CR',
-      data: ['some-record']
-    })
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs(M.readResponseMessage)
 
-    expect(options.permissionHandler.lastArgs.length).toBe(1)
-    expect(options.permissionHandler.lastArgs[0][1].action).toBe('R')
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|R|some-record|0|{}+'))
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
+
+    expect(services.permissionHandler.lastArgs.length).toBe(1)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.READ)
+  })
+
+  it('rejects a create', () => {
+    services.permissionHandler.nextResult = false
+
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(M.createDeniedMessage, C.RECORD_ACTIONS.MESSAGE_DENIED)
+
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
+
+    expect(services.permissionHandler.lastArgs.length).toBe(1)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE)
   })
 
   it('rejects a read', () => {
-    options.permissionHandler.lastArgs = []
-    options.permissionHandler.nextResult = false
+    services.cache.set('some-record', {}, () => {})
+    services.permissionHandler.nextResult = false
 
-    recordHandler.handle(clientA, {
-      raw: 'raw-message',
-      topic: 'R',
-      action: 'CR',
-      data: ['some-record']
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(M.readDeniedMessage, C.RECORD_ACTIONS.MESSAGE_DENIED)
 
-    expect(options.permissionHandler.lastArgs.length).toBe(1)
-    expect(options.permissionHandler.lastArgs[0][1].action).toBe('R')
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|MESSAGE_DENIED|some-record|R+'))
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
+
+    expect(services.permissionHandler.lastArgs.length).toBe(1)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.READ)
   })
 
   it('handles a permission error', () => {
-    options.permissionHandler.lastArgs = []
-    options.permissionHandler.nextError = 'XXX'
-    options.permissionHandler.nextResult = false
+    services.permissionHandler.nextError = 'XXX'
+    services.permissionHandler.nextResult = false
 
-    recordHandler.handle(clientA, {
-      raw: 'raw-message',
-      topic: 'R',
-      action: 'CR',
-      data: ['some-record']
-    })
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs(M.createDeniedMessage, C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR)
 
-    expect(options.permissionHandler.lastArgs.length).toBe(1)
-    expect(options.permissionHandler.lastArgs[0][1].action).toBe('R')
-    expect(clientA.socket.lastSendMessage).toBe(msg('R|E|MESSAGE_PERMISSION_ERROR|XXX+'))
+    recordHandler.handle(client.socketWrapper, M.createOrReadMessage)
+
+    expect(services.permissionHandler.lastArgs.length).toBe(1)
+    expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE)
   })
 })

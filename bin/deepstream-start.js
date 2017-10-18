@@ -26,7 +26,7 @@ module.exports = function (program) {
 function action () {
   global.deepstreamCLI = this
 
-  const Deepstream = require('../src/deepstream.io.js')
+  const Deepstream = require('../src/deepstream.io.js').default
   try {
     const ds = new Deepstream(null)
     ds.start()
