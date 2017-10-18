@@ -102,6 +102,37 @@ function getJifToMsg () {
     },
   })
 
+  JIF_TO_MSG.list = {}
+    JIF_TO_MSG.list.read = msg => ({
+      done: false,
+      message: {
+        topic: TOPIC.RECORD,
+        action: RECORD_ACTIONS.READ,
+        name: msg.listName
+      }
+  })
+
+  JIF_TO_MSG.list.write = msg => ({
+    done: false,
+    message: {
+      topic: TOPIC.RECORD,
+      action: RECORD_ACTIONS.CREATEANDUPDATE,
+      name: msg.listName,
+      version: msg.version || -1,
+      parsedData: msg.data,
+      isWriteAck: true
+    }
+  })
+
+  JIF_TO_MSG.list.delete = msg => ({
+    done: false,
+    message: {
+      topic: TOPIC.RECORD,
+      action: RECORD_ACTIONS.DELETE,
+      name: msg.listName
+    }
+  })
+
   JIF_TO_MSG.presence = {}
 
   JIF_TO_MSG.presence.query = (msg) => (
@@ -112,8 +143,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.QUERY_ALL,
-      name: PRESENCE_ACTIONS.QUERY_ALL.toString(),
+      action: PRESENCE_ACTIONS.QUERY_ALL
     },
   })
 
@@ -122,8 +152,7 @@ function getJifToMsg () {
     message: {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY,
-      name: PRESENCE_ACTIONS.QUERY.toString(),
-      parsedData: msg.data,
+      data: msg.parsedData,
     },
   })
 

@@ -135,6 +135,64 @@ export default {
       ],
       additionalProperties: false,
     },
+     {
+      "title": "List",
+      "description": "Fetch and delete lists.",
+      "properties": {
+        "topic": {
+          "const": "list"
+        },
+        "action": {
+          "enum": [
+            "read",
+            "delete"
+          ]
+        },
+        "listName": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "topic",
+        "action",
+        "listName"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "title": "List Writes",
+      "description": "Create or write to a list.",
+      "properties": {
+        "topic": {
+          "const": "list"
+        },
+        "action": {
+          "const": "write"
+        },
+        "listName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data": {
+          "type": ["array"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "version": {
+          "type": "integer",
+          "minimum": -1
+        }
+      },
+      "required": [
+        "topic",
+        "action",
+        "listName",
+        "data"
+      ],
+      "additionalProperties": false
+    },
     {
       title: 'Presence',
       description: 'Query presence.',

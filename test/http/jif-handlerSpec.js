@@ -345,7 +345,6 @@ describe('JIF Handler', () => {
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.PRESENCE)
         expect(message.action).to.equal(C.PRESENCE_ACTIONS.QUERY_ALL)
-        expect(message.name).to.equal(C.PRESENCE_ACTIONS.QUERY_ALL.toString())
       })
     })
   })
