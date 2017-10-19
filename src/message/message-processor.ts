@@ -37,10 +37,6 @@ export default class MessageProcessor {
     for (let i = 0; i < length; i++) {
       message = parsedMessages[i]
 
-      if (message.topic === TOPIC.CONNECTION && message.action === CONNECTION_ACTIONS.PONG) {
-        continue
-      }
-
       if (message === null ||
         !message.action ||
         !message.topic) {

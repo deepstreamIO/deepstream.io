@@ -95,9 +95,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Called from a socketWrapper. This method tells the connection endpoint
    * to flush the socket after a certain amount of time, used to low priority
    * messages
-   * @param  {UwsSocketWrapper} socketWrapper SocketWrapper with a flush
    */
-  public scheduleFlush (socketWrapper) {
+  public scheduleFlush (socketWrapper: SocketWrapper) {
     this._scheduledSocketWrapperWrites.add(socketWrapper)
     if (!this._flushTimeout) {
       this._flushTimeout = setTimeout(this._flushSockets, this.options.outgoingBufferTimeout)
@@ -118,10 +117,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Get a parameter from the root of the deepstream options if present, otherwise get it from the
    * plugin config. If neither is present, default to the optionally provided default.
-   *
-   * @param {String} option  The name of the option to be fetched
    */
-  private _getOption (option) {
+  private _getOption (option: string) {
     const value = this._dsOptions[option]
     if ((value === null || value === undefined) && (this.options[option] !== undefined)) {
       return this.options[option]
@@ -149,7 +146,9 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
     uws.native.server.group.onMessage(this._serverGroup, (message, socketWrapper) => {
       const parsedMessages = socketWrapper.parseMessage(message)
-      socketWrapper.onMessage(parsedMessages)
+      if (parsedMessages.length > 0) {
+        socketWrapper.onMessage(parsedMessages)
+      }
     })
 
     uws.native.server.group.onPing(this._serverGroup, () => {})
