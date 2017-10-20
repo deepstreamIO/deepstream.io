@@ -19,8 +19,6 @@ export default class RpcHandler {
 
   /**
   * Handles incoming messages for the RPC Topic.
-  *
-  * @param {Object} options deepstream options
   */
   constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, metaData?: any) {
      this.metaData = metaData
@@ -61,12 +59,19 @@ export default class RpcHandler {
     ) {
       const rpcData =  this.rpcs.get(message.correlationId)
       if (rpcData) {
+        this.services.logger.debug(
+          RPC_ACTIONS[message.action],
+          `name: ${message.name} with correlation id: ${message.correlationId} from ${socketWrapper.user}`,
+          this.metaData
+        )
         rpcData.rpc.handle(message)
       } else {
-        socketWrapper.sendError(
-          message,
-          RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+        this.services.logger.warn(
+          RPC_ACTIONS[RPC_ACTIONS.INVALID_RPC_CORRELATION_ID],
+          `name: ${message.name} with correlation id: ${message.correlationId}`,
+          this.metaData
         )
+        socketWrapper.sendError(message, RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
       }
     } else {
       /*
@@ -138,6 +143,12 @@ export default class RpcHandler {
     const rpcName = message.name
     const correlationId = message.correlationId
 
+    this.services.logger.debug(
+      RPC_ACTIONS[RPC_ACTIONS.REQUEST],
+      `name: ${rpcName} with correlation id: ${correlationId} from ${socketWrapper.user}`,
+      this.metaData
+    )
+
     const subscribers = Array.from(this.subscriptionRegistry.getLocalSubscribers(rpcName))
     const provider = subscribers[getRandomIntInRange(0, subscribers.length)]
 
@@ -185,7 +196,11 @@ export default class RpcHandler {
 
     this.rpcs.delete(correlationId)
 
-    this.services.logger.warn(RPC_ACTIONS.NO_RPC_PROVIDER, rpcName, this.metaData)
+    this.services.logger.warn(
+      RPC_ACTIONS[RPC_ACTIONS.NO_RPC_PROVIDER],
+      `name: ${message.name} with correlation id: ${message.correlationId}`,
+      this.metaData
+    )
 
     if (!requestor.isRemote) {
       requestor.sendError(message, RPC_ACTIONS.NO_RPC_PROVIDER)
@@ -200,8 +215,6 @@ export default class RpcHandler {
   * specific ones need to be filtered out.
   */
   private onPrivateMessage (msg: RPCMessage, originServerName: string): void {
-    msg.topic = TOPIC.RPC
-
     if (!msg.data || msg.data.length < 2) {
        // this.services.logger.warn(INVALID_MSGBUS_MESSAGE, msg.data,  this.metaData)
        return
@@ -223,7 +236,12 @@ export default class RpcHandler {
     }
 
     if (rpcData) {
-       rpcData.rpc.handle(msg)
+      this.services.logger.debug(
+        RPC_ACTIONS[RPC_ACTIONS[msg.action]],
+        `name: ${msg.name} with correlation id: ${msg.correlationId} from remote server ${originServerName}`,
+        this.metaData
+      )
+      rpcData.rpc.handle(msg)
     } else {
       // this.services.logger.warn(UNSOLICITED_MSGBUS_MESSAGE, msg, this.metaData)
     }

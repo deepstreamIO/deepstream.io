@@ -43,7 +43,7 @@ export const parse = (path: string): any => {
   const variables: Array<string> = []
   let regExp = path.replace(WILDCARD_REGEXP, WILDCARD_STRING)
 
-  regExp = regExp.replace(VARIABLE_REGEXP, (variableName) => {
+  regExp = regExp.replace(VARIABLE_REGEXP, variableName => {
     variables.push(variableName)
     return VARIABLE_STRING
   })

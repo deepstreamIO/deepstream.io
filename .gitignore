@@ -1,5 +1,5 @@
-
 .DS_Store
+.vscode/settings.json
 
 dist
 temp-e2e-test

@@ -13,6 +13,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   private metaData: any
   public type: string
   public isRemote: boolean
+  public user: string
 
   /**
   */
@@ -23,6 +24,9 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
     this.config = config
     this.services = services
     this.remoteServer = remoteServer
+
+    // used for logging
+    this.user = 'remote server ' + remoteServer
   }
 
   public sendAckMessage (message: RPCMessage): void {

@@ -9,7 +9,7 @@ const validationSteps: any = {}
  * individual validation steps. If any of them returns false,
  * the validation fails
  */
-export const validate = function (config) {
+export const validate = function (config?) {
   let validationStepResult
   let key
 

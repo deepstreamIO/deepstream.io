@@ -31,7 +31,7 @@ export const lookupConfRequirePath = function (filePath: string): string {
  *
  * *CWD = ignore CWD if prefix is absolute
  */
-export const lookupRequirePath = function (filePath: string, prefix: string): string {
+export const lookupRequirePath = function (filePath: string, prefix?: string): string {
   // filePath is absolute
   if (path.parse(filePath).root !== '') {
     return filePath
