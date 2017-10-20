@@ -2,7 +2,7 @@ import * as colors from 'colors'
 import * as os from 'os'
 import * as path from 'path'
 
-export const start = (program) => {
+export const start = program => {
   program
     .command('start')
     .description('start a deepstream server')

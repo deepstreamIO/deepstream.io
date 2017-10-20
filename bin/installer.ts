@@ -36,7 +36,7 @@ const getWebUrl = function (repo) {
 const downloadRelease = function (releases, type, name, version, outputDir, callback) {
   outputDir = outputDir == null ? 'lib' : outputDir
   const repo = `deepstream.io-${type}-${name}`
-  const filteredReleases = releases.filter((item) => {
+  const filteredReleases = releases.filter(item => {
     if (version == null) {
       return true
     }
@@ -47,7 +47,7 @@ const downloadRelease = function (releases, type, name, version, outputDir, call
   }
   const release = filteredReleases[0]
   version = version == null ? release.tag_name : version
-  const releaseForMachine = release.assets.filter((item) => item.name.indexOf(platform) !== -1)
+  const releaseForMachine = release.assets.filter(item => item.name.indexOf(platform) !== -1)
   if (releaseForMachine.length === 0) {
     return callback(new Error(`Release for your platform not found, see ${getWebUrl(repo)}`))
   }
@@ -65,7 +65,7 @@ const downloadRelease = function (releases, type, name, version, outputDir, call
     console.log(`Downloading version ${version}`)
   }
   const outStream = fs.createWriteStream(outputFile)
-  downloadArchive(urlPath, outStream, (err) => {
+  downloadArchive(urlPath, outStream, err => {
     if (err) {
       return callback(err)
     }

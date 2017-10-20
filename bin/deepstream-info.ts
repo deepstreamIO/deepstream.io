@@ -4,7 +4,7 @@ import * as os from 'os'
 import * as glob from 'glob'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
 
-export const info = (program) => {
+export const info = program => {
   program
     .command('info')
     .description('print meta information about build and runtime')
@@ -49,7 +49,7 @@ function printMeta () {
 function fetchLibs (libDir, meta) {
   const directory = libDir || 'lib'
   const files = glob.sync(path.join(directory, '*', 'package.json'))
-  meta.libs = files.map((filePath) => {
+  meta.libs = files.map(filePath => {
     const pkg = fs.readFileSync(filePath, 'utf8')
     const object = JSON.parse(pkg)
     return `${object.name}:${object.version}`
