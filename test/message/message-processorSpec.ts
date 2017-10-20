@@ -24,7 +24,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
     client = testMocks.getSocketWrapper('someUser')
     permissionHandlerMock  = new PermissionHandlerMock()
     const loggerMock = new LoggerMock()
-    log = loggerMock.log
+    log = loggerMock._log
     messageProcessor = new MessageProcessor({}, {
       permissionHandler: permissionHandlerMock,
       logger: loggerMock

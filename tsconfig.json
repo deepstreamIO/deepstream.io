@@ -4,7 +4,7 @@
     "module": "commonjs",
     "outDir": "dist",
     "sourceMap": true,
-    "allowJs": true,
+    "allowJs": false,
     "strictNullChecks": true 
   },
   "files": [
@@ -17,6 +17,8 @@
     "src/**/*",
     "src/**/*.json",
     "test/**/*",
+    "test/**/*.pem",
+    "test/**/*.json",
     "package.json"
   ],
   "exclude": [

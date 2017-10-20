@@ -1,10 +1,8 @@
-'use strict'
+import * as colors from 'colors'
+import * as os from 'os'
+import * as path from 'path'
 
-const colors = require('colors')
-const os = require('os')
-const path = require('path')
-
-module.exports = function (program) {
+export const start = (program) => {
   program
     .command('start')
     .description('start a deepstream server')
@@ -42,7 +40,7 @@ function action () {
 }
 
 function detachErrorHandler () {
-  console.error('Error during detaching the deepstream process, see logs or run without --detach'.red)
+  console.error('Error during detaching the deepstream process, see logs or run without --detach')
   process.exit(1)
 }
 

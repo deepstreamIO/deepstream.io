@@ -1,13 +1,11 @@
-'use strict'
-
-const colors = require('colors')
-const needle = require('needle')
-const fs = require('fs')
-const path = require('path')
-const os = require('os')
-const AdmZip = require('adm-zip')
-const execSync = require('child_process').execSync
-const mkdirp = require('mkdirp')
+import * as colors from 'colors'
+import * as needle from 'needle'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as os from 'os'
+import * as AdmZip from 'adm-zip'
+import { execSync } from 'child_process'
+import * as mkdirp from 'mkdirp'
 
 const CONFIG_EXAMPLE_FILE = 'example-config.yml'
 const SYSTEM = {
@@ -49,7 +47,7 @@ const downloadRelease = function (releases, type, name, version, outputDir, call
   }
   const release = filteredReleases[0]
   version = version == null ? release.tag_name : version
-  const releaseForMachine = release.assets.filter(item => item.name.indexOf(platform) !== -1)
+  const releaseForMachine = release.assets.filter((item) => item.name.indexOf(platform) !== -1)
   if (releaseForMachine.length === 0) {
     return callback(new Error(`Release for your platform not found, see ${getWebUrl(repo)}`))
   }
@@ -99,8 +97,6 @@ const downloadArchive = function (urlPath, outStream, callback) {
     outStream.write(response.body)
     outStream.end()
     if (process.env.VERBOSE) {
-      process.stdout.clearLine()
-      process.stdout.cursorTo(0)
       process.stdout.write('Download complete' + '\n')
     }
     return callback()
@@ -133,7 +129,7 @@ const fetchReleases = function (type, name, callback) {
     if (response.statusCode === 404) {
       return callback(new Error('Not found, see available connectors on https://deepstreamhub.com/open-source/'))
     }
-    if (response.statusCode == 403) {
+    if (response.statusCode === 403) {
       // API rate limit
       return callback(new Error(response.body.message))
     }
@@ -146,10 +142,9 @@ const fetchReleases = function (type, name, callback) {
  * for a specific reposotiry.
  *
  * @param  {Object}   data Contains archive: contains the archive path, name: contains the name of the  connector
- * @param  {String}   platform The current platform (windows, linux or mac)
  * @return {String}   outPath The directory where the connector was extracted to
  */
-const extract = function (data, platform) {
+const extract = function (data) {
   const archivePath = data.archive
   const outputParent = path.dirname(archivePath)
   const outPath = path.join(outputParent, data.name)
@@ -213,17 +208,17 @@ const showConfig = function (directory) {
  * @param  {Function} callback Callback (err)
  * @return {void}
  */
-module.exports = function (opts, callback) {
-  fetchReleases(opts.type, opts.name, (error, releases) => {
-    if (error) {
-      return callback(error)
+export const installer = (opts, callback) => {
+  fetchReleases(opts.type, opts.name, (fetchError, releases) => {
+    if (fetchError) {
+      return callback(fetchError)
     }
     downloadRelease(releases, opts.type, opts.name, opts.version, opts.dir, (error, result) => {
       if (error) {
         return callback(error)
       }
       try {
-        const extractedDirectory = extract(result, platform)
+        const extractedDirectory = extract(result)
         showConfig(extractedDirectory)
         callback()
       } catch (error) {

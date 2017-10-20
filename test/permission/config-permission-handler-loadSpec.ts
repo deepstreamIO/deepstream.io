@@ -8,7 +8,7 @@ const recordHandler = {
 
 describe('permission handler loading', () => {
   describe('permission handler is initialised correctly', () => {
-    it('loads a valid config file upon initialisation', (next) => {
+    it('loads a valid config file upon initialisation', next => {
       const permissionHandler = new ConfigPermissionHandler({
         permission: {
           options: {
@@ -17,7 +17,7 @@ describe('permission handler loading', () => {
           }
         }
       }, {})
-      permissionHandler.on('error', (error) => {
+      permissionHandler.on('error', error => {
         expect(`it should not have had this ${error}`).toBe('true')
         next()
       })
@@ -30,7 +30,7 @@ describe('permission handler loading', () => {
       permissionHandler.init()
     })
 
-    it('fails to load maxRuleIterations less than zero initialisation', (next) => {
+    it('fails to load maxRuleIterations less than zero initialisation', next => {
       const permissionHandler = new ConfigPermissionHandler({
         permission: {
           options: {
@@ -41,7 +41,7 @@ describe('permission handler loading', () => {
         }
       }, {})
       permissionHandler.setRecordHandler(recordHandler)
-      permissionHandler.on('error', (error) => {
+      permissionHandler.on('error', error => {
         expect(error).toContain('Maximum rule iteration has to be at least one')
         next()
       })
@@ -53,7 +53,7 @@ describe('permission handler loading', () => {
       permissionHandler.init()
     })
 
-    it('fails to load a non existant config file upon initialisation', (next) => {
+    it('fails to load a non existant config file upon initialisation', next => {
       const permissionHandler = new ConfigPermissionHandler({
         permission: {
           options: {
@@ -63,7 +63,7 @@ describe('permission handler loading', () => {
         }
       }, {})
       permissionHandler.setRecordHandler(recordHandler)
-      permissionHandler.on('error', (error) => {
+      permissionHandler.on('error', error => {
         expect(error).toContain('ENOENT')
         next()
       })
@@ -75,7 +75,7 @@ describe('permission handler loading', () => {
       permissionHandler.init()
     })
 
-    it('fails when loading a broken config file upon initialisation', (next) => {
+    it('fails when loading a broken config file upon initialisation', next => {
       const permissionHandler = new ConfigPermissionHandler({
         permission: {
           options: {
@@ -85,7 +85,7 @@ describe('permission handler loading', () => {
         }
       }, {})
       permissionHandler.setRecordHandler(recordHandler)
-      permissionHandler.on('error', (error) => {
+      permissionHandler.on('error', error => {
         expect(error).toContain('SyntaxError')
         next()
       })
@@ -97,7 +97,7 @@ describe('permission handler loading', () => {
       permissionHandler.init()
     })
 
-    it('fails when loading an invalid config file upon initialisation', (next) => {
+    it('fails when loading an invalid config file upon initialisation', next => {
       const permissionHandler = new ConfigPermissionHandler({
         permission: {
           options: {
@@ -107,7 +107,7 @@ describe('permission handler loading', () => {
         }
       }, {})
       permissionHandler.setRecordHandler(recordHandler)
-      permissionHandler.on('error', (error) => {
+      permissionHandler.on('error', error => {
         expect(error).toBe('invalid permission config - empty section "record"')
         next()
       })
@@ -124,7 +124,7 @@ describe('permission handler loading', () => {
     let permissionHandler
     const onError = jasmine.createSpy('error')
 
-    it('loads a valid config file upon initialisation', (next) => {
+    it('loads a valid config file upon initialisation', next => {
       permissionHandler = new ConfigPermissionHandler({
         permission: {
           options: {
@@ -135,7 +135,7 @@ describe('permission handler loading', () => {
       }, {})
       permissionHandler.setRecordHandler(recordHandler)
       permissionHandler.on('error', onError)
-      permissionHandler.on('error', (error) => {
+      permissionHandler.on('error', error => {
         expect(`it should not have had this ${error}`).toBe('true')
         next()
       })
@@ -147,7 +147,7 @@ describe('permission handler loading', () => {
       permissionHandler.init()
     })
 
-    it('allows publishing of a private event', (next) => {
+    it('allows publishing of a private event', next => {
       const message = {
         topic: C.TOPIC.EVENT,
         action: C.EVENT_ACTIONS.EMIT,
@@ -164,10 +164,10 @@ describe('permission handler loading', () => {
       permissionHandler.canPerformAction('some-user', message, callback)
     })
 
-    it('loads a new config', (next) => {
+    it('loads a new config', next => {
       const path = './test/test-configs/no-private-events-permission-config.json'
 
-      permissionHandler.on('config-loaded', (loadedPath) => {
+      permissionHandler.on('config-loaded', loadedPath => {
         expect(loadedPath).toBe(path)
         setTimeout(next, 20)
       })
@@ -175,7 +175,7 @@ describe('permission handler loading', () => {
       permissionHandler.loadConfig(path)
     })
 
-    it('denies publishing of a private event', (next) => {
+    it('denies publishing of a private event', next => {
       expect(onError).not.toHaveBeenCalled()
 
       const message = {

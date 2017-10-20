@@ -53,7 +53,7 @@ describe('config-initialiser', () => {
 
   describe('ssl files are loaded if provided', () => {
     it('fails with incorrect path passed in', () => {
-      ['sslKey', 'sslCert', 'sslCa'].forEach((key) => {
+      ['sslKey', 'sslCert', 'sslCa'].forEach(key => {
         const config = defaultConfig.get()
         config[key] = './does-not-exist'
         expect(() => {
@@ -63,7 +63,7 @@ describe('config-initialiser', () => {
     })
 
     it('loads sslFiles from a relative path and a config prefix', () => {
-      global.deepstreamConfDir = './dist/test/test-configs'
+      global.deepstreamConfDir = './test/test-configs'
 
       const config = defaultConfig.get()
       config.sslKey = './sslKey.pem'
@@ -109,7 +109,7 @@ describe('config-initialiser', () => {
     })
 
     it('works for authtype: user', () => {
-      global.deepstreamConfDir = './dist/test/test-configs'
+      global.deepstreamConfDir = './test/test-configs'
       const config = defaultConfig.get()
 
       config.auth = {
@@ -153,7 +153,7 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
 
       config.auth = {
-        path: '../dist/test-mocks/authentication-handler-mock',
+        path: '../test-mocks/authentication-handler-mock',
         options: {
           hello: 'there'
         }
@@ -217,7 +217,7 @@ describe('config-initialiser', () => {
       }
       const result = configInitialiser.initialise(config)
       expect(result.services.permissionHandler.description).toContain('valve permissions loaded from')
-      expect(result.services.permissionHandler.description).toContain(path.resolve('test/test-configs/basic-permission-config.json'))
+      expect(result.services.permissionHandler.description).toContain(path.resolve('./dist/test/test-configs/basic-permission-config.json'))
     })
 
     it('fails for invalid permission types', () => {
@@ -238,7 +238,7 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
 
       config.permission = {
-        path: '../dist/test-mocks/permission-handler-mock',
+        path: '../test-mocks/permission-handler-mock',
         options: {
           hello: 'there'
         }
@@ -314,7 +314,7 @@ describe('config-initialiser', () => {
       expect(result.services.logger.options).toEqual({ a: 1 })
     })
 
-    it('throw an error for a unsupported logger type', (next) => {
+    it('throw an error for a unsupported logger type', next => {
       const config = defaultConfig.get()
 
       config.logger = {

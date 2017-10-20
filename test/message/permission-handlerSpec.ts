@@ -56,7 +56,7 @@ const services = {
 describe('permissionHandler passes additional user meta data', () => {
   let connectionEndpoint
 
-  beforeEach((done) => {
+  beforeEach(done => {
     connectionEndpoint = new ConnectionEndpoint(config)
     const depInit = new DependencyInitialiser({ config, services }, config as any, services as any, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {

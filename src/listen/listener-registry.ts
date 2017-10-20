@@ -344,7 +344,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       return
     }
 
-    this.services.uniqueRegistry.get(this.getUniqueLockName(subscriptionName), (success) => {
+    this.services.uniqueRegistry.get(this.getUniqueLockName(subscriptionName), success => {
       if (!success) {
         return
       }

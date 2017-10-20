@@ -1,8 +1,6 @@
-'use strict'
+import * as dsDaemon from 'deepstream.io-service/src/daemon'
 
-const daemon = require('deepstream.io-service/src/daemon')
-
-module.exports = function (program) {
+export const daemon = (program) => {
   program
     .command('daemon')
     .description('start a daemon for deepstream server')
@@ -29,5 +27,5 @@ function action () {
     processExec = process.argv[1]
   }
 
-  daemon.start({ processExec })
+  dsDaemon.start({ processExec })
 }

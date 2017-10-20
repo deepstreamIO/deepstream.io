@@ -3,6 +3,7 @@
 import * as fs from 'fs'
 import FileAuthenticationHandler from '../authentication/file-based-authentication-handler'
 import OpenAuthenticationHandler from '../authentication/open-authentication-handler'
+import HTTPAuthenticationHAndler from '../authentication/http-authentication-handler'
 import { LOG_LEVEL } from '../constants'
 import DefaultCache from '../default-plugins/local-cache'
 import DefaultStorage from '../default-plugins/noop-storage'
@@ -246,7 +247,7 @@ function handleAuthStrategy (config: DeepstreamConfig, logger: Logger): Authenti
   const authStrategies = {
     none: OpenAuthenticationHandler,
     file: FileAuthenticationHandler, // eslint-disable-line
-    http: require('../authentication/http-authentication-handler'), // eslint-disable-line
+    http: HTTPAuthenticationHAndler, // eslint-disable-line
   }
 
   if (!config.auth) {

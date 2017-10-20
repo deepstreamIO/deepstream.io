@@ -45,7 +45,7 @@ describe('record deletion', () => {
     expect(callback).toHaveBeenCalled()
   })
 
-  it('encounters an error during record deletion', (done) => {
+  it('encounters an error during record deletion', done => {
     services.cache.nextOperationWillBeSuccessful = false
     services.cache.nextOperationWillBeSynchronous = false
 
@@ -65,12 +65,12 @@ describe('record deletion', () => {
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
-      expect(services.logger.log.calls.argsFor(0)).toEqual([3, C.RECORD_ACTIONS[C.RECORD_ACTIONS.RECORD_DELETE_ERROR], 'storageError'])
+      expect(services.logger._log.calls.argsFor(0)).toEqual([3, C.RECORD_ACTIONS[C.RECORD_ACTIONS.RECORD_DELETE_ERROR], 'storageError'])
       done()
     }, 20)
   })
 
-  it('encounters an ack delete timeout', (done) => {
+  it('encounters an ack delete timeout', done => {
     config.cacheRetrievalTimeout = 10
     services.cache.nextOperationWillBeSuccessful = false
     services.cache.nextOperationWillBeSynchronous = false
@@ -91,7 +91,7 @@ describe('record deletion', () => {
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).toBe(true)
       expect(callback).not.toHaveBeenCalled()
-      expect(services.logger.log.calls.argsFor(0)).toEqual([3, C.RECORD_ACTIONS[C.RECORD_ACTIONS.RECORD_DELETE_ERROR], 'cache timeout'])
+      expect(services.logger._log.calls.argsFor(0)).toEqual([3, C.RECORD_ACTIONS[C.RECORD_ACTIONS.RECORD_DELETE_ERROR], 'cache timeout'])
       done()
     }, 100)
   })

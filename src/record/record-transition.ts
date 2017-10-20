@@ -172,7 +172,7 @@ export default class RecordTransition {
         this.config,
         this.services,
         socketWrapper,
-        (record) => this.onRecord(record, upsert),
+        record => this.onRecord(record, upsert),
         this.onCacheResponse,
         this,
         this.metaData,

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 
-class CustomLogger extends EventEmitter {
+export default class CustomLogger extends EventEmitter {
   public options: any
   public isReady: boolean
 

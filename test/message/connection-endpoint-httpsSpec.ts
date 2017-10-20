@@ -5,8 +5,8 @@ import HttpMock from '../test-mocks/http-mock'
 import LoggerMock from '../test-mocks/logger-mock'
 import PermissionHandlerMock from '../test-mocks/permission-handler-mock'
 
-const httpMock = new HttpMock()
-const httpsMock = new HttpMock()
+const httpMock: any = new HttpMock()
+const httpsMock: any = new HttpMock()
 // since proxyquire.callThru is enabled, manually capture members from prototypes
 httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
@@ -55,18 +55,19 @@ describe('validates HTTPS server conditions', () => {
     error = { message: null }
   })
 
-  afterEach((done) => {
+  afterEach(done => {
     if (!connectionEndpoint || !connectionEndpoint.isReady) {
       done()
     } else {
       connectionEndpoint.once('close', done)
       connectionEndpoint.close()
     }
-    (httpMock.createServer as any).calls.reset()
-    (httpsMock.createServer as any).calls.reset()
+
+    httpMock.createServer.calls.reset()
+    httpsMock.createServer.calls.reset()
   })
 
-  it('creates a http connection when sslKey and sslCert are not provided', (done) => {
+  it('creates a http connection when sslKey and sslCert are not provided', done => {
     connectionEndpointInit(sslOptions, () => {
       expect(httpMock.createServer).toHaveBeenCalledWith()
       expect(httpsMock.createServer).not.toHaveBeenCalled()
@@ -74,7 +75,7 @@ describe('validates HTTPS server conditions', () => {
     })
   })
 
-  it('creates a https connection when sslKey and sslCert are provided', (done) => {
+  it('creates a https connection when sslKey and sslCert are provided', done => {
     sslOptions.sslKey = 'sslPrivateKey'
     sslOptions.sslCert = 'sslCertificate'
     connectionEndpointInit(sslOptions, () => {
@@ -84,7 +85,7 @@ describe('validates HTTPS server conditions', () => {
     })
   })
 
-  it('creates a https connection when sslKey, sslCert and sslCa are provided', (done) => {
+  it('creates a https connection when sslKey, sslCert and sslCa are provided', done => {
     sslOptions.sslKey = 'sslPrivateKey'
     sslOptions.sslCert = 'sslCertificate'
     sslOptions.sslCa = 'sslCertificateAuthority'

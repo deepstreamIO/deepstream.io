@@ -40,7 +40,7 @@ let config
 let services
 
 describe('connection endpoint', () => {
-  beforeEach((done) => {
+  beforeEach(done => {
     authenticationHandlerMock = new AuthenticationHandlerMock()
 
     config = {
@@ -70,7 +70,7 @@ describe('connection endpoint', () => {
     })
   })
 
-  afterEach((done) => {
+  afterEach(done => {
     connectionEndpoint.once('close', done)
     connectionEndpoint.close()
     client.socketWrapperMock.verify()
@@ -198,16 +198,16 @@ describe('connection endpoint', () => {
       expect(handshakeData.headers).toBeDefined()
     })
 
-    it('emits connected event for user with name', (done) => {
-      connectionEndpoint.once('client-connected', (socketWrapper) => {
+    it('emits connected event for user with name', done => {
+      connectionEndpoint.once('client-connected', socketWrapper => {
         expect(socketWrapper.user).toBe('test-user')
         done()
       })
       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
     })
 
-    it('emits disconnected event for user with name', (done) => {
-      connectionEndpoint.once('client-disconnected', (socketWrapper) => {
+    it('emits disconnected event for user with name', done => {
+      connectionEndpoint.once('client-disconnected', socketWrapper => {
         expect(socketWrapper.user).toBe('test-user')
         done()
       })
@@ -277,7 +277,7 @@ describe('connection endpoint', () => {
     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
   })
 
-  it('disconnects client if authentication timeout is exceeded', (done) => {
+  it('disconnects client if authentication timeout is exceeded', done => {
     client.socketWrapperMock
       .expects('sendError')
       .once()

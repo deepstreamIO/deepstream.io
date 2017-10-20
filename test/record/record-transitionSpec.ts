@@ -233,7 +233,7 @@ xdescribe('record transitions', () => {
     })
 
     it('logged an error', () => {
-      expect(services.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'storageError')
+      expect(services.logger._log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'storageError')
     })
   })
 
@@ -270,7 +270,7 @@ xdescribe('record transitions', () => {
     it('receives an error', () => {
       expect(socketWrapper.socket.lastSendMessage).toBe(null)
       recordRequestMockCallback('errorMsg', true)
-      expect(services.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'errorMsg')
+      expect(services.logger._log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'errorMsg')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_UPDATE_ERROR|1+'))
     })
   })
@@ -284,7 +284,7 @@ xdescribe('record transitions', () => {
     it('receives a non existant error', () => {
       expect(socketWrapper.socket.lastSendMessage).toBe(null)
       recordRequestMockCallback(null)
-      expect(services.logger.log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'Received update for non-existant record recordName')
+      expect(services.logger._log).toHaveBeenCalledWith(3, 'RECORD_UPDATE_ERROR', 'Received update for non-existant record recordName')
       expect(socketWrapper.socket.lastSendMessage).toBe(msg('R|E|RECORD_UPDATE_ERROR|1+'))
     })
   })

@@ -76,7 +76,7 @@ describe('installer', () => {
     { name: 'mac', browser_download_url: archiveUrl }
   ]
 
-  it('handle network error', (done) => {
+  it('handle network error', done => {
     const needleMock = new Needle(
       // request handler for fetching all releases
       (urlPath, options, callback) => callback(new Error('network-dummy-error'))
@@ -84,15 +84,15 @@ describe('installer', () => {
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock
-    })
+    }).installer
 
-    installer({ type: 'foo', name: 'bar' }, (error) => {
+    installer({ type: 'foo', name: 'bar' }, error => {
       expect(error.toString()).toContain('network-dummy-error')
       done()
     })
   })
 
-  it('connector not found', (done) => {
+  it('connector not found', done => {
     const needleMock = new Needle(
       // request handler for fetching all releases
       (urlPath, options, callback) => callback(null, { statusCode: 404 })
@@ -100,16 +100,16 @@ describe('installer', () => {
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock
-    })
+    }).installer
 
-    installer({ type: 'foo', name: 'bar' }, (error) => {
+    installer({ type: 'foo', name: 'bar' }, error => {
       expect(error.toString()).toContain('Not found')
       expect(error.toString()).toContain('see available')
       done()
     })
   })
 
-  it('connector found but not the version', (done) => {
+  it('connector found but not the version', done => {
     const needleMock = new Needle(
       // request handler for fetching all releases
       (urlPath, options, callback) => callback(null, {
@@ -120,16 +120,16 @@ describe('installer', () => {
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock
-    })
+    }).installer
 
-    installer({ type: 'foo', name: 'bar', version: '1.2.3' }, (error) => {
+    installer({ type: 'foo', name: 'bar', version: '1.2.3' }, error => {
       expect(error.toString()).toContain('1.2.3 not found')
       expect(error.toString()).toContain('deepstream.io-foo-bar/releases')
       done()
     })
   })
 
-  it('connector found but not the platform', (done) => {
+  it('connector found but not the platform', done => {
     const needleMock = new Needle(
       // request handler for fetching all releases
       (urlPath, options, callback) => callback(null, {
@@ -143,16 +143,16 @@ describe('installer', () => {
     needleMock['@noCallThru'] = true
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock
-    })
+    }).installer
 
-    installer({ type: 'foo', name: 'bar', version: '1.2.3' }, (error) => {
+    installer({ type: 'foo', name: 'bar', version: '1.2.3' }, error => {
       expect(error.toString()).toContain('platform')
       expect(error.toString()).toContain('deepstream.io-foo-bar/releases')
       done()
     })
   })
 
-  it('error while downloading the archive', (done) => {
+  it('error while downloading the archive', done => {
     const fsMock = {
       createWriteStream: dummyWritedStream()
     }
@@ -170,15 +170,15 @@ describe('installer', () => {
     const installer = proxyquire('../../bin/installer', {
       needle: needleMock,
       fs: fsMock
-    })
+    }).installer
 
-    installer({ type: 'foo', name: 'bar', version: '1.2.3' }, (error) => {
+    installer({ type: 'foo', name: 'bar', version: '1.2.3' }, error => {
       expect(error.toString()).toContain('dummy-stream-read-error')
       done()
     })
   })
 
-  it('error while extracting the archive', (done) => {
+  it('error while extracting the archive', done => {
     const fsMock = {
       createWriteStream: dummyWritedStream()
     }
@@ -200,15 +200,15 @@ describe('installer', () => {
       needle: needleMock,
       fs: fsMock,
       child_process: childProcessMock
-    })
+    }).installer
 
-    installer({ type: 'foo', name: 'bar', version: '1.2.3', verbose: true }, (error) => {
+    installer({ type: 'foo', name: 'bar', version: '1.2.3', verbose: true }, error => {
       expect(error.toString()).toContain('extract')
       done()
     })
   })
 
-  it('downloads a connector and extract it', (done) => {
+  it('downloads a connector and extract it', done => {
     const fsMock = {
       readFileSync () {
         return 'config:\n host: localhost\n port: 1234'
@@ -243,7 +243,7 @@ describe('installer', () => {
       'adm-zip': zipMock,
       'fs': fsMock,
       'child_process': child_processMock
-    })
+    }).installer
 
     const installOptions = {
       type: 'cache',
@@ -252,7 +252,7 @@ describe('installer', () => {
       dir: null
     }
 
-    installer(installOptions, (error) => {
+    installer(installOptions, error => {
       expect(error).toBeUndefined()
       // fetch all releases
       expect((needleMock.get as any).calls.argsFor(0)[0])

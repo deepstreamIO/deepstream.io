@@ -71,12 +71,12 @@ export default class ListenerTestUtils {
   }
 
   public complete () {
-    clients.forEach((client) => {
+    clients.forEach(client => {
       if (client) {
         client.socketWrapperMock.verify()
       }
     })
-    providers.forEach((provider) => {
+    providers.forEach(provider => {
       if (provider) {
         provider.socketWrapperMock.verify()
       }

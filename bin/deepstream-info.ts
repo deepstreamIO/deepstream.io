@@ -1,21 +1,19 @@
-'use strict'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as os from 'os'
+import * as glob from 'glob'
+import * as jsYamlLoader from '../src/config/js-yaml-loader'
 
-const fs = require('fs')
-const path = require('path')
-const os = require('os')
-const glob = require('glob')
-const jsYamlLoader = require('../src/config/js-yaml-loader')
-
-module.exports = function (program) {
+export const info = (program) => {
   program
-		.command('info')
-		.description('print meta information about build and runtime')
-		.option('-c, --config [file]', 'configuration file containing lib directory')
-		.option('-l, --lib-dir [directory]', 'directory of libraries')
-		.action(printMeta)
+    .command('info')
+    .description('print meta information about build and runtime')
+    .option('-c, --config [file]', 'configuration file containing lib directory')
+    .option('-l, --lib-dir [directory]', 'directory of libraries')
+    .action(printMeta)
 }
 
-function printMeta() {
+function printMeta () {
   if (!this.libDir) {
     try {
       global.deepstreamCLI = this
@@ -29,10 +27,11 @@ function printMeta() {
   }
 
   let meta
+  let pkg
   try {
     meta = require('../meta.json')
   } catch (err) {
-		// if deepstream is not installed as binary (source or npm)
+    // if deepstream is not installed as binary (source or npm)
     pkg = require('../package.json')
     meta = {
       deepstreamVersion: pkg.version,
@@ -47,7 +46,7 @@ function printMeta() {
   console.log(JSON.stringify(meta, null, 2))
 }
 
-function fetchLibs(libDir, meta) {
+function fetchLibs (libDir, meta) {
   const directory = libDir || 'lib'
   const files = glob.sync(path.join(directory, '*', 'package.json'))
   meta.libs = files.map((filePath) => {

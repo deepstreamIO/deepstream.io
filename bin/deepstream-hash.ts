@@ -1,17 +1,15 @@
-'use strict'
+import FileAuthenticationHandler from '../src/authentication/file-based-authentication-handler'
+import * as jsYamlLoader from '../src/config/js-yaml-loader'
 
-const FileAuthenticationHandler = require('../src/authentication/file-based-authentication-handler')
-const jsYamlLoader = require('../src/config/js-yaml-loader')
-
-module.exports = function (program) {
+export const hash = (program) => {
   program
-		.command('hash [password]')
-		.description('Generate a hash from a plaintext password using file auth configuration settings')
-		.option('-c, --config [file]', 'configuration file containing file auth and hash settings')
-		.action(hash)
+    .command('hash [password]')
+    .description('Generate a hash from a plaintext password using file auth configuration settings')
+    .option('-c, --config [file]', 'configuration file containing file auth and hash settings')
+    .action(action)
 }
 
-function hash(password) {
+function action (password) {
   global.deepstreamCLI = this
   const config = jsYamlLoader.loadConfigWithoutInitialisation().config
 
@@ -32,15 +30,15 @@ function hash(password) {
     process.exit(1)
   }
 
-	// Mock file loading since a users.yml file is not required
-  jsYamlLoader.readAndParseFile = function () {}
+  // Mock file loading since a users.yml file is not required
+  // jsYamlLoader.readAndParseFile = function () {}
 
   const fileAuthenticationHandler = new FileAuthenticationHandler(config.auth.options)
-  fileAuthenticationHandler.createHash(password, (err, hash) => {
+  fileAuthenticationHandler.createHash(password, (err, passwordHash) => {
     if (err) {
       console.error('Hash could not be created', err)
       process.exit(1)
     }
-    console.log('Password hash:', hash)
+    console.log('Password hash:', passwordHash)
   })
 }

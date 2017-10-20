@@ -10,7 +10,7 @@ const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return services.logger.log.calls.mostRecent().args[2]
+  return services.logger._log.calls.mostRecent().args[2]
 }
 
 describe('permission handler applies basic permissions to incoming messages', () => {
@@ -88,7 +88,6 @@ describe('permission handler applies basic permissions to incoming messages', ()
     expect(testPermission(permissions, message, 'userB')).toBe(false)
   })
 })
-
 
 describe('permission handler applies basic permissions referencing their own data', () => {
   it('checks incoming data against a value for events', () => {
@@ -222,7 +221,7 @@ describe('permission handler applies basic permissions referencing their own dat
     })).toBe(false)
   })
 
-  it('deals with broken messages', (next) => {
+  it('deals with broken messages', next => {
     const permissions = getBasePermissions()
 
     permissions.record['cars/mercedes'] = {
@@ -246,7 +245,7 @@ describe('permission handler applies basic permissions referencing their own dat
     testPermission(permissions, message, 'user', null, callback)
   })
 
-  it('deals with messages with invalid types', (next) => {
+  it('deals with messages with invalid types', next => {
     const permissions = getBasePermissions()
 
     permissions.event['some-event'] = {
@@ -282,7 +281,7 @@ describe('loads permissions repeatedly', () => {
     expect(permissionHandler.isReady).toBe(true)
   })
 
-  it('requests permissions initally, causing a lookup', (next) => {
+  it('requests permissions initally, causing a lookup', next => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
@@ -299,7 +298,7 @@ describe('loads permissions repeatedly', () => {
     permissionHandler.canPerformAction('some-user', message, callback)
   })
 
-  it('requests permissions a second time, causing a cache retriaval', (next) => {
+  it('requests permissions a second time, causing a cache retriaval', next => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,

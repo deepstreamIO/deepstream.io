@@ -49,7 +49,7 @@ export default class EventHandler {
    * be triggered by messages coming in from both clients and the message connector.
    */
   public triggerEvent (socket: SocketWrapper, message: Message) {
-    this.logger.debug(EVENT_ACTIONS.EMIT, message.name + ' ' + message.data)
+    this.logger.debug(EVENT_ACTIONS[EVENT_ACTIONS.EMIT], `event: ${message.name} with data: ${message.data}`)
     this.subscriptionRegistry.sendToSubscribers(message.name, message, false, socket)
   }
 }

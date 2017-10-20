@@ -1,13 +1,14 @@
-'use strict'
-
-const needle = require('needle')
-const C = require('../constants')
+import * as needle from 'needle'
+import { EVENT } from '../constants'
 
 /**
  * This class represents a single request from deepstream to a http
  * endpoint for authentication data
  */
-module.exports = class HttpAuthenticationRequest {
+export default class HttpAuthenticationRequest {
+  private settings: any
+  private callback: Function
+  private logger: Logger
 
   /**
    * Creates and issues the request and starts the timeout
@@ -20,10 +21,10 @@ module.exports = class HttpAuthenticationRequest {
    * @constructor
    * @returns {void}
    */
-  constructor (data, settings, logger, callback) {
-    this._settings = settings
-    this._callback = callback
-    this._logger = logger
+  constructor (data: any, settings: any, logger: Logger, callback: Function) {
+    this.settings = settings
+    this.callback = callback
+    this.logger = logger
 
     const options = {
       read_timeout: settings.requestTimeout,
@@ -38,32 +39,29 @@ module.exports = class HttpAuthenticationRequest {
 
   /**
    * Invoked for completed responses, whether succesful
-   * or erroures
+   * or errors
    *
    * @param {Error} error HTTP Error
    * @param {http.Response} response
-   *
-   * @private
-   * @returns {void}
    */
-  _onComplete (error, response) {
+  private _onComplete (error: Error, response: any): void {
     if (error) {
-      this._logger.warn(C.EVENT.AUTH_ERROR, `http auth error: ${error}`)
-      this._callback(false, null)
+      this.logger.warn(EVENT.AUTH_ERROR, `http auth error: ${error}`)
+      this.callback(false, null)
       this._destroy()
       return
     }
 
     if (response.statusCode >= 500 && response.statusCode < 600) {
-      this._logger.warn(C.EVENT.AUTH_ERROR, `http auth server error: ${response.body}`)
+      this.logger.warn(EVENT.AUTH_ERROR, `http auth server error: ${JSON.stringify(response.body)}`)
     }
 
-    if (this._settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {
-      this._callback(false, response.body || null)
+    if (this.settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {
+      this.callback(false, response.body || null)
     } else if (response.body && typeof response.body === 'string') {
-      this._callback(true, { username: response.body })
+      this.callback(true, { username: response.body })
     } else {
-      this._callback(true, response.body || null)
+      this.callback(true, response.body || null)
     }
 
     this._destroy()
@@ -71,13 +69,10 @@ module.exports = class HttpAuthenticationRequest {
 
   /**
    * Destroys the class
-   *
-   * @private
-   * @returns {void}
    */
-  _destroy () {
-    this._callback = null
-    this._settings = null
-    this._logger = null
+  private _destroy (): void {
+    // this.callback = null
+    // this.logger = null
+    // this.settings = null
   }
 }

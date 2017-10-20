@@ -130,7 +130,7 @@ describe('deepstream.io', () => {
     it('encounters a logger error', (next) => {
       server.on('started', () => {
         server._options.logger.emit('error', 'test error')
-        expect(logger.log.calls.mostRecent().args[2]).toBe('Error from logger plugin: test error')
+        expect(logger._log.calls.mostRecent().args[2]).toBe('Error from logger plugin: test error')
         next()
       })
       server.start()
@@ -141,8 +141,8 @@ describe('deepstream.io', () => {
       server.on('started', () => {
         fakeCloseablePlugin.emit('error', 'test error')
       // TODO: why fakeCloseablePlugin contains console args?
-        expect(logger.log.calls.mostRecent().args[2]).toBe('Error from cache plugin: test error')
-        expect(fakeCloseablePlugin.log.calls.mostRecent().args[2]).toBe('Error from cache plugin: test error')
+        expect(logger._log.calls.mostRecent().args[2]).toBe('Error from cache plugin: test error')
+        expect(fakeCloseablePlugin._log.calls.mostRecent().args[2]).toBe('Error from cache plugin: test error')
         next()
       })
       server.start()
@@ -175,7 +175,7 @@ describe('deepstream.io', () => {
     })
   })
 
-// this fails when a config file is present in /usr/local/etc/deepstream/conf
+  // this fails when a config file is present in /usr/local/etc/deepstream/conf
   xdescribe('handle server startup without config file', () => {
     const cwd = path.resolve('./bin')
     const execOptions = {

@@ -1,8 +1,6 @@
-'use strict'
+import * as dsService from 'deepstream.io-service'
 
-const service = require('deepstream.io-service')
-
-module.exports = function (program) {
+export const service = (program) => {
   program
     .command('service [add|remove|start|stop|restart|status]')
     .description('Add, remove, start or stop deepstream as a service to your operating system')
@@ -24,7 +22,7 @@ function response (error, result) {
   }
 }
 
-function execute(action) {
+function execute (action) {
   const name = this.serviceName || 'deepstream'
 
   let exec
@@ -38,29 +36,29 @@ function execute(action) {
   if (action === 'add') {
     const options = {
       exec,
-      programArgs: [],
+      programArgs: [] as Array<string>,
       pidFile: this.pidFile || `/var/run/deepstream/${name}.pid`,
       logDir: this.logDir || '/var/log/deepstream',
       dryRun: this.dryRun
     }
 
     if (this.config) {
-      options.programArgs.push(['-c'])
-      options.programArgs.push([this.config])
+      options.programArgs.push('-c')
+      options.programArgs.push(this.config)
     }
 
-    service.add (name, options, response)
+    dsService.add (name, options, response)
   } else if (action === 'remove') {
-    service.remove (name, response)
+    dsService.remove (name, response)
   } else if (action === 'start' ) {
-    service.start (name, response)
+    dsService.start (name, response)
   } else if (action === 'stop' ) {
-    service.stop (name, response)
+    dsService.stop (name, response)
   } else if (action === 'status') {
-    service.status(name, response)
+    dsService.status(name, response)
   } else if (action === 'restart') {
-    service.restart(name, response)
+    dsService.restart(name, response)
   } else {
-    console.log(`Unknown action for service, please 'add', 'remove', 'start', 'stop', 'restart' or 'status'`)
+    console.log('Unknown action for service, please "add", "remove", "start", "stop", "restart" or "status"')
   }
 }

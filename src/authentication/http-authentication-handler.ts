@@ -1,37 +1,30 @@
-'use strict'
-
-const HttpAuthenticationRequest = require('./http-authentication-request')
-const utils = require('../utils/utils')
-
-const EventEmitter = require('events').EventEmitter
+import HttpAuthenticationRequest from './http-authentication-request'
+import { EventEmitter } from 'events'
+import * as utils from '../utils/utils'
 
 /**
- *
- * @public
  * @extends {EventEmitter}
  */
-module.exports = class HttpAuthenticationHandler extends EventEmitter {
+export default class HttpAuthenticationHandler extends EventEmitter implements AuthenticationHandler {
+  public isReady: boolean
+  public description: string
+  private settings: any
+  private logger: any
+
   /**
-  * Creates the class
-  *
   * @param   {Object} settings
   * @param   {String} settings.endpointUrl http(s) endpoint that will receive post requests
   * @param   {Array}  settings.permittedStatusCodes an array of http status codes that qualify
   *                                                 as permitted
   * @param   {Number} settings.requestTimeout time in milliseconds before the request times out
   *                                           if no reply is received
-  *
-  * @param   {Logger} logger
-  *
-  * @constructor
-  * @returns {void}
   */
-  constructor (settings, logger) {
+  constructor (settings: { endpointUrl: string, permittedStatusCodes: Array<number>, requestTimeout: number }, logger: Logger) {
     super()
     this.isReady = true
-    this.type = `http webhook to ${settings.endpointUrl}`
-    this._settings = settings
-    this._logger = logger
+    this.description = `http webhook to ${settings.endpointUrl}`
+    this.settings = settings
+    this.logger = logger
     this._validateSettings()
   }
 
@@ -46,27 +39,24 @@ module.exports = class HttpAuthenticationHandler extends EventEmitter {
   * @implements {PermissionHandler.isValidUser}
   * @returns {void}
   */
-  isValidUser (connectionData, authData, callback) {
-    // eslint-disable-next-line
+  public isValidUser (connectionData, authData, callback): void {
+    // tslint:disable-next-line
     new HttpAuthenticationRequest(
       { connectionData, authData },
-      this._settings,
-      this._logger,
-      callback
+      this.settings,
+      this.logger,
+      callback,
     )
   }
 
   /**
   * Validate the user provided settings
-  *
-  * @private
-  * @returns {void}
   */
-  _validateSettings () {
-    utils.validateMap(this._settings, true, {
+  private _validateSettings (): void {
+    utils.validateMap(this.settings, true, {
       endpointUrl: 'url',
       permittedStatusCodes: 'array',
-      requestTimeout: 'number'
+      requestTimeout: 'number',
     })
   }
 }
