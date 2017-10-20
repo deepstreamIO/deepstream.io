@@ -1,9 +1,14 @@
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const noopStorage = require('../../src/default-plugins/noop-storage')
+const NoopStorage = require('../../src/default-plugins/noop-storage').default
 
 describe('retuns null for all values', () => {
+  let noopStorage
+
+  beforeAll(() => {
+    noopStorage = new NoopStorage()
+  })
+
   it('has created the noop storage', () => {
     expect(noopStorage.isReady).toBe(true)
   })

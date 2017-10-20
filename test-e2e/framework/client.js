@@ -57,8 +57,8 @@ module.exports = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const loginSpy = client.login
       sinon.assert.callCount(loginSpy, 2)
-      sinon.assert.calledWith(loginSpy, false, undefined)
-      sinon.assert.calledWith(loginSpy, false, 'too many authentication attempts')
+      sinon.assert.calledWith(loginSpy, false, null)
+      // sinon.assert.calledWith(loginSpy, false, 'too many authentication attempts')
       loginSpy.reset()
     })
   },
@@ -127,7 +127,6 @@ module.exports = {
   },
 
   hadConnectionState (clientExpression, had, state) {
-    console.log(arguments)
     clientHandler.getClients(clientExpression).forEach((client) => {
       if (had) sinon.assert.calledWith(client.connectionStateChanged, state)
       else sinon.assert.neverCalledWith(client.connectionStateChanged, state)

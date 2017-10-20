@@ -1,5 +1,7 @@
+
 .DS_Store
 
+dist
 temp-e2e-test
 
 # Logs

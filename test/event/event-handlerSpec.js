@@ -1,156 +1,146 @@
-/* import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
-const SocketWrapper = require('../mocks/socket-wrapper-mock')
-const EventHandler = require('../../src/event/event-handler')
+const EventHandler = require('../../src/event/event-handler').default
 
-const C = require('../../src/constants/constants')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
-const SocketMock = require('../mocks/socket-mock')
-
-const _msg = testHelper.msg
-
-const subscriptionsMessage = {
-  topic: C.TOPIC.EVENT,
-  action: C.ACTIONS.SUBSCRIBE,
-    // raw: 'rawMessageString',
-  data: ['someEvent']
-}
-const eventMessage = {
-  topic: C.TOPIC.EVENT,
-  action: C.ACTIONS.EVENT,
-    // raw: 'rawMessageString',
-  data: ['someEvent']
-}
+const getTestMocks = require('../test-helper/test-mocks')
 
 const options = testHelper.getDeepstreamOptions()
-const eventHandler = new EventHandler(options)
+const config = options.config
+const services = options.services
 
 describe('the eventHandler routes events correctly', () => {
-  it('sends an error for invalid subscription messages', () => {
-    const socketWrapper = new SocketWrapper(new SocketMock(), {})
-    const invalidMessage = {
-      topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.SUBSCRIBE,
-      raw: 'rawMessageString'
-    }
+  let testMocks
+  let eventHandler
+  let socketWrapper
 
-    eventHandler.handle(socketWrapper, invalidMessage)
-    expect(socketWrapper.socket.lastSendMessage).toBe(_msg('E|E|INVALID_MESSAGE_DATA|rawMessageString+'))
+  beforeEach(() => {
+    testMocks = getTestMocks()
+    eventHandler = new EventHandler(
+      config, services, testMocks.subscriptionRegistry, testMocks.listenerRegistry
+    )
+    socketWrapper = testMocks.getSocketWrapper().socketWrapper
   })
 
-  it('sends an error for subscription messages without an event name', () => {
-    const socketWrapper = new SocketWrapper(new SocketMock(), {})
-    const invalidMessage = {
-      topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.SUBSCRIBE,
-      raw: 'rawMessageString',
-      data: []
-    }
-
-    eventHandler.handle(socketWrapper, invalidMessage)
-    expect(socketWrapper.socket.lastSendMessage).toBe(_msg('E|E|INVALID_MESSAGE_DATA|rawMessageString+'))
-  })
-
-  it('sends an error for subscription messages with an invalid action', () => {
-    const socketWrapper = new SocketWrapper(new SocketMock(), {})
-    const invalidMessage = {
-      topic: C.TOPIC.EVENT,
-      action: 'giberrish',
-      raw: 'rawMessageString',
-      data: []
-    }
-
-    eventHandler.handle(socketWrapper, invalidMessage)
-    expect(socketWrapper.socket.lastSendMessage).toBe(_msg('E|E|UNKNOWN_ACTION|unknown action giberrish+'))
+  afterEach(() => {
+    testMocks.subscriptionRegistryMock.verify()
+    testMocks.listenerRegistryMock.verify()
   })
 
   it('subscribes to events', () => {
-    const socketWrapper = new SocketWrapper(new SocketMock(), {})
-    expect(socketWrapper.socket.lastSendMessage).toBe(null)
-    eventHandler.handle(socketWrapper, subscriptionsMessage)
-    expect(socketWrapper.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
-  })
-
-  it('triggers events', () => {
-    const socketA = new SocketWrapper(new SocketMock(), {})
-    const socketB = new SocketWrapper(new SocketMock(), {})
-
-    eventHandler.handle(socketA, subscriptionsMessage)
-    eventHandler.handle(socketB, subscriptionsMessage)
-
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
-    expect(socketB.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
-
-         // Raise event from socketA - only socketB should be notified
-    eventHandler.handle(socketA, eventMessage)
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
-    expect(socketB.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent+'))
-
-         // Raise event from socketB - socket A should be notified
-    eventHandler.handle(socketB, eventMessage)
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent+'))
-    expect(socketB.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent+'))
-
-         // Add event data
-    eventMessage.data[1] = 'eventData'
-    eventHandler.handle(socketB, eventMessage)
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent|eventData+'))
-    expect(socketB.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent+'))
-
-         // Add another socket
-    const socketC = new SocketWrapper(new SocketMock(), {})
-    eventHandler.handle(socketC, subscriptionsMessage)
-    expect(socketC.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
-
-         // Raise an event for all sockets
-    eventHandler.handle(socketA, eventMessage)
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent|eventData+'))
-    expect(socketB.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent|eventData+'))
-    expect(socketC.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent|eventData+'))
-  })
-
-  it('sends errors for invalid messages', () => {
-    const socketA = new SocketWrapper(new SocketMock(), {})
-
-    eventHandler.handle(socketA, {
+    const subscriptionMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      raw: 'rawMessageString',
-      data: []
-    })
+      action: C.EVENT_ACTIONS.SUBSCRIBE,
+      name: 'someEvent'
+    }
+    testMocks.subscriptionRegistryMock
+      .expects('subscribe')
+      .once()
+      .withExactArgs(subscriptionMessage, socketWrapper)
 
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|E|INVALID_MESSAGE_DATA|rawMessageString+'))
+    eventHandler.handle(socketWrapper, subscriptionMessage)
   })
 
-  it('unsubscribes', () => {
-    const socketA = new SocketWrapper(new SocketMock(), {})
-    const socketB = new SocketWrapper(new SocketMock(), {})
-    const socketC = new SocketWrapper(new SocketMock(), {})
+  it('unsubscribes to events', () => {
+    const unSubscriptionMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTIONS.UNSUBSCRIBE,
+      name: 'someEvent'
+    }
+    testMocks.subscriptionRegistryMock
+      .expects('unsubscribe')
+      .once()
+      .withExactArgs(unSubscriptionMessage, socketWrapper)
 
-    eventHandler.handle(socketA, subscriptionsMessage)
-    eventHandler.handle(socketB, subscriptionsMessage)
-    eventHandler.handle(socketC, subscriptionsMessage)
+    eventHandler.handle(socketWrapper, unSubscriptionMessage)
+  })
 
-    eventHandler.handle(socketA, eventMessage)
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
-    expect(socketB.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent|eventData+'))
-    expect(socketC.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent|eventData+'))
+  it('triggers event without data', () => {
+    const eventMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
+      name: 'someEvent'
+    }
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs('someEvent', eventMessage, false, socketWrapper)
 
-    subscriptionsMessage.action = C.ACTIONS.UNSUBSCRIBE
-    eventHandler.handle(socketB, subscriptionsMessage)
+    eventHandler.handle(socketWrapper, eventMessage)
+  })
 
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
-    expect(socketB.socket.lastSendMessage).toBe(_msg('E|A|US|someEvent+'))
-    expect(socketC.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent|eventData+'))
+  it('triggers event with data', () => {
+    const eventMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
+      name: 'someEvent',
+      data: JSON.stringify({ data: 'payload' })
+    }
+    testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs('someEvent', eventMessage, false, socketWrapper)
 
-    eventMessage.data[1] = 'otherData'
-    eventHandler.handle(socketA, eventMessage)
+    eventHandler.handle(socketWrapper, eventMessage)
+  })
 
-    expect(socketA.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
-    expect(socketB.socket.lastSendMessage).toBe(_msg('E|A|US|someEvent+'))
-    expect(socketC.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent|otherData+'))
+  it('registers a listener', () => {
+    const listenMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTIONS.LISTEN,
+      name: 'event/.*'
+    }
+    testMocks.listenerRegistryMock
+      .expects('handle')
+      .once()
+      .withExactArgs(socketWrapper, listenMessage)
+
+    eventHandler.handle(socketWrapper, listenMessage)
+  })
+
+  it('removes listeners', () => {
+    const unlistenMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTIONS.UNLISTEN,
+      name: 'event/.*'
+    }
+    testMocks.listenerRegistryMock
+      .expects('handle')
+      .once()
+      .withExactArgs(socketWrapper, unlistenMessage)
+
+    eventHandler.handle(socketWrapper, unlistenMessage)
+  })
+
+  it('processes listen accepts', () => {
+    const listenAcceptMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTIONS.LISTEN_ACCEPT,
+      name: 'event/.*',
+      subscription: 'event/A'
+    }
+    testMocks.listenerRegistryMock
+      .expects('handle')
+      .once()
+      .withExactArgs(socketWrapper, listenAcceptMessage)
+
+    eventHandler.handle(socketWrapper, listenAcceptMessage)
+  })
+
+  it('processes listen rejects', () => {
+    const listenRejectMessage = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTIONS.LISTEN_REJECT,
+      name: 'event/.*',
+      subscription: 'event/A'
+    }
+    testMocks.listenerRegistryMock
+      .expects('handle')
+      .once()
+      .withExactArgs(socketWrapper, listenRejectMessage)
+
+    eventHandler.handle(socketWrapper, listenRejectMessage)
   })
 })
 

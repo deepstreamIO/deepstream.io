@@ -1,12 +1,14 @@
 'use strict'
 
-const DeepstreamServer = require('../../src/deepstream.io')
+const DeepstreamServer = require('../../dist/src/deepstream.io').default
+const LocalCache = require('../../dist/src/default-plugins/local-cache').default
+const localCache = new LocalCache()
 
 const util = require('util')
 const EventEmitter = require('events').EventEmitter
 const Logger = require('./test-logger')
 
-const getUid = require('../../src/utils/utils').getUid
+const getUid = require('../../dist/src/utils/utils').getUid
 
 const path = require('path')
 
@@ -34,8 +36,8 @@ module.exports = class DeepstreamTest extends EventEmitter {
   }
 
   updatePermissions (type, done) {
-    this._server._options.permissionHandler.once('config-loaded', () => done())
-    this._server._options.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
+    this._server.services.permissionHandler.once('config-loaded', () => done())
+    this._server.services.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
   }
 
   start () {
@@ -146,6 +148,8 @@ module.exports = class DeepstreamTest extends EventEmitter {
         }
       }
     })
+
+    this._server.set('cache', localCache)
 
     if (this._enableLogging !== true) {
       this._server.set('logger', new Logger())

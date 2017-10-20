@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "outDir": "dist",
+    "sourceMap": true,
+    "allowJs": true,
+    "strictNullChecks": true 
+  },
+  "files": [
+    "./node_modules/@types/node/index.d.ts",
+    "./node_modules/@types/jasmine/index.d.ts"
+  ],
+  "include": [
+    "protocol/**/*",
+    "bin/*",
+    "src/**/*",
+    "src/**/*.json",
+    "test/**/*",
+    "package.json"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

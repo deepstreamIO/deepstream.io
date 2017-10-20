@@ -1,12 +1,10 @@
-/* eslint-disable import/no-extraneous-dependencies */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach, beforeAll */
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
-const uwsMock = require('../mocks/uws-mock')
-const HttpMock = require('../mocks/http-mock')
-const LoggerMock = require('../mocks/logger-mock')
-const PermissionHandlerMock = require('../mocks/permission-handler-mock')
+const uwsMock = require('../test-mocks/uws-mock')
+const HttpMock = require('../test-mocks/http-mock')
+const LoggerMock = require('../test-mocks/logger-mock')
+const PermissionHandlerMock = require('../test-mocks/permission-handler-mock')
 
 const httpMock = new HttpMock()
 const httpsMock = new HttpMock()
@@ -17,28 +15,33 @@ const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint
   uws: uwsMock,
   http: httpMock,
   https: httpsMock
-})
+}).default
 
-const options = {
-  permissionHandler: PermissionHandlerMock,
-  logger: new LoggerMock(),
+const config = {
   maxAuthAttempts: 3,
   logInvalidAuthData: true
 }
 
-const mockDs = { _options: options }
+const services = {
+  permissionHandler: PermissionHandlerMock,
+  logger: new LoggerMock()
+}
+
+const mockDs = { config, services }
+
+let connectionEndpoint
 
 const connectionEndpointInit = (endpointOptions, onReady) => {
-  options.connectionEndpoint = new ConnectionEndpoint(endpointOptions)
-  options.connectionEndpoint.setDeepstream(mockDs)
-  options.connectionEndpoint.init()
-  options.connectionEndpoint.on('ready', onReady)
+  connectionEndpoint = new ConnectionEndpoint(endpointOptions)
+  connectionEndpoint.setDeepstream(mockDs)
+  connectionEndpoint.init()
+  connectionEndpoint.on('ready', onReady)
 }
 
 describe('validates HTTPS server conditions', () => {
   let error
   let sslOptions
-  options.connectionEndpoint = null
+  connectionEndpoint = null
 
   beforeAll(() => {
     spyOn(httpMock, 'createServer').and.callThrough()
@@ -54,11 +57,11 @@ describe('validates HTTPS server conditions', () => {
   })
 
   afterEach((done) => {
-    if (!options.connectionEndpoint || !options.connectionEndpoint.isReady) {
+    if (!connectionEndpoint || !connectionEndpoint.isReady) {
       done()
     } else {
-      options.connectionEndpoint.once('close', done)
-      options.connectionEndpoint.close()
+      connectionEndpoint.once('close', done)
+      connectionEndpoint.close()
     }
     httpMock.createServer.calls.reset()
     httpsMock.createServer.calls.reset()
@@ -77,7 +80,7 @@ describe('validates HTTPS server conditions', () => {
     sslOptions.sslCert = 'sslCertificate'
     connectionEndpointInit(sslOptions, () => {
       expect(httpMock.createServer).not.toHaveBeenCalled()
-      expect(httpsMock.createServer).toHaveBeenCalledWith({ key: 'sslPrivateKey', cert: 'sslCertificate' })
+      expect(httpsMock.createServer).toHaveBeenCalledWith({ key: 'sslPrivateKey', cert: 'sslCertificate', ca: undefined })
       done()
     })
   })

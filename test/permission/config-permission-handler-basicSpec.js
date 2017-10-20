@@ -1,17 +1,18 @@
-/* eslint-disable no-param-reassign */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
-const C = require('../../src/constants/constants')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
-const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
+const ConfigPermissionHandler = require('../../src/permission/config-permission-handler').default
 
 const options = testHelper.getDeepstreamPermissionOptions()
+const config = options.config
+const services = options.services
+
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return options.logger.log.calls.mostRecent().args[2]
+  return services.logger.log.calls.mostRecent().args[2]
 }
 
 describe('permission handler applies basic permissions to incoming messages', () => {
@@ -19,8 +20,8 @@ describe('permission handler applies basic permissions to incoming messages', ()
     const permissions = getBasePermissions()
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
-      data: ['someRecord']
+      action: C.RECORD_ACTIONS.READ,
+      name: 'someRecord'
     }
     expect(testPermission(permissions, message)).toBe(true)
   })
@@ -34,8 +35,8 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
-      data: ['private/userA']
+      action: C.RECORD_ACTIONS.READ,
+      name: 'private/userA'
     }
 
     expect(testPermission(permissions, message, 'userB')).toBe(false)
@@ -50,8 +51,8 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UNSUBSCRIBE,
-      data: ['private/userA']
+      action: C.RECORD_ACTIONS.UNSUBSCRIBE,
+      name: 'private/userA'
     }
 
     expect(testPermission(permissions, message, 'userB')).toBe(true)
@@ -66,8 +67,8 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.READ,
-      data: ['private/userA']
+      action: C.RECORD_ACTIONS.READ,
+      name: 'private/userA'
     }
 
     expect(testPermission(permissions, message, 'userA')).toBe(true)
@@ -82,8 +83,8 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.SNAPSHOT,
-      data: ['private/userA']
+      action: C.RECORD_ACTIONS.READ,
+      name: 'private/userA'
     }
 
     expect(testPermission(permissions, message, 'userB')).toBe(false)
@@ -101,14 +102,16 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      data: ['some-event', 'O{"price":15}']
+      action: C.EVENT_ACTIONS.EMIT,
+      name: 'some-event',
+      data: '{"price":15}'
     })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      data: ['some-event', 'O{"price":5}']
+      action: C.EVENT_ACTIONS.EMIT,
+      name: 'some-event',
+      data: '{"price":5}'
     })).toBe(true)
   })
 
@@ -120,8 +123,8 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      data: ['some-event']
+      action: C.EVENT_ACTIONS.EMIT,
+      name: 'some-event'
     })).toBe(false)
   })
 
@@ -138,26 +141,34 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
-      data: ['trade/book', '1234', 'O{"assetClass": "equity"}']
+      action: C.RPC_ACTIONS.REQUEST,
+      name: 'trade/book',
+      correlationId: '1234',
+      data: '{"assetClass": "equity"}'
     }, null, { role: 'eq-trader' })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
-      data: ['trade/book', '1234', 'O{"assetClass": "fx"}']
+      action: C.RPC_ACTIONS.REQUEST,
+      name: 'trade/book',
+      correlationId: '1234',
+      data: '{"assetClass": "fx"}'
     }, null, { role: 'fx-trader' })).toBe(true)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
-      data: ['trade/book', '1234', 'O{"assetClass": "fx"}']
+      action: C.RPC_ACTIONS.REQUEST,
+      name: 'trade/book',
+      correlationId: '1234',
+      data: '{"assetClass": "fx"}'
     }, null, { role: 'eq-trader' })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.ACTIONS.REQUEST,
-      data: ['trade/cancel', '1234', 'O{"assetClass": "fx"}']
+      action: C.RPC_ACTIONS.REQUEST,
+      name: 'trade/cancel',
+      correlationId: '1234',
+      data: '{"assetClass": "fx"}'
     }, null, { role: 'fx-trader' })).toBe(false)
   })
 
@@ -174,32 +185,42 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      data: ['cars/mercedes', 1, '{"manufacturer":"mercedes-benz"}']
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'cars/mercedes',
+      version: 1,
+      data: '{"manufacturer":"mercedes-benz"}'
     })).toBe(true)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      data: ['cars/mercedes', 1, '{"manufacturer":"BMW"}']
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'cars/mercedes',
+      version: 1,
+      data: '{"manufacturer":"BMW"}'
     })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      data: ['cars/porsche/911', 1, '{"model": "911", "price": 60000 }']
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'cars/porsche/911',
+      version: 1,
+      data: '{"model": "911", "price": 60000 }'
     })).toBe(true)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      data: ['cars/porsche/911', 1, '{"model": "911", "price": 40000 }']
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'cars/porsche/911',
+      version: 1,
+      data: '{"model": "911", "price": 40000 }'
     })).toBe(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      data: ['cars/porsche/911', 1, '{"model": "Boxter", "price": 70000 }']
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'cars/porsche/911',
+      version: 1,
+      data: '{"model": "Boxter", "price": 70000 }'
     })).toBe(false)
   })
 
@@ -212,35 +233,14 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      data: ['cars/mercedes', 1, '{"manufacturer":"mercedes-benz"']
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'cars/mercedes',
+      version: 1,
+      data: '{"manufacturer":"mercedes-benz"'
     }
 
     const callback = function (error, result) {
       expect(lastError()).toContain('error when converting message data')
-      expect(result).toBe(false)
-      next()
-    }
-
-    testPermission(permissions, message, 'user', null, callback)
-  })
-
-  it('deals with messages without data', (next) => {
-    const permissions = getBasePermissions()
-
-    permissions.event['some-event'] = {
-      publish: 'data.manufacturer === "mercedes-benz"'
-    }
-
-    const message = {
-      topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      data: []
-    }
-
-
-    const callback = function (error, result) {
-      expect(error).toContain('invalid message')
       expect(result).toBe(false)
       next()
     }
@@ -257,8 +257,9 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      data: ['some-event', 'xxx']
+      action: C.EVENT_ACTIONS.EMIT,
+      name: 'some-event',
+      data: 'xxx'
     }
 
     const callback = function (error, result) {
@@ -275,7 +276,7 @@ describe('loads permissions repeatedly', () => {
   let permissionHandler
 
   it('creates the permissionHandler', () => {
-    permissionHandler = new ConfigPermissionHandler(options, getBasePermissions())
+    permissionHandler = new ConfigPermissionHandler(config, services, getBasePermissions())
     permissionHandler.setRecordHandler({
       removeRecordRequest: () => {},
       runWhenRecordStable: (r, c) => { c(r) }
@@ -286,8 +287,9 @@ describe('loads permissions repeatedly', () => {
   it('requests permissions initally, causing a lookup', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      data: ['some-event', 'some-data']
+      action: C.EVENT_ACTIONS.EMIT,
+      name: 'some-event',
+      data: 'some-data'
     }
 
     const callback = function (error, result) {
@@ -302,8 +304,9 @@ describe('loads permissions repeatedly', () => {
   it('requests permissions a second time, causing a cache retriaval', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.ACTIONS.EVENT,
-      data: ['some-event', 'some-data']
+      action: C.EVENT_ACTIONS.EMIT,
+      name: 'some-event',
+      data: 'some-data'
     }
 
     const callback = function (error, result) {

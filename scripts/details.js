@@ -25,5 +25,5 @@ function writeMetaFile() {
 		gitRef: exec( 'git rev-parse HEAD' ).toString().trim(),
 		buildTime: new Date().toString()
 	};
-	fs.writeFileSync( path.join( __dirname, '..', 'meta.json' ), JSON.stringify( meta, null, 2 ), 'utf8' );
+	fs.writeFileSync( path.join( __dirname, '..', 'dist', 'meta.json' ), JSON.stringify( meta, null, 2 ), 'utf8' );
 }

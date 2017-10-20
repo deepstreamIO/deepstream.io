@@ -1,4 +1,3 @@
-/* global jasmine, spyOn, describe, it, expect, beforeAll, beforeEach, afterEach */
 'use strict'
 
 const defaultConfig = require('../../src/default-options')
@@ -17,13 +16,13 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
       config.plugins = {
         cache: {
-          path: './test/test-plugins/plugin-a',
+          path: './test/test-mocks/plugin-mock',
           options: { some: 'options' }
         }
       }
-      configInitialiser.initialise(config)
-      expect(config.cache.type).toBe('pluginA')
-      expect(config.cache.options).toEqual({ some: 'options' })
+      const result = configInitialiser.initialise(config)
+      expect(result.services.cache.description).toBe('mock-plugin')
+      expect(result.services.cache.options).toEqual({ some: 'options' })
     })
 
     it('loads plugins via module names', () => {
@@ -34,24 +33,23 @@ describe('config-initialiser', () => {
           options: {}
         }
       }
-
-      configInitialiser.initialise(config)
-      expect(config.cache.toString()).toBe('[object Object]')
+      const result = configInitialiser.initialise(config)
+      expect(result.services.toString()).toBe('[object Object]')
     })
 
     it('loads plugins from a relative path and lib dir', () => {
-      global.deepstreamLibDir = './test/test-plugins'
+      global.deepstreamLibDir = './test/test-mocks'
 
       const config = defaultConfig.get()
       config.plugins = {
         cache: {
-          path: './plugin-a',
+          path: './plugin-mock',
           options: { some: 'options' }
         }
       }
-      configInitialiser.initialise(config)
-      expect(config.cache.type).toBe('pluginA')
-      expect(config.cache.options).toEqual({ some: 'options' })
+      const result = configInitialiser.initialise(config)
+      expect(result.services.cache.description).toBe('mock-plugin')
+      expect(result.services.cache.options).toEqual({ some: 'options' })
     })
   })
 
@@ -71,8 +69,8 @@ describe('config-initialiser', () => {
 
       const config = defaultConfig.get()
       config.sslKey = './sslKey.pem'
-      configInitialiser.initialise(config)
-      expect(config.sslKey).toBe('I\'m a key')
+      const result = configInitialiser.initialise(config)
+      expect(result.config.sslKey).toBe('I\'m a key')
     })
   })
 
@@ -108,8 +106,8 @@ describe('config-initialiser', () => {
       config.auth = {
         type: 'none'
       }
-      configInitialiser.initialise(config)
-      expect(config.authenticationHandler.type).toBe('none')
+      const result = configInitialiser.initialise(config)
+      expect(result.services.authenticationHandler.description).toBe('none')
     })
 
     it('works for authtype: user', () => {
@@ -122,9 +120,9 @@ describe('config-initialiser', () => {
           path: './users.json'
         }
       }
-      configInitialiser.initialise(config)
-      expect(config.authenticationHandler.type).toContain('file using')
-      expect(config.authenticationHandler.type).toContain(path.resolve('test/test-configs/users.json'))
+      const result = configInitialiser.initialise(config)
+      expect(result.services.authenticationHandler.description).toContain('file using')
+      expect(result.services.authenticationHandler.description).toContain(path.resolve('test/test-configs/users.json'))
     })
 
     it('works for authtype: http', () => {
@@ -139,8 +137,8 @@ describe('config-initialiser', () => {
         }
       }
 
-      configInitialiser.initialise(config)
-      expect(config.authenticationHandler.type).toBe('http webhook to http://some-url.com')
+      const result = configInitialiser.initialise(config)
+      expect(result.services.authenticationHandler.type).toBe('http webhook to http://some-url.com')
     })
 
     it('fails for missing auth sections', () => {
@@ -157,15 +155,15 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
 
       config.auth = {
-        path: '../mocks/auth-handler-mock',
+        path: '../test-mocks/authentication-handler-mock',
         options: {
           hello: 'there'
         }
       }
 
-      configInitialiser.initialise(config)
-      expect(config.authenticationHandler.isReady).toBe(true)
-      expect(config.authenticationHandler.options).toEqual({ hello: 'there' })
+      const result = configInitialiser.initialise(config)
+      expect(result.services.authenticationHandler.isReady).toBe(true)
+      expect(result.services.authenticationHandler.options).toEqual({ hello: 'there' })
     })
 
     it('tries to find a custom authentication handler from name', () => {
@@ -202,8 +200,8 @@ describe('config-initialiser', () => {
         options: {}
       }
 
-      configInitialiser.initialise(config)
-      expect(config.authenticationHandler.type).toBe('none')
+      const result = configInitialiser.initialise(config)
+      expect(result.services.authenticationHandler.description).toBe('none')
       delete global.deepstreamCLI
     })
   })
@@ -219,9 +217,9 @@ describe('config-initialiser', () => {
           path: './basic-permission-config.json'
         }
       }
-      configInitialiser.initialise(config)
-      expect(config.permissionHandler.type).toContain('valve permissions loaded from')
-      expect(config.permissionHandler.type).toContain(path.resolve('test/test-configs/basic-permission-config.json'))
+      const result = configInitialiser.initialise(config)
+      expect(result.services.permissionHandler.description).toContain('valve permissions loaded from')
+      expect(result.services.permissionHandler.description).toContain(path.resolve('test/test-configs/basic-permission-config.json'))
     })
 
     it('fails for invalid permission types', () => {
@@ -241,16 +239,16 @@ describe('config-initialiser', () => {
     it('allows passing a custom permission handler', () => {
       const config = defaultConfig.get()
 
-      config.auth = {
-        path: '../mocks/perm-handler-mock',
+      config.permission = {
+        path: '../test-mocks/permission-handler-mock',
         options: {
           hello: 'there'
         }
       }
 
-      configInitialiser.initialise(config)
-      expect(config.authenticationHandler.isReady).toBe(true)
-      expect(config.authenticationHandler.options).toEqual({ hello: 'there' })
+      const result = configInitialiser.initialise(config)
+      expect(result.services.permissionHandler.isReady).toBe(true)
+      expect(result.services.permissionHandler.options).toEqual({ hello: 'there' })
     })
 
     it('tries to find a custom authentication handler from name', () => {
@@ -283,8 +281,8 @@ describe('config-initialiser', () => {
         options: {}
       }
 
-      configInitialiser.initialise(config)
-      expect(config.permissionHandler.type).toBe('none')
+      const result = configInitialiser.initialise(config)
+      expect(result.services.permissionHandler.description).toBe('none')
       delete global.deepstreamCLI
     })
   })
@@ -295,13 +293,13 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
 
       config.logger = {
-        name: 'default',
+        type: 'default',
         options: {
           logLevel: 2
         }
       }
-      configInitialiser.initialise(config)
-      expect(config.logger._options).toEqual({ logLevel: 2 })
+      const result = configInitialiser.initialise(config)
+      expect(result.services.logger.options).toEqual({ logLevel: 2 })
     })
 
     it('load a custom logger', () => {
@@ -314,8 +312,8 @@ describe('config-initialiser', () => {
           a: 1
         }
       }
-      configInitialiser.initialise(config)
-      expect(config.logger.options).toEqual({ a: 1 })
+      const result = configInitialiser.initialise(config)
+      expect(result.services.logger.options).toEqual({ a: 1 })
     })
 
     it('throw an error for a unsupported logger type', (next) => {

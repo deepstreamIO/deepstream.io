@@ -1,13 +1,12 @@
-/* eslint-disable no-param-reassign, no-new, max-len, */
-/* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
 'use strict'
 
 const getBasePermissions = require('../test-helper/test-helper').getBasePermissions
-const C = require('../../src/constants/constants')
+const C = require('../../src/constants')
 const testHelper = require('../test-helper/test-helper')
-const ConfigPermissionHandler = require('../../src/permission/config-permission-handler')
+const ConfigPermissionHandler = require('../../src/permission/config-permission-handler').default
 
 const options = testHelper.getDeepstreamPermissionOptions()
+const config = options.config
 const testPermission = testHelper.testPermission(options)
 
 describe('supports spaces after variables and escaped quotes', () => {
@@ -19,7 +18,7 @@ describe('supports spaces after variables and escaped quotes', () => {
     }
 
     try {
-      new ConfigPermissionHandler(options, permissions)
+      new ConfigPermissionHandler(config, {}, permissions)
     } catch (e) {
       expect(e.toString()).toContain('invalid permission config - rule read for record does not support data')
     }
@@ -32,8 +31,10 @@ describe('supports spaces after variables and escaped quotes', () => {
     }
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      data: ['someUser', 1, '{"firstname":"Yasser"}']
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'someUser',
+      version: 1,
+      data: '{"firstname":"Yasser"}'
     }
 
     const callback = function (error, result) {
@@ -53,8 +54,10 @@ describe('supports spaces after variables and escaped quotes', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.ACTIONS.UPDATE,
-      data: ['someUser', 1, '{"firstname":"Wolfram"}']
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'someUser',
+      version: 1,
+      data: '{"firstname":"Wolfram"}'
     }
 
     const callback = function (error, result) {

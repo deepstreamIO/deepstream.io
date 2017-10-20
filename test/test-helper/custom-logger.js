@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 'use strict'
 
 const Emitter = require('events').EventEmitter
@@ -18,8 +17,7 @@ class CustomLogger extends Emitter {
     console.log('CustomLogger:', level, event, msg)
   }
 
-  setLogLevel (level) {
-    console.log('<< new log level', level)
+  setLogLevel (/* level */) {
   }
 
 }

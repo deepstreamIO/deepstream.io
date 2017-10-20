@@ -1,7 +1,12 @@
 sudo: true
 language: node_js
 
+git:
+    submodules: false
+
 before_install:
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
   - gem install fpm --conservative || echo "FPM install failed"
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       if [ "$CC" == "gcc" ]; then
@@ -33,8 +38,9 @@ script:
   # This fails on node 4
   - if [[ "$TRAVIS_NODE_VERSION" == "6.11"* ]]; then
       npm run lint;
+      npm run lint:test;
     fi
-  - npm run reporter
+  - npm run test:coverage
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sh scripts/run-e2e.sh;
     fi
