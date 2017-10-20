@@ -124,5 +124,12 @@ module.exports = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       clientHandler.assertNoErrors(client.name)
     })
+  },
+
+  hadConnectionState (clientExpression, had, state) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      if (had) sinon.assert.calledWith(client.connectionStateChanged, state)
+      else sinon.assert.neverCalledWith(client.connectionStateChanged, state)
+    })
   }
 }

@@ -19,6 +19,7 @@ function createClient (clientName, server, options) {
     client,
     login: sinon.spy(),
     error: {},
+    connectionStateChanged: sinon.spy(),
     event: {
       callbacks: {},
       callbacksListeners: {},
@@ -82,6 +83,13 @@ function createClient (clientName, server, options) {
     clientErrors[topic]          = clientErrors[topic] || {}
     clientErrors[topic][event] = clientErrors[topic][event] || sinon.spy()
     clients[clientName].error[topic][event](message)
+  })
+
+  clients[clientName].client.on('connectionStateChanged', (state) => {
+    if (!clients[clientName]) {
+      return
+    }
+    clients[clientName].connectionStateChanged(state)
   })
 
   return clients[clientName]
