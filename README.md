@@ -10,7 +10,6 @@ deepstream is a new type of server that syncs data and sends events across milli
 2. [Getting started](https://deepstream.io/tutorials/core/getting-started-quickstart/)
 3. [Tutorials](https://deepstream.io/tutorials/)
 4. [Documentation](https://deepstream.io/docs/)
-5. Deploying on [AWS](https://www.youtube.com/watch?v=VN_qI8a6H34)
 
 ### Community Links
 
