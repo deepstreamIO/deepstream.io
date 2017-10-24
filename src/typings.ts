@@ -1,5 +1,5 @@
-declare module "*.json" {
-  const version: number;
+declare module '*.json' {
+  const version: number
 }
 
 type RuleType = string
@@ -21,14 +21,14 @@ interface StorageRecord {
 }
 
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
+  user: string
   isRemote: boolean
-  sendMessage(message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, buffer?: boolean): void
-  sendAckMessage(message: { topic: TOPIC } | Message | RPCMessage, buffer?: boolean): void
-  sendError(message: { topic: TOPIC } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: EVENT, errorMessage?: string, buffer?: boolean): void
+  sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, buffer?: boolean): void
+  sendAckMessage (message: { topic: TOPIC } | Message | RPCMessage, buffer?: boolean): void
+  sendError (message: { topic: TOPIC } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: EVENT, errorMessage?: string, buffer?: boolean): void
 }
 
 interface SocketWrapper extends SimpleSocketWrapper {
-  user: string
   uuid: number
   __id: number
   authData: object
@@ -74,6 +74,7 @@ interface ListenMessage extends Message {
   raw?: string
 }
 
+// tslint:disable-next-line:no-empty-interface
 interface RecordMessage extends Message {
 }
 
@@ -105,25 +106,25 @@ interface JifResult {
 }
 
 interface SubscriptionListener {
-  onSubscriptionRemoved(name: string, socketWrapper: SocketWrapper)
-  onLastSubscriptionRemoved(name: string)
-  onSubscriptionMade(name: string, socketWrapper: SocketWrapper)
-  onFirstSubscriptionMade(name: string)
+  onSubscriptionRemoved (name: string, socketWrapper: SocketWrapper)
+  onLastSubscriptionRemoved (name: string)
+  onSubscriptionMade (name: string, socketWrapper: SocketWrapper)
+  onFirstSubscriptionMade (name: string)
 }
 
 interface Logger extends DeepstreamPlugin {
-  setLogLevel(logLevel: number)
-  info(event: EVENT, message?: string, metaData?: any): void
-  debug(event: EVENT, message?: string, metaData?: any): void
-  warn(event: EVENT, message?: string, metaData?: any): void
-  error(event: EVENT, message?: string, metaData?: any): void
-  log(level: LOG_LEVEL, event: EVENT, message: string, metaData?: any): void
+  setLogLevel (logLevel: number)
+  info (event: EVENT, message?: string, metaData?: any): void
+  debug (event: EVENT, message?: string, metaData?: any): void
+  warn (event: EVENT, message?: string, metaData?: any): void
+  error (event: EVENT, message?: string, metaData?: any): void
+  log (level: LOG_LEVEL, event: EVENT, message: string, metaData?: any): void
 }
 
 interface ConnectionEndpoint extends DeepstreamPlugin {
-  onMessages(socketWrapper: SocketWrapper, messages: Array<Message>): void
-  close(): void
-  scheduleFlush?(socketWrapper: SocketWrapper)
+  onMessages (socketWrapper: SocketWrapper, messages: Array<Message>): void
+  close (): void
+  scheduleFlush? (socketWrapper: SocketWrapper)
 }
 
 interface PluginConfig {
@@ -136,33 +137,28 @@ interface PluginConfig {
 interface DeepstreamPlugin extends NodeJS.EventEmitter {
   isReady: boolean
   description: string
-  init?(): void
-  close?(): void
-  setDeepstream?(deepstream: any): void
-  setRecordHandler?(recordHandler: any): void
+  init? (): void
+  close? (): void
+  setDeepstream? (deepstream: any): void
+  setRecordHandler? (recordHandler: any): void
 }
 
-interface StorageReadCallback {
- (error: Error | null, result: StorageRecord): void;
-}
-
-interface StorageWriteCallback {
- (error: Error | null): void;
-}
+type StorageReadCallback = (error: Error | null, result: StorageRecord) => void
+type StorageWriteCallback = (error: Error | null) => void
 
 interface StoragePlugin extends DeepstreamPlugin {
-  set(recordName: string, data: any, callback: StorageWriteCallback, metaData: any): void
-  get(recordName: string, callback: StorageReadCallback, metaData: any): void
-  delete(recordName: string, callback: StorageWriteCallback, metaData: any): void
+  set (recordName: string, data: any, callback: StorageWriteCallback, metaData: any): void
+  get (recordName: string, callback: StorageReadCallback, metaData: any): void
+  delete (recordName: string, callback: StorageWriteCallback, metaData: any): void
 }
 
 interface PermissionHandler extends DeepstreamPlugin {
-  canPerformAction(username: string, message: Message, callback: Function, authData: any, socketWrapper: SocketWrapper): void
+  canPerformAction (username: string, message: Message, callback: Function, authData: any, socketWrapper: SocketWrapper): void
 }
 
 interface AuthenticationHandler extends DeepstreamPlugin {
-  isValidUser(connectionData: any, authData: any, callback: UserAuthenticationCallback)
-  onClientDisconnect?(username: string)
+  isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback)
+  onClientDisconnect? (username: string)
 }
 
 interface UserAuthenticationCallback {
@@ -170,17 +166,17 @@ interface UserAuthenticationCallback {
 }
 
 interface Cluster {
-  getStateRegistry(stateRegistryName: TOPIC): any,
-  send(message: Message, metaData: any): void,
-  sendDirect(serverName: string, message: Message, metaData: any): void,
-  subscribe(topic: TOPIC, callback: Function): void
-  isLeader(): boolean
-  close(callback: Function): void
+  getStateRegistry (stateRegistryName: TOPIC): any,
+  send (message: Message, metaData: any): void,
+  sendDirect (serverName: string, message: Message, metaData: any): void,
+  subscribe (topic: TOPIC, callback: Function): void
+  isLeader (): boolean
+  close (callback: Function): void
 }
 
 interface LockRegistry {
-  get(lock: string, callback: Function)
-  release(lock: string)
+  get (lock: string, callback: Function)
+  release (lock: string)
 }
 
 interface DeepstreamConfig {
@@ -249,11 +245,12 @@ interface UserData {
  serverData: any
 }
 
-declare module NodeJS  {
+// tslint:disable-next-line:no-namespace
+declare namespace NodeJS  {
   interface Global {
-    deepstreamLibDir: string
-    deepstreamCLI: string
-    deepstreamConfDir: string
-    require(path: string): any
+    deepstreamCLI: any
+    deepstreamLibDir: string | null
+    deepstreamConfDir: string | null
+    require (path: string): any
   }
 }

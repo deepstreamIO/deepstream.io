@@ -4,7 +4,7 @@
     "module": "commonjs",
     "outDir": "dist",
     "sourceMap": true,
-    "allowJs": true,
+    "allowJs": false,
     "strictNullChecks": true,
     "types": [
       "node"
@@ -23,6 +23,8 @@
     "src/**/*",
     "src/**/*.json",
     "test/**/*",
+    "test/**/*.pem",
+    "test/**/*.json",
     "package.json"
   ],
   "exclude": [

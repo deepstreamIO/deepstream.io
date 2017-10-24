@@ -25,22 +25,22 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   public isReady: boolean = false
   public description: string = 'µWebSocket Connection Endpoint'
 
-  private _dsOptions: any
+  private dsOptions: any
   private initialised: boolean = false
-  private _flushTimeout: number | null
-  private _authenticatedSockets: Set<SocketWrapper> = new Set()
-  private _logger: Logger
-  private _authenticationHandler: AuthenticationHandler
-  private _server: https.Server | http.Server
-  private _logInvalidAuthData: boolean
-  private _healthCheckPath: string
-  private _maxAuthAttempts: number
-  private _urlPath: string
-  private _noDelay: boolean
-  private _unauthenticatedClientTimeout: number
-  private _serverGroup: any
-  private _scheduledSocketWrapperWrites: Set<SocketWrapper>
-  private _upgradeRequest: any
+  private flushTimeout: number | null
+  private authenticatedSockets: Set<SocketWrapper> = new Set()
+  private logger: Logger
+  private authenticationHandler: AuthenticationHandler
+  private server: https.Server | http.Server
+  private logInvalidAuthData: boolean
+  private healthCheckPath: string
+  private maxAuthAttempts: number
+  private urlPath: string
+  private noDelay: boolean
+  private unauthenticatedClientTimeout: number
+  private serverGroup: any
+  private scheduledSocketWrapperWrites: Set<SocketWrapper>
+  private upgradeRequest: any
 
   constructor (private options: any, private services: DeepstreamServices) {
     super()
@@ -51,9 +51,9 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Called on initialization with a reference to the instantiating deepstream server.
    */
   public setDeepstream (deepstream): void {
-    this._dsOptions = deepstream.config
-    this._logger = deepstream.services.logger
-    this._authenticationHandler = deepstream.services.authenticationHandler
+    this.dsOptions = deepstream.config
+    this.logger = deepstream.services.logger
+    this.authenticationHandler = deepstream.services.authenticationHandler
   }
 
   /**
@@ -62,7 +62,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @throws Will throw if called before `setDeepstream()`.
    */
   public init (): void {
-    if (!this._dsOptions) {
+    if (!this.dsOptions) {
       throw new Error('setDeepstream must be called before init()')
     }
     if (this.initialised) {
@@ -70,37 +70,36 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     }
     this.initialised = true
 
-    this._healthCheckPath = this._getOption('healthCheckPath')
+    this.healthCheckPath = this._getOption('healthCheckPath')
 
-    this._maxAuthAttempts = this._getOption('maxAuthAttempts')
-    this._logInvalidAuthData = this._getOption('logInvalidAuthData')
-    this._urlPath = this._getOption('urlPath')
-    this._unauthenticatedClientTimeout = this._getOption('unauthenticatedClientTimeout')
+    this.maxAuthAttempts = this._getOption('maxAuthAttempts')
+    this.logInvalidAuthData = this._getOption('logInvalidAuthData')
+    this.urlPath = this._getOption('urlPath')
+    this.unauthenticatedClientTimeout = this._getOption('unauthenticatedClientTimeout')
 
     this._uwsInit()
 
-    this._server = this._createHttpServer()
-    this._server.on('request', this._handleHealthCheck.bind(this))
+    this.server = this._createHttpServer()
+    this.server.on('request', this._handleHealthCheck.bind(this))
 
-    this._server.once('listening', this._onReady.bind(this))
-    this._server.on('error', this._onError.bind(this))
-    this._server.on('upgrade', this._onUpgradeRequest.bind(this))
+    this.server.once('listening', this._onReady.bind(this))
+    this.server.on('error', this._onError.bind(this))
+    this.server.on('upgrade', this._onUpgradeRequest.bind(this))
 
     const port = this._getOption('port')
     const host = this._getOption('host')
-    this._server.listen(port, host)
+    this.server.listen(port, host)
   }
 
   /**
    * Called from a socketWrapper. This method tells the connection endpoint
    * to flush the socket after a certain amount of time, used to low priority
    * messages
-   * @param  {UwsSocketWrapper} socketWrapper SocketWrapper with a flush
    */
-  public scheduleFlush (socketWrapper) {
-    this._scheduledSocketWrapperWrites.add(socketWrapper)
-    if (!this._flushTimeout) {
-      this._flushTimeout = setTimeout(this._flushSockets, this.options.outgoingBufferTimeout)
+  public scheduleFlush (socketWrapper: SocketWrapper) {
+    this.scheduledSocketWrapperWrites.add(socketWrapper)
+    if (!this.flushTimeout) {
+      this.flushTimeout = setTimeout(this._flushSockets, this.options.outgoingBufferTimeout)
     }
   }
 
@@ -108,21 +107,19 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Called when the flushTimeout occurs in order to send  all pending socket acks
    */
   private _flushSockets () {
-    for (const socketWrapper of this._scheduledSocketWrapperWrites) {
+    for (const socketWrapper of this.scheduledSocketWrapperWrites) {
       socketWrapper.flush()
     }
-    this._scheduledSocketWrapperWrites.clear()
-    this._flushTimeout = null
+    this.scheduledSocketWrapperWrites.clear()
+    this.flushTimeout = null
   }
 
   /**
    * Get a parameter from the root of the deepstream options if present, otherwise get it from the
    * plugin config. If neither is present, default to the optionally provided default.
-   *
-   * @param {String} option  The name of the option to be fetched
    */
-  private _getOption (option) {
-    const value = this._dsOptions[option]
+  private _getOption (option: string) {
+    const value = this.dsOptions[option]
     if ((value === null || value === undefined) && (this.options[option] !== undefined)) {
       return this.options[option]
     }
@@ -135,11 +132,11 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private _uwsInit () {
     const maxMessageSize = this._getOption('maxMessageSize')
     const perMessageDeflate = this._getOption('perMessageDeflate')
-    this._serverGroup = uws.native.server.group.create(perMessageDeflate, maxMessageSize)
-    this._noDelay = this._getOption('noDelay')
+    this.serverGroup = uws.native.server.group.create(perMessageDeflate, maxMessageSize)
+    this.noDelay = this._getOption('noDelay')
 
     uws.native.server.group.onDisconnection(
-      this._serverGroup,
+      this.serverGroup,
       (external, code, message, socketWrapper) => {
         if (socketWrapper) {
           socketWrapper.close()
@@ -147,19 +144,21 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       }
     )
 
-    uws.native.server.group.onMessage(this._serverGroup, (message, socketWrapper) => {
+    uws.native.server.group.onMessage(this.serverGroup, (message, socketWrapper) => {
       const parsedMessages = socketWrapper.parseMessage(message)
-      socketWrapper.onMessage(parsedMessages)
+      if (parsedMessages.length > 0) {
+        socketWrapper.onMessage(parsedMessages)
+      }
     })
 
-    uws.native.server.group.onPing(this._serverGroup, () => {})
-    uws.native.server.group.onPong(this._serverGroup, () => {})
-    uws.native.server.group.onConnection(this._serverGroup, this._onConnection.bind(this))
+    uws.native.server.group.onPing(this.serverGroup, () => {})
+    uws.native.server.group.onPong(this.serverGroup, () => {})
+    uws.native.server.group.onConnection(this.serverGroup, this._onConnection.bind(this))
 
     // TODO: This will become an issue when distinguishing
     // between different protocols
     uws.native.server.group.startAutoPing(
-      this._serverGroup,
+      this.serverGroup,
       this._getOption('heartbeatInterval'),
       messageBuilder.getMessage({
         topic: TOPIC.CONNECTION,
@@ -172,13 +171,13 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Called for the ready event of the ws server.
    */
   private _onReady (): void {
-    const serverAddress = this._server.address()
+    const serverAddress = this.server.address()
     const address = serverAddress.address
     const port = serverAddress.port
-    const wsMsg = `Listening for websocket connections on ${address}:${port}${this._urlPath}`
-    this._logger.info(EVENT.INFO, wsMsg)
-    const hcMsg = `Listening for health checks on path ${this._healthCheckPath} `
-    this._logger.info(EVENT.INFO, hcMsg)
+    const wsMsg = `Listening for websocket connections on ${address}:${port}${this.urlPath}`
+    this.logger.info(EVENT.INFO, wsMsg)
+    const hcMsg = `Listening for health checks on path ${this.healthCheckPath} `
+    this.logger.info(EVENT.INFO, hcMsg)
     this.emit('ready')
     this.isReady = true
   }
@@ -247,7 +246,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     req: http.IncomingMessage | https.IncomingMessage,
     res: http.ServerResponse | https.ServerResponse
   ) {
-    if (req.method === 'GET' && req.url === this._healthCheckPath) {
+    if (req.method === 'GET' && req.url === this.healthCheckPath) {
       res.writeHead(200)
       res.end()
     }
@@ -267,27 +266,27 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     const address = uws.native.getAddress(external)
     const handshakeData = {
       remoteAddress: address[1],
-      headers: this._upgradeRequest.headers,
-      referer: this._upgradeRequest.headers.referer
+      headers: this.upgradeRequest.headers,
+      referer: this.upgradeRequest.headers.referer
     }
 
-    this._upgradeRequest = null
+    this.upgradeRequest = null
 
     const socketWrapper = createSocketWrapper(
-      external, handshakeData, this._logger, this.options, this
+      external, handshakeData, this.logger, this.options, this
     )
     uws.native.setUserData(external, socketWrapper)
 
-    this._logger.info(
+    this.logger.info(
       EVENT.INCOMING_CONNECTION,
       `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
     )
 
     let disconnectTimer
-    if (this._unauthenticatedClientTimeout !== null) {
+    if (this.unauthenticatedClientTimeout !== null) {
       disconnectTimer = setTimeout(
         this._processConnectionTimeout.bind(this, socketWrapper),
-        this._unauthenticatedClientTimeout
+        this.unauthenticatedClientTimeout
       )
       socketWrapper.once('close', clearTimeout.bind(null, disconnectTimer))
     }
@@ -312,7 +311,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     const msg = parsedMessages[0]
 
     if (msg.parseError) {
-      this._logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${msg.raw}`)
+      this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${msg.raw}`)
       socketWrapper.sendError({
         topic: TOPIC.CONNECTION
       }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, msg.raw)
@@ -321,7 +320,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     }
 
     if (msg.topic !== TOPIC.CONNECTION) {
-      this._logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid connection message ${msg.raw}`)
+      this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid connection message ${msg.raw}`)
       socketWrapper.sendError({
         topic: TOPIC.CONNECTION,
       }, PARSER_ACTIONS.INVALID_MESSAGE, msg.raw)
@@ -337,7 +336,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       return
     }
 
-    this._logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], msg.action)
+    this.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], msg.action)
   }
 
   /**
@@ -351,7 +350,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     let errorMsg
 
     if (msg.parseError) {
-      this._logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing auth message ${msg.raw}`)
+      this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing auth message ${msg.raw}`)
       socketWrapper.sendError({
         topic: TOPIC.AUTH
       }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, msg.raw)
@@ -360,7 +359,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     }
 
     if (msg.topic !== TOPIC.AUTH) {
-      this._logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid auth message ${msg.raw}`)
+      this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid auth message ${msg.raw}`)
       socketWrapper.sendError({
         topic: TOPIC.AUTH,
       }, PARSER_ACTIONS.INVALID_MESSAGE, msg.raw)
@@ -371,13 +370,13 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
      * Log the authentication attempt
      */
     const logMsg = socketWrapper.getHandshakeData().remoteAddress
-    this._logger.debug(AUTH_ACTIONS[AUTH_ACTIONS.REQUEST], logMsg)
+    this.logger.debug(AUTH_ACTIONS[AUTH_ACTIONS.REQUEST], logMsg)
 
     /**
      * Ensure the message is a valid authentication message
      */
     if (msg.action !== AUTH_ACTIONS.REQUEST) {
-      errorMsg = this._logInvalidAuthData === true ? msg.data : ''
+      errorMsg = this.logInvalidAuthData === true ? msg.data : ''
       this._sendInvalidAuthMsg(socketWrapper, errorMsg)
       return
     }
@@ -389,7 +388,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     if (result instanceof Error || !msg.parsedData || typeof msg.parsedData !== 'object') {
       errorMsg = 'Error parsing auth message'
 
-      if (this._logInvalidAuthData === true) {
+      if (this.logInvalidAuthData === true) {
         errorMsg += ` "${msg.data}": ${result.toString()}`
       }
 
@@ -400,7 +399,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     /**
      * Forward for authentication
      */
-    this._authenticationHandler.isValidUser(
+    this.authenticationHandler.isValidUser(
       socketWrapper.getHandshakeData(),
       msg.parsedData,
       this._processAuthResult.bind(this, msg.parsedData, socketWrapper, disconnectTimeout)
@@ -412,7 +411,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * the message, sends an error to the client and closes the socket
    */
   private _sendInvalidAuthMsg (socketWrapper: SocketWrapper, msg: string): void {
-    this._logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA], this._logInvalidAuthData ? msg : '')
+    this.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '')
     socketWrapper.sendError({
       topic: TOPIC.AUTH
     }, AUTH_ACTIONS.INVALID_MESSAGE_DATA)
@@ -442,8 +441,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       this.emit('client-connected', socketWrapper)
     }
 
-    this._authenticatedSockets.add(socketWrapper)
-    this._logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_SUCCESSFUL], socketWrapper.user)
+    this.authenticatedSockets.add(socketWrapper)
+    this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_SUCCESSFUL], socketWrapper.user)
   }
 
   /**
@@ -463,19 +462,19 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private _processInvalidAuth (clientData: any, authData: any, socketWrapper: any): void {
     let logMsg = 'invalid authentication data'
 
-    if (this._logInvalidAuthData === true) {
+    if (this.logInvalidAuthData === true) {
       logMsg += `: ${JSON.stringify(authData)}`
     }
 
-    this._logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg)
+    this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg)
     socketWrapper.sendError({
       topic: TOPIC.AUTH,
       parsedData: clientData
     }, AUTH_ACTIONS.AUTH_UNSUCCESSFUL)
     socketWrapper.authAttempts++
 
-    if (socketWrapper.authAttempts >= this._maxAuthAttempts) {
-      this._logger.info(AUTH_ACTIONS[AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
+    if (socketWrapper.authAttempts >= this.maxAuthAttempts) {
+      this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
       socketWrapper.sendError({
         topic: TOPIC.AUTH
       }, AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS)
@@ -489,7 +488,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    */
   private _processConnectionTimeout (socketWrapper: SocketWrapper): void {
     const log = 'connection has not authenticated successfully in the expected time'
-    this._logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT], log)
+    this.logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT], log)
     socketWrapper.sendError({
       topic: TOPIC.CONNECTION
     }, CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT)
@@ -515,16 +514,16 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * if the configured port number isn't available
    */
   private _onError (error: Error): void {
-    this._logger.error(EVENT.CONNECTION_ERROR, error.toString())
+    this.logger.error(EVENT.CONNECTION_ERROR, error.toString())
   }
 
   /**
   * Notifies the (optional) onClientDisconnect method of the permissionHandler
   * that the specified client has disconnected
   */
-  private _onSocketClose (socketWrapper: any):void {
-    if (this._authenticationHandler.onClientDisconnect) {
-      this._authenticationHandler.onClientDisconnect(socketWrapper.user)
+  private _onSocketClose (socketWrapper: any): void {
+    if (this.authenticationHandler.onClientDisconnect) {
+      this.authenticationHandler.onClientDisconnect(socketWrapper.user)
     }
 
     if (socketWrapper.user !== OPEN) {
@@ -533,15 +532,15 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
     // uws.native.clearUserData(socketWrapper._external)
 
-    this._authenticatedSockets.delete(socketWrapper)
+    this.authenticatedSockets.delete(socketWrapper)
   }
 
   /**
    * HTTP upgrade request listener
    */
-  private _onUpgradeRequest (request, socket):void {
+  private _onUpgradeRequest (request, socket): void {
     const requestPath = request.url.split('?')[0].split('#')[0]
-    if (!this._urlPath || this._urlPath === requestPath) {
+    if (!this.urlPath || this.urlPath === requestPath) {
       this._handleUpgrade(request, socket)
     }
     UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
@@ -550,28 +549,28 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Terminate an HTTP socket with some error code and error message
    */
-  static _terminateSocket (socket, code:number, name:string):void {
+  private static _terminateSocket (socket, code: number, name: string): void {
     socket.end(`HTTP/1.1 ${code}  ${name}\r\n\r\n`)
   }
 
   /**
    * Process websocket upgrade
    */
-  private _handleUpgrade (request, socket):void {
+  private _handleUpgrade (request, socket): void {
     const secKey = request.headers['sec-websocket-key']
     const socketHandle = socket.ssl ? socket._parent._handle : socket._handle
     const sslState = socket.ssl ? socket.ssl._external : null
     if (secKey && secKey.length === 24) {
-      socket.setNoDelay(this._noDelay)
+      socket.setNoDelay(this.noDelay)
       const ticket = uws.native.transfer(
         socketHandle.fd === -1 ? socketHandle : socketHandle.fd,
         sslState
       )
       socket.on('close', () => {
-        if (this._serverGroup) {
-          this._upgradeRequest = request
+        if (this.serverGroup) {
+          this.upgradeRequest = request
           uws.native.upgrade(
-            this._serverGroup,
+            this.serverGroup,
             ticket, secKey,
             request.headers['sec-websocket-extensions'],
             request.headers['sec-websocket-protocol']
@@ -587,14 +586,14 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * will emit a close event once succesfully shut down
    */
   public close () {
-    this._server.removeAllListeners('request')
-    this._server.removeAllListeners('upgrade')
-    if (this._serverGroup) {
-      uws.native.server.group.close(this._serverGroup)
+    this.server.removeAllListeners('request')
+    this.server.removeAllListeners('upgrade')
+    if (this.serverGroup) {
+      uws.native.server.group.close(this.serverGroup)
     }
-    this._serverGroup = null
+    this.serverGroup = null
 
-    this._server.close(() => {
+    this.server.close(() => {
       this.emit('close')
     })
   }

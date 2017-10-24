@@ -1,6 +1,6 @@
 require('source-map-support').install()
 
-import { EOL }  from 'os'
+import { EOL } from 'os'
 import { readFileSync } from 'fs'
 import { join as joinPath } from 'path'
 import { EventEmitter } from 'events'
@@ -94,14 +94,13 @@ export default class Deepstream extends EventEmitter {
  * please see default-options.
  */
   public set (key: string, value: any): any {
-     if (this.services[key] !== undefined) {
+    if (this.services[key] !== undefined) {
       this.services[key] = value
     } else if (this.config[key] !== undefined) {
       this.config[key] = value
     } else {
       throw new Error(`Unknown option or service "${key}"`)
     }
-
     return this
   }
 
@@ -196,7 +195,7 @@ export default class Deepstream extends EventEmitter {
   private pluginInit (): void {
     this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
-    const infoLogger = message => this.services.logger.info(EVENT.INFO, message)
+    const infoLogger = (message) => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`deepstream version: ${pkg.version}`)
 
     // otherwise (no configFile) deepstream was invoked by API
@@ -228,7 +227,7 @@ export default class Deepstream extends EventEmitter {
     }
     plugin.isReady = true
 
-    const allPluginsReady = this.services.registeredPlugins.every(type => this.services[type].isReady)
+    const allPluginsReady = this.services.registeredPlugins.every((type) => this.services[type].isReady)
 
     if (allPluginsReady && this.currentState === STATES.PLUGIN_INIT) {
       this.transition('plugins-started')
@@ -245,7 +244,7 @@ export default class Deepstream extends EventEmitter {
 
     this.services.uniqueRegistry = new LockRegistry(this.config, this.services)
 
-  this.eventHandler = new EventHandler(this.config, this.services)
+    this.eventHandler = new EventHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
     TOPIC.EVENT,
     this.eventHandler.handle.bind(this.eventHandler)
@@ -413,7 +412,7 @@ export default class Deepstream extends EventEmitter {
 
     try {
     const nexeres = require('nexeres')
-      logo = nexeres.get('ascii-logo.txt').toString('ascii')
+    logo = nexeres.get('ascii-logo.txt').toString('ascii')
     } catch (e) {
       logo = readFileSync(joinPath(__dirname, '..', '..', '/ascii-logo.txt'), 'utf8')
     }

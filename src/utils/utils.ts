@@ -172,7 +172,7 @@ export let deepFreeze = function (obj: object): object {
   const propNames = Object.getOwnPropertyNames(obj)
 
   // Freeze properties before freezing self
-  propNames.forEach((name) => {
+  propNames.forEach(name => {
     const prop = obj[name]
 
     // Freeze prop if it is an object

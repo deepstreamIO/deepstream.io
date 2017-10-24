@@ -1,3 +1,6 @@
+.DS_Store
+.vscode/settings.json
+
 dist
 temp-e2e-test
 
@@ -34,7 +37,7 @@ node_modules
 npm-shrinkwrap.json
 npm-debug.*
 
- Users Environment Variables
+# Users Environment Variables
 .lock-wscript
 
 # IDE configuration

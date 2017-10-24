@@ -283,7 +283,7 @@ export default class RecordHandler {
     let cacheResponse = false
     let storageResponse = false
     let writeError
-    this.services.storage.set(recordName, record, (error) => {
+    this.services.storage.set(recordName, record, error => {
       if (writeAck) {
         storageResponse = true
         writeError = writeError || error || null
@@ -293,7 +293,7 @@ export default class RecordHandler {
       }
     }, this.metaData)
 
-    this.services.cache.set(recordName, record, (error) => {
+    this.services.cache.set(recordName, record, error => {
       if (!error) {
         this.broadcastUpdate(recordName, message, false, socketWrapper)
       }
@@ -332,7 +332,7 @@ export default class RecordHandler {
     const record = { _v: 0, _d: {} }
 
     // store the records data in the cache and wait for the result
-    this.services.cache.set(recordName, record, (error) => {
+    this.services.cache.set(recordName, record, error => {
       if (error) {
         this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_CREATE_ERROR], recordName, this.metaData)
         socketWrapper.sendError(message, RECORD_ACTIONS.RECORD_CREATE_ERROR)
@@ -345,7 +345,7 @@ export default class RecordHandler {
 
     if (!this.config.storageExclusion || !this.config.storageExclusion.test(recordName)) {
     // store the record data in the persistant storage independently and don't wait for the result
-      this.services.storage.set(recordName, record, (error) => {
+      this.services.storage.set(recordName, record, error => {
         if (error) {
           this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_CREATE_ERROR], `storage:${error}`, this.metaData)
         }

@@ -43,7 +43,6 @@ connectionEndpoints:
         logInvalidAuthData: false
         # maximum allowed size of an individual message in bytes
         maxMessageSize: 1048576
-
   http:
     name: http
     options:
@@ -119,31 +118,16 @@ plugins:
 # a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
 storageExclusion: null
 
-#Authentication
 auth:
-  type: none
-
-#   # reading users and passwords from a file
-#   type: file
-#   options:
-#     # Path to the user file. Can be json, js or yml
-#     path: ./users.yml
-#     # the name of a HMAC digest algorithm
-#     hash: 'md5'
-#     # the number of times the algorithm should be applied
-#     iterations: 100
-#     # the length of the resulting key
-#     keyLength: 32
-
-#   # getting permissions from a http webhook
-#   type: http
-#   options:
-#     # a post request will be send to this url on every incoming connection
-#     endpointUrl: https://someurl.com/validateLogin
-#     # any of these will be treated as access granted
-#     permittedStatusCodes: [ 200 ]
-#     # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
-#     requestTimeout: 2000
+  # getting permissions from a http webhook
+  type: http
+  options:
+    # a post request will be send to this url on every incoming connection
+    endpointUrl: http://localhost:6004
+    # any of these will be treated as access granted
+    permittedStatusCodes: [ 200 ]
+    # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+    requestTimeout: 2000
 
 # Permissioning
 permission:

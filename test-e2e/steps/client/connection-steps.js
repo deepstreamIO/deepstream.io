@@ -18,9 +18,14 @@ Given(/^(.+) logs? out$/, (clientExpression, done) => {
   setTimeout(done, utils.defaultDelay)
 })
 
-Given(/^(.+) connects to server (\d+)$/, client.connect)
+Given(/^(.+) connects? to server (\d+)$/, client.connect)
 
 Then(/^(.+) connections? times? out$/, client.connectionTimesOut)
+
+Then(/^(.+) had a connection state change to "([^"]*)"$/, (clientExpression, state) =>
+  client.hadConnectionState(clientExpression, true, state))
+Then(/^(.+) did not have a connection state change to "([^"]*)"$/, (clientExpression, state) =>
+  client.hadConnectionState(clientExpression, false, state))
 
 Given(/^(.+) connects? and logs? into server (\d+)$/, (clientExpression, server, done) => {
   client.connectAndLogin(clientExpression, server, () => {
