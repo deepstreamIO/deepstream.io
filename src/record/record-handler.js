@@ -10,6 +10,32 @@ const recordRequest = require('./record-request')
 
 const writeSuccess = JSON.stringify({ writeSuccess: true })
 
+/**
+ * Handles write acknowledgements during a force write.
+ *
+ * @param  {SocketWrapper} socketWrapper the socket that sent the request
+ * @param  {Object} message the update message
+ * @param  {Boolean} cacheResponse flag indicating whether the cache has been set
+ * @param  {Boolean} storageResponse flag indicating whether the storage layer
+ *                                   has been set
+ * @param  {String} error any errors that occurred during writing to cache
+ *                        and storage
+ *
+ * @private
+ * @returns {void}
+ */
+function handleForceWriteAcknowledgement (
+  socketWrapper, message, cacheResponse, storageResponse, error
+) {
+  if (storageResponse && cacheResponse) {
+    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
+      message.data[0],
+      [message.data[1]],
+      messageBuilder.typed(error)
+    ], true)
+  }
+}
+
 module.exports = class RecordHandler {
 /**
  * The entry point for record related operations
@@ -351,9 +377,9 @@ module.exports = class RecordHandler {
       if (writeAck) {
         storageResponse = true
         writeError = writeError || error || null
-        this._handleForceWriteAcknowledgement(
-        socketWrapper, message, cacheResponse, storageResponse, writeError
-      )
+        handleForceWriteAcknowledgement(
+          socketWrapper, message, cacheResponse, storageResponse, writeError
+        )
       }
     }, this._metaData)
 
@@ -364,38 +390,11 @@ module.exports = class RecordHandler {
       if (writeAck) {
         cacheResponse = true
         writeError = writeError || error || null
-        this._handleForceWriteAcknowledgement(
-        socketWrapper, message, cacheResponse, storageResponse, writeError
-      )
+        handleForceWriteAcknowledgement(
+          socketWrapper, message, cacheResponse, storageResponse, writeError
+        )
       }
     }, this._metaData)
-  }
-
-/**
- * Handles write acknowledgements during a force write. Usually
- * this case is handled via the record transition.
- *
- * @param  {SocketWrapper} socketWrapper the socket that sent the request
- * @param  {Object} message the update message
- * @param  {Boolean} cacheResponse flag indicating whether the cache has been set
- * @param  {Boolean} storageResponse flag indicating whether the storage layer
- *                                   has been set
- * @param  {String} error any errors that occurred during writing to cache
- *                        and storage
- *
- * @private
- * @returns {void}
- */
-  static _handleForceWriteAcknowledgement (
-    socketWrapper, message, cacheResponse, storageResponse, error
-  ) {
-    if (storageResponse && cacheResponse) {
-      socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
-        message.data[0],
-      [message.data[1]],
-        messageBuilder.typed(error)
-      ], true)
-    }
   }
 
 /**
