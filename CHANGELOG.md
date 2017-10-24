@@ -1,3 +1,13 @@
+## [3.1.1] - 2017.10.24
+
+### Improvements
+
+- Lists can now be written to via the HTTP API using the `listName` option. Valid operations include `read`, `delete` and `write`.
+
+### Fixes
+
+- Fix regression where server crashed when using `storageHotPathPatterns` with record write acknowledgements.
+
 ## [3.1.0] - 2017.09.25
 
 ### Features
