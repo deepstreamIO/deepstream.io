@@ -139,6 +139,11 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
     return messageParser.parse(message)
   }
 
+  public parseBinaryMessage (message: ArrayBuffer): Array<Message> {
+    // return binaryMessageParser.parse(message)
+    return []
+  }
+
   /**
    * Sends a message based on the provided action and topic
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on

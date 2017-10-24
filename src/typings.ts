@@ -69,7 +69,6 @@ interface PresenceMessage extends Message {
 
 interface ListenMessage extends Message {
   action: RECORD_ACTIONS | EVENT_ACTIONS
-  name: string
   subscription: string
 
   raw?: string

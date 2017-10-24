@@ -7,3 +7,6 @@
 [submodule "protocol/text"]
 	path = protocol/text
 	url = git@github.com:deepstreamIO/deepstream.io-protocol-text.git
+[submodule "protocol/binary"]
+	path = protocol/binary
+	url = git@github.com:deepstreamIO/urp-js
