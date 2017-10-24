@@ -64,6 +64,7 @@
     "proxyquire": "1.8.0",
     "sinon": "^4.0.1",
     "ts-node": "^3.3.0",
+    "tslint": "^5.8.0",
     "typescript": "^2.5.3",
     "watch": "^1.0.2"
   },
