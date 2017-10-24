@@ -20,6 +20,7 @@ import RecordHandler from './record/record-handler'
 import { get as getDefaultOptions } from './default-options'
 import * as configInitialiser from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
+import * as configValidator from './config/config-validator'
 
 import MessageConnector from './cluster/cluster-node'
 import LockRegistry from './cluster/lock-registry'
@@ -386,17 +387,17 @@ export default class Deepstream extends EventEmitter {
  * those plugins are handled through the DependencyInitialiser in this instance.
  */
   private loadConfig (config: DeepstreamConfig): void {
+    let result
     if (config === null || typeof config === 'string') {
-      const result = jsYamlLoader.loadConfig(config)
+      result = jsYamlLoader.loadConfig(config)
       this.configFile = result.file
-      this.config = result.config
-      this.services = result.services
     } else {
       const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
-      const result = configInitialiser.initialise(rawConfig)
-      this.config = result.config
-      this.services = result.services
+      result = configInitialiser.initialise(rawConfig)
     }
+    configValidator.validate(result.config)
+    this.config = result.config
+    this.services = result.services
   }
 
 /**

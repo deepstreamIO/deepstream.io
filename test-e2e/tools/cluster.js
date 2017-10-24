@@ -69,7 +69,6 @@ module.exports = class DeepstreamTest extends EventEmitter {
       rpcTimeout: 30,
 
       showLogo : false,
-      stopped  : () => setTimeout(() => this.emit('stopped'), 500),
 
       maxAuthAttempts              : 2,
       unauthenticatedClientTimeout : 200,
