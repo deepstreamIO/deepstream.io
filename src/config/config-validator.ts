@@ -36,19 +36,6 @@ const pluginsOpts = {
   plugins: {
     type: ['null', 'object'],
     properties: {
-      message: {
-        type: 'object',
-        properties: {
-          name: { type: 'string', minLength: 1 },
-          options: {
-            type: 'object',
-            properties: {
-              host: { type: 'string', minLength: 1 },
-              port: { type: 'integer', minimum: 1 },
-            }
-          }
-        }
-      },
       cache: {
         type: 'object',
         properties: {
@@ -202,14 +189,8 @@ const timeoutOpts = {
   storageRetrievalTimeout: { type: 'integer', minimum: 1 },
   dependencyInitialisationTimeout: { type: 'integer', minimum: 1 },
   listenResponseTimeout: { type: 'integer', minimum: 1 },
-  lockTimeout: { type: 'integer', minimum: 1 },
-  lockRequestTimeout: { type: 'integer', minimum: 1 },
   broadcastTimeout: { type: 'integer', minimum: -1 },
   stateReconciliationTimeout: { type: 'integer', minimum: 1 },
-
-  clusterKeepAliveInterval: { type: 'integer', minimum: 1 },
-  clusterActiveCheckInterval: { type: 'integer', minimum: 1 },
-  clusterNodeInactiveTimeout: { type: 'integer', minimum: 1 },
 }
 
 const listeningOpts = {
@@ -217,7 +198,7 @@ const listeningOpts = {
 }
 
 const schema = {
-  additionalProperties: false,
+  additionalProperties: true,
   properties: Object.assign(
     {},
     generalOpts,
