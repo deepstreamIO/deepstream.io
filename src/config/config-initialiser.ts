@@ -211,9 +211,9 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
   let requirePath
   let pluginConstructor
   let es6Adaptor
-  if (plugin.type === 'default-cache') {
+  if (plugin.name === 'default-cache') {
     pluginConstructor = DefaultCache
-  } else if (plugin.type === 'default-storage') {
+  } else if (plugin.name === 'default-storage') {
     pluginConstructor = DefaultStorage
   } else if (plugin.path != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.path)
