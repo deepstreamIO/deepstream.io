@@ -99,7 +99,6 @@ function handleLogger (config: DeepstreamConfig): Logger {
       }
     }
   }
-
   const logger = new Logger(configOptions)
   if (logger.log) {
     logger.debug = logger.log.bind(config.logger, LOG_LEVEL.DEBUG)
@@ -108,12 +107,11 @@ function handleLogger (config: DeepstreamConfig): Logger {
     logger.error = logger.log.bind(config.logger, LOG_LEVEL.ERROR)
   }
 
-  const LOG_LEVEL_KEYS = Object.keys(LOG_LEVEL)
-  if (LOG_LEVEL_KEYS[config.logLevel]) {
+  if (LOG_LEVEL[config.logLevel]) {
     // NOTE: config.logLevel has highest priority, compare to the level defined
     // in the nested logger object
     config.logLevel = config.logLevel
-    logger.setLogLevel(config.logLevel)
+    logger.setLogLevel(LOG_LEVEL[config.logLevel])
   }
 
   return logger
@@ -213,9 +211,9 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
   let requirePath
   let pluginConstructor
   let es6Adaptor
-  if (plugin.type === 'default-cache') {
+  if (plugin.name === 'default-cache') {
     pluginConstructor = DefaultCache
-  } else if (plugin.type === 'default-storage') {
+  } else if (plugin.name === 'default-storage') {
     pluginConstructor = DefaultStorage
   } else if (plugin.path != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.path)

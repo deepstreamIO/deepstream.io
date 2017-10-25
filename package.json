@@ -33,13 +33,13 @@
   },
   "dependencies": {
     "adm-zip": "^0.4.7",
-    "ajv": "^5.2.3",
+    "ajv": "^5.3.0",
     "bluebird": "^3.5.1",
     "body-parser": "^1.18.2",
     "colors": "^1.1.2",
     "commander": "^2.11.0",
     "content-type": "^1.0.4",
-    "deepstream.io-service": "latest",
+    "deepstream.io-service": "^0.1.5",
     "glob": "^7.1.2",
     "http-shutdown": "^1.2.0",
     "http-status": "^1.0.1",
@@ -50,8 +50,8 @@
     "uws": "8.14.1"
   },
   "devDependencies": {
-    "@types/jasmine": "^2.6.0",
-    "@types/node": "^8.0.32",
+    "@types/jasmine": "^2.6.1",
+    "@types/node": "^8.0.47",
     "async": "^2.5.0",
     "chai": "^4.1.2",
     "coveralls": "^3.0.0",
@@ -64,6 +64,7 @@
     "proxyquire": "1.8.0",
     "sinon": "^4.0.1",
     "ts-node": "^3.3.0",
+    "tslint": "^5.8.0",
     "typescript": "^2.5.3",
     "watch": "^1.0.2"
   },

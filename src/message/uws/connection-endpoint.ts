@@ -243,8 +243,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @returns {void}
    */
   private _handleHealthCheck (
-    req: http.IncomingMessage | https.IncomingMessage,
-    res: http.ServerResponse | https.ServerResponse
+    req: http.IncomingMessage,
+    res: http.ServerResponse
   ) {
     if (req.method === 'GET' && req.url === this.healthCheckPath) {
       res.writeHead(200)

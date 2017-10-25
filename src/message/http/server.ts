@@ -144,8 +144,8 @@ export default class Server extends EventEmitter {
   }
 
   private _onRequest (
-    request: http.IncomingMessage | https.IncomingMessage,
-    response: http.ServerResponse | https.ServerResponse
+    request: http.IncomingMessage,
+    response: http.ServerResponse
    ): void {
     if (!this.config.allowAllOrigins) {
       if (!this._verifyOrigin(request, response)) {
@@ -175,8 +175,8 @@ export default class Server extends EventEmitter {
   }
 
   private _verifyOrigin (
-    request: http.IncomingMessage | https.IncomingMessage,
-    response: http.ServerResponse | https.ServerResponse
+    request: http.IncomingMessage,
+    response: http.ServerResponse
   ): boolean {
     const requestOriginUrl = request.headers.origin as string || request.headers.referer as string
     const requestHostUrl = request.headers.host
@@ -250,8 +250,8 @@ export default class Server extends EventEmitter {
   }
 
   private _handleGet (
-    request: http.IncomingMessage | https.IncomingMessage,
-    response: http.ServerResponse | https.ServerResponse
+    request: http.IncomingMessage,
+    response: http.ServerResponse
    ): void {
     const parsedUrl = url.parse(request.url as string, true)
     const onResponse = Server._onHandlerResponse.bind(null, response)
@@ -270,8 +270,8 @@ export default class Server extends EventEmitter {
   }
 
   private _handleOptions (
-    request: http.IncomingMessage | https.IncomingMessage,
-    response: http.ServerResponse | https.ServerResponse
+    request: http.IncomingMessage,
+    response: http.ServerResponse
   ): void {
     const requestMethod = request.headers['access-control-request-method'] as string
     if (this._methods.indexOf(requestMethod) === -1) {
@@ -303,7 +303,7 @@ export default class Server extends EventEmitter {
   }
 
   static _onHandlerResponse (
-    response: http.ServerResponse | https.ServerResponse,
+    response: http.ServerResponse,
     err: { statusCode: HTTPStatus, message: string },
     data: { result: string, body: object }
   ): void {

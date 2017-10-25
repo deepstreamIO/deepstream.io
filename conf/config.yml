@@ -119,15 +119,29 @@ plugins:
 storageExclusion: null
 
 auth:
+  type: none
+
+  # reading users and passwords from a file
+  # type: file
+  # options:
+  #   # Path to the user file. Can be json, js or yml
+  #   path: ./users.yml
+  #   # the name of a HMAC digest algorithm
+  #   hash: 'md5'
+  #   # the number of times the algorithm should be applied
+  #   iterations: 100
+  #   # the length of the resulting key
+  #   keyLength: 32
+
   # getting permissions from a http webhook
-  type: http
-  options:
-    # a post request will be send to this url on every incoming connection
-    endpointUrl: http://localhost:6004
-    # any of these will be treated as access granted
-    permittedStatusCodes: [ 200 ]
-    # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
-    requestTimeout: 2000
+  # type: http
+  # options:
+  #   # a post request will be send to this url on every incoming connection
+  #   endpointUrl: http://localhost:6004
+  #   # any of these will be treated as access granted
+  #   permittedStatusCodes: [ 200 ]
+  #   # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+  #   requestTimeout: 2000
 
 # Permissioning
 permission:
@@ -154,10 +168,6 @@ storageRetrievalTimeout: 2000
 dependencyInitialisationTimeout: 2000
 # The amount of time to wait for a provider to acknowledge or reject a listen request
 listenResponseTimeout: 500
-# The amount of time a lock can be reserved for before it is force released
-lockTimeout: 1000
-# The amount of time a lock request waits for before it defaults to false
-lockRequestTimeout: 1000
 # The amount of time a broadcast will wait (to allow broadcast coalescing). -1 means disabled.
 broadcastTimeout: 0
 # A list of prefixes that, when a record is updated via setData and it matches one of the prefixes
