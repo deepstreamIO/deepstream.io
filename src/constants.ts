@@ -43,7 +43,7 @@ export enum EVENT {
 }
 
 export enum TOPIC {
-    ERROR = 0x00,
+    // ERROR = 0x00,
     PARSER = 0x01,
     CONNECTION = 0x02,
     AUTH = 0x03,

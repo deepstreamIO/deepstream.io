@@ -42,7 +42,7 @@ export default class MessageProcessor {
         !message.topic) {
         this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], message)
         socketWrapper.sendError({
-          topic: TOPIC.ERROR,
+          topic: TOPIC.PARSER,
         }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, message)
         continue
       }

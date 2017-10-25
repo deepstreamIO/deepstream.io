@@ -27,7 +27,7 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   public __id: number
   public authCallback: Function
   public authAttempts: number = 0
-  
+
   private bufferedWrites: string = ''
 
   static lastPreparedMessage: any
@@ -158,7 +158,7 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
     }
   }
 
-  public parseData (message: Message): void {
+  public parseData (message: Message): true | Error {
     return messageParser.parseData(message)
   }
 

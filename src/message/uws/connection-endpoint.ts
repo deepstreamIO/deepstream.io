@@ -426,7 +426,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private _registerAuthenticatedSocket (socketWrapper: SocketWrapper, userData: any): void {
     delete socketWrapper.authCallback
     socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
-    socketWrapper.onMessage = (parsedMessages) => {
+    socketWrapper.onMessage = parsedMessages => {
       this.onMessages(socketWrapper, parsedMessages)
     }
     this._appendDataToSocketWrapper(socketWrapper, userData)

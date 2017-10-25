@@ -23,7 +23,7 @@ export default class MessageDistributor {
     if (this.callbacks[message.topic] === undefined) {
       this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_TOPIC], TOPIC[message.topic])
       socketWrapper.sendError({
-        topic: TOPIC.ERROR,
+        topic: TOPIC.PARSER,
       }, PARSER_ACTIONS.UNKNOWN_TOPIC, TOPIC[message.topic])
       return
     }
