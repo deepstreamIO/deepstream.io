@@ -260,7 +260,7 @@ export default class RuleApplication {
     }
     const recordData = this.recordsData[this.params.name]
     if (typeof recordData !== UNDEFINED) {
-      return recordData ? recordData._d : {}
+      return recordData ? recordData._d : null
     }
     this.loadRecord(this.params.name)
   }

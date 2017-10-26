@@ -221,6 +221,52 @@ describe('permission handler applies basic permissions referencing their own dat
     })).toBe(false)
   })
 
+  it('checks against existing data for non-existant record reads', (next) => {
+    const permissions = getBasePermissions()
+
+    permissions.record['nonExistingRecord'] = {
+      read: 'oldData.xyz === "hello"'
+    }
+
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTIONS.READ,
+      name: 'nonExistingRecord',
+    }
+
+    const callback = function (error, result) {
+      expect(lastError()).toContain('Cannot read property \'xyz\' of null')
+      expect(result).toBe(false)
+      next()
+    }
+
+    testPermission(permissions, message, 'user', null, callback)
+  })
+
+  it('checks against existing data for non-existant list reads', (next) => {
+    const permissions = getBasePermissions()
+
+    permissions.record['nonExistingRecord'] = {
+      read: 'oldData.indexOf("hello") !== -1'
+    }
+
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTIONS.READ,
+      name: 'nonExistingRecord',
+    }
+
+    const callback = function (error, result) {
+      expect(lastError()).toContain('Cannot read property \'indexOf\' of null')
+      expect(error).toBe(C.AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR)
+      expect(result).toBe(false)
+      next()
+    }
+
+    testPermission(permissions, message, 'user', null, callback)
+
+  })
+
   it('deals with broken messages', next => {
     const permissions = getBasePermissions()
 
