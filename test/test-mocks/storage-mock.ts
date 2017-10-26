@@ -74,10 +74,10 @@ export default class StorageMock {
     const value = this.values[key]
 
     if (this.nextGetWillBeSynchronous === true) {
-      callback(this.nextOperationWillBeSuccessful ? null : 'storageError', value ? Object.assign({}, value) : undefined)
+      callback(this.nextOperationWillBeSuccessful ? null : 'storageError', value ? Object.assign({}, value) : null)
     } else {
       this.getTimeout = setTimeout(() => {
-        callback(this.nextOperationWillBeSuccessful ? null : 'storageError', value ? Object.assign({}, value) : undefined)
+        callback(this.nextOperationWillBeSuccessful ? null : 'storageError', value ? Object.assign({}, value) : null)
       }, 25)
     }
   }
