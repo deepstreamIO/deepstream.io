@@ -36,6 +36,7 @@ connectionEndpoints:
 
         # Security
         # amount of time a connection can remain open while not being logged in
+        # or false for no timeout
         unauthenticatedClientTimeout: 180000
         # invalid login attempts before the connection is cut
         maxAuthAttempts: 3
