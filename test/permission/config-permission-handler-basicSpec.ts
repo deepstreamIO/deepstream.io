@@ -221,17 +221,17 @@ describe('permission handler applies basic permissions referencing their own dat
     })).toBe(false)
   })
 
-  it('checks against existing data for non-existant record reads', (next) => {
+  it('checks against existing data for non-existant record reads', next => {
     const permissions = getBasePermissions()
 
-    permissions.record['nonExistingRecord'] = {
+    permissions.record['non-Existing-Record'] = {
       read: 'oldData.xyz === "hello"'
     }
 
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.RECORD_ACTIONS.READ,
-      name: 'nonExistingRecord',
+      name: 'non-Existing-Record',
     }
 
     const callback = function (error, result) {
@@ -243,17 +243,17 @@ describe('permission handler applies basic permissions referencing their own dat
     testPermission(permissions, message, 'user', null, callback)
   })
 
-  it('checks against existing data for non-existant list reads', (next) => {
+  it('checks against existing data for non-existant list reads', next => {
     const permissions = getBasePermissions()
 
-    permissions.record['nonExistingRecord'] = {
+    permissions.record['non-Existing-Record'] = {
       read: 'oldData.indexOf("hello") !== -1'
     }
 
     const message = {
       topic: C.TOPIC.RECORD,
       action: C.RECORD_ACTIONS.READ,
-      name: 'nonExistingRecord',
+      name: 'non-Existing-Record',
     }
 
     const callback = function (error, result) {
