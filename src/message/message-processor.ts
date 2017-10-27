@@ -46,7 +46,16 @@ export default class MessageProcessor {
         }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, message)
         continue
       }
-
+      if (message.topic === TOPIC.AUTH && message.action === AUTH_ACTIONS.REQUEST) {
+        this.services.logger.warn(
+          AUTH_ACTIONS[AUTH_ACTIONS.ALREADY_AUTHENTICATED],
+          'user is already authenticated'
+        )
+        socketWrapper.sendError({
+          topic: TOPIC.AUTH,
+        }, AUTH_ACTIONS.ALREADY_AUTHENTICATED, message)
+        continue
+      }
       this.services.permissionHandler.canPerformAction(
         socketWrapper.user,
         message,
