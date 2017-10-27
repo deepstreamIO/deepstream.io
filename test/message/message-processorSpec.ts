@@ -90,4 +90,18 @@ describe('the message processor only forwards valid, authorized messages', () =>
 
     expect(lastAuthenticatedMessage).toBe(message as any)
   })
+
+  it('does not process auth requests', () => {
+    const authMsg = {
+      topic: C.TOPIC.AUTH,
+      action: C.AUTH_ACTIONS.REQUEST
+    }
+
+    client.socketWrapperMock
+      .expects('sendError')
+      .once()
+      .withExactArgs({ topic: C.TOPIC.AUTH }, C.AUTH_ACTIONS.ALREADY_AUTHENTICATED, authMsg)
+
+    messageProcessor.process(client.socketWrapper, [authMsg])
+  })
 })
