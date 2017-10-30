@@ -99,7 +99,6 @@ function handleLogger (config: DeepstreamConfig): Logger {
       }
     }
   }
-
   const logger = new Logger(configOptions)
   if (logger.log) {
     logger.debug = logger.log.bind(config.logger, LOG_LEVEL.DEBUG)
@@ -108,12 +107,11 @@ function handleLogger (config: DeepstreamConfig): Logger {
     logger.error = logger.log.bind(config.logger, LOG_LEVEL.ERROR)
   }
 
-  const LOG_LEVEL_KEYS = Object.keys(LOG_LEVEL)
-  if (LOG_LEVEL_KEYS[config.logLevel]) {
+  if (LOG_LEVEL[config.logLevel]) {
     // NOTE: config.logLevel has highest priority, compare to the level defined
     // in the nested logger object
     config.logLevel = config.logLevel
-    logger.setLogLevel(config.logLevel)
+    logger.setLogLevel(LOG_LEVEL[config.logLevel])
   }
 
   return logger
@@ -187,9 +185,9 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): Ar
     plugin.options = plugin.options || {}
 
     let PluginConstructor
-    if (plugin.name === 'uws') {
+    if (plugin.type === 'default' && connectionType === 'websocket') {
       PluginConstructor = UWSConnectionEndpoint
-    } else if (plugin.name === 'http') {
+    } else if (plugin.type === 'default' && connectionType === 'http') {
       PluginConstructor = HTTPConnectionEndpoint
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection')
@@ -213,20 +211,20 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
   let requirePath
   let pluginConstructor
   let es6Adaptor
-  if (plugin.type === 'default-cache') {
+  if (plugin.name != null && type) {
+    requirePath = `deepstream.io-${type}-${plugin.name}`
+    requirePath = fileUtils.lookupLibRequirePath(requirePath)
+    es6Adaptor = req(requirePath)
+    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
+  } else if (plugin.type === 'default' && type === 'cache') {
     pluginConstructor = DefaultCache
-  } else if (plugin.type === 'default-storage') {
+  } else if (plugin.type === 'default' && type === 'storage') {
     pluginConstructor = DefaultStorage
   } else if (plugin.path != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.path)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
-  } else if (plugin.name != null && type) {
-    requirePath = `deepstream.io-${type}-${plugin.name}`
-    requirePath = fileUtils.lookupLibRequirePath(requirePath)
-    es6Adaptor = req(requirePath)
-    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
-  } else if (plugin.name != null) {
+  }  else if (plugin.name != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.name)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor

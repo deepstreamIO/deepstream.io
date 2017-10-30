@@ -405,8 +405,8 @@ describe('js-yaml-loader', () => {
     })
 
     it('load plugins', () => {
-      expect(services.cache.config).toEqual({ foo: 5, bar: 6 })
-      expect(services.storage.config).toEqual({ foo: 7, bar: 8 })
+      expect(services.cache.options).toEqual({ foo: 5, bar: 6 })
+      expect(services.storage.options).toEqual({ foo: 7, bar: 8 })
     })
   })
 
@@ -479,8 +479,8 @@ describe('js-yaml-loader', () => {
     })
 
     it('load plugins', () => {
-      expect(services.cache.config).toEqual({ foo: -1, bar: -2 })
-      expect(services.storage.config).toEqual({ foo: -3, bar: -4 })
+      expect(services.cache.options).toEqual({ foo: -1, bar: -2 })
+      expect(services.storage.options).toEqual({ foo: -3, bar: -4 })
     })
   })
 
@@ -553,8 +553,8 @@ describe('js-yaml-loader', () => {
     })
 
     it('load plugins', () => {
-      expect(services.cache.config).toEqual({ foo: -1, bar: -2 })
-      expect(services.storage.config).toEqual({ foo: -3, bar: -4 })
+      expect(services.cache.options).toEqual({ foo: -1, bar: -2 })
+      expect(services.storage.options).toEqual({ foo: -3, bar: -4 })
     })
   })
 })
