@@ -73,6 +73,7 @@ function handleSSLProperties(config) {
  */
 function handleLogger(config) {
     const configOptions = (config.logger || {}).options;
+    console.log('logger: ', configOptions);
     let Logger;
     if (config.logger.type === 'default') {
         Logger = std_out_logger_1.default;
@@ -197,9 +198,19 @@ function resolvePluginClass(plugin, type) {
     let requirePath;
     let pluginConstructor;
     let es6Adaptor;
-    if (plugin.name != null && type) {
+    if (plugin.path != null) {
+        requirePath = fileUtils.lookupLibRequirePath(plugin.path);
+        es6Adaptor = req(requirePath);
+        pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor;
+    }
+    else if (plugin.name != null && type) {
         requirePath = `deepstream.io-${type}-${plugin.name}`;
         requirePath = fileUtils.lookupLibRequirePath(requirePath);
+        es6Adaptor = req(requirePath);
+        pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor;
+    }
+    else if (plugin.name != null) {
+        requirePath = fileUtils.lookupLibRequirePath(plugin.name);
         es6Adaptor = req(requirePath);
         pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor;
     }
@@ -208,16 +219,6 @@ function resolvePluginClass(plugin, type) {
     }
     else if (plugin.type === 'default' && type === 'storage') {
         pluginConstructor = noop_storage_1.default;
-    }
-    else if (plugin.path != null) {
-        requirePath = fileUtils.lookupLibRequirePath(plugin.path);
-        es6Adaptor = req(requirePath);
-        pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor;
-    }
-    else if (plugin.name != null) {
-        requirePath = fileUtils.lookupLibRequirePath(plugin.name);
-        es6Adaptor = req(requirePath);
-        pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor;
     }
     else {
         throw new Error(`Neither name nor path property found for ${type}`);

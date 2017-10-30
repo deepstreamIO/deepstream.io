@@ -258,9 +258,10 @@ describe('js-yaml-loader', () => {
                 [path.resolve('./cache')]: CacheModule
             });
             services = configLoader.loadConfig(null, { config: './config.json' }).services;
+            console.log('cache', services.cache);
         });
         it('load plugins', () => {
-            expect(services.cache.config).toEqual({ foo: 3, bar: 4 });
+            expect(services.cache.options).toEqual({ foo: 3, bar: 4 });
         });
     });
     describe('load plugins by path property (npm module style)', () => {
@@ -302,7 +303,7 @@ describe('js-yaml-loader', () => {
             services = configLoader.loadConfig(null, { config: './config.json' }).services;
         });
         it('load plugins', () => {
-            expect(services.cache.config).toEqual({ foo: 3, bar: 4 });
+            expect(services.cache.options).toEqual({ foo: 3, bar: 4 });
         });
     });
     describe('load plugins by name with a name convention', () => {
