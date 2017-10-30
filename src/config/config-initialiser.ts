@@ -220,7 +220,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
     requirePath = fileUtils.lookupLibRequirePath(requirePath)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
-  } else  if (plugin.name != null) {
+  } else if (plugin.name != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.name)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
