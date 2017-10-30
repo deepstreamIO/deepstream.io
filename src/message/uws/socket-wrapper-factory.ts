@@ -1,6 +1,4 @@
 import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS, ParseResult, Message } from '../../constants'
-import * as textMessageBuilder from '../../../protocol/text/src/message-builder'
-import * as textMessageParser from '../../../protocol/text/src/message-parser'
 import * as binaryMessageBuilder from '../../../protocol/binary/src/message-builder'
 import * as binaryMessageParser from '../../../protocol/binary/src/message-parser'
 import * as uws from 'uws'
@@ -142,7 +140,8 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
 
   public parseMessage (message: string | Buffer): Array<ParseResult> {
     if (typeof message === 'string') {
-      return textMessageParser.parse(message)
+      // return textMessageParser.parse(message)
+      throw new Error('string message parsing is not supported')
     }
     return binaryMessageParser.parse(message)
   }
@@ -162,7 +161,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   }
 
   public parseData (message: Message): true | Error {
-    return textMessageParser.parseData(message)
+    return binaryMessageParser.parseData(message)
   }
 
   public onMessage (messages: Array<Message>): void {
