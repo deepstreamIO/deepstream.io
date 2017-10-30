@@ -1,4 +1,4 @@
-import { EVENT, PARSER_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
+import { EVENT, PARSER_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'

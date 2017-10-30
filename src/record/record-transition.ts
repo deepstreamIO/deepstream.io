@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC } from '../constants'
+import { RECORD_ACTIONS, TOPIC, RecordWriteMessage } from '../constants'
 import { isOfType } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'

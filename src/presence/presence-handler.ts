@@ -1,5 +1,5 @@
 import StateRegistry from '../cluster/state-registry'
-import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC } from '../constants'
+import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 
 const EVERYONE = '%_EVERYONE_%'
@@ -9,11 +9,10 @@ function parseUserNames (names: any): Array<string> | null {
   if (names === 'S') {
     return [EVERYONE]
   }
-  try {
-    return JSON.parse(names)
-  } catch (e) {
-    return null
+  if (names instanceof Array) {
+    return names
   }
+  return null
 }
 
 /**
@@ -54,9 +53,11 @@ export default class PresenceHandler {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
     }
-    const users = parseUserNames(message.data)
-    if (!users) {
-      this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], message.data, this.metaData)
+    const success = socketWrapper.parseData()
+    const users = parseUserNames(message.parsedData)
+    if (success !== true || !users) {
+      const rawData = JSON.stringify(message.data)
+      this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], rawData, this.metaData)
       socketWrapper.sendError(message, PRESENCE_ACTIONS.INVALID_PRESENCE_USERS)
       return
     }

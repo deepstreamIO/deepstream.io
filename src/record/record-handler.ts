@@ -1,4 +1,4 @@
-import { PARSER_ACTIONS, RECORD_ACTIONS, TOPIC } from '../constants'
+import { PARSER_ACTIONS, RECORD_ACTIONS, TOPIC, RecordMessage, RecordWriteMessage, ListenMessage } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'
@@ -319,7 +319,7 @@ export default class RecordHandler {
         topic: TOPIC.RECORD,
         action: RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
         name: message.name,
-        data: [message.version, error],
+        parsedData: [message.version, error],
       }, true)
     }
   }

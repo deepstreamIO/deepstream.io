@@ -42,6 +42,82 @@ export enum EVENT {
     INVALID_STATE_TRANSITION = 'INVALID_STATE_TRANSITION'
 }
 
+export interface Message {
+  topic: TOPIC
+  action: RECORD_ACTIONS | PRESENCE_ACTIONS | RPC_ACTIONS | EVENT_ACTIONS | AUTH_ACTIONS | CONNECTION_ACTIONS
+  name?: string
+
+  isError?: boolean
+  isAck?: boolean
+
+  data?: string | Buffer
+  parsedData?: any
+
+  parseError?: false
+
+  raw?: string | Buffer
+
+  subscription?: string
+  isWriteAck?: boolean
+  correlationId?: string
+  path?: string
+  version?: number
+  reason?: string
+}
+
+export interface SubscriptionMessage extends Message {
+  name: string
+}
+
+export interface EventMessage extends SubscriptionMessage {
+  action: EVENT_ACTIONS
+}
+
+export interface RPCMessage extends SubscriptionMessage {
+  action: RPC_ACTIONS
+  correlationId: string
+}
+
+export interface PresenceMessage extends SubscriptionMessage {
+  action: PRESENCE_ACTIONS
+  correlationId: string
+}
+
+export interface ListenMessage extends SubscriptionMessage {
+  action: RECORD_ACTIONS | EVENT_ACTIONS
+  subscription: string
+
+  raw?: string
+}
+
+// tslint:disable-next-line:no-empty-interface
+export interface RecordMessage extends SubscriptionMessage {
+  action: RECORD_ACTIONS
+}
+
+export interface RecordWriteMessage extends RecordMessage {
+  version: number
+  isWriteAck: boolean
+  path?: string
+}
+
+export interface RecordAckMessage extends RecordMessage {
+  path?: string
+  data: any
+}
+
+export interface ParseError {
+  parseError: true
+
+  raw?: string | Buffer
+
+  parsedMessage?: Message
+  description?: string
+  action: PARSER_ACTIONS
+}
+
+export type ParseResult = Message | ParseError
+
 export enum TOPIC {
     // ERROR = 0x00,
     PARSER = 0x01,

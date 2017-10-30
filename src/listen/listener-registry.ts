@@ -1,5 +1,5 @@
 import StateRegistry from '../cluster/state-registry'
-import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC } from '../constants'
+import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, Message, ListenMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
 import TimeoutRegistry from './listener-timeout-registry'
@@ -300,7 +300,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * De-register a client as a listener for record subscriptions
   */
-  private removeListener (socketWrapper: SocketWrapper, message: Message): void {
+  private removeListener (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const pattern = message.name
     this.removeListenerFromInProgress(this.localListenInProgress, pattern, socketWrapper)
     this.removeListenerIfActive(pattern, socketWrapper)

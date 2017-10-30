@@ -6,6 +6,7 @@ import {
   RECORD_ACTIONS,
   RPC_ACTIONS,
   TOPIC,
+  RecordWriteMessage,
 } from '../constants'
 
 const OPEN = 'open'

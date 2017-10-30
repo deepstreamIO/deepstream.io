@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC } from '../constants'
+import { RECORD_ACTIONS, TOPIC, RecordMessage } from '../constants'
 
 export default class RecordDeletion {
   private metaData: any
@@ -17,7 +17,7 @@ export default class RecordDeletion {
  * This class represents the deletion of a single record. It handles it's removal
  * from cache and storage and handles errors and timeouts
  */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper, message: Message, successCallback: Function, metaData: any) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, metaData: any) {
     this.metaData = metaData
     this.config = config
     this.services = services

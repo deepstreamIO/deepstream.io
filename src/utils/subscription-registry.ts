@@ -1,6 +1,6 @@
 import { getMessage } from '../../protocol/text/src/message-builder'
 import StateRegistry from '../cluster/state-registry'
-import { EVENT, EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
+import { EVENT, EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC, SubscriptionMessage } from '../constants'
 
 let idCounter = 0
 
@@ -200,7 +200,7 @@ export default class SubscriptionRegistry {
   /**
    * Adds a SocketWrapper as a subscriber to a topic
    */
-  public subscribe (message: Message, socket: SocketWrapper): void {
+  public subscribe (message: SubscriptionMessage, socket: SocketWrapper): void {
     const name = message.name
     const subscription = this.subscriptions.get(name) || {
       name,
@@ -230,7 +230,7 @@ export default class SubscriptionRegistry {
   /**
    * Removes a SocketWrapper from the list of subscriptions for a topic
    */
-  public unsubscribe (message: Message, socket: SocketWrapper, silent?: boolean): void {
+  public unsubscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void {
     const name = message.name
     const subscription = this.subscriptions.get(name)
 
