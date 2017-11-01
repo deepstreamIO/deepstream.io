@@ -50,7 +50,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Updates lastPreparedMessage and returns the [uws] prepared message.
    */
   public prepareMessage (message: string): string {
-    UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
+    UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_BINARY)
     return UwsSocketWrapper.lastPreparedMessage
   }
 
@@ -74,7 +74,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Variant of send with no particular checks or appends of message.
    */
   public sendNative (message: string | Buffer, allowBuffering: boolean): void {
-    uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
+    uws.native.server.send(this.external, message, uws.OPCODE_BINARY)
     /*
      *if (this.config.outgoingBufferTimeout === 0) {
      *  uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
@@ -97,7 +97,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    */
   public flush () {
     if (this.bufferedWrites !== '') {
-      uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_TEXT)
+      uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_BINARY)
       this.bufferedWrites = ''
     }
   }

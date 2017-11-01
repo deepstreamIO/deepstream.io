@@ -41,6 +41,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private serverGroup: any
   private scheduledSocketWrapperWrites: Set<SocketWrapper>
   private upgradeRequest: any
+  private pingMessage: Buffer
 
   constructor (private options: any, private services: DeepstreamServices) {
     super()
@@ -170,16 +171,14 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     uws.native.server.group.onPong(this.serverGroup, () => {})
     uws.native.server.group.onConnection(this.serverGroup, this._onConnection.bind(this))
 
-    // TODO: This will become an issue when distinguishing
-    // between different protocols
-    uws.native.server.group.startAutoPing(
-      this.serverGroup,
-      this._getOption('heartbeatInterval'),
-      messageBuilder.getMessage({
-        topic: TOPIC.CONNECTION,
-        action: CONNECTION_ACTIONS.PING
-      }, false)
-    )
+    this.pingMessage = messageBuilder.getMessage({
+      topic: TOPIC.CONNECTION,
+      action: CONNECTION_ACTIONS.PING
+    }, false)
+
+    setInterval(() => {
+      uws.native.server.group.broadcast(this.serverGroup, this.pingMessage, true);
+    }, this._getOption('heartbeatInterval'))
   }
 
   private _handleParseErrors (socketWrapper: SocketWrapper, parseResults: Array<ParseResult>): Array<Message> {
@@ -284,8 +283,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * @returns {void}
    */
   private _handleHealthCheck (
-    req: http.IncomingMessage | https.IncomingMessage,
-    res: http.ServerResponse | https.ServerResponse
+    req: http.IncomingMessage,
+    res: http.ServerResponse
   ) {
     if (req.method === 'GET' && req.url === this.healthCheckPath) {
       res.writeHead(200)
