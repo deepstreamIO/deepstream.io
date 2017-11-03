@@ -436,9 +436,10 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    */
   private _sendInvalidAuthMsg (socketWrapper: SocketWrapper, msg: string): void {
     this.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '')
-    socketWrapper.sendError({
-      topic: TOPIC.AUTH
-    }, AUTH_ACTIONS.INVALID_MESSAGE_DATA)
+    socketWrapper.sendMessage({
+      topic: TOPIC.AUTH,
+      action: AUTH_ACTIONS.INVALID_MESSAGE_DATA
+    }, false)
     socketWrapper.destroy()
   }
 
@@ -454,7 +455,6 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       this.onMessages(socketWrapper, parsedMessages)
     }
     this._appendDataToSocketWrapper(socketWrapper, userData)
-
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
       action: AUTH_ACTIONS.AUTH_SUCCESSFUL,
@@ -491,17 +491,19 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     }
 
     this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg)
-    socketWrapper.sendError({
+    socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
+      action: AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
       parsedData: clientData
-    }, AUTH_ACTIONS.AUTH_UNSUCCESSFUL)
+    }, false)
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this.maxAuthAttempts) {
       this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
-      socketWrapper.sendError({
-        topic: TOPIC.AUTH
-      }, AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS)
+      socketWrapper.sendMessage({
+        topic: TOPIC.AUTH,
+        action: AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS
+      }, false)
       socketWrapper.destroy()
     }
   }
@@ -512,10 +514,11 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    */
   private _processConnectionTimeout (socketWrapper: SocketWrapper): void {
     const log = 'connection has not authenticated successfully in the expected time'
-    this.logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT], log)
-    socketWrapper.sendError({
-      topic: TOPIC.CONNECTION
-    }, CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT)
+    this.logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT], log)
+    socketWrapper.sendMessage({
+      topic: TOPIC.CONNECTION,
+      action: CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT
+    }, false)
     socketWrapper.destroy()
   }
 

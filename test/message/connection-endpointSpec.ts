@@ -283,7 +283,7 @@ describe('connection endpoint', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.CONNECTION
-      }, C.CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT)
+      }, C.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT)
 
     client.socketWrapperMock
       .expects('destroy')

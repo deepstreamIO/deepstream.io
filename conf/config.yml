@@ -119,15 +119,16 @@ plugins:
 storageExclusion: null
 
 auth:
+  type: none
   # getting permissions from a http webhook
-  type: http
-  options:
-    # a post request will be send to this url on every incoming connection
-    endpointUrl: http://localhost:6004
-    # any of these will be treated as access granted
-    permittedStatusCodes: [ 200 ]
-    # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
-    requestTimeout: 2000
+  # type: http
+  # options:
+  #   # a post request will be send to this url on every incoming connection
+  #   endpointUrl: http://localhost:6004
+  #   # any of these will be treated as access granted
+  #   permittedStatusCodes: [ 200 ]
+  #   # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+  #   requestTimeout: 2000
 
 # Permissioning
 permission:

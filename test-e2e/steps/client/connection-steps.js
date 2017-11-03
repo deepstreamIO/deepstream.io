@@ -22,6 +22,8 @@ Given(/^(.+) connects? to server (\d+)$/, client.connect)
 
 Then(/^(.+) connections? times? out$/, client.connectionTimesOut)
 
+Then(/^(.+) has connection state "([^"]*)"$/, (clientExpression, state) =>
+  client.hasConnectionState(clientExpression, state))
 Then(/^(.+) had a connection state change to "([^"]*)"$/, (clientExpression, state) =>
   client.hadConnectionState(clientExpression, true, state))
 Then(/^(.+) did not have a connection state change to "([^"]*)"$/, (clientExpression, state) =>

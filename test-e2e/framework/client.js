@@ -1,7 +1,8 @@
 'use strict'
 
-const C = require('deepstream.io-client-js').CONSTANTS
+const { C, CONNECTION_STATE, EVENT } = require('deepstream.io-client-js')
 const sinon = require('sinon')
+const assert = require('assert')
 
 const clientHandler = require('./client-handler')
 const utils = require('./utils')
@@ -55,11 +56,9 @@ module.exports = {
 
   recievedTooManyLoginAttempts (clientExpression) {
     clientHandler.getClients(clientExpression).forEach((client) => {
-      const loginSpy = client.login
-      sinon.assert.callCount(loginSpy, 2)
-      sinon.assert.calledWith(loginSpy, false, null)
-      // sinon.assert.calledWith(loginSpy, false, 'too many authentication attempts')
-      loginSpy.reset()
+      const errorSpy = client.error[C.TOPIC[C.TOPIC.AUTH]][C.AUTH_ACTIONS[C.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS]]
+      sinon.assert.calledOnce(errorSpy)
+      errorSpy.reset()
     })
   },
 
@@ -90,7 +89,7 @@ module.exports = {
   connectionTimesOut (clientExpression, done) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       setTimeout(() => {
-        const errorSpy = client.error[C.TOPIC.CONNECTION][C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT]
+        const errorSpy = client.error[C.TOPIC[C.TOPIC.CONNECTION]][C.CONNECTION_ACTIONS[C.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT]]
         sinon.assert.calledOnce(errorSpy)
         errorSpy.reset()
         done()
@@ -110,9 +109,8 @@ module.exports = {
   },
 
   recievedOneError (clientExpression, topicName, eventName) {
-    const topic = C.TOPIC[topicName.toUpperCase()]
-    const event = C.EVENT[eventName.toUpperCase()]
-
+    const topic = C.TOPIC[C.TOPIC[topicName.toUpperCase()]]
+    const event = EVENT[EVENT[eventName.toUpperCase()]]
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[topic][event]
       sinon.assert.calledOnce(errorSpy)
@@ -131,5 +129,5 @@ module.exports = {
       if (had) sinon.assert.calledWith(client.connectionStateChanged, state)
       else sinon.assert.neverCalledWith(client.connectionStateChanged, state)
     })
-  }
+  },
 }
