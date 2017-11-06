@@ -37,6 +37,7 @@ interface SocketWrapper extends SimpleSocketWrapper {
   onMessage: Function
   authCallback: Function
   prepareMessage: Function
+  getMessage: Function
   finalizeMessage: Function
   sendPrepared: Function
   sendNative: Function
