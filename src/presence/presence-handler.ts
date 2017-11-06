@@ -4,17 +4,6 @@ import SubscriptionRegistry from '../utils/subscription-registry'
 
 const EVERYONE = '%_EVERYONE_%'
 
-function parseUserNames (names: any): Array<string> | null {
-  // Returns all users for backwards compatability
-  if (names === 'S') {
-    return [EVERYONE]
-  }
-  if (names instanceof Array) {
-    return names
-  }
-  return null
-}
-
 /**
  * This class handles incoming and outgoing messages in relation
  * to deepstream presence. It provides a way to inform clients
@@ -53,12 +42,16 @@ export default class PresenceHandler {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
     }
-    const success = socketWrapper.parseData()
-    const users = parseUserNames(message.parsedData)
-    if (success !== true || !users) {
+    const users = message.names
+    if (!users) {
+      // TODO: if this case is reached, we're doing something wrong in the parser
+      // - action should be removed from the protocol
       const rawData = JSON.stringify(message.data)
       this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], rawData, this.metaData)
-      socketWrapper.sendError(message, PRESENCE_ACTIONS.INVALID_PRESENCE_USERS)
+      socketWrapper.sendMessage({
+        topic: TOPIC.PRESENCE,
+        action: PRESENCE_ACTIONS.INVALID_PRESENCE_USERS
+      })
       return
     }
     if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {

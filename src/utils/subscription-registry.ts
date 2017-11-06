@@ -214,7 +214,11 @@ export default class SubscriptionRegistry {
     } else if (subscription.sockets.has(socket)) {
       const msg = `repeat supscription to "${name}" by ${socket.user}`
       this.services.logger.warn(EVENT_ACTIONS[this.constants.MULTIPLE_SUBSCRIPTIONS], msg)
-      socket.sendError({ topic: this.topic }, this.constants.MULTIPLE_SUBSCRIPTIONS, name)
+      socket.sendMessage({
+        topic: this.topic,
+        action: this.constants.MULTIPLE_SUBSCRIPTIONS,
+        name
+      })
       return
     }
 
@@ -238,7 +242,11 @@ export default class SubscriptionRegistry {
       if (!silent) {
         const msg = `${socket.user} is not subscribed to ${name}`
         this.services.logger.warn(this.actions[this.constants.NOT_SUBSCRIBED], msg)
-        socket.sendError({ topic: this.topic }, this.constants.NOT_SUBSCRIBED, name)
+        socket.sendMessage({
+          topic: this.topic,
+          action: this.constants.NOT_SUBSCRIBED,
+          name
+        })
       }
       return
     }

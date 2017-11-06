@@ -22,9 +22,10 @@ export default class MessageDistributor {
   public distribute (socketWrapper: SocketWrapper, message: Message) {
     if (this.callbacks[message.topic] === undefined) {
       this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_TOPIC], TOPIC[message.topic])
-      socketWrapper.sendError({
+      socketWrapper.sendMessage({
         topic: TOPIC.PARSER,
-      }, PARSER_ACTIONS.UNKNOWN_TOPIC, TOPIC[message.topic])
+        action: PARSER_ACTIONS.UNKNOWN_TOPIC
+      })
       return
     }
 
@@ -39,7 +40,7 @@ export default class MessageDistributor {
    * to both messages passed to the distribute method as well as messages received
    * from the messageConnector
    */
-  public registerForTopic (topic: string, callback: Function) {
+  public registerForTopic (topic: TOPIC, callback: Function) {
     if (this.callbacks[topic] !== undefined) {
       throw new Error(`Callback already registered for topic ${topic}`)
     }

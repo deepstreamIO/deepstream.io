@@ -42,6 +42,19 @@ export let reverseMap = function (map: Object): object {
 }
 
 /**
+ * Like reverseMap but the values will be cast using Number(k)
+ */
+export function reverseMapNumeric (map: { [k: number]: number }) {
+  const reversedMap = {}
+
+  for (const key in map) {
+    reversedMap[map[key]] = Number(key)
+  }
+
+  return reversedMap
+}
+
+/**
  * Extended version of the typeof operator. Also supports 'array'
  * and 'url' to check for valid URL schemas
  */
