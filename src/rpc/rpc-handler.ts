@@ -161,7 +161,8 @@ export default class RpcHandler {
       this.rpcs.set(correlationId, rpcData)
       rpcData.providers.add(provider)
     } else if (isRemote) {
-      socketWrapper.sendError(message, RPC_ACTIONS.NO_RPC_PROVIDER)
+      message.action = RPC_ACTIONS.NO_RPC_PROVIDER
+      socketWrapper.sendMessage(message)
     } else {
        this.makeRemoteRpc(socketWrapper, message)
     }
@@ -203,7 +204,8 @@ export default class RpcHandler {
     )
 
     if (!requestor.isRemote) {
-      requestor.sendError(message, RPC_ACTIONS.NO_RPC_PROVIDER)
+      message.action = RPC_ACTIONS.NO_RPC_PROVIDER
+      requestor.sendMessage(message)
     }
   }
 
