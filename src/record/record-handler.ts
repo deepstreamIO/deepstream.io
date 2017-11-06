@@ -55,70 +55,70 @@ export default class RecordHandler {
  * and deepstream works which one it will be
  */
   public handle (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    const wa = message.action = WRITE_ACK_TO_ACTION[message.action]
-    if (message.action === RA.SUBSCRIBECREATEANDREAD) {
+    const action = message.isWriteAck ? WRITE_ACK_TO_ACTION[message.action] : message.action
+    if (action === RA.SUBSCRIBECREATEANDREAD) {
     /*
      * Return the record's contents and subscribes for future updates.
      * Creates the record if it doesn't exist
      */
       this.createOrRead(socketWrapper, message)
     } else if (
-      message.action === RA.CREATEANDUPDATE ||
-      message.action === RA.CREATEANDPATCH
+      action === RA.CREATEANDUPDATE ||
+      action === RA.CREATEANDPATCH
     ) {
     /*
      * Allows updates to the record without being subscribed, creates
      * the record if it doesn't exist
      */
       this.createAndUpdate(socketWrapper, message as RecordWriteMessage)
-    } else if (message.action === RA.READ) {
+    } else if (action === RA.READ) {
     /*
      * Return the current state of the record in cache or db
      */
       this.snapshot(socketWrapper, message)
-    } else if (message.action === RA.HEAD) {
+    } else if (action === RA.HEAD) {
     /*
      * Return the current state of the record in cache or db
      */
       this.head(socketWrapper, message)
-    } else if (message.action === RA.HAS) {
+    } else if (action === RA.HAS) {
     /*
      * Return a Boolean to indicate if record exists in cache or database
      */
       this.hasRecord(socketWrapper, message)
-    } else if (message.action === RA.UPDATE || message.action === RA.PATCH) {
+    } else if (action === RA.UPDATE || action === RA.PATCH) {
     /*
      * Handle complete (UPDATE) or partial (PATCH) updates
      */
       this.update(socketWrapper, message as RecordWriteMessage, false)
-    } else if (message.action === RA.DELETE) {
+    } else if (action === RA.DELETE) {
     /*
      * Deletes the record
      */
       this.delete(socketWrapper, message)
-    } else if (message.action === RA.DELETE_ACK) {
+    } else if (action === RA.DELETE_ACK) {
     /*
      * Handle delete acknowledgement from message bus
      * TODO: Different action
      */
       this.deleteAck(socketWrapper, message)
-    } else if (message.action === RA.UNSUBSCRIBE) {
+    } else if (action === RA.UNSUBSCRIBE) {
   /*
    * Unsubscribes (discards) a record that was previously subscribed to
    * using read()
    */
       this.subscriptionRegistry.unsubscribe(message, socketWrapper)
-    } else if (message.action === RA.LISTEN ||
+    } else if (action === RA.LISTEN ||
   /*
    * Listen to requests for a particular record or records
    * whose names match a pattern
    */
-    message.action === RA.UNLISTEN ||
-    message.action === RA.LISTEN_ACCEPT ||
-    message.action === RA.LISTEN_REJECT) {
+    action === RA.UNLISTEN ||
+    action === RA.LISTEN_ACCEPT ||
+    action === RA.LISTEN_REJECT) {
       this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
     } else {
-      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[message.action], this.metaData)
+      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[action], this.metaData)
     }
   }
 
