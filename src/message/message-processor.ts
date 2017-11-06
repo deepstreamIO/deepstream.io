@@ -82,12 +82,10 @@ export default class MessageProcessor {
     }
 
     if (result !== true) {
-      socketWrapper.sendMessage({
-        topic: message.topic,
+      socketWrapper.sendMessage(Object.assign({}, message, {
         action: AUTH_ACTIONS.MESSAGE_DENIED,
         originalAction: message.action,
-        name: message.name
-      })
+      }))
       return
     }
 
