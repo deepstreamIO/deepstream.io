@@ -4,17 +4,6 @@ import SubscriptionRegistry from '../utils/subscription-registry'
 
 const EVERYONE = '%_EVERYONE_%'
 
-function parseUserNames (names: any): Array<string> | null {
-  // Returns all users for backwards compatability
-  if (names === 'S') {
-    return [EVERYONE]
-  }
-  if (names instanceof Array) {
-    return names
-  }
-  return null
-}
-
 /**
  * This class handles incoming and outgoing messages in relation
  * to deepstream presence. It provides a way to inform clients
@@ -52,31 +41,51 @@ export default class PresenceHandler {
     if (message.action === PRESENCE_ACTIONS.QUERY_ALL) {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
+    } 
+
+    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE_ALL) {
+      this.subscriptionRegistry.subscribe({
+        topic: TOPIC.PRESENCE,
+        action: PRESENCE_ACTIONS.SUBSCRIBE_ALL,
+        name: EVERYONE
+      }, socketWrapper)
+      return
+    } 
+    if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_ALL) {
+      this.subscriptionRegistry.unsubscribe({
+        topic: TOPIC.PRESENCE,
+        action: PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
+        name: EVERYONE
+      }, socketWrapper)
+      return
     }
-    const success = socketWrapper.parseData()
-    const users = parseUserNames(message.parsedData)
-    if (success !== true || !users) {
+    
+    const success = socketWrapper.parseData(message)
+    if (success !== true) {
       const rawData = JSON.stringify(message.data)
       this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], rawData, this.metaData)
       socketWrapper.sendError(message, PRESENCE_ACTIONS.INVALID_PRESENCE_USERS)
       return
     }
+    const users = message.parsedData
     if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.subscribe({
           topic: TOPIC.PRESENCE,
           action: PRESENCE_ACTIONS.SUBSCRIBE,
           name: users[i],
-        }, socketWrapper)
+        }, socketWrapper, true)
       }
+      socketWrapper.sendAckMessage(message)
     } else if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.unsubscribe({
           topic: TOPIC.PRESENCE,
           action: PRESENCE_ACTIONS.UNSUBSCRIBE,
           name: users[i],
-        }, socketWrapper)
+        }, socketWrapper, true)
       }
+      socketWrapper.sendAckMessage(message)
     } else if (message.action === PRESENCE_ACTIONS.QUERY) {
       this.handleQuery(users, message.correlationId, socketWrapper)
     } else {

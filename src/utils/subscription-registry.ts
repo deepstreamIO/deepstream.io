@@ -162,7 +162,6 @@ export default class SubscriptionRegistry {
 
     const subscribers = subscription.sockets
     const first = subscribers.values().next().value
-    console.log('subscribers.length', subscribers.size)
     const msg = first.getMessage(message)
     const preparedMessage = first.prepareMessage(msg)
     for (const sock of subscribers) {
@@ -214,7 +213,7 @@ export default class SubscriptionRegistry {
   /**
    * Adds a SocketWrapper as a subscriber to a topic
    */
-  public subscribe (message: SubscriptionMessage, socket: SocketWrapper): void {
+  public subscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void {
     const name = message.name
     const subscription = this.subscriptions.get(name) || {
       name,
@@ -236,9 +235,11 @@ export default class SubscriptionRegistry {
 
     this.addSocket(subscription, socket)
 
-    const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
-    this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
-    socket.sendAckMessage(message)
+    if (!silent) {
+      const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
+      this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
+      socket.sendAckMessage(message)
+    }
   }
 
   /**
