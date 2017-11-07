@@ -33,9 +33,8 @@ describe('presence handler', () => {
 
   it('subscribes to client logins and logouts', () => {
     const subscriptionMessage = {
-      topic: C.TOPIC.EVENT,
-      action: C.PRESENCE_ACTIONS.SUBSCRIBE,
-      data: 'S'
+      topic: C.TOPIC.PRESENCE,
+      action: C.PRESENCE_ACTIONS.SUBSCRIBE_ALL,
     }
 
     testMocks.subscriptionRegistryMock
@@ -43,7 +42,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.SUBSCRIBE,
+        action: C.PRESENCE_ACTIONS.SUBSCRIBE_ALL,
         name: EVERYONE
       }, userOne.socketWrapper)
 
@@ -52,9 +51,8 @@ describe('presence handler', () => {
 
   it('unsubscribes to client logins and logouts', () => {
     const unsubscriptionMessage = {
-      topic: C.TOPIC.EVENT,
-      action: C.PRESENCE_ACTIONS.UNSUBSCRIBE,
-      data: 'S'
+      topic: C.TOPIC.PRESENCE,
+      action: C.PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
     }
 
     testMocks.subscriptionRegistryMock
@@ -62,7 +60,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.UNSUBSCRIBE,
+        action: C.PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
         name: EVERYONE
       }, userOne.socketWrapper)
 
