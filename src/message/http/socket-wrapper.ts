@@ -66,6 +66,9 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
 
   onMessage () {
   }
+  
+  getMessage () {
+  }
 
   /**
    * Returns a map of parameters that were collected

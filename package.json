@@ -19,7 +19,7 @@
     "test": "npm run tsc && jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "test:coverage": "npm run tsc && istanbul cover jasmine-runner.js",
     "test-http-server": "node test/test-helper/start-test-server.js",
-    "e2e": "npm run tsc && node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps --tags \"not @cluster\"",
+    "e2e": "npm run tsc && node ./node_modules/cucumber/bin/cucumber.js test-e2e --require ./test-e2e/steps --tags \"not @cluster and not @permissions and not @http\"",
     "e2e:rpc": "npm run e2e -- --tags \"not @cluster and @rpcs\"",
     "e2e:event": "npm run e2e -- --tags \"not @cluster and @events\"",
     "e2e:record": "npm run e2e -- --tags \"not @cluster and @records\"",

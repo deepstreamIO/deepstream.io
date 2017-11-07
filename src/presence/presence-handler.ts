@@ -42,10 +42,28 @@ export default class PresenceHandler {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
     }
-    const users = message.names
-    if (!users) {
+
+    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE_ALL) {
+      this.subscriptionRegistry.subscribe({
+        topic: TOPIC.PRESENCE,
+        action: PRESENCE_ACTIONS.SUBSCRIBE_ALL,
+        name: EVERYONE
+      }, socketWrapper)
+      return
+    }
+    if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_ALL) {
+      this.subscriptionRegistry.unsubscribe({
+        topic: TOPIC.PRESENCE,
+        action: PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
+        name: EVERYONE
+      }, socketWrapper)
+      return
+    }
+
+    const success = socketWrapper.parseData(message)
+    if (success !== true) {
       // TODO: if this case is reached, we're doing something wrong in the parser
-      // - action should be removed from the protocol
+      // - ideally action should be removed from the protocol
       const rawData = JSON.stringify(message.data)
       this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], rawData, this.metaData)
       socketWrapper.sendMessage({
@@ -54,22 +72,25 @@ export default class PresenceHandler {
       })
       return
     }
+    const users = message.parsedData
     if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.subscribe({
           topic: TOPIC.PRESENCE,
           action: PRESENCE_ACTIONS.SUBSCRIBE,
           name: users[i],
-        }, socketWrapper)
+        }, socketWrapper, true)
       }
+      socketWrapper.sendAckMessage(message)
     } else if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.unsubscribe({
           topic: TOPIC.PRESENCE,
           action: PRESENCE_ACTIONS.UNSUBSCRIBE,
           name: users[i],
-        }, socketWrapper)
+        }, socketWrapper, true)
       }
+      socketWrapper.sendAckMessage(message)
     } else if (message.action === PRESENCE_ACTIONS.QUERY) {
       this.handleQuery(users, message.correlationId, socketWrapper)
     } else {

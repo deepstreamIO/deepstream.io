@@ -160,47 +160,60 @@ export default class SubscriptionRegistry {
       return
     }
 
-    const msgString = getMessage(message, false)
-
-    if (subscription.sharedMessages.length === 0) {
-      this.pending.push(subscription)
-    }
-
-    // append this message to the sharedMessage, the message that
-    // is shared in the broadcast to every listener-only
-    const start = subscription.sharedMessages.length
-    subscription.sharedMessages += msgString
-    const stop = subscription.sharedMessages.length
-
-    // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
-    // each uniqueSender has a vector of "gaps" in relation to sharedMessage
-    // sockets should not receive what they sent themselves, so a gap is inserted
-    // for every send from this socket
-    if (socket && socket.uuid !== undefined) {
-      const uniqueSenders = subscription.uniqueSenders
-      const gaps = uniqueSenders.get(socket) || []
-
-      if (gaps.length === 0) {
-        uniqueSenders.set(socket, gaps)
+    const subscribers = subscription.sockets
+    const first = subscribers.values().next().value
+    const msg = first.getMessage(message)
+    const preparedMessage = first.prepareMessage(msg)
+    for (const sock of subscribers) {
+      if (sock === socket) {
+        continue
       }
-
-      gaps.push(start, stop)
+      sock.sendPrepared(preparedMessage)
     }
+    first.finalizeMessage(preparedMessage)
+    return
 
-    // reuse the same timer if already started
-    if (!this.delayedBroadcastsTimer) {
-      if (this.delay !== -1 && !noDelay) {
-        this.delayedBroadcastsTimer = setTimeout(this.onBroadcastTimeout, this.delay)
-      } else {
-        this.onBroadcastTimeout()
-      }
-    }
+    // const msgString = getMessage(message, false)
+
+    // if (subscription.sharedMessages.length === 0) {
+    //   this.pending.push(subscription)
+    // }
+
+    // // append this message to the sharedMessage, the message that
+    // // is shared in the broadcast to every listener-only
+    // const start = subscription.sharedMessages.length
+    // subscription.sharedMessages += msgString
+    // const stop = subscription.sharedMessages.length
+
+    // // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
+    // // each uniqueSender has a vector of "gaps" in relation to sharedMessage
+    // // sockets should not receive what they sent themselves, so a gap is inserted
+    // // for every send from this socket
+    // if (socket && socket.uuid !== undefined) {
+    //   const uniqueSenders = subscription.uniqueSenders
+    //   const gaps = uniqueSenders.get(socket) || []
+
+    //   if (gaps.length === 0) {
+    //     uniqueSenders.set(socket, gaps)
+    //   }
+
+    //   gaps.push(start, stop)
+    // }
+
+    // // reuse the same timer if already started
+    // if (!this.delayedBroadcastsTimer) {
+    //   if (this.delay !== -1 && !noDelay) {
+    //     this.delayedBroadcastsTimer = setTimeout(this.onBroadcastTimeout, this.delay)
+    //   } else {
+    //     this.onBroadcastTimeout()
+    //   }
+    // }
   }
 
   /**
    * Adds a SocketWrapper as a subscriber to a topic
    */
-  public subscribe (message: SubscriptionMessage, socket: SocketWrapper): void {
+  public subscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void {
     const name = message.name
     const subscription = this.subscriptions.get(name) || {
       name,
@@ -226,9 +239,11 @@ export default class SubscriptionRegistry {
 
     this.addSocket(subscription, socket)
 
-    const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
-    this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
-    socket.sendAckMessage(message)
+    if (!silent) {
+      const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
+      this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
+      socket.sendAckMessage(message)
+    }
   }
 
   /**

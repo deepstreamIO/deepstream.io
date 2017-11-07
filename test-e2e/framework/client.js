@@ -98,7 +98,7 @@ module.exports = {
   },
 
   recievedErrorOnce (clientExpression, topicName, eventName) {
-    const topic = C.TOPIC[topicName.toUpperCase()]
+    const topic = topicName.toUpperCase()
     const event = C.EVENT[eventName.toUpperCase()]
 
     clientHandler.getClients(clientExpression).forEach((client) => {
