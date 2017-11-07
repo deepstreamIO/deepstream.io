@@ -72,20 +72,30 @@ export default class MessageProcessor {
   private onPermissionResponse (socketWrapper: SocketWrapper, message: Message, error: Error | null, result: boolean): void {
     if (error !== null) {
       this.services.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
-      socketWrapper.sendMessage({
+      const permissionErrorMessage: Message = {
         topic: message.topic,
         action: AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR,
         originalAction: message.action,
         name: message.name
-      })
+      }
+      if (message.correlationId) {
+        permissionErrorMessage.correlationId = message.correlationId
+      }
+      socketWrapper.sendMessage(permissionErrorMessage)
       return
     }
 
     if (result !== true) {
-      socketWrapper.sendMessage(Object.assign({}, message, {
+      const permissionDeniedMessage: Message = {
+        topic: message.topic,
         action: AUTH_ACTIONS.MESSAGE_DENIED,
         originalAction: message.action,
-      }))
+        name: message.name
+      }
+      if (message.correlationId) {
+        permissionDeniedMessage.correlationId = message.correlationId
+      }
+      socketWrapper.sendMessage(permissionDeniedMessage)
       return
     }
 
