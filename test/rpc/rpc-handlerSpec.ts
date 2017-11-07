@@ -104,9 +104,14 @@ describe('the rpcHandler routes events correctly', () => {
 
     it('errors when recieving more than one ack', () => {
       provider.socketWrapperMock
-        .expects('sendError')
+        .expects('sendMessage')
         .once()
-        .withExactArgs(requestMessage, C.RPC_ACTIONS.MULTIPLE_ACCEPT)
+        .withExactArgs({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.MULTIPLE_ACCEPT,
+          name: requestMessage.name,
+          correlationId: requestMessage.correlationId
+        })
 
       provider.socketWrapperMock
         .expects('sendMessage')
@@ -129,13 +134,20 @@ describe('the rpcHandler routes events correctly', () => {
     })
 
     it('replies with an error to additonal responses', () => {
-      provider.socketWrapperMock
-        .expects('sendError')
-        .once()
-        .withExactArgs(responseMessage, C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
-
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, responseMessage)
+
+      provider.socketWrapperMock
+        .expects('sendMessage')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+          originalAction: responseMessage.action,
+          name: responseMessage.name,
+          correlationId: responseMessage.correlationId
+        })
+
       rpcHandler.handle(provider.socketWrapper, responseMessage)
     })
 
@@ -150,13 +162,20 @@ describe('the rpcHandler routes events correctly', () => {
     })
 
     it('replies with an error after the first message', () => {
-      provider.socketWrapperMock
-        .expects('sendError')
-        .once()
-        .withExactArgs(errorMessage, C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
-
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, errorMessage)
+
+      provider.socketWrapperMock
+        .expects('sendMessage')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+          originalAction: errorMessage.action,
+          name: errorMessage.name,
+          correlationId: errorMessage.correlationId
+        })
+
       rpcHandler.handle(provider.socketWrapper, errorMessage)
     })
 
@@ -175,31 +194,47 @@ describe('the rpcHandler routes events correctly', () => {
     })
 
     it('times out if no ack is received', done => {
-      requestor.socketWrapperMock
-        .expects('sendError')
-        .once()
-        .withExactArgs(requestMessage, C.RPC_ACTIONS.ACCEPT_TIMEOUT)
-
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
-      setTimeout(done, config.rpcAckTimeout * 2)
+      console.log('test setup')
+
+      provider.socketWrapperMock
+        .expects('sendMessage')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.ACCEPT_TIMEOUT,
+          name: requestMessage.name,
+          correlationId: requestMessage.correlationId
+        })
+
+      setTimeout(() => {
+        console.log('test timeout')
+        done()
+      }, config.rpcAckTimeout * 2)
     })
 
     it('times out if response is not received in time', done => {
-      requestor.socketWrapperMock
-        .expects('sendError')
-        .once()
-        .withExactArgs(requestMessage, C.RPC_ACTIONS.RESPONSE_TIMEOUT)
-
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)
+
+      provider.socketWrapperMock
+        .expects('sendMessage')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.RESPONSE_TIMEOUT,
+          name: requestMessage.name,
+          correlationId: requestMessage.correlationId
+        })
+
       setTimeout(done, config.rpcTimeout + 2)
     })
 
     // Should an Ack for a non existant rpc should error?
     xit('ignores ack message if it arrives after response', done => {
       provider.socketWrapperMock
-        .expects('sendError')
-        .never()
+        .expects('sendMessage')
+        .twice()
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, responseMessage)
@@ -211,15 +246,30 @@ describe('the rpcHandler routes events correctly', () => {
     })
 
     it('doesn\'t throw error on response after timeout', done => {
-      provider.socketWrapperMock
-        .expects('sendError')
-        .once()
-        .withExactArgs(responseMessage, C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
-
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)
 
+      provider.socketWrapperMock
+        .expects('sendMessage')
+        .once()
+        .withExactArgs({
+          topic: C.TOPIC.RPC,
+          action: C.RPC_ACTIONS.RESPONSE_TIMEOUT,
+          name: requestMessage.name,
+          correlationId: requestMessage.correlationId
+        })
+
       setTimeout(() => {
+        provider.socketWrapperMock
+          .expects('sendMessage')
+          .once()
+          .withExactArgs({
+            topic: C.TOPIC.RPC,
+            action: C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+            originalAction: responseMessage.action,
+            name: responseMessage.name,
+            correlationId: responseMessage.correlationId
+          })
         rpcHandler.handle(provider.socketWrapper, responseMessage)
         done()
       }, 30)

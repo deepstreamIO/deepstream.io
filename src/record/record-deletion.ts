@@ -108,6 +108,7 @@ export default class RecordDeletion {
     this.socketWrapper.sendMessage({
       topic: TOPIC.RECORD,
       action: RECORD_ACTIONS.RECORD_DELETE_ERROR,
+      originalAction: this.message.action,
       name: this.recordName
     })
     this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_DELETE_ERROR], errorMsg, this.metaData)

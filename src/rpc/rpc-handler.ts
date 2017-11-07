@@ -74,6 +74,7 @@ export default class RpcHandler {
         socketWrapper.sendMessage({
           topic: TOPIC.RPC,
           action: RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+          originalAction: message.action,
           name: message.name,
           correlationId: message.correlationId
         })

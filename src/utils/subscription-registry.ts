@@ -230,6 +230,7 @@ export default class SubscriptionRegistry {
       socket.sendMessage({
         topic: this.topic,
         action: this.constants.MULTIPLE_SUBSCRIPTIONS,
+        originalAction: message.action,
         name
       })
       return
@@ -260,6 +261,7 @@ export default class SubscriptionRegistry {
         socket.sendMessage({
           topic: this.topic,
           action: this.constants.NOT_SUBSCRIBED,
+          originalAction: message.action,
           name
         })
       }

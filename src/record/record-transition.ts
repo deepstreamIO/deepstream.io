@@ -109,11 +109,11 @@ export default class RecordTransition {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
         action: RECORD_ACTIONS.VERSION_EXISTS,
+        originalAction: step.message.action,
         name: this.name,
         version: this.record._v,
         parsedData: this.record._d,
-        originalAction: step.message.action,
-        isWriteAck: step.message.isWriteAck,
+        isWriteAck: false,
       })
 
       this.services.logger.warn(

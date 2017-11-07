@@ -12,7 +12,7 @@ module.exports.anotherDeletionMsg = {
   name: 'no-storage/1'
 }
 
-module.exports.createOrReadMessage = {
+module.exports.subscribeCreateAndReadMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
   name: 'some-record'
@@ -28,13 +28,22 @@ module.exports.readResponseMessage = {
 
 module.exports.readDeniedMessage = {
   topic: C.TOPIC.RECORD,
-  action: C.RECORD_ACTIONS.READ,
+  action: C.RECORD_ACTIONS.MESSAGE_DENIED,
+  originalAction: C.RECORD_ACTIONS.READ,
+  name: 'some-record'
+}
+
+module.exports.createPermissionErrorMessage = {
+  topic: C.TOPIC.RECORD,
+  action: C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR,
+  originalAction: C.RECORD_ACTIONS.CREATE,
   name: 'some-record'
 }
 
 module.exports.createDeniedMessage = {
   topic: C.TOPIC.RECORD,
-  action: C.RECORD_ACTIONS.CREATE,
+  action: C.RECORD_ACTIONS.MESSAGE_DENIED,
+  originalAction: C.RECORD_ACTIONS.CREATE,
   name: 'some-record'
 }
 
@@ -47,12 +56,6 @@ module.exports.subscribeMessage = {
 module.exports.unsubscribeMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.UNSUBSCRIBE,
-  name: 'some-record'
-}
-
-module.exports.createOrReadMessage = {
-  topic: C.TOPIC.RECORD,
-  action: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
   name: 'some-record'
 }
 
