@@ -195,7 +195,6 @@ describe('the rpcHandler routes events correctly', () => {
 
     it('times out if no ack is received', done => {
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
-      console.log('test setup')
 
       provider.socketWrapperMock
         .expects('sendMessage')
@@ -208,7 +207,6 @@ describe('the rpcHandler routes events correctly', () => {
         })
 
       setTimeout(() => {
-        console.log('test timeout')
         done()
       }, config.rpcAckTimeout * 2)
     })
