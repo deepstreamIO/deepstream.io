@@ -51,6 +51,7 @@ export default class PresenceHandler {
       }, socketWrapper)
       return
     }
+
     if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_ALL) {
       this.subscriptionRegistry.unsubscribe({
         topic: TOPIC.PRESENCE,
@@ -161,18 +162,24 @@ export default class PresenceHandler {
   * Alerts all clients who are subscribed to
   * PRESENCE_JOIN that a new client has been added.
   */
-  private onClientAdded (username: string) {
-    const message = {
+  private onClientAdded (username: string): void {
+    const individualMessage: Message = {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.PRESENCE_JOIN,
       name : username,
     }
 
+    const allMessage: Message = {
+      topic: TOPIC.PRESENCE,
+      action: PRESENCE_ACTIONS.PRESENCE_JOIN_ALL,
+      name: username
+    }
+
     this.subscriptionRegistry.sendToSubscribers(
-      EVERYONE, message, false, null, false,
+      EVERYONE, allMessage, false, null, false,
     )
     this.subscriptionRegistry.sendToSubscribers(
-      username, message, false, null, false,
+      username, individualMessage, false, null, false,
     )
   }
 
@@ -180,17 +187,24 @@ export default class PresenceHandler {
   * Alerts all clients who are subscribed to
   * PRESENCE_LEAVE that the client has left.
   */
-  private onClientRemoved (username: string) {
-    const message = {
+  private onClientRemoved (username: string): void {
+    const individualMessage: Message = {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.PRESENCE_LEAVE,
-      name: username,
+      name : username,
     }
+
+    const allMessage: Message = {
+      topic: TOPIC.PRESENCE,
+      action: PRESENCE_ACTIONS.PRESENCE_LEAVE_ALL,
+      name: username
+    }
+
     this.subscriptionRegistry.sendToSubscribers(
-      EVERYONE, message, false, null, false,
+      EVERYONE, allMessage, false, null, false,
     )
     this.subscriptionRegistry.sendToSubscribers(
-      username, message, false, null, false,
+      username, individualMessage, false, null, false,
     )
   }
 }
