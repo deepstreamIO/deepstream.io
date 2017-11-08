@@ -49,7 +49,7 @@ module.exports.assert = {
   globalQueryResult (clientExpression, users) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
-      sinon.assert.calledWith(client.presence.callbacks[queryEvent], users)
+      sinon.assert.calledWith(client.presence.callbacks[queryEvent], null, users)
       client.presence.callbacks[queryEvent].reset()
     })
   },
@@ -61,7 +61,7 @@ module.exports.assert = {
         result[users[i]] = online
       }
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
-      sinon.assert.calledWith(client.presence.callbacks[queryEvent], result)
+      sinon.assert.calledWith(client.presence.callbacks[queryEvent], null, result)
       client.presence.callbacks[queryEvent].reset()
     })
   }
