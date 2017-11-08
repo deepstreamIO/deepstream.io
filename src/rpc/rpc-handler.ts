@@ -71,7 +71,13 @@ export default class RpcHandler {
           `name: ${message.name} with correlation id: ${message.correlationId}`,
           this.metaData
         )
-        socketWrapper.sendError(message, RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
+        socketWrapper.sendMessage({
+          topic: TOPIC.RPC,
+          action: RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+          originalAction: message.action,
+          name: message.name,
+          correlationId: message.correlationId
+        })
       }
     } else {
       /*
@@ -161,8 +167,12 @@ export default class RpcHandler {
       this.rpcs.set(correlationId, rpcData)
       rpcData.providers.add(provider)
     } else if (isRemote) {
-      message.action = RPC_ACTIONS.NO_RPC_PROVIDER
-      socketWrapper.sendMessage(message)
+      socketWrapper.sendMessage({
+        topic: TOPIC.RPC,
+        action: RPC_ACTIONS.NO_RPC_PROVIDER,
+        name: rpcName,
+        correlationId
+      })
     } else {
        this.makeRemoteRpc(socketWrapper, message)
     }
@@ -204,8 +214,12 @@ export default class RpcHandler {
     )
 
     if (!requestor.isRemote) {
-      message.action = RPC_ACTIONS.NO_RPC_PROVIDER
-      requestor.sendMessage(message)
+      requestor.sendMessage({
+        topic: TOPIC.RPC,
+        action: RPC_ACTIONS.NO_RPC_PROVIDER,
+        name: rpcName,
+        correlationId
+      })
     }
   }
 

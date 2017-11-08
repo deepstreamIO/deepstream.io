@@ -50,13 +50,14 @@ describe('record deletion', () => {
     services.cache.nextOperationWillBeSynchronous = false
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.DELETE,
+        action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
+        originalAction: C.RECORD_ACTIONS.DELETE,
         name: 'someRecord'
-      }, C.RECORD_ACTIONS.RECORD_DELETE_ERROR)
+      })
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.deletionMsg, callback
@@ -76,13 +77,14 @@ describe('record deletion', () => {
     services.cache.nextOperationWillBeSynchronous = false
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.DELETE,
+        action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
+        originalAction: C.RECORD_ACTIONS.DELETE,
         name: 'someRecord'
-      }, C.RECORD_ACTIONS.RECORD_DELETE_ERROR)
+      })
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.deletionMsg, callback

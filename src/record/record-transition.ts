@@ -106,14 +106,15 @@ export default class RecordTransition {
   public sendVersionExists (step: Step): void {
     const socketWrapper = step.sender
     if (this.record) {
-      socketWrapper.sendError({
+      socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
-        action: step.message.action,
+        action: RECORD_ACTIONS.VERSION_EXISTS,
+        originalAction: step.message.action,
         name: this.name,
         version: this.record._v,
         parsedData: this.record._d,
-        isWriteAck: step.message.isWriteAck,
-      }, RECORD_ACTIONS.VERSION_EXISTS)
+        isWriteAck: false,
+      })
 
       this.services.logger.warn(
         RECORD_ACTIONS.VERSION_EXISTS,
@@ -143,13 +144,21 @@ export default class RecordTransition {
     }
     const valid = this.applyConfigAndData(socketWrapper, message, update)
     if (!valid) {
-      socketWrapper.sendError(message, RECORD_ACTIONS.INVALID_MESSAGE_DATA)
+      socketWrapper.sendMessage({
+        topic: TOPIC.RECORD,
+        action: RECORD_ACTIONS.INVALID_MESSAGE_DATA,
+        data: message.data
+      })
       return
     }
 
     if (message.action === RECORD_ACTIONS.UPDATE) {
       if (!isOfType(message.parsedData, 'object') && !isOfType(message.parsedData, 'array')) {
-        socketWrapper.sendError(message, RECORD_ACTIONS.INVALID_MESSAGE_DATA)
+        socketWrapper.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RECORD_ACTIONS.INVALID_MESSAGE_DATA,
+          data: message.data
+        })
         return
       }
     }
@@ -412,7 +421,11 @@ export default class RecordTransition {
 
     for (let i = 0; i < this.steps.length; i++) {
       if (!this.steps[i].sender.isRemote) {
-        this.steps[i].sender.sendError(this.steps[i].message, RECORD_ACTIONS.RECORD_UPDATE_ERROR)
+        this.steps[i].sender.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RECORD_ACTIONS.RECORD_UPDATE_ERROR,
+          name: this.steps[i].message.name
+        })
       }
     }
 

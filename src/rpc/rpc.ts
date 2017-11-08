@@ -102,7 +102,12 @@ export default class Rpc {
   */
   private handleAccept (message: RPCMessage) {
     if (this.isAccepted === true) {
-      this.provider.sendError(this.message, RPC_ACTIONS.MULTIPLE_ACCEPT)
+      this.provider.sendMessage({
+        topic: TOPIC.RPC,
+        action: RPC_ACTIONS.MULTIPLE_ACCEPT,
+        name: this.message.name,
+        correlationId: this.message.correlationId
+      })
       return
     }
 
@@ -125,8 +130,12 @@ export default class Rpc {
     if (alternativeProvider) {
       this.setProvider(alternativeProvider)
     } else {
-      this.message.action = RPC_ACTIONS.NO_RPC_PROVIDER
-      this.requestor.sendMessage(this.message)
+      this.requestor.sendMessage({
+        topic: TOPIC.RPC,
+        action: RPC_ACTIONS.NO_RPC_PROVIDER,
+        name: this.message.name,
+        correlationId: this.message.correlationId
+      })
       this.destroy()
     }
   }
@@ -136,8 +145,12 @@ export default class Rpc {
   * in time by the provider
   */
   private onAcceptTimeout (): void {
-    this.message.action = RPC_ACTIONS.ACCEPT_TIMEOUT
-    this.requestor.sendMessage(this.message)
+    this.requestor.sendMessage({
+      topic: TOPIC.RPC,
+      action: RPC_ACTIONS.ACCEPT_TIMEOUT,
+      name: this.message.name,
+      correlationId: this.message.correlationId
+    })
     this.destroy()
   }
 
@@ -146,8 +159,12 @@ export default class Rpc {
   * in time by the provider
   */
   public onResponseTimeout (): void {
-    this.message.action = RPC_ACTIONS.RESPONSE_TIMEOUT
-    this.requestor.sendMessage(this.message)
+    this.requestor.sendMessage({
+      topic: TOPIC.RPC,
+      action: RPC_ACTIONS.RESPONSE_TIMEOUT,
+      name: this.message.name,
+      correlationId: this.message.correlationId
+    })
     this.destroy()
   }
 }

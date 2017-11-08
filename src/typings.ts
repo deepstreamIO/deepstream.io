@@ -6,14 +6,7 @@ type RuleType = string
 type ValveSection = string
 
 type LOG_LEVEL = any
-type TOPIC = any
-type RECORD_ACTIONS = any
-type PRESENCE_ACTIONS = any
-type EVENT_ACTIONS = any
-type RPC_ACTIONS = any
-type AUTH_ACTIONS = any
-type CONNECTION_ACTIONS = any
-type PARSER_ACTIONS = any
+type TOPIC = number
 type EVENT = any
 
 interface StorageRecord {
@@ -48,7 +41,7 @@ interface SocketWrapper extends SimpleSocketWrapper {
 
 interface Message {
   topic: TOPIC
-  action: RECORD_ACTIONS | PRESENCE_ACTIONS | RPC_ACTIONS | EVENT_ACTIONS | AUTH_ACTIONS | CONNECTION_ACTIONS
+  action: number
   name?: string
 
   isError?: boolean
@@ -57,12 +50,14 @@ interface Message {
   data?: string | Buffer
   parsedData?: any
 
+  originalAction?: number
+  subscription?: string
+  names?: Array<string>
   isWriteAck?: boolean
   correlationId?: string
   path?: string
   version?: number
   reason?: string
-  subscription?: string
 }
 
 interface JifMessage {

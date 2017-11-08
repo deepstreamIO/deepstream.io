@@ -41,7 +41,7 @@ export default class PresenceHandler {
     if (message.action === PRESENCE_ACTIONS.QUERY_ALL) {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
-    } 
+    }
 
     if (message.action === PRESENCE_ACTIONS.SUBSCRIBE_ALL) {
       this.subscriptionRegistry.subscribe({
@@ -50,7 +50,7 @@ export default class PresenceHandler {
         name: EVERYONE
       }, socketWrapper)
       return
-    } 
+    }
     if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_ALL) {
       this.subscriptionRegistry.unsubscribe({
         topic: TOPIC.PRESENCE,
@@ -59,12 +59,17 @@ export default class PresenceHandler {
       }, socketWrapper)
       return
     }
-    
+
     const success = socketWrapper.parseData(message)
     if (success !== true) {
+      // TODO: if this case is reached, we're doing something wrong in the parser
+      // - ideally action should be removed from the protocol
       const rawData = JSON.stringify(message.data)
       this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], rawData, this.metaData)
-      socketWrapper.sendError(message, PRESENCE_ACTIONS.INVALID_PRESENCE_USERS)
+      socketWrapper.sendMessage({
+        topic: TOPIC.PRESENCE,
+        action: PRESENCE_ACTIONS.INVALID_PRESENCE_USERS
+      })
       return
     }
     const users = message.parsedData

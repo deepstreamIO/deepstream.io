@@ -9,13 +9,7 @@ function sendError (
   onError: Function, services: DeepstreamServices, context: any, metaData: any,
 ): void {
   services.logger.error(event, message, metaData)
-  if (onError) {
-    onError.call(context, event, message, recordName, socketWrapper)
-  } else if (socketWrapper) {
-    socketWrapper.sendError({
-      topic: TOPIC.RECORD,
-    }, event)
-  }
+  onError.call(context, event, message, recordName, socketWrapper)
 }
 
 /**

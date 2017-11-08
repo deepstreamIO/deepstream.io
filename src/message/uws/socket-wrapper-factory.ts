@@ -138,12 +138,21 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
     return binaryMessageBuilder.getMessage(message, false)
   }
 
-  public parseMessage (message: string | Buffer): Array<ParseResult> {
-    if (typeof message === 'string') {
+  public parseMessage (message: string | ArrayBuffer): Array<ParseResult> {
+    let messageBuffer: string | Buffer
+    if (message instanceof ArrayBuffer) {
+      /* we copy the underlying buffer (since a shallow reference won't be safe
+       * outside of the callback)
+       * the copy could be avoided if we make sure not to store references to the
+       * raw buffer within the message
+       */
+      messageBuffer = Buffer.from(message)
+    } else {
       // return textMessageParser.parse(message)
-      throw new Error('string message parsing is not supported')
+      console.error('received string message', message)
+      return []
     }
-    return binaryMessageParser.parse(message)
+    return binaryMessageParser.parse(messageBuffer)
   }
 
   /**

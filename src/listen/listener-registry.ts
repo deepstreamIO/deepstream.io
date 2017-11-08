@@ -673,7 +673,10 @@ export default class ListenerRegistry implements SubscriptionListener {
     try {
       return new RegExp(message.name)
     } catch (e) {
-      socketWrapper.sendError({ topic: this.topic }, this.actions.INVALID_LISTEN_REGEX)
+      socketWrapper.sendMessage({
+        topic: this.topic,
+        action: this.actions.INVALID_LISTEN_REGEX,
+      })
       this.services.logger.error(this.actions[this.actions.INVALID_LISTEN_REGEX], e.toString(), this.metaData)
       return null
     }
