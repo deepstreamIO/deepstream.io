@@ -243,7 +243,6 @@ export default class RecordHandler {
  */
   private createOrRead (socketWrapper: SocketWrapper, message: RecordMessage): void {
     const onComplete = function (record, recordName, socket) {
-      console.log('createorread onComplete')
       if (record) {
         this.read(message, record, socket)
       } else {
@@ -381,13 +380,10 @@ export default class RecordHandler {
   private create (message: RecordMessage, socketWrapper: SocketWrapper, callback: Function): void {
     const recordName = message.name
     const record = { _v: 0, _d: {} }
-    console.log('create', recordName)
 
     // store the records data in the cache and wait for the result
     this.services.cache.set(recordName, record, error => {
-      console.log('create cache response', recordName)
       if (error) {
-        console.log('create cache error', error)
         this.services.logger.error(RA[RA.RECORD_CREATE_ERROR], recordName, this.metaData)
         socketWrapper.sendMessage({
           topic: TOPIC.RECORD,
@@ -416,7 +412,6 @@ export default class RecordHandler {
  * Subscribes to updates for a record and sends its current data once done
  */
   private read (message: RecordMessage, record: StorageRecord, socketWrapper: SocketWrapper): void {
-    console.trace('read', message)
     this.permissionAction(RA.READ, message.name, socketWrapper, () => {
       this.subscriptionRegistry.subscribe(message, socketWrapper)
       sendRecord(message.name, record, socketWrapper)
