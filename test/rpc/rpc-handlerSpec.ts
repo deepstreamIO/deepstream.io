@@ -196,7 +196,7 @@ describe('the rpcHandler routes events correctly', () => {
     it('times out if no ack is received', done => {
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
 
-      provider.socketWrapperMock
+      requestor.socketWrapperMock
         .expects('sendMessage')
         .once()
         .withExactArgs({
@@ -215,7 +215,7 @@ describe('the rpcHandler routes events correctly', () => {
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)
 
-      provider.socketWrapperMock
+      requestor.socketWrapperMock
         .expects('sendMessage')
         .once()
         .withExactArgs({
@@ -247,7 +247,7 @@ describe('the rpcHandler routes events correctly', () => {
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)
 
-      provider.socketWrapperMock
+      requestor.socketWrapperMock
         .expects('sendMessage')
         .once()
         .withExactArgs({

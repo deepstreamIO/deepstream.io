@@ -130,7 +130,7 @@ export default class Rpc {
     if (alternativeProvider) {
       this.setProvider(alternativeProvider)
     } else {
-      this.provider.sendMessage({
+      this.requestor.sendMessage({
         topic: TOPIC.RPC,
         action: RPC_ACTIONS.NO_RPC_PROVIDER,
         name: this.message.name,
@@ -145,7 +145,7 @@ export default class Rpc {
   * in time by the provider
   */
   private onAcceptTimeout (): void {
-    this.provider.sendMessage({
+    this.requestor.sendMessage({
       topic: TOPIC.RPC,
       action: RPC_ACTIONS.ACCEPT_TIMEOUT,
       name: this.message.name,
@@ -159,7 +159,7 @@ export default class Rpc {
   * in time by the provider
   */
   public onResponseTimeout (): void {
-    this.provider.sendMessage({
+    this.requestor.sendMessage({
       topic: TOPIC.RPC,
       action: RPC_ACTIONS.RESPONSE_TIMEOUT,
       name: this.message.name,
