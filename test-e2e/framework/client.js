@@ -110,7 +110,7 @@ module.exports = {
 
   recievedOneError (clientExpression, topicName, eventName) {
     const topic = C.TOPIC[C.TOPIC[topicName.toUpperCase()]]
-    const event = EVENT[EVENT[eventName.toUpperCase()]]
+    const event = eventName.toUpperCase()
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[topic][event]
       sinon.assert.calledOnce(errorSpy)
