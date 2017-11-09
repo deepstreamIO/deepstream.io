@@ -15,8 +15,18 @@ Given(/^(.+) subscribes to presence events$/, (clientExpression, done) => {
   setTimeout(done, utils.defaultDelay)
 })
 
+Given(/^(.+) unsubscribes to presence events$/, (clientExpression, done) => {
+  presence.unsubscribe(clientExpression)
+  setTimeout(done, utils.defaultDelay)
+})
+
 Given(/^(.+) subscribes to presence events for "([^"]*)"$/, (clientExpression, users, done) => {
   users.split(',').forEach(user => presence.subscribe(clientExpression, user))
+  setTimeout(done, utils.defaultDelay)
+})
+
+Given(/^(.+) unsubscribes to presence events for "([^"]*)"$/, (clientExpression, users, done) => {
+  users.split(',').forEach(user => presence.unsubscribe(clientExpression, user))
   setTimeout(done, utils.defaultDelay)
 })
 
@@ -30,7 +40,7 @@ When(/^(.+) queries for clients "([^"]*)"$/, (clientExpression, clients, done) =
   setTimeout(done, utils.defaultDelay)
 })
 
-Then(/^(.+) (?:is|are) notified that (.+) logged ([^"]*)$/, presence.assert.notifiedUserStateChanged)
+Then(/^(.+) (?:is|are) (not )?notified that (.+) logged ([^"]*)$/, presence.assert.notifiedUserStateChanged)
 
 Then(/^(.+) is notified that (?:clients|client) "([^"]*)" (?:are|is) connected$/, (clientExpression, connectedClients) => {
   presence.assert.globalQueryResult(clientExpression, null, connectedClients.split(','))
