@@ -50,6 +50,7 @@ interface Message {
   data?: string | Buffer
   parsedData?: any
 
+  originalTopic?: number
   originalAction?: number
   subscription?: string
   names?: Array<string>
