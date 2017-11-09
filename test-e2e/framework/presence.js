@@ -46,10 +46,14 @@ module.exports.assert = {
     })
   },
 
-  globalQueryResult (clientExpression, users) {
+  globalQueryResult (clientExpression, error, users) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
-      sinon.assert.calledWith(client.presence.callbacks[queryEvent], null, users)
+      if (users) {
+        sinon.assert.calledWith(client.presence.callbacks[queryEvent], error, users)
+      } else {
+        sinon.assert.calledWith(client.presence.callbacks[queryEvent], error)
+      }
       client.presence.callbacks[queryEvent].reset()
     })
   },

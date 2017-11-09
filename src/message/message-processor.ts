@@ -4,6 +4,8 @@ import {
   CONNECTION_ACTIONS,
   EVENT,
   PARSER_ACTIONS,
+  PRESENCE_ACTIONS,
+  EVENT_ACTIONS,
   TOPIC,
   EventMessage,
   RPCMessage,

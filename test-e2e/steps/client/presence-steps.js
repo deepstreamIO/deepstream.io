@@ -33,7 +33,11 @@ When(/^(.+) queries for clients "([^"]*)"$/, (clientExpression, clients, done) =
 Then(/^(.+) (?:is|are) notified that (.+) logged ([^"]*)$/, presence.assert.notifiedUserStateChanged)
 
 Then(/^(.+) is notified that (?:clients|client) "([^"]*)" (?:are|is) connected$/, (clientExpression, connectedClients) => {
-  presence.assert.globalQueryResult(clientExpression, connectedClients.split(','))
+  presence.assert.globalQueryResult(clientExpression, null, connectedClients.split(','))
+})
+
+Then(/^(.+) receives a "([^"]*)" error on their query$/, (clientExpression, error) => {
+  presence.assert.globalQueryResult(clientExpression, { reason: error })
 })
 
 Then(/^(.+) (?:is|are) notified that (?:clients|client) "([^"]*)" (?:are|is) online$/, (clientExpression, clients) => {
@@ -45,6 +49,6 @@ Then(/^(.+) (?:is|are) notified that (?:clients|client) "([^"]*)" (?:are|is) off
 })
 
 Then(/^(.+) is notified that no clients are connected$/, (clientExpression) => {
-  presence.assert.globalQueryResult(clientExpression, [])
+  presence.assert.globalQueryResult(clientExpression, null, [])
 })
 
