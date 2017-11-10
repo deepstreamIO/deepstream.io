@@ -47,7 +47,7 @@ const rpcs = {
     // permissions always deny
   },
   rejectOnce: (client, data, response) => {
-    client.rpc.provides.rejectOnce()
+    client.rpc.provides.rejectOnce(data)
     if (rejected) {
       response.send('ok')
       rejected = false

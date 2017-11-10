@@ -146,7 +146,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
        * the copy could be avoided if we make sure not to store references to the
        * raw buffer within the message
        */
-      messageBuffer = Buffer.from(message)
+      messageBuffer = Buffer.from(Buffer.from(message))
     } else {
       // return textMessageParser.parse(message)
       console.error('received string message', message)
