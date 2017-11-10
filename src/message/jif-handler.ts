@@ -313,6 +313,11 @@ export default class JIFHandler {
     } else {
       type = TYPE.NORMAL
     }
+
+    if (message.isError) {
+      return this.errorToJIF(message, message.action)
+    }
+
     return this.MSG_TO_JIF[message.topic][message.action][type](message)
   }
 
@@ -327,7 +332,7 @@ export default class JIFHandler {
    *    {Boolean} done      false iff message should await another result/acknowledgement
    * }
    */
-  public errorToJIF (message, event) {
+  public errorToJIF (message: Message, event) {
     // convert topic enum to human-readable key
     const topicKey = this.topicToKey[message.topic]
 
@@ -338,19 +343,19 @@ export default class JIFHandler {
     }
 
     if (event === AUTH_ACTIONS.MESSAGE_DENIED) {
-      result.action = message.action
-      result.error = `Message denied. Action "${ACTIONS[message.topic][message.action]}" is not permitted.`
+      result.action = message.originalAction
+      result.error = `Message denied. Action "${ACTIONS[message.topic][message.originalAction as number]}" is not permitted.`
     } else if (event === RECORD_ACTIONS.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version
       result.currentData = message.parsedData
     } else if (event === RECORD_ACTIONS.RECORD_NOT_FOUND) {
       result.error = `Record read failed. Record "${message.name}" could not be found.`
-      result.errorEvent = message.event
+      result.errorEvent = message.action
     } else if (event === RPC_ACTIONS.NO_RPC_PROVIDER) {
       result.error = `No provider was available to handle the RPC "${message.name}".`
       // message.correlationId = data[1]
-    } else if (message.topic === TOPIC.RPC && event === RPC_ACTIONS.RESPONSE_TIMEOUT) {
+    } else if (message.topic === TOPIC.RPC && message.action === RPC_ACTIONS.RESPONSE_TIMEOUT) {
       result.error = 'The RPC response timeout was exceeded by the provider.'
 
     } else {

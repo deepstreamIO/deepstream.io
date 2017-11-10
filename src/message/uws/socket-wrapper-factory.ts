@@ -103,24 +103,6 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   }
 
   /**
-   * Sends an error on the specified topic. The
-   * action will automatically be set to C.ACTION.ERROR
-   */
-  public sendError (
-    message: Message,
-    action: EVENT,
-    errorMessage: string,
-    allowBuffering: boolean
-  ): void {
-    if (this.isClosed === false) {
-      this.sendNative(
-        binaryMessageBuilder.getErrorMessage(message, action, errorMessage),
-        allowBuffering
-      )
-    }
-  }
-
-  /**
    * Sends a message based on the provided action and topic
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
    *                                 this message type
