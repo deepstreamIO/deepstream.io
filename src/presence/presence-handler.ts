@@ -48,7 +48,11 @@ export default class PresenceHandler {
         topic: TOPIC.PRESENCE,
         action: PRESENCE_ACTIONS.SUBSCRIBE_ALL,
         name: EVERYONE
-      }, socketWrapper)
+      }, socketWrapper, true)
+      socketWrapper.sendAckMessage({
+        topic: message.topic,
+        action: message.action
+      })
       return
     }
 
@@ -57,23 +61,19 @@ export default class PresenceHandler {
         topic: TOPIC.PRESENCE,
         action: PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
         name: EVERYONE
-      }, socketWrapper)
-      return
-    }
-
-    const success = socketWrapper.parseData(message)
-    if (success !== true) {
-      // TODO: if this case is reached, we're doing something wrong in the parser
-      // - ideally action should be removed from the protocol
-      const rawData = JSON.stringify(message.data)
-      this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], rawData, this.metaData)
-      socketWrapper.sendMessage({
-        topic: TOPIC.PRESENCE,
-        action: PRESENCE_ACTIONS.INVALID_PRESENCE_USERS
+      }, socketWrapper, true)
+      socketWrapper.sendAckMessage({
+        topic: message.topic,
+        action: message.action
       })
       return
     }
-    const users = message.parsedData
+
+    const users = message.names
+    if (!users) {
+      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid presence names parameter ${PRESENCE_ACTIONS[message.action]}`)
+      return
+    }
     if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.subscribe({
@@ -82,7 +82,11 @@ export default class PresenceHandler {
           name: users[i],
         }, socketWrapper, true)
       }
-      socketWrapper.sendAckMessage(message)
+      socketWrapper.sendAckMessage({
+        topic: message.topic,
+        action: message.action,
+        correlationId: message.correlationId
+      })
     } else if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.unsubscribe({
@@ -91,7 +95,11 @@ export default class PresenceHandler {
           name: users[i],
         }, socketWrapper, true)
       }
-      socketWrapper.sendAckMessage(message)
+      socketWrapper.sendAckMessage({
+        topic: message.topic,
+        action: message.action,
+        correlationId: message.correlationId
+      })
     } else if (message.action === PRESENCE_ACTIONS.QUERY) {
       this.handleQuery(users, message.correlationId, socketWrapper)
     } else {
@@ -136,7 +144,7 @@ export default class PresenceHandler {
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-      parsedData: clients,
+      names: clients,
     })
   }
 

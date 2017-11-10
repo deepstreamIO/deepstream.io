@@ -196,7 +196,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.PRESENCE_JOIN,
+        action: C.PRESENCE_ACTIONS.PRESENCE_JOIN_ALL,
         name: 'Bart'
       }, false, null, false)
 
@@ -218,7 +218,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.PRESENCE_LEAVE,
+        action: C.PRESENCE_ACTIONS.PRESENCE_LEAVE_ALL,
         name: 'Bart'
       }, false, null, false)
 
