@@ -39,5 +39,7 @@ Then(/(.+) RPCs? "([^"]*)" (?:is|are) called once( with data ("[^"]*"|\d+|\{.*\}
   rpc.assert.providerCalled(clientExpression, rpcName, 1, data)
 })
 
-Then(/(.+) RPCs? "([^"]*)" is called (\d+) times$/, rpc.assert.providerCalled)
+Then(/(.+) RPCs? "([^"]*)" is called (\d+) times$/, (clientExpression, rpcName, numTimes) => {
+  rpc.assert.providerCalled(clientExpression, rpcName, numTimes)
+})
 

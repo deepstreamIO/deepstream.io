@@ -2,7 +2,7 @@
 
 /* eslint-disable class-methods-use-this */
 import { EventEmitter } from 'events'
-import * as messageParser from '../../../protocol/text/src/message-parser'
+import * as messageParser from '../../../protocol/binary/src/message-parser'
 
 export default class HTTPSocketWrapper extends EventEmitter implements SocketWrapper {
 
@@ -66,7 +66,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
 
   onMessage () {
   }
-  
+
   getMessage () {
   }
 
@@ -117,6 +117,9 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    * @returns {void}
    */
   sendMessage (message) {
+    if (messageParser.isError(message)) {
+      message.isError = true
+    }
     if (this.isClosed === false) {
       messageParser.parseData(message)
       this._onMessage(

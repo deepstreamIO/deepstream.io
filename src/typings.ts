@@ -19,7 +19,6 @@ interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
-  sendError (message: { topic: TOPIC } | Message, event: EVENT, errorMessage?: string, buffer?: boolean): void
 }
 
 interface SocketWrapper extends SimpleSocketWrapper {

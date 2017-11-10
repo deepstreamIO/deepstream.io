@@ -47,7 +47,7 @@ Then(/^(.+) is notified that (?:clients|client) "([^"]*)" (?:are|is) connected$/
 })
 
 Then(/^(.+) receives a "([^"]*)" error on their query$/, (clientExpression, error) => {
-  presence.assert.globalQueryResult(clientExpression, { reason: error })
+  presence.assert.globalQueryResult(clientExpression, error)
 })
 
 Then(/^(.+) (?:is|are) notified that (?:clients|client) "([^"]*)" (?:are|is) online$/, (clientExpression, clients) => {
