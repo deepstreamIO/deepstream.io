@@ -35,8 +35,8 @@ Then(/(.+) RPCs? "([^"]*)" (?:is|are) never called$/, (clientExpression, rpcName
   rpc.assert.providerCalled(clientExpression, rpcName, 0)
 })
 
-Then(/(.+) RPCs? "([^"]*)" (?:is|are) called once$/, (clientExpression, rpcName) => {
-  rpc.assert.providerCalled(clientExpression, rpcName, 1)
+Then(/(.+) RPCs? "([^"]*)" (?:is|are) called once( with data ("[^"]*"|\d+|\{.*\}))?$/, (clientExpression, rpcName, data) => {
+  rpc.assert.providerCalled(clientExpression, rpcName, 1, data)
 })
 
 Then(/(.+) RPCs? "([^"]*)" is called (\d+) times$/, rpc.assert.providerCalled)
