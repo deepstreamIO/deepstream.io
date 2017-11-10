@@ -106,12 +106,11 @@ module.exports.assert = {
 
   providerCalled (clientExpression, rpc, timesCalled, data) {
     clientHandler.getClients(clientExpression).forEach((client) => {
-      const spy = client.rpc.provides[rpc]
-      sinon.assert.callCount(spy, timesCalled)
+      sinon.assert.callCount(client.rpc.provides[rpc], timesCalled)
       if (data) {
-        sinon.assert.calledWith(spy, JSON.parse(data))
+        sinon.assert.calledWith(client.rpc.provides[rpc], JSON.parse(data))
       }
-      spy.reset()
+      client.rpc.provides[rpc].reset()
     })
   }
 }
