@@ -85,24 +85,6 @@ describe('connection endpoint', () => {
   })
 
   describe('the connection endpoint handles invalid connection messages', () => {
-    it('handles gibberish messages', () => {
-      client.socketWrapperMock
-        .expects('sendMessage')
-        .once()
-        .withExactArgs({
-          topic: C.TOPIC.PARSER,
-          action: C.PARSER_ACTIONS.MESSAGE_PARSE_ERROR,
-          data: 'gibbeerish'
-        })
-
-      client.socketWrapperMock
-        .expects('destroy')
-        .once()
-        .withExactArgs()
-
-      uwsMock.messageHandler([{ parseError: true, raw: 'gibbeerish' }], client.socketWrapper)
-    })
-
     it('handles invalid connection topic', () => {
       client.socketWrapperMock
         .expects('sendMessage')
@@ -116,8 +98,12 @@ describe('connection endpoint', () => {
       client.socketWrapperMock
         .expects('destroy')
         .never()
-
-      uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, raw: 'gibbeerish' }], client.socketWrapper)
+      const message: C.Message = {
+        topic: C.TOPIC.AUTH,
+        action: C.AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
+        raw: 'gibbeerish'
+      }
+      uwsMock.messageHandler([message], client.socketWrapper)
     })
   })
 
@@ -128,15 +114,27 @@ describe('connection endpoint', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.PARSER,
-        action: C.PARSER_ACTIONS.MESSAGE_PARSE_ERROR,
-        data: 'gibbeerish'
+        action: C.PARSER_ACTIONS.UNKNOWN_ACTION,
+        data: Buffer.from('gibbeerish'),
+        originalTopic: 5,
+        originalAction: 177
       })
 
     client.socketWrapperMock
       .expects('destroy')
       .withExactArgs()
 
-    uwsMock.messageHandler([{ parseError: true, raw: 'gibbeerish' }], client.socketWrapper)
+    const message: C.ParseError = {
+      parseError: true,
+      action: C.PARSER_ACTIONS.UNKNOWN_ACTION,
+      parsedMessage: {
+        topic: 5,
+        action: 177
+      },
+      description: 'unknown RECORD action 177',
+      raw: Buffer.from('gibbeerish')
+    }
+    uwsMock.messageHandler([message], client.socketWrapper)
   })
 
   it('the connection endpoint handles invalid auth messages', () => {

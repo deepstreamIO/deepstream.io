@@ -112,12 +112,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
     errorMessage: string,
     allowBuffering: boolean
   ): void {
-    if (this.isClosed === false) {
-      this.sendNative(
-        binaryMessageBuilder.getErrorMessage(message, action, errorMessage),
-        allowBuffering
-      )
-    }
+    throw new Error('deprecated')
   }
 
   /**

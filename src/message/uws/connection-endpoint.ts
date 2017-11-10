@@ -172,12 +172,15 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     const messages: Array<Message> = []
     for (const parseResult of parseResults) {
       if (parseResult.parseError) {
-        const raw = this._getRaw(parseResult)
-        this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${raw}`)
+        const rawMsg = this._getRaw(parseResult)
+        this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${rawMsg}`)
+
         socketWrapper.sendMessage({
           topic: TOPIC.PARSER,
-          action: PARSER_ACTIONS.MESSAGE_PARSE_ERROR,
-          data: parseResult.raw
+          action: parseResult.action,
+          data: parseResult.raw,
+          originalTopic: parseResult.parsedMessage.topic,
+          originalAction: parseResult.parsedMessage.action
         })
         socketWrapper.destroy()
       } else {
