@@ -222,7 +222,7 @@ function getMsgToJif () {
   MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      users: message.parsedData,
+      users: message.names,
       success: true,
     },
   })
