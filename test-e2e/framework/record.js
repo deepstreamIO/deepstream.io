@@ -20,14 +20,17 @@ module.exports = {
       const recordData = {
         record: client.client.record.getRecord(recordName),
         discardCallback: sinon.spy(),
+        deleteSuccessCallback: sinon.spy(),
         deleteCallback: sinon.spy(),
         callbackError: sinon.spy(),
         subscribeCallback: sinon.spy(),
+        errorCallback: sinon.spy(),
         setCallback: undefined,
         subscribePathCallbacks: {}
       }
-      recordData.record.on('discard', recordData.discardCallback)
       recordData.record.on('delete', recordData.deleteCallback)
+      recordData.record.on('error', recordData.errorCallback)
+      recordData.record.on('discard', recordData.discardCallback)
       client.record.records[recordName] = recordData
     })
   },
@@ -65,7 +68,7 @@ module.exports = {
 
   delete (clientExpression, recordName) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      recordData.record.delete()
+      recordData.record.delete(recordData.deleteSuccessCallback)
     })
   },
 
@@ -245,6 +248,13 @@ module.exports.assert = {
   recievedNoUpdateForPath (clientExpression, recordName, path) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.notCalled(recordData.subscribePathCallbacks[path])
+    })
+  },
+
+  receivedRecordError (clientExpression, error, recordName) {
+    getRecordData(clientExpression, recordName).forEach((recordData) => {
+      sinon.assert.calledWith(recordData.errorCallback, error)
+      recordData.errorCallback.reset()
     })
   },
 

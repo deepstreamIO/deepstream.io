@@ -29,6 +29,8 @@ Then(/^(.+) (gets?|is not) notified of record "([^"]*)" getting (discarded|delet
   }
 })
 
+Then(/^(.+) receives? an? "([^"]*)" error on record "([^"]*)"$/, record.assert.receivedRecordError)
+
 Then(/^(.+) receives? an update for record "([^"]*)" with data '([^']+)'$/, record.assert.recievedUpdate)
 
 Then(/^(.+) receives? an update for record "([^"]*)" and path "([^"]*)" with data '([^']+)'$/, record.assert.recievedUpdateForPath)
