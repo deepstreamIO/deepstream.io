@@ -207,10 +207,14 @@ module.exports.assert = {
     })
   },
 
-  discarded (clientExpression, recordName) {
+  discarded (clientExpression, recordName, called) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      sinon.assert.calledOnce(recordData.discardCallback)
-      recordData.discardCallback.reset()
+      if (called) {
+        sinon.assert.calledOnce(recordData.discardCallback)
+        recordData.discardCallback.reset()
+      } else {
+        sinon.assert.notCalled(recordData.discardCallback)
+      }
     })
   },
 

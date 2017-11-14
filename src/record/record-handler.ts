@@ -96,12 +96,12 @@ export default class RecordHandler {
      * Deletes the record
      */
       this.delete(socketWrapper, message)
-    } else if (action === RA.DELETE_ACK) {
+    } else if (action === RA.DELETED) {
     /*
      * Handle delete acknowledgement from message bus
      * TODO: Different action
      */
-      this.deleteAck(socketWrapper, message)
+      this.remoteDelete(socketWrapper, message)
     } else if (action === RA.UNSUBSCRIBE) {
   /*
    * Unsubscribes (discards) a record that was previously subscribed to
@@ -413,7 +413,7 @@ export default class RecordHandler {
  */
   private read (message: RecordMessage, record: StorageRecord, socketWrapper: SocketWrapper): void {
     this.permissionAction(RA.READ, message.name, socketWrapper, () => {
-      this.subscriptionRegistry.subscribe(message, socketWrapper)
+      this.subscriptionRegistry.subscribe(Object.assign({}, message, { action: RA.SUBSCRIBE }), socketWrapper)
       sendRecord(message.name, record, socketWrapper)
     })
   }
@@ -522,13 +522,13 @@ export default class RecordHandler {
   }
 
 /**
- * Handle a record deletion ACK from the message bus. We assume that the original deepstream node
+ * Handle a remote record deletion from the message bus. We assume that the original deepstream node
  * has already deleted the record from cache and storage and we only need to broadcast the message
  * to subscribers.
  *
  * If a transition is in progress it will be stopped.
  */
-  private deleteAck (socketWrapper: SocketWrapper, message: RecordMessage) {
+  private remoteDelete (socketWrapper: SocketWrapper, message: RecordMessage) {
     const recordName = message.name
 
     if (this.transitions[recordName]) {
