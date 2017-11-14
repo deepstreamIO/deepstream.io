@@ -154,11 +154,12 @@ export default class RecordTransition {
 
     if (message.action === RECORD_ACTIONS.UPDATE) {
       if (!isOfType(message.parsedData, 'object') && !isOfType(message.parsedData, 'array')) {
-        socketWrapper.sendMessage({
-          topic: TOPIC.RECORD,
-          action: RECORD_ACTIONS.INVALID_MESSAGE_DATA,
-          data: message.data
-        })
+        socketWrapper.sendMessage(
+          Object.assign({}, message, {
+            action: RECORD_ACTIONS.INVALID_MESSAGE_DATA,
+            originalAction: message.action
+          })
+        )
         return
       }
     }

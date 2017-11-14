@@ -59,12 +59,6 @@ module.exports.unsubscribeMessage = {
   name: 'some-record'
 }
 
-module.exports.recordHasMessage = {
-  topic: C.TOPIC.RECORD,
-  action: C.RECORD_ACTIONS.HAS,
-  name: 'some-record'
-}
-
 module.exports.recordSnapshotMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.READ,
