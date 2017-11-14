@@ -86,9 +86,9 @@ export default class RecordHandler {
      * Return the current version of the record or -1 if not found, subscribing either way
      */
       this.subscribeAndHead(socketWrapper, message)
-    } else if (action === RA.UPDATE || action === RA.PATCH) {
+    } else if (action === RA.UPDATE || action === RA.PATCH || action === RA.ERASE) {
     /*
-     * Handle complete (UPDATE) or partial (PATCH) updates
+     * Handle complete (UPDATE) or partial (PATCH/ERASE) updates
      */
       this.update(socketWrapper, message as RecordWriteMessage, false)
     } else if (action === RA.DELETE) {
@@ -250,7 +250,7 @@ export default class RecordHandler {
   private createAndUpdate (socketWrapper: SocketWrapper, message: RecordWriteMessage): void {
     const recordName = message.name
     const isPatch = message.path !== undefined
-    message = Object.assign({}, message, { action: isPatch ? RA.PATCH : RA.UPDATE })
+    Object.assign(message, { action: isPatch ? RA.PATCH : RA.UPDATE })
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage
