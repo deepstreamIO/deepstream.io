@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC, RecordWriteMessage } from '../constants'
+import { RECORD_ACTIONS, TOPIC, RecordWriteMessage, EVENT } from '../constants'
 import { isOfType } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
@@ -59,6 +59,7 @@ export default class RecordTransition {
  private lastVersion: number | null
  private lastError: string | null
  private writeError: Error
+ private writeAckResponses: Map<string, { socketWrapper: SocketWrapper, responses: number }>
 
   constructor (name: string, config: DeepstreamConfig, services: DeepstreamServices, recordHandler: RecordHandler, metaData) {
     this.metaData = metaData
@@ -78,8 +79,8 @@ export default class RecordTransition {
     this.isDestroyed = false
     this.pendingUpdates = {}
     this.ending = false
-    this.storageResponses = 0
-    this.cacheResponses = 0
+
+    this.writeAckResponses = new Map()
 
     this.onCacheResponse = this.onCacheResponse.bind(this)
     this.onStorageResponse = this.onStorageResponse.bind(this)
@@ -346,15 +347,37 @@ export default class RecordTransition {
     this.existingVersions = []
   }
 
+  private handleWriteAcknowledgement (error: Error | null, originalMessage: Message) {
+    const correlationId = originalMessage.correlationId as string
+    const response = this.writeAckResponses.get(correlationId)
+    if (!response) {
+      console.log('unkown correlation id for write ack')
+      return
+    }
+    response.responses--
+    if (response.responses === 0) {
+      response.socketWrapper.sendMessage({
+        topic: TOPIC.RECORD,
+        action: RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        originalAction: originalMessage.action,
+        name: originalMessage.name,
+        correlationId
+      })
+      this.writeAckResponses.delete(correlationId)
+    }
+  }
+
 /**
  * Callback for responses returned by cache.set(). If an error
  * is returned the queue will be destroyed, otherwise
  * the update will be broadcast to other subscribers and the
  * next step invoked
  */
-  private onCacheResponse (error: Error | null): void {
-    this.cacheResponses--
-    this.writeError = this.writeError || error
+  private onCacheResponse (error: Error | null, message?: Message): void {
+    if (message) {
+      this.handleWriteAcknowledgement(error, message)
+    }
+
     if (error) {
       this.onFatalError(error)
     } else if (this.isDestroyed === false) {
@@ -364,6 +387,7 @@ export default class RecordTransition {
         false,
         this.currentStep.sender,
       )
+
       this.next()
     } else if (
       this.cacheResponses === 0 &&
@@ -377,8 +401,7 @@ export default class RecordTransition {
 /**
  * Callback for responses returned by storage.set()
  */
-  private onStorageResponse (error: Error | null): void {
-    this.storageResponses--
+  private onStorageResponse (error: Error | null, message?: Message): void {
     this.writeError = this.writeError || error
     if (error) {
       this.onFatalError(error)

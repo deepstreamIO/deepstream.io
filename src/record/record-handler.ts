@@ -96,7 +96,7 @@ export default class RecordHandler {
      * Deletes the record
      */
       this.delete(socketWrapper, message)
-    } else if (action === RA.DELETED) {
+    } else if (action === RA.DELETE_SUCCESS) {
     /*
      * Handle delete acknowledgement from message bus
      * TODO: Different action
