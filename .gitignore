@@ -42,4 +42,7 @@ npm-debug.*
 # IDE configuration
 .idea
 
+# dist files
+dist
+
 licenses.json
