@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 require('colors')
 
-import * as pgk from '../../package.json'
+import * as pgk from '../package.json'
 
 import { Command } from 'commander'
 import { install } from './deepstream-install'

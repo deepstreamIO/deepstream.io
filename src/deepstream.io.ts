@@ -415,7 +415,7 @@ export default class Deepstream extends EventEmitter {
     const nexeres = require('nexeres')
     logo = nexeres.get('ascii-logo.txt').toString('ascii')
     } catch (e) {
-      logo = readFileSync(joinPath(__dirname, '..', '..', '/ascii-logo.txt'), 'utf8')
+      logo = readFileSync(joinPath(__dirname, '..', '/ascii-logo.txt'), 'utf8')
     }
 
   /* istanbul ignore next */
