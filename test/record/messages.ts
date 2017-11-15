@@ -6,9 +6,21 @@ module.exports.deletionMsg = {
   name: 'someRecord'
 }
 
+module.exports.deletionSuccessMsg = {
+  topic: C.TOPIC.RECORD,
+  action: C.RECORD_ACTIONS.DELETE_SUCCESS,
+  name: 'someRecord'
+}
+
 module.exports.anotherDeletionMsg = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.DELETE,
+  name: 'no-storage/1'
+}
+
+module.exports.anotherDeletionSuccessMsg = {
+  topic: C.TOPIC.RECORD,
+  action: C.RECORD_ACTIONS.DELETE_SUCCESS,
   name: 'no-storage/1'
 }
 

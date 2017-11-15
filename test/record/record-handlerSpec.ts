@@ -150,16 +150,16 @@ describe('record handler handles messages', () => {
     })
   })
 
-  it('returns an error for a head request of data that doesn\'t exists', () => {
+  it('returns an version of -1 for head request of data that doesn\'t exist', () => {
     ['record/1', 'record/2', 'record/3'].forEach(name => {
       client.socketWrapperMock
         .expects('sendMessage')
         .once()
         .withExactArgs(Object.assign({}, {
           topic: C.TOPIC.RECORD,
-          action: C.RECORD_ACTIONS.RECORD_NOT_FOUND,
-          originalAction: M.recordHeadMessage.action,
+          action: C.RECORD_ACTIONS.HEAD_RESPONSE,
           name: M.recordHeadMessage.name,
+          version: -1
         }, { name }))
 
       recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordHeadMessage, { name }))
