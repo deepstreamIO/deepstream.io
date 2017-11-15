@@ -474,7 +474,7 @@ describe('JIF Handler', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.PRESENCE,
           action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-          parsedData: ['john', 'alex', 'yasser']
+          names: ['john', 'alex', 'yasser']
         })
         const jif = result.message
         expect(result.done).to.equal(true)

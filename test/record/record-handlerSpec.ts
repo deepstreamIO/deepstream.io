@@ -89,52 +89,6 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
   })
 
-  it('returns true for HAS if message exists', () => {
-    services.cache.set('some-record', {}, () => {})
-
-    client.socketWrapperMock
-      .expects('sendMessage')
-      .once()
-      .withExactArgs({
-        topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.HAS_RESPONSE,
-        name: 'some-record',
-        parsedData: true
-      })
-
-    recordHandler.handle(client.socketWrapper, M.recordHasMessage)
-  })
-
-  it('returns false for HAS if message doesn\'t exists', () => {
-    client.socketWrapperMock
-      .expects('sendMessage')
-      .once()
-      .withExactArgs({
-        topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.HAS_RESPONSE,
-        name: 'some-record',
-        parsedData: false
-      })
-
-    recordHandler.handle(client.socketWrapper, M.recordHasMessage)
-  })
-
-  it('returns an error for HAS if message error occurs with record retrieval', () => {
-    services.cache.nextOperationWillBeSuccessful = false
-
-    client.socketWrapperMock
-      .expects('sendMessage')
-      .once()
-      .withExactArgs({
-        topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
-        originalAction: M.recordHasMessage.action,
-        name: M.recordHasMessage.name,
-      })
-
-    recordHandler.handle(client.socketWrapper, M.recordHasMessage)
-  })
-
   it('returns a snapshot of the data that exists with version number and data', () => {
     services.cache.set('some-record', M.recordData, () => {})
 
@@ -196,16 +150,16 @@ describe('record handler handles messages', () => {
     })
   })
 
-  it('returns an error for a head request of data that doesn\'t exists', () => {
+  it('returns an version of -1 for head request of data that doesn\'t exist', () => {
     ['record/1', 'record/2', 'record/3'].forEach(name => {
       client.socketWrapperMock
         .expects('sendMessage')
         .once()
         .withExactArgs(Object.assign({}, {
           topic: C.TOPIC.RECORD,
-          action: C.RECORD_ACTIONS.RECORD_NOT_FOUND,
-          originalAction: M.recordHeadMessage.action,
+          action: C.RECORD_ACTIONS.HEAD_RESPONSE,
           name: M.recordHeadMessage.name,
+          version: -1
         }, { name }))
 
       recordHandler.handle(client.socketWrapper, Object.assign({}, M.recordHeadMessage, { name }))

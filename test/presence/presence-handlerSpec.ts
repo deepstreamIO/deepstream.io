@@ -44,7 +44,7 @@ describe('presence handler', () => {
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.SUBSCRIBE_ALL,
         name: EVERYONE
-      }, userOne.socketWrapper)
+      }, userOne.socketWrapper, true)
 
     presenceHandler.handle(userOne.socketWrapper, subscriptionMessage)
   })
@@ -62,7 +62,7 @@ describe('presence handler', () => {
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
         name: EVERYONE
-      }, userOne.socketWrapper)
+      }, userOne.socketWrapper, true)
 
     presenceHandler.handle(userOne.socketWrapper, unsubscriptionMessage)
   })
@@ -86,7 +86,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-        parsedData: []
+        names: []
       })
 
     presenceHandler.handle(userOne.socketWrapper, queryMessage)
@@ -159,7 +159,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-        parsedData: ['Bart']
+        names: ['Bart']
       })
 
     presenceHandler.handle(userOne.socketWrapper, queryMessage)
@@ -184,7 +184,7 @@ describe('presence handler', () => {
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-        parsedData: ['Bart', 'Homer', 'Maggie']
+        names: ['Bart', 'Homer', 'Maggie']
       })
 
     presenceHandler.handle(userOne.socketWrapper, queryMessage)

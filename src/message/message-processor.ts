@@ -1,6 +1,5 @@
 import {
   ACTIONS,
-  AUTH_ACTIONS,
   CONNECTION_ACTIONS,
   EVENT,
   PARSER_ACTIONS,
@@ -73,10 +72,10 @@ export default class MessageProcessor {
    */
   private onPermissionResponse (socketWrapper: SocketWrapper, message: Message, error: Error | null, result: boolean): void {
     if (error !== null) {
-      this.services.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
+      this.services.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
       const permissionErrorMessage: Message = {
         topic: message.topic,
-        action: AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR,
+        action: EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR,
         originalAction: message.action,
         name: message.name
       }
@@ -90,7 +89,7 @@ export default class MessageProcessor {
     if (result !== true) {
       const permissionDeniedMessage: Message = {
         topic: message.topic,
-        action: AUTH_ACTIONS.MESSAGE_DENIED,
+        action: EVENT_ACTIONS.MESSAGE_DENIED,
         originalAction: message.action,
         name: message.name
       }

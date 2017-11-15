@@ -1,5 +1,4 @@
 import {
-  AUTH_ACTIONS,
   EVENT,
   EVENT_ACTIONS,
   PRESENCE_ACTIONS,
@@ -125,8 +124,8 @@ export default class RuleApplication {
     const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL
              }for ${this.params.path}: ${error.toString()}`
 
-    this.params.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg)
-    this.params.callback(AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
+    this.params.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg)
+    this.params.callback(EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
     this.destroy()
   }
 

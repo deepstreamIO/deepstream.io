@@ -30,9 +30,9 @@ describe('record deletion', () => {
 
   it('deletes records - happy path', () => {
     client.socketWrapperMock
-      .expects('sendAckMessage')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(M.deletionMsg)
+      .withExactArgs(M.deletionSuccessMsg)
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.deletionMsg, callback
@@ -102,9 +102,9 @@ describe('record deletion', () => {
     config.storageExclusion = new RegExp('no-storage/')
 
     client.socketWrapperMock
-      .expects('sendAckMessage')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(M.anotherDeletionMsg)
+      .withExactArgs(M.anotherDeletionSuccessMsg)
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.anotherDeletionMsg, callback

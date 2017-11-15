@@ -1,6 +1,5 @@
 import {
   ACTIONS,
-  AUTH_ACTIONS,
   EVENT,
   EVENT_ACTIONS,
   PRESENCE_ACTIONS,
@@ -11,7 +10,11 @@ import {
 
 import * as Ajv from 'ajv'
 
-import * as utils from '../utils/utils'
+import {
+  getUid,
+  reverseMap,
+  deepFreeze,
+} from '../utils/utils'
 import jifSchema from './jif-schema'
 
 const ajv = new Ajv()
@@ -40,7 +43,7 @@ function getJifToMsg () {
       topic: TOPIC.RPC,
       action: RPC_ACTIONS.REQUEST,
       name: msg.rpcName,
-      correlationId: utils.getUid(),
+      correlationId: getUid(),
       parsedData: msg.data,
     },
   })
@@ -156,7 +159,7 @@ function getJifToMsg () {
     },
   })
 
-  return utils.deepFreeze(JIF_TO_MSG)
+  return deepFreeze(JIF_TO_MSG)
 }
 
 // message type enumeration
@@ -235,7 +238,7 @@ function getMsgToJif () {
     },
   })
 
-  return utils.deepFreeze(MSG_TO_JIF)
+  return deepFreeze(MSG_TO_JIF)
 }
 
 export default class JIFHandler {
@@ -248,7 +251,7 @@ export default class JIFHandler {
     this.JIF_TO_MSG = getJifToMsg()
     this.MSG_TO_JIF = getMsgToJif()
 
-    this.topicToKey = utils.reverseMap(TOPIC)
+    this.topicToKey = reverseMap(TOPIC)
 
     this.logger = options.logger
   }
@@ -342,7 +345,7 @@ export default class JIFHandler {
       success: false,
     }
 
-    if (event === AUTH_ACTIONS.MESSAGE_DENIED) {
+    if (event === EVENT_ACTIONS.MESSAGE_DENIED) {
       result.action = message.originalAction
       result.error = `Message denied. Action "${ACTIONS[message.topic][message.originalAction as number]}" is not permitted.`
     } else if (event === RECORD_ACTIONS.VERSION_EXISTS) {
