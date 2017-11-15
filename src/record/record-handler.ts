@@ -218,7 +218,8 @@ export default class RecordHandler {
       } else {
         this.permissionAction(
           RA.CREATE,
-          recordName,
+          message,
+          message.action,
           socket,
           this.create.bind(this, message, socket),
         )
@@ -250,6 +251,7 @@ export default class RecordHandler {
   private createAndUpdate (socketWrapper: SocketWrapper, message: RecordWriteMessage): void {
     const recordName = message.name
     const isPatch = message.path !== undefined
+    const originalAction = message.action
     Object.assign(message, { action: isPatch ? RA.PATCH : RA.UPDATE })
 
     // allow writes on the hot path to bypass the record transition
@@ -257,8 +259,8 @@ export default class RecordHandler {
     for (let i = 0; i < this.config.storageHotPathPatterns.length; i++) {
       const pattern = this.config.storageHotPathPatterns[i]
       if (recordName.indexOf(pattern) !== -1 && !isPatch) {
-        this.permissionAction(RA.CREATE, recordName, socketWrapper, () => {
-          this.permissionAction(RA.UPDATE, recordName, socketWrapper, () => {
+        this.permissionAction(RA.CREATE, message, originalAction, socketWrapper, () => {
+          this.permissionAction(RA.UPDATE, message, originalAction, socketWrapper, () => {
             this.forceWrite(recordName, message, socketWrapper)
           })
         })
@@ -276,14 +278,14 @@ export default class RecordHandler {
 
     const transition = this.transitions[recordName]
     if (transition) {
-      this.permissionAction(message.action, recordName, socketWrapper, () => {
+      this.permissionAction(message.action, message, originalAction, socketWrapper, () => {
         transition.add(socketWrapper, message)
       })
       return
     }
 
-    this.permissionAction(RA.CREATE, recordName, socketWrapper, () => {
-      this.permissionAction(RA.UPDATE, recordName, socketWrapper, () => {
+    this.permissionAction(RA.CREATE, message, originalAction, socketWrapper, () => {
+      this.permissionAction(RA.UPDATE, message, originalAction, socketWrapper, () => {
         this.update(socketWrapper, message, true)
       })
     })
@@ -382,7 +384,7 @@ export default class RecordHandler {
  * Subscribes to updates for a record and sends its current data once done
  */
   private readAndSubscribe (message: RecordMessage, record: StorageRecord, socketWrapper: SocketWrapper): void {
-    this.permissionAction(RA.READ, message.name, socketWrapper, () => {
+    this.permissionAction(RA.READ, message, message.action, socketWrapper, () => {
       this.subscriptionRegistry.subscribe(Object.assign({}, message, { action: RA.SUBSCRIBE }), socketWrapper)
       sendRecord(message.name, record, socketWrapper)
     })
@@ -524,17 +526,12 @@ export default class RecordHandler {
  * A secondary permissioning step that is performed once we know if the record exists (READ)
  * or if it should be created (CREATE)
  */
-  private permissionAction (action: RA, recordName: string, socketWrapper: SocketWrapper, successCallback: Function) {
-    const message = {
-      topic: TOPIC.RECORD,
-      action,
-      name: recordName,
-    }
-
+  private permissionAction (actionToPermission: RA, message: Message, originalAction: RA, socketWrapper: SocketWrapper, successCallback: Function) {
+    const copyWithAction = Object.assign({}, message, { action: actionToPermission })
     this.services.permissionHandler.canPerformAction(
       socketWrapper.user,
-      message,
-      onPermissionResponse.bind(this, socketWrapper, message, successCallback),
+      copyWithAction,
+      onPermissionResponse.bind(this, socketWrapper, message, originalAction, successCallback),
       socketWrapper.authData,
       socketWrapper,
     )
@@ -546,22 +543,24 @@ export default class RecordHandler {
  * Callback for complete permissions. Notifies socket if permission has failed
  */
 function onPermissionResponse (
-  socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, error: Error, canPerformAction: boolean,
+  socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RA, successCallback: Function, error: Error, canPerformAction: boolean,
 ): void {
   if (error !== null) {
     this.services.logger.error(RA[RA.MESSAGE_PERMISSION_ERROR], error.toString())
     socketWrapper.sendMessage({
       topic: TOPIC.RECORD,
       action: RA.MESSAGE_PERMISSION_ERROR,
-      originalAction: message.action,
-      name: message.name
+      originalAction,
+      name: message.name,
+      correlationId: message.correlationId
     })
   } else if (canPerformAction !== true) {
     socketWrapper.sendMessage({
       topic: TOPIC.RECORD,
       action: RA.MESSAGE_DENIED,
-      originalAction: message.action,
-      name: message.name
+      originalAction,
+      name: message.name,
+      correlationId: message.correlationId
     })
   } else {
     successCallback()

@@ -110,6 +110,7 @@ module.exports = {
         client.record.writeAcks = {}
       }
       client.record.writeAcks[recordName] = sinon.spy()
+      console.log('setting sinon spy for', recordName)
       client.client.record.setData(recordName, utils.parseData(data), client.record.writeAcks[recordName])
     })
   },
@@ -289,9 +290,16 @@ module.exports.assert = {
 
   writeAckError (clientExpression, recordName, errorMessage) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
+      if (!recordData) return
       sinon.assert.calledOnce(recordData.setCallback)
       sinon.assert.calledWith(recordData.setCallback, errorMessage)
       recordData.setCallback.reset()
+    })
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      if (!client.record.writeAcks) return
+      sinon.assert.calledOnce(client.record.writeAcks[recordName])
+      sinon.assert.calledWith(client.record.writeAcks[recordName], errorMessage)
+      client.record.writeAcks[recordName].reset()
     })
   },
 
