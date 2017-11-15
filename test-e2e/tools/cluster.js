@@ -84,6 +84,7 @@ module.exports = class DeepstreamTest extends EventEmitter {
           name: 'uws',
           options: {
             port: this._wsPort,
+            heartbeatInterval: 10
           }
         },
         http: {

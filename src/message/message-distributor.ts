@@ -24,7 +24,8 @@ export default class MessageDistributor {
       this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_TOPIC], TOPIC[message.topic])
       socketWrapper.sendMessage({
         topic: TOPIC.PARSER,
-        action: PARSER_ACTIONS.UNKNOWN_TOPIC
+        action: PARSER_ACTIONS.UNKNOWN_TOPIC,
+        originalTopic: message.topic
       })
       return
     }

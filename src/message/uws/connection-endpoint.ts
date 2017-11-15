@@ -42,6 +42,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private scheduledSocketWrapperWrites: Set<SocketWrapper>
   private upgradeRequest: any
   private pingMessage: Buffer
+  private pingInterval: number
 
   constructor (private options: any, private services: DeepstreamServices) {
     super()
@@ -90,6 +91,11 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     const port = this._getOption('port')
     const host = this._getOption('host')
     this.server.listen(port, host)
+
+    this.pingMessage = messageBuilder.getMessage({
+      topic: TOPIC.CONNECTION,
+      action: CONNECTION_ACTIONS.PING
+    }, false)
   }
 
   /**
@@ -158,12 +164,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     uws.native.server.group.onPong(this.serverGroup, () => {})
     uws.native.server.group.onConnection(this.serverGroup, this._onConnection.bind(this))
 
-    this.pingMessage = messageBuilder.getMessage({
-      topic: TOPIC.CONNECTION,
-      action: CONNECTION_ACTIONS.PING
-    }, false)
-
-    setInterval(() => {
+    this.pingInterval = setInterval(() => {
       uws.native.server.group.broadcast(this.serverGroup, this.pingMessage, true)
     }, this._getOption('heartbeatInterval'))
   }
@@ -183,9 +184,15 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
           originalAction: parseResult.parsedMessage.action
         })
         socketWrapper.destroy()
-      } else {
-        messages.push(parseResult)
+        continue
       }
+      if (
+        parseResult.topic === TOPIC.CONNECTION &&
+        parseResult.action === CONNECTION_ACTIONS.PONG
+      ) {
+        continue
+      }
+      messages.push(parseResult)
     }
     return messages
   }
@@ -350,6 +357,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
         action: CONNECTION_ACTIONS.INVALID_MESSAGE,
+        originalTopic: msg.topic,
+        originalAction: msg.action,
         data: msg.raw
       })
       return
@@ -382,7 +391,10 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       this.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE], `invalid auth message ${raw}`)
       socketWrapper.sendMessage({
         topic: TOPIC.AUTH,
-        action: AUTH_ACTIONS.INVALID_MESSAGE
+        action: AUTH_ACTIONS.INVALID_MESSAGE,
+        originalTopic: msg.topic,
+        originalAction: msg.action,
+        data: msg.raw
       })
       return
     }
@@ -611,6 +623,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * will emit a close event once succesfully shut down
    */
   public close () {
+    clearInterval(this.pingInterval)
     this.server.removeAllListeners('request')
     this.server.removeAllListeners('upgrade')
     if (this.serverGroup) {
