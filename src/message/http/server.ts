@@ -283,9 +283,9 @@ export default class Server extends EventEmitter {
       return
     }
 
-    const requestHeaders = typeof request.headers['access-control-request-headers'] === 'string'
+    const requestHeaders = (typeof request.headers['access-control-request-headers'] === 'string'
       ? (request.headers['access-control-request-headers'] as string).split(',')
-      : request.headers['access-control-request-headers']
+      : request.headers['access-control-request-headers']) || []
     for (let i = 0; i < requestHeaders.length; i++) {
       if (this._headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
         Server._terminateResponse(
