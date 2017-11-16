@@ -110,7 +110,6 @@ module.exports = {
         client.record.writeAcks = {}
       }
       client.record.writeAcks[recordName] = sinon.spy()
-      console.log('setting sinon spy for', recordName)
       client.client.record.setData(recordName, utils.parseData(data), client.record.writeAcks[recordName])
     })
   },
