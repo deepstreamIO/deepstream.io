@@ -1,5 +1,3 @@
-'use strict'
-
 import * as http from 'http'
 import * as https from 'https'
 import * as url from 'url'
@@ -20,23 +18,23 @@ export default class Server extends EventEmitter {
 
   public isReady: boolean = false
 
-  private _origins: string
+  private origins: string
   private authPathRegExp: RegExp
   private postPathRegExp: RegExp
   private getPathRegExp: RegExp
-  private _methods: Array<string> = ['GET', 'POST', 'OPTIONS']
-  private _methodsStr: string = this._methods.join(', ')
-  private _headers: Array<string> = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept']
-  private _headersLower: Array<string> = this._headers.map(header => header.toLowerCase())
-  private _headersStr: string = this._headers.join(', ')
-  private _jsonBodyParser = bodyParser.json({
+  private methods: Array<string> = ['GET', 'POST', 'OPTIONS']
+  private methodsStr: string = this.methods.join(', ')
+  private headers: Array<string> = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept']
+  private headersLower: Array<string> = this.headers.map(header => header.toLowerCase())
+  private headersStr: string = this.headers.join(', ')
+  private jsonBodyParser = bodyParser.json({
     inflate: true,
     limit: '1mb' // TODO: make this configurable
   })
-  private _httpServer: any
-  private _sslKey: string
-  private _sslCert: string
-  private _sslCa: string
+  private httpServer: any
+  private sslKey: string
+  private sslCert: string
+  private sslCa: string
 
   constructor (private config: any, private logger: Logger) {
     super()
@@ -53,7 +51,7 @@ export default class Server extends EventEmitter {
 
     if (config.allowAllOrigins === false) {
       checkConfigOption(config, 'origins', 'string')
-      this._origins = config.origins
+      this.origins = config.origins
     }
     this.authPathRegExp = new RegExp(`^${config.authPath}/?(.*)$`, 'i')
     this.postPathRegExp = new RegExp(`^${config.postPath}/?(.*)$`, 'i')
@@ -62,15 +60,15 @@ export default class Server extends EventEmitter {
 
   public start (): void {
     const server = this._createHttpServer()
-    this._httpServer = httpShutdown(server)
-    this._httpServer.on('request', this._onRequest.bind(this))
-    this._httpServer.once('listening', this._onReady.bind(this))
-    this._httpServer.on('error', this._onError.bind(this))
-    this._httpServer.listen(this.config.port, this.config.host)
+    this.httpServer = httpShutdown(server)
+    this.httpServer.on('request', this._onRequest.bind(this))
+    this.httpServer.once('listening', this._onReady.bind(this))
+    this.httpServer.on('error', this._onError.bind(this))
+    this.httpServer.listen(this.config.port, this.config.host)
   }
 
   public stop (callback): void {
-    this._httpServer.shutdown(callback)
+    this.httpServer.shutdown(callback)
   }
 
   /**
@@ -80,7 +78,7 @@ export default class Server extends EventEmitter {
    * @returns {void}
    */
   private _onReady (): void {
-    const serverAddress = this._httpServer.address()
+    const serverAddress = this.httpServer.address()
     const address = serverAddress.address
     const port = serverAddress.port
     this.logger.info(
@@ -93,10 +91,15 @@ export default class Server extends EventEmitter {
     this.isReady = true
   }
 
-  static _terminateResponse (response, code: HTTPStatus, message: string) {
+  private static _terminateResponse (response, code: number, message?: string) {
     response.setHeader('Content-Type', 'text/plain; charset=utf-8')
     response.writeHead(code)
-    response.end(`${message}\r\n\r\n`)
+    if (message) {
+      response.end(`${message}\r\n\r\n`)
+    } else {
+      response.end()
+    }
+    console.log('terminate response', code, message)
   }
 
   /**
@@ -127,9 +130,9 @@ export default class Server extends EventEmitter {
   * }
   */
   private _getHttpsParams (): { key: string, cert: string, ca: string | undefined } | null {
-    const key = this._sslKey
-    const cert = this._sslCert
-    const ca = this._sslCa
+    const key = this.sslKey
+    const cert = this.sslCert
+    const ca = this.sslCa
     if (key || cert) {
       if (!key) {
         throw new Error('Must also include sslKey in order to use HTTPS')
@@ -147,32 +150,33 @@ export default class Server extends EventEmitter {
     request: http.IncomingMessage,
     response: http.ServerResponse
    ): void {
-    if (!this.config.allowAllOrigins) {
-      if (!this._verifyOrigin(request, response)) {
-        return
-      }
-    } else {
-      response.setHeader('Access-Control-Allow-Origin', '*')
-    }
+     console.log('onrequest', request.method, request.url)
+     if (!this.config.allowAllOrigins) {
+       if (!this._verifyOrigin(request, response)) {
+         return
+       }
+     } else {
+       response.setHeader('Access-Control-Allow-Origin', '*')
+     }
 
-    switch (request.method) {
-      case 'POST':
-        this._handlePost(request, response)
-        break
-      case 'GET':
-        this._handleGet(request, response)
-        break
-      case 'OPTIONS':
-        this._handleOptions(request, response)
-        break
-      default:
-        Server._terminateResponse(
-          response,
-          HTTPStatus.METHOD_NOT_ALLOWED,
-          `Unsupported method. Supported methods: ${this._methodsStr}`
-        )
-    }
-  }
+     switch (request.method) {
+       case 'POST':
+         this._handlePost(request, response)
+         break
+       case 'GET':
+         this._handleGet(request, response)
+         break
+       case 'OPTIONS':
+         this._handleOptions(request, response)
+         break
+       default:
+         Server._terminateResponse(
+           response,
+           HTTPStatus.METHOD_NOT_ALLOWED,
+           `Unsupported method. Supported methods: ${this.methodsStr}`
+         )
+     }
+   }
 
   private _verifyOrigin (
     request: http.IncomingMessage,
@@ -184,7 +188,7 @@ export default class Server extends EventEmitter {
       Server._terminateResponse(response, HTTPStatus.FORBIDDEN, 'Forbidden Host.')
       return false
     }
-    if (this._origins.indexOf(requestOriginUrl) === -1) {
+    if (this.origins.indexOf(requestOriginUrl) === -1) {
       if (!requestOriginUrl) {
         Server._terminateResponse(
           response,
@@ -225,7 +229,7 @@ export default class Server extends EventEmitter {
       return
     }
 
-    this._jsonBodyParser(request, response, (err) => {
+    this.jsonBodyParser(request, response, err => {
       if (err) {
         Server._terminateResponse(
           response,
@@ -273,38 +277,54 @@ export default class Server extends EventEmitter {
     request: http.IncomingMessage,
     response: http.ServerResponse
   ): void {
-    const requestMethod = request.headers['access-control-request-method'] as string
-    if (this._methods.indexOf(requestMethod) === -1) {
+    const requestMethod = request.headers['access-control-request-method'] as string | undefined
+    if (!requestMethod) {
+      Server._terminateResponse(
+        response,
+        HTTPStatus.BAD_REQUEST,
+        'Missing header "Access-Control-Request-Method".'
+      )
+      return
+    }
+    if (this.methods.indexOf(requestMethod) === -1) {
       Server._terminateResponse(
         response,
         HTTPStatus.FORBIDDEN,
-        `Method ${requestMethod} is forbidden. Supported methods: ${this._methodsStr}`
+        `Method ${requestMethod} is forbidden. Supported methods: ${this.methodsStr}`
       )
       return
     }
 
-    const requestHeaders = typeof request.headers['access-control-request-headers'] === 'string'
-      ? (request.headers['access-control-request-headers'] as string).split(',')
-      : request.headers['access-control-request-headers']
+    const requestHeadersRaw = request.headers['access-control-request-headers'] as string | undefined
+    if (!requestHeadersRaw) {
+      Server._terminateResponse(
+        response,
+        HTTPStatus.BAD_REQUEST,
+        'Missing header "Access-Control-Request-Headers".'
+      )
+      return
+    }
+    const requestHeaders = requestHeadersRaw.split(',')
     for (let i = 0; i < requestHeaders.length; i++) {
-      if (this._headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
+      if (this.headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
         Server._terminateResponse(
           response,
           HTTPStatus.FORBIDDEN,
-          `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this._headersStr}`
+          `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this.headersStr}`
         )
         return
       }
     }
 
-    response.setHeader('Access-Control-Allow-Methods', this._methodsStr)
-    response.setHeader('Access-Control-Allow-Headers', this._headersStr)
-    Server._terminateResponse(response, HTTPStatus.OK, 'OK')
+    response.setHeader('Access-Control-Allow-Methods', this.methodsStr)
+    response.setHeader('Access-Control-Allow-Headers', this.headersStr)
+    console.log('terminate')
+    Server._terminateResponse(response, HTTPStatus.NO_CONTENT)
   }
 
-  static _onHandlerResponse (
+  private static _onHandlerResponse (
     response: http.ServerResponse,
-    err: { statusCode: HTTPStatus, message: string },
+    err: { statusCode: number, message: string },
     data: { result: string, body: object }
   ): void {
     if (err) {
