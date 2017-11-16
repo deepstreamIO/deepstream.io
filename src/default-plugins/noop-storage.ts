@@ -15,14 +15,14 @@ export default class NoopStorage extends EventEmitter implements StoragePlugin {
   }
 
   public set (key: string, value: object, callback: Function) {
-    callback(null)
+    process.nextTick(() => callback(null))
   }
 
   public get (key: string, callback: Function) {
-    callback(null, null)
+    process.nextTick(() => callback(null, null))
   }
 
   public delete (key: String, callback: Function) {
-    callback(null)
+    process.nextTick(() => callback(null))
   }
 }
