@@ -92,6 +92,8 @@ describe('connection endpoint', () => {
         .withExactArgs({
           topic: C.TOPIC.CONNECTION,
           action: C.CONNECTION_ACTIONS.INVALID_MESSAGE,
+          originalTopic: C.TOPIC.AUTH,
+          originalAction: C.AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
           data: 'gibbeerish'
         })
 
@@ -145,13 +147,21 @@ describe('connection endpoint', () => {
       .withExactArgs({
         topic: C.TOPIC.AUTH,
         action: C.AUTH_ACTIONS.INVALID_MESSAGE,
+        originalTopic: C.TOPIC.EVENT,
+        originalAction: C.EVENT_ACTIONS.EMIT,
+        data: 'gibbeerish'
       })
 
     client.socketWrapperMock
       .expects('destroy')
       .never()
 
-    uwsMock.messageHandler([{ topic: C.TOPIC.EVENT, action: C.EVENT_ACTIONS.EMIT }], client.socketWrapper)
+    const message: C.Message = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTIONS.EMIT,
+      raw: 'gibbeerish'
+    }
+    uwsMock.messageHandler([message], client.socketWrapper)
   })
 
   it('the connection endpoint handles auth null data', () => {

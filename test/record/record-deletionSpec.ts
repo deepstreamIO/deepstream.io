@@ -55,7 +55,6 @@ describe('record deletion', () => {
       .withExactArgs({
         topic: C.TOPIC.RECORD,
         action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
-        originalAction: C.RECORD_ACTIONS.DELETE,
         name: 'someRecord'
       })
 
@@ -82,7 +81,6 @@ describe('record deletion', () => {
       .withExactArgs({
         topic: C.TOPIC.RECORD,
         action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
-        originalAction: C.RECORD_ACTIONS.DELETE,
         name: 'someRecord'
       })
 

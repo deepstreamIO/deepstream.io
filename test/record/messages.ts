@@ -38,24 +38,17 @@ module.exports.readResponseMessage = {
   parsedData: {}
 }
 
-module.exports.readDeniedMessage = {
-  topic: C.TOPIC.RECORD,
-  action: C.RECORD_ACTIONS.MESSAGE_DENIED,
-  originalAction: C.RECORD_ACTIONS.READ,
-  name: 'some-record'
-}
-
-module.exports.createPermissionErrorMessage = {
+module.exports.subscribeCreateAndReadPermissionErrorMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR,
-  originalAction: C.RECORD_ACTIONS.CREATE,
+  originalAction: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
   name: 'some-record'
 }
 
-module.exports.createDeniedMessage = {
+module.exports.subscribeCreateAndReadDeniedMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.MESSAGE_DENIED,
-  originalAction: C.RECORD_ACTIONS.CREATE,
+  originalAction: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
   name: 'some-record'
 }
 
