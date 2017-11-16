@@ -99,7 +99,6 @@ export default class Server extends EventEmitter {
     } else {
       response.end()
     }
-    console.log('terminate response', code, message)
   }
 
   /**
@@ -150,7 +149,6 @@ export default class Server extends EventEmitter {
     request: http.IncomingMessage,
     response: http.ServerResponse
    ): void {
-     console.log('onrequest', request.method, request.url)
      if (!this.config.allowAllOrigins) {
        if (!this._verifyOrigin(request, response)) {
          return
@@ -318,7 +316,6 @@ export default class Server extends EventEmitter {
 
     response.setHeader('Access-Control-Allow-Methods', this.methodsStr)
     response.setHeader('Access-Control-Allow-Headers', this.headersStr)
-    console.log('terminate')
     Server._terminateResponse(response, HTTPStatus.NO_CONTENT)
   }
 
