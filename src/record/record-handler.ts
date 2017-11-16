@@ -11,17 +11,14 @@ import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'
 import recordRequest from './record-request'
 import RecordTransition from './record-transition'
-import { reverseMapNumeric } from '../utils/utils'
 
-const ACTION_TO_WRITE_ACK: { [key: number]: RA } = {
-  [RA.CREATEANDPATCH]: RA.CREATEANDPATCH_WITH_WRITE_ACK,
-  [RA.CREATEANDUPDATE]: RA.CREATEANDUPDATE_WITH_WRITE_ACK,
-  [RA.PATCH]: RA.PATCH_WITH_WRITE_ACK,
-  [RA.UPDATE]: RA.UPDATE_WITH_WRITE_ACK,
-  [RA.ERASE]: RA.ERASE_WITH_WRITE_ACK,
+const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
+  [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
+  [RA.CREATEANDUPDATE_WITH_WRITE_ACK]: RA.CREATEANDUPDATE,
+  [RA.PATCH_WITH_WRITE_ACK]: RA.PATCH,
+  [RA.UPDATE_WITH_WRITE_ACK]: RA.UPDATE,
+  [RA.ERASE_WITH_WRITE_ACK]: RA.ERASE,
 }
-
-const WRITE_ACK_TO_ACTION: { [key: number]: RA } = reverseMapNumeric(ACTION_TO_WRITE_ACK)
 
 export default class RecordHandler {
   private metaData: any
@@ -547,21 +544,15 @@ function onPermissionResponse (
 ): void {
   if (error !== null) {
     this.services.logger.error(RA[RA.MESSAGE_PERMISSION_ERROR], error.toString())
-    socketWrapper.sendMessage({
-      topic: TOPIC.RECORD,
+    socketWrapper.sendMessage(Object.assign({}, message, {
       action: RA.MESSAGE_PERMISSION_ERROR,
       originalAction,
-      name: message.name,
-      correlationId: message.correlationId
-    })
+    }))
   } else if (canPerformAction !== true) {
-    socketWrapper.sendMessage({
-      topic: TOPIC.RECORD,
+    socketWrapper.sendMessage(Object.assign({}, message, {
       action: RA.MESSAGE_DENIED,
       originalAction,
-      name: message.name,
-      correlationId: message.correlationId
-    })
+    }))
   } else {
     successCallback()
   }

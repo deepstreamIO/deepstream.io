@@ -10,7 +10,7 @@ interface Step {
 }
 
 function translateFromWriteAck (message: RecordWriteMessage): RecordWriteMessage {
-  let msg = {
+  const msg = {
     topic: TOPIC.RECORD,
     version: message.version,
     isWriteAck: false,

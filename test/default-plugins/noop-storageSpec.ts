@@ -11,17 +11,23 @@ describe('retuns null for all values', () => {
     expect(noopStorage.isReady).toBe(true)
   })
 
-  it('tries to retrieve a non-existing value', () => {
+  it('tries to retrieve a non-existing value', done => {
     const successCallback = jasmine.createSpy('success')
     noopStorage.get('firstname', successCallback)
-    expect(successCallback.calls.count()).toBe(1)
-    expect(successCallback.calls.mostRecent().args).toEqual([null, null])
+    setTimeout(() => {
+      expect(successCallback.calls.count()).toBe(1)
+      expect(successCallback.calls.mostRecent().args).toEqual([null, null])
+      done()
+    }, 1)
   })
 
-  it('tries to delete a value', () => {
+  it('tries to delete a value', done => {
     const successCallback = jasmine.createSpy('success')
     noopStorage.delete('firstname', successCallback)
-    expect(successCallback.calls.count()).toBe(1)
-    expect(successCallback.calls.mostRecent().args).toEqual([null])
+    setTimeout(() => {
+      expect(successCallback.calls.count()).toBe(1)
+      expect(successCallback.calls.mostRecent().args).toEqual([null])
+      done()
+    }, 1)
   })
 })

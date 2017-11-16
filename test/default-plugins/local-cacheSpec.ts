@@ -2,6 +2,7 @@ import LocalCache from '../../src/default-plugins/local-cache'
 
 describe('it saves values in memory', () => {
   let localCache
+
   beforeAll(() => {
     localCache = new LocalCache()
   })
@@ -10,31 +11,43 @@ describe('it saves values in memory', () => {
     expect(localCache.isReady).toBe(true)
   })
 
-  it('sets a value in the cache', () => {
+  it('sets a value in the cache', done => {
     const successCallback = jasmine.createSpy('set success')
     localCache.set('firstname', 'Wolfram', successCallback)
-    expect(successCallback.calls.count()).toBe(1)
-    expect(successCallback.calls.mostRecent().args).toEqual([null])
+    setTimeout(() => {
+      expect(successCallback.calls.count()).toBe(1)
+      expect(successCallback.calls.mostRecent().args).toEqual([null])
+      done()
+    }, 1)
   })
 
-  it('retrieves an existing value from the cache', () => {
+  it('retrieves an existing value from the cache', done => {
     const successCallback = jasmine.createSpy('set success')
     localCache.get('firstname', successCallback)
-    expect(successCallback.calls.count()).toBe(1)
-    expect(successCallback.calls.mostRecent().args).toEqual([null, 'Wolfram'])
+    setTimeout(() => {
+      expect(successCallback.calls.count()).toBe(1)
+      expect(successCallback.calls.mostRecent().args).toEqual([null, 'Wolfram'])
+      done()
+    }, 1)
   })
 
-  it('deletes a value from the cache', () => {
+  it('deletes a value from the cache', done => {
     const successCallback = jasmine.createSpy('set success')
     localCache.delete('firstname', successCallback)
-    expect(successCallback.calls.count()).toBe(1)
-    expect(successCallback.calls.mostRecent().args).toEqual([null])
+    setTimeout(() => {
+      expect(successCallback.calls.count()).toBe(1)
+      expect(successCallback.calls.mostRecent().args).toEqual([null])
+      done()
+    }, 1)
   })
 
-  it('tries to retrieve a non-existing value from the cache', () => {
+  it('tries to retrieve a non-existing value from the cache', done => {
     const successCallback = jasmine.createSpy('set success')
     localCache.get('firstname', successCallback)
-    expect(successCallback.calls.count()).toBe(1)
-    expect(successCallback.calls.mostRecent().args).toEqual([null, null])
+    setTimeout(() => {
+      expect(successCallback.calls.count()).toBe(1)
+      expect(successCallback.calls.mostRecent().args).toEqual([null, null])
+      done()
+    }, 1)
   })
 })
