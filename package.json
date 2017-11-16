@@ -12,7 +12,8 @@
   "scripts": {
     "start": "npm run tsc && node ./dist/bin/deepstream",
     "precommit": "npm run lint",
-    "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && cp ./ascii-logo.txt ./dist/ascii-logo.txt && cp -r conf ./dist/conf && mv ./dist/bin/deepstream.js ./dist/bin/deepstream",
+    "copy-pkg": "node ./scripts/merge-pkgs.js ./dist ./",
+    "tsc": "rm -rf dist && tsc && npm run copy-pkg && cp ./ascii-logo.txt ./dist/ascii-logo.txt && cp -r conf ./dist/conf && mv ./dist/bin/deepstream.js ./dist/bin/deepstream",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE",
     "lint": "tslint bin/*.ts test/**/*.ts protocol/**/*.ts src/**/*.ts -t verbose",
     "lint:fix": "tslint --fix bin/*.ts test/**/*.ts protocol/**/*.ts src/**/*.ts -t verbose",
