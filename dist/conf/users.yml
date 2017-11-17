@@ -1,0 +1,11 @@
+# Username
+userA:
+  # Password hash ( hash options passed within config.yml )
+  # This hash represents clear text "password" with default options
+  password: "rCOSZxJrgze2AZdVQh12c6ErDMOG0M+Rx5Yu7S5d91c=GS4SbTQYmoaGwjm2shEobg=="
+  # Server data is used within your permission handler
+  serverData:
+    someOptional: "auth-data"
+  # Client data is sent to the client on login
+  clientData:
+    favouriteColor: "red"

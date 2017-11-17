@@ -36,6 +36,7 @@ connectionEndpoints:
 
         # Security
         # amount of time a connection can remain open while not being logged in
+        # or false for no timeout
         unauthenticatedClientTimeout: 180000
         # invalid login attempts before the connection is cut
         maxAuthAttempts: 3
@@ -120,6 +121,7 @@ storageExclusion: null
 
 auth:
   type: none
+
   # getting permissions from a http webhook
   # type: http
   # options:
@@ -155,10 +157,6 @@ storageRetrievalTimeout: 2000
 dependencyInitialisationTimeout: 2000
 # The amount of time to wait for a provider to acknowledge or reject a listen request
 listenResponseTimeout: 500
-# The amount of time a lock can be reserved for before it is force released
-lockTimeout: 1000
-# The amount of time a lock request waits for before it defaults to false
-lockRequestTimeout: 1000
 # The amount of time a broadcast will wait (to allow broadcast coalescing). -1 means disabled.
 broadcastTimeout: 0
 # A list of prefixes that, when a record is updated via setData and it matches one of the prefixes

@@ -37,7 +37,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private maxAuthAttempts: number
   private urlPath: string
   private noDelay: boolean
-  private unauthenticatedClientTimeout: number
+  private unauthenticatedClientTimeout: number | boolean
   private serverGroup: any
   private scheduledSocketWrapperWrites: Set<SocketWrapper>
   private upgradeRequest: any
@@ -324,7 +324,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     )
 
     let disconnectTimer
-    if (this.unauthenticatedClientTimeout !== null) {
+    if (this.unauthenticatedClientTimeout !== null && this.unauthenticatedClientTimeout !== false) {
       disconnectTimer = setTimeout(
         this._processConnectionTimeout.bind(this, socketWrapper),
         this.unauthenticatedClientTimeout

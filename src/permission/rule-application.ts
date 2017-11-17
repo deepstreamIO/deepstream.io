@@ -257,8 +257,10 @@ export default class RuleApplication {
   private getOldData (): any {
     if (this.isDestroyed === true || this.params.rule.hasOldData === false) {
       return
-    } else if (this.recordsData[this.params.name]) {
-      return this.recordsData[this.params.name]._d
+    }
+    const recordData = this.recordsData[this.params.name]
+    if (typeof recordData !== UNDEFINED) {
+      return recordData ? recordData._d : null
     }
     this.loadRecord(this.params.name)
   }

@@ -298,7 +298,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.recordDelete)
 
     services.cache.get(M.recordDelete.name, (error, record) => {
-      expect(record).toEqual(undefined)
+      expect(record).toEqual(null)
     })
   })
 
