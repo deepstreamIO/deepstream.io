@@ -6,7 +6,7 @@ import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { EventEmitter } from 'events'
 import MessageDistributor from '../message-distributor'
-import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS } from '../../constants'
+import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS } from '../../constants'
 
 export default class HTTPConnectionEndpoint extends EventEmitter implements ConnectionEndpoint {
 
@@ -103,7 +103,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     return value
   }
 
-  close () {
+  public close () {
     this.server.stop(() => this.emit('close'))
   }
 
@@ -376,7 +376,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   /**
    * Check whether any more responses are outstanding and finalize http response if not.
    */
-  static checkComplete (messageResults: Array<JifResult>, responseCallback: Function, requestTimeoutId: NodeJS.Timer): void {
+  private static checkComplete (messageResults: Array<JifResult>, responseCallback: Function, requestTimeoutId: NodeJS.Timer): void {
     const messageResult = HTTPConnectionEndpoint.calculateMessageResult(messageResults)
     if (messageResult === null) {
       // insufficient responses received
@@ -425,7 +425,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * Calculate the 'result' field in a response depending on how many responses resolved
    * successfully. Can be one of 'SUCCESS', 'FAILURE' or 'PARTIAL SUCCSS'
    */
-  static calculateMessageResult (messageResults: Array<JifResult>): string | null {
+  private static calculateMessageResult (messageResults: Array<JifResult>): string | null {
     let numSucceeded = 0
     for (let i = 0; i < messageResults.length; i++) {
       if (!messageResults[i]) {
@@ -482,13 +482,13 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     permissioned: boolean
   ): void {
     if (error !== null) {
-      this.options.logger.warn(AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR, error.toString())
+      this.options.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
     }
     if (permissioned !== true) {
       messageResults[messageIndex] = {
         success: false,
         error: 'Message denied. Action \'emit\' is not permitted.',
-        errorEvent: AUTH_ACTIONS[AUTH_ACTIONS.MESSAGE_DENIED],
+        errorEvent: EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_DENIED],
         errorAction: 'emit',
         errorTopic: 'event'
       }

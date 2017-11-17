@@ -247,27 +247,27 @@ export default class Deepstream extends EventEmitter {
 
     this.eventHandler = new EventHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
-    TOPIC.EVENT,
-    this.eventHandler.handle.bind(this.eventHandler)
-  )
+      TOPIC.EVENT,
+      this.eventHandler.handle.bind(this.eventHandler)
+    )
 
     this.rpcHandler = new RpcHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
-    TOPIC.RPC,
-    this.rpcHandler.handle.bind(this.rpcHandler)
-  )
+      TOPIC.RPC,
+      this.rpcHandler.handle.bind(this.rpcHandler)
+    )
 
     this.recordHandler = new RecordHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
-    TOPIC.RECORD,
-    this.recordHandler.handle.bind(this.recordHandler)
-  )
+      TOPIC.RECORD,
+      this.recordHandler.handle.bind(this.recordHandler)
+    )
 
     this.presenceHandler = new PresenceHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
-    TOPIC.PRESENCE,
-    this.presenceHandler.handle.bind(this.presenceHandler)
-  )
+      TOPIC.PRESENCE,
+      this.presenceHandler.handle.bind(this.presenceHandler)
+    )
 
     this.messageProcessor.onAuthenticatedMessage =
       this.messageDistributor.distribute.bind(this.messageDistributor)

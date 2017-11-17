@@ -11,11 +11,23 @@ const queryEvent = 'query'
 module.exports = {
   subscribe (clientExpression, user) {
     clientHandler.getClients(clientExpression).forEach((client) => {
-      client.presence.callbacks[subscribeEvent] = sinon.spy()
+      if (!client.presence.callbacks[subscribeEvent]) {
+        client.presence.callbacks[subscribeEvent] = sinon.spy()
+      }
       if (user) {
         client.client.presence.subscribe(user, client.presence.callbacks[subscribeEvent])
       } else {
         client.client.presence.subscribe(client.presence.callbacks[subscribeEvent])
+      }
+    })
+  },
+
+  unsubscribe (clientExpression, user) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      if (user) {
+        client.client.presence.unsubscribe(user)
+      } else {
+        client.client.presence.unsubscribe()
       }
     })
   },
@@ -33,23 +45,27 @@ module.exports = {
 }
 
 module.exports.assert = {
-  notifiedUserStateChanged (notifeeExpression, notiferExpression, event) {
+  notifiedUserStateChanged (notifeeExpression, not, notiferExpression, event) {
     clientHandler.getClients(notifeeExpression).forEach((notifee) => {
       clientHandler.getClients(notiferExpression).forEach((notifier) => {
-        try {
+        if (not) {
+          sinon.assert.neverCalledWith(notifee.presence.callbacks[subscribeEvent], notifier.user, event === 'in')
+        } else {
           sinon.assert.calledWith(notifee.presence.callbacks[subscribeEvent], notifier.user, event === 'in')
-        } catch (e) {
-          sinon.assert.calledWith(notifee.presence.callbacks[subscribeEvent], event === 'in', notifier.user)
         }
       })
       notifee.presence.callbacks[subscribeEvent].reset()
     })
   },
 
-  globalQueryResult (clientExpression, users) {
+  globalQueryResult (clientExpression, error, users) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
-      sinon.assert.calledWith(client.presence.callbacks[queryEvent], users)
+      if (users) {
+        sinon.assert.calledWith(client.presence.callbacks[queryEvent], error, users)
+      } else {
+        sinon.assert.calledWith(client.presence.callbacks[queryEvent], error)
+      }
       client.presence.callbacks[queryEvent].reset()
     })
   },
@@ -61,7 +77,7 @@ module.exports.assert = {
         result[users[i]] = online
       }
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
-      sinon.assert.calledWith(client.presence.callbacks[queryEvent], result)
+      sinon.assert.calledWith(client.presence.callbacks[queryEvent], null, result)
       client.presence.callbacks[queryEvent].reset()
     })
   }

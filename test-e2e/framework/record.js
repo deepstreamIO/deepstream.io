@@ -20,14 +20,17 @@ module.exports = {
       const recordData = {
         record: client.client.record.getRecord(recordName),
         discardCallback: sinon.spy(),
+        deleteSuccessCallback: sinon.spy(),
         deleteCallback: sinon.spy(),
         callbackError: sinon.spy(),
         subscribeCallback: sinon.spy(),
+        errorCallback: sinon.spy(),
         setCallback: undefined,
         subscribePathCallbacks: {}
       }
-      recordData.record.on('discard', recordData.discardCallback)
       recordData.record.on('delete', recordData.deleteCallback)
+      recordData.record.on('error', recordData.errorCallback)
+      recordData.record.on('discard', recordData.discardCallback)
       client.record.records[recordName] = recordData
     })
   },
@@ -65,7 +68,7 @@ module.exports = {
 
   delete (clientExpression, recordName) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      recordData.record.delete()
+      recordData.record.delete(recordData.deleteSuccessCallback)
     })
   },
 
@@ -207,10 +210,14 @@ module.exports.assert = {
     })
   },
 
-  discarded (clientExpression, recordName) {
+  discarded (clientExpression, recordName, called) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
-      sinon.assert.calledOnce(recordData.discardCallback)
-      recordData.discardCallback.reset()
+      if (called) {
+        sinon.assert.calledOnce(recordData.discardCallback)
+        recordData.discardCallback.reset()
+      } else {
+        sinon.assert.notCalled(recordData.discardCallback)
+      }
     })
   },
 
@@ -241,6 +248,13 @@ module.exports.assert = {
   recievedNoUpdateForPath (clientExpression, recordName, path) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.notCalled(recordData.subscribePathCallbacks[path])
+    })
+  },
+
+  receivedRecordError (clientExpression, error, recordName) {
+    getRecordData(clientExpression, recordName).forEach((recordData) => {
+      sinon.assert.calledWith(recordData.errorCallback, error)
+      recordData.errorCallback.reset()
     })
   },
 
@@ -275,9 +289,16 @@ module.exports.assert = {
 
   writeAckError (clientExpression, recordName, errorMessage) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
+      if (!recordData) return
       sinon.assert.calledOnce(recordData.setCallback)
       sinon.assert.calledWith(recordData.setCallback, errorMessage)
       recordData.setCallback.reset()
+    })
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      if (!client.record.writeAcks) return
+      sinon.assert.calledOnce(client.record.writeAcks[recordName])
+      sinon.assert.calledWith(client.record.writeAcks[recordName], errorMessage)
+      client.record.writeAcks[recordName].reset()
     })
   },
 

@@ -1,6 +1,6 @@
-import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS } from '../../constants'
-import * as messageBuilder from '../../../protocol/text/src/message-builder'
-import * as messageParser from '../../../protocol/text/src/message-parser'
+import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS, ParseResult, Message } from '../../constants'
+import * as binaryMessageBuilder from '../../../protocol/binary/src/message-builder'
+import * as binaryMessageParser from '../../../protocol/binary/src/message-parser'
 import * as uws from 'uws'
 import { EventEmitter } from 'events'
 
@@ -19,7 +19,7 @@ import { EventEmitter } from 'events'
  *
  * @constructor
  */
-class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
+export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
 
   public isClosed: boolean = false
   public user: string
@@ -27,13 +27,13 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   public __id: number
   public authCallback: Function
   public authAttempts: number = 0
-  
+
   private bufferedWrites: string = ''
 
-  static lastPreparedMessage: any
+  public static lastPreparedMessage: any
 
-  authData: object
-  isRemote: boolean
+  public authData: object
+  public isRemote: boolean
 
   constructor (
     private external: any,
@@ -50,7 +50,7 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Updates lastPreparedMessage and returns the [uws] prepared message.
    */
   public prepareMessage (message: string): string {
-    UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
+    UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_BINARY)
     return UwsSocketWrapper.lastPreparedMessage
   }
 
@@ -58,7 +58,7 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * Sends the [uws] prepared message, or in case of testing sends the
    * last prepared message.
    */
-  public sendPrepared (preparedMessage):void {
+  public sendPrepared (preparedMessage): void {
     this.flush()
     uws.native.server.sendPrepared(this.external, preparedMessage)
   }
@@ -66,25 +66,28 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   /**
    * Finalizes the [uws] prepared message.
    */
-  public finalizeMessage (preparedMessage: string):void {
+  public finalizeMessage (preparedMessage: string): void {
     uws.native.server.finalizeMessage(preparedMessage)
   }
 
   /**
    * Variant of send with no particular checks or appends of message.
    */
-  public sendNative (message: string, allowBuffering: boolean): void {
-    if (this.config.outgoingBufferTimeout === 0) {
-      uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
-    } else if (!allowBuffering) {
-      this.flush()
-      uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
-    } else {
-      this.bufferedWrites += message
-      if (this.connectionEndpoint.scheduleFlush) {
-        this.connectionEndpoint.scheduleFlush(this)
-      }
-    }
+  public sendNative (message: string | Buffer, allowBuffering: boolean): void {
+    uws.native.server.send(this.external, message, uws.OPCODE_BINARY)
+    /*
+     *if (this.config.outgoingBufferTimeout === 0) {
+     *  uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
+     *} else if (!allowBuffering) {
+     *  this.flush()
+     *  uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
+     *} else {
+     *  this.bufferedWrites += message
+     *  if (this.connectionEndpoint.scheduleFlush) {
+     *    this.connectionEndpoint.scheduleFlush(this)
+     *  }
+     *}
+     */
   }
 
   /**
@@ -94,26 +97,8 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    */
   public flush () {
     if (this.bufferedWrites !== '') {
-      uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_TEXT)
+      uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_BINARY)
       this.bufferedWrites = ''
-    }
-  }
-
-  /**
-   * Sends an error on the specified topic. The
-   * action will automatically be set to C.ACTION.ERROR
-   */
-  public sendError (
-    message: Message,
-    action: EVENT,
-    errorMessage: string,
-    allowBuffering: boolean
-  ): void {
-    if (this.isClosed === false) {
-      this.sendNative(
-        messageBuilder.getErrorMessage(message, action, errorMessage),
-        allowBuffering
-      )
     }
   }
 
@@ -125,18 +110,31 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean): void {
     if (this.isClosed === false) {
       this.sendNative(
-        messageBuilder.getMessage(message, false),
+        binaryMessageBuilder.getMessage(message, false),
         allowBuffering
       )
     }
   }
 
-  public getMessage (message: Message): string | void {
-    return messageBuilder.getMessage(message, false)
+  public getMessage (message: Message): Buffer {
+    return binaryMessageBuilder.getMessage(message, false)
   }
 
-  public parseMessage (message: string): Array<Message> {
-    return messageParser.parse(message)
+  public parseMessage (message: string | ArrayBuffer): Array<ParseResult> {
+    let messageBuffer: string | Buffer
+    if (message instanceof ArrayBuffer) {
+      /* we copy the underlying buffer (since a shallow reference won't be safe
+       * outside of the callback)
+       * the copy could be avoided if we make sure not to store references to the
+       * raw buffer within the message
+       */
+      messageBuffer = Buffer.from(Buffer.from(message))
+    } else {
+      // return textMessageParser.parse(message)
+      console.error('received string message', message)
+      return []
+    }
+    return binaryMessageParser.parse(messageBuffer)
   }
 
   /**
@@ -147,17 +145,17 @@ class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   public sendAckMessage (message: Message, allowBuffering: boolean): void {
     if (this.isClosed === false) {
       this.sendNative(
-        messageBuilder.getMessage(message, true),
+        binaryMessageBuilder.getMessage(message, true),
         allowBuffering
       )
     }
   }
 
-  public parseData (message: Message): void {
-    return messageParser.parseData(message)
+  public parseData (message: Message): true | Error {
+    return binaryMessageParser.parseData(message)
   }
 
-  public onMessage (): void {
+  public onMessage (messages: Array<Message>): void {
   }
 
   /**

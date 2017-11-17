@@ -6,13 +6,7 @@ type RuleType = string
 type ValveSection = string
 
 type LOG_LEVEL = any
-type TOPIC = any
-type RECORD_ACTIONS = any
-type PRESENCE_ACTIONS = any
-type EVENT_ACTIONS = any
-type RPC_ACTIONS = any
-type AUTH_ACTIONS = any
-type CONNECTION_ACTIONS = any
+type TOPIC = number
 type EVENT = any
 
 interface StorageRecord {
@@ -23,9 +17,8 @@ interface StorageRecord {
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   user: string
   isRemote: boolean
-  sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, buffer?: boolean): void
-  sendAckMessage (message: { topic: TOPIC } | Message | RPCMessage, buffer?: boolean): void
-  sendError (message: { topic: TOPIC } | Message | ListenMessage | RPCMessage | PresenceMessage | RecordWriteMessage | RecordAckMessage, event: EVENT, errorMessage?: string, buffer?: boolean): void
+  sendMessage (message: Message, buffer?: boolean): void
+  sendAckMessage (message: Message, buffer?: boolean): void
 }
 
 interface SocketWrapper extends SimpleSocketWrapper {
@@ -36,6 +29,7 @@ interface SocketWrapper extends SimpleSocketWrapper {
   onMessage: Function
   authCallback: Function
   prepareMessage: Function
+  getMessage: Function
   finalizeMessage: Function
   sendPrepared: Function
   sendNative: Function
@@ -46,48 +40,24 @@ interface SocketWrapper extends SimpleSocketWrapper {
 
 interface Message {
   topic: TOPIC
-  action: RECORD_ACTIONS | PRESENCE_ACTIONS | RPC_ACTIONS | EVENT_ACTIONS | AUTH_ACTIONS | CONNECTION_ACTIONS
-  name: string
+  action: number
+  name?: string
 
   isError?: boolean
   isAck?: boolean
 
-  data?: string
-  parseError?: boolean
+  data?: string | Buffer
   parsedData?: any
 
-  raw?: string
-}
-
-interface RPCMessage extends Message {
-  correlationId: string
-}
-
-interface PresenceMessage extends Message {
-  correlationId: string
-}
-
-interface ListenMessage extends Message {
-  action: RECORD_ACTIONS | EVENT_ACTIONS
-  name: string
-  subscription: string
-
-  raw?: string
-}
-
-// tslint:disable-next-line:no-empty-interface
-interface RecordMessage extends Message {
-}
-
-interface RecordWriteMessage extends Message {
-  version: number
-  isWriteAck: boolean
+  originalTopic?: number
+  originalAction?: number
+  subscription?: string
+  names?: Array<string>
+  isWriteAck?: boolean
+  correlationId?: string
   path?: string
-}
-
-interface RecordAckMessage extends Message {
-  path?: string
-  data: any
+  version?: number
+  reason?: string
 }
 
 interface JifMessage {
@@ -239,6 +209,7 @@ interface ValveConfig {
 interface Provider {
   socketWrapper: SocketWrapper
   pattern: string
+  closeListener?: () => void
 }
 
 interface UserData {

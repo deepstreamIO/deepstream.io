@@ -50,9 +50,14 @@ describe('the message processor only forwards valid, authorized messages', () =>
     permissionHandlerMock.nextCanPerformActionResult = 'someError'
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(message, C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR)
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR,
+        originalAction: C.RECORD_ACTIONS.READ,
+        name: message.name
+      })
 
     messageProcessor.process(client.socketWrapper, [message])
 
@@ -60,13 +65,46 @@ describe('the message processor only forwards valid, authorized messages', () =>
     expect(log).toHaveBeenCalledWith(2, C.RECORD_ACTIONS[C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR], 'someError')
   })
 
+  it('rpc permission errors have a correlation id', () => {
+    permissionHandlerMock.nextCanPerformActionResult = 'someError'
+    const rpcMessage = {
+      topic: C.TOPIC.RPC,
+      action: C.RPC_ACTIONS.REQUEST,
+      name: 'myRPC',
+      correlationId: '1234567890',
+      data: Buffer.from('{}', 'utf8'),
+      parsedData: {}
+    }
+
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.RPC,
+        action: C.RPC_ACTIONS.MESSAGE_PERMISSION_ERROR,
+        originalAction: rpcMessage.action,
+        name: rpcMessage.name,
+        correlationId: rpcMessage.correlationId
+      })
+
+    messageProcessor.process(client.socketWrapper, [rpcMessage])
+
+    expect(log).toHaveBeenCalled()
+    expect(log).toHaveBeenCalledWith(2, C.RPC_ACTIONS[C.RPC_ACTIONS.MESSAGE_PERMISSION_ERROR], 'someError')
+  })
+
   it('handles denied messages', () => {
     permissionHandlerMock.nextCanPerformActionResult = false
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(message, C.RECORD_ACTIONS.MESSAGE_DENIED)
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.MESSAGE_DENIED,
+        originalAction: C.RECORD_ACTIONS.READ,
+        name: message.name
+      })
 
     messageProcessor.process(client.socketWrapper, [message])
   })
