@@ -543,23 +543,24 @@ export default class RecordHandler {
 function onPermissionResponse (
   socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RA, successCallback: Function, error: Error, canPerformAction: boolean,
 ): void {
-  if (error !== null) {
-    this.services.logger.error(RA[RA.MESSAGE_PERMISSION_ERROR], error.toString())
-    socketWrapper.sendMessage({
+  if (error || !canPerformAction) {
+    let action
+    if (error) {
+      this.services.logger.error(RA[RA.MESSAGE_PERMISSION_ERROR], error.toString())
+      action = RA.MESSAGE_PERMISSION_ERROR
+    } else {
+      action = RA.MESSAGE_DENIED
+    }
+    const msg = {
       topic: TOPIC.RECORD,
-      action: RA.MESSAGE_PERMISSION_ERROR,
+      action,
       originalAction,
-      name: message.name,
-      correlationId: message.correlationId
-    })
-  } else if (canPerformAction !== true) {
-    socketWrapper.sendMessage({
-      topic: TOPIC.RECORD,
-      action: RA.MESSAGE_DENIED,
-      originalAction,
-      name: message.name,
-      correlationId: message.correlationId
-    })
+      name: message.name
+    } as RecordMessage
+    if (message.correlationId) {
+      msg.correlationId = message.correlationId
+    }
+    socketWrapper.sendMessage(msg)
   } else {
     successCallback()
   }
