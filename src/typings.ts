@@ -209,6 +209,7 @@ interface ValveConfig {
 interface Provider {
   socketWrapper: SocketWrapper
   pattern: string
+  closeListener?: () => void
 }
 
 interface UserData {
