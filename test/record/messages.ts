@@ -134,7 +134,6 @@ module.exports.createAndUpdate = {
   name: 'some-record',
   version:  -1,
   parsedData: module.exports.recordData._d,
-  isWriteAck: false
 }
 
 module.exports.listenAcceptMessage = {
