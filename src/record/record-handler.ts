@@ -537,22 +537,29 @@ export default class RecordHandler {
 }
 
 /*
- * Callback for complete permissions. Notifies socket if permission has failed
+ * Callback for complete permissions. Important to note that only compound operations like
+ * CREATE_AND_UPDATE will end up here.
  */
 function onPermissionResponse (
   socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RA, successCallback: Function, error: Error, canPerformAction: boolean,
 ): void {
   if (error !== null) {
     this.services.logger.error(RA[RA.MESSAGE_PERMISSION_ERROR], error.toString())
-    socketWrapper.sendMessage(Object.assign({}, message, {
+    socketWrapper.sendMessage({
+      topic: TOPIC.RECORD,
       action: RA.MESSAGE_PERMISSION_ERROR,
       originalAction,
-    }))
+      name: message.name,
+      correlationId: message.correlationId
+    })
   } else if (canPerformAction !== true) {
-    socketWrapper.sendMessage(Object.assign({}, message, {
+    socketWrapper.sendMessage({
+      topic: TOPIC.RECORD,
       action: RA.MESSAGE_DENIED,
       originalAction,
-    }))
+      name: message.name,
+      correlationId: message.correlationId
+    })
   } else {
     successCallback()
   }
