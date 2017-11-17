@@ -87,7 +87,7 @@ export default class RecordHandler {
     /*
      * Handle complete (UPDATE) or partial (PATCH/ERASE) updates
      */
-      this.update(socketWrapper, message as RecordWriteMessage, false)
+      this.update(socketWrapper, message as RecordWriteMessage, message.isWriteAck || false)
     } else if (action === RA.DELETE) {
     /*
      * Deletes the record
@@ -394,6 +394,8 @@ export default class RecordHandler {
   private update (socketWrapper: SocketWrapper, message: RecordWriteMessage, upsert: boolean): void {
     const recordName = message.name
     const version = message.version
+    const isPatch = message.path !== undefined
+    Object.assign(message, { action: isPatch ? RA.PATCH : RA.UPDATE })
 
   /*
    * If the update message is received from the message bus, rather than from a client,

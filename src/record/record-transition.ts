@@ -9,22 +9,6 @@ interface Step {
   sender: SocketWrapper
 }
 
-function translateFromWriteAck (message: RecordWriteMessage): RecordWriteMessage {
-  const msg = {
-    topic: TOPIC.RECORD,
-    version: message.version,
-    isWriteAck: false,
-    name: message.name
-  }
-  if (message.action === RECORD_ACTIONS.ERASE_WITH_WRITE_ACK) {
-    return Object.assign({}, msg, { action: RECORD_ACTIONS.ERASE, path: message.path })
-  } else if (message.action === RECORD_ACTIONS.PATCH_WITH_WRITE_ACK) {
-    return Object.assign({}, msg, { action: RECORD_ACTIONS.PATCH, path: message.path, parsedData: message.parsedData })
-  } else {
-    return Object.assign({}, msg, { action: RECORD_ACTIONS.UPDATE, parsedData: message.parsedData })
-  }
-}
-
 export default class RecordTransition {
 /**
  * This class manages one or more simultanious updates to the data of a record.
@@ -377,9 +361,8 @@ export default class RecordTransition {
     if (error) {
       this.onFatalError(error)
     } else if (this.isDestroyed === false) {
-      if (this.currentStep.message.isWriteAck) {
-        this.currentStep.message = translateFromWriteAck(this.currentStep.message)
-      }
+      delete this.currentStep.message.isWriteAck
+      delete this.currentStep.message.correlationId
       this.recordHandler.broadcastUpdate(
         this.name,
         this.currentStep.message,
