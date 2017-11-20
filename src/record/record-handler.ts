@@ -11,6 +11,7 @@ import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'
 import recordRequest from './record-request'
 import RecordTransition from './record-transition'
+import { isExcluded } from '../utils/utils'
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
@@ -253,8 +254,8 @@ export default class RecordHandler {
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage
-    for (let i = 0; i < this.config.storageHotPathPatterns.length; i++) {
-      const pattern = this.config.storageHotPathPatterns[i]
+    for (let i = 0; i < this.config.storageHotPathPrefixes.length; i++) {
+      const pattern = this.config.storageHotPathPrefixes[i]
       if (recordName.indexOf(pattern) !== -1 && !isPatch) {
         this.permissionAction(RA.CREATE, message, originalAction, socketWrapper, () => {
           this.permissionAction(RA.UPDATE, message, originalAction, socketWrapper, () => {
@@ -367,7 +368,7 @@ export default class RecordHandler {
       }
     }, this.metaData)
 
-    if (!this.config.storageExclusion || !this.config.storageExclusion.test(recordName)) {
+    if (!isExcluded(this.config.storageExclusionPrefixes, message.name)) {
     // store the record data in the persistant storage independently and don't wait for the result
       this.services.storage.set(recordName, record, error => {
         if (error) {

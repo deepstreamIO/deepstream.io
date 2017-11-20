@@ -1,4 +1,5 @@
 import { RECORD_ACTIONS, TOPIC, RecordMessage } from '../constants'
+import { isExcluded } from '../utils/utils'
 
 export default class RecordDeletion {
   private metaData: any
@@ -37,8 +38,7 @@ export default class RecordDeletion {
       this.checkIfDone.bind(this, this.cacheTimeout),
       metaData,
     )
-
-    if (!this.config.storageExclusion || !this.config.storageExclusion.test(this.recordName)) {
+    if (!isExcluded(this.config.storageExclusionPrefixes, this.recordName)) {
       this.storageTimeout = setTimeout(
         this.handleError.bind(this, 'storage timeout'),
         this.config.storageRetrievalTimeout,
