@@ -17,7 +17,7 @@ sslCa: null
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
   websocket:
-    name: uws
+    type: default
     options:
         # port for the websocket server
         port: 6020
@@ -43,7 +43,7 @@ connectionEndpoints:
         maxMessageSize: 1048576
 
   http:
-    name: http
+    type: default
     options:
       # port for the http server
       port: 8080
@@ -76,7 +76,7 @@ connectionEndpoints:
 # Logger Configuration
 logger:
   # use either the default logger
-  name: default
+  type: default
   options:
     colors: true
     # value of logLevel (line 4) will always overwrite this value
