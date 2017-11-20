@@ -76,13 +76,13 @@ connectionEndpoints:
         - 'https://example.com'
 
 # Logger Configuration
-# logger:
-#   # use either the default logger
-#   type: default
-#    options:
-#      colors: true
-#      # value of logLevel (line 4) will always overwrite this value
-#      logLevel: INFO
+logger:
+  # use either the default logger
+  type: default
+   options:
+     colors: true
+     # value of logLevel (line 4) will always overwrite this value
+     logLevel: INFO
 
 #   # or the winston logger
 #   name: winston
