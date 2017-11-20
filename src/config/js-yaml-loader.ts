@@ -20,8 +20,9 @@ try {
   DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', 'conf', 'config'))
   DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', '..', 'conf', 'config'))
 } catch (e) {
-  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[1], '..', 'conf', 'config'))
-  DEFAULT_CONFIG_DIRS.push(path.join(process.argv[1], '..', '..', 'conf', 'config'))
+  console.log(__dirname)
+  DEFAULT_CONFIG_DIRS.push(path.join(__dirname, '..', 'conf', 'config'))
+  DEFAULT_CONFIG_DIRS.push(path.join(__dirname, '..', '..', 'conf', 'config'))
 }
 
 /**
