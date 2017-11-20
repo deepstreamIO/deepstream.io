@@ -64,7 +64,7 @@ describe('record handler handles messages', () => {
   })
 
   it('does not store new record when excluded', () => {
-    config.storageExclusionPatterns = ['some-record']
+    config.storageExclusionPrefixes = ['some-record']
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
