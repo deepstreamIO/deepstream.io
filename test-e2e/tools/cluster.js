@@ -83,6 +83,7 @@ module.exports = class DeepstreamTest extends EventEmitter {
           name: 'uws',
           options: {
             port: this._wsPort,
+            heartbeatInterval: 10
           }
         },
         http: {
@@ -123,7 +124,7 @@ module.exports = class DeepstreamTest extends EventEmitter {
         let success
 
         // authenicate auth data
-        const users = ['A', 'B', 'C', 'D', 'E', 'F', 'W', '1', '2', '3', '4']
+        const users = ['A', 'B', 'C', 'D', 'E', 'F', 'W', '1', '2', '3', '4', 'OPEN']
         if (users.indexOf(username) !== -1 && authData.password === 'abcdefgh') {
           success = true
         } else if (username === 'userA' && authData.password === 'abcdefgh') {

@@ -1,6 +1,5 @@
 import {
   ACTIONS,
-  AUTH_ACTIONS,
   EVENT,
   EVENT_ACTIONS,
   PRESENCE_ACTIONS,
@@ -9,9 +8,15 @@ import {
   TOPIC,
 } from '../constants'
 
+import { isWriteAck, ACTION_TO_WRITE_ACK, WRITE_ACK_TO_ACTION } from '../../protocol/binary/src/utils'
+
 import * as Ajv from 'ajv'
 
-import * as utils from '../utils/utils'
+import {
+  getUid,
+  reverseMap,
+  deepFreeze,
+} from '../utils/utils'
 import jifSchema from './jif-schema'
 
 const ajv = new Ajv()
@@ -40,7 +45,7 @@ function getJifToMsg () {
       topic: TOPIC.RPC,
       action: RPC_ACTIONS.REQUEST,
       name: msg.rpcName,
-      correlationId: utils.getUid(),
+      correlationId: getUid(),
       parsedData: msg.data,
     },
   })
@@ -63,12 +68,13 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDUPDATE,
+      action: RECORD_ACTIONS.CREATEANDPATCH_WITH_WRITE_ACK,
       name: msg.recordName,
       version: msg.version || -1,
       path: msg.path,
       parsedData: msg.data,
       isWriteAck: true,
+      correlationId: 0
     },
   })
 
@@ -76,11 +82,12 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDUPDATE,
+      action: RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK,
       name: msg.recordName,
       version: msg.version || -1,
       parsedData: msg.data,
       isWriteAck: true,
+      correlationId: 0
     },
   })
 
@@ -116,11 +123,12 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDUPDATE,
+      action: RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK,
       name: msg.listName,
       version: msg.version || -1,
       parsedData: msg.data,
       isWriteAck: true,
+      correlationId: 0
     },
   })
 
@@ -156,7 +164,7 @@ function getJifToMsg () {
     },
   })
 
-  return utils.deepFreeze(JIF_TO_MSG)
+  return deepFreeze(JIF_TO_MSG)
 }
 
 // message type enumeration
@@ -196,18 +204,26 @@ function getMsgToJif () {
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      error: message.parsedData[1] || undefined,
-      success: message.parsedData[1] === null,
+      success: true,
     },
   })
 
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE][TYPE.ACK] = () => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE][TYPE.NORMAL] = () => ({
     done: true,
     message: {
       success: true,
     },
   })
+
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE_SUCCESS] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE_SUCCESS][TYPE.NORMAL] = () => ({
+    done: true,
+    message: {
+      success: true,
+    },
+  })
+
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE] = {}
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
@@ -222,7 +238,7 @@ function getMsgToJif () {
   MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      users: message.parsedData,
+      users: message.names,
       success: true,
     },
   })
@@ -235,7 +251,7 @@ function getMsgToJif () {
     },
   })
 
-  return utils.deepFreeze(MSG_TO_JIF)
+  return deepFreeze(MSG_TO_JIF)
 }
 
 export default class JIFHandler {
@@ -248,7 +264,7 @@ export default class JIFHandler {
     this.JIF_TO_MSG = getJifToMsg()
     this.MSG_TO_JIF = getMsgToJif()
 
-    this.topicToKey = utils.reverseMap(TOPIC)
+    this.topicToKey = reverseMap(TOPIC)
 
     this.logger = options.logger
   }
@@ -313,6 +329,11 @@ export default class JIFHandler {
     } else {
       type = TYPE.NORMAL
     }
+
+    if (message.isError) {
+      return this.errorToJIF(message, message.action)
+    }
+
     return this.MSG_TO_JIF[message.topic][message.action][type](message)
   }
 
@@ -327,7 +348,7 @@ export default class JIFHandler {
    *    {Boolean} done      false iff message should await another result/acknowledgement
    * }
    */
-  public errorToJIF (message, event) {
+  public errorToJIF (message: Message, event) {
     // convert topic enum to human-readable key
     const topicKey = this.topicToKey[message.topic]
 
@@ -337,20 +358,24 @@ export default class JIFHandler {
       success: false,
     }
 
-    if (event === AUTH_ACTIONS.MESSAGE_DENIED) {
-      result.action = message.action
-      result.error = `Message denied. Action "${ACTIONS[message.topic][message.action]}" is not permitted.`
+    if (event === EVENT_ACTIONS.MESSAGE_DENIED) {
+      result.action = message.originalAction as number
+      result.error = `Message denied. Action "${
+        isWriteAck(result.action)
+          ? ACTIONS[message.topic][WRITE_ACK_TO_ACTION[result.action]]
+          : ACTIONS[message.topic][result.action]
+      }" is not permitted.`
     } else if (event === RECORD_ACTIONS.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version
       result.currentData = message.parsedData
     } else if (event === RECORD_ACTIONS.RECORD_NOT_FOUND) {
       result.error = `Record read failed. Record "${message.name}" could not be found.`
-      result.errorEvent = message.event
+      result.errorEvent = message.action
     } else if (event === RPC_ACTIONS.NO_RPC_PROVIDER) {
       result.error = `No provider was available to handle the RPC "${message.name}".`
       // message.correlationId = data[1]
-    } else if (message.topic === TOPIC.RPC && event === RPC_ACTIONS.RESPONSE_TIMEOUT) {
+    } else if (message.topic === TOPIC.RPC && message.action === RPC_ACTIONS.RESPONSE_TIMEOUT) {
       result.error = 'The RPC response timeout was exceeded by the provider.'
 
     } else {

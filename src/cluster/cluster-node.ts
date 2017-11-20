@@ -14,7 +14,7 @@ export default class ClusterNode implements Cluster {
 
   public send (message: Message, metaData: any) {}
 
-  public subscribe (topic: string, callback: Function) {}
+  public subscribe (topic: TOPIC, callback: Function) {}
 
   public isLeader (): boolean { throw new Error('Leader not used in single state') }
 

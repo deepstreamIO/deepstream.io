@@ -30,9 +30,9 @@ describe('record deletion', () => {
 
   it('deletes records - happy path', () => {
     client.socketWrapperMock
-      .expects('sendAckMessage')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(M.deletionMsg)
+      .withExactArgs(M.deletionSuccessMsg)
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.deletionMsg, callback
@@ -50,13 +50,13 @@ describe('record deletion', () => {
     services.cache.nextOperationWillBeSynchronous = false
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.DELETE,
+        action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
         name: 'someRecord'
-      }, C.RECORD_ACTIONS.RECORD_DELETE_ERROR)
+      })
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.deletionMsg, callback
@@ -76,13 +76,13 @@ describe('record deletion', () => {
     services.cache.nextOperationWillBeSynchronous = false
 
     client.socketWrapperMock
-      .expects('sendError')
+      .expects('sendMessage')
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.DELETE,
+        action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
         name: 'someRecord'
-      }, C.RECORD_ACTIONS.RECORD_DELETE_ERROR)
+      })
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.deletionMsg, callback
@@ -100,9 +100,9 @@ describe('record deletion', () => {
     config.storageExclusion = new RegExp('no-storage/')
 
     client.socketWrapperMock
-      .expects('sendAckMessage')
+      .expects('sendMessage')
       .once()
-      .withExactArgs(M.anotherDeletionMsg)
+      .withExactArgs(M.anotherDeletionSuccessMsg)
 
     recordDeletion = new RecordDeletion(
       config, services, client.socketWrapper, M.anotherDeletionMsg, callback

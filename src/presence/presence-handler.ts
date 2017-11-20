@@ -1,20 +1,8 @@
 import StateRegistry from '../cluster/state-registry'
-import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC } from '../constants'
+import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 
 const EVERYONE = '%_EVERYONE_%'
-
-function parseUserNames (names: any): Array<string> | null {
-  // Returns all users for backwards compatability
-  if (names === 'S') {
-    return [EVERYONE]
-  }
-  try {
-    return JSON.parse(names)
-  } catch (e) {
-    return null
-  }
-}
 
 /**
  * This class handles incoming and outgoing messages in relation
@@ -54,10 +42,36 @@ export default class PresenceHandler {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
     }
-    const users = parseUserNames(message.data)
+
+    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE_ALL) {
+      this.subscriptionRegistry.subscribe({
+        topic: TOPIC.PRESENCE,
+        action: PRESENCE_ACTIONS.SUBSCRIBE_ALL,
+        name: EVERYONE
+      }, socketWrapper, true)
+      socketWrapper.sendAckMessage({
+        topic: message.topic,
+        action: message.action
+      })
+      return
+    }
+
+    if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_ALL) {
+      this.subscriptionRegistry.unsubscribe({
+        topic: TOPIC.PRESENCE,
+        action: PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
+        name: EVERYONE
+      }, socketWrapper, true)
+      socketWrapper.sendAckMessage({
+        topic: message.topic,
+        action: message.action
+      })
+      return
+    }
+
+    const users = message.names
     if (!users) {
-      this.services.logger.error(PRESENCE_ACTIONS[PRESENCE_ACTIONS.INVALID_PRESENCE_USERS], message.data, this.metaData)
-      socketWrapper.sendError(message, PRESENCE_ACTIONS.INVALID_PRESENCE_USERS)
+      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid presence names parameter ${PRESENCE_ACTIONS[message.action]}`)
       return
     }
     if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
@@ -66,16 +80,26 @@ export default class PresenceHandler {
           topic: TOPIC.PRESENCE,
           action: PRESENCE_ACTIONS.SUBSCRIBE,
           name: users[i],
-        }, socketWrapper)
+        }, socketWrapper, true)
       }
+      socketWrapper.sendAckMessage({
+        topic: message.topic,
+        action: message.action,
+        correlationId: message.correlationId
+      })
     } else if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.unsubscribe({
           topic: TOPIC.PRESENCE,
           action: PRESENCE_ACTIONS.UNSUBSCRIBE,
           name: users[i],
-        }, socketWrapper)
+        }, socketWrapper, true)
       }
+      socketWrapper.sendAckMessage({
+        topic: message.topic,
+        action: message.action,
+        correlationId: message.correlationId
+      })
     } else if (message.action === PRESENCE_ACTIONS.QUERY) {
       this.handleQuery(users, message.correlationId, socketWrapper)
     } else {
@@ -120,7 +144,7 @@ export default class PresenceHandler {
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-      parsedData: clients,
+      names: clients,
     })
   }
 
@@ -146,18 +170,24 @@ export default class PresenceHandler {
   * Alerts all clients who are subscribed to
   * PRESENCE_JOIN that a new client has been added.
   */
-  private onClientAdded (username: string) {
-    const message = {
+  private onClientAdded (username: string): void {
+    const individualMessage: Message = {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.PRESENCE_JOIN,
       name : username,
     }
 
+    const allMessage: Message = {
+      topic: TOPIC.PRESENCE,
+      action: PRESENCE_ACTIONS.PRESENCE_JOIN_ALL,
+      name: username
+    }
+
     this.subscriptionRegistry.sendToSubscribers(
-      EVERYONE, message, false, null, false,
+      EVERYONE, allMessage, false, null, false,
     )
     this.subscriptionRegistry.sendToSubscribers(
-      username, message, false, null, false,
+      username, individualMessage, false, null, false,
     )
   }
 
@@ -165,17 +195,24 @@ export default class PresenceHandler {
   * Alerts all clients who are subscribed to
   * PRESENCE_LEAVE that the client has left.
   */
-  private onClientRemoved (username: string) {
-    const message = {
+  private onClientRemoved (username: string): void {
+    const individualMessage: Message = {
       topic: TOPIC.PRESENCE,
       action: PRESENCE_ACTIONS.PRESENCE_LEAVE,
-      name: username,
+      name : username,
     }
+
+    const allMessage: Message = {
+      topic: TOPIC.PRESENCE,
+      action: PRESENCE_ACTIONS.PRESENCE_LEAVE_ALL,
+      name: username
+    }
+
     this.subscriptionRegistry.sendToSubscribers(
-      EVERYONE, message, false, null, false,
+      EVERYONE, allMessage, false, null, false,
     )
     this.subscriptionRegistry.sendToSubscribers(
-      username, message, false, null, false,
+      username, individualMessage, false, null, false,
     )
   }
 }

@@ -1,4 +1,4 @@
-import { EVENT, PARSER_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
+import { EVENT, PARSER_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
@@ -71,7 +71,13 @@ export default class RpcHandler {
           `name: ${message.name} with correlation id: ${message.correlationId}`,
           this.metaData
         )
-        socketWrapper.sendError(message, RPC_ACTIONS.INVALID_RPC_CORRELATION_ID)
+        socketWrapper.sendMessage({
+          topic: TOPIC.RPC,
+          action: RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+          originalAction: message.action,
+          name: message.name,
+          correlationId: message.correlationId
+        })
       }
     } else {
       /*
@@ -161,7 +167,12 @@ export default class RpcHandler {
       this.rpcs.set(correlationId, rpcData)
       rpcData.providers.add(provider)
     } else if (isRemote) {
-      socketWrapper.sendError(message, RPC_ACTIONS.NO_RPC_PROVIDER)
+      socketWrapper.sendMessage({
+        topic: TOPIC.RPC,
+        action: RPC_ACTIONS.NO_RPC_PROVIDER,
+        name: rpcName,
+        correlationId
+      })
     } else {
        this.makeRemoteRpc(socketWrapper, message)
     }
@@ -203,7 +214,12 @@ export default class RpcHandler {
     )
 
     if (!requestor.isRemote) {
-      requestor.sendError(message, RPC_ACTIONS.NO_RPC_PROVIDER)
+      requestor.sendMessage({
+        topic: TOPIC.RPC,
+        action: RPC_ACTIONS.NO_RPC_PROVIDER,
+        name: rpcName,
+        correlationId
+      })
     }
   }
 

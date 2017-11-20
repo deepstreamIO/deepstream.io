@@ -1,4 +1,4 @@
-import { EVENT, EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
+import { EVENT, EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC, EventMessage, ListenMessage } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 
@@ -27,7 +27,7 @@ export default class EventHandler {
    * The main distribution method. Routes messages to functions
    * based on the provided action parameter of the message
    */
-  public handle (socket: SocketWrapper, message: Message) {
+  public handle (socket: SocketWrapper, message: EventMessage) {
     if (message.action === EVENT_ACTIONS.SUBSCRIBE) {
       this.subscriptionRegistry.subscribe(message, socket)
     } else if (message.action === EVENT_ACTIONS.UNSUBSCRIBE) {
@@ -48,7 +48,7 @@ export default class EventHandler {
    * Notifies subscribers of events. This method is invoked for the EVENT action. It can
    * be triggered by messages coming in from both clients and the message connector.
    */
-  public triggerEvent (socket: SocketWrapper, message: Message) {
+  public triggerEvent (socket: SocketWrapper, message: EventMessage) {
     this.logger.debug(EVENT_ACTIONS[EVENT_ACTIONS.EMIT], `event: ${message.name} with data: ${message.data}`)
     this.subscriptionRegistry.sendToSubscribers(message.name, message, false, socket)
   }

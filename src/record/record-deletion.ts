@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC } from '../constants'
+import { RECORD_ACTIONS, TOPIC, RecordMessage } from '../constants'
 
 export default class RecordDeletion {
   private metaData: any
@@ -17,7 +17,7 @@ export default class RecordDeletion {
  * This class represents the deletion of a single record. It handles it's removal
  * from cache and storage and handles errors and timeouts
  */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper, message: Message, successCallback: Function, metaData: any) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, metaData: any) {
     this.metaData = metaData
     this.config = config
     this.services = services
@@ -29,25 +29,25 @@ export default class RecordDeletion {
     this.isDestroyed = false
 
     this.cacheTimeout = setTimeout(
-    this.handleError.bind(this, 'cache timeout'),
-    this.config.cacheRetrievalTimeout,
-  )
+      this.handleError.bind(this, 'cache timeout'),
+      this.config.cacheRetrievalTimeout,
+    )
     this.services.cache.delete(
-    this.recordName,
-    this.checkIfDone.bind(this, this.cacheTimeout),
-    metaData,
-  )
+      this.recordName,
+      this.checkIfDone.bind(this, this.cacheTimeout),
+      metaData,
+    )
 
     if (!this.config.storageExclusion || !this.config.storageExclusion.test(this.recordName)) {
       this.storageTimeout = setTimeout(
-      this.handleError.bind(this, 'storage timeout'),
-      this.config.storageRetrievalTimeout,
-    )
+        this.handleError.bind(this, 'storage timeout'),
+        this.config.storageRetrievalTimeout,
+      )
       this.services.storage.delete(
-      this.recordName,
-      this.checkIfDone.bind(this, this.storageTimeout),
-      metaData,
-    )
+        this.recordName,
+        this.checkIfDone.bind(this, this.storageTimeout),
+        metaData,
+      )
     } else {
       this.checkIfDone(null, null)
     }
@@ -83,7 +83,7 @@ export default class RecordDeletion {
  */
   private done (): void {
     this.services.logger.info(RECORD_ACTIONS[RECORD_ACTIONS.DELETE], this.recordName, this.metaData)
-    this.socketWrapper.sendAckMessage(this.message)
+    this.socketWrapper.sendMessage({ topic: TOPIC.RECORD, action: RECORD_ACTIONS.DELETE_SUCCESS, name: this.message.name })
     this.message = Object.assign({}, this.message, { action: RECORD_ACTIONS.DELETED })
     this.successCallback(this.recordName, this.message, this.socketWrapper)
     this.destroy()
@@ -105,7 +105,11 @@ export default class RecordDeletion {
  * Handle errors that occured during deleting the record
  */
   private handleError (errorMsg: string) {
-    this.socketWrapper.sendError(this.message, RECORD_ACTIONS.RECORD_DELETE_ERROR)
+    this.socketWrapper.sendMessage({
+      topic: TOPIC.RECORD,
+      action: RECORD_ACTIONS.RECORD_DELETE_ERROR,
+      name: this.recordName
+    })
     this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_DELETE_ERROR], errorMsg, this.metaData)
     this.destroy()
   }
