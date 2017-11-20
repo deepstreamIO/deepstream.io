@@ -20,7 +20,6 @@ try {
   DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', 'conf', 'config'))
   DEFAULT_CONFIG_DIRS.push(path.join(process.argv[0], '..', '..', 'conf', 'config'))
 } catch (e) {
-  console.log(__dirname)
   DEFAULT_CONFIG_DIRS.push(path.join(__dirname, '..', 'conf', 'config'))
   DEFAULT_CONFIG_DIRS.push(path.join(__dirname, '..', '..', 'conf', 'config'))
 }
