@@ -65,7 +65,7 @@ describe('permissionHandler passes additional user meta data', () => {
 
       uwsMock.messageHandler([{
         topic: C.TOPIC.CONNECTION,
-        action: C.CONNECTION_ACTIONS.CHALLENGE_RESPONSE,
+        action: C.CONNECTION_ACTIONS.CHALLENGE,
         data: 'localhost:6021'
       }], client.socketWrapper)
 
