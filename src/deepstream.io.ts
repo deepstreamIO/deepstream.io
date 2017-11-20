@@ -31,7 +31,7 @@ import DependencyInitialiser from './utils/dependency-initialiser'
  */
 process.title = 'deepstream server'
 
-export default class Deepstream extends EventEmitter {
+export class Deepstream extends EventEmitter {
   public constants: any
 
   private config: DeepstreamConfig
