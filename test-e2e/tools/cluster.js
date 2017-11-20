@@ -134,6 +134,12 @@ module.exports = class DeepstreamTest extends EventEmitter {
           success = true
           clientData = { 'favorite color': 'orange', id: username }
           serverData.role = 'admin'
+        } else if (username === 'randomClientData') {
+          success = true
+          clientData = { value : Math.random() }
+        } else if (username === 'onlyLoginOnce' && !this.onlyLoginOnce) {
+          this.onlyLoginOnce = true
+          success = true
         } else {
           success = false
         }

@@ -130,4 +130,19 @@ module.exports = {
       else sinon.assert.neverCalledWith(client.connectionStateChanged, state)
     })
   },
+
+  hadClientDataChanged (clientExpression, had, data) {
+    const clientData = data ? data : null
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      if (had) sinon.assert.calledWith(client.clientDataChanged, JSON.parse(clientData))
+      else sinon.assert.notCalled(client.clientDataChanged)
+    })
+  },
+
+  hadReAuthenticationFailure (clientExpression, had, reason) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      if (had) sinon.assert.calledWith(client.reAuthenticationFailure, reason)
+      else sinon.assert.notCalled(client.reAuthenticationFailure)
+    })
+  },
 }
