@@ -1,5 +1,5 @@
 import { RECORD_ACTIONS, TOPIC } from '../constants'
-
+import { isExcluded } from '../utils/utils'
 /**
  * Sends an error to the socketWrapper that requested the
  * record
@@ -60,11 +60,7 @@ function onCacheResponse (
     )
   } else if (record) {
     onComplete.call(context, record, recordName, socketWrapper)
-  } else if (
-      !config.storageExclusion ||
-      !config.storageExclusion.test(recordName)
-    ) {
-
+  } else if (!isExcluded(config.storageExclusionPrefixes, recordName)) {
     let storageTimedOut = false
     const storageTimeout = setTimeout(() => {
       storageTimedOut = true

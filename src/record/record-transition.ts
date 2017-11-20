@@ -1,5 +1,5 @@
 import { RECORD_ACTIONS, TOPIC, RecordWriteMessage, EVENT } from '../constants'
-import { isOfType } from '../utils/utils'
+import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
 import recordRequest from './record-request'
@@ -282,7 +282,7 @@ export default class RecordTransition {
    * If the storage response is asynchronous and write acknowledgement is enabled, the transition
    * will not be destroyed until writing to storage is finished
    */
-    if (!this.config.storageExclusion || !this.config.storageExclusion.test(this.name)) {
+    if (!isExcluded(this.config.storageExclusionPrefixes, this.name)) {
       this.pendingStorageWrites++
       if (message.isWriteAck) {
         this.setUpWriteAcknowledgement(message, this.currentStep.sender)

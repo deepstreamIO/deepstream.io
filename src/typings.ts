@@ -170,12 +170,12 @@ interface DeepstreamConfig {
   auth: PluginConfig
   permission: PluginConfig
 
-  storageExclusion: RegExp | null
+  storageExclusionPrefixes: Array<string>
   rpcAckTimeout: number
   rpcTimeout: number
   cacheRetrievalTimeout: number
   storageRetrievalTimeout: number
-  storageHotPathPatterns: Array<string>
+  storageHotPathPrefixes: Array<string>
   dependencyInitialisationTimeout: number
   stateReconciliationTimeout: number
   clusterKeepAliveInterval: number

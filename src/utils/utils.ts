@@ -184,3 +184,19 @@ export let deepFreeze = function (obj: object): object {
   // Freeze self (no-op if already frozen)
   return Object.freeze(obj)
 }
+
+/**
+ * Check whether a record name should be excluded from storage
+ */
+export const isExcluded = function (exclusionPrefixes: Array<string>, recordName: string): boolean {
+  if (!exclusionPrefixes) {
+    return false
+  }
+
+  for (let i = 0; i < exclusionPrefixes.length; i++) {
+    if (recordName.startsWith(exclusionPrefixes[i])) {
+      return true
+    }
+  }
+  return false
+}
