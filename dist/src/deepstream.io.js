@@ -17,6 +17,7 @@ const record_handler_1 = require("./record/record-handler");
 const default_options_1 = require("./default-options");
 const configInitialiser = require("./config/config-initialiser");
 const jsYamlLoader = require("./config/js-yaml-loader");
+const configValidator = require("./config/config-validator");
 const cluster_node_1 = require("./cluster/cluster-node");
 const lock_registry_1 = require("./cluster/lock-registry");
 const dependency_initialiser_1 = require("./utils/dependency-initialiser");
@@ -296,18 +297,18 @@ class Deepstream extends events_1.EventEmitter {
      * those plugins are handled through the DependencyInitialiser in this instance.
      */
     loadConfig(config) {
+        let result;
         if (config === null || typeof config === 'string') {
-            const result = jsYamlLoader.loadConfig(config);
+            result = jsYamlLoader.loadConfig(config);
             this.configFile = result.file;
-            this.config = result.config;
-            this.services = result.services;
         }
         else {
             const rawConfig = utils_1.merge(default_options_1.get(), config);
-            const result = configInitialiser.initialise(rawConfig);
-            this.config = result.config;
-            this.services = result.services;
+            result = configInitialiser.initialise(rawConfig);
         }
+        configValidator.validate(result.config);
+        this.config = result.config;
+        this.services = result.services;
     }
     /**
      * Shows a giant ASCII art logo which is absolutely crucial

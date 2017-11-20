@@ -27,7 +27,7 @@ describe('record handler handles messages', () => {
             .expects('sendMessage')
             .once()
             .withExactArgs(M.readResponseMessage);
-        recordHandler.handle(client.socketWrapper, M.createOrReadMessage);
+        recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage);
         expect(services.permissionHandler.lastArgs.length).toBe(2);
         expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE);
         expect(services.permissionHandler.lastArgs[1][1].action).toBe(C.RECORD_ACTIONS.READ);
@@ -38,17 +38,17 @@ describe('record handler handles messages', () => {
             .expects('sendMessage')
             .once()
             .withExactArgs(M.readResponseMessage);
-        recordHandler.handle(client.socketWrapper, M.createOrReadMessage);
+        recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage);
         expect(services.permissionHandler.lastArgs.length).toBe(1);
         expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.READ);
     });
     it('rejects a create', () => {
         services.permissionHandler.nextResult = false;
         client.socketWrapperMock
-            .expects('sendError')
+            .expects('sendMessage')
             .once()
-            .withExactArgs(M.createDeniedMessage, C.RECORD_ACTIONS.MESSAGE_DENIED);
-        recordHandler.handle(client.socketWrapper, M.createOrReadMessage);
+            .withExactArgs(M.subscribeCreateAndReadDeniedMessage);
+        recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage);
         expect(services.permissionHandler.lastArgs.length).toBe(1);
         expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE);
     });
@@ -56,10 +56,10 @@ describe('record handler handles messages', () => {
         services.cache.set('some-record', {}, () => { });
         services.permissionHandler.nextResult = false;
         client.socketWrapperMock
-            .expects('sendError')
+            .expects('sendMessage')
             .once()
-            .withExactArgs(M.readDeniedMessage, C.RECORD_ACTIONS.MESSAGE_DENIED);
-        recordHandler.handle(client.socketWrapper, M.createOrReadMessage);
+            .withExactArgs(M.subscribeCreateAndReadDeniedMessage);
+        recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage);
         expect(services.permissionHandler.lastArgs.length).toBe(1);
         expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.READ);
     });
@@ -67,10 +67,10 @@ describe('record handler handles messages', () => {
         services.permissionHandler.nextError = 'XXX';
         services.permissionHandler.nextResult = false;
         client.socketWrapperMock
-            .expects('sendError')
+            .expects('sendMessage')
             .once()
-            .withExactArgs(M.createDeniedMessage, C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR);
-        recordHandler.handle(client.socketWrapper, M.createOrReadMessage);
+            .withExactArgs(M.subscribeCreateAndReadPermissionErrorMessage);
+        recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage);
         expect(services.permissionHandler.lastArgs.length).toBe(1);
         expect(services.permissionHandler.lastArgs[0][1].action).toBe(C.RECORD_ACTIONS.CREATE);
     });

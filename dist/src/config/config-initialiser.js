@@ -98,12 +98,11 @@ function handleLogger(config) {
         logger.warn = logger.log.bind(config.logger, constants_1.LOG_LEVEL.WARN);
         logger.error = logger.log.bind(config.logger, constants_1.LOG_LEVEL.ERROR);
     }
-    const LOG_LEVEL_KEYS = Object.keys(constants_1.LOG_LEVEL);
-    if (LOG_LEVEL_KEYS[config.logLevel]) {
+    if (constants_1.LOG_LEVEL[config.logLevel]) {
         // NOTE: config.logLevel has highest priority, compare to the level defined
         // in the nested logger object
         config.logLevel = config.logLevel;
-        logger.setLogLevel(config.logLevel);
+        logger.setLogLevel(constants_1.LOG_LEVEL[config.logLevel]);
     }
     return logger;
 }
@@ -198,10 +197,10 @@ function resolvePluginClass(plugin, type) {
     let requirePath;
     let pluginConstructor;
     let es6Adaptor;
-    if (plugin.type === 'default-cache') {
+    if (plugin.name === 'default-cache') {
         pluginConstructor = local_cache_1.default;
     }
-    else if (plugin.type === 'default-storage') {
+    else if (plugin.name === 'default-storage') {
         pluginConstructor = noop_storage_1.default;
     }
     else if (plugin.path != null) {

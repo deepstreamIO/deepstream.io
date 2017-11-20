@@ -52,7 +52,7 @@ class RecordDeletion {
      */
     done() {
         this.services.logger.info(constants_1.RECORD_ACTIONS[constants_1.RECORD_ACTIONS.DELETE], this.recordName, this.metaData);
-        this.socketWrapper.sendAckMessage(this.message);
+        this.socketWrapper.sendMessage({ topic: constants_1.TOPIC.RECORD, action: constants_1.RECORD_ACTIONS.DELETE_SUCCESS, name: this.message.name });
         this.message = Object.assign({}, this.message, { action: constants_1.RECORD_ACTIONS.DELETED });
         this.successCallback(this.recordName, this.message, this.socketWrapper);
         this.destroy();
@@ -72,7 +72,11 @@ class RecordDeletion {
      * Handle errors that occured during deleting the record
      */
     handleError(errorMsg) {
-        this.socketWrapper.sendError(this.message, constants_1.RECORD_ACTIONS.RECORD_DELETE_ERROR);
+        this.socketWrapper.sendMessage({
+            topic: constants_1.TOPIC.RECORD,
+            action: constants_1.RECORD_ACTIONS.RECORD_DELETE_ERROR,
+            name: this.recordName
+        });
         this.services.logger.error(constants_1.RECORD_ACTIONS[constants_1.RECORD_ACTIONS.RECORD_DELETE_ERROR], errorMsg, this.metaData);
         this.destroy();
     }

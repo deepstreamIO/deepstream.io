@@ -18,9 +18,11 @@ class MessageDistributor {
     distribute(socketWrapper, message) {
         if (this.callbacks[message.topic] === undefined) {
             this.services.logger.warn(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.UNKNOWN_TOPIC], constants_1.TOPIC[message.topic]);
-            socketWrapper.sendError({
-                topic: constants_1.TOPIC.ERROR,
-            }, constants_1.PARSER_ACTIONS.UNKNOWN_TOPIC, constants_1.TOPIC[message.topic]);
+            socketWrapper.sendMessage({
+                topic: constants_1.TOPIC.PARSER,
+                action: constants_1.PARSER_ACTIONS.UNKNOWN_TOPIC,
+                originalTopic: message.topic
+            });
             return;
         }
         // TODO: Can we remove this? A general emit is quite expensive

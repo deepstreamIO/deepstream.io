@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../constants");
+const utils_1 = require("../../protocol/binary/src/utils");
 const Ajv = require("ajv");
-const utils = require("../utils/utils");
+const utils_2 = require("../utils/utils");
 const jif_schema_1 = require("./jif-schema");
 const ajv = new Ajv();
 const validateJIF = ajv.compile(jif_schema_1.default);
@@ -26,7 +27,7 @@ function getJifToMsg() {
             topic: constants_1.TOPIC.RPC,
             action: constants_1.RPC_ACTIONS.REQUEST,
             name: msg.rpcName,
-            correlationId: utils.getUid(),
+            correlationId: utils_2.getUid(),
             parsedData: msg.data,
         },
     });
@@ -44,23 +45,25 @@ function getJifToMsg() {
         done: false,
         message: {
             topic: constants_1.TOPIC.RECORD,
-            action: constants_1.RECORD_ACTIONS.CREATEANDUPDATE,
+            action: constants_1.RECORD_ACTIONS.CREATEANDPATCH_WITH_WRITE_ACK,
             name: msg.recordName,
             version: msg.version || -1,
             path: msg.path,
             parsedData: msg.data,
             isWriteAck: true,
+            correlationId: 0
         },
     });
     JIF_TO_MSG.record.update = msg => ({
         done: false,
         message: {
             topic: constants_1.TOPIC.RECORD,
-            action: constants_1.RECORD_ACTIONS.CREATEANDUPDATE,
+            action: constants_1.RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK,
             name: msg.recordName,
             version: msg.version || -1,
             parsedData: msg.data,
             isWriteAck: true,
+            correlationId: 0
         },
     });
     JIF_TO_MSG.record.head = msg => ({
@@ -92,11 +95,12 @@ function getJifToMsg() {
         done: false,
         message: {
             topic: constants_1.TOPIC.RECORD,
-            action: constants_1.RECORD_ACTIONS.CREATEANDUPDATE,
+            action: constants_1.RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK,
             name: msg.listName,
             version: msg.version || -1,
             parsedData: msg.data,
             isWriteAck: true,
+            correlationId: 0
         },
     });
     JIF_TO_MSG.list.delete = msg => ({
@@ -124,7 +128,7 @@ function getJifToMsg() {
             data: msg.parsedData,
         },
     });
-    return utils.deepFreeze(JIF_TO_MSG);
+    return utils_2.deepFreeze(JIF_TO_MSG);
 }
 // message type enumeration
 const TYPE = { ACK: 'A', NORMAL: 'N' };
@@ -158,12 +162,18 @@ function getMsgToJif() {
     MSG_TO_JIF[constants_1.TOPIC.RECORD][constants_1.RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
         done: true,
         message: {
-            error: message.parsedData[1] || undefined,
-            success: message.parsedData[1] === null,
+            success: true,
         },
     });
     MSG_TO_JIF[constants_1.TOPIC.RECORD][constants_1.RECORD_ACTIONS.DELETE] = {};
-    MSG_TO_JIF[constants_1.TOPIC.RECORD][constants_1.RECORD_ACTIONS.DELETE][TYPE.ACK] = () => ({
+    MSG_TO_JIF[constants_1.TOPIC.RECORD][constants_1.RECORD_ACTIONS.DELETE][TYPE.NORMAL] = () => ({
+        done: true,
+        message: {
+            success: true,
+        },
+    });
+    MSG_TO_JIF[constants_1.TOPIC.RECORD][constants_1.RECORD_ACTIONS.DELETE_SUCCESS] = {};
+    MSG_TO_JIF[constants_1.TOPIC.RECORD][constants_1.RECORD_ACTIONS.DELETE_SUCCESS][TYPE.NORMAL] = () => ({
         done: true,
         message: {
             success: true,
@@ -182,7 +192,7 @@ function getMsgToJif() {
     MSG_TO_JIF[constants_1.TOPIC.PRESENCE][constants_1.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = message => ({
         done: true,
         message: {
-            users: message.parsedData,
+            users: message.names,
             success: true,
         },
     });
@@ -194,13 +204,13 @@ function getMsgToJif() {
             success: true,
         },
     });
-    return utils.deepFreeze(MSG_TO_JIF);
+    return utils_2.deepFreeze(MSG_TO_JIF);
 }
 class JIFHandler {
     constructor(options) {
         this.JIF_TO_MSG = getJifToMsg();
         this.MSG_TO_JIF = getMsgToJif();
-        this.topicToKey = utils.reverseMap(constants_1.TOPIC);
+        this.topicToKey = utils_2.reverseMap(constants_1.TOPIC);
         this.logger = options.logger;
     }
     /*
@@ -262,6 +272,9 @@ class JIFHandler {
         else {
             type = TYPE.NORMAL;
         }
+        if (message.isError) {
+            return this.errorToJIF(message, message.action);
+        }
         return this.MSG_TO_JIF[message.topic][message.action][type](message);
     }
     /*
@@ -283,9 +296,11 @@ class JIFHandler {
             errorEvent: event,
             success: false,
         };
-        if (event === constants_1.AUTH_ACTIONS.MESSAGE_DENIED) {
-            result.action = message.action;
-            result.error = `Message denied. Action "${constants_1.ACTIONS[message.topic][message.action]}" is not permitted.`;
+        if (event === constants_1.EVENT_ACTIONS.MESSAGE_DENIED) {
+            result.action = message.originalAction;
+            result.error = `Message denied. Action "${utils_1.isWriteAck(result.action)
+                ? constants_1.ACTIONS[message.topic][utils_1.WRITE_ACK_TO_ACTION[result.action]]
+                : constants_1.ACTIONS[message.topic][result.action]}" is not permitted.`;
         }
         else if (event === constants_1.RECORD_ACTIONS.VERSION_EXISTS) {
             result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`;
@@ -294,13 +309,13 @@ class JIFHandler {
         }
         else if (event === constants_1.RECORD_ACTIONS.RECORD_NOT_FOUND) {
             result.error = `Record read failed. Record "${message.name}" could not be found.`;
-            result.errorEvent = message.event;
+            result.errorEvent = message.action;
         }
         else if (event === constants_1.RPC_ACTIONS.NO_RPC_PROVIDER) {
             result.error = `No provider was available to handle the RPC "${message.name}".`;
             // message.correlationId = data[1]
         }
-        else if (message.topic === constants_1.TOPIC.RPC && event === constants_1.RPC_ACTIONS.RESPONSE_TIMEOUT) {
+        else if (message.topic === constants_1.TOPIC.RPC && message.action === constants_1.RPC_ACTIONS.RESPONSE_TIMEOUT) {
             result.error = 'The RPC response timeout was exceeded by the provider.';
         }
         else {

@@ -11,14 +11,14 @@ class LocalCache extends events_1.EventEmitter {
     }
     set(key, value, callback) {
         this.data[key] = value;
-        callback(null);
+        process.nextTick(() => callback(null));
     }
     get(key, callback) {
-        callback(null, this.data[key] || null);
+        process.nextTick(() => callback(null, this.data[key] || null));
     }
     delete(key, callback) {
         delete this.data[key];
-        callback(null);
+        process.nextTick(() => callback(null));
     }
 }
 exports.default = LocalCache;

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable class-methods-use-this */
 const events_1 = require("events");
-const messageParser = require("../../../protocol/text/src/message-parser");
+const messageParser = require("../../../protocol/binary/src/message-parser");
 class HTTPSocketWrapper extends events_1.EventEmitter {
     constructor(options, onMessage, onError) {
         super();
@@ -33,6 +33,8 @@ class HTTPSocketWrapper extends events_1.EventEmitter {
     flush() {
     }
     onMessage() {
+    }
+    getMessage() {
     }
     /**
      * Returns a map of parameters that were collected
@@ -71,6 +73,9 @@ class HTTPSocketWrapper extends events_1.EventEmitter {
      * @returns {void}
      */
     sendMessage(message) {
+        if (messageParser.isError(message)) {
+            message.isError = true;
+        }
         if (this.isClosed === false) {
             messageParser.parseData(message);
             this._onMessage(this._messageResults, this._correlationIndex, message, this._responseCallback, this._requestTimeout);

@@ -21,7 +21,7 @@ const RULE_TYPES = {
 /**
  * This class maps topic / action combinations to applicable
  * rules. It combines actions of a similar character (e.g. READ,
- * SNAPSHOT, HAS) into high level permissions (e.g. read)
+ * SNAPSHOT) into high level permissions (e.g. read)
  *
  * Lower level permissioning on a per action basis can still be achieved
  * by virtue of using the action variable within the rule, e.g.
@@ -36,7 +36,7 @@ const RULES_MAP = {
         section: 'record',
         actions: {
             [constants_1.RECORD_ACTIONS.READ]: RULE_TYPES.READ,
-            [constants_1.RECORD_ACTIONS.HAS]: RULE_TYPES.READ,
+            [constants_1.RECORD_ACTIONS.HEAD]: RULE_TYPES.READ,
             [constants_1.RECORD_ACTIONS.LISTEN]: RULE_TYPES.LISTEN,
             [constants_1.RECORD_ACTIONS.CREATE]: RULE_TYPES.CREATE,
             [constants_1.RECORD_ACTIONS.UPDATE]: RULE_TYPES.WRITE,
@@ -63,6 +63,7 @@ const RULES_MAP = {
         section: 'presence',
         actions: {
             [constants_1.PRESENCE_ACTIONS.SUBSCRIBE]: RULE_TYPES.ALLOW,
+            [constants_1.PRESENCE_ACTIONS.SUBSCRIBE_ALL]: RULE_TYPES.ALLOW,
             [constants_1.PRESENCE_ACTIONS.QUERY]: RULE_TYPES.ALLOW,
             [constants_1.PRESENCE_ACTIONS.QUERY_ALL]: RULE_TYPES.ALLOW,
         },

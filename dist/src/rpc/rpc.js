@@ -84,7 +84,12 @@ class Rpc {
     */
     handleAccept(message) {
         if (this.isAccepted === true) {
-            this.provider.sendError(this.message, constants_1.RPC_ACTIONS.MULTIPLE_ACCEPT);
+            this.provider.sendMessage({
+                topic: constants_1.TOPIC.RPC,
+                action: constants_1.RPC_ACTIONS.MULTIPLE_ACCEPT,
+                name: this.message.name,
+                correlationId: this.message.correlationId
+            });
             return;
         }
         clearTimeout(this.acceptTimeout);
@@ -105,7 +110,12 @@ class Rpc {
             this.setProvider(alternativeProvider);
         }
         else {
-            this.requestor.sendError(this.message, constants_1.RPC_ACTIONS.NO_RPC_PROVIDER);
+            this.requestor.sendMessage({
+                topic: constants_1.TOPIC.RPC,
+                action: constants_1.RPC_ACTIONS.NO_RPC_PROVIDER,
+                name: this.message.name,
+                correlationId: this.message.correlationId
+            });
             this.destroy();
         }
     }
@@ -114,7 +124,12 @@ class Rpc {
     * in time by the provider
     */
     onAcceptTimeout() {
-        this.requestor.sendError(this.message, constants_1.RPC_ACTIONS.ACCEPT_TIMEOUT);
+        this.requestor.sendMessage({
+            topic: constants_1.TOPIC.RPC,
+            action: constants_1.RPC_ACTIONS.ACCEPT_TIMEOUT,
+            name: this.message.name,
+            correlationId: this.message.correlationId
+        });
         this.destroy();
     }
     /**
@@ -122,7 +137,12 @@ class Rpc {
     * in time by the provider
     */
     onResponseTimeout() {
-        this.requestor.sendError(this.message, constants_1.RPC_ACTIONS.RESPONSE_TIMEOUT);
+        this.requestor.sendMessage({
+            topic: constants_1.TOPIC.RPC,
+            action: constants_1.RPC_ACTIONS.RESPONSE_TIMEOUT,
+            name: this.message.name,
+            correlationId: this.message.correlationId
+        });
         this.destroy();
     }
 }

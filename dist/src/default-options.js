@@ -81,11 +81,11 @@ function get() {
         },
         plugins: {
             cache: {
-                type: 'default-cache',
+                name: 'default-cache',
                 options: {}
             },
             storage: {
-                type: 'default-storage',
+                name: 'default-storage',
                 options: {}
             }
         },

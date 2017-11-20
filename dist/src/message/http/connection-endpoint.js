@@ -338,13 +338,13 @@ class HTTPConnectionEndpoint extends events_1.EventEmitter {
      */
     onPermissionResponse(socketWrapper, message, messageResults, messageIndex, error, permissioned) {
         if (error !== null) {
-            this.options.logger.warn(constants_1.AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR, error.toString());
+            this.options.logger.warn(constants_1.EVENT_ACTIONS[constants_1.EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString());
         }
         if (permissioned !== true) {
             messageResults[messageIndex] = {
                 success: false,
                 error: 'Message denied. Action \'emit\' is not permitted.',
-                errorEvent: constants_1.AUTH_ACTIONS[constants_1.AUTH_ACTIONS.MESSAGE_DENIED],
+                errorEvent: constants_1.EVENT_ACTIONS[constants_1.EVENT_ACTIONS.MESSAGE_DENIED],
                 errorAction: 'emit',
                 errorTopic: 'event'
             };

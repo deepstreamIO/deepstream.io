@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const http = require("http");
 const https = require("https");
@@ -20,12 +20,12 @@ class Server extends events_1.EventEmitter {
         this.config = config;
         this.logger = logger;
         this.isReady = false;
-        this._methods = ['GET', 'POST', 'OPTIONS'];
-        this._methodsStr = this._methods.join(', ');
-        this._headers = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept'];
-        this._headersLower = this._headers.map(header => header.toLowerCase());
-        this._headersStr = this._headers.join(', ');
-        this._jsonBodyParser = bodyParser.json({
+        this.methods = ['GET', 'POST', 'OPTIONS'];
+        this.methodsStr = this.methods.join(', ');
+        this.headers = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept'];
+        this.headersLower = this.headers.map(header => header.toLowerCase());
+        this.headersStr = this.headers.join(', ');
+        this.jsonBodyParser = bodyParser.json({
             inflate: true,
             limit: '1mb' // TODO: make this configurable
         });
@@ -40,7 +40,7 @@ class Server extends events_1.EventEmitter {
         // checkConfigOption(config, 'maxRequestPayload', 'number')
         if (config.allowAllOrigins === false) {
             checkConfigOption(config, 'origins', 'string');
-            this._origins = config.origins;
+            this.origins = config.origins;
         }
         this.authPathRegExp = new RegExp(`^${config.authPath}/?(.*)$`, 'i');
         this.postPathRegExp = new RegExp(`^${config.postPath}/?(.*)$`, 'i');
@@ -48,14 +48,14 @@ class Server extends events_1.EventEmitter {
     }
     start() {
         const server = this._createHttpServer();
-        this._httpServer = httpShutdown(server);
-        this._httpServer.on('request', this._onRequest.bind(this));
-        this._httpServer.once('listening', this._onReady.bind(this));
-        this._httpServer.on('error', this._onError.bind(this));
-        this._httpServer.listen(this.config.port, this.config.host);
+        this.httpServer = httpShutdown(server);
+        this.httpServer.on('request', this._onRequest.bind(this));
+        this.httpServer.once('listening', this._onReady.bind(this));
+        this.httpServer.on('error', this._onError.bind(this));
+        this.httpServer.listen(this.config.port, this.config.host);
     }
     stop(callback) {
-        this._httpServer.shutdown(callback);
+        this.httpServer.shutdown(callback);
     }
     /**
      * Called when the server starts listening for requests.
@@ -64,7 +64,7 @@ class Server extends events_1.EventEmitter {
      * @returns {void}
      */
     _onReady() {
-        const serverAddress = this._httpServer.address();
+        const serverAddress = this.httpServer.address();
         const address = serverAddress.address;
         const port = serverAddress.port;
         this.logger.info(constants_1.EVENT.INFO, `Listening for http connections on ${address}:${port}`);
@@ -75,7 +75,12 @@ class Server extends events_1.EventEmitter {
     static _terminateResponse(response, code, message) {
         response.setHeader('Content-Type', 'text/plain; charset=utf-8');
         response.writeHead(code);
-        response.end(`${message}\r\n\r\n`);
+        if (message) {
+            response.end(`${message}\r\n\r\n`);
+        }
+        else {
+            response.end();
+        }
     }
     /**
      * Creates an HTTP or HTTPS server for ws to attach itself to,
@@ -104,9 +109,9 @@ class Server extends events_1.EventEmitter {
     * }
     */
     _getHttpsParams() {
-        const key = this._sslKey;
-        const cert = this._sslCert;
-        const ca = this._sslCa;
+        const key = this.sslKey;
+        const cert = this.sslCert;
+        const ca = this.sslCa;
         if (key || cert) {
             if (!key) {
                 throw new Error('Must also include sslKey in order to use HTTPS');
@@ -138,7 +143,7 @@ class Server extends events_1.EventEmitter {
                 this._handleOptions(request, response);
                 break;
             default:
-                Server._terminateResponse(response, HTTPStatus.METHOD_NOT_ALLOWED, `Unsupported method. Supported methods: ${this._methodsStr}`);
+                Server._terminateResponse(response, HTTPStatus.METHOD_NOT_ALLOWED, `Unsupported method. Supported methods: ${this.methodsStr}`);
         }
     }
     _verifyOrigin(request, response) {
@@ -148,7 +153,7 @@ class Server extends events_1.EventEmitter {
             Server._terminateResponse(response, HTTPStatus.FORBIDDEN, 'Forbidden Host.');
             return false;
         }
-        if (this._origins.indexOf(requestOriginUrl) === -1) {
+        if (this.origins.indexOf(requestOriginUrl) === -1) {
             if (!requestOriginUrl) {
                 Server._terminateResponse(response, HTTPStatus.FORBIDDEN, 'CORS is configured for this server. All requests must set a valid "Origin" header.');
             }
@@ -175,7 +180,7 @@ class Server extends events_1.EventEmitter {
             Server._terminateResponse(response, HTTPStatus.UNSUPPORTED_MEDIA_TYPE, 'Invalid "Content-Type" header. Supported media types: "application/json"');
             return;
         }
-        this._jsonBodyParser(request, response, (err) => {
+        this.jsonBodyParser(request, response, err => {
             if (err) {
                 Server._terminateResponse(response, HTTPStatus.BAD_REQUEST, `Failed to parse body of request: ${err.message}`);
                 return;
@@ -210,22 +215,29 @@ class Server extends events_1.EventEmitter {
     }
     _handleOptions(request, response) {
         const requestMethod = request.headers['access-control-request-method'];
-        if (this._methods.indexOf(requestMethod) === -1) {
-            Server._terminateResponse(response, HTTPStatus.FORBIDDEN, `Method ${requestMethod} is forbidden. Supported methods: ${this._methodsStr}`);
+        if (!requestMethod) {
+            Server._terminateResponse(response, HTTPStatus.BAD_REQUEST, 'Missing header "Access-Control-Request-Method".');
             return;
         }
-        const requestHeaders = typeof request.headers['access-control-request-headers'] === 'string'
-            ? request.headers['access-control-request-headers'].split(',')
-            : request.headers['access-control-request-headers'];
+        if (this.methods.indexOf(requestMethod) === -1) {
+            Server._terminateResponse(response, HTTPStatus.FORBIDDEN, `Method ${requestMethod} is forbidden. Supported methods: ${this.methodsStr}`);
+            return;
+        }
+        const requestHeadersRaw = request.headers['access-control-request-headers'];
+        if (!requestHeadersRaw) {
+            Server._terminateResponse(response, HTTPStatus.BAD_REQUEST, 'Missing header "Access-Control-Request-Headers".');
+            return;
+        }
+        const requestHeaders = requestHeadersRaw.split(',');
         for (let i = 0; i < requestHeaders.length; i++) {
-            if (this._headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
-                Server._terminateResponse(response, HTTPStatus.FORBIDDEN, `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this._headersStr}`);
+            if (this.headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
+                Server._terminateResponse(response, HTTPStatus.FORBIDDEN, `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this.headersStr}`);
                 return;
             }
         }
-        response.setHeader('Access-Control-Allow-Methods', this._methodsStr);
-        response.setHeader('Access-Control-Allow-Headers', this._headersStr);
-        Server._terminateResponse(response, HTTPStatus.OK, 'OK');
+        response.setHeader('Access-Control-Allow-Methods', this.methodsStr);
+        response.setHeader('Access-Control-Allow-Headers', this.headersStr);
+        Server._terminateResponse(response, HTTPStatus.NO_CONTENT);
     }
     static _onHandlerResponse(response, err, data) {
         if (err) {

@@ -193,7 +193,10 @@ class ListenerRegistry {
             pattern: message.name,
             closeListener: this.removeListener.bind(this, socketWrapper, message),
         };
-        socketWrapper.once('close', this.locallyProvidedRecords[subscriptionName].closeListener);
+        const provider = this.locallyProvidedRecords[subscriptionName];
+        if (provider.closeListener) {
+            socketWrapper.once('close', provider.closeListener);
+        }
         this.stopLocalDiscoveryStage(subscriptionName);
         this.clusterProvidedRecords.add(subscriptionName);
     }
@@ -252,7 +255,9 @@ class ListenerRegistry {
             const provider = this.locallyProvidedRecords[subscriptionName];
             if (provider.socketWrapper === socketWrapper &&
                 provider.pattern === pattern) {
-                provider.socketWrapper.removeListener('close', provider.closeListener);
+                if (provider.closeListener) {
+                    provider.socketWrapper.removeListener('close', provider.closeListener);
+                }
                 this.removeActiveListener(subscriptionName);
                 if (this.clientRegistry.hasLocalSubscribers(subscriptionName)) {
                     this.startDiscoveryStage(subscriptionName);
@@ -302,6 +307,10 @@ class ListenerRegistry {
         }
         else {
             const nextServerName = this.leadingListen[subscriptionName].shift();
+            if (!nextServerName) {
+                console.warn(constants_1.EVENT.INFO, 'empty leading listen array', this.metaData);
+                return;
+            }
             this.services.logger.debug(constants_1.EVENT.LEADING_LISTEN, `started for ${this.topic}:${subscriptionName}`, this.metaData);
             this.sendRemoteDiscoveryStart(nextServerName, subscriptionName);
         }
@@ -351,6 +360,10 @@ class ListenerRegistry {
             return;
         }
         const provider = listenInProgress.shift();
+        if (!provider) {
+            this.services.logger.warn(constants_1.EVENT.INFO, 'no listen in progress', this.metaData);
+            return;
+        }
         const subscribers = this.clientRegistry.getLocalSubscribers(subscriptionName);
         if (subscribers && subscribers.has(provider.socketWrapper)) {
             this.stopLocalDiscoveryStage(subscriptionName);
@@ -419,7 +432,7 @@ class ListenerRegistry {
         if (socketWrapper && this.topic === constants_1.TOPIC.RECORD) {
             socketWrapper.sendMessage({
                 topic: this.topic,
-                action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
+                action: constants_1.RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
                 name: subscriptionName,
                 parsedData: hasProvider,
             });
@@ -434,7 +447,7 @@ class ListenerRegistry {
         }
         this.clientRegistry.sendToSubscribers(subscriptionName, {
             topic: this.topic,
-            action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
+            action: constants_1.RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
             name: subscriptionName,
             parsedData: hasProvider,
         }, false, null);
@@ -455,11 +468,11 @@ class ListenerRegistry {
     * complete its local discovery start
     */
     sendRemoteDiscoveryStop(listenLeaderServerName, subscriptionName) {
-        this.message.sendDirect(listenLeaderServerName, {
-            topic: this.messageTopic,
-            action: this.actions.ACK,
-            name: subscriptionName,
-        }, this.metaData);
+        // this.message.sendDirect(listenLeaderServerName, {
+        //   topic: this.messageTopic,
+        //   action: this.actions.ACK,
+        //   name: subscriptionName,
+        // }, this.metaData)
     }
     /**
     * Send a subscription found to a provider
@@ -537,8 +550,12 @@ class ListenerRegistry {
             return new RegExp(message.name);
         }
         catch (e) {
-            socketWrapper.sendError({ topic: this.topic }, this.actions.INVALID_LISTEN_REGEX);
-            this.services.logger.error(this.actions[this.actions.INVALID_LISTEN_REGEX], e.toString(), this.metaData);
+            socketWrapper.sendMessage({
+                topic: this.topic,
+                action: this.actions.INVALID_LISTEN_REGEX,
+                name: message.name
+            });
+            this.services.logger.warn(this.actions[this.actions.INVALID_LISTEN_REGEX], e.toString(), this.metaData);
             return null;
         }
     }

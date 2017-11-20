@@ -25,9 +25,9 @@ describe('record deletion', () => {
     });
     it('deletes records - happy path', () => {
         client.socketWrapperMock
-            .expects('sendAckMessage')
+            .expects('sendMessage')
             .once()
-            .withExactArgs(M.deletionMsg);
+            .withExactArgs(M.deletionSuccessMsg);
         recordDeletion = new RecordDeletion(config, services, client.socketWrapper, M.deletionMsg, callback);
         expect(services.cache.completedDeleteOperations).toBe(1);
         expect(services.storage.completedDeleteOperations).toBe(1);
@@ -38,13 +38,13 @@ describe('record deletion', () => {
         services.cache.nextOperationWillBeSuccessful = false;
         services.cache.nextOperationWillBeSynchronous = false;
         client.socketWrapperMock
-            .expects('sendError')
+            .expects('sendMessage')
             .once()
             .withExactArgs({
             topic: C.TOPIC.RECORD,
-            action: C.RECORD_ACTIONS.DELETE,
+            action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
             name: 'someRecord'
-        }, C.RECORD_ACTIONS.RECORD_DELETE_ERROR);
+        });
         recordDeletion = new RecordDeletion(config, services, client.socketWrapper, M.deletionMsg, callback);
         setTimeout(() => {
             expect(recordDeletion.isDestroyed).toBe(true);
@@ -58,13 +58,13 @@ describe('record deletion', () => {
         services.cache.nextOperationWillBeSuccessful = false;
         services.cache.nextOperationWillBeSynchronous = false;
         client.socketWrapperMock
-            .expects('sendError')
+            .expects('sendMessage')
             .once()
             .withExactArgs({
             topic: C.TOPIC.RECORD,
-            action: C.RECORD_ACTIONS.DELETE,
+            action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
             name: 'someRecord'
-        }, C.RECORD_ACTIONS.RECORD_DELETE_ERROR);
+        });
         recordDeletion = new RecordDeletion(config, services, client.socketWrapper, M.deletionMsg, callback);
         setTimeout(() => {
             expect(recordDeletion.isDestroyed).toBe(true);
@@ -76,9 +76,9 @@ describe('record deletion', () => {
     it('doesn\'t delete excluded messages from storage', () => {
         config.storageExclusion = new RegExp('no-storage/');
         client.socketWrapperMock
-            .expects('sendAckMessage')
+            .expects('sendMessage')
             .once()
-            .withExactArgs(M.anotherDeletionMsg);
+            .withExactArgs(M.anotherDeletionSuccessMsg);
         recordDeletion = new RecordDeletion(config, services, client.socketWrapper, M.anotherDeletionMsg, callback);
         expect(services.cache.completedDeleteOperations).toBe(1);
         expect(services.storage.completedDeleteOperations).toBe(0);

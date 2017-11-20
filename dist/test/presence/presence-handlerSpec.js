@@ -24,34 +24,32 @@ describe('presence handler', () => {
     });
     it('subscribes to client logins and logouts', () => {
         const subscriptionMessage = {
-            topic: C.TOPIC.EVENT,
-            action: C.PRESENCE_ACTIONS.SUBSCRIBE,
-            data: 'S'
+            topic: C.TOPIC.PRESENCE,
+            action: C.PRESENCE_ACTIONS.SUBSCRIBE_ALL,
         };
         testMocks.subscriptionRegistryMock
             .expects('subscribe')
             .once()
             .withExactArgs({
             topic: C.TOPIC.PRESENCE,
-            action: C.PRESENCE_ACTIONS.SUBSCRIBE,
+            action: C.PRESENCE_ACTIONS.SUBSCRIBE_ALL,
             name: EVERYONE
-        }, userOne.socketWrapper);
+        }, userOne.socketWrapper, true);
         presenceHandler.handle(userOne.socketWrapper, subscriptionMessage);
     });
     it('unsubscribes to client logins and logouts', () => {
         const unsubscriptionMessage = {
-            topic: C.TOPIC.EVENT,
-            action: C.PRESENCE_ACTIONS.UNSUBSCRIBE,
-            data: 'S'
+            topic: C.TOPIC.PRESENCE,
+            action: C.PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
         };
         testMocks.subscriptionRegistryMock
             .expects('unsubscribe')
             .once()
             .withExactArgs({
             topic: C.TOPIC.PRESENCE,
-            action: C.PRESENCE_ACTIONS.UNSUBSCRIBE,
+            action: C.PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
             name: EVERYONE
-        }, userOne.socketWrapper);
+        }, userOne.socketWrapper, true);
         presenceHandler.handle(userOne.socketWrapper, unsubscriptionMessage);
     });
     it('does not return own name when queried and only user', () => {
@@ -71,7 +69,7 @@ describe('presence handler', () => {
             .withExactArgs({
             topic: C.TOPIC.PRESENCE,
             action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-            parsedData: []
+            names: []
         });
         presenceHandler.handle(userOne.socketWrapper, queryMessage);
     });
@@ -130,7 +128,7 @@ describe('presence handler', () => {
             .withExactArgs({
             topic: C.TOPIC.PRESENCE,
             action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-            parsedData: ['Bart']
+            names: ['Bart']
         });
         presenceHandler.handle(userOne.socketWrapper, queryMessage);
     });
@@ -151,7 +149,7 @@ describe('presence handler', () => {
             .withExactArgs({
             topic: C.TOPIC.PRESENCE,
             action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-            parsedData: ['Bart', 'Homer', 'Maggie']
+            names: ['Bart', 'Homer', 'Maggie']
         });
         presenceHandler.handle(userOne.socketWrapper, queryMessage);
     });
@@ -161,7 +159,7 @@ describe('presence handler', () => {
             .once()
             .withExactArgs(EVERYONE, {
             topic: C.TOPIC.PRESENCE,
-            action: C.PRESENCE_ACTIONS.PRESENCE_JOIN,
+            action: C.PRESENCE_ACTIONS.PRESENCE_JOIN_ALL,
             name: 'Bart'
         }, false, null, false);
         testMocks.subscriptionRegistryMock
@@ -180,7 +178,7 @@ describe('presence handler', () => {
             .once()
             .withExactArgs(EVERYONE, {
             topic: C.TOPIC.PRESENCE,
-            action: C.PRESENCE_ACTIONS.PRESENCE_LEAVE,
+            action: C.PRESENCE_ACTIONS.PRESENCE_LEAVE_ALL,
             name: 'Bart'
         }, false, null, false);
         testMocks.subscriptionRegistryMock

@@ -47,7 +47,13 @@ class RpcHandler {
             }
             else {
                 this.services.logger.warn(constants_1.RPC_ACTIONS[constants_1.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID], `name: ${message.name} with correlation id: ${message.correlationId}`, this.metaData);
-                socketWrapper.sendError(message, constants_1.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID);
+                socketWrapper.sendMessage({
+                    topic: constants_1.TOPIC.RPC,
+                    action: constants_1.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+                    originalAction: message.action,
+                    name: message.name,
+                    correlationId: message.correlationId
+                });
             }
         }
         else {
@@ -124,7 +130,12 @@ class RpcHandler {
             rpcData.providers.add(provider);
         }
         else if (isRemote) {
-            socketWrapper.sendError(message, constants_1.RPC_ACTIONS.NO_RPC_PROVIDER);
+            socketWrapper.sendMessage({
+                topic: constants_1.TOPIC.RPC,
+                action: constants_1.RPC_ACTIONS.NO_RPC_PROVIDER,
+                name: rpcName,
+                correlationId
+            });
         }
         else {
             this.makeRemoteRpc(socketWrapper, message);
@@ -157,7 +168,12 @@ class RpcHandler {
         this.rpcs.delete(correlationId);
         this.services.logger.warn(constants_1.RPC_ACTIONS[constants_1.RPC_ACTIONS.NO_RPC_PROVIDER], `name: ${message.name} with correlation id: ${message.correlationId}`, this.metaData);
         if (!requestor.isRemote) {
-            requestor.sendError(message, constants_1.RPC_ACTIONS.NO_RPC_PROVIDER);
+            requestor.sendMessage({
+                topic: constants_1.TOPIC.RPC,
+                action: constants_1.RPC_ACTIONS.NO_RPC_PROVIDER,
+                name: rpcName,
+                correlationId
+            });
         }
     }
     /**

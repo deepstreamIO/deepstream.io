@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../../constants");
-const messageBuilder = require("../../../protocol/text/src/message-builder");
-const messageParser = require("../../../protocol/text/src/message-parser");
+const binaryMessageBuilder = require("../../../protocol/binary/src/message-builder");
+const binaryMessageParser = require("../../../protocol/binary/src/message-parser");
 const uws = require("uws");
 const events_1 = require("events");
 /**
@@ -38,7 +38,7 @@ class UwsSocketWrapper extends events_1.EventEmitter {
      * Updates lastPreparedMessage and returns the [uws] prepared message.
      */
     prepareMessage(message) {
-        UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_TEXT);
+        UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_BINARY);
         return UwsSocketWrapper.lastPreparedMessage;
     }
     /**
@@ -59,19 +59,20 @@ class UwsSocketWrapper extends events_1.EventEmitter {
      * Variant of send with no particular checks or appends of message.
      */
     sendNative(message, allowBuffering) {
-        if (this.config.outgoingBufferTimeout === 0) {
-            uws.native.server.send(this.external, message, uws.OPCODE_TEXT);
-        }
-        else if (!allowBuffering) {
-            this.flush();
-            uws.native.server.send(this.external, message, uws.OPCODE_TEXT);
-        }
-        else {
-            this.bufferedWrites += message;
-            if (this.connectionEndpoint.scheduleFlush) {
-                this.connectionEndpoint.scheduleFlush(this);
-            }
-        }
+        uws.native.server.send(this.external, message, uws.OPCODE_BINARY);
+        /*
+         *if (this.config.outgoingBufferTimeout === 0) {
+         *  uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
+         *} else if (!allowBuffering) {
+         *  this.flush()
+         *  uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
+         *} else {
+         *  this.bufferedWrites += message
+         *  if (this.connectionEndpoint.scheduleFlush) {
+         *    this.connectionEndpoint.scheduleFlush(this)
+         *  }
+         *}
+         */
     }
     /**
      * Called by the connection endpoint to flush all buffered writes.
@@ -80,17 +81,8 @@ class UwsSocketWrapper extends events_1.EventEmitter {
      */
     flush() {
         if (this.bufferedWrites !== '') {
-            uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_TEXT);
+            uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_BINARY);
             this.bufferedWrites = '';
-        }
-    }
-    /**
-     * Sends an error on the specified topic. The
-     * action will automatically be set to C.ACTION.ERROR
-     */
-    sendError(message, action, errorMessage, allowBuffering) {
-        if (this.isClosed === false) {
-            this.sendNative(messageBuilder.getErrorMessage(message, action, errorMessage), allowBuffering);
         }
     }
     /**
@@ -100,14 +92,28 @@ class UwsSocketWrapper extends events_1.EventEmitter {
      */
     sendMessage(message, allowBuffering) {
         if (this.isClosed === false) {
-            this.sendNative(messageBuilder.getMessage(message, false), allowBuffering);
+            this.sendNative(binaryMessageBuilder.getMessage(message, false), allowBuffering);
         }
     }
     getMessage(message) {
-        return messageBuilder.getMessage(message, false);
+        return binaryMessageBuilder.getMessage(message, false);
     }
     parseMessage(message) {
-        return messageParser.parse(message);
+        let messageBuffer;
+        if (message instanceof ArrayBuffer) {
+            /* we copy the underlying buffer (since a shallow reference won't be safe
+             * outside of the callback)
+             * the copy could be avoided if we make sure not to store references to the
+             * raw buffer within the message
+             */
+            messageBuffer = Buffer.from(Buffer.from(message));
+        }
+        else {
+            // return textMessageParser.parse(message)
+            console.error('received string message', message);
+            return [];
+        }
+        return binaryMessageParser.parse(messageBuffer);
     }
     /**
      * Sends a message based on the provided action and topic
@@ -116,13 +122,13 @@ class UwsSocketWrapper extends events_1.EventEmitter {
      */
     sendAckMessage(message, allowBuffering) {
         if (this.isClosed === false) {
-            this.sendNative(messageBuilder.getMessage(message, true), allowBuffering);
+            this.sendNative(binaryMessageBuilder.getMessage(message, true), allowBuffering);
         }
     }
     parseData(message) {
-        return messageParser.parseData(message);
+        return binaryMessageParser.parseData(message);
     }
-    onMessage() {
+    onMessage(messages) {
     }
     /**
      * Destroys the socket. Removes all deepstream specific
@@ -147,6 +153,7 @@ class UwsSocketWrapper extends events_1.EventEmitter {
         return this.handshakeData;
     }
 }
+exports.UwsSocketWrapper = UwsSocketWrapper;
 UwsSocketWrapper.lastPreparedMessage = null;
 function createSocketWrapper(external, handshakeData, logger, config, connectionEndpoint) { return new UwsSocketWrapper(external, handshakeData, logger, config, connectionEndpoint); }
 exports.createSocketWrapper = createSocketWrapper;

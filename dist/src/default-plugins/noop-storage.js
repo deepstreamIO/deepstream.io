@@ -9,13 +9,13 @@ class NoopStorage extends events_1.EventEmitter {
         this.description = 'noop storage';
     }
     set(key, value, callback) {
-        callback(null);
+        process.nextTick(() => callback(null));
     }
     get(key, callback) {
-        callback(null, null);
+        process.nextTick(() => callback(null, null));
     }
     delete(key, callback) {
-        callback(null);
+        process.nextTick(() => callback(null));
     }
 }
 exports.default = NoopStorage;

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../../constants");
-const messageBuilder = require("../../../protocol/text/src/message-builder");
+const messageBuilder = require("../../../protocol/binary/src/message-builder");
 const socket_wrapper_factory_1 = require("./socket-wrapper-factory");
 const events_1 = require("events");
 const https = require("https");
@@ -66,6 +66,10 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
         const port = this._getOption('port');
         const host = this._getOption('host');
         this.server.listen(port, host);
+        this.pingMessage = messageBuilder.getMessage({
+            topic: constants_1.TOPIC.CONNECTION,
+            action: constants_1.CONNECTION_ACTIONS.PING
+        }, false);
     }
     /**
      * Called from a socketWrapper. This method tells the connection endpoint
@@ -113,7 +117,8 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
             }
         });
         uws.native.server.group.onMessage(this.serverGroup, (message, socketWrapper) => {
-            const parsedMessages = socketWrapper.parseMessage(message);
+            const parseResults = socketWrapper.parseMessage(message);
+            const parsedMessages = this._handleParseErrors(socketWrapper, parseResults);
             if (parsedMessages.length > 0) {
                 socketWrapper.onMessage(parsedMessages);
             }
@@ -121,12 +126,45 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
         uws.native.server.group.onPing(this.serverGroup, () => { });
         uws.native.server.group.onPong(this.serverGroup, () => { });
         uws.native.server.group.onConnection(this.serverGroup, this._onConnection.bind(this));
-        // TODO: This will become an issue when distinguishing
-        // between different protocols
-        uws.native.server.group.startAutoPing(this.serverGroup, this._getOption('heartbeatInterval'), messageBuilder.getMessage({
-            topic: constants_1.TOPIC.CONNECTION,
-            action: constants_1.CONNECTION_ACTIONS.PING
-        }, false));
+        this.pingInterval = setInterval(() => {
+            uws.native.server.group.broadcast(this.serverGroup, this.pingMessage, true);
+        }, this._getOption('heartbeatInterval'));
+    }
+    _handleParseErrors(socketWrapper, parseResults) {
+        const messages = [];
+        for (const parseResult of parseResults) {
+            if (parseResult.parseError) {
+                const rawMsg = this._getRaw(parseResult);
+                this.logger.warn(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${rawMsg}`);
+                socketWrapper.sendMessage({
+                    topic: constants_1.TOPIC.PARSER,
+                    action: parseResult.action,
+                    data: parseResult.raw,
+                    originalTopic: parseResult.parsedMessage.topic,
+                    originalAction: parseResult.parsedMessage.action
+                });
+                socketWrapper.destroy();
+                continue;
+            }
+            if (parseResult.topic === constants_1.TOPIC.CONNECTION &&
+                parseResult.action === constants_1.CONNECTION_ACTIONS.PONG) {
+                continue;
+            }
+            messages.push(parseResult);
+        }
+        return messages;
+    }
+    _getRaw(parseResult) {
+        if (parseResult.raw && typeof parseResult.raw === 'string') {
+            return parseResult.raw;
+        }
+        else if (parseResult.parseError && parseResult.parsedMessage) {
+            return JSON.stringify(parseResult.parsedMessage);
+        }
+        else if (parseResult.raw instanceof Buffer) {
+            return JSON.stringify(parseResult.raw);
+        }
+        return '';
     }
     /**
      * Called for the ready event of the ws server.
@@ -227,7 +265,7 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
         uws.native.setUserData(external, socketWrapper);
         this.logger.info(constants_1.EVENT.INCOMING_CONNECTION, `from ${handshakeData.referer} (${handshakeData.remoteAddress})`);
         let disconnectTimer;
-        if (this.unauthenticatedClientTimeout !== null) {
+        if (this.unauthenticatedClientTimeout !== null && this.unauthenticatedClientTimeout !== false) {
             disconnectTimer = setTimeout(this._processConnectionTimeout.bind(this, socketWrapper), this.unauthenticatedClientTimeout);
             socketWrapper.once('close', clearTimeout.bind(null, disconnectTimer));
         }
@@ -244,19 +282,16 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
      */
     _processConnectionMessage(socketWrapper, parsedMessages) {
         const msg = parsedMessages[0];
-        if (msg.parseError) {
-            this.logger.warn(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${msg.raw}`);
-            socketWrapper.sendError({
-                topic: constants_1.TOPIC.CONNECTION
-            }, constants_1.PARSER_ACTIONS.MESSAGE_PARSE_ERROR, msg.raw);
-            socketWrapper.destroy();
-            return;
-        }
         if (msg.topic !== constants_1.TOPIC.CONNECTION) {
-            this.logger.warn(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.INVALID_MESSAGE], `invalid connection message ${msg.raw}`);
-            socketWrapper.sendError({
+            const raw = this._getRaw(msg);
+            this.logger.warn(constants_1.CONNECTION_ACTIONS[constants_1.CONNECTION_ACTIONS.INVALID_MESSAGE], `invalid connection message ${raw}`);
+            socketWrapper.sendMessage({
                 topic: constants_1.TOPIC.CONNECTION,
-            }, constants_1.PARSER_ACTIONS.INVALID_MESSAGE, msg.raw);
+                action: constants_1.CONNECTION_ACTIONS.INVALID_MESSAGE,
+                originalTopic: msg.topic,
+                originalAction: msg.action,
+                data: msg.raw
+            });
             return;
         }
         if (msg.action === constants_1.CONNECTION_ACTIONS.CHALLENGE_RESPONSE) {
@@ -267,7 +302,7 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
             });
             return;
         }
-        this.logger.error(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.UNKNOWN_ACTION], msg.action);
+        this.logger.error(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.UNKNOWN_ACTION], '', msg.action);
     }
     /**
      * Callback for the first message that's received from the socket.
@@ -277,19 +312,16 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
     _authenticateConnection(socketWrapper, disconnectTimeout, parsedMessages) {
         const msg = parsedMessages[0];
         let errorMsg;
-        if (msg.parseError) {
-            this.logger.warn(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing auth message ${msg.raw}`);
-            socketWrapper.sendError({
-                topic: constants_1.TOPIC.AUTH
-            }, constants_1.PARSER_ACTIONS.MESSAGE_PARSE_ERROR, msg.raw);
-            socketWrapper.destroy();
-            return;
-        }
         if (msg.topic !== constants_1.TOPIC.AUTH) {
-            this.logger.warn(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.INVALID_MESSAGE], `invalid auth message ${msg.raw}`);
-            socketWrapper.sendError({
+            const raw = this._getRaw(msg);
+            this.logger.warn(constants_1.AUTH_ACTIONS[constants_1.AUTH_ACTIONS.INVALID_MESSAGE], `invalid auth message ${raw}`);
+            socketWrapper.sendMessage({
                 topic: constants_1.TOPIC.AUTH,
-            }, constants_1.PARSER_ACTIONS.INVALID_MESSAGE, msg.raw);
+                action: constants_1.AUTH_ACTIONS.INVALID_MESSAGE,
+                originalTopic: msg.topic,
+                originalAction: msg.action,
+                data: msg.raw
+            });
             return;
         }
         /**
@@ -302,7 +334,7 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
          */
         if (msg.action !== constants_1.AUTH_ACTIONS.REQUEST) {
             errorMsg = this.logInvalidAuthData === true ? msg.data : '';
-            this._sendInvalidAuthMsg(socketWrapper, errorMsg);
+            this._sendInvalidAuthMsg(socketWrapper, errorMsg, msg.action);
             return;
         }
         /**
@@ -314,7 +346,7 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
             if (this.logInvalidAuthData === true) {
                 errorMsg += ` "${msg.data}": ${result.toString()}`;
             }
-            this._sendInvalidAuthMsg(socketWrapper, errorMsg);
+            this._sendInvalidAuthMsg(socketWrapper, errorMsg, msg.action);
             return;
         }
         /**
@@ -326,11 +358,13 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
      * Will be called for syntactically incorrect auth messages. Logs
      * the message, sends an error to the client and closes the socket
      */
-    _sendInvalidAuthMsg(socketWrapper, msg) {
+    _sendInvalidAuthMsg(socketWrapper, msg, originalAction) {
         this.logger.warn(constants_1.AUTH_ACTIONS[constants_1.AUTH_ACTIONS.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '');
-        socketWrapper.sendError({
-            topic: constants_1.TOPIC.AUTH
-        }, constants_1.AUTH_ACTIONS.INVALID_MESSAGE_DATA);
+        socketWrapper.sendMessage({
+            topic: constants_1.TOPIC.AUTH,
+            action: constants_1.AUTH_ACTIONS.INVALID_MESSAGE_DATA,
+            originalAction
+        });
         socketWrapper.destroy();
     }
     /**
@@ -341,7 +375,7 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
     _registerAuthenticatedSocket(socketWrapper, userData) {
         delete socketWrapper.authCallback;
         socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper));
-        socketWrapper.onMessage = (parsedMessages) => {
+        socketWrapper.onMessage = parsedMessages => {
             this.onMessages(socketWrapper, parsedMessages);
         };
         this._appendDataToSocketWrapper(socketWrapper, userData);
@@ -375,16 +409,18 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
             logMsg += `: ${JSON.stringify(authData)}`;
         }
         this.logger.info(constants_1.AUTH_ACTIONS[constants_1.AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg);
-        socketWrapper.sendError({
+        socketWrapper.sendMessage({
             topic: constants_1.TOPIC.AUTH,
+            action: constants_1.AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
             parsedData: clientData
-        }, constants_1.AUTH_ACTIONS.AUTH_UNSUCCESSFUL);
+        });
         socketWrapper.authAttempts++;
         if (socketWrapper.authAttempts >= this.maxAuthAttempts) {
             this.logger.info(constants_1.AUTH_ACTIONS[constants_1.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts');
-            socketWrapper.sendError({
-                topic: constants_1.TOPIC.AUTH
-            }, constants_1.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS);
+            socketWrapper.sendMessage({
+                topic: constants_1.TOPIC.AUTH,
+                action: constants_1.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS
+            });
             socketWrapper.destroy();
         }
     }
@@ -394,10 +430,11 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
      */
     _processConnectionTimeout(socketWrapper) {
         const log = 'connection has not authenticated successfully in the expected time';
-        this.logger.info(constants_1.CONNECTION_ACTIONS[constants_1.CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT], log);
-        socketWrapper.sendError({
-            topic: constants_1.TOPIC.CONNECTION
-        }, constants_1.CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT);
+        this.logger.info(constants_1.CONNECTION_ACTIONS[constants_1.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT], log);
+        socketWrapper.sendMessage({
+            topic: constants_1.TOPIC.CONNECTION,
+            action: constants_1.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT
+        });
         socketWrapper.destroy();
     }
     /**
@@ -474,6 +511,7 @@ class UWSConnectionEndpoint extends events_1.EventEmitter {
      * will emit a close event once succesfully shut down
      */
     close() {
+        clearInterval(this.pingInterval);
         this.server.removeAllListeners('request');
         this.server.removeAllListeners('upgrade');
         if (this.serverGroup) {

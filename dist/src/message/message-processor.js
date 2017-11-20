@@ -31,15 +31,6 @@ class MessageProcessor {
         const length = parsedMessages.length;
         for (let i = 0; i < length; i++) {
             message = parsedMessages[i];
-            if (message === null ||
-                !message.action ||
-                !message.topic) {
-                this.services.logger.warn(constants_1.PARSER_ACTIONS[constants_1.PARSER_ACTIONS.MESSAGE_PARSE_ERROR], message);
-                socketWrapper.sendError({
-                    topic: constants_1.TOPIC.ERROR,
-                }, constants_1.PARSER_ACTIONS.MESSAGE_PARSE_ERROR, message);
-                continue;
-            }
             this.services.permissionHandler.canPerformAction(socketWrapper.user, message, this.onPermissionResponse.bind(this, socketWrapper, message), socketWrapper.authData, socketWrapper);
         }
     }
@@ -55,12 +46,30 @@ class MessageProcessor {
      */
     onPermissionResponse(socketWrapper, message, error, result) {
         if (error !== null) {
-            this.services.logger.warn(constants_1.AUTH_ACTIONS[constants_1.AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString());
-            socketWrapper.sendError(message, constants_1.AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR);
+            this.services.logger.warn(constants_1.EVENT_ACTIONS[constants_1.EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString());
+            const permissionErrorMessage = {
+                topic: message.topic,
+                action: constants_1.EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR,
+                originalAction: message.action,
+                name: message.name
+            };
+            if (message.correlationId) {
+                permissionErrorMessage.correlationId = message.correlationId;
+            }
+            socketWrapper.sendMessage(permissionErrorMessage);
             return;
         }
         if (result !== true) {
-            socketWrapper.sendError(message, constants_1.AUTH_ACTIONS.MESSAGE_DENIED);
+            const permissionDeniedMessage = {
+                topic: message.topic,
+                action: constants_1.EVENT_ACTIONS.MESSAGE_DENIED,
+                originalAction: message.action,
+                name: message.name
+            };
+            if (message.correlationId) {
+                permissionDeniedMessage.correlationId = message.correlationId;
+            }
+            socketWrapper.sendMessage(permissionDeniedMessage);
             return;
         }
         this.onAuthenticatedMessage(socketWrapper, message);

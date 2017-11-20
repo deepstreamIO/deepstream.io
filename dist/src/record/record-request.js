@@ -7,14 +7,7 @@ const constants_1 = require("../constants");
  */
 function sendError(event, message, recordName, socketWrapper, onError, services, context, metaData) {
     services.logger.error(event, message, metaData);
-    if (onError) {
-        onError.call(context, event, message, recordName, socketWrapper);
-    }
-    else if (socketWrapper) {
-        socketWrapper.sendError({
-            topic: constants_1.TOPIC.RECORD,
-        }, event);
-    }
+    onError.call(context, event, message, recordName, socketWrapper);
 }
 /**
  * Callback for responses returned by the storage connector. The request will complete or error
