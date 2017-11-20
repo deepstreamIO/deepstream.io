@@ -20,13 +20,16 @@ When(/(.+) sets the merge strategy to (remote|local)$/, (clientExpression, recor
   // not implemented
 })
 
-Then(/^(.+) gets? notified of record "([^"]*)" getting (discarded|deleted)$/, (clientExpression, recordName, action) => {
+Then(/^(.+) (gets?|is not) notified of record "([^"]*)" getting (discarded|deleted)$/, (clientExpression, notified, recordName, action) => {
+  let called = notified.indexOf('is not') !== -1 ? false : true
   if (action === 'discarded') {
-    record.assert.discarded(clientExpression, recordName)
+    record.assert.discarded(clientExpression, recordName, called)
   } else {
-    record.assert.deleted(clientExpression, recordName)
+    record.assert.deleted(clientExpression, recordName, called)
   }
 })
+
+Then(/^(.+) receives? an? "([^"]*)" error on record "([^"]*)"$/, record.assert.receivedRecordError)
 
 Then(/^(.+) receives? an update for record "([^"]*)" with data '([^']+)'$/, record.assert.recievedUpdate)
 
@@ -85,6 +88,11 @@ When(
 
 When(/^(.+) sets? the record "([^"]*)" and path "([^"]*)" with data '([^']+)'$/, (clientExpression, recordName, path, data, done) => {
   record.setWithPath(clientExpression, recordName, path, data)
+  setTimeout(done, utils.defaultDelay)
+})
+
+When(/^(.+) erases the path "([^"]*)" on record "([^"]*)"$/, (clientExpression, path, recordName, done) => {
+  record.erase(clientExpression, recordName, path)
   setTimeout(done, utils.defaultDelay)
 })
 

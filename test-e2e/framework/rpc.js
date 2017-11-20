@@ -5,6 +5,8 @@ const sinon = require('sinon')
 const clientHandler = require('./client-handler')
 const utils = require('./utils')
 
+let rejected = false
+
 const rpcs = {
   addTwo: (client, data, response) => {
     client.rpc.provides.addTwo()
@@ -43,6 +45,16 @@ const rpcs = {
   },
   deny: (client, data, response) => {
     // permissions always deny
+  },
+  rejectOnce: (client, data, response) => {
+    client.rpc.provides.rejectOnce(data)
+    if (rejected) {
+      response.send('ok')
+      rejected = false
+    } else {
+      response.reject()
+      rejected = true
+    }
   }
 }
 
@@ -92,9 +104,12 @@ module.exports.assert = {
     }, eventually ? 150 : 0)
   },
 
-  providerCalled (clientExpression, rpc, timesCalled) {
+  providerCalled (clientExpression, rpc, timesCalled, data) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.callCount(client.rpc.provides[rpc], timesCalled)
+      if (data) {
+        sinon.assert.calledWith(client.rpc.provides[rpc], JSON.parse(data))
+      }
       client.rpc.provides[rpc].reset()
     })
   }

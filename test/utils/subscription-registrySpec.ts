@@ -84,11 +84,14 @@ describe('subscription registry', () => {
         .withExactArgs(subscribeMessage)
 
       clientA.socketWrapperMock
-        .expects('sendError')
+        .expects('sendMessage')
         .once()
         .withExactArgs({
-          topic: C.TOPIC.EVENT
-        }, C.EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS, 'someName')
+          topic: C.TOPIC.EVENT,
+          action: C.EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS,
+          originalAction: C.EVENT_ACTIONS.SUBSCRIBE,
+          name: 'someName'
+        })
 
       subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
       subscriptionRegistry.subscribe(subscribeMessage, clientA.socketWrapper)
@@ -149,11 +152,14 @@ describe('subscription registry', () => {
 
     it('handles unsubscribes for non existant topics', () => {
       clientA.socketWrapperMock
-        .expects('sendError')
+        .expects('sendMessage')
         .once()
         .withExactArgs({
-          topic: C.TOPIC.EVENT
-        }, C.EVENT_ACTIONS.NOT_SUBSCRIBED, 'someName')
+          topic: C.TOPIC.EVENT,
+          action: C.EVENT_ACTIONS.NOT_SUBSCRIBED,
+          originalAction: C.EVENT_ACTIONS.UNSUBSCRIBE,
+          name: 'someName'
+        })
 
       subscriptionRegistry.unsubscribe(unsubscribeMessage, clientA.socketWrapper)
     })
@@ -200,20 +206,23 @@ describe('subscription registry', () => {
 
     it('doesn\'t subscribe twice to the same name', () => {
       clientA.socketWrapperMock
-        .expects('sendError')
+        .expects('sendMessage')
         .once()
         .withExactArgs({
-          topic: C.TOPIC.EVENT
-        }, 'too-aware', 'someName')
+          topic: C.TOPIC.EVENT,
+          action: 'too-aware',
+          originalAction: 'make-aware',
+          name: 'someName'
+        })
 
       subscriptionRegistry.subscribe({
         topic: C.TOPIC.EVENT,
-        action: 'too-aware',
+        action: 'make-aware',
         name: 'someName'
       }, clientA.socketWrapper)
       subscriptionRegistry.subscribe({
         topic: C.TOPIC.EVENT,
-        action: 'too-aware',
+        action: 'make-aware',
         name: 'someName'
       }, clientA.socketWrapper)
     })
@@ -243,13 +252,20 @@ describe('subscription registry', () => {
 
     it('handles unsubscribes for non existant subscriptions', () => {
       clientA.socketWrapperMock
-        .expects('sendError')
+        .expects('sendMessage')
         .once()
         .withExactArgs({
-          topic: C.TOPIC.EVENT
-        }, 'unaware', 'someName')
+          topic: C.TOPIC.EVENT,
+          action: 'unaware',
+          originalAction: 'be-unaware',
+          name: 'someName'
+        })
 
-      subscriptionRegistry.unsubscribe(unsubscribeMessage, clientA.socketWrapper)
+      subscriptionRegistry.unsubscribe({
+        topic: C.TOPIC.EVENT,
+        action: 'be-unaware',
+        name: 'someName'
+      }, clientA.socketWrapper)
     })
   })
 

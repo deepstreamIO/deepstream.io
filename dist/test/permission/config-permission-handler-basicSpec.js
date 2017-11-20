@@ -210,7 +210,7 @@ describe('permission handler applies basic permissions referencing their own dat
         };
         const callback = function (error, result) {
             expect(lastError()).toContain('Cannot read property \'indexOf\' of null');
-            expect(error).toBe(C.AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR);
+            expect(error).toBe(C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR);
             expect(result).toBe(false);
             next();
         };

@@ -92,7 +92,7 @@ function get() {
         /*
          * Storage options
          */
-        storageExclusion: null,
+        storageExclusionPrefixes: [],
         /**
          * Listening
          */
@@ -104,7 +104,7 @@ function get() {
         rpcTimeout: 10000,
         cacheRetrievalTimeout: 1000,
         storageRetrievalTimeout: 2000,
-        storageHotPathPatterns: [],
+        storageHotPathPrefixes: [],
         dependencyInitialisationTimeout: 2000,
         stateReconciliationTimeout: 500,
         clusterKeepAliveInterval: 5000,

@@ -1,4 +1,4 @@
-import { EVENT_ACTIONS, RECORD_ACTIONS, TOPIC } from '../constants'
+import { EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
 
 export default class ListenerTimeoutRegistry {
   private topic: TOPIC
@@ -87,7 +87,7 @@ export default class ListenerTimeoutRegistry {
   *  If no other provider accepted yet, we'll wait for the current request to end and stop here
   *  If another provider has accepted already, we'll immediatly send a SUBSCRIPTION_REMOVED message
   */
-  public addTimeout (subscriptionName: string, provider: SocketWrapper, callback: Function): void {
+  public addTimeout (subscriptionName: string, provider: Provider, callback: Function): void {
     const timeoutId = setTimeout(() => {
       if (this.timedoutProviders[subscriptionName] == null) {
         this.timedoutProviders[subscriptionName] = []

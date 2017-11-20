@@ -19,7 +19,7 @@ describe('record request', () => {
     config = Object.assign({}, options.config, {
       cacheRetrievalTimeout: 100,
       storageRetrievalTimeout: 100,
-      storageExclusion: new RegExp('dont-save')
+      storageExclusionPrefixes: ['dont-save']
     })
     services.cache.set('existingRecord', { _v: 1, _d: {} }, () => {})
     services.storage.set('onlyExistsInStorage', { _v: 1, _d: {} }, () => {})

@@ -73,7 +73,6 @@ function handleSSLProperties(config) {
  */
 function handleLogger(config) {
     const configOptions = (config.logger || {}).options;
-    console.log('logger: ', configOptions);
     let Logger;
     if (config.logger.type === 'default') {
         Logger = std_out_logger_1.default;
@@ -94,10 +93,10 @@ function handleLogger(config) {
     }
     const logger = new Logger(configOptions);
     if (logger.log) {
-        logger.debug = logger.log.bind(config.logger, constants_1.LOG_LEVEL.DEBUG);
-        logger.info = logger.log.bind(config.logger, constants_1.LOG_LEVEL.INFO);
-        logger.warn = logger.log.bind(config.logger, constants_1.LOG_LEVEL.WARN);
-        logger.error = logger.log.bind(config.logger, constants_1.LOG_LEVEL.ERROR);
+        logger.debug = logger.debug || logger.log.bind(logger, constants_1.LOG_LEVEL.DEBUG);
+        logger.info = logger.info || logger.log.bind(logger, constants_1.LOG_LEVEL.INFO);
+        logger.warn = logger.warn || logger.log.bind(logger, constants_1.LOG_LEVEL.WARN);
+        logger.error = logger.error || logger.log.bind(logger, constants_1.LOG_LEVEL.ERROR);
     }
     if (constants_1.LOG_LEVEL[config.logLevel]) {
         // NOTE: config.logLevel has highest priority, compare to the level defined

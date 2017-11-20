@@ -1,4 +1,17 @@
-import { AUTH_ACTIONS, CONNECTION_ACTIONS, EVENT, PARSER_ACTIONS, TOPIC } from '../constants'
+import {
+  ACTIONS,
+  CONNECTION_ACTIONS,
+  EVENT,
+  PARSER_ACTIONS,
+  PRESENCE_ACTIONS,
+  EVENT_ACTIONS,
+  TOPIC,
+  EventMessage,
+  RPCMessage,
+  PresenceMessage,
+  ListenMessage,
+  RecordMessage,
+} from '../constants'
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -37,16 +50,6 @@ export default class MessageProcessor {
     for (let i = 0; i < length; i++) {
       message = parsedMessages[i]
 
-      if (message === null ||
-        !message.action ||
-        !message.topic) {
-        this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], message)
-        socketWrapper.sendError({
-          topic: TOPIC.ERROR,
-        }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, message)
-        continue
-      }
-
       this.services.permissionHandler.canPerformAction(
         socketWrapper.user,
         message,
@@ -69,13 +72,31 @@ export default class MessageProcessor {
    */
   private onPermissionResponse (socketWrapper: SocketWrapper, message: Message, error: Error | null, result: boolean): void {
     if (error !== null) {
-      this.services.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
-      socketWrapper.sendError(message, AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR)
+      this.services.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
+      const permissionErrorMessage: Message = {
+        topic: message.topic,
+        action: EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR,
+        originalAction: message.action,
+        name: message.name
+      }
+      if (message.correlationId) {
+        permissionErrorMessage.correlationId = message.correlationId
+      }
+      socketWrapper.sendMessage(permissionErrorMessage)
       return
     }
 
     if (result !== true) {
-      socketWrapper.sendError(message, AUTH_ACTIONS.MESSAGE_DENIED)
+      const permissionDeniedMessage: Message = {
+        topic: message.topic,
+        action: EVENT_ACTIONS.MESSAGE_DENIED,
+        originalAction: message.action,
+        name: message.name
+      }
+      if (message.correlationId) {
+        permissionDeniedMessage.correlationId = message.correlationId
+      }
+      socketWrapper.sendMessage(permissionDeniedMessage)
       return
     }
 

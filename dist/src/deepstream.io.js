@@ -340,5 +340,5 @@ class Deepstream extends events_1.EventEmitter {
         this.services.logger.error(constants_1.EVENT.PLUGIN_ERROR, msg);
     }
 }
-exports.default = Deepstream;
+exports.Deepstream = Deepstream;
 //# sourceMappingURL=deepstream.io.js.map

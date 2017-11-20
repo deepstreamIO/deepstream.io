@@ -75,8 +75,8 @@ class RuleApplication {
             return;
         }
         const errorMsg = `error when executing ${this.params.rule.fn.toString()}${os_1.EOL}for ${this.params.path}: ${error.toString()}`;
-        this.params.logger.warn(constants_1.AUTH_ACTIONS[constants_1.AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg);
-        this.params.callback(constants_1.AUTH_ACTIONS.MESSAGE_PERMISSION_ERROR, false);
+        this.params.logger.warn(constants_1.EVENT_ACTIONS[constants_1.EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg);
+        this.params.callback(constants_1.EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR, false);
         this.destroy();
     }
     /**

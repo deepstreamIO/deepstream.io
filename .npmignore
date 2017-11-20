@@ -1,7 +1,8 @@
-.DS_Store
-.vscode/settings.json
-
-temp-e2e-test
+# Typescript files
+/scripts
+/bin
+.tsconfig.json
+.tslint.json
 
 # Logs
 logs
@@ -26,23 +27,17 @@ build
 nexe_node
 meta.json
 
-# Compiled binary addons (http://nodejs.org/api/addons.html)
-build/Release
-
-# Dependency directory
-# Commenting this out is preferred by some people, see
-# https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git-
-node_modules
-npm-shrinkwrap.json
-npm-debug.*
-
 # Users Environment Variables
 .lock-wscript
 
 # IDE configuration
 .idea
 
-licenses.json
+# CI
+.travis.yml
+appveyor.yml
 
-# Typescript
-dist
+# testing
+test
+test-e2e
+benchmarks

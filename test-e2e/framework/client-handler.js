@@ -6,13 +6,14 @@ const clients = {}
 
 const utils = require('./utils')
 
-const DeepstreamClient = require('deepstream.io-client-js')
+const { deepstream } = require('deepstream.io-client-js')
 
 function createClient (clientName, server, options) {
   const gatewayUrl = global.cluster.getUrl(server - 1, clientName)
-  const client = DeepstreamClient(gatewayUrl, Object.assign({
+  const client = deepstream(gatewayUrl, Object.assign({
     maxReconnectInterval: 300,
     maxReconnectAttempts: 20,
+    discardTimeout: 100
   }, options))
   clients[clientName] = {
     name: clientName,

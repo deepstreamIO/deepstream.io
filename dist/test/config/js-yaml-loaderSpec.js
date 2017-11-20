@@ -258,7 +258,6 @@ describe('js-yaml-loader', () => {
                 [path.resolve('./cache')]: CacheModule
             });
             services = configLoader.loadConfig(null, { config: './config.json' }).services;
-            console.log('cache', services.cache);
         });
         it('load plugins', () => {
             expect(services.cache.options).toEqual({ foo: 3, bar: 4 });

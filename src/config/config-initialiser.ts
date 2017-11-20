@@ -101,10 +101,10 @@ function handleLogger (config: DeepstreamConfig): Logger {
   }
   const logger = new Logger(configOptions)
   if (logger.log) {
-    logger.debug = logger.log.bind(config.logger, LOG_LEVEL.DEBUG)
-    logger.info = logger.log.bind(config.logger, LOG_LEVEL.INFO)
-    logger.warn = logger.log.bind(config.logger, LOG_LEVEL.WARN)
-    logger.error = logger.log.bind(config.logger, LOG_LEVEL.ERROR)
+    logger.debug = logger.debug || logger.log.bind(logger, LOG_LEVEL.DEBUG)
+    logger.info = logger.info || logger.log.bind(logger, LOG_LEVEL.INFO)
+    logger.warn = logger.warn || logger.log.bind(logger, LOG_LEVEL.WARN)
+    logger.error = logger.error || logger.log.bind(logger, LOG_LEVEL.ERROR)
   }
 
   if (LOG_LEVEL[config.logLevel]) {

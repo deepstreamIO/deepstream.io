@@ -78,6 +78,7 @@ class StorageMock {
             if (this.failNextSet) {
                 this.failNextSet = false;
                 callback('storageError');
+                return;
             }
             callback(this.nextOperationWillBeSuccessful ? null : 'storageError');
         }
