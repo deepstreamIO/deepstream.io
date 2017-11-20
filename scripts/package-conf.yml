@@ -1,12 +1,14 @@
 # General
-# Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
-serverName: UUID
 # Show the deepstream logo on startup (highly recommended)
 showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 logLevel: INFO
 # Directory where all plugins reside
 libDir: ../lib
+
+# Connectivity
+# webfacing URL under which this client is reachable. Used for loadbalancing / failover
+externalUrl: null
 
 # SSL Configuration
 sslKey: null
@@ -17,7 +19,7 @@ sslCa: null
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
   websocket:
-    name: uws
+    type: default
     options:
         # port for the websocket server
         port: 6020
@@ -34,6 +36,7 @@ connectionEndpoints:
 
         # Security
         # amount of time a connection can remain open while not being logged in
+        # or false for no timeout
         unauthenticatedClientTimeout: 180000
         # invalid login attempts before the connection is cut
         maxAuthAttempts: 3
@@ -41,9 +44,8 @@ connectionEndpoints:
         logInvalidAuthData: false
         # maximum allowed size of an individual message in bytes
         maxMessageSize: 1048576
-
   http:
-    name: http
+    type: default
     options:
       # port for the http server
       port: 8080
@@ -76,11 +78,11 @@ connectionEndpoints:
 # Logger Configuration
 logger:
   # use either the default logger
-  name: default
-  options:
-    colors: true
-    # value of logLevel (line 4) will always overwrite this value
-    logLevel: INFO
+  type: default
+   options:
+     colors: true
+     # value of logLevel (line 4) will always overwrite this value
+     logLevel: INFO
 
 #   # or the winston logger
 #   name: winston
@@ -101,55 +103,49 @@ logger:
 #   path: ./my-custom-logger
 
 # Plugin Configuration
-# plugins:
-
-#   message:
-#     name: redis
-#     options:
-#       host: ${REDIS_HOST}
-#       port: 6379
-
-#   cache:
-#     name: redis
-#     options:
-#       host: ${REDIS_HOST}
-#       port: 6379
-
-#   storage:
-#     name: rethinkdb
-#     options:
-#       host: localhost
-#       port: 28015
+plugins:
+  # cache:
+  #   name: memcached
+  #   options:
+  #     serverLocation: 'localhost:11211'
+  #
+  # storage:
+  #   name: rethinkdb
+  #   options:
+  #     host: localhost
+  #     port: 28015
 
 # Storage options
-# a RegExp that matches recordNames. If it matches, the record's data won't be stored in the db
-storageExclusion: null
+# A list of prefixes that, when a record starts with one of the prefixes the
+# records data won't be stored in the db
+# storageExclusionPrefixes:
+#   - no-storage/
+#   - temporary-data/
+# A list of prefixes that, when a record is updated via setData and it matches one of the prefixes
+# it will be permissioned and written directly to the cache and storage layers
+# storageHotPathPrefixes:
+#   - analytics/
+#   - metrics/
 
-#Authentication
 auth:
   type: none
 
-#   # reading users and passwords from a file
-#   type: file
-#   options:
-#     # Path to the user file. Can be json, js or yml
-#     path: ./users.yml
-#     # the name of a HMAC digest algorithm
-#     hash: 'md5'
-#     # the number of times the algorithm should be applied
-#     iterations: 100
-#     # the length of the resulting key
-#     keyLength: 32
+  # type: file
+  # options:
+  #   path: ./users.yml # Path to the user file. Can be json, js or yml
+  #   hash: 'md5' # the name of a HMAC digest algorithm
+  #   iterations: 100 # the number of times the algorithm should be applied
+  #   keyLength: 32 # the length of the resulting key
 
-#   # getting permissions from a http webhook
-#   type: http
-#   options:
-#     # a post request will be send to this url on every incoming connection
-#     endpointUrl: https://someurl.com/validateLogin
-#     # any of these will be treated as access granted
-#     permittedStatusCodes: [ 200 ]
-#     # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
-#     requestTimeout: 2000
+  # getting permissions from a http webhook
+  # type: http
+  # options:
+  #   # a post request will be send to this url on every incoming connection
+  #   endpointUrl: http://localhost:6004
+  #   # any of these will be treated as access granted
+  #   permittedStatusCodes: [ 200 ]
+  #   # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+  #   requestTimeout: 2000
 
 # Permissioning
 permission:
@@ -176,14 +172,5 @@ storageRetrievalTimeout: 2000
 dependencyInitialisationTimeout: 2000
 # The amount of time to wait for a provider to acknowledge or reject a listen request
 listenResponseTimeout: 500
-# The amount of time a lock can be reserved for before it is force released
-lockTimeout: 1000
-# The amount of time a lock request waits for before it defaults to false
-lockRequestTimeout: 1000
 # The amount of time a broadcast will wait (to allow broadcast coalescing). -1 means disabled.
 broadcastTimeout: 0
-# A list of prefixes that, when a record is updated via setData and it matches one of the prefixes
-# it will be permissioned and written directly to the cache and storage layers
-# storageHotPathPatterns:
-  # - analytics/
-  # - metrics/

@@ -51,7 +51,7 @@ export function get (): DeepstreamConfig {
      */
     connectionEndpoints: {
       websocket: {
-        name: 'uws',
+        type: 'default',
         options: {
           port: 6020,
           host: '0.0.0.0',
@@ -72,7 +72,7 @@ export function get (): DeepstreamConfig {
         }
       },
       http: {
-        name: 'http',
+        type: 'default',
         options: {
           port: 8080,
           host: '0.0.0.0',
@@ -95,11 +95,11 @@ export function get (): DeepstreamConfig {
 
     plugins: {
       cache: {
-        name: 'default-cache',
+        type: 'default',
         options: {}
       },
       storage: {
-        name: 'default-storage',
+        type: 'default',
         options: {}
       }
     },
