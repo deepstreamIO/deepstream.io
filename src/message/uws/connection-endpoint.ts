@@ -337,10 +337,6 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       socketWrapper,
       disconnectTimer
     )
-    socketWrapper.sendMessage({
-      topic: TOPIC.CONNECTION,
-      action: CONNECTION_ACTIONS.CHALLENGE
-    }, false)
     socketWrapper.onMessage = this._processConnectionMessage.bind(this, socketWrapper)
   }
 
@@ -364,7 +360,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       return
     }
 
-    if (msg.action === CONNECTION_ACTIONS.CHALLENGE_RESPONSE) {
+    if (msg.action === CONNECTION_ACTIONS.CHALLENGE) {
       socketWrapper.onMessage = socketWrapper.authCallback
       socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
