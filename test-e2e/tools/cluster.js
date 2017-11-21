@@ -1,6 +1,6 @@
 'use strict'
 
-const DeepstreamServer = require('../../dist/src/deepstream.io').default
+const { Deepstream } = require('../../dist/src/deepstream.io')
 const LocalCache = require('../../dist/src/default-plugins/local-cache').default
 const localCache = new LocalCache()
 
@@ -62,7 +62,7 @@ module.exports = class DeepstreamTest extends EventEmitter {
 
   _startServer () {
     this.started = true
-    this._server = new DeepstreamServer({
+    this._server = new Deepstream({
       serverName : `server-${this._wsPort}`,
 
       stateReconciliationTimeout : 100,

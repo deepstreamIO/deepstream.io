@@ -96,7 +96,7 @@ describe('record deletion', () => {
     }, 100)
   })
 
-  fit('doesn\'t delete excluded messages from storage', () => {
+  it('doesn\'t delete excluded messages from storage', () => {
     config.storageExclusionPatterns = ['no-storage/']
 
     client.socketWrapperMock

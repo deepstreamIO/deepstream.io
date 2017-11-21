@@ -1,3 +1,36 @@
+## [4.0.0-beta.1] - 2017.11.20
+
+### Features
+
+#### Binary Protocol
+
+A full implementation of the Universal Realtime Protocol (URP) has been included as a submodule dependency of deepstream >= 4.0.0. It provides a stable platform for realtime applications and eases the building of client libraries by providing a more robust specification. 
+The protocol now uses binary WebSocket frames, which will allow for custom payload encodings in a future update.
+
+### Improvements
+
+- For this release we rewrote the server large portions of the server in TypeScript which helped to uncover a number of bugs in the previous implementation. 
+
+### Breaking Changes
+
+- As part of the move to URP, this release breaks support for all client libraries prior to version 4. Most clients will require significant changes to support the new protocol. For reference, [see the v4 rewrite of the javascript client](https://github.com/deepstreamIO/deepstream.io-client-js#v4).
+
+- the [`storageHotPathPatterns` config option](https://deepstreamhub.com/docs/server/configuration/#storagehotpathpatterns) has been renamed to `storageHotPathPrefixes` since this better represents what it is.
+
+- the [`storageExclusion` config option](https://deepstreamhub.com/docs/server/configuration/#storageexclusion) has been changed to an array of strings called `storageExclusionPrefixes` for consistency with `storageHotPathPatterns`.
+
+- Due to our move to Typescript/ES6 modules, the node API no longer exports a class at the top level. The following demonstrates the change required:
+
+```js
+// old format
+const Deepstream = require('deepstream.io')
+
+// new format (UMD)
+const { Deepstream } = require('deepstream.io')
+// new format (ES6)
+import { Deepstream } from 'deepstream.io'
+```
+
 ## [3.1.0] - 2017.09.25
 
 ### Features

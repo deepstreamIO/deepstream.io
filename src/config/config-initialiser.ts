@@ -101,10 +101,10 @@ function handleLogger (config: DeepstreamConfig): Logger {
   }
   const logger = new Logger(configOptions)
   if (logger.log) {
-    logger.debug = logger.log.bind(config.logger, LOG_LEVEL.DEBUG)
-    logger.info = logger.log.bind(config.logger, LOG_LEVEL.INFO)
-    logger.warn = logger.log.bind(config.logger, LOG_LEVEL.WARN)
-    logger.error = logger.log.bind(config.logger, LOG_LEVEL.ERROR)
+    logger.debug = logger.debug || logger.log.bind(logger, LOG_LEVEL.DEBUG)
+    logger.info = logger.info || logger.log.bind(logger, LOG_LEVEL.INFO)
+    logger.warn = logger.warn || logger.log.bind(logger, LOG_LEVEL.WARN)
+    logger.error = logger.error || logger.log.bind(logger, LOG_LEVEL.ERROR)
   }
 
   if (LOG_LEVEL[config.logLevel]) {
@@ -211,23 +211,23 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
   let requirePath
   let pluginConstructor
   let es6Adaptor
-  if (plugin.name != null && type) {
+  if (plugin.path != null) {
+    requirePath = fileUtils.lookupLibRequirePath(plugin.path)
+    es6Adaptor = req(requirePath)
+    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
+  } else if (plugin.name != null && type) {
     requirePath = `deepstream.io-${type}-${plugin.name}`
     requirePath = fileUtils.lookupLibRequirePath(requirePath)
+    es6Adaptor = req(requirePath)
+    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
+  } else if (plugin.name != null) {
+    requirePath = fileUtils.lookupLibRequirePath(plugin.name)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.type === 'default' && type === 'cache') {
     pluginConstructor = DefaultCache
   } else if (plugin.type === 'default' && type === 'storage') {
     pluginConstructor = DefaultStorage
-  } else if (plugin.path != null) {
-    requirePath = fileUtils.lookupLibRequirePath(plugin.path)
-    es6Adaptor = req(requirePath)
-    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
-  }  else if (plugin.name != null) {
-    requirePath = fileUtils.lookupLibRequirePath(plugin.name)
-    es6Adaptor = req(requirePath)
-    pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else {
     throw new Error(`Neither name nor path property found for ${type}`)
   }

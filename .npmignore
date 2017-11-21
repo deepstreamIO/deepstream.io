@@ -1,5 +1,6 @@
 # Typescript files
-src
+/scripts
+/bin
 .tsconfig.json
 .tslint.json
 
@@ -40,5 +41,3 @@ appveyor.yml
 test
 test-e2e
 benchmarks
-
-scripts
