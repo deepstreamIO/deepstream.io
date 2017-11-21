@@ -297,7 +297,7 @@ describe('js-yaml-loader', () => {
     })
 
     it('load plugins', () => {
-      expect(services.cache.config).toEqual({ foo: 3, bar: 4 })
+      expect(services.cache.options).toEqual({ foo: 3, bar: 4 })
     })
   })
 
@@ -343,7 +343,7 @@ describe('js-yaml-loader', () => {
     })
 
     it('load plugins', () => {
-      expect(services.cache.config).toEqual({ foo: 3, bar: 4 })
+      expect(services.cache.options).toEqual({ foo: 3, bar: 4 })
     })
   })
 
