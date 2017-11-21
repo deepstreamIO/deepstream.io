@@ -119,6 +119,26 @@ module.exports = {
     })
   },
 
+  callbackCalled (clientExpression, eventName, notCalled, once, data) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      const spy = client[eventName]
+      if (notCalled) {
+        sinon.assert.notCalled(spy)
+      } else {
+        if (once) {
+          sinon.assert.calledOnce(spy)
+        } else {
+          sinon.assert.called(spy)
+        }
+        if (data !== undefined) {
+          sinon.assert.calledWith(spy, JSON.parse(data))
+        }
+      }
+
+      spy.reset()
+    })
+  },
+
   recievedNoErrors (clientExpression) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       clientHandler.assertNoErrors(client.name)
@@ -132,24 +152,4 @@ module.exports = {
     })
   },
 
-  hadClientDataChanged (clientExpression, had, data) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      if (had) {
-        sinon.assert.calledOnce(client.clientDataChanged)
-        if (data !== undefined) {
-          sinon.assert.calledWith(client.clientDataChanged, JSON.parse(data))
-        }
-      } else {
-        sinon.assert.notCalled(client.clientDataChanged)
-      }
-      client.clientDataChanged.reset()
-    })
-  },
-
-  hadReAuthenticationFailure (clientExpression, had, reason) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      if (had) sinon.assert.calledOnce(client.reAuthenticationFailure)
-      else sinon.assert.notCalled(client.reAuthenticationFailure)
-    })
-  },
 }

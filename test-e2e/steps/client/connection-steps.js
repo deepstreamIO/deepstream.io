@@ -53,22 +53,6 @@ Then(/^(.+) receives? an (un)?authenticated login response(?: with data (\{.*\})
   client.recievesLoginResponse(clientExpression, unauth, data)
 })
 
-Then(/^(.+) login callback was only called once$/, (clientExpression) => {
-  client.recievesLoginResponse(clientExpression, false)
-})
-
-Then(/^(.+) had a clientDataChanged( to (\{.*\}))?$/, (clientExpression, data) => {
-  client.hadClientDataChanged(clientExpression, true, data)
-})
-
-Then(/^(.+) did not have a clientDataChanged$/, (clientExpression) => {
-  client.hadClientDataChanged(clientExpression, false)
-})
-
-Then(/^(.+) had a reAuthenticationFailure( with reason (\{.*\}))?$/, (clientExpression, reason) => {
-  client.hadReAuthenticationFailure(clientExpression, true, reason)
-})
-
-Then(/^(.+) did not have a reAuthenticationFailure$/, (clientExpression) => {
-  client.hadReAuthenticationFailure(clientExpression, false)
+Then(/^(.+) "([^"]*)" callback was( not)? called( once)?( with (\{.*\}))?$/, (clientExpression, eventName, notCalled, once, data) => {
+  client.callbackCalled(clientExpression, eventName, notCalled, once, data)
 })

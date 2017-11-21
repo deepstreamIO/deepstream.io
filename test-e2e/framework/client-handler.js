@@ -22,7 +22,7 @@ function createClient (clientName, server, options) {
     error: {},
     connectionStateChanged: sinon.spy(),
     clientDataChanged: sinon.spy(),
-    reAuthenticationFailure: sinon.spy(),
+    reauthenticationFailure: sinon.spy(),
     event: {
       callbacks: {},
       callbacksListeners: {},
@@ -102,11 +102,11 @@ function createClient (clientName, server, options) {
     clients[clientName].clientDataChanged(clientData)
   })
 
-  clients[clientName].client.on('reAuthenticationFailure', (reason) => {
+  clients[clientName].client.on('reauthenticationFailure', (reason) => {
     if (!clients[clientName]) {
       return
     }
-    clients[clientName].reAuthenticationFailure(reason)
+    clients[clientName].reauthenticationFailure(reason)
   })
 
   return clients[clientName]
