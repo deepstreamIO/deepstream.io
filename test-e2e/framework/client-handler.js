@@ -99,7 +99,6 @@ function createClient (clientName, server, options) {
     if (!clients[clientName]) {
       return
     }
-    console.log('>>', clientData)
     clients[clientName].clientDataChanged(clientData)
   })
 

@@ -65,7 +65,7 @@ Then(/^(.+) did not have a clientDataChanged$/, (clientExpression) => {
   client.hadClientDataChanged(clientExpression, false)
 })
 
-Then(/^(.+) had a reAuthenticationFailure with reason (\{.*\})?$/, (clientExpression, reason) => {
+Then(/^(.+) had a reAuthenticationFailure( with reason (\{.*\}))?$/, (clientExpression, reason) => {
   client.hadReAuthenticationFailure(clientExpression, true, reason)
 })
 

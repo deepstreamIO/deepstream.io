@@ -25,7 +25,8 @@ module.exports = {
   connectAndLogin (clientExpression, server, done) {
     clientHandler.getClientNames(clientExpression).forEach((clientName) => {
       const client = clientHandler.createClient(clientName, server)
-      client.client.login({ username: clientName, password: 'abcdefgh' }, () => {
+      client.client.login({ username: clientName, password: 'abcdefgh' }, (success, data) => {
+        client.login(success, data)
         client.user = clientName
         done()
       })
@@ -76,7 +77,7 @@ module.exports = {
         if (data) {
           sinon.assert.calledWith(loginSpy, true, JSON.parse(data))
         } else {
-          sinon.assert.calledWith(loginSpy, true, null)
+          sinon.assert.calledWith(loginSpy, true)
         }
       } else {
         sinon.assert.calledOnce(loginSpy)
@@ -132,16 +133,22 @@ module.exports = {
   },
 
   hadClientDataChanged (clientExpression, had, data) {
-    const clientData = data ? data : null
     clientHandler.getClients(clientExpression).forEach((client) => {
-      if (had) sinon.assert.calledWith(client.clientDataChanged, JSON.parse(clientData))
-      else sinon.assert.notCalled(client.clientDataChanged)
+      if (had) {
+        sinon.assert.calledOnce(client.clientDataChanged)
+        if (data !== undefined) {
+          sinon.assert.calledWith(client.clientDataChanged, JSON.parse(data))
+        }
+      } else {
+        sinon.assert.notCalled(client.clientDataChanged)
+      }
+      client.clientDataChanged.reset()
     })
   },
 
   hadReAuthenticationFailure (clientExpression, had, reason) {
     clientHandler.getClients(clientExpression).forEach((client) => {
-      if (had) sinon.assert.calledWith(client.reAuthenticationFailure, reason)
+      if (had) sinon.assert.calledOnce(client.reAuthenticationFailure)
       else sinon.assert.notCalled(client.reAuthenticationFailure)
     })
   },
