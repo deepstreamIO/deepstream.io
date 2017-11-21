@@ -201,7 +201,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.equal(true)
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK)
         expect(message.name).to.equal('car/bmw')
         expect(message.version).to.equal(-1)
         expect(message.parsedData).to.deep.equal({ tyres: 2, wheels: 4 })
@@ -221,7 +221,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.equal(true)
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK)
         expect(message.name).to.equal('car/bmw')
         expect(message.version).to.equal(-1)
         expect(message.parsedData).to.deep.equal([{ model: 'M6', hp: 560 }, { model: 'X6', hp: 306 }])
@@ -242,7 +242,7 @@ describe('JIF Handler', () => {
         expect(result.success).to.equal(true)
         expect(message).to.be.an('object')
         expect(message.topic).to.equal(C.TOPIC.RECORD)
-        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDUPDATE)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.CREATEANDPATCH_WITH_WRITE_ACK)
         expect(message.name).to.equal('car/bmw')
         expect(message.version).to.equal(-1)
         expect(message.path).to.equal('tyres')
@@ -406,12 +406,11 @@ describe('JIF Handler', () => {
         expect(jif.success).to.equal(true)
       })
 
-      it('should build a valid record delete ack', () => {
+      it('should build a valid record delete success', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.RECORD,
-          action: C.RECORD_ACTIONS.DELETE,
-          name: 'car/fiat',
-          isAck: true
+          action: C.RECORD_ACTIONS.DELETE_SUCCESS,
+          name: 'car/fiat'
         })
         const jif = result.message
         expect(result.done).to.equal(true)
@@ -474,7 +473,7 @@ describe('JIF Handler', () => {
         const result = jifHandler.toJIF({
           topic: C.TOPIC.PRESENCE,
           action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
-          parsedData: ['john', 'alex', 'yasser']
+          names: ['john', 'alex', 'yasser']
         })
         const jif = result.message
         expect(result.done).to.equal(true)

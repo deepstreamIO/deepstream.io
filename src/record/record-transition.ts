@@ -1,5 +1,5 @@
-import { RECORD_ACTIONS, TOPIC } from '../constants'
-import { isOfType } from '../utils/utils'
+import { RECORD_ACTIONS, TOPIC, RecordWriteMessage, EVENT } from '../constants'
+import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
 import recordRequest from './record-request'
@@ -54,11 +54,12 @@ export default class RecordTransition {
  private existingVersions: Array<Step>
  private pendingUpdates: any
  private ending: boolean
- private storageResponses: number
- private cacheResponses: number
  private lastVersion: number | null
  private lastError: string | null
  private writeError: Error
+ private writeAckSockets: Map<SocketWrapper, { [correlationId: string]: number }>
+ private pendingStorageWrites: number
+ private pendingCacheWrites: number
 
   constructor (name: string, config: DeepstreamConfig, services: DeepstreamServices, recordHandler: RecordHandler, metaData) {
     this.metaData = metaData
@@ -78,8 +79,10 @@ export default class RecordTransition {
     this.isDestroyed = false
     this.pendingUpdates = {}
     this.ending = false
-    this.storageResponses = 0
-    this.cacheResponses = 0
+
+    this.writeAckSockets = new Map()
+    this.pendingCacheWrites = 0
+    this.pendingStorageWrites = 0
 
     this.onCacheResponse = this.onCacheResponse.bind(this)
     this.onStorageResponse = this.onStorageResponse.bind(this)
@@ -106,14 +109,15 @@ export default class RecordTransition {
   public sendVersionExists (step: Step): void {
     const socketWrapper = step.sender
     if (this.record) {
-      socketWrapper.sendError({
+      socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
-        action: step.message.action,
+        action: RECORD_ACTIONS.VERSION_EXISTS,
+        originalAction: step.message.action,
         name: this.name,
         version: this.record._v,
         parsedData: this.record._d,
-        isWriteAck: step.message.isWriteAck,
-      }, RECORD_ACTIONS.VERSION_EXISTS)
+        isWriteAck: false,
+      })
 
       this.services.logger.warn(
         RECORD_ACTIONS.VERSION_EXISTS,
@@ -141,15 +145,25 @@ export default class RecordTransition {
       message,
       sender: socketWrapper,
     }
-    const valid = this.applyConfigAndData(socketWrapper, message, update)
-    if (!valid) {
-      socketWrapper.sendError(message, RECORD_ACTIONS.INVALID_MESSAGE_DATA)
+
+    const result = socketWrapper.parseData(message)
+    if (result instanceof Error) {
+      socketWrapper.sendMessage({
+        topic: TOPIC.RECORD,
+        action: RECORD_ACTIONS.INVALID_MESSAGE_DATA,
+        data: message.data
+      })
       return
     }
 
     if (message.action === RECORD_ACTIONS.UPDATE) {
       if (!isOfType(message.parsedData, 'object') && !isOfType(message.parsedData, 'array')) {
-        socketWrapper.sendError(message, RECORD_ACTIONS.INVALID_MESSAGE_DATA)
+        socketWrapper.sendMessage(
+          Object.assign({}, message, {
+            action: RECORD_ACTIONS.INVALID_MESSAGE_DATA,
+            originalAction: message.action
+          })
+        )
         return
       }
     }
@@ -162,7 +176,6 @@ export default class RecordTransition {
     if (version !== -1) {
       this.lastVersion = version
     }
-    this.cacheResponses++
     this.steps.push(update)
 
     if (this.recordRequestMade === false) {
@@ -177,61 +190,25 @@ export default class RecordTransition {
         this,
         this.metaData,
       )
-    } else if (this.steps.length === 1 && this.cacheResponses === 1) {
+    } else if (this.steps.length === 1) {
       this.next()
     }
   }
 
 /**
- * Validates and assigns config and data to the step object. Because
- * JSON parsing is expensive we want to push these to the lowest level
- * of execution.
- */
-  private applyConfigAndData (socketWrapper: SocketWrapper, message: RecordWriteMessage, step: Step): boolean {
-    const result = socketWrapper.parseData(message)
-    if (result instanceof Error) {
-      console.error(result, message)
-      return false
-    }
-    if (message.isWriteAck) {
-      if (this.pendingUpdates[step.sender.uuid] === undefined) {
-        this.pendingUpdates[step.sender.uuid] = {
-          socketWrapper: step.sender,
-          versions: [step.message.version],
-        }
-      } else {
-        const update = this.pendingUpdates[step.sender.uuid]
-        update.versions.push(step.message.version)
-      }
-    }
-    return true
-
-  }
-
-/**
  * Destroys the instance
  */
-  private destroy (errorMessage: Error | null): void {
+  private destroy (error: Error | null): void {
     if (this.isDestroyed) {
       return
     }
 
-    this.sendWriteAcknowledgements(errorMessage || this.writeError)
+    if (error) {
+      this.sendWriteAcknowledgementErrors(error.toString())
+    }
+
     this.recordHandler.transitionComplete(this.name)
     this.isDestroyed = true
-
-    // this.options = null
-    // this.name = null
-    // this.record = null
-    // this.recordHandler = null
-    // this.steps = null
-    // this.currentStep = null
-    // this.recordRequest = null
-    // this.lastVersion = null
-
-    // this.pendingUpdates = null
-    // this.cacheResponses = 0
-    // this.storageResponses = 0
   }
 
 /**
@@ -270,11 +247,7 @@ export default class RecordTransition {
 
     const currentStep = this.steps.shift()
     if (!currentStep) {
-      if (this.cacheResponses === 0 && this.storageResponses === 0) {
-        this.destroy(null)
-      } else {
-        console.error('this shouldnt reach here')
-      }
+      this.destroy(null)
       return
     }
 
@@ -287,7 +260,6 @@ export default class RecordTransition {
     }
 
     if (this.record._v !== message.version - 1) {
-      this.cacheResponses--
       this.sendVersionExists(currentStep)
       this.next()
       return
@@ -301,7 +273,7 @@ export default class RecordTransition {
       this.record._d = message.parsedData
     }
 
-  /*
+    /*
    * Please note: saving to storage is called first to allow for synchronous cache
    * responses to destroy the transition, it is however not on the critical path
    * and the transition will continue straight away, rather than wait for the storage response
@@ -310,21 +282,34 @@ export default class RecordTransition {
    * If the storage response is asynchronous and write acknowledgement is enabled, the transition
    * will not be destroyed until writing to storage is finished
    */
-    if (!this.config.storageExclusion || !this.config.storageExclusion.test(this.name)) {
-      this.storageResponses++
-      this.services.storage.set(
-      this.name,
-      this.record,
-      this.onStorageResponse,
-      this.metaData,
-    )
+    if (!isExcluded(this.config.storageExclusionPrefixes, this.name)) {
+      this.pendingStorageWrites++
+      if (message.isWriteAck) {
+        this.setUpWriteAcknowledgement(message, this.currentStep.sender)
+        this.services.storage.set(this.name, this.record, error => this.onStorageResponse(error, this.currentStep.sender, message), this.metaData)
+      } else {
+        this.services.storage.set(this.name, this.record, this.onStorageResponse, this.metaData)
+      }
     }
-    this.services.cache.set(
-      this.name,
-      this.record,
-      this.onCacheResponse,
-      this.metaData,
-    )
+
+    this.pendingCacheWrites++
+    if (message.isWriteAck) {
+      this.setUpWriteAcknowledgement(message, this.currentStep.sender)
+      this.services.cache.set(this.name, this.record, error => this.onCacheResponse(error, this.currentStep.sender, message), this.metaData)
+    } else {
+      this.services.cache.set(this.name, this.record, this.onCacheResponse, this.metaData)
+    }
+  }
+
+  private setUpWriteAcknowledgement (message: Message, socketWrapper: SocketWrapper) {
+    const correlationId = message.correlationId as string
+    const response = this.writeAckSockets.get(socketWrapper)
+    if (!response) {
+      this.writeAckSockets.set(socketWrapper, { [correlationId]: 1 })
+      return
+    }
+    response[correlationId] = response[correlationId] ? ++response[correlationId] : 1
+    this.writeAckSockets.set(socketWrapper, response)
   }
 
 /**
@@ -337,30 +322,56 @@ export default class RecordTransition {
     this.existingVersions = []
   }
 
+  private handleWriteAcknowledgement (error: Error | null, socketWrapper: SocketWrapper, originalMessage: Message) {
+    const correlationId = originalMessage.correlationId as string
+    const response = this.writeAckSockets.get(socketWrapper)
+    if (!response) {
+      console.log('unkown socket write ack')
+      return
+    }
+
+    response[correlationId]--
+    if (response[correlationId] === 0) {
+      socketWrapper.sendMessage({
+        topic: TOPIC.RECORD,
+        action: RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        // originalAction: originalMessage.action,
+        name: originalMessage.name,
+        correlationId
+      })
+      delete response[correlationId]
+    }
+
+    if (Object.keys(response).length === 0) {
+      this.writeAckSockets.delete(socketWrapper)
+    }
+  }
+
 /**
  * Callback for responses returned by cache.set(). If an error
  * is returned the queue will be destroyed, otherwise
  * the update will be broadcast to other subscribers and the
  * next step invoked
  */
-  private onCacheResponse (error: Error | null): void {
-    this.cacheResponses--
-    this.writeError = this.writeError || error
+  private onCacheResponse (error: Error | null, socketWrapper?: SocketWrapper, message?: Message): void {
+    if (message && socketWrapper) {
+      this.handleWriteAcknowledgement(error, socketWrapper, message)
+    }
+
     if (error) {
       this.onFatalError(error)
     } else if (this.isDestroyed === false) {
+      delete this.currentStep.message.isWriteAck
+      delete this.currentStep.message.correlationId
       this.recordHandler.broadcastUpdate(
         this.name,
         this.currentStep.message,
         false,
         this.currentStep.sender,
       )
+
       this.next()
-    } else if (
-      this.cacheResponses === 0 &&
-      this.storageResponses === 0 &&
-      this.steps.length === 0
-    ) {
+    } else if (this.steps.length === 0 && this.pendingCacheWrites === 0 && this.pendingStorageWrites === 0) {
       this.destroy(null)
     }
   }
@@ -368,15 +379,15 @@ export default class RecordTransition {
 /**
  * Callback for responses returned by storage.set()
  */
-  private onStorageResponse (error: Error | null): void {
-    this.storageResponses--
-    this.writeError = this.writeError || error
+  private onStorageResponse (error: Error | null, socketWrapper?: SocketWrapper, message?: Message): void {
+    if (message && socketWrapper) {
+      this.handleWriteAcknowledgement(error, socketWrapper, message)
+    }
+
     if (error) {
       this.onFatalError(error)
     } else if (
-      this.cacheResponses === 0 &&
-      this.storageResponses === 0 &&
-      this.steps.length === 0
+      this.steps.length === 0 && this.pendingCacheWrites === 0 && this.pendingStorageWrites === 0
     ) {
       this.destroy(null)
     }
@@ -385,40 +396,38 @@ export default class RecordTransition {
 /**
  * Sends all write acknowledgement messages at the end of a transition
  */
-  private sendWriteAcknowledgements (errorMessage: Error | null) {
-    for (const uid in this.pendingUpdates) {
-      const update = this.pendingUpdates[uid]
-      update.socketWrapper.sendMessage({
-        topic: TOPIC.RECORD,
-        action: RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
-        name: this.name,
-        parsedData: [
-          update.versions,
-          errorMessage ? errorMessage.toString() : null,
-        ],
-      }, true)
+  private sendWriteAcknowledgementErrors (errorMessage: string) {
+    for (const [socketWrapper, pendingWrites] of this.writeAckSockets) {
+      for (const correlationId in pendingWrites) {
+        socketWrapper.sendMessage({
+          topic: TOPIC.RECORD, action: RECORD_ACTIONS.RECORD_UPDATE_ERROR, reason: errorMessage, correlationId
+        })
+      }
     }
+    this.writeAckSockets.clear()
   }
 
 /**
  * Generic error callback. Will destroy the queue and notify the senders of all pending
  * transitions
  */
-  private onFatalError (errorMessage: Error): void {
+  private onFatalError (error: Error): void {
     if (this.isDestroyed === true) {
       return
     }
-    this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_UPDATE_ERROR], errorMessage.toString(), this.metaData)
+    this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_UPDATE_ERROR], error.toString(), this.metaData)
 
     for (let i = 0; i < this.steps.length; i++) {
       if (!this.steps[i].sender.isRemote) {
-        this.steps[i].sender.sendError(this.steps[i].message, RECORD_ACTIONS.RECORD_UPDATE_ERROR)
+        this.steps[i].sender.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RECORD_ACTIONS.RECORD_UPDATE_ERROR,
+          name: this.steps[i].message.name
+        })
       }
     }
 
-    if (this.cacheResponses === 0 && this.storageResponses === 0) {
-      this.destroy(errorMessage)
-    }
+    this.destroy(error)
   }
 
 }

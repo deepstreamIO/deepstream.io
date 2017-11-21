@@ -39,7 +39,9 @@ const pluginsOpts = {
       cache: {
         type: 'object',
         properties: {
+          type: { type: 'string', enum: ['default'] },
           name: { type: 'string', minLength: 1 },
+          path: { type: 'string', minLength: 1 },
           options: {
             type: 'object',
             properties: {
@@ -52,7 +54,9 @@ const pluginsOpts = {
       storage: {
         type: 'object',
         properties: {
+          type: { type: 'string', enum: ['default'] },
           name: { type: 'string', minLength: 1 },
+          path: { type: 'string', minLength: 1 },
           options: {
             type: 'object',
             properties: {
@@ -76,9 +80,10 @@ const authenticationOpts = {
     type: 'object',
     properties: {
       type: { type: 'string', enum: ['none', 'file', 'http'] },
+      name: { type: 'string', minLength: 1 },
+      path: { type: 'string', minLength: 1 },
       options: {
         type: 'object',
-        additionalProperties: false,
         properties: {
           path: { type: 'string', minLength: 1 },
           hash: { type: 'string', minLength: 1 },
@@ -98,7 +103,9 @@ const permissionOpts = {
   permission: {
     type: 'object',
     properties: {
-      type: { type: 'string', minLength: 1 },
+      type: { type: 'string', enum: ['config', 'none'] },
+      name: { type: 'string', minLength: 1 },
+      path: { type: 'string', minLength: 1 },
       options: {
         type: 'object',
         properties: {
@@ -118,7 +125,9 @@ const connEndpointsOpts = {
       websocket: {
         type: 'object',
         properties: {
+          type: { type: 'string', enum: ['default'] },
           name: { type: 'string', minLength: 1 },
+          path: { type: 'string', minLength: 1 },
           options: {
             type: 'object',
             properties: {
@@ -140,7 +149,9 @@ const connEndpointsOpts = {
       http: {
         type: 'object',
         properties: {
+          type: { type: 'string', enum: ['default'] },
           name: { type: 'string', minLength: 1 },
+          path: { type: 'string', minLength: 1 },
           options: {
             type: 'object',
             properties: {
@@ -167,7 +178,9 @@ const loggerOpts = {
   logger: {
     type: 'object',
     properties: {
-      type: { type: 'string', minLength: 1 },
+      type: { type: 'string', enum: ['default'] },
+      name: { type: 'string', minLength: 1 },
+      path: { type: 'string', minLength: 1 },
       options: {
         type: 'object',
         properties: {
@@ -176,8 +189,7 @@ const loggerOpts = {
           host: { type: 'string', minLength: 1 },
           options: { type: 'object' }
         }
-      },
-      path: { type: 'string', minLength: 1 }
+      }
     }
   }
 }

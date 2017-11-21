@@ -1,6 +1,6 @@
-import { TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS, EVENT, PARSER_ACTIONS } from '../../constants'
-import * as messageBuilder from '../../../protocol/text/src/message-builder'
-import { createSocketWrapper } from './socket-wrapper-factory'
+import { TOPIC, ALL_ACTIONS, CONNECTION_ACTIONS, AUTH_ACTIONS, EVENT, PARSER_ACTIONS, ParseResult, Message } from '../../constants'
+import * as messageBuilder from '../../../protocol/binary/src/message-builder'
+import { UwsSocketWrapper, createSocketWrapper } from './socket-wrapper-factory'
 import { EventEmitter } from 'events'
 import * as https from 'https'
 import * as http from 'http'
@@ -41,6 +41,8 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private serverGroup: any
   private scheduledSocketWrapperWrites: Set<SocketWrapper>
   private upgradeRequest: any
+  private pingMessage: Buffer
+  private pingInterval: number
 
   constructor (private options: any, private services: DeepstreamServices) {
     super()
@@ -89,6 +91,11 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     const port = this._getOption('port')
     const host = this._getOption('host')
     this.server.listen(port, host)
+
+    this.pingMessage = messageBuilder.getMessage({
+      topic: TOPIC.CONNECTION,
+      action: CONNECTION_ACTIONS.PING
+    }, false)
   }
 
   /**
@@ -144,8 +151,10 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       }
     )
 
-    uws.native.server.group.onMessage(this.serverGroup, (message, socketWrapper) => {
-      const parsedMessages = socketWrapper.parseMessage(message)
+    uws.native.server.group.onMessage(this.serverGroup, (message: ArrayBuffer | string, socketWrapper: UwsSocketWrapper) => {
+      const parseResults = socketWrapper.parseMessage(message)
+      const parsedMessages = this._handleParseErrors(socketWrapper, parseResults)
+
       if (parsedMessages.length > 0) {
         socketWrapper.onMessage(parsedMessages)
       }
@@ -155,16 +164,48 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     uws.native.server.group.onPong(this.serverGroup, () => {})
     uws.native.server.group.onConnection(this.serverGroup, this._onConnection.bind(this))
 
-    // TODO: This will become an issue when distinguishing
-    // between different protocols
-    uws.native.server.group.startAutoPing(
-      this.serverGroup,
-      this._getOption('heartbeatInterval'),
-      messageBuilder.getMessage({
-        topic: TOPIC.CONNECTION,
-        action: CONNECTION_ACTIONS.PING
-      }, false)
-    )
+    this.pingInterval = setInterval(() => {
+      uws.native.server.group.broadcast(this.serverGroup, this.pingMessage, true)
+    }, this._getOption('heartbeatInterval'))
+  }
+
+  private _handleParseErrors (socketWrapper: SocketWrapper, parseResults: Array<ParseResult>): Array<Message> {
+    const messages: Array<Message> = []
+    for (const parseResult of parseResults) {
+      if (parseResult.parseError) {
+        const rawMsg = this._getRaw(parseResult)
+        this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${rawMsg}`)
+
+        socketWrapper.sendMessage({
+          topic: TOPIC.PARSER,
+          action: parseResult.action,
+          data: parseResult.raw,
+          originalTopic: parseResult.parsedMessage.topic,
+          originalAction: parseResult.parsedMessage.action
+        })
+        socketWrapper.destroy()
+        continue
+      }
+      if (
+        parseResult.topic === TOPIC.CONNECTION &&
+        parseResult.action === CONNECTION_ACTIONS.PONG
+      ) {
+        continue
+      }
+      messages.push(parseResult)
+    }
+    return messages
+  }
+
+  private _getRaw (parseResult: ParseResult): string {
+    if (parseResult.raw && typeof parseResult.raw === 'string') {
+      return parseResult.raw
+    } else if (parseResult.parseError && parseResult.parsedMessage) {
+      return JSON.stringify(parseResult.parsedMessage)
+    } else if (parseResult.raw instanceof Buffer) {
+      return JSON.stringify(parseResult.raw)
+    }
+    return ''
   }
 
   /**
@@ -296,10 +337,6 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       socketWrapper,
       disconnectTimer
     )
-    socketWrapper.sendMessage({
-      topic: TOPIC.CONNECTION,
-      action: CONNECTION_ACTIONS.CHALLENGE
-    }, false)
     socketWrapper.onMessage = this._processConnectionMessage.bind(this, socketWrapper)
   }
 
@@ -310,24 +347,20 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private _processConnectionMessage (socketWrapper: SocketWrapper, parsedMessages: Array<Message>) {
     const msg = parsedMessages[0]
 
-    if (msg.parseError) {
-      this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${msg.raw}`)
-      socketWrapper.sendError({
-        topic: TOPIC.CONNECTION
-      }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, msg.raw)
-      socketWrapper.destroy()
-      return
-    }
-
     if (msg.topic !== TOPIC.CONNECTION) {
-      this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid connection message ${msg.raw}`)
-      socketWrapper.sendError({
+      const raw = this._getRaw(msg)
+      this.logger.warn(CONNECTION_ACTIONS[CONNECTION_ACTIONS.INVALID_MESSAGE], `invalid connection message ${raw}`)
+      socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
-      }, PARSER_ACTIONS.INVALID_MESSAGE, msg.raw)
+        action: CONNECTION_ACTIONS.INVALID_MESSAGE,
+        originalTopic: msg.topic,
+        originalAction: msg.action,
+        data: msg.raw
+      })
       return
     }
 
-    if (msg.action === CONNECTION_ACTIONS.CHALLENGE_RESPONSE) {
+    if (msg.action === CONNECTION_ACTIONS.CHALLENGE) {
       socketWrapper.onMessage = socketWrapper.authCallback
       socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
@@ -336,7 +369,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       return
     }
 
-    this.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], msg.action)
+    this.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], '', msg.action)
   }
 
   /**
@@ -349,20 +382,16 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
     let errorMsg
 
-    if (msg.parseError) {
-      this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing auth message ${msg.raw}`)
-      socketWrapper.sendError({
-        topic: TOPIC.AUTH
-      }, PARSER_ACTIONS.MESSAGE_PARSE_ERROR, msg.raw)
-      socketWrapper.destroy()
-      return
-    }
-
     if (msg.topic !== TOPIC.AUTH) {
-      this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid auth message ${msg.raw}`)
-      socketWrapper.sendError({
+      const raw = this._getRaw(msg)
+      this.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE], `invalid auth message ${raw}`)
+      socketWrapper.sendMessage({
         topic: TOPIC.AUTH,
-      }, PARSER_ACTIONS.INVALID_MESSAGE, msg.raw)
+        action: AUTH_ACTIONS.INVALID_MESSAGE,
+        originalTopic: msg.topic,
+        originalAction: msg.action,
+        data: msg.raw
+      })
       return
     }
 
@@ -377,7 +406,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
      */
     if (msg.action !== AUTH_ACTIONS.REQUEST) {
       errorMsg = this.logInvalidAuthData === true ? msg.data : ''
-      this._sendInvalidAuthMsg(socketWrapper, errorMsg)
+      this._sendInvalidAuthMsg(socketWrapper, errorMsg, msg.action)
       return
     }
 
@@ -392,7 +421,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
         errorMsg += ` "${msg.data}": ${result.toString()}`
       }
 
-      this._sendInvalidAuthMsg(socketWrapper, errorMsg)
+      this._sendInvalidAuthMsg(socketWrapper, errorMsg, msg.action)
       return
     }
 
@@ -410,11 +439,13 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Will be called for syntactically incorrect auth messages. Logs
    * the message, sends an error to the client and closes the socket
    */
-  private _sendInvalidAuthMsg (socketWrapper: SocketWrapper, msg: string): void {
+  private _sendInvalidAuthMsg (socketWrapper: SocketWrapper, msg: string, originalAction: ALL_ACTIONS): void {
     this.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '')
-    socketWrapper.sendError({
-      topic: TOPIC.AUTH
-    }, AUTH_ACTIONS.INVALID_MESSAGE_DATA)
+    socketWrapper.sendMessage({
+      topic: TOPIC.AUTH,
+      action: AUTH_ACTIONS.INVALID_MESSAGE_DATA,
+      originalAction
+    })
     socketWrapper.destroy()
   }
 
@@ -426,11 +457,10 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private _registerAuthenticatedSocket (socketWrapper: SocketWrapper, userData: any): void {
     delete socketWrapper.authCallback
     socketWrapper.once('close', this._onSocketClose.bind(this, socketWrapper))
-    socketWrapper.onMessage = (parsedMessages) => {
+    socketWrapper.onMessage = parsedMessages => {
       this.onMessages(socketWrapper, parsedMessages)
     }
     this._appendDataToSocketWrapper(socketWrapper, userData)
-
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
       action: AUTH_ACTIONS.AUTH_SUCCESSFUL,
@@ -467,17 +497,19 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     }
 
     this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg)
-    socketWrapper.sendError({
+    socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
+      action: AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
       parsedData: clientData
-    }, AUTH_ACTIONS.AUTH_UNSUCCESSFUL)
+    })
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this.maxAuthAttempts) {
       this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
-      socketWrapper.sendError({
-        topic: TOPIC.AUTH
-      }, AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS)
+      socketWrapper.sendMessage({
+        topic: TOPIC.AUTH,
+        action: AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS
+      })
       socketWrapper.destroy()
     }
   }
@@ -488,10 +520,11 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    */
   private _processConnectionTimeout (socketWrapper: SocketWrapper): void {
     const log = 'connection has not authenticated successfully in the expected time'
-    this.logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT], log)
-    socketWrapper.sendError({
-      topic: TOPIC.CONNECTION
-    }, CONNECTION_ACTIONS.CONNECTION_AUTHENTICATION_TIMEOUT)
+    this.logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT], log)
+    socketWrapper.sendMessage({
+      topic: TOPIC.CONNECTION,
+      action: CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT
+    })
     socketWrapper.destroy()
   }
 
@@ -586,6 +619,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * will emit a close event once succesfully shut down
    */
   public close () {
+    clearInterval(this.pingInterval)
     this.server.removeAllListeners('request')
     this.server.removeAllListeners('upgrade')
     if (this.serverGroup) {

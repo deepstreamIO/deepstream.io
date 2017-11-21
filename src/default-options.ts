@@ -51,7 +51,7 @@ export function get (): DeepstreamConfig {
      */
     connectionEndpoints: {
       websocket: {
-        name: 'uws',
+        type: 'default',
         options: {
           port: 6020,
           host: '0.0.0.0',
@@ -72,7 +72,7 @@ export function get (): DeepstreamConfig {
         }
       },
       http: {
-        name: 'http',
+        type: 'default',
         options: {
           port: 8080,
           host: '0.0.0.0',
@@ -95,11 +95,11 @@ export function get (): DeepstreamConfig {
 
     plugins: {
       cache: {
-        name: 'default-cache',
+        type: 'default',
         options: {}
       },
       storage: {
-        name: 'default-storage',
+        type: 'default',
         options: {}
       }
     },
@@ -107,7 +107,7 @@ export function get (): DeepstreamConfig {
     /*
      * Storage options
      */
-    storageExclusion: null,
+    storageExclusionPrefixes: [],
 
     /**
      * Listening
@@ -121,7 +121,7 @@ export function get (): DeepstreamConfig {
     rpcTimeout: 10000,
     cacheRetrievalTimeout: 1000,
     storageRetrievalTimeout: 2000,
-    storageHotPathPatterns: [],
+    storageHotPathPrefixes: [],
     dependencyInitialisationTimeout: 2000,
     stateReconciliationTimeout: 500,
     clusterKeepAliveInterval: 5000,

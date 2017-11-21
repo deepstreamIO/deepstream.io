@@ -1,13 +1,27 @@
-## deepstream.io: The Open Realtime Server
-----------------------------------------------
-deepstream is a new type of server that syncs data and sends events across millions of clients
+# deepstream - the open realtime server <a href='https://deepstreamhub.com/open-source/'><img src='./elton-square.png' height='60' alt='deepstream'></a>
+
+deepstream is an open source server inspired by concepts behind financial trading technology. It allows clients and backend services to sync data, send messages and make rpcs at very high speed and scale.
 
 [![Build Status](https://travis-ci.org/deepstreamIO/deepstream.io.svg?branch=master)](https://travis-ci.org/deepstreamIO/deepstream.io) [![npm version](https://badge.fury.io/js/deepstream.io.svg)](http://badge.fury.io/js/deepstream.io) [![Coverage Status](https://coveralls.io/repos/github/deepstreamIO/deepstream.io/badge.svg?branch=master)](https://coveralls.io/github/deepstreamIO/deepstream.io?branch=master) [![dependencies Status](https://david-dm.org/deepstreamIO/deepstream.io/status.svg)](https://david-dm.org/deepstreamIO/deepstream.io) [![devDependencies Status](https://david-dm.org/deepstreamIO/deepstream.io/dev-status.svg)](https://david-dm.org/deepstreamIO/deepstream.io?type=dev)
 
-### Quick links to useful resources on getting started:
+deepstream has three core concepts for enabling realtime application development
+
+- **records** ([realtime document sync](https://deepstreamhub.com/tutorials/guides/records/))
+
+records are schema-less, persistent documents that can be manipulated and observed. Any change is synchronized with all connected clients and backend processes in milliseconds. Records can reference each other and be arranged in lists to allow modelling of relational data
+
+- **events** ([publish subscribe messaging](https://deepstreamhub.com/tutorials/guides/events/))
+
+events allow for high performance, many-to-many messaging. deepstream provides topic based routing from sender to subscriber, data serialisation and subscription listening.
+
+- **rpcs** ([request response workflows](https://deepstreamhub.com/tutorials/guides/remote-procedure-calls/))
+
+remote procedure calls allow for secure and highly available request response communication. deepstream handles load-balancing, failover, data-transport and message routing.
+
+### Getting Started:
 
 1. [Installing deepstream](https://deepstream.io/install/)
-2. [Getting started](https://deepstream.io/tutorials/core/getting-started-quickstart/)
+2. [Quickstart](https://deepstream.io/tutorials/core/getting-started-quickstart/)
 3. [Tutorials](https://deepstream.io/tutorials/)
 4. [Documentation](https://deepstream.io/docs/)
 
@@ -17,31 +31,35 @@ deepstream is a new type of server that syncs data and sends events across milli
 2. [Twitter](https://twitter.com/deepstreamHub)
 3. [Stack Overflow](https://stackoverflow.com/questions/tagged/deepstream.io)
 
-### Development Guide
+### Contributing
 
-Deepstream development is a great way for you to go into depth about building performant nodeJS applications, and contributions are always welcome with lots of ❤
+deepstream development is a great way to get into building performant Node.js applications, and contributions are always welcome with lots of ❤. Contributing to deepstream is as simple as having Node.js (6+) and TypeScript (2+) installed, cloning the repo and making some changes.
 
-Contributing to deepstream.io is as simple as:
+```
+~ » git clone git@github.com:deepstreamIO/deepstream.io.git
+~ » cd deepstream.io
+~/deepstream.io » git submodule update --init 
+~/deepstream.io » npm i
+~/deepstream.io » npm start
+      _                     _
+   __| | ___  ___ _ __  ___| |_ _ __ ___  __ _ _ __ ____
+  / _` |/ _ \/ _ \ '_ \/ __| __| '__/ _ \/ _` | '_ ` _  \
+ | (_| |  __/  __/ |_) \__ \ |_| | |  __/ (_| | | | | | |
+  \__,_|\___|\___| .__/|___/\__|_|  \___|\__,_|_| |_| |_|
+                 |_|
+ =====================   starting   =====================
+```
 
-1. Downloading [nodeJS](https://nodejs.org/en/) (4+)
-2. Cloning the repo
-3. Run `npm i` / `yarn install` to install dependencies
-4. Make your changes / Add a test
-5. Run `npm t` to see if the unit tests all pass
-6. Run `sh ./scripts/run-e2e.sh` if your changes are quite big. But otherwise CI can take care of that for you ;)
+From here you can make your changes, and check the unit tests pass:
+
+```
+~/deepstream.io » npm t
+```
+
+If your changes are substantial you can also run our extensive end-to-end testing framework:
+
+```
+~/deepstream.io » npm run e2e
+```
 
 For power users who want to make sure the binary works, you can run `sh scripts/package.sh true`. You'll need to download the usual [node-gyp](https://github.com/nodejs/node-gyp) build environment for this to work and we only support the latest LTS version to compile. This step is usually not needed though unless your modifying resource files or changing dependencies.
-
-### Post release sanity test for linux distributions:
-
-1. access a linux machine
-
-2. copy over the sanity test using:
-
-`curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/sanity-test.sh`
-
-3. depending on your distribution, run
-
-- debian/ubuntu: `bash sanity-test.sh deb`
-- centos/aws: `bash sanity-test.sh rpm`
-- any linux distro: `bash sanity-test.sh tar`

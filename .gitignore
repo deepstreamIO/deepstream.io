@@ -46,3 +46,6 @@ npm-debug.*
 dist
 
 licenses.json
+
+# Typescript
+dist

@@ -5,7 +5,13 @@
     "outDir": "dist",
     "sourceMap": true,
     "allowJs": false,
-    "strictNullChecks": true 
+    "strictNullChecks": true,
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "node_modules/@types"
+    ]
   },
   "files": [
     "./node_modules/@types/node/index.d.ts",
