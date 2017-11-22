@@ -76,7 +76,7 @@ module.exports = {
         if (data) {
           sinon.assert.calledWith(loginSpy, true, JSON.parse(data))
         } else {
-          sinon.assert.calledWith(loginSpy, true, null)
+          sinon.assert.calledWith(loginSpy, true)
         }
       } else {
         sinon.assert.calledOnce(loginSpy)
