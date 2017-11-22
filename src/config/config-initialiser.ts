@@ -131,24 +131,12 @@ function handlePlugins (config: DeepstreamConfig, services: any): void {
   if (config.plugins == null) {
     return
   }
-  // mapping between the root properties which contains the plugin instance
-  // and the plugin configuration objects
-  const connectorMap = {
-    cache: 'cache',
-    storage: 'storage',
-  }
-  // mapping between the plugin configuration properties and the npm module
-  // name resolution
-  const typeMap = {
-    cache: 'cache',
-    storage: 'storage',
-  }
   const plugins = Object.assign({}, config.plugins)
 
   for (const key in plugins) {
     const plugin = plugins[key]
     if (plugin) {
-      const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
+      const PluginConstructor = resolvePluginClass(plugin, key)
       services[key] = new PluginConstructor(plugin.options)
       if (services.registeredPlugins.indexOf(key) === -1) {
         services.registeredPlugins.push(key)
