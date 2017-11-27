@@ -81,6 +81,9 @@ function handleSSLProperties (config: DeepstreamConfig): void {
  */
 function handleLogger (config: DeepstreamConfig): Logger {
   const configOptions = (config.logger || {}).options
+  if (commandLineArguments.colors !== undefined) {
+    configOptions.colors = commandLineArguments.colors
+  }
   let Logger
   if (config.logger.type === 'default') {
     Logger = DefaultLogger
