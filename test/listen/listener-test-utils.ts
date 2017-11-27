@@ -239,9 +239,8 @@ export default class ListenerTestUtils {
       .once()
       .withExactArgs({
         topic,
-        action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
+        action: state ? this.actions.SUBSCRIPTION_HAS_PROVIDER : this.actions.SUBSCRIPTION_HAS_NO_PROVIDER,
         name: subscription,
-        parsedData: state
       })
   }
 
@@ -251,9 +250,8 @@ export default class ListenerTestUtils {
       .once()
       .withExactArgs(subscription, {
         topic,
-        action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
+        action: state ? this.actions.SUBSCRIPTION_HAS_PROVIDER : this.actions.SUBSCRIPTION_HAS_NO_PROVIDER,
         name: subscription,
-        parsedData: state
       }, false, null)
   }
 
