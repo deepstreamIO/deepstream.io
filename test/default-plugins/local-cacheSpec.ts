@@ -13,7 +13,7 @@ describe('it saves values in memory', () => {
 
   it('sets a value in the cache', done => {
     const successCallback = jasmine.createSpy('set success')
-    localCache.set('firstname', 'Wolfram', successCallback)
+    localCache.set('firstname', 1, 'Wolfram', successCallback)
     setTimeout(() => {
       expect(successCallback.calls.count()).toBe(1)
       expect(successCallback.calls.mostRecent().args).toEqual([null])
@@ -26,7 +26,7 @@ describe('it saves values in memory', () => {
     localCache.get('firstname', successCallback)
     setTimeout(() => {
       expect(successCallback.calls.count()).toBe(1)
-      expect(successCallback.calls.mostRecent().args).toEqual([null, 'Wolfram'])
+      expect(successCallback.calls.mostRecent().args).toEqual([null, 1, 'Wolfram'])
       done()
     }, 1)
   })
@@ -46,7 +46,7 @@ describe('it saves values in memory', () => {
     localCache.get('firstname', successCallback)
     setTimeout(() => {
       expect(successCallback.calls.count()).toBe(1)
-      expect(successCallback.calls.mostRecent().args).toEqual([null, null])
+      expect(successCallback.calls.mostRecent().args).toEqual([null, -1, null])
       done()
     }, 1)
   })

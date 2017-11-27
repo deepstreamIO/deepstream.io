@@ -123,9 +123,9 @@ export default class RecordHandler {
  * Sends the records data current data once loaded from the cache, and null otherwise
  */
   private snapshot (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    const onComplete = function (record, recordName, socket: SocketWrapper) {
-      if (record) {
-        sendRecord(recordName, record, socket)
+    const onComplete = (recordName, version, data, socket: SocketWrapper) => {
+      if (data) {
+        sendRecord(recordName, version, data, socket)
       } else {
         socket.sendMessage({
           topic: TOPIC.RECORD,
@@ -162,12 +162,12 @@ export default class RecordHandler {
    * If the record is not found, the version number will be -1
    */
   private head (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    const onComplete = function (record) {
+    const onComplete = (recordName, version, data) => {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
         action: RA.HEAD_RESPONSE,
         name: message.name,
-        version: record ? record._v : -1,
+        version
       })
     }
 
@@ -209,9 +209,9 @@ export default class RecordHandler {
  * note that create also triggers a read once done
  */
   private createOrRead (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    const onComplete = function (record, recordName, socket) {
-      if (record) {
-        this.readAndSubscribe(message, record, socket)
+    const onComplete = (recordName, version, data, socket) => {
+      if (data) {
+        this.readAndSubscribe(message, version, data, socket)
       } else {
         this.permissionAction(
           RA.CREATE,
@@ -297,12 +297,11 @@ export default class RecordHandler {
  */
   private forceWrite (recordName: string, message: RecordWriteMessage, socketWrapper: SocketWrapper): void {
     socketWrapper.parseData(message)
-    const record = { _v: 0, _d: message.parsedData }
     const writeAck = message.isWriteAck
     let cacheResponse = false
     let storageResponse = false
     let writeError
-    this.services.storage.set(recordName, record, error => {
+    this.services.storage.set(recordName, 0, message.parsedData, error => {
       if (writeAck) {
         storageResponse = true
         writeError = writeError || error || null
@@ -312,7 +311,7 @@ export default class RecordHandler {
       }
     }, this.metaData)
 
-    this.services.cache.set(recordName, record, error => {
+    this.services.cache.set(recordName, 0, message.parsedData, error => {
       if (!error) {
         this.broadcastUpdate(recordName, message, false, socketWrapper)
       }
@@ -348,10 +347,9 @@ export default class RecordHandler {
  */
   private create (message: RecordMessage, socketWrapper: SocketWrapper, callback: Function): void {
     const recordName = message.name
-    const record = { _v: 0, _d: {} }
 
     // store the records data in the cache and wait for the result
-    this.services.cache.set(recordName, record, error => {
+    this.services.cache.set(recordName, 0, {}, error => {
       if (error) {
         this.services.logger.error(RA[RA.RECORD_CREATE_ERROR], recordName, this.metaData)
         socketWrapper.sendMessage({
@@ -363,13 +361,13 @@ export default class RecordHandler {
       } else if (callback) {
         callback(recordName, socketWrapper)
       } else {
-        this.readAndSubscribe(message, record, socketWrapper)
+        this.readAndSubscribe(message, 0, {}, socketWrapper)
       }
     }, this.metaData)
 
     if (!this.config.storageExclusion || !this.config.storageExclusion.test(recordName)) {
     // store the record data in the persistant storage independently and don't wait for the result
-      this.services.storage.set(recordName, record, error => {
+      this.services.storage.set(recordName, 0, {}, error => {
         if (error) {
           this.services.logger.error(RA[RA.RECORD_CREATE_ERROR], `storage:${error}`, this.metaData)
         }
@@ -380,10 +378,10 @@ export default class RecordHandler {
 /**
  * Subscribes to updates for a record and sends its current data once done
  */
-  private readAndSubscribe (message: RecordMessage, record: StorageRecord, socketWrapper: SocketWrapper): void {
+  private readAndSubscribe (message: RecordMessage, version: number, data: any, socketWrapper: SocketWrapper): void {
     this.permissionAction(RA.READ, message, message.action, socketWrapper, () => {
       this.subscriptionRegistry.subscribe(Object.assign({}, message, { action: RA.SUBSCRIBE }), socketWrapper)
-      sendRecord(message.name, record, socketWrapper)
+      sendRecord(message.name, version, data, socketWrapper)
     })
   }
 
@@ -569,12 +567,12 @@ function onPermissionResponse (
   /**
  * Sends the records data current data once done
  */
-function sendRecord (recordName: string, record: StorageRecord, socketWrapper: SocketWrapper) {
+function sendRecord (recordName: string, version: number, data: any, socketWrapper: SocketWrapper) {
   socketWrapper.sendMessage({
     topic: TOPIC.RECORD,
     action: RA.READ_RESPONSE,
     name: recordName,
-    version: record._v,
-    parsedData: record._d,
+    version,
+    parsedData: data,
   })
 }

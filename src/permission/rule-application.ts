@@ -133,7 +133,7 @@ export default class RuleApplication {
    * Called either asynchronously when data is successfully retrieved from the
    * cache or synchronously if its already present
    */
-  private onLoadComplete (data: StorageRecord, recordName: string): void {
+  private onLoadComplete (recordName: string, version: number, data: any): void {
     this.recordsData[recordName] = data
 
     if (this.isReady()) {
@@ -146,9 +146,9 @@ export default class RuleApplication {
    * Called whenever a storage or cache retrieval fails. Any kind of error during the
    * permission process is treated as a denied permission
    */
-  private onLoadError (error: string | Error, message: Message, recordName: string) {
+  private onLoadError (event: any, errorMessage: string, recordName: string, socket: SocketWrapper) {
     this.recordsData[recordName] = ERROR
-    const errorMsg = `failed to load record ${this.params.name} for permissioning:${error.toString()}`
+    const errorMsg = `failed to load record ${this.params.name} for permissioning:${errorMessage}`
     this.params.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], errorMsg)
     this.params.callback(RECORD_ACTIONS.RECORD_LOAD_ERROR, false)
     this.destroy()
@@ -240,7 +240,7 @@ export default class RuleApplication {
     }
 
     if (typeof currentData !== UNDEFINED && currentData !== LOADING) {
-      data = JSON.parse(JSON.stringify(currentData._d))
+      data = JSON.parse(JSON.stringify(currentData))
       jsonPath.setValue(data, msg.path, msg.parsedData)
       return data
     }
@@ -258,7 +258,7 @@ export default class RuleApplication {
     if (this.isDestroyed === true || this.params.rule.hasOldData === false) {
       return
     } else if (this.recordsData[this.params.name]) {
-      return this.recordsData[this.params.name]._d
+      return this.recordsData[this.params.name]
     }
     this.loadRecord(this.params.name)
   }
@@ -341,7 +341,7 @@ export default class RuleApplication {
     }
     /* istanbul ignore next */
     if (typeof this.recordsData[recordName] !== UNDEFINED) {
-      this.onLoadComplete(this.recordsData[recordName], recordName)
+      this.onLoadComplete(recordName, -1, this.recordsData[recordName])
       return
     }
 
@@ -390,7 +390,7 @@ export default class RuleApplication {
     } else if (typeof this.recordsData[recordName] === UNDEFINED) {
       this.loadRecord(recordName)
     } else {
-      return this.recordsData[recordName]._d
+      return this.recordsData[recordName]
     }
   }
 }
