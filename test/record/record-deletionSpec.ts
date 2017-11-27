@@ -97,7 +97,7 @@ describe('record deletion', () => {
   })
 
   it('doesn\'t delete excluded messages from storage', () => {
-    config.storageExclusion = new RegExp('no-storage/')
+    config.storageExclusionPatterns = ['no-storage/']
 
     client.socketWrapperMock
       .expects('sendMessage')

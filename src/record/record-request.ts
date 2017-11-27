@@ -3,6 +3,8 @@ import { RECORD_ACTIONS, TOPIC } from '../constants'
 type onCompleteCallback = (recordName: string, version: number, data: any, socket: SocketWrapper) => void
 type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper) => void
 
+import { isExcluded } from '../utils/utils'
+
 /**
  * Sends an error to the socketWrapper that requested the
  * record
@@ -63,11 +65,7 @@ function onCacheResponse (
     )
   } else if (data) {
     onComplete.call(context, recordName, version, data, socketWrapper)
-  } else if (
-      !config.storageExclusion ||
-      !config.storageExclusion.test(recordName)
-    ) {
-
+  } else if (!isExcluded(config.storageExclusionPrefixes, recordName)) {
     let storageTimedOut = false
     const storageTimeout = setTimeout(() => {
       storageTimedOut = true

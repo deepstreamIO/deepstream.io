@@ -8,17 +8,17 @@ export default class ClusterNode implements Cluster {
     this.stateRegistries = new Map()
   }
 
-  public sendDirect (serverName: string, message: Message, metaData: any) {}
+  public sendDirect (serverName: string, message: Message, metaData?: any) {}
 
   public sendState () {}
 
-  public send (message: Message, metaData: any) {}
+  public send (stateRegistryTopic: TOPIC, message: Message, metaData?: any) {}
 
-  public subscribe (topic: TOPIC, callback: Function) {}
+  public subscribe (stateRegistryTopic: TOPIC, callback: Function) {}
 
   public isLeader (): boolean { throw new Error('Leader not used in single state') }
 
-  public getStateRegistry (name: TOPIC) {
+  public getStateRegistry (stateRegistryTopic: TOPIC) {
     let stateRegistry = this.stateRegistries.get(name)
     if (!stateRegistry) {
       stateRegistry = new StateRegistry(name, {})

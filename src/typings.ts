@@ -132,10 +132,10 @@ interface UserAuthenticationCallback {
 }
 
 interface Cluster {
-  getStateRegistry (stateRegistryName: TOPIC): any,
-  send (message: Message, metaData: any): void,
-  sendDirect (serverName: string, message: Message, metaData: any): void,
-  subscribe (topic: TOPIC, callback: Function): void
+  getStateRegistry (stateRegistryTopic: TOPIC): any,
+  send (stateRegistryTopic: TOPIC, message: Message, metaData?: any): void,
+  sendDirect (serverName: string, message: Message, metaData?: any): void,
+  subscribe (stateRegistryTopic: TOPIC, callback: Function): void
   isLeader (): boolean
   close (callback: Function): void
 }
@@ -165,12 +165,12 @@ interface DeepstreamConfig {
   auth: PluginConfig
   permission: PluginConfig
 
-  storageExclusion: RegExp | null
+  storageExclusionPrefixes: Array<string>
   rpcAckTimeout: number
   rpcTimeout: number
   cacheRetrievalTimeout: number
   storageRetrievalTimeout: number
-  storageHotPathPatterns: Array<string>
+  storageHotPathPrefixes: Array<string>
   dependencyInitialisationTimeout: number
   stateReconciliationTimeout: number
   clusterKeepAliveInterval: number
@@ -204,6 +204,7 @@ interface ValveConfig {
 interface Provider {
   socketWrapper: SocketWrapper
   pattern: string
+  closeListener?: () => void
 }
 
 interface UserData {

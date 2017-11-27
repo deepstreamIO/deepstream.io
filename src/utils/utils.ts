@@ -42,19 +42,6 @@ export let reverseMap = function (map: Object): object {
 }
 
 /**
- * Like reverseMap but the values will be cast using Number(k)
- */
-export function reverseMapNumeric (map: { [k: number]: number }) {
-  const reversedMap = {}
-
-  for (const key in map) {
-    reversedMap[map[key]] = Number(key)
-  }
-
-  return reversedMap
-}
-
-/**
  * Extended version of the typeof operator. Also supports 'array'
  * and 'url' to check for valid URL schemas
  */
@@ -196,4 +183,20 @@ export let deepFreeze = function (obj: object): object {
 
   // Freeze self (no-op if already frozen)
   return Object.freeze(obj)
+}
+
+/**
+ * Check whether a record name should be excluded from storage
+ */
+export const isExcluded = function (exclusionPrefixes: Array<string>, recordName: string): boolean {
+  if (!exclusionPrefixes) {
+    return false
+  }
+
+  for (let i = 0; i < exclusionPrefixes.length; i++) {
+    if (recordName.startsWith(exclusionPrefixes[i])) {
+      return true
+    }
+  }
+  return false
 }

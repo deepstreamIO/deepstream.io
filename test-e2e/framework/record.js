@@ -98,6 +98,16 @@ module.exports = {
     })
   },
 
+  erase (clientExpression, recordName, path) {
+    getRecordData(clientExpression, recordName).forEach((recordData) => {
+      if (recordData.setCallback) {
+        recordData.record.erase(path, recordData.setCallback)
+      } else {
+        recordData.record.erase(path)
+      }
+    })
+  },
+
   setData (clientExpression, recordName, data) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.record.setData(recordName, utils.parseData(data))

@@ -46,8 +46,8 @@ export const getDeepstreamOptions = function (serverName) {
     stateReconciliationTimeout: 50,
     cacheRetrievalTimeout: 30,
     storageRetrievalTimeout: 50,
-    storageExclusion: new RegExp('no-storage'),
-    storageHotPathPatterns: [],
+    storageExclusionPrefixes: ['no-storage'],
+    storageHotPathPrefixes: [],
     permission: {
       options: {
         cacheEvacuationInterval: 60000,

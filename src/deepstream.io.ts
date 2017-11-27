@@ -20,6 +20,7 @@ import RecordHandler from './record/record-handler'
 import { get as getDefaultOptions } from './default-options'
 import * as configInitialiser from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
+import * as configValidator from './config/config-validator'
 
 import MessageConnector from './cluster/cluster-node'
 import LockRegistry from './cluster/lock-registry'
@@ -30,7 +31,7 @@ import DependencyInitialiser from './utils/dependency-initialiser'
  */
 process.title = 'deepstream server'
 
-export default class Deepstream extends EventEmitter {
+export class Deepstream extends EventEmitter {
   public constants: any
 
   private config: DeepstreamConfig
@@ -41,7 +42,7 @@ export default class Deepstream extends EventEmitter {
 
   private eventHandler: EventHandler
   private rpcHandler: RpcHandler
-  private recordHandler: any
+  private recordHandler: RecordHandler
   private presenceHandler: PresenceHandler
 
   private stateMachine: any
@@ -195,7 +196,7 @@ export default class Deepstream extends EventEmitter {
   private pluginInit (): void {
     this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
-    const infoLogger = (message) => this.services.logger.info(EVENT.INFO, message)
+    const infoLogger = message => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`deepstream version: ${pkg.version}`)
 
     // otherwise (no configFile) deepstream was invoked by API
@@ -207,7 +208,7 @@ export default class Deepstream extends EventEmitter {
       infoLogger(`library directory set to: ${global.deepstreamLibDir}`)
     }
 
-    this.services.registeredPlugins.forEach((pluginType) => {
+    this.services.registeredPlugins.forEach(pluginType => {
       const plugin = this.services[pluginType]
       const initialiser = new DependencyInitialiser(this, this.config, this.services, plugin, pluginType)
       initialiser.once('ready', () => {
@@ -227,7 +228,7 @@ export default class Deepstream extends EventEmitter {
     }
     plugin.isReady = true
 
-    const allPluginsReady = this.services.registeredPlugins.every((type) => this.services[type].isReady)
+    const allPluginsReady = this.services.registeredPlugins.every(type => this.services[type].isReady)
 
     if (allPluginsReady && this.currentState === STATES.PLUGIN_INIT) {
       this.transition('plugins-started')
@@ -324,7 +325,7 @@ export default class Deepstream extends EventEmitter {
  */
   private connectionEndpointShutdown (): void {
     const endpoints = this.services.connectionEndpoints
-    endpoints.forEach((endpoint) => {
+    endpoints.forEach(endpoint => {
       process.nextTick(() => endpoint.close())
     })
 
@@ -343,7 +344,7 @@ export default class Deepstream extends EventEmitter {
  */
   private pluginShutdown (): void {
     const closeablePlugins: Array<DeepstreamPlugin> = []
-    this.services.registeredPlugins.forEach((pluginType) => {
+    this.services.registeredPlugins.forEach(pluginType => {
       const plugin = this.services[pluginType]
       if (typeof plugin.close === 'function') {
         process.nextTick(() => plugin.close())
@@ -386,17 +387,17 @@ export default class Deepstream extends EventEmitter {
  * those plugins are handled through the DependencyInitialiser in this instance.
  */
   private loadConfig (config: DeepstreamConfig): void {
+    let result
     if (config === null || typeof config === 'string') {
-      const result = jsYamlLoader.loadConfig(config)
+      result = jsYamlLoader.loadConfig(config)
       this.configFile = result.file
-      this.config = result.config
-      this.services = result.services
     } else {
       const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
-      const result = configInitialiser.initialise(rawConfig)
-      this.config = result.config
-      this.services = result.services
+      result = configInitialiser.initialise(rawConfig)
     }
+    configValidator.validate(result.config)
+    this.config = result.config
+    this.services = result.services
   }
 
 /**

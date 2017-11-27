@@ -1,5 +1,5 @@
 import { RECORD_ACTIONS, TOPIC, RecordWriteMessage, EVENT } from '../constants'
-import { isOfType } from '../utils/utils'
+import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
 import recordRequest from './record-request'
@@ -7,22 +7,6 @@ import recordRequest from './record-request'
 interface Step {
   message: RecordWriteMessage
   sender: SocketWrapper
-}
-
-function translateFromWriteAck (message: RecordWriteMessage): RecordWriteMessage {
-  const msg = {
-    topic: TOPIC.RECORD,
-    version: message.version,
-    isWriteAck: false,
-    name: message.name
-  }
-  if (message.action === RECORD_ACTIONS.ERASE_WITH_WRITE_ACK) {
-    return Object.assign({}, msg, { action: RECORD_ACTIONS.ERASE, path: message.path })
-  } else if (message.action === RECORD_ACTIONS.PATCH_WITH_WRITE_ACK) {
-    return Object.assign({}, msg, { action: RECORD_ACTIONS.PATCH, path: message.path, parsedData: message.parsedData })
-  } else {
-    return Object.assign({}, msg, { action: RECORD_ACTIONS.UPDATE, parsedData: message.parsedData })
-  }
 }
 
 export default class RecordTransition {
@@ -303,7 +287,7 @@ export default class RecordTransition {
    * If the storage response is asynchronous and write acknowledgement is enabled, the transition
    * will not be destroyed until writing to storage is finished
    */
-    if (!this.config.storageExclusion || !this.config.storageExclusion.test(this.name)) {
+    if (!isExcluded(this.config.storageExclusionPrefixes, this.name)) {
       this.pendingStorageWrites++
       if (message.isWriteAck) {
         this.setUpWriteAcknowledgement(message, this.currentStep.sender)
@@ -386,9 +370,8 @@ export default class RecordTransition {
     if (error) {
       this.onFatalError(error)
     } else if (this.isDestroyed === false) {
-      if (this.currentStep.message.isWriteAck) {
-        this.currentStep.message = translateFromWriteAck(this.currentStep.message)
-      }
+      delete this.currentStep.message.isWriteAck
+      delete this.currentStep.message.correlationId
       this.recordHandler.broadcastUpdate(
         this.name,
         this.currentStep.message,

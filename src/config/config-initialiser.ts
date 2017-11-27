@@ -101,10 +101,10 @@ function handleLogger (config: DeepstreamConfig): Logger {
   }
   const logger = new Logger(configOptions)
   if (logger.log) {
-    logger.debug = logger.log.bind(config.logger, LOG_LEVEL.DEBUG)
-    logger.info = logger.log.bind(config.logger, LOG_LEVEL.INFO)
-    logger.warn = logger.log.bind(config.logger, LOG_LEVEL.WARN)
-    logger.error = logger.log.bind(config.logger, LOG_LEVEL.ERROR)
+    logger.debug = logger.debug || logger.log.bind(logger, LOG_LEVEL.DEBUG)
+    logger.info = logger.info || logger.log.bind(logger, LOG_LEVEL.INFO)
+    logger.warn = logger.warn || logger.log.bind(logger, LOG_LEVEL.WARN)
+    logger.error = logger.error || logger.log.bind(logger, LOG_LEVEL.ERROR)
   }
 
   if (LOG_LEVEL[config.logLevel]) {
@@ -131,24 +131,12 @@ function handlePlugins (config: DeepstreamConfig, services: any): void {
   if (config.plugins == null) {
     return
   }
-  // mapping between the root properties which contains the plugin instance
-  // and the plugin configuration objects
-  const connectorMap = {
-    cache: 'cache',
-    storage: 'storage',
-  }
-  // mapping between the plugin configuration properties and the npm module
-  // name resolution
-  const typeMap = {
-    cache: 'cache',
-    storage: 'storage',
-  }
   const plugins = Object.assign({}, config.plugins)
 
   for (const key in plugins) {
     const plugin = plugins[key]
     if (plugin) {
-      const PluginConstructor = resolvePluginClass(plugin, typeMap[connectorMap[key]])
+      const PluginConstructor = resolvePluginClass(plugin, key)
       services[key] = new PluginConstructor(plugin.options)
       if (services.registeredPlugins.indexOf(key) === -1) {
         services.registeredPlugins.push(key)
@@ -185,9 +173,9 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): Ar
     plugin.options = plugin.options || {}
 
     let PluginConstructor
-    if (plugin.name === 'uws') {
+    if (plugin.type === 'default' && connectionType === 'websocket') {
       PluginConstructor = UWSConnectionEndpoint
-    } else if (plugin.name === 'http') {
+    } else if (plugin.type === 'default' && connectionType === 'http') {
       PluginConstructor = HTTPConnectionEndpoint
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection')
@@ -211,11 +199,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
   let requirePath
   let pluginConstructor
   let es6Adaptor
-  if (plugin.name === 'default-cache') {
-    pluginConstructor = DefaultCache
-  } else if (plugin.name === 'default-storage') {
-    pluginConstructor = DefaultStorage
-  } else if (plugin.path != null) {
+  if (plugin.path != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.path)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
@@ -228,6 +212,10 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
     requirePath = fileUtils.lookupLibRequirePath(plugin.name)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
+  } else if (plugin.type === 'default' && type === 'cache') {
+    pluginConstructor = DefaultCache
+  } else if (plugin.type === 'default' && type === 'storage') {
+    pluginConstructor = DefaultStorage
   } else {
     throw new Error(`Neither name nor path property found for ${type}`)
   }

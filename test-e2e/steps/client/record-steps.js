@@ -91,6 +91,11 @@ When(/^(.+) sets? the record "([^"]*)" and path "([^"]*)" with data '([^']+)'$/,
   setTimeout(done, utils.defaultDelay)
 })
 
+When(/^(.+) erases the path "([^"]*)" on record "([^"]*)"$/, (clientExpression, path, recordName, done) => {
+  record.erase(clientExpression, recordName, path)
+  setTimeout(done, utils.defaultDelay)
+})
+
 Then(/^(.+) is told that the record "([^"]*)" was set without error$/, record.assert.writeAckSuccess)
 
 Then(/^(.+) is told that the record "([^"]*)" experienced error "([^"]*)" while setting$/, (clientExpression, recordName, errorMessage, done) => {

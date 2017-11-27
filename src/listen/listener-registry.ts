@@ -13,14 +13,14 @@ export default class ListenerRegistry implements SubscriptionListener {
   private clientRegistry: SubscriptionRegistry
   private message: Cluster
   private uniqueLockName: string
-  private patterns: any
-  private localListenInProgress: any
+  private patterns: { [pattern: string]: RegExp }
+  private localListenInProgress: { [subscription: string]: Array<Provider> }
   private listenerTimeoutRegistry: TimeoutRegistry
-  private locallyProvidedRecords: any
-  private leadListen: any
-  private leadingListen: any
+  private locallyProvidedRecords: { [subscription: string]: Provider }
+  private leadListen: { [subscription: string]: any }
+  private leadingListen: { [subscription: string]: Array<string> }
   private messageTopic: TOPIC
-  private actions: any
+  private actions: typeof RECORD_ACTIONS | typeof EVENT_ACTIONS
 
   private clusterProvidedRecords: StateRegistry
 
@@ -246,7 +246,10 @@ export default class ListenerRegistry implements SubscriptionListener {
       pattern: message.name,
       closeListener: this.removeListener.bind(this, socketWrapper, message),
     }
-    socketWrapper.once('close', this.locallyProvidedRecords[subscriptionName].closeListener)
+    const provider = this.locallyProvidedRecords[subscriptionName]
+    if (provider.closeListener) {
+      socketWrapper.once('close', provider.closeListener)
+    }
 
     this.stopLocalDiscoveryStage(subscriptionName)
     this.clusterProvidedRecords.add(subscriptionName)
@@ -317,7 +320,9 @@ export default class ListenerRegistry implements SubscriptionListener {
         provider.socketWrapper === socketWrapper &&
         provider.pattern === pattern
       ) {
-        provider.socketWrapper.removeListener('close', provider.closeListener)
+        if (provider.closeListener) {
+          provider.socketWrapper.removeListener('close', provider.closeListener)
+        }
         this.removeActiveListener(subscriptionName)
         if (this.clientRegistry.hasLocalSubscribers(subscriptionName)) {
           this.startDiscoveryStage(subscriptionName)
@@ -385,6 +390,10 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.services.uniqueRegistry.release(this.getUniqueLockName(subscriptionName))
     } else {
       const nextServerName = this.leadingListen[subscriptionName].shift()
+      if (!nextServerName) {
+        console.warn(EVENT.INFO, 'empty leading listen array', this.metaData)
+        return
+      }
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
         `started for ${this.topic}:${subscriptionName}`,
@@ -445,7 +454,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * data to the specific subscriptionName
   */
   private triggerNextProvider (subscriptionName: string): void {
-    const listenInProgress = this.localListenInProgress[subscriptionName]
+    const listenInProgress: Array<Provider> = this.localListenInProgress[subscriptionName]
 
     if (typeof listenInProgress === 'undefined') {
       return
@@ -457,6 +466,10 @@ export default class ListenerRegistry implements SubscriptionListener {
     }
 
     const provider = listenInProgress.shift()
+    if (!provider) {
+      this.services.logger.warn(EVENT.INFO, 'no listen in progress', this.metaData)
+      return
+    }
     const subscribers = this.clientRegistry.getLocalSubscribers(subscriptionName)
 
     if (subscribers && subscribers.has(provider.socketWrapper)) {
@@ -543,7 +556,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     if (socketWrapper && this.topic === TOPIC.RECORD) {
       socketWrapper.sendMessage({
         topic: this.topic,
-        action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
+        action: RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
         name: subscriptionName,
         parsedData: hasProvider,
       })
@@ -559,7 +572,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     }
     this.clientRegistry.sendToSubscribers(subscriptionName, {
       topic: this.topic,
-      action: this.actions.SUBSCRIPTION_HAS_PROVIDER,
+      action: RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
       name: subscriptionName,
       parsedData: hasProvider,
     }, false, null)
@@ -582,11 +595,11 @@ export default class ListenerRegistry implements SubscriptionListener {
   * complete its local discovery start
   */
   private sendRemoteDiscoveryStop (listenLeaderServerName: string, subscriptionName: string): void  {
-    this.message.sendDirect(listenLeaderServerName, {
-      topic: this.messageTopic,
-      action: this.actions.ACK,
-      name: subscriptionName,
-    }, this.metaData)
+    // this.message.sendDirect(listenLeaderServerName, {
+    //   topic: this.messageTopic,
+    //   action: this.actions.ACK,
+    //   name: subscriptionName,
+    // }, this.metaData)
   }
 
   /**
@@ -676,8 +689,9 @@ export default class ListenerRegistry implements SubscriptionListener {
       socketWrapper.sendMessage({
         topic: this.topic,
         action: this.actions.INVALID_LISTEN_REGEX,
+        name: message.name
       })
-      this.services.logger.error(this.actions[this.actions.INVALID_LISTEN_REGEX], e.toString(), this.metaData)
+      this.services.logger.warn(this.actions[this.actions.INVALID_LISTEN_REGEX], e.toString(), this.metaData)
       return null
     }
   }

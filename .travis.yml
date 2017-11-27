@@ -5,17 +5,18 @@ git:
     submodules: false
 
 before_install:
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-  - git submodule update --init --recursive
-  - gem install fpm --conservative || echo "FPM install failed"
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      sed -i '' 's/git@github.com:/https:\/\/github.com\//' .gitmodules;
       if [ "$CC" == "gcc" ]; then
         export CC=$(ls -t /usr/local/bin/gcc-?.?);
       fi
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules;
       export CXX=g++-4.8;
     fi
+  - git submodule update --init --recursive
+  - gem install fpm --conservative || echo "FPM install failed"
 
 compiler:
   - gcc
@@ -24,7 +25,6 @@ compiler:
 node_js:
   - "8"
   - "6.11"
-  - "4"
 
 env:
   - DEFAULT_DELAY: 50

@@ -8,6 +8,8 @@ import {
   TOPIC,
 } from '../constants'
 
+import { isWriteAck, ACTION_TO_WRITE_ACK, WRITE_ACK_TO_ACTION } from '../../protocol/binary/src/utils'
+
 import * as Ajv from 'ajv'
 
 import {
@@ -66,12 +68,13 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDUPDATE,
+      action: RECORD_ACTIONS.CREATEANDPATCH_WITH_WRITE_ACK,
       name: msg.recordName,
       version: msg.version || -1,
       path: msg.path,
       parsedData: msg.data,
       isWriteAck: true,
+      correlationId: 0
     },
   })
 
@@ -79,11 +82,12 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDUPDATE,
+      action: RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK,
       name: msg.recordName,
       version: msg.version || -1,
       parsedData: msg.data,
       isWriteAck: true,
+      correlationId: 0
     },
   })
 
@@ -119,11 +123,12 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDUPDATE,
+      action: RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK,
       name: msg.listName,
       version: msg.version || -1,
       parsedData: msg.data,
       isWriteAck: true,
+      correlationId: 0
     },
   })
 
@@ -199,18 +204,26 @@ function getMsgToJif () {
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
     done: true,
     message: {
-      error: message.parsedData[1] || undefined,
-      success: message.parsedData[1] === null,
+      success: true,
     },
   })
 
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE][TYPE.ACK] = () => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE][TYPE.NORMAL] = () => ({
     done: true,
     message: {
       success: true,
     },
   })
+
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE_SUCCESS] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE_SUCCESS][TYPE.NORMAL] = () => ({
+    done: true,
+    message: {
+      success: true,
+    },
+  })
+
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE] = {}
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE][TYPE.NORMAL] = message => ({
     done: true,
@@ -346,8 +359,12 @@ export default class JIFHandler {
     }
 
     if (event === EVENT_ACTIONS.MESSAGE_DENIED) {
-      result.action = message.originalAction
-      result.error = `Message denied. Action "${ACTIONS[message.topic][message.originalAction as number]}" is not permitted.`
+      result.action = message.originalAction as number
+      result.error = `Message denied. Action "${
+        isWriteAck(result.action)
+          ? ACTIONS[message.topic][WRITE_ACK_TO_ACTION[result.action]]
+          : ACTIONS[message.topic][result.action]
+      }" is not permitted.`
     } else if (event === RECORD_ACTIONS.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version
