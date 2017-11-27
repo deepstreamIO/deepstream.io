@@ -137,10 +137,10 @@ interface UserAuthenticationCallback {
 }
 
 interface Cluster {
-  getStateRegistry (stateRegistryName: TOPIC): any,
-  send (message: Message, metaData: any): void,
-  sendDirect (serverName: string, message: Message, metaData: any): void,
-  subscribe (topic: TOPIC, callback: Function): void
+  getStateRegistry (stateRegistryTopic: TOPIC): any,
+  send (stateRegistryTopic: TOPIC, message: Message, metaData?: any): void,
+  sendDirect (serverName: string, message: Message, metaData?: any): void,
+  subscribe (stateRegistryTopic: TOPIC, callback: Function): void
   isLeader (): boolean
   close (callback: Function): void
 }

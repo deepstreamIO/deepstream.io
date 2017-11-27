@@ -6,10 +6,6 @@ logLevel: INFO
 # Directory where all plugins reside
 #libDir: ../lib
 
-# Connectivity
-# webfacing URL under which this client is reachable. Used for loadbalancing / failover
-externalUrl: null
-
 # SSL Configuration
 sslKey: null
 sslCert: null

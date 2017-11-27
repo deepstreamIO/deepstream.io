@@ -42,7 +42,7 @@ export class Deepstream extends EventEmitter {
 
   private eventHandler: EventHandler
   private rpcHandler: RpcHandler
-  private recordHandler: any
+  private recordHandler: RecordHandler
   private presenceHandler: PresenceHandler
 
   private stateMachine: any
@@ -196,7 +196,7 @@ export class Deepstream extends EventEmitter {
   private pluginInit (): void {
     this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
-    const infoLogger = (message) => this.services.logger.info(EVENT.INFO, message)
+    const infoLogger = message => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`deepstream version: ${pkg.version}`)
 
     // otherwise (no configFile) deepstream was invoked by API
@@ -208,7 +208,7 @@ export class Deepstream extends EventEmitter {
       infoLogger(`library directory set to: ${global.deepstreamLibDir}`)
     }
 
-    this.services.registeredPlugins.forEach((pluginType) => {
+    this.services.registeredPlugins.forEach(pluginType => {
       const plugin = this.services[pluginType]
       const initialiser = new DependencyInitialiser(this, this.config, this.services, plugin, pluginType)
       initialiser.once('ready', () => {
@@ -228,7 +228,7 @@ export class Deepstream extends EventEmitter {
     }
     plugin.isReady = true
 
-    const allPluginsReady = this.services.registeredPlugins.every((type) => this.services[type].isReady)
+    const allPluginsReady = this.services.registeredPlugins.every(type => this.services[type].isReady)
 
     if (allPluginsReady && this.currentState === STATES.PLUGIN_INIT) {
       this.transition('plugins-started')
@@ -325,7 +325,7 @@ export class Deepstream extends EventEmitter {
  */
   private connectionEndpointShutdown (): void {
     const endpoints = this.services.connectionEndpoints
-    endpoints.forEach((endpoint) => {
+    endpoints.forEach(endpoint => {
       process.nextTick(() => endpoint.close())
     })
 
@@ -344,7 +344,7 @@ export class Deepstream extends EventEmitter {
  */
   private pluginShutdown (): void {
     const closeablePlugins: Array<DeepstreamPlugin> = []
-    this.services.registeredPlugins.forEach((pluginType) => {
+    this.services.registeredPlugins.forEach(pluginType => {
       const plugin = this.services[pluginType]
       if (typeof plugin.close === 'function') {
         process.nextTick(() => plugin.close())

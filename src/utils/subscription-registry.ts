@@ -25,6 +25,7 @@ export default class SubscriptionRegistry {
   private config: DeepstreamConfig
   private services: DeepstreamServices
   private topic: TOPIC
+  private clusterTopic: TOPIC
   private subscriptionListener: SubscriptionListener
   private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry
@@ -47,6 +48,7 @@ export default class SubscriptionRegistry {
     this.config = config
     this.services = services
     this.topic = topic
+    this.clusterTopic = clusterTopic
 
     switch (topic) {
       case TOPIC.RECORD:
@@ -150,7 +152,7 @@ export default class SubscriptionRegistry {
    */
   public sendToSubscribers (name: string, message: Message, noDelay: boolean, socket: SocketWrapper | null, isRemote: boolean = false): void {
     if (socket && !isRemote) {
-      this.services.message.send(message, {})
+      this.services.message.send(this.clusterTopic, message)
     }
 
     const subscription = this.subscriptions.get(name)
