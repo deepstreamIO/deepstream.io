@@ -12,7 +12,7 @@ import { daemon } from './deepstream-daemon'
 const program = new Command('deepstream')
 program
   .usage('[command]')
-  .version(pgk.version)
+  .version(pgk.version.toString())
 
 start(program)
 install(program)
