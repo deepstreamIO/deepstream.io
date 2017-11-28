@@ -19,10 +19,10 @@ export default class ClusterNode implements Cluster {
   public isLeader (): boolean { throw new Error('Leader not used in single state') }
 
   public getStateRegistry (stateRegistryTopic: TOPIC) {
-    let stateRegistry = this.stateRegistries.get(name)
+    let stateRegistry = this.stateRegistries.get(stateRegistryTopic)
     if (!stateRegistry) {
-      stateRegistry = new StateRegistry(name, {})
-      this.stateRegistries.set(name, stateRegistry)
+      stateRegistry = new StateRegistry(stateRegistryTopic, {})
+      this.stateRegistries.set(stateRegistryTopic, stateRegistry)
     }
     return stateRegistry
   }

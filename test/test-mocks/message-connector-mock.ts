@@ -44,9 +44,9 @@ export default class MessageConnectorMock extends EventEmitter implements Cluste
 
   }
 
-  public send (topic, message) {
+  public send (stateRegistryTopic, message) {
     this.publishedMessages.push(message)
-    this.lastPublishedTopic = message.topic
+    this.lastPublishedTopic = stateRegistryTopic
     this.lastPublishedMessage = JSON.parse(JSON.stringify(message))
   }
 
