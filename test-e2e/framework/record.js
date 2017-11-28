@@ -275,6 +275,12 @@ module.exports.assert = {
     })
   },
 
+  hasProviders (clientExpression, recordName, without) {
+    getRecordData(clientExpression, recordName).forEach((recordData) => {
+      assert.deepEqual(recordData.record.hasProvider, !without)
+    })
+  },
+
   hasDataAtPath (clientExpression, recordName, path, data) {
     data = utils.parseData(data)
     getRecordData(clientExpression, recordName).forEach((recordData) => {
