@@ -556,9 +556,8 @@ export default class ListenerRegistry implements SubscriptionListener {
     if (socketWrapper && this.topic === TOPIC.RECORD) {
       socketWrapper.sendMessage({
         topic: this.topic,
-        action: RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+        action: hasProvider ? RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER : RECORD_ACTIONS.SUBSCRIPTION_HAS_NO_PROVIDER,
         name: subscriptionName,
-        parsedData: hasProvider,
       })
     }
   }
@@ -572,9 +571,8 @@ export default class ListenerRegistry implements SubscriptionListener {
     }
     this.clientRegistry.sendToSubscribers(subscriptionName, {
       topic: this.topic,
-      action: RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER,
+      action: hasProvider ? RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER : RECORD_ACTIONS.SUBSCRIPTION_HAS_NO_PROVIDER,
       name: subscriptionName,
-      parsedData: hasProvider,
     }, false, null)
   }
 
