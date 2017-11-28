@@ -12,6 +12,8 @@ const getUid = require('../../dist/src/utils/utils').getUid
 
 const path = require('path')
 
+let onlyLoginOnceUser = { loggedIn: false }
+
 module.exports = class DeepstreamTest extends EventEmitter {
   constructor (wsPort, httpPort, enableLogging) {
     super()
@@ -134,6 +136,12 @@ module.exports = class DeepstreamTest extends EventEmitter {
           success = true
           clientData = { 'favorite color': 'orange', id: username }
           serverData.role = 'admin'
+        } else if (username === 'randomClientData') {
+          success = true
+          clientData = { value : Math.random() }
+        } else if (username === 'onlyLoginOnce' && !onlyLoginOnceUser.loggedIn) {
+          onlyLoginOnceUser.loggedIn = true
+          success = true
         } else {
           success = false
         }
