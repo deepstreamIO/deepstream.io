@@ -59,7 +59,7 @@ export default class Rpc {
       this.handleAccept(message)
     } else if (message.action === RPC_ACTIONS.REJECT) {
       this.reroute()
-    } else if (message.action === RPC_ACTIONS.RESPONSE || message.action ===  RPC_ACTIONS.ERROR) {
+    } else if (message.action === RPC_ACTIONS.RESPONSE || message.action ===  RPC_ACTIONS.REQUEST_ERROR) {
       this.requestor.sendMessage(message)
       this.destroy()
     }
