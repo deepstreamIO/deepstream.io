@@ -48,6 +48,8 @@ Given(/^(.+) unsubscribes? to record "([^"]*)" with path "([^"]*)"$/, record.uns
 
 Then(/^(.+) (?:have|has) record "([^"]*)" with data '([^']+)'$/, record.assert.hasData)
 
+Then(/^(.+) (?:have|has) record "([^"]*)" with(out)? providers$/, record.assert.hasProviders)
+
 Then(/^(.+) (?:have|has) record "([^"]*)" with path "([^"]*)" and data '([^']+)'$/, record.assert.hasDataAtPath)
 
 Given(/^(.+) discards record "([^"]*)"$/, (clientExpression, recordName, done) => {

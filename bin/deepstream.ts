@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-require('colors')
-
 import * as pgk from '../../package.json'
 
 import { Command } from 'commander'

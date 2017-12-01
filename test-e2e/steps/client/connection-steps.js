@@ -52,3 +52,7 @@ Then(/^(.+) receives? no login response$/, (clientExpression) => {
 Then(/^(.+) receives? an (un)?authenticated login response(?: with data (\{.*\}))?$/, (clientExpression, unauth, data) => {
   client.recievesLoginResponse(clientExpression, unauth, data)
 })
+
+Then(/^(.+) "([^"]*)" callback was( not)? called( once)?( with (\{.*\}))?$/, (clientExpression, eventName, notCalled, once, data) => {
+  client.callbackCalled(clientExpression, eventName, notCalled, once, data)
+})

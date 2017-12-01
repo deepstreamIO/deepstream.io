@@ -25,7 +25,8 @@ module.exports = {
   connectAndLogin (clientExpression, server, done) {
     clientHandler.getClientNames(clientExpression).forEach((clientName) => {
       const client = clientHandler.createClient(clientName, server)
-      client.client.login({ username: clientName, password: 'abcdefgh' }, () => {
+      client.client.login({ username: clientName, password: 'abcdefgh' }, (success, data) => {
+        client.login(success, data)
         client.user = clientName
         done()
       })
@@ -118,6 +119,26 @@ module.exports = {
     })
   },
 
+  callbackCalled (clientExpression, eventName, notCalled, once, data) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      const spy = client[eventName]
+      if (notCalled) {
+        sinon.assert.notCalled(spy)
+      } else {
+        if (once) {
+          sinon.assert.calledOnce(spy)
+        } else {
+          sinon.assert.called(spy)
+        }
+        if (data !== undefined) {
+          sinon.assert.calledWith(spy, JSON.parse(data))
+        }
+      }
+
+      spy.reset()
+    })
+  },
+
   recievedNoErrors (clientExpression) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       clientHandler.assertNoErrors(client.name)
@@ -130,4 +151,5 @@ module.exports = {
       else sinon.assert.neverCalledWith(client.connectionStateChanged, state)
     })
   },
+
 }

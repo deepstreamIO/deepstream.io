@@ -1,4 +1,4 @@
-import * as colors from 'colors'
+import chalk from 'chalk'
 import * as needle from 'needle'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -161,7 +161,7 @@ const extract = function (data) {
     throw new Error('Could not extract archive')
   }
   if (!process.env.QUIET) {
-    console.log(colors.green(`${data.name} ${data.version} was installed to ${outputParent}`))
+    console.log(chalk.green(`${data.name} ${data.version} was installed to ${outputParent}`))
   }
   return outPath
 }
@@ -192,7 +192,7 @@ const showConfig = function (directory) {
       console.log('You need to configure the connector in your deepstream configuration file')
     }
     if (!process.env.QUIET) {
-      console.log(`Example configuration:\n${colors.grey(content)}`)
+      console.log(`Example configuration:\n${chalk.grey(content)}`)
     }
   } catch (err) {
     if (!process.env.QUIET) {

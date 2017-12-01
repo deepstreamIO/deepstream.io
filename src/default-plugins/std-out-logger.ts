@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import { EVENT, LOG_LEVEL, TOPIC } from '../constants'
 
-require('colors')
+import chalk from 'chalk'
 
 const EOL = require('os').EOL
 
@@ -12,7 +12,7 @@ export default class StdOutLogger extends EventEmitter implements Logger {
   private options: any
   private useColors: boolean
   private currentLogLevel: LOG_LEVEL
-  private logLevelColors: Array<String>
+  private logLevelColors: Array<string>
 
   /**
    * Logs to the operatingsystem's standard-out and standard-error streams.
@@ -53,11 +53,11 @@ export default class StdOutLogger extends EventEmitter implements Logger {
       outputStream = 'stdout'
     }
 
-    // if (this.useColors) {
-    // process[outputStream].write(msg[this.logLevelColors[logLevel]] + EOL)
-    // } else {
+    if (this.useColors) {
+    process[outputStream].write(chalk[this.logLevelColors[logLevel]](msg) + EOL)
+    } else {
     process[outputStream].write(msg + EOL)
-    // }
+    }
   }
 
   public debug (event: EVENT, logMessage: string): void {

@@ -55,7 +55,7 @@ export default class RpcHandler {
       message.action === RPC_ACTIONS.RESPONSE ||
       message.action === RPC_ACTIONS.REJECT ||
       message.action === RPC_ACTIONS.ACCEPT ||
-      message.action === RPC_ACTIONS.ERROR
+      message.action === RPC_ACTIONS.REQUEST_ERROR
     ) {
       const rpcData =  this.rpcs.get(message.correlationId)
       if (rpcData) {
