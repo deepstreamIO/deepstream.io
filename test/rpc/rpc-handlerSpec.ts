@@ -68,7 +68,7 @@ describe('the rpcHandler routes events correctly', () => {
 
     const errorMessage = {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.ERROR,
+      action: C.RPC_ACTIONS.REQUEST_ERROR,
       isError: true,
       name: 'addTwo',
       correlationId: 1234,
