@@ -331,7 +331,6 @@ export default class RecordTransition {
     const correlationId = originalMessage.correlationId as string
     const response = this.writeAckSockets.get(socketWrapper)
     if (!response) {
-      console.log('unknown socket write ack')
       return
     }
 
