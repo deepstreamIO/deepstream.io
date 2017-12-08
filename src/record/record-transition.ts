@@ -2,7 +2,7 @@ import { RECORD_ACTIONS, TOPIC, RecordWriteMessage, EVENT } from '../constants'
 import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
-import recordRequest from './record-request'
+import { recordRequest } from './record-request'
 
 interface Step {
   message: RecordWriteMessage

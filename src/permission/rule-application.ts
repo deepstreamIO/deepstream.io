@@ -17,7 +17,7 @@ import { EOL } from 'os'
 
 import * as jsonPath from '../record/json-path'
 import RecordHandler from '../record/record-handler'
-import recordRequest from '../record/record-request'
+import { recordRequest } from '../record/record-request'
 
 interface RuleApplicationParams {
    username: string
@@ -366,7 +366,7 @@ export default class RuleApplication {
       null,
       this.onLoadComplete,
       this.onLoadError,
-      this,
+      this
     )
   }
 

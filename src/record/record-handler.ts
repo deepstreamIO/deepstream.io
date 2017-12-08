@@ -5,11 +5,12 @@ import {
   RecordMessage,
   RecordWriteMessage,
   ListenMessage,
+  Message,
 } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'
-import recordRequest from './record-request'
+import { recordRequestBinding } from './record-request'
 import RecordTransition from './record-transition'
 import { isExcluded } from '../utils/utils'
 
@@ -29,6 +30,8 @@ export default class RecordHandler {
   private listenerRegistry: ListenerRegistry
   private transitions: any
   private recordRequestsInProgress: any
+  private recordRequest: Function
+
 /**
  * The entry point for record related operations
  */
@@ -43,6 +46,7 @@ export default class RecordHandler {
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
     this.transitions = {}
     this.recordRequestsInProgress = {}
+    this.recordRequest = recordRequestBinding(config, services, this, metaData)
   }
 
 /**
@@ -124,37 +128,7 @@ export default class RecordHandler {
  * Sends the records data current data once loaded from the cache, and null otherwise
  */
   private snapshot (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    const onComplete = (recordName, version, data, socket: SocketWrapper) => {
-      if (data) {
-        sendRecord(recordName, version, data, socket)
-      } else {
-        socket.sendMessage({
-          topic: TOPIC.RECORD,
-          action: RA.RECORD_NOT_FOUND,
-          originalAction: message.action,
-          name: message.name
-        })
-      }
-    }
-    const onError = (event: RA, errorMessage, recordName, socket: SocketWrapper) => {
-      socket.sendMessage({
-        topic: TOPIC.RECORD,
-        action: event,
-        originalAction: message.action,
-        name: recordName
-      })
-    }
-
-    recordRequest(
-      message.name,
-      this.config,
-      this.services,
-      socketWrapper,
-      onComplete,
-      onError,
-      this,
-      this.metaData,
-    )
+    this.recordRequest(message.name, socketWrapper, onSnapshotComplete, onRequestError, message)
   }
 
   /**
@@ -163,34 +137,7 @@ export default class RecordHandler {
    * If the record is not found, the version number will be -1
    */
   private head (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    const onComplete = (recordName, version, data) => {
-      socketWrapper.sendMessage({
-        topic: TOPIC.RECORD,
-        action: RA.HEAD_RESPONSE,
-        name: message.name,
-        version
-      })
-    }
-
-    const onError = (event: RA, errorMessage, recordName, socket: SocketWrapper) => {
-      socket.sendMessage({
-        topic: TOPIC.RECORD,
-        action: event,
-        originalAction: message.action,
-        name: recordName
-      })
-    }
-
-    recordRequest(
-      message.name,
-      this.config,
-      this.services,
-      socketWrapper,
-      onComplete,
-      onError,
-      this,
-      this.metaData,
-    )
+    this.recordRequest(message.name, socketWrapper, onHeadComplete, onRequestError, message)
   }
 
   /**
@@ -205,35 +152,26 @@ export default class RecordHandler {
     )
   }
 
+  private onCreateOrReadComplete (recordName, version, data, socket, message) {
+    if (data) {
+      this.readAndSubscribe(message, version, data, socket)
+    } else {
+      this.permissionAction(
+        RA.CREATE,
+        message,
+        message.action,
+        socket,
+        this.create.bind(this, message, socket),
+      )
+    }
+  }
+
 /**
  * Tries to retrieve the record and creates it if it doesn't exist. Please
  * note that create also triggers a read once done
  */
   private createOrRead (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    const onComplete = (recordName, version, data, socket) => {
-      if (data) {
-        this.readAndSubscribe(message, version, data, socket)
-      } else {
-        this.permissionAction(
-          RA.CREATE,
-          message,
-          message.action,
-          socket,
-          this.create.bind(this, message, socket),
-        )
-      }
-    }
-
-    recordRequest(
-      message.name,
-      this.config,
-      this.services,
-      socketWrapper,
-      onComplete,
-      () => {},
-      this,
-      this.metaData,
-    )
+    this.recordRequest(message.name, socketWrapper, this.onCreateOrReadComplete, onRequestError, message)
   }
 
 /**
@@ -567,9 +505,40 @@ function onPermissionResponse (
   }
 }
 
-  /**
- * Sends the records data current data once done
- */
+function onRequestError (event: RA, errorMessage, recordName: string, socket: SocketWrapper, message: Message) {
+  socket.sendMessage({
+    topic: TOPIC.RECORD,
+    action: event,
+    originalAction: message.action,
+    name: recordName
+  })
+}
+
+function onSnapshotComplete (recordName, version, data, socket: SocketWrapper, message: Message) {
+  if (data) {
+    sendRecord(recordName, version, data, socket)
+  } else {
+    socket.sendMessage({
+      topic: TOPIC.RECORD,
+      action: RA.RECORD_NOT_FOUND,
+      originalAction: message.action,
+      name: message.name
+    })
+  }
+}
+
+function onHeadComplete (name, version, data, socketWrapper) {
+  socketWrapper.sendMessage({
+    topic: TOPIC.RECORD,
+    action: RA.HEAD_RESPONSE,
+    name,
+    version
+  })
+}
+
+/**
+* Sends the records data current data once done
+*/
 function sendRecord (recordName: string, version: number, data: any, socketWrapper: SocketWrapper) {
   socketWrapper.sendMessage({
     topic: TOPIC.RECORD,

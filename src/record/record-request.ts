@@ -1,7 +1,7 @@
-import { RECORD_ACTIONS, TOPIC } from '../constants'
+import { RECORD_ACTIONS, TOPIC, Message } from '../constants'
 
-type onCompleteCallback = (recordName: string, version: number, data: any, socket: SocketWrapper) => void
-type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper) => void
+type onCompleteCallback = (recordName: string, version: number, data: any, socket: SocketWrapper, message: Message) => void
+type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper, message: Message) => void
 
 import { isExcluded } from '../utils/utils'
 
@@ -10,11 +10,15 @@ import { isExcluded } from '../utils/utils'
  * record
  */
 function sendError (
-  event: RECORD_ACTIONS, message: string, recordName: string, socketWrapper: SocketWrapper | null,
-  onError: onErrorCallback, services: DeepstreamServices, context: any, metaData: any,
+  event: RECORD_ACTIONS, errorMessage: string, recordName: string, socketWrapper: SocketWrapper | null,
+  onError: onErrorCallback, services: DeepstreamServices, context: any, metaData?: any, message?: Message,
 ): void {
-  services.logger.error(event, message, metaData)
-  onError.call(context, event, message, recordName, socketWrapper)
+  services.logger.error(event, errorMessage, metaData)
+  if (message) {
+    onError.call(context, event, errorMessage, recordName, socketWrapper, message)
+  } else {
+    onError.call(context, event, errorMessage, recordName, socketWrapper)
+  }
 }
 
 /**
@@ -23,21 +27,22 @@ function sendError (
  */
 function onStorageResponse (
   error: string | null, recordName: string, version: number, data: any, socketWrapper: SocketWrapper | null,
-  onComplete: onCompleteCallback, onError: onErrorCallback, services: DeepstreamServices, context: any, metaData: any,
+  onComplete: onCompleteCallback, onError: onErrorCallback, services: DeepstreamServices, context: any,
+  metaData: any, message?: Message
 ): void {
   if (error) {
     sendError(
       RECORD_ACTIONS.RECORD_LOAD_ERROR,
       `error while loading ${recordName} from storage:${error}`,
-      recordName,
-      socketWrapper,
-      onError,
-      services,
-      context,
-      metaData,
+      recordName, socketWrapper, onError, services, context,
+      metaData, message
     )
   } else {
-    onComplete.call(context, recordName, version, data || null, socketWrapper)
+    if (message) {
+      onComplete.call(context, recordName, version, data || null, socketWrapper, message)
+    } else {
+      onComplete.call(context, recordName, version, data || null, socketWrapper)
+    }
 
     if (data) {
       services.cache.set(recordName, version, data, () => {}, metaData)
@@ -50,21 +55,22 @@ function onStorageResponse (
  */
 function onCacheResponse (
   error: string | null, recordName: string, version: number, data: any, socketWrapper: SocketWrapper | null,
-  onComplete: onCompleteCallback, onError: onErrorCallback, config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any,
+  onComplete: onCompleteCallback, onError: onErrorCallback, config: DeepstreamConfig, services: DeepstreamServices,
+  context: any, metaData: any, message?: Message
 ): void {
   if (error) {
     sendError(
       RECORD_ACTIONS.RECORD_LOAD_ERROR,
       `error while loading ${recordName} from cache:${error}`,
-      recordName,
-      socketWrapper,
-      onError,
-      services,
-      context,
-      metaData,
+      recordName, socketWrapper, onError, services, context,
+      metaData, message
     )
   } else if (data) {
-    onComplete.call(context, recordName, version, data, socketWrapper)
+    if (message) {
+      onComplete.call(context, recordName, version, data, socketWrapper, message)
+    } else {
+      onComplete.call(context, recordName, version, data, socketWrapper)
+    }
   } else if (!isExcluded(config.storageExclusionPrefixes, recordName)) {
     let storageTimedOut = false
     const storageTimeout = setTimeout(() => {
@@ -73,6 +79,7 @@ function onCacheResponse (
         RECORD_ACTIONS.STORAGE_RETRIEVAL_TIMEOUT,
         recordName, recordName, socketWrapper,
         onError, services, context, metaData,
+        message
       )
     }, config.storageRetrievalTimeout)
 
@@ -81,21 +88,17 @@ function onCacheResponse (
       if (!storageTimedOut) {
         clearTimeout(storageTimeout)
         onStorageResponse(
-          storageError,
-          recordName,
-          version,
-          data,
-          socketWrapper,
-          onComplete,
-          onError,
-          services,
-          context,
-          metaData,
+          storageError, recordName, version, data, socketWrapper, onComplete,
+          onError, services, context, metaData, message
         )
       }
     }, metaData)
   } else {
-    onComplete.call(context, recordName, version, data, socketWrapper)
+    if (message) {
+      onComplete.call(context, recordName, version, data, socketWrapper, message)
+    } else {
+      onComplete.call(context, recordName, version, data, socketWrapper)
+    }
   }
 }
 
@@ -106,7 +109,7 @@ function onCacheResponse (
  *
  * It also handles all the timeout and destruction steps around this operation
  */
-export default function (
+export function recordRequest (
   recordName: string,
   config: DeepstreamConfig,
   services: DeepstreamServices,
@@ -114,7 +117,8 @@ export default function (
   onComplete: onCompleteCallback,
   onError: onErrorCallback,
   context: any,
-  metaData?: any
+  metaData?: any,
+  message?: Message,
 ): void {
   let cacheTimedOut = false
 
@@ -124,6 +128,7 @@ export default function (
       RECORD_ACTIONS.CACHE_RETRIEVAL_TIMEOUT,
       recordName, recordName, socketWrapper,
       onError, services, context, metaData,
+      message
     )
   }, config.cacheRetrievalTimeout)
 
@@ -131,18 +136,17 @@ export default function (
     if (!cacheTimedOut) {
       clearTimeout(cacheTimeout)
       onCacheResponse(
-        error,
-        recordName,
-        version,
-        data,
-        socketWrapper,
-        onComplete,
-        onError,
-        config,
-        services,
-        context,
-        metaData,
+        error, recordName, version, data,
+        socketWrapper, onComplete, onError,
+        config, services, context, metaData,
+        message
       )
     }
   }, metaData)
+}
+
+export function recordRequestBinding (config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any) {
+  return function (recordName: string, socketWrapper: SocketWrapper, onComplete: onCompleteCallback, onError: onErrorCallback, message?: Message) {
+    recordRequest (recordName, config, services, socketWrapper, onComplete, onError, context, metaData, message)
+  }
 }

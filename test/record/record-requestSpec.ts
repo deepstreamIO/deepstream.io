@@ -1,5 +1,5 @@
 import * as C from '../../src/constants'
-const recordRequest = require('../../src/record/record-request').default
+const recordRequest = require('../../src/record/record-request').recordRequest
 
 import { getTestMocks } from '../test-helper/test-mocks'
 const testHelper = require('../test-helper/test-helper')
