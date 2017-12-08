@@ -2,6 +2,7 @@
 .vscode/settings.json
 
 temp-e2e-test
+local-storage
 
 # Logs
 logs

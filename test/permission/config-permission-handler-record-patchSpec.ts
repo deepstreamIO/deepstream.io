@@ -20,7 +20,7 @@ describe('constructs data for patch message validation', () => {
       write: 'data.firstname === "Wolfram" && data.lastname === "Hempel"'
     }
 
-    services.cache.set('user/wh', { firstname: 'Wolfram', lastname: 'Something Else' }, noop)
+    services.cache.set('user/wh', 0, { firstname: 'Wolfram', lastname: 'Something Else' }, noop)
 
     const message = {
       topic: C.TOPIC.RECORD,
@@ -48,7 +48,7 @@ describe('constructs data for patch message validation', () => {
       write: 'data.firstname === "Wolfram" && data.lastname === "Hempel"'
     }
 
-    services.cache.set('user/wh', { firstname: 'Wolfram', lastname: 'Something Else' }, noop)
+    services.cache.set('user/wh', 1, { firstname: 'Wolfram', lastname: 'Something Else' }, noop)
 
     const message = {
       topic: C.TOPIC.RECORD,

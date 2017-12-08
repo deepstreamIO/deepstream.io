@@ -1,4 +1,6 @@
-export default class AuthenticationHandlerMock {
+import { EventEmitter } from 'events'
+
+export default class AuthenticationHandlerMock extends EventEmitter implements AuthenticationHandler {
   public onClientDisconnectCalledWith: any
   public sendNextValidAuthWithData: boolean
   public lastUserValidationQueryArgs: any
@@ -6,10 +8,13 @@ export default class AuthenticationHandlerMock {
   public nextUserIsAnonymous: boolean
   public options: any
   public isReady: boolean
+  public description: string
 
   constructor (options?) {
+    super()
     this.options = options
     this.isReady = true
+    this.description = 'Authentication Mock'
     this.reset()
   }
 

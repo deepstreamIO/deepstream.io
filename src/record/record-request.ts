@@ -1,12 +1,17 @@
 import { RECORD_ACTIONS, TOPIC } from '../constants'
+
+type onCompleteCallback = (recordName: string, version: number, data: any, socket: SocketWrapper) => void
+type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper) => void
+
 import { isExcluded } from '../utils/utils'
+
 /**
  * Sends an error to the socketWrapper that requested the
  * record
  */
 function sendError (
   event: RECORD_ACTIONS, message: string, recordName: string, socketWrapper: SocketWrapper | null,
-  onError: Function, services: DeepstreamServices, context: any, metaData: any,
+  onError: onErrorCallback, services: DeepstreamServices, context: any, metaData: any,
 ): void {
   services.logger.error(event, message, metaData)
   onError.call(context, event, message, recordName, socketWrapper)
@@ -17,13 +22,13 @@ function sendError (
  * here, if the record couldn't be found in storage no further attempts to retrieve it will be made
  */
 function onStorageResponse (
-  error: Error | null, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null,
-  onComplete: Function, onError: Function, services: DeepstreamServices, context: any, metaData: any,
+  error: string | null, recordName: string, version: number, data: any, socketWrapper: SocketWrapper | null,
+  onComplete: onCompleteCallback, onError: onErrorCallback, services: DeepstreamServices, context: any, metaData: any,
 ): void {
   if (error) {
     sendError(
       RECORD_ACTIONS.RECORD_LOAD_ERROR,
-      `error while loading ${recordName} from storage:${error.toString()}`,
+      `error while loading ${recordName} from storage:${error}`,
       recordName,
       socketWrapper,
       onError,
@@ -32,10 +37,10 @@ function onStorageResponse (
       metaData,
     )
   } else {
-    onComplete.call(context, record || null, recordName, socketWrapper)
+    onComplete.call(context, recordName, version, data || null, socketWrapper)
 
-    if (record) {
-      services.cache.set(recordName, record, () => {}, metaData)
+    if (data) {
+      services.cache.set(recordName, version, data, () => {}, metaData)
     }
   }
 }
@@ -44,13 +49,13 @@ function onStorageResponse (
  * Callback for responses returned by the cache connector
  */
 function onCacheResponse (
-  error: Error | null, record: StorageRecord, recordName: string, socketWrapper: SocketWrapper | null,
-  onComplete: Function, onError: Function, config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any,
+  error: string | null, recordName: string, version: number, data: any, socketWrapper: SocketWrapper | null,
+  onComplete: onCompleteCallback, onError: onErrorCallback, config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any,
 ): void {
   if (error) {
     sendError(
       RECORD_ACTIONS.RECORD_LOAD_ERROR,
-      `error while loading ${recordName} from cache:${error.toString()}`,
+      `error while loading ${recordName} from cache:${error}`,
       recordName,
       socketWrapper,
       onError,
@@ -58,8 +63,8 @@ function onCacheResponse (
       context,
       metaData,
     )
-  } else if (record) {
-    onComplete.call(context, record, recordName, socketWrapper)
+  } else if (data) {
+    onComplete.call(context, recordName, version, data, socketWrapper)
   } else if (!isExcluded(config.storageExclusionPrefixes, recordName)) {
     let storageTimedOut = false
     const storageTimeout = setTimeout(() => {
@@ -71,13 +76,15 @@ function onCacheResponse (
       )
     }, config.storageRetrievalTimeout)
 
-    services.storage.get(recordName, (storageError, recordData) => {
+    // tslint:disable-next-line:no-shadowed-variable
+    services.storage.get(recordName, (storageError, version, result) => {
       if (!storageTimedOut) {
         clearTimeout(storageTimeout)
         onStorageResponse(
           storageError,
-          recordData,
           recordName,
+          version,
+          data,
           socketWrapper,
           onComplete,
           onError,
@@ -88,7 +95,7 @@ function onCacheResponse (
       }
     }, metaData)
   } else {
-    onComplete.call(context, null, recordName, socketWrapper)
+    onComplete.call(context, recordName, version, data, socketWrapper)
   }
 }
 
@@ -100,8 +107,14 @@ function onCacheResponse (
  * It also handles all the timeout and destruction steps around this operation
  */
 export default function (
-  recordName: string, config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper | null,
-  onComplete: Function, onError: Function, context: any, metaData?: any,
+  recordName: string,
+  config: DeepstreamConfig,
+  services: DeepstreamServices,
+  socketWrapper: SocketWrapper | null,
+  onComplete: onCompleteCallback,
+  onError: onErrorCallback,
+  context: any,
+  metaData?: any
 ): void {
   let cacheTimedOut = false
 
@@ -114,13 +127,14 @@ export default function (
     )
   }, config.cacheRetrievalTimeout)
 
-  services.cache.get(recordName, (error, record) => {
+  services.cache.get(recordName, (error, version, data) => {
     if (!cacheTimedOut) {
       clearTimeout(cacheTimeout)
       onCacheResponse(
         error,
-        record,
         recordName,
+        version,
+        data,
         socketWrapper,
         onComplete,
         onError,

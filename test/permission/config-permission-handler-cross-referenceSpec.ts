@@ -14,7 +14,7 @@ const lastError = function () {
 
 describe('permission handler loads data for cross referencing', () => {
   beforeAll(next => {
-    services.cache.set('item/doesExist', { isInStock: true }, next)
+    services.cache.set('item/doesExist', 0, { isInStock: true }, next)
   })
 
   it('retrieves an existing record from a synchronous cache', next => {
@@ -44,8 +44,8 @@ describe('permission handler loads data for cross referencing', () => {
   it('retrieves two records from the cache for crossreferencing purposes', next => {
     const permissions = getBasePermissions()
 
-    services.cache.set('item/itemA', { isInStock: true }, noop)
-    services.cache.set('item/itemB', { isInStock: false }, noop)
+    services.cache.set('item/itemA', 0, { isInStock: true }, noop)
+    services.cache.set('item/itemB', 0, { isInStock: false }, noop)
 
     services.cache.nextGetWillBeSynchronous = false
     permissions.record['purchase/$itemId'] = {
@@ -116,8 +116,8 @@ describe('permission handler loads data for cross referencing', () => {
   it('mixes old data and cross references', next => {
     const permissions = getBasePermissions()
     services.cache.reset()
-    services.cache.set('userA', { firstname: 'Egon' }, noop)
-    services.cache.set('userB', { firstname: 'Mike' }, noop)
+    services.cache.set('userA', 0, { firstname: 'Egon' }, noop)
+    services.cache.set('userB', 0, { firstname: 'Mike' }, noop)
     services.cache.nextGetWillBeSynchronous = false
     permissions.record.userA = {
       read: 'oldData.firstname === "Egon" && _("userB").firstname === "Mike"'
@@ -144,7 +144,7 @@ describe('permission handler loads data for cross referencing', () => {
   it('retrieves keys from variables', next => {
     const permissions = getBasePermissions()
 
-    services.cache.set('userX', { firstname: 'Joe' }, noop)
+    services.cache.set('userX', 0, { firstname: 'Joe' }, noop)
 
     permissions.event['some-event'] = {
       publish: '_(data.owner).firstname === "Joe"'
@@ -169,7 +169,7 @@ describe('permission handler loads data for cross referencing', () => {
   it('retrieves keys from variables again', next => {
     const permissions = getBasePermissions()
 
-    services.cache.set('userX', { firstname: 'Mike' }, noop)
+    services.cache.set('userX', 0, { firstname: 'Mike' }, noop)
 
     permissions.event['some-event'] = {
       publish: '_(data.owner).firstname === "Joe"'

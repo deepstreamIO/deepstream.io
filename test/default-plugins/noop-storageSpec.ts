@@ -16,7 +16,7 @@ describe('retuns null for all values', () => {
     noopStorage.get('firstname', successCallback)
     setTimeout(() => {
       expect(successCallback.calls.count()).toBe(1)
-      expect(successCallback.calls.mostRecent().args).toEqual([null, null])
+      expect(successCallback.calls.mostRecent().args).toEqual([null, -1, null])
       done()
     }, 1)
   })

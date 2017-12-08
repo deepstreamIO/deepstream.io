@@ -68,8 +68,10 @@ RUN git clone https://github.com/deepstreamio/deepstream.io.git
 
 WORKDIR deepstream.io
 RUN mkdir build
-RUN git checkout tags/$GIT_TAG_NAME
+RUN git checkout feat/binary-message-parser
+RUN git submodule update -i
 RUN npm install
+RUN npm run tsc
 RUN chmod 555 scripts/package.sh
 
 RUN rm scripts/package.sh

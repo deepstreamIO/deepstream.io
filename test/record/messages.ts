@@ -82,14 +82,15 @@ module.exports.recordHeadResponseMessage = {
   name: 'some-record'
 }
 
-module.exports.recordData = { _v: 5, _d: { name: 'Kowalski' } }
+module.exports.recordData = { name: 'Kowalski' }
+module.exports.recordVersion = 5
 
 module.exports.recordUpdate = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.UPDATE,
   name: 'some-record',
-  version: module.exports.recordData._v + 1,
-  parsedData: module.exports.recordData._d,
+  version: module.exports.recordVersion + 1,
+  parsedData: module.exports.recordData,
   isWriteAck: false
 }
 
@@ -98,7 +99,7 @@ module.exports.recordUpdateWithAck = {
   action: C.RECORD_ACTIONS.UPDATE,
   name: 'some-record',
   version: -1,
-  parsedData: module.exports.recordData._d,
+  parsedData: module.exports.recordData,
   isWriteAck: true
 }
 
@@ -106,7 +107,7 @@ module.exports.recordPatch = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.PATCH,
   name: 'some-record',
-  version: module.exports.recordData._v + 1,
+  version: module.exports.recordVersion + 1,
   path: 'lastname',
   parsedData: 'Egon',
   isWriteAck: false
@@ -133,7 +134,8 @@ module.exports.createAndUpdate = {
   action: C.RECORD_ACTIONS.CREATEANDUPDATE,
   name: 'some-record',
   version:  -1,
-  parsedData: module.exports.recordData._d,
+  parsedData: module.exports.recordData,
+  isWriteAck: false
 }
 
 module.exports.listenAcceptMessage = {

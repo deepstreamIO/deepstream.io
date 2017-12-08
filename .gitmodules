@@ -3,7 +3,7 @@
 	url = https://github.com/deepstreamIO/uws-dependency.git
 [submodule "test-e2e/features"]
 	path = test-e2e/features
-	url = https://github.com/deepstreamIO/deepstream.io-e2e.git
+	url = http://github.com/deepstreamIO/deepstream.io-e2e.git
 [submodule "protocol/binary"]
 	path = protocol/binary
-	url = https://github.com/deepstreamIO/urp-js.git
+	url = http://github.com/deepstreamIO/urp-js.git

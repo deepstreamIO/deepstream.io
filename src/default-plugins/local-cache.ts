@@ -15,13 +15,17 @@ export default class LocalCache extends EventEmitter implements StoragePlugin {
     this.description = 'local cache'
   }
 
-  public set (key: string, value: object, callback: StorageWriteCallback) {
-    this.data[key] = value
+  public set (key: string, version: number, data: any, callback: StorageWriteCallback) {
+    this.data[key] = { version, data }
     process.nextTick(() => callback(null))
   }
 
   public get (key: string, callback: StorageReadCallback) {
-    process.nextTick(() => callback(null, this.data[key] || null))
+    if (!this.data[key]) {
+      process.nextTick(() => callback(null, -1, null))
+    } else {
+      process.nextTick(() => callback(null, this.data[key].version, this.data[key].data))
+    }
   }
 
   public delete (key: string, callback: StorageWriteCallback) {

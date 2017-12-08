@@ -40,7 +40,7 @@ describe('record handler handles messages', () => {
   })
 
   it('triggers only read action if record does exist', () => {
-    services.cache.set('some-record', {}, () => {})
+    services.cache.set('some-record', 0, {}, () => {})
 
     client.socketWrapperMock
       .expects('sendMessage')
@@ -68,7 +68,7 @@ describe('record handler handles messages', () => {
   })
 
   it('rejects a read', () => {
-    services.cache.set('some-record', {}, () => {})
+    services.cache.set('some-record', 0, {}, () => {})
     services.permissionHandler.nextResult = false
 
     client.socketWrapperMock

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 const StateRegistry = require('../../src/cluster/state-registry').default
 
-export default class MessageConnectorMock extends EventEmitter {
+export default class MessageConnectorMock extends EventEmitter implements Cluster {
   public lastPublishedTopic: any
   public lastPublishedMessage: any
   public lastSubscribedTopic: any
@@ -89,4 +89,6 @@ export default class MessageConnectorMock extends EventEmitter {
     return new StateRegistry(topic, this.options, this)
   }
 
+  public close () {
+  }
 }

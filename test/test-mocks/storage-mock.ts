@@ -1,21 +1,29 @@
-export default class StorageMock {
+import { EventEmitter } from 'events'
+
+export default class StorageMock extends EventEmitter implements StoragePlugin  {
   public values: any
-  public failNextSet: any
-  public nextOperationWillBeSuccessful: any
-  public nextOperationWillBeSynchronous: any
-  public nextGetWillBeSynchronous: any
-  public lastGetCallback: any
-  public lastRequestedKey: any
-  public lastSetKey: any
-  public lastSetValue: any
+  public failNextSet: boolean
+  public nextOperationWillBeSuccessful: boolean
+  public nextOperationWillBeSynchronous: boolean
+  public nextGetWillBeSynchronous: boolean
+  public lastGetCallback: Function | null
+  public lastRequestedKey: string | null
+  public lastSetKey: string | null
+  public lastSetVersion: number | null
+  public lastSetValue: object | null
   public completedSetOperations: any
   public completedDeleteOperations: any
   public getCalls: any
   public setTimeout: any
   public getTimeout: any
+  public isReady: boolean
+  public description: string
 
   constructor () {
+    super()
     this.reset()
+    this.isReady = true
+    this.description = ''
   }
 
   public reset () {
@@ -27,6 +35,7 @@ export default class StorageMock {
     this.lastGetCallback = null
     this.lastRequestedKey = null
     this.lastSetKey = null
+    this.lastSetVersion = null
     this.lastSetValue = null
     this.completedSetOperations = 0
     this.completedDeleteOperations = 0
@@ -64,32 +73,35 @@ export default class StorageMock {
   }
 
   public triggerLastGetCallback (errorMessage, value) {
-    this.lastGetCallback(errorMessage, value)
+    if (this.lastGetCallback) {
+      this.lastGetCallback(errorMessage, value)
+    }
   }
 
   public get (key, callback) {
     this.getCalls.push(arguments)
     this.lastGetCallback = callback
     this.lastRequestedKey = key
-    const value = this.values[key]
+    const set = this.values[key] || {}
 
     if (this.nextGetWillBeSynchronous === true) {
-      callback(this.nextOperationWillBeSuccessful ? null : 'storageError', value ? Object.assign({}, value) : null)
+      callback(this.nextOperationWillBeSuccessful ? null : 'storageError', set.version !== undefined ? set.version : -1, set.value ? Object.assign({}, set.value) : null)
     } else {
       this.getTimeout = setTimeout(() => {
-        callback(this.nextOperationWillBeSuccessful ? null : 'storageError', value ? Object.assign({}, value) : null)
+        callback(this.nextOperationWillBeSuccessful ? null : 'storageError', set.version !== undefined ? set.version : -1, set.value ? Object.assign({}, set.value) : null)
       }, 25)
     }
   }
 
-  public set (key, value, callback) {
+  public set (key, version, value, callback) {
+    const set = { version, value }
+
     this.lastSetKey = key
+    this.lastSetVersion = version
     this.lastSetValue = value
-    if (value._d === undefined) {
-      value = { _v: 0, _d: value }
-    }
+
     if (this.nextOperationWillBeSuccessful) {
-      this.values[key] = value
+      this.values[key] = set
     }
 
     if (this.nextOperationWillBeSynchronous) {

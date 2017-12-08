@@ -14,7 +14,7 @@ describe('allows to create a record without providing data, but denies updating 
   }
 
   beforeEach(() => {
-    services.cache.set('some/tests', {}, () => {})
+    services.cache.set('some/tests', 0, {}, () => {})
   })
 
   it('allows creating the record', () => {

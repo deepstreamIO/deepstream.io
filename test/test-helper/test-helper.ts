@@ -1,4 +1,5 @@
 import * as SocketWrapperFactoryMock from '../test-mocks/socket-wrapper-factory-mock'
+import AuthenticationHandler from '../test-mocks/authentication-handler-mock'
 
 export const showChars = function (input) {
   return input
@@ -37,6 +38,7 @@ export const getBasePermissions = function () {
 import MessageConnectorMock from '../test-mocks/message-connector-mock'
 import LoggerMock from '../test-mocks/logger-mock'
 import StorageMock from '../test-mocks/storage-mock'
+import { EventEmitter } from 'events'
 
 export const getDeepstreamOptions = function (serverName) {
   const config = {
@@ -53,6 +55,29 @@ export const getDeepstreamOptions = function (serverName) {
       }
     }
   }
+
+  class PermissionHandler extends EventEmitter {
+    public lastArgs: Array<any>
+    public isReady: boolean
+    public description: string
+    public nextResult: boolean
+    public nextError: boolean | null
+
+    constructor () {
+      super()
+      this.isReady = true
+      this.description = 'Test Permission Handler'
+      this.nextResult = true
+      this.nextError = null
+      this.lastArgs = []
+    }
+
+    public canPerformAction (a, b, c) {
+      this.lastArgs.push([a, b, c])
+      c(this.nextError, this.nextResult)
+    }
+  }
+
   const services = {
     logger: new LoggerMock(),
     cache: new StorageMock(),
@@ -62,16 +87,11 @@ export const getDeepstreamOptions = function (serverName) {
       get (name, cb) { cb(true) },
       release () {}
     },
-    permissionHandler: {
-      nextResult: true,
-      nextError: null,
-      lastArgs: [],
-      canPerformAction (a, b, c) {
-        this.lastArgs.push([a, b, c])
-        c(this.nextError, this.nextResult)
-      }
-    }
-  }
+    authenticationHandler: new AuthenticationHandler(),
+    permissionHandler: new PermissionHandler(),
+    registeredPlugins: [],
+    connectionEndpoints: []
+  } as DeepstreamServices
   return { config, services }
 }
 

@@ -48,7 +48,8 @@ export default class RecordTransition {
  private services: DeepstreamServices
  private recordHandler: RecordHandler
  private steps: Array<Step>
- private record: StorageRecord | null
+ private version: number
+ private data: any
  private currentStep: Step
  private recordRequestMade: boolean
  private existingVersions: Array<Step>
@@ -70,7 +71,9 @@ export default class RecordTransition {
     this.steps = []
     this.recordRequestMade = false
 
-    this.record = null
+    this.version = -1
+    this.data = null
+
     // this.currentStep = null
     this.lastVersion = null
     this.lastError = null
@@ -84,8 +87,8 @@ export default class RecordTransition {
     this.pendingCacheWrites = 0
     this.pendingStorageWrites = 0
 
-    this.onCacheResponse = this.onCacheResponse.bind(this)
-    this.onStorageResponse = this.onStorageResponse.bind(this)
+    this.onCacheSetResponse = this.onCacheSetResponse.bind(this)
+    this.onStorageSetResponse = this.onStorageSetResponse.bind(this)
     this.onRecord = this.onRecord.bind(this)
     this.onFatalError = this.onFatalError.bind(this)
   }
@@ -108,20 +111,20 @@ export default class RecordTransition {
  */
   public sendVersionExists (step: Step): void {
     const socketWrapper = step.sender
-    if (this.record) {
+    if (this.data) {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
         action: RECORD_ACTIONS.VERSION_EXISTS,
         originalAction: step.message.action,
         name: this.name,
-        version: this.record._v,
-        parsedData: this.record._d,
+        version: this.version,
+        parsedData: this.data,
         isWriteAck: false,
       })
 
       this.services.logger.warn(
         RECORD_ACTIONS.VERSION_EXISTS,
-        `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.record._v}`,
+        `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.version}`,
         this.metaData,
       )
     } else {
@@ -185,8 +188,8 @@ export default class RecordTransition {
         this.config,
         this.services,
         socketWrapper,
-        record => this.onRecord(record, upsert),
-        this.onCacheResponse,
+        (r: string, v: number, d: any) => this.onRecord(v, d, upsert),
+        this.onCacheRequestError,
         this,
         this.metaData,
       )
@@ -198,7 +201,7 @@ export default class RecordTransition {
 /**
  * Destroys the instance
  */
-  private destroy (error: Error | null): void {
+  private destroy (error: string | null): void {
     if (this.isDestroyed) {
       return
     }
@@ -214,15 +217,17 @@ export default class RecordTransition {
 /**
  * Callback for successfully retrieved records
  */
-  private onRecord (record: StorageRecord, upsert: boolean) {
-    if (record === null) {
+  private onRecord (version: number, data: any, upsert: boolean) {
+    if (data === null) {
       if (!upsert) {
-        this.onFatalError(new Error(`Received update for non-existant record ${this.name}`))
+        this.onFatalError(`Received update for non-existant record ${this.name}`)
         return
       }
-      this.record = { _v: 0, _d: {} }
+      this.data = {}
+      this.version = 0
     } else {
-      this.record = record
+      this.version = version
+      this.data = data
     }
     this.flushVersionExists()
     this.next()
@@ -241,7 +246,7 @@ export default class RecordTransition {
       return
     }
 
-    if (this.record === null) {
+    if (this.data === null) {
       return
     }
 
@@ -255,22 +260,22 @@ export default class RecordTransition {
     let message = currentStep.message
 
     if (message.version === -1) {
-      message = Object.assign({}, message, { version: this.record._v + 1 })
+      message = Object.assign({}, message, { version: this.version + 1 })
       currentStep.message = message
     }
 
-    if (this.record._v !== message.version - 1) {
+    if (this.version !== message.version - 1) {
       this.sendVersionExists(currentStep)
       this.next()
       return
     }
 
-    this.record._v = message.version
+    this.version = message.version
 
     if (message.path) {
-      setPathValue(this.record._d, message.path, message.parsedData)
+      setPathValue(this.data, message.path, message.parsedData)
     } else {
-      this.record._d = message.parsedData
+      this.data = message.parsedData
     }
 
     /*
@@ -286,18 +291,18 @@ export default class RecordTransition {
       this.pendingStorageWrites++
       if (message.isWriteAck) {
         this.setUpWriteAcknowledgement(message, this.currentStep.sender)
-        this.services.storage.set(this.name, this.record, error => this.onStorageResponse(error, this.currentStep.sender, message), this.metaData)
+        this.services.storage.set(this.name, this.version, this.data, error => this.onStorageSetResponse(error, this.currentStep.sender, message), this.metaData)
       } else {
-        this.services.storage.set(this.name, this.record, this.onStorageResponse, this.metaData)
+        this.services.storage.set(this.name, this.version, this.data, this.onStorageSetResponse, this.metaData)
       }
     }
 
     this.pendingCacheWrites++
     if (message.isWriteAck) {
       this.setUpWriteAcknowledgement(message, this.currentStep.sender)
-      this.services.cache.set(this.name, this.record, error => this.onCacheResponse(error, this.currentStep.sender, message), this.metaData)
+      this.services.cache.set(this.name, this.version, this.data, error => this.onCacheSetResponse(error, this.currentStep.sender, message), this.metaData)
     } else {
-      this.services.cache.set(this.name, this.record, this.onCacheResponse, this.metaData)
+      this.services.cache.set(this.name, this.version, this.data, error => this.onCacheSetResponse(error, this.currentStep.sender, message), this.metaData)
     }
   }
 
@@ -322,11 +327,10 @@ export default class RecordTransition {
     this.existingVersions = []
   }
 
-  private handleWriteAcknowledgement (error: Error | null, socketWrapper: SocketWrapper, originalMessage: Message) {
+  private handleWriteAcknowledgement (error: string | null, socketWrapper: SocketWrapper, originalMessage: Message) {
     const correlationId = originalMessage.correlationId as string
     const response = this.writeAckSockets.get(socketWrapper)
     if (!response) {
-      console.log('unkown socket write ack')
       return
     }
 
@@ -347,13 +351,17 @@ export default class RecordTransition {
     }
   }
 
+  private onCacheRequestError () {
+    // TODO
+  }
+
 /**
  * Callback for responses returned by cache.set(). If an error
  * is returned the queue will be destroyed, otherwise
  * the update will be broadcast to other subscribers and the
  * next step invoked
  */
-  private onCacheResponse (error: Error | null, socketWrapper?: SocketWrapper, message?: Message): void {
+  private onCacheSetResponse (error: string | null, socketWrapper: SocketWrapper, message: Message): void {
     if (message && socketWrapper) {
       this.handleWriteAcknowledgement(error, socketWrapper, message)
     }
@@ -379,7 +387,7 @@ export default class RecordTransition {
 /**
  * Callback for responses returned by storage.set()
  */
-  private onStorageResponse (error: Error | null, socketWrapper?: SocketWrapper, message?: Message): void {
+  private onStorageSetResponse (error: string | null, socketWrapper?: SocketWrapper, message?: Message): void {
     if (message && socketWrapper) {
       this.handleWriteAcknowledgement(error, socketWrapper, message)
     }
@@ -411,7 +419,7 @@ export default class RecordTransition {
  * Generic error callback. Will destroy the queue and notify the senders of all pending
  * transitions
  */
-  private onFatalError (error: Error): void {
+  private onFatalError (error: string): void {
     if (this.isDestroyed === true) {
       return
     }

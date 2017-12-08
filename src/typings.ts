@@ -9,11 +9,6 @@ type LOG_LEVEL = any
 type TOPIC = number
 type EVENT = any
 
-interface StorageRecord {
-  _v: number
-  _d: object
-}
-
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   user: string
   isRemote: boolean
@@ -114,13 +109,13 @@ interface DeepstreamPlugin extends NodeJS.EventEmitter {
   setRecordHandler? (recordHandler: any): void
 }
 
-type StorageReadCallback = (error: Error | null, result: StorageRecord) => void
-type StorageWriteCallback = (error: Error | null) => void
+type StorageReadCallback = (error: string | null, version: number, result: any) => void
+type StorageWriteCallback = (error: string | null) => void
 
 interface StoragePlugin extends DeepstreamPlugin {
-  set (recordName: string, data: any, callback: StorageWriteCallback, metaData: any): void
-  get (recordName: string, callback: StorageReadCallback, metaData: any): void
-  delete (recordName: string, callback: StorageWriteCallback, metaData: any): void
+  set (recordName: string, version: number, data: any, callback: StorageWriteCallback, metaData?: any): void
+  get (recordName: string, callback: StorageReadCallback, metaData?: any): void
+  delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void
 }
 
 interface PermissionHandler extends DeepstreamPlugin {

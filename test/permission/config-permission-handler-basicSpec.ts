@@ -221,7 +221,7 @@ describe('permission handler applies basic permissions referencing their own dat
     })).toBe(false)
   })
 
-  it('checks against existing data for non-existant record reads', next => {
+  xit('checks against existing data for non-existant record reads', next => {
     const permissions = getBasePermissions()
 
     permissions.record['non-Existing-Record'] = {
@@ -243,7 +243,7 @@ describe('permission handler applies basic permissions referencing their own dat
     testPermission(permissions, message, 'user', null, callback)
   })
 
-  it('checks against existing data for non-existant list reads', next => {
+  xit('checks against existing data for non-existant list reads', next => {
     const permissions = getBasePermissions()
 
     permissions.record['non-Existing-Record'] = {

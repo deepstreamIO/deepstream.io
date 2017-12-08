@@ -16,8 +16,8 @@ describe('permission handler loads data for cross referencing', () => {
   it('retrieves data for a nested cross references', next => {
     const permissions = testHelper.getBasePermissions()
 
-    services.cache.set('thing/x', { ref: 'y' }, noop)
-    services.cache.set('thing/y', { is: 'it' }, noop)
+    services.cache.set('thing/x', 0, { ref: 'y' }, noop)
+    services.cache.set('thing/y', 0, { is: 'it' }, noop)
 
     services.cache.nextGetWillBeSynchronous = false
     permissions.record['test-record'] = {
@@ -46,8 +46,8 @@ describe('permission handler loads data for cross referencing', () => {
   it('erors for undefined fields in crossreferences', next => {
     const permissions = testHelper.getBasePermissions()
 
-    services.cache.set('thing/x', { ref: 'y' }, noop)
-    services.cache.set('thing/y', { is: 'it' }, noop)
+    services.cache.set('thing/x', 0, { ref: 'y' }, noop)
+    services.cache.set('thing/y', 0, { is: 'it' }, noop)
 
     services.cache.nextGetWillBeSynchronous = false
     permissions.record['test-record'] = {
@@ -73,7 +73,7 @@ describe('permission handler loads data for cross referencing', () => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.reset()
-    services.cache.set('user', { firstname: 'Wolfram', lastname: 'Hempel' }, noop)
+    services.cache.set('user', 0, { firstname: 'Wolfram', lastname: 'Hempel' }, noop)
     services.cache.nextGetWillBeSynchronous = false
 
     permissions.record['test-record'] = {
@@ -101,7 +101,7 @@ describe('permission handler loads data for cross referencing', () => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.reset()
-    services.cache.set('user', { ref: 'user', firstname: 'Egon' }, noop)
+    services.cache.set('user', 0, { ref: 'user', firstname: 'Egon' }, noop)
     services.cache.nextGetWillBeSynchronous = false
 
     permissions.record['test-record'] = {
@@ -129,7 +129,7 @@ describe('permission handler loads data for cross referencing', () => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.reset()
-    services.cache.set('user', { ref: { bla: 'blub' } }, noop)
+    services.cache.set('user', 0, { ref: { bla: 'blub' } }, noop)
     services.cache.nextGetWillBeSynchronous = false
 
     permissions.record['test-record'] = {
@@ -155,11 +155,11 @@ describe('permission handler loads data for cross referencing', () => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.reset()
-    services.cache.set('a', 'a', noop)
-    services.cache.set('ab', 'b', noop)
-    services.cache.set('abc', 'c', noop)
-    services.cache.set('abcd', 'd', noop)
-    services.cache.set('abcde', 'e', noop)
+    services.cache.set('a', 0, 'a', noop)
+    services.cache.set('ab', 0, 'b', noop)
+    services.cache.set('abc', 0, 'c', noop)
+    services.cache.set('abcd', 0, 'd', noop)
+    services.cache.set('abcde', 0, 'e', noop)
     services.cache.nextGetWillBeSynchronous = false
     permissions.record['test-record'] = {
       read: '_(_(_(_(_("a")+"b")+"c")+"d")+"e")'
