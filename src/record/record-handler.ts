@@ -194,19 +194,21 @@ export default class RecordHandler {
     // and be written directly to cache and storage
     for (let i = 0; i < this.config.storageHotPathPrefixes.length; i++) {
       const pattern = this.config.storageHotPathPrefixes[i]
-      if (recordName.indexOf(pattern) === 0 && !isPatch) {
+      if (recordName.indexOf(pattern) === 0) {
+        if (isPatch) {
+          socketWrapper.sendMessage({
+            topic: TOPIC.RECORD,
+            action: RA.INVALID_PATCH_ON_HOTPATH,
+            originalAction: message.action,
+            name: recordName
+          })
+          return
+        }
+
         this.permissionAction(RA.CREATE, message, originalAction, socketWrapper, () => {
           this.permissionAction(RA.UPDATE, message, originalAction, socketWrapper, () => {
             this.forceWrite(recordName, message, socketWrapper)
           })
-        })
-        return
-      } else if (isPatch) {
-        socketWrapper.sendMessage({
-          topic: TOPIC.RECORD,
-          action: RA.INVALID_PATCH_ON_HOTPATH,
-          originalAction: message.action,
-          name: recordName
         })
         return
       }
