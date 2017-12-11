@@ -40,9 +40,9 @@ export default class RecordHandler {
     this.config = config
     this.services = services
     this.subscriptionRegistry =
-    subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RECORD, TOPIC.RECORD_SUBSCRIPTIONS)
+      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RECORD, TOPIC.RECORD_SUBSCRIPTIONS)
     this.listenerRegistry =
-    listenerRegistry || new ListenerRegistry(TOPIC.RECORD, config, services, this.subscriptionRegistry, null)
+      listenerRegistry || new ListenerRegistry(TOPIC.RECORD, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
     this.transitions = {}
     this.recordRequestsInProgress = {}
@@ -194,7 +194,7 @@ export default class RecordHandler {
     // and be written directly to cache and storage
     for (let i = 0; i < this.config.storageHotPathPrefixes.length; i++) {
       const pattern = this.config.storageHotPathPrefixes[i]
-      if (recordName.indexOf(pattern) !== -1 && !isPatch) {
+      if (recordName.indexOf(pattern) === 0 && !isPatch) {
         this.permissionAction(RA.CREATE, message, originalAction, socketWrapper, () => {
           this.permissionAction(RA.UPDATE, message, originalAction, socketWrapper, () => {
             this.forceWrite(recordName, message, socketWrapper)
@@ -258,8 +258,8 @@ export default class RecordHandler {
         cacheResponse = true
         writeError = writeError || error || null
         this.handleForceWriteAcknowledgement(
-        socketWrapper, message, cacheResponse, storageResponse, writeError,
-      )
+          socketWrapper, message, cacheResponse, storageResponse, writeError,
+        )
       }
     }, this.metaData)
   }
@@ -276,7 +276,7 @@ export default class RecordHandler {
         topic: TOPIC.RECORD,
         action: RA.WRITE_ACKNOWLEDGEMENT,
         name: message.name,
-        parsedData: [message.version, error],
+        correlationId: message.correlationId
       }, true)
     }
   }
@@ -354,7 +354,6 @@ export default class RecordHandler {
       transition = new RecordTransition(recordName, this.config, this.services, this, this.metaData)
       this.transitions[recordName] = transition
     }
-
     transition.add(socketWrapper, message, upsert)
   }
 

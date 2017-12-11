@@ -302,7 +302,7 @@ export default class RecordTransition {
       this.setUpWriteAcknowledgement(message, this.currentStep.sender)
       this.services.cache.set(this.name, this.version, this.data, error => this.onCacheSetResponse(error, this.currentStep.sender, message), this.metaData)
     } else {
-      this.services.cache.set(this.name, this.version, this.data, error => this.onCacheSetResponse(error, this.currentStep.sender, message), this.metaData)
+      this.services.cache.set(this.name, this.version, this.data, this.onCacheSetResponse, this.metaData)
     }
   }
 
@@ -361,15 +361,14 @@ export default class RecordTransition {
  * the update will be broadcast to other subscribers and the
  * next step invoked
  */
-  private onCacheSetResponse (error: string | null, socketWrapper: SocketWrapper, message: Message): void {
+  private onCacheSetResponse (error: string | null, socketWrapper?: SocketWrapper, message?: Message): void {
     if (message && socketWrapper) {
       this.handleWriteAcknowledgement(error, socketWrapper, message)
     }
-
     if (error) {
       this.onFatalError(error)
     } else if (this.isDestroyed === false) {
-      delete this.currentStep.message.isWriteAck
+      this.currentStep.message.isWriteAck = false
       delete this.currentStep.message.correlationId
       this.recordHandler.broadcastUpdate(
         this.name,
