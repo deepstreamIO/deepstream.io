@@ -199,7 +199,7 @@ export default class RecordHandler {
           const errorMessage = {
             topic: TOPIC.RECORD,
             action: RA.INVALID_PATCH_ON_HOTPATH,
-            originalAction: message.action,
+            originalAction,
             name: recordName
           } as RecordMessage
           if (message.correlationId) {
