@@ -196,12 +196,16 @@ export default class RecordHandler {
       const pattern = this.config.storageHotPathPrefixes[i]
       if (recordName.indexOf(pattern) === 0) {
         if (isPatch) {
-          socketWrapper.sendMessage({
+          const errorMessage = {
             topic: TOPIC.RECORD,
             action: RA.INVALID_PATCH_ON_HOTPATH,
             originalAction: message.action,
             name: recordName
-          })
+          } as RecordMessage
+          if (message.correlationId) {
+            errorMessage.correlationId = message.correlationId
+          }
+          socketWrapper.sendMessage(errorMessage)
           return
         }
 
