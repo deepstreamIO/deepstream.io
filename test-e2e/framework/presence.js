@@ -54,7 +54,7 @@ module.exports.assert = {
           sinon.assert.calledWith(notifee.presence.callbacks[subscribeEvent], notifier.user, event === 'in')
         }
       })
-      notifee.presence.callbacks[subscribeEvent].reset()
+      notifee.presence.callbacks[subscribeEvent]. resetHistory()
     })
   },
 
@@ -66,7 +66,7 @@ module.exports.assert = {
       } else {
         sinon.assert.calledWith(client.presence.callbacks[queryEvent], error)
       }
-      client.presence.callbacks[queryEvent].reset()
+      client.presence.callbacks[queryEvent]. resetHistory()
     })
   },
 
@@ -78,7 +78,7 @@ module.exports.assert = {
       }
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
       sinon.assert.calledWith(client.presence.callbacks[queryEvent], null, result)
-      client.presence.callbacks[queryEvent].reset()
+      client.presence.callbacks[queryEvent]. resetHistory()
     })
   }
 }

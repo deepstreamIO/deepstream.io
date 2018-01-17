@@ -363,7 +363,7 @@ Then(/^(.+) (eventually )?receives "(\d+)" events? "([^"]*)"(?: with data (.+))?
       const eventSpy = client.event.callbacks[subscriptionName]
       expect(eventSpy.callCount).to.equal(parseInt(numEvents, 10))
       sinon.assert.calledWith(eventSpy, utils.parseData(data))
-      eventSpy.reset()
+      eventSpy.resetHistory()
       done()
     })
   }, eventually ? 350 : 0)
