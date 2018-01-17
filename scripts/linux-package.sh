@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-if [ -z $1 ]; then echo "First param is distro ( centos | debian | ubuntu | ... )"; exit 1; fi
-if [ -z $2 ]; then echo "Second param is version ( wheezy | 7 | ... )"; exit 1; fi
+if [ -z $1 ]; then echo "First param is distro ( centos | debian | ubuntu | node | ... )"; exit 1; fi
+if [ -z $2 ]; then echo "Second param is version ( wheezy | 7 | 8-alpine | ... )"; exit 1; fi
 
 if [ -z $3 ]; then
   echo "No distribution version provided, so using the version from package.json"
@@ -23,6 +23,8 @@ if [ $DISTRO = "ubuntu" ] || [ $DISTRO = "debian" ]; then
   ENV="deb"
 elif [ $DISTRO = "centos" ] || [ $DISTRO = "fedora" ]; then
   ENV="rpm"
+elif [ $DISTRO = "node" ]; then
+  ENV="apk"
 else
   echo "Unsupported distro: $DISTRO"
   exit 1;
@@ -41,14 +43,21 @@ RUN apt-get update
 RUN apt-get install -y curl build-essential git ruby ruby-dev rpm
 RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
 RUN apt-get install -y nodejs
+RUN gem install fpm  --conservative || echo "fpm install failed"
 EOF
-else
+elif [ $DISTRO = "rpm" ]; then
   cat >>Dockerfile <<EOF
 RUN yum update -y
 RUN yum install -y git curl rpmbuild ruby ruby-devel rubygems rpm-build
 RUN yum -y install gcc gcc-c++ make openssl-devel
 RUN curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -
 RUN yum -y install nodejs
+RUN gem install fpm  --conservative || echo "fpm install failed"
+EOF
+else
+  cat >>Dockerfile <<EOF
+RUN node --version
+RUN apk --no-cache --virtual build-deps add bash linux-headers python make g++ git curl
 EOF
 fi
 
@@ -59,8 +68,6 @@ EOF
 fi
 
 cat >>Dockerfile <<EOF
-RUN gem install fpm  --conservative || echo "fpm install failed"
-
 RUN echo "Start"
 
 RUN git config --global http.sslverify false
@@ -68,16 +75,14 @@ RUN git clone https://github.com/deepstreamio/deepstream.io.git
 
 WORKDIR deepstream.io
 RUN mkdir build
-RUN git checkout feat/binary-message-parser
 RUN git submodule update -i
 RUN npm install
 RUN npm run tsc
-RUN chmod 555 scripts/package.sh
 
-RUN rm scripts/package.sh
+RUN echo 'ello3'
 RUN curl -s -L https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/package.sh -o scripts/package.sh
 RUN chmod 555 scripts/package.sh
-RUN ./scripts/package.sh true
+RUN bash scripts/package.sh true true
 EOF
 
 if [ $ENV = 'deb' ]; then
@@ -106,23 +111,17 @@ fi
 echo "Using Dockerfile:"
 sed -e 's@^@  @g' Dockerfile
 
-
 TAG="${GIT_TAG_NAME}"
 echo "Building Docker image ${TAG}"
-docker build --tag=${TAG} .
+id=$(docker build --tag=${TAG} .)
+
+echo "Extracting Artifacts from Docker image"
+
+id=$(docker create ${TAG})
+docker cp $id:deepstream.io/build/. ./.
+docker rm -v $id
 
 echo "Removing Dockerfile"
 rm -f Dockerfile
-
-CIDFILE="cidfile"
-ARGS="--cidfile=${CIDFILE}"
-rm -f ${CIDFILE} # Cannot exist
-
-echo "Running build"
-docker run ${ARGS} ${TAG}
-
-echo "Removing container"
-docker rm "$(cat ${CIDFILE})" >/dev/null
-rm -f "${CIDFILE}"
 
 echo "Build successful"

@@ -12,6 +12,7 @@ OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
 DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
+CREATE_DISTROS=false
 
 NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
 UWS_SOURCE="nexe_node/uWebSockets/"
@@ -47,7 +48,10 @@ if [ -z $1  ]; then
     fi
 fi
 
-if [ $OS = "linux" ]; then
+if [ $2 ]; then
+    echo 'Ignoring distros'
+elif [ $OS = "linux" ]; then
+    CREATE_DISTROS=true
     echo "Checking if FPM is installed"
     fpm --version
 fi
@@ -102,7 +106,6 @@ function compile {
         sed -i '' "s@'library_files': \[@'library_files': \[ 'lib\/uws.js',@" $NODE_SOURCE/node.gyp
         sed -i '' "s@'src/async-wrap.cc',@'src\/async-wrap.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
         sed -i '' "s@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x',  # -std=gnu++0x@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x', 'CLANG_CXX_LIBRARY': 'libc++',@" $NODE_SOURCE/common.gypi
-        # sed -i '' "14,18d" $NODE_SOURCE/src/util.h
     else
         sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
         sed -i "s@'src/async-wrap.cc',@'src/async-wrap.cc',\n  $C_FILE_NAMES@" $NODE_SOURCE/node.gyp
@@ -278,7 +281,9 @@ function linux {
     tar czf ../$COMMIT_NAME .
     cp ../$COMMIT_NAME ../../$CLEAN_NAME
     cd -
+}
 
+function distros {
     echo -e "\tPatching config file for linux distros..."
 
     if [ $OS = "darwin" ]; then
@@ -352,6 +357,9 @@ elif [ $OS = "darwin" ]; then
     mac
 elif [ $OS = "linux" ]; then
     linux
+    if [ $CREATE_DISTROS = true ]; then
+        distros
+    fi
 fi
 
 clean
