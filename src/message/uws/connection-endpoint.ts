@@ -1,5 +1,5 @@
 import { TOPIC, ALL_ACTIONS, CONNECTION_ACTIONS, AUTH_ACTIONS, EVENT, PARSER_ACTIONS, ParseResult, Message } from '../../constants'
-import * as messageBuilder from '../../../protocol/binary/src/message-builder'
+import * as messageBuilder from '../../../binary-protocol/src/message-builder'
 import { UwsSocketWrapper, createSocketWrapper } from './socket-wrapper-factory'
 import { EventEmitter } from 'events'
 import * as https from 'https'

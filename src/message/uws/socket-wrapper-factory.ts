@@ -1,6 +1,6 @@
 import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS, ParseResult, Message } from '../../constants'
-import * as binaryMessageBuilder from '../../../protocol/binary/src/message-builder'
-import * as binaryMessageParser from '../../../protocol/binary/src/message-parser'
+import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
+import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import * as uws from 'uws'
 import { EventEmitter } from 'events'
 

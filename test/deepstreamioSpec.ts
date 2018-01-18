@@ -1,5 +1,3 @@
-'use strict'
-
 const childProcess = require('child_process')
 const path = require('path')
 const { Deepstream } = require('../src/deepstream.io')

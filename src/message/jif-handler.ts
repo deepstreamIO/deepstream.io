@@ -8,7 +8,7 @@ import {
   TOPIC,
 } from '../constants'
 
-import { isWriteAck, ACTION_TO_WRITE_ACK, WRITE_ACK_TO_ACTION } from '../../protocol/binary/src/utils'
+import { isWriteAck, ACTION_TO_WRITE_ACK, WRITE_ACK_TO_ACTION } from '../../binary-protocol/src/utils'
 
 import * as Ajv from 'ajv'
 

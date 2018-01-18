@@ -2,8 +2,7 @@
   "spec_dir": "",
   "spec_files": [
     "dist/test/**/*[sS]pec.js",
-    "dist/test/*[sS]pec.js",
-	  "dist/protocol/**/test/*[sS]pec.js"
+    "dist/test/*[sS]pec.js"
   ],
   "helpers": [
   ],

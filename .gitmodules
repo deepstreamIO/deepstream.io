@@ -4,6 +4,6 @@
 [submodule "test-e2e/features"]
 	path = test-e2e/features
 	url = http://github.com/deepstreamIO/deepstream.io-e2e.git
-[submodule "protocol/binary"]
-	path = protocol/binary
-	url = http://github.com/deepstreamIO/urp-js.git
+[submodule "binary-protocol"]
+	path = binary-protocol
+	url = git@github.com:deepstreamIO/urp-js.git

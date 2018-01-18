@@ -1,4 +1,4 @@
-export * from '../protocol/binary/src/message-constants'
+export * from '../binary-protocol/src/message-constants'
 
 export enum LOG_LEVEL {
     DEBUG = 0,
