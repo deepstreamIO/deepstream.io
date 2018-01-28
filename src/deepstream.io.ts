@@ -34,8 +34,8 @@ process.title = 'deepstream server'
 export class Deepstream extends EventEmitter {
   public constants: any
 
-  private config: DeepstreamConfig
-  private services: DeepstreamServices
+  protected config: DeepstreamConfig
+  protected services: DeepstreamServices
 
   private messageProcessor: any
   private messageDistributor: any
@@ -193,7 +193,7 @@ export class Deepstream extends EventEmitter {
 /**
  * Invoked once the logger is initialised. Initialises any built-in or custom Deepstream plugins.
  */
-  private pluginInit (): void {
+  protected pluginInit (): void {
     this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
     const infoLogger = message => this.services.logger.info(EVENT.INFO, message)
@@ -239,7 +239,7 @@ export class Deepstream extends EventEmitter {
  * Invoked once all plugins are initialised. Instantiates the messaging pipeline and
  * the various handlers.
  */
-  private serviceInit (): void {
+  protected serviceInit (): void {
     this.messageProcessor = new MessageProcessor(this.config, this.services)
     this.messageDistributor = new MessageDistributor(this.config, this.services)
 

@@ -1,5 +1,3 @@
-'use strict'
-
 import * as fs from 'fs'
 import FileAuthenticationHandler from '../authentication/file-based-authentication-handler'
 import OpenAuthenticationHandler from '../authentication/open-authentication-handler'
@@ -16,6 +14,16 @@ import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
 
 let commandLineArguments
+
+const customPlugins = new Map()
+
+/**
+ * Registers plugins by name. Useful when wanting to include
+ * custom plugins in a binary
+ */
+export const registerPlugin = function (name: string, construct: Function) {
+  customPlugins.set(name, construct)
+}
 
 /**
  * Takes a configuration object and instantiates functional properties.
@@ -196,6 +204,10 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): Ar
  * CLI arguments will be considered.
  */
 function resolvePluginClass (plugin: PluginConfig, type: string): any {
+  if (customPlugins.has(plugin.name)) {
+    return customPlugins.get(plugin.name)
+  }
+
   // nexe needs *global.require* for __dynamic__ modules
   // but browserify and proxyquire can't handle *global.require*
   const req = global && global.require ? global.require : require

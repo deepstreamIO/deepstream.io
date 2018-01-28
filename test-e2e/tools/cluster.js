@@ -1,5 +1,3 @@
-'use strict'
-
 const { Deepstream } = require('../../dist/src/deepstream.io')
 const LocalCache = require('../../dist/src/default-plugins/local-cache').default
 const localCache = new LocalCache()
