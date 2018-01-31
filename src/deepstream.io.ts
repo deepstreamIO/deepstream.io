@@ -60,7 +60,7 @@ export class Deepstream extends EventEmitter {
  *
  * @constructor
  */
-  constructor (config: DeepstreamConfig) {
+  constructor (config: DeepstreamConfig|string) {
     super()
     this.loadConfig(config)
     this.messageProcessor = null
@@ -386,7 +386,7 @@ export class Deepstream extends EventEmitter {
  * configInitialiser, but it should not block. Instead the ready events of
  * those plugins are handled through the DependencyInitialiser in this instance.
  */
-  private loadConfig (config: DeepstreamConfig): void {
+  private loadConfig (config: DeepstreamConfig|string): void {
     let result
     if (config === null || typeof config === 'string') {
       result = jsYamlLoader.loadConfig(config)
