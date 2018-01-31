@@ -29,7 +29,7 @@ export const registerPlugin = function (name: string, construct: Function) {
  * Takes a configuration object and instantiates functional properties.
  * CLI arguments will be considered.
  */
-export const initialise = function (config: DeepstreamConfig): { config: DeepstreamConfig, services: DeepstreamServices } {
+export const initialise = function (config: DeepstreamConfig = {}): { config: DeepstreamConfig, services: DeepstreamServices } {
   commandLineArguments = global.deepstreamCLI || {}
   handleUUIDProperty(config)
   handleSSLProperties(config)
@@ -88,6 +88,9 @@ function handleSSLProperties (config: DeepstreamConfig): void {
  * CLI arguments will be considered.
  */
 function handleLogger (config: DeepstreamConfig): Logger {
+  if (!config.logger) {
+    config.logger = {}
+  }
   const configOptions = (config.logger || {}).options
   if (commandLineArguments.colors !== undefined) {
     configOptions.colors = commandLineArguments.colors
@@ -117,7 +120,9 @@ function handleLogger (config: DeepstreamConfig): Logger {
     logger.warn = logger.warn || logger.log.bind(logger, LOG_LEVEL.WARN)
     logger.error = logger.error || logger.log.bind(logger, LOG_LEVEL.ERROR)
   }
-
+  if (typeof config.logLevel !== 'number') {
+    config.logLevel = 1
+  }
   if (LOG_LEVEL[config.logLevel]) {
     // NOTE: config.logLevel has highest priority, compare to the level defined
     // in the nested logger object

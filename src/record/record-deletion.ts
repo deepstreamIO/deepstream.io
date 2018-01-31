@@ -38,7 +38,7 @@ export default class RecordDeletion {
       this.checkIfDone.bind(this, this.cacheTimeout),
       metaData,
     )
-    if (!isExcluded(this.config.storageExclusionPrefixes, this.recordName)) {
+    if (Array.isArray(this.config.storageExclusionPrefixes) && !isExcluded(this.config.storageExclusionPrefixes, this.recordName)) {
       this.storageTimeout = setTimeout(
         this.handleError.bind(this, 'storage timeout'),
         this.config.storageRetrievalTimeout,

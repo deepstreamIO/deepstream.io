@@ -37,13 +37,13 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
     this.logger = services.logger
     this.config = config
     this.services = services
-    this.permissionOptions = config.permission.options
+    this.permissionOptions = config.permission && config.permission.options
     this.ruleCache = new RuleCache(this.permissionOptions)
     this.isReady = false
     this.description = `valve permissions loaded from ${this.permissionOptions.path}`
     this.optionsValid = true
 
-    const maxRuleIterations = config.permission.options.maxRuleIterations
+    const maxRuleIterations = config.permission && config.permission.options.maxRuleIterations
     if (maxRuleIterations !== undefined && maxRuleIterations < 1) {
       this.optionsValid = false
       process.nextTick(() => this.emit('error', 'Maximum rule iteration has to be at least one '))

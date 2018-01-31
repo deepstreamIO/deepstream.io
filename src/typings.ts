@@ -97,7 +97,7 @@ interface PluginConfig {
   name?: string
   path?: string
   type?: string
-  options: any
+  options?: any
 }
 
 interface DeepstreamPlugin extends NodeJS.EventEmitter {

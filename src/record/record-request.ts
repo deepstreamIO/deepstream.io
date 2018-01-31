@@ -71,7 +71,7 @@ function onCacheResponse (
     } else {
       onComplete.call(context, recordName, version, data, socketWrapper)
     }
-  } else if (!isExcluded(config.storageExclusionPrefixes, recordName)) {
+  } else if (Array.isArray(config.storageExclusionPrefixes) && !isExcluded(config.storageExclusionPrefixes, recordName)) {
     let storageTimedOut = false
     const storageTimeout = setTimeout(() => {
       storageTimedOut = true

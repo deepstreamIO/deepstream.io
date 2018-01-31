@@ -25,24 +25,24 @@ export default class ListenerRegistry implements SubscriptionListener {
   private clusterProvidedRecords: StateRegistry
 
   /**
-  * Deepstream.io allows clients to register as listeners for subscriptions.
-  * This allows for the creation of 'active' data-providers,
-  * e.g. data providers that provide data on the fly, based on what clients
-  * are actually interested in.
-  *
-  * When a client registers as a listener, it provides a regular expression.
-  * It will then immediatly get a number of callbacks for existing record subscriptions
-  * whose names match that regular expression.
-  *
-  * After that, whenever a record with a name matching that regular expression is subscribed
-  * to for the first time, the listener is notified.
-  *
-  * Whenever the last subscription for a matching record is removed, the listener is also
-  * notified with a SUBSCRIPTION_FOR_PATTERN_REMOVED action
-  *
-  * This class manages the matching of patterns and record names. The subscription /
-  * notification logic is handled by this.providerRegistry
-  */
+   * Deepstream.io allows clients to register as listeners for subscriptions.
+   * This allows for the creation of 'active' data-providers,
+   * e.g. data providers that provide data on the fly, based on what clients
+   * are actually interested in.
+   *
+   * When a client registers as a listener, it provides a regular expression.
+   * It will then immediatly get a number of callbacks for existing record subscriptions
+   * whose names match that regular expression.
+   *
+   * After that, whenever a record with a name matching that regular expression is subscribed
+   * to for the first time, the listener is notified.
+   *
+   * Whenever the last subscription for a matching record is removed, the listener is also
+   * notified with a SUBSCRIPTION_FOR_PATTERN_REMOVED action
+   *
+   * This class manages the matching of patterns and record names. The subscription /
+   * notification logic is handled by this.providerRegistry
+   */
   constructor (topic: TOPIC, config: DeepstreamConfig, services: DeepstreamServices, clientRegistry: SubscriptionRegistry, metaData: any) {
     this.metaData = metaData
     this.topic = topic
@@ -119,22 +119,22 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Returns whether or not a provider exists for
-  * the specific subscriptionName
-  */
+   * Returns whether or not a provider exists for
+   * the specific subscriptionName
+   */
   public hasActiveProvider (susbcriptionName: string): boolean {
     return this.clusterProvidedRecords.has(susbcriptionName)
   }
 
   /**
-  * The main entry point to the handle class.
-  * Called on any of the following actions:
-  *
-  * 1) ACTIONS.LISTEN
-  * 2) ACTIONS.UNLISTEN
-  * 3) ACTIONS.LISTEN_ACCEPT
-  * 4) ACTIONS.LISTEN_REJECT
-  */
+   * The main entry point to the handle class.
+   * Called on any of the following actions:
+   *
+   * 1) ACTIONS.LISTEN
+   * 2) ACTIONS.UNLISTEN
+   * 3) ACTIONS.LISTEN_ACCEPT
+   * 4) ACTIONS.LISTEN_REJECT
+   */
   public handle (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const subscriptionName = message.subscription
 
@@ -161,13 +161,13 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Handle messages that arrive via the message bus
-  *
-  * This can either be messages by the leader indicating that this
-  * node is responsible for starting a local discovery phase
-  * or from a resulting node with an ACK to allow the leader
-  * to move on and release its lock
-  */
+   * Handle messages that arrive via the message bus
+   *
+   * This can either be messages by the leader indicating that this
+   * node is responsible for starting a local discovery phase
+   * or from a resulting node with an ACK to allow the leader
+   * to move on and release its lock
+   */
   private onIncomingMessage (message: ListenMessage): void {
     // if (this.config.serverName !== message.data[0]) {
     //   return
@@ -181,9 +181,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Process an accept or reject for a listen that is currently in progress
-  * and hasn't timed out yet.
-  */
+   * Process an accept or reject for a listen that is currently in progress
+   * and hasn't timed out yet.
+   */
   private processResponseForListenInProgress (socketWrapper: SocketWrapper, subscriptionName: string, message: ListenMessage): void {
     if (message.action === this.actions.LISTEN_ACCEPT) {
       this.accept(socketWrapper, message)
@@ -201,9 +201,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Called by the record subscription registry whenever a subscription count goes down to zero
-  * Part of the subscriptionListener interface.
-  */
+   * Called by the record subscription registry whenever a subscription count goes down to zero
+   * Part of the subscriptionListener interface.
+   */
   public onFirstSubscriptionMade (subscriptionName: string): void {
     this.startDiscoveryStage(subscriptionName)
   }
@@ -227,15 +227,15 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Called by the record subscription registry whenever the subscription count increments.
-  * Part of the subscriptionListener interface.
-  */
+   * Called by the record subscription registry whenever the subscription count increments.
+   * Part of the subscriptionListener interface.
+   */
   public onSubscriptionRemoved (subscriptionName: string, socketWrapper: SocketWrapper): void {
   }
 
   /**
-  * Register callback for when the server recieves an accept message from the client
-  */
+   * Register callback for when the server recieves an accept message from the client
+   */
   private accept (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const subscriptionName = message.subscription
 
@@ -256,8 +256,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Register a client as a listener for record subscriptions
-  */
+   * Register a client as a listener for record subscriptions
+   */
   private addListener (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const regExp = this.validatePattern(socketWrapper, message)
 
@@ -270,13 +270,13 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Find subscriptions that match pattern, and notify them that
-  * they can be provided.
-  *
-  * We will attempt to notify all possible providers rather than
-  * just the single provider for load balancing purposes and
-  * so that the one listener doesnt potentially get overwhelmed.
-  */
+   * Find subscriptions that match pattern, and notify them that
+   * they can be provided.
+   *
+   * We will attempt to notify all possible providers rather than
+   * just the single provider for load balancing purposes and
+   * so that the one listener doesnt potentially get overwhelmed.
+   */
   private reconcileSubscriptionsToPatterns (regExp: RegExp, pattern: string, socketWrapper: SocketWrapper): void {
     const names = this.clientRegistry.getNames()
     for (let i = 0; i < names.length; i++) {
@@ -301,8 +301,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * De-register a client as a listener for record subscriptions
-  */
+   * De-register a client as a listener for record subscriptions
+   */
   private removeListener (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const pattern = message.name
     this.removeListenerFromInProgress(this.localListenInProgress, pattern, socketWrapper)
@@ -310,9 +310,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Removes the listener if it is the currently active publisher, and retriggers
-  * another listener discovery phase
-  */
+   * Removes the listener if it is the currently active publisher, and retriggers
+   * another listener discovery phase
+   */
   private removeListenerIfActive (pattern: string, socketWrapper: SocketWrapper): void {
     for (const subscriptionName in this.locallyProvidedRecords) {
       const provider = this.locallyProvidedRecords[subscriptionName]
@@ -332,16 +332,16 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-    */
+   */
   private removeActiveListener (subscriptionName: string): void {
     delete this.locallyProvidedRecords[subscriptionName]
     this.clusterProvidedRecords.remove(subscriptionName)
   }
 
   /**
-  * Start discovery phase once a lock is obtained from the leader within
-  * the cluster
-  */
+   * Start discovery phase once a lock is obtained from the leader within
+   * the cluster
+   */
   private startDiscoveryStage (subscriptionName: string): void {
     const localListenArray = this.createLocalListenArray(subscriptionName)
 
@@ -372,9 +372,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * called when a subscription has been provided to clear down the discovery stage,
-  * or when an ack has been recieved via the message bus
-  */
+   * called when a subscription has been provided to clear down the discovery stage,
+   * or when an ack has been recieved via the message bus
+   */
   private nextDiscoveryStage (subscriptionName: string): void {
     if (
       this.hasActiveProvider(subscriptionName) ||
@@ -404,9 +404,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Start discovery phase once a lock is obtained from the leader within
-  * the cluster
-  */
+   * Start discovery phase once a lock is obtained from the leader within
+   * the cluster
+   */
   private startLocalDiscoveryStage (subscriptionName: string, localListenArray?: Array<Provider>): void {
     if (!localListenArray) {
       localListenArray = this.createLocalListenArray(subscriptionName)
@@ -424,8 +424,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Finalises a local listener discovery stage
-  */
+   * Finalises a local listener discovery stage
+   */
   private stopLocalDiscoveryStage (subscriptionName: string): void {
     delete this.localListenInProgress[subscriptionName]
 
@@ -450,9 +450,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Trigger the next provider in the map of providers capable of publishing
-  * data to the specific subscriptionName
-  */
+   * Trigger the next provider in the map of providers capable of publishing
+   * data to the specific subscriptionName
+   */
   private triggerNextProvider (subscriptionName: string): void {
     const listenInProgress: Array<Provider> = this.localListenInProgress[subscriptionName]
 
@@ -487,8 +487,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Triggered when a subscription is being provided by a node in the cluster
-  */
+   * Triggered when a subscription is being provided by a node in the cluster
+   */
   private onRecordStartProvided (subscriptionName: string): void {
     this.sendHasProviderUpdate(true, subscriptionName)
     if (this.leadingListen[subscriptionName]) {
@@ -497,8 +497,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Triggered when a subscription is stopped being provided by a node in the cluster
-  */
+   * Triggered when a subscription is stopped being provided by a node in the cluster
+   */
   private onRecordStopProvided (subscriptionName: string): void {
     this.sendHasProviderUpdate(false, subscriptionName)
     if (
@@ -510,8 +510,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Compiles a regular expression from an incoming pattern
-  */
+   * Compiles a regular expression from an incoming pattern
+   */
   private addPattern (pattern: string): void {
     if (!this.patterns[pattern]) {
       this.patterns[pattern] = new RegExp(pattern)
@@ -519,8 +519,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Deletes the pattern regex when removed
-  */
+   * Deletes the pattern regex when removed
+   */
   private removePattern (pattern: string, socketWrapper: SocketWrapper): void {
     this.listenerTimeoutRegistry.removeProvider(socketWrapper)
     this.removeListenerFromInProgress(this.localListenInProgress, pattern, socketWrapper)
@@ -532,9 +532,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Remove provider from listen in progress map if it unlistens during
-  * discovery stage
-  */
+   * Remove provider from listen in progress map if it unlistens during
+   * discovery stage
+   */
   private removeListenerFromInProgress (listensCurrentlyInProgress, pattern: string, socketWrapper: SocketWrapper): void {
     for (const subscriptionName in listensCurrentlyInProgress) {
       const listenInProgress = listensCurrentlyInProgress[subscriptionName]
@@ -550,8 +550,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Sends a has provider update to a single subcriber
-  */
+   * Sends a has provider update to a single subcriber
+   */
   private sendHasProviderUpdateToSingleSubscriber (hasProvider: boolean, socketWrapper: SocketWrapper, subscriptionName: string): void {
     if (socketWrapper && this.topic === TOPIC.RECORD) {
       socketWrapper.sendMessage({
@@ -563,8 +563,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Sends a has provider update to all subcribers
-  */
+   * Sends a has provider update to all subcribers
+   */
   private sendHasProviderUpdate (hasProvider: boolean, subscriptionName: string): void  {
     if (this.topic !== TOPIC.RECORD) {
       return
@@ -577,9 +577,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Sent by the listen leader, and is used to inform the next server in the cluster to
-  * start a local discovery
-  */
+   * Sent by the listen leader, and is used to inform the next server in the cluster to
+   * start a local discovery
+   */
   private sendRemoteDiscoveryStart (serverName: string, subscriptionName: string): void  {
     this.message.sendDirect(serverName, {
       topic: this.messageTopic,
@@ -589,9 +589,9 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Sent by the listen follower, and is used to inform the leader that it has
-  * complete its local discovery start
-  */
+   * Sent by the listen follower, and is used to inform the leader that it has
+   * complete its local discovery start
+   */
   private sendRemoteDiscoveryStop (listenLeaderServerName: string, subscriptionName: string): void  {
     // this.message.sendDirect(listenLeaderServerName, {
     //   topic: this.messageTopic,
@@ -601,8 +601,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Send a subscription found to a provider
-  */
+   * Send a subscription found to a provider
+   */
   private sendSubscriptionForPatternFound (provider: Provider, subscriptionName: string): void  {
     provider.socketWrapper.sendMessage({
       topic: this.topic,
@@ -613,8 +613,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Send a subscription removed to a provider
-  */
+   * Send a subscription removed to a provider
+   */
   private sendSubscriptionForPatternRemoved (provider: Provider, subscriptionName: string): void {
     provider.socketWrapper.sendMessage({
       topic: this.topic,
@@ -625,8 +625,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Create a map of all the listeners that patterns match the subscriptionName locally
-  */
+   * Create a map of all the listeners that patterns match the subscriptionName locally
+   */
   private createRemoteListenArray (subscriptionName: string): Array<string> {
     const patterns = this.patterns
     const providerRegistry = this.providerRegistry
@@ -648,7 +648,9 @@ export default class ListenerRegistry implements SubscriptionListener {
     }
 
     const set = new Set(servers)
-    set.delete(this.config.serverName)
+    if (this.config && typeof this.config.serverName !== 'undefined') {
+      set.delete(this.config.serverName)
+    }
 
     if (!this.config.shuffleListenProviders) {
       return Array.from(set)
@@ -657,8 +659,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Create a map of all the listeners that patterns match the subscriptionName locally
-  */
+   * Create a map of all the listeners that patterns match the subscriptionName locally
+   */
   private createLocalListenArray (subscriptionName): Array<Provider> {
     const patterns = this.patterns
     const providerRegistry = this.providerRegistry
@@ -678,8 +680,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Validates that the pattern is not empty and is a valid regular expression
-  */
+   * Validates that the pattern is not empty and is a valid regular expression
+   */
   private validatePattern (socketWrapper: SocketWrapper, message: ListenMessage): RegExp | null {
     try {
       return new RegExp(message.name)
@@ -693,9 +695,9 @@ export default class ListenerRegistry implements SubscriptionListener {
       return null
     }
   }
-    /**
-  * Returns the unique lock when leading a listen discovery phase
-  */
+  /**
+   * Returns the unique lock when leading a listen discovery phase
+   */
   private getUniqueLockName (subscriptionName: string) {
     return `${this.uniqueLockName}_${subscriptionName}`
   }

@@ -192,6 +192,9 @@ export default class RecordHandler {
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage
+    if (!Array.isArray(this.config.storageHotPathPrefixes)) {
+      return
+    }
     for (let i = 0; i < this.config.storageHotPathPrefixes.length; i++) {
       const pattern = this.config.storageHotPathPrefixes[i]
       if (recordName.indexOf(pattern) === 0) {
@@ -310,7 +313,7 @@ export default class RecordHandler {
       }
     }, this.metaData)
 
-    if (!isExcluded(this.config.storageExclusionPrefixes, message.name)) {
+    if (Array.isArray(this.config.storageExclusionPrefixes) && !isExcluded(this.config.storageExclusionPrefixes, message.name)) {
     // store the record data in the persistant storage independently and don't wait for the result
       this.services.storage.set(recordName, 0, {}, error => {
         if (error) {

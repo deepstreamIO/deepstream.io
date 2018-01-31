@@ -287,7 +287,7 @@ export default class RecordTransition {
    * If the storage response is asynchronous and write acknowledgement is enabled, the transition
    * will not be destroyed until writing to storage is finished
    */
-    if (!isExcluded(this.config.storageExclusionPrefixes, this.name)) {
+    if (Array.isArray(this.config.storageExclusionPrefixes) && !isExcluded(this.config.storageExclusionPrefixes, this.name)) {
       this.pendingStorageWrites++
       if (message.isWriteAck) {
         this.setUpWriteAcknowledgement(message, this.currentStep.sender)

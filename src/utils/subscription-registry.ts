@@ -103,9 +103,11 @@ export default class SubscriptionRegistry {
    */
   public getAllRemoteServers (subscriptionName: string): Array<string> {
     const serverNames = this.clusterSubscriptions.getAllServers(subscriptionName)
-    const localServerIndex = serverNames.indexOf(this.config.serverName)
-    if (localServerIndex > -1) {
-      serverNames.splice(serverNames.indexOf(this.config.serverName), 1)
+    if (typeof this.config.serverName === 'string') {
+      const localServerIndex = serverNames.indexOf(this.config.serverName)
+      if (localServerIndex > -1) {
+        serverNames.splice(serverNames.indexOf(this.config.serverName), 1)
+      }
     }
     return serverNames
   }
