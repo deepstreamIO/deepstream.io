@@ -11,7 +11,7 @@ export default class LockRegistry {
   * within deepstream.io. It is passed via
   * via the options object.
   */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices) {
     this.locks = {}
   }
 

@@ -13,14 +13,14 @@ interface RpcData {
 export default class RpcHandler {
   private metaData: any
   private subscriptionRegistry: SubscriptionRegistry
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private rpcs: Map<string, RpcData>
 
   /**
   * Handles incoming messages for the RPC Topic.
   */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, metaData?: any) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, metaData?: any) {
      this.metaData = metaData
      this.config = config
      this.services = services

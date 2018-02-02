@@ -12,7 +12,7 @@ export default class Rpc {
   private rpcHandler: RpcHandler
   private requestor: SimpleSocketWrapper
   private provider: SimpleSocketWrapper
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private message: Message
   private correlationId: string
@@ -23,7 +23,7 @@ export default class Rpc {
 
   /**
   */
-  constructor (rpcHandler: RpcHandler, requestor: SimpleSocketWrapper, provider: SimpleSocketWrapper, config: DeepstreamConfig, services: DeepstreamServices,  message: RPCMessage) {
+  constructor (rpcHandler: RpcHandler, requestor: SimpleSocketWrapper, provider: SimpleSocketWrapper, config: InternalDeepstreamConfig, services: DeepstreamServices,  message: RPCMessage) {
     this.rpcHandler = rpcHandler
     this.rpcName = message.name
     this.correlationId = message.correlationId

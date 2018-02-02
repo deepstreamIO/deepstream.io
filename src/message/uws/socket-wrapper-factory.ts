@@ -190,6 +190,6 @@ export function createSocketWrapper (
   external: any,
   handshakeData: any,
   logger: Logger,
-  config: DeepstreamConfig,
+  config: InternalDeepstreamConfig,
   connectionEndpoint: ConnectionEndpoint
 ) { return new UwsSocketWrapper(external, handshakeData, logger, config, connectionEndpoint) }

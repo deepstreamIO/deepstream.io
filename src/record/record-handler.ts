@@ -24,7 +24,7 @@ const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
 
 export default class RecordHandler {
   private metaData: any
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private subscriptionRegistry: SubscriptionRegistry
   private listenerRegistry: ListenerRegistry
@@ -35,7 +35,7 @@ export default class RecordHandler {
 /**
  * The entry point for record related operations
  */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, metaData?: any) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, metaData?: any) {
     this.metaData = metaData
     this.config = config
     this.services = services

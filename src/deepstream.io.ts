@@ -34,7 +34,7 @@ process.title = 'deepstream server'
 export class Deepstream extends EventEmitter {
   public constants: any
 
-  protected config: DeepstreamConfig
+  protected config: InternalDeepstreamConfig
   protected services: DeepstreamServices
 
   private messageProcessor: any
@@ -55,12 +55,12 @@ export class Deepstream extends EventEmitter {
  * publish-subscribe, request-response, listeneing, permissioning
  * and a host of other features!
  *
- * @copyright 2017 deepstreamHub GmbH
+ * @copyright 2018 deepstreamHub GmbH
  * @author deepstreamHub GmbH
  *
  * @constructor
  */
-  constructor (config: DeepstreamConfig) {
+  constructor (config: DeepstreamConfig | string | null) {
     super()
     this.loadConfig(config)
     this.messageProcessor = null
@@ -386,13 +386,13 @@ export class Deepstream extends EventEmitter {
  * configInitialiser, but it should not block. Instead the ready events of
  * those plugins are handled through the DependencyInitialiser in this instance.
  */
-  private loadConfig (config: DeepstreamConfig): void {
+  private loadConfig (config: DeepstreamConfig | string | null): void {
     let result
     if (config === null || typeof config === 'string') {
       result = jsYamlLoader.loadConfig(config)
       this.configFile = result.file
     } else {
-      const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
+      const rawConfig = merge(getDefaultOptions(), config) as InternalDeepstreamConfig
       result = configInitialiser.initialise(rawConfig)
     }
     configValidator.validate(result.config)

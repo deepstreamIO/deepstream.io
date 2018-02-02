@@ -4,7 +4,7 @@ import { EVENT } from '../constants'
 export default class DependencyInitialiser extends EventEmitter {
   public isReady: boolean
 
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private dependency: any
   private name: string
@@ -15,7 +15,7 @@ export default class DependencyInitialiser extends EventEmitter {
  * an individual dependency (cache connector, persistance connector,
  * message connector, logger)
  */
-  constructor (deepstream, config: DeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
+  constructor (deepstream, config: InternalDeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
     super()
     this.isReady = false
 

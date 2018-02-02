@@ -22,7 +22,7 @@ export default class SubscriptionRegistry {
   private delay: number
   private sockets: Map<SocketWrapper, Set<Subscription>>
   private subscriptions: Map<string, Subscription>
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private topic: TOPIC
   private clusterTopic: TOPIC
@@ -37,7 +37,7 @@ export default class SubscriptionRegistry {
    * A bit like an event-hub, only that it registers SocketWrappers rather
    * than functions
    */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, topic: TOPIC, clusterTopic: TOPIC) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, topic: TOPIC, clusterTopic: TOPIC) {
     this.pending = []
     this.delay = -1
     if (config.broadcastTimeout !== undefined) {

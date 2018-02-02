@@ -16,7 +16,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
 
   private ruleCache: RuleCache
   private permissionOptions: ValveConfig
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private permissions: any
   private logger: Logger
@@ -32,7 +32,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
    * with the default permission.yml it allows everything, but at the same time provides
    * a convenient starting point for permission declarations.
    */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, permissions: any) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, permissions: any) {
     super()
     this.logger = services.logger
     this.config = config

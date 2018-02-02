@@ -29,7 +29,7 @@ export const registerPlugin = function (name: string, construct: Function) {
  * Takes a configuration object and instantiates functional properties.
  * CLI arguments will be considered.
  */
-export const initialise = function (config: DeepstreamConfig): { config: DeepstreamConfig, services: DeepstreamServices } {
+export const initialise = function (config: InternalDeepstreamConfig): { config: InternalDeepstreamConfig, services: DeepstreamServices } {
   commandLineArguments = global.deepstreamCLI || {}
   handleUUIDProperty(config)
   handleSSLProperties(config)
@@ -53,7 +53,7 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
 /**
  * Transform the UUID string config to a UUID in the config object.
  */
-function handleUUIDProperty (config: DeepstreamConfig): void {
+function handleUUIDProperty (config: InternalDeepstreamConfig): void {
   if (config.serverName === 'UUID') {
     config.serverName = utils.getUid()
   }
@@ -63,7 +63,7 @@ function handleUUIDProperty (config: DeepstreamConfig): void {
  * Load the SSL files
  * CLI arguments will be considered.
  */
-function handleSSLProperties (config: DeepstreamConfig): void {
+function handleSSLProperties (config: InternalDeepstreamConfig): void {
   const sslFiles = ['sslKey', 'sslCert', 'sslCa']
   let key
   let resolvedFilePath
@@ -87,7 +87,7 @@ function handleSSLProperties (config: DeepstreamConfig): void {
  * Initialize the logger and overwrite the root logLevel if it's set
  * CLI arguments will be considered.
  */
-function handleLogger (config: DeepstreamConfig): Logger {
+function handleLogger (config: InternalDeepstreamConfig): Logger {
   const configOptions = (config.logger || {}).options
   if (commandLineArguments.colors !== undefined) {
     configOptions.colors = commandLineArguments.colors
@@ -138,7 +138,7 @@ function handleLogger (config: DeepstreamConfig): Logger {
  *
  * CLI arguments will be considered.
  */
-function handlePlugins (config: DeepstreamConfig, services: any): void {
+function handlePlugins (config: InternalDeepstreamConfig, services: any): void {
   if (config.plugins == null) {
     return
   }
@@ -167,7 +167,7 @@ function handlePlugins (config: DeepstreamConfig, services: any): void {
  *
  * CLI arguments will be considered.
  */
-function handleConnectionEndpoints (config: DeepstreamConfig, services: any): Array<ConnectionEndpoint> {
+function handleConnectionEndpoints (config: InternalDeepstreamConfig, services: any): Array<ConnectionEndpoint> {
   // delete any endpoints that have been set to `null`
   for (const type in config.connectionEndpoints) {
     if (!config.connectionEndpoints[type]) {
@@ -242,7 +242,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
  *
  * CLI arguments will be considered.
  */
-function handleAuthStrategy (config: DeepstreamConfig, logger: Logger): AuthenticationHandler {
+function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): AuthenticationHandler {
   let AuthenticationHandler
 
   const authStrategies = {
@@ -283,7 +283,7 @@ function handleAuthStrategy (config: DeepstreamConfig, logger: Logger): Authenti
  *
  * CLI arguments will be considered.
  */
-function handlePermissionStrategy (config: DeepstreamConfig, services: any): PermissionHandler {
+function handlePermissionStrategy (config: InternalDeepstreamConfig, services: any): PermissionHandler {
   let PermissionHandler
 
   const permissionStrategies = {

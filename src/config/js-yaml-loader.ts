@@ -70,7 +70,7 @@ export const loadConfigWithoutInitialisation = function (filePath?: string, args
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  */
-export const loadConfig = function (filePath: string, args?: object) {
+export const loadConfig = function (filePath: string | null, args?: object) {
   const config = exports.loadConfigWithoutInitialisation(filePath, args)
   const result = configInitialiser.initialise(config.config)
   return {
@@ -87,7 +87,7 @@ export const loadConfig = function (filePath: string, args?: object) {
  *
  * If no fileContent is passed the file is read synchronously
  */
-function parseFile (filePath: string, fileContent: string): DeepstreamConfig {
+function parseFile (filePath: string, fileContent: string): InternalDeepstreamConfig {
   const extension = path.extname(filePath)
 
   if (extension === '.yml' || extension === '.yaml') {
@@ -122,7 +122,7 @@ function setGlobalConfigDirectory (argv: any, filePath?: string): string {
 * Set the globalLib prefix that will be used as the directory for the logger
 * and plugins within the config file
 */
-function setGlobalLibDirectory (argv: any, config: DeepstreamConfig): void {
+function setGlobalLibDirectory (argv: any, config: InternalDeepstreamConfig): void {
   const libDir =
       argv.l ||
       argv.libDir ||
@@ -135,7 +135,7 @@ function setGlobalLibDirectory (argv: any, config: DeepstreamConfig): void {
  * Augments the basic configuration with command line parameters
  * and normalizes paths within it
  */
-function extendConfig (config: any, argv: any): DeepstreamConfig {
+function extendConfig (config: any, argv: any): InternalDeepstreamConfig {
   const cliArgs = {}
   let key
 
@@ -155,10 +155,10 @@ function extendConfig (config: any, argv: any): DeepstreamConfig {
     overrideEndpointOption('host', argv.httpHost, 'http', config)
   }
 
-  return merge({ plugins: {} }, getDefaultOptions(), config, cliArgs) as DeepstreamConfig
+  return merge({ plugins: {} }, getDefaultOptions(), config, cliArgs) as InternalDeepstreamConfig
 }
 
-function overrideEndpointOption (key: string, value: string, endpoint: string, config: DeepstreamConfig) {
+function overrideEndpointOption (key: string, value: string, endpoint: string, config: InternalDeepstreamConfig) {
   try {
     config.connectionEndpoints[endpoint].options[key] = value
   } catch (exception) {

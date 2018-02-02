@@ -34,7 +34,7 @@ interface RuleApplicationParams {
    logger: Logger
    recordHandler: RecordHandler
    socketWrapper: SocketWrapper
-   config: DeepstreamConfig
+   config: InternalDeepstreamConfig
    services: DeepstreamServices
 }
 

@@ -19,7 +19,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   private authenticationHandler: AuthenticationHandler
   private permissionHandler: PermissionHandler
   private messageDistributor: MessageDistributor
-  private dsOptions: DeepstreamConfig
+  private dsOptions: InternalDeepstreamConfig
   private jifHandler: JIFHandler
   private onSocketMessageBound: Function
   private onSocketErrorBound: Function

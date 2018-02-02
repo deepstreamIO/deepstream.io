@@ -7,7 +7,7 @@ import TimeoutRegistry from './listener-timeout-registry'
 export default class ListenerRegistry implements SubscriptionListener {
   private metaData: any
   private topic: TOPIC
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private providerRegistry: SubscriptionRegistry
   private clientRegistry: SubscriptionRegistry
@@ -43,7 +43,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * This class manages the matching of patterns and record names. The subscription /
   * notification logic is handled by this.providerRegistry
   */
-  constructor (topic: TOPIC, config: DeepstreamConfig, services: DeepstreamServices, clientRegistry: SubscriptionRegistry, metaData: any) {
+  constructor (topic: TOPIC, config: InternalDeepstreamConfig, services: DeepstreamServices, clientRegistry: SubscriptionRegistry, metaData: any) {
     this.metaData = metaData
     this.topic = topic
     this.actions = topic === TOPIC.RECORD ? RECORD_ACTIONS : EVENT_ACTIONS

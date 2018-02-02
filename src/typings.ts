@@ -146,6 +146,44 @@ interface LockRegistry {
 }
 
 interface DeepstreamConfig {
+  showLogo?: boolean
+  libDir?: string | null
+  logLevel?: number
+  serverName?: string
+  externalUrl?: string | null
+  sslKey?: string | null
+  sslCert?: string | null
+  sslCa?: string | null
+  connectionEndpoints?: any
+
+  plugins?: {
+    cache?: PluginConfig
+    storage?: PluginConfig
+  }
+
+  logger?: PluginConfig
+  auth?: PluginConfig
+  permission?: PluginConfig
+
+  storageExclusionPrefixes?: Array<string>
+  rpcAckTimeout?: number
+  rpcTimeout?: number
+  cacheRetrievalTimeout?: number
+  storageRetrievalTimeout?: number
+  storageHotPathPrefixes?: Array<string>
+  dependencyInitialisationTimeout?: number
+  stateReconciliationTimeout?: number
+  clusterKeepAliveInterval?: number
+  clusterActiveCheckInterval?: number
+  clusterNodeInactiveTimeout?: number
+  listenResponseTimeout?: number
+  lockTimeout?: number
+  lockRequestTimeout?: number
+  broadcastTimeout?: number
+  shuffleListenProviders?: boolean
+}
+
+interface InternalDeepstreamConfig {
   showLogo: boolean
   libDir: string | null
   logLevel: number

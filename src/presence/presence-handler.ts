@@ -11,13 +11,13 @@ const EVERYONE = '%_EVERYONE_%'
  */
 export default class PresenceHandler {
   private metaData: any
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private localClients: Map<string, number>
   private subscriptionRegistry: SubscriptionRegistry
   private connectedClients: StateRegistry
 
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, metaData?: any) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, metaData?: any) {
     this.metaData = metaData
     this.config = config
     this.services = services

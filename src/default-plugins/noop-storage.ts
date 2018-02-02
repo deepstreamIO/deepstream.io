@@ -4,10 +4,10 @@ export default class NoopStorage extends EventEmitter implements StoragePlugin {
   public description: string
   public isReady: boolean
 
-  private config?: DeepstreamConfig
+  private config?: InternalDeepstreamConfig
   private data: any
 
-  constructor (config?: DeepstreamConfig, services?: DeepstreamServices) {
+  constructor (config?: InternalDeepstreamConfig, services?: DeepstreamServices) {
     super()
     this.config = config
     this.isReady = true

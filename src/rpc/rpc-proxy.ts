@@ -7,7 +7,7 @@ import { EVENT, PRESENCE_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../cons
  * infact relays calls from and to the message connector - sneaky.
  */
 export default class RpcProxy extends EventEmitter implements SimpleSocketWrapper {
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private remoteServer: string
   private metaData: any
@@ -17,7 +17,7 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
 
   /**
   */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, remoteServer: string, metaData: any) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, remoteServer: string, metaData: any) {
     super()
     this.isRemote = true
     this.metaData = metaData

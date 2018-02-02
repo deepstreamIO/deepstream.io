@@ -44,7 +44,7 @@ export default class RecordTransition {
 
  private metaData: any
  private name: string
- private config: DeepstreamConfig
+ private config: InternalDeepstreamConfig
  private services: DeepstreamServices
  private recordHandler: RecordHandler
  private steps: Array<Step>
@@ -62,7 +62,7 @@ export default class RecordTransition {
  private pendingStorageWrites: number
  private pendingCacheWrites: number
 
-  constructor (name: string, config: DeepstreamConfig, services: DeepstreamServices, recordHandler: RecordHandler, metaData) {
+  constructor (name: string, config: InternalDeepstreamConfig, services: DeepstreamServices, recordHandler: RecordHandler, metaData) {
     this.metaData = metaData
     this.name = name
     this.config = config

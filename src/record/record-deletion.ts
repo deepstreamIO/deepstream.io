@@ -3,7 +3,7 @@ import { isExcluded } from '../utils/utils'
 
 export default class RecordDeletion {
   private metaData: any
-  private config: DeepstreamConfig
+  private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private socketWrapper: SocketWrapper
   private message: Message
@@ -18,7 +18,7 @@ export default class RecordDeletion {
  * This class represents the deletion of a single record. It handles it's removal
  * from cache and storage and handles errors and timeouts
  */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, metaData: any) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, metaData: any) {
     this.metaData = metaData
     this.config = config
     this.services = services
