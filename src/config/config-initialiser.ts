@@ -47,6 +47,13 @@ export const initialise = function (config: InternalDeepstreamConfig): { config:
   services.permissionHandler = handlePermissionStrategy(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
 
+  if (services.cache.apiVersion !== 2) {
+    storageCompatability(services.cache)
+  }
+  if (services.storage.apiVersion !== 2) {
+    storageCompatability(services.storage)
+  }
+
   return { config, services }
 }
 
@@ -321,4 +328,18 @@ function handlePermissionStrategy (config: InternalDeepstreamConfig, services: a
     return new PermissionHandler(config.permission.options, services)
   }
 
+}
+
+function storageCompatability (storage: StoragePlugin) {
+  const oldGet = storage.get as Function
+  storage.get = (recordName: string, callback: StorageReadCallback) => {
+    oldGet(recordName, (error, record) => {
+      callback(error, record._v, record._d)
+    })
+  }
+
+  const oldSet = storage.set as Function
+  storage.set = (recordName: string, version: number, data: any, callback: StorageWriteCallback) => {
+    oldSet(recordName, { _v: version, _d: data }, callback)
+  }
 }

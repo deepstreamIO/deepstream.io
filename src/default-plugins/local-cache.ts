@@ -3,6 +3,7 @@ import { EventEmitter } from 'events'
 export default class LocalCache extends EventEmitter implements StoragePlugin {
   public description: string
   public isReady: boolean
+  public apiVersion: number
 
   private config?: InternalDeepstreamConfig
   private data: any
@@ -13,6 +14,7 @@ export default class LocalCache extends EventEmitter implements StoragePlugin {
     this.config = config
     this.data = {}
     this.description = 'local cache'
+    this.apiVersion = 2
   }
 
   public set (key: string, version: number, data: any, callback: StorageWriteCallback) {
