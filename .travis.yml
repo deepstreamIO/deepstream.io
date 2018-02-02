@@ -24,21 +24,18 @@ compiler:
 
 node_js:
   - "8"
-  - "6.11"
+  - "6"
 
 env:
   - DEFAULT_DELAY: 50
 
 matrix:
   include:
-    - node_js: "6.11"
+    - node_js: "8"
       os: osx
 
 script:
-  # This fails on node 4
-  - if [[ "$TRAVIS_NODE_VERSION" == "6.11"* ]]; then
-      npm run lint;
-    fi
+  - npm run lint;
   - npm run test:coverage
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sh scripts/run-e2e.sh;
