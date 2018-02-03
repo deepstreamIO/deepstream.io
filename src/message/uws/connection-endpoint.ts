@@ -186,13 +186,14 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
         socketWrapper.destroy()
         continue
       }
+      const message = parseResult as Message
       if (
-        parseResult.topic === TOPIC.CONNECTION &&
-        parseResult.action === CONNECTION_ACTIONS.PONG
+        message.topic === TOPIC.CONNECTION &&
+        message.action === CONNECTION_ACTIONS.PONG
       ) {
         continue
       }
-      messages.push(parseResult)
+      messages.push(message)
     }
     return messages
   }
