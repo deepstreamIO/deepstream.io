@@ -197,6 +197,7 @@ export class Deepstream extends EventEmitter {
     this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
     const infoLogger = message => this.services.logger.info(EVENT.INFO, message)
+    infoLogger(`server name: ${this.config.serverName}`)
     infoLogger(`deepstream version: ${pkg.version}`)
 
     // otherwise (no configFile) deepstream was invoked by API
