@@ -280,16 +280,16 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   /**
    * Responds to http health checks.
    * Responds with 200(OK) if deepstream is alive.
-   *
-   * @private
-   * @returns {void}
    */
   private _handleHealthCheck (
     req: http.IncomingMessage,
     res: http.ServerResponse
-  ) {
+  ): void {
     if (req.method === 'GET' && req.url === this.healthCheckPath) {
       res.writeHead(200)
+      res.end()
+    } else {
+      res.writeHead(404)
       res.end()
     }
   }

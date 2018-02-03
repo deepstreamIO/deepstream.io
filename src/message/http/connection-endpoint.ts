@@ -6,7 +6,7 @@ import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { EventEmitter } from 'events'
 import MessageDistributor from '../message-distributor'
-import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS } from '../../constants'
+import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS } from '../../constants'
 
 export default class HTTPConnectionEndpoint extends EventEmitter implements ConnectionEndpoint {
 
@@ -447,6 +447,9 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   }
 
   private onGetMessage (data, headers, responseCallback) {
+    const message = 'Reading records via HTTP GET is not yet implemented, please use a post request instead.'
+    this.logger.warn(RECORD_ACTIONS[RECORD_ACTIONS.READ], message)
+    responseCallback({ statusCode: 400, message })
     // TODO: implement a GET endpoint that reads the current state of a record
   }
 
