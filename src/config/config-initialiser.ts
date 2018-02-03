@@ -333,13 +333,13 @@ function handlePermissionStrategy (config: InternalDeepstreamConfig, services: a
 function storageCompatability (storage: StoragePlugin) {
   const oldGet = storage.get as Function
   storage.get = (recordName: string, callback: StorageReadCallback) => {
-    oldGet(recordName, (error, record) => {
-      callback(error, record._v, record._d)
+    oldGet.call(storage, recordName, (error, record) => {
+      callback(error, record ? record._v : -1, record ? record._d : {})
     })
   }
 
   const oldSet = storage.set as Function
   storage.set = (recordName: string, version: number, data: any, callback: StorageWriteCallback) => {
-    oldSet(recordName, { _v: version, _d: data }, callback)
+    oldSet.call(storage, recordName, { _v: version, _d: data }, callback)
   }
 }

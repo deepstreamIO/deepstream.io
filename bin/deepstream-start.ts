@@ -1,5 +1,6 @@
 import * as os from 'os'
 import * as path from 'path'
+import { EVENT } from '../src/constants'
 
 export const start = program => {
   program
@@ -26,6 +27,7 @@ function action () {
   const { Deepstream } = require('../src/deepstream.io.js')
   try {
     const ds = new Deepstream(null)
+    ds.on(EVENT.PLUGIN_INITIALIZATION_ERROR, () => process.exit(1))
     ds.start()
     process
       .removeAllListeners('SIGINT').on('SIGINT', () => {

@@ -1,9 +1,11 @@
 import { EventEmitter } from 'events'
 import { EVENT } from '../constants'
+import { Deepstream } from '../deepstream.io'
 
 export default class DependencyInitialiser extends EventEmitter {
   public isReady: boolean
 
+  private deepstream: Deepstream
   private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private dependency: any
@@ -18,6 +20,7 @@ export default class DependencyInitialiser extends EventEmitter {
   constructor (deepstream, config: InternalDeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
     super()
     this.isReady = false
+    this.deepstream = deepstream
 
     this.config = config
     this.services = services
@@ -94,8 +97,7 @@ export default class DependencyInitialiser extends EventEmitter {
   private _onError (error: any): void {
     if (this.isReady !== true) {
       this._logError(`Error while initialising ${this.name}: ${error.toString()}`)
-      error.code = EVENT.PLUGIN_INITIALIZATION_ERROR
-      throw error
+      this.deepstream.emit(EVENT.PLUGIN_INITIALIZATION_ERROR, error)
     }
   }
 
