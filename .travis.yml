@@ -18,6 +18,8 @@ jobs:
       script: bash linux-package.sh ubuntu xenial
     - <<: *create-packages
       script: bash linux-package.sh debian jessie
+    - <<: *create-packages
+      script: bash linux-package.sh debian stretch
 
     - &test-packages
       stage: Download and test packages
