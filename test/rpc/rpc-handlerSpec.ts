@@ -18,7 +18,7 @@ describe('the rpcHandler routes events correctly', () => {
   beforeEach(() => {
     testMocks = getTestMocks()
     rpcHandler = new RpcHandler(config, services, testMocks.subscriptionRegistry)
-    requestor = testMocks.getSocketWrapper('requestor')
+    requestor = testMocks.getSocketWrapper('requestor', {}, { color: 'blue' })
     provider = testMocks.getSocketWrapper('provider')
   })
 
@@ -87,7 +87,10 @@ describe('the rpcHandler routes events correctly', () => {
       provider.socketWrapperMock
         .expects('sendMessage')
         .once()
-        .withExactArgs(requestMessage)
+        .withExactArgs(Object.assign({
+          requestorData: { color: 'blue' },
+          requestorName: 'requestor'
+        }, requestMessage))
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
     })
@@ -116,7 +119,10 @@ describe('the rpcHandler routes events correctly', () => {
       provider.socketWrapperMock
         .expects('sendMessage')
         .once()
-        .withExactArgs(requestMessage)
+        .withExactArgs(Object.assign({
+          requestorData: { color: 'blue' },
+          requestorName: 'requestor'
+        }, requestMessage))
 
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)

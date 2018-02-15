@@ -14,12 +14,14 @@ interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   isRemote: boolean
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
+  clientData?: object | null
 }
 
 interface SocketWrapper extends SimpleSocketWrapper {
   uuid: number
   __id: number
-  authData: object
+  authData: object | null
+  clientData: object | null
   getHandshakeData: Function
   onMessage: Function
   authCallback: Function
@@ -166,6 +168,7 @@ interface DeepstreamConfig {
   permission?: PluginConfig
 
   storageExclusionPrefixes?: Array<string>
+  provideRPCRequestorDetails?: boolean
   rpcAckTimeout?: number
   rpcTimeout?: number
   cacheRetrievalTimeout?: number
@@ -204,6 +207,7 @@ interface InternalDeepstreamConfig {
   permission: PluginConfig
 
   storageExclusionPrefixes: Array<string>
+  provideRPCRequestorDetails: boolean
   rpcAckTimeout: number
   rpcTimeout: number
   cacheRetrievalTimeout: number

@@ -114,6 +114,11 @@ export function get (): InternalDeepstreamConfig {
      */
     shuffleListenProviders: true,
 
+    /**
+     * RPC
+     */
+    provideRPCRequestorDetails: true,
+
     /*
      * Timeouts
      */
