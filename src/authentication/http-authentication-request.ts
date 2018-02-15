@@ -31,7 +31,15 @@ export default class HttpAuthenticationRequest {
       open_timeout: settings.requestTimeout,
       timeout: settings.requestTimeout,
       follow_max: 2,
-      json: true
+      json: true,
+      pfx: settings.pfx,
+      key: settings.key,
+      passphrase: settings.passphrase,
+      cert: settings.cert,
+      ca: settings.ca,
+      ciphers: settings.ciphers || 'ECDHE-ECDSA-AES128-GCM-SHA256',
+      rejectUnauthorized: settings.rejectUnauthorized || true,
+      secureProtocol: settings.secureProtocol || 'TLSv1_2_method'
     }
 
     needle.post(settings.endpointUrl, data, options, this._onComplete.bind(this))

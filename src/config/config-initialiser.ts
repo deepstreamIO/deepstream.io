@@ -278,8 +278,28 @@ function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): 
     throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
 
-  if (config.auth.options && config.auth.options.path) {
-    config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
+  if (config.auth.options) {
+    if (config.auth.options.path) {
+      config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
+    }
+    ['cert', 'key'].forEach(sslOption => {
+      if (config.auth.options[sslOption]) {
+        config.auth.options[sslOption] = fileUtils.lookupConfRequirePath(config.auth.options[sslOption])
+        config.auth.options[sslOption] = fs.readFileSync(config.auth.options[sslOption], 'utf8')
+      }
+    })
+    if (config.auth.options.pfx) {
+      config.auth.options.pfx = fileUtils.lookupConfRequirePath(config.auth.options.pfx)
+      config.auth.options.pfx = fs.readFileSync(config.auth.options.pfx)
+    }
+    const caOption = config.auth.options.ca
+    if (caOption) {
+      const caOptionArr = Array.isArray(caOption) ? caOption : [caOption]
+      config.auth.options.ca = caOptionArr.map(caFile => {
+        const caFilePath = fileUtils.lookupConfRequirePath(caFile)
+        return fs.readFileSync(caFilePath, 'utf8')
+      })
+    }
   }
 
   return new AuthenticationHandler(config.auth.options, logger)

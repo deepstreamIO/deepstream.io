@@ -142,6 +142,23 @@ auth:
   #   permittedStatusCodes: [ 200 ]
   #   # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
   #   requestTimeout: 2000
+  #   # an optional client certificate to use when connecting to the http authentication endpoint
+  #   cert: /path/to/cert.pem
+  #   key: /path/to/key.pem
+  #   # an optional list of CA certificates to trust when validating the http authentication endpoint
+  #   ca:
+  #     - /path/to/ca1.pem
+  #     - /path/to/ca2.pem
+  #   # you can also use a PKCS#12 (PFX) file to provide the client certificate and key
+  #   pfx: /path/to/pfx.p12
+  #   # an optional passphrase, necessary if the client certificate's private key is encrypted (always so with P12)
+  #   passphrase: somePassphrase
+  #   # optional list of ciphers to use with the http authentication endpoint (default: ECDHE-ECDSA-AES128-GCM-SHA256)
+  #   ciphers: ECDHE-ECDSA-AES128-GCM-SHA256
+  #   # if deepstream should reject http authentication endpoint that canont be authenticated (default: true)
+  #   rejectUnauthorized: true
+  #   # list of secure protocols acceptable for connecting to the http authentication endpoint (default: TLSv1_2_method)
+  #   secureProtocol: TLSv1_2_method
 
 # Permissioning
 permission:
