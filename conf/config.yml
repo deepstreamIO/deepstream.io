@@ -153,7 +153,7 @@ auth:
   #   pfx: /path/to/pfx.p12
   #   # an optional passphrase, necessary if the client certificate's private key is encrypted (always so with P12)
   #   passphrase: somePassphrase
-  #   # optional list of ciphers to use with the http authentication endpoint (default: ECDHE-ECDSA-AES128-GCM-SHA256)
+  #   # optional list of ciphers to use with the http authentication endpoint (default: no restriction)
   #   ciphers: ECDHE-ECDSA-AES128-GCM-SHA256
   #   # if deepstream should reject http authentication endpoint that canont be authenticated (default: true)
   #   rejectUnauthorized: true

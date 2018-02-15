@@ -37,7 +37,7 @@ export default class HttpAuthenticationRequest {
       passphrase: settings.passphrase,
       cert: settings.cert,
       ca: settings.ca,
-      ciphers: settings.ciphers || 'ECDHE-ECDSA-AES128-GCM-SHA256',
+      ciphers: settings.ciphers,
       rejectUnauthorized: settings.rejectUnauthorized || true,
       secureProtocol: settings.secureProtocol || 'TLSv1_2_method'
     }
