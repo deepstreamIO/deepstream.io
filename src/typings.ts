@@ -115,6 +115,7 @@ type StorageReadCallback = (error: string | null, version: number, result: any) 
 type StorageWriteCallback = (error: string | null) => void
 
 interface StoragePlugin extends DeepstreamPlugin {
+  apiVersion?: number
   set (recordName: string, version: number, data: any, callback: StorageWriteCallback, metaData?: any): void
   get (recordName: string, callback: StorageReadCallback, metaData?: any): void
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void

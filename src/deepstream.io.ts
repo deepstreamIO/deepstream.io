@@ -97,6 +97,11 @@ export class Deepstream extends EventEmitter {
   public set (key: string, value: any): any {
     if (this.services[key] !== undefined) {
       this.services[key] = value
+      if (key === 'storage' || key === 'cache') {
+        if (this.services[key].apiVersion !== 2) {
+          configInitialiser.storageCompatability(this.services[key])
+        }
+      }
     } else if (this.config[key] !== undefined) {
       this.config[key] = value
     } else {
