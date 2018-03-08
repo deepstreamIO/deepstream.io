@@ -88,7 +88,7 @@ function onCacheResponse (
       if (!storageTimedOut) {
         clearTimeout(storageTimeout)
         onStorageResponse(
-          storageError, recordName, version, data, socketWrapper, onComplete,
+          storageError, recordName, version, result, socketWrapper, onComplete,
           onError, services, context, metaData, message
         )
       }
