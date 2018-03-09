@@ -482,6 +482,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private _appendDataToSocketWrapper (socketWrapper: SocketWrapper, userData: any): void {
     socketWrapper.user = userData.username || OPEN
     socketWrapper.authData = userData.serverData || null
+    socketWrapper.clientData = userData.clientData || null
   }
 
   /**

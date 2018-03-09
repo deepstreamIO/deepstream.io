@@ -33,6 +33,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   public static lastPreparedMessage: any
 
   public authData: object
+  public clientData: object
   public isRemote: boolean
 
   constructor (

@@ -31,7 +31,14 @@ export default class Rpc {
     this.provider = provider
     this.config = config
     this.services = services
-    this.message = message
+    if (this.config.provideRPCRequestorDetails) {
+      this.message = Object.assign({
+        requestorName: requestor.user,
+        requestorData: requestor.clientData
+      }, message)
+    } else {
+      this.message = message
+    }
     this.isAccepted = false
 
     this.setProvider(provider)

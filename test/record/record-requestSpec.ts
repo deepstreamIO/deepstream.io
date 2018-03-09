@@ -13,6 +13,9 @@ describe('record request', () => {
   let config
   let services
 
+  const cacheData = { cache: true }
+  const storageData = { storage: true }
+
   beforeEach(() => {
     const options = testHelper.getDeepstreamOptions()
     services = options.services
@@ -21,8 +24,8 @@ describe('record request', () => {
       storageRetrievalTimeout: 100,
       storageExclusionPrefixes: ['dont-save']
     })
-    services.cache.set('existingRecord', 1, {}, () => {})
-    services.storage.set('onlyExistsInStorage', 1, {}, () => {})
+    services.cache.set('existingRecord', 1, cacheData, () => {})
+    services.storage.set('onlyExistsInStorage', 1, storageData, () => {})
 
     testMocks = getTestMocks()
     client = testMocks.getSocketWrapper('someUser')
@@ -49,7 +52,7 @@ describe('record request', () => {
       expect(services.storage.lastRequestedKey).toBe(null)
 
       expect(completeCallback).toHaveBeenCalledWith(
-        'existingRecord', 1, {}, client.socketWrapper
+        'existingRecord', 1, cacheData, client.socketWrapper
       )
       expect(errorCallback).not.toHaveBeenCalled()
     })
@@ -71,7 +74,7 @@ describe('record request', () => {
         expect(completeCallback).toHaveBeenCalledWith(
           'existingRecord',
           1,
-          {},
+          cacheData,
           client.socketWrapper
           )
         expect(errorCallback).not.toHaveBeenCalled()
@@ -81,7 +84,7 @@ describe('record request', () => {
       }, 30)
     })
 
-    xit('requests a record that doesn\'t exists in a synchronous cache, but in storage', () => {
+    it('requests a record that doesn\'t exists in a synchronous cache, but in storage', () => {
       services.cache.nextGetWillBeSynchronous = true
 
       recordRequest(
@@ -97,11 +100,11 @@ describe('record request', () => {
       expect(services.cache.lastRequestedKey).toBe('onlyExistsInStorage')
       expect(services.storage.lastRequestedKey).toBe('onlyExistsInStorage')
 
-      expect(completeCallback).toHaveBeenCalledWith('onlyExistsInStorage', 1, {}, client.socketWrapper)
+      expect(completeCallback).toHaveBeenCalledWith('onlyExistsInStorage', 1, storageData, client.socketWrapper)
       expect(errorCallback).not.toHaveBeenCalled()
     })
 
-    xit('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', done => {
+    it('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', done => {
       services.cache.nextGetWillBeSynchronous = false
       services.storage.nextGetWillBeSynchronous = false
 
@@ -121,7 +124,7 @@ describe('record request', () => {
 
         expect(errorCallback).not.toHaveBeenCalled()
         expect(completeCallback).toHaveBeenCalledWith(
-          'onlyExistsInStorage', 1, {}, client.socketWrapper
+          'onlyExistsInStorage', 1, storageData, client.socketWrapper
         )
         done()
       }, 75)
