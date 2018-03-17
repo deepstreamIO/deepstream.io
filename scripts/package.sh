@@ -6,7 +6,7 @@ NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
-UWS_COMMIT="193bd4744ebe0bca48b9f881f38792ded1235c40"
+UWS_COMMIT="188485ea2b7a5e6cc060773303bf8fd3724805a3"
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
@@ -90,7 +90,7 @@ function compile {
 
     echo -e "\t\tDownloading UWS"
     rm -rf nexe_node/uWebSockets
-    git clone https://github.com/uNetworking/bindings.git nexe_node/uWebSockets
+    git clone https://github.com/deepstreamIO/uWebSockets-bindings.git nexe_node/uWebSockets
     cd nexe_node/uWebSockets
     git checkout $UWS_COMMIT
     git submodule update --init
