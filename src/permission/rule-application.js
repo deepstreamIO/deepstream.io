@@ -127,7 +127,6 @@ module.exports = class RuleApplication {
    */
   _onLoadComplete (data, recordName) {
     this._recordData[recordName] = data
-
     if (this._isReady()) {
       this._runScheduled = true
       process.nextTick(this._run)
@@ -257,7 +256,7 @@ module.exports = class RuleApplication {
    * @returns {void}
    */
   _getOldData () {
-    if (this._isDestroyed === true || this._params.rule.hasOldData === false) {
+    if (this._isDestroyed === true || this._params.rule.hasOldData === false || this._recordData[this._params.name] === null) {
       return null
     } else if (this._recordData[this._params.name]) {
       return this._recordData[this._params.name]._d
