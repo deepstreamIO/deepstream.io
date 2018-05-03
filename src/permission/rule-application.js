@@ -256,7 +256,10 @@ module.exports = class RuleApplication {
    * @returns {void}
    */
   _getOldData () {
-    if (this._isDestroyed === true || this._params.rule.hasOldData === false || this._recordData[this._params.name] === null) {
+    if (this._isDestroyed === true ||
+      this._params.rule.hasOldData === false ||
+      this._recordData[this._params.name] === null
+    ) {
       return null
     } else if (this._recordData[this._params.name]) {
       return this._recordData[this._params.name]._d

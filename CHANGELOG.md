@@ -1,3 +1,9 @@
+## [3.1.2] - 2018.05.03
+
+### Fixes
+
+- Loading a record for valve that doesn't exist results in an infinite loop
+
 ## [3.1.1] - 2017.10.24
 
 ### Improvements
