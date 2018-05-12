@@ -132,7 +132,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     })
   })
 
-  it('times out', (done) => {
+  xit('times out', (done) => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
