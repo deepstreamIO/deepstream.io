@@ -17,6 +17,8 @@ jobs:
     - <<: *create-packages
       script: bash linux-package.sh ubuntu xenial
     - <<: *create-packages
+      script: bash linux-package.sh ubuntu bionic
+    - <<: *create-packages
       script: bash linux-package.sh debian jessie
     - <<: *create-packages
       script: bash linux-package.sh debian stretch
@@ -29,5 +31,7 @@ jobs:
       script: bash linux-test.sh ubuntu trusty
     - <<: *test-packages
       script: bash linux-test.sh ubuntu xenial
+    - <<: *test-packages
+      script: bash linux-test.sh ubuntu bionic
     - <<: *test-packages
       script: bash linux-test.sh debian jessie
