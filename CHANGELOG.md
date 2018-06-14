@@ -1,3 +1,10 @@
+## [3.1.3] - 2018.06.14
+  
+### Misc
+
+- Fixing packaging issue due to broken dependency
+- Upgrading to package on node 8
+ 
 ## [3.1.2] - 2018.05.03
 
 ### Fixes
