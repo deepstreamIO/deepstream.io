@@ -45,6 +45,7 @@
     "js-yaml": "^3.9.1",
     "mkdirp": "^0.5.1",
     "needle": "^2.0.0",
+    "original-fs": "^1.0.0",
     "uws": "^10"
   },
   "devDependencies": {
