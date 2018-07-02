@@ -107,7 +107,7 @@ sed -e 's@^@  @g' Dockerfile
 
 TAG="${GIT_TAG_NAME}"
 echo "Building Docker image ${TAG}"
-docker build --tag=${TAG} .
+docker build --no-cache --tag=${TAG} .
 
 echo "Removing Dockerfile"
 rm -f Dockerfile
