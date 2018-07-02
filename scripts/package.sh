@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="8"
+LTS_VERSION="6.11"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
-UWS_COMMIT="188485ea2b7a5e6cc060773303bf8fd3724805a3"
+UWS_COMMIT="193bd4744ebe0bca48b9f881f38792ded1235c40"
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
