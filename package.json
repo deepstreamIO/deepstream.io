@@ -46,7 +46,7 @@
     "mkdirp": "^0.5.1",
     "needle": "^2.0.0",
     "original-fs": "^1.0.0",
-    "uws": "^9"
+    "uws": "10.148.1"
   },
   "devDependencies": {
     "async": "^2.5.0",
