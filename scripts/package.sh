@@ -174,7 +174,8 @@ function compile {
     PROC_ID=$!
     SECONDS=0;
     while kill -0 "$PROC_ID" >/dev/null 2>&1; do
-        echo -ne "\rCompiling deepstream... ($SECONDS SECONDS)"
+        MINUTES=$(bc <<<"scale=2; $SECONDS / 60")
+        echo -ne "\rCompiling deepstream... ($MINUTES MINUTES)"
         sleep 1
     done
 
