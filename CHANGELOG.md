@@ -1,10 +1,23 @@
+## [3.1.5] - 2018.09.17
+
+### Misc
+
+- Upgrading all dependencies
+- Upgrading to node 8
+
+## [3.1.4] - 2018.07.02
+
+### Misc
+
+- Downgrading again to node 6
+
 ## [3.1.3] - 2018.06.14
-  
+
 ### Misc
 
 - Fixing packaging issue due to broken dependency
 - Upgrading to package on node 8
- 
+
 ## [3.1.2] - 2018.05.03
 
 ### Fixes
