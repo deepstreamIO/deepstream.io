@@ -34,7 +34,7 @@ script:
   - if [[ "$TRAVIS_NODE_VERSION" == "6.14"* ]]; then
       npm run lint;
     fi
-  - npm run reporter
+  - npm run coverage
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sh scripts/run-e2e.sh;
     fi
