@@ -656,7 +656,11 @@ module.exports = class UWSConnectionEndpoint extends events.EventEmitter {
     if (!this._urlPath || this._urlPath === requestPath) {
       this._handleUpgrade(request, socket)
     }
-    UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
+    try {
+      UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
+    } catch (e) {
+      // already terminated
+    }
   }
 
   /**
