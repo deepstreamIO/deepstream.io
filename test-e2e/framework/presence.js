@@ -42,7 +42,7 @@ module.exports.assert = {
           sinon.assert.calledWith(notifee.presence.callbacks[subscribeEvent], event === 'in', notifier.user)
         }
       })
-      notifee.presence.callbacks[subscribeEvent].reset()
+      notifee.presence.callbacks[subscribeEvent].resetHistory()
     })
   },
 
@@ -50,7 +50,7 @@ module.exports.assert = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
       sinon.assert.calledWith(client.presence.callbacks[queryEvent], users)
-      client.presence.callbacks[queryEvent].reset()
+      client.presence.callbacks[queryEvent].resetHistory()
     })
   },
 
@@ -62,7 +62,7 @@ module.exports.assert = {
       }
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
       sinon.assert.calledWith(client.presence.callbacks[queryEvent], result)
-      client.presence.callbacks[queryEvent].reset()
+      client.presence.callbacks[queryEvent].resetHistory()
     })
   }
 }

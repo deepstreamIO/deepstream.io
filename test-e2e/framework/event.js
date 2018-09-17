@@ -18,7 +18,7 @@ module.exports = {
       if (doesReceive) {
         sinon.assert.calledOnce(eventSpy)
         sinon.assert.calledWith(eventSpy, utils.parseData(data))
-        eventSpy.reset()
+        eventSpy.resetHistory()
       } else {
         sinon.assert.notCalled(eventSpy)
       }

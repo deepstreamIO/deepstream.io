@@ -59,7 +59,7 @@ module.exports = {
       sinon.assert.callCount(loginSpy, 2)
       sinon.assert.calledWith(loginSpy, false, undefined)
       sinon.assert.calledWith(loginSpy, false, 'too many authentication attempts')
-      loginSpy.reset()
+      loginSpy.resetHistory()
     })
   },
 
@@ -83,7 +83,7 @@ module.exports = {
         sinon.assert.calledOnce(loginSpy)
         sinon.assert.calledWith(loginSpy, false)
       }
-      loginSpy.reset()
+      loginSpy.resetHistory()
     })
   },
 
@@ -92,7 +92,7 @@ module.exports = {
       setTimeout(() => {
         const errorSpy = client.error[C.TOPIC.CONNECTION][C.EVENT.CONNECTION_AUTHENTICATION_TIMEOUT]
         sinon.assert.calledOnce(errorSpy)
-        errorSpy.reset()
+        errorSpy.resetHistory()
         done()
       }, 1000)
     })
@@ -105,7 +105,7 @@ module.exports = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[topic][event]
       sinon.assert.called(errorSpy)
-      errorSpy.reset()
+      errorSpy.resetHistory()
     })
   },
 
@@ -116,7 +116,7 @@ module.exports = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[topic][event]
       sinon.assert.calledOnce(errorSpy)
-      errorSpy.reset()
+      errorSpy.resetHistory()
     })
   },
 

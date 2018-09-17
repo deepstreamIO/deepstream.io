@@ -358,14 +358,15 @@ describe('connection endpoint', () => {
     })
   })
 
-  describe('closes all client connections on close', () => {
+  xdescribe('closes all client connections on close', () => {
     const closeSpy = jasmine.createSpy('close-event')
     let unclosedSocket
 
     beforeAll(() => {
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
+      unclosedSocket = new SocketMock()
       unclosedSocket.autoClose = false
+      connectionEndpoint._server._simulateUpgrade(unclosedSocket)
+      socketWrapperMock = uwsMock.simulateConnection()
       connectionEndpoint.once('close', closeSpy)
       connectionEndpoint.close()
     })

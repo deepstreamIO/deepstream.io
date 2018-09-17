@@ -77,7 +77,7 @@ module.exports.assert = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.rpc.callbacks[rpc])
       sinon.assert.calledWith(client.rpc.callbacks[rpc], null, JSON.parse(data).toString())
-      client.rpc.callbacks[rpc].reset()
+      client.rpc.callbacks[rpc].resetHistory()
     })
   },
 
@@ -86,7 +86,7 @@ module.exports.assert = {
       clientHandler.getClients(clientExpression).forEach((client) => {
         sinon.assert.calledOnce(client.rpc.callbacks[rpc])
         sinon.assert.calledWith(client.rpc.callbacks[rpc], error)
-        client.rpc.callbacks[rpc].reset()
+        client.rpc.callbacks[rpc].resetHistory()
         done()
       })
     }, eventually ? 150 : 0)
@@ -95,7 +95,7 @@ module.exports.assert = {
   providerCalled (clientExpression, rpc, timesCalled) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.callCount(client.rpc.provides[rpc], timesCalled)
-      client.rpc.provides[rpc].reset()
+      client.rpc.provides[rpc].resetHistory()
     })
   }
 }

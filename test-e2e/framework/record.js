@@ -203,14 +203,14 @@ module.exports.assert = {
   deleted (clientExpression, recordName) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.calledOnce(recordData.deleteCallback)
-      recordData.deleteCallback.reset()
+      recordData.deleteCallback.resetHistory()
     })
   },
 
   discarded (clientExpression, recordName) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.calledOnce(recordData.discardCallback)
-      recordData.discardCallback.reset()
+      recordData.discardCallback.resetHistory()
     })
   },
 
@@ -219,7 +219,7 @@ module.exports.assert = {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.calledOnce(recordData.subscribeCallback)
       sinon.assert.calledWith(recordData.subscribeCallback, data)
-      recordData.subscribeCallback.reset()
+      recordData.subscribeCallback.resetHistory()
     })
   },
 
@@ -228,7 +228,7 @@ module.exports.assert = {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.calledOnce(recordData.subscribePathCallbacks[path])
       sinon.assert.calledWith(recordData.subscribePathCallbacks[path], data)
-      recordData.subscribePathCallbacks[path].reset()
+      recordData.subscribePathCallbacks[path].resetHistory()
     })
   },
 
@@ -263,13 +263,13 @@ module.exports.assert = {
       if (!recordData) return
       sinon.assert.calledOnce(recordData.setCallback)
       sinon.assert.calledWith(recordData.setCallback, null)
-      recordData.setCallback.reset()
+      recordData.setCallback.resetHistory()
     })
     clientHandler.getClients(clientExpression).forEach((client) => {
       if (!client.record.writeAcks) return
       sinon.assert.calledOnce(client.record.writeAcks[recordName])
       sinon.assert.calledWith(client.record.writeAcks[recordName], null)
-      client.record.writeAcks[recordName].reset()
+      client.record.writeAcks[recordName].resetHistory()
     })
   },
 
@@ -277,7 +277,7 @@ module.exports.assert = {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       sinon.assert.calledOnce(recordData.setCallback)
       sinon.assert.calledWith(recordData.setCallback, errorMessage)
-      recordData.setCallback.reset()
+      recordData.setCallback.resetHistory()
     })
   },
 
@@ -285,7 +285,7 @@ module.exports.assert = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.record.snapshotCallback)
       sinon.assert.calledWith(client.record.snapshotCallback, null, utils.parseData(data))
-      client.record.snapshotCallback.reset()
+      client.record.snapshotCallback.resetHistory()
     })
   },
 
@@ -293,7 +293,7 @@ module.exports.assert = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.record.snapshotCallback)
       sinon.assert.calledWith(client.record.snapshotCallback, data.replace(/"/g, ''))
-      client.record.snapshotCallback.reset()
+      client.record.snapshotCallback.resetHistory()
     })
   },
 
@@ -301,7 +301,7 @@ module.exports.assert = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.record.headCallback)
       sinon.assert.calledWith(client.record.headCallback, null, utils.parseData(data))
-      client.record.headCallback.reset()
+      client.record.headCallback.resetHistory()
     })
   },
 
@@ -309,7 +309,7 @@ module.exports.assert = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.record.headCallback)
       sinon.assert.calledWith(client.record.headCallback, data.replace(/"/g, ''))
-      client.record.snapshotCallback.reset()
+      client.record.snapshotCallback.resetHistory()
     })
   },
 
@@ -317,7 +317,7 @@ module.exports.assert = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.record.hasCallback)
       sinon.assert.calledWith(client.record.hasCallback, null, expected)
-      client.record.hasCallback.reset()
+      client.record.hasCallback.resetHistory()
     })
   },
 
