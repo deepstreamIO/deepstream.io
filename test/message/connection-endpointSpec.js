@@ -1,4 +1,4 @@
-/* eslint-disable import/no-extraneous-dependencies, max-len */
+/* eslint-disable no-undef,import/no-extraneous-dependencies */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, beforeAll, afterEach, afterAll */
 'use strict'
 
