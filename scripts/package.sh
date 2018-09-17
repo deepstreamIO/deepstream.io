@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="6.14"
+LTS_VERSION="8"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
-UWS_COMMIT="193bd4744ebe0bca48b9f881f38792ded1235c40"
+UWS_COMMIT="188485ea2b7a5e6cc060773303bf8fd3724805a3"
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
 PACKAGE_DIR=build/$PACKAGE_VERSION
@@ -104,12 +104,11 @@ function compile {
     if [ $OS = "darwin" ]; then
         echo -e "\t\tapplying patches only tested on darwin node v6.9.1"
         sed -i '' "s@'library_files': \[@'library_files': \[ 'lib\/uws.js',@" $NODE_SOURCE/node.gyp
-        sed -i '' "s@'src/debug-agent.cc',@'src\/debug-agent.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
+        sed -i '' "s@'src/async-wrap.cc',@'src\/async-wrap.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
         sed -i '' "s@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x',  # -std=gnu++0x@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x', 'CLANG_CXX_LIBRARY': 'libc++',@" $NODE_SOURCE/common.gypi
-        sed -i '' "14,18d" $NODE_SOURCE/src/util.h
     else
         sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
-        sed -i "s@'src/debug-agent.cc',@'src/debug-agent.cc',\n  $C_FILE_NAMES@" $NODE_SOURCE/node.gyp
+        sed -i "s@'src/async-wrap.cc',@'src/async-wrap.cc',\n  $C_FILE_NAMES@" $NODE_SOURCE/node.gyp
         sed -i "s@'deps/uv/src/ares',@'deps/uv/src/ares',\n  $EXTRA_INCLUDES@" $NODE_SOURCE/node.gyp
         sed -i "s/'cflags': \[ '-g', '-O0' \],/'cflags': [ '-g', '-O0', '-DUSE_LIBUV' ],/" $NODE_SOURCE/common.gypi
         sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/src/uws.js
