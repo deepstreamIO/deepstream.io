@@ -90,7 +90,7 @@ function compile {
 
     echo -e "\t\tDownloading UWS"
     rm -rf nexe_node/uWebSockets
-    git clone https://github.com/uNetworking/uWebSockets-bindings.git nexe_node/uWebSockets
+    git clone https://github.com/elementengineering/uWebSockets-bindings.git nexe_node/uWebSockets
     cd nexe_node/uWebSockets
     git checkout $UWS_COMMIT
     git submodule update --init
