@@ -41,7 +41,8 @@ const options = {
   authenticationHandler: permissionHandler,
   logger: new LoggerMock(),
   maxAuthAttempts: 3,
-  logInvalidAuthData: true
+  logInvalidAuthData: true,
+  unauthenticatedClientTimeout: 100
 }
 
 const mockDs = {
@@ -60,7 +61,6 @@ describe('permissionHandler passes additional user meta data', () => {
       connectionEndpoint._server._simulateUpgrade(new SocketMock())
       socketWrapperMock = uwsMock.simulateConnection()
       uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
-
       done()
     })
   })
