@@ -1,4 +1,3 @@
-/*
 const sinon = require('sinon')
 
 const M = require('./messages')
@@ -8,6 +7,69 @@ const testHelper = require('../test-helper/test-helper')
 
 const RecordTransition = require('../../src/record/record-transition').default
 
+describe('RecordTransition', () => {
+  let services
+  let config
+  // let socketWrapper
+  let recordTransition
+  let testMocks
+  let client
+
+  beforeEach(() => {
+    testMocks = getTestMocks()
+    client = testMocks.getSocketWrapper()
+
+    const options = testHelper.getDeepstreamOptions()
+    services = options.services
+    config = options.config
+
+    recordTransition = new RecordTransition(M.recordUpdate.name, config, services, testMocks.recordHandler)
+
+  })
+
+  afterEach(() => {
+    client.socketWrapperMock.verify()
+    testMocks.recordHandlerMock.verify()
+  })
+
+  it('sends update for both cache and storage', async () => {
+    const message: C.RecordWriteMessage = {
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTIONS.UPDATE,
+      name: 'random-name',
+      correlationId: '30',
+      data: 'somedata',
+      isWriteAck: true,
+      version: -1,
+      parsedData: { name: 'somedata' }
+    }
+    const messageCopy = Object.assign({}, message)
+
+    services.storage.nextOperationWillBeSuccessful = true
+    services.storage.nextOperationWillBeSynchronous = false
+
+    services.cache.nextOperationWillBeSuccessful = true
+    services.cache.nextOperationWillBeSynchronous = true
+
+    client.socketWrapperMock.parseData = () => {}
+
+    client.socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        name: message.name,
+        correlationId: message.correlationId
+      })
+
+    recordTransition.add(client.socketWrapper, message, true)
+    // Wait for the async callback to fire
+    await new Promise((resolve, reject) => setTimeout(resolve, 50))
+  })
+})
+
+/*
 xdescribe('record transitions', () => {
   let services
   let config
