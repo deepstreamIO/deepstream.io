@@ -32,7 +32,7 @@ describe('RecordTransition', () => {
     testMocks.recordHandlerMock.verify()
   })
 
-  it('sends update for both cache and storage', async () => {
+  it('sends write acknowledgement with sync cache and async storage', async () => {
     const message: C.RecordWriteMessage = {
       topic: C.TOPIC.RECORD,
       action: C.RECORD_ACTIONS.UPDATE,
@@ -51,8 +51,6 @@ describe('RecordTransition', () => {
     services.cache.nextOperationWillBeSuccessful = true
     services.cache.nextOperationWillBeSynchronous = true
 
-    client.socketWrapperMock.parseData = () => {}
-
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
@@ -65,7 +63,7 @@ describe('RecordTransition', () => {
 
     recordTransition.add(client.socketWrapper, message, true)
     // Wait for the async callback to fire
-    await new Promise((resolve, reject) => setTimeout(resolve, 50))
+    await new Promise((resolve, reject) => setTimeout(resolve, 60))
   })
 })
 
