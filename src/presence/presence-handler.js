@@ -13,6 +13,7 @@ function parseUserNames (data, socketWrapper) {
     (data.length === 1 && (
     data[0] === C.ACTIONS.QUERY ||
     data[0] === C.ACTIONS.SUBSCRIBE ||
+    data[0] === C.ACTIONS.UNSUBSCRIBE ||
     data[0] === C.TOPIC.PRESENCE)
   )) {
     return [EVERYONE]
