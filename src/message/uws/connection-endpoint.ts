@@ -164,6 +164,31 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     uws.native.server.group.onPong(this.serverGroup, () => {})
     uws.native.server.group.onConnection(this.serverGroup, this._onConnection.bind(this))
 
+    // When investigating the auto ping we found that it did not (for some
+    // reason) properly send to the group (even tough the code looks like it
+    // should). The result of this is that it finds every client connected to
+    // the group to have disconnected on their end. But since the clients are
+    // actually online (they just did not receive a ping message) they will
+    // reconnect immediately. We run the auto ping, which cleans up the dead
+    // connections at half the rate of the actual heartbeat. Sending them at the
+    // same rate can give the following scenario, bars are timepoint of events:
+
+    //
+    // | First ping is sent
+    //  | pong is received on server
+    //   | Server starts new heartbeat interval. If no pong arrives from client, will terminate it
+    //                      | Second ping is sent
+    //                        | Server terminates socket
+    //      slight network lag | causes pong to arrive to late
+    // ----------- time -------------->
+
+    // For this reason we use 2x heartbeat interval to terminate websockets,
+    // giving them at least 1 * heartbeatInterval to respond, but finding they
+    // are offline might take up to 2x heartbeatInterval
+    uws.native.server.group.startAutoPing(
+      this.serverGroup, 2 * this._getOption('heartbeatInterval'), this.pingMessage
+    )
+
     this.pingInterval = setInterval(() => {
       uws.native.server.group.broadcast(this.serverGroup, this.pingMessage, true)
     }, this._getOption('heartbeatInterval'))
