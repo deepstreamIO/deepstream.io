@@ -11,8 +11,8 @@ export default class RecordDeletion {
   private recordName: string
   private completed: 0
   private isDestroyed: boolean
-  private cacheTimeout: number
-  private storageTimeout: number
+  private cacheTimeout: NodeJS.Timeout
+  private storageTimeout: NodeJS.Timeout
 
 /**
  * This class represents the deletion of a single record. It handles it's removal

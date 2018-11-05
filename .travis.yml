@@ -23,8 +23,8 @@ compiler:
   - clang
 
 node_js:
+  - "10"
   - "8"
-  - "6"
 
 env:
   - DEFAULT_DELAY: 50

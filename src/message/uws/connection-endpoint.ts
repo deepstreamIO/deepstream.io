@@ -27,7 +27,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   private dsOptions: any
   private initialised: boolean = false
-  private flushTimeout: number | null
+  private flushTimeout: NodeJS.Timeout | null
   private authenticatedSockets: Set<SocketWrapper> = new Set()
   private logger: Logger
   private authenticationHandler: AuthenticationHandler
@@ -37,12 +37,12 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private maxAuthAttempts: number
   private urlPath: string
   private noDelay: boolean
-  private unauthenticatedClientTimeout: number | boolean
+  private unauthenticatedClientTimeout: NodeJS.Timeout | false
   private serverGroup: any
   private scheduledSocketWrapperWrites: Set<SocketWrapper>
   private upgradeRequest: any
   private pingMessage: Buffer
-  private pingInterval: number
+  private pingInterval: NodeJS.Timeout
 
   constructor (private options: any, private services: DeepstreamServices) {
     super()
@@ -213,7 +213,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
    * Called for the ready event of the ws server.
    */
   private _onReady (): void {
-    const serverAddress = this.server.address()
+    const serverAddress:any = this.server.address()
     const address = serverAddress.address
     const port = serverAddress.port
     const wsMsg = `Listening for websocket connections on ${address}:${port}${this.urlPath}`
@@ -326,9 +326,9 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
     let disconnectTimer
     if (this.unauthenticatedClientTimeout !== null && this.unauthenticatedClientTimeout !== false) {
+      const timeout = this.unauthenticatedClientTimeout as any;
       disconnectTimer = setTimeout(
-        this._processConnectionTimeout.bind(this, socketWrapper),
-        this.unauthenticatedClientTimeout
+        this._processConnectionTimeout.bind(this, socketWrapper), timeout
       )
       socketWrapper.once('close', clearTimeout.bind(null, disconnectTimer))
     }
@@ -578,7 +578,11 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     if (!this.urlPath || this.urlPath === requestPath) {
       this._handleUpgrade(request, socket)
     }
-    UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
+    try {
+        UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
+    } catch (e) {
+
+    }
   }
 
   /**
