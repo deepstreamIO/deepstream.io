@@ -368,11 +368,12 @@ export default class RecordTransition {
     if (error) {
       this.onFatalError(error)
     } else if (this.isDestroyed === false) {
-      this.currentStep.message.isWriteAck = false
-      delete this.currentStep.message.correlationId
+      const copiedMessage = { ...this.currentStep.message, isWriteAck: false }
+      delete copiedMessage.correlationId
+
       this.recordHandler.broadcastUpdate(
         this.name,
-        this.currentStep.message,
+        copiedMessage,
         false,
         this.currentStep.sender,
       )
