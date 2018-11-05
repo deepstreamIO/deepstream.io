@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.4.11",
-    "ajv": "^6.5.4",
+    "ajv": "^6.5.5",
     "bluebird": "^3.5.2",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
@@ -62,7 +62,7 @@
     "n0p3": "^1.0.2",
     "nexe": "^1",
     "proxyquire": "2.1.0",
-    "sinon": "^4.4.6",
+    "sinon": "^7",
     "tslint": "^5.11.0",
     "typescript": "^3.1.6",
     "watch": "^1.0.2"
