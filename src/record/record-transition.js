@@ -130,6 +130,10 @@ module.exports = class RecordTransition {
  * @returns {void}
  */
   add (socketWrapper, version, message, upsert) {
+    if (this.isDestroyed) {
+        return
+    }
+
     const update = {
       message,
       version,
