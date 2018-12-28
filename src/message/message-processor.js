@@ -50,17 +50,23 @@ module.exports = class MessageProcessor {
     const length = parsedMessages.length
     for (let i = 0; i < length; i++) {
       parsedMessage = parsedMessages[i]
-      
-      if (parsedMessage === null ||
-        !parsedMessage.action ||
-        !parsedMessage.topic ||
-        !parsedMessage.data) {
+
+      // Checking for a null parse message before referencing
+      if (parsedMessage === null) {
         this._options.logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
         socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
         continue
       }
-      
+
       if (parsedMessage.topic === C.TOPIC.CONNECTION && parsedMessage.action === C.ACTIONS.PONG) {
+        continue
+      }
+
+      if (!parsedMessage.action ||
+        !parsedMessage.topic ||
+        !parsedMessage.data) {
+        this._options.logger.warn(C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
+        socketWrapper.sendError(C.TOPIC.ERROR, C.EVENT.MESSAGE_PARSE_ERROR, parsedMessage)
         continue
       }
 
