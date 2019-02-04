@@ -27,14 +27,7 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "deepstreamHub GmbH"
-            VALUE "ProductName", "deepstream.io"
-            VALUE "FileDescription", "A Scalable Server for Realtime Applications"
-            VALUE "FileVersion", DEEPSTREAM_VERSION
-            VALUE "ProductVersion", DEEPSTREAM_VERSION
-            VALUE "OriginalFilename", "deepstream.exe"
-            VALUE "InternalName", "deepstream"
-            VALUE "LegalCopyright", "Apache License 2.0"
+
         END
     END
     BLOCK "VarFileInfo"

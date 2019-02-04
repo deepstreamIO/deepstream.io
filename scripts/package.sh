@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-LTS_VERSION="8"
+LTS_VERSION="10"
 NODE_VERSION=$( node --version )
 NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
@@ -70,79 +70,6 @@ function compile {
     echo "Generating meta.json"
     node scripts/details.js META
 
-    echo -e "Preparing node"
-    mkdir -p nexe_node/node/$NODE_VERSION_WITHOUT_V
-    cd nexe_node/node/$NODE_VERSION_WITHOUT_V
-    rm -rf node-$NODE_VERSION_WITHOUT_V
-    if [ ! -f node-$NODE_VERSION_WITHOUT_V.tar.gz ]; then
-        echo -e "\tDownloading node src"
-        curl -o node-$NODE_VERSION_WITHOUT_V.tar.gz https://nodejs.org/dist/v$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V.tar.gz
-    fi
-
-    echo -e "\tUnpacking node"
-    tar -xzf node-$NODE_VERSION_WITHOUT_V.tar.gz
-    cd -
-
-    echo -e "\t\tDelete node uws"
-    rm -rf node_modules/uws
-
-    echo -e "\tAdding in UWS"
-
-    echo -e "\t\tDownloading UWS"
-    rm -rf nexe_node/uWebSockets
-    git clone https://github.com/elementengineering/uWebSockets-bindings.git nexe_node/uWebSockets
-    cd nexe_node/uWebSockets
-    git checkout $UWS_COMMIT
-    git submodule update --init
-    cd -
-
-    echo -e "\t\tAdding UWS into node"
-
-    C_FILE_NAMES="      'src\/uws\/extension.cpp', 'src\/uws\/Extensions.cpp', 'src\/uws\/Group.cpp', 'src\/uws\/Networking.cpp', 'src\/uws\/Hub.cpp', 'src\/uws\/uws_Node.cpp', 'src\/uws\/WebSocket.cpp', 'src\/uws\/HTTPSocket.cpp', 'src\/uws\/Socket.cpp',"
-    EXTRA_INCLUDES="        'src\/uws',"
-
-    if [ $OS = "darwin" ]; then
-        echo -e "\t\tapplying patches only tested on darwin node v6.9.1"
-        sed -i '' "s@'library_files': \[@'library_files': \[ 'lib\/uws.js',@" $NODE_SOURCE/node.gyp
-        sed -i '' "s@'src/async-wrap.cc',@'src\/async-wrap.cc',$C_FILE_NAMES@" $NODE_SOURCE/node.gyp
-        sed -i '' "s@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x',  # -std=gnu++0x@'CLANG_CXX_LANGUAGE_STANDARD': 'gnu++0x', 'CLANG_CXX_LIBRARY': 'libc++',@" $NODE_SOURCE/common.gypi
-    else
-        sed -i "s/'library_files': \[/'library_files': \[\n      'lib\/uws.js',/" $NODE_SOURCE/node.gyp
-        sed -i "s@'src/async-wrap.cc',@'src/async-wrap.cc',\n  $C_FILE_NAMES@" $NODE_SOURCE/node.gyp
-        sed -i "s@'deps/uv/src/ares',@'deps/uv/src/ares',\n  $EXTRA_INCLUDES@" $NODE_SOURCE/node.gyp
-        sed -i "s/'cflags': \[ '-g', '-O0' \],/'cflags': [ '-g', '-O0', '-DUSE_LIBUV' ],/" $NODE_SOURCE/common.gypi
-        sed -i "s/} catch (e) {/} catch (e) { console.log( e );/" $UWS_SOURCE/nodejs/src/uws.js
-    fi
-
-    mkdir -p $NODE_SOURCE/src/uws
-    cp $UWS_SOURCE/uWebSockets/src/* $NODE_SOURCE/src/uws
-    mv $NODE_SOURCE/src/uws/Node.cpp $NODE_SOURCE/src/uws/uws_Node.cpp
-    rm $NODE_SOURCE/src/uws/Epoll.h
-
-    echo "#include \"Libuv.h\"" > $NODE_SOURCE/src/uws/Backend.h
-
-    cp $UWS_SOURCE/nodejs/src/http.h $NODE_SOURCE/src/uws
-    cp $UWS_SOURCE/nodejs/src/extension.cpp $NODE_SOURCE/src/uws
-    cp $UWS_SOURCE/nodejs/src/addon.h $NODE_SOURCE/src/uws
-    cp $UWS_SOURCE/nodejs/src/uws.js $NODE_SOURCE/lib/uws.js
-
-    if [ $OS = "win32" ]; then
-        echo "Windows icon"
-
-        NAME=$PACKAGE_VERSION
-
-        echo -e "\tPatch the window executable icon and details"
-        cp scripts/resources/node.rc $NODE_SOURCE/src/res/node.rc
-        cp scripts/resources/deepstream.ico $NODE_SOURCE/src/res/deepstream.ico
-
-        if ! [[ $PACKAGE_VERSION =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
-            echo -e "\tVersion can't contain characters in MSBuild, so replacing $PACKAGE_VERSION with 0.0.0"
-            NAME="0.0.0"
-        fi
-
-        sed -i "s/DEEPSTREAM_VERSION/$NAME/" $NODE_SOURCE/src/res/node.rc
-    fi
-
     # Nexe Patches
     echo "Nexe Patches for Browserify, copying stub versions of optional installs since they aern't bundled anyway"
 
@@ -155,6 +82,14 @@ function compile {
     mkdir $DEEPSTREAM_PACKAGE/var
     mkdir $DEEPSTREAM_PACKAGE/lib
     mkdir $DEEPSTREAM_PACKAGE/doc
+
+    echo "Adding uws to libs"
+    cd $DEEPSTREAM_PACKAGE/lib
+    echo '{ "name": "TEMP" }' > package.json
+    npm install uws@10.148.1
+    mv -f node_modules/uws ./uws
+    rm -rf node_modules package.json
+    cd -
 
     echo "Adding winston logger to libs"
     cd $DEEPSTREAM_PACKAGE/lib

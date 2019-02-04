@@ -7,9 +7,9 @@ const Before = cucumber.Before
 const After = cucumber.After
 
 
-Before((/* scenario*/) => {
-  // client are connecting via "Background" explictly
-})
+// Before((/* scenario*/) => {
+//   // client are connecting via "Background" explictly
+// })
 
 After((scenario, done) => {
   world.endTest(done)

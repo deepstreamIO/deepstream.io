@@ -13,11 +13,14 @@ const httpsMock = new HttpMock()
 // since proxyquire.callThru is enabled, manually capture members from prototypes
 httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
-const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
-  uws: uwsMock,
+const ConnectionEndpoint = proxyquire('../../src/message/websocket/connection-endpoint', {
   http: httpMock,
   https: httpsMock
 })
+const UWSConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
+  '../websocket/connection-endpoint': ConnectionEndpoint,
+})
+
 
 const options = {
   permissionHandler: PermissionHandlerMock,
@@ -29,7 +32,7 @@ const options = {
 const mockDs = { _options: options }
 
 const connectionEndpointInit = (endpointOptions, onReady) => {
-  options.connectionEndpoint = new ConnectionEndpoint(endpointOptions)
+  options.connectionEndpoint = new UWSConnectionEndpoint(endpointOptions)
   options.connectionEndpoint.setDeepstream(mockDs)
   options.connectionEndpoint.init()
   options.connectionEndpoint.on('ready', onReady)

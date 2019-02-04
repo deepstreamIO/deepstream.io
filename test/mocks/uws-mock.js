@@ -4,41 +4,6 @@
 
 const SocketMock = require('./socket-mock')
 
-class Group {
-  constructor (root) {
-    this.root = root
-  }
-
-  startAutoPing (group, interval, message) {
-    this.root.heartbeatInterval = interval
-    this.root.pingMessage = message
-  }
-  create () {
-    return {}
-  }
-  onConnection (group, connectionHandler) {
-    this.root._connectionHandler = connectionHandler
-  }
-  onDisconnection (group, disconnectionHandler) {
-
-  }
-  onMessage (group, messageHandler) {
-    this.root._messageHandler = messageHandler
-  }
-  onPing (group, pingHandler) {
-
-  }
-  onPong (group, pongHandler) {
-
-  }
-  broadcast () {
-
-  }
-  close () {
-
-  }
-}
-
 class Server {
   constructor (root) {
     this.root = root
@@ -51,30 +16,6 @@ class Server {
 
 class Native {
   constructor (root) {
-    this.root = root
-    this.server = new Server(root)
-    this.root._lastUserData = null
-  }
-
-  setUserData (external, userData) {
-    this.root._lastUserData = userData
-  }
-
-  clearUserData () {
-
-  }
-
-  getAddress () {
-    return [null, '127.0.0.1', null]
-  }
-
-  transfer () {
-    this.root.close()
-  }
-
-  upgrade () {
-    const external = {}
-    this.root._connectionHandler(external)
   }
 }
 

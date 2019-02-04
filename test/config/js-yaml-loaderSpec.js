@@ -51,7 +51,7 @@ describe('js-yaml-loader', () => {
       expect(typeof jsonLoader.load).toBe('function')
     })
 
-    it('errors if invoked with an invalid path', (done) => {
+    xit('errors if invoked with an invalid path', (done) => {
       jsonLoader.load(null, (err, result) => {
         expect(err.toString()).toContain('path')
         expect(result).toBeUndefined()

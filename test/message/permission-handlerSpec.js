@@ -3,7 +3,6 @@
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
-const uwsMock = require('../mocks/uws-mock')
 const HttpMock = require('../mocks/http-mock')
 const LoggerMock = require('../mocks/logger-mock')
 const httpMock = new HttpMock()
@@ -12,8 +11,7 @@ const httpsMock = new HttpMock()
 httpMock.createServer = httpMock.createServer
 httpsMock.createServer = httpsMock.createServer
 const SocketWrapperMock = require('../mocks/socket-wrapper-mock')
-const ConnectionEndpoint = proxyquire('../../src/message/uws/connection-endpoint', {
-  uws: uwsMock,
+const ConnectionEndpoint = proxyquire('../../src/message/websocket/connection-endpoint', {
   http: httpMock,
   https: httpsMock,
   './socket-wrapper': SocketWrapperMock
@@ -58,16 +56,16 @@ describe('permissionHandler passes additional user meta data', () => {
     const depInit = new DependencyInitialiser(mockDs, options, connectionEndpoint, 'connectionEndpoint')
     depInit.on('ready', () => {
       connectionEndpoint.onMessages = function () {}
-      connectionEndpoint._server._simulateUpgrade(new SocketMock())
-      socketWrapperMock = uwsMock.simulateConnection()
-      uwsMock._messageHandler(_msg('C|CHR|localhost:6021+'), socketWrapperMock)
+      socketWrapperMock = new SocketWrapperMock(new SocketMock())
+      connectionEndpoint._onConnection(socketWrapperMock)
+      socketWrapperMock.onMessage(_msg('C|CHR|localhost:6021+'))
       done()
     })
   })
 
   it('sends an authentication message', () => {
     spyOn(permissionHandler, 'isValidUser').and.callThrough()
-    uwsMock._messageHandler(_msg('A|REQ|{"role": "admin"}+'), socketWrapperMock)
+    socketWrapperMock.onMessage(_msg('A|REQ|{"role": "admin"}+'))
     expect(permissionHandler.isValidUser).toHaveBeenCalled()
     expect(permissionHandler.isValidUser.calls.mostRecent().args[1]).toEqual({ role: 'admin' })
     expect(socketWrapperMock.lastSendMessage).toBe(_msg('A|A|O{"firstname":"Wolfram"}+'))
@@ -75,7 +73,7 @@ describe('permissionHandler passes additional user meta data', () => {
 
   it('sends a record read message', () => {
     spyOn(connectionEndpoint, 'onMessages')
-    uwsMock._messageHandler(_msg('R|CR|someRecord+'), socketWrapperMock)
+    socketWrapperMock.onMessage(_msg('R|CR|someRecord+'))
     expect(connectionEndpoint.onMessages).toHaveBeenCalled()
     expect(connectionEndpoint.onMessages.calls.mostRecent().args[0].authData).toEqual({ role: 'admin' })
   })

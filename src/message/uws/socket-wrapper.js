@@ -1,8 +1,9 @@
 'use strict'
 
+const fileUtils = require('../../config/file-utils')
+
 const C = require('../../constants/constants')
 const messageBuilder = require('../message-builder')
-const uws = require('uws')
 
 const EventEmitter = require('events').EventEmitter
 
@@ -23,8 +24,12 @@ const EventEmitter = require('events').EventEmitter
  */
 class UwsSocketWrapper extends EventEmitter {
 
-  constructor (external, handshakeData, logger, config, connectionEndpoint) {
+  constructor (websocket, handshakeData, logger, config, connectionEndpoint) {
     super()
+
+    const req = global && global.require ? global.require : require
+    this.uws = req(fileUtils.lookupLibRequirePath('uws'))
+
     this.isClosed = false
     this._logger = logger
     this.user = null
@@ -32,8 +37,9 @@ class UwsSocketWrapper extends EventEmitter {
     this.authAttempts = 0
     this.setMaxListeners(0)
     this.uuid = Math.random()
+    this.socket = websocket
     this._handshakeData = handshakeData
-    this._external = external
+    this._external = websocket.external
 
     this._bufferedWrites = ''
     this._config = config
@@ -51,7 +57,7 @@ class UwsSocketWrapper extends EventEmitter {
   // eslint-disable-next-line class-methods-use-this
   prepareMessage (message) {
     UwsSocketWrapper.lastPreparedMessage = message
-    return uws.native.server.prepareMessage(message, uws.OPCODE_TEXT)
+    return this.uws.native.server.prepareMessage(message, this.uws.OPCODE_TEXT)
   }
 
   /**
@@ -65,7 +71,9 @@ class UwsSocketWrapper extends EventEmitter {
    */
   sendPrepared (preparedMessage) {
     this.flush()
-    uws.native.server.sendPrepared(this._external, preparedMessage)
+    if (this.socket.readyState) {
+      this.uws.native.server.sendPrepared(this._external, preparedMessage)
+    }
   }
 
   /**
@@ -78,7 +86,7 @@ class UwsSocketWrapper extends EventEmitter {
    */
   // eslint-disable-next-line class-methods-use-this
   finalizeMessage (preparedMessage) {
-    uws.native.server.finalizeMessage(preparedMessage)
+    this.uws.native.server.finalizeMessage(preparedMessage)
   }
 
   /**
@@ -91,10 +99,10 @@ class UwsSocketWrapper extends EventEmitter {
    */
   sendNative (message, allowBuffering) {
     if (this._config.outgoingBufferTimeout === 0) {
-      uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
+      this.socket.send(message)
     } else if (!allowBuffering) {
       this.flush()
-      uws.native.server.send(this._external, message, uws.OPCODE_TEXT)
+      this.socket.send(message)
     } else {
       this._bufferedWrites += message
       this._connectionEndpoint.scheduleFlush(this)
@@ -108,7 +116,7 @@ class UwsSocketWrapper extends EventEmitter {
    */
   flush () {
     if (this._bufferedWrites !== '') {
-      uws.native.server.send(this._external, this._bufferedWrites, uws.OPCODE_TEXT)
+      this.socket.send(this._bufferedWrites)
       this._bufferedWrites = ''
     }
   }
@@ -156,17 +164,6 @@ class UwsSocketWrapper extends EventEmitter {
 
   // eslint-disable-next-line class-methods-use-this
   onMessage () {
-  }
-
-  /**
-   * Destroys the socket. Removes all deepstream specific
-   * logic and closes the connection
-   *
-   * @public
-   * @returns {void}
-   */
-  destroy () {
-    uws.native.server.terminate(this._external)
   }
 
   close () {
