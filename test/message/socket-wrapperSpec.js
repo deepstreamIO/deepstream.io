@@ -1,13 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /* global jasmine, spyOn, describe, it, expect, beforeEach, afterEach */
-'use strict'
-
-const proxyquire = require('proxyquire').noPreserveCache()
-const uwsMock = require('../mocks/uws-mock')
-
-const SocketWrapper = proxyquire('../../src/message/uws/socket-wrapper', {
-  uws: uwsMock
-})
+const SocketWrapper = require('../../src/message/uws/socket-wrapper')
 
 describe('uws socket-wrapper creates a unified interface for sockets', () => {
   let socketWrapper

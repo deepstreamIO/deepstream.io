@@ -3,7 +3,6 @@
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
-const uwsMock = require('../mocks/uws-mock')
 const HttpMock = require('../mocks/http-mock')
 const LoggerMock = require('../mocks/logger-mock')
 const PermissionHandlerMock = require('../mocks/permission-handler-mock')

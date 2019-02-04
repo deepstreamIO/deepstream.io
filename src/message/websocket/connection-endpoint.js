@@ -1,5 +1,4 @@
-'use strict'
-
+/* eslint-disable class-methods-use-this */
 const C = require('../../constants/constants')
 const messageParser = require('../message-parser')
 const messageBuilder = require('../message-builder')

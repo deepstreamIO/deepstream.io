@@ -51,13 +51,13 @@ describe('js-yaml-loader', () => {
       expect(typeof jsonLoader.load).toBe('function')
     })
 
-    xit('errors if invoked with an invalid path', (done) => {
-      jsonLoader.load(null, (err, result) => {
-        expect(err.toString()).toContain('path')
-        expect(result).toBeUndefined()
-        done()
-      })
-    })
+    // it('errors if invoked with an invalid path', (done) => {
+    //   jsonLoader.load(null, (err, result) => {
+    //     expect(err.toString()).toContain('path')
+    //     expect(result).toBeUndefined()
+    //     done()
+    //   })
+    // })
 
     it('successfully loads and parses a valid JSON file', (done) => {
       jsonLoader.load('./test/test-configs/basic-valid-json.json', (err, result) => {
