@@ -44,7 +44,8 @@ const permissionHandler = {
 
 const config = {
   maxAuthAttempts: 3,
-  logInvalidAuthData: true
+  logInvalidAuthData: true,
+  unauthenticatedClientTimeout: 100
 }
 
 const services = {

@@ -1,4 +1,4 @@
-import { EVENT, TOPIC, CONNECTION_ACTIONS, AUTH_ACTIONS, ParseResult, Message } from '../../constants'
+import { EVENT, TOPIC, CONNECTION_ACTIONS, ParseResult, Message } from '../../constants'
 import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import * as uws from 'uws'
@@ -29,8 +29,6 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
 
   private bufferedWrites: string = ''
 
-  public static lastPreparedMessage: any
-
   public authData: object
   public clientData: object
   public isRemote: boolean
@@ -46,35 +44,17 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
     this.setMaxListeners(0)
   }
 
-  /**
-   * Updates lastPreparedMessage and returns the [uws] prepared message.
-   */
-  public prepareMessage (message: string): string {
-    UwsSocketWrapper.lastPreparedMessage = uws.native.server.prepareMessage(message, uws.OPCODE_BINARY)
-    return UwsSocketWrapper.lastPreparedMessage
-  }
-
-  /**
-   * Sends the [uws] prepared message, or in case of testing sends the
-   * last prepared message.
-   */
-  public sendPrepared (preparedMessage): void {
-    this.flush()
-    uws.native.server.sendPrepared(this.external, preparedMessage)
-  }
-
-  /**
-   * Finalizes the [uws] prepared message.
-   */
-  public finalizeMessage (preparedMessage: string): void {
-    uws.native.server.finalizeMessage(preparedMessage)
+  get isOpen() {
+    return this.isClosed !== true
   }
 
   /**
    * Variant of send with no particular checks or appends of message.
    */
   public sendNativeMessage (message: string | Buffer, allowBuffering: boolean): void {
-    uws.native.server.send(this.external, message, uws.OPCODE_BINARY)
+    if (this.isOpen) {
+      uws.native.server.send(this.external, message, uws.OPCODE_BINARY)
+    }
     /*
      *if (this.config.outgoingBufferTimeout === 0) {
      *  uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
@@ -96,7 +76,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * and can wait to be bundled into another message if necessary
    */
   public flush () {
-    if (this.bufferedWrites !== '') {
+    if (this.bufferedWrites !== '' && this.isOpen) {
       uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_BINARY)
       this.bufferedWrites = ''
     }
@@ -108,7 +88,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    *                                 this message type
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean): void {
-    if (this.isClosed === false) {
+    if (this.isOpen) {
       this.sendNativeMessage(
         binaryMessageBuilder.getMessage(message, false),
         allowBuffering
@@ -143,7 +123,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    *                                 this message type
    */
   public sendAckMessage (message: Message, allowBuffering: boolean): void {
-    if (this.isClosed === false) {
+    if (this.isOpen) {
       this.sendNativeMessage(
         binaryMessageBuilder.getMessage(message, true),
         allowBuffering
@@ -163,6 +143,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * logic and closes the connection
    */
   public destroy (): void {
+    // Not sure if this should only happen on closed sockets or not
     uws.native.server.terminate(this.external)
   }
 

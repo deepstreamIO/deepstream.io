@@ -8,7 +8,7 @@ import OpenPermissionHandler from './permission/open-permission-handler'
 import ClusterNode from './cluster/cluster-node'
 import LockRegistry from './cluster/lock-registry'
 
-export function get (): InternalDeepstreamConfig {
+export function get(): InternalDeepstreamConfig {
   return {
     /*
      * General
@@ -118,6 +118,18 @@ export function get (): InternalDeepstreamConfig {
      * RPC
      */
     provideRPCRequestorDetails: true,
+
+    /**
+     * Send requestorName by default.
+     * Overriden by provideRPCRequestorDetails
+     */
+    provideRPCRequestorName: true,
+
+    /**
+     * Send requestorData by default.
+     * Overriden by provideRPCRequestorDetails
+     */
+    provideRPCRequestorData: true,
 
     /*
      * Timeouts
