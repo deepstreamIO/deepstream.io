@@ -19,7 +19,7 @@ sslCa: null
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
   websocket:
-    name: uws
+    name: uws-v2
     options:
         # port for the websocket server
         port: 6020
