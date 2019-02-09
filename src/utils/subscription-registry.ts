@@ -1,7 +1,5 @@
 import StateRegistry from '../cluster/state-registry'
-import { EVENT, EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC, SubscriptionMessage } from '../constants'
-
-let idCounter = 0
+import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC, SubscriptionMessage } from '../constants'
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
@@ -12,14 +10,10 @@ interface SubscriptionActions {
 
 interface Subscription {
   name: string
-  sockets: Set<SocketWrapper>,
-  uniqueSenders: Map<SocketWrapper, Array<number>>,
-  sharedMessages: string
+  sockets: Set<SocketWrapper>
 }
 
 export default class SubscriptionRegistry {
-  private pending: Array<Subscription>
-  private delay: number
   private sockets: Map<SocketWrapper, Set<Subscription>>
   private subscriptions: Map<string, Subscription>
   private config: InternalDeepstreamConfig
@@ -29,7 +23,6 @@ export default class SubscriptionRegistry {
   private subscriptionListener: SubscriptionListener
   private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry
-  private delayedBroadcastsTimer: any
   private actions: any
 
   /**
@@ -38,11 +31,6 @@ export default class SubscriptionRegistry {
    * than functions
    */
   constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, topic: TOPIC, clusterTopic: TOPIC) {
-    this.pending = []
-    this.delay = -1
-    if (config.broadcastTimeout !== undefined) {
-      this.delay = config.broadcastTimeout
-    }
     this.sockets = new Map()
     this.subscriptions = new Map()
     this.config = config
@@ -72,7 +60,6 @@ export default class SubscriptionRegistry {
       UNSUBSCRIBE: this.actions.UNSUBSCRIBE,
     }
 
-    this.onBroadcastTimeout = this.onBroadcastTimeout.bind(this)
     this.onSocketClose = this.onSocketClose.bind(this)
 
     this.setupRemoteComponents(clusterTopic)
@@ -150,8 +137,8 @@ export default class SubscriptionRegistry {
    * subscription name. Each broadcast is given 'broadcastTimeout' ms to coalesce into one big
    * broadcast.
    */
-  public sendToSubscribers (name: string, message: Message, noDelay: boolean, socket: SocketWrapper | null, isRemote: boolean = false): void {
-    if (socket && !isRemote) {
+  public sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, isRemote: boolean = false): void {
+    if (senderSocket && !isRemote) {
       this.services.message.send(this.clusterTopic, message)
     }
 
@@ -164,51 +151,12 @@ export default class SubscriptionRegistry {
     const subscribers = subscription.sockets
     const first = subscribers.values().next().value
     const msg = first.getMessage(message)
-    const preparedMessage = first.prepareMessage(msg)
-    for (const sock of subscribers) {
-      if (sock === socket) {
+    for (const socket of subscribers) {
+      if (socket === senderSocket) {
         continue
       }
-      sock.sendPrepared(preparedMessage)
+      socket.sendNativeMessage(msg, true)
     }
-    first.finalizeMessage(preparedMessage)
-    return
-
-    // const msgString = getMessage(message, false)
-
-    // if (subscription.sharedMessages.length === 0) {
-    //   this.pending.push(subscription)
-    // }
-
-    // // append this message to the sharedMessage, the message that
-    // // is shared in the broadcast to every listener-only
-    // const start = subscription.sharedMessages.length
-    // subscription.sharedMessages += msgString
-    // const stop = subscription.sharedMessages.length
-
-    // // uniqueSendersMap maps from uuid to offset in uniqueSendersVector
-    // // each uniqueSender has a vector of "gaps" in relation to sharedMessage
-    // // sockets should not receive what they sent themselves, so a gap is inserted
-    // // for every send from this socket
-    // if (socket && socket.uuid !== undefined) {
-    //   const uniqueSenders = subscription.uniqueSenders
-    //   const gaps = uniqueSenders.get(socket) || []
-
-    //   if (gaps.length === 0) {
-    //     uniqueSenders.set(socket, gaps)
-    //   }
-
-    //   gaps.push(start, stop)
-    // }
-
-    // // reuse the same timer if already started
-    // if (!this.delayedBroadcastsTimer) {
-    //   if (this.delay !== -1 && !noDelay) {
-    //     this.delayedBroadcastsTimer = setTimeout(this.onBroadcastTimeout, this.delay)
-    //   } else {
-    //     this.onBroadcastTimeout()
-    //   }
-    // }
   }
 
   /**
@@ -218,15 +166,13 @@ export default class SubscriptionRegistry {
     const name = message.name
     const subscription = this.subscriptions.get(name) || {
       name,
-      sockets: new Set(),
-      uniqueSenders: new Map(),
-      sharedMessages: '',
+      sockets: new Set()
     }
 
     if (subscription.sockets.size === 0) {
       this.subscriptions.set(name, subscription)
     } else if (subscription.sockets.has(socket)) {
-      const msg = `repeat supscription to "${name}" by ${socket.user}`
+      const msg = `repeat subscription to "${name}" by ${socket.user}`
       this.services.logger.warn(EVENT_ACTIONS[this.constants.MULTIPLE_SUBSCRIPTIONS], msg)
       socket.sendMessage({
         topic: this.topic,
@@ -323,13 +269,7 @@ export default class SubscriptionRegistry {
   private removeSocket (subscription, socket): void {
     if (subscription.sockets.size === 0) {
       this.subscriptions.delete(subscription.name)
-      const idx = this.pending.indexOf(subscription)
-      if (idx !== -1) {
-        this.pending.splice(idx, 1)
-      }
       socket.removeListener('close', this.onSocketClose)
-    } else {
-      subscription.uniqueSenders.delete(socket)
     }
 
     if (this.subscriptionListener) {
@@ -358,60 +298,5 @@ export default class SubscriptionRegistry {
       subscription.sockets.delete(socket)
       this.removeSocket(subscription, socket)
     }
-  }
-
-  /**
-   * Broadcasts the enqueued messages for the timed out subscription room.
-   */
-  private onBroadcastTimeout (): void {
-    this.delayedBroadcastsTimer = null
-
-    for (const subscription of this.pending) {
-      const uniqueSenders = subscription.uniqueSenders
-      const sharedMessages = subscription.sharedMessages
-      const sockets = subscription.sockets
-
-      idCounter = (idCounter + 1) % Number.MAX_SAFE_INTEGER
-
-      // for all unique senders and their gaps, build their special messages
-      for (const uniqueSender of uniqueSenders) {
-        const socket = uniqueSender[0]
-        const gaps = uniqueSender[1]
-        let i = 0
-        let message = sharedMessages.substring(0, gaps[i++])
-        let lastStop = gaps[i++]
-        while (i < gaps.length) {
-          message += sharedMessages.substring(lastStop, gaps[i++])
-          lastStop = gaps[i++]
-        }
-        message += sharedMessages.substring(lastStop, sharedMessages.length)
-
-        socket.__id = idCounter
-
-        if (message) {
-          socket.sendNative(message)
-        }
-      }
-
-      // for all sockets in this subscription name, send either sharedMessage or this socket's
-      // specialized message. only sockets that sent something will have a special message, all
-      // other sockets are only listeners and receive the exact same (sharedMessage) message.
-
-      // unfortunately accessing the first (or any single) element from a set requires creating
-      // an iterator
-      const first = sockets.values().next().value
-      const preparedMessage = first.prepareMessage(sharedMessages)
-      for (const socket of sockets) {
-        if (socket.__id !== idCounter) {
-          socket.sendPrepared(preparedMessage)
-        }
-      }
-      first.finalizeMessage(preparedMessage)
-
-      subscription.sharedMessages = ''
-      subscription.uniqueSenders.clear()
-    }
-
-    this.pending.length = 0
   }
 }

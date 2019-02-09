@@ -2,7 +2,7 @@
 
 /* eslint-disable class-methods-use-this */
 import { EventEmitter } from 'events'
-import * as messageParser from '../../../binary-protocol/src/message-parser'
+import { parseData, isError } from '../../../binary-protocol/src/message-parser'
 
 export default class HTTPSocketWrapper extends EventEmitter implements SocketWrapper {
 
@@ -16,7 +16,6 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
   private _responseCallback
   private _requestTimeout
 
-  __id: number
   authData: object
   clientData: object
   authCallback: Function
@@ -97,7 +96,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    */
   sendError (message, event, errorMessage) {
     if (this.isClosed === false) {
-      messageParser.parseData(message)
+      parseData(message)
       this._onError(
         this._messageResults,
         this._correlationIndex,
@@ -119,11 +118,11 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    * @returns {void}
    */
   sendMessage (message) {
-    if (messageParser.isError(message)) {
+    if (isError(message)) {
       message.isError = true
     }
     if (this.isClosed === false) {
-      messageParser.parseData(message)
+      parseData(message)
       this._onMessage(
         this._messageResults,
         this._correlationIndex,
@@ -134,13 +133,17 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
     }
   }
 
+  sendNativeMessage(message: any, buffer?: boolean): void {
+    // This can never be called as HTTP API is not a subscriber (Yet)
+  }
+
   sendAckMessage (message) {
     message.isAck = true
     this.sendMessage(message)
   }
 
   parseData (message) {
-    return messageParser.parseData(message)
+    return parseData(message)
   }
 
   /**

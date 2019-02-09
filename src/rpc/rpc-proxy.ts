@@ -32,6 +32,9 @@ export default class RpcProxy extends EventEmitter implements SimpleSocketWrappe
   public sendAckMessage (message: RPCMessage): void {
   }
 
+  public sendNativeMessage (message: any, buffer?: boolean): void {
+  }
+
   /**
   * Mimicks the SocketWrapper's send method, but expects a message object,
   * instead of a string.

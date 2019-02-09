@@ -168,5 +168,3 @@ storageRetrievalTimeout: 2000
 dependencyInitialisationTimeout: 2000
 # The amount of time to wait for a provider to acknowledge or reject a listen request
 listenResponseTimeout: 500
-# The amount of time a broadcast will wait (to allow broadcast coalescing). -1 means disabled.
-broadcastTimeout: 0

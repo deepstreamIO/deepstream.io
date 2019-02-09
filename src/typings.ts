@@ -12,6 +12,7 @@ type EVENT = any
 interface SimpleSocketWrapper extends NodeJS.EventEmitter {
   user: string
   isRemote: boolean
+  sendNativeMessage (message: any, buffer?: boolean): void
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
   clientData?: object | null
@@ -19,17 +20,12 @@ interface SimpleSocketWrapper extends NodeJS.EventEmitter {
 
 interface SocketWrapper extends SimpleSocketWrapper {
   uuid: number
-  __id: number
   authData: object | null
   clientData: object | null
   getHandshakeData: Function
   onMessage: Function
   authCallback: Function
-  prepareMessage: Function
   getMessage: Function
-  finalizeMessage: Function
-  sendPrepared: Function
-  sendNative: Function
   parseData: Function
   flush: Function
   destroy: Function

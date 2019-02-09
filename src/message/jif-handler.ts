@@ -8,7 +8,7 @@ import {
   TOPIC,
 } from '../constants'
 
-import { isWriteAck, ACTION_TO_WRITE_ACK, WRITE_ACK_TO_ACTION } from '../../binary-protocol/src/utils'
+import { isWriteAck, WRITE_ACK_TO_ACTION } from '../../binary-protocol/src/utils'
 
 import * as Ajv from 'ajv'
 
@@ -255,17 +255,13 @@ function getMsgToJif () {
 }
 
 export default class JIFHandler {
-  private JIF_TO_MSG: any
-  private MSG_TO_JIF: any
-  private topicToKey: any
   private logger: Logger
 
+  private JIF_TO_MSG = getJifToMsg()
+  private MSG_TO_JIF = getMsgToJif()
+  private topicToKey = reverseMap(TOPIC)
+
   constructor (options) {
-    this.JIF_TO_MSG = getJifToMsg()
-    this.MSG_TO_JIF = getMsgToJif()
-
-    this.topicToKey = reverseMap(TOPIC)
-
     this.logger = options.logger
   }
 

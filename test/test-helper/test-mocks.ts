@@ -45,8 +45,6 @@ export const getTestMocks = () => {
       user,
       authData,
       clientData,
-      prepareMessage: () => {},
-      sendPrepared: () => {},
       finalizeMessage: () => {},
       sendMessage: () => {},
       sendError: () => {},

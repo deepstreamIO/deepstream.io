@@ -24,7 +24,6 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   public isClosed: boolean = false
   public user: string
   public uuid: number = Math.random()
-  public __id: number
   public authCallback: Function
   public authAttempts: number = 0
 
@@ -74,7 +73,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   /**
    * Variant of send with no particular checks or appends of message.
    */
-  public sendNative (message: string | Buffer, allowBuffering: boolean): void {
+  public sendNativeMessage (message: string | Buffer, allowBuffering: boolean): void {
     uws.native.server.send(this.external, message, uws.OPCODE_BINARY)
     /*
      *if (this.config.outgoingBufferTimeout === 0) {
@@ -110,7 +109,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean): void {
     if (this.isClosed === false) {
-      this.sendNative(
+      this.sendNativeMessage(
         binaryMessageBuilder.getMessage(message, false),
         allowBuffering
       )
@@ -145,7 +144,7 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    */
   public sendAckMessage (message: Message, allowBuffering: boolean): void {
     if (this.isClosed === false) {
-      this.sendNative(
+      this.sendNativeMessage(
         binaryMessageBuilder.getMessage(message, true),
         allowBuffering
       )
@@ -184,8 +183,6 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
     return this.handshakeData
   }
 }
-
-UwsSocketWrapper.lastPreparedMessage = null
 
 export function createSocketWrapper (
   external: any,

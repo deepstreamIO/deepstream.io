@@ -114,11 +114,11 @@ describe('subscription registry', () => {
       subscriptionRegistry.subscribe(subscribeMessage, clientB.socketWrapper)
 
       clientA.socketWrapperMock
-        .expects('sendPrepared')
+        .expects('sendMessage')
         .once()
 
       clientB.socketWrapperMock
-        .expects('sendPrepared')
+        .expects('sendMessage')
         .once()
 
       subscriptionRegistry.sendToSubscribers('someName', eventMessage)
@@ -129,11 +129,11 @@ describe('subscription registry', () => {
       subscriptionRegistry.subscribe(subscribeMessage, clientB.socketWrapper)
 
       clientA.socketWrapperMock
-        .expects('sendPrepared')
+        .expects('sendMessage')
         .never()
 
       clientB.socketWrapperMock
-        .expects('sendPrepared')
+        .expects('sendMessage')
         .once()
 
       subscriptionRegistry.sendToSubscribers('someName', eventMessage, false, clientA.socketWrapper)
@@ -171,7 +171,7 @@ describe('subscription registry', () => {
       clientA.socketWrapper.emit('close', clientA.socketWrapper)
 
       clientA.socketWrapperMock
-        .expects('sendPrepared')
+        .expects('sendMessage')
         .never()
 
       subscriptionRegistry.sendToSubscribers('nameA', eventMessage)
