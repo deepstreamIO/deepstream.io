@@ -1,9 +1,6 @@
-[submodule "uws-dependency"]
-	path = uws-dependency
-	url = https://github.com/deepstreamIO/uws-dependency.git
 [submodule "test-e2e/features"]
 	path = test-e2e/features
-	url = http://github.com/deepstreamIO/deepstream.io-e2e.git
+	url = https://github.com/deepstreamIO/deepstream.io-e2e.git
 [submodule "binary-protocol"]
 	path = binary-protocol
-	url = git@github.com:deepstreamIO/urp-js.git
+	url = https://github.com/deepstreamIO/urp-js.git

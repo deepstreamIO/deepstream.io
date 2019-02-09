@@ -20,7 +20,8 @@ interface SimpleSocketWrapper extends NodeJS.EventEmitter {
 
 interface SocketWrapper extends SimpleSocketWrapper {
   uuid: number
-  authData: object | null
+  authData: object
+  isClosed: boolean
   clientData: object | null
   getHandshakeData: Function
   onMessage: Function
@@ -205,6 +206,8 @@ interface InternalDeepstreamConfig {
 
   storageExclusionPrefixes: Array<string>
   provideRPCRequestorDetails: boolean
+  provideRPCRequestorName: boolean
+  provideRPCRequestorData: boolean
   rpcAckTimeout: number
   rpcTimeout: number
   cacheRetrievalTimeout: number

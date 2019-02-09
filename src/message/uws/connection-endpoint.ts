@@ -27,7 +27,7 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
 
   private dsOptions: any
   private initialised: boolean = false
-  private flushTimeout: NodeJS.Timeout | null
+  private flushTimeout: number | null
   private authenticatedSockets: Set<SocketWrapper> = new Set()
   private logger: Logger
   private authenticationHandler: AuthenticationHandler
@@ -37,12 +37,12 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
   private maxAuthAttempts: number
   private urlPath: string
   private noDelay: boolean
-  private unauthenticatedClientTimeout: NodeJS.Timeout | false
+  private unauthenticatedClientTimeout: number | boolean
   private serverGroup: any
   private scheduledSocketWrapperWrites: Set<SocketWrapper>
   private upgradeRequest: any
   private pingMessage: Buffer
-  private pingInterval: NodeJS.Timeout
+  private pingInterval: number
 
   constructor (private options: any, private services: DeepstreamServices) {
     super()
@@ -165,13 +165,13 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     uws.native.server.group.onConnection(this.serverGroup, this._onConnection.bind(this))
 
     // When investigating the auto ping we found that it did not (for some
-    // reason) properly send to the group (even tough the code looks like it
+    // reason) properly send to the group (even though the code looks like it
     // should). The result of this is that it finds every client connected to
     // the group to have disconnected on their end. But since the clients are
     // actually online (they just did not receive a ping message) they will
     // reconnect immediately. We run the auto ping, which cleans up the dead
     // connections at half the rate of the actual heartbeat. Sending them at the
-    // same rate can give the following scenario, bars are timepoint of events:
+    // same rate can give the following scenario, bars are time point of events:
 
     //
     // | First ping is sent
@@ -234,13 +234,25 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
     return ''
   }
 
+  private getServerAddressAndPort (): Array<string> {
+    const serverAddress = this.server.address()
+    if (typeof serverAddress === 'string') {
+      return serverAddress.split(':')
+    } else if (serverAddress.address && serverAddress.port){
+      return [
+        serverAddress.address,
+        `${serverAddress.port}`
+      ]
+    } else {
+      throw Error(`Could not recognize "${serverAddress}" with type "${typeof serverAddress}" as a server address`)
+    }
+  }
+
   /**
    * Called for the ready event of the ws server.
    */
   private _onReady (): void {
-    const serverAddress:any = this.server.address()
-    const address = serverAddress.address
-    const port = serverAddress.port
+    const [address, port] = this.getServerAddressAndPort()
     const wsMsg = `Listening for websocket connections on ${address}:${port}${this.urlPath}`
     this.logger.info(EVENT.INFO, wsMsg)
     const hcMsg = `Listening for health checks on path ${this.healthCheckPath} `
@@ -604,9 +616,9 @@ export default class UWSConnectionEndpoint extends EventEmitter implements Conne
       this._handleUpgrade(request, socket)
     }
     try {
-        UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
+      UWSConnectionEndpoint._terminateSocket(socket, 400, 'URL not supported')
     } catch (e) {
-
+      // already terminated
     }
   }
 

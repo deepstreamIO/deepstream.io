@@ -36,8 +36,8 @@ export class HttpServerMock extends EventEmitter {
 
   public address () {
     return {
-      address: this.host,
-      port: this.port
+      address: this.host || 'localhost',
+      port: this.port || 8080
     }
   }
 

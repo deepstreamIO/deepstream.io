@@ -154,11 +154,17 @@ function handlePlugins (config: InternalDeepstreamConfig, services: any): void {
   for (const key in plugins) {
     const plugin = plugins[key]
     if (plugin) {
-      const PluginConstructor = resolvePluginClass(plugin, key)
-      services[key] = new PluginConstructor(plugin.options)
+      if (plugin.deepstreamInitialized) {
+        services[key] = plugin
+      } else {
+        const PluginConstructor = resolvePluginClass(plugin, key)
+        services[key] = new PluginConstructor(plugin.options)
+      }
+
       if (services.registeredPlugins.indexOf(key) === -1) {
         services.registeredPlugins.push(key)
       }
+
     }
   }
 }
@@ -334,7 +340,7 @@ export function storageCompatability (storage: StoragePlugin) {
   const oldGet = storage.get as Function
   storage.get = (recordName: string, callback: StorageReadCallback) => {
     oldGet.call(storage, recordName, (error, record) => {
-      callback(error, record ? record._v : -1, record ? record._d : {})
+      callback(error, record ? record._v : -1, record ? record._d : null)
     })
   }
 

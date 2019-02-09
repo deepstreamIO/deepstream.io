@@ -7,7 +7,8 @@ import { EventEmitter } from 'events'
 
 import * as pkg from '../package.json'
 import { combineEvents, merge } from './utils/utils'
-import { STATES, EVENT, TOPIC } from './constants'
+import * as constants_ from './constants'
+const { STATES, EVENT, TOPIC, ACTIONS } = constants_
 
 import MessageProcessor from './message/message-processor'
 import MessageDistributor from './message/message-distributor'
@@ -30,6 +31,8 @@ import DependencyInitialiser from './utils/dependency-initialiser'
  * Sets the name of the process
  */
 process.title = 'deepstream server'
+
+export const constants = constants_
 
 export class Deepstream extends EventEmitter {
   public constants: any
