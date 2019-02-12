@@ -28,7 +28,7 @@ deploy:
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release description'
     auth_token:
-      secure: $GITHUB_TOKEN
+      secure: flpmOw4mcgY+8ECrKSgcyHOHQA53xoC3Uasxx/F9HK3UMRA3694yVeLLCXZmAubW
     draft: true
     artifact: 'deepstream.io-release'
     on:

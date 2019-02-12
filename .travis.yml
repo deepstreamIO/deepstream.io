@@ -45,7 +45,8 @@ cache:
 deploy:
   - provider: releases
     skip_cleanup: true
-    api_key: $GITHUB_TOKEN
+    api_key:
+      secure: "JaEa2nH1tnYtYMOKtEdnZs88Y14sfj5MagOZCT5jToD7IiYhQcaSVNsndBfVo8OD3pbNVzhJmJjG9wjqtFTqmIxGjGzAg3ZFzGYRSo+ijBMkJdZdA6sU1EGkHXeYJtLxp8Vy8i+KyMZzW9lBbfHFXQyyK8Jjj7ry7YRdHv0Ju4E="
     file_glob: true
     file:
       - "build/*.pkg"
