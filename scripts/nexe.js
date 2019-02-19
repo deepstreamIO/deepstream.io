@@ -1,7 +1,7 @@
 const nexe = require('nexe') // eslint-disable-line
 
 nexe.compile({
-  input: 'bin/deepstream',
+  input: 'bin/deepstream.js',
   build: false,
   flags: ['--max-old-space-size=8192'],
   output: process.env.EXECUTABLE_NAME,
@@ -10,9 +10,7 @@ nexe.compile({
   resources: [
     'ascii-logo.txt',
     'package.json',
-    'bin/*',
-    'src/**/*',
-    'node_modules/uws/**'
+    'node_modules/uws'
   ],
   ico: 'scripts/resources/deepstream.ico',
   rc: {

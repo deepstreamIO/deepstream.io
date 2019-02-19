@@ -24,22 +24,11 @@ artifacts:
   - path: '**\*.zip'
 
 deploy:
-  - provider: S3
-    access_key_id:
-      secure: VLu/whVhELZZ1jIRBIL+wo+hR1hh4pfYMpyA6rm31hM=
-    secret_access_key:
-      secure: 6EQDvyUVR62R3ByX/YdAEEzWPNVLeWs8kq1KWtzCCuHuDkzh77qw9mO3W4Qk0Uw8
-    bucket: ds-server-artifacts
-    folder: $(APPVEYOR_REPO_NAME)
-    on:
-      branch: master
-      appveyor_repo_tag: false
-
   - provider: GitHub
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release description'
     auth_token:
-      secure: tZHuiZVCwkXRYMihVyoNrmDxAm6xPbXyop7Plg5uUWIIqA1EoUCrTYd/V+0D1I+Y
+      secure: $GITHUB_TOKEN
     draft: true
     artifact: 'deepstream.io-release'
     on:

@@ -1,3 +1,15 @@
+## [3.1.6] - 2019.02.12
+
+### Bug Fix
+
+- Send random bytes crash server [@alexiri](@alexiri) [#926](https://github.com/deepstreamIO/deepstream.io/issues/926)
+
+### Misc
+
+- Seperate out the websocket provider into a separate class to allow different websocket servers
+- Upgrading to node 10
+- Upgrading all dependencies
+
 ## [3.1.5] - 2018.09.17
 
 ### Misc
