@@ -46,6 +46,10 @@ class UwsSocketWrapper extends EventEmitter {
     this._connectionEndpoint = connectionEndpoint
   }
 
+  get isOpen () {
+    return !this.isClosed;
+  }
+
   /**
    * Updates lastPreparedMessage and returns the [uws] prepared message.
    *
