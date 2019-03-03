@@ -19,7 +19,7 @@ sslCa: null
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
   websocket:
-    name: uws-v2
+    name: uws
     options:
         # port for the websocket server
         port: 6020
@@ -27,12 +27,14 @@ connectionEndpoints:
         host: 0.0.0.0
         # url path websocket connections connect to
         urlPath: /deepstream
-        # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
-        healthCheckPath: /health-check
         # the amount of milliseconds between each ping/heartbeat message
         heartbeatInterval: 30000
         # the amount of milliseconds that writes to sockets are buffered
         outgoingBufferTimeout: 0
+
+        # headers
+        headers:
+          - user-agent
 
         # Security
         # amount of time a connection can remain open while not being logged in

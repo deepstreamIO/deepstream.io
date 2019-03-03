@@ -46,7 +46,7 @@
     "mkdirp": "^0.5.1",
     "needle": "^2.2.3",
     "original-fs": "^1.0.0",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.0.0",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#binaries",
     "uws": "10.148.1"
   },
   "devDependencies": {

@@ -192,14 +192,11 @@ module.exports = class SubscriptionRegistry {
 
       // unfortunately accessing the first (or any single) element from a set requires creating
       // an iterator
-      const first = sockets.values().next().value
-      const preparedMessage = first.prepareMessage(sharedMessages)
       for (const socket of sockets) {
         if (socket.__id !== idCounter) {
-          socket.sendPrepared(preparedMessage)
+          socket.sendNative(sharedMessages)
         }
       }
-      first.finalizeMessage(preparedMessage)
 
       subscription.sharedMessages = ''
       subscription.uniqueSenders.clear()

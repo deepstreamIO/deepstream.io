@@ -34,9 +34,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     this._authenticatedSockets = new Set()
   }
 
-  addHTTPListeners () {
-  }
-
   createWebsocketServer () {
   }
 
@@ -104,15 +101,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     this._urlPath = this._getOption('urlPath')
     this._unauthenticatedClientTimeout = this._getOption('unauthenticatedClientTimeout')
 
-    // this._httpServer = this.createHttpServer()
-    // this._httpServer.on('request', this._handleHealthCheck.bind(this))
-    // this._httpServer.once('listening', this._onReady.bind(this))
-    // this._httpServer.on('error', this._onError.bind(this))
-    // this.addHTTPListeners(this._httpServer)
-
     this.websocketServer = this.createWebsocketServer()
-
-    // this._httpServer.listen(this._getOption('port'), this._getOption('host'))
   }
 
   /**
@@ -163,7 +152,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onReady () {
-    const serverAddress = '0.0.0.0'; // this._httpServer.address()
+    const serverAddress = '0.0.0.0' // this._httpServer.address()
     const wsMsg = `Listening for websocket connections on ${serverAddress.address}:${serverAddress.port}${this._urlPath}`
     this._logger.info(C.EVENT.INFO, wsMsg)
     const hcMsg = `Listening for health checks on path ${this._healthCheckPath} `
@@ -266,8 +255,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
 
     socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.CHALLENGE)
     socketWrapper.onMessage = this._processConnectionMessage.bind(this, socketWrapper)
-    // socketWrapper.socket.on('message', message => socketWrapper.onMessage(message))
-    // socketWrapper.socket.on('close', this._onSocketClose.bind(this, socketWrapper))
   }
 
   /**
@@ -606,8 +593,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   close () {
-    // this._httpServer.removeAllListeners('request')
-    // this._httpServer.close(() => this.emit('close'))
     this.closeWebsocketServer()
   }
 }
