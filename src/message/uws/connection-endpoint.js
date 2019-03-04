@@ -53,10 +53,11 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
     let server
     const sslParams = this.getSLLParams()
     if (sslParams) {
-      server = new this.uWS.SSLApp({
-        ...options,
-        ...sslParams
-      })
+      server = new this.uWS.SSLApp(Object.assign(
+        {},
+        options,
+        sslParams
+      ))
     } else {
       server = new this.uWS.App(options)
     }
