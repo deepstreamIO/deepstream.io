@@ -182,7 +182,11 @@ module.exports = class SubscriptionRegistry {
         socket.__id = idCounter
 
         if (message) {
-          socket.sendNative(message)
+          if (socket.isOpen) {
+            socket.sendNative(message)
+          } else {
+            this._options.logger.warn('DEAD_SOCKET', 'Sending a native message on a dead socket')
+          }
         }
       }
 
@@ -194,7 +198,11 @@ module.exports = class SubscriptionRegistry {
       // an iterator
       for (const socket of sockets) {
         if (socket.__id !== idCounter) {
-          socket.sendNative(sharedMessages)
+          if (socket.isOpen) {
+            socket.sendNative(sharedMessages)
+          } else {
+            this._options.logger.warn('DEAD_SOCKET', 'Sending a prepared message on a dead socket')
+          }
         }
       }
 
@@ -230,7 +238,7 @@ module.exports = class SubscriptionRegistry {
       return
     }
 
-    const msgString = messageBuilder.getMsg(message.topic, message.action, message.data)
+    let msgString = messageBuilder.getMsg(message.topic, message.action, message.data)
 
     // not all messages are valid, this should be fixed elsewhere!
     if (msgString.charAt(msgString.length - 1) !== C.MESSAGE_SEPERATOR) {

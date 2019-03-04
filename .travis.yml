@@ -43,22 +43,9 @@ cache:
     - nexe_node
 
 deploy:
-  - provider: s3
-    access_key_id:
-      secure: "FJbc8QXOnde/y554bSYYqxfLnS8jq3CoSlhc4Yug6r+8uPx6q2Du+yVWkwUIgW1I76eumQfBk0/cdrcwtnHTos5e0lbe70gNu8fQDehIzoNu3dQTbaq1mJusblrwO0sOhacVablcfKUyblDKdCCEarJi8VhgJFDuOWGP1H+q/Yw="
-    secret_access_key:
-      secure: "h0LJ+fwY3d0ZlBq8aBl2Fqck/2MficTsP6evp2mDS/Uq2M8ngx/KTDFJ9WV1HKLjJraqbCAElysy8mYOfrLtxgDMNv1/PE/aIGkn/DiwcUyMxUxEe2NX9YDBtwTEOLkyxn3R+m2wGADsyztrw+4WPK2oxpzQdDYFGQEaOci2IfQ="
-    bucket: ds-server-artifacts
-    skip_cleanup: true
-    acl: public_read
-    local_dir: build
-    upload-dir: $TRAVIS_REPO_SLUG
-    on:
-      branch: master
   - provider: releases
     skip_cleanup: true
-    api_key:
-      secure: "UeDGbc9qehbKD63mNT4IebRpcPdctgqAlk7GNrz6/l6rPBsyLALd0o7mqHYcF0Dd2kMew1fDBiQEBUMTuFaggvGyKDmDkqGCdfo/6dGH07FzTpCwXisZ6u5eXo30deT5q94K1kaU17h8gmowBwmrU6iLXRrxCb6fkq58GX8P9tE="
+    api_key: $GITHUB_TOKEN
     file_glob: true
     file:
       - "build/*.pkg"

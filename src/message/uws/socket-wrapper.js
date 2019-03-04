@@ -41,6 +41,10 @@ class UwsSocketWrapper extends EventEmitter {
     this._connectionEndpoint = connectionEndpoint
   }
 
+  get isOpen () {
+    return !this.isClosed
+  }
+
   /**
    * Variant of send with no particular checks or appends of message.
    *
