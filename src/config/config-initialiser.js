@@ -66,7 +66,7 @@ function handleUUIDProperty (config) {
  * @returns {void}
  */
 function handleSSLProperties (config) {
-  const sslFiles = ['sslKey', 'sslCert', 'dhParams']
+  const sslFiles = ['sslKey', 'sslCert', 'sslDHParams']
   let key
   let resolvedFilePath
   let filePath

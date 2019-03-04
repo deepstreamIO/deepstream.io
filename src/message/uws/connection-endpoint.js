@@ -115,7 +115,7 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
 
 
   /**
-   * Returns sslKey, sslCert and sslCa options from the config.
+   * Returns sslKey, sslCert and other options from the config.
    *
    * @throws Will throw an error if one of sslKey or sslCert are not specified
    *
@@ -129,8 +129,8 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
   getSLLParams () {
     const keyFileName = this._getOption('sslKey')
     const certFileName = this._getOption('sslCertFile')
-    const passphrase = this._getOption('sslPassphraseFile')
-    const dhParamsFile = this._getOption('dhParamsFileName')
+    const dhParamsFile = this._getOption('sslDHParams')
+    const passphrase = this._getOption('sslPassphrase')
     if (keyFileName || certFileName) {
       if (!keyFileName) {
         throw new Error('Must also include sslKey in order to use SSL')

@@ -11,7 +11,7 @@ logLevel: INFO
 # SSL Configuration
 sslKey: null
 sslCert: null
-dhParams: null
+sslDHParams: null
 sslPassphrase: null
 
 # Connection Endpoint Configuration

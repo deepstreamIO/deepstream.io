@@ -57,7 +57,7 @@ describe('config-initialiser', () => {
 
   describe('ssl files are loaded if provided', () => {
     it('fails with incorrect path passed in', () => {
-      ['sslKey', 'sslCert', 'sslCa'].forEach((key) => {
+      ['sslKey', 'sslCert', 'sslDHParams'].forEach((key) => {
         const config = defaultConfig.get()
         config[key] = './does-not-exist'
         expect(() => {

@@ -11,7 +11,8 @@ libDir: ../lib
 # SSL Configuration
 sslKey: null
 sslCert: null
-sslCa: null
+sslDHParams: null
+sslPassphrase: null
 
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`

@@ -109,7 +109,7 @@ module.exports = class Server extends EventEmitter {
   }
 
   /**
-  * Returns sslKey, sslCert and sslCa options from the config.
+  * Returns sslKey, sslCert and other options from the config.
   *
   * @throws Will throw an error if one of sslKey or sslCert are not specified
   *
@@ -123,7 +123,6 @@ module.exports = class Server extends EventEmitter {
   _getHttpsParams () {
     const key = this._sslKey
     const cert = this._sslCert
-    const ca = this._sslCa
     if (key || cert) {
       if (!key) {
         throw new Error('Must also include sslKey in order to use HTTPS')
@@ -133,9 +132,6 @@ module.exports = class Server extends EventEmitter {
       }
 
       const params = { key, cert }
-      if (ca) {
-        params.ca = ca
-      }
       return params
     }
     return null

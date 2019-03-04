@@ -22,8 +22,8 @@ exports.get = function () {
      */
     sslKey: null,
     sslCert: null,
-    dhParams: null,
-    passphrase: null,
+    sslDHParams: null,
+    sslPassphrase: null,
 
     /*
      * Authentication

@@ -18,8 +18,8 @@ The following has been removed:
 - `sslCa` 
 
 And the following optional config has been added:
-- `dhParams`: a file that you can optionally provide
-- `passphrase`: the passphrase that the files are encrypted with
+- `sslDHParams`: a file that you can optionally provide
+- `sslPassphrase`: the passphrase that the files are encrypted with
 
 You are also required to specify which headers you want to copy from the websocket connection, as we are not provided 
 them all by default
