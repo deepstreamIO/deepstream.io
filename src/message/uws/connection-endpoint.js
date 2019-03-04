@@ -20,8 +20,18 @@ const messageBuilder = require('../message-builder')
 module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
   constructor (options) {
     super(options)
+
+    // alias require to trick nexe from bundling it
+    const req = require
+    try {
+      this.uWS = req('uWebSockets.js')
+    } catch (e) {
+      this.uWS = req(fileUtils.lookupLibRequirePath('uWebSockets.js'))
+    }
+
     this.description = 'µWebSocket Connection Endpoint'
     this.onMessages = this.onMessages.bind(this)
+    this.listenSocket = null
   }
 
     /**
@@ -31,52 +41,147 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
      * @returns {void}
      */
   createWebsocketServer () {
-      // nexe needs *global.require* for __dynamic__ modules
-      // but browserify and proxyquire can't handle *global.require*
-    const req = global && global.require ? global.require : require
-    const Server = req(fileUtils.lookupLibRequirePath('uws')).Server
+    this.connections = new Map()
 
-    const wss = new Server({
-      server: this._httpServer,
+    const options = {
       noDelay: this._getOption('noDelay'),
       perMessageDeflate: this._getOption('perMessageDeflate'),
       maxPayload: this._getOption('maxMessageSize')
+    }
+
+    let server
+    const sslParams = this.getSLLParams()
+    if (sslParams) {
+      server = new this.uWS.SSLApp(Object.assign(
+        {},
+        options,
+        sslParams
+      ))
+    } else {
+      server = new this.uWS.App(options)
+    }
+
+    server.get(this._getOption('healthCheckPath'), (res) => {
+      res.end()
     })
 
-    wss.on('connection', (socket, upgradeReq) => {
-      this._onConnection(this.createWebsocketWrapper(socket, upgradeReq))
+    server.ws('/deepstream', {
+      /* Options */
+      compression: 0,
+      maxPayloadLength: 16 * 1024 * 1024,
+      idleTimeout: 10,
+      /* Handlers */
+      open: (ws, request) => {
+        const socketWrapper = this.createWebsocketWrapper(ws, request)
+        this.connections.set(ws, socketWrapper)
+        this._onConnection(socketWrapper)
+      },
+      message: (ws, message) => {
+        this.connections.get(ws).onMessage(Buffer.from(message).toString('utf8'))
+      },
+      drain: () => {
+      },
+      close: (ws) => {
+        this._onSocketClose(this.connections.get(ws))
+        this.connections.delete(ws)
+      }
     })
-    wss.startAutoPing(
-            this._getOption('heartbeatInterval'),
-            messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
+
+    server.listen(this._getOption('port'), (token) => {
+      /* Save the listen socket for later shut down */
+      this.listenSocket = token
+
+      if (token) {
+        this._onReady()
+
+        const pingMessage = messageBuilder.getMsg(C.TOPIC.CONNECTION, C.ACTIONS.PING)
+        setInterval(() => {
+          this.connections.forEach((con) => {
+            if (!con.isClosed) {
+              con.sendNative(pingMessage)
+            }
+          })
+        }, this._getOption('heartbeatInterval'))
+      } else {
+        this._logger.error(
+            C.EVENT.SERVICE_INIT,
+            `Failed to listen to port ${this._getOption('port')}`
         )
+      }
+    })
 
-    return wss
+    return server
+  }
+
+
+  /**
+   * Returns sslKey, sslCert and sslCa options from the config.
+   *
+   * @throws Will throw an error if one of sslKey or sslCert are not specified
+   *
+   * @private
+   * @returns {null|Object} {
+   *   {String}           key   ssl key
+   *   {String}           cert  ssl certificate
+   *   {String|undefined} ca    ssl certificate authority (if it's present in options)
+   * }
+   */
+  getSLLParams () {
+    const keyFileName = this._getOption('sslKeyFile')
+    const certFileName = this._getOption('sslCertFile')
+    const passphrase = this._getOption('passphrase')
+    const dhParamsFile = this._getOption('dhParamsFileName')
+    if (keyFileName || certFileName) {
+      if (!keyFileName) {
+        throw new Error('Must also include sslKeyFile in order to use SSL')
+      }
+      if (!certFileName) {
+        throw new Error('Must also include sslCertFile in order to use SSL')
+      }
+
+      return {
+        key_file_name: keyFileName,
+        cert_file_name: certFileName,
+        passphrase,
+        dh_params_file_name: dhParamsFile
+      }
+    }
+    return null
   }
 
   closeWebsocketServer () {
-    this.websocketServer.close()
+    this.connections.forEach((conn) => {
+      if (!conn.isClosed) {
+        conn.socket.close()
+      }
+    })
+    this.uWS.us_listen_socket_close(this.listenSocket)
+    setTimeout(() => this.emit('close'), 2000)
   }
 
-    /**
-     * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
-     * and subscribes to authentication messages.
-     * @param {Websocket} socket
-     *
-     * @param {WebSocket} external    uws native websocket
-     *
-     * @private
-     * @returns {void}
-     */
+  /**
+   * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
+   * and subscribes to authentication messages.
+   * @param {Websocket} socket
+   *
+   * @param {WebSocket} external    uws native websocket
+   *
+   * @private
+   * @returns {void}
+   */
   createWebsocketWrapper (websocket, upgradeReq) {
+    const headers = {}
+    for (const wantedHeader in this._options.headers) {
+      headers[wantedHeader] = upgradeReq.getHeader(wantedHeader)
+    }
     const handshakeData = {
-      remoteAddress: websocket._socket.remoteAddress,
-      headers: upgradeReq.headers,
-      referer: upgradeReq.headers.referer
+      remoteAddress: websocket.getRemoteAddress(),
+      headers,
+      referer: upgradeReq.getHeader('referer')
     }
     const socketWrapper = new SocketWrapper(
-            websocket, handshakeData, this._logger, this._options, this
-        )
+      websocket, handshakeData, this._logger, this._options, this
+    )
     return socketWrapper
   }
 

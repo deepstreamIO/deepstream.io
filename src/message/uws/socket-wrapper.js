@@ -1,7 +1,5 @@
 'use strict'
 
-const fileUtils = require('../../config/file-utils')
-
 const C = require('../../constants/constants')
 const messageBuilder = require('../message-builder')
 
@@ -27,9 +25,6 @@ class UwsSocketWrapper extends EventEmitter {
   constructor (websocket, handshakeData, logger, config, connectionEndpoint) {
     super()
 
-    const req = global && global.require ? global.require : require
-    this.uws = req(fileUtils.lookupLibRequirePath('uws'))
-
     this.isClosed = false
     this._logger = logger
     this.user = null
@@ -47,50 +42,7 @@ class UwsSocketWrapper extends EventEmitter {
   }
 
   get isOpen () {
-    return !this.isClosed;
-  }
-
-  /**
-   * Updates lastPreparedMessage and returns the [uws] prepared message.
-   *
-   * @param {String} message the message to be prepared
-   *
-   * @public
-   * @returns {External} prepared message
-   */
-  // eslint-disable-next-line class-methods-use-this
-  prepareMessage (message) {
-    UwsSocketWrapper.lastPreparedMessage = message
-    return this.uws.native.server.prepareMessage(message, this.uws.OPCODE_TEXT)
-  }
-
-  /**
-   * Sends the [uws] prepared message, or in case of testing sends the
-   * last prepared message.
-   *
-   * @param {External} preparedMessage the prepared message
-   *
-   * @public
-   * @returns {void}
-   */
-  sendPrepared (preparedMessage) {
-    this.flush()
-    if (this.socket.readyState) {
-      this.uws.native.server.sendPrepared(this._external, preparedMessage)
-    }
-  }
-
-  /**
-   * Finalizes the [uws] prepared message.
-   *
-   * @param {External} preparedMessage the prepared message to finalize
-   *
-   * @public
-   * @returns {void}
-   */
-  // eslint-disable-next-line class-methods-use-this
-  finalizeMessage (preparedMessage) {
-    this.uws.native.server.finalizeMessage(preparedMessage)
+    return !this.isClosed
   }
 
   /**
@@ -191,5 +143,4 @@ class UwsSocketWrapper extends EventEmitter {
   }
 }
 
-UwsSocketWrapper.lastPreparedMessage = null
 module.exports = UwsSocketWrapper

@@ -3,8 +3,6 @@ const C = require('../../constants/constants')
 const messageParser = require('../message-parser')
 const messageBuilder = require('../message-builder')
 const events = require('events')
-const http = require('http')
-const https = require('https')
 
 const OPEN = 'OPEN'
 
@@ -32,9 +30,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     this._scheduledSocketWrapperWrites = new Set()
 
     this._authenticatedSockets = new Set()
-  }
-
-  addHTTPListeners () {
   }
 
   createWebsocketServer () {
@@ -81,7 +76,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
   }
 
   /**
-   * Initialise and setup the http and WebSocket servers.
+   * Initialise and setup webSocket servers.
    *
    * @throws Will throw if called before `setDeepstream()`.
    *
@@ -97,22 +92,12 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
     }
     this.initialised = true
 
-    this._healthCheckPath = this._getOption('healthCheckPath')
-
     this._maxAuthAttempts = this._getOption('maxAuthAttempts')
     this._logInvalidAuthData = this._getOption('logInvalidAuthData')
     this._urlPath = this._getOption('urlPath')
     this._unauthenticatedClientTimeout = this._getOption('unauthenticatedClientTimeout')
 
-    this._httpServer = this.createHttpServer()
-    this._httpServer.on('request', this._handleHealthCheck.bind(this))
-    this._httpServer.once('listening', this._onReady.bind(this))
-    this._httpServer.on('error', this._onError.bind(this))
-    this.addHTTPListeners(this._httpServer)
-
     this.websocketServer = this.createWebsocketServer()
-
-    this._httpServer.listen(this._getOption('port'), this._getOption('host'))
   }
 
   /**
@@ -163,75 +148,12 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onReady () {
-    const serverAddress = this._httpServer.address()
-    const wsMsg = `Listening for websocket connections on ${serverAddress.address}:${serverAddress.port}${this._urlPath}`
+    const wsMsg = `Listening for websocket connections on ${this._getOption('host')}:${this._getOption('port')}${this._urlPath}`
     this._logger.info(C.EVENT.INFO, wsMsg)
-    const hcMsg = `Listening for health checks on path ${this._healthCheckPath} `
+    const hcMsg = `Listening for health checks on path ${this._getOption('healthCheckPath')} `
     this._logger.info(C.EVENT.INFO, hcMsg)
     this.emit('ready')
     this.isReady = true
-  }
-
-  /**
-   * Creates an HTTP or HTTPS server for ws to attach itself to,
-   * depending on the options the client configured
-   *
-   * @private
-   * @returns {http.HttpServer | http.HttpsServer}
-   */
-  createHttpServer () {
-    const httpsParams = this._getHttpsParams()
-    if (httpsParams) {
-      return https.createServer(httpsParams)
-    }
-    return http.createServer()
-  }
-
-  /**
-   * Returns sslKey, sslCert and sslCa options from the config.
-   *
-   * @throws Will throw an error if one of sslKey or sslCert are not specified
-   *
-   * @private
-   * @returns {null|Object} {
-   *   {String}           key   ssl key
-   *   {String}           cert  ssl certificate
-   *   {String|undefined} ca    ssl certificate authority (if it's present in options)
-   * }
-   */
-  _getHttpsParams () {
-    const key = this._getOption('sslKey')
-    const cert = this._getOption('sslCert')
-    const ca = this._getOption('sslCa')
-    if (key || cert) {
-      if (!key) {
-        throw new Error('Must also include sslKey in order to use HTTPS')
-      }
-      if (!cert) {
-        throw new Error('Must also include sslCert in order to use HTTPS')
-      }
-
-      const params = { key, cert }
-      if (ca) {
-        params.ca = ca
-      }
-      return params
-    }
-    return null
-  }
-
-  /**
-   * Responds to http health checks.
-   * Responds with 200(OK) if deepstream is alive.
-   *
-   * @private
-   * @returns {void}
-   */
-  _handleHealthCheck (req, res) {
-    if (req.method === 'GET' && req.url === this._healthCheckPath) {
-      res.writeHead(200)
-      res.end()
-    }
   }
 
   /**
@@ -266,8 +188,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
 
     socketWrapper.sendMessage(C.TOPIC.CONNECTION, C.ACTIONS.CHALLENGE)
     socketWrapper.onMessage = this._processConnectionMessage.bind(this, socketWrapper)
-    socketWrapper.socket.on('message', message => socketWrapper.onMessage(message))
-    socketWrapper.socket.on('close', this._onSocketClose.bind(this, socketWrapper))
   }
 
   /**
@@ -606,8 +526,6 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   close () {
-    this._httpServer.removeAllListeners('request')
-    this._httpServer.close(() => this.emit('close'))
     this.closeWebsocketServer()
   }
 }

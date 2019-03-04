@@ -83,7 +83,7 @@ describe('the eventHandler routes events correctly', () => {
     expect(socketA.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
     expect(socketB.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
 
-         // Raise event from socketA - only socketB should be notified
+    // Raise event from socketA - only socketB should be notified
     eventHandler.handle(socketA, eventMessage)
     expect(socketA.socket.lastSendMessage).toBe(_msg('E|A|S|someEvent+'))
     expect(socketB.socket.lastSendMessage).toBe(_msg('E|EVT|someEvent+'))

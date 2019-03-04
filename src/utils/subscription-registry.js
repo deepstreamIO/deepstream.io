@@ -196,18 +196,15 @@ module.exports = class SubscriptionRegistry {
 
       // unfortunately accessing the first (or any single) element from a set requires creating
       // an iterator
-      const first = sockets.values().next().value
-      const preparedMessage = first.prepareMessage(sharedMessages)
       for (const socket of sockets) {
         if (socket.__id !== idCounter) {
           if (socket.isOpen) {
-            socket.sendPrepared(preparedMessage)
+            socket.sendNative(sharedMessages)
           } else {
             this._options.logger.warn('DEAD_SOCKET', 'Sending a prepared message on a dead socket')
           }
         }
       }
-      first.finalizeMessage(preparedMessage)
 
       subscription.sharedMessages = ''
       subscription.uniqueSenders.clear()
