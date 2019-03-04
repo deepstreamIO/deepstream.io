@@ -13,11 +13,11 @@ jobs:
       install: curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-package.sh
       script: bash linux-package.sh centos 7
     - <<: *create-packages
-      script: bash linux-package.sh ubuntu trusty
-    - <<: *create-packages
       script: bash linux-package.sh ubuntu xenial
     - <<: *create-packages
       script: bash linux-package.sh ubuntu bionic
+    - <<: *create-packages
+      script: bash linux-package.sh ubuntu cosmic
     - <<: *create-packages
       script: bash linux-package.sh debian jessie
     - <<: *create-packages
@@ -28,10 +28,12 @@ jobs:
       install: curl -O https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/scripts/linux-test.sh
       script: bash linux-test.sh centos 7
     - <<: *test-packages
-      script: bash linux-test.sh ubuntu trusty
-    - <<: *test-packages
       script: bash linux-test.sh ubuntu xenial
     - <<: *test-packages
       script: bash linux-test.sh ubuntu bionic
+    - <<: *create-packages
+      script: bash linux-test.sh ubuntu cosmic
     - <<: *test-packages
       script: bash linux-test.sh debian jessie
+    - <<: *test-packages
+      script: bash linux-test.sh debian stretch
