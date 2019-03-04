@@ -32,7 +32,7 @@ connectionEndpoints:
       # the amount of milliseconds that writes to sockets are buffered
       outgoingBufferTimeout: 0
 
-      # headers
+      # Headers to copy over from websocket
       headers:
         - user-agent
 
