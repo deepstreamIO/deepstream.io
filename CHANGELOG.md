@@ -1,3 +1,9 @@
+## [3.2.1] - 2019.03.04
+
+### Improvements
+
+- Removed node server in favour uWS due to over 5x of performance improvements (based on library benchmarks)
+
 ## [3.2.0] - 2019.03.04
 
 ### Improvements

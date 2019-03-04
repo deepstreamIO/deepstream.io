@@ -69,6 +69,10 @@ connectionEndpoints:
       # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
       healthCheckPath: /health-check
 
+      # Headers to copy over from http request
+      headers:
+        - user-agent
+
       # -- CORS --
       # if disabled, only requests with an 'Origin' header matching one specified under 'origins'
       # below will be permitted and the 'Access-Control-Allow-Credentials' response header will be
