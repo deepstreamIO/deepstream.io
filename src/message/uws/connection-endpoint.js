@@ -49,17 +49,12 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
       maxPayload: this._getOption('maxMessageSize')
     }
 
-    let server
-    const sslParams = this.getSLLParams()
-    if (sslParams) {
-      server = new this.uWS.SSLApp(Object.assign(
-        {},
-        options,
-        sslParams
-      ))
-    } else {
-      server = new this.uWS.App(options)
-    }
+    const server = UWSConnectionEndpoint.getServer(this.uWS, {
+      sslCert: this._getOption('sslCert'),
+      sslKey: this._getOption('sslKey'),
+      sslDHParams: this._getOption('sslDHParams'),
+      passphrase: this._getOption('sslPassphrase')
+    }, options)
 
     server.get(this._getOption('healthCheckPath'), (res) => {
       res.end()
@@ -87,7 +82,7 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
       }
     })
 
-    server.listen(this._getOption('port'), (token) => {
+    server.listen(this._getOption('host'), this._getOption('port'), (token) => {
       /* Save the listen socket for later shut down */
       this.listenSocket = token
 
@@ -126,11 +121,11 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
    *   {String|undefined} ca    ssl certificate authority (if it's present in options)
    * }
    */
-  getSLLParams () {
-    const keyFileName = this._getOption('sslKey')
-    const certFileName = this._getOption('sslCertFile')
-    const dhParamsFile = this._getOption('sslDHParams')
-    const passphrase = this._getOption('sslPassphrase')
+  static getSLLParams (config) {
+    const keyFileName = config.sslKey
+    const certFileName = config.sslCert
+    const dhParamsFile = config.sslDHParams
+    const passphrase = config.sslPassphrase
     if (keyFileName || certFileName) {
       if (!keyFileName) {
         throw new Error('Must also include sslKey in order to use SSL')
@@ -147,6 +142,29 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
       }
     }
     return null
+  }
+
+  static getServer (uWS, config, options) {
+    let server
+    const sslParams = UWSConnectionEndpoint.getSLLParams(config)
+    if (sslParams) {
+      server = new uWS.SSLApp(Object.assign(
+          {},
+          options,
+          sslParams
+      ))
+    } else {
+      server = new uWS.App(options)
+    }
+    return server
+  }
+
+  static getHeaders (desiredHeaders, req) {
+    const headers = {}
+    for (const wantedHeader in desiredHeaders) {
+      headers[wantedHeader] = req.getHeader(wantedHeader)
+    }
+    return headers
   }
 
   closeWebsocketServer () {
@@ -170,13 +188,9 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
    * @returns {void}
    */
   createWebsocketWrapper (websocket, upgradeReq) {
-    const headers = {}
-    for (const wantedHeader in this._options.headers) {
-      headers[wantedHeader] = upgradeReq.getHeader(wantedHeader)
-    }
     const handshakeData = {
       remoteAddress: websocket.getRemoteAddress(),
-      headers,
+      headers: UWSConnectionEndpoint.getHeaders(this._options.headers, upgradeReq),
       referer: upgradeReq.getHeader('referer')
     }
     const socketWrapper = new SocketWrapper(
