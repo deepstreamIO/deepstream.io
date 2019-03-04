@@ -3,22 +3,20 @@ set -e
 
 LTS_VERSION="10"
 NODE_VERSION=$( node --version )
-NODE_VERSION_WITHOUT_V=$( echo $NODE_VERSION | cut -c2-10 )
+NODE_VERSION_WITHOUT_V=$( echo ${NODE_VERSION} | cut -c2-10 )
 COMMIT=$( node scripts/details.js COMMIT )
 PACKAGE_VERSION=$( node scripts/details.js VERSION )
-UWS_COMMIT="193bd4744ebe0bca48b9f881f38792ded1235c40"
 PACKAGE_NAME=$( node scripts/details.js NAME )
 OS=$( node scripts/details.js OS )
-PACKAGE_DIR=build/$PACKAGE_VERSION
-DEEPSTREAM_PACKAGE=$PACKAGE_DIR/deepstream.io
+PACKAGE_DIR=build/${PACKAGE_VERSION}
+DEEPSTREAM_PACKAGE=${PACKAGE_DIR}/deepstream.io
 GIT_BRANCH=$( git rev-parse --abbrev-ref HEAD )
 CREATE_DISTROS=false
 
 NODE_SOURCE="nexe_node/node/$NODE_VERSION_WITHOUT_V/node-v$NODE_VERSION_WITHOUT_V"
-UWS_SOURCE="nexe_node/uWebSockets/"
 
 EXTENSION=""
-if [ $OS = "win32" ]; then
+if [[ ${OS} = "win32" ]]; then
     EXTENSION=".exe"
 fi
 EXECUTABLE_NAME="build/deepstream$EXTENSION"
@@ -26,12 +24,12 @@ EXECUTABLE_NAME="build/deepstream$EXTENSION"
 # Needed even for void builds for travis deploy to pass
 mkdir -p build
 
-if ! [[ $NODE_VERSION_WITHOUT_V == $LTS_VERSION* ]]; then
+if ! [[ ${NODE_VERSION_WITHOUT_V} == ${LTS_VERSION}* ]]; then
     echo "Packaging only done on $LTS_VERSION.x"
     exit
 fi
 
-if [ -z $1  ]; then
+if [[ -z $1  ]]; then
     if ! [[ ${TRAVIS_BRANCH} = 'master' ]] && ! [[ ${APPVEYOR_REPO_BRANCH} = 'master' ]] && ! [[ ${GIT_BRANCH} = 'master' ]]; then
         echo "Running on branch ${GIT_BRANCH}"
         if [[ -z ${TRAVIS_TAG} ]] && [[ -z ${APPVEYOR_REPO_TAG} ]]; then
@@ -41,16 +39,16 @@ if [ -z $1  ]; then
             echo "On appveyor, not a tag or master"
             exit
         else
-            echo "Running on tag ${TRAVIS_TAG} ${APPVEYOR_REPO_TAG}"
+            echo "Running on tag $TRAVIS_TAG $APPVEYOR_REPO_TAG"
         fi
     else
         echo "Running on master"
     fi
 fi
 
-if [ $2 ]; then
+if [[ $2 ]]; then
     echo 'Ignoring distros'
-elif [ $OS = "linux" ]; then
+elif [[ ${OS} = "linux" ]]; then
     CREATE_DISTROS=true
     echo "Checking if FPM is installed"
     fpm --version
@@ -77,14 +75,14 @@ function compile {
     mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
 
     # Creatine package structure
-    rm -rf build/$PACKAGE_VERSION
-    mkdir -p $DEEPSTREAM_PACKAGE
-    mkdir $DEEPSTREAM_PACKAGE/var
-    mkdir $DEEPSTREAM_PACKAGE/lib
-    mkdir $DEEPSTREAM_PACKAGE/doc
+    rm -rf build/${PACKAGE_VERSION}
+    mkdir -p ${DEEPSTREAM_PACKAGE}
+    mkdir ${DEEPSTREAM_PACKAGE}/var
+    mkdir ${DEEPSTREAM_PACKAGE}/lib
+    mkdir ${DEEPSTREAM_PACKAGE}/doc
 
     echo "Adding uws to libs"
-    cd $DEEPSTREAM_PACKAGE/lib
+    cd ${DEEPSTREAM_PACKAGE}/lib
     echo '{ "name": "TEMP" }' > package.json
     npm install uws@10.148.1
     mv -f node_modules/uws ./uws
@@ -92,19 +90,19 @@ function compile {
     cd -
 
     echo "Adding winston logger to libs"
-    cd $DEEPSTREAM_PACKAGE/lib
+    cd ${DEEPSTREAM_PACKAGE}/lib
     echo '{ "name": "TEMP" }' > package.json
     npm install https://github.com/deepstreamIO/deepstream.io-logger-winston.git
     mv -f node_modules/deepstream.io-logger-winston ./deepstream.io-logger-winston
     rm -rf node_modules package.json
     cd -
 
-    cd $DEEPSTREAM_PACKAGE/lib/deepstream.io-logger-winston
+    cd ${DEEPSTREAM_PACKAGE}/lib/deepstream.io-logger-winston
     npm install --production --loglevel error
     cd -
 
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
-    NODE_VERSION_WITHOUT_V=$NODE_VERSION_WITHOUT_V EXECUTABLE_NAME=$EXECUTABLE_NAME node scripts/nexe.js > /dev/null &
+    NODE_VERSION_WITHOUT_V=${NODE_VERSION_WITHOUT_V} EXECUTABLE_NAME=${EXECUTABLE_NAME} node scripts/nexe.js > /dev/null &
 
     PROC_ID=$!
     SECONDS=0;
@@ -115,7 +113,7 @@ function compile {
 
     echo ""
 
-    if wait $pid; then
+    if wait ${pid}; then
         echo -e "\tNexe Build Succeeded"
     else
         echo -e "\tNexe Build Failed"
@@ -125,19 +123,19 @@ function compile {
     echo "Adding docs"
     echo -e "\tAdding Readme"
     echo "Documentation is available at https://deepstreamhub.com/open-source
-    " > $DEEPSTREAM_PACKAGE/doc/README
+    " > ${DEEPSTREAM_PACKAGE}/doc/README
     echo -e "\tAdding Changelog"
-    cp CHANGELOG.md $DEEPSTREAM_PACKAGE/doc/CHANGELOG.md
+    cp CHANGELOG.md ${DEEPSTREAM_PACKAGE}/doc/CHANGELOG.md
     echo -e "\tAdding Licenses"
-    curl -L https://raw.githubusercontent.com/nodejs/node/v10.x/LICENSE -o $DEEPSTREAM_PACKAGE/doc/NODE.LICENSE
-    mv build/DEPENDENCIES.LICENSE $DEEPSTREAM_PACKAGE/doc/LICENSE
+    curl -L https://raw.githubusercontent.com/nodejs/node/v10.x/LICENSE -o ${DEEPSTREAM_PACKAGE}/doc/NODE.LICENSE
+    mv build/DEPENDENCIES.LICENSE ${DEEPSTREAM_PACKAGE}/doc/LICENSE
 
     echo "Moving deepstream into package structure at $DEEPSTREAM_PACKAGE"
-    cp -r conf $DEEPSTREAM_PACKAGE/
-    cp build/deepstream $DEEPSTREAM_PACKAGE/
+    cp -r conf ${DEEPSTREAM_PACKAGE}/
+    cp build/deepstream ${DEEPSTREAM_PACKAGE}/
 
     echo "Patching config file for zip lib and var directories"
-    cp -f ./scripts/package-conf.yml $DEEPSTREAM_PACKAGE/conf/config.yml
+    cp -f ./scripts/resources/package-conf.yml ${DEEPSTREAM_PACKAGE}/conf/config.yml
 }
 
 function windows {
@@ -146,20 +144,20 @@ function windows {
 
     echo "OS is windows"
     echo -e "\tCreating zip deepstream.io-windows-$PACKAGE_VERSION.zip"
-    cd $DEEPSTREAM_PACKAGE
-    7z a ../$COMMIT_NAME . > /dev/null
-    cp ../$COMMIT_NAME ../../$CLEAN_NAME
+    cd ${DEEPSTREAM_PACKAGE}
+    7z a ../${COMMIT_NAME} . > /dev/null
+    cp ../${COMMIT_NAME} ../../${CLEAN_NAME}
     cd -
 }
 
 function mac {
-    COMMIT_NAME="deepstream.io-mac-$PACKAGE_VERSION-$COMMIT"
-    CLEAN_NAME="deepstream.io-mac-$PACKAGE_VERSION"
+    COMMIT_NAME="deepstream.io-mac-${PACKAGE_VERSION}-${COMMIT}"
+    CLEAN_NAME="deepstream.io-mac-${PACKAGE_VERSION}"
 
     echo "OS is mac"
-    echo -e "\tCreating $CLEAN_NAME"
+    echo -e "\tCreating ${CLEAN_NAME}"
 
-    cd $DEEPSTREAM_PACKAGE
+    cd ${DEEPSTREAM_PACKAGE}
     zip -r ../${COMMIT_NAME}.zip .
     cp ../${COMMIT_NAME}.zip ../../${CLEAN_NAME}.zip
     cd -
@@ -192,8 +190,8 @@ function mac {
     pkgbuild \
         --root build/osxpkg \
         --identifier deepstream.io \
-        --version $PACKAGE_VERSION \
-        --info scripts/PackageInfo \
+        --version ${PACKAGE_VERSION} \
+        --info scripts/resources/PackageInfo \
         --install-location /usr/local \
         ${DEEPSTREAM_PACKAGE}/../${COMMIT_NAME}.pkg
 
@@ -209,24 +207,24 @@ function linux {
 
     echo -e "\tCreating tar.gz"
 
-    COMMIT_NAME="deepstream.io-linux-$PACKAGE_VERSION-$COMMIT.tar.gz"
-    CLEAN_NAME="deepstream.io-linux-$PACKAGE_VERSION.tar.gz"
+    COMMIT_NAME="deepstream.io-linux-${PACKAGE_VERSION}-${COMMIT}.tar.gz"
+    CLEAN_NAME="deepstream.io-linux-${PACKAGE_VERSION}.tar.gz"
 
-    cd $DEEPSTREAM_PACKAGE
-    tar czf ../$COMMIT_NAME .
-    cp ../$COMMIT_NAME ../../$CLEAN_NAME
+    cd ${DEEPSTREAM_PACKAGE}
+    tar czf ../${COMMIT_NAME} .
+    cp ../${COMMIT_NAME} ../../${CLEAN_NAME}
     cd -
 }
 
 function distros {
     echo -e "\tPatching config file for linux distros..."
 
-    if [ $OS = "darwin" ]; then
-        sed -i '' 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
-        sed -i '' 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+    if [[ ${OS} = "darwin" ]]; then
+        sed -i '' 's@ ../lib@ /var/lib/deepstream@' ${DEEPSTREAM_PACKAGE}/conf/config.yml
+        sed -i '' 's@ ../var@ /var/log/deepstream@' ${DEEPSTREAM_PACKAGE}/conf/config.yml
     else
-        sed -i 's@ ../lib@ /var/lib/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
-        sed -i 's@ ../var@ /var/log/deepstream@' $DEEPSTREAM_PACKAGE/conf/config.yml
+        sed -i 's@ ../lib@ /var/lib/deepstream@' ${DEEPSTREAM_PACKAGE}/conf/config.yml
+        sed -i 's@ ../var@ /var/log/deepstream@' ${DEEPSTREAM_PACKAGE}/conf/config.yml
     fi
 
     echo -e "\t\tCreating rpm"
@@ -235,9 +233,9 @@ function distros {
         -s dir \
         -t rpm \
         --package ./build/ \
-        --package-name-suffix $COMMIT \
+        --package-name-suffix ${COMMIT} \
         -n deepstream.io \
-        -v $PACKAGE_VERSION \
+        -v ${PACKAGE_VERSION} \
         --license "AGPL-3.0" \
         --vendor "deepstreamHub GmbH" \
         --description "deepstream.io rpm package" \
@@ -248,9 +246,9 @@ function distros {
         --before-upgrade ./scripts/daemon/before-upgrade \
         --after-upgrade ./scripts/daemon/after-upgrade \
         -f \
-        $DEEPSTREAM_PACKAGE/doc/=/usr/share/doc/deepstream/ \
-        $DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
-        $DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
+        ${DEEPSTREAM_PACKAGE}/doc/=/usr/share/doc/deepstream/ \
+        ${DEEPSTREAM_PACKAGE}/conf/=/etc/deepstream/conf.d/ \
+        ${DEEPSTREAM_PACKAGE}/lib/=/var/lib/deepstream/ \
         ./build/deepstream=/usr/bin/deepstream
 
     echo -e "\t\tCreating deb"
@@ -258,9 +256,9 @@ function distros {
         -s dir \
         -t deb \
         --package ./build \
-        --package-name-suffix $COMMIT \
+        --package-name-suffix ${COMMIT} \
         -n deepstream.io \
-        -v $PACKAGE_VERSION \
+        -v ${PACKAGE_VERSION} \
         --license "AGPL-3.0" \
         --vendor "deepstreamHub GmbH" \
         --description "deepstream.io deb package" \
@@ -272,27 +270,27 @@ function distros {
         --after-upgrade ./scripts/daemon/after-upgrade \
         -f \
         --deb-no-default-config-files \
-        $DEEPSTREAM_PACKAGE/doc/=/usr/share/doc/deepstream/ \
-        $DEEPSTREAM_PACKAGE/conf/=/etc/deepstream/conf.d/ \
-        $DEEPSTREAM_PACKAGE/lib/=/var/lib/deepstream/ \
+        ${DEEPSTREAM_PACKAGE}/doc/=/usr/share/doc/deepstream/ \
+        ${DEEPSTREAM_PACKAGE}/conf/=/etc/deepstream/conf.d/ \
+        ${DEEPSTREAM_PACKAGE}/lib/=/var/lib/deepstream/ \
         ./build/deepstream=/usr/bin/deepstream
 }
 
 function clean {
-    rm -rf $DEEPSTREAM_PACKAGE
+    rm -rf ${DEEPSTREAM_PACKAGE}
     rm build/deepstream
     rm -f npm-shrinkwrap
 }
 
 compile
 
-if [ $OS = "win32" ]; then
+if [[ $OS = "win32" ]]; then
     windows
-elif [ $OS = "darwin" ]; then
+elif [[ ${OS} = "darwin" ]]; then
     mac
-elif [ $OS = "linux" ]; then
+elif [[ ${OS} = "linux" ]]; then
     linux
-    if [ $CREATE_DISTROS = true ]; then
+    if [[ ${CREATE_DISTROS} = true ]]; then
         distros
     fi
 fi

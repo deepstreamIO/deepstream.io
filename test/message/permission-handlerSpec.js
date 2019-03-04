@@ -61,6 +61,7 @@ describe('permissionHandler passes additional user meta data', () => {
       socketWrapperMock.onMessage(_msg('C|CHR|localhost:6021+'))
       done()
     })
+    connectionEndpoint._onReady()
   })
 
   it('sends an authentication message', () => {

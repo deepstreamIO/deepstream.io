@@ -44,10 +44,25 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
   createWebsocketServer () {
     this.connections = new Map()
 
-    const server = new this.uWS.App({
+    const options = {
       noDelay: this._getOption('noDelay'),
       perMessageDeflate: this._getOption('perMessageDeflate'),
       maxPayload: this._getOption('maxMessageSize')
+    }
+
+    let server
+    const sslParams = this.getSLLParams()
+    if (sslParams) {
+      server = new this.uWS.SSLApp({
+        ...options,
+        ...sslParams
+      })
+    } else {
+      server = new this.uWS.App(options)
+    }
+
+    server.get(this._getOption('healthCheckPath'), (res) => {
+      res.end()
     })
 
     server.ws('/deepstream', {
@@ -76,7 +91,6 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
       /* Save the listen socket for later shut down */
       this.listenSocket = token
 
-      /* Did we even manage to listen? */
       if (token) {
         this._onReady()
 
@@ -89,11 +103,50 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
           })
         }, this._getOption('heartbeatInterval'))
       } else {
-        console.log(`Failed to listen to port ${this._getOption('port')}`)
+        this._logger.error(
+            C.EVENT.SERVICE_INIT,
+            `Failed to listen to port ${this._getOption('port')}`
+        )
       }
     })
 
     return server
+  }
+
+
+  /**
+   * Returns sslKey, sslCert and sslCa options from the config.
+   *
+   * @throws Will throw an error if one of sslKey or sslCert are not specified
+   *
+   * @private
+   * @returns {null|Object} {
+   *   {String}           key   ssl key
+   *   {String}           cert  ssl certificate
+   *   {String|undefined} ca    ssl certificate authority (if it's present in options)
+   * }
+   */
+  getSLLParams () {
+    const keyFileName = this._getOption('sslKeyFile')
+    const certFileName = this._getOption('sslCertFile')
+    const passphrase = this._getOption('passphrase')
+    const dhParamsFile = this._getOption('dhParamsFileName')
+    if (keyFileName || certFileName) {
+      if (!keyFileName) {
+        throw new Error('Must also include sslKeyFile in order to use SSL')
+      }
+      if (!certFileName) {
+        throw new Error('Must also include sslCertFile in order to use SSL')
+      }
+
+      return {
+        key_file_name: keyFileName,
+        cert_file_name: certFileName,
+        passphrase,
+        dh_params_file_name: dhParamsFile
+      }
+    }
+    return null
   }
 
   closeWebsocketServer () {

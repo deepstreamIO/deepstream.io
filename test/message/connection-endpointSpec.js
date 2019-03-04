@@ -3,7 +3,6 @@
 'use strict'
 
 const proxyquire = require('proxyquire').noPreserveCache()
-const HttpMock = require('../mocks/http-mock')
 const LoggerMock = require('../mocks/logger-mock')
 const DependencyInitialiser = require('../../src/utils/dependency-initialiser')
 const _msg = require('../test-helper/test-helper').msg
@@ -12,15 +11,7 @@ const authenticationHandlerMock = require('../mocks/authentication-handler-mock'
 const SocketMock = require('../mocks/socket-mock')
 const SocketWrapperMock = require('../mocks/socket-wrapper-mock')
 
-const httpMock = new HttpMock()
-const httpsMock = new HttpMock()
-// since proxyquire.callThru is enabled, manually capture members from prototypes
-httpMock.createServer = httpMock.createServer
-httpsMock.createServer = httpsMock.createServer
-
 const ConnectionEndpoint = proxyquire('../../src/message/websocket/connection-endpoint', {
-  http: httpMock,
-  https: httpsMock,
   './socket-wrapper': SocketWrapperMock
 })
 
@@ -52,11 +43,12 @@ describe('connection endpoint', () => {
         lastAuthenticatedMessage = messages[messages.length - 1]
       }
     })
+    connectionEndpoint._onReady()
   })
 
-  afterAll((done) => {
-    connectionEndpoint.once('close', done)
-    connectionEndpoint.close()
+  afterAll(() => {
+    // connectionEndpoint.once('close', done)
+    // connectionEndpoint.close()
   })
 
   // TODO: Required on UWS connection endpoint'
@@ -224,7 +216,7 @@ describe('connection endpoint', () => {
         done()
       })
 
-      socketWrapperMock.socket.close()
+      connectionEndpoint._onSocketClose(socketWrapperMock)
     })
   })
 
@@ -338,7 +330,7 @@ describe('connection endpoint', () => {
     })
 
     it('notifies the permissionHandler when a client disconnects', () => {
-      socketWrapperMock.socket.close()
+      connectionEndpoint._onSocketClose(socketWrapperMock)
       expect(authenticationHandlerMock.onClientDisconnectCalledWith).toBe('test-user')
     })
   })
@@ -407,11 +399,10 @@ describe('connection endpoint', () => {
 
   describe('connection endpoint doesn\'t log credentials if logInvalidAuthData is set to false', () => {
     it('creates the connection endpoint', (done) => {
-            // re-initialize ConnectionEndpoint to get modified config
+      // re-initialize ConnectionEndpoint to get modified config
       const options2 = Object.assign({}, options)
       options2.logInvalidAuthData = false
-      const connectionEndpoint2 = new ConnectionEndpoint(options2, () => {
-      })
+      const connectionEndpoint2 = new ConnectionEndpoint(options2)
       const depInit = new DependencyInitialiser({ _options: options2 }, options2, connectionEndpoint2, 'connectionEndpoint')
       depInit.on('ready', () => {
         socketWrapperMock = new SocketWrapperMock(new SocketMock())
@@ -419,6 +410,7 @@ describe('connection endpoint', () => {
         socketWrapperMock.onMessage(_msg('C|CHR|localhost:6021+'))
         done()
       })
+      connectionEndpoint2._onReady()
     })
 
     it('handles valid auth messages', () => {
