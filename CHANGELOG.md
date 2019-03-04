@@ -1,8 +1,44 @@
+## [3.2.0] - 2019.03.04
+
+### Improvements
+
+- We now use uWS 0.15, which is much quicker and up to update than the previous deprecated version.
+
+### Fixes
+
+- Hopefully sorted out the build to produce artifacts for linux flavours and linux.
+
+### Breaking changes
+
+Unfortunately due the changes in the underlying library we had to change a couple of options. We decided against
+releasing as 4.0 because even though its the correct semver we already have a major V4 version, and the changes
+should only affect people using SSL within the server (which isn't recommended in production!)
+
+The following has been removed:
+- `sslCa` 
+
+And the following optional config has been added:
+- `dhParams`: a file that you can optionally provide
+- `passphrase`: the passphrase that the files are encrypted with
+
+You are also required to specify which headers you want to copy from the websocket connection, as we are not provided 
+them all by default
+
+```
+connectionEndpoints:
+  websocket:
+    name: uws
+    options:
+      # Headers to copy over from websocket
+      headers:
+        - user-agent
+```
+
 ## [3.1.6] - 2019.02.12
 
 ### Bug Fix
 
-- Send random bytes crash server [@alexiri](@alexiri) [#926](https://github.com/deepstreamIO/deepstream.io/issues/926)
+- Send random bytes crash server [@rzhade3](@rzhade3) [#926](https://github.com/deepstreamIO/deepstream.io/issues/927)
 
 ### Misc
 

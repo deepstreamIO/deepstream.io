@@ -127,13 +127,13 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
    * }
    */
   getSLLParams () {
-    const keyFileName = this._getOption('sslKeyFile')
+    const keyFileName = this._getOption('sslKey')
     const certFileName = this._getOption('sslCertFile')
-    const passphrase = this._getOption('passphrase')
+    const passphrase = this._getOption('sslPassphraseFile')
     const dhParamsFile = this._getOption('dhParamsFileName')
     if (keyFileName || certFileName) {
       if (!keyFileName) {
-        throw new Error('Must also include sslKeyFile in order to use SSL')
+        throw new Error('Must also include sslKey in order to use SSL')
       }
       if (!certFileName) {
         throw new Error('Must also include sslCertFile in order to use SSL')

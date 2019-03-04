@@ -2,7 +2,7 @@
 set -e
 
 if [[ -z $1 ]]; then echo "First param is distro ( centos | debian | ubuntu | ... )"; exit 1; fi
-if [[ -z $2 ]]; then echo "Second param is version ( wheezy | 7 | ... )"; exit 1; fi
+if [[ -z $2 ]]; then echo "Second param is version ( bionic | 7 | ... )"; exit 1; fi
 
 if [[ -z $3 ]]; then
   echo "No distribution version provided, so using the version from package.json"
@@ -92,7 +92,7 @@ RUN curl \
 -H "X-Bintray-Publish:1" \
 -H "X-Bintray-Debian-Distribution:${DISTRO_NAME}" \
 -H "X-Bintray-Debian-Component:main" \
--H "X-Bintray-Debian-Architecture:amd64" \å
+-H "X-Bintray-Debian-Architecture:amd64" \
 -u yasserf:${BINTRAY_API_KEY} \
 "https://api.bintray.com/content/deepstreamio/deb/deepstream.io/${GIT_TAG_NAME}/deepstream.io_${DISTRO_NAME}_${GIT_TAG_NAME}_amd64.deb"
 EOF
