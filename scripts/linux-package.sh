@@ -77,6 +77,8 @@ WORKDIR deepstream.io
 RUN mkdir build
 RUN git checkout tags/${GIT_TAG_NAME}
 RUN npm install
+
+ENV BUILD_NODE=true
 RUN chmod 555 scripts/package.sh
 
 RUN rm scripts/package.sh
