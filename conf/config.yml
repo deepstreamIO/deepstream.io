@@ -86,21 +86,6 @@ connectionEndpoints:
 #      # value of logLevel (line 4) will always overwrite this value
 #      logLevel: INFO
 
-#   # or the winston logger
-#   name: winston
-#   options:
-#     # specify a list of transports (console, file, time)
-#     -
-#       type: console
-#       options:
-#         # value of logLevel (line 4) will always overwrite this value
-#         level: info
-#         colorize: true
-#     -
-#       type: time
-#       options:
-#         filename: ../var/deepstream
-
 #   # or a custom logger
 #   path: ./my-custom-logger
 

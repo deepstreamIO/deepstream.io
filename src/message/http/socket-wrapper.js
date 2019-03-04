@@ -29,16 +29,7 @@ class HTTPSocketWrapper extends EventEmitter {
     this.isClosed = true
   }
 
-  static prepareMessage () {
-  }
-
-  sendPrepared () {
-  }
-
   sendNative () {
-  }
-
-  static finalizeMessage () {
   }
 
   /**

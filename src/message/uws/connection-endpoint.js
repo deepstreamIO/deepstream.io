@@ -21,13 +21,12 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
   constructor (options) {
     super(options)
 
-    // nexe needs *global.require* for __dynamic__ modules
-    // but browserify and proxyquire can't handle *global.require*
-    if (global && global.require) {
-      this.uWS = global.require(fileUtils.lookupLibRequirePath('uWebSockets.js'))
-    } else {
-      // eslint-disable-next-line
-      this.uWS = require('uWebSockets.js')
+    // alias require to trick nexe from bundling it
+    const req = require
+    try {
+      this.uWS = req('uWebSockets.js')
+    } catch (e) {
+      this.uWS = req(fileUtils.lookupLibRequirePath('uWebSockets.js'))
     }
 
     this.description = 'µWebSocket Connection Endpoint'

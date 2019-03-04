@@ -74,31 +74,19 @@ function compile {
     echo -e "\tStubbing xml2js for needle"
     mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
 
-    # Creatine package structure
+    # Creating package structure
     rm -rf build/${PACKAGE_VERSION}
     mkdir -p ${DEEPSTREAM_PACKAGE}
     mkdir ${DEEPSTREAM_PACKAGE}/var
     mkdir ${DEEPSTREAM_PACKAGE}/lib
     mkdir ${DEEPSTREAM_PACKAGE}/doc
 
-    echo "Adding uws to libs"
+    echo "Adding uWebSockets.js to libs"
     cd ${DEEPSTREAM_PACKAGE}/lib
     echo '{ "name": "TEMP" }' > package.json
-    npm install uws@10.148.1
-    mv -f node_modules/uws ./uws
+    npm install uWebSockets.js@github:uNetworking/uWebSockets.js#binaries
+    mv -f node_modules/uWebSockets.js ./uWebSockets.js
     rm -rf node_modules package.json
-    cd -
-
-    echo "Adding winston logger to libs"
-    cd ${DEEPSTREAM_PACKAGE}/lib
-    echo '{ "name": "TEMP" }' > package.json
-    npm install https://github.com/deepstreamIO/deepstream.io-logger-winston.git
-    mv -f node_modules/deepstream.io-logger-winston ./deepstream.io-logger-winston
-    rm -rf node_modules package.json
-    cd -
-
-    cd ${DEEPSTREAM_PACKAGE}/lib/deepstream.io-logger-winston
-    npm install --production --loglevel error
     cd -
 
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
@@ -241,10 +229,10 @@ function distros {
         --description "deepstream.io rpm package" \
         --url https://deepstream.io/ \
         -m "<info@deepstreamhub.com>" \
-        --after-install ./scripts/daemon/after-install \
-        --before-remove ./scripts/daemon/before-remove \
-        --before-upgrade ./scripts/daemon/before-upgrade \
-        --after-upgrade ./scripts/daemon/after-upgrade \
+        --after-install ./scripts/resources/daemon/after-install \
+        --before-remove ./scripts/resources/daemon/before-remove \
+        --before-upgrade ./scripts/resources/daemon/before-upgrade \
+        --after-upgrade ./scripts/resources/daemon/after-upgrade \
         -f \
         ${DEEPSTREAM_PACKAGE}/doc/=/usr/share/doc/deepstream/ \
         ${DEEPSTREAM_PACKAGE}/conf/=/etc/deepstream/conf.d/ \
@@ -264,10 +252,10 @@ function distros {
         --description "deepstream.io deb package" \
         --url https://deepstream.io/ \
         -m "<info@deepstreamhub.com>" \
-        --after-install ./scripts/daemon/after-install \
-        --before-remove ./scripts/daemon/before-remove \
-        --before-upgrade ./scripts/daemon/before-upgrade \
-        --after-upgrade ./scripts/daemon/after-upgrade \
+        --after-install ./scripts/resources/daemon/after-install \
+        --before-remove ./scripts/resources/daemon/before-remove \
+        --before-upgrade ./scripts/resources/daemon/before-upgrade \
+        --after-upgrade ./scripts/resources/daemon/after-upgrade \
         -f \
         --deb-no-default-config-files \
         ${DEEPSTREAM_PACKAGE}/doc/=/usr/share/doc/deepstream/ \

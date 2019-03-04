@@ -37,6 +37,7 @@ const SocketWrapper = function (socket, options) {
   this._currentPacketMessageCount = 0
   this._sendNextPacketTimeout = null
   this._currentMessageResetTimeout = null
+  this.isOpen = true
 }
 
 utils.inherits(SocketWrapper, EventEmitter)
