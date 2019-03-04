@@ -36,6 +36,7 @@ if [[ ${DISTRO} = 'centos' ]]; then
 FROM centos/devtoolset-7-toolchain-centos7
 USER root
 RUN yum install -y centos-release-scl
+ENV BUILD_NODE=true
 EOF
 else
   cat >Dockerfile <<EOF
@@ -79,7 +80,6 @@ RUN mkdir build
 RUN git checkout tags/${GIT_TAG_NAME}
 RUN npm install
 
-ENV BUILD_NODE=true
 ENV BINTRAY_API_KEY=3026c13a116a4d7ad150c6848b4f31c8958ecaa2
 RUN chmod 555 scripts/package.sh
 
