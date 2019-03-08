@@ -15,7 +15,8 @@
   },
   "files": [
     "./node_modules/@types/node/index.d.ts",
-    "./node_modules/@types/jasmine/index.d.ts"
+    "./node_modules/@types/jasmine/index.d.ts",
+    "./node_modules/uWebSockets.js/index.d.ts"
   ],
   "include": [
     "protocol/**/*",

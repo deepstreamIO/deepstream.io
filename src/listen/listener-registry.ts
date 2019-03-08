@@ -248,7 +248,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     }
     const provider = this.locallyProvidedRecords[subscriptionName]
     if (provider.closeListener) {
-      socketWrapper.once('close', provider.closeListener)
+      socketWrapper.onClose(provider.closeListener)
     }
 
     this.stopLocalDiscoveryStage(subscriptionName)

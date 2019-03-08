@@ -19,10 +19,10 @@ import {
  * are - forwards them.
  */
 export default class MessageProcessor {
-  private config: InternalDeepstreamConfig
+  private config: DeepstreamConfig
   private services: DeepstreamServices
 
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices) {
     this.config = config
     this.services = services
   }

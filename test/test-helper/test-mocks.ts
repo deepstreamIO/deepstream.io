@@ -45,7 +45,6 @@ export const getTestMocks = () => {
       user,
       authData,
       clientData,
-      sendNativeMessage: () => {},
       sendMessage: () => {},
       sendAckMessage: () => {},
       uuid: Math.random(),

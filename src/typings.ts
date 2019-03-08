@@ -9,13 +9,13 @@ type LOG_LEVEL = any
 type TOPIC = number
 type EVENT = any
 
-interface SimpleSocketWrapper extends NodeJS.EventEmitter {
+interface SimpleSocketWrapper {
   user: string
   isRemote: boolean
-  sendNativeMessage (message: any, buffer?: boolean): void
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
   clientData?: object | null
+  onClose: Function
 }
 
 interface SocketWrapper extends SimpleSocketWrapper {
