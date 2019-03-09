@@ -13,6 +13,7 @@ function createClient (clientName, server, options) {
   const client = DeepstreamClient(gatewayUrl, Object.assign({
     maxReconnectInterval: 300,
     maxReconnectAttempts: 20,
+    path: '/e2e'
   }, options))
   clients[clientName] = {
     name: clientName,

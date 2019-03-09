@@ -60,11 +60,11 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
       res.end()
     })
 
-    server.ws('/deepstream', {
+    server.ws(this._getOption('urlPath'), {
       /* Options */
       compression: 0,
-      maxPayloadLength: 16 * 1024 * 1024,
-      idleTimeout: 10,
+      maxPayloadLength: this._getOption('maxMessageSize'),
+      idleTimeout: this._getOption('heartbeatInterval') * 2,
       /* Handlers */
       open: (ws, request) => {
         const socketWrapper = this.createWebsocketWrapper(ws, request)
