@@ -5,6 +5,9 @@ os:
   - Visual Studio 2015
 
 install:
+  - curl -L -o nasm.exe https://www.nasm.us/pub/nasm/releasebuilds/2.13.03/win64/nasm-2.13.03-installer-x64.exe
+  - start /wait nasm.exe /S
+  - ps: $env:path="C:\Program Files\nasm;$($env:path)"
   - ps: Install-Product node 10.15.1 x64
   - git submodule update --init --recursive
   - npm install
