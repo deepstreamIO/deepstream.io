@@ -21,13 +21,5 @@ module.exports = function (program) {
 }
 
 function action () {
-  let processExec
-  try {
-    require('nexeres')
-    processExec = process.argv[0]
-  } catch (e) {
-    processExec = process.argv[1]
-  }
-
-  daemon.start({ processExec })
+  daemon.start({ processExec: process.argv[1] })
 }
