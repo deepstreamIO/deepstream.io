@@ -1,3 +1,11 @@
+## [3.2.2] - 2019.03.10
+
+### Fixes
+
+- Lingering nexe issues, such as entry points
+- Including uWS options such as path and heartbeat timeouts
+- Don't error if closing server more than once, just log that shutdown is already in progress
+
 ## [3.2.1] - 2019.03.04
 
 ### Improvements
