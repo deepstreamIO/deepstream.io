@@ -134,7 +134,12 @@ module.exports = class Deepstream extends EventEmitter {
       throw new Error('The server is already stopped.')
     }
 
-    if ([STATES.CONNECTION_ENDPOINT_SHUTDOWN, STATES.SERVICE_SHUTDOWN, STATES.PLUGIN_SHUTDOWN, STATES.LOGGER_SHUTDOWN].includes(this._currentState)) {
+    if ([
+      STATES.CONNECTION_ENDPOINT_SHUTDOWN,
+      STATES.SERVICE_SHUTDOWN,
+      STATES.PLUGIN_SHUTDOWN,
+      STATES.LOGGER_SHUTDOWN
+    ].includes(this._currentState)) {
       this._options.logger.info(C.EVENT.INFO, `Already shutting down server, currently in state: ${this._currentState}`)
       return
     }
