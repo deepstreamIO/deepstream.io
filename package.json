@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "a scalable server for realtime webapps",
   "main": "src/deepstream.io.js",
   "bin": {
@@ -33,7 +33,7 @@
     "js-yaml": "^3.8.1",
     "mkdirp": "^0.5.1",
     "needle": "^1.4.5",
-    "uws": "git+https://github.com/deepstreamIO/uws-dependency.git#v0.12.0"
+    "uws": "10.148.1"
   },
   "devDependencies": {
     "async": "^2.1.4",
