@@ -489,6 +489,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    * @returns {void}
    */
   _onSocketClose (socketWrapper) {
+    if (this._authenticatedSockets.delete(socketWrapper)) {
     if (this._authenticationHandler.onClientDisconnect) {
       this._authenticationHandler.onClientDisconnect(socketWrapper.user)
     }
@@ -498,6 +499,7 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
 
     if (socketWrapper.user !== OPEN) {
       this.emit('client-disconnected', socketWrapper)
+    }
     }
 
     this.onSocketWrapperClosed(socketWrapper)
