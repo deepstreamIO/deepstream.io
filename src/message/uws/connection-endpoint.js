@@ -189,7 +189,7 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
    */
   createWebsocketWrapper (websocket, upgradeReq) {
     const handshakeData = {
-      remoteAddress: websocket.getRemoteAddress(),
+      remoteAddress: new Uint8Array(websocket.getRemoteAddress()).join('.'),
       headers: UWSConnectionEndpoint.getHeaders(this._options.headers, upgradeReq),
       referer: upgradeReq.getHeader('referer')
     }
