@@ -1,3 +1,13 @@
+## [3.2.3] - 2019.03.22
+  
+### Fixes
+
+- Issues due to hooks into monitoring tool for enterprise customers (hooks will eventually find themselves into OS!)
+
+### Misc
+
+- Updating all dependencies (minor changes) 
+
 ## [3.2.2] - 2019.03.10
 
 ### Fixes
