@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 'use strict'
 
 const C = require('../constants/constants')
@@ -9,6 +10,7 @@ const messageBuilder = require('../message/message-builder')
 const recordRequest = require('./record-request')
 
 const writeSuccess = JSON.stringify({ writeSuccess: true })
+const RECORD = C.TOPIC.RECORD
 
 /**
  * Handles write acknowledgements during a force write.
@@ -28,7 +30,7 @@ function handleForceWriteAcknowledgement (
   socketWrapper, message, cacheResponse, storageResponse, error
 ) {
   if (storageResponse && cacheResponse) {
-    socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
+    socketWrapper.sendMessage(RECORD, C.ACTIONS.WRITE_ACKNOWLEDGEMENT, [
       message.data[0],
       [message.data[1]],
       messageBuilder.typed(error)
@@ -42,13 +44,13 @@ module.exports = class RecordHandler {
    *
    * @param {Object} options deepstream options
    */
-  constructor(options, subscriptionRegistry, listenerRegistry, metaData) {
+  constructor (options, subscriptionRegistry, listenerRegistry, metaData) {
     this._metaData = metaData
     this._options = options
     this._subscriptionRegistry =
-        subscriptionRegistry || new SubscriptionRegistry(options, C.TOPIC.RECORD)
+        subscriptionRegistry || new SubscriptionRegistry(options, RECORD)
     this._listenerRegistry =
-        listenerRegistry || new ListenerRegistry(C.TOPIC.RECORD, options, this._subscriptionRegistry)
+        listenerRegistry || new ListenerRegistry(RECORD, options, this._subscriptionRegistry)
     this._subscriptionRegistry.setSubscriptionListener(this._listenerRegistry)
     this._transitions = {}
     this._recordRequestsInProgress = {}
@@ -67,13 +69,13 @@ module.exports = class RecordHandler {
    * @public
    * @returns {void}
    */
-  handle(socketWrapper, message) {
+  handle (socketWrapper, message) {
     /*
      * All messages have to provide at least the name of the record they relate to
      * or a pattern in case of listen
      */
     if (!message.data || message.data.length < 1) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
+      socketWrapper.sendError(RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.raw)
       return
     }
 
@@ -142,7 +144,7 @@ module.exports = class RecordHandler {
       this._options.logger.warn(C.EVENT.UNKNOWN_ACTION, message.action, this._metaData)
 
       if (socketWrapper !== C.SOURCE_MESSAGE_CONNECTOR) {
-        socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
+        socketWrapper.sendError(RECORD, C.EVENT.UNKNOWN_ACTION, `unknown action ${message.action}`)
       }
     }
   }
@@ -157,14 +159,14 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _hasRecord(socketWrapper, message) {
+  _hasRecord (socketWrapper, message) {
     const onComplete = function (record, recordName, socket) {
       const hasRecord = record ? C.TYPES.TRUE : C.TYPES.FALSE
-      socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
+      socket.sendMessage(RECORD, C.ACTIONS.HAS, [recordName, hasRecord])
     }
 
     const onError = function (event, errorMessage, recordName, socket) {
-      socket.sendError(C.TOPIC.RECORD, C.ACTIONS.HAS, [recordName, event])
+      socket.sendError(RECORD, C.ACTIONS.HAS, [recordName, event])
     }
 
     recordRequest(
@@ -186,20 +188,20 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _snapshot(socketWrapper, message) {
+  _snapshot (socketWrapper, message) {
     const onComplete = function (record, recordName, socket) {
       if (record) {
         sendRecord(recordName, record, socket)
       } else {
         socket.sendError(
-            C.TOPIC.RECORD,
+            RECORD,
             C.ACTIONS.SNAPSHOT,
             [recordName, C.EVENT.RECORD_NOT_FOUND]
         )
       }
     }
     const onError = function (event, errorMessage, recordName, socket) {
-      socket.sendError(C.TOPIC.RECORD, C.ACTIONS.SNAPSHOT, [recordName, event])
+      socket.sendError(RECORD, C.ACTIONS.SNAPSHOT, [recordName, event])
     }
 
     recordRequest(
@@ -221,20 +223,20 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _head(socketWrapper, message) {
+  _head (socketWrapper, message) {
     const onComplete = function (record, recordName, socket) {
       if (record) {
-        socket.sendMessage(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, record._v])
+        socket.sendMessage(RECORD, C.ACTIONS.HEAD, [recordName, record._v])
       } else {
         socket.sendError(
-            C.TOPIC.RECORD,
+            RECORD,
             C.ACTIONS.HEAD,
             [recordName, C.EVENT.RECORD_NOT_FOUND]
         )
       }
     }
     const onError = function (error, errorMessage, recordName, socket) {
-      socket.sendError(C.TOPIC.RECORD, C.ACTIONS.HEAD, [recordName, error])
+      socket.sendError(RECORD, C.ACTIONS.HEAD, [recordName, error])
     }
 
     recordRequest(
@@ -259,7 +261,7 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _createOrRead(socketWrapper, message) {
+  _createOrRead (socketWrapper, message) {
     const onComplete = function (record, recordName, socket) {
       if (record) {
         this._read(recordName, record, socket)
@@ -301,16 +303,16 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _createAndUpdate(socketWrapper, message) {
+  _createAndUpdate (socketWrapper, message) {
     if (message.data.length < 4) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
+      socketWrapper.sendError(RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data[0])
       return
     }
 
     const recordName = message.data[0]
     if (recordName.length === 0) {
       socketWrapper.sendError(
-          C.TOPIC.RECORD,
+          RECORD,
           C.EVENT.INVALID_MESSAGE_DATA,
           'record name must have non-zero length'
       )
@@ -333,7 +335,7 @@ module.exports = class RecordHandler {
         return
       } else if (isPatch) {
         socketWrapper.sendError(
-            C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, 'unable to patch record data on hot path'
+            RECORD, C.EVENT.INVALID_MESSAGE_DATA, 'unable to patch record data on hot path'
         )
         return
       }
@@ -368,8 +370,8 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _forceWrite(recordName, message, socketWrapper) {
-    const record = {_v: 0, _d: JSON.parse(message.data[2])}
+  _forceWrite (recordName, message, socketWrapper) {
+    const record = { _v: 0, _d: JSON.parse(message.data[2]) }
     const writeAck = message.data[message.data.length - 1] === writeSuccess
     let cacheResponse = false
     let storageResponse = false
@@ -408,7 +410,7 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _create(recordName, socketWrapper, callback) {
+  _create (recordName, socketWrapper, callback) {
     const record = {
       _v: 0,
       _d: {}
@@ -418,7 +420,7 @@ module.exports = class RecordHandler {
     this._options.cache.set(recordName, record, (error) => {
       if (error) {
         this._options.logger.error(C.EVENT.RECORD_CREATE_ERROR, recordName, this._metaData)
-        socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName)
+        socketWrapper.sendError(RECORD, C.EVENT.RECORD_CREATE_ERROR, recordName)
       } else if (callback) {
         callback(recordName, socketWrapper)
       } else {
@@ -446,7 +448,7 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _read(recordName, record, socketWrapper) {
+  _read (recordName, record, socketWrapper) {
     this._permissionAction(C.ACTIONS.READ, recordName, socketWrapper, () => {
       this._subscriptionRegistry.subscribe(recordName, socketWrapper)
       sendRecord(recordName, record, socketWrapper)
@@ -464,13 +466,13 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _update(socketWrapper, message, upsert) {
+  _update (socketWrapper, message, upsert) {
     const dataLength = message.data.length
     if (
         (message.action === C.ACTIONS.UPDATE && (dataLength !== 4 && dataLength !== 3)) ||
         (message.action === C.ACTIONS.PATCH && (dataLength !== 5 && dataLength !== 4))
     ) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data)
+      socketWrapper.sendError(RECORD, C.EVENT.INVALID_MESSAGE_DATA, message.data)
       return
     }
 
@@ -488,13 +490,13 @@ module.exports = class RecordHandler {
     }
 
     if (isNaN(version)) {
-      socketWrapper.sendError(C.TOPIC.RECORD, C.EVENT.INVALID_VERSION, [recordName, version])
+      socketWrapper.sendError(RECORD, C.EVENT.INVALID_VERSION, [recordName, version])
       return
     }
 
     let transition = this._transitions[recordName]
     if (transition && transition.hasVersion(version)) {
-      transition.sendVersionExists({message, version, sender: socketWrapper})
+      transition.sendVersionExists({ message, version, sender: socketWrapper })
       return
     }
 
@@ -518,7 +520,7 @@ module.exports = class RecordHandler {
    * @package private
    * @returns {void}
    */
-  _$broadcastUpdate(name, message, noDelay, originalSender) {
+  _$broadcastUpdate (name, message, noDelay, originalSender) {
     this._subscriptionRegistry.sendToSubscribers(name, message, noDelay, originalSender)
   }
 
@@ -532,7 +534,7 @@ module.exports = class RecordHandler {
    * @package private
    * @returns {void}
    */
-  _$transitionComplete(recordName) {
+  _$transitionComplete (recordName) {
     delete this._transitions[recordName]
   }
 
@@ -548,7 +550,7 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  removeRecordRequest(recordName) {
+  removeRecordRequest (recordName) {
     if (!this._recordRequestsInProgress[recordName]) {
       return
     }
@@ -575,7 +577,7 @@ module.exports = class RecordHandler {
    * @public
    * @returns {void}
    */
-  runWhenRecordStable(recordName, callback) {
+  runWhenRecordStable (recordName, callback) {
     if (
         !this._recordRequestsInProgress[recordName] ||
         this._recordRequestsInProgress[recordName].length === 0
@@ -597,7 +599,7 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _delete(socketWrapper, message) {
+  _delete (socketWrapper, message) {
     const recordName = message.data[0]
 
     if (this._transitions[recordName]) {
@@ -621,7 +623,7 @@ module.exports = class RecordHandler {
    *
    * @private @returns {void}
    */
-  _deleteAck(socketWrapper, message) {
+  _deleteAck (socketWrapper, message) {
     const recordName = message.data[1]
 
     if (this._transitions[recordName]) {
@@ -642,7 +644,7 @@ module.exports = class RecordHandler {
    * @package private
    * @returns {void}
    */
-  _onDeleted(name, message, originalSender) {
+  _onDeleted (name, message, originalSender) {
     this._$broadcastUpdate(name, message, true, originalSender)
 
     for (const subscriber of this._subscriptionRegistry.getLocalSubscribers(name)) {
@@ -663,9 +665,9 @@ module.exports = class RecordHandler {
    * @private
    * @returns {void}
    */
-  _permissionAction(action, recordName, socketWrapper, successCallback) {
+  _permissionAction (action, recordName, socketWrapper, successCallback) {
     const message = {
-      topic: C.TOPIC.RECORD,
+      topic: RECORD,
       action,
       data: [recordName]
     }
@@ -682,7 +684,7 @@ module.exports = class RecordHandler {
   /*
    * Callback for complete permissions. Notifies socket if permission has failed
    */
-  _onPermissionResponse(socketWrapper, message, successCallback, error, canPerformAction) {
+  _onPermissionResponse (socketWrapper, message, successCallback, error, canPerformAction) {
     if (error) {
       socketWrapper.sendError(message.topic, C.EVENT.MESSAGE_PERMISSION_ERROR, error.toString())
     } else if (canPerformAction !== true) {
@@ -706,5 +708,5 @@ module.exports = class RecordHandler {
  * @returns {void}
  */
 function sendRecord (recordName, record, socketWrapper) {
-  socketWrapper.sendMessage(C.TOPIC.RECORD, C.ACTIONS.READ, [recordName, record._v, record._d])
+  socketWrapper.sendMessage(RECORD, C.ACTIONS.READ, [recordName, record._v, record._d])
 }

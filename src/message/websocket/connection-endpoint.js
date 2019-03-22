@@ -490,16 +490,16 @@ module.exports = class ConnectionEndpoint extends events.EventEmitter {
    */
   _onSocketClose (socketWrapper) {
     if (this._authenticatedSockets.delete(socketWrapper)) {
-    if (this._authenticationHandler.onClientDisconnect) {
-      this._authenticationHandler.onClientDisconnect(socketWrapper.user)
-    }
+      if (this._authenticationHandler.onClientDisconnect) {
+        this._authenticationHandler.onClientDisconnect(socketWrapper.user)
+      }
 
-    this._authenticatedSockets.delete(socketWrapper)
-    this._scheduledSocketWrapperWrites.delete(socketWrapper)
+      this._authenticatedSockets.delete(socketWrapper)
+      this._scheduledSocketWrapperWrites.delete(socketWrapper)
 
-    if (socketWrapper.user !== OPEN) {
-      this.emit('client-disconnected', socketWrapper)
-    }
+      if (socketWrapper.user !== OPEN) {
+        this.emit('client-disconnected', socketWrapper)
+      }
     }
 
     this.onSocketWrapperClosed(socketWrapper)

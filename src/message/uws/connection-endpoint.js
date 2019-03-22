@@ -173,7 +173,7 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
         conn.socket.close()
       }
     })
-    this.connections.clear();
+    this.connections.clear()
     this.uWS.us_listen_socket_close(this.listenSocket)
 
     setTimeout(() => this.emit('close'), 2000)
