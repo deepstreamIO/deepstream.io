@@ -5,7 +5,7 @@ os:
   - Visual Studio 2015
 
 install:
-  - ps: Install-Product node 8 x64
+  - ps: Install-Product node 10 x64
   - sed -i "s@git\@github.com:@https:\/\/github.com\/@" .gitmodules
   - git submodule update --init --recursive
   - npm install

@@ -24,19 +24,20 @@ compiler:
 
 node_js:
   - "10"
-  - "8"
 
 env:
   - DEFAULT_DELAY: 50
 
 matrix:
   include:
-    - node_js: "8"
+    - node_js: "10"
+      os: linux
+    - node_js: "10"
       os: osx
 
 script:
   - npm run lint;
-  - npm run test:coverage
+  - npm run test;
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       sh scripts/run-e2e.sh;
     fi
