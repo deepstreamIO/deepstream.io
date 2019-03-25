@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 
-export default class AuthenticationHandlerMock extends EventEmitter implements AuthenticationHandler {
+export default class AuthenticationHandlerMock extends EventEmitter {
   public onClientDisconnectCalledWith: any
   public sendNextValidAuthWithData: boolean
   public lastUserValidationQueryArgs: any

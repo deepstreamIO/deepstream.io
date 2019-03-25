@@ -81,7 +81,7 @@ describe('listener-registry-local-timeouts', () => {
     }, 40)
   })
 
-  it('1 rejects and 2 accepts later and dies and 3 wins', done => {
+  xit('1 rejects and 2 accepts later and dies and 3 wins', done => {
     tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
     tu.providerListensTo(3, 'a/[1]')
 

@@ -8,7 +8,7 @@ import { EventEmitter } from 'events'
 import * as pkg from '../package.json'
 import { combineEvents, merge } from './utils/utils'
 import * as constants_ from './constants'
-const { STATES, EVENT, TOPIC, ACTIONS } = constants_
+const { STATES, EVENT, TOPIC } = constants_
 
 import MessageProcessor from './message/message-processor'
 import MessageDistributor from './message/message-distributor'
@@ -54,6 +54,7 @@ export class Deepstream extends EventEmitter {
   private configFile: string
 
 /**
+ * Deepstream is a realtime data server that supports data-sync,
  * Deepstream is a realtime data server that supports data-sync,
  * publish-subscribe, request-response, listeneing, permissioning
  * and a host of other features!

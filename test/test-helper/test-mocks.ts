@@ -46,6 +46,7 @@ export const getTestMocks = () => {
       authData,
       clientData,
       sendMessage: () => {},
+      sendBinaryMessage: () => {},
       sendAckMessage: () => {},
       uuid: Math.random(),
       parseData: message => {
@@ -63,7 +64,9 @@ export const getTestMocks = () => {
       parseMessage: message => message,
       destroy: () => {},
       getHandshakeData: () => ({}),
-      close: () => socketWrapper.emit('close', this),
+      close: () => {},
+      onClose: () => {},
+      removeOnClose: () => {},
       emit: socketWrapperEmitter.emit,
       on: socketWrapperEmitter.on,
       once: socketWrapperEmitter.once,

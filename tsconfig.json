@@ -16,7 +16,8 @@
   "files": [
     "./node_modules/@types/node/index.d.ts",
     "./node_modules/@types/jasmine/index.d.ts",
-    "./node_modules/uWebSockets.js/index.d.ts"
+    "./node_modules/uWebSockets.js/index.d.ts",
+    "./src/typings.d.ts"
   ],
   "include": [
     "protocol/**/*",
@@ -24,8 +25,6 @@
     "src/**/*",
     "src/**/*.json",
     "test/**/*",
-    "test/**/*.pem",
-    "test/**/*.json",
     "package.json"
   ],
   "exclude": [

@@ -1,12 +1,12 @@
-const { Deepstream } = require('../../dist/src/deepstream.io')
-const LocalCache = require('../../dist/src/default-plugins/local-cache').default
+const { Deepstream } = require('../../src/deepstream.io')
+const LocalCache = require('../../src/default-plugins/local-cache').default
 const localCache = new LocalCache()
 
 const util = require('util')
 const EventEmitter = require('events').EventEmitter
 const Logger = require('./test-logger')
 
-const getUid = require('../../dist/src/utils/utils').getUid
+const getUid = require('../../src/utils/utils').getUid
 
 const path = require('path')
 
