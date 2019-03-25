@@ -14,14 +14,20 @@ interface SimpleSocketWrapper {
   isRemote: boolean
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
+  sendBinaryMessage? (message: Buffer, buffer?: boolean): void
   clientData?: object | null
-  onClose: Function
 }
 
-interface SocketWrapper extends SimpleSocketWrapper {
+interface StatefulSocketWrapper extends SimpleSocketWrapper {
+  isClosed: boolean,
+  onClose: Function,
+  removeOnClose: Function
+  destroy: Function
+}
+
+interface SocketWrapper extends StatefulSocketWrapper {
   uuid: number
   authData: object
-  isClosed: boolean
   clientData: object | null
   getHandshakeData: Function
   onMessage: Function
@@ -29,7 +35,6 @@ interface SocketWrapper extends SimpleSocketWrapper {
   getMessage: Function
   parseData: Function
   flush: Function
-  destroy: Function
 }
 
 interface Message {
@@ -90,6 +95,10 @@ interface ConnectionEndpoint extends DeepstreamPlugin {
   onMessages (socketWrapper: SocketWrapper, messages: Array<Message>): void
   close (): void
   scheduleFlush? (socketWrapper: SocketWrapper)
+}
+
+interface SocketConnectionEndpoint extends ConnectionEndpoint {
+  scheduleFlush (socketWrapper: SocketWrapper)
 }
 
 interface PluginConfig {

@@ -6,6 +6,7 @@ import {
 } from '../../constants'
 import * as fileUtils from '../../config/file-utils'
 import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
+import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import {createUWSSocketWrapper} from './socket-wrapper-factory'
 
 /**
@@ -17,6 +18,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
   private listenSocket: null
   private uWS: any
   private connections: Map<any, any>
+  private pingInterval: any
 
   constructor (options: WebSocketServerConfig, services: DeepstreamServices) {
     super(options, services)
@@ -60,11 +62,11 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
       res.end()
     })
 
-    server.ws('/deepstream', {
+    server.ws(this.getOption('urlPath'), {
       /* Options */
       compression: 0,
-      maxPayloadLength: 16 * 1024 * 1024,
-      idleTimeout: 10,
+      maxPayloadLength: this.getOption('maxMessageSize'),
+      idleTimeout: this.getOption('heartbeatInterval') * 2,
       /* Handlers */
       open: (ws, request) => {
         const socketWrapper = this.createWebsocketWrapper(ws, request)
@@ -72,7 +74,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
         this.onConnection(socketWrapper)
       },
       message: (ws, message) => {
-        this.connections.get(ws).onMessage(Buffer.from(message).toString('utf8'))
+        this.connections.get(ws).onMessage(binaryMessageParser.parse(Buffer.from(message.slice())))
       },
       drain: () => {
       },
@@ -90,10 +92,10 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
         this.onReady()
 
         const pingMessage = binaryMessageBuilder.getMessage({ topic: TOPIC.CONNECTION, action: CONNECTION_ACTIONS.PING }, false)
-        setInterval(() => {
+        this.pingInterval = setInterval(() => {
           this.connections.forEach(con => {
             if (!con.isClosed) {
-              con.sendNative(pingMessage)
+              con.sendBinaryMessage!(pingMessage)
             }
           })
         }, this.getOption('heartbeatInterval'))
@@ -173,6 +175,8 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
       }
     })
     this.uWS.us_listen_socket_close(this.listenSocket)
+    this.connections.clear()
+    clearInterval(this.pingInterval);
     setTimeout(() => this.emit('close'), 2000)
   }
 
@@ -188,7 +192,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
    */
   public createWebsocketWrapper (websocket, upgradeReq): SocketWrapper {
     const handshakeData = {
-      remoteAddress: websocket.getRemoteAddress(),
+      remoteAddress: new Uint8Array(websocket.getRemoteAddress()).join('.'),
       headers: UWSConnectionEndpoint.getHeaders(this.options.headers, upgradeReq),
       referer: upgradeReq.getHeader('referer')
     }

@@ -337,11 +337,6 @@ export default class Server extends EventEmitter {
   /**
    * Generic callback for connection errors. This will most often be called
    * if the configured port number isn't available
-   *
-   * @param   {String} error
-   *
-   * @private
-   * @returns {void}
    */
   private _onError (error: string): void {
     this.logger.error(EVENT.CONNECTION_ERROR, error.toString())

@@ -1,6 +1,7 @@
 import { EVENT, TOPIC, CONNECTION_ACTIONS, ParseResult, Message } from '../../constants'
 import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
+import { WebSocketServerConfig } from '../websocket/connection-endpoint'
 
 /**
  * This class wraps around a websocket
@@ -15,9 +16,9 @@ export class UwsSocketWrapper implements SocketWrapper {
   public uuid: number = Math.random()
   public authCallback: Function
   public authAttempts: number = 0
-  public onCloseCallbacks: Array<Function>
 
-  private bufferedWrites: string = ''
+  private bufferedWrites: Array<Buffer>
+  private closeCallbacks: Set<Function> = new Set()
 
   public authData: object
   public clientData: object
@@ -26,12 +27,12 @@ export class UwsSocketWrapper implements SocketWrapper {
     private socket: any,
     private handshakeData: any,
     private logger: Logger,
-    private config: any,
-    private connectionEndpoint: ConnectionEndpoint
+    private config: WebSocketServerConfig,
+    private connectionEndpoint: SocketConnectionEndpoint
    ) {
   }
 
-  get isOpen() {
+  get isOpen () {
     return this.isClosed !== true
   }
 
@@ -41,9 +42,9 @@ export class UwsSocketWrapper implements SocketWrapper {
    * and can wait to be bundled into another message if necessary
    */
   public flush () {
-    if (this.bufferedWrites !== '') {
-      this.socket.send(this.bufferedWrites)
-      this.bufferedWrites = ''
+    if (this.bufferedWrites.length !== 0) {
+      this.socket.send(Buffer.concat(this.bufferedWrites), true)
+      this.bufferedWrites = []
     }
   }
 
@@ -53,17 +54,22 @@ export class UwsSocketWrapper implements SocketWrapper {
    *                                 this message type
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean): void {
-    if (this.isOpen) {
-      if (this.config.outgoingBufferTimeout === 0) {
-        this.socket.send(message)
-      } else if (!allowBuffering) {
-        this.flush()
-        this.socket.send(message)
-      } else {
-        this.bufferedWrites += message
-        this.connectionEndpoint!.scheduleFlush(this)
-      }
-    }
+    this.sendBinaryMessage(
+        binaryMessageBuilder.getMessage(message, false),
+        allowBuffering
+    )
+  }
+
+  /**
+   * Sends a message based on the provided action and topic
+   * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
+   *                                 this message type
+   */
+  public sendAckMessage (message: Message, allowBuffering: boolean): void {
+    this.sendBinaryMessage(
+        binaryMessageBuilder.getMessage(message, true),
+        true
+    )
   }
 
   public getMessage (message: Message): Buffer {
@@ -79,20 +85,6 @@ export class UwsSocketWrapper implements SocketWrapper {
     return binaryMessageParser.parse(Buffer.from(Buffer.from(message)))
   }
 
-  /**
-   * Sends a message based on the provided action and topic
-   * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
-   *                                 this message type
-   */
-  public sendAckMessage (message: Message, allowBuffering: boolean): void {
-    if (this.isOpen) {
-      this.sendMessage(
-        binaryMessageBuilder.getMessage(message, true),
-        allowBuffering
-      )
-    }
-  }
-
   public parseData (message: Message): true | Error {
     return binaryMessageParser.parseData(message)
   }
@@ -105,16 +97,15 @@ export class UwsSocketWrapper implements SocketWrapper {
    * logic and closes the connection
    */
   public destroy (): void {
+    this.socket.end()
   }
 
   public close (): void {
     this.isClosed = true
     delete this.authCallback
 
-    this.onCloseCallbacks.forEach(cb => cb())
+    this.closeCallbacks.forEach(cb => cb())
     this.logger.info(EVENT.CLIENT_DISCONNECTED, this.user)
-
-    // Run all close callbacks
   }
 
   /**
@@ -126,8 +117,27 @@ export class UwsSocketWrapper implements SocketWrapper {
     return this.handshakeData
   }
 
-  public onClose (): void {
+  public onClose (callback: Function): void {
+    this.closeCallbacks.add(callback)
+  }
 
+  public removeOnClose (callback: Function): void {
+    this.closeCallbacks.delete(callback)
+  }
+
+  public sendBinaryMessage (binaryMessage: Buffer, allowBuffering: boolean) {
+    if (this.isOpen) {
+      if (this.config.outgoingBufferTimeout === 0) {
+        this.socket.send(binaryMessage, true)
+      } else if (!allowBuffering) {
+        this.flush()
+        this.socket.send(Buffer.concat(this.bufferedWrites), true)
+        this.bufferedWrites = []
+      } else {
+        this.bufferedWrites.push(binaryMessage)
+        this.connectionEndpoint.scheduleFlush(this)
+      }
+    }
   }
 }
 
@@ -135,6 +145,6 @@ export function createUWSSocketWrapper (
   socket: any,
   handshakeData: any,
   logger: Logger,
-  config: DeepstreamConfig,
-  connectionEndpoint: ConnectionEndpoint
+  config: WebSocketServerConfig,
+  connectionEndpoint: SocketConnectionEndpoint
 ) { return new UwsSocketWrapper(socket, handshakeData, logger, config, connectionEndpoint) }

@@ -321,7 +321,7 @@ export default class ListenerRegistry implements SubscriptionListener {
         provider.pattern === pattern
       ) {
         if (provider.closeListener) {
-          provider.socketWrapper.removeListener('close', provider.closeListener)
+          provider.socketWrapper.removeOnClose(provider.closeListener)
         }
         this.removeActiveListener(subscriptionName)
         if (this.clientRegistry.hasLocalSubscribers(subscriptionName)) {

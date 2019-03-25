@@ -155,7 +155,7 @@ export default class SubscriptionRegistry {
       if (socket === senderSocket) {
         continue
       }
-      socket.sendNativeMessage(msg, true)
+      socket.sendBinaryMessage!(msg, true)
     }
   }
 
@@ -255,7 +255,7 @@ export default class SubscriptionRegistry {
     const subscriptions = this.sockets.get(socket) || new Set()
     if (subscriptions.size === 0) {
       this.sockets.set(socket, subscriptions)
-      socket.once('close', this.onSocketClose)
+      socket.onClose(this.onSocketClose)
     }
     subscriptions.add(subscription)
 
@@ -269,7 +269,7 @@ export default class SubscriptionRegistry {
   private removeSocket (subscription, socket): void {
     if (subscription.sockets.size === 0) {
       this.subscriptions.delete(subscription.name)
-      socket.removeListener('close', this.onSocketClose)
+      socket.removeOnClose(this.onSocketClose)
     }
 
     if (this.subscriptionListener) {
