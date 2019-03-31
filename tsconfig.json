@@ -25,6 +25,7 @@
     "src/**/*",
     "src/**/*.json",
     "test/**/*",
+    "test-e2e/**/*",
     "package.json"
   ],
   "exclude": [

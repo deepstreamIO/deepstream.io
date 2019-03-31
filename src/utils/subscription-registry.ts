@@ -291,7 +291,7 @@ export default class SubscriptionRegistry {
   private onSocketClose (socket: SocketWrapper): void {
     const subscriptions = this.sockets.get(socket)
     if (!subscriptions) {
-      // log error
+      this.services.logger.error(EVENT_ACTIONS[this.constants.NOT_SUBSCRIBED], 'A socket has an illegal registered close callback')
       return
     }
     for (const subscription of subscriptions) {

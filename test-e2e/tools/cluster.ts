@@ -1,46 +1,49 @@
-const { Deepstream } = require('../../src/deepstream.io')
-const LocalCache = require('../../src/default-plugins/local-cache').default
+import {When, Then, Given} from 'cucumber'
+import * as path from 'path'
+import { Deepstream } from '../../src/deepstream.io'
+import LocalCache from '../../src/default-plugins/local-cache'
+
+import { EventEmitter } from 'events'
+import { Logger } from './test-logger'
+
+const onlyLoginOnceUser = { loggedIn: false }
 const localCache = new LocalCache()
 
-const util = require('util')
-const EventEmitter = require('events').EventEmitter
-const Logger = require('./test-logger')
+export class Cluster extends EventEmitter {
+  private wsPort: any
+  private httpPort: any
+  private server: any
+  private enableLogging: any
+  public started: boolean
 
-const getUid = require('../../src/utils/utils').getUid
-
-const path = require('path')
-
-let onlyLoginOnceUser = { loggedIn: false }
-
-module.exports = class DeepstreamTest extends EventEmitter {
   constructor (wsPort, httpPort, enableLogging) {
     super()
-    this._wsPort = wsPort
-    this._httpPort = httpPort
-    this._server = null
-    this._enableLogging = enableLogging
+    this.wsPort = wsPort
+    this.httpPort = httpPort
+    this.server = null
+    this.enableLogging = enableLogging
     this.started = false
     this._startServer()
   }
 
-  getUrl () {
-    return `localhost:${this._wsPort}`
+  public getUrl () {
+    return `localhost:${this.wsPort}`
   }
 
-  getHttpUrl () {
-    return `localhost:${this._httpPort}`
+  public getHttpUrl () {
+    return `localhost:${this.httpPort}`
   }
 
-  getAuthUrl () {
-    return `localhost:${this._httpPort}/auth`
+  public getAuthUrl () {
+    return `localhost:${this.httpPort}/auth`
   }
 
-  updatePermissions (type, done) {
-    this._server.services.permissionHandler.once('config-loaded', () => done())
-    this._server.services.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
+  public updatePermissions (type, done) {
+    this.server.services.permissionHandler.once('config-loaded', () => done())
+    this.server.services.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
   }
 
-  start () {
+  public start () {
     if (this.started) {
       this.emit('started')
       return
@@ -49,19 +52,19 @@ module.exports = class DeepstreamTest extends EventEmitter {
     this._startServer()
   }
 
-  stop () {
+  public stop () {
     if (!this.started) {
       this.emit('stopped')
       return
     }
     this.started = false
-    this._server.stop()
+    this.server.stop()
   }
 
-  _startServer () {
+  public _startServer () {
     this.started = true
-    this._server = new Deepstream({
-      serverName : `server-${this._wsPort}`,
+    this.server = new Deepstream({
+      serverName : `server-${this.wsPort}`,
 
       stateReconciliationTimeout : 100,
       lockTimeout                : 1000,
@@ -82,14 +85,14 @@ module.exports = class DeepstreamTest extends EventEmitter {
         websocket: {
           name: 'uws',
           options: {
-            port: this._wsPort,
+            port: this.wsPort,
             heartbeatInterval: 5000
           }
         },
         http: {
           name: 'http',
           options: {
-            port: this._httpPort,
+            port: this.httpPort,
             enableAuthEndpoint: true,
             authPath: '/auth',
             postPath: '/',
@@ -101,7 +104,7 @@ module.exports = class DeepstreamTest extends EventEmitter {
     })
 
     const tokens = new Map()
-    this._server.set('authenticationHandler', {
+    this.server.set('authenticationHandler', {
       isReady: true,
       isValidUser (headers, authData, callback) {
         if (authData.token) {
@@ -111,16 +114,16 @@ module.exports = class DeepstreamTest extends EventEmitter {
           }
 
           // authenticate token
-          const authResponseData = tokens.get(authData.token)
-          if (authResponseData.username) {
-            callback(true, authResponseData)
+          const response = tokens.get(authData.token)
+          if (response.username) {
+            callback(true, response)
             return
           }
         }
         const username = authData.username
         const token = Math.random().toString()
-        let clientData = null
-        const serverData = {}
+        let clientData: any = null
+        const serverData: any = {}
         let success
 
         // authenicate auth data
@@ -132,7 +135,7 @@ module.exports = class DeepstreamTest extends EventEmitter {
           serverData.role = 'user'
         } else if (username === 'userB' && authData.password === '123456789') {
           success = true
-          clientData = { 'favorite color': 'orange', id: username }
+          clientData = { 'favorite color': 'orange', 'id': username }
           serverData.role = 'admin'
         } else if (username === 'randomClientData') {
           success = true
@@ -155,15 +158,15 @@ module.exports = class DeepstreamTest extends EventEmitter {
       }
     })
 
-    this._server.set('cache', localCache)
+    this.server.set('cache', localCache)
 
-    if (this._enableLogging !== true) {
-      this._server.set('logger', new Logger())
+    if (this.enableLogging !== true) {
+      this.server.set('logger', new Logger())
     }
 
-    this._server.once('started', () => setTimeout(() => this.emit('started'), 500))
-    this._server.once('stopped', () => setTimeout(() => this.emit('stopped'), 500))
-    this._server.start()
+    this.server.once('started', () => setTimeout(() => this.emit('started'), 500))
+    this.server.once('stopped', () => setTimeout(() => this.emit('stopped'), 500))
+    this.server.start()
   }
 
 }

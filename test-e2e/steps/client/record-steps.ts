@@ -1,19 +1,10 @@
-'use strict'
-
-const sinon = require('sinon')
-
-const utils = require('./utils')
-
-const cucumber = require('cucumber')
-const When = cucumber.When
-const Then = cucumber.Then
-const Given = cucumber.Given
-
-const record = require('../../framework/record')
+import { defaultDelay } from '../../framework/utils'
+import {When, Then, Given} from 'cucumber'
+import { record } from '../../framework/record'
 
 When(/(.+) gets? the record "([^"]*)"$/, (clientExpression, recordName, done) => {
   record.getRecord(clientExpression, recordName)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 When(/(.+) sets the merge strategy to (remote|local)$/, (clientExpression, recordName) => {
@@ -21,11 +12,11 @@ When(/(.+) sets the merge strategy to (remote|local)$/, (clientExpression, recor
 })
 
 Then(/^(.+) (gets?|is not) notified of record "([^"]*)" getting (discarded|deleted)$/, (clientExpression, notified, recordName, action) => {
-  let called = notified.indexOf('is not') !== -1 ? false : true
+  const called = notified.indexOf('is not') !== -1 ? false : true
   if (action === 'discarded') {
     record.assert.discarded(clientExpression, recordName, called)
   } else {
-    record.assert.deleted(clientExpression, recordName, called)
+    record.assert.deleted(clientExpression, recordName)
   }
 })
 
@@ -54,12 +45,12 @@ Then(/^(.+) (?:have|has) record "([^"]*)" with path "([^"]*)" and data '([^']+)'
 
 Given(/^(.+) discards record "([^"]*)"$/, (clientExpression, recordName, done) => {
   record.discard(clientExpression, recordName)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Given(/^(.+) deletes record "([^"]*)"$/, (clientExpression, recordName, done) => {
   record.delete(clientExpression, recordName)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 When(/^(.+) requires? write acknowledgements for record "([^"]*)"$/, (clientExpression, recordName) => {
@@ -68,34 +59,34 @@ When(/^(.+) requires? write acknowledgements for record "([^"]*)"$/, (clientExpr
 
 When(/^(.+) sets? the record "([^"]*)" with data '([^']+)'$/, (clientExpression, recordName, data, done) => {
   record.set(clientExpression, recordName, data)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 When(/^(.+) sets? the record "([^"]*)" without being subscribed with data '([^']+)'$/, (clientExpression, recordName, data, done) => {
   record.setData(clientExpression, recordName, data)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 When(/^(.+) sets? the record "([^"]*)" without being subscribed with data '([^']+)' and requires write acknowledgement$/, (clientExpression, recordName, data, done) => {
   record.setDataWithWriteAck(clientExpression, recordName, data)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 When(
     /^(.+) sets? the record "([^"]*)" without being subscribed with path "([^"]*)" and data '([^']+)'$/,
 (clientExpression, recordName, path, data, done) => {
   record.setDataWithPath(clientExpression, recordName, path, data)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 When(/^(.+) sets? the record "([^"]*)" and path "([^"]*)" with data '([^']+)'$/, (clientExpression, recordName, path, data, done) => {
   record.setWithPath(clientExpression, recordName, path, data)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 When(/^(.+) erases the path "([^"]*)" on record "([^"]*)"$/, (clientExpression, path, recordName, done) => {
   record.erase(clientExpression, recordName, path)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Then(/^(.+) is told that the record "([^"]*)" was set without error$/, record.assert.writeAckSuccess)
@@ -109,7 +100,7 @@ Then(/^(.+) is told that the record "([^"]*)" experienced error "([^"]*)" while 
 
 Given(/^(.+) requests? a snapshot of record "([^"]*)"$/, (clientExpression, recordName, done) => {
   record.snapshot(clientExpression, recordName)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Then(/^(.+) gets? a snapshot response for "([^"]*)" with data '([^']+)'$/, record.assert.snapshotSuccess)
@@ -117,7 +108,7 @@ Then(/^(.+) gets? a snapshot response for "([^"]*)" with error '([^']+)'$/, reco
 
 Given(/^(.+) asks? if record "([^"]*)" exists$/, (clientExpression, recordName, done) => {
   record.has(clientExpression, recordName)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Then(/^(.+) gets? told record "([^"]*)" (.*)exists?$/, (clientExpression, recordName, adjective) => {
@@ -126,14 +117,14 @@ Then(/^(.+) gets? told record "([^"]*)" (.*)exists?$/, (clientExpression, record
 
 Then(/^(.+) asks? for the version of record "([^"]*)"$/, (clientExpression, recordName, done) => {
   record.head(clientExpression, recordName)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Then(/^(.+) gets? told record "([^"]*)" has version (.*)$/, (clientExpression, recordName, version) => {
   record.assert.headSuccess(clientExpression, recordName, Number(version))
 })
-Then(/^(.+) gets? a head response for "([^"]*)" with error '([^']+)'$/, record.assert.headError)
 
+Then(/^(.+) gets? a head response for "([^"]*)" with error '([^']+)'$/, record.assert.headError)
 
   /** ******************************************************************************************************************************
    *********************************************************** Lists ************************************************************
@@ -141,12 +132,12 @@ Then(/^(.+) gets? a head response for "([^"]*)" with error '([^']+)'$/, record.a
 
 When(/(.+) gets? the list "([^"]*)"$/, (clientExpression, listName, done) => {
   record.getList(clientExpression, listName)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Given(/^(.+) sets the entries on the list "([^"]*)" to '([^']*)'$/, (clientExpression, listName, data, done) => {
   record.setEntries(clientExpression, listName, data)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Given(/^(.+) (adds|removes) an entry "([^"]*)" (?:to|from) "([^""]*)"$/, (clientExpression, action, entryName, listName, done) => {
@@ -155,9 +146,8 @@ Given(/^(.+) (adds|removes) an entry "([^"]*)" (?:to|from) "([^""]*)"$/, (client
   } else {
     record.removeEntry(clientExpression, listName, entryName)
   }
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
-
 
 Then(/^(.+) have a list "([^"]*)" with entries '([^']*)'$/, record.assert.hasEntries)
 
@@ -181,10 +171,9 @@ When(/(.+) gets? a anonymous record$/, record.getAnonymousRecord)
 
 When(/(.+) sets? the underlying record to "([^"]*)" on the anonymous record$/, (clientExpression, recordName, done) => {
   record.setName(clientExpression, recordName)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Then(/(.+) anonymous record data is '([^']*)'$/, (clientExpression, data) => {
   record.assert.anonymousRecordContains(clientExpression, data)
 })
-

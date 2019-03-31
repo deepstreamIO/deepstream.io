@@ -1,15 +1,12 @@
-'use strict'
+// tslint:disable:no-shadowed-variable
 
-const { C, CONNECTION_STATE, EVENT } = require('deepstream.io-client-js')
-const sinon = require('sinon')
-const assert = require('assert')
+const { C } = require('deepstream.io-client-js')
+import * as sinon from 'sinon'
+import { clientHandler } from './client-handler'
 
-const clientHandler = require('./client-handler')
-const utils = require('./utils')
-
-module.exports = {
+export const client = {
   logsOut (clientExpression, done) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       client.client.close()
     })
     // current sync since protocol doesn't yet support async
@@ -17,13 +14,13 @@ module.exports = {
   },
 
   connect (clientExpression, server) {
-    clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+    clientHandler.getClientNames(clientExpression).forEach(clientName => {
       clientHandler.createClient(clientName, server)
     })
   },
 
   connectAndLogin (clientExpression, server, done) {
-    clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+    clientHandler.getClientNames(clientExpression).forEach(clientName => {
       const client = clientHandler.createClient(clientName, server)
       client.client.login({ username: clientName, password: 'abcdefgh' }, (success, data) => {
         client.login(success, data)
@@ -34,7 +31,7 @@ module.exports = {
   },
 
   login (clientExpression, username, password, done) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       client.client.login({
         username,
         password
@@ -47,7 +44,7 @@ module.exports = {
   },
 
   attemptLogin (clientExpression, username, password) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       client.client.login({
         username,
         password
@@ -56,7 +53,7 @@ module.exports = {
   },
 
   recievedTooManyLoginAttempts (clientExpression) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       const errorSpy = client.error[C.TOPIC[C.TOPIC.AUTH]][C.AUTH_ACTIONS[C.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS]]
       sinon.assert.calledOnce(errorSpy)
       errorSpy. resetHistory()
@@ -64,13 +61,13 @@ module.exports = {
   },
 
   recievesNoLoginResponse (clientExpression) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       sinon.assert.notCalled(client.login)
     })
   },
 
   recievesLoginResponse (clientExpression, loginFailed, data) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       const loginSpy = client.login
       if (!loginFailed) {
         sinon.assert.calledOnce(loginSpy)
@@ -88,7 +85,7 @@ module.exports = {
   },
 
   connectionTimesOut (clientExpression, done) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       setTimeout(() => {
         const errorSpy = client.error[C.TOPIC[C.TOPIC.CONNECTION]][C.CONNECTION_ACTIONS[C.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT]]
         sinon.assert.calledOnce(errorSpy)
@@ -102,7 +99,7 @@ module.exports = {
     const topic = topicName.toUpperCase()
     const event = C.EVENT[eventName.toUpperCase()]
 
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       const errorSpy = client.error[topic][event]
       sinon.assert.called(errorSpy)
       errorSpy. resetHistory()
@@ -112,7 +109,7 @@ module.exports = {
   recievedOneError (clientExpression, topicName, eventName) {
     const topic = C.TOPIC[C.TOPIC[topicName.toUpperCase()]]
     const event = eventName.toUpperCase()
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       const errorSpy = client.error[topic][event]
       sinon.assert.calledOnce(errorSpy)
       errorSpy. resetHistory()
@@ -120,7 +117,7 @@ module.exports = {
   },
 
   callbackCalled (clientExpression, eventName, notCalled, once, data) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       const spy = client[eventName]
       if (notCalled) {
         sinon.assert.notCalled(spy)
@@ -140,15 +137,18 @@ module.exports = {
   },
 
   recievedNoErrors (clientExpression) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       clientHandler.assertNoErrors(client.name)
     })
   },
 
   hadConnectionState (clientExpression, had, state) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      if (had) sinon.assert.calledWith(client.connectionStateChanged, state)
-      else sinon.assert.neverCalledWith(client.connectionStateChanged, state)
+    clientHandler.getClients(clientExpression).forEach(client => {
+      if (had) {
+        sinon.assert.calledWith(client.connectionStateChanged, state)
+      } else {
+        sinon.assert.neverCalledWith(client.connectionStateChanged, state)
+      }
     })
   },
 

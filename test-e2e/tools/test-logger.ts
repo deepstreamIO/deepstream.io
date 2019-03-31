@@ -1,9 +1,17 @@
-'use strict'
+import { EventEmitter } from 'events'
+import * as  util from 'util'
 
-const EventEmitter = require('events').EventEmitter
-const util = require('util')
+interface Log {
+  level: number,
+  event: string,
+  message: string
+}
 
-module.exports = class Logger extends EventEmitter{
+export class Logger extends EventEmitter {
+  public logs: Array<Log>
+  public lastLog: Log | null
+  public isReady: boolean
+
   constructor () {
     super()
     this.logs = []
@@ -11,23 +19,23 @@ module.exports = class Logger extends EventEmitter{
     this.isReady = true
   }
 
-  error (event, logMessage) {
+  public error (event, logMessage) {
     this.log(3, event, logMessage)
   }
 
-  warn (event, logMessage) {
+  public warn (event, logMessage) {
     this.log(2, event, logMessage)
   }
 
-  info (event, logMessage) {
+  public info (event, logMessage) {
      this.log(1, event, logMessage)
   }
 
-  debug (event, logMessage) {
+  public debug (event, logMessage) {
     this.log(0, event, logMessage)
   }
 
-  log (logLevel, event, logMessage) {
+  public log (logLevel, event, logMessage) {
     const log = {
       level: logLevel,
       event,

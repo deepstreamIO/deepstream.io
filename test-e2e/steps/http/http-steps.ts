@@ -1,24 +1,15 @@
-/* eslint-disable max-len, new-cap, import/no-extraneous-dependencies, no-unused-expressions */
-'use strict'
+import * as sinon from 'sinon'
+import {Given, When, Then, After } from 'cucumber'
+import { expect } from 'chai'
+import * as needle from 'needle'
 
-const expect = require('chai').expect
-const sinon = require('sinon')
-const needle = require('needle')
-
-const clientHandler = require('../../framework/client-handler')
-const utils = require('../client/utils')
-
-const cucumber = require('cucumber')
-const When = cucumber.When
-const Then = cucumber.Then
-const Given = cucumber.Given
-const After = cucumber.After
+import { clientHandler } from '../../framework/client-handler'
+import { parseData, defaultDelay } from '../../framework/utils'
 
 let httpClients = {}
 
-
 Given(/^(.+) authenticates? with http server (\d+)$/, (clientExpression, server, done) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     let serverUrl
     if (global.cluster.getAuthUrl) {
       serverUrl = global.cluster.getAuthUrl(server - 1, clientName)
@@ -47,7 +38,7 @@ Given(/^(.+) authenticates? with http server (\d+)$/, (clientExpression, server,
 })
 
 Given(/^(.+) authenticates? with http server (\d+) with details ("[^"]*"|\d+|\{.*\})?$/, (clientExpression, server, data, done) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     let serverUrl
     if (global.cluster.getAuthUrl) {
       serverUrl = global.cluster.getAuthUrl(server - 1, clientName)
@@ -71,7 +62,7 @@ Given(/^(.+) authenticates? with http server (\d+) with details ("[^"]*"|\d+|\{.
 
 Then(/^the last response (.+) received contained the properties "([^"]*)"$/, (clientExpression, properties) => {
   const propertyArray = properties.split(',')
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     expect(client.lastResponse.body).to.contain.keys(propertyArray)
     expect(Object.keys(client.lastResponse.body).length).to.equal(propertyArray.length)
@@ -80,15 +71,16 @@ Then(/^the last response (.+) received contained the properties "([^"]*)"$/, (cl
 })
 
 When(/^(.+) queues? (?:an|the|"(\d+)") events? "([^"]*)"(?: with data ("[^"]*"|\d+|\{.*\}))?$/, (clientExpression, numEvents, eventName, rawData) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const jifMessage = {
       topic: 'event',
       action: 'emit',
       eventName,
+      data: undefined
     }
     if (rawData !== undefined) {
-      const data = utils.parseData(rawData)
+      const data = parseData(rawData)
       jifMessage.data = data
     }
     if (numEvents === undefined) {
@@ -103,17 +95,17 @@ When(/^(.+) queues? (?:an|the|"(\d+)") events? "([^"]*)"(?: with data ("[^"]*"|\
 })
 
 When(/^(.+) sends the data ("[^"]*"|\d+|\{.*\})$/, (clientExpression, rawData, done) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     needle.post(`${client.serverUrl}`, JSON.parse(rawData), { json: true }, (err, response) => {
-      setTimeout(done, utils.defaultDelay)
+      setTimeout(done, defaultDelay)
       client.lastResponse = response
     })
   })
 })
 
 When(/^(.+) queues "(\d+)" random messages$/, (clientExpression, numMessages) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     for (let i = 0; i < numMessages; i++) {
       const r = Math.random()
@@ -166,8 +158,8 @@ When(/^(.+) queues "(\d+)" random messages$/, (clientExpression, numMessages) =>
   })
 })
 
-When(/^(.+) queues a presence query$/, (clientExpression) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+When(/^(.+) queues a presence query$/,clientExpression => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const jifMessage = {
       topic: 'presence',
@@ -179,15 +171,16 @@ When(/^(.+) queues a presence query$/, (clientExpression) => {
 })
 
 When(/^(.+) queues? (?:an|the) RPC call to "([^"]*)"(?: with arguments ("[^"]*"|\d+|\{.*\}))?$/, (clientExpression, rpcName, rawData) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const jifMessage = {
       topic: 'rpc',
       action: 'make',
-      rpcName
+      rpcName,
+      data: undefined
     }
     if (rawData !== undefined) {
-      const data = utils.parseData(rawData)
+      const data = parseData(rawData)
       jifMessage.data = data
     }
 
@@ -196,7 +189,7 @@ When(/^(.+) queues? (?:an|the) RPC call to "([^"]*)"(?: with arguments ("[^"]*"|
 })
 
 When(/^(.+) queues? a fetch for (record|list) "([^"]*)"$/, (clientExpression, recordOrList, recordName) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const jifMessage = recordOrList === 'record'
       ? { topic: 'record', action: 'read', recordName }
@@ -207,20 +200,23 @@ When(/^(.+) queues? a fetch for (record|list) "([^"]*)"$/, (clientExpression, re
 })
 
 When(/^(.+) queues? a write to (record|list) "([^"]*)"(?: and path "([^"]*)")? with data '([^']*)'(?: and version "(-?\d+)")?$/, (clientExpression, recordOrList, recordName, path, rawData, version) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const jifMessage = recordOrList === 'record'
       ? { topic: 'record', action: 'write', recordName }
       : { topic: 'list', action: 'write', listName: recordName }
 
     if (path !== undefined) {
+      // @ts-ignore
       jifMessage.path = path
     }
     if (rawData !== undefined) {
-      const data = utils.parseData(rawData)
+      const data = parseData(rawData)
+      // @ts-ignore
       jifMessage.data = data
     }
     if (version !== undefined) {
+      // @ts-ignore
       jifMessage.version = parseInt(version, 10)
     }
 
@@ -229,7 +225,7 @@ When(/^(.+) queues? a write to (record|list) "([^"]*)"(?: and path "([^"]*)")? w
 })
 
 When(/^(.+) queues? a delete for (record|list) "([^"]*)"$/, (clientExpression, recordOrList, recordName) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const jifMessage = recordOrList === 'record'
       ? { topic: 'record', action: 'delete', recordName }
@@ -240,7 +236,7 @@ When(/^(.+) queues? a delete for (record|list) "([^"]*)"$/, (clientExpression, r
 })
 
 When(/^(.+) queues? a head for record "([^"]*)"$/, (clientExpression, recordName) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const jifMessage = {
       topic: 'record',
@@ -253,7 +249,7 @@ When(/^(.+) queues? a head for record "([^"]*)"$/, (clientExpression, recordName
 })
 
 When(/^(.+) flushe?s? their http queues?$/, (clientExpression, done) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const message = {
       token: client.token,
@@ -261,14 +257,14 @@ When(/^(.+) flushe?s? their http queues?$/, (clientExpression, done) => {
     }
     client.queue = []
     needle.post(`${client.serverUrl}`, message, { json: true }, (err, response) => {
-      setTimeout(done, utils.defaultDelay)
+      setTimeout(done, defaultDelay)
       client.lastResponse = response
     })
   })
 })
 
 Then(/^(.+) last response said that clients? "([^"]*)" (?:is|are) connected(?: at index "(\d+)")?$/, (clientExpression, connectedClients, rawIndex) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
@@ -284,7 +280,7 @@ Then(/^(.+) last response said that clients? "([^"]*)" (?:is|are) connected(?: a
 })
 
 Then(/^(.+) last response said that no clients are connected(?: at index "(\d+)")?$/, (clientExpression, rawIndex) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
@@ -300,7 +296,7 @@ Then(/^(.+) last response said that no clients are connected(?: at index "(\d+)"
 })
 
 Then(/^(.+) receives? an RPC response(?: with data ("[^"]*"|\d+|\{.*\}))?(?: at index "(\d+)")?$/, (clientExpression, rawData, rawIndex) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
@@ -312,13 +308,13 @@ Then(/^(.+) receives? an RPC response(?: with data ("[^"]*"|\d+|\{.*\}))?(?: at 
     expect(result).to.be.an('object')
     expect(result.success).to.be.true
     if (rawData !== undefined) {
-      expect(result.data).to.deep.equal(utils.parseData(rawData))
+      expect(result.data).to.deep.equal(parseData(rawData))
     }
   })
 })
 
 Then(/^(.+) receives? the (?:record|list) (?:head )?"([^"]*)"(?: with data '([^']+)')?(?: (?:with|and) version "(\d+)")?(?: at index "(\d+)")?$/, (clientExpression, recordName, rawData, version, rawIndex) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
@@ -330,7 +326,7 @@ Then(/^(.+) receives? the (?:record|list) (?:head )?"([^"]*)"(?: with data '([^'
     expect(result).to.be.an('object')
     expect(result.success).to.be.true
     if (rawData !== undefined) {
-      expect(result.data).to.deep.equal(utils.parseData(rawData))
+      expect(result.data).to.deep.equal(parseData(rawData))
     }
     if (version !== undefined) {
       expect(result.version).to.equal(parseInt(version, 10))
@@ -339,7 +335,7 @@ Then(/^(.+) receives? the (?:record|list) (?:head )?"([^"]*)"(?: with data '([^'
 })
 
 Then(/^(.+) last response was a "(\S*)"(?: with length "(\d+)")?$/, (clientExpression, result, length) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
 
@@ -359,10 +355,10 @@ Then(/^(.+) last response was a "(\S*)"(?: with length "(\d+)")?$/, (clientExpre
 
 Then(/^(.+) (eventually )?receives "(\d+)" events? "([^"]*)"(?: with data (.+))?$/, (clientExpression, eventually, numEvents, subscriptionName, data, done) => {
   setTimeout(() => {
-    clientHandler.getClients(clientExpression).forEach((client) => {
+    clientHandler.getClients(clientExpression).forEach(client => {
       const eventSpy = client.event.callbacks[subscriptionName]
       expect(eventSpy.callCount).to.equal(parseInt(numEvents, 10))
-      sinon.assert.calledWith(eventSpy, utils.parseData(data))
+      sinon.assert.calledWith(eventSpy, parseData(data))
       eventSpy.resetHistory()
       done()
     })
@@ -370,7 +366,7 @@ Then(/^(.+) (eventually )?receives "(\d+)" events? "([^"]*)"(?: with data (.+))?
 })
 
 Then(/^(.+) last response had a success(?: at index "(\d+)")?$/, (clientExpression, rawIndex) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
@@ -388,7 +384,7 @@ Then(/^(.+) last response had a success(?: at index "(\d+)")?$/, (clientExpressi
 })
 
 Then(/^(.+) last response had an? "([^"]*)" error matching "([^"]*)"(?: at index "(\d+)")?$/, (clientExpression, topic, message, rawIndex) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
@@ -408,7 +404,7 @@ Then(/^(.+) last response had an? "([^"]*)" error matching "([^"]*)"(?: at index
 })
 
 Then(/^(.+) last response had an error matching "([^"]*)"$/, (clientExpression, message) => {
-  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+  clientHandler.getClientNames(clientExpression).forEach(clientName => {
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
     expect(lastResponse).to.not.be.null
@@ -431,4 +427,3 @@ After(() => {
   }
   httpClients = {}
 })
-

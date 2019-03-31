@@ -1,14 +1,5 @@
-'use strict'
-
-const Cluster = require('../../tools/cluster')
-
-const cucumber = require('cucumber')
-const Given = cucumber.Given
-const When = cucumber.When
-const Then = cucumber.Then
-const Before = cucumber.Before
-const BeforeAll = cucumber.BeforeAll
-const AfterAll = cucumber.AfterAll
+import { Cluster } from '../../tools/cluster'
+import {Given, When, Then, Before, BeforeAll } from 'cucumber'
 
 Before((scenarioResult, done) => {
   global.cluster.updatePermissions('open', done)
@@ -38,14 +29,14 @@ When(/^server (\S)* comes back up$/, (server, done) => {
   global.cluster.start()
 })
 
-Given(/^a small amount of time passes$/, (done) => {
+Given(/^a small amount of time passes$/, done => {
   setTimeout(done, 500)
 })
 
-BeforeAll((callback) => {
+BeforeAll(done => {
   global.cluster = new Cluster(6001, 8001, process.env.ENABLE_LOGGING === 'true')
   global.cluster.once('started', () => {
-    setTimeout(callback, 200)
+    setTimeout(done, 200)
   })
   global.cluster.start()
 })

@@ -14,11 +14,11 @@
     "precommit": "npm run lint",
     "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && cp -r conf ./dist/conf && mv ./dist/bin/deepstream.js ./dist/bin/deepstream",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE",
-    "lint": "tslint bin/*.ts test/**/*.ts protocol/**/*.ts src/**/*.ts -t verbose",
-    "lint:fix": "tslint --fix bin/*.ts test/**/*.ts protocol/**/*.ts src/**/*.ts -t verbose",
+    "lint": "tslint bin/*.ts test/**/*.ts protocol/**/*.ts src/**/*.ts test-e2e/**/*.ts -t verbose",
+    "lint:fix": "npm run lint -- --fix",
     "test": "ts-node --project tsconfig.json ./node_modules/.bin/jasmine JASMINE_CONFIG_PATH=jasmine.json",
     "test-http-server": "node test/test-helper/start-test-server.js",
-    "e2e": "ts-node --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require ./test-e2e/steps --tags \"not @cluster\" --retry --exit",
+    "e2e": "ts-node --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit",
     "e2e:rpc": "npm run e2e -- --tags \"not @cluster and @rpcs\"",
     "e2e:event": "npm run e2e -- --tags \"not @cluster and @events\"",
     "e2e:record": "npm run e2e -- --tags \"not @cluster and @records\"",
@@ -31,6 +31,7 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
+    "@types/sinon": "^7.0.11",
     "adm-zip": "^0.4.11",
     "ajv": "^6.10.0",
     "bluebird": "^3.5.2",

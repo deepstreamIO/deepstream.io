@@ -104,7 +104,7 @@ export class UwsSocketWrapper implements SocketWrapper {
     this.isClosed = true
     delete this.authCallback
 
-    this.closeCallbacks.forEach(cb => cb())
+    this.closeCallbacks.forEach(cb => cb(this))
     this.logger.info(EVENT.CLIENT_DISCONNECTED, this.user)
   }
 
@@ -117,11 +117,11 @@ export class UwsSocketWrapper implements SocketWrapper {
     return this.handshakeData
   }
 
-  public onClose (callback: Function): void {
+  public onClose (callback: (socketWrapper: StatefulSocketWrapper) => void): void {
     this.closeCallbacks.add(callback)
   }
 
-  public removeOnClose (callback: Function): void {
+  public removeOnClose (callback: (socketWrapper: StatefulSocketWrapper) => void): void {
     this.closeCallbacks.delete(callback)
   }
 

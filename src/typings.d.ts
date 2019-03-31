@@ -174,6 +174,8 @@ interface DeepstreamConfig {
   auth?: PluginConfig
   permission?: PluginConfig
 
+  unauthenticatedClientTimeout?: number
+  maxAuthAttempts?: number
   storageExclusionPrefixes?: Array<string>
   provideRPCRequestorDetails?: boolean
   rpcAckTimeout?: number
@@ -270,5 +272,6 @@ declare namespace NodeJS  {
     deepstreamLibDir: string | null
     deepstreamConfDir: string | null
     require (path: string): any
+    cluster: any // Used by e2e tests
   }
 }
