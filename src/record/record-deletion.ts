@@ -11,14 +11,14 @@ export default class RecordDeletion {
   private recordName: string
   private completed: 0
   private isDestroyed: boolean
-  private cacheTimeout: number
-  private storageTimeout: number
+  private cacheTimeout: any
+  private storageTimeout: any
 
 /**
  * This class represents the deletion of a single record. It handles it's removal
  * from cache and storage and handles errors and timeouts
  */
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, metaData: any) {
+  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, socketWrapper: SocketWrapper, message: RecordMessage, successCallback: Function, metaData: any = {}) {
     this.metaData = metaData
     this.config = config
     this.services = services

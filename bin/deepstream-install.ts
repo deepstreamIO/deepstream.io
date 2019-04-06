@@ -1,4 +1,4 @@
-import { installer } from './installer'
+import { installer } from '../src/utils/installer'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
 
 export const install = (program) => {

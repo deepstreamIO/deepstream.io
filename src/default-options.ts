@@ -1,12 +1,5 @@
 import { getUid } from './utils/utils'
 import { LOG_LEVEL } from './constants'
-import LocalCache from './default-plugins/local-cache'
-import NoopStorage from './default-plugins/noop-storage'
-import StdoutLogger from './default-plugins/std-out-logger'
-import OpenAuthenticationHandler from './authentication/open-authentication-handler'
-import OpenPermissionHandler from './permission/open-permission-handler'
-import ClusterNode from './cluster/cluster-node'
-import LockRegistry from './cluster/lock-registry'
 
 export function get(): InternalDeepstreamConfig {
   return {
