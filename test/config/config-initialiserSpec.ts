@@ -14,7 +14,7 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
       config.plugins = {
         cache: {
-          path: './test/test-mocks/plugin-mock',
+          path: './dist/test/test-mocks/plugin-mock',
           options: { some: 'options' }
         }
       }
@@ -36,7 +36,7 @@ describe('config-initialiser', () => {
     })
 
     it('loads plugins from a relative path and lib dir', () => {
-      global.deepstreamLibDir = './test/test-mocks'
+      global.deepstreamLibDir = './dist/test/test-mocks'
 
       const config = defaultConfig.get()
       config.plugins = {
@@ -95,7 +95,7 @@ describe('config-initialiser', () => {
 
   describe('creates the right authentication handler', () => {
     beforeAll(() => {
-      global.deepstreamLibDir = './test/test-plugins'
+      global.deepstreamLibDir = './dist/test/test-plugins'
     })
 
     it('works for authtype: none', () => {
@@ -206,7 +206,7 @@ describe('config-initialiser', () => {
 
   describe('creates the permissionHandler', () => {
     it('creates the config permission handler', () => {
-      global.deepstreamConfDir = './test/test-configs'
+      global.deepstreamConfDir = './dist/test/test-configs'
       const config = defaultConfig.get()
 
       config.permission = {
@@ -217,7 +217,7 @@ describe('config-initialiser', () => {
       }
       const result = configInitialiser.initialise(config)
       expect(result.services.permissionHandler.description).toContain('valve permissions loaded from')
-      expect(result.services.permissionHandler.description).toContain(path.resolve('./test/test-configs/basic-permission-config.json'))
+      expect(result.services.permissionHandler.description).toContain(path.resolve('./dist/test/test-configs/basic-permission-config.json'))
     })
 
     it('fails for invalid permission types', () => {
@@ -226,7 +226,7 @@ describe('config-initialiser', () => {
       config.permission = {
         type: 'does-not-exist',
         options: {
-          path: './test/test-configs/basic-permission-config.json'
+          path: './dist/test/test-configs/basic-permission-config.json'
         }
       }
       expect(() => {
@@ -305,7 +305,7 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
 
       config.logger = {
-        path: './test/test-helper/custom-logger',
+        path: './dist/test/test-helper/custom-logger',
         options: {
           a: 1
         }

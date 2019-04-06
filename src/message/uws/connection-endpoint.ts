@@ -162,7 +162,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
 
   public static getHeaders (desiredHeaders, req) {
     const headers = {}
-    for (const wantedHeader in desiredHeaders) {
+    for (const wantedHeader of desiredHeaders) {
       headers[wantedHeader] = req.getHeader(wantedHeader)
     }
     return headers

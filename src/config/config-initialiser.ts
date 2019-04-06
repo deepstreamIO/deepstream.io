@@ -221,9 +221,8 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
     return customPlugins.get(plugin.name)
   }
 
-  // nexe needs *global.require* for __dynamic__ modules
-  // but browserify and proxyquire can't handle *global.require*
-  const req = global && global.require ? global.require : require
+  // Required for bundling via nexe
+  const req = require
   let requirePath
   let pluginConstructor
   let es6Adaptor

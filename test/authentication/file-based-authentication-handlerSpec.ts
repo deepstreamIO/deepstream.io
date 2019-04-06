@@ -1,3 +1,5 @@
+import 'jasmine'
+
 require('source-map-support').install()
 import AuthenticationHandler from '../../src/authentication/file-based-authentication-handler'
 
