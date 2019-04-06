@@ -199,7 +199,7 @@ describe('the rpcHandler routes events correctly', () => {
       }).not.toThrow()
     })
 
-    it('times out if no ack is received', done => {
+    it('times out if no ack is received', (done) => {
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
 
       requestor.socketWrapperMock
@@ -217,7 +217,7 @@ describe('the rpcHandler routes events correctly', () => {
       }, config.rpcAckTimeout * 2)
     })
 
-    it('times out if response is not received in time', done => {
+    it('times out if response is not received in time', (done) => {
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)
 
@@ -235,7 +235,7 @@ describe('the rpcHandler routes events correctly', () => {
     })
 
     // Should an Ack for a non existant rpc should error?
-    xit('ignores ack message if it arrives after response', done => {
+    xit('ignores ack message if it arrives after response', (done) => {
       provider.socketWrapperMock
         .expects('sendMessage')
         .twice()
@@ -249,7 +249,7 @@ describe('the rpcHandler routes events correctly', () => {
       }, 30)
     })
 
-    it('doesn\'t throw error on response after timeout', done => {
+    it('doesn\'t throw error on response after timeout', (done) => {
       rpcHandler.handle(requestor.socketWrapper, requestMessage)
       rpcHandler.handle(provider.socketWrapper, acceptMessage)
 

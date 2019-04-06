@@ -46,7 +46,7 @@ describe('js-yaml-loader', () => {
       expect(typeof jsonLoader.load).toBe('function')
     })
 
-    it('errors if invoked with an invalid path', done => {
+    it('errors if invoked with an invalid path', (done) => {
       jsonLoader.load(null, (err, result) => {
         expect(err.toString()).toContain('path')
         expect(result).toBeUndefined()
@@ -54,7 +54,7 @@ describe('js-yaml-loader', () => {
       })
     })
 
-    it('successfully loads and parses a valid JSON file', done => {
+    it('successfully loads and parses a valid JSON file', (done) => {
       jsonLoader.load('./test/test-configs/basic-valid-json.json', (err, result) => {
         expect(err).toBe(null)
         expect(result).toEqual({ pet: 'pug' })
@@ -62,7 +62,7 @@ describe('js-yaml-loader', () => {
       })
     })
 
-    it('errors when trying to load non existant file', done => {
+    it('errors when trying to load non existant file', (done) => {
       jsonLoader.load('./test/test-configs/does-not-exist.json', (err, result) => {
         expect(err.toString()).toContain('no such file or directory')
         expect(result).toBeUndefined()
@@ -70,7 +70,7 @@ describe('js-yaml-loader', () => {
       })
     })
 
-    it('errors when trying to load invalid json', done => {
+    it('errors when trying to load invalid json', (done) => {
       jsonLoader.load('./test/test-configs/broken-json-config.json', (err, result) => {
         expect(err.toString()).toContain('Unexpected token')
         expect(result).toBeUndefined()

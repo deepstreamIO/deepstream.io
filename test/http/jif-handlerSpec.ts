@@ -36,7 +36,7 @@ describe('JIF Handler', () => {
         null,
         undefined
       ]
-      const results = jifs.map(jif => jifHandler.fromJIF(jif))
+      const results = jifs.map((jif) => jifHandler.fromJIF(jif))
 
       results.forEach((result, i) => {
         expect(result.success).to.equal(false, i)
@@ -92,7 +92,7 @@ describe('JIF Handler', () => {
           'Event',
           'EVENT',
         ]
-        const results = topics.map(topic => jifHandler.fromJIF(
+        const results = topics.map((topic) => jifHandler.fromJIF(
           { topic, action: 'emit', eventName: 'time/berlin' }
         ))
 
@@ -108,7 +108,7 @@ describe('JIF Handler', () => {
           'Emit',
           'EMIT',
         ]
-        const results = actions.map(action => jifHandler.fromJIF(
+        const results = actions.map((action) => jifHandler.fromJIF(
           { topic: 'event', action, eventName: 'time/berlin' }
         ))
 
@@ -136,7 +136,7 @@ describe('JIF Handler', () => {
           { name: 'john' },
           ''
         ]
-        const results = names.map(eventName => jifHandler.fromJIF(
+        const results = names.map((eventName) => jifHandler.fromJIF(
           { topic: 'event', action: 'emit', eventName }
         ))
 
@@ -305,7 +305,7 @@ describe('JIF Handler', () => {
           { topic: 'record', action: 'head', recordName: 'car/bmw', path: 'wheel' },
           { topic: 'record', action: 'delete', recordName: 'car/bmw', path: 'wheel' }
         ]
-        const results = jifs.map(jif => jifHandler.fromJIF(jif))
+        const results = jifs.map((jif) => jifHandler.fromJIF(jif))
 
         expect(results[0].success).to.equal(true)
         expect(results[1].success).to.equal(false)
@@ -320,7 +320,7 @@ describe('JIF Handler', () => {
           { topic: 'record', action: 'head', recordName: 'car/bmw', data: { a: 123 } },
           { topic: 'record', action: 'delete', recordName: 'car/bmw', data: { a: 123 } }
         ]
-        const results = jifs.map(jif => jifHandler.fromJIF(jif))
+        const results = jifs.map((jif) => jifHandler.fromJIF(jif))
 
         expect(results[0].success).to.equal(true)
         expect(results[1].success).to.equal(false)

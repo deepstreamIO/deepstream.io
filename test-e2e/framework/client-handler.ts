@@ -89,21 +89,21 @@ function createClient (clientName, server, options?) {
     clients[clientName].error[topic][event](message)
   })
 
-  clients[clientName].client.on('connectionStateChanged', state => {
+  clients[clientName].client.on('connectionStateChanged', (state) => {
     if (!clients[clientName]) {
       return
     }
     clients[clientName].connectionStateChanged(state)
   })
 
-  clients[clientName].client.on('clientDataChanged', clientData => {
+  clients[clientName].client.on('clientDataChanged', (clientData) => {
     if (!clients[clientName]) {
       return
     }
     clients[clientName].clientDataChanged(clientData)
   })
 
-  clients[clientName].client.on('reauthenticationFailure', reason => {
+  clients[clientName].client.on('reauthenticationFailure', (reason) => {
     if (!clients[clientName]) {
       return
     }
@@ -128,7 +128,7 @@ function getClientNames (expression) {
 }
 
 function getClients (expression) {
-  return getClientNames(expression).map(client => clients[client])
+  return getClientNames(expression).map((client) => clients[client])
 }
 
 function assertNoErrors (client) {

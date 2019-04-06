@@ -142,7 +142,7 @@ describe('record handler handles messages', () => {
   })
 
   it('returns a version of the data that exists with version number', () => {
-    ['record/1', 'record/2', 'record/3'].forEach(name => {
+    ['record/1', 'record/2', 'record/3'].forEach((name) => {
       const version = Math.floor(Math.random() * 100)
       const data = { firstname: 'Wolfram' }
       services.cache.set(name, version, data, () => {})
@@ -157,7 +157,7 @@ describe('record handler handles messages', () => {
   })
 
   it('returns an version of -1 for head request of data that doesn\'t exist', () => {
-    ['record/1', 'record/2', 'record/3'].forEach(name => {
+    ['record/1', 'record/2', 'record/3'].forEach((name) => {
       client.socketWrapperMock
         .expects('sendMessage')
         .once()
@@ -253,7 +253,7 @@ describe('record handler handles messages', () => {
     })
   })
 
-  it('updates a record via same client to the same version', done => {
+  it('updates a record via same client to the same version', (done) => {
     config.cacheRetrievalTimeout = 50
     services.cache.nextGetWillBeSynchronous = false
     services.cache.set(M.recordUpdate.name, M.recordVersion, M.recordData, () => {})

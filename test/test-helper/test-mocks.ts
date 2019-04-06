@@ -49,7 +49,7 @@ export const getTestMocks = () => {
       sendBinaryMessage: () => {},
       sendAckMessage: () => {},
       uuid: Math.random(),
-      parseData: message => {
+      parseData: (message) => {
         if (message.parsedData) {
           return true
         }
@@ -60,8 +60,8 @@ export const getTestMocks = () => {
           return e
         }
       },
-      getMessage: message => message,
-      parseMessage: message => message,
+      getMessage: (message) => message,
+      parseMessage: (message) => message,
       destroy: () => {},
       getHandshakeData: () => ({}),
       close: () => {},

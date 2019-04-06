@@ -47,10 +47,11 @@
     "mkdirp": "^0.5.1",
     "needle": "^2.2.4",
     "source-map-support": "^0.5.9",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#binaries"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.9.0"
   },
   "devDependencies": {
     "@types/jasmine": "^2.8.16",
+    "@types/needle": "^2.0.4",
     "@types/node": "^10.12.30",
     "@types/sinon": "^7.0.11",
     "async": "^2.6.2",

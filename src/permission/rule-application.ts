@@ -269,7 +269,7 @@ export default class RuleApplication {
    * everytime the permission is run. This allows it to merge
    * patches and update the now timestamp
    */
-  private getArguments (): Array<any> {
+  private getArguments (): any[] {
     return [
       this.crossReference,
       this.user,
@@ -300,7 +300,7 @@ export default class RuleApplication {
    * This is only done once per rule as the path is not expected
    * to change
    */
-  private getPathVars (): Array<string> {
+  private getPathVars (): string[] {
     if (!this.params.name) {
       return []
     }

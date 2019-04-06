@@ -86,7 +86,8 @@ export class Cluster extends EventEmitter {
           name: 'uws',
           options: {
             port: this.wsPort,
-            heartbeatInterval: 5000
+            heartbeatInterval: 5000,
+            headers: []
           }
         },
         http: {
@@ -97,7 +98,8 @@ export class Cluster extends EventEmitter {
             authPath: '/auth',
             postPath: '/',
             getPath: '/',
-            requestTimeout: 80
+            requestTimeout: 80,
+            headers: []
           }
         }
       },

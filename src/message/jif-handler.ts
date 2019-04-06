@@ -28,7 +28,7 @@ function getJifToMsg () {
   const JIF_TO_MSG: any = {}
 
   JIF_TO_MSG.event = {}
-  JIF_TO_MSG.event.emit = msg => ({
+  JIF_TO_MSG.event.emit = (msg) => ({
     done: true,
     message: {
       topic: TOPIC.EVENT,
@@ -39,7 +39,7 @@ function getJifToMsg () {
   })
 
   JIF_TO_MSG.rpc = {}
-  JIF_TO_MSG.rpc.make = msg => ({
+  JIF_TO_MSG.rpc.make = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RPC,
@@ -51,7 +51,7 @@ function getJifToMsg () {
   })
 
   JIF_TO_MSG.record = {}
-  JIF_TO_MSG.record.read = msg => ({
+  JIF_TO_MSG.record.read = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -60,11 +60,11 @@ function getJifToMsg () {
     },
   })
 
-  JIF_TO_MSG.record.write = msg => (
+  JIF_TO_MSG.record.write = (msg) => (
     msg.path ? JIF_TO_MSG.record.patch(msg) : JIF_TO_MSG.record.update(msg)
   )
 
-  JIF_TO_MSG.record.patch = msg => ({
+  JIF_TO_MSG.record.patch = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -78,7 +78,7 @@ function getJifToMsg () {
     },
   })
 
-  JIF_TO_MSG.record.update = msg => ({
+  JIF_TO_MSG.record.update = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -91,7 +91,7 @@ function getJifToMsg () {
     },
   })
 
-  JIF_TO_MSG.record.head = msg => ({
+  JIF_TO_MSG.record.head = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -100,7 +100,7 @@ function getJifToMsg () {
     },
   })
 
-  JIF_TO_MSG.record.delete = msg => ({
+  JIF_TO_MSG.record.delete = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -110,7 +110,7 @@ function getJifToMsg () {
   })
 
   JIF_TO_MSG.list = {}
-  JIF_TO_MSG.list.read = msg => ({
+  JIF_TO_MSG.list.read = (msg) => ({
       done: false,
       message: {
         topic: TOPIC.RECORD,
@@ -119,7 +119,7 @@ function getJifToMsg () {
       },
   })
 
-  JIF_TO_MSG.list.write = msg => ({
+  JIF_TO_MSG.list.write = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -132,7 +132,7 @@ function getJifToMsg () {
     },
   })
 
-  JIF_TO_MSG.list.delete = msg => ({
+  JIF_TO_MSG.list.delete = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.RECORD,
@@ -143,7 +143,7 @@ function getJifToMsg () {
 
   JIF_TO_MSG.presence = {}
 
-  JIF_TO_MSG.presence.query = msg => (
+  JIF_TO_MSG.presence.query = (msg) => (
     msg.parsedData ? JIF_TO_MSG.presence.queryUsers(msg) : JIF_TO_MSG.presence.queryAll(msg)
   )
 
@@ -155,7 +155,7 @@ function getJifToMsg () {
     },
   })
 
-  JIF_TO_MSG.presence.queryUsers = msg => ({
+  JIF_TO_MSG.presence.queryUsers = (msg) => ({
     done: false,
     message: {
       topic: TOPIC.PRESENCE,
@@ -175,7 +175,7 @@ function getMsgToJif () {
   const MSG_TO_JIF = {}
   MSG_TO_JIF[TOPIC.RPC] = {}
   MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       data: message.parsedData,
@@ -191,7 +191,7 @@ function getMsgToJif () {
 
   MSG_TO_JIF[TOPIC.RECORD] = {}
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       version: message.version,
@@ -201,7 +201,7 @@ function getMsgToJif () {
   })
 
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       success: true,
@@ -225,7 +225,7 @@ function getMsgToJif () {
   })
 
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       version: message.version,
@@ -235,7 +235,7 @@ function getMsgToJif () {
 
   MSG_TO_JIF[TOPIC.PRESENCE] = {}
   MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       users: message.names,
@@ -243,7 +243,7 @@ function getMsgToJif () {
     },
   })
   MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE][TYPE.NORMAL] = message => ({
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE][TYPE.NORMAL] = (message) => ({
     done: true,
     message: {
       users: message.parsedData,

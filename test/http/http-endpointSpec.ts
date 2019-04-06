@@ -86,7 +86,7 @@ describe('http plugin', () => {
   })
 
   describe('POST endpoint', () => {
-    it('should reject a request with an empty path', done => {
+    it('should reject a request with an empty path', (done) => {
       needle.post('127.0.0.1:8888', message, { json: true }, (err, response) => {
         expect(err).to.equal(null)
         expect(response.statusCode).to.be.within(400, 499)
@@ -96,7 +96,7 @@ describe('http plugin', () => {
       })
     })
 
-    it('should reject a request with a url-encoded payload', done => {
+    it('should reject a request with a url-encoded payload', (done) => {
       needle.post(postUrl, message, { json: false }, (err, response) => {
         expect(err).to.equal(null)
         expect(response.statusCode).to.be.within(400, 499)
@@ -112,15 +112,15 @@ describe('http plugin', () => {
       'foo',
       null,
       ''
-    ].map(payload => needle.postAsync(postUrl, payload, { json: true })
-      .then(response => {
+    ].map((payload) => needle.postAsync(postUrl, payload, { json: true })
+      .then((response) => {
         expect(response.statusCode).to.be.within(400, 499)
         expect(response.headers['content-type']).to.match(/^text\/plain/)
         expect(response.body).to.match(/(fail|invalid)/i, payload)
       })
     )))
 
-    it('should accept a request without an auth token', done => {
+    it('should accept a request without an auth token', (done) => {
       const noToken = Object.assign({}, message, { token: undefined })
       needle.post(postUrl, noToken, { json: true }, (err, response) => {
         expect(err).to.equal(null)
@@ -129,7 +129,7 @@ describe('http plugin', () => {
       })
     })
 
-    it('should return an unsuccessful result for an empty list of messages', done => {
+    it('should return an unsuccessful result for an empty list of messages', (done) => {
       needle.post(postUrl, { token: 'foo', body: [] }, { json: true }, (err, response) => {
         expect(err).to.equal(null)
         expect(response.statusCode).to.be.within(400, 499)
@@ -138,14 +138,14 @@ describe('http plugin', () => {
       })
     })
 
-    it('should not return an error for a list of valid messages', done => {
-      needle.post(postUrl, message, { json: true }, err => {
+    it('should not return an error for a list of valid messages', (done) => {
+      needle.post(postUrl, message, { json: true }, (err) => {
         expect(err).to.equal(null)
         done()
       })
     })
 
-    it('should reject a request that has a mix of valid and invalid messages', done => {
+    it('should reject a request that has a mix of valid and invalid messages', (done) => {
       const someValid = message.body.slice(0, 2)
       const req = {
         token: 'foo',
@@ -169,7 +169,7 @@ describe('http plugin', () => {
         (services.permissionHandler.canPerformAction as any).restore()
       })
 
-      it('should reject a request that times out', done => {
+      it('should reject a request that times out', (done) => {
         needle.post(postUrl, message, { json: true }, (err, response) => {
           expect(err).to.equal(null)
           const resp = response.body

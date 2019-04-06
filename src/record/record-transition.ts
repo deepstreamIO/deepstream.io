@@ -47,12 +47,12 @@ export default class RecordTransition {
  private config: InternalDeepstreamConfig
  private services: DeepstreamServices
  private recordHandler: RecordHandler
- private steps: Array<Step>
+ private steps: Step[]
  private version: number
  private data: any
  private currentStep: Step
  private recordRequestMade: boolean
- private existingVersions: Array<Step>
+ private existingVersions: Step[]
  private pendingUpdates: any
  private ending: boolean
  private lastVersion: number | null
@@ -291,7 +291,7 @@ export default class RecordTransition {
       this.pendingStorageWrites++
       if (message.isWriteAck) {
         this.setUpWriteAcknowledgement(message, this.currentStep.sender)
-        this.services.storage.set(this.name, this.version, this.data, error => this.onStorageSetResponse(error, this.currentStep.sender, message), this.metaData)
+        this.services.storage.set(this.name, this.version, this.data, (error) => this.onStorageSetResponse(error, this.currentStep.sender, message), this.metaData)
       } else {
         this.services.storage.set(this.name, this.version, this.data, this.onStorageSetResponse, this.metaData)
       }
@@ -300,7 +300,7 @@ export default class RecordTransition {
     this.pendingCacheWrites++
     if (message.isWriteAck) {
       this.setUpWriteAcknowledgement(message, this.currentStep.sender)
-      this.services.cache.set(this.name, this.version, this.data, error => this.onCacheSetResponse(error, this.currentStep.sender, message), this.metaData)
+      this.services.cache.set(this.name, this.version, this.data, (error) => this.onCacheSetResponse(error, this.currentStep.sender, message), this.metaData)
     } else {
       this.services.cache.set(this.name, this.version, this.data, this.onCacheSetResponse, this.metaData)
     }

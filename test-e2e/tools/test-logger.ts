@@ -8,7 +8,7 @@ interface Log {
 }
 
 export class Logger extends EventEmitter {
-  public logs: Array<Log>
+  public logs: Log[]
   public lastLog: Log | null
   public isReady: boolean
 

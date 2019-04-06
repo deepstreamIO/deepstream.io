@@ -43,7 +43,7 @@ export default class MessageProcessor {
    * @todo The responses from the permissionHandler might arive in any arbitrary order - order them
    * @todo Handle permission handler timeouts
    */
-  public process (socketWrapper: SocketWrapper, parsedMessages: Array<Message>): void {
+  public process (socketWrapper: SocketWrapper, parsedMessages: Message[]): void {
     let message
 
     const length = parsedMessages.length

@@ -9,11 +9,11 @@ describe('it forwards authentication attempts as http post requests to a specifi
   const port = TestHttpServer.getRandomPort()
   const logger = new MockLogger()
 
-  beforeAll(done => {
+  beforeAll((done) => {
     server = new TestHttpServer(port, done)
   })
 
-  afterAll(done => {
+  afterAll((done) => {
     server.close(done)
   })
 
@@ -28,7 +28,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     expect(authenticationHandler.description).toBe(`http webhook to ${endpointUrl}`)
   })
 
-  it('issues a request when isValidUser is called and receives 200 in return', done => {
+  it('issues a request when isValidUser is called and receives 200 in return', (done) => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -49,7 +49,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     })
   })
 
-  it('issues a request when isValidUser is called and receives 401 (denied) in return', done => {
+  it('issues a request when isValidUser is called and receives 401 (denied) in return', (done) => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -71,7 +71,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     })
   })
 
-  it('receives a positive response without data', done => {
+  it('receives a positive response without data', (done) => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -92,7 +92,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     })
   })
 
-  it('receives a positive response with only a string', done => {
+  it('receives a positive response with only a string', (done) => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -113,7 +113,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     })
   })
 
-  it('receives a server error as response', done => {
+  it('receives a server error as response', (done) => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -129,7 +129,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     })
   })
 
-  xit('times out', done => {
+  xit('times out', (done) => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 

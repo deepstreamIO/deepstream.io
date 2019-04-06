@@ -19,7 +19,7 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
   * @param   {Number} settings.requestTimeout time in milliseconds before the request times out
   *                                           if no reply is received
   */
-  constructor (settings: { endpointUrl: string, permittedStatusCodes: Array<number>, requestTimeout: number }, logger: Logger) {
+  constructor (settings: { endpointUrl: string, permittedStatusCodes: number[], requestTimeout: number }, logger: Logger) {
     super()
     this.isReady = true
     this.description = `http webhook to ${settings.endpointUrl}`

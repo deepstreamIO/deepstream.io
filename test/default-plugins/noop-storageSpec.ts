@@ -11,7 +11,7 @@ describe('retuns null for all values', () => {
     expect(noopStorage.isReady).toBe(true)
   })
 
-  it('tries to retrieve a non-existing value', done => {
+  it('tries to retrieve a non-existing value', (done) => {
     const successCallback = jasmine.createSpy('success')
     noopStorage.get('firstname', successCallback)
     setTimeout(() => {
@@ -21,7 +21,7 @@ describe('retuns null for all values', () => {
     }, 1)
   })
 
-  it('tries to delete a value', done => {
+  it('tries to delete a value', (done) => {
     const successCallback = jasmine.createSpy('success')
     noopStorage.delete('firstname', successCallback)
     setTimeout(() => {

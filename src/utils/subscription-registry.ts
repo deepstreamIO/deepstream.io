@@ -80,7 +80,7 @@ export default class SubscriptionRegistry {
   /**
    * Return all the servers that have this subscription.
    */
-  public getAllServers (subscriptionName: string): Array<string> {
+  public getAllServers (subscriptionName: string): string[] {
     return this.clusterSubscriptions.getAllServers(subscriptionName)
   }
 
@@ -88,7 +88,7 @@ export default class SubscriptionRegistry {
    * Return all the servers that have this subscription excluding the current
    * server name
    */
-  public getAllRemoteServers (subscriptionName: string): Array<string> {
+  public getAllRemoteServers (subscriptionName: string): string[] {
     const serverNames = this.clusterSubscriptions.getAllServers(subscriptionName)
     const localServerIndex = serverNames.indexOf(this.config.serverName)
     if (localServerIndex > -1) {
@@ -101,7 +101,7 @@ export default class SubscriptionRegistry {
    * Returns a list of all the topic this registry
    * currently has subscribers for
    */
-  public getNames (): Array<string> {
+  public getNames (): string[] {
     return this.clusterSubscriptions.getAll()
   }
 

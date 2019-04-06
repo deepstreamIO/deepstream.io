@@ -77,7 +77,7 @@ export default class StateRegistry extends EventEmitter {
   /**
   * Returns all the servers that hold a given state
   */
-  public getAllServers (subscriptionName: string): Array<string> {
+  public getAllServers (subscriptionName: string): string[] {
     return []
   }
 
@@ -87,7 +87,7 @@ export default class StateRegistry extends EventEmitter {
   * @public
   * @returns {Array} entries
   */
-  public getAll (): Array<string> {
+  public getAll (): string[] {
     return Object.keys(this.data)
   }
 

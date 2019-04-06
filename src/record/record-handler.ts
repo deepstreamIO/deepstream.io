@@ -247,7 +247,7 @@ export default class RecordHandler {
     let cacheResponse = false
     let storageResponse = false
     let writeError
-    this.services.storage.set(recordName, 0, message.parsedData, error => {
+    this.services.storage.set(recordName, 0, message.parsedData, (error) => {
       if (writeAck) {
         storageResponse = true
         writeError = writeError || error || null
@@ -257,7 +257,7 @@ export default class RecordHandler {
       }
     }, this.metaData)
 
-    this.services.cache.set(recordName, 0, message.parsedData, error => {
+    this.services.cache.set(recordName, 0, message.parsedData, (error) => {
       if (!error) {
         this.broadcastUpdate(recordName, message, false, socketWrapper)
       }
@@ -295,7 +295,7 @@ export default class RecordHandler {
     const recordName = message.name
 
     // store the records data in the cache and wait for the result
-    this.services.cache.set(recordName, 0, {}, error => {
+    this.services.cache.set(recordName, 0, {}, (error) => {
       if (error) {
         this.services.logger.error(RA[RA.RECORD_CREATE_ERROR], recordName, this.metaData)
         socketWrapper.sendMessage({
@@ -313,7 +313,7 @@ export default class RecordHandler {
 
     if (!isExcluded(this.config.storageExclusionPrefixes, message.name)) {
     // store the record data in the persistant storage independently and don't wait for the result
-      this.services.storage.set(recordName, 0, {}, error => {
+      this.services.storage.set(recordName, 0, {}, (error) => {
         if (error) {
           this.services.logger.error(RA[RA.RECORD_CREATE_ERROR], `storage:${error}`, this.metaData)
         }
@@ -329,7 +329,7 @@ export default class RecordHandler {
       this.subscriptionRegistry.subscribe(Object.assign({}, message, { action: RA.SUBSCRIBE }), socketWrapper)
 
       this.recordRequest(message.name, socketWrapper, (_: string, newVersion: number, latestData: any) => {
-        const infoLogger = msg => this.services.logger.info(EVENT.INFO, msg)
+        const infoLogger = (msg) => this.services.logger.info(EVENT.INFO, msg)
         if (latestData) {
           if (newVersion !== version) {
             infoLogger(`BUG CAUGHT! ${message.name} was version ${version} for readAndSubscribe, ` +

@@ -58,7 +58,7 @@ export const getDeepstreamOptions = function (serverName) {
   }
 
   class PermissionHandler extends EventEmitter {
-    public lastArgs: Array<any>
+    public lastArgs: any[]
     public isReady: boolean
     public description: string
     public nextResult: boolean

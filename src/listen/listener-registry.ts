@@ -14,11 +14,11 @@ export default class ListenerRegistry implements SubscriptionListener {
   private message: Cluster
   private uniqueLockName: string
   private patterns: { [pattern: string]: RegExp }
-  private localListenInProgress: { [subscription: string]: Array<Provider> }
+  private localListenInProgress: { [subscription: string]: Provider[] }
   private listenerTimeoutRegistry: TimeoutRegistry
   private locallyProvidedRecords: { [subscription: string]: Provider }
   private leadListen: { [subscription: string]: any }
-  private leadingListen: { [subscription: string]: Array<string> }
+  private leadingListen: { [subscription: string]: string[] }
   private messageTopic: TOPIC
   private actions: typeof RECORD_ACTIONS | typeof EVENT_ACTIONS
 
@@ -349,7 +349,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       return
     }
 
-    this.services.uniqueRegistry.get(this.getUniqueLockName(subscriptionName), success => {
+    this.services.uniqueRegistry.get(this.getUniqueLockName(subscriptionName), (success) => {
       if (!success) {
         return
       }
@@ -407,7 +407,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Start discovery phase once a lock is obtained from the leader within
   * the cluster
   */
-  private startLocalDiscoveryStage (subscriptionName: string, localListenArray?: Array<Provider>): void {
+  private startLocalDiscoveryStage (subscriptionName: string, localListenArray?: Provider[]): void {
     if (!localListenArray) {
       localListenArray = this.createLocalListenArray(subscriptionName)
     }
@@ -454,7 +454,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * data to the specific subscriptionName
   */
   private triggerNextProvider (subscriptionName: string): void {
-    const listenInProgress: Array<Provider> = this.localListenInProgress[subscriptionName]
+    const listenInProgress: Provider[] = this.localListenInProgress[subscriptionName]
 
     if (typeof listenInProgress === 'undefined') {
       return
@@ -627,11 +627,11 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Create a map of all the listeners that patterns match the subscriptionName locally
   */
-  private createRemoteListenArray (subscriptionName: string): Array<string> {
+  private createRemoteListenArray (subscriptionName: string): string[] {
     const patterns = this.patterns
     const providerRegistry = this.providerRegistry
 
-    let servers: Array<string> = []
+    let servers: string[] = []
     const providerPatterns = providerRegistry.getNames()
 
     for (let i = 0; i < providerPatterns.length; i++) {
@@ -659,10 +659,10 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Create a map of all the listeners that patterns match the subscriptionName locally
   */
-  private createLocalListenArray (subscriptionName): Array<Provider> {
+  private createLocalListenArray (subscriptionName): Provider[] {
     const patterns = this.patterns
     const providerRegistry = this.providerRegistry
-    const providers: Array<Provider> = []
+    const providers: Provider[] = []
     for (const pattern in patterns) {
       if (patterns[pattern].test(subscriptionName)) {
         for (const socketWrapper of providerRegistry.getLocalSubscribers(pattern)) {

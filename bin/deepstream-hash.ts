@@ -1,7 +1,7 @@
 import FileAuthenticationHandler from '../src/authentication/file-based-authentication-handler'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
 
-export const hash = program => {
+export const hash = (program) => {
   program
     .command('hash [password]')
     .description('Generate a hash from a plaintext password using file auth configuration settings')
