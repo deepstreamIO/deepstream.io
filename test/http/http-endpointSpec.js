@@ -33,7 +33,8 @@ const conf = {
   port: 8888,
   host: '127.0.0.1',
   allowAllOrigins: true,
-  requestTimeout: 30
+  requestTimeout: 30,
+  headers: []
 }
 const mockDS = {
   _options: {

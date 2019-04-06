@@ -63,6 +63,7 @@ module.exports = class HTTPConnectionEndpoint extends events.EventEmitter {
       port: this._getOption('port'),
       host: this._getOption('host'),
       healthCheckPath: this._getOption('healthCheckPath'),
+      headers: this._getOption('headers'),
       authPath: this._options.authPath,
       postPath: this._options.postPath,
       getPath: this._options.getPath,

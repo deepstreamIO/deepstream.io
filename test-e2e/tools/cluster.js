@@ -82,7 +82,8 @@ module.exports = class DeepstreamTest extends EventEmitter {
           name: 'uws',
           options: {
             port: this._wsPort,
-            urlPath: '/e2e'
+            urlPath: '/e2e',
+            headers: ['x-header']
           }
         },
         http: {

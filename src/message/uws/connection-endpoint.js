@@ -161,7 +161,7 @@ module.exports = class UWSConnectionEndpoint extends ConnectionEndpoint {
 
   static getHeaders (desiredHeaders, req) {
     const headers = {}
-    for (const wantedHeader in desiredHeaders) {
+    for (const wantedHeader of desiredHeaders) {
       headers[wantedHeader] = req.getHeader(wantedHeader)
     }
     return headers
