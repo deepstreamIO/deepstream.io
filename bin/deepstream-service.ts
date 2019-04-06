@@ -1,6 +1,6 @@
 import * as dsService from 'deepstream.io-service'
 
-export const service = program => {
+export const service = (program) => {
   program
     .command('service [add|remove|start|stop|restart|status]')
     .description('Add, remove, start or stop deepstream as a service to your operating system')
@@ -36,7 +36,7 @@ function execute (action) {
   if (action === 'add') {
     const options = {
       exec,
-      programArgs: [] as Array<string>,
+      programArgs: [] as string[],
       pidFile: this.pidFile || `/var/run/deepstream/${name}.pid`,
       logDir: this.logDir || '/var/log/deepstream',
       dryRun: this.dryRun

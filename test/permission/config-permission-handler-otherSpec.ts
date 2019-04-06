@@ -25,7 +25,7 @@ describe('supports spaces after variables and escaped quotes', () => {
     }
   })
 
-  it('allows yasser', next => {
+  it('allows yasser', (next) => {
     const permissions = getBasePermissions()
     permissions.record.someUser = {
       write: 'data .firstname === "Yasser"'
@@ -47,7 +47,7 @@ describe('supports spaces after variables and escaped quotes', () => {
     testPermission(permissions, message, 'Yasser', null, callback)
   })
 
-  it('denies Wolfram', next => {
+  it('denies Wolfram', (next) => {
     const permissions = getBasePermissions()
     permissions.record.someUser = {
       write: 'data .firstname === "Yasser"'

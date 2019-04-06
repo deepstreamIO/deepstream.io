@@ -57,7 +57,7 @@ describe('record request', () => {
       expect(errorCallback).not.toHaveBeenCalled()
     })
 
-    it('requests a record that exists in an asynchronous cache', done => {
+    it('requests a record that exists in an asynchronous cache', (done) => {
       services.cache.nextGetWillBeSynchronous = false
 
       recordRequest(
@@ -104,7 +104,7 @@ describe('record request', () => {
       expect(errorCallback).not.toHaveBeenCalled()
     })
 
-    it('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', done => {
+    it('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', (done) => {
       services.cache.nextGetWillBeSynchronous = false
       services.storage.nextGetWillBeSynchronous = false
 
@@ -219,7 +219,7 @@ describe('record request', () => {
         config.cacheRetrievalTimeout = 10
       })
 
-      it('sends a CACHE_RETRIEVAL_TIMEOUT message when cache times out', done => {
+      it('sends a CACHE_RETRIEVAL_TIMEOUT message when cache times out', (done) => {
         recordRequest(
           'willTimeoutCache',
           config,
@@ -257,7 +257,7 @@ describe('record request', () => {
         services.storage.nextOperationWillBeSuccessful = true
       })
 
-      it('sends a STORAGE_RETRIEVAL_TIMEOUT message when storage times out', done => {
+      it('sends a STORAGE_RETRIEVAL_TIMEOUT message when storage times out', (done) => {
         recordRequest(
           'willTimeoutStorage',
           config,
@@ -295,7 +295,7 @@ describe('record request', () => {
       services.storage.set('dont-save/1', 1, {}, () => {})
     })
 
-    it('returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', done => {
+    it('returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', (done) => {
       recordRequest(
         'dont-save/1',
         config,

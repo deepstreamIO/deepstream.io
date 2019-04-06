@@ -1,73 +1,39 @@
 import { EVENT, TOPIC, CONNECTION_ACTIONS, ParseResult, Message } from '../../constants'
 import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
-import * as uws from 'uws'
-import { EventEmitter } from 'events'
+import { WebSocketServerConfig } from '../websocket/connection-endpoint'
 
 /**
  * This class wraps around a websocket
  * and provides higher level methods that are integrated
  * with deepstream's message structure
- *
- * @param {WebSocket} external        uws native websocket
- * @param {Object} handshakeData      headers from the websocket http handshake
- * @param {Logger} logger
- * @param {Object} config             configuration options
- * @param {Object} connectionEndpoint the uws connection endpoint
- *
- * @extends EventEmitter
- *
- * @constructor
  */
-export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
+export class UwsSocketWrapper implements SocketWrapper {
 
+  public isRemote: false = false
   public isClosed: boolean = false
   public user: string
   public uuid: number = Math.random()
   public authCallback: Function
   public authAttempts: number = 0
 
-  private bufferedWrites: string = ''
+  private bufferedWrites: Array<Buffer>
+  private closeCallbacks: Set<Function> = new Set()
 
   public authData: object
   public clientData: object
-  public isRemote: boolean
 
   constructor (
-    private external: any,
+    private socket: any,
     private handshakeData: any,
     private logger: Logger,
-    private config: any,
-    private connectionEndpoint: ConnectionEndpoint
+    private config: WebSocketServerConfig,
+    private connectionEndpoint: SocketConnectionEndpoint
    ) {
-    super()
-    this.setMaxListeners(0)
   }
 
-  get isOpen() {
+  get isOpen () {
     return this.isClosed !== true
-  }
-
-  /**
-   * Variant of send with no particular checks or appends of message.
-   */
-  public sendNativeMessage (message: string | Buffer, allowBuffering: boolean): void {
-    if (this.isOpen) {
-      uws.native.server.send(this.external, message, uws.OPCODE_BINARY)
-    }
-    /*
-     *if (this.config.outgoingBufferTimeout === 0) {
-     *  uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
-     *} else if (!allowBuffering) {
-     *  this.flush()
-     *  uws.native.server.send(this.external, message, uws.OPCODE_TEXT)
-     *} else {
-     *  this.bufferedWrites += message
-     *  if (this.connectionEndpoint.scheduleFlush) {
-     *    this.connectionEndpoint.scheduleFlush(this)
-     *  }
-     *}
-     */
   }
 
   /**
@@ -76,9 +42,9 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * and can wait to be bundled into another message if necessary
    */
   public flush () {
-    if (this.bufferedWrites !== '' && this.isOpen) {
-      uws.native.server.send(this.external, this.bufferedWrites, uws.OPCODE_BINARY)
-      this.bufferedWrites = ''
+    if (this.bufferedWrites.length !== 0) {
+      this.socket.send(Buffer.concat(this.bufferedWrites), true)
+      this.bufferedWrites = []
     }
   }
 
@@ -88,33 +54,10 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    *                                 this message type
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean): void {
-    if (this.isOpen) {
-      this.sendNativeMessage(
+    this.sendBinaryMessage(
         binaryMessageBuilder.getMessage(message, false),
         allowBuffering
-      )
-    }
-  }
-
-  public getMessage (message: Message): Buffer {
-    return binaryMessageBuilder.getMessage(message, false)
-  }
-
-  public parseMessage (message: string | ArrayBuffer): Array<ParseResult> {
-    let messageBuffer: string | Buffer
-    if (message instanceof ArrayBuffer) {
-      /* we copy the underlying buffer (since a shallow reference won't be safe
-       * outside of the callback)
-       * the copy could be avoided if we make sure not to store references to the
-       * raw buffer within the message
-       */
-      messageBuffer = Buffer.from(Buffer.from(message))
-    } else {
-      // return textMessageParser.parse(message)
-      console.error('received string message', message)
-      return []
-    }
-    return binaryMessageParser.parse(messageBuffer)
+    )
   }
 
   /**
@@ -123,12 +66,23 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    *                                 this message type
    */
   public sendAckMessage (message: Message, allowBuffering: boolean): void {
-    if (this.isOpen) {
-      this.sendNativeMessage(
+    this.sendBinaryMessage(
         binaryMessageBuilder.getMessage(message, true),
-        allowBuffering
-      )
-    }
+        true
+    )
+  }
+
+  public getMessage (message: Message): Buffer {
+    return binaryMessageBuilder.getMessage(message, false)
+  }
+
+  public parseMessage (message: ArrayBuffer): Array<ParseResult> {
+    /* we copy the underlying buffer (since a shallow reference won't be safe
+     * outside of the callback)
+     * the copy could be avoided if we make sure not to store references to the
+     * raw buffer within the message
+     */
+    return binaryMessageParser.parse(Buffer.from(Buffer.from(message)))
   }
 
   public parseData (message: Message): true | Error {
@@ -143,16 +97,15 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
    * logic and closes the connection
    */
   public destroy (): void {
-    // Not sure if this should only happen on closed sockets or not
-    uws.native.server.terminate(this.external)
+    this.socket.end()
   }
 
   public close (): void {
     this.isClosed = true
     delete this.authCallback
-    this.emit('close', this)
+
+    this.closeCallbacks.forEach(cb => cb(this))
     this.logger.info(EVENT.CLIENT_DISCONNECTED, this.user)
-    this.removeAllListeners()
   }
 
   /**
@@ -163,12 +116,35 @@ export class UwsSocketWrapper extends EventEmitter implements SocketWrapper {
   public getHandshakeData (): any {
     return this.handshakeData
   }
+
+  public onClose (callback: (socketWrapper: StatefulSocketWrapper) => void): void {
+    this.closeCallbacks.add(callback)
+  }
+
+  public removeOnClose (callback: (socketWrapper: StatefulSocketWrapper) => void): void {
+    this.closeCallbacks.delete(callback)
+  }
+
+  public sendBinaryMessage (binaryMessage: Buffer, allowBuffering: boolean) {
+    if (this.isOpen) {
+      if (this.config.outgoingBufferTimeout === 0) {
+        this.socket.send(binaryMessage, true)
+      } else if (!allowBuffering) {
+        this.flush()
+        this.socket.send(Buffer.concat(this.bufferedWrites), true)
+        this.bufferedWrites = []
+      } else {
+        this.bufferedWrites.push(binaryMessage)
+        this.connectionEndpoint.scheduleFlush(this)
+      }
+    }
+  }
 }
 
-export function createSocketWrapper (
-  external: any,
+export function createUWSSocketWrapper (
+  socket: any,
   handshakeData: any,
   logger: Logger,
-  config: InternalDeepstreamConfig,
-  connectionEndpoint: ConnectionEndpoint
-) { return new UwsSocketWrapper(external, handshakeData, logger, config, connectionEndpoint) }
+  config: WebSocketServerConfig,
+  connectionEndpoint: SocketConnectionEndpoint
+) { return new UwsSocketWrapper(socket, handshakeData, logger, config, connectionEndpoint) }

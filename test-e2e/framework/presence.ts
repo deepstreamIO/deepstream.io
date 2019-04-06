@@ -1,50 +1,10 @@
-'use strict'
-
-const sinon = require('sinon')
-
-const clientHandler = require('./client-handler')
-const utils = require('./utils')
+import * as sinon from 'sinon'
+import { clientHandler } from './client-handler'
 
 const subscribeEvent = 'subscribe'
 const queryEvent = 'query'
 
-module.exports = {
-  subscribe (clientExpression, user) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      if (!client.presence.callbacks[subscribeEvent]) {
-        client.presence.callbacks[subscribeEvent] = sinon.spy()
-      }
-      if (user) {
-        client.client.presence.subscribe(user, client.presence.callbacks[subscribeEvent])
-      } else {
-        client.client.presence.subscribe(client.presence.callbacks[subscribeEvent])
-      }
-    })
-  },
-
-  unsubscribe (clientExpression, user) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      if (user) {
-        client.client.presence.unsubscribe(user)
-      } else {
-        client.client.presence.unsubscribe()
-      }
-    })
-  },
-
-  getAll (clientExpression, users) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      client.presence.callbacks[queryEvent] = sinon.spy()
-      if (users) {
-        client.client.presence.getAll(users, client.presence.callbacks[queryEvent])
-      } else {
-        client.client.presence.getAll(client.presence.callbacks[queryEvent])
-      }
-    })
-  }
-}
-
-module.exports.assert = {
+export const assert = {
   notifiedUserStateChanged (notifeeExpression, not, notiferExpression, event) {
     clientHandler.getClients(notifeeExpression).forEach((notifee) => {
       clientHandler.getClients(notiferExpression).forEach((notifier) => {
@@ -58,7 +18,7 @@ module.exports.assert = {
     })
   },
 
-  globalQueryResult (clientExpression, error, users) {
+  globalQueryResult (clientExpression, error, users?) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
       if (users) {
@@ -79,6 +39,43 @@ module.exports.assert = {
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
       sinon.assert.calledWith(client.presence.callbacks[queryEvent], null, result)
       client.presence.callbacks[queryEvent]. resetHistory()
+    })
+  }
+}
+
+export const presence = {
+  assert,
+  subscribe (clientExpression, user?) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      if (!client.presence.callbacks[subscribeEvent]) {
+        client.presence.callbacks[subscribeEvent] = sinon.spy()
+      }
+      if (user) {
+        client.client.presence.subscribe(user, client.presence.callbacks[subscribeEvent])
+      } else {
+        client.client.presence.subscribe(client.presence.callbacks[subscribeEvent])
+      }
+    })
+  },
+
+  unsubscribe (clientExpression, user?) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      if (user) {
+        client.client.presence.unsubscribe(user)
+      } else {
+        client.client.presence.unsubscribe()
+      }
+    })
+  },
+
+  getAll (clientExpression, users?) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      client.presence.callbacks[queryEvent] = sinon.spy()
+      if (users) {
+        client.client.presence.getAll(users, client.presence.callbacks[queryEvent])
+      } else {
+        client.client.presence.getAll(client.presence.callbacks[queryEvent])
+      }
     })
   }
 }

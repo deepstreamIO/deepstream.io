@@ -221,7 +221,7 @@ describe('permission handler applies basic permissions referencing their own dat
     })).toBe(false)
   })
 
-  xit('checks against existing data for non-existant record reads', next => {
+  xit('checks against existing data for non-existant record reads', (next) => {
     const permissions = getBasePermissions()
 
     permissions.record['non-Existing-Record'] = {
@@ -243,7 +243,7 @@ describe('permission handler applies basic permissions referencing their own dat
     testPermission(permissions, message, 'user', null, callback)
   })
 
-  xit('checks against existing data for non-existant list reads', next => {
+  xit('checks against existing data for non-existant list reads', (next) => {
     const permissions = getBasePermissions()
 
     permissions.record['non-Existing-Record'] = {
@@ -267,7 +267,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
   })
 
-  it('deals with broken messages', next => {
+  it('deals with broken messages', (next) => {
     const permissions = getBasePermissions()
 
     permissions.record['cars/mercedes'] = {
@@ -291,7 +291,7 @@ describe('permission handler applies basic permissions referencing their own dat
     testPermission(permissions, message, 'user', null, callback)
   })
 
-  it('deals with messages with invalid types', next => {
+  it('deals with messages with invalid types', (next) => {
     const permissions = getBasePermissions()
 
     permissions.event['some-event'] = {
@@ -327,7 +327,7 @@ describe('loads permissions repeatedly', () => {
     expect(permissionHandler.isReady).toBe(true)
   })
 
-  it('requests permissions initally, causing a lookup', next => {
+  it('requests permissions initally, causing a lookup', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
@@ -344,7 +344,7 @@ describe('loads permissions repeatedly', () => {
     permissionHandler.canPerformAction('some-user', message, callback)
   })
 
-  it('requests permissions a second time, causing a cache retriaval', next => {
+  it('requests permissions a second time, causing a cache retriaval', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,

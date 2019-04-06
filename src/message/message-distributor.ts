@@ -6,10 +6,10 @@ import { EVENT, PARSER_ACTIONS, TOPIC } from '../constants'
  */
 export default class MessageDistributor {
   private callbacks: any
-  private options: InternalDeepstreamConfig
+  private options: DeepstreamConfig
   private services: DeepstreamServices
 
-  constructor (options: InternalDeepstreamConfig, services: DeepstreamServices) {
+  constructor (options: DeepstreamConfig, services: DeepstreamServices) {
     this.callbacks = {}
     this.options = options
     this.services = services

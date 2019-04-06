@@ -1,8 +1,6 @@
-'use strict'
+export const defaultDelay: number = Number(process.env.DEFAULT_DELAY) || 20
 
-const defaultDelay = process.env.DEFAULT_DELAY || 20
-
-function parseData (data) {
+export const parseData = (data: string) => {
   if (data === undefined || data === 'undefined') {
     return undefined
   } else if (data === 'null') {
@@ -13,9 +11,4 @@ function parseData (data) {
   } catch (e) {
     return data
   }
-}
-
-module.exports = {
-  parseData,
-  defaultDelay
 }

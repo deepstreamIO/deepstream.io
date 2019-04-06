@@ -13,7 +13,7 @@ const lastError = function () {
 }
 
 describe('permission handler loads data for cross referencing', () => {
-  it('retrieves data for a nested cross references', next => {
+  it('retrieves data for a nested cross references', (next) => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.set('thing/x', 0, { ref: 'y' }, noop)
@@ -43,7 +43,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('erors for undefined fields in crossreferences', next => {
+  it('erors for undefined fields in crossreferences', (next) => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.set('thing/x', 0, { ref: 'y' }, noop)
@@ -69,7 +69,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('can use the same cross reference multiple times', next => {
+  it('can use the same cross reference multiple times', (next) => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.reset()
@@ -97,7 +97,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('supports nested references to the same record', next => {
+  it('supports nested references to the same record', (next) => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.reset()
@@ -125,7 +125,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('errors for objects as cross reference arguments', next => {
+  it('errors for objects as cross reference arguments', (next) => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.reset()
@@ -151,7 +151,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('prevents nesting beyond limit', next => {
+  it('prevents nesting beyond limit', (next) => {
     const permissions = testHelper.getBasePermissions()
 
     services.cache.reset()

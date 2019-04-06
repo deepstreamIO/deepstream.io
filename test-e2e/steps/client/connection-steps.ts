@@ -1,13 +1,6 @@
-'use strict'
-
-const utils = require('./utils')
-
-const cucumber = require('cucumber')
-const When = cucumber.When
-const Then = cucumber.Then
-const Given = cucumber.Given
-
-const client = require('../../framework/client')
+import { defaultDelay } from '../../framework/utils'
+import {When, Then, Given} from 'cucumber'
+import { client } from '../../framework/client'
 
 Then(/^(.+) receives? at least one "([^"]*)" error "([^"]*)"$/, client.recievedErrorOnce)
 Then(/^(.+) receives? "([^"]*)" error "([^"]*)"$/, client.recievedOneError)
@@ -15,29 +8,31 @@ Then(/^(.+) received? no errors$/, client.recievedNoErrors)
 
 Given(/^(.+) logs? out$/, (clientExpression, done) => {
   client.logsOut(clientExpression, () => {})
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Given(/^(.+) connects? to server (\d+)$/, client.connect)
 
 Then(/^(.+) connections? times? out$/, client.connectionTimesOut)
 
-Then(/^(.+) has connection state "([^"]*)"$/, (clientExpression, state) =>
-  client.hasConnectionState(clientExpression, state))
+// Then(/^(.+) has connection state "([^"]*)"$/, (clientExpression, state) =>
+//   client.hasConnectionState(clientExpression, state))
+
 Then(/^(.+) had a connection state change to "([^"]*)"$/, (clientExpression, state) =>
   client.hadConnectionState(clientExpression, true, state))
+
 Then(/^(.+) did not have a connection state change to "([^"]*)"$/, (clientExpression, state) =>
   client.hadConnectionState(clientExpression, false, state))
 
 Given(/^(.+) connects? and logs? into server (\d+)$/, (clientExpression, server, done) => {
   client.connectAndLogin(clientExpression, server, () => {
-    setTimeout(done, utils.defaultDelay)
+    setTimeout(done, defaultDelay)
   })
 })
 
 Given(/^(.+) logs? in with username "([^"]*)" and password "([^"]*)"$/, (clientExpression, username, password, done) => {
   client.login(clientExpression, username, password, () => {
-    setTimeout(done, utils.defaultDelay)
+    setTimeout(done, defaultDelay)
   })
 })
 

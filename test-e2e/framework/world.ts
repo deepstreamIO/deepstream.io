@@ -1,11 +1,8 @@
-'use strict'
+// tslint:disable:no-shadowed-variable
 
-const C = require('deepstream.io-client-js').CONSTANTS
-const sinon = require('sinon')
-const clientHandler = require('./client-handler')
-const utils = require('./utils')
+import { clientHandler } from './client-handler'
 
-module.exports = {
+export const world = {
   endTest (done) {
     const clients = clientHandler.clients
     for (const client in clients) {

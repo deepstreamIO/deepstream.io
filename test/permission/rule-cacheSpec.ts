@@ -16,7 +16,7 @@ describe('loads and retrieves values from the rule cache', () => {
     expect(ruleCache.get('event', '*', 'write')).toBe('ah')
   })
 
-  it('sets another value', next => {
+  it('sets another value', (next) => {
     ruleCache.set('record', '*', 'write', 'yup')
     expect(ruleCache.has('record', '*', 'write')).toBe(true)
     expect(ruleCache.get('record', '*', 'write')).toBe('yup')
@@ -38,7 +38,7 @@ describe('loads and retrieves values from the rule cache', () => {
     expect(ruleCache.has('record', '*', 'write')).toBe(false)
   })
 
-  it('does not remove an entry thats repeatedly requested', next => {
+  it('does not remove an entry thats repeatedly requested', (next) => {
     ruleCache.set('record', '*', 'write', 'yeah')
     let count = 0
     const interval = setInterval(() => {
@@ -52,7 +52,7 @@ describe('loads and retrieves values from the rule cache', () => {
     }, 10)
   })
 
-  it('removes the entry once it stops being requested', next => {
+  it('removes the entry once it stops being requested', (next) => {
     expect(ruleCache.has('record', '*', 'write')).toBe(true)
     expect(ruleCache.get('record', '*', 'write')).toBe('yeah')
     setTimeout(() => {

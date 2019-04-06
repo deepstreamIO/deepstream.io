@@ -13,11 +13,11 @@ const lastError = function () {
 }
 
 describe('permission handler loads data for cross referencing', () => {
-  beforeAll(next => {
+  beforeAll((next) => {
     services.cache.set('item/doesExist', 0, { isInStock: true }, next)
   })
 
-  it('retrieves an existing record from a synchronous cache', next => {
+  it('retrieves an existing record from a synchronous cache', (next) => {
     const permissions = getBasePermissions()
     services.cache.nextGetWillBeSynchronous = true
 
@@ -41,7 +41,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('retrieves two records from the cache for crossreferencing purposes', next => {
+  it('retrieves two records from the cache for crossreferencing purposes', (next) => {
     const permissions = getBasePermissions()
 
     services.cache.set('item/itemA', 0, { isInStock: true }, noop)
@@ -67,7 +67,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('retrieves and expects a non existing record', next => {
+  it('retrieves and expects a non existing record', (next) => {
     const permissions = getBasePermissions()
 
     services.cache.nextGetWillBeSynchronous = false
@@ -90,7 +90,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('gets a non existant record thats not expected', next => {
+  it('gets a non existant record thats not expected', (next) => {
     const permissions = getBasePermissions()
 
     services.cache.nextGetWillBeSynchronous = false
@@ -113,7 +113,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('mixes old data and cross references', next => {
+  it('mixes old data and cross references', (next) => {
     const permissions = getBasePermissions()
     services.cache.reset()
     services.cache.set('userA', 0, { firstname: 'Egon' }, noop)
@@ -141,7 +141,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('retrieves keys from variables', next => {
+  it('retrieves keys from variables', (next) => {
     const permissions = getBasePermissions()
 
     services.cache.set('userX', 0, { firstname: 'Joe' }, noop)
@@ -166,7 +166,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, 'username', null, callback)
   })
 
-  it('retrieves keys from variables again', next => {
+  it('retrieves keys from variables again', (next) => {
     const permissions = getBasePermissions()
 
     services.cache.set('userX', 0, { firstname: 'Mike' }, noop)
@@ -191,7 +191,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, 'username', null, callback)
   })
 
-  it('handles load errors', next => {
+  it('handles load errors', (next) => {
     const permissions = getBasePermissions()
 
     permissions.event['some-event'] = {

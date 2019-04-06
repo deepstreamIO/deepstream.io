@@ -155,4 +155,10 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    */
   destroy () {
   }
+
+  onClose () {
+  }
+
+  removeOnClose () {
+  }
 }

@@ -1,6 +1,6 @@
 import * as dsDaemon from 'deepstream.io-service/src/daemon'
 
-export const daemon = program => {
+export const daemon = (program) => {
   program
     .command('daemon')
     .description('start a daemon for deepstream server')

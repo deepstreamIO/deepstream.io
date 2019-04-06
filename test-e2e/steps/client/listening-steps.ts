@@ -1,12 +1,6 @@
-'use strict'
-
-const utils = require('./utils')
-const listening = require('../../framework/listening')
-
-const cucumber = require('cucumber')
-const When = cucumber.When
-const Then = cucumber.Then
-const Given = cucumber.Given
+import { defaultDelay } from '../../framework/utils'
+import {When, Then} from 'cucumber'
+import { listening } from '../../framework/listening'
 
 When(/^publisher (\S*) (accepts|rejects) (?:a|an) (event|record) match "([^"]*)" for pattern "([^"]*)"$/, (client, action, type, subscriptionName, pattern) => {
   listening.setupListenResponse(client, action === 'accepts', type, subscriptionName, pattern)
@@ -14,12 +8,12 @@ When(/^publisher (\S*) (accepts|rejects) (?:a|an) (event|record) match "([^"]*)"
 
 When(/^publisher (\S*) listens to (?:a|an) (event|record) with pattern "([^"]*)"$/, (client, type, pattern, done) => {
   listening.listens(client, type, pattern)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 When(/^publisher (\S*) unlistens to the (event|record) pattern "([^"]*)"$/, (client, type, pattern, done) => {
   listening.unlistens(client, type, pattern)
-  setTimeout(done, utils.defaultDelay)
+  setTimeout(done, defaultDelay)
 })
 
 Then(/^publisher (\S*) does not receive (?:a|an) (event|record) match "([^"]*)" for pattern "([^"]*)"$/, listening.assert.doesNotRecieveMatch)

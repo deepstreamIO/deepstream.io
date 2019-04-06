@@ -45,7 +45,7 @@ describe('record deletion', () => {
     expect(callback).toHaveBeenCalled()
   })
 
-  it('encounters an error during record deletion', done => {
+  it('encounters an error during record deletion', (done) => {
     services.cache.nextOperationWillBeSuccessful = false
     services.cache.nextOperationWillBeSynchronous = false
 
@@ -70,7 +70,7 @@ describe('record deletion', () => {
     }, 20)
   })
 
-  it('encounters an ack delete timeout', done => {
+  it('encounters an ack delete timeout', (done) => {
     config.cacheRetrievalTimeout = 10
     services.cache.nextOperationWillBeSuccessful = false
     services.cache.nextOperationWillBeSynchronous = false

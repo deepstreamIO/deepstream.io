@@ -19,10 +19,10 @@ import {
  * are - forwards them.
  */
 export default class MessageProcessor {
-  private config: InternalDeepstreamConfig
+  private config: DeepstreamConfig
   private services: DeepstreamServices
 
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices) {
     this.config = config
     this.services = services
   }
@@ -43,7 +43,7 @@ export default class MessageProcessor {
    * @todo The responses from the permissionHandler might arive in any arbitrary order - order them
    * @todo Handle permission handler timeouts
    */
-  public process (socketWrapper: SocketWrapper, parsedMessages: Array<Message>): void {
+  public process (socketWrapper: SocketWrapper, parsedMessages: Message[]): void {
     let message
 
     const length = parsedMessages.length

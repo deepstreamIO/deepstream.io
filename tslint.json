@@ -5,10 +5,10 @@
     ],
     "jsRules": {},
     "rules": {
-        "arrow-parens": [true, "ban-single-arg-parens"],
+        "arrow-parens": [true],
         "ordered-imports": false, 
-        "trailing-comma": false,
-        "array-type": [true, "generic"],
+        "trailing-comma": true,
+        "array-type": [true, "array-simple"],
         "prefer-const": true,
         "new-parens": true,
         "no-consecutive-blank-lines": true,

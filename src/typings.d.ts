@@ -9,19 +9,25 @@ type LOG_LEVEL = any
 type TOPIC = number
 type EVENT = any
 
-interface SimpleSocketWrapper extends NodeJS.EventEmitter {
+interface SimpleSocketWrapper {
   user: string
   isRemote: boolean
-  sendNativeMessage (message: any, buffer?: boolean): void
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
+  sendBinaryMessage? (message: Buffer, buffer?: boolean): void
   clientData?: object | null
 }
 
-interface SocketWrapper extends SimpleSocketWrapper {
+interface StatefulSocketWrapper extends SimpleSocketWrapper {
+  isClosed: boolean,
+  onClose: Function,
+  removeOnClose: Function
+  destroy: Function
+}
+
+interface SocketWrapper extends StatefulSocketWrapper {
   uuid: number
   authData: object
-  isClosed: boolean
   clientData: object | null
   getHandshakeData: Function
   onMessage: Function
@@ -29,7 +35,6 @@ interface SocketWrapper extends SimpleSocketWrapper {
   getMessage: Function
   parseData: Function
   flush: Function
-  destroy: Function
 }
 
 interface Message {
@@ -90,6 +95,10 @@ interface ConnectionEndpoint extends DeepstreamPlugin {
   onMessages (socketWrapper: SocketWrapper, messages: Array<Message>): void
   close (): void
   scheduleFlush? (socketWrapper: SocketWrapper)
+}
+
+interface SocketConnectionEndpoint extends ConnectionEndpoint {
+  scheduleFlush (socketWrapper: SocketWrapper)
 }
 
 interface PluginConfig {
@@ -165,6 +174,8 @@ interface DeepstreamConfig {
   auth?: PluginConfig
   permission?: PluginConfig
 
+  unauthenticatedClientTimeout?: number
+  maxAuthAttempts?: number
   storageExclusionPrefixes?: Array<string>
   provideRPCRequestorDetails?: boolean
   rpcAckTimeout?: number
@@ -261,5 +272,6 @@ declare namespace NodeJS  {
     deepstreamLibDir: string | null
     deepstreamConfDir: string | null
     require (path: string): any
+    cluster: any // Used by e2e tests
   }
 }

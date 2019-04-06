@@ -40,10 +40,10 @@ export const validate = (path: string): string | boolean => {
  * The path is assumed to be valid when its passed to this method
 t */
 export const parse = (path: string): any => {
-  const variables: Array<string> = []
+  const variables: string[] = []
   let regExp = path.replace(WILDCARD_REGEXP, WILDCARD_STRING)
 
-  regExp = regExp.replace(VARIABLE_REGEXP, variableName => {
+  regExp = regExp.replace(VARIABLE_REGEXP, (variableName) => {
     variables.push(variableName)
     return VARIABLE_STRING
   })

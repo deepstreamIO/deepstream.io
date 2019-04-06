@@ -1,6 +1,4 @@
-import { EventEmitter } from 'events'
-
-export default class SocketMock extends EventEmitter {
+export default class SocketMock {
   public lastSendMessage: any
   public isDisconnected: any
   public sendMessages: any
@@ -12,7 +10,6 @@ export default class SocketMock extends EventEmitter {
   public _handle: any
 
   constructor () {
-    super()
     this.lastSendMessage = null
     this.isDisconnected = false
     this.sendMessages = []
@@ -52,9 +49,6 @@ public destroy () {
 public doClose () {
   this.isDisconnected = true
   this.readyState = 'closed'
-  this.emit('close')
 }
 
-public setNoDelay () {
-}
 }

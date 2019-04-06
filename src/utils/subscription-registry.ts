@@ -80,7 +80,7 @@ export default class SubscriptionRegistry {
   /**
    * Return all the servers that have this subscription.
    */
-  public getAllServers (subscriptionName: string): Array<string> {
+  public getAllServers (subscriptionName: string): string[] {
     return this.clusterSubscriptions.getAllServers(subscriptionName)
   }
 
@@ -88,7 +88,7 @@ export default class SubscriptionRegistry {
    * Return all the servers that have this subscription excluding the current
    * server name
    */
-  public getAllRemoteServers (subscriptionName: string): Array<string> {
+  public getAllRemoteServers (subscriptionName: string): string[] {
     const serverNames = this.clusterSubscriptions.getAllServers(subscriptionName)
     const localServerIndex = serverNames.indexOf(this.config.serverName)
     if (localServerIndex > -1) {
@@ -101,7 +101,7 @@ export default class SubscriptionRegistry {
    * Returns a list of all the topic this registry
    * currently has subscribers for
    */
-  public getNames (): Array<string> {
+  public getNames (): string[] {
     return this.clusterSubscriptions.getAll()
   }
 
@@ -155,7 +155,7 @@ export default class SubscriptionRegistry {
       if (socket === senderSocket) {
         continue
       }
-      socket.sendNativeMessage(msg, true)
+      socket.sendBinaryMessage!(msg, true)
     }
   }
 
@@ -255,7 +255,7 @@ export default class SubscriptionRegistry {
     const subscriptions = this.sockets.get(socket) || new Set()
     if (subscriptions.size === 0) {
       this.sockets.set(socket, subscriptions)
-      socket.once('close', this.onSocketClose)
+      socket.onClose(this.onSocketClose)
     }
     subscriptions.add(subscription)
 
@@ -269,7 +269,7 @@ export default class SubscriptionRegistry {
   private removeSocket (subscription, socket): void {
     if (subscription.sockets.size === 0) {
       this.subscriptions.delete(subscription.name)
-      socket.removeListener('close', this.onSocketClose)
+      socket.removeOnClose(this.onSocketClose)
     }
 
     if (this.subscriptionListener) {
@@ -291,7 +291,7 @@ export default class SubscriptionRegistry {
   private onSocketClose (socket: SocketWrapper): void {
     const subscriptions = this.sockets.get(socket)
     if (!subscriptions) {
-      // log error
+      this.services.logger.error(EVENT_ACTIONS[this.constants.NOT_SUBSCRIBED], 'A socket has an illegal registered close callback')
       return
     }
     for (const subscription of subscriptions) {

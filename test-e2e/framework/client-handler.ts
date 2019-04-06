@@ -1,14 +1,9 @@
-'use strict'
-
-const sinon = require('sinon')
+const { deepstream } = require('deepstream.io-client-js')
+import * as sinon from 'sinon'
 
 const clients = {}
 
-const utils = require('./utils')
-
-const { deepstream } = require('deepstream.io-client-js')
-
-function createClient (clientName, server, options) {
+function createClient (clientName, server, options?) {
   const gatewayUrl = global.cluster.getUrl(server - 1, clientName)
   const client = deepstream(gatewayUrl, Object.assign({
     maxReconnectInterval: 300,
@@ -120,7 +115,7 @@ function createClient (clientName, server, options) {
 
 function getClientNames (expression) {
   const clientExpression = /all clients|(?:subscriber|publisher|clients?) ([^\s']*)(?:'s)?/
-  const result = clientExpression.exec(expression)
+  const result = clientExpression.exec(expression)!
   if (result[0] === 'all clients') {
     return Object.keys(clients)
   } else if (result.length === 2 && result[1].indexOf(',') > -1) {
@@ -129,12 +124,11 @@ function getClientNames (expression) {
     return [result[1].replace(/"/g, '')]
   }
 
-  throw `Invalid expression: ${expression}`
-
+  throw new Error(`Invalid expression: ${expression}`)
 }
 
 function getClients (expression) {
-  return getClientNames(expression).map(client => clients[client])
+  return getClientNames(expression).map((client) => clients[client])
 }
 
 function assertNoErrors (client) {
@@ -146,7 +140,7 @@ function assertNoErrors (client) {
   }
 }
 
-module.exports = {
+export const clientHandler = {
   clients,
   createClient,
   getClientNames,

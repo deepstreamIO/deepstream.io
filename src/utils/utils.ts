@@ -11,7 +11,7 @@ export let getUid = function (): string {
 /**
  * Calls <callback> once all <emitters> have emitted <event>
  */
-export let combineEvents = function (emitters: Array<EventEmitter>, event: string, callback: Function): void {
+export let combineEvents = function (emitters: EventEmitter[], event: string, callback: Function): void {
   let i
   let count = 0
   const increment = function () {
@@ -143,7 +143,7 @@ export let getRandomIntInRange = function (min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min))
 }
 
-export let spliceRandomElement = function (array: Array<any>): any {
+export let spliceRandomElement = function (array: any[]): any {
   const randomIndex = getRandomIntInRange(0, array.length)
   return array.splice(randomIndex, 1)[0]
 }
@@ -152,7 +152,7 @@ export let spliceRandomElement = function (array: Array<any>): any {
  * Randomize array element order in-place.
  * Using Durstenfeld shuffle algorithm.
  */
-export let shuffleArray = function (array: Array<any>): Array<any> {
+export let shuffleArray = function (array: any[]): any[] {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     const temp = array[i]
@@ -172,7 +172,7 @@ export let deepFreeze = function (obj: object): object {
   const propNames = Object.getOwnPropertyNames(obj)
 
   // Freeze properties before freezing self
-  propNames.forEach(name => {
+  propNames.forEach((name) => {
     const prop = obj[name]
 
     // Freeze prop if it is an object
@@ -188,7 +188,7 @@ export let deepFreeze = function (obj: object): object {
 /**
  * Check whether a record name should be excluded from storage
  */
-export const isExcluded = function (exclusionPrefixes: Array<string>, recordName: string): boolean {
+export const isExcluded = function (exclusionPrefixes: string[], recordName: string): boolean {
   if (!exclusionPrefixes) {
     return false
   }

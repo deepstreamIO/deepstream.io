@@ -152,7 +152,7 @@ export default class PresenceHandler {
   * Handles finding clients who are connected and splicing out the client
   * querying for users
   */
-  private handleQuery (users: Array<string>, correlationId: string, socketWrapper: SocketWrapper): void {
+  private handleQuery (users: string[], correlationId: string, socketWrapper: SocketWrapper): void {
     const result = {}
     const clients = this.connectedClients.getAllMap()
     for (let i = 0; i < users.length; i++) {

@@ -12,7 +12,7 @@ export default class StdOutLogger extends EventEmitter implements Logger {
   private options: any
   private useColors: boolean
   private currentLogLevel: LOG_LEVEL
-  private logLevelColors: Array<string>
+  private logLevelColors: string[]
 
   /**
    * Logs to the operatingsystem's standard-out and standard-error streams.

@@ -1,5 +1,3 @@
-'use strict'
-
 import Server from './server'
 import JIFHandler from '../jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
@@ -19,7 +17,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   private authenticationHandler: AuthenticationHandler
   private permissionHandler: PermissionHandler
   private messageDistributor: MessageDistributor
-  private dsOptions: InternalDeepstreamConfig
+  private dsOptions: DeepstreamConfig
   private jifHandler: JIFHandler
   private onSocketMessageBound: Function
   private onSocketErrorBound: Function
@@ -65,6 +63,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       port: this.getOption('port'),
       host: this.getOption('host'),
       healthCheckPath: this.getOption('healthCheckPath'),
+      headers: this.getOption('headers'),
       authPath: this.options.authPath,
       postPath: this.options.postPath,
       getPath: this.options.getPath,

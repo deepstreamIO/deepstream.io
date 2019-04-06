@@ -1,22 +1,20 @@
-'use strict'
+// tslint:disable:no-shadowed-variable
 
-const sinon = require('sinon')
-
-const clientHandler = require('./client-handler')
-const utils = require('./utils')
+import * as sinon from 'sinon'
+import { clientHandler } from './client-handler'
 
 let rejected = false
 
 const rpcs = {
-  addTwo: (client, data, response) => {
+  'addTwo': (client, data, response) => {
     client.rpc.provides.addTwo()
     response.send(data.numA + data.numB)
   },
-  double: (client, data, response) => {
+  'double': (client, data, response) => {
     client.rpc.provides.double()
     response.send(data * 2)
   },
-  stringify: (client, data, response) => {
+  'stringify': (client, data, response) => {
     client.rpc.provides.stringify()
     response.send(typeof data === 'object' ? JSON.stringify(data) : String(data))
   },
@@ -28,14 +26,14 @@ const rpcs = {
     client.rpc.provides['only-full-user-data']()
     response.send('ok')
   },
-  alwaysReject: (client, data, response) => {
+  'alwaysReject': (client, data, response) => {
     client.rpc.provides.alwaysReject()
     response.reject()
   },
-  neverRespond: (client) => {
+  'neverRespond': (client) => {
     client.rpc.provides.neverRespond()
   },
-  clientBRejects: (client, data, response) => {
+  'clientBRejects': (client, data, response) => {
     client.rpc.provides.clientBRejects()
     if (client.name === 'B') {
       response.reject()
@@ -43,10 +41,10 @@ const rpcs = {
       response.send(data.root * data.root)
     }
   },
-  deny: (client, data, response) => {
+  'deny': (client, data, response) => {
     // permissions always deny
   },
-  rejectOnce: (client, data, response) => {
+  'rejectOnce': (client, data, response) => {
     client.rpc.provides.rejectOnce(data)
     if (rejected) {
       response.send('ok')
@@ -58,38 +56,12 @@ const rpcs = {
   }
 }
 
-module.exports = {
-  provide (clientExpression, rpc) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      client.rpc.provides[rpc] = sinon.spy()
-      client.client.rpc.provide(rpc, rpcs[rpc].bind(null, client))
-    })
-  },
-
-  unprovide (clientExpression, rpc, args, done) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      client.client.rpc.unprovide(rpc)
-    })
-  },
-
-  make (clientExpression, rpc, args, done) {
-    clientHandler.getClients(clientExpression).forEach((client) => {
-      const callback = client.rpc.callbacks[rpc] = sinon.spy()
-      client.client.rpc.make(rpc, JSON.parse(args), (a, b) => {
-        callback(a, b && b.toString())
-        setTimeout(done, utils.defaultDelay)
-      })
-    })
-  }
-}
-
-module.exports.assert = {
-
+const assert = {
   recievesResponse (clientExpression, rpc, data) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.rpc.callbacks[rpc])
       sinon.assert.calledWith(client.rpc.callbacks[rpc], null, JSON.parse(data).toString())
-      client.rpc.callbacks[rpc]. resetHistory()
+      client.rpc.callbacks[rpc].resetHistory()
     })
   },
 
@@ -98,19 +70,45 @@ module.exports.assert = {
       clientHandler.getClients(clientExpression).forEach((client) => {
         sinon.assert.calledOnce(client.rpc.callbacks[rpc])
         sinon.assert.calledWith(client.rpc.callbacks[rpc], error)
-        client.rpc.callbacks[rpc]. resetHistory()
+        client.rpc.callbacks[rpc].resetHistory()
         done()
       })
     }, eventually ? 150 : 0)
   },
 
-  providerCalled (clientExpression, rpc, timesCalled, data) {
+  providerCalled (clientExpression, rpc, timesCalled, data?) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.callCount(client.rpc.provides[rpc], timesCalled)
       if (data) {
         sinon.assert.calledWith(client.rpc.provides[rpc], JSON.parse(data))
       }
-      client.rpc.provides[rpc]. resetHistory()
+      client.rpc.provides[rpc].resetHistory()
+    })
+  }
+}
+
+export const rpc = {
+  assert,
+
+  provide (clientExpression, rpc) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      client.rpc.provides[rpc] = sinon.spy()
+      client.client.rpc.provide(rpc, rpcs[rpc].bind(null, client))
+    })
+  },
+
+  unprovide (clientExpression, rpc) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      client.client.rpc.unprovide(rpc)
+    })
+  },
+
+  make (clientExpression, rpc, args) {
+    clientHandler.getClients(clientExpression).forEach((client) => {
+      const callback = client.rpc.callbacks[rpc] = sinon.spy()
+      client.client.rpc.make(rpc, JSON.parse(args), (a, b) => {
+        callback(a, b && b.toString())
+      })
     })
   }
 }

@@ -1,13 +1,10 @@
-'use strict'
+// tslint:disable:no-shadowed-variable
 
-const { C, CONNECTION_STATE, EVENT } = require('deepstream.io-client-js')
-const sinon = require('sinon')
-const assert = require('assert')
+const { C } = require('deepstream.io-client-js')
+import * as sinon from 'sinon'
+import { clientHandler } from './client-handler'
 
-const clientHandler = require('./client-handler')
-const utils = require('./utils')
-
-module.exports = {
+export const client = {
   logsOut (clientExpression, done) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.close()
@@ -147,8 +144,11 @@ module.exports = {
 
   hadConnectionState (clientExpression, had, state) {
     clientHandler.getClients(clientExpression).forEach((client) => {
-      if (had) sinon.assert.calledWith(client.connectionStateChanged, state)
-      else sinon.assert.neverCalledWith(client.connectionStateChanged, state)
+      if (had) {
+        sinon.assert.calledWith(client.connectionStateChanged, state)
+      } else {
+        sinon.assert.neverCalledWith(client.connectionStateChanged, state)
+      }
     })
   },
 

@@ -1,7 +1,7 @@
 import { installer } from './installer'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
 
-export const install = program => {
+export const install = (program) => {
   program
     .command('install')
     .description('install connectors')
@@ -60,7 +60,7 @@ function action (type, nameAndVersion) {
     name,
     version,
     dir: this.libDir
-  }, err => {
+  }, (err) => {
     if (err) {
       console.error(err.toString().red)
       process.exit(1)

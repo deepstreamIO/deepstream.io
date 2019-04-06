@@ -86,8 +86,7 @@ export default class Rpc {
   }
 
   /**
-  * Destroyes this Rpc, either because its completed
-  * or because a timeout has occured
+  * Destroys this Rpc, either because its completed or because a timeout has occured
   */
   public destroy (): void {
     clearTimeout(this.acceptTimeout)

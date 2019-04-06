@@ -53,7 +53,7 @@ describe('config-initialiser', () => {
 
   describe('ssl files are loaded if provided', () => {
     it('fails with incorrect path passed in', () => {
-      ['sslKey', 'sslCert', 'sslCa'].forEach(key => {
+      ['sslKey', 'sslCert', 'sslCa'].forEach((key) => {
         const config = defaultConfig.get()
         config[key] = './does-not-exist'
         expect(() => {
@@ -314,7 +314,7 @@ describe('config-initialiser', () => {
       expect(result.services.logger.options).toEqual({ a: 1 })
     })
 
-    it('throw an error for a unsupported logger type', next => {
+    it('throw an error for a unsupported logger type', (next) => {
       const config = defaultConfig.get()
 
       config.logger = {

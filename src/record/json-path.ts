@@ -41,7 +41,7 @@ function tokenize (path: string): Array<string | number> {
       continue
     }
 
-    const arrayIndexes: Array<string> = part.split(SPLIT_REG_EXP)
+    const arrayIndexes: string[] = part.split(SPLIT_REG_EXP)
 
     if (arrayIndexes.length === 0) {
       // TODO

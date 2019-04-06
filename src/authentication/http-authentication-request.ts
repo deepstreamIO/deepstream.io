@@ -1,4 +1,4 @@
-import * as needle from 'needle'
+import { post } from 'needle'
 import { EVENT } from '../constants'
 
 /**
@@ -34,21 +34,17 @@ export default class HttpAuthenticationRequest {
       json: true
     }
 
-    needle.post(settings.endpointUrl, data, options, this._onComplete.bind(this))
+    post(settings.endpointUrl, data, options, this._onComplete.bind(this))
   }
 
   /**
    * Invoked for completed responses, whether succesful
    * or errors
-   *
-   * @param {Error} error HTTP Error
-   * @param {http.Response} response
    */
-  private _onComplete (error: Error, response: any): void {
+  private _onComplete (error, response): void {
     if (error) {
       this.logger.warn(EVENT.AUTH_ERROR, `http auth error: ${error}`)
       this.callback(false, null)
-      this._destroy()
       return
     }
 
@@ -63,16 +59,5 @@ export default class HttpAuthenticationRequest {
     } else {
       this.callback(true, response.body || null)
     }
-
-    this._destroy()
-  }
-
-  /**
-   * Destroys the class
-   */
-  private _destroy (): void {
-    // this.callback = null
-    // this.logger = null
-    // this.settings = null
   }
 }

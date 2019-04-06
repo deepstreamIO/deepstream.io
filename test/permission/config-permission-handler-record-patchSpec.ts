@@ -12,7 +12,7 @@ const lastError = function () {
 }
 
 describe('constructs data for patch message validation', () => {
-  it('fails to set incorrect data', next => {
+  it('fails to set incorrect data', (next) => {
     const permissions = testHelper.getBasePermissions()
     services.cache.nextGetWillBeSynchronous = false
 
@@ -40,7 +40,7 @@ describe('constructs data for patch message validation', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('succeeds if both old and new data is correct', next => {
+  it('succeeds if both old and new data is correct', (next) => {
     const permissions = testHelper.getBasePermissions()
     services.cache.nextGetWillBeSynchronous = false
 
@@ -68,7 +68,7 @@ describe('constructs data for patch message validation', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('errors if the patch message has data with an invalid json', next => {
+  it('errors if the patch message has data with an invalid json', (next) => {
     const permissions = testHelper.getBasePermissions()
     services.cache.nextGetWillBeSynchronous = false
 
@@ -94,7 +94,7 @@ describe('constructs data for patch message validation', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('returns false if patch if for a non existing record', next => {
+  it('returns false if patch if for a non existing record', (next) => {
     const permissions = testHelper.getBasePermissions()
     services.cache.nextGetWillBeSynchronous = false
 

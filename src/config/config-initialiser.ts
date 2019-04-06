@@ -180,7 +180,7 @@ function handlePlugins (config: InternalDeepstreamConfig, services: any): void {
  *
  * CLI arguments will be considered.
  */
-function handleConnectionEndpoints (config: InternalDeepstreamConfig, services: any): Array<ConnectionEndpoint> {
+function handleConnectionEndpoints (config: InternalDeepstreamConfig, services: any): ConnectionEndpoint[] {
   // delete any endpoints that have been set to `null`
   for (const type in config.connectionEndpoints) {
     if (!config.connectionEndpoints[type]) {
@@ -190,7 +190,7 @@ function handleConnectionEndpoints (config: InternalDeepstreamConfig, services: 
   if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
     throw new Error('No connection endpoints configured')
   }
-  const connectionEndpoints: Array<ConnectionEndpoint> = []
+  const connectionEndpoints: ConnectionEndpoint[] = []
   for (const connectionType in config.connectionEndpoints) {
     const plugin = config.connectionEndpoints[connectionType]
 
@@ -221,9 +221,8 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
     return customPlugins.get(plugin.name)
   }
 
-  // nexe needs *global.require* for __dynamic__ modules
-  // but browserify and proxyquire can't handle *global.require*
-  const req = global && global.require ? global.require : require
+  // Required for bundling via nexe
+  const req = require
   let requirePath
   let pluginConstructor
   let es6Adaptor

@@ -5,7 +5,7 @@ const PermissionHandler = require('../../src/permission/open-permission-handler'
 describe('open permission handler', () => {
   let permissionHandler
 
-  it('allows any action', done => {
+  it('allows any action', (done) => {
     permissionHandler = new PermissionHandler()
 
     const message = {

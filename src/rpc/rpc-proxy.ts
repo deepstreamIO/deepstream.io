@@ -6,33 +6,19 @@ import { EVENT, PRESENCE_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../cons
  * of a SocketWrapper, connected to a local rpc provider, but
  * infact relays calls from and to the message connector - sneaky.
  */
-export default class RpcProxy extends EventEmitter implements SimpleSocketWrapper {
-  private config: InternalDeepstreamConfig
-  private services: DeepstreamServices
-  private remoteServer: string
-  private metaData: any
+export default class RpcProxy implements SimpleSocketWrapper {
+  public isRemote: true = true
   public type: string
-  public isRemote: boolean
   public user: string
 
   /**
   */
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, remoteServer: string, metaData: any) {
-    super()
-    this.isRemote = true
-    this.metaData = metaData
-    this.config = config
-    this.services = services
-    this.remoteServer = remoteServer
-
+  constructor (private config: InternalDeepstreamConfig, private services: DeepstreamServices, private remoteServer: string, private  metaData: any) {
     // used for logging
     this.user = 'remote server ' + remoteServer
   }
 
   public sendAckMessage (message: RPCMessage): void {
-  }
-
-  public sendNativeMessage (message: any, buffer?: boolean): void {
   }
 
   /**

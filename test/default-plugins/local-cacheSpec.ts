@@ -11,7 +11,7 @@ describe('it saves values in memory', () => {
     expect(localCache.isReady).toBe(true)
   })
 
-  it('sets a value in the cache', done => {
+  it('sets a value in the cache', (done) => {
     const successCallback = jasmine.createSpy('set success')
     localCache.set('firstname', 1, 'Wolfram', successCallback)
     setTimeout(() => {
@@ -21,7 +21,7 @@ describe('it saves values in memory', () => {
     }, 1)
   })
 
-  it('retrieves an existing value from the cache', done => {
+  it('retrieves an existing value from the cache', (done) => {
     const successCallback = jasmine.createSpy('set success')
     localCache.get('firstname', successCallback)
     setTimeout(() => {
@@ -31,7 +31,7 @@ describe('it saves values in memory', () => {
     }, 1)
   })
 
-  it('deletes a value from the cache', done => {
+  it('deletes a value from the cache', (done) => {
     const successCallback = jasmine.createSpy('set success')
     localCache.delete('firstname', successCallback)
     setTimeout(() => {
@@ -41,7 +41,7 @@ describe('it saves values in memory', () => {
     }, 1)
   })
 
-  it('tries to retrieve a non-existing value from the cache', done => {
+  it('tries to retrieve a non-existing value from the cache', (done) => {
     const successCallback = jasmine.createSpy('set success')
     localCache.get('firstname', successCallback)
     setTimeout(() => {
