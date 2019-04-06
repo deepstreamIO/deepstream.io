@@ -50,7 +50,7 @@ export const readAndParseFile = function (filePath: string, callback: Function):
  * Loads a config file without having to initialise it. Useful for one
  * off operations such as generating a hash via cli
  */
-export const loadConfigWithoutInitialisation = function (filePath?: string, args?: object): any {
+export const loadConfigWithoutInitialisation = function (filePath: string | null = null, args?: object): any {
   const argv = args || global.deepstreamCLI || {}
   const configPath = setGlobalConfigDirectory(argv, filePath)
   const configString = fs.readFileSync(configPath, { encoding: 'utf8' })
@@ -71,7 +71,7 @@ export const loadConfigWithoutInitialisation = function (filePath?: string, args
  * some properties like the plugins (logger and connectors).
  */
 export const loadConfig = function (filePath: string | null, args?: object) {
-  const config = exports.loadConfigWithoutInitialisation(filePath, args)
+  const config = loadConfigWithoutInitialisation(filePath, args)
   const result = configInitialiser.initialise(config.config)
   return {
     config: result.config,
@@ -105,7 +105,7 @@ function parseFile (filePath: string, fileContent: string): InternalDeepstreamCo
 * Set the globalConfig prefix that will be used as the directory for ssl, permissions and auth
 * relative files within the config file
 */
-function setGlobalConfigDirectory (argv: any, filePath?: string): string {
+function setGlobalConfigDirectory (argv: any, filePath?: string | null): string {
   const customConfigPath =
       argv.c ||
       argv.config ||

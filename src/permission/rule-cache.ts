@@ -1,7 +1,7 @@
 export default class RuleCache {
   private config: ValveConfig
   private data: any
-  private interval: number
+  private interval: any
 
   /**
    * This cache stores rules that are frequently used. It removes

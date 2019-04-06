@@ -8,23 +8,16 @@
     "strictNullChecks": true,
     "types": [
       "node"
-    ],
-    "typeRoots": [
-      "node_modules/@types"
     ]
   },
   "files": [
-    "./node_modules/@types/node/index.d.ts",
-    "./node_modules/@types/jasmine/index.d.ts",
-    "./node_modules/uWebSockets.js/index.d.ts",
-    "./src/typings.d.ts"
+    "./typings/index.d.ts"
   ],
   "include": [
     "protocol/**/*",
     "bin/*",
     "src/**/*",
     "src/**/*.json",
-    "test/**/*",
     "test-e2e/**/*",
     "package.json"
   ],

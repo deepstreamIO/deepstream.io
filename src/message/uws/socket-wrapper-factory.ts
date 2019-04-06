@@ -17,7 +17,7 @@ export class UwsSocketWrapper implements SocketWrapper {
   public authCallback: Function
   public authAttempts: number = 0
 
-  private bufferedWrites: Array<Buffer>
+  private bufferedWrites: Buffer[]
   private closeCallbacks: Set<Function> = new Set()
 
   public authData: object
@@ -76,7 +76,7 @@ export class UwsSocketWrapper implements SocketWrapper {
     return binaryMessageBuilder.getMessage(message, false)
   }
 
-  public parseMessage (message: ArrayBuffer): Array<ParseResult> {
+  public parseMessage (message: ArrayBuffer): ParseResult[] {
     /* we copy the underlying buffer (since a shallow reference won't be safe
      * outside of the callback)
      * the copy could be avoided if we make sure not to store references to the
@@ -89,7 +89,7 @@ export class UwsSocketWrapper implements SocketWrapper {
     return binaryMessageParser.parseData(message)
   }
 
-  public onMessage (messages: Array<Message>): void {
+  public onMessage (messages: Message[]): void {
   }
 
   /**
@@ -104,7 +104,7 @@ export class UwsSocketWrapper implements SocketWrapper {
     this.isClosed = true
     delete this.authCallback
 
-    this.closeCallbacks.forEach(cb => cb(this))
+    this.closeCallbacks.forEach((cb) => cb(this))
     this.logger.info(EVENT.CLIENT_DISCONNECTED, this.user)
   }
 
@@ -141,7 +141,7 @@ export class UwsSocketWrapper implements SocketWrapper {
   }
 }
 
-export function createUWSSocketWrapper (
+export const createUWSSocketWrapper = function (
   socket: any,
   handshakeData: any,
   logger: Logger,
