@@ -1,3 +1,13 @@
+## [3.2.4] - 2019.06.04
+  
+### Fixes
+
+- Issue where headers were not retrieved correctly with new uws
+
+### Misc
+
+- Updating all dependencies (minor changes other than nexe) 
+
 ## [3.2.3] - 2019.03.22
   
 ### Fixes
