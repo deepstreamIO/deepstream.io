@@ -16,8 +16,8 @@
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE",
     "lint": "tslint bin/*.ts test/**/*.ts protocol/**/*.ts src/**/*.ts test-e2e/**/*.ts -t verbose",
     "lint:fix": "npm run lint -- --fix",
-    "test": "ts-node --project tsconfig.json --files ./node_modules/.bin/_mocha --opts mocha.opts  src/**/*.spec.ts",
-    "test:coverage": "npm run tsc && istanbul cover jasmine-runner.js",
+    "test": "mocha --opts mocha.opts src/**/*.spec.ts",
+    "test:coverage": "nyc mocha --opts mocha.opts src/**/*.spec.ts",
     "test:http-server": "node test/test-helper/start-test-server.js",
     "e2e": "ts-node --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit",
     "e2e:rpc": "npm run e2e -- --tags \"not @cluster and @rpcs\"",
@@ -63,6 +63,7 @@
     "mocha": "^6.0.2",
     "n0p3": "^1.0.2",
     "nexe": "^3",
+    "nyc": "^13.3.0",
     "proxyquire": "2.1.0",
     "sinon": "^7.3.1",
     "sinon-chai": "^3.3.0",
@@ -76,5 +77,25 @@
   "bugs": {
     "url": "https://github.com/deepstreamIO/deepstream.io/issues"
   },
-  "homepage": "http://deepstream.io"
+  "homepage": "http://deepstream.io",
+  "nyc": {
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "src/**/*.spec.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register/transpile-only"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
+  }
 }

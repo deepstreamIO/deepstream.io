@@ -1,4 +1,6 @@
 import { EventEmitter } from 'events'
+import {spy} from 'sinon';
+
 const utils = require('util')
 
 export default class ClosableLogger extends EventEmitter {

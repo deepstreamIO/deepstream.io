@@ -37,16 +37,11 @@ matrix:
 
 script:
   - npm run lint;
-  - npm run test;
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      sh scripts/run-e2e.sh;
-    fi
-  # This has to happen here and not in before_deploy to be put in travis cache
-  - bash ./scripts/package.sh
+  - npm run test:coverage;
+  - sh scripts/run-e2e.sh;
 
-cache:
-  directories:
-    - nexe_node
+before_deploy:
+  - bash ./scripts/package.sh
 
 deploy:
   - provider: s3

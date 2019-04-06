@@ -1,7 +1,7 @@
 dist
 .DS_Store
 .vscode/settings.json
-
+.nyc_output
 temp-e2e-test
 local-storage
 

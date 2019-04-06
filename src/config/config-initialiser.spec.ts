@@ -16,7 +16,7 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
       config.plugins = {
         cache: {
-          path: './dist/test/test-mocks/plugin-mock',
+          path: './src/test/mock/plugin-mock',
           options: { some: 'options' }
         }
       } as any
@@ -37,7 +37,7 @@ describe('config-initialiser', () => {
     })
 
     it('loads plugins from a relative path and lib dir', () => {
-      global.deepstreamLibDir = './dist/test/test-mocks'
+      global.deepstreamLibDir = './src/test/mock'
 
       const config = defaultConfig.get()
       config.plugins = {
@@ -95,7 +95,7 @@ describe('config-initialiser', () => {
 
   describe('creates the right authentication handler', () => {
     before(() => {
-      global.deepstreamLibDir = './dist/test/test-plugins'
+      global.deepstreamLibDir = './src/test/plugins'
     })
 
     it('works for authtype: none', () => {
@@ -153,7 +153,7 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
 
       config.auth = {
-        path: '../test-mocks/authentication-handler-mock',
+        path: '../mock/authentication-handler-mock',
         options: {
           hello: 'there'
         }
@@ -206,7 +206,7 @@ describe('config-initialiser', () => {
 
   describe('creates the permissionHandler', () => {
     it('creates the config permission handler', () => {
-      global.deepstreamConfDir = './dist/test/test-configs'
+      global.deepstreamConfDir = './src/test/config'
       const config = defaultConfig.get()
 
       config.permission = {
@@ -217,7 +217,7 @@ describe('config-initialiser', () => {
       }
       const result = configInitialiser.initialise(config)
       expect(result.services.permissionHandler.description).to.contain('valve permissions loaded from')
-      expect(result.services.permissionHandler.description).to.contain(path.resolve('./dist/test/test-configs/basic-permission-config.json'))
+      expect(result.services.permissionHandler.description).to.contain(path.resolve('./src/test/config/basic-permission-config.json'))
     })
 
     it('fails for invalid permission types', () => {
@@ -226,7 +226,7 @@ describe('config-initialiser', () => {
       config.permission = {
         type: 'does-not-exist',
         options: {
-          path: './dist/test/test-configs/basic-permission-config.json'
+          path: './src/test/config/basic-permission-config.json'
         }
       }
       expect(() => {
@@ -238,7 +238,7 @@ describe('config-initialiser', () => {
       const config = defaultConfig.get()
 
       config.permission = {
-        path: '../test-mocks/permission-handler-mock',
+        path: '../mock/permission-handler-mock',
         options: {
           hello: 'there'
         }
