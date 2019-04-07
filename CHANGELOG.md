@@ -1,3 +1,11 @@
+## [4.0.0-rc.6] - 2019.04.07
+
+### Improvements
+
+- Uses mocha / dropped mocha
+- Uses uWebsockets instead of uws
+- Improving some typescript types
+
 ## [4.0.0-beta.2] - 2017.11.20
 
 ### Features
