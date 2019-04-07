@@ -243,18 +243,6 @@ describe('file based authentication', () => {
       })
     })
 
-    it('loads a broken config', (done) => {
-      const authenticationHandler = new AuthenticationHandler({
-        path: './src/test/config/broken-json-config.json',
-        hash: false
-      } as any)
-
-      authenticationHandler.on('error', (error) => {
-        expect(error.toString()).to.contain('Unexpected token }')
-        done()
-      })
-    })
-
     it('loads a user config without password field', (done) => {
       const authenticationHandler = new AuthenticationHandler({
         path: './src/test/config/invalid-user-config.json',

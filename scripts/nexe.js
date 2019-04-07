@@ -1,3 +1,4 @@
+const version = require('../package')
 const nexe = require('nexe') // eslint-disable-line
 
 nexe.compile({
@@ -8,16 +9,16 @@ nexe.compile({
   target: { version: process.env.NODE_VERSION_WITHOUT_V },
   temp: 'nexe_node',
   resources: [
-    'ascii-logo.txt',
-    'package.json'
+    './dist/ascii-logo.txt',
+    './dist/package.json'
   ],
   ico: 'scripts/resources/deepstream.ico',
   rc: {
     CompanyName: "deepstreamHub GmbH",
     ProductName: "deepstream.io",
     FileDescription: "A Scalable Server for Realtime Applications",
-    FileVersion: require('../package').version,
-    ProductVersion: require('../package').version,
+    FileVersion: version,
+    ProductVersion: version,
     OriginalFilename: "deepstream.exe",
     InternalName: "deepstream",
     LegalCopyright: "AGPL"

@@ -78,28 +78,6 @@ describe('permission handler loading', () => {
       permissionHandler.init()
     })
 
-    it('fails when loading a broken config file upon initialisation', (next) => {
-      const permissionHandler = new ConfigPermissionHandler({
-        permission: {
-          options: {
-            path: './src/test/config/broken-json-config.json',
-            cacheEvacuationInterval: 60000
-          }
-        }
-      }, {})
-      permissionHandler.setRecordHandler(recordHandler)
-      permissionHandler.on('error', (error) => {
-        expect(error).to.contain('SyntaxError')
-        next()
-      })
-      permissionHandler.on('ready', () => {
-        expect('should not have gotten here').to.equal('true')
-        next()
-      })
-      expect(permissionHandler.isReady).to.equal(false)
-      permissionHandler.init()
-    })
-
     it('fails when loading an invalid config file upon initialisation', (next) => {
       const permissionHandler = new ConfigPermissionHandler({
         permission: {

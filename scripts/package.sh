@@ -66,7 +66,7 @@ function compile {
     echo "Transpiling"
     npm run tsc
 
-    echo -e "\tGenerate License File using unmodified npm packages"
+    echo "Generate License File using unmodified npm packages"
     ./scripts/license-aggregator.js > build/DEPENDENCIES.LICENSE
 
     echo "Generating meta.json"
@@ -75,7 +75,7 @@ function compile {
     # Nexe Patches
     echo "Nexe Patches for Browserify, copying stub versions of optional installs since they aern't bundled anyway"
 
-    echo -e "\tStubbing xml2js for needle"
+    echo "Stubbing xml2js for needle"
     mkdir -p node_modules/xml2js && echo "throw new Error()" >> node_modules/xml2js/index.js
 
     # Creating package structure

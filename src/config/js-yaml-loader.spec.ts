@@ -72,14 +72,6 @@ describe.skip('js-yaml-loader', () => {
         done()
       })
     })
-
-    it('errors when trying to load invalid json', (done) => {
-      jsonLoader.load('./src/test/config/broken-json-config.json', (err, result) => {
-        expect(err.toString()).to.contain('Unexpected token')
-        expect(result).to.equal(undefined)
-        done()
-      })
-    })
   })
 
   describe('js-yaml-loader', () => {

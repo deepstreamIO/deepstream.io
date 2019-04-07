@@ -1,6 +1,6 @@
 {
   "name": "deepstream.io",
-  "version": "4.0.0-rc.5",
+  "version": "4.0.0-rc.6",
   "description": "a scalable server for realtime webapps",
   "main": "./dist/src/deepstream.io.js",
   "bin": {
@@ -12,7 +12,7 @@
   "scripts": {
     "start": "ts-node --project tsconfig.json --files ./bin/deepstream.ts",
     "precommit": "npm run lint",
-    "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && cp -r conf ./dist/conf && cp ./dist/bin/deepstream.js ./dist/bin/deepstream && chmod +x ./dist/bin/deepstream",
+    "tsc": "sh scripts/tsc.sh",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE",
     "lint": "tslint --project .",
     "lint:fix": "npm run lint -- --fix",
