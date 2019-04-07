@@ -66,7 +66,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * This method will be overridden by an external class and is used instead
    * of an event emitter to improve the performance of the messaging pipeline
    */
-  public onMessages (socketWrapper: SocketWrapper, messages: Array<Message>) {
+  public onMessages (socketWrapper: SocketWrapper, messages: Message[]) {
   }
 
   /**
@@ -135,8 +135,8 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
     return value
   }
 
-  public handleParseErrors (socketWrapper: SocketWrapper, parseResults: Array<ParseResult>): Array<Message> {
-    const messages: Array<Message> = []
+  public handleParseErrors (socketWrapper: SocketWrapper, parseResults: ParseResult[]): Message[] {
+    const messages: Message[] = []
     for (const parseResult of parseResults) {
       if (parseResult.parseError) {
         const rawMsg = this.getRaw(parseResult)
@@ -181,7 +181,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
   protected onReady (): void {
     const wsMsg = `Listening for websocket connections on ${this.getOption('host')}:${this.getOption('port')}${this.urlPath}`
     this.logger.info(EVENT.INFO, wsMsg)
-    const hcMsg = `Listening for health checks on path ${this.healthCheckPath} `
+    const hcMsg = `Listening for health checks on path ${this.getOption('healthCheckPath')} `
     this.logger.info(EVENT.INFO, hcMsg)
     this.emit('ready')
     this.isReady = true
@@ -217,7 +217,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * Always challenges the client that connects. This will be opened up later to allow users
    * to put in their own challenge authentication.
    */
-  private processConnectionMessage (socketWrapper: SocketWrapper, parsedMessages: Array<Message>) {
+  private processConnectionMessage (socketWrapper: SocketWrapper, parsedMessages: Message[]) {
     const msg = parsedMessages[0]
 
     if (msg.topic !== TOPIC.CONNECTION) {
@@ -250,7 +250,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * This is expected to be an auth-message. This method makes sure that's
    * the case and - if so - forwards it to the permission handler for authentication
    */
-  private authenticateConnection (socketWrapper: SocketWrapper, disconnectTimeout, parsedMessages: Array<Message>): void {
+  private authenticateConnection (socketWrapper: SocketWrapper, disconnectTimeout, parsedMessages: Message[]): void {
     const msg = parsedMessages[0]
 
     let errorMsg
@@ -331,7 +331,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
     this.authenticatedSocketWrappers.add(socketWrapper)
 
     delete socketWrapper.authCallback
-    socketWrapper.onMessage = parsedMessages => {
+    socketWrapper.onMessage = (parsedMessages) => {
       this.onMessages(socketWrapper, parsedMessages)
     }
     this.appendDataToSocketWrapper(socketWrapper, userData)

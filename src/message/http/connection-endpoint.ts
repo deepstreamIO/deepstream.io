@@ -113,7 +113,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * This method will be overridden by an external class and is used instead
    * of an event emitter to improve the performance of the messaging pipeline
    */
-  public onMessages (socketWrapper: SimpleSocketWrapper, messages: Array<Message>): void {
+  public onMessages (socketWrapper: SimpleSocketWrapper, messages: Message[]): void {
   }
 
   /**
@@ -168,7 +168,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * Authenticates the message using authData, a token, or OPEN auth if enabled/provided.
    */
   private onPostMessage (
-    messageData: { token?: string, authData?: object, body: Array<object> },
+    messageData: { token?: string, authData?: object, body: object[] },
     metadata: object,
     responseCallback: Function
   ): void {
@@ -258,7 +258,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    */
   private onMessageAuthResponse (
     responseCallback: Function,
-    messageData: { body: Array<object> },
+    messageData: { body: object[] },
     success: boolean,
     authResponseData: object
   ): void {
@@ -335,7 +335,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * response where possible.
    */
   private onSocketMessage (
-    messageResults: Array<JifResult>, index: number, message: Message, responseCallback: Function, requestTimeoutId: NodeJS.Timer
+    messageResults: JifResult[], index: number, message: Message, responseCallback: Function, requestTimeoutId: NodeJS.Timer
   ): void {
     const parseResult = this.jifHandler.toJIF(message)
     if (!parseResult) {
@@ -357,7 +357,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * response where necessary.
    */
   private onSocketError (
-    messageResults: Array<JifResult>,
+    messageResults: JifResult[],
     index: number,
     message: Message,
     event: string,
@@ -375,7 +375,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   /**
    * Check whether any more responses are outstanding and finalize http response if not.
    */
-  private static checkComplete (messageResults: Array<JifResult>, responseCallback: Function, requestTimeoutId: NodeJS.Timer): void {
+  private static checkComplete (messageResults: JifResult[], responseCallback: Function, requestTimeoutId: NodeJS.Timer): void {
     const messageResult = HTTPConnectionEndpoint.calculateMessageResult(messageResults)
     if (messageResult === null) {
       // insufficient responses received
@@ -393,7 +393,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   /**
    * Handle request timeout, sending any responses that have already resolved.
    */
-  private onRequestTimeout (responseCallback: Function, messageResults: Array<JifResult>): void {
+  private onRequestTimeout (responseCallback: Function, messageResults: JifResult[]): void {
     let numTimeouts = 0
     for (let i = 0; i < messageResults.length; i++) {
       if (messageResults[i] === null) {
@@ -424,7 +424,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * Calculate the 'result' field in a response depending on how many responses resolved
    * successfully. Can be one of 'SUCCESS', 'FAILURE' or 'PARTIAL SUCCSS'
    */
-  private static calculateMessageResult (messageResults: Array<JifResult>): string | null {
+  private static calculateMessageResult (messageResults: JifResult[]): string | null {
     let numSucceeded = 0
     for (let i = 0; i < messageResults.length; i++) {
       if (!messageResults[i]) {
@@ -458,7 +458,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   private permissionEventEmit (
     socketWrapper: SocketWrapper,
     parsedMessage: Message,
-    messageResults: Array<JifResult>,
+    messageResults: JifResult[],
     messageIndex: number
   ): void {
     this.permissionHandler.canPerformAction(
@@ -478,7 +478,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   private onPermissionResponse (
     socketWrapper: SocketWrapper,
     message: Message,
-    messageResults: Array<JifResult>,
+    messageResults: JifResult[],
     messageIndex: number,
     error: string,
     permissioned: boolean

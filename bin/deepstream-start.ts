@@ -1,5 +1,3 @@
-import * as os from 'os'
-import * as path from 'path'
 import { EVENT } from '../src/constants'
 
 export const start = (program) => {
@@ -24,7 +22,7 @@ export const start = (program) => {
 function action () {
   global.deepstreamCLI = this
 
-  const { Deepstream } = require('../src/deepstream.io.js')
+  const { Deepstream } = require('../src/deepstream.io')
   try {
     const ds = new Deepstream(null)
     ds.on(EVENT.PLUGIN_INITIALIZATION_ERROR, () => process.exit(1))
@@ -38,11 +36,6 @@ function action () {
     console.error(err.toString())
     process.exit(1)
   }
-}
-
-function detachErrorHandler () {
-  console.error('Error during detaching the deepstream process, see logs or run without --detach')
-  process.exit(1)
 }
 
 /**

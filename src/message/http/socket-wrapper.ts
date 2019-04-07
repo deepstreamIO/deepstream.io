@@ -9,27 +9,22 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
   public user: string
   public uuid: number = Math.random()
 
-  private _onMessage: Function
-  private _onError: Function
-  private _correlationIndex
-  private _messageResults
-  private _responseCallback
-  private _requestTimeout
+  private correlationIndex
+  private messageResults
+  private responseCallback
+  private requestTimeout
 
-  authData: object
-  clientData: object
-  authCallback: Function
-  isRemote: boolean
-  isClosed: boolean = false
+  public authData: object
+  public clientData: object
+  public authCallback: Function
+  public isRemote: boolean
+  public isClosed: boolean = false
 
-  constructor (options, onMessage, onError) {
+  constructor (options, private onMessageCallback, private onErrorCallback) {
     super()
-
-    this._onMessage = onMessage
-    this._onError = onError
   }
 
-  init (
+  public init (
     authResponseData: any,
     messageIndex,
     messageResults,
@@ -40,35 +35,23 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
     this.clientData = authResponseData.clientData
     this.authData = authResponseData.serverData
 
-    this._correlationIndex = messageIndex
-    this._messageResults = messageResults
-    this._responseCallback = responseCallback
-    this._requestTimeout = requestTimeoutId
+    this.correlationIndex = messageIndex
+    this.messageResults = messageResults
+    this.responseCallback = responseCallback
+    this.requestTimeout = requestTimeoutId
   }
 
-  close () {
+  public close () {
     this.isClosed = true
   }
 
-  prepareMessage () {
+  public flush () {
   }
 
-  sendPrepared () {
+  public onMessage () {
   }
 
-  sendNative () {
-  }
-
-  finalizeMessage () {
-  }
-
-  flush () {
-  }
-
-  onMessage () {
-  }
-
-  getMessage () {
+  public getMessage () {
   }
 
   /**
@@ -79,7 +62,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    * @public
    * @returns {Object} handshakeData
    */
-  getHandshakeData () {
+  public getHandshakeData () {
     return {}
   }
 
@@ -94,17 +77,17 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    * @public
    * @returns {void}
    */
-  sendError (message, event, errorMessage) {
+  public sendError (message, event, errorMessage) {
     if (this.isClosed === false) {
       parseData(message)
-      this._onError(
-        this._messageResults,
-        this._correlationIndex,
+      this.onErrorCallback(
+        this.messageResults,
+        this.correlationIndex,
         message,
         event,
         errorMessage,
-        this._responseCallback,
-        this._requestTimeout
+        this.responseCallback,
+        this.requestTimeout
       )
     }
   }
@@ -117,32 +100,32 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    * @public
    * @returns {void}
    */
-  sendMessage (message) {
+  public sendMessage (message) {
     if (isError(message)) {
       message.isError = true
     }
     if (this.isClosed === false) {
       parseData(message)
-      this._onMessage(
-        this._messageResults,
-        this._correlationIndex,
+      this.onMessageCallback(
+        this.messageResults,
+        this.correlationIndex,
         message,
-        this._responseCallback,
-        this._requestTimeout
+        this.responseCallback,
+        this.requestTimeout
       )
     }
   }
 
-  sendNativeMessage(message: any, buffer?: boolean): void {
+  public sendNativeMessage (message: any, buffer?: boolean): void {
     // This can never be called as HTTP API is not a subscriber (Yet)
   }
 
-  sendAckMessage (message) {
+  public sendAckMessage (message) {
     message.isAck = true
     this.sendMessage(message)
   }
 
-  parseData (message) {
+  public parseData (message) {
     return parseData(message)
   }
 
@@ -153,12 +136,12 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    * @public
    * @returns {void}
    */
-  destroy () {
+  public destroy () {
   }
 
-  onClose () {
+  public onClose () {
   }
 
-  removeOnClose () {
+  public removeOnClose () {
   }
 }

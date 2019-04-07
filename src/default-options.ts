@@ -1,7 +1,7 @@
 import { getUid } from './utils/utils'
 import { LOG_LEVEL } from './constants'
 
-export function get(): InternalDeepstreamConfig {
+export function get (): InternalDeepstreamConfig {
   return {
     /*
      * General

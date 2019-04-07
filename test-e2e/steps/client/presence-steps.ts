@@ -13,12 +13,12 @@ Given(/^(.+) unsubscribes to presence events$/, (clientExpression, done) => {
 })
 
 Given(/^(.+) subscribes to presence events for "([^"]*)"$/, (clientExpression, users, done) => {
-  users.split(',').forEach(user => presence.subscribe(clientExpression, user))
+  users.split(',').forEach((user) => presence.subscribe(clientExpression, user))
   setTimeout(done, defaultDelay)
 })
 
 Given(/^(.+) unsubscribes to presence events for "([^"]*)"$/, (clientExpression, users, done) => {
-  users.split(',').forEach(user => presence.unsubscribe(clientExpression, user))
+  users.split(',').forEach((user) => presence.unsubscribe(clientExpression, user))
   setTimeout(done, defaultDelay)
 })
 

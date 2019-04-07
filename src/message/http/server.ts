@@ -22,10 +22,10 @@ export default class Server extends EventEmitter {
   private authPathRegExp: RegExp
   private postPathRegExp: RegExp
   private getPathRegExp: RegExp
-  private methods: Array<string> = ['GET', 'POST', 'OPTIONS']
+  private methods: string[] = ['GET', 'POST', 'OPTIONS']
   private methodsStr: string = this.methods.join(', ')
-  private headers: Array<string> = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept']
-  private headersLower: Array<string> = this.headers.map(header => header.toLowerCase())
+  private headers: string[] = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept']
+  private headersLower: string[] = this.headers.map((header) => header.toLowerCase())
   private headersStr: string = this.headers.join(', ')
   private jsonBodyParser = bodyParser.json({
     inflate: true,
@@ -227,7 +227,7 @@ export default class Server extends EventEmitter {
       return
     }
 
-    this.jsonBodyParser(request, response, err => {
+    this.jsonBodyParser(request, response, (err) => {
       if (err) {
         Server._terminateResponse(
           response,

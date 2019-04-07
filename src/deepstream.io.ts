@@ -138,12 +138,16 @@ export class Deepstream extends EventEmitter {
   }
 
 /**
- * Stops the server and closes all connections. The server can be started again,
- * but all clients have to reconnect. Will emit a 'stopped' event once done
+ * Stops the server and closes all connections. Will emit a 'stopped' event once done
  */
   public stop (): void {
     if (this.currentState === STATES.STOPPED) {
       throw new Error('The server is already stopped.')
+    }
+
+    if ([STATES.CONNECTION_ENDPOINT_SHUTDOWN, STATES.PLUGIN_SHUTDOWN, STATES.LOGGER_SHUTDOWN].indexOf(this.currentState) !== -1) {
+      this.services.logger.info(EVENT.INFO, `Server is currently shutting down, currently in state ${STATES[this.currentState]}`)
+      return
     }
 
     this.transition('stop')
@@ -205,7 +209,7 @@ export class Deepstream extends EventEmitter {
   protected pluginInit (): void {
     this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
-    const infoLogger = message => this.services.logger.info(EVENT.INFO, message)
+    const infoLogger = (message) => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`server name: ${this.config.serverName}`)
     infoLogger(`deepstream version: ${pkg.version}`)
 
@@ -218,7 +222,7 @@ export class Deepstream extends EventEmitter {
       infoLogger(`library directory set to: ${global.deepstreamLibDir}`)
     }
 
-    this.services.registeredPlugins.forEach(pluginType => {
+    this.services.registeredPlugins.forEach((pluginType) => {
       const plugin = this.services[pluginType]
       const initialiser = new DependencyInitialiser(this, this.config, this.services, plugin, pluginType)
       initialiser.once('ready', () => {
@@ -238,7 +242,7 @@ export class Deepstream extends EventEmitter {
     }
     plugin.isReady = true
 
-    const allPluginsReady = this.services.registeredPlugins.every(type => this.services[type].isReady)
+    const allPluginsReady = this.services.registeredPlugins.every((type) => this.services[type].isReady)
 
     if (allPluginsReady && this.currentState === STATES.PLUGIN_INIT) {
       this.transition('plugins-started')
@@ -295,7 +299,7 @@ export class Deepstream extends EventEmitter {
  */
   private connectionEndpointInit (): void {
     const endpoints = this.services.connectionEndpoints
-    const initialisers: Array<any> = []
+    const initialisers: any[] = []
 
     for (let i = 0; i < endpoints.length; i++) {
       const connectionEndpoint = endpoints[i]
@@ -335,7 +339,7 @@ export class Deepstream extends EventEmitter {
  */
   private connectionEndpointShutdown (): void {
     const endpoints = this.services.connectionEndpoints
-    endpoints.forEach(endpoint => {
+    endpoints.forEach((endpoint) => {
       process.nextTick(() => endpoint.close())
     })
 
@@ -353,8 +357,8 @@ export class Deepstream extends EventEmitter {
  * Close any (perhaps partially initialised) plugins.
  */
   private pluginShutdown (): void {
-    const closeablePlugins: Array<DeepstreamPlugin> = []
-    this.services.registeredPlugins.forEach(pluginType => {
+    const closeablePlugins: DeepstreamPlugin[] = []
+    this.services.registeredPlugins.forEach((pluginType) => {
       const plugin = this.services[pluginType]
       if (typeof plugin.close === 'function') {
         process.nextTick(() => plugin.close())
@@ -418,17 +422,8 @@ export class Deepstream extends EventEmitter {
     if (this.config.showLogo !== true) {
       return
     }
-  /* istanbul ignore next */
-    let logo
+    const logo = readFileSync(joinPath(__dirname, '..', '/ascii-logo.txt'), 'utf8')
 
-    try {
-    const nexeres = require('nexeres')
-    logo = nexeres.get('ascii-logo.txt').toString('ascii')
-    } catch (e) {
-      logo = readFileSync(joinPath(__dirname, '..', '..', '/ascii-logo.txt'), 'utf8')
-    }
-
-  /* istanbul ignore next */
     process.stdout.write(logo + EOL)
     process.stdout.write(
     ` =====================   starting   =====================${EOL}`

@@ -10,11 +10,11 @@
     "test": "test"
   },
   "scripts": {
-    "start": "npm run tsc && node ./dist/bin/deepstream",
+    "start": "ts-node --project tsconfig.json --files ./bin/deepstream.ts",
     "precommit": "npm run lint",
-    "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && cp -r conf ./dist/conf && mv ./dist/bin/deepstream.js ./dist/bin/deepstream",
+    "tsc": "rm -rf dist && tsc && cp ./package.json ./dist/package.json && cp -r conf ./dist/conf && cp ./dist/bin/deepstream.js ./dist/bin/deepstream && chmod +x ./dist/bin/deepstream",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE",
-    "lint": "tslint bin/*.ts test/**/*.ts protocol/**/*.ts src/**/*.ts test-e2e/**/*.ts -t verbose",
+    "lint": "tslint --project .",
     "lint:fix": "npm run lint -- --fix",
     "test": "mocha --opts src/test/mocha.opts src/**/*.spec.ts",
     "test:coverage": "nyc mocha --opts src/test/mocha.opts src/**/*.spec.ts",

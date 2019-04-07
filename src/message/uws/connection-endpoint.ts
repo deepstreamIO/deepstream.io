@@ -58,7 +58,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
       passphrase: this.getOption('sslPassphrase')
     }, options)
 
-    server.get(this.getOption('healthCheckPath'), res => {
+    server.get(this.getOption('healthCheckPath'), (res) => {
       res.end()
     })
 
@@ -78,13 +78,13 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
       },
       drain: () => {
       },
-      close: ws => {
+      close: (ws) => {
         this.onSocketClose(this.connections.get(ws))
         this.connections.delete(ws)
       }
     })
 
-    server.listen(this.getOption('host'), this.getOption('port'), token => {
+    server.listen(this.getOption('host'), this.getOption('port'), (token) => {
       /* Save the listen socket for later shut down */
       this.listenSocket = token
 
@@ -93,7 +93,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
 
         const pingMessage = binaryMessageBuilder.getMessage({ topic: TOPIC.CONNECTION, action: CONNECTION_ACTIONS.PING }, false)
         this.pingInterval = setInterval(() => {
-          this.connections.forEach(con => {
+          this.connections.forEach((con) => {
             if (!con.isClosed) {
               con.sendBinaryMessage!(pingMessage)
             }
@@ -169,14 +169,14 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
   }
 
   public closeWebsocketServer () {
-    this.connections.forEach(conn => {
+    this.connections.forEach((conn) => {
       if (!conn.isClosed) {
         conn.socket.close()
       }
     })
     this.uWS.us_listen_socket_close(this.listenSocket)
     this.connections.clear()
-    clearInterval(this.pingInterval);
+    clearInterval(this.pingInterval)
     setTimeout(() => this.emit('close'), 2000)
   }
 

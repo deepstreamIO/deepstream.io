@@ -6,6 +6,7 @@
     "sourceMap": true,
     "allowJs": false,
     "strictNullChecks": true,
+    "resolveJsonModule": true,
     "types": [
       "node"
     ]

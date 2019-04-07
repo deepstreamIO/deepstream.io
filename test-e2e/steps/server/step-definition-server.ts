@@ -29,11 +29,11 @@ When(/^server (\S)* comes back up$/, (server, done) => {
   global.cluster.start()
 })
 
-Given(/^a small amount of time passes$/, done => {
+Given(/^a small amount of time passes$/, (done) => {
   setTimeout(done, 500)
 })
 
-BeforeAll(done => {
+BeforeAll((done) => {
   global.cluster = new Cluster(6001, 8001, process.env.ENABLE_LOGGING === 'true')
   global.cluster.once('started', () => {
     setTimeout(done, 200)

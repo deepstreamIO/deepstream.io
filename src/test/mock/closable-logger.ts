@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import {spy} from 'sinon';
+import {spy} from 'sinon'
 
 const utils = require('util')
 

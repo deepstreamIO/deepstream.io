@@ -2,7 +2,7 @@ import { defaultDelay } from '../../framework/utils'
 import {When, Then, Given} from 'cucumber'
 import { event } from '../../framework/event'
 
-When(/^(.+) publishes? (?:an|the) event "([^"]*)"(?: with data ("[^"]*"|\d+|\{.*\}))?$/, (clientExpression, subscriptionName, data, done) => {
+When(/^(.+) publishes? (?:an|the) event "([^"]*)"(?: with data ("[^"]*"|\d+|{.*}))?$/, (clientExpression, subscriptionName, data, done) => {
   event.publishes(clientExpression, subscriptionName, data)
   setTimeout(done, defaultDelay)
 })
