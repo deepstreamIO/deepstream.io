@@ -1,3 +1,4 @@
+.nyc_combined_coverage
 dist
 .DS_Store
 .vscode/settings.json

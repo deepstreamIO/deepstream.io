@@ -17,15 +17,17 @@
     "lint": "tslint --project .",
     "lint:fix": "npm run lint -- --fix",
     "test": "mocha --opts src/test/mocha.opts src/**/*.spec.ts",
-    "test:coverage": "nyc mocha --opts src/test/mocha.opts src/**/*.spec.ts",
+    "test:coverage": "nyc mocha --opts src/test/mocha.opts src/**/*.spec.ts && mv -f .nyc_output/ .nyc_combined_coverage/",
     "test:http-server": "node test/test-helper/start-test-server.js",
-    "e2e": "ts-node --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit",
+    "e2e": "ts-node --transpile-only --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit",
     "e2e:rpc": "npm run e2e -- --tags \"not @cluster and @rpcs\"",
     "e2e:event": "npm run e2e -- --tags \"not @cluster and @events\"",
     "e2e:record": "npm run e2e -- --tags \"not @cluster and @records\"",
     "e2e:login": "npm run e2e -- --tags \"not @cluster and @login\"",
     "e2e:presence": "npm run e2e -- --tags \"not @cluster and @presence\"",
-    "e2e:http": "npm run e2e -- --tags \"not @cluster and @http\""
+    "e2e:http": "npm run e2e -- --tags \"not @cluster and @http\"",
+    "e2e:coverage": "nyc cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit && mv -f .nyc_output/ .nyc_combined_coverage/",
+    "test:all:coverage": "npm run test:coverage && npm run e2e:coverage"
   },
   "repository": {
     "type": "git",
