@@ -52,7 +52,7 @@
   "devDependencies": {
     "@types/mocha": "^5.2.6",
     "@types/needle": "^2.0.4",
-    "@types/node": "^10.14.4",
+    "@types/node": "^11.13.0",
     "@types/sinon": "^7.0.11",
     "async": "^2.6.2",
     "chai": "^4.2.0",
@@ -60,7 +60,7 @@
     "cucumber": "^5.1.0",
     "deepstream.io-client-js": "git+https://github.com/deepstreamIO/deepstream.io-client-js.git#v4",
     "istanbul": "^0.4.5",
-    "mocha": "^6.0.2",
+    "mocha": "^6.1.0",
     "n0p3": "^1.0.2",
     "nexe": "^3",
     "nyc": "^13.3.0",
