@@ -10,7 +10,6 @@ deepstream is a new type of server that syncs data and sends events across milli
 2. [Getting started](https://deepstream.io/tutorials/core/getting-started-quickstart/)
 3. [Tutorials](https://deepstream.io/tutorials/)
 4. [Documentation](https://deepstream.io/docs/)
-5. Deploying on [AWS](https://www.youtube.com/watch?v=VN_qI8a6H34)
 
 ### Community Links
 
@@ -24,12 +23,11 @@ Deepstream development is a great way for you to go into depth about building pe
 
 Contributing to deepstream.io is as simple as:
 
-1. Downloading [nodeJS](https://nodejs.org/en/) (4+)
+1. Downloading [nodeJS](https://nodejs.org/en/) (10+)
 2. Cloning the repo
 3. Run `npm i` / `yarn install` to install dependencies
 4. Make your changes / Add a test
-5. Run `npm t` to see if the unit tests all pass
-6. Run `sh ./scripts/run-e2e.sh` if your changes are quite big. But otherwise CI can take care of that for you ;)
+5. Run `npm t / npm run e2e` to see if the unit tests all pass
 
 For power users who want to make sure the binary works, you can run `sh scripts/package.sh true`. You'll need to download the usual [node-gyp](https://github.com/nodejs/node-gyp) build environment for this to work and we only support the latest LTS version to compile. This step is usually not needed though unless your modifying resource files or changing dependencies.
 
