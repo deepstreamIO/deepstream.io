@@ -17,7 +17,7 @@
     "lint": "tslint --project .",
     "lint:fix": "npm run lint -- --fix",
     "test": "mocha --opts src/test/mocha.opts src/**/*.spec.ts",
-    "test:coverage": "nyc mocha --opts src/test/mocha.opts src/**/*.spec.ts && mv -f .nyc_output/ .nyc_combined_coverage/",
+    "test:coverage": "nyc mocha --opts src/test/mocha.opts src/**/*.spec.ts && npm run test:coverage:combine",
     "test:http-server": "node test/test-helper/start-test-server.js",
     "e2e": "ts-node --transpile-only --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit",
     "e2e:rpc": "npm run e2e -- --tags \"not @cluster and @rpcs\"",
@@ -26,8 +26,9 @@
     "e2e:login": "npm run e2e -- --tags \"not @cluster and @login\"",
     "e2e:presence": "npm run e2e -- --tags \"not @cluster and @presence\"",
     "e2e:http": "npm run e2e -- --tags \"not @cluster and @http\"",
-    "e2e:coverage": "nyc cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit && mv -f .nyc_output/ .nyc_combined_coverage/",
-    "test:all:coverage": "npm run test:coverage && npm run e2e:coverage"
+    "e2e:coverage": "nyc cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit && npm run test:coverage:combine",
+    "test:all:coverage": "rm -rf .nyc_combined_coverage && npm run test:coverage && npm run e2e:coverage && nyc report --reporter=lcov -t .nyc_combined_coverage",
+    "test:coverage:combine": "mkdir -p .nyc_combined_coverage && mv -f .nyc_output/* .nyc_combined_coverage/"
   },
   "repository": {
     "type": "git",
@@ -94,8 +95,7 @@
       "ts-node/register/transpile-only"
     ],
     "reporter": [
-      "text-summary",
-      "html"
+      "lcov"
     ],
     "sourceMap": true,
     "instrument": true
