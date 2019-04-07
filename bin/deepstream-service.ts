@@ -25,17 +25,9 @@ function response (error, result) {
 function execute (action) {
   const name = this.serviceName || 'deepstream'
 
-  let exec
-  try {
-    require('nexeres')
-    exec = process.argv[0]
-  } catch (e) {
-    exec = process.argv[1]
-  }
-
   if (action === 'add') {
     const options = {
-      exec,
+      exec: process.argv[1],
       programArgs: [] as string[],
       pidFile: this.pidFile || `/var/run/deepstream/${name}.pid`,
       logDir: this.logDir || '/var/log/deepstream',

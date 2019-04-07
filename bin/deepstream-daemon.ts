@@ -19,13 +19,5 @@ export const daemon = (program) => {
 }
 
 function action () {
-  let processExec
-  try {
-    require('nexeres')
-    processExec = process.argv[0]
-  } catch (e) {
-    processExec = process.argv[1]
-  }
-
-  dsDaemon.start({ processExec })
+  dsDaemon.start({ processExec: process.argv[1] })
 }

@@ -37,7 +37,7 @@ matrix:
 
 script:
   - npm run lint;
-  - npm run test:coverage:all;
+  - npm run test:all:coverage;
 
 before_deploy:
   - bash ./scripts/package.sh
