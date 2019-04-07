@@ -25,6 +25,3 @@
 [submodule "connectors/storage/elasticsearch"]
 	path = connectors/storage/elasticsearch
 	url = git@github.com:deepstreamIO/deepstream.io-storage-elasticsearch.git
-[submodule "connectors/storage/mariadb"]
-	path = connectors/storage/mariadb
-	url = git@github.com:deepstreamIO/deepstream.io-storage-mariadb.git
