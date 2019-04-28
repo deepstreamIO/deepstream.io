@@ -8,6 +8,7 @@ import * as fileUtils from '../../config/file-utils'
 import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import {createUWSSocketWrapper} from './socket-wrapper-factory'
+import {isIterable} from "../../utils/utils";
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -162,6 +163,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
 
   public static getHeaders (desiredHeaders, req) {
     const headers = {}
+    if (!isIterable(desiredHeaders)) return headers
     for (const wantedHeader of desiredHeaders) {
       headers[wantedHeader] = req.getHeader(wantedHeader)
     }

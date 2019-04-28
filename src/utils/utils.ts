@@ -57,6 +57,16 @@ export let isOfType = function (input: any, expectedType: string): boolean {
 }
 
 /**
+ * Returns whether the input is iterable or not
+ */
+export let isIterable = function (input: any): boolean {
+    if (input == null) {
+        return false;
+    }
+    return typeof input[Symbol.iterator] === 'function';
+}
+
+/**
  * Takes a map and validates it against a basic
  * json schema in the form { key: type }
  * @returns {Boolean|Error}
