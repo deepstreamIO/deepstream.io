@@ -1,4 +1,4 @@
-import { EVENT, PARSER_ACTIONS, TOPIC } from '../constants'
+import {PARSER_ACTIONS, TOPIC} from '../constants'
 
 /**
  * The MessageDistributor routes valid and permissioned messages to

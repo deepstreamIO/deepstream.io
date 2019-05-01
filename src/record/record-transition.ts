@@ -368,19 +368,17 @@ export default class RecordTransition {
     if (error) {
       this.onFatalError(error)
     } else if (this.isDestroyed === false) {
-      // // Get values that should not be broadcast
       const { isWriteAck, correlationId } = this.currentStep.message
 
       // // Delete values that should not be broadcast
       this.currentStep.message.isWriteAck = false
-      this.currentStep.message.correlationId = undefined
+      delete this.currentStep.message.correlationId // TODO: Optimise
       this.recordHandler.broadcastUpdate(
           this.name,
           this.currentStep.message,
           false,
           this.currentStep.sender,
       )
-
       // Restore the message for other callers to use
       this.currentStep.message.isWriteAck = isWriteAck
       this.currentStep.message.correlationId = correlationId

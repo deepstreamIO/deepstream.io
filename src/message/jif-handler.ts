@@ -377,9 +377,9 @@ export default class JIFHandler {
     } else {
       this.logger.warn(
         EVENT.INFO,
-        `Unhandled request error occurred: ${TOPIC[message.topic]} ${EVENT[event]} ${JSON.stringify(message)}`,
+        `Unhandled request error occurred: ${TOPIC[message.topic]} ${event} ${JSON.stringify(message)}`,
       )
-      result.error = `An error occurred: ${EVENT[event]}.`
+      result.error = `An error occurred: ${event}.`
       result.errorParams = message.name
     }
 

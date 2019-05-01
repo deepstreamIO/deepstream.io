@@ -10,7 +10,7 @@
     "test": "test"
   },
   "scripts": {
-    "start": "ts-node --project tsconfig.json --files ./bin/deepstream.ts",
+    "start": "ts-node --transpile-only --project tsconfig.json --files ./bin/deepstream.ts",
     "precommit": "npm run lint",
     "tsc": "sh scripts/tsc.sh",
     "license": "mkdir -p build && node scripts/license-aggregator > build/LICENSE && cat scripts/resources/missing-licenses.txt >> build/LICENSE",
@@ -50,7 +50,7 @@
     "mkdirp": "^0.5.1",
     "needle": "^2.2.4",
     "source-map-support": "^0.5.11",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.9.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.10.0"
   },
   "devDependencies": {
     "@types/mocha": "^5.2.6",
@@ -61,7 +61,7 @@
     "chai": "^4.2.0",
     "coveralls": "^3.0.3",
     "cucumber": "^5.1.0",
-    "deepstream.io-client-js": "git+https://github.com/deepstreamIO/deepstream.io-client-js.git#v4",
+    "deepstream.io-client-js": "next",
     "istanbul": "^0.4.5",
     "mocha": "^6.1.0",
     "n0p3": "^1.0.2",

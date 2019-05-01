@@ -53,6 +53,7 @@ export function get (): InternalDeepstreamConfig {
           heartbeatInterval: 30000,
           outgoingBufferTimeout: 0,
           noDelay: true,
+          headers: [],
 
           /*
            * Security
@@ -76,7 +77,8 @@ export function get (): InternalDeepstreamConfig {
           getPath: '/',
           healthCheckPath: '/health-check',
           allowAllOrigins: true,
-          origins: []
+          origins: [],
+          headers: []
         }
       }
     },

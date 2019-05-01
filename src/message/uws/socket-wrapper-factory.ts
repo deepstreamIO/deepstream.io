@@ -2,6 +2,7 @@ import { EVENT, TOPIC, CONNECTION_ACTIONS, ParseResult, Message } from '../../co
 import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
+import { combineMultipleMessages } from '../../../binary-protocol/src/message-builder'
 
 /**
  * This class wraps around a websocket
@@ -22,6 +23,7 @@ export class UwsSocketWrapper implements SocketWrapper {
 
   public authData: object
   public clientData: object
+  private bufferedWritesTotalByteSize: number
 
   constructor (
     private socket: any,
@@ -30,6 +32,8 @@ export class UwsSocketWrapper implements SocketWrapper {
     private config: WebSocketServerConfig,
     private connectionEndpoint: SocketConnectionEndpoint
    ) {
+    this.bufferedWritesTotalByteSize = 0
+    this.bufferedWrites = []
   }
 
   get isOpen () {
@@ -43,7 +47,8 @@ export class UwsSocketWrapper implements SocketWrapper {
    */
   public flush () {
     if (this.bufferedWrites.length !== 0) {
-      this.socket.send(Buffer.concat(this.bufferedWrites), true)
+      this.socket.send(combineMultipleMessages(this.bufferedWrites, this.bufferedWritesTotalByteSize), true)
+      this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []
     }
   }
@@ -53,11 +58,8 @@ export class UwsSocketWrapper implements SocketWrapper {
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
    *                                 this message type
    */
-  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean): void {
-    this.sendBinaryMessage(
-        binaryMessageBuilder.getMessage(message, false),
-        allowBuffering
-    )
+  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean = true): void {
+    this.sendBinaryMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
   }
 
   /**
@@ -65,7 +67,7 @@ export class UwsSocketWrapper implements SocketWrapper {
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
    *                                 this message type
    */
-  public sendAckMessage (message: Message, allowBuffering: boolean): void {
+  public sendAckMessage (message: Message, allowBuffering: boolean = true): void {
     this.sendBinaryMessage(
         binaryMessageBuilder.getMessage(message, true),
         true
@@ -125,16 +127,16 @@ export class UwsSocketWrapper implements SocketWrapper {
     this.closeCallbacks.delete(callback)
   }
 
-  public sendBinaryMessage (binaryMessage: Buffer, allowBuffering: boolean) {
+  public sendBinaryMessage (message: Buffer, buffer?: boolean): void {
     if (this.isOpen) {
       if (this.config.outgoingBufferTimeout === 0) {
-        this.socket.send(binaryMessage, true)
-      } else if (!allowBuffering) {
+        this.socket.send(message, true)
+      } else if (!buffer) {
         this.flush()
-        this.socket.send(Buffer.concat(this.bufferedWrites), true)
-        this.bufferedWrites = []
+        this.socket.send(message, true)
       } else {
-        this.bufferedWrites.push(binaryMessage)
+        this.bufferedWritesTotalByteSize += message.length
+        this.bufferedWrites.push(message)
         this.connectionEndpoint.scheduleFlush(this)
       }
     }

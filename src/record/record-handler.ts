@@ -148,7 +148,7 @@ export default class RecordHandler {
   private subscribeAndHead (socketWrapper: SocketWrapper, message: RecordMessage): void {
     this.head(socketWrapper, message)
     this.subscriptionRegistry.subscribe(
-      Object.assign({}, message, { action: RA.SUBSCRIBE }),
+      { ...message,  action: RA.SUBSCRIBE },
       socketWrapper
     )
   }
@@ -189,7 +189,7 @@ export default class RecordHandler {
     const recordName = message.name
     const isPatch = message.path !== undefined
     const originalAction = message.action
-    Object.assign(message, { action: isPatch ? RA.PATCH : RA.UPDATE })
+    message = { ...message, action: isPatch ? RA.PATCH : RA.UPDATE }
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage
@@ -326,7 +326,7 @@ export default class RecordHandler {
  */
   private readAndSubscribe (message: RecordMessage, version: number, data: any, socketWrapper: SocketWrapper): void {
     this.permissionAction(RA.READ, message, message.action, socketWrapper, () => {
-      this.subscriptionRegistry.subscribe(Object.assign({}, message, { action: RA.SUBSCRIBE }), socketWrapper)
+      this.subscriptionRegistry.subscribe({ ...message, action: RA.SUBSCRIBE }, socketWrapper)
 
       this.recordRequest(message.name, socketWrapper, (_: string, newVersion: number, latestData: any) => {
         const infoLogger = (msg) => this.services.logger.info(EVENT.INFO, msg)
@@ -354,7 +354,7 @@ export default class RecordHandler {
     const recordName = message.name
     const version = message.version
     const isPatch = message.path !== undefined
-    Object.assign(message, { action: isPatch ? RA.PATCH : RA.UPDATE })
+    message = { ...message, action: isPatch ? RA.PATCH : RA.UPDATE }
 
   /*
    * If the update message is received from the message bus, rather than from a client,
@@ -368,7 +368,7 @@ export default class RecordHandler {
 
     let transition = this.transitions[recordName]
     if (transition && transition.hasVersion(version)) {
-      transition.sendVersionExists({ message, version, sender: socketWrapper })
+      transition.sendVersionExists({ message, sender: socketWrapper })
       return
     }
 
@@ -384,7 +384,7 @@ export default class RecordHandler {
  * instances of record updates
  */
   public broadcastUpdate (name: string, message: RecordMessage, noDelay: boolean, originalSender: SocketWrapper): void {
-    this.subscriptionRegistry.sendToSubscribers(name, message, noDelay, originalSender)
+      this.subscriptionRegistry.sendToSubscribers(name, message, noDelay, originalSender)
   }
 
 /**
@@ -484,7 +484,7 @@ export default class RecordHandler {
  * or if it should be created (CREATE)
  */
   private permissionAction (actionToPermission: RA, message: Message, originalAction: RA, socketWrapper: SocketWrapper, successCallback: Function) {
-    const copyWithAction = Object.assign({}, message, { action: actionToPermission })
+    const copyWithAction = {...message, action: actionToPermission }
     this.services.permissionHandler.canPerformAction(
       socketWrapper.user,
       copyWithAction,

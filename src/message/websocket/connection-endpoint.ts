@@ -39,7 +39,6 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
   protected logger: Logger
   private authenticationHandler: AuthenticationHandler
   private logInvalidAuthData: boolean
-  private healthCheckPath: string
   private maxAuthAttempts: number
   private urlPath: string
   private unauthenticatedClientTimeout: number | boolean

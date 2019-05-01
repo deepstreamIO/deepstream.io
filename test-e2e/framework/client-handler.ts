@@ -1,11 +1,13 @@
-const { deepstream } = require('deepstream.io-client-js')
+import * as deepstream from 'deepstream.io-client-js'
 import * as sinon from 'sinon'
 
 const clients = {}
 
 function createClient (clientName, server, options?) {
-  const gatewayUrl = global.cluster.getUrl(server - 1, clientName)
-  const client = deepstream(gatewayUrl, Object.assign({
+  const gatewayUrl = global.cluster.getUrl()
+  // @ts-ignore
+  const client = deepstream(gatewayUrl, {
+    ...options,
     maxReconnectInterval: 300,
     maxReconnectAttempts: 20,
     discardTimeout: 100,
@@ -15,7 +17,7 @@ function createClient (clientName, server, options?) {
     recordReadAckTimeout: 100,
     recordReadTimeout: 300,
     recordDeleteTimeout: 100
-  }, options))
+  })
   clients[clientName] = {
     name: clientName,
     client,

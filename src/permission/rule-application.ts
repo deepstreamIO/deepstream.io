@@ -46,7 +46,6 @@ export default class RuleApplication {
   private pathVars: any
   private user: any
   private recordsData: any
-  private id: string
   private iterations: number
 
   /**
@@ -66,7 +65,6 @@ export default class RuleApplication {
     this.createNewRecordRequest = this.createNewRecordRequest.bind(this)
     this.pathVars = this.getPathVars()
     this.user = this.getUser()
-    this.id = Math.random().toString()
     this.iterations = 0
     this.recordsData = {}
     this.run()

@@ -149,7 +149,7 @@ function handlePlugins (config: InternalDeepstreamConfig, services: any): void {
   if (config.plugins == null) {
     return
   }
-  const plugins = Object.assign({}, config.plugins)
+  const plugins = { ...config.plugins }
 
   for (const key in plugins) {
     const plugin = plugins[key]

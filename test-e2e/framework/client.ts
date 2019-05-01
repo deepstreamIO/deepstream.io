@@ -1,6 +1,5 @@
 // tslint:disable:no-shadowed-variable
-
-const { C } = require('deepstream.io-client-js')
+import * as C from '../../binary-protocol/src/message-constants'
 import * as sinon from 'sinon'
 import { clientHandler } from './client-handler'
 

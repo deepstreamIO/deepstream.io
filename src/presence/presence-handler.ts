@@ -156,7 +156,7 @@ export default class PresenceHandler {
     const result = {}
     const clients = this.connectedClients.getAllMap()
     for (let i = 0; i < users.length; i++) {
-      result[users[i]] = !!clients[users[i]]
+      result[users[i]] = clients.has(users[i])
     }
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,

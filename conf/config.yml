@@ -1,4 +1,6 @@
 # General
+# Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
+serverName: UUID
 # Show the deepstream logo on startup (highly recommended)
 showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
@@ -9,13 +11,14 @@ logLevel: INFO
 # SSL Configuration
 sslKey: null
 sslCert: null
-sslCa: null
+sslDHParams: null
+sslPassphrase: null
 
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
   websocket:
-    type: default
+    name: uws
     options:
         # port for the websocket server
         port: 6020
@@ -28,11 +31,14 @@ connectionEndpoints:
         # the amount of milliseconds between each ping/heartbeat message
         heartbeatInterval: 30000
         # the amount of milliseconds that writes to sockets are buffered
-        outgoingBufferTimeout: 0
+      outgoingBufferTimeout: 0
+
+      # Headers to copy over from websocket
+      headers:
+        - user-agent
 
         # Security
         # amount of time a connection can remain open while not being logged in
-        # or false for no timeout
         unauthenticatedClientTimeout: 180000
         # invalid login attempts before the connection is cut
         maxAuthAttempts: 3
@@ -40,8 +46,9 @@ connectionEndpoints:
         logInvalidAuthData: false
         # maximum allowed size of an individual message in bytes
         maxMessageSize: 1048576
+
   http:
-    type: default
+    name: http
     options:
       # port for the http server
       port: 8080
@@ -62,6 +69,10 @@ connectionEndpoints:
       # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
       healthCheckPath: /health-check
 
+      # Headers to copy over from http request
+      headers:
+        - user-agent
+
       # -- CORS --
       # if disabled, only requests with an 'Origin' header matching one specified under 'origins'
       # below will be permitted and the 'Access-Control-Allow-Credentials' response header will be
@@ -72,28 +83,13 @@ connectionEndpoints:
         - 'https://example.com'
 
 # Logger Configuration
-# logger:
-#   # use either the default logger
-#   type: default
-#    options:
-#      colors: true
-#      # value of logLevel (line 4) will always overwrite this value
-#      logLevel: INFO
-
-#   # or the winston logger
-#   name: winston
-#   options:
-#     # specify a list of transports (console, file, time)
-#     -
-#       type: console
-#       options:
-#         # value of logLevel (line 4) will always overwrite this value
-#         level: info
-#         colorize: true
-#     -
-#       type: time
-#       options:
-#         filename: ../var/deepstream
+logger:
+  # use either the default logger
+  type: default
+  options:
+    colors: true
+    # value of logLevel (line 4) will always overwrite this value
+    logLevel: INFO
 
 #   # or a custom logger
 #   path: ./my-custom-logger
@@ -101,10 +97,11 @@ connectionEndpoints:
 # Plugin Configuration
 plugins:
   # cache:
-  #   name: memcached
+  #   name: redis
   #   options:
-  #     serverLocation: 'localhost:11211'
-  #
+  #     host: ${REDIS_HOST}
+  #     port: 6379
+
   # storage:
   #   name: rethinkdb
   #   options:
@@ -123,21 +120,27 @@ plugins:
 #   - analytics/
 #   - metrics/
 
+# Authentication
 auth:
   type: none
 
+#   # reading users and passwords from a file
   # type: file
   # options:
-  #   path: ./users.yml # Path to the user file. Can be json, js or yml
-  #   hash: 'md5' # the name of a HMAC digest algorithm
-  #   iterations: 100 # the number of times the algorithm should be applied
-  #   keyLength: 32 # the length of the resulting key
+#     # Path to the user file. Can be json, js or yml
+#     path: ./users.yml
+#     # the name of a HMAC digest algorithm
+#     hash: 'md5'
+#     # the number of times the algorithm should be applied
+#     iterations: 100
+#     # the length of the resulting key
+#     keyLength: 32
 
-  # getting permissions from a http webhook
+#   # getting permissions from a http webhook
   # type: http
   # options:
   #   # a post request will be send to this url on every incoming connection
-  #   endpointUrl: http://localhost:6004
+#     endpointUrl: https://someurl.com/validateLogin
   #   # any of these will be treated as access granted
   #   permittedStatusCodes: [ 200 ]
   #   # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected

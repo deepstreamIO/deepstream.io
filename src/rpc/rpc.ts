@@ -30,7 +30,7 @@ export default class Rpc {
     this.provider = provider
     this.config = config
     this.services = services
-    this.message = Object.assign(message, this.getRequestor(requestor))
+    this.message = { ...message, ...this.getRequestor(requestor) }
     this.isAccepted = false
 
     this.setProvider(provider)

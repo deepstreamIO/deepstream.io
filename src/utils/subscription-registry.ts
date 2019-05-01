@@ -109,7 +109,7 @@ export default class SubscriptionRegistry {
    * Returns a map of all the topic this registry
    * currently has subscribers for
    */
-  public getNamesMap (): Map<string, any> {
+  public getNamesMap (): Map<string, number> {
     return this.clusterSubscriptions.getAllMap()
   }
 
