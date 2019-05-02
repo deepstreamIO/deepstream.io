@@ -2,11 +2,9 @@ import { EVENT, TOPIC } from '../constants'
 import StateRegistry from './state-registry'
 
 export default class ClusterNode implements Cluster {
-  public stateRegistries: Map<TOPIC, StateRegistry>
+  public stateRegistries = new Map<TOPIC, StateRegistry>()
 
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, type: string) {
-    this.stateRegistries = new Map()
-  }
+  constructor (private config: InternalDeepstreamConfig, services: DeepstreamServices, type: string) {}
 
   public sendDirect (serverName: string, message: Message, metaData?: any) {}
 
@@ -21,7 +19,7 @@ export default class ClusterNode implements Cluster {
   public getStateRegistry (stateRegistryTopic: TOPIC) {
     let stateRegistry = this.stateRegistries.get(stateRegistryTopic)
     if (!stateRegistry) {
-      stateRegistry = new StateRegistry(stateRegistryTopic, {})
+      stateRegistry = new StateRegistry(stateRegistryTopic, this.config)
       this.stateRegistries.set(stateRegistryTopic, stateRegistry)
     }
     return stateRegistry
