@@ -96,10 +96,9 @@ export const client = {
 
   recievedErrorOnce (clientExpression, topicName, eventName) {
     const topic = topicName.toUpperCase()
-    const event = C.EVENT[eventName.toUpperCase()]
 
     clientHandler.getClients(clientExpression).forEach((client) => {
-      const errorSpy = client.error[topic][event]
+      const errorSpy = client.error[topic][eventName]
       sinon.assert.called(errorSpy)
       errorSpy. resetHistory()
     })

@@ -142,7 +142,7 @@ export default class RecordTransition {
  * This method will also retrieve the current record's data when called
  * for the first time
  */
-  public add (socketWrapper: SocketWrapper, message: RecordWriteMessage, upsert: boolean): void {
+  public add (socketWrapper: SocketWrapper, message: RecordWriteMessage, upsert: boolean = false): void {
     const version = message.version
     const update = {
       message,
@@ -201,7 +201,7 @@ export default class RecordTransition {
 /**
  * Destroys the instance
  */
-  private destroy (error: string | null): void {
+  public destroy (error?: string | null): void {
     if (this.isDestroyed) {
       return
     }

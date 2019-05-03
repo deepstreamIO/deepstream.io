@@ -1,3 +1,4 @@
+// @ts-ignore
 import * as deepstream from 'deepstream.io-client-js'
 import * as sinon from 'sinon'
 

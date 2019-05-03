@@ -1,11 +1,6 @@
 import ConnectionEndpoint, {WebSocketServerConfig} from '../websocket/connection-endpoint'
-import {
-  TOPIC,
-  CONNECTION_ACTIONS,
-  STATES
-} from '../../constants'
+import { STATES } from '../../constants'
 import * as fileUtils from '../../config/file-utils'
-import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import {createUWSSocketWrapper} from './socket-wrapper-factory'
 
@@ -16,9 +11,8 @@ import {createUWSSocketWrapper} from './socket-wrapper-factory'
  */
 export default class UWSConnectionEndpoint extends ConnectionEndpoint {
   private listenSocket: null
-  private uWS: any
+  private readonly uWS: any
   private connections: Map<any, any>
-  private pingInterval: any
 
   constructor (options: WebSocketServerConfig, services: DeepstreamServices) {
     super(options, services)
@@ -90,15 +84,6 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
 
       if (token) {
         this.onReady()
-
-        const pingMessage = binaryMessageBuilder.getMessage({ topic: TOPIC.CONNECTION, action: CONNECTION_ACTIONS.PING }, false)
-        this.pingInterval = setInterval(() => {
-          this.connections.forEach((con) => {
-            if (!con.isClosed) {
-              con.sendBinaryMessage!(pingMessage)
-            }
-          })
-        }, this.getOption('heartbeatInterval'))
       } else {
         this.logger.error(
             STATES.SERVICE_INIT,
@@ -175,7 +160,6 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
     })
     this.uWS.us_listen_socket_close(this.listenSocket)
     this.connections.clear()
-    clearInterval(this.pingInterval)
     setTimeout(() => this.emit('close'), 2000)
   }
 

@@ -1,15 +1,17 @@
+interface CachedRule {
+  rule: string,
+  isUsed: boolean,
+}
+
 export default class RuleCache {
-  private config: ValveConfig
-  private data: any
+  private data = new Map<string, CachedRule>()
   private interval: any
 
   /**
    * This cache stores rules that are frequently used. It removes
    * unused rules after a preset interval
    */
-  constructor (config: ValveConfig) {
-    this.config = config
-    this.data = {}
+  constructor (private config: ValveConfig) {
     this.interval = setInterval(this.purge.bind(this), config.cacheEvacuationInterval)
   }
 
@@ -17,7 +19,7 @@ export default class RuleCache {
    * Empties the rulecache completely
    */
   public reset (): void {
-    this.data = {}
+    this.data.clear()
   }
 
   /**
@@ -25,26 +27,29 @@ export default class RuleCache {
    * present
    */
   public has (section: string, name: string, type: string): boolean {
-    return !!this.data[toKey(section, name, type)]
+    return this.data.has(toKey(section, name, type))
   }
 
   /**
    * Resets the usage flag and returns an entry from the cache
    */
-  public get (section: string, name: string, type: string) {
-    const key = toKey(section, name, type)
-    this.data[key].isUsed = true
-    return this.data[key].rule
+  public get (section: string, name: string, type: string): string | undefined {
+    const cache = this.data.get(toKey(section, name, type))
+    if (cache) {
+      cache.isUsed = true
+      return cache.rule
+    }
+    return undefined
   }
 
   /**
    * Adds an entry to the cache
    */
-  public set (section: string, name: string, type: string, rule: any): void {
-    this.data[toKey(section, name, type)] = {
+  public set (section: string, name: string, type: string, rule: string): void {
+    this.data.set(toKey(section, name, type), {
       rule,
       isUsed: true,
-    }
+    })
   }
 
   /**
@@ -56,11 +61,11 @@ export default class RuleCache {
    * Any rules that haven't been used in the next cycle will be removed from the cache
    */
   private purge () {
-    for (const key in this.data) {
-      if (this.data[key].isUsed === true) {
-        this.data[key].isUsed = false
+    for (const [key, cache] of this.data) {
+      if (cache.isUsed === true) {
+        cache.isUsed = false
       } else {
-        delete this.data[key]
+        this.data.delete(key)
       }
     }
   }

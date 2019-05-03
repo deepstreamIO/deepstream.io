@@ -83,7 +83,8 @@ interface SubscriptionListener {
 }
 
 interface Logger extends DeepstreamPlugin {
-  setLogLevel (logLevel: number)
+  shouldLog (logLevel: LOG_LEVEL): boolean
+  setLogLevel (logLevel: LOG_LEVEL)
   info (event: EVENT, message?: string, metaData?: any): void
   debug (event: EVENT, message?: string, metaData?: any): void
   warn (event: EVENT, message?: string, metaData?: any): void

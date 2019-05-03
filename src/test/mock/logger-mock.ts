@@ -23,6 +23,10 @@ export default class LoggerMock extends EventEmitter implements Logger {
     this._log = spy()
   }
 
+  public shouldLog (logLevel: LOG_LEVEL): boolean {
+    return true
+  }
+
   public warn (event, message) {
     this.log(C.LOG_LEVEL.WARN, event, message)
     this._log(C.LOG_LEVEL.WARN, event, message)

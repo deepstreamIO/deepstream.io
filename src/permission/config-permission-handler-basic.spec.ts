@@ -330,7 +330,7 @@ describe('loads permissions repeatedly', () => {
     expect(permissionHandler.isReady).to.equal(true)
   })
 
-  it('requests permissions initally, causing a lookup', (next) => {
+  it('requests permissions initially, causing a lookup', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,
@@ -347,7 +347,7 @@ describe('loads permissions repeatedly', () => {
     permissionHandler.canPerformAction('some-user', message, callback)
   })
 
-  it('requests permissions a second time, causing a cache retriaval', (next) => {
+  it('requests permissions a second time, causing a cache retrieval', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.EMIT,

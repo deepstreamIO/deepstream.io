@@ -1,23 +1,22 @@
 import {
-  EVENT,
   EVENT_ACTIONS,
   PRESENCE_ACTIONS,
   RECORD_ACTIONS,
   RPC_ACTIONS,
   TOPIC,
-  RecordWriteMessage,
+  RecordWriteMessage, RecordData,
 } from '../constants'
-
-const OPEN = 'open'
-const UNDEFINED = 'undefined'
-const LOADING = 'loading'
-const ERROR = 'error'
-const STRING = 'string'
-import { EOL } from 'os'
-
 import * as jsonPath from '../record/json-path'
 import RecordHandler from '../record/record-handler'
 import { recordRequest } from '../record/record-request'
+import { EOL } from 'os'
+
+const OPEN = 'open'
+const LOADING = 'loading'
+const ERROR = 'error'
+
+const UNDEFINED = 'undefined'
+const STRING = 'string'
 
 interface RuleApplicationParams {
    username: string
@@ -39,13 +38,14 @@ interface RuleApplicationParams {
 }
 
 export default class RuleApplication {
-  private params: RuleApplicationParams
-  private isDestroyed: boolean
-  private runScheduled: boolean
-  private maxIterationCount: number
+  private isDestroyed: boolean = false
+  private runScheduled: boolean = false
   private pathVars: any
   private user: any
-  private recordsData: any
+
+  private readonly maxIterationCount: number
+  private readonly recordsData = new Map<string, RecordData | string>()
+
   private iterations: number
 
   /**
@@ -55,18 +55,17 @@ export default class RuleApplication {
    * references to old or new data is loaded, it errors or the maxIterationCount
    * limit is exceeded
    */
-  constructor (params: RuleApplicationParams) {
-    this.params = params
-    this.isDestroyed = false
-    this.runScheduled = false
+  constructor (private params: RuleApplicationParams) {
     this.maxIterationCount = this.params.permissionOptions.maxRuleIterations
+
     this.run = this.run.bind(this)
     this.crossReference = this.crossReference.bind(this)
     this.createNewRecordRequest = this.createNewRecordRequest.bind(this)
+
     this.pathVars = this.getPathVars()
     this.user = this.getUser()
     this.iterations = 0
-    this.recordsData = {}
+
     this.run()
   }
 
@@ -88,13 +87,12 @@ export default class RuleApplication {
       return
     }
 
-    const args = this.getArguments()
-
-    let result
-
     if (this.isDestroyed) {
       return
     }
+
+    const args = this.getArguments()
+    let result
 
     try {
       result = this.params.rule.fn.apply({}, args)
@@ -119,8 +117,7 @@ export default class RuleApplication {
     if (this.isDestroyed === true) {
       return
     }
-    const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL
-             }for ${this.params.path}: ${error.toString()}`
+    const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL}for ${this.params.path}: ${error.toString()}`
 
     this.params.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg)
     this.params.callback(EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
@@ -132,7 +129,7 @@ export default class RuleApplication {
    * cache or synchronously if its already present
    */
   private onLoadComplete (recordName: string, version: number, data: any): void {
-    this.recordsData[recordName] = data
+    this.recordsData.set(recordName, data)
 
     if (this.isReady()) {
       this.runScheduled = true
@@ -145,7 +142,7 @@ export default class RuleApplication {
    * permission process is treated as a denied permission
    */
   private onLoadError (event: any, errorMessage: string, recordName: string, socket: SocketWrapper) {
-    this.recordsData[recordName] = ERROR
+    this.recordsData.set(recordName, ERROR)
     const errorMsg = `failed to load record ${this.params.name} for permissioning:${errorMessage}`
     this.params.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], errorMsg)
     this.params.callback(RECORD_ACTIONS.RECORD_LOAD_ERROR, false)
@@ -160,9 +157,9 @@ export default class RuleApplication {
     this.params.recordHandler.removeRecordRequest(this.params.name)
     this.isDestroyed = true
     this.runScheduled = false
+    this.recordsData.clear()
     // this.params = null
     // this.crossReference = null
-    // this.recordsData = null
     // this.currentData = null
     this.pathVars = null
     this.user = null
@@ -225,7 +222,7 @@ export default class RuleApplication {
       return
     }
 
-    const currentData = this.recordsData[this.params.name]
+    const currentData = this.recordsData.get(this.params.name)
     const parseResult = this.params.socketWrapper.parseData(msg)
     let data
 
@@ -255,8 +252,8 @@ export default class RuleApplication {
   private getOldData (): any {
     if (this.isDestroyed === true || this.params.rule.hasOldData === false) {
       return
-    } else if (this.recordsData[this.params.name]) {
-      return this.recordsData[this.params.name]
+    } else if (this.recordsData.has(this.params.name)) {
+      return this.recordsData.get(this.params.name)
     }
     this.loadRecord(this.params.name)
   }
@@ -317,9 +314,10 @@ export default class RuleApplication {
   private isReady (): boolean {
     let isLoading = false
 
-    for (const key in this.recordsData) {
-      if (this.recordsData[key] === LOADING) {
+    for (const [key, value] of this.recordsData) {
+      if (value === LOADING) {
         isLoading = true
+        break
       }
     }
 
@@ -333,17 +331,18 @@ export default class RuleApplication {
    * but I'll leave the additional safeguards in until absolutely sure.
    */
   private loadRecord (recordName: string): void {
-    /* istanbul ignore next */
-    if (this.recordsData[recordName] === LOADING) {
-      return
-    }
-    /* istanbul ignore next */
-    if (typeof this.recordsData[recordName] !== UNDEFINED) {
-      this.onLoadComplete(recordName, -1, this.recordsData[recordName])
+    const recordData = this.recordsData.get(recordName)
+
+    if (recordData === LOADING) {
       return
     }
 
-    this.recordsData[recordName] = LOADING
+    if (typeof recordData !== UNDEFINED) {
+      this.onLoadComplete(recordName, -1, recordData)
+      return
+    }
+
+    this.recordsData.set(recordName, LOADING)
 
     this.params.recordHandler.runWhenRecordStable(
       recordName,
@@ -376,19 +375,20 @@ export default class RuleApplication {
    */
   private crossReference (recordName: string): any | null {
     const type = typeof recordName
+    const recordData = this.recordsData.get(recordName)
 
     if (type !== UNDEFINED && type !== STRING) {
       this.onRuleError(`crossreference got unsupported type ${type}`)
     } else if (type === UNDEFINED || recordName.indexOf(UNDEFINED) !== -1) {
       return
-    } else if (this.recordsData[recordName] === LOADING) {
+    } else if (recordData === LOADING) {
       return
-    } else if (this.recordsData[recordName] === null) {
+    } else if (recordData === null) {
       return null
-    } else if (typeof this.recordsData[recordName] === UNDEFINED) {
+    } else if (typeof recordData === UNDEFINED) {
       this.loadRecord(recordName)
     } else {
-      return this.recordsData[recordName]
+      return recordData
     }
   }
 }

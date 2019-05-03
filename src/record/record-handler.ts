@@ -24,30 +24,24 @@ const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
 }
 
 export default class RecordHandler {
-  private metaData: any
-  private config: InternalDeepstreamConfig
-  private services: DeepstreamServices
   private subscriptionRegistry: SubscriptionRegistry
   private listenerRegistry: ListenerRegistry
-  private transitions: any
-  private recordRequestsInProgress: any
+  private transitions = new Map<string, RecordTransition>()
+  private recordRequestsInProgress = new Map<string, Function[]>()
   private recordRequest: Function
 
 /**
  * The entry point for record related operations
  */
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, metaData?: any) {
-    this.metaData = metaData
-    this.config = config
-    this.services = services
+  constructor (private readonly config: InternalDeepstreamConfig, private readonly services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, private readonly metaData?: any) {
     this.subscriptionRegistry =
       subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RECORD, TOPIC.RECORD_SUBSCRIPTIONS)
     this.listenerRegistry =
       listenerRegistry || new ListenerRegistry(TOPIC.RECORD, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
-    this.transitions = {}
-    this.recordRequestsInProgress = {}
     this.recordRequest = recordRequestBinding(config, services, this, metaData)
+
+    this.onDeleted = this.onDeleted.bind(this)
   }
 
 /**
@@ -219,7 +213,7 @@ export default class RecordHandler {
       }
     }
 
-    const transition = this.transitions[recordName]
+    const transition = this.transitions.get(recordName)
     if (transition) {
       this.permissionAction(message.action, message, originalAction, socketWrapper, () => {
         transition.add(socketWrapper, message)
@@ -366,7 +360,7 @@ export default class RecordHandler {
       return
     }
 
-    let transition = this.transitions[recordName]
+    let transition = this.transitions.get(recordName)
     if (transition && transition.hasVersion(version)) {
       transition.sendVersionExists({ message, sender: socketWrapper })
       return
@@ -374,7 +368,7 @@ export default class RecordHandler {
 
     if (!transition) {
       transition = new RecordTransition(recordName, this.config, this.services, this, this.metaData)
-      this.transitions[recordName] = transition
+      this.transitions.set(recordName, transition)
     }
     transition.add(socketWrapper, message, upsert)
   }
@@ -392,7 +386,7 @@ export default class RecordHandler {
  * the transition from the registry
  */
   public transitionComplete (recordName: string): void {
-    delete this.transitions[recordName]
+    this.transitions.delete(recordName)
   }
 
 /**
@@ -403,16 +397,18 @@ export default class RecordHandler {
  * such as when no cross referencing or data loading is used.
  */
   public removeRecordRequest (recordName: string): void {
-    if (!this.recordRequestsInProgress[recordName]) {
+    const recordRequests = this.recordRequestsInProgress.get(recordName)
+
+    if (!recordRequests) {
       return
     }
 
-    if (this.recordRequestsInProgress[recordName].length === 0) {
-      delete this.recordRequestsInProgress[recordName]
+    if (recordRequests.length === 0) {
+      this.recordRequestsInProgress.delete(recordName)
       return
     }
 
-    const callback = this.recordRequestsInProgress[recordName].splice(0, 1)[0]
+    const callback = recordRequests.splice(0, 1)[0]
     callback(recordName)
   }
 
@@ -423,14 +419,12 @@ export default class RecordHandler {
  * verified it has the latest version
  */
   public runWhenRecordStable (recordName: string, callback: Function): void {
-    if (
-    !this.recordRequestsInProgress[recordName] ||
-    this.recordRequestsInProgress[recordName].length === 0
-  ) {
-      this.recordRequestsInProgress[recordName] = []
+    const recordRequests = this.recordRequestsInProgress.get(recordName)
+    if (!recordRequests || recordRequests.length === 0) {
+      this.recordRequestsInProgress.set(recordName, [])
       callback(recordName)
     } else {
-      this.recordRequestsInProgress[recordName].push(callback)
+      recordRequests.push(callback)
     }
   }
 
@@ -441,13 +435,14 @@ export default class RecordHandler {
   private delete (socketWrapper: SocketWrapper, message: RecordMessage) {
     const recordName = message.name
 
-    if (this.transitions[recordName]) {
-      this.transitions[recordName].destroy()
-      delete this.transitions[recordName]
+    const transition = this.transitions.get(recordName)
+    if (transition) {
+      transition.destroy()
+      this.transitions.delete(recordName)
     }
 
     // tslint:disable-next-line
-    new RecordDeletion(this.config, this.services, socketWrapper, message, this.onDeleted.bind(this), this.metaData)
+    new RecordDeletion(this.config, this.services, socketWrapper, message, this.onDeleted, this.metaData)
   }
 
 /**
@@ -460,9 +455,10 @@ export default class RecordHandler {
   private remoteDelete (socketWrapper: SocketWrapper, message: RecordMessage) {
     const recordName = message.name
 
-    if (this.transitions[recordName]) {
-      this.transitions[recordName].destroy()
-      delete this.transitions[recordName]
+    const transition = this.transitions.get(recordName)
+    if (transition) {
+      transition.destroy()
+      this.transitions.delete(recordName)
     }
 
     this.onDeleted(recordName, message, socketWrapper)

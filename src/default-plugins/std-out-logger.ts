@@ -36,6 +36,10 @@ export default class StdOutLogger extends EventEmitter implements Logger {
     this.description = 'std out/err'
   }
 
+  public shouldLog (logLevel: number): boolean {
+    return logLevel < this.currentLogLevel
+  }
+
   /**
    * Logs a line
    */

@@ -153,26 +153,23 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
    * caches frequently used rules for faster access
    */
   private getCompiledRulesForName (name: string, ruleSpecification: any): any {
-    if (this.ruleCache.has(ruleSpecification.section, name, ruleSpecification.type)) {
-      return this.ruleCache.get(ruleSpecification.section, name, ruleSpecification.type)
+    const compiledRules = this.ruleCache.get(ruleSpecification.section, name, ruleSpecification.type)
+    if (compiledRules) {
+      return compiledRules
     }
 
-    const section = this.permissions[ruleSpecification.section]
-    let i = 0
+    const sections = this.permissions[ruleSpecification.section]
     let pathLength = 0
     let result: any = null
 
-    for (i; i < section.length; i++) {
-      if (
-        typeof section[i].rules[ruleSpecification.type] !== UNDEFINED &&
-        section[i].path.length >= pathLength &&
-        section[i].regexp.test(name)
-      ) {
-        pathLength = section[i].path.length
+    for (let i = 0; i < sections.length; i++) {
+      const { rules, path, regexp } = sections[i]
+      if (typeof rules[ruleSpecification.type] !== UNDEFINED && path.length >= pathLength && regexp.test(name)) {
+        pathLength = path.length
         result = {
-          path: section[i].path,
-          regexp: section[i].regexp,
-          rule: section[i].rules[ruleSpecification.type],
+          path,
+          regexp,
+          rule: rules[ruleSpecification.type],
         }
       }
     }
