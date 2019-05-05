@@ -44,7 +44,7 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
-  it('retrieves two records from the cache for crossreferencing purposes', (next) => {
+  it('retrieves two records from the cache for cross referencing purposes', (next) => {
     const permissions = getBasePermissions()
 
     services.cache.set('item/itemA', 0, { isInStock: true }, noop)

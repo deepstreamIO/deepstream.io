@@ -1,6 +1,5 @@
 import 'mocha'
 
-import { expect } from 'chai'
 import * as C from '../constants'
 import EventHandler from './event-handler'
 

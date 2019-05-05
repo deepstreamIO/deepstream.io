@@ -5,14 +5,13 @@ interface CachedRule {
 
 export default class RuleCache {
   private data = new Map<string, CachedRule>()
-  private interval: any
 
   /**
    * This cache stores rules that are frequently used. It removes
    * unused rules after a preset interval
    */
-  constructor (private config: ValveConfig) {
-    this.interval = setInterval(this.purge.bind(this), config.cacheEvacuationInterval)
+  constructor (config: ValveConfig) {
+    setInterval(this.purge.bind(this), config.cacheEvacuationInterval)
   }
 
   /**

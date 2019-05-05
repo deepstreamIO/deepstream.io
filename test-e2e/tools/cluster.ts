@@ -1,4 +1,3 @@
-import {When, Then, Given} from 'cucumber'
 import * as path from 'path'
 import { Deepstream } from '../../src/deepstream.io'
 import LocalCache from '../../src/default-plugins/local-cache'

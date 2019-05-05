@@ -61,7 +61,7 @@
     "chai": "^4.2.0",
     "coveralls": "^3.0.3",
     "cucumber": "^5.1.0",
-    "deepstream.io-client-js": "next",
+    "deepstream.io-client-js": "^4.0.0-rc.2",
     "istanbul": "^0.4.5",
     "mocha": "^6.1.0",
     "n0p3": "^1.0.2",

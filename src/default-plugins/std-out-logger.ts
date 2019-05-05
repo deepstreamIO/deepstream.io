@@ -1,18 +1,22 @@
 import { EventEmitter } from 'events'
-import { EVENT, LOG_LEVEL, TOPIC } from '../constants'
+import { EVENT, LOG_LEVEL } from '../constants'
 
 import chalk from 'chalk'
 
 const EOL = require('os').EOL
 
 export default class StdOutLogger extends EventEmitter implements Logger {
-  public description: string
-  public isReady: boolean
+  public description = 'std out/err'
+  public isReady: boolean = true
 
-  private options: any
   private useColors: boolean
   private currentLogLevel: LOG_LEVEL
-  private logLevelColors: string[]
+  private logLevelColors: string[] = [
+    'white',
+    'green',
+    'yellow',
+    'red',
+  ]
 
   /**
    * Logs to the operatingsystem's standard-out and standard-error streams.
@@ -20,20 +24,10 @@ export default class StdOutLogger extends EventEmitter implements Logger {
    * Consoles / Terminals as well as most log-managers and logging systems
    * consume messages from these streams
    */
-  constructor (options: any) {
+  constructor (private options: any = {}) {
     super()
-    this.options = options || {}
-    this.isReady = true
     this.useColors = this.options.colors === undefined ? true : this.options.colors
-    this.logLevelColors = [
-      'white',
-      'green',
-      'yellow',
-      'red',
-    ]
-
     this.currentLogLevel = this.options.logLevel || LOG_LEVEL.DEBUG
-    this.description = 'std out/err'
   }
 
   public shouldLog (logLevel: number): boolean {

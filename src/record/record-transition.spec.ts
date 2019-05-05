@@ -43,7 +43,6 @@ describe('RecordTransition', () => {
       version: -1,
       parsedData: { name: 'somedata' }
     }
-    const messageCopy = Object.assign({}, message)
 
     services.storage.nextOperationWillBeSuccessful = true
     services.storage.nextOperationWillBeSynchronous = false

@@ -1,6 +1,5 @@
 import 'mocha'
 import { expect } from 'chai'
-import {spy} from 'sinon'
 
 import * as C from '../constants'
 const testHelper = require('../test/helper/test-helper')

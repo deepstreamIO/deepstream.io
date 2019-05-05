@@ -1,9 +1,6 @@
 import { EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
 
 export default class ListenerTimeoutRegistry {
-  private topic: TOPIC
-  private config: InternalDeepstreamConfig
-  private services: DeepstreamServices
   private timeoutMap: any
   private timedoutProviders: any
   private acceptedProvider: any
@@ -14,11 +11,9 @@ export default class ListenerTimeoutRegistry {
   * been asked whether they want to provide a certain subscription, but have not yet
   * responded.
   */
-  constructor (topic: TOPIC, config: InternalDeepstreamConfig, services: DeepstreamServices) {
-    this.topic = topic
+  // @ts-ignore
+  constructor (private readonly topic: TOPIC, private config: InternalDeepstreamConfig, private services: DeepstreamServices) {
     this.actions = topic === TOPIC.RECORD ? RECORD_ACTIONS : EVENT_ACTIONS
-    this.config = config
-    this.services = services
     this.timeoutMap = {}
     this.timedoutProviders = {}
     this.acceptedProvider = {}

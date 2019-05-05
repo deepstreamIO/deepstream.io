@@ -5,22 +5,18 @@ import {PARSER_ACTIONS, TOPIC} from '../constants'
  * various, previously registered handlers, e.g. event-, rpc- or recordHandler
  */
 export default class MessageDistributor {
-  private callbacks: any
-  private options: DeepstreamConfig
-  private services: DeepstreamServices
+  private callbacks = new Map<TOPIC, Function>()
 
-  constructor (options: DeepstreamConfig, services: DeepstreamServices) {
-    this.callbacks = {}
-    this.options = options
-    this.services = services
-  }
+  // @ts-ignore
+  constructor (private options: DeepstreamConfig, private services: DeepstreamServices) {}
 
   /**
    * Accepts a socketWrapper and a parsed message as input and distributes
    * it to its subscriber, based on the message's topic
    */
   public distribute (socketWrapper: SocketWrapper, message: Message) {
-    if (this.callbacks[message.topic] === undefined) {
+    const callback = this.callbacks.get(message.topic)
+    if (callback === undefined) {
       this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_TOPIC], TOPIC[message.topic])
       socketWrapper.sendMessage({
         topic: TOPIC.PARSER,
@@ -33,7 +29,7 @@ export default class MessageDistributor {
     // TODO: Can we remove this? A general emit is quite expensive
     // socketWrapper.emit(message.topic, message)
 
-    this.callbacks[message.topic](socketWrapper, message)
+    callback(socketWrapper, message)
   }
 
   /**
@@ -42,11 +38,11 @@ export default class MessageDistributor {
    * from the messageConnector
    */
   public registerForTopic (topic: TOPIC, callback: Function) {
-    if (this.callbacks[topic] !== undefined) {
+    if (this.callbacks.has(topic)) {
       throw new Error(`Callback already registered for topic ${topic}`)
     }
 
-    this.callbacks[topic] = callback
+    this.callbacks.set(topic, callback)
     this.services.message.subscribe(
       topic,
       this.onMessageConnectorMessage.bind(this, callback),

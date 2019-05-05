@@ -31,7 +31,7 @@ connectionEndpoints:
         # the amount of milliseconds between each ping/heartbeat message
         heartbeatInterval: 30000
         # the amount of milliseconds that writes to sockets are buffered
-        outgoingBufferTimeout: 50
+        outgoingBufferTimeout: 0
 
         # Headers to copy over from websocket
         headers:

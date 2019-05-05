@@ -46,7 +46,7 @@ export class UwsSocketWrapper implements SocketWrapper {
    * and can wait to be bundled into another message if necessary
    */
   public flush () {
-    if (this.bufferedWrites.length !== 0) {
+    if (this.bufferedWritesTotalByteSize !== 0) {
       this.socket.send(combineMultipleMessages(this.bufferedWrites, this.bufferedWritesTotalByteSize), true)
       this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []

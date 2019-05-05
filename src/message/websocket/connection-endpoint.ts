@@ -36,13 +36,12 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
   private flushTimeout: NodeJS.Timeout | null
   private authenticatedSocketWrappers: Set<SocketWrapper> = new Set()
   private scheduledSocketWrapperWrites: Set<SocketWrapper> = new Set()
-  protected logger: Logger
   private authenticationHandler: AuthenticationHandler
   private logInvalidAuthData: boolean
   private maxAuthAttempts: number
   private urlPath: string
   private unauthenticatedClientTimeout: number | boolean
-  private websocketServer: any
+  protected logger: Logger
 
   constructor (protected options: WebSocketServerConfig, protected services: DeepstreamServices) {
     super()
@@ -96,7 +95,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
     this.urlPath = this.getOption('urlPath')
     this.unauthenticatedClientTimeout = this.getOption('unauthenticatedClientTimeout')
 
-    this.websocketServer = this.createWebsocketServer()
+    this.createWebsocketServer()
   }
 
   /**

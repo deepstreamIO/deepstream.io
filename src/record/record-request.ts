@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC, Message } from '../constants'
+import { RECORD_ACTIONS, Message } from '../constants'
 
 type onCompleteCallback = (recordName: string, version: number, data: any, socket: SocketWrapper, message: Message) => void
 type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper, message: Message) => void

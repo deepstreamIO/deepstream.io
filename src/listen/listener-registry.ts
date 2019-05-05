@@ -1,5 +1,5 @@
 import StateRegistry from '../cluster/state-registry'
-import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, Message, ListenMessage } from '../constants'
+import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
 import TimeoutRegistry from './listener-timeout-registry'
@@ -628,7 +628,6 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Create a map of all the listeners that patterns match the subscriptionName locally
   */
   private createRemoteListenArray (subscriptionName: string): string[] {
-    const patterns = this.patterns
     const providerRegistry = this.providerRegistry
 
     let servers: string[] = []

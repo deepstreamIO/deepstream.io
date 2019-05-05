@@ -14,7 +14,7 @@ Given(/^(.+) unsubscribes to presence events$/, (clientExpression, done) => {
 
 Given(/^(.+) subscribes to presence events for "([^"]*)"$/, (clientExpression, users, done) => {
   users.split(',').forEach((user) => presence.subscribe(clientExpression, user))
-  setTimeout(done, defaultDelay)
+  setTimeout(done, defaultDelay * 3)
 })
 
 Given(/^(.+) unsubscribes to presence events for "([^"]*)"$/, (clientExpression, users, done) => {

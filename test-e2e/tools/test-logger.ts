@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events'
-import * as  util from 'util'
 
 interface Log {
   level: number,
@@ -7,7 +6,7 @@ interface Log {
   message: string
 }
 
-export class Logger extends EventEmitter {
+export class Logger extends EventEmitter implements Logger {
   public logs: Log[]
   public lastLog: Log | null
   public isReady: boolean
@@ -17,6 +16,10 @@ export class Logger extends EventEmitter {
     this.logs = []
     this.lastLog = null
     this.isReady = true
+  }
+
+  public shouldLog () {
+    return true
   }
 
   public error (event, logMessage) {

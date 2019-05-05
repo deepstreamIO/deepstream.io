@@ -1,20 +1,16 @@
 import { EventEmitter } from 'events'
+import {JSONValue} from '../../binary-protocol/src/message-constants'
 
 export default class LocalCache extends EventEmitter implements StoragePlugin {
-  public description: string
-  public isReady: boolean
-  public apiVersion: number
+  public description = 'local cache'
+  public isReady: boolean = true
+  public apiVersion = 2
 
-  private config?: InternalDeepstreamConfig
-  private data: any
+  private data = new Map<string, { version: number, data: JSONValue }>()
 
-  constructor (config?: InternalDeepstreamConfig, services?: DeepstreamServices) {
+  // @ts-ignore
+  constructor (private config?: InternalDeepstreamConfig, private services?: DeepstreamServices) {
     super()
-    this.isReady = true
-    this.config = config
-    this.data = new Map()
-    this.description = 'local cache'
-    this.apiVersion = 2
   }
 
   public set (key: string, version: number, data: any, callback: StorageWriteCallback) {

@@ -1,4 +1,4 @@
-import { RECORD_ACTIONS, TOPIC, RecordWriteMessage, EVENT } from '../constants'
+import { RECORD_ACTIONS, TOPIC, RecordWriteMessage } from '../constants'
 import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
@@ -40,53 +40,20 @@ export default class RecordTransition {
  * Once the update is applied it will notify the record-handler to broadcast the
  * update and delete the instance of this class.
  */
- public isDestroyed: boolean
+ public isDestroyed: boolean = false
 
- private metaData: any
- private name: string
- private config: InternalDeepstreamConfig
- private services: DeepstreamServices
- private recordHandler: RecordHandler
- private steps: Step[]
- private version: number
- private data: any
+ private steps: Step[] = []
+ private version: number = -1
+ private data: any = null
  private currentStep: Step
- private recordRequestMade: boolean
- private existingVersions: Step[]
- private pendingUpdates: any
- private ending: boolean
- private lastVersion: number | null
- private lastError: string | null
- private writeError: Error
- private writeAckSockets: Map<SocketWrapper, { [correlationId: string]: number }>
- private pendingStorageWrites: number
- private pendingCacheWrites: number
+ private recordRequestMade: boolean = false
+ private existingVersions: Step[] = []
+ private lastVersion: number | null = null
+ private readonly writeAckSockets = new Map<SocketWrapper, { [correlationId: string]: number }>()
+ private pendingStorageWrites: number = 0
+ private pendingCacheWrites: number = 0
 
-  constructor (name: string, config: InternalDeepstreamConfig, services: DeepstreamServices, recordHandler: RecordHandler, metaData) {
-    this.metaData = metaData
-    this.name = name
-    this.config = config
-    this.services = services
-    this.recordHandler = recordHandler
-    this.steps = []
-    this.recordRequestMade = false
-
-    this.version = -1
-    this.data = null
-
-    // this.currentStep = null
-    this.lastVersion = null
-    this.lastError = null
-
-    this.existingVersions = []
-    this.isDestroyed = false
-    this.pendingUpdates = {}
-    this.ending = false
-
-    this.writeAckSockets = new Map()
-    this.pendingCacheWrites = 0
-    this.pendingStorageWrites = 0
-
+  constructor (private name: string, private config: InternalDeepstreamConfig, private services: DeepstreamServices, private recordHandler: RecordHandler, private readonly metaData) {
     this.onCacheSetResponse = this.onCacheSetResponse.bind(this)
     this.onStorageSetResponse = this.onStorageSetResponse.bind(this)
     this.onRecord = this.onRecord.bind(this)

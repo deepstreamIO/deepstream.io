@@ -1,5 +1,5 @@
 import { Cluster } from '../../tools/cluster'
-import {Given, When, Then, Before, BeforeAll } from 'cucumber'
+import {Given, When, Before, BeforeAll } from 'cucumber'
 
 Before((scenarioResult, done) => {
   global.cluster.updatePermissions('open', done)

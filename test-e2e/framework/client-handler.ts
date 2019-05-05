@@ -9,6 +9,7 @@ function createClient (clientName, server, options?) {
   // @ts-ignore
   const client = deepstream(gatewayUrl, {
     ...options,
+    subscriptionInterval: 0,
     maxReconnectInterval: 300,
     maxReconnectAttempts: 20,
     discardTimeout: 100,

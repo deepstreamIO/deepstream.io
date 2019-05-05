@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events'
-const util = require('util')
 
 export default class PluginMock extends EventEmitter {
   public isReady: boolean

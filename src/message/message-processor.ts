@@ -1,17 +1,4 @@
-import {
-  ACTIONS,
-  CONNECTION_ACTIONS,
-  EVENT,
-  PARSER_ACTIONS,
-  PRESENCE_ACTIONS,
-  EVENT_ACTIONS,
-  TOPIC,
-  EventMessage,
-  RPCMessage,
-  PresenceMessage,
-  ListenMessage,
-  RecordMessage,
-} from '../constants'
+import { EVENT_ACTIONS } from '../constants'
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -19,13 +6,8 @@ import {
  * are - forwards them.
  */
 export default class MessageProcessor {
-  private config: DeepstreamConfig
-  private services: DeepstreamServices
-
-  constructor (config: DeepstreamConfig, services: DeepstreamServices) {
-    this.config = config
-    this.services = services
-  }
+  // @ts-ignore
+  constructor (private config: DeepstreamConfig, private services: DeepstreamServices) {}
 
   /**
    * There will only ever be one consumer of forwarded messages. So rather than using
@@ -40,7 +22,7 @@ export default class MessageProcessor {
    * of parsed messages, iterates through them and issues permission requests for
    * each individual message
    *
-   * @todo The responses from the permissionHandler might arive in any arbitrary order - order them
+   * @todo The responses from the permissionHandler might arrive in any arbitrary order - order them
    * @todo Handle permission handler timeouts
    */
   public process (socketWrapper: SocketWrapper, parsedMessages: Message[]): void {

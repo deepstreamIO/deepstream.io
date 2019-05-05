@@ -14,7 +14,7 @@ export const assert = {
           sinon.assert.calledWith(notifee.presence.callbacks[subscribeEvent], notifier.user, event === 'in')
         }
       })
-      notifee.presence.callbacks[subscribeEvent]. resetHistory()
+      notifee.presence.callbacks[subscribeEvent].resetHistory()
     })
   },
 

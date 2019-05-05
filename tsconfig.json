@@ -7,6 +7,7 @@
     "allowJs": false,
     "strictNullChecks": true,
     "resolveJsonModule": true,
+    "noUnusedLocals": true,
     "types": [
       "node"
     ]

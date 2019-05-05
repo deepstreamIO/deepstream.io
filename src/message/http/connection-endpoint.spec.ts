@@ -1,11 +1,8 @@
-import * as C from '../../constants'
-
-const { expect } = require('chai')
-const sinon = require('sinon')
+import { expect } from 'chai'
 const Promise = require('bluebird')
-
 const needle = require('needle')
 
+import * as C from '../../constants'
 import LoggerMock from '../../test/mock/logger-mock'
 
 Promise.promisifyAll(needle)
@@ -157,15 +154,6 @@ describe('http plugin', () => {
     })
 
     describe('authentication', () => {
-      let canPerformActionStub
-      before(() => {
-        canPerformActionStub = sinon.stub(services.permissionHandler, 'canPerformAction')
-      })
-
-      after(() => {
-        (services.permissionHandler.canPerformAction as any).restore()
-      })
-
       it('should reject a request that times out', (done) => {
         needle.post(postUrl, message, { json: true }, (err, response) => {
           expect(err).to.equal(null)

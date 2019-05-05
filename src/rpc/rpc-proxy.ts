@@ -1,5 +1,4 @@
-import { EventEmitter } from 'events'
-import { EVENT, PRESENCE_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../constants'
+import { RPC_ACTIONS, RPCMessage } from '../constants'
 
 /**
  * This class exposes an interface that mimicks the behaviour
@@ -7,13 +6,14 @@ import { EVENT, PRESENCE_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../cons
  * infact relays calls from and to the message connector - sneaky.
  */
 export default class RpcProxy implements SimpleSocketWrapper {
-  public isRemote: true = true
+  public isRemote = true
   public type: string
   public user: string
 
   /**
   */
-  constructor (private config: InternalDeepstreamConfig, private services: DeepstreamServices, private remoteServer: string, private  metaData: any) {
+  // @ts-ignore
+  constructor (config: InternalDeepstreamConfig, private services: DeepstreamServices, private remoteServer: string, private  metaData: any) {
     // used for logging
     this.user = 'remote server ' + remoteServer
   }

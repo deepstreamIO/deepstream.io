@@ -5,7 +5,6 @@ export default class SocketMock {
   public autoClose: any
   public readyState: any
   public ssl: any
-  private socket: any
   // tslint:disable-next-line:variable-name
   public _handle: any
 
@@ -15,7 +14,6 @@ export default class SocketMock {
     this.sendMessages = []
     this.autoClose = true
     this.readyState = ''
-    this.socket = {}
     this.ssl = null
     this._handle = {}
 }

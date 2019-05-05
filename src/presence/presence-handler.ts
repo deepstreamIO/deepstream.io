@@ -10,24 +10,17 @@ const EVERYONE = '%_EVERYONE_%'
  * who else is logged into deepstream
  */
 export default class PresenceHandler {
-  private metaData: any
-  private config: InternalDeepstreamConfig
-  private services: DeepstreamServices
-  private localClients: Map<string, number>
+  private localClients: Map<string, number> = new Map()
   private subscriptionRegistry: SubscriptionRegistry
   private connectedClients: StateRegistry
 
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, metaData?: any) {
-    this.metaData = metaData
-    this.config = config
-    this.services = services
-    this.localClients = new Map()
-
+  constructor (config: InternalDeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, private metaData?: any) {
     this.subscriptionRegistry =
       subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.PRESENCE, TOPIC.PRESENCE_SUBSCRIPTIONS)
 
     this.connectedClients =
       stateRegistry || this.services.message.getStateRegistry(TOPIC.ONLINE_USERS)
+
     this.connectedClients.on('add', this.onClientAdded.bind(this))
     this.connectedClients.on('remove', this.onClientRemoved.bind(this))
   }
@@ -74,6 +67,7 @@ export default class PresenceHandler {
       this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid presence names parameter ${PRESENCE_ACTIONS[message.action]}`)
       return
     }
+
     if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.subscribe({

@@ -314,6 +314,7 @@ export default class RuleApplication {
   private isReady (): boolean {
     let isLoading = false
 
+    // @ts-ignore
     for (const [key, value] of this.recordsData) {
       if (value === LOADING) {
         isLoading = true

@@ -8,30 +8,19 @@ import RpcHandler from './rpc-handler'
  * from a remote provider within the network
  */
 export default class Rpc {
-  private rpcHandler: RpcHandler
-  private requestor: SimpleSocketWrapper
-  private provider: SimpleSocketWrapper
-  private config: InternalDeepstreamConfig
-  private services: DeepstreamServices
   private message: Message
   private correlationId: string
   private rpcName: string
-  private isAccepted: boolean
+  private isAccepted: boolean = false
   private acceptTimeout: any
   private responseTimeout: any
 
   /**
   */
-  constructor (rpcHandler: RpcHandler, requestor: SimpleSocketWrapper, provider: SimpleSocketWrapper, config: InternalDeepstreamConfig, services: DeepstreamServices, message: RPCMessage) {
-    this.rpcHandler = rpcHandler
+  constructor (private rpcHandler: RpcHandler, private requestor: SimpleSocketWrapper, private provider: SimpleSocketWrapper, private config: InternalDeepstreamConfig, message: RPCMessage) {
     this.rpcName = message.name
     this.correlationId = message.correlationId
-    this.requestor = requestor
-    this.provider = provider
-    this.config = config
-    this.services = services
     this.message = { ...message, ...this.getRequestor(requestor) }
-    this.isAccepted = false
 
     this.setProvider(provider)
   }

@@ -1,19 +1,13 @@
 import { EventEmitter } from 'events'
 
 export default class NoopStorage extends EventEmitter implements StoragePlugin {
-  public description: string
-  public isReady: boolean
-  public apiVersion: number
+  public description = 'noop storage'
+  public isReady: boolean = true
+  public apiVersion: number = 2
 
-  private config?: InternalDeepstreamConfig
-  private data: any
-
-  constructor (config?: InternalDeepstreamConfig, services?: DeepstreamServices) {
+  // @ts-ignore
+  constructor (private config?: InternalDeepstreamConfig, private services?: DeepstreamServices) {
     super()
-    this.config = config
-    this.isReady = true
-    this.description = 'noop storage'
-    this.apiVersion = 2
   }
 
   public set (key: string, version: number, data: any, callback: StorageWriteCallback) {

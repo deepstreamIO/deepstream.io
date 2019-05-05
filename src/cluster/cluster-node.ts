@@ -1,4 +1,4 @@
-import { EVENT, TOPIC } from '../constants'
+import { TOPIC } from '../constants'
 import StateRegistry from './state-registry'
 
 export default class ClusterNode implements Cluster {

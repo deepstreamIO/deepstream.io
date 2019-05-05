@@ -14,6 +14,7 @@ export default class StateRegistry extends EventEmitter {
   /**
   * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
   */
+  // @ts-ignore
   constructor (private topic: TOPIC, private options: InternalDeepstreamConfig) {
     super()
   }

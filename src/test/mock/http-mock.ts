@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events'
-const util = require('util')
 
 export class HttpServerMock extends EventEmitter {
   public listening: boolean

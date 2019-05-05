@@ -1,4 +1,4 @@
-import { EVENT, PARSER_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../constants'
+import { PARSER_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
@@ -11,19 +11,13 @@ interface RpcData {
 }
 
 export default class RpcHandler {
-  private metaData: any
   private subscriptionRegistry: SubscriptionRegistry
-  private config: InternalDeepstreamConfig
-  private services: DeepstreamServices
   private rpcs: Map<string, RpcData>
 
   /**
   * Handles incoming messages for the RPC Topic.
   */
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, metaData?: any) {
-     this.metaData = metaData
-     this.config = config
-     this.services = services
+  constructor (private config: InternalDeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, private metaData?: any) {
      this.subscriptionRegistry =
       subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RPC, TOPIC.RPC_SUBSCRIPTIONS)
 
@@ -162,7 +156,7 @@ export default class RpcHandler {
       const rpcData = {
         providers: new Set(),
         servers: !isRemote ? new Set() : null,
-        rpc: new Rpc(this, socketWrapper, provider, this.config, this.services, message),
+        rpc: new Rpc(this, socketWrapper, provider, this.config, message),
       } as RpcData
       this.rpcs.set(correlationId, rpcData)
       rpcData.providers.add(provider)
@@ -199,7 +193,7 @@ export default class RpcHandler {
       const rpcData = {
         providers: new Set(),
         servers: new Set(),
-        rpc: new Rpc(this, requestor, rpcProxy, this.config, this.services, message),
+        rpc: new Rpc(this, requestor, rpcProxy, this.config, message),
       } as RpcData
       this.rpcs.set(correlationId, rpcData)
       return
