@@ -31,7 +31,7 @@ connectionEndpoints:
         # the amount of milliseconds between each ping/heartbeat message
         heartbeatInterval: 30000
         # the amount of milliseconds that writes to sockets are buffered
-        outgoingBufferTimeout: 0
+        outgoingBufferTimeout: 50
 
         # Headers to copy over from websocket
         headers:
@@ -149,14 +149,7 @@ auth:
 # Permissioning
 permission:
   # Only config or custom permissionHandler at the moment
-  type: config
-  options:
-    # Path to the permissionFile. Can be json, js or yml
-    path: ./permissions.yml
-    # Amount of times nested cross-references will be loaded. Avoids endless loops
-    maxRuleIterations: 3
-    # PermissionResults are cached to increase performance. Lower number means more loading
-    cacheEvacuationInterval: 60000
+  type: none
 
 # Timeouts (in milliseconds)
 # Timeout for client RPC acknownledgement

@@ -32,6 +32,7 @@ export default class SubscriptionRegistry {
   private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry
   private actions: any
+  private bulkIds = new Set<number>()
 
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
@@ -71,6 +72,7 @@ export default class SubscriptionRegistry {
     this.onSocketClose = this.onSocketClose.bind(this)
 
     this.setupRemoteComponents(clusterTopic)
+    this.setUpBulkHistoryPurge()
   }
 
   public whenReady (callback: Function): void {
@@ -198,11 +200,23 @@ export default class SubscriptionRegistry {
     this.addSocket(subscription, socket)
 
     if (!silent) {
-      if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
-        const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
-        this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
+      if (message.isBulk) {
+      if (this.bulkIds.has(message.bulkId!)) {
+        return
       }
-      socket.sendAckMessage(message)
+      this.bulkIds.add(message.bulkId!)
+      socket.sendAckMessage({
+        topic: message.topic,
+        action: message.bulkAction as any,
+        correlationId: message.correlationId
+      })
+    } else {
+        if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
+          const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
+          this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
+        }
+        socket.sendAckMessage(message)
+      }
     }
   }
 
@@ -232,11 +246,24 @@ export default class SubscriptionRegistry {
     this.removeSocket(subscription, socket)
 
     if (!silent) {
-      if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
-        const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-        this.services.logger.debug(this.actions[this.constants.UNSUBSCRIBE], logMsg)
+      if (message.isBulk) {
+          if (this.bulkIds.has(message.bulkId!)) {
+            return
+          }
+          this.bulkIds.add(message.bulkId!)
+
+          socket.sendAckMessage({
+            topic: message.topic,
+            action: message.bulkAction as any,
+            correlationId: message.correlationId
+          })
+      } else {
+        if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
+          const logMsg = `for ${this.topic}:${name} by ${socket.user}`
+          this.services.logger.debug(this.actions[this.constants.UNSUBSCRIBE], logMsg)
+        }
+        socket.sendAckMessage(message)
       }
-      socket.sendAckMessage(message)
     }
   }
 
@@ -314,5 +341,16 @@ export default class SubscriptionRegistry {
       subscription.sockets.delete(socket)
       this.removeSocket(subscription, socket)
     }
+  }
+
+  private setUpBulkHistoryPurge () {
+    // This is a really inconvenient way of doing this,
+    // specially since it doesn't delete the first X but rather
+    // just purges the queue entirely. It's here to prevent a memory
+    // leak and will be improved on later, ideally by having a complete
+    // status on a bulk message
+    setInterval(() => {
+      this.bulkIds.clear()
+    }, 1000)
   }
 }

@@ -10,6 +10,7 @@
     "test": "test"
   },
   "scripts": {
+    "start:inspect": "npm run tsc && node --inspect dist/bin/deepstream",
     "start": "ts-node --transpile-only --project tsconfig.json --files ./bin/deepstream.ts",
     "precommit": "npm run lint",
     "tsc": "sh scripts/tsc.sh",
