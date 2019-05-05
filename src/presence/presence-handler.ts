@@ -68,11 +68,11 @@ export default class PresenceHandler {
       return
     }
 
-    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
+    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE_BULK) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.subscribe({
           topic: TOPIC.PRESENCE,
-          action: PRESENCE_ACTIONS.SUBSCRIBE,
+          action: PRESENCE_ACTIONS.SUBSCRIBE_BULK,
           name: users[i],
         }, socketWrapper, true)
       }
@@ -81,11 +81,11 @@ export default class PresenceHandler {
         action: message.action,
         correlationId: message.correlationId
       })
-    } else if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE) {
+    } else if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_BULK) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.unsubscribe({
           topic: TOPIC.PRESENCE,
-          action: PRESENCE_ACTIONS.UNSUBSCRIBE,
+          action: PRESENCE_ACTIONS.SUBSCRIBE_BULK,
           name: users[i],
         }, socketWrapper, true)
       }

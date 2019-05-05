@@ -13,7 +13,7 @@ Then(/^(.+) receives? (the|no) event "([^"]*)"(?: with data (.+))?$/, (clientExp
 
 Given(/^(.+) subscribes? to (?:an|the) event "([^"]*)"$/, (clientExpression, subscriptionName, done) => {
   event.subscribes(clientExpression, subscriptionName)
-  setTimeout(done, defaultDelay)
+  setTimeout(done, defaultDelay * 3)
 })
 
 When(/^(.+) unsubscribes from (?:an|the) event "([^"]*)"$/, (clientExpression, subscriptionName, done) => {

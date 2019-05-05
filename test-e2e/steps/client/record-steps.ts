@@ -4,7 +4,7 @@ import { record } from '../../framework/record'
 
 When(/(.+) gets? the record "([^"]*)"$/, (clientExpression, recordName, done) => {
   record.getRecord(clientExpression, recordName)
-  setTimeout(done, defaultDelay)
+  setTimeout(done, defaultDelay * 3)
 })
 
 When(/(.+) sets the merge strategy to (remote|local)$/, (clientExpression, recordName) => {
@@ -132,7 +132,7 @@ Then(/^(.+) gets? a head response for "([^"]*)" with error '([^']+)'$/, record.a
 
 When(/(.+) gets? the list "([^"]*)"$/, (clientExpression, listName, done) => {
   record.getList(clientExpression, listName)
-  setTimeout(done, defaultDelay)
+  setTimeout(done, defaultDelay * 3)
 })
 
 Given(/^(.+) sets the entries on the list "([^"]*)" to '([^']*)'$/, (clientExpression, listName, data, done) => {
