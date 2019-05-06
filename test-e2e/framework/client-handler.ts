@@ -1,5 +1,5 @@
 // @ts-ignore
-import * as deepstream from 'deepstream.io-client-js'
+import * as deepstream from '../../client/src/deepstream'
 import * as sinon from 'sinon'
 
 const clients = {}

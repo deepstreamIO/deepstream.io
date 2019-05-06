@@ -25,3 +25,6 @@
 [submodule "connectors/storage/elasticsearch"]
 	path = connectors/storage/elasticsearch
 	url = git@github.com:deepstreamIO/deepstream.io-storage-elasticsearch.git
+[submodule "client"]
+	path = client
+	url = git@github.com:deepstreamIO/deepstream.io-client-js.git
