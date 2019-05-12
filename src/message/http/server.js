@@ -277,7 +277,9 @@ module.exports = class Server extends EventEmitter {
         return
       }
     }
-
+    if (this._config.allowAllOrigins) {
+      response.writeHeader('Access-Control-Allow-Origin', '*')
+    }
     response.writeHeader('Access-Control-Allow-Methods', this._methodsStr)
     response.writeHeader('Access-Control-Allow-Headers', this._headersStr)
     Server._terminateResponse(response, HTTPStatus.OK, 'OK')
