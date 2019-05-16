@@ -4,12 +4,13 @@ import {
   RECORD_ACTIONS,
   RPC_ACTIONS,
   TOPIC,
-  RecordWriteMessage, RecordData,
+  RecordWriteMessage
 } from '../constants'
 import * as jsonPath from '../record/json-path'
 import RecordHandler from '../record/record-handler'
 import { recordRequest } from '../record/record-request'
 import { EOL } from 'os'
+import {RecordData} from '../../binary-protocol/src/message-constants'
 
 const OPEN = 'open'
 const LOADING = 'loading'

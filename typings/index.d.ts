@@ -147,6 +147,7 @@ interface Cluster {
   sendDirect (serverName: string, message: Message, metaData?: any): void,
   subscribe (stateRegistryTopic: TOPIC, callback: Function): void
   isLeader (): boolean
+  getLeader (): string
   close (callback: Function): void
 }
 

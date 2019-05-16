@@ -110,7 +110,7 @@ describe('http plugin', () => {
       .then((response) => {
         expect(response.statusCode).to.be.within(400, 499)
         expect(response.headers['content-type']).to.match(/^text\/plain/)
-        expect(response.body).to.match(/(fail|invalid)/i, payload)
+        expect(response.body).to.match(/(fail|invalid)/i, JSON.stringify(payload))
       })
     )))
 

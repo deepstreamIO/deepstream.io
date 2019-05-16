@@ -36,8 +36,8 @@ describe('JIF Handler', () => {
       const results = jifs.map((jif) => jifHandler.fromJIF(jif))
 
       results.forEach((result, i) => {
-        expect(result.success).to.equal(false, i)
-        expect(result.error).to.match(/should be object/, i)
+        expect(result.success).to.equal(false, i.toString())
+        expect(result.error).to.match(/should be object/, i.toString())
       })
     })
 
@@ -93,7 +93,7 @@ describe('JIF Handler', () => {
           { topic, action: 'emit', eventName: 'time/berlin' }
         ))
 
-        results.forEach((result, i) => expect(result.success).to.equal(false, i))
+        results.forEach((result, i) => expect(result.success).to.equal(false, i.toString()))
       })
 
       it('should reject malformed actions', () => {
@@ -109,7 +109,7 @@ describe('JIF Handler', () => {
           { topic: 'event', action, eventName: 'time/berlin' }
         ))
 
-        results.forEach((result, i) => expect(result.success).to.equal(false, i))
+        results.forEach((result, i) => expect(result.success).to.equal(false, i.toString()))
       })
 
       it('should not support an event without a name', () => {
@@ -137,7 +137,7 @@ describe('JIF Handler', () => {
           { topic: 'event', action: 'emit', eventName }
         ))
 
-        results.forEach((result, i) => expect(result.success).to.equal(false, i))
+        results.forEach((result, i) => expect(result.success).to.equal(false, i.toString()))
       })
 
     })
