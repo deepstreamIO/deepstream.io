@@ -3,6 +3,7 @@ import 'mocha'
 import * as M from './test-messages'
 import * as C from '../constants'
 import { getTestMocks } from '../test/helper/test-mocks'
+import { Promise as BBPromise } from 'bluebird'
 const testHelper = require('../test/helper/test-helper')
 
 const RecordTransition = require('./record-transition').default
@@ -61,8 +62,9 @@ describe('RecordTransition', () => {
       })
 
     recordTransition.add(client.socketWrapper, message, true)
+
     // Wait for the async callback to fire
-    await new Promise((resolve, reject) => setTimeout(resolve, 60))
+    await BBPromise.delay(60)
   })
 })
 

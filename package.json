@@ -38,7 +38,6 @@
   "dependencies": {
     "adm-zip": "^0.4.13",
     "ajv": "^6.10.0",
-    "bluebird": "^3.5.4",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.2",
     "commander": "^2.20.0",
@@ -74,7 +73,8 @@
     "ts-node": "^8.0.3",
     "tslint": "^5.15.0",
     "typescript": "3.4.2",
-    "watch": "^1.0.2"
+    "watch": "^1.0.2",
+    "bluebird": "^3.5.4"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",

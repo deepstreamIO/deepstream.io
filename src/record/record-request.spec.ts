@@ -5,6 +5,7 @@ import {spy} from 'sinon'
 import * as C from '../constants'
 const recordRequest = require('./record-request').recordRequest
 
+import { Promise as BBPromise } from 'bluebird'
 import { getTestMocks } from '../test/helper/test-mocks'
 const testHelper = require('../test/helper/test-helper')
 
@@ -61,7 +62,7 @@ describe('record request', () => {
       expect(errorCallback).to.have.callCount(0)
     })
 
-    it('requests a record that exists in an asynchronous cache', (done) => {
+    it('requests a record that exists in an asynchronous cache', async () => {
       services.cache.nextGetWillBeSynchronous = false
 
       recordRequest(
@@ -74,18 +75,17 @@ describe('record request', () => {
         null
         )
 
-      setTimeout(() => {
-        expect(completeCallback).to.have.been.calledWith(
-          'existingRecord',
-          1,
-          cacheData,
-          client.socketWrapper
-          )
-        expect(errorCallback).to.have.callCount(0)
-        expect(services.cache.lastRequestedKey).to.equal('existingRecord')
-        expect(services.storage.lastRequestedKey).to.equal(null)
-        done()
-      }, 30)
+      await BBPromise.delay(30)
+
+      expect(completeCallback).to.have.been.calledWith(
+        'existingRecord',
+        1,
+        cacheData,
+        client.socketWrapper
+        )
+      expect(errorCallback).to.have.callCount(0)
+      expect(services.cache.lastRequestedKey).to.equal('existingRecord')
+      expect(services.storage.lastRequestedKey).to.equal(null)
     })
 
     it('requests a record that doesn\'t exists in a synchronous cache, but in storage', () => {
@@ -108,7 +108,7 @@ describe('record request', () => {
       expect(errorCallback).to.have.callCount(0)
     })
 
-    it('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', (done) => {
+    it('requests a record that doesn\'t exists in an asynchronous cache, but in asynchronous storage', async () => {
       services.cache.nextGetWillBeSynchronous = false
       services.storage.nextGetWillBeSynchronous = false
 
@@ -122,16 +122,15 @@ describe('record request', () => {
         null
         )
 
-      setTimeout(() => {
-        expect(services.cache.lastRequestedKey).to.equal('onlyExistsInStorage')
-        expect(services.storage.lastRequestedKey).to.equal('onlyExistsInStorage')
+      await BBPromise.delay(75)
 
-        expect(errorCallback).to.have.callCount(0)
-        expect(completeCallback).to.have.been.calledWith(
-          'onlyExistsInStorage', 1, storageData, client.socketWrapper
-        )
-        done()
-      }, 75)
+      expect(services.cache.lastRequestedKey).to.equal('onlyExistsInStorage')
+      expect(services.storage.lastRequestedKey).to.equal('onlyExistsInStorage')
+
+      expect(errorCallback).to.have.callCount(0)
+      expect(completeCallback).to.have.been.calledWith(
+        'onlyExistsInStorage', 1, storageData, client.socketWrapper
+      )
     })
 
     it('returns null for non existent records', () => {
@@ -261,7 +260,7 @@ describe('record request', () => {
         services.storage.nextOperationWillBeSuccessful = true
       })
 
-      it('sends a STORAGE_RETRIEVAL_TIMEOUT message when storage times out', (done) => {
+      it('sends a STORAGE_RETRIEVAL_TIMEOUT message when storage times out', async () => {
         recordRequest(
           'willTimeoutStorage',
           config,
@@ -272,21 +271,19 @@ describe('record request', () => {
           null
         )
 
-        setTimeout(() => {
-          expect(errorCallback).to.have.been.calledWith(
-            C.RECORD_ACTIONS.STORAGE_RETRIEVAL_TIMEOUT,
-            'willTimeoutStorage',
-            'willTimeoutStorage',
-            client.socketWrapper
-          )
-          expect(completeCallback).to.have.callCount(0)
+        await BBPromise.delay(1)
 
-          // ignores update from storage that may occur afterwards
-          services.storage.triggerLastGetCallback(null, '{ data: "value" }')
-          expect(completeCallback).to.have.callCount(0)
+        expect(errorCallback).to.have.been.calledWith(
+          C.RECORD_ACTIONS.STORAGE_RETRIEVAL_TIMEOUT,
+          'willTimeoutStorage',
+          'willTimeoutStorage',
+          client.socketWrapper
+        )
+        expect(completeCallback).to.have.callCount(0)
 
-          done()
-        }, 1)
+        // ignores update from storage that may occur afterwards
+        services.storage.triggerLastGetCallback(null, '{ data: "value" }')
+        expect(completeCallback).to.have.callCount(0)
       })
     })
   })
@@ -299,7 +296,7 @@ describe('record request', () => {
       services.storage.set('dont-save/1', 1, {}, () => {})
     })
 
-    it('returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', (done) => {
+    it('returns null when requesting a record that doesn\'t exists in a synchronous cache, and is excluded from storage', () => {
       recordRequest(
         'dont-save/1',
         config,
@@ -318,11 +315,10 @@ describe('record request', () => {
       )
       expect(errorCallback).to.have.callCount(0)
       expect(services.storage.lastRequestedKey).to.equal(null)
-      done()
     })
   })
 
-  describe.skip('promoting to cache can be disabled', () => {
+  describe('promoting to cache can be disabled', () => {
     beforeEach(() => {
       services.cache.nextGetWillBeSynchronous = true
       services.storage.nextGetWillBeSynchronous = true
@@ -330,28 +326,31 @@ describe('record request', () => {
       services.storage.set('dont-save/1', 1, {}, () => {})
     })
 
-    it('doesnt call set on cache if promoteToCache is disabled', (done) => {
+    it('doesnt call set on cache if promoteToCache is disabled', () => {
       recordRequest(
-        'dont-save/1',
+        'onlyExistsInStorage',
         config,
         services,
         client.socketWrapper,
         completeCallback,
         errorCallback,
+        this,
+        null,
         null,
         false
       )
 
       expect(completeCallback).to.have.been.calledWith(
-        'dont-save/1',
-        -1,
-        null,
+        'onlyExistsInStorage',
+        1,
+        { storage: true },
         client.socketWrapper
       )
       expect(services.cache.set).to.have.callCount(0)
+
       expect(errorCallback).to.have.callCount(0)
-      expect(services.storage.lastRequestedKey).to.equal(null)
-      done()
+      expect(services.cache.lastRequestedKey).to.equal('onlyExistsInStorage')
+      expect(services.storage.lastRequestedKey).to.equal('onlyExistsInStorage')
     })
   })
 })
