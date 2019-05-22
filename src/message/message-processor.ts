@@ -1,4 +1,5 @@
 import { EVENT_ACTIONS } from '../constants'
+import { TOPIC, CONNECTION_ACTIONS } from '../../binary-protocol/src/message-constants'
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -31,6 +32,11 @@ export default class MessageProcessor {
     const length = parsedMessages.length
     for (let i = 0; i < length; i++) {
       message = parsedMessages[i]
+
+      if (message.topic === TOPIC.CONNECTION && message.action === CONNECTION_ACTIONS.PING) {
+        // Each connection endpoint is responsible for dealing with ping connections
+        continue
+      }
 
       this.services.permissionHandler.canPerformAction(
         socketWrapper.user,

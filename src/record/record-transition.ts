@@ -159,6 +159,8 @@ export default class RecordTransition {
         this.onCacheRequestError,
         this,
         this.metaData,
+        undefined,
+        false
       )
     } else if (this.steps.length === 1) {
       this.next()
@@ -280,7 +282,7 @@ export default class RecordTransition {
       this.writeAckSockets.set(socketWrapper, { [correlationId]: 1 })
       return
     }
-    response[correlationId] = response[correlationId] ? ++response[correlationId] : 1
+    response[correlationId] = response[correlationId] ? response[correlationId] + 1 : 1
     this.writeAckSockets.set(socketWrapper, response)
   }
 

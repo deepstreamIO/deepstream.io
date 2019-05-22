@@ -77,6 +77,10 @@ export default class MessageConnectorMock extends EventEmitter implements Cluste
     return this.currentLeader === this.options.serverName
   }
 
+  public getLeader () {
+    return this.currentLeader
+  }
+
   public getCurrentLeader () {
     return this.currentLeader
   }

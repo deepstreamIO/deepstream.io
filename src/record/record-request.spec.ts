@@ -321,4 +321,37 @@ describe('record request', () => {
       done()
     })
   })
+
+  describe.skip('promoting to cache can be disabled', () => {
+    beforeEach(() => {
+      services.cache.nextGetWillBeSynchronous = true
+      services.storage.nextGetWillBeSynchronous = true
+      services.cache.set = spy()
+      services.storage.set('dont-save/1', 1, {}, () => {})
+    })
+
+    it('doesnt call set on cache if promoteToCache is disabled', (done) => {
+      recordRequest(
+        'dont-save/1',
+        config,
+        services,
+        client.socketWrapper,
+        completeCallback,
+        errorCallback,
+        null,
+        false
+      )
+
+      expect(completeCallback).to.have.been.calledWith(
+        'dont-save/1',
+        -1,
+        null,
+        client.socketWrapper
+      )
+      expect(services.cache.set).to.have.callCount(0)
+      expect(errorCallback).to.have.callCount(0)
+      expect(services.storage.lastRequestedKey).to.equal(null)
+      done()
+    })
+  })
 })

@@ -28,7 +28,7 @@ function sendError (
 function onStorageResponse (
   error: string | null, recordName: string, version: number, data: any, socketWrapper: SocketWrapper | null,
   onComplete: onCompleteCallback, onError: onErrorCallback, services: DeepstreamServices, context: any,
-  metaData: any, message?: Message
+  metaData: any, promoteToCache: boolean, message?: Message
 ): void {
   if (error) {
     sendError(
@@ -44,7 +44,9 @@ function onStorageResponse (
       onComplete.call(context, recordName, version, data || null, socketWrapper)
     }
 
-    if (data) {
+    // Promote to cache is disabled when coming from the record transition
+    // since that might override the last set
+    if (data && promoteToCache) {
       services.cache.set(recordName, version, data, () => {}, metaData)
     }
   }
@@ -56,7 +58,7 @@ function onStorageResponse (
 function onCacheResponse (
   error: string | null, recordName: string, version: number, data: any, socketWrapper: SocketWrapper | null,
   onComplete: onCompleteCallback, onError: onErrorCallback, config: InternalDeepstreamConfig, services: DeepstreamServices,
-  context: any, metaData: any, message?: Message
+  context: any, metaData: any, promoteToCache: boolean, message?: Message
 ): void {
   if (error) {
     sendError(
@@ -89,7 +91,7 @@ function onCacheResponse (
         clearTimeout(storageTimeout)
         onStorageResponse(
           storageError, recordName, version, result, socketWrapper, onComplete,
-          onError, services, context, metaData, message
+          onError, services, context, metaData, promoteToCache, message
         )
       }
     }, metaData)
@@ -119,6 +121,7 @@ export function recordRequest (
   context: any,
   metaData?: any,
   message?: Message,
+  promoteToCache: boolean = true
 ): void {
   let cacheTimedOut = false
 
@@ -139,7 +142,7 @@ export function recordRequest (
         error, recordName, version, data,
         socketWrapper, onComplete, onError,
         config, services, context, metaData,
-        message
+        promoteToCache, message
       )
     }
   }, metaData)

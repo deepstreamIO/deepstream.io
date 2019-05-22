@@ -16,11 +16,22 @@ export const start = (program) => {
     .option('--disable-permissions', 'Force deepstream to use "none" permissions')
     .option('--log-level <level>', 'Log messages with this level and above', parseLogLevel)
     .option('--colors [true|false]', 'Enable or disable logging with colors', parseBoolean.bind(null, '--colors'))
+    .option('--inspect <url>', 'Enable node inspector')
     .action(action)
 }
 
 function action () {
   global.deepstreamCLI = this
+
+  const inspectUrl = global.deepstreamCLI.inspect
+  if (inspectUrl) {
+    const inspector = require('inspector')
+    const [host, port] = global.deepstreamCLI.inspect.split(':')
+    if (!host || !port) {
+      throw new Error('Invalid inspect url, please provide host:port')
+    }
+    inspector.open(port, host)
+  }
 
   const { Deepstream } = require('../src/deepstream.io')
   try {
