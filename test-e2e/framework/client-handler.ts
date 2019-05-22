@@ -1,5 +1,4 @@
-// @ts-ignore
-import * as deepstream from '../../client/src/deepstream'
+import * as deepstream from 'deepstream.io-client-js'
 import * as sinon from 'sinon'
 
 const clients = {}
@@ -12,13 +11,14 @@ function createClient (clientName, server, options?) {
     subscriptionInterval: 5,
     maxReconnectInterval: 300,
     maxReconnectAttempts: 20,
-    discardTimeout: 100,
     rpcAcceptTimeout: 100,
     rpcResponseTimeout: 300,
     subscriptionTimeout: 100,
     recordReadAckTimeout: 100,
-    recordReadTimeout: 300,
-    recordDeleteTimeout: 100
+    recordReadTimeout: 50,
+    recordDeleteTimeout: 100,
+    recordDiscardTimeout: 100,
+    timerResolution: 1
   })
   clients[clientName] = {
     name: clientName,

@@ -55,7 +55,7 @@ export const client = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[C.TOPIC[C.TOPIC.AUTH]][C.AUTH_ACTIONS[C.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS]]
       sinon.assert.calledOnce(errorSpy)
-      errorSpy. resetHistory()
+      errorSpy.resetHistory()
     })
   },
 
@@ -79,7 +79,7 @@ export const client = {
         sinon.assert.calledOnce(loginSpy)
         sinon.assert.calledWith(loginSpy, false)
       }
-      loginSpy. resetHistory()
+      loginSpy.resetHistory()
     })
   },
 
@@ -88,7 +88,7 @@ export const client = {
       setTimeout(() => {
         const errorSpy = client.error[C.TOPIC[C.TOPIC.CONNECTION]][C.CONNECTION_ACTIONS[C.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT]]
         sinon.assert.calledOnce(errorSpy)
-        errorSpy. resetHistory()
+        errorSpy.resetHistory()
         done()
       }, 1000)
     })
@@ -100,7 +100,7 @@ export const client = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[topic][eventName]
       sinon.assert.called(errorSpy)
-      errorSpy. resetHistory()
+      errorSpy.resetHistory()
     })
   },
 
@@ -110,7 +110,7 @@ export const client = {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[topic][event]
       sinon.assert.calledOnce(errorSpy)
-      errorSpy. resetHistory()
+      errorSpy.resetHistory()
     })
   },
 
@@ -130,7 +130,7 @@ export const client = {
         }
       }
 
-      spy. resetHistory()
+      spy.resetHistory()
     })
   },
 

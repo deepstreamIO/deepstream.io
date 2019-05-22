@@ -26,7 +26,7 @@ export const assert = {
       } else {
         sinon.assert.calledWith(client.presence.callbacks[queryEvent], error)
       }
-      client.presence.callbacks[queryEvent]. resetHistory()
+      client.presence.callbacks[queryEvent].resetHistory()
     })
   },
 
@@ -38,7 +38,7 @@ export const assert = {
       }
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
       sinon.assert.calledWith(client.presence.callbacks[queryEvent], null, result)
-      client.presence.callbacks[queryEvent]. resetHistory()
+      client.presence.callbacks[queryEvent].resetHistory()
     })
   }
 }

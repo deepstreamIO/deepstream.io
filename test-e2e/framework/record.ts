@@ -15,7 +15,7 @@ const assert2 = {
     deleted (clientExpression, recordName) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.deleteCallback)
-            recordData.deleteCallback. resetHistory()
+            recordData.deleteCallback.resetHistory()
         })
     },
 
@@ -23,7 +23,7 @@ const assert2 = {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             if (called) {
                 sinon.assert.calledOnce(recordData.discardCallback)
-                recordData.discardCallback. resetHistory()
+                recordData.discardCallback.resetHistory()
             } else {
                 sinon.assert.notCalled(recordData.discardCallback)
             }
@@ -35,7 +35,7 @@ const assert2 = {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.subscribeCallback)
             sinon.assert.calledWith(recordData.subscribeCallback, data)
-            recordData.subscribeCallback. resetHistory()
+            recordData.subscribeCallback.resetHistory()
         })
     },
 
@@ -44,7 +44,7 @@ const assert2 = {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.subscribePathCallbacks[path])
             sinon.assert.calledWith(recordData.subscribePathCallbacks[path], data)
-            recordData.subscribePathCallbacks[path]. resetHistory()
+            recordData.subscribePathCallbacks[path].resetHistory()
         })
     },
 
@@ -63,7 +63,7 @@ const assert2 = {
     receivedRecordError (clientExpression, error, recordName) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledWith(recordData.errorCallback, error)
-            recordData.errorCallback. resetHistory()
+            recordData.errorCallback.resetHistory()
         })
     },
 
@@ -92,13 +92,13 @@ const assert2 = {
             if (!recordData) { return }
             sinon.assert.calledOnce(recordData.setCallback)
             sinon.assert.calledWith(recordData.setCallback, null)
-            recordData.setCallback. resetHistory()
+            recordData.setCallback.resetHistory()
         })
         clientHandler.getClients(clientExpression).forEach((client) => {
             if (!client.record.writeAcks) { return }
             sinon.assert.calledOnce(client.record.writeAcks[recordName])
             sinon.assert.calledWith(client.record.writeAcks[recordName], null)
-            client.record.writeAcks[recordName]. resetHistory()
+            client.record.writeAcks[recordName].resetHistory()
         })
     },
 
@@ -107,13 +107,13 @@ const assert2 = {
             if (!recordData) { return }
             sinon.assert.calledOnce(recordData.setCallback)
             sinon.assert.calledWith(recordData.setCallback, errorMessage)
-            recordData.setCallback. resetHistory()
+            recordData.setCallback.resetHistory()
         })
         clientHandler.getClients(clientExpression).forEach((client) => {
             if (!client.record.writeAcks) { return }
             sinon.assert.calledOnce(client.record.writeAcks[recordName])
             sinon.assert.calledWith(client.record.writeAcks[recordName], errorMessage)
-            client.record.writeAcks[recordName]. resetHistory()
+            client.record.writeAcks[recordName].resetHistory()
         })
     },
 
@@ -121,7 +121,7 @@ const assert2 = {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.snapshotCallback)
             sinon.assert.calledWith(client.record.snapshotCallback, null, utils.parseData(data))
-            client.record.snapshotCallback. resetHistory()
+            client.record.snapshotCallback.resetHistory()
         })
     },
 
@@ -129,7 +129,7 @@ const assert2 = {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.snapshotCallback)
             sinon.assert.calledWith(client.record.snapshotCallback, data.replace(/"/g, ''))
-            client.record.snapshotCallback. resetHistory()
+            client.record.snapshotCallback.resetHistory()
         })
     },
 
@@ -137,7 +137,7 @@ const assert2 = {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.headCallback)
             sinon.assert.calledWith(client.record.headCallback, null, utils.parseData(data))
-            client.record.headCallback. resetHistory()
+            client.record.headCallback.resetHistory()
         })
     },
 
@@ -145,7 +145,7 @@ const assert2 = {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.headCallback)
             sinon.assert.calledWith(client.record.headCallback, data.replace(/"/g, ''))
-            client.record.snapshotCallback. resetHistory()
+            client.record.snapshotCallback.resetHistory()
         })
     },
 
@@ -153,7 +153,7 @@ const assert2 = {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.hasCallback)
             sinon.assert.calledWith(client.record.hasCallback, null, expected)
-            client.record.hasCallback. resetHistory()
+            client.record.hasCallback.resetHistory()
         })
     },
 
