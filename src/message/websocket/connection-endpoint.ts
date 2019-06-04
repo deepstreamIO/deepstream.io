@@ -6,8 +6,10 @@ import {
   EVENT,
   PARSER_ACTIONS,
   ParseResult,
-  TOPIC
+  TOPIC,
+  Message
 } from '../../../binary-protocol/src/message-constants'
+import { SocketConnectionEndpoint, SocketWrapper, AuthenticationHandler, Logger, DeepstreamServices } from '../../types';
 
 const OPEN = 'OPEN'
 

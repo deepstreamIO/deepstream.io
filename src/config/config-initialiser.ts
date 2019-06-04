@@ -12,6 +12,7 @@ import ConfigPermissionHandler from '../permission/config-permission-handler'
 import OpenPermissionHandler from '../permission/open-permission-handler'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
+import { InternalDeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, StoragePlugin, StorageReadCallback, StorageWriteCallback, AuthenticationHandler, PermissionHandler } from '../types';
 
 let commandLineArguments
 

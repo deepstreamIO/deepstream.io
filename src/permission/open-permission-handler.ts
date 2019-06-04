@@ -1,4 +1,6 @@
 import { EventEmitter } from 'events'
+import { PermissionHandler, SocketWrapper } from '../types';
+import { Message } from '../constants';
 
 /**
  * The open permission handler allows any action to occur without applying

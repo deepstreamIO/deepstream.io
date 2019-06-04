@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import { AuthenticationHandler } from '../types';
 
 /**
  * Used for users that don't provide a username

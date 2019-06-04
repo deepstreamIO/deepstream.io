@@ -18,7 +18,8 @@ function createClient (clientName, server, options?) {
     recordReadTimeout: 50,
     recordDeleteTimeout: 100,
     recordDiscardTimeout: 100,
-    timerResolution: 1
+    timerResolution: 1,
+    offlineEnabled: false
   })
   clients[clientName] = {
     name: clientName,

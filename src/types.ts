@@ -1,15 +1,11 @@
-declare module '*.json' {
-  const version: number
-}
+import { EventEmitter } from "events";
+import { TOPIC, EVENT, LOG_LEVEL } from "./constants";
+import { SubscriptionRegistryFactory } from "./utils/SubscriptionRegistryFactory";
 
-type RuleType = string
-type ValveSection = string
+export type RuleType = string
+export type ValveSection = string
 
-type LOG_LEVEL = any
-type TOPIC = number
-type EVENT = any
-
-interface SimpleSocketWrapper {
+export interface SimpleSocketWrapper {
   user: string
   isRemote: boolean
   sendMessage (message: Message, buffer?: boolean): void
@@ -18,14 +14,14 @@ interface SimpleSocketWrapper {
   clientData?: object | null
 }
 
-interface StatefulSocketWrapper extends SimpleSocketWrapper {
+export interface StatefulSocketWrapper extends SimpleSocketWrapper {
   isClosed: boolean,
   onClose: Function,
   removeOnClose: Function
   destroy: Function
 }
 
-interface SocketWrapper extends StatefulSocketWrapper {
+export interface SocketWrapper extends StatefulSocketWrapper {
   uuid: number
   authData: object
   clientData: object | null
@@ -37,7 +33,7 @@ interface SocketWrapper extends StatefulSocketWrapper {
   flush: Function
 }
 
-interface Message {
+export interface Message {
   topic: TOPIC
   action: number
   name?: string
@@ -59,12 +55,12 @@ interface Message {
   reason?: string
 }
 
-interface JifMessage {
+export interface JifMessage {
   done: boolean
   message: JifResult
 }
 
-interface JifResult {
+export interface JifResult {
   success: boolean
   data?: any
   error?: string
@@ -72,76 +68,79 @@ interface JifResult {
   users?: string[]
   errorTopic?: string
   errorAction?: string
-  errorEvent?: EVENT
+  errorEvent?: EVENT | string
 }
 
-interface SubscriptionListener {
-  onSubscriptionRemoved (name: string, socketWrapper: SocketWrapper)
-  onLastSubscriptionRemoved (name: string)
-  onSubscriptionMade (name: string, socketWrapper: SocketWrapper)
-  onFirstSubscriptionMade (name: string)
+export interface SubscriptionListener {
+  onSubscriptionRemoved (name: string, socketWrapper: SocketWrapper): void
+  onLastSubscriptionRemoved (name: string): void
+  onSubscriptionMade (name: string, socketWrapper: SocketWrapper): void
+  onFirstSubscriptionMade (name: string): void
 }
 
-interface Logger extends DeepstreamPlugin {
+export interface Logger extends DeepstreamPlugin {
   shouldLog (logLevel: LOG_LEVEL): boolean
-  setLogLevel (logLevel: LOG_LEVEL)
-  info (event: EVENT, message?: string, metaData?: any): void
-  debug (event: EVENT, message?: string, metaData?: any): void
-  warn (event: EVENT, message?: string, metaData?: any): void
-  error (event: EVENT, message?: string, metaData?: any): void
+  setLogLevel (logLevel: LOG_LEVEL): void
+  info (event: EVENT | string, message?: string, metaData?: any): void
+  debug (event: EVENT | string, message?: string, metaData?: any): void
+  warn (event: EVENT | string, message?: string, metaData?: any): void
+  error (event: EVENT | string, message?: string, metaData?: any): void
   log (level: LOG_LEVEL, event: EVENT, message: string, metaData?: any): void
 }
 
-interface ConnectionEndpoint extends DeepstreamPlugin {
+export interface ConnectionEndpoint extends DeepstreamPlugin {
   onMessages (socketWrapper: SocketWrapper, messages: Message[]): void
   close (): void
   scheduleFlush? (socketWrapper: SocketWrapper)
 }
 
-interface SocketConnectionEndpoint extends ConnectionEndpoint {
+export interface SocketConnectionEndpoint extends ConnectionEndpoint {
   scheduleFlush (socketWrapper: SocketWrapper)
 }
 
-interface PluginConfig {
+export interface PluginConfig {
   name?: string
   path?: string
   type?: string
   options: any
 }
 
-interface DeepstreamPlugin extends NodeJS.EventEmitter {
+export type MonitorHookCallback = () => void
+
+export interface DeepstreamPlugin extends EventEmitter {
   isReady: boolean
   description: string
   init? (): void
   close? (): void
   setDeepstream? (deepstream: any): void
   setRecordHandler? (recordHandler: any): void
+  registerMonitorHook? (cb: MonitorHookCallback)
 }
 
-type StorageReadCallback = (error: string | null, version: number, result: any) => void
-type StorageWriteCallback = (error: string | null) => void
+export type StorageReadCallback = (error: string | null, version: number, result: any) => void
+export type StorageWriteCallback = (error: string | null) => void
 
-interface StoragePlugin extends DeepstreamPlugin {
+export interface StoragePlugin extends DeepstreamPlugin {
   apiVersion?: number
   set (recordName: string, version: number, data: any, callback: StorageWriteCallback, metaData?: any): void
   get (recordName: string, callback: StorageReadCallback, metaData?: any): void
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void
 }
 
-interface PermissionHandler extends DeepstreamPlugin {
+export interface PermissionHandler extends DeepstreamPlugin {
   canPerformAction (username: string, message: Message, callback: Function, authData: any, socketWrapper: SocketWrapper): void
 }
 
-interface AuthenticationHandler extends DeepstreamPlugin {
+export interface AuthenticationHandler extends DeepstreamPlugin {
   isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback)
   onClientDisconnect? (username: string)
 }
 
-interface UserAuthenticationCallback {
+export interface UserAuthenticationCallback {
   (isValid: boolean, clientData?: any)
 }
 
-interface Cluster {
+export interface Cluster {
   getStateRegistry (stateRegistryTopic: TOPIC): any,
   send (stateRegistryTopic: TOPIC, message: Message, metaData?: any): void,
   sendDirect (serverName: string, message: Message, metaData?: any): void,
@@ -151,12 +150,12 @@ interface Cluster {
   close (callback: Function): void
 }
 
-interface LockRegistry {
+export interface LockRegistry {
   get (lock: string, callback: Function)
   release (lock: string)
 }
 
-interface DeepstreamConfig {
+export interface DeepstreamConfig {
   showLogo?: boolean
   libDir?: string | null
   logLevel?: number
@@ -197,7 +196,7 @@ interface DeepstreamConfig {
   shuffleListenProviders?: boolean
 }
 
-interface InternalDeepstreamConfig {
+export interface InternalDeepstreamConfig {
   showLogo: boolean
   libDir: string | null
   logLevel: number
@@ -238,7 +237,7 @@ interface InternalDeepstreamConfig {
   shuffleListenProviders: boolean
 }
 
-interface DeepstreamServices {
+export interface DeepstreamServices {
   registeredPlugins: string[]
   connectionEndpoints: ConnectionEndpoint[]
   cache: StoragePlugin
@@ -247,33 +246,23 @@ interface DeepstreamServices {
   authenticationHandler: AuthenticationHandler
   logger: Logger
   message: Cluster
-  uniqueRegistry: LockRegistry
+  uniqueRegistry: LockRegistry,
+  subscriptions: SubscriptionRegistryFactory
 }
 
-interface ValveConfig {
+export interface ValveConfig {
   cacheEvacuationInterval: number
   maxRuleIterations: number
   path: string
 }
 
-interface Provider {
+export interface Provider {
   socketWrapper: SocketWrapper
   pattern: string
   closeListener?: () => void
 }
 
-interface UserData {
+export interface UserData {
   clientData: any
   serverData: any
-}
-
-// tslint:disable-next-line:no-namespace
-declare namespace NodeJS  {
-  interface Global {
-    deepstreamCLI: any
-    deepstreamLibDir: string | null
-    deepstreamConfDir: string | null
-    require (path: string): any
-    cluster: any // Used by e2e tests
-  }
 }

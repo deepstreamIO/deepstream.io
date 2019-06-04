@@ -1,6 +1,7 @@
 import HttpAuthenticationRequest from './http-authentication-request'
 import { EventEmitter } from 'events'
 import * as utils from '../utils/utils'
+import { AuthenticationHandler, Logger } from '../types';
 
 /**
  * @extends {EventEmitter}

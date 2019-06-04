@@ -1,4 +1,5 @@
 import * as rulesMap from './rules-map'
+import { ValveSection, RuleType } from '../types';
 
 // TODO: any of these are fine inside a string or comment context...
 const FUNCTION_REGEXP = /([\w]+(?:['"`]\])?)\s*\(/g

@@ -6,8 +6,11 @@ import {
   RPC_ACTIONS,
   TOPIC,
   SubscriptionMessage,
-  LOG_LEVEL
+  LOG_LEVEL,
+  MONITORING_ACTIONS,
+  Message
 } from '../constants'
+import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SubscriptionListener } from '../types';
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
@@ -59,6 +62,9 @@ export default class SubscriptionRegistry {
         break
       case TOPIC.PRESENCE:
         this.actions = PRESENCE_ACTIONS
+        break
+      case TOPIC.MONITORING:
+        this.actions = MONITORING_ACTIONS
         break
     }
 

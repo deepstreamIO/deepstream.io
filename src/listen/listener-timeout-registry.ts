@@ -1,4 +1,5 @@
 import { EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
+import { SocketWrapper, Provider } from '../types';
 
 export default class ListenerTimeoutRegistry {
   private timeoutMap: any

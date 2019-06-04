@@ -4,6 +4,7 @@ import * as path from 'path'
 
 import { get as getDefaultOptions } from '../default-options'
 import { merge } from '../utils/utils'
+import { InternalDeepstreamConfig } from '../types';
 
 const configInitialiser = require('./config-initialiser')
 const fileUtils = require('./file-utils')

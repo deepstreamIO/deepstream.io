@@ -3,6 +3,7 @@ import { STATES } from '../../constants'
 import * as fileUtils from '../../config/file-utils'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import {createUWSSocketWrapper} from './socket-wrapper-factory'
+import { DeepstreamServices, SocketWrapper } from '../../types';
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -86,7 +87,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
         this.onReady()
       } else {
         this.logger.error(
-            STATES.SERVICE_INIT,
+            STATES[STATES.SERVICE_INIT],
             `Failed to listen to port ${this.getOption('port')}`
         )
       }

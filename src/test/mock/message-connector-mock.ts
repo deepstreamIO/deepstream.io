@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import { Cluster } from '../../types';
 const StateRegistry = require('../../cluster/state-registry').default
 
 export default class MessageConnectorMock extends EventEmitter implements Cluster {

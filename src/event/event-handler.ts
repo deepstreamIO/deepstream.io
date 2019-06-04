@@ -1,6 +1,7 @@
 import { EVENT_ACTIONS, TOPIC, EventMessage, ListenMessage } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
+import { Logger, InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types';
 
 export default class EventHandler {
   private subscriptionRegistry: SubscriptionRegistry
@@ -13,7 +14,7 @@ export default class EventHandler {
 
   constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry) {
     this.subscriptionRegistry =
-      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.EVENT, TOPIC.EVENT_SUBSCRIPTIONS)
+      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.EVENT, TOPIC.EVENT_SUBSCRIPTIONS)
     this.listenerRegistry =
       listenerRegistry || new ListenerRegistry(TOPIC.EVENT, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)

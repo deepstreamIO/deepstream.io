@@ -17,6 +17,7 @@ import EventHandler from './event/event-handler'
 import RpcHandler from './rpc/rpc-handler'
 import PresenceHandler from './presence/presence-handler'
 import RecordHandler from './record/record-handler'
+import MonitoringHandler from './monitoring/monitoring'
 
 import { get as getDefaultOptions } from './default-options'
 import * as configInitialiser from './config/config-initialiser'
@@ -26,6 +27,8 @@ import * as configValidator from './config/config-validator'
 import MessageConnector from './cluster/cluster-node'
 import LockRegistry from './cluster/lock-registry'
 import DependencyInitialiser from './utils/dependency-initialiser'
+import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
+import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types.js';
 
 /**
  * Sets the name of the process
@@ -47,6 +50,7 @@ export class Deepstream extends EventEmitter {
   private rpcHandler: RpcHandler
   private recordHandler: RecordHandler
   private presenceHandler: PresenceHandler
+  private monitoringHandler: MonitoringHandler
 
   private stateMachine: any
   private currentState: any
@@ -207,6 +211,7 @@ export class Deepstream extends EventEmitter {
  * Invoked once the logger is initialised. Initialises any built-in or custom Deepstream plugins.
  */
   protected pluginInit (): void {
+    this.services.subscriptions = new SubscriptionRegistryFactory(this.config, this.services)
     this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
     const infoLogger = (message) => this.services.logger.info(EVENT.INFO, message)
@@ -281,6 +286,12 @@ export class Deepstream extends EventEmitter {
     this.messageDistributor.registerForTopic(
       TOPIC.PRESENCE,
       this.presenceHandler.handle.bind(this.presenceHandler)
+    )
+
+    this.monitoringHandler = new MonitoringHandler(this.config, this.services)
+    this.messageDistributor.registerForTopic(
+      TOPIC.MONITORING,
+      this.monitoringHandler.handle.bind(this.monitoringHandler)
     )
 
     this.messageProcessor.onAuthenticatedMessage =

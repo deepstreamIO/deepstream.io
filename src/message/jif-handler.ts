@@ -6,6 +6,7 @@ import {
   RECORD_ACTIONS,
   RPC_ACTIONS,
   TOPIC,
+  Message,
 } from '../constants'
 
 import { isWriteAck, WRITE_ACK_TO_ACTION } from '../../binary-protocol/src/utils'
@@ -18,6 +19,7 @@ import {
   deepFreeze,
 } from '../utils/utils'
 import jifSchema from './jif-schema'
+import { Logger, JifMessage } from '../types';
 
 const ajv = new Ajv()
 

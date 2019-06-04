@@ -1,5 +1,6 @@
 import { getUid } from './utils/utils'
 import { LOG_LEVEL } from './constants'
+import { InternalDeepstreamConfig } from './types';
 
 export function get (): InternalDeepstreamConfig {
   return {
