@@ -127,7 +127,7 @@ const fetchReleases = function (type, name, callback) {
       return callback(error)
     }
     if (response.statusCode === 404) {
-      return callback(new Error('Not found, see available connectors on https://deepstreamhub.com/open-source/'))
+      return callback(new Error('Not found, see available connectors on //deepstream.io/install/'))
     }
     if (response.statusCode === 403) {
       // API rate limit

@@ -1,3 +1,10 @@
+## [4.0.0-rc.8] - 2019.04.28
+
+### Improvements
+
+- Publishing under the @deepstream org
+- Ready for official release, just waiting for the website and documentation to reflect it
+
 ## [4.0.0-rc.7] - 2019.04.07
 
 ### Improvements
