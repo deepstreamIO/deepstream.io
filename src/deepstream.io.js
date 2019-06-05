@@ -227,6 +227,12 @@ module.exports = class Deepstream extends EventEmitter {
       if (logger instanceof EventEmitter) {
         logger.on('error', this._onPluginError.bind(this, 'logger'))
       }
+
+      logger.debug(`deepstream V3 is in maintenance mode
+It's heavily recommended you try out V4 (@deepstream/server)
+You can see the changlogs here https://deepstream.io/releases/server/v4-0-0/
+It's currently in RC due to work required on website and binaries, however as far as
+functionality goes its on par + some with V3 and resolves many of the issues in V3)`)
       this._transition('logger-started')
     })
   }
