@@ -19,13 +19,14 @@ describe('it forwards authentication attempts as http post requests to a specifi
     server.close(done)
   })
 
-  it('creates the authentication handler', () => {
+  before (() => {
     const endpointUrl = `http://localhost:${port}`
 
     authenticationHandler = new AuthenticationHandler({
       endpointUrl,
       permittedStatusCodes: [200],
       requestTimeout: 60,
+      promoteToHeader: ['token']
     }, logger)
     expect(authenticationHandler.description).to.equal(`http webhook to ${endpointUrl}`)
   })
@@ -127,6 +128,22 @@ describe('it forwards authentication attempts as http post requests to a specifi
       expect(result).to.equal(false)
       expect(logger._log).to.have.been.calledWith(2, C.EVENT.AUTH_ERROR, 'http auth server error: "oh dear"')
       expect(data).to.equal('oh dear')
+      done()
+    })
+  })
+
+  it('promotes headers from body if provides', (done) => {
+    const connectionData = { connection: 'data' }
+    const authData = { token: 'a-token' }
+
+    server.once('request-received', () => {
+      server.respondWith(200, {})
+    })
+
+    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+      expect(result).to.equal(true)
+      expect(data).to.deep.equal({})
+      expect(server.getRequestHeader('token')).to.equal('a-token')
       done()
     })
   })

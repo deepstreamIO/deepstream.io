@@ -1,58 +1,88 @@
-import HttpAuthenticationRequest from './http-authentication-request'
+import { post } from 'needle'
 import { EventEmitter } from 'events'
 import * as utils from '../utils/utils'
+import { AuthenticationHandler, Logger } from '../types'
+import { EVENT } from '../constants';
 
-/**
- * @extends {EventEmitter}
- */
+interface HttpAuthenticationHandlerSettings {
+  // http(s) endpoint that will receive post requests
+  endpointUrl: string
+  // an array of http status codes that qualify as permitted
+  permittedStatusCodes: number[]
+  // time in milliseconds before the request times out if no reply is received
+  requestTimeout: number
+  // fields to copy from authData to header, useful for when endpoints authenticate using middleware
+  promoteToHeader: string[]
+}
+
 export default class HttpAuthenticationHandler extends EventEmitter implements AuthenticationHandler {
   public isReady: boolean
   public description: string
-  private settings: any
-  private logger: any
 
-  /**
-  * @param   {Object} settings
-  * @param   {String} settings.endpointUrl http(s) endpoint that will receive post requests
-  * @param   {Array}  settings.permittedStatusCodes an array of http status codes that qualify
-  *                                                 as permitted
-  * @param   {Number} settings.requestTimeout time in milliseconds before the request times out
-  *                                           if no reply is received
-  */
-  constructor (settings: { endpointUrl: string, permittedStatusCodes: number[], requestTimeout: number }, logger: Logger) {
+  constructor (private settings: HttpAuthenticationHandlerSettings, private logger: Logger) {
     super()
     this.isReady = true
     this.description = `http webhook to ${settings.endpointUrl}`
-    this.settings = settings
-    this.logger = logger
-    this._validateSettings()
+    this.validateSettings()
+    if (this.settings.promoteToHeader === undefined) {
+      this.settings.promoteToHeader = []
+    }
   }
 
-  /**
-  * Main interface. Authenticates incoming connections
-  *
-  * @param   {Object}   connectionData
-  * @param   {Object}   authData
-  * @param   {Function} callback
-  *
-  * @public
-  * @implements {PermissionHandler.isValidUser}
-  * @returns {void}
-  */
   public isValidUser (connectionData, authData, callback): void {
-    // tslint:disable-next-line
-    new HttpAuthenticationRequest(
-      { connectionData, authData },
-      this.settings,
-      this.logger,
-      callback,
-    )
+      const options = {
+        read_timeout: this.settings.requestTimeout,
+        open_timeout: this.settings.requestTimeout,
+        timeout: this.settings.requestTimeout,
+        follow_max: 2,
+        json: true,
+        headers: {}
+      }
+
+      if (this.settings.promoteToHeader.length > 0) {
+        options.headers = this.settings.promoteToHeader.reduce(
+          (result, property) => {
+            if (authData[property]) {
+              result[property] = authData[property]
+            }
+            return result
+          },
+          {}
+        )
+      }
+
+      post(this.settings.endpointUrl, { connectionData, authData }, options, (error, response) => {
+        if (error) {
+          this.logger.warn(EVENT.AUTH_ERROR, `http auth error: ${error}`)
+          callback(false, null)
+          return
+        }
+
+        if (!response.statusCode) {
+          this.logger.warn(EVENT.AUTH_ERROR, 'http auth server error: missing status code!')
+          callback(false, null)
+          return
+        }
+
+        if (response.statusCode >= 500 && response.statusCode < 600) {
+          this.logger.warn(EVENT.AUTH_ERROR, `http auth server error: ${JSON.stringify(response.body)}`)
+        }
+
+        if (this.settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {
+          callback(false, response.body || null)
+          return
+        }
+
+        if (response.body && typeof response.body === 'string') {
+          callback(true, { username: response.body })
+          return
+        }
+
+        callback(true, response.body || null)
+      })
   }
 
-  /**
-  * Validate the user provided settings
-  */
-  private _validateSettings (): void {
+  private validateSettings (): void {
     utils.validateMap(this.settings, true, {
       endpointUrl: 'url',
       permittedStatusCodes: 'array',

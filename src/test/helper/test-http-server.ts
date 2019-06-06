@@ -3,30 +3,25 @@ import { EventEmitter } from 'events'
 
 export default class TestHttpServer extends EventEmitter {
   public server: any
-  public lastRequestData: any
-  public hasReceivedRequest: any
-  public lastRequestHeaders: any
-  public lastRequestMethod: any
-  private port: any
-  private callback: any
-  private doLog: any
-  private response: any
+  public lastRequestData: any = null
+  public hasReceivedRequest: boolean = false
+  public lastRequestHeaders: any = null
+  public lastRequestMethod: any = null
+  private response: any = null
+  private request: any = null
 
-  constructor (port, callback, doLog = false) {
+  constructor (private port: number, private callback: Function, private doLog: boolean = false) {
     super()
     this.server = http.createServer(this._onRequest.bind(this))
-    this.lastRequestData = null
-    this.hasReceivedRequest = false
-    this.lastRequestHeaders = null
-    this.port = port
-    this.callback = callback
-    this.doLog = doLog
-    this.response = null
     this.server.listen(port, this._onListen.bind(this))
   }
 
   public static getRandomPort () {
     return 1000 + Math.floor(Math.random() * 9000)
+  }
+
+  public getRequestHeader (key: string) {
+    return this.request.headers[key]
   }
 
   public reset () {
@@ -64,6 +59,7 @@ export default class TestHttpServer extends EventEmitter {
     request.setEncoding('utf8')
     request.on('data', this._addChunk.bind(this, request))
     request.on('end', this._onRequestComplete.bind(this, request))
+    this.request = request
     this.response = response
   }
 
