@@ -1,3 +1,10 @@
+## [4.0.0-rc.9] - 2019.06.06
+  
+### Feat
+
+- Adding the `promoteToHeader` flag for http-authentication-endpoint to copy data from 
+the auth body into headers for the webhook
+
 ## [4.0.0-rc.8] - 2019.04.28
 
 ### Improvements

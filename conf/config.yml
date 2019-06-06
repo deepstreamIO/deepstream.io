@@ -145,6 +145,9 @@ auth:
   #   permittedStatusCodes: [ 200 ]
   #   # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
   #   requestTimeout: 2000
+  #   # promote the following items from the login auth data into headers
+  #   promoteToHeader:
+  #    - token
 
 # Permissioning
 permission:
