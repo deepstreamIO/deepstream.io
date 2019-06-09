@@ -7,7 +7,7 @@ import * as configValidator from './config-validator'
 import RuleApplication from './rule-application'
 import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
-import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, Logger } from '../types';
+import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, Logger } from '../types'
 
 const UNDEFINED = 'undefined'
 

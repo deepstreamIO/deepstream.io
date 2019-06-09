@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { StoragePlugin, StorageWriteCallback, StorageReadCallback } from '../types';
+import { StoragePlugin, StorageWriteCallback, StorageReadCallback } from '../types'
 
 export default class NoopStorage extends EventEmitter implements StoragePlugin {
   public description = 'noop storage'

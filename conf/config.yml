@@ -169,3 +169,6 @@ storageRetrievalTimeout: 2000
 dependencyInitialisationTimeout: 2000
 # The amount of time to wait for a provider to acknowledge or reject a listen request
 listenResponseTimeout: 500
+# Kill the process if deepstream encounters an error. This is useful for situations where connection to a cache
+# or storage is lost to not get into an odd state. Currently this is very ungraceful and will exit instantly.
+exitOnPluginError: false

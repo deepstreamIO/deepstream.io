@@ -1,6 +1,6 @@
 import { getUid } from './utils/utils'
 import { LOG_LEVEL } from './constants'
-import { InternalDeepstreamConfig } from './types';
+import { InternalDeepstreamConfig } from './types'
 
 export function get (): InternalDeepstreamConfig {
   return {
@@ -144,6 +144,7 @@ export function get (): InternalDeepstreamConfig {
     listenResponseTimeout: 500,
     lockTimeout: 1000,
     lockRequestTimeout: 1000,
-    broadcastTimeout: 0
+    broadcastTimeout: 0,
+    exitOnPluginError: false
   }
 }

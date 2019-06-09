@@ -1,5 +1,5 @@
 import { RPC_ACTIONS, RPCMessage } from '../constants'
-import { SimpleSocketWrapper } from '../types';
+import { SimpleSocketWrapper } from '../types'
 
 /**
  * This class exposes an interface that mimicks the behaviour

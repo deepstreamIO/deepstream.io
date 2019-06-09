@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import {JSONValue} from '../../binary-protocol/src/message-constants'
-import { StoragePlugin, StorageWriteCallback, StorageReadCallback } from '../types';
+import { StoragePlugin, StorageWriteCallback, StorageReadCallback } from '../types'
 
 export default class LocalCache extends EventEmitter implements StoragePlugin {
   public description = 'local cache'

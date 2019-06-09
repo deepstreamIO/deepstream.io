@@ -3,7 +3,7 @@ import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
 import RpcProxy from './rpc-proxy'
-import { SimpleSocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types';
+import { SimpleSocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,

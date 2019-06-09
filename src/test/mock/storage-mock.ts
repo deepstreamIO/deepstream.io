@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { StoragePlugin } from '../../types';
+import { StoragePlugin } from '../../types'
 
 export default class StorageMock extends EventEmitter implements StoragePlugin  {
   public values: any

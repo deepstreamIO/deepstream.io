@@ -1,6 +1,6 @@
 import { post } from 'needle'
 import { EVENT } from '../constants'
-import { Logger } from '../types';
+import { Logger } from '../types'
 
 /**
  * This class represents a single request from deepstream to a http

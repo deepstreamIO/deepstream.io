@@ -1,7 +1,7 @@
 import { post } from 'needle'
 import { EventEmitter } from 'events'
 import * as utils from '../utils/utils'
-import { EVENT } from '../constants';
+import { EVENT } from '../constants'
 import { AuthenticationHandler, Logger } from '../types'
 
 interface HttpAuthenticationHandlerSettings {

@@ -3,7 +3,7 @@ import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
-import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices } from '../types';
+import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices } from '../types'
 
 interface Step {
   message: RecordWriteMessage

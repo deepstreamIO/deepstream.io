@@ -7,7 +7,7 @@ const recordRequest = require('./record-request').recordRequest
 
 import { Promise as BBPromise } from 'bluebird'
 import { getTestMocks } from '../test/helper/test-mocks'
-import { RECORD_ACTIONS } from '../constants';
+import { RECORD_ACTIONS } from '../constants'
 const testHelper = require('../test/helper/test-helper')
 
 describe('record request', () => {

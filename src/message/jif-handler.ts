@@ -19,7 +19,7 @@ import {
   deepFreeze,
 } from '../utils/utils'
 import jifSchema from './jif-schema'
-import { Logger, JifMessage } from '../types';
+import { Logger, JifMessage } from '../types'
 
 const ajv = new Ajv()
 

@@ -40,8 +40,8 @@ import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
 import { EventEmitter } from 'events'
-import { InternalDeepstreamConfig, DeepstreamServices } from '../../types';
-import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory';
+import { InternalDeepstreamConfig, DeepstreamServices } from '../../types'
+import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory'
 
 export const getDeepstreamOptions = (serverName?: string): { config: InternalDeepstreamConfig, services: DeepstreamServices } => {
   const config: InternalDeepstreamConfig = { ...get(), ...{

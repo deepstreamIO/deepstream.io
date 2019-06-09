@@ -1,4 +1,4 @@
-import { InternalDeepstreamConfig, DeepstreamServices } from "../types";
+import { InternalDeepstreamConfig, DeepstreamServices } from '../types'
 
 /**
  * The unique registry is responsible for maintaing a single source of truth

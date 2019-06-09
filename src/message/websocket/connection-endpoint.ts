@@ -9,7 +9,7 @@ import {
   TOPIC,
   Message
 } from '../../../binary-protocol/src/message-constants'
-import { SocketConnectionEndpoint, SocketWrapper, AuthenticationHandler, Logger, DeepstreamServices } from '../../types';
+import { SocketConnectionEndpoint, SocketWrapper, AuthenticationHandler, Logger, DeepstreamServices } from '../../types'
 
 const OPEN = 'OPEN'
 

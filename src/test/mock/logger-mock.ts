@@ -1,7 +1,7 @@
 import {spy} from 'sinon'
 import { EventEmitter } from 'events'
-import { Logger } from '../../types';
-import { LOG_LEVEL } from '../../constants';
+import { Logger } from '../../types'
+import { LOG_LEVEL } from '../../constants'
 
 export default class LoggerMock extends EventEmitter implements Logger {
   public isReady: boolean

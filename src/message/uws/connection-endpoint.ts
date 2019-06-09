@@ -3,7 +3,7 @@ import { STATES } from '../../constants'
 import * as fileUtils from '../../config/file-utils'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import {createUWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper } from '../../types';
+import { DeepstreamServices, SocketWrapper } from '../../types'
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives

@@ -4,7 +4,7 @@ type onCompleteCallback = (recordName: string, version: number, data: any, socke
 type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper, message: Message) => void
 
 import { isExcluded } from '../utils/utils'
-import { SocketWrapper, DeepstreamServices, InternalDeepstreamConfig } from '../types';
+import { SocketWrapper, DeepstreamServices, InternalDeepstreamConfig } from '../types'
 
 /**
  * Sends an error to the socketWrapper that requested the

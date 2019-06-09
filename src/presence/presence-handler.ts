@@ -1,7 +1,7 @@
 import StateRegistry from '../cluster/state-registry'
 import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage, Message } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
-import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types';
+import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 const EVERYONE = '%_EVERYONE_%'
 

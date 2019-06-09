@@ -28,7 +28,7 @@ import MessageConnector from './cluster/cluster-node'
 import LockRegistry from './cluster/lock-registry'
 import DependencyInitialiser from './utils/dependency-initialiser'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
-import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types.js';
+import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types.js'
 
 /**
  * Sets the name of the process
@@ -448,5 +448,8 @@ export class Deepstream extends EventEmitter {
   private onPluginError (pluginName: string, error: Error): void {
     const msg = `Error from ${pluginName} plugin: ${error.toString()}`
     this.services.logger.error(EVENT.PLUGIN_ERROR, msg)
+    if (this.config.exitOnPluginError) {
+      process.exit(1)
+    }
   }
 }

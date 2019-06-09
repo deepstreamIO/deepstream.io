@@ -1,6 +1,6 @@
-import { EventEmitter } from "events";
-import { TOPIC, EVENT, LOG_LEVEL } from "./constants";
-import { SubscriptionRegistryFactory } from "./utils/SubscriptionRegistryFactory";
+import { EventEmitter } from 'events'
+import { TOPIC, EVENT, LOG_LEVEL } from './constants'
+import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 
 export type RuleType = string
 export type ValveSection = string
@@ -235,6 +235,7 @@ export interface InternalDeepstreamConfig {
   lockRequestTimeout: number
   broadcastTimeout: number
   shuffleListenProviders: boolean
+  exitOnPluginError: boolean
 }
 
 export interface DeepstreamServices {

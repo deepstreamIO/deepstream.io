@@ -1,6 +1,6 @@
 import { RECORD_ACTIONS, TOPIC, RecordMessage, Message } from '../constants'
 import { isExcluded } from '../utils/utils'
-import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types';
+import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 export default class RecordDeletion {
   private metaData: any

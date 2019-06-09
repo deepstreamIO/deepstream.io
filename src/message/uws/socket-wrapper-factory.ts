@@ -3,7 +3,7 @@ import * as binaryMessageBuilder from '../../../binary-protocol/src/message-buil
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
 import { combineMultipleMessages } from '../../../binary-protocol/src/message-builder'
-import { SocketWrapper, Logger, SocketConnectionEndpoint, StatefulSocketWrapper } from '../../types';
+import { SocketWrapper, Logger, SocketConnectionEndpoint, StatefulSocketWrapper } from '../../types'
 
 /**
  * This class wraps around a websocket

@@ -1,7 +1,7 @@
 import { EVENT_ACTIONS, TOPIC, EventMessage, ListenMessage } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
-import { Logger, InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types';
+import { Logger, InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 export default class EventHandler {
   private subscriptionRegistry: SubscriptionRegistry

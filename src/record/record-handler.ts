@@ -14,7 +14,7 @@ import { recordRequestBinding } from './record-request'
 import RecordTransition from './record-transition'
 import { isExcluded } from '../utils/utils'
 import { EVENT } from '../../binary-protocol/src/message-constants'
-import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types';
+import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,

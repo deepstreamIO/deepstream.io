@@ -10,7 +10,7 @@ import {
   MONITORING_ACTIONS,
   Message
 } from '../constants'
-import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SubscriptionListener } from '../types';
+import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SubscriptionListener } from '../types'
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS

@@ -1,6 +1,6 @@
 import { TOPIC, Message } from '../constants'
 import StateRegistry from './state-registry'
-import { InternalDeepstreamConfig, DeepstreamServices, Cluster } from '../types';
+import { InternalDeepstreamConfig, DeepstreamServices, Cluster } from '../types'
 
 export default class ClusterNode implements Cluster {
   public stateRegistries = new Map<TOPIC, StateRegistry>()

@@ -3,7 +3,7 @@ import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../c
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
 import TimeoutRegistry from './listener-timeout-registry'
-import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, Cluster } from '../types';
+import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, Cluster } from '../types'
 
 export default class ListenerRegistry implements SubscriptionListener {
   private metaData: any

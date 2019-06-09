@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { EVENT, LOG_LEVEL } from '../constants'
 
 import chalk from 'chalk'
-import { Logger } from '../types';
+import { Logger } from '../types'
 
 const EOL = require('os').EOL
 

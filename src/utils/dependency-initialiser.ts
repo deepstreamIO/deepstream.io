@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import { EVENT } from '../constants'
 import { Deepstream } from '../deepstream.io'
-import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamPlugin } from '../types';
+import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamPlugin } from '../types'
 
 export default class DependencyInitialiser extends EventEmitter {
   public isReady: boolean

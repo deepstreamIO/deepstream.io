@@ -12,7 +12,7 @@ import ConfigPermissionHandler from '../permission/config-permission-handler'
 import OpenPermissionHandler from '../permission/open-permission-handler'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { InternalDeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, StoragePlugin, StorageReadCallback, StorageWriteCallback, AuthenticationHandler, PermissionHandler } from '../types';
+import { InternalDeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, StoragePlugin, StorageReadCallback, StorageWriteCallback, AuthenticationHandler, PermissionHandler } from '../types'
 
 let commandLineArguments
 
@@ -100,11 +100,11 @@ function handleLogger (config: InternalDeepstreamConfig): Logger {
   if (commandLineArguments.colors !== undefined) {
     configOptions.colors = commandLineArguments.colors
   }
-  let Logger
+  let LoggerClass
   if (config.logger.type === 'default') {
-    Logger = DefaultLogger
+    LoggerClass = DefaultLogger
   } else {
-    Logger = resolvePluginClass(config.logger, 'logger')
+    LoggerClass = resolvePluginClass(config.logger, 'logger')
   }
 
   if (configOptions instanceof Array) {
@@ -118,7 +118,7 @@ function handleLogger (config: InternalDeepstreamConfig): Logger {
       }
     }
   }
-  const logger = new Logger(configOptions)
+  const logger = new LoggerClass(configOptions)
   if (logger.log) {
     logger.debug = logger.debug || logger.log.bind(logger, LOG_LEVEL.DEBUG)
     logger.info = logger.info || logger.log.bind(logger, LOG_LEVEL.INFO)
@@ -256,7 +256,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
  * CLI arguments will be considered.
  */
 function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): AuthenticationHandler {
-  let AuthenticationHandler
+  let AuthenticationHandlerClass
 
   const authStrategies = {
     none: OpenAuthenticationHandler,
@@ -274,12 +274,12 @@ function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): 
   }
 
   if (config.auth.name || config.auth.path) {
-    AuthenticationHandler = resolvePluginClass(config.auth, 'authentication')
-    if (!AuthenticationHandler) {
+    AuthenticationHandlerClass = resolvePluginClass(config.auth, 'authentication')
+    if (!AuthenticationHandlerClass) {
       throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
     }
   } else if (config.auth.type && authStrategies[config.auth.type]) {
-    AuthenticationHandler = authStrategies[config.auth.type]
+    AuthenticationHandlerClass = authStrategies[config.auth.type]
   } else {
     throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
@@ -288,7 +288,7 @@ function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): 
     config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
   }
 
-  return new AuthenticationHandler(config.auth.options, logger)
+  return new AuthenticationHandlerClass(config.auth.options, logger)
 }
 
 /**
@@ -297,7 +297,7 @@ function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): 
  * CLI arguments will be considered.
  */
 function handlePermissionStrategy (config: InternalDeepstreamConfig, services: any): PermissionHandler {
-  let PermissionHandler
+  let PermissionHandlerClass
 
   const permissionStrategies = {
     config: ConfigPermissionHandler,
@@ -314,12 +314,12 @@ function handlePermissionStrategy (config: InternalDeepstreamConfig, services: a
   }
 
   if (config.permission.name || config.permission.path) {
-    PermissionHandler = resolvePluginClass(config.permission, 'permission')
-    if (!PermissionHandler) {
+    PermissionHandlerClass = resolvePluginClass(config.permission, 'permission')
+    if (!PermissionHandlerClass) {
       throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
     }
   } else if (config.permission.type && permissionStrategies[config.permission.type]) {
-    PermissionHandler = permissionStrategies[config.permission.type]
+    PermissionHandlerClass = permissionStrategies[config.permission.type]
   } else {
     throw new Error(`Unknown permission type ${config.permission.type}`)
   }
@@ -329,9 +329,9 @@ function handlePermissionStrategy (config: InternalDeepstreamConfig, services: a
   }
 
   if (config.permission.type === 'config') {
-    return new PermissionHandler(config, services)
+    return new PermissionHandlerClass(config, services)
   } else {
-    return new PermissionHandler(config.permission.options, services)
+    return new PermissionHandlerClass(config.permission.options, services)
   }
 
 }

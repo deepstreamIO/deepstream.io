@@ -5,7 +5,7 @@ import * as HTTPStatus from 'http-status'
 import { EventEmitter } from 'events'
 import MessageDistributor from '../message-distributor'
 import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS, Message } from '../../constants'
-import { ConnectionEndpoint, Logger, AuthenticationHandler, PermissionHandler, DeepstreamConfig, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult } from '../../types';
+import { ConnectionEndpoint, Logger, AuthenticationHandler, PermissionHandler, DeepstreamConfig, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult } from '../../types'
 
 export default class HTTPConnectionEndpoint extends EventEmitter implements ConnectionEndpoint {
 
