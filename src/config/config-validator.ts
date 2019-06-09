@@ -165,7 +165,8 @@ const connEndpointsOpts = {
               healthCheckPath: { type: 'string', minLength: 1 },
 
               allowAllOrigins: { type: 'boolean' },
-              origins: { type: 'array', items: { type: 'string', format: 'uri' } }
+              origins: { type: 'array', items: { type: 'string', format: 'uri' } },
+              maxMessageSize: { type: 'integer', minimum: 0 }
             }
           }
         }

@@ -81,6 +81,8 @@ connectionEndpoints:
       # a list of allowed origins
       origins:
         - 'https://example.com'
+      # maximum allowed size of an individual message in bytes
+      maxMessageSize: 1024
 
 # Logger Configuration
 logger:

@@ -124,6 +124,17 @@ export default class ListenerTestUtils {
     })
   }
 
+  public providerWillGetListenTimeout (provider, pattern, subscription) {
+    providers[provider].socketWrapperMock
+      .expects('sendMessage')
+      .once()
+      .withExactArgs({
+        topic,
+        action: this.actions.LISTEN_RESPONSE_TIMEOUT,
+        subscription
+      })
+  }
+
   public providerWillGetSubscriptionFound (provider, pattern, subscription) {
     providers[provider].socketWrapperMock
       .expects('sendMessage')

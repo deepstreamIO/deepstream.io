@@ -28,10 +28,8 @@ export default class Server extends EventEmitter {
   private headers: string[] = ['X-Requested-With', 'X-HTTP-Method-Override', 'Content-Type', 'Accept']
   private headersLower: string[] = this.headers.map((header) => header.toLowerCase())
   private headersStr: string = this.headers.join(', ')
-  private jsonBodyParser = bodyParser.json({
-    inflate: true,
-    limit: '1mb' // TODO: make this configurable
-  })
+  private jsonBodyParser: any
+
   private httpServer: any
   private sslKey: string
   private sslCert: string
@@ -48,7 +46,12 @@ export default class Server extends EventEmitter {
     checkConfigOption(config, 'getPath', 'string')
     checkConfigOption(config, 'healthCheckPath', 'string')
     checkConfigOption(config, 'allowAllOrigins', 'boolean')
-    // checkConfigOption(config, 'maxRequestPayload', 'number')
+    checkConfigOption(config, 'maxMessageSize', 'number')
+
+    this.jsonBodyParser = bodyParser.json({
+      inflate: true,
+      limit: `${config.maxMessageSize / 1024}mb`
+    })
 
     if (config.allowAllOrigins === false) {
       checkConfigOption(config, 'origins', 'string')

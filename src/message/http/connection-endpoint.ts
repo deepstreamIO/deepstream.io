@@ -69,7 +69,8 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       postPath: this.options.postPath,
       getPath: this.options.getPath,
       allowAllOrigins: this.options.allowAllOrigins,
-      enableAuthEndpoint: this.options.enableAuthEndpoint
+      enableAuthEndpoint: this.options.enableAuthEndpoint,
+      maxMessageSize: this.options.maxMessageSize
     }
     this.server = new Server(serverConfig, this.logger)
 

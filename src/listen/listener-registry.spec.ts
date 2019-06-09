@@ -7,7 +7,7 @@ import 'mocha'
 
 let tu
 
-describe('listener-registry', () => {
+describe.skip('listener-registry', () => {
 /*
 const ListenerRegistry = require('../../src/listen/listener-registry')
 const testHelper = require('../test-helper/test-helper')

@@ -79,7 +79,8 @@ export function get (): InternalDeepstreamConfig {
           healthCheckPath: '/health-check',
           allowAllOrigins: true,
           origins: [],
-          headers: []
+          headers: [],
+          maxMessageSize: 1024
         }
       }
     },

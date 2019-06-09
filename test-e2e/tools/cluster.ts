@@ -98,7 +98,8 @@ export class Cluster extends EventEmitter {
             postPath: '/',
             getPath: '/',
             requestTimeout: 80,
-            headers: []
+            headers: [],
+            maxMessageSize: 1024
           }
         }
       },

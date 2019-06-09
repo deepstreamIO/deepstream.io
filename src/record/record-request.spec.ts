@@ -169,7 +169,7 @@ describe('record request', () => {
         )
 
       expect(errorCallback).to.have.been.calledWith(
-        RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR],
+        RECORD_ACTIONS.RECORD_LOAD_ERROR,
         'error while loading cacheError from cache:storageError',
         'cacheError',
         client.socketWrapper
@@ -201,7 +201,7 @@ describe('record request', () => {
         )
 
       expect(errorCallback).to.have.been.calledWith(
-        RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR],
+        RECORD_ACTIONS.RECORD_LOAD_ERROR,
         'error while loading storageError from storage:storageError',
         'storageError',
         client.socketWrapper
