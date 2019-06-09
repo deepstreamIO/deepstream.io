@@ -3,6 +3,7 @@ import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
 import RpcProxy from './rpc-proxy'
+import { SimpleSocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types';
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,
@@ -19,7 +20,7 @@ export default class RpcHandler {
   */
   constructor (private config: InternalDeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, private metaData?: any) {
      this.subscriptionRegistry =
-      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.RPC, TOPIC.RPC_SUBSCRIPTIONS)
+      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RPC, TOPIC.RPC_SUBSCRIPTIONS)
 
      this.subscriptionRegistry.setAction('NOT_SUBSCRIBED', RPC_ACTIONS.NOT_PROVIDED)
      this.subscriptionRegistry.setAction('MULTIPLE_SUBSCRIPTIONS', RPC_ACTIONS.MULTIPLE_PROVIDERS)
@@ -239,7 +240,7 @@ export default class RpcHandler {
     const rpcData =  this.rpcs.get(msg.correlationId)
     if (!rpcData) {
       this.services.logger.warn(
-        RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+        RPC_ACTIONS[RPC_ACTIONS.INVALID_RPC_CORRELATION_ID],
         `Message bus response for RPC that may have been destroyed: ${JSON.stringify(msg)}`,
         this.metaData,
       )

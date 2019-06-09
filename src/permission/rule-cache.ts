@@ -1,3 +1,5 @@
+import { ValveConfig } from "../types";
+
 interface CachedRule {
   rule: string,
   isUsed: boolean,

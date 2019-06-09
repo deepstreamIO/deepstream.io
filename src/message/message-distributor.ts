@@ -1,4 +1,5 @@
 import {PARSER_ACTIONS, TOPIC} from '../constants'
+import { Message, SocketWrapper } from '../types';
 
 /**
  * The MessageDistributor routes valid and permissioned messages to

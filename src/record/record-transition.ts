@@ -1,8 +1,9 @@
-import { RECORD_ACTIONS, TOPIC, RecordWriteMessage } from '../constants'
+import { RECORD_ACTIONS, TOPIC, RecordWriteMessage, Message } from '../constants'
 import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
+import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices } from '../types';
 
 interface Step {
   message: RecordWriteMessage
@@ -90,7 +91,7 @@ export default class RecordTransition {
       })
 
       this.services.logger.warn(
-        RECORD_ACTIONS.VERSION_EXISTS,
+        RECORD_ACTIONS[RECORD_ACTIONS.VERSION_EXISTS],
         `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.version}`,
         this.metaData,
       )

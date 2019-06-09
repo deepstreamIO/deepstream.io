@@ -6,8 +6,10 @@ import {
   EVENT,
   PARSER_ACTIONS,
   ParseResult,
-  TOPIC
+  TOPIC,
+  Message
 } from '../../../binary-protocol/src/message-constants'
+import { SocketConnectionEndpoint, SocketWrapper, AuthenticationHandler, Logger, DeepstreamServices } from '../../types';
 
 const OPEN = 'OPEN'
 
@@ -260,8 +262,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
         topic: TOPIC.AUTH,
         action: AUTH_ACTIONS.INVALID_MESSAGE,
         originalTopic: msg.topic,
-        originalAction: msg.action,
-        data: rawMessage
+        originalAction: msg.action
       })
       return
     }

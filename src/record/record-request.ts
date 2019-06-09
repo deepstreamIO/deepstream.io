@@ -4,6 +4,7 @@ type onCompleteCallback = (recordName: string, version: number, data: any, socke
 type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper, message: Message) => void
 
 import { isExcluded } from '../utils/utils'
+import { SocketWrapper, DeepstreamServices, InternalDeepstreamConfig } from '../types';
 
 /**
  * Sends an error to the socketWrapper that requested the
@@ -13,7 +14,7 @@ function sendError (
   event: RECORD_ACTIONS, errorMessage: string, recordName: string, socketWrapper: SocketWrapper | null,
   onError: onErrorCallback, services: DeepstreamServices, context: any, metaData?: any, message?: Message,
 ): void {
-  services.logger.error(event, errorMessage, metaData)
+  services.logger.error(RECORD_ACTIONS[event], errorMessage, metaData)
   if (message) {
     onError.call(context, event, errorMessage, recordName, socketWrapper, message)
   } else {

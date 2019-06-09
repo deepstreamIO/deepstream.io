@@ -1,6 +1,7 @@
 import {spy} from 'sinon'
-import * as C from '../../constants'
 import { EventEmitter } from 'events'
+import { Logger } from '../../types';
+import { LOG_LEVEL } from '../../constants';
 
 export default class LoggerMock extends EventEmitter implements Logger {
   public isReady: boolean
@@ -28,23 +29,23 @@ export default class LoggerMock extends EventEmitter implements Logger {
   }
 
   public warn (event, message) {
-    this.log(C.LOG_LEVEL.WARN, event, message)
-    this._log(C.LOG_LEVEL.WARN, event, message)
+    this.log(LOG_LEVEL.WARN, event, message)
+    this._log(LOG_LEVEL.WARN, event, message)
   }
 
   public debug (event, message) {
-    this.log(C.LOG_LEVEL.DEBUG, event, message)
-    this._log(C.LOG_LEVEL.DEBUG, event, message)
+    this.log(LOG_LEVEL.DEBUG, event, message)
+    this._log(LOG_LEVEL.DEBUG, event, message)
   }
 
   public info (event, message) {
-    this.log(C.LOG_LEVEL.INFO, event, message)
-    this._log(C.LOG_LEVEL.INFO, event, message)
+    this.log(LOG_LEVEL.INFO, event, message)
+    this._log(LOG_LEVEL.INFO, event, message)
   }
 
   public error (event, message) {
-    this.log(C.LOG_LEVEL.ERROR, event, message)
-    this._log(C.LOG_LEVEL.ERROR, event, message)
+    this.log(LOG_LEVEL.ERROR, event, message)
+    this._log(LOG_LEVEL.ERROR, event, message)
   }
 
   public log (level, event, message) {

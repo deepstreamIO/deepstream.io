@@ -11,6 +11,7 @@ import RecordHandler from '../record/record-handler'
 import { recordRequest } from '../record/record-request'
 import { EOL } from 'os'
 import {RecordData} from '../../binary-protocol/src/message-constants'
+import { Message, ValveConfig, Logger, SocketWrapper, InternalDeepstreamConfig, DeepstreamServices } from '../types';
 
 const OPEN = 'open'
 const LOADING = 'loading'

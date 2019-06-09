@@ -7,6 +7,7 @@ const recordRequest = require('./record-request').recordRequest
 
 import { Promise as BBPromise } from 'bluebird'
 import { getTestMocks } from '../test/helper/test-mocks'
+import { RECORD_ACTIONS } from '../constants';
 const testHelper = require('../test/helper/test-helper')
 
 describe('record request', () => {
@@ -168,7 +169,7 @@ describe('record request', () => {
         )
 
       expect(errorCallback).to.have.been.calledWith(
-        C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
+        RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR],
         'error while loading cacheError from cache:storageError',
         'cacheError',
         client.socketWrapper
@@ -176,7 +177,7 @@ describe('record request', () => {
       expect(completeCallback).to.have.callCount(0)
 
       expect(services.logger._log).to.have.been.calledWith(
-        3, C.RECORD_ACTIONS.RECORD_LOAD_ERROR, 'error while loading cacheError from cache:storageError'
+        3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading cacheError from cache:storageError'
       )
       // expect(client.socketWrapper.socket.lastSendMessage).to.equal(
       //   msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'
@@ -200,14 +201,14 @@ describe('record request', () => {
         )
 
       expect(errorCallback).to.have.been.calledWith(
-        C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
+        RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR],
         'error while loading storageError from storage:storageError',
         'storageError',
         client.socketWrapper
         )
       expect(completeCallback).to.have.callCount(0)
 
-      expect(services.logger._log).to.have.been.calledWith(3, C.RECORD_ACTIONS.RECORD_LOAD_ERROR, 'error while loading storageError from storage:storageError')
+      expect(services.logger._log).to.have.been.calledWith(3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading storageError from storage:storageError')
       // expect(socketWrapper.socket.lastSendMessage).to.equal(msg('R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+'))
     })
 

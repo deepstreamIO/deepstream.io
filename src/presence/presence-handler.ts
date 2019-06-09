@@ -1,6 +1,7 @@
 import StateRegistry from '../cluster/state-registry'
-import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage } from '../constants'
+import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage, Message } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
+import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types';
 
 const EVERYONE = '%_EVERYONE_%'
 
@@ -16,7 +17,7 @@ export default class PresenceHandler {
 
   constructor (config: InternalDeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, private metaData?: any) {
     this.subscriptionRegistry =
-      subscriptionRegistry || new SubscriptionRegistry(config, services, TOPIC.PRESENCE, TOPIC.PRESENCE_SUBSCRIPTIONS)
+      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.PRESENCE, TOPIC.PRESENCE_SUBSCRIPTIONS)
 
     this.connectedClients =
       stateRegistry || this.services.message.getStateRegistry(TOPIC.ONLINE_USERS)

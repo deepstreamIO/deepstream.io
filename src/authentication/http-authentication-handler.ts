@@ -1,8 +1,8 @@
 import { post } from 'needle'
 import { EventEmitter } from 'events'
 import * as utils from '../utils/utils'
-import { AuthenticationHandler, Logger } from '../types'
 import { EVENT } from '../constants';
+import { AuthenticationHandler, Logger } from '../types'
 
 interface HttpAuthenticationHandlerSettings {
   // http(s) endpoint that will receive post requests

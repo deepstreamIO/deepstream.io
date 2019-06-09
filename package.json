@@ -58,7 +58,7 @@
     "@types/node": "^11.13.0",
     "@types/sinon": "^7.0.11",
     "@types/sinon-chai": "^3.2.2",
-    "deepstream.io-client-js": "next",
+    "@deepstream/client": "latest",
     "async": "^2.6.2",
     "chai": "^4.2.0",
     "coveralls": "^3.0.3",

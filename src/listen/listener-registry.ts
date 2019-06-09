@@ -3,6 +3,7 @@ import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../c
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
 import TimeoutRegistry from './listener-timeout-registry'
+import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, Cluster } from '../types';
 
 export default class ListenerRegistry implements SubscriptionListener {
   private metaData: any
@@ -52,6 +53,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.clientRegistry = clientRegistry
     this.uniqueLockName = `${topic}_LISTEN_LOCK`
 
+    this.triggerNextProvider = this.triggerNextProvider.bind(this)
     this.message = this.services.message
 
     this.patterns = {}
@@ -73,17 +75,13 @@ export default class ListenerRegistry implements SubscriptionListener {
    */
   protected setupProviderRegistry (): void {
     if (this.topic === TOPIC.RECORD) {
-      this.providerRegistry = new SubscriptionRegistry(
-        this.config,
-        this.services,
-        this.topic,
+      this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
+        TOPIC.RECORD_LISTEN_PATTERNS,
         TOPIC.RECORD_LISTEN_PATTERNS,
       )
     } else {
-      this.providerRegistry = new SubscriptionRegistry(
-        this.config,
-        this.services,
-        this.topic,
+      this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
+        TOPIC.EVENT_LISTEN_PATTERNS,
         TOPIC.EVENT_LISTEN_PATTERNS,
       )
     }
@@ -480,7 +478,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.listenerTimeoutRegistry.addTimeout(
       subscriptionName,
       provider,
-      this.triggerNextProvider.bind(this),
+      this.triggerNextProvider,
     )
 
     this.sendSubscriptionForPatternFound(provider, subscriptionName)

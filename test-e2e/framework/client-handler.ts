@@ -1,4 +1,4 @@
-import * as deepstream from 'deepstream.io-client-js'
+import * as deepstream from '@deepstream/client'
 import * as sinon from 'sinon'
 
 const clients = {}

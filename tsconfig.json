@@ -12,9 +12,6 @@
       "node"
     ]
   },
-  "files": [
-    "./typings/index.d.ts"
-  ],
   "include": [
     "protocol/**/*",
     "bin/*",
@@ -22,6 +19,9 @@
     "src/**/*.json",
     "test-e2e/**/*",
     "package.json"
+  ],
+  "files": [
+    "types/global.d.ts"
   ],
   "exclude": [
     "node_modules"

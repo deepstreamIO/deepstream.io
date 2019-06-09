@@ -1,4 +1,5 @@
 import { EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
+import { SocketWrapper, Provider } from '../types';
 
 export default class ListenerTimeoutRegistry {
   private timeoutMap: any
@@ -88,13 +89,19 @@ export default class ListenerTimeoutRegistry {
         this.timedoutProviders[subscriptionName] = []
       }
       this.timedoutProviders[subscriptionName].push(provider)
+      provider.socketWrapper.sendMessage({
+        topic: this.topic,
+        action: this.actions.LISTEN_RESPONSE_TIMEOUT,
+        name: provider.pattern,
+        subscription: subscriptionName
+      })
       callback(subscriptionName)
     }, this.config.listenResponseTimeout)
     this.timeoutMap[subscriptionName] = timeoutId
   }
 
   /**
-    * Clear the timeout for a LISTEN_ACCEPT or LISTEN_REJECt recieved
+    * Clear the timeout for a LISTEN_ACCEPT or LISTEN_REJECT recieved
     * by the listen registry
     */
   public clearTimeout (subscriptionName): void {

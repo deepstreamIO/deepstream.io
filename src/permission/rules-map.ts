@@ -1,4 +1,5 @@
 import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
+import { Message } from '../types';
 
 /**
  * Different rule types support different features. Generally, all rules can

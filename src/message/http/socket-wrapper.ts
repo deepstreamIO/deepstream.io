@@ -3,6 +3,7 @@
 /* eslint-disable class-methods-use-this */
 import { EventEmitter } from 'events'
 import { parseData, isError } from '../../../binary-protocol/src/message-parser'
+import { SocketWrapper } from '../../types';
 
 export default class HTTPSocketWrapper extends EventEmitter implements SocketWrapper {
 

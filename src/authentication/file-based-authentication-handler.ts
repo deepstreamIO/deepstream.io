@@ -2,6 +2,7 @@ import * as crypto from 'crypto'
 import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
 import * as utils from '../utils/utils'
+import { AuthenticationHandler, UserAuthenticationCallback } from '../types';
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'

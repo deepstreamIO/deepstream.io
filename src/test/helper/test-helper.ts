@@ -40,6 +40,8 @@ import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
 import { EventEmitter } from 'events'
+import { InternalDeepstreamConfig, DeepstreamServices } from '../../types';
+import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory';
 
 export const getDeepstreamOptions = (serverName?: string): { config: InternalDeepstreamConfig, services: DeepstreamServices } => {
   const config: InternalDeepstreamConfig = { ...get(), ...{
@@ -57,7 +59,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
         maxRuleIterations: 3
       }
     },
-    provideRPCRequestorDetails: true
+    provideRPCRequestorDetails: true,
   }}
 
   class PermissionHandler extends EventEmitter {
@@ -82,7 +84,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
     }
   }
 
-  const services: DeepstreamServices = {
+  const services: Partial<DeepstreamServices> = {
     logger: new LoggerMock(),
     cache: new StorageMock(),
     storage: new StorageMock(),
@@ -94,10 +96,10 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
     authenticationHandler: new AuthenticationHandler(),
     permissionHandler: new PermissionHandler(),
     registeredPlugins: [],
-    connectionEndpoints: []
+    connectionEndpoints: [],
   }
-
-  return { config, services }
+  services.subscriptions = new SubscriptionRegistryFactory(config, services as DeepstreamServices)
+  return { config, services } as { config: InternalDeepstreamConfig, services: DeepstreamServices}
 }
 
 export const getDeepstreamPermissionOptions = function () {
