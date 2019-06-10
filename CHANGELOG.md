@@ -1,3 +1,17 @@
+## [4.0.0-rc.10] - 2019.06.10
+  
+### Feat
+
+- Send a LISTEN_RESPONSE_TIMEOUT event if a user doesn't accept or reject a listen request in time
+
+### Fixes
+
+- Fixing the HTTP auth timeout issue (where responses don't timeout correctly)
+
+### Misc
+
+- First steps towards a monitoring API
+
 ## [4.0.0-rc.9] - 2019.06.06
   
 ### Feat
