@@ -10,8 +10,6 @@ import * as sinon from 'sinon'
 export default class ListenerTestUtils {
   private actions: any
   private subscribedTopics: string[] = []
-  private config
-  private services
 
   private topic
   private subscribers = new Set()
@@ -23,8 +21,6 @@ export default class ListenerTestUtils {
 
   constructor (listenerTopic?: C.TOPIC) {
     const { config, services } = testHelper.getDeepstreamOptions()
-    this.config = config
-    this.services = services
 
     this.topic = listenerTopic || C.TOPIC.RECORD
 
