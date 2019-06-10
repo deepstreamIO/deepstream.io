@@ -33,7 +33,7 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
       const options = {
         read_timeout: this.settings.requestTimeout,
         open_timeout: this.settings.requestTimeout,
-        timeout: this.settings.requestTimeout,
+        response_timeout: this.settings.requestTimeout,
         follow_max: 2,
         json: true,
         headers: {}

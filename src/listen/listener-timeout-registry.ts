@@ -89,11 +89,11 @@ export default class ListenerTimeoutRegistry {
         this.timedoutProviders[subscriptionName] = []
       }
       this.timedoutProviders[subscriptionName].push(provider)
-      // provider.socketWrapper.sendMessage({
-      //   topic: this.topic,
-      //   action: this.actions.LISTEN_RESPONSE_TIMEOUT,
-      //   subscription: subscriptionName
-      // })
+      provider.socketWrapper.sendMessage({
+        topic: this.topic,
+        action: this.actions.LISTEN_RESPONSE_TIMEOUT,
+        subscription: subscriptionName
+      })
       callback(subscriptionName)
     }, this.config.listenResponseTimeout)
     this.timeoutMap[subscriptionName] = timeoutId

@@ -7,7 +7,7 @@ import 'mocha'
 
 let tu
 
-describe.skip('listener-registry', () => {
+describe('listener-registry', () => {
 /*
 const ListenerRegistry = require('../../src/listen/listener-registry')
 const testHelper = require('../test-helper/test-helper')
@@ -324,6 +324,7 @@ describe('listener-registry-local-timeouts', () => {
     it('provider 1 times out, provider 2 accepts', (done) => {
         tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
         tu.publishUpdateWillBeSentToSubscribers('a/1', true)
+        tu.providerWillGetListenTimeout(1, 'a/1')
 
         setTimeout(() => {
             tu.providerAccepts(1, 'a/[0-9]', 'a/1')
@@ -335,6 +336,7 @@ describe('listener-registry-local-timeouts', () => {
     it('provider 1 times out, but then it accepts but will be ignored because provider 2 accepts as well', (done) => {
         tu.providerWillGetSubscriptionRemoved(1, 'a/.*', 'a/1')
         tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
+        tu.providerWillGetListenTimeout(1, 'a/1')
 
         setTimeout(() => {
             tu.providerAcceptsButIsntAcknowledged(1, 'a/.*', 'a/1')
@@ -349,6 +351,7 @@ describe('listener-registry-local-timeouts', () => {
 
     it('provider 1 times out, but then it accept and will be used because provider 2 rejects', (done) => {
         tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
+        tu.providerWillGetListenTimeout(1, 'a/1')
 
         setTimeout(() => {
             tu.providerAcceptsButIsntAcknowledged(1, 'a/.*', 'a/1')
@@ -362,6 +365,9 @@ describe('listener-registry-local-timeouts', () => {
     })
 
     it('provider 1 and 2 times out and 3 rejects, 1 rejects and 2 accepts later and 2 wins', (done) => {
+        tu.providerWillGetListenTimeout(1, 'a/1')
+        tu.providerWillGetListenTimeout(2, 'a/1')
+
         tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
 
         tu.providerListensTo(3, 'a/[1]')
@@ -370,6 +376,7 @@ describe('listener-registry-local-timeouts', () => {
             tu.providerWillGetSubscriptionFound(3, 'a/[1]', 'a/1')
             // first provider timeout
             setTimeout(() => {
+
                 tu.providerRejects(1, 'a/.*', 'a/1')
 
                 tu.providerAcceptsButIsntAcknowledged(2, 'a/[0-9]', 'a/1')
@@ -401,8 +408,10 @@ describe('listener-registry-local-timeouts', () => {
         }, 40)
     })
 
-    // TODO: One of those magical timeouts that randomly fail other tests
     it('provider 1 and 2 times out and 3 rejects, 1 and 2 accepts later and 1 wins', (done) => {
+        tu.providerWillGetListenTimeout(1, 'a/1')
+        tu.providerWillGetListenTimeout(2, 'a/1')
+
         tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
         tu.providerListensTo(3, 'a/[1]')
 

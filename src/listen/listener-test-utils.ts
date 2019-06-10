@@ -7,140 +7,141 @@ import * as C from '../constants'
 import { getTestMocks } from '../test/helper/test-mocks'
 import * as sinon from 'sinon'
 
-const options = testHelper.getDeepstreamOptions()
-const config = options.config
-const services = options.services
-
-let topic
-let subscribedTopics
-const subscribers = new Set()
-let clientRegistryMock
-let providers
-let clients
-let listenerRegistry
-let clientRegistry
-
 export default class ListenerTestUtils {
   private actions: any
+  private subscribedTopics: string[] = []
+  private config
+  private services
+
+  private topic
+  private subscribers = new Set()
+  private clientRegistryMock
+  private providers
+  private clients
+  private listenerRegistry
+  private clientRegistry
 
   constructor (listenerTopic?: C.TOPIC) {
-    topic = listenerTopic || C.TOPIC.RECORD
+    const { config, services } = testHelper.getDeepstreamOptions()
+    this.config = config
+    this.services = services
 
-    if (topic === C.TOPIC.RECORD) {
+    this.topic = listenerTopic || C.TOPIC.RECORD
+
+    if (this.topic === C.TOPIC.RECORD) {
       this.actions = C.RECORD_ACTIONS
     } else {
       this.actions = C.EVENT_ACTIONS
     }
 
-    subscribedTopics = []
-
-    clientRegistry = {
-      hasName (subscriptionName) {
-        return subscribedTopics.indexOf(subscriptionName)
+    const self = this
+    this.clientRegistry = {
+      hasName (subscriptionName: string) {
+        return self.subscribedTopics.indexOf(subscriptionName)
       },
       getNames () {
-        return subscribedTopics
+        return self.subscribedTopics
       },
       getLocalSubscribers () {
-        return subscribers
+        return self.subscribers
       },
       hasLocalSubscribers () {
-        return subscribers.size > 0
+        return self.subscribers.size > 0
       },
       sendToSubscribers: () => {}
     }
-    clientRegistryMock = sinon.mock(clientRegistry)
+    self.clientRegistryMock = sinon.mock(self.clientRegistry)
 
     config.listenResponseTimeout = 30
     config.shuffleListenProviders = false
     config.stateReconciliationTimeout = 10
 
-    clients = [
+    self.clients = [
       null, // to make tests start from 1
       getTestMocks().getSocketWrapper('c1'),
       getTestMocks().getSocketWrapper('c2'),
       getTestMocks().getSocketWrapper('c3')
     ]
 
-    providers = [
+    self.providers = [
       null, // to make tests start from 1
       getTestMocks().getSocketWrapper('p1'),
       getTestMocks().getSocketWrapper('p2'),
       getTestMocks().getSocketWrapper('p3')
     ]
 
-    listenerRegistry = new ListenerRegistry(topic, config, services, clientRegistry)
-    expect(typeof listenerRegistry.handle).to.equal('function')
+    self.listenerRegistry = new ListenerRegistry(self.topic, config, services, self.clientRegistry)
+    expect(typeof self.listenerRegistry.handle).to.equal('function')
   }
 
   public complete () {
-    clients.forEach((client) => {
+    this.clients.forEach((client) => {
       if (client) {
         client.socketWrapperMock.verify()
       }
     })
-    providers.forEach((provider) => {
+    this.providers.forEach((provider) => {
       if (provider) {
         provider.socketWrapperMock.verify()
       }
     })
-    clientRegistryMock.verify()
+    this.clientRegistryMock.verify()
   }
 
   /**
   * Provider Utils
   */
   public providerListensTo (provider, pattern): void {
-    providers[provider].socketWrapperMock
+    this.providers[provider].socketWrapperMock
       .expects('sendAckMessage')
       .once()
       .withExactArgs({
-        topic,
+        topic: this.topic,
         action: this.actions.LISTEN,
         name: pattern
       })
 
-    listenerRegistry.handle(providers[provider].socketWrapper, {
-      topic,
-      action: this.actions.LISTEN,
-      name: pattern
-    })
+    this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
+        topic: this.topic,
+        action: this.actions.LISTEN,
+        name: pattern
+      })
   }
 
   public providerUnlistensTo (provider, pattern) {
-    providers[provider].socketWrapperMock
+    this.providers[provider].socketWrapperMock
       .expects('sendAckMessage')
       .once()
       .withExactArgs({
-        topic,
+        topic: this.topic,
         action: this.actions.UNLISTEN,
         name: pattern
       })
 
-    listenerRegistry.handle(providers[provider].socketWrapper, {
-      topic,
+    this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
+      topic: this.topic,
       action: this.actions.UNLISTEN,
       name: pattern
     })
   }
 
-  public providerWillGetListenTimeout (provider, pattern, subscription) {
-    providers[provider].socketWrapperMock
+  public providerWillGetListenTimeout (provider, subscription) {
+    this.providers[provider].socketWrapperMock
       .expects('sendMessage')
       .once()
       .withExactArgs({
-        topic,
+        topic: this.topic,
         action: this.actions.LISTEN_RESPONSE_TIMEOUT,
         subscription
       })
   }
 
   public providerWillGetSubscriptionFound (provider, pattern, subscription) {
-    providers[provider].socketWrapperMock
+    this.providers[provider].socketWrapperMock
       .expects('sendMessage')
       .once()
       .withExactArgs({
-        topic,
+        topic: this.topic,
         action: this.actions.SUBSCRIPTION_FOR_PATTERN_FOUND,
         name: pattern,
         subscription
@@ -148,11 +149,11 @@ export default class ListenerTestUtils {
   }
 
   public providerWillGetSubscriptionRemoved (provider, pattern, subscription) {
-    providers[provider].socketWrapperMock
+    this.providers[provider].socketWrapperMock
       .expects('sendMessage')
       .once()
       .withExactArgs({
-        topic,
+        topic: this.topic,
         action: this.actions.SUBSCRIPTION_FOR_PATTERN_REMOVED,
         name: pattern,
         subscription
@@ -164,13 +165,13 @@ export default class ListenerTestUtils {
   }
 
   public providerAccepts (provider, pattern, subscription, doesnthaveActiveProvider) {
-    listenerRegistry.handle(providers[provider].socketWrapper, {
-      topic,
+    this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
+      topic: this.topic,
       action: this.actions.LISTEN_ACCEPT,
       name: pattern,
       subscription
     })
-    expect(listenerRegistry.hasActiveProvider(subscription)).to.equal(!doesnthaveActiveProvider)
+    expect(this.listenerRegistry.hasActiveProvider(subscription)).to.equal(!doesnthaveActiveProvider)
   }
 
   public providerRejectsAndPreviousTimeoutProviderThatAcceptedIsUsed (provider, pattern, subscriptionName) {
@@ -183,21 +184,21 @@ export default class ListenerTestUtils {
   }
 
   public providerRejects (provider, pattern, subscription, doNotCheckActiveProvider) {
-    listenerRegistry.handle(providers[provider].socketWrapper, {
-      topic,
+    this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
+      topic: this.topic,
       action: this.actions.LISTEN_REJECT,
       name: pattern,
       subscription
     })
 
     if (!doNotCheckActiveProvider) {
-      expect(listenerRegistry.hasActiveProvider(subscription)).to.equal(false)
+      expect(this.listenerRegistry.hasActiveProvider(subscription)).to.equal(false)
     }
   }
 
   public acceptMessageThrowsError (provider, pattern, subscription) {
-    listenerRegistry.handle(providers[provider].socketWrapper, {
-      topic,
+    this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
+      topic: this.topic,
       action: this.actions.LISTEN_ACCEPT,
       name: pattern,
       subscription
@@ -207,8 +208,8 @@ export default class ListenerTestUtils {
   }
 
   public rejectMessageThrowsError (provider, pattern, subscription) {
-    listenerRegistry.handle(providers[provider].socketWrapper, {
-      topic,
+    this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
+      topic: this.topic,
       action: this.actions.LISTEN_REJECT,
       name: pattern,
       subscription
@@ -219,57 +220,57 @@ export default class ListenerTestUtils {
   }
 
   public providerLosesItsConnection (provider) {
-    providers[provider].socketWrapper.emit('close', providers[provider].socketWrapper)
+    this.providers[provider].socketWrapper.emit('close', this.providers[provider].socketWrapper)
   }
 
   /**
   * Subscriber Utils
   */
   public subscriptionAlreadyMadeFor (subscriptionName) {
-    subscribedTopics.push(subscriptionName)
+    this.subscribedTopics.push(subscriptionName)
   }
 
   public clientSubscribesTo (client, subscriptionName, firstSubscription) {
     if (firstSubscription) {
-      listenerRegistry.onFirstSubscriptionMade(subscriptionName)
+      this.listenerRegistry.onFirstSubscriptionMade(subscriptionName)
     }
-    listenerRegistry.onSubscriptionMade(subscriptionName, clients[client].socketWrapper)
-    subscribedTopics.push(subscriptionName)
-    subscribers.add(clients[client].socketWrapper)
+    this.listenerRegistry.onSubscriptionMade(subscriptionName, this.clients[client].socketWrapper)
+    this.subscribedTopics.push(subscriptionName)
+    this.subscribers.add(this.clients[client].socketWrapper)
   }
 
   public clientUnsubscribesTo (client, subscriptionName, lastSubscription) {
     if (lastSubscription) {
-      listenerRegistry.onLastSubscriptionRemoved(subscriptionName)
+      this.listenerRegistry.onLastSubscriptionRemoved(subscriptionName)
     }
-    listenerRegistry.onSubscriptionRemoved(subscriptionName, clients[client].socketWrapper)
-    subscribedTopics.splice(subscribedTopics.indexOf(subscriptionName), 1)
-    subscribers.delete(clients[client].socketWrapper)
+    this.listenerRegistry.onSubscriptionRemoved(subscriptionName, this.clients[client].socketWrapper)
+    this.subscribedTopics.splice(this.subscribedTopics.indexOf(subscriptionName), 1)
+    this.subscribers.delete(this.clients[client].socketWrapper)
   }
 
   public clientWillRecievePublishedUpdate (client, subscription, state) {
-    clients[client].socketWrapperMock
+    this.clients[client].socketWrapperMock
       .expects('sendMessage')
       .once()
       .withExactArgs({
-        topic,
+        topic: this.topic,
         action: state ? this.actions.SUBSCRIPTION_HAS_PROVIDER : this.actions.SUBSCRIPTION_HAS_NO_PROVIDER,
         name: subscription,
       })
   }
 
   public publishUpdateWillBeSentToSubscribers (subscription, state) {
-    clientRegistryMock
+    this.clientRegistryMock
       .expects('sendToSubscribers')
       .once()
       .withExactArgs(subscription, {
-        topic,
+        topic: this.topic,
         action: state ? this.actions.SUBSCRIPTION_HAS_PROVIDER : this.actions.SUBSCRIPTION_HAS_NO_PROVIDER,
         name: subscription,
       }, false, null)
   }
 
   public subscriptionHasActiveProvider (subscription, value) {
-    expect(listenerRegistry.hasActiveProvider(subscription)).to.equal(value)
+    expect(this.listenerRegistry.hasActiveProvider(subscription)).to.equal(value)
   }
 }

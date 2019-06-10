@@ -277,6 +277,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   */
   private reconcileSubscriptionsToPatterns (regExp: RegExp, pattern: string, socketWrapper: SocketWrapper): void {
     const names = this.clientRegistry.getNames()
+
     for (let i = 0; i < names.length; i++) {
       const subscriptionName = names[i]
 

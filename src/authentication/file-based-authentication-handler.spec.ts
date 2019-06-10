@@ -164,13 +164,14 @@ describe('file based authentication', () => {
       }).not.to.throw()
     })
 
-    it.skip('errors for invalid path', () => {
+    it('errors for invalid path', (done) => {
       const settings = getSettings()
       settings.path = 'xcc'
-      expect(() => {
-        // tslint:disable-next-line:no-unused-expression
-        new AuthenticationHandler(settings)
-      }).to.throw()
+      const x = new AuthenticationHandler(settings)
+      x.on('error', (error) => {
+        expect(error).to.contain('Error loading file xcc')
+        done()
+      })
     })
 
     it('accepts settings with hash = false', () => {
