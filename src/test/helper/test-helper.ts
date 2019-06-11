@@ -40,8 +40,9 @@ import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
 import { EventEmitter } from 'events'
-import { InternalDeepstreamConfig, DeepstreamServices } from '../../types'
+import { InternalDeepstreamConfig, DeepstreamServices, MonitoringPlugin } from '../../types'
 import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory'
+import { Message, LOG_LEVEL, EVENT } from '../../constants'
 
 export const getDeepstreamOptions = (serverName?: string): { config: InternalDeepstreamConfig, services: DeepstreamServices } => {
   const config: InternalDeepstreamConfig = { ...get(), ...{
@@ -78,9 +79,29 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
       this.lastArgs = []
     }
 
-    public canPerformAction (a, b, c) {
-      this.lastArgs.push([a, b, c])
-      c(this.nextError, this.nextResult)
+    public canPerformAction (user, message, callback, authData, socketWrapper) {
+      this.lastArgs.push([user, message, callback])
+      callback(socketWrapper, message, this.nextError, this.nextResult)
+    }
+  }
+
+// tslint:disable-next-line: max-classes-per-file
+  class MonitoringMock extends EventEmitter implements MonitoringPlugin {
+    public isReady = true
+    public apiVersion = 1
+    public description: 'monitoring mock'
+    constructor () {
+      super()
+    }
+    public onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
+    }
+    public onLogin (allowed: boolean, endpointType: string): void {
+    }
+    public onMessageRecieved (message: Message): void {
+    }
+    public onMessageSend (message: Message): void {
+    }
+    public onBroadcast (message: Message, count: number): void {
     }
   }
 
@@ -93,6 +114,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
       get (name, cb) { cb(true) },
       release () {}
     },
+    monitoring: new MonitoringMock(),
     authenticationHandler: new AuthenticationHandler(),
     permissionHandler: new PermissionHandler(),
     registeredPlugins: [],
@@ -123,7 +145,7 @@ export const testPermission = function (options) {
 
     username = username || 'someUser'
     userdata = userdata || {}
-    callback = callback || function (error, result) {
+    callback = callback || function (socketWrapper, msg, error, result) {
       permissionResult = result
     }
     permissionHandler.canPerformAction(

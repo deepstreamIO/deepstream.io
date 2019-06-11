@@ -405,13 +405,15 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * Callback for the results returned by the permissionHandler
    */
   private processAuthResult (authData: any, socketWrapper: SocketWrapper, disconnectTimeout, isAllowed: boolean, userData: any): void {
+    this.services.monitoring.onLogin(isAllowed, 'websocket')
+
     userData = userData || {}
     clearTimeout(disconnectTimeout)
 
     if (isAllowed === true) {
       this.registerAuthenticatedSocket(socketWrapper, userData)
     } else {
-      this.processInvalidAuth(userData.clientData, authData, socketWrapper)// todo
+      this.processInvalidAuth(userData.clientData, authData, socketWrapper)
     }
   }
 

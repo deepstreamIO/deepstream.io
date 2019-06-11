@@ -34,7 +34,7 @@ describe('constructs data for patch message validation', () => {
       data: '"Miller"'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
       next()
@@ -62,7 +62,7 @@ describe('constructs data for patch message validation', () => {
       data: '"Hempel"'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       next()
@@ -88,7 +88,7 @@ describe('constructs data for patch message validation', () => {
       data: '['
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(lastError()).to.contain('SyntaxError: Unexpected end of JSON input')
       expect(result).to.equal(false)
       next()
@@ -112,7 +112,7 @@ describe('constructs data for patch message validation', () => {
       data: '"Hempel"'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(lastError()).to.contain('Tried to apply patch to non-existant record somerecord')
       expect(result).to.equal(false)
       next()

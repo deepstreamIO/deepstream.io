@@ -8,7 +8,6 @@ export default class MonitoringHandler {
   /**
    * Handles incoming and outgoing messages for the EVENT topic.
    */
-
   constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry) {
     // this.subscriptionRegistry =
     // subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.MONITORING, TOPIC.MONITORING_SUBSCRIPTIONS)

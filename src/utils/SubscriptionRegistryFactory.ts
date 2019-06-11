@@ -16,4 +16,8 @@ export class SubscriptionRegistryFactory {
         }
         return subscriptionRegistry
     }
+
+    public getSubscriptionRegistries () {
+        return this.subscriptionRegistries
+    }
 }

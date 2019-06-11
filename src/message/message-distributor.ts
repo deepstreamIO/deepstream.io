@@ -1,5 +1,5 @@
 import {PARSER_ACTIONS, TOPIC} from '../constants'
-import { Message, SocketWrapper } from '../types'
+import { Message, SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
 
 /**
  * The MessageDistributor routes valid and permissioned messages to
@@ -26,10 +26,7 @@ export default class MessageDistributor {
       })
       return
     }
-
-    // TODO: Can we remove this? A general emit is quite expensive
-    // socketWrapper.emit(message.topic, message)
-
+    this.services.monitoring.onMessageRecieved(message)
     callback(socketWrapper, message)
   }
 

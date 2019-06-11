@@ -1,13 +1,13 @@
 import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
-import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS } from '../constants'
+import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, Message } from '../constants'
 import RecordHandler from '../record/record-handler'
 import * as configCompiler from './config-compiler'
 import * as configValidator from './config-validator'
 import RuleApplication from './rule-application'
 import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
-import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, Logger } from '../types'
+import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, Logger, PermissionCallback, SocketWrapper } from '../types'
 
 const UNDEFINED = 'undefined'
 
@@ -117,13 +117,13 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
     const ruleSpecification = rulesMap.getRulesForMessage(message)
 
     if (ruleSpecification === null) {
-      callback(null, true)
+      callback(socketWrapper, message, null, true)
       return
     }
 
     const ruleData = this.getCompiledRulesForName(message.name, ruleSpecification)
     if (!ruleData) {
-      callback(null, false)
+      callback(socketWrapper, message, null, false)
       return
     }
 

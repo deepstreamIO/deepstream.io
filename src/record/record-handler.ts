@@ -43,6 +43,7 @@ export default class RecordHandler {
     this.recordRequest = recordRequestBinding(config, services, this, metaData)
 
     this.onDeleted = this.onDeleted.bind(this)
+    this.onPermissionResponse = this.onPermissionResponse.bind(this)
   }
 
 /**
@@ -485,41 +486,40 @@ export default class RecordHandler {
     this.services.permissionHandler.canPerformAction(
       socketWrapper.user,
       copyWithAction,
-      onPermissionResponse.bind(this, socketWrapper, message, originalAction, successCallback),
+      this.onPermissionResponse.bind(this, originalAction, successCallback),
       socketWrapper.authData,
       socketWrapper,
     )
   }
 
-}
-
-/*
- * Callback for complete permissions. Important to note that only compound operations like
- * CREATE_AND_UPDATE will end up here.
- */
-function onPermissionResponse (
-  socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RA, successCallback: Function, error: Error, canPerformAction: boolean,
-): void {
-  if (error || !canPerformAction) {
-    let action
-    if (error) {
-      this.services.logger.error(RA[RA.MESSAGE_PERMISSION_ERROR], error.toString())
-      action = RA.MESSAGE_PERMISSION_ERROR
+  /*
+  * Callback for complete permissions. Important to note that only compound operations like
+  * CREATE_AND_UPDATE will end up here.
+  */
+  private onPermissionResponse (
+    originalAction: RA, successCallback: Function, socketWrapper: SocketWrapper, message: RecordMessage, error: Error, canPerformAction: boolean,
+  ): void {
+    if (error || !canPerformAction) {
+      let action
+      if (error) {
+        this.services.logger.error(RA[RA.MESSAGE_PERMISSION_ERROR], error.toString())
+        action = RA.MESSAGE_PERMISSION_ERROR
+      } else {
+        action = RA.MESSAGE_DENIED
+      }
+      const msg = {
+        topic: TOPIC.RECORD,
+        action,
+        originalAction,
+        name: message.name
+      } as RecordMessage
+      if (message.correlationId) {
+        msg.correlationId = message.correlationId
+      }
+      socketWrapper.sendMessage(msg)
     } else {
-      action = RA.MESSAGE_DENIED
+      successCallback()
     }
-    const msg = {
-      topic: TOPIC.RECORD,
-      action,
-      originalAction,
-      name: message.name
-    } as RecordMessage
-    if (message.correlationId) {
-      msg.correlationId = message.correlationId
-    }
-    socketWrapper.sendMessage(msg)
-  } else {
-    successCallback()
   }
 }
 

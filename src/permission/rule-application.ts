@@ -11,7 +11,7 @@ import RecordHandler from '../record/record-handler'
 import { recordRequest } from '../record/record-request'
 import { EOL } from 'os'
 import {RecordData} from '../../binary-protocol/src/message-constants'
-import { Message, ValveConfig, Logger, SocketWrapper, InternalDeepstreamConfig, DeepstreamServices } from '../types'
+import { Message, ValveConfig, Logger, SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, PermissionCallback } from '../types'
 
 const OPEN = 'open'
 const LOADING = 'loading'
@@ -30,7 +30,7 @@ interface RuleApplicationParams {
    regexp: RegExp
    rule: any
    name: string
-   callback: Function
+   callback: PermissionCallback
    permissionOptions: ValveConfig
    logger: Logger
    recordHandler: RecordHandler
@@ -106,7 +106,7 @@ export default class RuleApplication {
     }
 
     if (this.isReady()) {
-      this.params.callback(null, result)
+      this.params.callback(this.params.socketWrapper, this.params.message, null, result)
       this.destroy()
     }
   }
@@ -122,7 +122,7 @@ export default class RuleApplication {
     const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL}for ${this.params.path}: ${error.toString()}`
 
     this.params.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg)
-    this.params.callback(EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
+    this.params.callback(this.params.socketWrapper, this.params.message, EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
     this.destroy()
   }
 
@@ -147,7 +147,7 @@ export default class RuleApplication {
     this.recordsData.set(recordName, ERROR)
     const errorMsg = `failed to load record ${this.params.name} for permissioning:${errorMessage}`
     this.params.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], errorMsg)
-    this.params.callback(RECORD_ACTIONS.RECORD_LOAD_ERROR, false)
+    this.params.callback(this.params.socketWrapper, this.params.message, RECORD_ACTIONS.RECORD_LOAD_ERROR, false)
     this.destroy()
   }
 

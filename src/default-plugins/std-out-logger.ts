@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { EVENT, LOG_LEVEL } from '../constants'
 
 import chalk from 'chalk'
-import { Logger } from '../types'
+import { Logger, DeepstreamServices } from '../types'
 
 const EOL = require('os').EOL
 
@@ -25,7 +25,7 @@ export default class StdOutLogger extends EventEmitter implements Logger {
    * Consoles / Terminals as well as most log-managers and logging systems
    * consume messages from these streams
    */
-  constructor (private options: any = {}) {
+  constructor (private options: any = {}, private services?: DeepstreamServices) {
     super()
     this.useColors = this.options.colors === undefined ? true : this.options.colors
     this.currentLogLevel = this.options.logLevel || LOG_LEVEL.DEBUG
@@ -39,6 +39,10 @@ export default class StdOutLogger extends EventEmitter implements Logger {
    * Logs a line
    */
   public log (logLevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
+    if (logLevel >= LOG_LEVEL.WARN && this.services) {
+      this.services.monitoring.onErrorLog(logLevel, event, logMessage)
+    }
+
     if (logLevel < this.currentLogLevel) {
       return
     }

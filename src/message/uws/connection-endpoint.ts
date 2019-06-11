@@ -181,7 +181,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
       referer: upgradeReq.getHeader('referer')
     }
     const socketWrapper = createUWSSocketWrapper(
-        websocket, handshakeData, this.logger, this.options, this
+        websocket, handshakeData, this.services, this.options, this
     )
     return socketWrapper
   }

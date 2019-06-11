@@ -5,6 +5,7 @@ import HTTPAuthenticationHAndler from '../authentication/http-authentication-han
 import { LOG_LEVEL } from '../constants'
 import DefaultCache from '../default-plugins/local-cache'
 import DefaultStorage from '../default-plugins/noop-storage'
+import DefaultMonitoring from '../default-plugins/noop-monitoring'
 import DefaultLogger from '../default-plugins/std-out-logger'
 import HTTPConnectionEndpoint from '../message/http/connection-endpoint'
 import UWSConnectionEndpoint from '../message/uws/connection-endpoint'
@@ -36,11 +37,12 @@ export const initialise = function (config: InternalDeepstreamConfig): { config:
   handleSSLProperties(config)
 
   const services: any = {
-    registeredPlugins: ['authenticationHandler', 'permissionHandler', 'cache', 'storage'],
+    registeredPlugins: ['authenticationHandler', 'permissionHandler', 'cache', 'storage', 'monitoring'],
   }
 
   services.cache = new DefaultCache()
   services.storage = new DefaultStorage()
+  services.monitoring = new DefaultMonitoring()
 
   services.logger = handleLogger(config)
   handlePlugins(config, services)
@@ -244,8 +246,10 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
     pluginConstructor = DefaultCache
   } else if (plugin.type === 'default' && type === 'storage') {
     pluginConstructor = DefaultStorage
+  } else if (plugin.type === 'none' && type === 'monitoring') {
+    pluginConstructor = DefaultMonitoring
   } else {
-    throw new Error(`Neither name nor path property found for ${type}`)
+    throw new Error(`Neither name nor path property found for ${type}, plugin type: ${plugin.type}`)
   }
   return pluginConstructor
 }

@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events'
 import { TOPIC, EVENT, LOG_LEVEL } from './constants'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
+import { Deepstream } from './deepstream.io'
+import { ALL_ACTIONS } from '../binary-protocol/src/message-constants'
 
 export type RuleType = string
 export type ValveSection = string
@@ -107,14 +109,17 @@ export interface PluginConfig {
 
 export type MonitorHookCallback = () => void
 
-export interface DeepstreamPlugin extends EventEmitter {
-  isReady: boolean
-  description: string
-  init? (): void
-  close? (): void
-  setDeepstream? (deepstream: any): void
-  setRecordHandler? (recordHandler: any): void
-  registerMonitorHook? (cb: MonitorHookCallback)
+export class DeepstreamPlugin extends EventEmitter {
+  constructor () {
+    super()
+  }
+  public isReady: boolean
+  public description: string
+  public init? (): void
+  public close? (): void
+  public setDeepstream? (deepstream: Deepstream): void
+  public setRecordHandler? (recordHandler: any): void
+  public registerMonitorHook? (cb: MonitorHookCallback)
 }
 
 export type StorageReadCallback = (error: string | null, version: number, result: any) => void
@@ -127,8 +132,18 @@ export interface StoragePlugin extends DeepstreamPlugin {
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void
 }
 
+export interface MonitoringPlugin extends DeepstreamPlugin {
+  apiVersion?: number
+  onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void
+  onLogin (allowed: boolean, endpointType: string): void
+  onMessageRecieved (message: Message): void
+  onMessageSend (message: Message): void
+  onBroadcast (message: Message, count: number): void
+}
+
+export type PermissionCallback = (socketWrapper: SocketWrapper, message: Message, error: Error | string | ALL_ACTIONS | null, result: boolean) => void
 export interface PermissionHandler extends DeepstreamPlugin {
-  canPerformAction (username: string, message: Message, callback: Function, authData: any, socketWrapper: SocketWrapper): void
+  canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: any, socketWrapper: SocketWrapper): void
 }
 
 export interface AuthenticationHandler extends DeepstreamPlugin {
@@ -169,6 +184,7 @@ export interface DeepstreamConfig {
   plugins?: {
     cache?: PluginConfig
     storage?: PluginConfig
+    monitoring?: PluginConfig
   }
 
   logger?: PluginConfig
@@ -210,6 +226,7 @@ export interface InternalDeepstreamConfig {
   plugins: {
     cache: PluginConfig
     storage: PluginConfig
+    monitoring: PluginConfig
   }
 
   logger: PluginConfig
@@ -243,6 +260,7 @@ export interface DeepstreamServices {
   connectionEndpoints: ConnectionEndpoint[]
   cache: StoragePlugin
   storage: StoragePlugin
+  monitoring: MonitoringPlugin
   permissionHandler: PermissionHandler
   authenticationHandler: AuthenticationHandler
   logger: Logger

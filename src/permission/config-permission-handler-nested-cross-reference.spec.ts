@@ -31,7 +31,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       expect(services.cache.getCalls.length).to.equal(2)
@@ -61,7 +61,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(lastError()).to.contain('Cannot read property \'is\' of undefined')
       expect(result).to.equal(false)
       next()
@@ -87,7 +87,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       expect(services.cache.getCalls.length).to.equal(1)
@@ -115,7 +115,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       expect(services.cache.getCalls.length).to.equal(1)
@@ -143,7 +143,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(lastError()).to.contain('crossreference got unsupported type object')
       expect(result).to.equal(false)
       next()
@@ -172,7 +172,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (error, result) {
+    const onDone = function (socketWrapper, msg, error, result) {
       expect(lastError()).to.contain('Exceeded max iteration count')
       expect(result).to.equal(false)
       expect(services.cache.getCalls.length).to.equal(3)

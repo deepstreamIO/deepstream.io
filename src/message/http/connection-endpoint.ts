@@ -12,7 +12,6 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   public isReady: boolean = false
   public description: string = 'HTTP connection endpoint'
 
-  private options: any
   private initialised: boolean = false
   private logger: Logger
   private authenticationHandler: AuthenticationHandler
@@ -26,10 +25,9 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   private logInvalidAuthData: boolean
   private requestTimeout: number
 
-  constructor (options: any, services: DeepstreamServices) {
+  constructor (private options: any, private services: DeepstreamServices) {
     super()
 
-    this.options = options
     this.onSocketMessageBound = this.onSocketMessage.bind(this)
     this.onSocketErrorBound = this.onSocketError.bind(this)
   }
@@ -142,6 +140,8 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     isAllowed: boolean,
     data: { token: string, clientData: object }
   ): void {
+    this.services.monitoring.onLogin(isAllowed, 'http')
+
     if (isAllowed === true) {
       responseCallback(null, {
         token: data.token,
@@ -244,7 +244,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     requestTimeoutId
   ): SocketWrapper {
     const socketWrapper = new HTTPSocketWrapper(
-      {}, this.onSocketMessageBound, this.onSocketErrorBound
+      {}, this.services, this.onSocketMessageBound, this.onSocketErrorBound
     )
 
     socketWrapper.init(
@@ -467,7 +467,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       socketWrapper.user,
       parsedMessage,
       this.onPermissionResponse.bind(
-        this, socketWrapper, parsedMessage, messageResults, messageIndex
+        this, messageResults, messageIndex
       ),
       socketWrapper.authData,
       socketWrapper
@@ -478,15 +478,15 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * Handle an event emit permission response
    */
   private onPermissionResponse (
-    socketWrapper: SocketWrapper,
-    message: Message,
     messageResults: JifResult[],
     messageIndex: number,
+    socketWrapper: SocketWrapper,
+    message: Message,
     error: string,
     permissioned: boolean
   ): void {
     if (error !== null) {
-      this.options.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
+      this.services.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
     }
     if (permissioned !== true) {
       messageResults[messageIndex] = {

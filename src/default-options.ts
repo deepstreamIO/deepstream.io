@@ -98,7 +98,11 @@ export function get (): InternalDeepstreamConfig {
       storage: {
         type: 'default',
         options: {}
-      }
+      },
+      monitoring: {
+        type: 'none',
+        options: {}
+      },
     },
 
     /*

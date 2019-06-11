@@ -3,7 +3,7 @@
 /* eslint-disable class-methods-use-this */
 import { EventEmitter } from 'events'
 import { parseData, isError } from '../../../binary-protocol/src/message-parser'
-import { SocketWrapper } from '../../types'
+import { SocketWrapper, DeepstreamServices } from '../../types'
 
 export default class HTTPSocketWrapper extends EventEmitter implements SocketWrapper {
 
@@ -21,7 +21,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
   public isRemote: boolean
   public isClosed: boolean = false
 
-  constructor (options, private onMessageCallback, private onErrorCallback) {
+  constructor (options, private services: DeepstreamServices, private onMessageCallback, private onErrorCallback) {
     super()
   }
 
@@ -106,6 +106,8 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
       message.isError = true
     }
     if (this.isClosed === false) {
+      this.services.monitoring.onMessageSend(message)
+
       parseData(message)
       this.onMessageCallback(
         this.messageResults,

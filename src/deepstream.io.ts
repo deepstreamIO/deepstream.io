@@ -157,6 +157,10 @@ export class Deepstream extends EventEmitter {
     this.transition('stop')
   }
 
+  public getServices (): Readonly<DeepstreamServices> {
+    return this.services
+  }
+
 /* ======================================================================= *
  * ========================== State Transitions ========================== *
  * ======================================================================= */
@@ -169,10 +173,11 @@ export class Deepstream extends EventEmitter {
     for (let i = 0; i < this.stateMachine.transitions.length; i++) {
       transition = this.stateMachine.transitions[i]
       if (transitionName === transition.name && this.currentState === transition.from) {
-      // found transition
+        // found transition
         this.onTransition(transition)
         this.currentState = transition.to
         transition.handler.call(this)
+        this.emit(EVENT.DEEPSTREAM_STATE_CHANGED, this.currentState)
         return
       }
     }

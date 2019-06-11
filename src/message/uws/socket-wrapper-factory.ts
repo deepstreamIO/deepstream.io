@@ -3,7 +3,7 @@ import * as binaryMessageBuilder from '../../../binary-protocol/src/message-buil
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
 import { combineMultipleMessages } from '../../../binary-protocol/src/message-builder'
-import { SocketWrapper, Logger, SocketConnectionEndpoint, StatefulSocketWrapper } from '../../types'
+import { SocketWrapper, SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices } from '../../types'
 
 /**
  * This class wraps around a websocket
@@ -29,7 +29,7 @@ export class UwsSocketWrapper implements SocketWrapper {
   constructor (
     private socket: any,
     private handshakeData: any,
-    private logger: Logger,
+    private services: DeepstreamServices,
     private config: WebSocketServerConfig,
     private connectionEndpoint: SocketConnectionEndpoint
    ) {
@@ -60,6 +60,7 @@ export class UwsSocketWrapper implements SocketWrapper {
    *                                 this message type
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean = true): void {
+    // onIndividualMessageSent
     this.sendBinaryMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
   }
 
@@ -108,7 +109,7 @@ export class UwsSocketWrapper implements SocketWrapper {
     delete this.authCallback
 
     this.closeCallbacks.forEach((cb) => cb(this))
-    this.logger.info(EVENT.CLIENT_DISCONNECTED, this.user)
+    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.user)
   }
 
   /**
@@ -147,7 +148,7 @@ export class UwsSocketWrapper implements SocketWrapper {
 export const createUWSSocketWrapper = function (
   socket: any,
   handshakeData: any,
-  logger: Logger,
+  services: DeepstreamServices,
   config: WebSocketServerConfig,
   connectionEndpoint: SocketConnectionEndpoint
-) { return new UwsSocketWrapper(socket, handshakeData, logger, config, connectionEndpoint) }
+) { return new UwsSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }

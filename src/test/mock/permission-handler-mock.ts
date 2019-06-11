@@ -15,12 +15,12 @@ export default class PermissionHandlerMock {
     this.lastCanPerformActionQueryArgs = null
   }
 
-  public canPerformAction (username, message, callback) {
+  public canPerformAction (username, message, callback, authData, socketWrapper) {
     this.lastCanPerformActionQueryArgs = arguments
     if (typeof this.nextCanPerformActionResult === 'string') {
-      callback(this.nextCanPerformActionResult)
+      callback(socketWrapper, message, this.nextCanPerformActionResult)
     } else {
-      callback(null, this.nextCanPerformActionResult)
+      callback(socketWrapper, message, null, this.nextCanPerformActionResult)
     }
   }
 }

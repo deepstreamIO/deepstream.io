@@ -9,7 +9,9 @@ import { SocketWrapper } from '../types'
  */
 export default class MessageProcessor {
   // @ts-ignore
-  constructor (private config: DeepstreamConfig, private services: DeepstreamServices) {}
+  constructor (private config: DeepstreamConfig, private services: DeepstreamServices) {
+    this.onPermissionResponse = this.onPermissionResponse.bind(this)
+  }
 
   /**
    * There will only ever be one consumer of forwarded messages. So rather than using
@@ -42,7 +44,7 @@ export default class MessageProcessor {
       this.services.permissionHandler.canPerformAction(
         socketWrapper.user,
         message,
-        this.onPermissionResponse.bind(this, socketWrapper, message),
+        this.onPermissionResponse,
         socketWrapper.authData,
         socketWrapper,
       )

@@ -39,7 +39,7 @@ describe('allows to create a record without providing data, but denies updating 
       data: '{"other":"data"}'
     }
 
-    const callback = function (error, result) {
+    const callback = function (socketWrapper, msg, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
     }
@@ -57,7 +57,7 @@ describe('allows to create a record without providing data, but denies updating 
       data: '"aValue"'
     }
 
-    const callback = function (error, result) {
+    const callback = function (socketWrapper, msg, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
     }
