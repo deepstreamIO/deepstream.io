@@ -31,9 +31,9 @@ export default class SubscriptionRegistry {
   private services: DeepstreamServices
   private topic: TOPIC
   private clusterTopic: TOPIC
-  private subscriptionListener: SubscriptionListener
+  private subscriptionListener: SubscriptionListener | null = null
   private constants: SubscriptionActions
-  private clusterSubscriptions: StateRegistry
+  private clusterSubscriptions: StateRegistry | null = null
   private actions: any
   private bulkIds = new Set<number>()
 
@@ -84,7 +84,7 @@ export default class SubscriptionRegistry {
   }
 
   public whenReady (callback: Function): void {
-    this.clusterSubscriptions.whenReady(callback)
+    this.clusterSubscriptions!.whenReady(callback)
   }
 
   /**
@@ -99,7 +99,7 @@ export default class SubscriptionRegistry {
    * Return all the servers that have this subscription.
    */
   public getAllServers (subscriptionName: string): string[] {
-    return this.clusterSubscriptions.getAllServers(subscriptionName)
+    return this.clusterSubscriptions!.getAllServers(subscriptionName)
   }
 
   /**
@@ -107,7 +107,7 @@ export default class SubscriptionRegistry {
    * server name
    */
   public getAllRemoteServers (subscriptionName: string): string[] {
-    const serverNames = this.clusterSubscriptions.getAllServers(subscriptionName)
+    const serverNames = this.clusterSubscriptions!.getAllServers(subscriptionName)
     const localServerIndex = serverNames.indexOf(this.config.serverName)
     if (localServerIndex > -1) {
       serverNames.splice(serverNames.indexOf(this.config.serverName), 1)
@@ -120,7 +120,7 @@ export default class SubscriptionRegistry {
    * currently has subscribers for
    */
   public getNames (): string[] {
-    return this.clusterSubscriptions.getAll()
+    return this.clusterSubscriptions!.getAll()
   }
 
   /**
@@ -128,7 +128,7 @@ export default class SubscriptionRegistry {
    * currently has subscribers for
    */
   public getNamesMap (): Map<string, number> {
-    return this.clusterSubscriptions.getAllMap()
+    return this.clusterSubscriptions!.getAllMap()
   }
 
   /**
@@ -136,7 +136,7 @@ export default class SubscriptionRegistry {
    * in the cluster
    */
   public hasName (subscriptionName: string): boolean {
-    return this.clusterSubscriptions.has(subscriptionName)
+    return this.clusterSubscriptions!.has(subscriptionName)
   }
 
   /**
@@ -303,11 +303,11 @@ export default class SubscriptionRegistry {
    */
   public setSubscriptionListener (listener: SubscriptionListener): void {
     this.subscriptionListener = listener
-    this.clusterSubscriptions.on('add', listener.onFirstSubscriptionMade.bind(listener))
-    this.clusterSubscriptions.on('remove', listener.onLastSubscriptionRemoved.bind(listener))
+    this.clusterSubscriptions!.on('add', listener.onFirstSubscriptionMade.bind(listener))
+    this.clusterSubscriptions!.on('remove', listener.onLastSubscriptionRemoved.bind(listener))
   }
 
-  private addSocket (subscription, socket): void {
+  private addSocket (subscription: Subscription, socket: SocketWrapper): void {
     const subscriptions = this.sockets.get(socket) || new Set()
     if (subscriptions.size === 0) {
       this.sockets.set(socket, subscriptions)
@@ -315,14 +315,14 @@ export default class SubscriptionRegistry {
     }
     subscriptions.add(subscription)
 
-    this.clusterSubscriptions.add(subscription.name)
+    this.clusterSubscriptions!.add(subscription.name)
 
     if (this.subscriptionListener) {
       this.subscriptionListener.onSubscriptionMade(subscription.name, socket)
     }
   }
 
-  private removeSocket (subscription, socket): void {
+  private removeSocket (subscription: Subscription, socket: SocketWrapper): void {
     if (subscription.sockets.size === 0) {
       this.subscriptions.delete(subscription.name)
       socket.removeOnClose(this.onSocketClose)
@@ -331,7 +331,7 @@ export default class SubscriptionRegistry {
     if (this.subscriptionListener) {
       this.subscriptionListener.onSubscriptionRemoved(subscription.name, socket)
     }
-    this.clusterSubscriptions.remove(subscription.name)
+    this.clusterSubscriptions!.remove(subscription.name)
 
     const subscriptions = this.sockets.get(socket)
     if (subscriptions) {

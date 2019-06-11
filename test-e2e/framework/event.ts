@@ -3,7 +3,7 @@ import { clientHandler } from './client-handler'
 import { parseData } from './utils'
 
 const assert = {
-  recieved (clientExpression, doesReceive, subscriptionName, data) {
+  recieved (clientExpression: string, doesReceive: boolean, subscriptionName: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const eventSpy = client.event.callbacks[subscriptionName]
       if (doesReceive) {
@@ -20,20 +20,20 @@ const assert = {
 export const event = {
   assert,
 
-  publishes (clientExpression, subscriptionName, data) {
+  publishes (clientExpression: string, subscriptionName: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.event.emit(subscriptionName, parseData(data))
     })
   },
 
-  subscribes (clientExpression, subscriptionName) {
+  subscribes (clientExpression: string, subscriptionName: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.event.callbacks[subscriptionName] = sinon.spy()
       client.client.event.subscribe(subscriptionName, client.event.callbacks[subscriptionName])
     })
   },
 
-  unsubscribes (clientExpression, subscriptionName) {
+  unsubscribes (clientExpression: string, subscriptionName: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.event.unsubscribe(subscriptionName, client.event.callbacks[subscriptionName])
       client.event.callbacks[subscriptionName].isSubscribed = false

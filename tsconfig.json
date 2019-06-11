@@ -8,6 +8,7 @@
     "strictNullChecks": true,
     "resolveJsonModule": true,
     "noUnusedLocals": true,
+    // "strict": true,
     "types": [
       "node"
     ]
@@ -20,10 +21,13 @@
     "test-e2e/**/*",
     "package.json"
   ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*-mock.ts",
+    "**/installer.ts",
+    "node_modules"
+  ],
   "files": [
     "types/global.d.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
 }

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
-import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, Message } from '../constants'
+import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS } from '../constants'
 import RecordHandler from '../record/record-handler'
 import * as configCompiler from './config-compiler'
 import * as configValidator from './config-validator'
@@ -8,6 +8,7 @@ import RuleApplication from './rule-application'
 import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
 import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, Logger, PermissionCallback, SocketWrapper } from '../types'
+import { Message } from '@deepstream/client/dist/binary-protocol/src/message-constants'
 
 const UNDEFINED = 'undefined'
 
@@ -21,7 +22,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
   private services: DeepstreamServices
   private permissions: any
   private logger: Logger
-  private recordHandler: RecordHandler
+  private recordHandler: RecordHandler | null = null
   private optionsValid: boolean
 
   /**
@@ -113,7 +114,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
    * - Load the applicable permissions
    * - Apply them
    */
-  public canPerformAction (username, message, callback, authData, socketWrapper) {
+  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: any, socketWrapper: SocketWrapper) {
     const ruleSpecification = rulesMap.getRulesForMessage(message)
 
     if (ruleSpecification === null) {
@@ -121,7 +122,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
       return
     }
 
-    const ruleData = this.getCompiledRulesForName(message.name, ruleSpecification)
+    const ruleData = this.getCompiledRulesForName(message.name!, ruleSpecification)
     if (!ruleData) {
       callback(socketWrapper, message, null, false)
       return
@@ -129,7 +130,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
 
     // tslint:disable-next-line
     new RuleApplication({
-      recordHandler: this.recordHandler,
+      recordHandler: this.recordHandler!,
       socketWrapper,
       username,
       authData,
@@ -139,7 +140,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
       action: ruleSpecification.action as (RECORD_ACTIONS | EVENT_ACTIONS | RPC_ACTIONS | PRESENCE_ACTIONS),
       regexp: ruleData.regexp,
       rule: ruleData.rule,
-      name: message.name,
+      name: message.name!,
       callback,
       logger: this.logger,
       permissionOptions: this.permissionOptions,

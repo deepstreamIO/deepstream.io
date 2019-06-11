@@ -11,7 +11,7 @@ const services = {
 }
 
 describe('dependency-initialiser', () => {
-  let dependencyBInitialiser
+  let dependencyBInitialiser: DependencyInitialiser
 
   const config = {
     pluginA: new PluginMock({}, 'A'),

@@ -6,7 +6,7 @@ Then(/^(.+) receives? at least one "([^"]*)" error "([^"]*)"$/, client.recievedE
 Then(/^(.+) receives? "([^"]*)" error "([^"]*)"$/, client.recievedOneError)
 Then(/^(.+) received? no errors$/, client.recievedNoErrors)
 
-Given(/^(.+) logs? out$/, (clientExpression, done) => {
+Given(/^(.+) logs? out$/, (clientExpression: string, done) => {
   client.logsOut(clientExpression, () => {})
   setTimeout(done, defaultDelay)
 })
@@ -15,22 +15,22 @@ Given(/^(.+) connects? to server (\d+)$/, client.connect)
 
 Then(/^(.+) connections? times? out$/, client.connectionTimesOut)
 
-// Then(/^(.+) has connection state "([^"]*)"$/, (clientExpression, state) =>
-//   client.hasConnectionState(clientExpression, state))
+// Then(/^(.+) has connection state "([^"]*)"$/, (clientExpression: string, state) =>
+//   client.hasConnectionState(clientExpression: string, state))
 
-Then(/^(.+) had a connection state change to "([^"]*)"$/, (clientExpression, state) =>
+Then(/^(.+) had a connection state change to "([^"]*)"$/, (clientExpression: string, state) =>
   client.hadConnectionState(clientExpression, true, state))
 
-Then(/^(.+) did not have a connection state change to "([^"]*)"$/, (clientExpression, state) =>
+Then(/^(.+) did not have a connection state change to "([^"]*)"$/, (clientExpression: string, state) =>
   client.hadConnectionState(clientExpression, false, state))
 
-Given(/^(.+) connects? and logs? into server (\d+)$/, (clientExpression, server, done) => {
+Given(/^(.+) connects? and logs? into server (\d+)$/, (clientExpression: string, server, done) => {
   client.connectAndLogin(clientExpression, server, () => {
     setTimeout(done, defaultDelay)
   })
 })
 
-Given(/^(.+) logs? in with username "([^"]*)" and password "([^"]*)"$/, (clientExpression, username, password, done) => {
+Given(/^(.+) logs? in with username "([^"]*)" and password "([^"]*)"$/, (clientExpression: string, username, password, done) => {
   client.login(clientExpression, username, password, () => {
     setTimeout(done, defaultDelay)
   })
@@ -44,10 +44,10 @@ Then(/^(.+) receives? no login response$/, (clientExpression) => {
   client.recievesNoLoginResponse(clientExpression)
 })
 
-Then(/^(.+) receives? an (un)?authenticated login response(?: with data ({.*}))?$/, (clientExpression, unauth, data) => {
+Then(/^(.+) receives? an (un)?authenticated login response(?: with data ({.*}))?$/, (clientExpression: string, unauth, data) => {
   client.recievesLoginResponse(clientExpression, unauth, data)
 })
 
-Then(/^(.+) "([^"]*)" callback was( not)? called( once)?( with ({.*}))?$/, (clientExpression, eventName, notCalled, once, data) => {
+Then(/^(.+) "([^"]*)" callback was( not)? called( once)?( with ({.*}))?$/, (clientExpression: string, eventName, notCalled, once, data) => {
   client.callbackCalled(clientExpression, eventName, notCalled, once, data)
 })

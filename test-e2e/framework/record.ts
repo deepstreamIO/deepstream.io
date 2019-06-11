@@ -3,23 +3,23 @@ import { clientHandler } from './client-handler'
 import * as utils from './utils'
 import * as assert from 'assert'
 
-function getRecordData (expression, recordName) {
-  return clientHandler.getClients(expression).map((client) => client.record.records[recordName])
+function getRecordData (clientExpression: string, recordName: string) {
+  return clientHandler.getClients(clientExpression).map((client) => client.record.records[recordName])
 }
 
-function getListData (expression, listName) {
-  return clientHandler.getClients(expression).map((client) => client.record.lists[listName])
+function getListData (clientExpression: string, listName: string) {
+  return clientHandler.getClients(clientExpression).map((client) => client.record.lists[listName])
 }
 
 const assert2 = {
-    deleted (clientExpression, recordName) {
+    deleted (clientExpression: string, recordName: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.deleteCallback)
             recordData.deleteCallback.resetHistory()
         })
     },
 
-    discarded (clientExpression, recordName, called) {
+    discarded (clientExpression: string, recordName: string, called: boolean) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             if (called) {
                 sinon.assert.calledOnce(recordData.discardCallback)
@@ -30,7 +30,7 @@ const assert2 = {
         })
     },
 
-    recievedUpdate (clientExpression, recordName, data) {
+    recievedUpdate (clientExpression: string, recordName: string, data: string) {
         data = utils.parseData(data)
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.subscribeCallback)
@@ -39,7 +39,7 @@ const assert2 = {
         })
     },
 
-    recievedUpdateForPath (clientExpression, recordName, path, data) {
+    recievedUpdateForPath (clientExpression: string, recordName: string, path: string, data: string) {
         data = utils.parseData(data)
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.subscribePathCallbacks[path])
@@ -48,46 +48,46 @@ const assert2 = {
         })
     },
 
-    recievedNoUpdate (clientExpression, recordName) {
+    recievedNoUpdate (clientExpression: string, recordName: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.notCalled(recordData.subscribeCallback)
         })
     },
 
-    recievedNoUpdateForPath (clientExpression, recordName, path) {
+    recievedNoUpdateForPath (clientExpression: string, recordName: string, path: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.notCalled(recordData.subscribePathCallbacks[path])
         })
     },
 
-    receivedRecordError (clientExpression, error, recordName) {
+    receivedRecordError (clientExpression: string, error: string, recordName: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledWith(recordData.errorCallback, error)
             recordData.errorCallback.resetHistory()
         })
     },
 
-    hasData (clientExpression, recordName, data) {
+    hasData (clientExpression: string, recordName: string, data: string) {
         data = utils.parseData(data)
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             assert.deepEqual(recordData.record.get(), data)
         })
     },
 
-    hasProviders (clientExpression, recordName, without) {
+    hasProviders (clientExpression: string, recordName: string, without: boolean) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             assert.deepEqual(recordData.record.hasProvider, !without)
         })
     },
 
-    hasDataAtPath (clientExpression, recordName, path, data) {
+    hasDataAtPath (clientExpression: string, recordName: string, path: string, data: string) {
         data = utils.parseData(data)
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             assert.deepEqual(recordData.record.get(path), data)
         })
     },
 
-    writeAckSuccess (clientExpression, recordName) {
+    writeAckSuccess (clientExpression: string, recordName: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             if (!recordData) { return }
             sinon.assert.calledOnce(recordData.setCallback)
@@ -102,7 +102,7 @@ const assert2 = {
         })
     },
 
-    writeAckError (clientExpression, recordName, errorMessage) {
+    writeAckError (clientExpression: string, recordName: string, errorMessage: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             if (!recordData) { return }
             sinon.assert.calledOnce(recordData.setCallback)
@@ -117,7 +117,7 @@ const assert2 = {
         })
     },
 
-    snapshotSuccess (clientExpression, recordName, data) {
+    snapshotSuccess (clientExpression: string, recordName: string, data: string) {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.snapshotCallback)
             sinon.assert.calledWith(client.record.snapshotCallback, null, utils.parseData(data))
@@ -125,7 +125,7 @@ const assert2 = {
         })
     },
 
-    snapshotError (clientExpression, recordName, data) {
+    snapshotError (clientExpression: string, recordName: string, data: string) {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.snapshotCallback)
             sinon.assert.calledWith(client.record.snapshotCallback, data.replace(/"/g, ''))
@@ -133,15 +133,15 @@ const assert2 = {
         })
     },
 
-    headSuccess (clientExpression, recordName, data) {
+    headSuccess (clientExpression: string, recordName: string, data: number) {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.headCallback)
-            sinon.assert.calledWith(client.record.headCallback, null, utils.parseData(data))
+            sinon.assert.calledWith(client.record.headCallback, null, data)
             client.record.headCallback.resetHistory()
         })
     },
 
-    headError (clientExpression, recordName, data) {
+    headError (clientExpression: string, recordName: string, data: string) {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.headCallback)
             sinon.assert.calledWith(client.record.headCallback, data.replace(/"/g, ''))
@@ -149,7 +149,7 @@ const assert2 = {
         })
     },
 
-    has (clientExpression, recordName, expected) {
+    has (clientExpression: string, recordName: string, expected: boolean) {
         clientHandler.getClients(clientExpression).forEach((client) => {
             sinon.assert.calledOnce(client.record.hasCallback)
             sinon.assert.calledWith(client.record.hasCallback, null, expected)
@@ -157,32 +157,32 @@ const assert2 = {
         })
     },
 
-    hasEntries (clientExpression, listName, data) {
+    hasEntries (clientExpression: string, listName: string, data: string) {
         data = utils.parseData(data)
         getListData(clientExpression, listName).forEach((listData) => {
             assert.deepEqual(listData.list.getEntries(), data)
         })
     },
 
-    addedNotified (clientExpression, listName, entryName) {
+    addedNotified (clientExpression: string, listName: string, entryName: string) {
         getListData(clientExpression, listName).forEach((listData) => {
             sinon.assert.calledWith(listData.addedCallback, entryName)
         })
     },
 
-    removedNotified (clientExpression, listName, entryName) {
+    removedNotified (clientExpression: string, listName: string, entryName: string) {
         getListData(clientExpression, listName).forEach((listData) => {
             sinon.assert.calledWith(listData.removedCallback, entryName)
         })
     },
 
-    movedNotified (clientExpression, listName, entryName) {
+    movedNotified (clientExpression: string, listName: string, entryName: string) {
         getListData(clientExpression, listName).forEach((listData) => {
             sinon.assert.calledWith(listData.movedNotified, entryName)
         })
     },
 
-    listChanged (clientExpression, listName, data) {
+    listChanged (clientExpression: string, listName: string, data: string) {
         data = utils.parseData(data)
         getListData(clientExpression, listName).forEach((listData) => {
             // sinon.assert.calledOnce( listData.subscribeCallback );
@@ -190,7 +190,7 @@ const assert2 = {
         })
     },
 
-    anonymousRecordContains (clientExpression, data) {
+    anonymousRecordContains (clientExpression: string, data: string) {
         data = utils.parseData(data)
         clientHandler.getClients(clientExpression).forEach((client) => {
             assert.deepEqual(client.record.anonymousRecord.get(), data)
@@ -201,7 +201,7 @@ const assert2 = {
 export const record = {
   assert: assert2,
 
-  getRecord (clientExpression, recordName) {
+  getRecord (clientExpression: string, recordName: string) {
     const clients = clientHandler.getClients(clientExpression)
     clients.forEach((client) => {
       const recordData = {
@@ -222,50 +222,50 @@ export const record = {
     })
   },
 
-  subscribe (clientExpression, recordName, immediate) {
+  subscribe (clientExpression: string, recordName: string, immediate: boolean) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       recordData.record.subscribe(recordData.subscribeCallback, !!immediate)
     })
   },
 
-  unsubscribe (clientExpression, recordName) {
+  unsubscribe (clientExpression: string, recordName: string) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       recordData.record.unsubscribe(recordData.subscribeCallback)
     })
   },
 
-  subscribeWithPath (clientExpression, recordName, path, immediate) {
+  subscribeWithPath (clientExpression: string, recordName: string, path: string, immediate: boolean) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       recordData.subscribePathCallbacks[path] = sinon.spy()
       recordData.record.subscribe(path, recordData.subscribePathCallbacks[path], !!immediate)
     })
   },
 
-  unsubscribeFromPath (clientExpression, recordName, path) {
+  unsubscribeFromPath (clientExpression: string, recordName: string, path: string) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       recordData.record.unsubscribe(path, recordData.subscribePathCallbacks[path])
     })
   },
 
-  discard (clientExpression, recordName) {
+  discard (clientExpression: string, recordName: string) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       recordData.record.discard()
     })
   },
 
-  delete (clientExpression, recordName) {
+  delete (clientExpression: string, recordName: string) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       recordData.record.delete(recordData.deleteSuccessCallback)
     })
   },
 
-  setupWriteAck (clientExpression, recordName) {
+  setupWriteAck (clientExpression: string, recordName: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.record.records[recordName].setCallback = sinon.spy()
     })
   },
 
-  set (clientExpression, recordName, data) {
+  set (clientExpression: string, recordName: string, data: string) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       if (recordData.setCallback) {
         recordData.record.set(utils.parseData(data), recordData.setCallback)
@@ -275,7 +275,7 @@ export const record = {
     })
   },
 
-  setWithPath (clientExpression, recordName, path, data) {
+  setWithPath (clientExpression: string, recordName: string, path: string, data: string) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       if (recordData.setCallback) {
         recordData.record.set(path, utils.parseData(data), recordData.setCallback)
@@ -285,7 +285,7 @@ export const record = {
     })
   },
 
-  erase (clientExpression, recordName, path) {
+  erase (clientExpression: string, recordName: string, path: string) {
     getRecordData(clientExpression, recordName).forEach((recordData) => {
       if (recordData.setCallback) {
         recordData.record.erase(path, recordData.setCallback)
@@ -295,13 +295,13 @@ export const record = {
     })
   },
 
-  setData (clientExpression, recordName, data) {
+  setData (clientExpression: string, recordName: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.record.setData(recordName, utils.parseData(data))
     })
   },
 
-  setDataWithWriteAck (clientExpression, recordName, data) {
+  setDataWithWriteAck (clientExpression: string, recordName: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       if (!client.record.writeAcks) {
         client.record.writeAcks = {}
@@ -311,25 +311,25 @@ export const record = {
     })
   },
 
-  setDataWithPath (clientExpression, recordName, path, data) {
+  setDataWithPath (clientExpression: string, recordName: string, path: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.record.setData(recordName, path, utils.parseData(data))
     })
   },
 
-  snapshot (clientExpression, recordName) {
+  snapshot (clientExpression: string, recordName: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.record.snapshot(recordName, client.record.snapshotCallback)
     })
   },
 
-  has (clientExpression, recordName) {
+  has (clientExpression: string, recordName: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.record.has(recordName, client.record.hasCallback)
     })
   },
 
-  head (clientExpression, recordName) {
+  head (clientExpression: string, recordName: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.record.head(recordName, client.record.headCallback)
     })
@@ -339,7 +339,7 @@ export const record = {
    *********************************************************** Lists ************************************************************
    ********************************************************************************************************************************/
 
-   getList (clientExpression, listName) {
+   getList (clientExpression: string, listName: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const listData = {
         list: client.client.record.getList(listName),
@@ -361,20 +361,20 @@ export const record = {
     })
    },
 
-   setEntries (clientExpression, listName, data) {
+   setEntries (clientExpression: string, listName: string, data: string) {
       const entries = utils.parseData(data)
       getListData(clientExpression, listName).forEach((listData) => {
         listData.list.setEntries(entries)
       })
    },
 
-   addEntry (clientExpression, listName, entryName) {
+   addEntry (clientExpression: string, listName: string, entryName: string) {
     getListData(clientExpression, listName).forEach((listData) => {
       listData.list.addEntry(entryName)
     })
    },
 
-   removeEntry (clientExpression, listName, entryName) {
+   removeEntry (clientExpression: string, listName: string, entryName: string) {
     getListData(clientExpression, listName).forEach((listData) => {
       listData.list.removeEntry(entryName)
     })
@@ -384,13 +384,13 @@ export const record = {
    *********************************************************** ANONYMOUS RECORDS ************************************************************
    ********************************************************************************************************************************/
 
-   getAnonymousRecord (clientExpression) {
+   getAnonymousRecord (clientExpression: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.record.anonymousRecord = client.client.record.getAnonymousRecord()
     })
    },
 
-   setName (clientExpression, recordName) {
+   setName (clientExpression: string, recordName: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.record.anonymousRecord.setName(recordName)
     })

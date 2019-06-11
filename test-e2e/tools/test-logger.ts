@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import { EVENT, LOG_LEVEL } from '../../src/constants'
 
 interface Log {
   level: number,
@@ -22,23 +23,23 @@ export class Logger extends EventEmitter implements Logger {
     return true
   }
 
-  public error (event, logMessage) {
-    this.log(3, event, logMessage)
+  public error (event: EVENT, logMessage: string) {
+    this.log(LOG_LEVEL.ERROR, event, logMessage)
   }
 
-  public warn (event, logMessage) {
-    this.log(2, event, logMessage)
+  public warn (event: EVENT, logMessage: string) {
+    this.log(LOG_LEVEL.WARN, event, logMessage)
   }
 
-  public info (event, logMessage) {
-     this.log(1, event, logMessage)
+  public info (event: EVENT, logMessage: string) {
+     this.log(LOG_LEVEL.INFO, event, logMessage)
   }
 
-  public debug (event, logMessage) {
-    this.log(0, event, logMessage)
+  public debug (event: EVENT, logMessage: string) {
+    this.log(LOG_LEVEL.DEBUG, event, logMessage)
   }
 
-  public log (logLevel, event, logMessage) {
+  public log (logLevel: LOG_LEVEL, event: EVENT, logMessage: string) {
     const log = {
       level: logLevel,
       event,

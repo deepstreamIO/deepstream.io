@@ -4,14 +4,14 @@ import { StoragePlugin } from '../../types'
 export default class StorageMock extends EventEmitter implements StoragePlugin  {
   public values: any
   public failNextSet: boolean
-  public nextOperationWillBeSuccessful: boolean
-  public nextOperationWillBeSynchronous: boolean
-  public nextGetWillBeSynchronous: boolean
-  public lastGetCallback: Function | null
-  public lastRequestedKey: string | null
-  public lastSetKey: string | null
-  public lastSetVersion: number | null
-  public lastSetValue: object | null
+  public nextOperationWillBeSuccessful: boolean = true
+  public nextOperationWillBeSynchronous: boolean = true
+  public nextGetWillBeSynchronous: boolean = true
+  public lastGetCallback: Function | null = null
+  public lastRequestedKey: string | null = null
+  public lastSetKey: string | null = null
+  public lastSetVersion: number | null = null
+  public lastSetValue: object | null = null
   public completedSetOperations: any
   public completedDeleteOperations: any
   public getCalls: any

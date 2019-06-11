@@ -93,11 +93,11 @@ export interface Logger extends DeepstreamPlugin {
 export interface ConnectionEndpoint extends DeepstreamPlugin {
   onMessages (socketWrapper: SocketWrapper, messages: Message[]): void
   close (): void
-  scheduleFlush? (socketWrapper: SocketWrapper)
+  scheduleFlush? (socketWrapper: SocketWrapper): void
 }
 
 export interface SocketConnectionEndpoint extends ConnectionEndpoint {
-  scheduleFlush (socketWrapper: SocketWrapper)
+  scheduleFlush (socketWrapper: SocketWrapper): void
 }
 
 export interface PluginConfig {
@@ -113,13 +113,13 @@ export class DeepstreamPlugin extends EventEmitter {
   constructor () {
     super()
   }
-  public isReady: boolean
-  public description: string
+  public isReady: boolean = false
+  public description: string = 'Deepstream Plugin'
   public init? (): void
   public close? (): void
   public setDeepstream? (deepstream: Deepstream): void
   public setRecordHandler? (recordHandler: any): void
-  public registerMonitorHook? (cb: MonitorHookCallback)
+  public registerMonitorHook? (cb: MonitorHookCallback): void
 }
 
 export type StorageReadCallback = (error: string | null, version: number, result: any) => void
@@ -147,13 +147,11 @@ export interface PermissionHandler extends DeepstreamPlugin {
 }
 
 export interface AuthenticationHandler extends DeepstreamPlugin {
-  isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback)
-  onClientDisconnect? (username: string)
+  isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback): void
+  onClientDisconnect? (username: string): void
 }
 
-export interface UserAuthenticationCallback {
-  (isValid: boolean, clientData?: any)
-}
+export type UserAuthenticationCallback = (isValid: boolean, clientData?: any) => void
 
 export interface Cluster {
   getStateRegistry (stateRegistryTopic: TOPIC): any,
@@ -166,8 +164,8 @@ export interface Cluster {
 }
 
 export interface LockRegistry {
-  get (lock: string, callback: Function)
-  release (lock: string)
+  get (lock: string, callback: Function): void
+  release (lock: string): void
 }
 
 export interface DeepstreamConfig {

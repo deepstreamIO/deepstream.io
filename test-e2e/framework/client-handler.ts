@@ -1,9 +1,17 @@
+import { Client } from '@deepstream/client'
 import * as deepstream from '@deepstream/client'
 import * as sinon from 'sinon'
+import { Message } from '../../src/constants'
 
-const clients = {}
+export interface E2EClient {
+  name: string,
+  client: Client,
+  [index: string]: any
+}
 
-function createClient (clientName, server, options?) {
+const clients: { [index: string]: E2EClient } = {}
+
+function createClient (clientName: string, server: string, options?: any) {
   const gatewayUrl = global.cluster.getUrl()
   // @ts-ignore
   const client = deepstream(gatewayUrl, {
@@ -77,10 +85,9 @@ function createClient (clientName, server, options?) {
     presence: {
       callbacks: {}
     }
-
   }
 
-  clients[clientName].client.on('error', (message, event, topic) => {
+  clients[clientName].client.on('error', (message: Message, event: string, topic: number) => {
     if (process.env.DEBUG_LOG) {
       console.log('An Error occured on', clientName, message, event, topic)
     }
@@ -94,21 +101,21 @@ function createClient (clientName, server, options?) {
     clients[clientName].error[topic][event](message)
   })
 
-  clients[clientName].client.on('connectionStateChanged', (state) => {
+  clients[clientName].client.on('connectionStateChanged', (state: string) => {
     if (!clients[clientName]) {
       return
     }
     clients[clientName].connectionStateChanged(state)
   })
 
-  clients[clientName].client.on('clientDataChanged', (clientData) => {
+  clients[clientName].client.on('clientDataChanged', (clientData: any) => {
     if (!clients[clientName]) {
       return
     }
     clients[clientName].clientDataChanged(clientData)
   })
 
-  clients[clientName].client.on('reauthenticationFailure', (reason) => {
+  clients[clientName].client.on('reauthenticationFailure', (reason: string) => {
     if (!clients[clientName]) {
       return
     }
@@ -118,7 +125,7 @@ function createClient (clientName, server, options?) {
   return clients[clientName]
 }
 
-function getClientNames (expression) {
+function getClientNames (expression: string) {
   const clientExpression = /all clients|(?:subscriber|publisher|clients?) ([^\s']*)(?:'s)?/
   const result = clientExpression.exec(expression)!
   if (result[0] === 'all clients') {
@@ -132,11 +139,11 @@ function getClientNames (expression) {
   throw new Error(`Invalid expression: ${expression}`)
 }
 
-function getClients (expression) {
+function getClients (expression: string) {
   return getClientNames(expression).map((client) => clients[client])
 }
 
-function assertNoErrors (client) {
+function assertNoErrors (client: string) {
   const clientErrors = clients[client].error
   for (const topic in clientErrors) {
     for (const event in clientErrors[topic]) {

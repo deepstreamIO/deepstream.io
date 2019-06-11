@@ -1,6 +1,7 @@
 import SCHEMA from './config-schema'
 import * as pathParser from './path-parser'
 import * as ruleParser from './rule-parser'
+import { DeepstreamConfig } from '../types'
 
 const validationSteps: any = {}
 
@@ -9,7 +10,7 @@ const validationSteps: any = {}
  * individual validation steps. If any of them returns false,
  * the validation fails
  */
-export const validate = function (config?) {
+export const validate = function (config?: DeepstreamConfig) {
   let validationStepResult
   let key
 

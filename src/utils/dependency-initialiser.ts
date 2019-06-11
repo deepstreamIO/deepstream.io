@@ -18,7 +18,7 @@ export default class DependencyInitialiser extends EventEmitter {
  * an individual dependency (cache connector, persistance connector,
  * message connector, logger)
  */
-  constructor (deepstream, config: InternalDeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
+  constructor (deepstream: Deepstream, config: InternalDeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
     super()
     this.isReady = false
     this.deepstream = deepstream

@@ -5,7 +5,7 @@ const subscribeEvent = 'subscribe'
 const queryEvent = 'query'
 
 export const assert = {
-  notifiedUserStateChanged (notifeeExpression, not, notiferExpression, event) {
+  notifiedUserStateChanged (notifeeExpression: string, not: boolean, notiferExpression: string, event: string) {
     clientHandler.getClients(notifeeExpression).forEach((notifee) => {
       clientHandler.getClients(notiferExpression).forEach((notifier) => {
         if (not) {
@@ -18,7 +18,7 @@ export const assert = {
     })
   },
 
-  globalQueryResult (clientExpression, error, users?) {
+  globalQueryResult (clientExpression: string, error: null | string, users?: string[]) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
       if (users) {
@@ -30,9 +30,9 @@ export const assert = {
     })
   },
 
-  queryResult (clientExpression, users, online) {
+  queryResult (clientExpression: string, users: string[], online: boolean) {
     clientHandler.getClients(clientExpression).forEach((client) => {
-      const result = {}
+      const result: { [index: string]: boolean } = {}
       for (let i = 0; i < users.length; i++) {
         result[users[i]] = online
       }
@@ -45,7 +45,7 @@ export const assert = {
 
 export const presence = {
   assert,
-  subscribe (clientExpression, user?) {
+  subscribe (clientExpression: string, user?: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       if (!client.presence.callbacks[subscribeEvent]) {
         client.presence.callbacks[subscribeEvent] = sinon.spy()
@@ -58,7 +58,7 @@ export const presence = {
     })
   },
 
-  unsubscribe (clientExpression, user?) {
+  unsubscribe (clientExpression: string, user?: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       if (user) {
         client.client.presence.unsubscribe(user)
@@ -68,7 +68,7 @@ export const presence = {
     })
   },
 
-  getAll (clientExpression, users?) {
+  getAll (clientExpression: string, users?: string[]) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.presence.callbacks[queryEvent] = sinon.spy()
       if (users) {

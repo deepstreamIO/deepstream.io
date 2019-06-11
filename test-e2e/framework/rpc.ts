@@ -1,11 +1,12 @@
 // tslint:disable:no-shadowed-variable
 
 import * as sinon from 'sinon'
-import { clientHandler } from './client-handler'
+import { clientHandler, E2EClient } from './client-handler'
+import { RPCResponse } from '@deepstream/client/dist/src/rpc/rpc-response'
 
 let rejected = false
 
-const rpcs = {
+const rpcs: { [index: string]: (client: E2EClient, data: any, response: RPCResponse) => void } = {
   'addTwo': (client, data, response) => {
     client.rpc.provides.addTwo()
     response.send(data.numA + data.numB)
@@ -57,7 +58,7 @@ const rpcs = {
 }
 
 const assert = {
-  recievesResponse (clientExpression, rpc, data) {
+  recievesResponse (clientExpression: string, rpc: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.calledOnce(client.rpc.callbacks[rpc])
       sinon.assert.calledWith(client.rpc.callbacks[rpc], null, JSON.parse(data).toString())
@@ -65,7 +66,7 @@ const assert = {
     })
   },
 
-  recievesResponseWithError (clientExpression, eventually, rpc, error, done) {
+  recievesResponseWithError (clientExpression: string, eventually: boolean, rpc: string, error: string, done: Function) {
     setTimeout(() => {
       clientHandler.getClients(clientExpression).forEach((client) => {
         sinon.assert.calledOnce(client.rpc.callbacks[rpc])
@@ -76,7 +77,7 @@ const assert = {
     }, eventually ? 150 : 0)
   },
 
-  providerCalled (clientExpression, rpc, timesCalled, data?) {
+  providerCalled (clientExpression: string, rpc: string, timesCalled: number, data?: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.callCount(client.rpc.provides[rpc], timesCalled)
       if (data) {
@@ -90,24 +91,24 @@ const assert = {
 export const rpc = {
   assert,
 
-  provide (clientExpression, rpc) {
+  provide (clientExpression: string, rpc: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.rpc.provides[rpc] = sinon.spy()
       client.client.rpc.provide(rpc, rpcs[rpc].bind(null, client))
     })
   },
 
-  unprovide (clientExpression, rpc) {
+  unprovide (clientExpression: string, rpc: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.rpc.unprovide(rpc)
     })
   },
 
-  make (clientExpression, rpc, args) {
+  make (clientExpression: string, rpc: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const callback = client.rpc.callbacks[rpc] = sinon.spy()
-      client.client.rpc.make(rpc, JSON.parse(args), (a, b) => {
-        callback(a, b && b.toString())
+      client.client.rpc.make(rpc, JSON.parse(data), (error, data) => {
+        callback(error, data && data.toString())
       })
     })
   }

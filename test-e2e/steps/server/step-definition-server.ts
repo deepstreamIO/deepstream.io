@@ -35,9 +35,7 @@ Given(/^a small amount of time passes$/, (done) => {
 
 BeforeAll((done) => {
   global.cluster = new Cluster(6001, 8001, process.env.ENABLE_LOGGING === 'true')
-  global.cluster.once('started', () => {
-    setTimeout(done, 200)
-  })
+  global.cluster.once('started', () => setTimeout(done!, 200))
   global.cluster.start()
 })
 

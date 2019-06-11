@@ -4,8 +4,8 @@ import {expect} from 'chai'
 import * as C from '../constants'
 const testHelper = require('../test/helper/test-helper')
 import { getTestMocks } from '../test/helper/test-mocks'
-
-const SubscriptionRegistry = require('./subscription-registry').default
+import SubscriptionRegistry from './subscription-registry'
+import { SocketWrapper } from '../types'
 
 const options = testHelper.getDeepstreamOptions()
 const services = options.services
@@ -18,11 +18,11 @@ const subscriptionListener = {
   onFirstSubscriptionMade: () => {},
 }
 
-let subscriptionRegistry
+let subscriptionRegistry: SubscriptionRegistry
 let subscriptionListenerMock
 
-let clientA
-let clientB
+let clientA: { socketWrapper: SocketWrapper }
+let clientB: { socketWrapper: SocketWrapper }
 
 let testMocks
 
@@ -32,7 +32,7 @@ describe('subscription registry', () => {
     testMocks = getTestMocks()
 
     subscriptionListenerMock = sinon.mock(subscriptionListener)
-    subscriptionRegistry = new SubscriptionRegistry(config, services, C.TOPIC.EVENT)
+    subscriptionRegistry = new SubscriptionRegistry(config, services, C.TOPIC.EVENT, C.TOPIC.EVENT)
     subscriptionRegistry.setSubscriptionListener(subscriptionListener)
 
     clientA = testMocks.getSocketWrapper('client a')
@@ -122,7 +122,7 @@ describe('subscription registry', () => {
         .expects('sendBinaryMessage')
         .once()
 
-      subscriptionRegistry.sendToSubscribers('someName', eventMessage)
+      subscriptionRegistry.sendToSubscribers('someName', eventMessage, true, null)
     })
 
     it('doesn\'t send message to sender', () => {
@@ -175,8 +175,8 @@ describe('subscription registry', () => {
         .expects('sendMessage')
         .never()
 
-      subscriptionRegistry.sendToSubscribers('nameA', eventMessage)
-      subscriptionRegistry.sendToSubscribers('nameB', eventMessage)
+      subscriptionRegistry.sendToSubscribers('nameA', eventMessage, true, null)
+      subscriptionRegistry.sendToSubscribers('nameB', eventMessage, true, null)
     })
   })
 

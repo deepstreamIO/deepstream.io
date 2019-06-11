@@ -6,5 +6,5 @@ Before((/* scenario*/) => {
 })
 
 After((scenario, done) => {
-  world.endTest(done)
+  world.endTest(done!)
 })

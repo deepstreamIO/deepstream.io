@@ -9,20 +9,12 @@ const onlyLoginOnceUser = { loggedIn: false }
 const localCache = new LocalCache()
 
 export class Cluster extends EventEmitter {
-  private wsPort: any
-  private httpPort: any
-  private server: any
-  private enableLogging: any
-  public started: boolean
+  private server: Deepstream
+  private started: boolean = false
 
-  constructor (wsPort, httpPort, enableLogging) {
+  constructor (private wsPort: number, private httpPort: number, private enableLogging: boolean) {
     super()
-    this.wsPort = wsPort
-    this.httpPort = httpPort
-    this.server = null
-    this.enableLogging = enableLogging
-    this.started = false
-    this._startServer()
+    this.server = this._startServer()
   }
 
   public getUrl () {
@@ -37,9 +29,10 @@ export class Cluster extends EventEmitter {
     return `localhost:${this.httpPort}/auth`
   }
 
-  public updatePermissions (type, done) {
-    this.server.services.permissionHandler.once('config-loaded', () => done())
-    this.server.services.permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
+  public updatePermissions (type: string, done: Function) {
+    this.server.getServices().permissionHandler.once('config-loaded', () => done())
+    // @ts-ignore
+    this.server.getServices().permissionHandler.loadConfig(path.resolve(`./test-e2e/config/permissions-${type}.json`))
   }
 
   public start () {
@@ -48,7 +41,7 @@ export class Cluster extends EventEmitter {
       return
     }
     this.started = true
-    this._startServer()
+    this.server = this._startServer()
   }
 
   public stop () {
@@ -60,7 +53,7 @@ export class Cluster extends EventEmitter {
     this.server.stop()
   }
 
-  public _startServer () {
+  public _startServer (): Deepstream {
     this.started = true
     this.server = new Deepstream({
       serverName : `server-${this.wsPort}`,
@@ -108,7 +101,7 @@ export class Cluster extends EventEmitter {
     const tokens = new Map()
     this.server.set('authenticationHandler', {
       isReady: true,
-      isValidUser (headers, authData, callback) {
+      isValidUser (headers: any, authData: any, callback: Function) {
         if (authData.token) {
           if (authData.token === 'letmein') {
             callback(true, { username: 'A' })
@@ -169,6 +162,8 @@ export class Cluster extends EventEmitter {
     this.server.once('started', () => setTimeout(() => this.emit('started'), 500))
     this.server.once('stopped', () => setTimeout(() => this.emit('stopped'), 500))
     this.server.start()
+
+    return this.server
   }
 
 }

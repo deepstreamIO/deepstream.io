@@ -53,13 +53,15 @@
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.10.0"
   },
   "devDependencies": {
+    "@deepstream/client": "^4.0.0-rc.28",
+    "@types/cucumber": "^4.0.5",
     "@types/mocha": "^5.2.6",
     "@types/needle": "^2.0.4",
     "@types/node": "^11.13.0",
     "@types/sinon": "^7.0.11",
     "@types/sinon-chai": "^3.2.2",
-    "@deepstream/client": "latest",
     "async": "^2.6.2",
+    "bluebird": "^3.5.4",
     "chai": "^4.2.0",
     "coveralls": "^3.0.3",
     "cucumber": "^5.1.0",
@@ -74,8 +76,7 @@
     "ts-node": "^8.0.3",
     "tslint": "^5.15.0",
     "typescript": "3.4.2",
-    "watch": "^1.0.2",
-    "bluebird": "^3.5.4"
+    "watch": "^1.0.2"
   },
   "author": "deepstreamHub GmbH",
   "license": "AGPL-3.0",

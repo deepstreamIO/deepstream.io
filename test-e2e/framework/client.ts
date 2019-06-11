@@ -4,7 +4,7 @@ import * as sinon from 'sinon'
 import { clientHandler } from './client-handler'
 
 export const client = {
-  logsOut (clientExpression, done) {
+  logsOut (clientExpression: string, done: Function) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.close()
     })
@@ -12,13 +12,13 @@ export const client = {
     done()
   },
 
-  connect (clientExpression, server) {
+  connect (clientExpression: string, server: string) {
     clientHandler.getClientNames(clientExpression).forEach((clientName) => {
       clientHandler.createClient(clientName, server)
     })
   },
 
-  connectAndLogin (clientExpression, server, done) {
+  connectAndLogin (clientExpression: string, server: string, done: Function) {
     clientHandler.getClientNames(clientExpression).forEach((clientName) => {
       const client = clientHandler.createClient(clientName, server)
       client.client.login({ username: clientName, password: 'abcdefgh' }, (success, data) => {
@@ -29,7 +29,7 @@ export const client = {
     })
   },
 
-  login (clientExpression, username, password, done) {
+  login (clientExpression: string, username: string, password: string, done: Function) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.login({
         username,
@@ -42,7 +42,7 @@ export const client = {
     })
   },
 
-  attemptLogin (clientExpression, username, password) {
+  attemptLogin (clientExpression: string, username: string, password: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       client.client.login({
         username,
@@ -51,7 +51,7 @@ export const client = {
     })
   },
 
-  recievedTooManyLoginAttempts (clientExpression) {
+  recievedTooManyLoginAttempts (clientExpression: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[C.TOPIC[C.TOPIC.AUTH]][C.AUTH_ACTIONS[C.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS]]
       sinon.assert.calledOnce(errorSpy)
@@ -59,13 +59,13 @@ export const client = {
     })
   },
 
-  recievesNoLoginResponse (clientExpression) {
+  recievesNoLoginResponse (clientExpression: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       sinon.assert.notCalled(client.login)
     })
   },
 
-  recievesLoginResponse (clientExpression, loginFailed, data) {
+  recievesLoginResponse (clientExpression: string, loginFailed: boolean, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const loginSpy = client.login
       if (!loginFailed) {
@@ -83,7 +83,7 @@ export const client = {
     })
   },
 
-  connectionTimesOut (clientExpression, done) {
+  connectionTimesOut (clientExpression: string, done: Function) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       setTimeout(() => {
         const errorSpy = client.error[C.TOPIC[C.TOPIC.CONNECTION]][C.CONNECTION_ACTIONS[C.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT]]
@@ -94,7 +94,7 @@ export const client = {
     })
   },
 
-  recievedErrorOnce (clientExpression, topicName, eventName) {
+  recievedErrorOnce (clientExpression: string, topicName: string, eventName: string) {
     const topic = topicName.toUpperCase()
 
     clientHandler.getClients(clientExpression).forEach((client) => {
@@ -104,7 +104,8 @@ export const client = {
     })
   },
 
-  recievedOneError (clientExpression, topicName, eventName) {
+  recievedOneError (clientExpression: string, topicName: string, eventName: string) {
+    // @ts-ignore
     const topic = C.TOPIC[C.TOPIC[topicName.toUpperCase()]]
     const event = eventName.toUpperCase()
     clientHandler.getClients(clientExpression).forEach((client) => {
@@ -114,7 +115,7 @@ export const client = {
     })
   },
 
-  callbackCalled (clientExpression, eventName, notCalled, once, data) {
+  callbackCalled (clientExpression: string, eventName: string, notCalled: boolean, once: boolean, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const spy = client[eventName]
       if (notCalled) {
@@ -134,13 +135,13 @@ export const client = {
     })
   },
 
-  recievedNoErrors (clientExpression) {
+  recievedNoErrors (clientExpression: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       clientHandler.assertNoErrors(client.name)
     })
   },
 
-  hadConnectionState (clientExpression, had, state) {
+  hadConnectionState (clientExpression: string, had: boolean, state: boolean) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       if (had) {
         sinon.assert.calledWith(client.connectionStateChanged, state)

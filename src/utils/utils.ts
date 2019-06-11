@@ -31,10 +31,11 @@ export let combineEvents = function (emitters: EventEmitter[], event: string, ca
  * Takes a key-value map and returns
  * a map with { value: key } of the old map
  */
-export let reverseMap = function (map: Object): object {
+export let reverseMap = function (map: any): any {
   const reversedMap = {}
 
   for (const key in map) {
+    // @ts-ignore
     reversedMap[map[key]] = key
   }
 
@@ -61,7 +62,7 @@ export let isOfType = function (input: any, expectedType: string): boolean {
  * json schema in the form { key: type }
  * @returns {Boolean|Error}
  */
-export let validateMap = function (map: object, throwError: boolean, schema: Object): any {
+export let validateMap = function (map: any, throwError: boolean, schema: any): any {
   let error
   let key
 
@@ -92,12 +93,12 @@ export let validateMap = function (map: object, throwError: boolean, schema: Obj
  * Multi Object recoursive merge
  * @param {Object} multiple objects to be merged into each other recoursively
  */
-export let merge = function (...args) {
+export let merge = function (...args: any[]) {
   const result = {}
   const objs = Array.prototype.slice.apply(arguments)
   let i
 
-  const internalMerge = (objA, objB) => {
+  const internalMerge = (objA: any, objB: any) => {
     let key
 
     for (key in objB) {
@@ -166,7 +167,7 @@ export let shuffleArray = function (array: any[]): any[] {
  * Recursively freeze a deeply nested object
  * https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze
  */
-export let deepFreeze = function (obj: object): object {
+export let deepFreeze = function (obj: any): object {
 
   // Retrieve the property names defined on obj
   const propNames = Object.getOwnPropertyNames(obj)
