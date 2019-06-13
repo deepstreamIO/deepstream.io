@@ -1,4 +1,3 @@
-import StateRegistry from '../cluster/state-registry'
 import {
   EVENT_ACTIONS,
   PRESENCE_ACTIONS,
@@ -10,7 +9,7 @@ import {
   MONITORING_ACTIONS,
   Message
 } from '../constants'
-import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SubscriptionListener } from '../types'
+import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry } from '../types'
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
@@ -30,7 +29,6 @@ export default class SubscriptionRegistry {
   private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private topic: TOPIC
-  private clusterTopic: TOPIC
   private subscriptionListener: SubscriptionListener | null = null
   private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry | null = null
@@ -48,7 +46,6 @@ export default class SubscriptionRegistry {
     this.config = config
     this.services = services
     this.topic = topic
-    this.clusterTopic = clusterTopic
 
     switch (topic) {
       case TOPIC.RECORD:
@@ -79,20 +76,12 @@ export default class SubscriptionRegistry {
 
     this.onSocketClose = this.onSocketClose.bind(this)
 
-    this.setupRemoteComponents(clusterTopic)
+    this.clusterSubscriptions = this.services.message.getStateRegistry(clusterTopic)
     this.setUpBulkHistoryPurge()
   }
 
-  public whenReady (callback: Function): void {
+  public whenReady (callback: () => void): void {
     this.clusterSubscriptions!.whenReady(callback)
-  }
-
-  /**
-   * Setup all the remote components and actions required to deal with the subscription
-   * via the cluster.
-   */
-  protected setupRemoteComponents (clusterTopic: TOPIC): void {
-    this.clusterSubscriptions = this.services.message.getStateRegistry(clusterTopic)
   }
 
   /**
@@ -157,7 +146,7 @@ export default class SubscriptionRegistry {
    */
   public sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, isRemote: boolean = false): void {
     if (senderSocket && !isRemote) {
-      this.services.message.send(this.clusterTopic, message)
+      this.services.message.send(message)
     }
 
     const subscription = this.subscriptions.get(name)

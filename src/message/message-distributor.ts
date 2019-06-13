@@ -1,5 +1,5 @@
-import {PARSER_ACTIONS, TOPIC} from '../constants'
-import { Message, SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
+import {PARSER_ACTIONS, TOPIC, Message} from '../constants'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
 
 /**
  * The MessageDistributor routes valid and permissioned messages to

@@ -53,7 +53,6 @@
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.10.0"
   },
   "devDependencies": {
-    "@deepstream/client": "^4.0.0-rc.28",
     "@types/cucumber": "^4.0.5",
     "@types/mocha": "^5.2.6",
     "@types/needle": "^2.0.4",

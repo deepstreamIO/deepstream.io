@@ -37,7 +37,16 @@ export const initialise = function (config: InternalDeepstreamConfig): { config:
   handleSSLProperties(config)
 
   const services: any = {
-    registeredPlugins: ['authenticationHandler', 'permissionHandler', 'cache', 'storage', 'monitoring'],
+    registeredPlugins: [
+      'authenticationHandler', 
+      'permissionHandler', 
+      'cache', 
+      'storage', 
+      'monitoring', 
+      'locks', 
+      'cluster', 
+      'state'
+    ]
   }
 
   services.cache = new DefaultCache()

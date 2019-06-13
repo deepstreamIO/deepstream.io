@@ -110,7 +110,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
     cache: new StorageMock(),
     storage: new StorageMock(),
     message: new MessageConnectorMock(config),
-    uniqueRegistry: {
+    locks: {
       get (name, cb) { cb(true) },
       release () {}
     },

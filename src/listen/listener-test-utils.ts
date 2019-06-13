@@ -50,7 +50,7 @@ export default class ListenerTestUtils {
 
     config.listenResponseTimeout = 30
     config.shuffleListenProviders = false
-    config.stateReconciliationTimeout = 10
+    // config.stateReconciliationTimeout = 10
 
     self.clients = [
       null, // to make tests start from 1

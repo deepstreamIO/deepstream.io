@@ -8,7 +8,7 @@ import { TOPIC } from '../constants'
  * @event 'add' emitted whenever an entry is added for the first time
  * @event 'remove' emitted whenever an entry is removed by the last node
  */
-export default class StateRegistry extends EventEmitter {
+export class StateRegistry extends EventEmitter {
   private readonly data = new Map<string, number>()
 
   /**

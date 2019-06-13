@@ -24,11 +24,11 @@ import * as configInitialiser from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
 import * as configValidator from './config/config-validator'
 
-import MessageConnector from './cluster/cluster-node'
-import LockRegistry from './cluster/lock-registry'
+import MessageConnector from './cluster/single-cluster-node'
 import DependencyInitialiser from './utils/dependency-initialiser'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
-import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types.js'
+import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types'
+import { DistributedLockRegistry } from './cluster/distributed-lock-registry'
 
 /**
  * Sets the name of the process
@@ -233,6 +233,7 @@ export class Deepstream extends EventEmitter {
     }
 
     this.services.registeredPlugins.forEach((pluginType) => {
+      console.log(pluginType)
       const plugin = this.services[pluginType]
       const initialiser = new DependencyInitialiser(this, this.config, this.services, plugin, pluginType)
       initialiser.once('ready', () => {
@@ -266,8 +267,6 @@ export class Deepstream extends EventEmitter {
   protected serviceInit (): void {
     this.messageProcessor = new MessageProcessor(this.config, this.services)
     this.messageDistributor = new MessageDistributor(this.config, this.services)
-
-    this.services.uniqueRegistry = new LockRegistry(this.config, this.services)
 
     this.eventHandler = new EventHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(

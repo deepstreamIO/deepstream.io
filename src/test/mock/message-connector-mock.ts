@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import { Cluster } from '../../types'
-const StateRegistry = require('../../cluster/state-registry').default
+import { StateMessage } from '../../../binary-protocol/src/message-constants'
+import { StateRegistry } from '../../cluster/single-state-registry';
 
 export default class MessageConnectorMock extends EventEmitter implements Cluster {
   public lastPublishedTopic: any
@@ -51,8 +52,10 @@ export default class MessageConnectorMock extends EventEmitter implements Cluste
     this.lastPublishedMessage = JSON.parse(JSON.stringify(message))
   }
 
-  public sendState (topic, message) {
+  public sendState (message: StateMessage, metaData?: any): void {
+  }
 
+  public sendStateDirect (serverName: string, message: StateMessage, metaData?: any): void {
   }
 
   public sendDirect (serverName, message) {
@@ -91,7 +94,7 @@ export default class MessageConnectorMock extends EventEmitter implements Cluste
   }
 
   public getStateRegistry (topic) {
-    return new StateRegistry(topic, this.options, this)
+    return new StateRegistry(topic, this.options)
   }
 
   public close () {

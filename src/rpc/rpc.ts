@@ -1,6 +1,6 @@
-import { RPC_ACTIONS, TOPIC, RPCMessage } from '../constants'
+import { RPC_ACTIONS, TOPIC, RPCMessage, Message } from '../constants'
 import RpcHandler from './rpc-handler'
-import { Message, SimpleSocketWrapper, InternalDeepstreamConfig } from '../types'
+import { SimpleSocketWrapper, InternalDeepstreamConfig } from '../types'
 
 /**
  * Relays a remote procedure call from a requestor to a provider and routes

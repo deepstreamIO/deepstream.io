@@ -1,6 +1,6 @@
-import { TOPIC, Message } from '../constants'
-import StateRegistry from './state-registry'
+import { TOPIC, Message, StateMessage } from '../constants'
 import { InternalDeepstreamConfig, DeepstreamServices, Cluster } from '../types'
+import { StateRegistry } from './single-state-registry'
 
 export default class ClusterNode implements Cluster {
   public stateRegistries = new Map<TOPIC, StateRegistry>()
@@ -9,9 +9,11 @@ export default class ClusterNode implements Cluster {
 
   public sendDirect (serverName: string, message: Message, metaData?: any) {}
 
-  public sendState () {}
+  public sendState (message: StateMessage, metaData?: any) {}
 
-  public send (stateRegistryTopic: TOPIC, message: Message, metaData?: any) {}
+  public sendStateDirect (serverName: string, message: StateMessage, metaData?: any) {}
+
+  public send (message: Message, metaData?: any) {}
 
   public subscribe (stateRegistryTopic: TOPIC, callback: Function) {}
 

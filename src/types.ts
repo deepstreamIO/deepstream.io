@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { TOPIC, EVENT, LOG_LEVEL } from './constants'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 import { Deepstream } from './deepstream.io'
-import { ALL_ACTIONS } from '../binary-protocol/src/message-constants'
+import { ALL_ACTIONS, StateMessage, Message } from '../binary-protocol/src/message-constants'
 
 export type RuleType = string
 export type ValveSection = string
@@ -33,28 +33,6 @@ export interface SocketWrapper extends StatefulSocketWrapper {
   getMessage: Function
   parseData: Function
   flush: Function
-}
-
-export interface Message {
-  topic: TOPIC
-  action: number
-  name?: string
-
-  isError?: boolean
-  isAck?: boolean
-
-  data?: string | Buffer
-  parsedData?: any
-
-  originalTopic?: number
-  originalAction?: number
-  subscription?: string
-  names?: string[]
-  isWriteAck?: boolean
-  correlationId?: string
-  path?: string
-  version?: number
-  reason?: string
 }
 
 export interface JifMessage {
@@ -98,6 +76,18 @@ export interface ConnectionEndpoint extends DeepstreamPlugin {
 
 export interface SocketConnectionEndpoint extends ConnectionEndpoint {
   scheduleFlush (socketWrapper: SocketWrapper): void
+}
+
+export interface StateRegistry extends EventEmitter {
+  has (name: string): boolean
+  add (name: string): void
+  remove (name: string): void 
+
+  getAll (): string[] 
+  getAllMap (): Map<string, number>
+  whenReady (callback: () => void): void 
+  getAllServers (subscriptionName: string): string[]
+  removeAll (serverName: string): void 
 }
 
 export interface PluginConfig {
@@ -155,17 +145,22 @@ export type UserAuthenticationCallback = (isValid: boolean, clientData?: any) =>
 
 export interface Cluster {
   getStateRegistry (stateRegistryTopic: TOPIC): any,
-  send (stateRegistryTopic: TOPIC, message: Message, metaData?: any): void,
+  sendStateDirect (serverName: string, message: StateMessage, metaData?: any): void,
+  sendState (message: StateMessage, metaData?: any): void,
+  send (message: Message, metaData?: any): void,
   sendDirect (serverName: string, message: Message, metaData?: any): void,
   subscribe (stateRegistryTopic: TOPIC, callback: Function): void
-  isLeader (): boolean
-  getLeader (): string
   close (callback: Function): void
 }
 
 export interface LockRegistry {
   get (lock: string, callback: Function): void
   release (lock: string): void
+}
+
+export interface ClusterRegistry {
+  isLeader (): boolean
+  getLeader (): string
 }
 
 export interface DeepstreamConfig {
@@ -225,6 +220,9 @@ export interface InternalDeepstreamConfig {
     cache: PluginConfig
     storage: PluginConfig
     monitoring: PluginConfig
+    state: PluginConfig
+    cluster: PluginConfig
+    locks: PluginConfig
   }
 
   logger: PluginConfig
@@ -241,14 +239,7 @@ export interface InternalDeepstreamConfig {
   storageRetrievalTimeout: number
   storageHotPathPrefixes: string[]
   dependencyInitialisationTimeout: number
-  stateReconciliationTimeout: number
-  clusterKeepAliveInterval: number
-  clusterActiveCheckInterval: number
-  clusterNodeInactiveTimeout: number
   listenResponseTimeout: number
-  lockTimeout: number
-  lockRequestTimeout: number
-  broadcastTimeout: number
   shuffleListenProviders: boolean
   exitOnPluginError: boolean
 }
@@ -263,7 +254,8 @@ export interface DeepstreamServices {
   authenticationHandler: AuthenticationHandler
   logger: Logger
   message: Cluster
-  uniqueRegistry: LockRegistry,
+  locks: LockRegistry,
+  cluster: ClusterRegistry,
   subscriptions: SubscriptionRegistryFactory
 }
 

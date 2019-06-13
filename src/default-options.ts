@@ -103,6 +103,27 @@ export function get (): InternalDeepstreamConfig {
         type: 'none',
         options: {}
       },
+      state: {
+        type: 'local',
+        options: {
+          stateReconciliationTimeout: 500
+        }
+      },
+      cluster: {
+        type: 'default',
+        options: {
+          clusterKeepAliveInterval: 5000,
+          clusterActiveCheckInterval: 1000,
+          clusterNodeInactiveTimeout: 6000
+        }
+      },
+      locks: {
+        type: 'default',
+        options: {
+          lockTimeout: 1000,
+          lockRequestTimeout: 1000
+        }
+      }
     },
 
     /*
@@ -141,14 +162,7 @@ export function get (): InternalDeepstreamConfig {
     storageRetrievalTimeout: 2000,
     storageHotPathPrefixes: [],
     dependencyInitialisationTimeout: 2000,
-    stateReconciliationTimeout: 500,
-    clusterKeepAliveInterval: 5000,
-    clusterActiveCheckInterval: 1000,
-    clusterNodeInactiveTimeout: 6000,
     listenResponseTimeout: 500,
-    lockTimeout: 1000,
-    lockRequestTimeout: 1000,
-    broadcastTimeout: 0,
     exitOnPluginError: false
   }
 }

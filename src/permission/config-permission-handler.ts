@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
-import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS } from '../constants'
+import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, Message } from '../constants'
 import RecordHandler from '../record/record-handler'
 import * as configCompiler from './config-compiler'
 import * as configValidator from './config-validator'
@@ -8,7 +8,6 @@ import RuleApplication from './rule-application'
 import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
 import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, Logger, PermissionCallback, SocketWrapper } from '../types'
-import { Message } from '@deepstream/client/dist/binary-protocol/src/message-constants'
 
 const UNDEFINED = 'undefined'
 

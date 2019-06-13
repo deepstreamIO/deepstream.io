@@ -1,9 +1,8 @@
-import StateRegistry from '../cluster/state-registry'
 import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
 import TimeoutRegistry from './listener-timeout-registry'
-import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, Cluster } from '../types'
+import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, Cluster, StateRegistry } from '../types'
 
 export default class ListenerRegistry implements SubscriptionListener {
   private metaData: any
@@ -66,7 +65,21 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.leadingListen = {}
 
     this.setupProviderRegistry()
-    this.setupRemoteComponents()
+
+    if (this.topic === TOPIC.RECORD) {
+      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
+      this.messageTopic = TOPIC.RECORD_LISTENING
+    } else {
+      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
+      this.messageTopic = TOPIC.EVENT_LISTENING
+    }
+    this.clusterProvidedRecords.on('add', this.onRecordStartProvided.bind(this))
+    this.clusterProvidedRecords.on('remove', this.onRecordStopProvided.bind(this))
+
+    this.message.subscribe(
+      this.messageTopic,
+      this.onIncomingMessage.bind(this),
+    )
   }
 
   /**
@@ -93,27 +106,6 @@ export default class ListenerRegistry implements SubscriptionListener {
       onFirstSubscriptionMade: this.addPattern.bind(this),
       onSubscriptionMade: () => {},
     })
-  }
-
-  /**
-   * Setup all the remote components and actions required to deal with the subscription
-   * via the cluster.
-   */
-  protected setupRemoteComponents (): void {
-    if (this.topic === TOPIC.RECORD) {
-      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
-      this.messageTopic = TOPIC.RECORD_LISTENING
-    } else {
-      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
-      this.messageTopic = TOPIC.EVENT_LISTENING
-    }
-    this.clusterProvidedRecords.on('add', this.onRecordStartProvided.bind(this))
-    this.clusterProvidedRecords.on('remove', this.onRecordStopProvided.bind(this))
-
-    this.message.subscribe(
-      this.messageTopic,
-      this.onIncomingMessage.bind(this),
-    )
   }
 
   /**
