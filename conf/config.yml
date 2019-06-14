@@ -142,7 +142,7 @@ auth:
   # type: http
   # options:
   #   # a post request will be send to this url on every incoming connection
-#     endpointUrl: https://someurl.com/validateLogin
+  #   endpointUrl: https://someurl.com/validateLogin
   #   # any of these will be treated as access granted
   #   permittedStatusCodes: [ 200 ]
   #   # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
@@ -150,6 +150,13 @@ auth:
   #   # promote the following items from the login auth data into headers
   #   promoteToHeader:
   #    - token
+  #   # the codes which the auth handler should retry. This is useful for when the API you depend on is 
+  #   # flaky or going through a not so blue/green deployment
+  #   retryStatusCodes: [ 404, 504 ]
+  #   # the maximum amount of retries before returning a false login
+  #   retryAttempts: 3
+  #   # the time in milliseconds between retries
+  #   retryInterval: 5000
 
 # Permissioning
 permission:

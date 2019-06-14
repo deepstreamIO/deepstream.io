@@ -118,28 +118,6 @@ export let merge = function (...args: any[]) {
   return result
 }
 
-/**
- * Set timeout utility that adds support for disabling a timeout
- * by passing null
- */
-export let setTimeout = function (callback: Function, timeoutDuration: number): any {
-  if (timeoutDuration !== null) {
-    return setTimeout(callback, timeoutDuration)
-  }
-  return -1
-}
-
-/**
- * Set Interval utility that adds support for disabling an interval
- * by passing null
- */
-export let setInterval = function (callback: Function, intervalDuration: number): any {
-  if (intervalDuration !== null) {
-    return setInterval(callback, intervalDuration)
-  }
-  return -1
-}
-
 export let getRandomIntInRange = function (min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min))
 }
@@ -200,4 +178,8 @@ export const isExcluded = function (exclusionPrefixes: string[], recordName: str
     }
   }
   return false
+}
+
+export const PromiseDelay = function (timeout) {
+  return new Promise((resolve) => setTimeout(resolve, timeout))
 }

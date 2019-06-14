@@ -131,7 +131,10 @@ describe('config-initialiser', () => {
         options: {
           endpointUrl: 'http://some-url.com',
           permittedStatusCodes: [200],
-          requestTimeout: 2000
+          requestTimeout: 2000,
+          retryAttempts: 2,
+          retryInterval: 50,
+          retryStatusCodes: [ 404 ]
         }
       }
 

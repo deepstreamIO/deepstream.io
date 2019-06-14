@@ -4,6 +4,8 @@ import * as C from '../constants'
 import AuthenticationHandler from './http-authentication-handler'
 import TestHttpServer from '../test/helper/test-http-server'
 import MockLogger from '../test/mock/logger-mock'
+import { PromiseDelay } from '../utils/utils';
+import { EVENT } from '../../binary-protocol/src/message-constants';
 
 describe('it forwards authentication attempts as http post requests to a specified endpoint', () => {
   let authenticationHandler
@@ -26,7 +28,10 @@ describe('it forwards authentication attempts as http post requests to a specifi
       endpointUrl,
       permittedStatusCodes: [200],
       requestTimeout: 60,
-      promoteToHeader: ['token']
+      promoteToHeader: ['token'],
+      retryAttempts: 2,
+      retryInterval: 30,
+      retryStatusCodes: [404, 504]
     }, logger)
     expect(authenticationHandler.description).to.equal(`http webhook to ${endpointUrl}`)
   })
@@ -145,6 +150,59 @@ describe('it forwards authentication attempts as http post requests to a specifi
       expect(data).to.deep.equal({})
       expect(server.getRequestHeader('token')).to.equal('a-token')
       done()
+    })
+  })
+
+  describe('retries', () => {
+    const connectionData = { connection: 'data' }
+    const authData = { token: 'a-token' }
+
+    beforeEach(() => {
+      server.once('request-received', () => server.respondWith(404, {}))
+    })
+
+    it ('doesnt fail if the reponse returned is rety code', async () => {
+      let called = false
+      authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+        called = true
+      })
+      await PromiseDelay(20)
+      expect(called).to.equal(false)
+    })
+
+    it ('returns true if the second attempt is valid', async () => {
+      let done
+      const result = new Promise((resolve) => done = resolve)
+
+      authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+        expect(result).to.equal(true)
+        expect(data).to.deep.equal({ what: '2nd-attempt' })
+        done()
+      })
+
+      await PromiseDelay(30)
+      server.once('request-received', () => server.respondWith(200, { what: '2nd-attempt' }))
+
+      await result
+    })
+
+    it ('returns invalid if retry attempts are exceeded', async () => {
+      let done
+      const result = new Promise((resolve) => done = resolve)
+
+      authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
+        expect(result).to.equal(false)
+        expect(data).to.equal(EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED)
+        done()
+      })
+
+      await PromiseDelay(30)
+      server.once('request-received', () => server.respondWith(404, {}))
+
+      await PromiseDelay(30)
+      server.once('request-received', () => server.respondWith(504, {}))
+
+      await result
     })
   })
 
