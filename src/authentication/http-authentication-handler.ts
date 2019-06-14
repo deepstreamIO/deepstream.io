@@ -67,12 +67,14 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
     post(this.settings.endpointUrl, { connectionData, authData }, options, (error, response) => {
       if (error) {
         this.logger.warn(EVENT.AUTH_ERROR, `http auth error: ${error}`)
+        this.retryAttempts.delete(id)
         callback(false, null)
         return
       }
 
       if (!response.statusCode) {
         this.logger.warn(EVENT.AUTH_ERROR, 'http auth server error: missing status code!')
+        this.retryAttempts.delete(id)
         callback(false, null)
         return
       }
@@ -97,10 +99,13 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
         if (retryAttempt.attempts < this.settings.retryAttempts) {
           setTimeout(() => this.validate(id, connectionData, authData, callback), this.settings.retryInterval)
         } else {
+          this.retryAttempts.delete(id)
           callback(false, EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED)
         }
         return
       }
+
+      this.retryAttempts.delete(id)
 
       if (this.settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {
         callback(false, response.body || null)
