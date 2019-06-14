@@ -339,7 +339,7 @@ export default class RecordHandler {
             'but was removed during permission check'
           )
           onRequestError(
-            message.action, `"${message.name}" was removed during permission check`, 
+            message.action, `"${message.name}" was removed during permission check`,
             message.name, socketWrapper, message
           )
         }

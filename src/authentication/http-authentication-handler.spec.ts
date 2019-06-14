@@ -219,7 +219,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).to.equal(false)
       expect(logger._log).to.have.been.calledWith(2, C.EVENT.AUTH_ERROR, 'http auth error: Error: socket hang up')
-      expect(data).to.equal(null)
+      expect(data).to.equal(EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED)
       server.respondWith(200)
       done()
     })

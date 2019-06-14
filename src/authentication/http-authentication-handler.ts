@@ -67,8 +67,7 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
     post(this.settings.endpointUrl, { connectionData, authData }, options, (error, response) => {
       if (error) {
         this.logger.warn(EVENT.AUTH_ERROR, `http auth error: ${error}`)
-        this.retryAttempts.delete(id)
-        callback(false, null)
+        this.retry(id, connectionData, authData, callback)
         return
       }
 
@@ -84,24 +83,7 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
       }
 
       if (this.settings.retryStatusCodes.includes(response.statusCode)) {
-        let retryAttempt = this.retryAttempts.get(id)
-        if (!retryAttempt) {
-          retryAttempt = {
-            connectionData,
-            authData,
-            callback,
-            attempts: 0
-          }
-          this.retryAttempts.set(id, retryAttempt)
-        } else {
-          retryAttempt.attempts++
-        }
-        if (retryAttempt.attempts < this.settings.retryAttempts) {
-          setTimeout(() => this.validate(id, connectionData, authData, callback), this.settings.retryInterval)
-        } else {
-          this.retryAttempts.delete(id)
-          callback(false, EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED)
-        }
+        this.retry(id, connectionData, authData, callback)
         return
       }
 
@@ -119,6 +101,27 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
 
       callback(true, response.body || null)
     })
+  }
+
+  private retry (id, connectionData, authData, callback) {
+    let retryAttempt = this.retryAttempts.get(id)
+    if (!retryAttempt) {
+      retryAttempt = {
+        connectionData,
+        authData,
+        callback,
+        attempts: 0
+      }
+      this.retryAttempts.set(id, retryAttempt)
+    } else {
+      retryAttempt.attempts++
+    }
+    if (retryAttempt.attempts < this.settings.retryAttempts) {
+      setTimeout(() => this.validate(id, connectionData, authData, callback), this.settings.retryInterval)
+    } else {
+      this.retryAttempts.delete(id)
+      callback(false, EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED)
+    }
   }
 
   private validateSettings (): void {
