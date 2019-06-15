@@ -73,7 +73,7 @@ describe('record deletion', () => {
   })
 
   it('encounters an ack delete timeout', (done) => {
-    config.cacheRetrievalTimeout = 10
+    config.record.cacheRetrievalTimeout = 10
     services.cache.nextOperationWillBeSuccessful = false
     services.cache.nextOperationWillBeSynchronous = false
 
@@ -99,7 +99,7 @@ describe('record deletion', () => {
   })
 
   it('doesn\'t delete excluded messages from storage', () => {
-    config.storageExclusionPatterns = ['no-storage/']
+    config.record.storageExclusionPrefixes = ['no-storage/']
 
     client.socketWrapperMock
       .expects('sendMessage')

@@ -237,7 +237,7 @@ describe('permission handler applies basic permissions referencing their own dat
       name: 'non-Existing-Record',
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('Cannot read property \'xyz\' of null')
       expect(result).to.equal(false)
       next()
@@ -259,7 +259,7 @@ describe('permission handler applies basic permissions referencing their own dat
       name: 'non-Existing-Record',
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('Cannot read property \'indexOf\' of null')
       expect(error).to.equal(C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR)
       expect(result).to.equal(false)
@@ -285,7 +285,7 @@ describe('permission handler applies basic permissions referencing their own dat
       data: '{"manufacturer":"mercedes-benz"'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('error when converting message data')
       expect(result).to.equal(false)
       next()
@@ -308,7 +308,7 @@ describe('permission handler applies basic permissions referencing their own dat
       data: 'xxx'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('error when converting message data')
       expect(result).to.equal(false)
       next()
@@ -338,7 +338,7 @@ describe('loads permissions repeatedly', () => {
       data: 'some-data'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       next()
@@ -355,7 +355,7 @@ describe('loads permissions repeatedly', () => {
       data: 'some-data'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       next()

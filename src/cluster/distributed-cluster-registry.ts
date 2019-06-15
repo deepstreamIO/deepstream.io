@@ -1,8 +1,8 @@
-import { DeepstreamServices, InternalDeepstreamConfig } from "../types";
-import { TOPIC, LOG_LEVEL } from "../constants"
-import { ClusterMessage, EVENT, CLUSTER_ACTIONS } from "../../binary-protocol/src/message-constants";
-import { EventEmitter } from "events"
-import { StateRegistry } from "./single-state-registry";
+import { DeepstreamServices, InternalDeepstreamConfig } from '../types'
+import { TOPIC, LOG_LEVEL } from '../constants'
+import { ClusterMessage, EVENT, CLUSTER_ACTIONS } from '../../binary-protocol/src/message-constants'
+import { EventEmitter } from 'events'
+import { StateRegistry } from './single-state-registry'
 
 /**
  * This class maintains a list of all nodes that are

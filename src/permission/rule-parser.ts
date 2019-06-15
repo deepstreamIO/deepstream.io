@@ -98,7 +98,7 @@ export const parse = (rule: boolean | string, variables: any) => {
   const args = ['_', 'user', 'data', 'oldData', 'now', 'action'].concat(variables)
   args.push(`return ${rule};`)
 
-  ruleObj.fn = Function.apply(this, args)
+  ruleObj.fn = Function.apply(null, args)
   ruleObj.hasOldData = !!rule.match(OLD_DATA_REGEXP)
   ruleObj.hasData = !!rule.match(DATA_REGEXP)
 

@@ -145,7 +145,7 @@ export let shuffleArray = function (array: any[]): any[] {
  * Recursively freeze a deeply nested object
  * https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze
  */
-export let deepFreeze = function (obj: any): object {
+export let deepFreeze = function (obj: any): any {
 
   // Retrieve the property names defined on obj
   const propNames = Object.getOwnPropertyNames(obj)
@@ -180,6 +180,6 @@ export const isExcluded = function (exclusionPrefixes: string[], recordName: str
   return false
 }
 
-export const PromiseDelay = function (timeout) {
+export const PromiseDelay = (timeout: number) => {
   return new Promise((resolve) => setTimeout(resolve, timeout))
 }

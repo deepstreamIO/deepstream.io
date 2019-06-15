@@ -1,7 +1,7 @@
 import { TOPIC, Message, StateMessage } from '../constants'
 import { InternalDeepstreamConfig, DeepstreamServices, Cluster } from '../types'
 import { StateRegistry } from './single-state-registry'
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'events'
 
 export default class LocalClusterNode implements Cluster {
   public stateRegistries = new Map<TOPIC, StateRegistry>()

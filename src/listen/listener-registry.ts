@@ -64,40 +64,22 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.leadListen = {}
     this.leadingListen = {}
 
-    this.setupProviderRegistry()
-
     if (this.topic === TOPIC.RECORD) {
+      this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
+        TOPIC.RECORD_LISTEN_PATTERNS,
+        TOPIC.RECORD_LISTEN_PATTERNS,
+      )
       this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.RECORD_LISTENING
     } else {
+      this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
+        TOPIC.EVENT_LISTEN_PATTERNS,
+        TOPIC.EVENT_LISTEN_PATTERNS,
+      )
       this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.EVENT_LISTENING
     }
-    this.clusterProvidedRecords.on('add', this.onRecordStartProvided.bind(this))
-    this.clusterProvidedRecords.on('remove', this.onRecordStopProvided.bind(this))
 
-    this.message.subscribe(
-      this.messageTopic,
-      this.onIncomingMessage.bind(this),
-    )
-  }
-
-  /**
-   * Setup all the remote components and actions required to deal with the subscription
-   * via the cluster.
-   */
-  protected setupProviderRegistry (): void {
-    if (this.topic === TOPIC.RECORD) {
-      this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
-        TOPIC.RECORD_LISTEN_PATTERNS,
-        TOPIC.RECORD_LISTEN_PATTERNS,
-      )
-    } else {
-      this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
-        TOPIC.EVENT_LISTEN_PATTERNS,
-        TOPIC.EVENT_LISTEN_PATTERNS,
-      )
-    }
     this.providerRegistry.setAction('subscribe', this.actions.LISTEN)
     this.providerRegistry.setAction('unsubscribe', this.actions.UNLISTEN)
     this.providerRegistry.setSubscriptionListener({
@@ -106,6 +88,14 @@ export default class ListenerRegistry implements SubscriptionListener {
       onFirstSubscriptionMade: this.addPattern.bind(this),
       onSubscriptionMade: () => {},
     })
+
+    this.clusterProvidedRecords.on('add', this.onRecordStartProvided.bind(this))
+    this.clusterProvidedRecords.on('remove', this.onRecordStopProvided.bind(this))
+
+    this.message.subscribe(
+      this.messageTopic,
+      this.onIncomingMessage.bind(this),
+    )
   }
 
   /**
@@ -340,13 +330,13 @@ export default class ListenerRegistry implements SubscriptionListener {
       return
     }
 
-    this.services.uniqueRegistry.get(this.getUniqueLockName(subscriptionName), (success) => {
+    this.services.locks.get(this.getUniqueLockName(subscriptionName), (success: boolean) => {
       if (!success) {
         return
       }
 
       if (this.hasActiveProvider(subscriptionName)) {
-        this.services.uniqueRegistry.release(this.getUniqueLockName(subscriptionName))
+        this.services.locks.release(this.getUniqueLockName(subscriptionName))
         return
       }
 
@@ -378,7 +368,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       )
 
       delete this.leadingListen[subscriptionName]
-      this.services.uniqueRegistry.release(this.getUniqueLockName(subscriptionName))
+      this.services.locks.release(this.getUniqueLockName(subscriptionName))
     } else {
       const nextServerName = this.leadingListen[subscriptionName].shift()
       if (!nextServerName) {
@@ -526,7 +516,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Remove provider from listen in progress map if it unlistens during
   * discovery stage
   */
-  private removeListenerFromInProgress (listensCurrentlyInProgress, pattern: string, socketWrapper: SocketWrapper): void {
+  private removeListenerFromInProgress (listensCurrentlyInProgress: any, pattern: string, socketWrapper: SocketWrapper): void {
     for (const subscriptionName in listensCurrentlyInProgress) {
       const listenInProgress = listensCurrentlyInProgress[subscriptionName]
       for (let i = 0; i < listenInProgress.length; i++) {
@@ -640,7 +630,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     const set = new Set(servers)
     set.delete(this.config.serverName)
 
-    if (!this.config.shuffleListenProviders) {
+    if (!this.config.listen.shuffleProviders) {
       return Array.from(set)
     }
     return shuffleArray(Array.from(set))
@@ -649,7 +639,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Create a map of all the listeners that patterns match the subscriptionName locally
   */
-  private createLocalListenArray (subscriptionName): Provider[] {
+  private createLocalListenArray (subscriptionName: string): Provider[] {
     const patterns = this.patterns
     const providerRegistry = this.providerRegistry
     const providers: Provider[] = []
@@ -661,7 +651,7 @@ export default class ListenerRegistry implements SubscriptionListener {
       }
     }
 
-    if (!this.config.shuffleListenProviders) {
+    if (!this.config.listen.shuffleProviders) {
       return providers
     }
     return shuffleArray(providers)

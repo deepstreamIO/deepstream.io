@@ -13,7 +13,7 @@ import RecordDeletion from './record-deletion'
 import { recordRequestBinding } from './record-request'
 import RecordTransition from './record-transition'
 import { isExcluded } from '../utils/utils'
-import { EVENT } from '../../binary-protocol/src/message-constants'
+import { EVENT, JSONObject, ALL_ACTIONS, RECORD_ACTIONS } from '../../binary-protocol/src/message-constants'
 import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
@@ -43,6 +43,7 @@ export default class RecordHandler {
     this.recordRequest = recordRequestBinding(config, services, this, metaData)
 
     this.onDeleted = this.onDeleted.bind(this)
+    this.create = this.create.bind(this)
     this.onPermissionResponse = this.onPermissionResponse.bind(this)
   }
 
@@ -149,16 +150,16 @@ export default class RecordHandler {
     )
   }
 
-  private onCreateOrReadComplete (recordName, version, data, socket, message) {
+  private onCreateOrReadComplete (recordName: string, version: number, data: JSONObject | null, socketWrapper: SocketWrapper, message: RecordMessage) {
     if (data) {
-      this.readAndSubscribe(message, version, data, socket)
+      this.readAndSubscribe(message, version, data, socketWrapper)
     } else {
       this.permissionAction(
         RA.CREATE,
         message,
         message.action,
-        socket,
-        this.create.bind(this, message, socket),
+        socketWrapper,
+        this.create,
       )
     }
   }
@@ -189,8 +190,8 @@ export default class RecordHandler {
 
     // allow writes on the hot path to bypass the record transition
     // and be written directly to cache and storage
-    for (let i = 0; i < this.config.storageHotPathPrefixes.length; i++) {
-      const pattern = this.config.storageHotPathPrefixes[i]
+    for (let i = 0; i < this.config.record.storageHotPathPrefixes.length; i++) {
+      const pattern = this.config.record.storageHotPathPrefixes[i]
       if (recordName.indexOf(pattern) === 0) {
         if (isPatch) {
           const errorMessage = {
@@ -242,7 +243,7 @@ export default class RecordHandler {
     const writeAck = message.isWriteAck
     let cacheResponse = false
     let storageResponse = false
-    let writeError
+    let writeError: string | null
     this.services.storage.set(recordName, 0, message.parsedData, (error) => {
       if (writeAck) {
         storageResponse = true
@@ -272,7 +273,7 @@ export default class RecordHandler {
  * this case is handled via the record transition.
  */
   public handleForceWriteAcknowledgement (
-    socketWrapper: SocketWrapper, message: RecordWriteMessage, cacheResponse: boolean, storageResponse: boolean, error: Error,
+    socketWrapper: SocketWrapper, message: RecordWriteMessage, cacheResponse: boolean, storageResponse: boolean, error: Error | string | null,
   ): void {
     if (storageResponse && cacheResponse) {
       socketWrapper.sendMessage({
@@ -284,10 +285,10 @@ export default class RecordHandler {
     }
   }
 
-/**
- * Creates a new, empty record and triggers a read operation once done
- */
-  private create (message: RecordMessage, socketWrapper: SocketWrapper, callback: Function): void {
+  /**
+   * Creates a new, empty record and triggers a read operation once done
+   */
+  private create (socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RECORD_ACTIONS, callback: Function): void {
     const recordName = message.name
 
     // store the records data in the cache and wait for the result
@@ -297,18 +298,22 @@ export default class RecordHandler {
         socketWrapper.sendMessage({
           topic: TOPIC.RECORD,
           action: RA.RECORD_CREATE_ERROR,
-          originalAction: message.action,
+          originalAction,
           name: message.name
         })
-      } else if (callback) {
-        callback(recordName, socketWrapper)
-      } else {
-        this.readAndSubscribe(message, 0, {}, socketWrapper)
+        return
       }
+
+      if (callback) {
+        callback(recordName, socketWrapper)
+        return
+      }
+
+      this.readAndSubscribe(message, 0, {}, socketWrapper)
     }, this.metaData)
 
-    if (!isExcluded(this.config.storageExclusionPrefixes, message.name)) {
-    // store the record data in the persistant storage independently and don't wait for the result
+    if (!isExcluded(this.config.record.storageExclusionPrefixes, message.name)) {
+      // store the record data in the persistant storage independently and don't wait for the result
       this.services.storage.set(recordName, 0, {}, (error) => {
         if (error) {
           this.services.logger.error(RA[RA.RECORD_CREATE_ERROR], `storage:${error}`, this.metaData)
@@ -491,9 +496,10 @@ export default class RecordHandler {
     this.services.permissionHandler.canPerformAction(
       socketWrapper.user,
       copyWithAction,
-      this.onPermissionResponse.bind(this, originalAction, successCallback),
+      this.onPermissionResponse,
       socketWrapper.authData,
       socketWrapper,
+      { originalAction, successCallback }
     )
   }
 
@@ -502,7 +508,7 @@ export default class RecordHandler {
   * CREATE_AND_UPDATE will end up here.
   */
   private onPermissionResponse (
-    originalAction: RA, successCallback: Function, socketWrapper: SocketWrapper, message: RecordMessage, error: Error, canPerformAction: boolean,
+    socketWrapper: SocketWrapper, message: Message, { originalAction, successCallback }: { originalAction: RA, successCallback: Function }, error: string | Error | ALL_ACTIONS | null, canPerformAction: boolean,
   ): void {
     if (error || !canPerformAction) {
       let action
@@ -523,12 +529,12 @@ export default class RecordHandler {
       }
       socketWrapper.sendMessage(msg)
     } else {
-      successCallback()
+      successCallback(socketWrapper, message, originalAction)
     }
   }
 }
 
-function onRequestError (event: RA, errorMessage, recordName: string, socket: SocketWrapper, message: Message) {
+function onRequestError (event: RA, errorMessage: string, recordName: string, socket: SocketWrapper, message: Message) {
   socket.sendMessage({
     topic: TOPIC.RECORD,
     action: event,
@@ -537,7 +543,7 @@ function onRequestError (event: RA, errorMessage, recordName: string, socket: So
   })
 }
 
-function onSnapshotComplete (recordName, version, data, socket: SocketWrapper, message: Message) {
+function onSnapshotComplete (recordName: string, version: number, data: JSONObject, socket: SocketWrapper, message: Message) {
   if (data) {
     sendRecord(recordName, version, data, socket)
   } else {
@@ -550,7 +556,7 @@ function onSnapshotComplete (recordName, version, data, socket: SocketWrapper, m
   }
 }
 
-function onHeadComplete (name, version, data, socketWrapper) {
+function onHeadComplete (name: string, version: number, data: never, socketWrapper: SocketWrapper) {
   socketWrapper.sendMessage({
     topic: TOPIC.RECORD,
     action: RA.HEAD_RESPONSE,

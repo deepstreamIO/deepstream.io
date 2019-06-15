@@ -1,11 +1,11 @@
 import {spy} from 'sinon'
 import { EventEmitter } from 'events'
 import { Logger } from '../../types'
-import { LOG_LEVEL } from '../../constants'
+import { LOG_LEVEL, EVENT } from '../../constants'
 
 export default class LoggerMock extends EventEmitter implements Logger {
   public isReady: boolean
-  public description: string
+  public description: string = 'mock logger'
   public lastLogLevel: any
   public lastLogEvent: any
   public lastLogMessage: any
@@ -28,27 +28,27 @@ export default class LoggerMock extends EventEmitter implements Logger {
     return true
   }
 
-  public warn (event, message) {
+  public warn (event: EVENT | string, message?: string, metaData?: any) {
     this.log(LOG_LEVEL.WARN, event, message)
     this._log(LOG_LEVEL.WARN, event, message)
   }
 
-  public debug (event, message) {
+  public debug (event: EVENT | string, message?: string, metaData?: any) {
     this.log(LOG_LEVEL.DEBUG, event, message)
     this._log(LOG_LEVEL.DEBUG, event, message)
   }
 
-  public info (event, message) {
+  public info (event: EVENT | string, message?: string, metaData?: any) {
     this.log(LOG_LEVEL.INFO, event, message)
     this._log(LOG_LEVEL.INFO, event, message)
   }
 
-  public error (event, message) {
+  public error (event: EVENT | string, message?: string, metaData?: any) {
     this.log(LOG_LEVEL.ERROR, event, message)
     this._log(LOG_LEVEL.ERROR, event, message)
   }
 
-  public log (level, event, message) {
+  public log (level: LOG_LEVEL, event: EVENT | string, message?: string, metaData?: any) {
     this.lastLogLevel = level
     this.lastLogEvent = event
     this.lastLogMessage = message

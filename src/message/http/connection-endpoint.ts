@@ -4,8 +4,8 @@ import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { EventEmitter } from 'events'
 import MessageDistributor from '../message-distributor'
-import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS, Message } from '../../constants'
-import { ConnectionEndpoint, Logger, AuthenticationHandler, PermissionHandler, DeepstreamConfig, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult } from '../../types'
+import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS, Message, ALL_ACTIONS } from '../../constants'
+import { ConnectionEndpoint, Logger, AuthenticationHandler, PermissionHandler, DeepstreamConfig, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper } from '../../types'
 
 export default class HTTPConnectionEndpoint extends EventEmitter implements ConnectionEndpoint {
 
@@ -16,17 +16,21 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   private logger: Logger
   private authenticationHandler: AuthenticationHandler
   private permissionHandler: PermissionHandler
-  private messageDistributor: MessageDistributor
+  private messageDistributor!: MessageDistributor
   private dsOptions: DeepstreamConfig
-  private jifHandler: JIFHandler
+  private jifHandler!: JIFHandler
   private onSocketMessageBound: Function
   private onSocketErrorBound: Function
-  private server: Server
-  private logInvalidAuthData: boolean
-  private requestTimeout: number
+  private server!: Server
+  private logInvalidAuthData: boolean = false
+  private requestTimeout!: number
 
   constructor (private options: any, private services: DeepstreamServices) {
     super()
+
+    this.logger = services.logger
+    this.authenticationHandler = services.authenticationHandler
+    this.permissionHandler = services.permissionHandler
 
     this.onSocketMessageBound = this.onSocketMessage.bind(this)
     this.onSocketErrorBound = this.onSocketError.bind(this)
@@ -35,19 +39,14 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   /**
    * Called on initialization with a reference to the instantiating deepstream server.
    */
-  public setDeepstream (deepstream): void {
-    this.logger = deepstream.services.logger
-    this.authenticationHandler = deepstream.services.authenticationHandler
-    this.permissionHandler = deepstream.services.permissionHandler
+  public setDeepstream (deepstream: any): void {
     this.messageDistributor = deepstream.messageDistributor
     this.dsOptions = deepstream.config
-    this.jifHandler = new JIFHandler({ logger: deepstream.services.logger })
+    this.jifHandler = new JIFHandler(this.services)
   }
 
   /**
    * Initialise the http server.
-   *
-   * @throws Will throw if called before `setDeepstream()`.
    */
   public init (): void {
     if (!this.dsOptions) {
@@ -238,18 +237,19 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    */
   private createSocketWrapper (
     authResponseData: object,
-    messageIndex,
-    messageResults,
-    responseCallback,
-    requestTimeoutId
-  ): SocketWrapper {
+    messageIndex: number,
+    messageResults: any,
+    responseCallback: Function,
+    requestTimeoutId: NodeJS.Timeout
+  ): UnauthenticatedSocketWrapper {
     const socketWrapper = new HTTPSocketWrapper(
-      {}, this.services, this.onSocketMessageBound, this.onSocketErrorBound
+      this.services, this.onSocketMessageBound, this.onSocketErrorBound
     )
 
     socketWrapper.init(
       authResponseData, messageIndex, messageResults, responseCallback, requestTimeoutId
     )
+
     return socketWrapper
   }
 
@@ -295,7 +295,8 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       this.requestTimeout
     )
 
-    const dummySocketWrapper = this.createSocketWrapper(authResponseData, null, null, null, null)
+    // @ts-ignore
+    const dummySocketWrapper = this.createSocketWrapper(authResponseData, null, null, null, null) as SocketWrapper
 
     for (let messageIndex = 0; messageIndex < messageCount; messageIndex++) {
       const parseResult = parseResults[messageIndex]
@@ -447,7 +448,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     return 'PARTIAL_SUCCESS'
   }
 
-  private onGetMessage (data, headers, responseCallback) {
+  private onGetMessage (data: any, headers: any, responseCallback: any) {
     const message = 'Reading records via HTTP GET is not yet implemented, please use a post request instead.'
     this.logger.warn(RECORD_ACTIONS[RECORD_ACTIONS.READ], message)
     responseCallback({ statusCode: 400, message })
@@ -466,11 +467,10 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     this.permissionHandler.canPerformAction(
       socketWrapper.user,
       parsedMessage,
-      this.onPermissionResponse.bind(
-        this, messageResults, messageIndex
-      ),
+      this.onPermissionResponse,
       socketWrapper.authData,
-      socketWrapper
+      socketWrapper,
+      { messageResults, messageIndex }
     )
   }
 
@@ -478,11 +478,10 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * Handle an event emit permission response
    */
   private onPermissionResponse (
-    messageResults: JifResult[],
-    messageIndex: number,
     socketWrapper: SocketWrapper,
     message: Message,
-    error: string,
+    { messageResults, messageIndex }: { messageResults: JifResult[], messageIndex: number },
+    error: string | Error | ALL_ACTIONS | null,
     permissioned: boolean
   ): void {
     if (error !== null) {

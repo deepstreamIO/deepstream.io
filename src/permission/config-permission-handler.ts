@@ -113,17 +113,17 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
    * - Load the applicable permissions
    * - Apply them
    */
-  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: any, socketWrapper: SocketWrapper) {
+  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: any, socketWrapper: SocketWrapper, passItOn: any) {
     const ruleSpecification = rulesMap.getRulesForMessage(message)
 
     if (ruleSpecification === null) {
-      callback(socketWrapper, message, null, true)
+      callback(socketWrapper, message, passItOn, null, true)
       return
     }
 
     const ruleData = this.getCompiledRulesForName(message.name!, ruleSpecification)
     if (!ruleData) {
-      callback(socketWrapper, message, null, false)
+      callback(socketWrapper, message, passItOn, null, false)
       return
     }
 
@@ -141,6 +141,7 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
       rule: ruleData.rule,
       name: message.name!,
       callback,
+      passItOn,
       logger: this.logger,
       permissionOptions: this.permissionOptions,
       config: this.config,

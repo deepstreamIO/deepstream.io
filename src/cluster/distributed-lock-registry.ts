@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events'
 import Timeout = NodeJS.Timeout
-import { InternalDeepstreamConfig, DeepstreamServices } from '../types'
+import { InternalDeepstreamConfig, DeepstreamServices, LockRegistry, LockCallback } from '../types'
 import { TOPIC, LOCK_ACTIONS, EVENT, LockMessage } from '../constants'
 
 /**
@@ -12,7 +12,7 @@ import { TOPIC, LOCK_ACTIONS, EVENT, LockMessage } from '../constants'
  * so issuing a lock prevents multiple nodes from assuming the lead.
  *
  */
-export class DistributedLockRegistry {
+export class DistributedLockRegistry implements LockRegistry {
   private locks = new Set<string>()
   private timeouts = new Map<string, Timeout>()
   private responseEventEmitter = new EventEmitter()
@@ -34,7 +34,7 @@ export class DistributedLockRegistry {
    * Requests a lock, if the leader ( whether local or distributed ) has the lock availble
    * it will invoke the callback with true, otherwise false.
    */
-  public get (lockName: string, callback) {
+  public get (lockName: string, callback: LockCallback) {
     if (this.services.cluster.isLeader()) {
       callback( this.getLock(lockName))
     } else if (!this.timeouts.has(lockName)) {
@@ -59,7 +59,7 @@ export class DistributedLockRegistry {
    * Called when the current node is not the leader, issuing a lock request
    * via the message bus
    */
-  private getRemoteLock (lockName: string, callback: () => void) {
+  private getRemoteLock (lockName: string, callback: LockCallback) {
     const leaderServerName = this.services.cluster.getLeader()
 
     this.timeouts.set(lockName, setTimeout(
@@ -118,7 +118,7 @@ export class DistributedLockRegistry {
   /**
    * Called when a remote lock request is received
    */
-  private handleRemoteLockRequest (lockName, remoteServerName) {
+  private handleRemoteLockRequest (lockName: string, remoteServerName: string) {
     this.services.message.sendDirect(remoteServerName, {
       topic: TOPIC.LOCK,
       action: LOCK_ACTIONS.RESPONSE,

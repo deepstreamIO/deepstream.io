@@ -8,7 +8,6 @@ import { SimpleSocketWrapper } from '../types'
  */
 export default class RpcProxy implements SimpleSocketWrapper {
   public isRemote = true
-  public type: string
   public user: string
 
   // @ts-ignore

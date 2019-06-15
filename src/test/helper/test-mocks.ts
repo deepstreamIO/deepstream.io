@@ -1,4 +1,6 @@
 import { EventEmitter } from 'events'
+import { Message } from '../../constants';
+import { JSONObject } from '../../../binary-protocol/src/message-constants';
 const sinon = require('sinon')
 
 export const getTestMocks = () => {
@@ -38,7 +40,7 @@ export const getTestMocks = () => {
   const stateRegistryMock = sinon.mock(stateRegistry)
   const recordHandlerMock = sinon.mock(recordHandler)
 
-  function getSocketWrapper (user, authData = {}, clientData = {}) {
+  function getSocketWrapper (user: string, authData: JSONObject = {}, clientData: JSONObject = {}) {
     const socketWrapperEmitter = new EventEmitter()
     const socketWrapper = {
       authAttempts: 0,
@@ -49,19 +51,19 @@ export const getTestMocks = () => {
       sendBinaryMessage: () => {},
       sendAckMessage: () => {},
       uuid: Math.random(),
-      parseData: (message) => {
+      parseData: (message: Message) => {
         if (message.parsedData) {
           return true
         }
         try {
-          message.parsedData = JSON.parse(message.data)
+          message.parsedData = JSON.parse(message.data!.toString())
           return true
         } catch (e) {
           return e
         }
       },
-      getMessage: (message) => message,
-      parseMessage: (message) => message,
+      getMessage: (message: Message) => message,
+      parseMessage: (message: Message) => message,
       destroy: () => {},
       getHandshakeData: () => ({}),
       close: () => {},

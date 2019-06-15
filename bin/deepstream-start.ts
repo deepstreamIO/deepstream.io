@@ -1,6 +1,7 @@
 import { EVENT } from '../src/constants'
+import { Command } from 'commander'
 
-export const start = (program) => {
+export const start = (program: Command) => {
   program
     .command('start')
     .description('start a deepstream server')
@@ -21,6 +22,7 @@ export const start = (program) => {
 }
 
 function action () {
+  // @ts-ignore
   global.deepstreamCLI = this
 
   const inspectUrl = global.deepstreamCLI.inspect
@@ -52,9 +54,8 @@ function action () {
 /**
 * Used by commander to parse the log level and fails if invalid
 * value is passed in
-* @private
 */
-function parseLogLevel (logLevel) {
+function parseLogLevel (logLevel: string) {
   if (!/debug|info|warn|error|off/i.test(logLevel)) {
     console.error('Log level must be one of the following (debug|info|warn|error|off)')
     process.exit(1)
@@ -65,9 +66,8 @@ function parseLogLevel (logLevel) {
 /**
 * Used by commander to parse numbers and fails if invalid
 * value is passed in
-* @private
 */
-function parseInteger (name, port) {
+function parseInteger (name: string, port: number) {
   const portNumber = Number(port)
   if (!portNumber) {
     console.error(`Provided ${name} must be an integer`)
@@ -79,9 +79,8 @@ function parseInteger (name, port) {
 /**
 * Used by commander to parse boolean and fails if invalid
 * value is passed in
-* @private
 */
-function parseBoolean (name, enabled) {
+function parseBoolean (name: string, enabled: 'true' | 'false') {
   let isEnabled
   if (typeof enabled === 'undefined' || enabled === 'true') {
     isEnabled = true

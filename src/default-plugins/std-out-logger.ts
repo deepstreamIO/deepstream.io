@@ -57,9 +57,9 @@ export default class StdOutLogger extends EventEmitter implements Logger {
     }
 
     if (this.useColors) {
-    process[outputStream].write(chalk[this.logLevelColors[logLevel]](msg) + EOL)
+    (process as any)[outputStream].write((chalk as any)[this.logLevelColors[logLevel]](msg) + EOL)
     } else {
-    process[outputStream].write(msg + EOL)
+      (process as any)[outputStream].write(msg + EOL)
     }
   }
 

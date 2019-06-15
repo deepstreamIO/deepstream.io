@@ -1,9 +1,10 @@
 import { EventEmitter } from 'events'
-import { StoragePlugin } from '../../types'
+import { StoragePlugin, StorageWriteCallback, StorageReadCallback } from '../../types'
+import { JSONObject } from '../../constants';
 
 export default class StorageMock extends EventEmitter implements StoragePlugin  {
-  public values: any
-  public failNextSet: boolean
+  public values = new Map<string, { version: number, value: JSONObject }>()
+  public failNextSet: boolean = false
   public nextOperationWillBeSuccessful: boolean = true
   public nextOperationWillBeSynchronous: boolean = true
   public nextGetWillBeSynchronous: boolean = true
@@ -28,7 +29,7 @@ export default class StorageMock extends EventEmitter implements StoragePlugin  
   }
 
   public reset () {
-    this.values = {}
+    this.values.clear()
     this.failNextSet = false
     this.nextOperationWillBeSuccessful = true
     this.nextOperationWillBeSynchronous = true
@@ -45,12 +46,12 @@ export default class StorageMock extends EventEmitter implements StoragePlugin  
     clearTimeout(this.setTimeout)
   }
 
-  public delete (key, callback) {
+  public delete (key: string, callback: StorageWriteCallback) {
     if (this.nextOperationWillBeSynchronous) {
       this.completedDeleteOperations++
       if (this.nextOperationWillBeSuccessful) {
-        delete this.values[key]
-        callback()
+        this.values.delete(key)
+        callback(null)
       } else {
         callback('storageError')
         return
@@ -63,7 +64,7 @@ export default class StorageMock extends EventEmitter implements StoragePlugin  
     }
   }
 
-  public hadGetFor (key) {
+  public hadGetFor (key: string) {
     for (let i = 0; i < this.getCalls.length; i++) {
       if (this.getCalls[i][0] === key) {
         return true
@@ -73,17 +74,20 @@ export default class StorageMock extends EventEmitter implements StoragePlugin  
     return false
   }
 
-  public triggerLastGetCallback (errorMessage, value) {
+  public triggerLastGetCallback (errorMessage: string, value: JSONObject) {
     if (this.lastGetCallback) {
       this.lastGetCallback(errorMessage, value)
     }
   }
 
-  public get (key, callback) {
+  public get (key: string, callback: StorageReadCallback) {
     this.getCalls.push(arguments)
     this.lastGetCallback = callback
     this.lastRequestedKey = key
-    const set = this.values[key] || {}
+    const set = this.values.get(key) || {
+      version: -1,
+      value: null
+    }
 
     if (this.nextGetWillBeSynchronous === true) {
       callback(this.nextOperationWillBeSuccessful ? null : 'storageError', set.version !== undefined ? set.version : -1, set.value ? Object.assign({}, set.value) : null)
@@ -94,7 +98,7 @@ export default class StorageMock extends EventEmitter implements StoragePlugin  
     }
   }
 
-  public set (key, version, value, callback) {
+  public set (key: string, version: number, value: JSONObject, callback: StorageWriteCallback) {
     const set = { version, value }
 
     this.lastSetKey = key
@@ -102,7 +106,7 @@ export default class StorageMock extends EventEmitter implements StoragePlugin  
     this.lastSetValue = value
 
     if (this.nextOperationWillBeSuccessful) {
-      this.values[key] = set
+      this.values.set(key, set)
     }
 
     if (this.nextOperationWillBeSynchronous) {

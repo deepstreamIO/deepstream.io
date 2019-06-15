@@ -39,7 +39,7 @@ describe('supports spaces after variables and escaped quotes', () => {
       data: '{"firstname":"Yasser"}'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       next()
@@ -62,7 +62,7 @@ describe('supports spaces after variables and escaped quotes', () => {
       data: '{"firstname":"Wolfram"}'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
       next()

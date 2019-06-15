@@ -40,27 +40,39 @@ import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
 import { EventEmitter } from 'events'
-import { InternalDeepstreamConfig, DeepstreamServices, MonitoringPlugin } from '../../types'
+import { InternalDeepstreamConfig, DeepstreamServices, MonitoringPlugin, SocketWrapper } from '../../types'
 import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory'
 import { Message, LOG_LEVEL, EVENT } from '../../constants'
 
 export const getDeepstreamOptions = (serverName?: string): { config: InternalDeepstreamConfig, services: DeepstreamServices } => {
   const config: InternalDeepstreamConfig = { ...get(), ...{
     serverName: serverName || 'server-name-a',
-    stateReconciliationTimeout: 50,
-    cacheRetrievalTimeout: 30,
-    storageRetrievalTimeout: 50,
-    rpcAckTimeout: 10,
-    rpcTimeout: 20,
-    storageExclusionPrefixes: ['no-storage'],
-    storageHotPathPrefixes: [],
+
+    cluster: {
+      state: {
+        options: {
+          reconciliationTimeout: 50
+        }
+      }
+    },
     permission: {
       options: {
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 3
       }
     },
-    provideRPCRequestorDetails: true,
+    rpc: {
+      provideRequestorData: true,
+      provideRequestorName: true,
+      ackTimeout: 10,
+      responseTimeout: 20,
+    },
+    record: {
+      cacheRetrievalTimeout: 30,
+      storageRetrievalTimeout: 50,
+      storageExclusionPrefixes: ['no-storage'],
+      storageHotPathPrefixes: [],
+    }
   }}
 
   class PermissionHandler extends EventEmitter {
@@ -79,9 +91,9 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
       this.lastArgs = []
     }
 
-    public canPerformAction (user, message, callback, authData, socketWrapper) {
+    public canPerformAction (user, message, callback, authData, socketWrapper, passItOn) {
       this.lastArgs.push([user, message, callback])
-      callback(socketWrapper, message, this.nextError, this.nextResult)
+      callback(socketWrapper, message, passItOn, this.nextError, this.nextResult)
     }
   }
 
@@ -139,13 +151,13 @@ export const testPermission = function (options) {
     const permissionHandler = new ConfigPermissionHandler(options.config, options.services, permissions)
     permissionHandler.setRecordHandler({
       removeRecordRequest: () => {},
-      runWhenRecordStable: (r, c) => { c(r) }
+      runWhenRecordStable: (r: any, c: any) => { c(r) }
     })
     let permissionResult
 
     username = username || 'someUser'
     userdata = userdata || {}
-    callback = callback || function (socketWrapper, msg, error, result) {
+    callback = callback || function (socketWrapper: SocketWrapper, msg: Message, passItOn: any, error: Error, result: boolean) {
       permissionResult = result
     }
     permissionHandler.canPerformAction(

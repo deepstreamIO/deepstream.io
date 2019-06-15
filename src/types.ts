@@ -2,14 +2,15 @@ import { EventEmitter } from 'events'
 import { TOPIC, EVENT, LOG_LEVEL } from './constants'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 import { Deepstream } from './deepstream.io'
-import { ALL_ACTIONS, StateMessage, Message } from '../binary-protocol/src/message-constants'
+import { ALL_ACTIONS, StateMessage, Message, JSONObject } from '../binary-protocol/src/message-constants'
 
+export type MetaData = JSONObject
 export type RuleType = string
 export type ValveSection = string
 
 export interface SimpleSocketWrapper {
-  user: string
-  isRemote: boolean
+  user: string | null
+  isRemote?: boolean
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
   sendBinaryMessage? (message: Buffer, buffer?: boolean): void
@@ -21,18 +22,24 @@ export interface StatefulSocketWrapper extends SimpleSocketWrapper {
   onClose: Function,
   removeOnClose: Function
   destroy: Function
+  close: Function
 }
 
-export interface SocketWrapper extends StatefulSocketWrapper {
+export interface UnauthenticatedSocketWrapper extends StatefulSocketWrapper {
   uuid: number
-  authData: object
+  authData: object | null
   clientData: object | null
   getHandshakeData: Function
   onMessage: Function
-  authCallback: Function
+  authCallback: Function | null
   getMessage: Function
   parseData: Function
   flush: Function
+}
+
+export interface SocketWrapper extends UnauthenticatedSocketWrapper {
+  user: string
+  authCallback: Function
 }
 
 export interface JifMessage {
@@ -81,13 +88,13 @@ export interface SocketConnectionEndpoint extends ConnectionEndpoint {
 export interface StateRegistry extends EventEmitter {
   has (name: string): boolean
   add (name: string): void
-  remove (name: string): void 
+  remove (name: string): void
 
-  getAll (): string[] 
+  getAll (): string[]
   getAllMap (): Map<string, number>
-  whenReady (callback: () => void): void 
+  whenReady (callback: () => void): void
   getAllServers (subscriptionName: string): string[]
-  removeAll (serverName: string): void 
+  removeAll (serverName: string): void
 }
 
 export interface PluginConfig {
@@ -131,9 +138,9 @@ export interface MonitoringPlugin extends DeepstreamPlugin {
   onBroadcast (message: Message, count: number): void
 }
 
-export type PermissionCallback = (socketWrapper: SocketWrapper, message: Message, error: Error | string | ALL_ACTIONS | null, result: boolean) => void
+export type PermissionCallback = (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: Error | string | ALL_ACTIONS | null, result: boolean) => void
 export interface PermissionHandler extends DeepstreamPlugin {
-  canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: any, socketWrapper: SocketWrapper): void
+  canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: any, socketWrapper: SocketWrapper, passItOn: any): void
 }
 
 export interface AuthenticationHandler extends DeepstreamPlugin {
@@ -149,9 +156,11 @@ export interface Cluster {
   sendState (message: StateMessage, metaData?: any): void,
   send (message: Message, metaData?: any): void,
   sendDirect (serverName: string, message: Message, metaData?: any): void,
-  subscribe (stateRegistryTopic: TOPIC, callback: Function): void
+  subscribe<SpecificMessage> (stateRegistryTopic: TOPIC, callback: (message: SpecificMessage, originServerName: string) => void): void
   close (callback: Function): void
 }
+
+export type LockCallback = (locked: boolean) => void
 
 export interface LockRegistry {
   get (lock: string, callback: Function): void
@@ -163,85 +172,58 @@ export interface ClusterRegistry {
   getLeader (): string
 }
 
-export interface DeepstreamConfig {
-  showLogo?: boolean
-  libDir?: string | null
-  logLevel?: number
-  serverName?: string
-  externalUrl?: string | null
-  sslKey?: string | null
-  sslCert?: string | null
-  sslCa?: string | null
-  connectionEndpoints?: any
-
-  plugins?: {
-    cache?: PluginConfig
-    storage?: PluginConfig
-    monitoring?: PluginConfig
-  }
-
-  logger?: PluginConfig
-  auth?: PluginConfig
-  permission?: PluginConfig
-
-  unauthenticatedClientTimeout?: number
-  maxAuthAttempts?: number
-  storageExclusionPrefixes?: string[]
-  provideRPCRequestorDetails?: boolean
-  rpcAckTimeout?: number
-  rpcTimeout?: number
-  cacheRetrievalTimeout?: number
-  storageRetrievalTimeout?: number
-  storageHotPathPrefixes?: string[]
-  dependencyInitialisationTimeout?: number
-  stateReconciliationTimeout?: number
-  clusterKeepAliveInterval?: number
-  clusterActiveCheckInterval?: number
-  clusterNodeInactiveTimeout?: number
-  listenResponseTimeout?: number
-  lockTimeout?: number
-  lockRequestTimeout?: number
-  broadcastTimeout?: number
-  shuffleListenProviders?: boolean
-}
+export type DeepstreamConfig = any // DeepPartial<InternalDeepstreamConfig>
 
 export interface InternalDeepstreamConfig {
   showLogo: boolean
   libDir: string | null
   logLevel: number
   serverName: string
+  dependencyInitialisationTimeout: number
+  exitOnPluginError: boolean
+
   externalUrl: string | null
   sslKey: string | null
   sslCert: string | null
-  sslCa: string | null
-  connectionEndpoints: any
+  sslDHParams: string | null
+  sslPassphrase: string | null
 
-  plugins: {
-    cache: PluginConfig
-    storage: PluginConfig
-    monitoring: PluginConfig
-    state: PluginConfig
-    cluster: PluginConfig
-    locks: PluginConfig
-  }
+  connectionEndpoints: any
 
   logger: PluginConfig
   auth: PluginConfig
   permission: PluginConfig
+  cache: PluginConfig
+  storage: PluginConfig
+  monitoring: PluginConfig
 
-  storageExclusionPrefixes: string[]
-  provideRPCRequestorDetails: boolean
-  provideRPCRequestorName: boolean
-  provideRPCRequestorData: boolean
-  rpcAckTimeout: number
-  rpcTimeout: number
-  cacheRetrievalTimeout: number
-  storageRetrievalTimeout: number
-  storageHotPathPrefixes: string[]
-  dependencyInitialisationTimeout: number
-  listenResponseTimeout: number
-  shuffleListenProviders: boolean
-  exitOnPluginError: boolean
+  cluster: {
+    message: PluginConfig
+    state: PluginConfig
+    registry: PluginConfig
+    locks: PluginConfig
+  }
+
+  plugins: { [index: string]: PluginConfig }
+
+  record: {
+    storageHotPathPrefixes: string[]
+    storageExclusionPrefixes: string[]
+    storageRetrievalTimeout: number
+    cacheRetrievalTimeout: number
+  },
+
+  rpc: {
+    provideRequestorName: boolean
+    provideRequestorData: boolean
+    ackTimeout: number
+    responseTimeout: number
+  },
+
+  listen: {
+    responseTimeout: number
+    shuffleProviders: boolean
+  }
 }
 
 export interface DeepstreamServices {

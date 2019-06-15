@@ -1,6 +1,7 @@
 import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage, Message } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry } from '../types'
+import { Dictionary } from 'ts-essentials'
 
 const EVERYONE = '%_EVERYONE_%'
 
@@ -147,7 +148,7 @@ export default class PresenceHandler {
   * querying for users
   */
   private handleQuery (users: string[], correlationId: string, socketWrapper: SocketWrapper): void {
-    const result = {}
+    const result: Dictionary<boolean> = {}
     const clients = this.connectedClients.getAllMap()
     for (let i = 0; i < users.length; i++) {
       result[users[i]] = clients.has(users[i])

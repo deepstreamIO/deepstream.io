@@ -27,19 +27,16 @@ export default class Rpc {
   }
 
   private getRequestor (requestor: SimpleSocketWrapper): any {
-    const provideAll = (
-      this.config.provideRPCRequestorDetails ||
-      (this.config.provideRPCRequestorName && this.config.provideRPCRequestorData)
-    )
+    const provideAll = this.config.rpc.provideRequestorName && this.config.rpc.provideRequestorData
     switch (true) {
       case provideAll:
         return {
           requestorName: requestor.user,
           requestorData: requestor.clientData
         }
-      case this.config.provideRPCRequestorName:
+      case this.config.rpc.provideRequestorName:
         return { requestorName: requestor.user }
-      case this.config.provideRPCRequestorData:
+      case this.config.rpc.provideRequestorData:
         return { requestorData: requestor.clientData }
       default:
         return {}
@@ -98,8 +95,8 @@ export default class Rpc {
     clearTimeout(this.responseTimeout)
 
     this.provider = provider
-    this.acceptTimeout = setTimeout(this.onAcceptTimeout.bind(this), this.config.rpcAckTimeout)
-    this.responseTimeout = setTimeout(this.onResponseTimeout.bind(this), this.config.rpcTimeout)
+    this.acceptTimeout = setTimeout(this.onAcceptTimeout.bind(this), this.config.rpc.ackTimeout)
+    this.responseTimeout = setTimeout(this.onResponseTimeout.bind(this), this.config.rpc.responseTimeout)
     this.provider.sendMessage(this.message)
   }
 

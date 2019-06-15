@@ -135,7 +135,7 @@ export default class SubscriptionRegistry {
   * ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
   */
   public setAction (name: string, value: EVENT_ACTIONS | RECORD_ACTIONS | RPC_ACTIONS): void {
-    this.constants[name.toUpperCase()] = value
+    (this.constants as any)[name.toUpperCase()] = value
   }
 
   /**

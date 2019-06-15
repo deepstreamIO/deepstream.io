@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import { Message } from '../../constants';
 
 const SocketWrapperMock = class extends EventEmitter {
   public static lastPreparedMessage: any
@@ -10,7 +11,7 @@ const SocketWrapperMock = class extends EventEmitter {
   public handshakeData: any
   public lastSendMessage: any
 
-  constructor (options?) {
+  constructor (options?: any) {
     super()
     this.isClosed = false
     this.user = null
@@ -20,22 +21,7 @@ const SocketWrapperMock = class extends EventEmitter {
     this.handshakeData = options
   }
 
-  public prepareMessage (message) {
-    SocketWrapperMock.lastPreparedMessage = message
-    return message
-  }
-
-  public sendPrepared (/* preparedMessage */) {
-  }
-
-  public finalizeMessage () {
-  }
-
-  public sendNative (message) {
-    this.lastSendMessage = message
-  }
-
-  public sendAckMessage (message) {
+  public sendAckMessage (message: Message) {
     this.lastSendMessage = message
   }
 
@@ -46,16 +32,16 @@ const SocketWrapperMock = class extends EventEmitter {
   public sendError (/* topic, type, msg */) {
   }
 
-  public sendMessage (message) {
+  public sendMessage (message: Message) {
     this.lastSendMessage = message
   }
 
-  public parseData (message) {
+  public parseData (message: Message) {
     if (message.parsedData || !message.data) {
       return null
     }
     try {
-      message.parsedData = JSON.parse(message.data)
+      message.parsedData = JSON.parse(message.data.toString())
       return true
     } catch (e) {
       return e
@@ -84,4 +70,4 @@ const SocketWrapperMock = class extends EventEmitter {
   }
 }
 
-export const createSocketWrapper = (options?) => new SocketWrapperMock(options)
+export const createSocketWrapper = (options?: any) => new SocketWrapperMock(options)

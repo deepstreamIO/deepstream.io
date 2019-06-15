@@ -56,17 +56,40 @@ export class Cluster extends EventEmitter {
   public _startServer (): Deepstream {
     this.started = true
     this.server = new Deepstream({
+      showLogo : false,
       serverName : `server-${this.wsPort}`,
 
-      stateReconciliationTimeout : 100,
-      lockTimeout                : 1000,
-      shuffleListenProviders     : false,
-      rpcTimeout: 30,
+      cluster: {
+        message: {
+          options: {
 
-      showLogo : false,
+          }
+        },
+        registry: {
+          options: {
 
-      maxAuthAttempts              : 2,
-      unauthenticatedClientTimeout : 200,
+          }
+        },
+        state: {
+          options: {
+            reconciliationTimeout: 100,
+          }
+        },
+        locks: {
+          options: {
+            lockTimeout: 1000,
+          }
+        }
+      },
+
+      listen: {
+        shuffleProviders: false
+      },
+
+      rpc: {
+        responseTimeout: 30
+      },
+
       permission: {
         type    : 'config',
         options : {
@@ -79,7 +102,9 @@ export class Cluster extends EventEmitter {
           options: {
             port: this.wsPort,
             heartbeatInterval: 5000,
-            headers: []
+            headers: [],
+      maxAuthAttempts              : 2,
+      unauthenticatedClientTimeout : 200
           }
         },
         http: {

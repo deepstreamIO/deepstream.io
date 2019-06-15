@@ -135,7 +135,7 @@ function extendConfig (config: any, argv: any): InternalDeepstreamConfig {
   let key
 
   for (key in getDefaultOptions()) {
-    cliArgs[key] = argv[key]
+    (cliArgs as any)[key] = argv[key]
   }
   if (argv.port) {
     overrideEndpointOption('port', argv.port, 'websocket', config)

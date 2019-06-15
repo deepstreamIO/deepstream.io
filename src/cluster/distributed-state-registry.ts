@@ -2,6 +2,7 @@ import { EventEmitter } from 'events'
 import { TOPIC, STATE_ACTIONS } from '../constants'
 import { InternalDeepstreamConfig, DeepstreamServices } from '../types'
 import { StateMessage } from '../../binary-protocol/src/message-constants'
+import { Dictionary } from 'ts-essentials'
 
 /**
  * This class provides a generic mechanism that allows to maintain
@@ -104,7 +105,7 @@ export class DistributedStateRegistry extends EventEmitter {
    */
   public onServerRemoved (serverName: string) {
     for (const [, value] of this.data) {
-      if (value.nodes[serverName]) {
+      if (value.nodes.has(serverName)) {
         this.removeFromServer(name, serverName)
       }
     }
@@ -128,9 +129,9 @@ export class DistributedStateRegistry extends EventEmitter {
     if (!serverName) {
       return this.data.keys()
     }
-    const entries = []
+    const entries: string[] = []
     for (const [, value] of this.data) {
-      if (value.nodes[serverName]) {
+      if (value.nodes.has(serverName)) {
         entries.push(name)
       }
     }
@@ -139,8 +140,6 @@ export class DistributedStateRegistry extends EventEmitter {
 
   /**
    * Returns all currently registered entries as a map
-   *
-   * @public
    * @returns {Array} entries
    */
   public getAllMap () {
@@ -163,7 +162,7 @@ export class DistributedStateRegistry extends EventEmitter {
 
     // TODO
     for (const nodeName in data.nodes) {
-      if (data.nodes[nodeName] === true) {
+      if (data.nodes.has(nodeName)) {
         exists = true
       }
     }
@@ -201,7 +200,7 @@ export class DistributedStateRegistry extends EventEmitter {
   /**
    * Generic messaging function for add and remove messages
    */
-  private sendMessage (name, action) {
+  private sendMessage (name: string, action: STATE_ACTIONS) {
     this.services.message.sendState({
       topic: TOPIC.STATE_REGISTRY,
       registryTopic: this.topic,
@@ -233,13 +232,13 @@ export class DistributedStateRegistry extends EventEmitter {
       setTimeout(() => {
         let totalCheckSum = 0
 
-        for (const [name, value] of this.data) {
+        for (const [, value] of this.data) {
           if (value.nodes.has(serverName)) {
-            totalCheckSum += value[name].checkSum
+            totalCheckSum += value.checkSum
           }
         }
 
-        this.checkSumTimeouts.get(serverName).forEach((cb) => cb(totalCheckSum))
+        this.checkSumTimeouts.get(serverName).forEach((cb: (checksum: number) => void) => cb(totalCheckSum))
         this.checkSumTimeouts.delete(serverName)
       }, this.options.plugins.state.options.checkSumBuffer)
     }
@@ -315,10 +314,10 @@ export class DistributedStateRegistry extends EventEmitter {
    * make sure only a single full state message is sent in reply.
    */
   public sendFullState (serverName: string): void {
-    const localState = []
+    const localState: string[] = []
 
     for (const [, value] of this.data) {
-      if (value.nodes[this.options.serverName]) {
+      if (value.nodes.has(this.options.serverName)) {
         localState.push(name)
       }
     }
@@ -339,7 +338,7 @@ export class DistributedStateRegistry extends EventEmitter {
    * be added.
    */
   private applyFullState (serverName: string, names: string[]) {
-    const namesMap = {}
+    const namesMap: Dictionary<boolean> = {}
     for (let i = 0; i < names.length; i++) {
       namesMap[names[i]] = true
     }

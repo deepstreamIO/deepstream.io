@@ -9,13 +9,14 @@ import {
   TOPIC,
   Message
 } from '../../../binary-protocol/src/message-constants'
-import { SocketConnectionEndpoint, SocketWrapper, AuthenticationHandler, Logger, DeepstreamServices } from '../../types'
+import { SocketConnectionEndpoint, SocketWrapper, AuthenticationHandler, Logger, DeepstreamServices, InternalDeepstreamConfig, UnauthenticatedSocketWrapper } from '../../types'
 
 const OPEN = 'OPEN'
 
 export interface WebSocketServerConfig {
   outgoingBufferTimeout: number,
-  headers: any
+  headers: string[],
+  [index: string]: any,
 }
 
 enum ClientEvent {
@@ -33,21 +34,22 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
   public isReady: boolean = false
   public description: string = 'µWebSocket Connection Endpoint'
 
-  private dsOptions: any
   private initialised: boolean = false
-  private flushTimeout: NodeJS.Timeout | null
+  private flushTimeout: NodeJS.Timeout | null = null
   private authenticatedSocketWrappers: Set<SocketWrapper> = new Set()
   private scheduledSocketWrapperWrites: Set<SocketWrapper> = new Set()
-  private authenticationHandler: AuthenticationHandler
-  private logInvalidAuthData: boolean
-  private maxAuthAttempts: number
-  private urlPath: string
-  private unauthenticatedClientTimeout: number | boolean
+  private logInvalidAuthData: boolean = false
+  private maxAuthAttempts: number = 3
+  private unauthenticatedClientTimeout: number | boolean = false
   protected logger: Logger
+  private authenticationHandler: AuthenticationHandler
+  private urlPath: string | null = null
 
-  constructor (protected options: WebSocketServerConfig, protected services: DeepstreamServices) {
+  constructor (protected options: WebSocketServerConfig, protected dsOptions: InternalDeepstreamConfig, protected services: DeepstreamServices) {
     super()
     this.flushSockets = this.flushSockets.bind(this)
+    this.logger = services.logger
+    this.authenticationHandler = services.authenticationHandler
   }
 
   public createWebsocketServer () {
@@ -70,23 +72,9 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
   }
 
   /**
-   * Called on initialization with a reference to the instantiating deepstream server.
-   */
-  public setDeepstream (deepstream): void {
-    this.dsOptions = deepstream.config
-    this.logger = deepstream.services.logger
-    this.authenticationHandler = deepstream.services.authenticationHandler
-  }
-
-  /**
    * Initialise and setup the http and WebSocket servers.
-   *
-   * @throws Will throw if called before `setDeepstream()`.
    */
   public init (): void {
-    if (!this.dsOptions) {
-      throw new Error('setDeepstream must be called before init()')
-    }
     if (this.initialised) {
       throw new Error('init() must only be called once')
     }
@@ -128,7 +116,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * plugin config. If neither is present, default to the optionally provided default.
    */
   protected getOption (option: string) {
-    const value = this.dsOptions[option]
+    const value = (this.dsOptions as any)[option]
     if ((value === null || value === undefined) && (this.options[option] !== undefined)) {
       return this.options[option]
     }
@@ -140,7 +128,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
     for (const parseResult of parseResults) {
       if (parseResult.parseError) {
         const rawMsg = this.getRaw(parseResult)
-        this.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${rawMsg}`)
+        this.logger!.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${rawMsg}`)
 
         socketWrapper.sendMessage({
           topic: TOPIC.PARSER,
@@ -180,9 +168,9 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    */
   protected onReady (): void {
     const wsMsg = `Listening for websocket connections on ${this.getOption('host')}:${this.getOption('port')}${this.urlPath}`
-    this.logger.info(EVENT.INFO, wsMsg)
+    this.logger!.info(EVENT.INFO, wsMsg)
     const hcMsg = `Listening for health checks on path ${this.getOption('healthCheckPath')} `
-    this.logger.info(EVENT.INFO, hcMsg)
+    this.logger!.info(EVENT.INFO, hcMsg)
     this.emit('ready')
     this.isReady = true
   }
@@ -191,14 +179,15 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
    * and subscribes to authentication messages.
    */
-  protected onConnection (socketWrapper: SocketWrapper) {
+  protected onConnection (socketWrapper: UnauthenticatedSocketWrapper) {
     const handshakeData = socketWrapper.getHandshakeData()
-    this.logger.info(
+    this.logger!.info(
         EVENT.INCOMING_CONNECTION,
         `from ${handshakeData.referer} (${handshakeData.remoteAddress})`
     )
 
     let disconnectTimer
+
     if (this.unauthenticatedClientTimeout !== null && this.unauthenticatedClientTimeout !== false) {
       const timeout = this.unauthenticatedClientTimeout as any
       disconnectTimer = setTimeout(this.processConnectionTimeout.bind(this, socketWrapper), timeout)
@@ -217,12 +206,12 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * Always challenges the client that connects. This will be opened up later to allow users
    * to put in their own challenge authentication.
    */
-  private processConnectionMessage (socketWrapper: SocketWrapper, parsedMessages: Message[]) {
+  private processConnectionMessage (socketWrapper: UnauthenticatedSocketWrapper, parsedMessages: Message[]) {
     const msg = parsedMessages[0]
 
     if (msg.topic !== TOPIC.CONNECTION) {
       const rawMessage = this.getRaw(msg)
-      this.logger.warn(CONNECTION_ACTIONS[CONNECTION_ACTIONS.INVALID_MESSAGE], `invalid connection message ${rawMessage}`)
+      this.logger!.warn(CONNECTION_ACTIONS[CONNECTION_ACTIONS.INVALID_MESSAGE], `invalid connection message ${rawMessage}`)
       socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
         action: CONNECTION_ACTIONS.INVALID_MESSAGE,
@@ -234,7 +223,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
     }
 
     if (msg.action === CONNECTION_ACTIONS.CHALLENGE) {
-      socketWrapper.onMessage = socketWrapper.authCallback
+      socketWrapper.onMessage = socketWrapper.authCallback!
       socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
         action: CONNECTION_ACTIONS.ACCEPT
@@ -242,7 +231,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
       return
     }
 
-    this.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], '', msg.action)
+    this.logger!.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], '', msg.action)
   }
 
   /**
@@ -250,14 +239,14 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * This is expected to be an auth-message. This method makes sure that's
    * the case and - if so - forwards it to the permission handler for authentication
    */
-  private authenticateConnection (socketWrapper: SocketWrapper, disconnectTimeout, parsedMessages: Message[]): void {
+  private authenticateConnection (socketWrapper: UnauthenticatedSocketWrapper, disconnectTimeout: NodeJS.Timeout | undefined, parsedMessages: Message[]): void {
     const msg = parsedMessages[0]
 
     let errorMsg
 
     if (msg.topic !== TOPIC.AUTH) {
       const rawMessage = this.getRaw(msg)
-      this.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE], `invalid auth message ${rawMessage}`)
+      this.logger!.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE], `invalid auth message ${rawMessage}`)
       socketWrapper.sendMessage({
         topic: TOPIC.AUTH,
         action: AUTH_ACTIONS.INVALID_MESSAGE,
@@ -271,13 +260,13 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
      * Log the authentication attempt
      */
     const logMsg = socketWrapper.getHandshakeData().remoteAddress
-    this.logger.debug(AUTH_ACTIONS[AUTH_ACTIONS.REQUEST], logMsg)
+    this.logger!.debug(AUTH_ACTIONS[AUTH_ACTIONS.REQUEST], logMsg)
 
     /**
      * Ensure the message is a valid authentication message
      */
     if (msg.action !== AUTH_ACTIONS.REQUEST) {
-      errorMsg = this.logInvalidAuthData === true ? msg.data : ''
+      errorMsg = this.logInvalidAuthData === true ? JSON.stringify(msg.parsedData) : ''
       this.sendInvalidAuthMsg(socketWrapper, errorMsg, msg.action)
       return
     }
@@ -300,7 +289,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
     /**
      * Forward for authentication
      */
-    this.authenticationHandler.isValidUser(
+    this.authenticationHandler!.isValidUser(
       socketWrapper.getHandshakeData(),
       msg.parsedData,
       this.processAuthResult.bind(this, msg.parsedData, socketWrapper, disconnectTimeout)
@@ -311,8 +300,8 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * Will be called for syntactically incorrect auth messages. Logs
    * the message, sends an error to the client and closes the socket
    */
-  private sendInvalidAuthMsg (socketWrapper: SocketWrapper, msg: string, originalAction: ALL_ACTIONS): void {
-    this.logger.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '')
+  private sendInvalidAuthMsg (socketWrapper: UnauthenticatedSocketWrapper, msg: string, originalAction: ALL_ACTIONS): void {
+    this.logger!.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '')
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
       action: AUTH_ACTIONS.INVALID_MESSAGE_DATA,
@@ -326,14 +315,16 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * all authentication specific logic and registeres the
    * socket with the authenticated sockets
    */
-  private registerAuthenticatedSocket (socketWrapper: SocketWrapper, userData: any): void {
-    this.authenticatedSocketWrappers.add(socketWrapper)
+  private registerAuthenticatedSocket (unauthenticatedSocketWrapper: UnauthenticatedSocketWrapper, userData: any): void {
+    const socketWrapper = this.appendDataToSocketWrapper(unauthenticatedSocketWrapper, userData)
 
-    delete socketWrapper.authCallback
-    socketWrapper.onMessage = (parsedMessages) => {
+    delete unauthenticatedSocketWrapper.authCallback
+    unauthenticatedSocketWrapper.onMessage = (parsedMessages: Message[]) => {
       this.onMessages(socketWrapper, parsedMessages)
     }
-    this.appendDataToSocketWrapper(socketWrapper, userData)
+
+    this.authenticatedSocketWrappers.add(socketWrapper)
+
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
       action: AUTH_ACTIONS.AUTH_SUCCESSFUL,
@@ -344,16 +335,17 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
       this.emit(ClientEvent.CLIENT_CONNECTED, socketWrapper)
     }
 
-    this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_SUCCESSFUL], socketWrapper.user)
+    this.logger!.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_SUCCESSFUL], socketWrapper.user!)
   }
 
   /**
    * Append connection data to the socket wrapper
    */
-  private appendDataToSocketWrapper (socketWrapper: SocketWrapper, userData: any): void {
+  private appendDataToSocketWrapper (socketWrapper: UnauthenticatedSocketWrapper, userData: any): SocketWrapper {
     socketWrapper.user = userData.username || OPEN
     socketWrapper.authData = userData.serverData || null
     socketWrapper.clientData = userData.clientData || null
+    return socketWrapper as SocketWrapper
   }
 
   /**
@@ -369,7 +361,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
       logMsg += `: ${JSON.stringify(authData)}`
     }
 
-    this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg)
+    this.logger!.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg)
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
       action: AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
@@ -378,7 +370,7 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this.maxAuthAttempts) {
-      this.logger.info(AUTH_ACTIONS[AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
+      this.logger!.info(AUTH_ACTIONS[AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
       socketWrapper.sendMessage({
         topic: TOPIC.AUTH,
         action: AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS
@@ -391,9 +383,9 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
    * Callback for connections that have not authenticated succesfully within
    * the expected timeframe
    */
-  private processConnectionTimeout (socketWrapper: SocketWrapper): void {
+  private processConnectionTimeout (socketWrapper: UnauthenticatedSocketWrapper): void {
     const log = 'connection has not authenticated successfully in the expected time'
-    this.logger.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT], log)
+    this.logger!.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT], log)
     socketWrapper.sendMessage({
       topic: TOPIC.CONNECTION,
       action: CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT
@@ -404,11 +396,13 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
   /**
    * Callback for the results returned by the permissionHandler
    */
-  private processAuthResult (authData: any, socketWrapper: SocketWrapper, disconnectTimeout, isAllowed: boolean, userData: any): void {
+  private processAuthResult (authData: any, socketWrapper: UnauthenticatedSocketWrapper, disconnectTimeout: NodeJS.Timeout | undefined, isAllowed: boolean, userData: any): void {
     this.services.monitoring.onLogin(isAllowed, 'websocket')
 
     userData = userData || {}
-    clearTimeout(disconnectTimeout)
+    if (disconnectTimeout) {
+      clearTimeout(disconnectTimeout)
+    }
 
     if (isAllowed === true) {
       this.registerAuthenticatedSocket(socketWrapper, userData)
@@ -426,8 +420,8 @@ export default class WebsocketConnectionEndpoint extends EventEmitter implements
     this.onSocketWrapperClosed(socketWrapper)
 
     if (this.authenticatedSocketWrappers.delete(socketWrapper)) {
-      if (this.authenticationHandler.onClientDisconnect) {
-        this.authenticationHandler.onClientDisconnect(socketWrapper.user)
+      if (this.authenticationHandler!.onClientDisconnect) {
+        this.authenticationHandler!.onClientDisconnect(socketWrapper.user)
       }
 
       if (socketWrapper.user !== OPEN) {

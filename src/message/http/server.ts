@@ -5,11 +5,12 @@ import { EventEmitter } from 'events'
 import * as HTTPStatus from 'http-status'
 import * as contentType from 'content-type'
 import * as bodyParser from 'body-parser'
+// @ts-ignore
 import * as httpShutdown from 'http-shutdown'
 import { EVENT } from '../../constants'
 import { Logger } from '../../types'
 
-function checkConfigOption (config: any, option, expectedType?): void {
+function checkConfigOption (config: any, option: string, expectedType?: string): void {
   if ((expectedType && typeof config[option] !== expectedType) || config[option] === undefined) {
     throw new Error(`The HTTP plugin requires that the "${option}" config option is set`)
   }
@@ -19,7 +20,7 @@ export default class Server extends EventEmitter {
 
   public isReady: boolean = false
 
-  private origins: string
+  private origins: string = ''
   private authPathRegExp: RegExp
   private postPathRegExp: RegExp
   private getPathRegExp: RegExp
@@ -31,9 +32,9 @@ export default class Server extends EventEmitter {
   private jsonBodyParser: any
 
   private httpServer: any
-  private sslKey: string
-  private sslCert: string
-  private sslCa: string
+  private sslKey: any
+  private sslCert: any
+  private sslCa: any
 
   constructor (private config: any, private logger: Logger) {
     super()
@@ -71,7 +72,7 @@ export default class Server extends EventEmitter {
     this.httpServer.listen(this.config.port, this.config.host)
   }
 
-  public stop (callback): void {
+  public stop (callback: Function): void {
     this.httpServer.shutdown(callback)
   }
 
@@ -95,7 +96,7 @@ export default class Server extends EventEmitter {
     this.isReady = true
   }
 
-  private static _terminateResponse (response, code: number, message?: string) {
+  private static _terminateResponse (response: http.ServerResponse, code: number, message?: string) {
     response.setHeader('Content-Type', 'text/plain; charset=utf-8')
     response.writeHead(code)
     if (message) {
@@ -215,7 +216,7 @@ export default class Server extends EventEmitter {
     return true
   }
 
-  private _handlePost (request, response): void {
+  private _handlePost (request: any, response: any): void {
     let parsedContentType
     try {
       parsedContentType = contentType.parse(request)
@@ -231,7 +232,7 @@ export default class Server extends EventEmitter {
       return
     }
 
-    this.jsonBodyParser(request, response, (err) => {
+    this.jsonBodyParser(request, response, (err: Error | null) => {
       if (err) {
         Server._terminateResponse(
           response,

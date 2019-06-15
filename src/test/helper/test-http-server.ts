@@ -30,7 +30,7 @@ export default class TestHttpServer extends EventEmitter {
     this.lastRequestHeaders = null
   }
 
-  public respondWith (statusCode, data) {
+  public respondWith (statusCode: number, data: any) {
     if (typeof data === 'object') {
       data = JSON.stringify(data) // eslint-disable-line
     }
@@ -39,39 +39,35 @@ export default class TestHttpServer extends EventEmitter {
     this.response.end(data)
   }
 
-  public close (callback) {
+  public close (callback: Function) {
     this.server.close(callback)
   }
 
   public _onListen () {
-    this._log.bind(this, `server listening on port ${this.port}`)
+    this._log(`server listening on port ${this.port}`)
     this.callback()
   }
 
-  public _log (msg) {
+  public _log (msg: string) {
     if (this.doLog) {
       console.log(msg)
     }
   }
 
-  public _onRequest (request, response) {
-    request.postData = ''
+  public _onRequest (request: http.IncomingMessage, response: http.OutgoingMessage) {
+    let postData = ''
     request.setEncoding('utf8')
-    request.on('data', this._addChunk.bind(this, request))
-    request.on('end', this._onRequestComplete.bind(this, request))
+    request.on('data', (chunk) => {
+      postData += chunk
+    })
+    request.on('end', () => {
+      this.lastRequestData = JSON.parse(postData)
+      this.lastRequestHeaders = request.headers
+      this.lastRequestMethod = request.method
+      this.emit('request-received')
+      this._log(`received data ${postData}`)
+    })
     this.request = request
     this.response = response
-  }
-
-  public _addChunk (request, chunk) {
-    request.postData += chunk
-  }
-
-  public _onRequestComplete (request) {
-    this.lastRequestData = JSON.parse(request.postData)
-    this.lastRequestHeaders = request.headers
-    this.lastRequestMethod = request.method
-    this.emit('request-received')
-    this._log(`received data ${request.postData}`)
   }
 }

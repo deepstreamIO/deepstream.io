@@ -11,6 +11,8 @@ export function get (): InternalDeepstreamConfig {
     serverName: getUid(),
     showLogo: true,
     logLevel: LOG_LEVEL.DEBUG,
+    dependencyInitialisationTimeout: 2000,
+    exitOnPluginError: false,
 
     /*
      * Connectivity
@@ -22,23 +24,8 @@ export function get (): InternalDeepstreamConfig {
      */
     sslKey: null,
     sslCert: null,
-    sslCa: null,
-
-    /*
-     * Authentication
-     */
-    auth: {
-      type: 'none',
-      options: {}
-    },
-
-    /*
-     * Permissioning
-     */
-    permission: {
-      type: 'none',
-      options: {}
-    },
+    sslDHParams: null,
+    sslPassphrase: null,
 
     /*
      * Connection Endpoints
@@ -90,79 +77,90 @@ export function get (): InternalDeepstreamConfig {
       options: {}
     },
 
-    plugins: {
-      cache: {
-        type: 'default',
-        options: {}
-      },
-      storage: {
-        type: 'default',
-        options: {}
-      },
-      monitoring: {
+    auth: {
+      type: 'none',
+      options: {}
+    },
+
+    permission: {
+      type: 'none',
+      options: {}
+    },
+
+    cache: {
+      type: 'default',
+      options: {}
+    },
+
+    storage: {
+      type: 'default',
+      options: {}
+    },
+
+    monitoring: {
+      type: 'none',
+      options: {}
+    },
+
+    cluster: {
+      message: {
         type: 'none',
-        options: {}
+        options: {
+
+        }
+      },
+      registry: {
+        type: 'default',
+        options: {
+          keepAliveInterval: 5000,
+          activeCheckInterval: 1000,
+          nodeInactiveTimeout: 6000
+        }
       },
       state: {
         type: 'local',
         options: {
-          stateReconciliationTimeout: 500
-        }
-      },
-      cluster: {
-        type: 'default',
-        options: {
-          clusterKeepAliveInterval: 5000,
-          clusterActiveCheckInterval: 1000,
-          clusterNodeInactiveTimeout: 6000
+          reconciliationTimeout: 500
         }
       },
       locks: {
         type: 'default',
         options: {
-          lockTimeout: 1000,
-          lockRequestTimeout: 1000
+          timeout: 1000,
+          requestTimeout: 1000
         }
       }
     },
 
-    /*
-     * Storage options
-     */
-    storageExclusionPrefixes: [],
+    plugins: {
+    },
 
-    /**
-     * Listening
-     */
-    shuffleListenProviders: true,
+    rpc: {
+      /**
+       * Send requestorName by default.
+       * Overriden by provideRequestorDetails
+       */
+      provideRequestorName: true,
+      /**
+       * Send requestorData by default.
+       * Overriden by provideRequestorDetails
+       */
+      provideRequestorData: true,
 
-    /**
-     * RPC
-     */
-    provideRPCRequestorDetails: true,
+      ackTimeout: 1000,
+      responseTimeout: 10000,
+    },
 
-    /**
-     * Send requestorName by default.
-     * Overriden by provideRPCRequestorDetails
-     */
-    provideRPCRequestorName: true,
+    record: {
+      storageHotPathPrefixes: [],
+      storageExclusionPrefixes: [],
+      cacheRetrievalTimeout: 1000,
+      storageRetrievalTimeout: 2000,
+    },
 
-    /**
-     * Send requestorData by default.
-     * Overriden by provideRPCRequestorDetails
-     */
-    provideRPCRequestorData: true,
-
-    /*
-     * Timeouts
-     */
-    rpcAckTimeout: 1000,
-    rpcTimeout: 10000,
-    cacheRetrievalTimeout: 1000,
-    storageRetrievalTimeout: 2000,
-    storageHotPathPrefixes: [],
-    dependencyInitialisationTimeout: 2000,
-    listenResponseTimeout: 500,
-    exitOnPluginError: false
+    listen: {
+      shuffleProviders: true,
+      responseTimeout: 500
+    }
   }
 }

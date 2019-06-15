@@ -1,20 +1,19 @@
 import { EventEmitter } from 'events'
+import { AuthenticationCallback } from '@deepstream/client/dist/src/connection/connection';
+import { JSONObject } from '../../../binary-protocol/src/message-constants';
 
 export default class AuthenticationHandlerMock extends EventEmitter {
-  public onClientDisconnectCalledWith: any
-  public sendNextValidAuthWithData: boolean
-  public lastUserValidationQueryArgs: any
-  public nextUserValidationResult: boolean
-  public nextUserIsAnonymous: boolean
-  public options: any
-  public isReady: boolean
-  public description: string
+  public onClientDisconnectCalledWith: string | null = null
+  public sendNextValidAuthWithData: boolean = false
+  public lastUserValidationQueryArgs: IArguments | null = null
+  public nextUserValidationResult: boolean = true
+  public nextUserIsAnonymous: boolean = false
+  public isReady: boolean = true
+  public description: string = 'Authentication Mock'
 
-  constructor (options?) {
+  constructor () {
     super()
-    this.options = options
     this.isReady = true
-    this.description = 'Authentication Mock'
     this.reset()
   }
 
@@ -26,7 +25,7 @@ export default class AuthenticationHandlerMock extends EventEmitter {
     this.onClientDisconnectCalledWith = null
   }
 
-  public isValidUser (handshakeData, authData, callback) {
+  public isValidUser (handshakeData: JSONObject, authData: JSONObject, callback: AuthenticationCallback) {
     this.lastUserValidationQueryArgs = arguments
     if (this.nextUserValidationResult === true) {
       if (this.sendNextValidAuthWithData === true) {
@@ -44,7 +43,7 @@ export default class AuthenticationHandlerMock extends EventEmitter {
     }
   }
 
-  public onClientDisconnect (username) {
+  public onClientDisconnect (username: string) {
     this.onClientDisconnectCalledWith = username
   }
 }

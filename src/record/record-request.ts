@@ -1,7 +1,7 @@
 import { RECORD_ACTIONS, Message } from '../constants'
 
-type onCompleteCallback = (recordName: string, version: number, data: any, socket: SocketWrapper, message: Message) => void
-type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper, message: Message) => void
+type onCompleteCallback = (recordName: string, version: number, data: any, socket: SocketWrapper | null, message?: Message) => void
+type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper | null, message?: Message) => void
 
 import { isExcluded } from '../utils/utils'
 import { SocketWrapper, DeepstreamServices, InternalDeepstreamConfig } from '../types'
@@ -74,7 +74,7 @@ function onCacheResponse (
     } else {
       onComplete.call(context, recordName, version, data, socketWrapper)
     }
-  } else if (!isExcluded(config.storageExclusionPrefixes, recordName)) {
+  } else if (!isExcluded(config.record.storageExclusionPrefixes, recordName)) {
     let storageTimedOut = false
     const storageTimeout = setTimeout(() => {
       storageTimedOut = true
@@ -84,7 +84,7 @@ function onCacheResponse (
         onError, services, context, metaData,
         message
       )
-    }, config.storageRetrievalTimeout)
+    }, config.record.storageRetrievalTimeout)
 
     // tslint:disable-next-line:no-shadowed-variable
     services.storage.get(recordName, (storageError, version, result) => {
@@ -134,7 +134,7 @@ export function recordRequest (
       onError, services, context, metaData,
       message
     )
-  }, config.cacheRetrievalTimeout)
+  }, config.record.cacheRetrievalTimeout)
 
   services.cache.get(recordName, (error, version, data) => {
     if (!cacheTimedOut) {

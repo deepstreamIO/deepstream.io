@@ -179,6 +179,7 @@ export default class FileBasedAuthenticationHandler extends EventEmitter impleme
       this.settings.iterations,
       this.settings.keyLength,
       this.settings.hash,
+      // @ts-ignore
       this.compareHashResult.bind(this, expectedHash, username, serverData, clientData, callback),
     )
   }

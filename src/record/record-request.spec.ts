@@ -26,9 +26,11 @@ describe('record request', () => {
     const options = testHelper.getDeepstreamOptions()
     services = options.services
     config = Object.assign({}, options.config, {
-      cacheRetrievalTimeout: 100,
-      storageRetrievalTimeout: 100,
-      storageExclusionPrefixes: ['dont-save']
+      record: {
+        cacheRetrievalTimeout: 100,
+        storageRetrievalTimeout: 100,
+        storageExclusionPrefixes: ['dont-save']
+      }
     })
     services.cache.set('existingRecord', 1, cacheData, () => {})
     services.storage.set('onlyExistsInStorage', 1, storageData, () => {})
@@ -214,7 +216,7 @@ describe('record request', () => {
 
     describe('handles cache timeouts', () => {
       beforeEach(() => {
-        config.cacheRetrievalTimeout = 1
+        config.record.cacheRetrievalTimeout = 1
         services.cache.nextGetWillBeSynchronous = false
         services.cache.nextOperationWillBeSuccessful = true
       })
@@ -240,7 +242,7 @@ describe('record request', () => {
             'willTimeoutCache',
             'willTimeoutCache',
             client.socketWrapper
-            )
+          )
           expect(completeCallback).to.have.callCount(0)
 
           // ignores update from cache that may occur afterwards
@@ -254,7 +256,7 @@ describe('record request', () => {
 
     describe('handles storage timeouts', () => {
       beforeEach(() => {
-        config.storageRetrievalTimeout = 1
+        config.record.storageRetrievalTimeout = 1
         services.cache.nextGetWillBeSynchronous = true
         services.cache.nextOperationWillBeSuccessful = true
         services.storage.nextGetWillBeSynchronous = false

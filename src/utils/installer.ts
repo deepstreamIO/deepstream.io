@@ -6,18 +6,17 @@ import * as os from 'os'
 import * as AdmZip from 'adm-zip'
 import { execSync } from 'child_process'
 import * as mkdirp from 'mkdirp'
+import { JSONObject } from '../../binary-protocol/src/message-constants'
 
 const CONFIG_EXAMPLE_FILE = 'example-config.yml'
-const SYSTEM = {
+const SYSTEM: { [index: string]: string } = {
   linux: 'linux',
   darwin: 'mac',
   win32: 'windows'
 }
 const platform = SYSTEM[os.platform()]
 
-const getWebUrl = function (repo) {
-  return `https://github.com/deepstreamIO/${repo}/releases`
-}
+const getWebUrl = (repo: string): string => `https://github.com/deepstreamIO/${repo}/releases`
 
 /**
  * Download a release from GitHub releases API with with the deepstream connector
@@ -33,10 +32,10 @@ const getWebUrl = function (repo) {
  * @param {Object} {{archive: String, name: String, version: String}}
  * @return {void}
  */
-const downloadRelease = function (releases, type, name, version, outputDir, callback) {
+const downloadRelease = (releases: any, type: string, name: string, version: string, outputDir: string, callback: any): void => {
   outputDir = outputDir == null ? 'lib' : outputDir
   const repo = `deepstream.io-${type}-${name}`
-  const filteredReleases = releases.filter((item) => {
+  const filteredReleases = releases.filter((item: any) => {
     if (version == null) {
       return true
     }
@@ -47,7 +46,7 @@ const downloadRelease = function (releases, type, name, version, outputDir, call
   }
   const release = filteredReleases[0]
   version = version == null ? release.tag_name : version
-  const releaseForMachine = release.assets.filter((item) => item.name.indexOf(platform) !== -1)
+  const releaseForMachine = release.assets.filter((item: any) => item.name.indexOf(platform) !== -1)
   if (releaseForMachine.length === 0) {
     return callback(new Error(`Release for your platform not found, see ${getWebUrl(repo)}`))
   }
@@ -80,13 +79,8 @@ const downloadRelease = function (releases, type, name, version, outputDir, call
 /**
  * Downloads an archive usually zip or tar.gz from a URL which comes from the GitHub
  * release API.
- *
- * @param  {String}   urlPath URL where to download the archive
- * @param  {Stream}   writeable output stream to save the archive
- * @param  {Function} callback Callback (err)
- * @return {void}
  */
-const downloadArchive = function (urlPath, outStream, callback) {
+const downloadArchive = (urlPath: string, outStream: any, callback: (error: Error | null) => void): void => {
   needle.get(`https://github.com${urlPath}`, {
     follow_max: 5,
     headers: { 'User-Agent': 'nodejs-client' }
@@ -99,22 +93,15 @@ const downloadArchive = function (urlPath, outStream, callback) {
     if (process.env.VERBOSE) {
       process.stdout.write('Download complete' + '\n')
     }
-    return callback()
+    return callback(null)
   })
 }
 
 /**
  * Fetch a JSON array from GitHub Release API which contains all meta data
  * for a specific reposotiry.
- *
- * @param  {String}   type Connector type: {cache|storage}
- * @param  {String}   name Name of the connector
- * @callback callback
- * @param {error} error
- * @param {Object} JSON
- * @return {void}
  */
-const fetchReleases = function (type, name, callback) {
+const fetchReleases = function (type: string, name: string, callback: (error: Error | null, result?: JSONObject) => void): void {
   const repo = `deepstream.io-${type}-${name}`
   const urlPath = `/repos/deepstreamIO/${repo}/releases`
   if (process.env.VERBOSE) {
@@ -141,10 +128,9 @@ const fetchReleases = function (type, name, callback) {
  * Fetch a JSON array from GitHub Release API which contains all meta data
  * for a specific reposotiry.
  *
- * @param  {Object}   data Contains archive: contains the archive path, name: contains the name of the  connector
  * @return {String}   outPath The directory where the connector was extracted to
  */
-const extract = function (data) {
+const extract = (data: { archive: string, name: string, version: string }): string => {
   const archivePath = data.archive
   const outputParent = path.dirname(archivePath)
   const outPath = path.join(outputParent, data.name)
@@ -168,12 +154,8 @@ const extract = function (data) {
 
 /**
  * Extracts an archive to a specific directory
- *
- * @param  {String}   archivePath
- * @param {String}   outputDirectory
- * @return {void}
  */
-const extractZip = function (archivePath, outputDirectory) {
+const extractZip = (archivePath: string, outputDirectory: string) => {
   const zip = new AdmZip(archivePath)
   zip.extractAllTo(outputDirectory, true)
 }
@@ -181,11 +163,8 @@ const extractZip = function (archivePath, outputDirectory) {
 /**
  * Prints out the config snippet of a extract connector to the stdout.
  * Output is indented and grey colored.
- *
- * @param  {String}   directory where to lookup for CONFIG_EXAMPLE_FILE
- * @return {void}
  */
-const showConfig = function (directory) {
+const showConfig = (directory: string) => {
   try {
     const content = fs.readFileSync(path.join(directory, CONFIG_EXAMPLE_FILE), 'utf8')
     if (process.env.VERBOSE) {
@@ -201,19 +180,22 @@ const showConfig = function (directory) {
   }
 }
 
+interface InstallerOptions {
+  type: string
+  name: string
+  version: string
+  dir: string
+}
+
 /**
  * Download, extract and show configuration for deepstream connector
- *
- * @param  {Object}   opts {{type: String, name: string, version: String, dir: String}}
- * @param  {Function} callback Callback (err)
- * @return {void}
  */
-export const installer = (opts, callback) => {
-  fetchReleases(opts.type, opts.name, (fetchError, releases) => {
+export const installer = (opts: InstallerOptions, callback: Function) => {
+  fetchReleases(opts.type, opts.name, (fetchError: any, releases: any) => {
     if (fetchError) {
       return callback(fetchError)
     }
-    downloadRelease(releases, opts.type, opts.name, opts.version, opts.dir, (error, result) => {
+    downloadRelease(releases, opts.type, opts.name, opts.version, opts.dir, (error: any, result: any) => {
       if (error) {
         return callback(error)
       }

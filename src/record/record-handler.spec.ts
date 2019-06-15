@@ -68,7 +68,7 @@ describe('record handler handles messages', () => {
   })
 
   it('does not store new record when excluded', () => {
-    config.storageExclusionPrefixes = ['some-record']
+    config.record.storageExclusionPrefixes = ['some-record']
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
@@ -254,7 +254,7 @@ describe('record handler handles messages', () => {
   })
 
   it('updates a record via same client to the same version', (done) => {
-    config.cacheRetrievalTimeout = 50
+    config.record.cacheRetrievalTimeout = 50
     services.cache.nextGetWillBeSynchronous = false
     services.cache.set(M.recordUpdate.name, M.recordVersion, M.recordData, () => {})
 

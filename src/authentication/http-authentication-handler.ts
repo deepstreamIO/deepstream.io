@@ -3,6 +3,8 @@ import { EventEmitter } from 'events'
 import * as utils from '../utils/utils'
 import { EVENT } from '../constants'
 import { AuthenticationHandler, Logger, UserAuthenticationCallback } from '../types'
+import { JSONObject } from '../../binary-protocol/src/message-constants'
+import { AuthenticationCallback } from '@deepstream/client/dist/src/connection/connection'
 
 interface HttpAuthenticationHandlerSettings {
   // http(s) endpoint that will receive post requests
@@ -38,11 +40,11 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
     }
   }
 
-  public isValidUser (connectionData, authData, callback): void {
+  public isValidUser (connectionData: JSONObject, authData: JSONObject, callback: AuthenticationCallback): void {
     this.validate(this.requestId++, connectionData, authData, callback)
   }
 
-  private validate (id, connectionData, authData, callback): void {
+  private validate (id: number, connectionData: JSONObject, authData: JSONObject, callback: AuthenticationCallback): void {
     const options = {
       read_timeout: this.settings.requestTimeout,
       open_timeout: this.settings.requestTimeout,
@@ -60,7 +62,7 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
           }
           return result
         },
-        {}
+        {} as JSONObject
       )
     }
 
@@ -103,7 +105,7 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
     })
   }
 
-  private retry (id, connectionData, authData, callback) {
+  private retry (id: number, connectionData: JSONObject, authData: JSONObject, callback: AuthenticationCallback) {
     let retryAttempt = this.retryAttempts.get(id)
     if (!retryAttempt) {
       retryAttempt = {
@@ -120,7 +122,7 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
       setTimeout(() => this.validate(id, connectionData, authData, callback), this.settings.retryInterval)
     } else {
       this.retryAttempts.delete(id)
-      callback(false, EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED)
+      callback(false, { error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED })
     }
   }
 

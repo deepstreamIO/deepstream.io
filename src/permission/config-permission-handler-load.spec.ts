@@ -136,7 +136,7 @@ describe('permission handler loading', () => {
         data: 'somedata'
       }
 
-      const callback = function (socketWrapper, msg, error, result) {
+      const callback = function (socketWrapper, msg, passItOn, error, result) {
         expect(error).to.equal(null)
         expect(result).to.equal(true)
         next()
@@ -166,7 +166,7 @@ describe('permission handler loading', () => {
         data: 'somedata'
       }
 
-      const callback = function (socketWrapper, msg, error, result) {
+      const callback = function (socketWrapper, msg, passItOn, error, result) {
         expect(error).to.equal(null)
         expect(result).to.equal(false)
         next()

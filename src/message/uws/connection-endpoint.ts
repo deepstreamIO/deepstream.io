@@ -3,7 +3,9 @@ import { STATES } from '../../constants'
 import * as fileUtils from '../../config/file-utils'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import {createUWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper } from '../../types'
+import { DeepstreamServices, SocketWrapper, InternalDeepstreamConfig, UnauthenticatedSocketWrapper } from '../../types'
+import { WebSocket, TemplatedApp as Server, us_listen_socket, HttpRequest } from 'uWebSockets.js'
+import { Dictionary } from 'ts-essentials'
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -11,12 +13,12 @@ import { DeepstreamServices, SocketWrapper } from '../../types'
  * forwards messages it receives from authenticated sockets.
  */
 export default class UWSConnectionEndpoint extends ConnectionEndpoint {
-  private listenSocket: null
+  private listenSocket: null | us_listen_socket
   private readonly uWS: any
-  private connections: Map<any, any>
+  private connections = new Map<WebSocket, UnauthenticatedSocketWrapper>()
 
-  constructor (options: WebSocketServerConfig, services: DeepstreamServices) {
-    super(options, services)
+  constructor (options: WebSocketServerConfig, config: InternalDeepstreamConfig, services: DeepstreamServices) {
+    super(options, config, services)
 
     // alias require to trick nexe from bundling it
     const req = require
@@ -33,13 +35,8 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
 
   /**
    * Initialize the uws endpoint, setup callbacks etc.
-   *
-   * @private
-   * @returns {void}
    */
   public createWebsocketServer () {
-    this.connections = new Map()
-
     const options = {
       noDelay: this.getOption('noDelay'),
       perMessageDeflate: this.getOption('perMessageDeflate'),
@@ -50,7 +47,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
       sslCert: this.getOption('sslCert'),
       sslKey: this.getOption('sslKey'),
       sslDHParams: this.getOption('sslDHParams'),
-      passphrase: this.getOption('sslPassphrase')
+      sslPassphrase: this.getOption('sslPassphrase')
     }, options)
 
     server.get(this.getOption('healthCheckPath'), (res) => {
@@ -69,7 +66,9 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
         this.onConnection(socketWrapper)
       },
       message: (ws, message) => {
-        this.connections.get(ws).onMessage(binaryMessageParser.parse(Buffer.from(message.slice())))
+        this.connections.get(ws)!.onMessage(
+          binaryMessageParser.parse(Buffer.from(message.slice(0))
+        ))
       },
       drain: () => {
       },
@@ -98,17 +97,8 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
 
   /**
    * Returns sslKey, sslCert and other options from the config.
-   *
-   * @throws Will throw an error if one of sslKey or sslCert are not specified
-   *
-   * @private
-   * @returns {null|Object} {
-   *   {String}           key   ssl key
-   *   {String}           cert  ssl certificate
-   *   {String|undefined} ca    ssl certificate authority (if it's present in options)
-   * }
    */
-  public static getSLLParams (config) {
+  public static getSLLParams (config: Partial<InternalDeepstreamConfig>) {
     const keyFileName = config.sslKey
     const certFileName = config.sslCert
     const dhParamsFile = config.sslDHParams
@@ -131,7 +121,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
     return null
   }
 
-  public static getServer (uWS, config, options) {
+  public static getServer (uWS: any, config: Partial<InternalDeepstreamConfig>, options: any): Server {
     let server
     const sslParams = UWSConnectionEndpoint.getSLLParams(config)
     if (sslParams) {
@@ -145,8 +135,8 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
     return server
   }
 
-  public static getHeaders (desiredHeaders, req) {
-    const headers = {}
+  public static getHeaders (desiredHeaders: string[], req: HttpRequest) {
+    const headers: Dictionary<string> = {}
     for (const wantedHeader of desiredHeaders) {
       headers[wantedHeader] = req.getHeader(wantedHeader)
     }
@@ -156,7 +146,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
   public closeWebsocketServer () {
     this.connections.forEach((conn) => {
       if (!conn.isClosed) {
-        conn.socket.close()
+        conn.close()
       }
     })
     this.uWS.us_listen_socket_close(this.listenSocket)
@@ -167,14 +157,8 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
   /**
    * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
    * and subscribes to authentication messages.
-   * @param {Websocket} socket
-   *
-   * @param {WebSocket} external    uws native websocket
-   *
-   * @private
-   * @returns {void}
    */
-  public createWebsocketWrapper (websocket, upgradeReq): SocketWrapper {
+  public createWebsocketWrapper (websocket: WebSocket, upgradeReq: HttpRequest): UnauthenticatedSocketWrapper {
     const handshakeData = {
       remoteAddress: new Uint8Array(websocket.getRemoteAddress()).join('.'),
       headers: UWSConnectionEndpoint.getHeaders(this.options.headers, upgradeReq),
@@ -186,7 +170,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
     return socketWrapper
   }
 
-  public onSocketWrapperClosed (socketWrapper) {
+  public onSocketWrapperClosed (socketWrapper: SocketWrapper) {
     socketWrapper.close()
   }
 }

@@ -28,7 +28,6 @@ import MessageConnector from './cluster/single-cluster-node'
 import DependencyInitialiser from './utils/dependency-initialiser'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types'
-import { DistributedLockRegistry } from './cluster/distributed-lock-registry'
 
 /**
  * Sets the name of the process
@@ -40,33 +39,28 @@ export const constants = constants_
 export class Deepstream extends EventEmitter {
   public constants: any
 
-  protected config: InternalDeepstreamConfig
-  protected services: DeepstreamServices
+  private configFile!: string
+
+  protected config!: InternalDeepstreamConfig
+  protected services!: DeepstreamServices
 
   private messageProcessor: any
   private messageDistributor: any
 
-  private eventHandler: EventHandler
-  private rpcHandler: RpcHandler
-  private recordHandler: RecordHandler
-  private presenceHandler: PresenceHandler
-  private monitoringHandler: MonitoringHandler
+  private eventHandler!: EventHandler
+  private rpcHandler!: RpcHandler
+  private recordHandler!: RecordHandler
+  private presenceHandler!: PresenceHandler
+  private monitoringHandler!: MonitoringHandler
 
   private stateMachine: any
   private currentState: any
-
-  private configFile: string
 
 /**
  * Deepstream is a realtime data server that supports data-sync,
  * Deepstream is a realtime data server that supports data-sync,
  * publish-subscribe, request-response, listeneing, permissioning
  * and a host of other features!
- *
- * @copyright 2018 deepstreamHub GmbH
- * @author deepstreamHub GmbH
- *
- * @constructor
  */
   constructor (config: DeepstreamConfig | string | null) {
     super()
@@ -103,15 +97,15 @@ export class Deepstream extends EventEmitter {
  * please see default-options.
  */
   public set (key: string, value: any): any {
-    if (this.services[key] !== undefined) {
-      this.services[key] = value
+    if ((this.services as any)[key] !== undefined) {
+      (this.services as any)[key] = value
       if (key === 'storage' || key === 'cache') {
-        if (this.services[key].apiVersion !== 2) {
-          configInitialiser.storageCompatability(this.services[key])
+        if ((this.services as any)[key].apiVersion !== 2) {
+          configInitialiser.storageCompatability((this.services as any)[key])
         }
       }
-    } else if (this.config[key] !== undefined) {
-      this.config[key] = value
+    } else if ((this.config as any)[key] !== undefined) {
+      (this.config as any)[key] = value
     } else {
       throw new Error(`Unknown option or service "${key}"`)
     }
@@ -219,7 +213,7 @@ export class Deepstream extends EventEmitter {
     this.services.subscriptions = new SubscriptionRegistryFactory(this.config, this.services)
     this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
-    const infoLogger = (message) => this.services.logger.info(EVENT.INFO, message)
+    const infoLogger = (message: string) => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`server name: ${this.config.serverName}`)
     infoLogger(`deepstream version: ${pkg.version}`)
 
@@ -233,8 +227,7 @@ export class Deepstream extends EventEmitter {
     }
 
     this.services.registeredPlugins.forEach((pluginType) => {
-      console.log(pluginType)
-      const plugin = this.services[pluginType]
+      const plugin = (this.services as any)[pluginType]
       const initialiser = new DependencyInitialiser(this, this.config, this.services, plugin, pluginType)
       initialiser.once('ready', () => {
         this.checkReady(pluginType, plugin)
@@ -253,7 +246,7 @@ export class Deepstream extends EventEmitter {
     }
     plugin.isReady = true
 
-    const allPluginsReady = this.services.registeredPlugins.every((type) => this.services[type].isReady)
+    const allPluginsReady = this.services.registeredPlugins.every((type) => (this.services as any)[type].isReady)
 
     if (allPluginsReady && this.currentState === STATES.PLUGIN_INIT) {
       this.transition('plugins-started')
@@ -374,7 +367,7 @@ export class Deepstream extends EventEmitter {
   private pluginShutdown (): void {
     const closeablePlugins: DeepstreamPlugin[] = []
     this.services.registeredPlugins.forEach((pluginType) => {
-      const plugin = this.services[pluginType]
+      const plugin = (this.services as any)[pluginType]
       if (typeof plugin.close === 'function') {
         process.nextTick(() => plugin.close())
         closeablePlugins.push(plugin)

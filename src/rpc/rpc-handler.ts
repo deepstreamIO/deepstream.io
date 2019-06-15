@@ -27,7 +27,7 @@ export default class RpcHandler {
      this.subscriptionRegistry.setAction('SUBSCRIBE', RPC_ACTIONS.PROVIDE)
      this.subscriptionRegistry.setAction('UNSUBSCRIBE', RPC_ACTIONS.UNPROVIDE)
 
-     this.services.message.subscribe(
+     this.services.message.subscribe<RPCMessage>(
        TOPIC.RPC,
        this.onPrivateMessage.bind(this),
     )
@@ -248,7 +248,7 @@ export default class RpcHandler {
 
     if (rpcData) {
       this.services.logger.debug(
-        RPC_ACTIONS[RPC_ACTIONS[msg.action]],
+        RPC_ACTIONS[msg.action],
         `name: ${msg.name} with correlation id: ${msg.correlationId} from remote server ${originServerName}`,
         this.metaData
       )

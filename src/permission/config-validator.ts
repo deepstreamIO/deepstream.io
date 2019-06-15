@@ -1,9 +1,10 @@
-import SCHEMA from './config-schema'
+import { SCHEMA } from './config-schema'
 import * as pathParser from './path-parser'
 import * as ruleParser from './rule-parser'
 import { DeepstreamConfig } from '../types'
+import { Dictionary } from 'ts-essentials'
 
-const validationSteps: any = {}
+const validationSteps: Dictionary<(config: DeepstreamConfig) => boolean | string> = {}
 
 /**
  * Validates a configuration object. This method runs through multiple
@@ -91,11 +92,6 @@ validationSteps.doesOnlyContainValidPaths = function (config) {
 /**
  * Each section must specify a generic permission ("*") that
  * will be applied if no other permission is applicable
- *
- * @param   {Object} config parsed permission config
- *
- * @private
- * @returns {Boolean}
  */
 validationSteps.doesHaveRootEntries = function (config) {
   let sectionName

@@ -48,8 +48,8 @@ export default class ListenerTestUtils {
     }
     self.clientRegistryMock = sinon.mock(self.clientRegistry)
 
-    config.listenResponseTimeout = 30
-    config.shuffleListenProviders = false
+    config.listen.responseTimeout = 30
+    config.listen.shuffleProviders = false
     // config.stateReconciliationTimeout = 10
 
     self.clients = [
