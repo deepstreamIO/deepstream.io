@@ -1,8 +1,8 @@
-import { EventEmitter } from 'events'
 import { TOPIC, STATE_ACTIONS } from '../constants'
-import { InternalDeepstreamConfig, DeepstreamServices } from '../types'
+import { DeepstreamServices, StateRegistry, DeepstreamConfig, DeepstreamPlugin, StateRegistryCallback } from '../types'
 import { StateMessage } from '../../binary-protocol/src/message-constants'
 import { Dictionary } from 'ts-essentials'
+import { Emitter } from '@deepstream/client/dist/src/util/emitter';
 
 /**
  * This class provides a generic mechanism that allows to maintain
@@ -13,7 +13,10 @@ import { Dictionary } from 'ts-essentials'
  * an 'add' event is emitted. Whenever its removed by the last node within the cluster,
  * a 'remove' event is emitted.
  */
-export class DistributedStateRegistry extends EventEmitter {
+export class DistributedStateRegistry extends DeepstreamPlugin implements StateRegistry {
+  public description: string = 'Distributed State Registry'
+
+  public isReady: boolean = false
   private data = new Map<string, {
     localCount: number,
     nodes: Set<string>,
@@ -22,26 +25,31 @@ export class DistributedStateRegistry extends EventEmitter {
   private reconciliationTimeouts = new Map()
   private checkSumTimeouts = new Map()
   private fullStateSent: boolean = false
-  private isReady: boolean = false
   private initialServers = new Set<string>()
   private stateOptions: any
+  private emitter = new Emitter()
 
   /**
    * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
    */
-  constructor (private topic: TOPIC, private options: InternalDeepstreamConfig, private services: DeepstreamServices) {
+  constructor (private topic: TOPIC, private pluginOptions: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
     super()
     this.services.message.subscribe(topic, this.processIncomingMessage.bind(this))
-    this.stateOptions = options.plugins.state.options
     this.resetFullStateSent = this.resetFullStateSent.bind(this)
   }
 
-  public whenReady (done: () => void) {
-    if (this.isReady) {
-      done()
-    } else {
-      this.once('ready', done)
+  public async whenReady () {
+    if (!this.isReady) {
+      await new Promise(resolve => this.emitter.once('ready', resolve))
     }
+  }
+
+  public onAdd(callback: StateRegistryCallback): void {
+    this.emitter.on('add', callback)
+  }
+
+  public onRemove(callback: StateRegistryCallback): void {
+    this.emitter.on('remove', callback)
   }
 
   /**
@@ -58,7 +66,7 @@ export class DistributedStateRegistry extends EventEmitter {
   public add (name: string) {
     const data = this.data.get(name)
     if (!data) {
-      this.addToServer(name, this.options.serverName)
+      this.addToServer(name, this.config.serverName)
       this.sendMessage(name, STATE_ACTIONS.ADD)
     } else {
       data.localCount++
@@ -74,10 +82,14 @@ export class DistributedStateRegistry extends EventEmitter {
     if (data) {
       data.localCount--
       if (data.localCount === 0) {
-        this.removeFromServer(name, this.options.serverName)
+        this.removeFromServer(name, this.config.serverName)
         this.sendMessage(name, STATE_ACTIONS.REMOVE)
       }
     }
+  }
+
+  public removeAll (serverName: string): void {
+    throw new Error('Method not implemented.')
   }
 
   /**
@@ -87,7 +99,7 @@ export class DistributedStateRegistry extends EventEmitter {
     this.initialServers = new Set(serverNames)
     if (this.initialServers.size === 0) {
       this.isReady = true
-      this.emit('ready')
+      this.emitter.emit('ready')
     }
     this.initialServers.forEach((serverName) => this.onServerAdded(serverName))
   }
@@ -127,7 +139,7 @@ export class DistributedStateRegistry extends EventEmitter {
    */
   public getAll (serverName: string) {
     if (!serverName) {
-      return this.data.keys()
+      return [...this.data.keys()]
     }
     const entries: string[] = []
     for (const [, value] of this.data) {
@@ -140,10 +152,9 @@ export class DistributedStateRegistry extends EventEmitter {
 
   /**
    * Returns all currently registered entries as a map
-   * @returns {Array} entries
    */
   public getAllMap () {
-    return this.data
+    return new Map()
   }
 
   /**
@@ -169,10 +180,10 @@ export class DistributedStateRegistry extends EventEmitter {
 
     if (exists === false) {
       this.data.delete(name)
-      this.emit('remove', name)
+      this.emitter.emit('remove', name)
     }
 
-    this.emit('server-removed', name, serverName)
+    this.emitter.emit('server-removed', name, serverName)
   }
 
   /**
@@ -189,12 +200,12 @@ export class DistributedStateRegistry extends EventEmitter {
         checkSum: this.createCheckSum(name)
       }
       this.data.set(name, data)
-      this.emit('add', name)
+      this.emitter.emit('add', name)
     }
 
     data.nodes.add(serverName)
 
-    this.emit('server-added', name, serverName)
+    this.emitter.emit('server-added', name, serverName)
   }
 
   /**
@@ -208,7 +219,7 @@ export class DistributedStateRegistry extends EventEmitter {
       name
     })
 
-    this.getCheckSumTotal(this.options.serverName, (checksum) =>
+    this.getCheckSumTotal(this.config.serverName, (checksum) =>
       this.services.message.sendState({
         topic: TOPIC.STATE_REGISTRY,
         registryTopic: this.topic,
@@ -240,7 +251,7 @@ export class DistributedStateRegistry extends EventEmitter {
 
         this.checkSumTimeouts.get(serverName).forEach((cb: (checksum: number) => void) => cb(totalCheckSum))
         this.checkSumTimeouts.delete(serverName)
-      }, this.options.plugins.state.options.checkSumBuffer)
+      }, this.pluginOptions.checkSumBuffer)
     }
   }
 
@@ -317,7 +328,7 @@ export class DistributedStateRegistry extends EventEmitter {
     const localState: string[] = []
 
     for (const [, value] of this.data) {
-      if (value.nodes.has(this.options.serverName)) {
+      if (value.nodes.has(this.config.serverName)) {
         localState.push(name)
       }
     }
@@ -356,7 +367,7 @@ export class DistributedStateRegistry extends EventEmitter {
     this.initialServers.delete(serverName)
     if (this.initialServers.size === 0) {
       this.isReady = true
-      this.emit('ready')
+      this.emitter.emit('ready')
     }
   }
 

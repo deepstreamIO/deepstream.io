@@ -8,7 +8,7 @@ const recordRequest = require('./record-request').recordRequest
 import { Promise as BBPromise } from 'bluebird'
 import { getTestMocks } from '../test/helper/test-mocks'
 import { RECORD_ACTIONS } from '../constants'
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 
 describe('record request', () => {
   const completeCallback = spy()
@@ -178,7 +178,7 @@ describe('record request', () => {
         )
       expect(completeCallback).to.have.callCount(0)
 
-      expect(services.logger._log).to.have.been.calledWith(
+      expect(services.logger.logSpy).to.have.been.calledWith(
         3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading cacheError from cache:storageError'
       )
       // expect(client.socketWrapper.socket.lastSendMessage).to.equal(
@@ -210,7 +210,7 @@ describe('record request', () => {
         )
       expect(completeCallback).to.have.callCount(0)
 
-      expect(services.logger._log).to.have.been.calledWith(3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading storageError from storage:storageError')
+      expect(services.logger.logSpy).to.have.been.calledWith(3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading storageError from storage:storageError')
       // expect(socketWrapper.socket.lastSendMessage).to.equal(msg('R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+'))
     })
 

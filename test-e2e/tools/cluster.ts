@@ -3,11 +3,70 @@ import { Deepstream } from '../../src/deepstream.io'
 import LocalCache from '../../src/default-plugins/local-cache'
 
 import { EventEmitter } from 'events'
-import { Logger } from './test-logger'
+import { TestLogger } from './test-logger';
+import { DeepstreamPlugin, AuthenticationHandler, UserAuthenticationCallback } from '../../src/types'
+import { JSONObject } from '../../src/constants';
 
 const onlyLoginOnceUser = { loggedIn: false }
 const localCache = new LocalCache()
+const tokens = new Map()
 
+class ClusterTestAuthenticationHandler extends DeepstreamPlugin implements AuthenticationHandler {
+  public description: string = 'ClusterTestAuthenticationHandler'
+
+  public isValidUser (headers: JSONObject, authData: any, callback: UserAuthenticationCallback) {
+    if (authData.token) {
+      if (authData.token === 'letmein') {
+        callback(true, { username: 'A' })
+        return
+      }
+
+      // authenticate token
+      const response = tokens.get(authData.token)
+      if (response.username) {
+        callback(true, response)
+        return
+      }
+    }
+    const username = authData.username
+    const token = Math.random().toString()
+    let clientData: any = null
+    const serverData: any = {}
+    let success
+
+    // authenicate auth data
+    const users = ['A', 'B', 'C', 'D', 'E', 'F', 'W', '1', '2', '3', '4', 'OPEN']
+    if (users.indexOf(username) !== -1 && authData.password === 'abcdefgh') {
+      success = true
+    } else if (username === 'userA' && authData.password === 'abcdefgh') {
+      success = true
+      serverData.role = 'user'
+    } else if (username === 'userB' && authData.password === '123456789') {
+      success = true
+      clientData = { 'favorite color': 'orange', 'id': username }
+      serverData.role = 'admin'
+    } else if (username === 'randomClientData') {
+      success = true
+      clientData = { value : Math.random() }
+    } else if (username === 'onlyLoginOnce' && !onlyLoginOnceUser.loggedIn) {
+      onlyLoginOnceUser.loggedIn = true
+      success = true
+    } else {
+      success = false
+    }
+
+    const authResponseData = { username, token, clientData, serverData }
+
+    if (success) {
+      tokens.set(token, authResponseData)
+      callback(true, authResponseData)
+    } else {
+      callback(false)
+    }
+  }
+}
+
+// tslint:disable-next-line: max-classes-per-file
 export class Cluster extends EventEmitter {
   private server: Deepstream
   private started: boolean = false
@@ -103,8 +162,8 @@ export class Cluster extends EventEmitter {
             port: this.wsPort,
             heartbeatInterval: 5000,
             headers: [],
-      maxAuthAttempts              : 2,
-      unauthenticatedClientTimeout : 200
+            maxAuthAttempts              : 2,
+            unauthenticatedClientTimeout : 200
           }
         },
         http: {
@@ -123,65 +182,11 @@ export class Cluster extends EventEmitter {
       },
     })
 
-    const tokens = new Map()
-    this.server.set('authenticationHandler', {
-      isReady: true,
-      isValidUser (headers: any, authData: any, callback: Function) {
-        if (authData.token) {
-          if (authData.token === 'letmein') {
-            callback(true, { username: 'A' })
-            return
-          }
-
-          // authenticate token
-          const response = tokens.get(authData.token)
-          if (response.username) {
-            callback(true, response)
-            return
-          }
-        }
-        const username = authData.username
-        const token = Math.random().toString()
-        let clientData: any = null
-        const serverData: any = {}
-        let success
-
-        // authenicate auth data
-        const users = ['A', 'B', 'C', 'D', 'E', 'F', 'W', '1', '2', '3', '4', 'OPEN']
-        if (users.indexOf(username) !== -1 && authData.password === 'abcdefgh') {
-          success = true
-        } else if (username === 'userA' && authData.password === 'abcdefgh') {
-          success = true
-          serverData.role = 'user'
-        } else if (username === 'userB' && authData.password === '123456789') {
-          success = true
-          clientData = { 'favorite color': 'orange', 'id': username }
-          serverData.role = 'admin'
-        } else if (username === 'randomClientData') {
-          success = true
-          clientData = { value : Math.random() }
-        } else if (username === 'onlyLoginOnce' && !onlyLoginOnceUser.loggedIn) {
-          onlyLoginOnceUser.loggedIn = true
-          success = true
-        } else {
-          success = false
-        }
-
-        const authResponseData = { username, token, clientData, serverData }
-
-        if (success) {
-          tokens.set(token, authResponseData)
-          callback(true, authResponseData)
-        } else {
-          callback(false)
-        }
-      }
-    })
-
+    this.server.set('authenticationHandler', new ClusterTestAuthenticationHandler())
     this.server.set('cache', localCache)
 
     if (this.enableLogging !== true) {
-      this.server.set('logger', new Logger())
+      this.server.set('logger', new TestLogger())
     }
 
     this.server.once('started', () => setTimeout(() => this.emit('started'), 500))

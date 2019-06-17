@@ -2,7 +2,7 @@ import {spy} from 'sinon'
 import {expect} from 'chai'
 
 import MessageDistributor from './message-distributor'
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 import { getTestMocks } from '../test/helper/test-mocks'
 
 const options = testHelper.getDeepstreamOptions()

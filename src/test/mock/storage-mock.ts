@@ -1,8 +1,7 @@
-import { EventEmitter } from 'events'
-import { StoragePlugin, StorageWriteCallback, StorageReadCallback } from '../../types'
+import { Storage, StorageWriteCallback, StorageReadCallback, DeepstreamServices, InternalDeepstreamConfig, DeepstreamPlugin } from '../../types'
 import { JSONObject } from '../../constants';
 
-export default class StorageMock extends EventEmitter implements StoragePlugin  {
+export default class StorageMock extends DeepstreamPlugin implements Storage  {
   public values = new Map<string, { version: number, value: JSONObject }>()
   public failNextSet: boolean = false
   public nextOperationWillBeSuccessful: boolean = true
@@ -18,14 +17,12 @@ export default class StorageMock extends EventEmitter implements StoragePlugin  
   public getCalls: any
   public setTimeout: any
   public getTimeout: any
-  public isReady: boolean
-  public description: string
+  public isReady: boolean = true
+  public description: string = 'Mock Storage'
 
-  constructor () {
+constructor () {
     super()
     this.reset()
-    this.isReady = true
-    this.description = ''
   }
 
   public reset () {

@@ -72,8 +72,8 @@ export default class Server extends EventEmitter {
     this.httpServer.listen(this.config.port, this.config.host)
   }
 
-  public stop (callback: Function): void {
-    this.httpServer.shutdown(callback)
+  public stop (): Promise<void> {
+    return new Promise(resolve => this.httpServer.shutdown(resolve))
   }
 
   /**

@@ -42,14 +42,14 @@ export default class DependencyInitialiser extends EventEmitter {
     }
 
     if (this.dependency.isReady) {
-      this._onReady()
+      this.onReady()
     } else {
       this.timeout = setTimeout(
-      this._onTimeout.bind(this),
+      this.onTimeout.bind(this),
       this.config.dependencyInitialisationTimeout,
     )
-      this.dependency.once('ready', this._onReady.bind(this))
-      this.dependency.on('error', this._onError.bind(this))
+      this.dependency.once('ready', this.onReady.bind(this))
+      this.dependency.on('error', this.onError.bind(this))
 
       if (this.dependency.init) {
         this.dependency.init()
@@ -67,7 +67,7 @@ export default class DependencyInitialiser extends EventEmitter {
 /**
  * Callback for succesfully initialised dependencies
  */
-  private _onReady (): void {
+  private onReady (): void {
     if (this.timeout) {
       clearTimeout(this.timeout)
     }
@@ -76,15 +76,15 @@ export default class DependencyInitialiser extends EventEmitter {
     const dependencyType = this.dependency.type ? `: ${this.dependency.type}` : ': no dependency description provided'
     this.services.logger.info(EVENT.INFO, `${this.name} ready${dependencyType}`)
 
-    process.nextTick(this._emitReady.bind(this))
+    process.nextTick(this.emitReady.bind(this))
   }
 
 /**
  * Callback for dependencies that weren't initialised in time
  */
-  private _onTimeout (): void {
+  private onTimeout (): void {
     const message = `${this.name} wasn't initialised in time`
-    this._logError(message)
+    this.logError(message)
     const error = (new Error(message)) as any
     error.code = EVENT.PLUGIN_INITIALIZATION_TIMEOUT
     throw error
@@ -95,9 +95,9 @@ export default class DependencyInitialiser extends EventEmitter {
 *
 * Plugin errors that occur at runtime are handled by the deepstream.io main class
 */
-  private _onError (error: any): void {
+  private onError (error: any): void {
     if (this.isReady !== true) {
-      this._logError(`Error while initialising ${this.name}: ${error.toString()}`)
+      this.logError(`Error while initialising ${this.name}: ${error.toString()}`)
       this.deepstream.emit(EVENT.PLUGIN_INITIALIZATION_ERROR, error)
     }
   }
@@ -105,7 +105,7 @@ export default class DependencyInitialiser extends EventEmitter {
 /**
  * Emits the ready event after a one tick delay
  */
-  private _emitReady (): void {
+  private emitReady (): void {
     this.isReady = true
     this.emit('ready')
   }
@@ -117,7 +117,7 @@ export default class DependencyInitialiser extends EventEmitter {
  * here. If it is available, it will be used, otherwise the error will be logged
  * straight to the console
  */
-  private _logError (message: string): void {
+  private logError (message: string): void {
     if (this.services.logger && this.services.logger.isReady) {
       this.services.logger.error(EVENT.PLUGIN_ERROR, message)
     } else {

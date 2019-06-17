@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events'
 import Timeout = NodeJS.Timeout
-import { InternalDeepstreamConfig, DeepstreamServices, LockRegistry, LockCallback } from '../types'
+import { InternalDeepstreamConfig, DeepstreamServices, LockRegistry, LockCallback, DeepstreamPlugin } from '../types'
 import { TOPIC, LOCK_ACTIONS, EVENT, LockMessage } from '../constants'
 
 /**
@@ -12,22 +12,21 @@ import { TOPIC, LOCK_ACTIONS, EVENT, LockMessage } from '../constants'
  * so issuing a lock prevents multiple nodes from assuming the lead.
  *
  */
-export class DistributedLockRegistry implements LockRegistry {
+export class DistributedLockRegistry extends DeepstreamPlugin implements LockRegistry {
+  public description: string = 'Distributed Lock Registry'
   private locks = new Set<string>()
   private timeouts = new Map<string, Timeout>()
   private responseEventEmitter = new EventEmitter()
-  private lockOptions: any
 
   /**
    * The unique registry is a singleton and is only created once
    * within deepstream.io. It is passed via
    * via the options object.
    */
-  constructor (private config: InternalDeepstreamConfig, private services: DeepstreamServices) {
+  constructor (private pluginOptions: any, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
+    super()
     this.onPrivateMessage =  this.onPrivateMessage.bind(this)
     this.services.message.subscribe(TOPIC.LOCK,  this.onPrivateMessage)
-
-    this.lockOptions = {} || config.plugins.locks.options
   }
 
   /**
@@ -64,7 +63,7 @@ export class DistributedLockRegistry implements LockRegistry {
 
     this.timeouts.set(lockName, setTimeout(
       this.onLockRequestTimeout.bind(this, name),
-      this.lockOptions.lockRequestTimeout
+      this.pluginOptions.lockRequestTimeout
     ))
 
     this.responseEventEmitter.once(lockName, callback)
@@ -143,10 +142,9 @@ export class DistributedLockRegistry implements LockRegistry {
     if (this.locks.has(lockName)) {
       return false
     }
-
     this.timeouts.set(lockName, setTimeout(
         this.onLockTimeout.bind(this, lockName),
-        this.lockOptions.lockTimeout
+        this.pluginOptions.lockTimeout
     ))
     this.locks.add(lockName)
     return true

@@ -105,7 +105,7 @@ describe('config-initialiser', () => {
         type: 'none'
       } as any
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.description).to.equal('none')
+      expect(result.services.authenticationHandler.description).to.equal('Open Authentication')
     })
 
     it('works for authtype: user', () => {
@@ -202,7 +202,7 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.description).to.equal('none')
+      expect(result.services.authenticationHandler.description).to.equal('Open Authentication')
       delete global.deepstreamCLI
     })
   })

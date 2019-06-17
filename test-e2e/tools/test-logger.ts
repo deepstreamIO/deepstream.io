@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events'
 import { EVENT, LOG_LEVEL } from '../../src/constants'
+import { Logger, DeepstreamPlugin } from '../../src/types';
 
 interface Log {
   level: number,
@@ -7,16 +7,14 @@ interface Log {
   message: string
 }
 
-export class Logger extends EventEmitter implements Logger {
-  public logs: Log[]
-  public lastLog: Log | null
-  public isReady: boolean
+export class TestLogger extends DeepstreamPlugin implements Logger {
+  public description = 'Test Logger'
+  public logs: Log[] = []
+  public lastLog: Log | null = null
+  public isReady: boolean = true
 
-  constructor () {
-    super()
-    this.logs = []
-    this.lastLog = null
-    this.isReady = true
+  public setLogLevel (logLevel: LOG_LEVEL): void {
+    throw new Error("Method not implemented.")
   }
 
   public shouldLog () {

@@ -2,7 +2,7 @@ import 'mocha'
 import { expect } from 'chai'
 
 import * as configValidator from './config-validator'
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 
 describe('it validates permission.json files', () => {
   it('exposes a validate method', () => {

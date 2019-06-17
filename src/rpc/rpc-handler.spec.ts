@@ -5,7 +5,7 @@ import RpcProxy from './rpc-proxy'
 import * as C from '../constants'
 import RpcHandler from './rpc-handler'
 
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 import { getTestMocks } from '../test/helper/test-mocks'
 
 const options = testHelper.getDeepstreamOptions()

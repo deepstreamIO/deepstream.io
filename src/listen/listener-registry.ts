@@ -2,7 +2,7 @@ import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../c
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
 import TimeoutRegistry from './listener-timeout-registry'
-import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, Cluster, StateRegistry } from '../types'
+import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, ClusterNode, StateRegistry } from '../types'
 
 export default class ListenerRegistry implements SubscriptionListener {
   private metaData: any
@@ -11,7 +11,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   private services: DeepstreamServices
   private providerRegistry: SubscriptionRegistry
   private clientRegistry: SubscriptionRegistry
-  private message: Cluster
+  private message: ClusterNode
   private uniqueLockName: string
   private patterns: { [pattern: string]: RegExp }
   private localListenInProgress: { [subscription: string]: Provider[] }
@@ -89,8 +89,8 @@ export default class ListenerRegistry implements SubscriptionListener {
       onSubscriptionMade: () => {},
     })
 
-    this.clusterProvidedRecords.on('add', this.onRecordStartProvided.bind(this))
-    this.clusterProvidedRecords.on('remove', this.onRecordStopProvided.bind(this))
+    this.clusterProvidedRecords.onAdd(this.onRecordStartProvided.bind(this))
+    this.clusterProvidedRecords.onRemove(this.onRecordStopProvided.bind(this))
 
     this.message.subscribe(
       this.messageTopic,

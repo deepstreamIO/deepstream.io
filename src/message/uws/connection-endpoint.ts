@@ -6,6 +6,7 @@ import {createUWSSocketWrapper} from './socket-wrapper-factory'
 import { DeepstreamServices, SocketWrapper, InternalDeepstreamConfig, UnauthenticatedSocketWrapper } from '../../types'
 import { WebSocket, TemplatedApp as Server, us_listen_socket, HttpRequest } from 'uWebSockets.js'
 import { Dictionary } from 'ts-essentials'
+import { PromiseDelay } from '../../utils/utils'
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -17,8 +18,8 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
   private readonly uWS: any
   private connections = new Map<WebSocket, UnauthenticatedSocketWrapper>()
 
-  constructor (options: WebSocketServerConfig, config: InternalDeepstreamConfig, services: DeepstreamServices) {
-    super(options, config, services)
+  constructor (options: WebSocketServerConfig, services: DeepstreamServices, config: InternalDeepstreamConfig) {
+    super(options, services, config)
 
     // alias require to trick nexe from bundling it
     const req = require
@@ -85,7 +86,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
       if (token) {
         this.onReady()
       } else {
-        this.logger.error(
+        this.services.logger.error(
             STATES[STATES.SERVICE_INIT],
             `Failed to listen to port ${this.getOption('port')}`
         )
@@ -143,15 +144,19 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
     return headers
   }
 
-  public closeWebsocketServer () {
+  public async closeWebsocketServer () {
+    const closePromises: Array<Promise<void>> = []
     this.connections.forEach((conn) => {
       if (!conn.isClosed) {
-        conn.close()
+        closePromises.push(new Promise((resolve) => conn.onClose(resolve)))
+        conn.destroy()
       }
     })
-    this.uWS.us_listen_socket_close(this.listenSocket)
+    await Promise.all(closePromises)
     this.connections.clear()
-    setTimeout(() => this.emit('close'), 2000)
+    this.uWS.us_listen_socket_close(this.listenSocket)
+    await PromiseDelay(2000)
+    this.emit('close')
   }
 
   /**

@@ -1,8 +1,8 @@
 import * as crypto from 'crypto'
-import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
 import * as utils from '../utils/utils'
-import { AuthenticationHandler, UserAuthenticationCallback } from '../types'
+import { AuthenticationHandler, UserAuthenticationCallback, DeepstreamPlugin } from '../types'
+import { AuthenticationCallback } from '@deepstream/client/dist/src/connection/connection';
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'
@@ -23,7 +23,7 @@ interface FileAuthConfig {
  * hashed or in cleartext ) from a json file. This can be useful to authenticate smaller amounts
  * of clients with static credentials, e.g. backend provider that write to publicly readable records
  */
-export default class FileBasedAuthenticationHandler extends EventEmitter implements AuthenticationHandler {
+export default class FileBasedAuthenticationHandler extends DeepstreamPlugin implements AuthenticationHandler {
   public isReady: boolean
   public description: string
   private settings: FileAuthConfig
@@ -48,12 +48,12 @@ export default class FileBasedAuthenticationHandler extends EventEmitter impleme
   */
   public isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback): void {
     if (typeof authData.username !== STRING) {
-      callback(false, { clientData: 'missing authentication parameter username' })
+      callback(false, { clientData: { error: 'missing authentication parameter username' }})
       return
     }
 
     if (typeof authData.password !== STRING) {
-      callback(false, { clientData: 'missing authentication parameter password' })
+      callback(false, { clientData: { error: 'missing authentication parameter password' } })
       return
     }
 
@@ -197,7 +197,7 @@ export default class FileBasedAuthenticationHandler extends EventEmitter impleme
   * @param   {Buffer}   actualHashBuffer the buffer containing the bytes for the new hash
   */
   private compareHashResult (
-    expectedHash: string, username: string, serverData: object, clientData: object, callback: Function, error: Error | null, actualHashBuffer: Buffer,
+    expectedHash: string, username: string, serverData: object, clientData: object, callback: AuthenticationCallback, error: Error | null, actualHashBuffer: Buffer,
   ) {
     if (expectedHash === actualHashBuffer.toString(STRING_CHARSET)) {
       // todo log error

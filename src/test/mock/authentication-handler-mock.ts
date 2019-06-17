@@ -1,8 +1,9 @@
 import { EventEmitter } from 'events'
 import { AuthenticationCallback } from '@deepstream/client/dist/src/connection/connection';
 import { JSONObject } from '../../../binary-protocol/src/message-constants';
+import { DeepstreamPlugin, AuthenticationHandler } from '../../types';
 
-export default class AuthenticationHandlerMock extends EventEmitter {
+export default class AuthenticationHandlerMock extends DeepstreamPlugin implements AuthenticationHandler {
   public onClientDisconnectCalledWith: string | null = null
   public sendNextValidAuthWithData: boolean = false
   public lastUserValidationQueryArgs: IArguments | null = null
@@ -13,7 +14,6 @@ export default class AuthenticationHandlerMock extends EventEmitter {
 
   constructor () {
     super()
-    this.isReady = true
     this.reset()
   }
 

@@ -13,7 +13,7 @@ const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return services.logger._log.lastCall.args[2]
+  return services.logger.logSpy.lastCall.args[2]
 }
 
 describe('permission handler applies basic permissions to incoming messages', () => {
@@ -322,7 +322,7 @@ describe('loads permissions repeatedly', () => {
   let permissionHandler
 
   it('creates the permissionHandler', () => {
-    permissionHandler = new ConfigPermissionHandler(config, services, getBasePermissions())
+    permissionHandler = new ConfigPermissionHandler({}, services, config, getBasePermissions())
     permissionHandler.setRecordHandler({
       removeRecordRequest: () => {},
       runWhenRecordStable: (r, c) => { c(r) }

@@ -25,7 +25,9 @@ export const getTestMocks = () => {
     remove: () => {},
     on: () => {},
     emit: () => {},
-    getAll: () => {}
+    getAll: () => {},
+    onAdd: () => {},
+    onRemove: () => {}
   }
   stateRegistry.on = emitter.on as any
   stateRegistry.emit = emitter.emit as any

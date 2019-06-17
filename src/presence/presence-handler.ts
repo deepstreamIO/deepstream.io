@@ -22,8 +22,8 @@ export default class PresenceHandler {
     this.connectedClients =
       stateRegistry || this.services.message.getStateRegistry(TOPIC.ONLINE_USERS)
 
-    this.connectedClients.on('add', this.onClientAdded.bind(this))
-    this.connectedClients.on('remove', this.onClientRemoved.bind(this))
+    this.connectedClients.onAdd(this.onClientAdded.bind(this))
+    this.connectedClients.onRemove(this.onClientRemoved.bind(this))
   }
 
   /**

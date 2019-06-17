@@ -497,7 +497,7 @@ export default class RecordHandler {
       socketWrapper.user,
       copyWithAction,
       this.onPermissionResponse,
-      socketWrapper.authData,
+      socketWrapper.authData!,
       socketWrapper,
       { originalAction, successCallback }
     )

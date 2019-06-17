@@ -2,7 +2,7 @@ import 'mocha'
 import { expect } from 'chai'
 
 import * as C from '../constants'
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 const RpcProxy = require('./rpc-proxy')
 
 const options = testHelper.getDeepstreamOptions()

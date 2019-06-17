@@ -1,8 +1,7 @@
 import { post } from 'needle'
-import { EventEmitter } from 'events'
 import * as utils from '../utils/utils'
 import { EVENT } from '../constants'
-import { AuthenticationHandler, Logger, UserAuthenticationCallback } from '../types'
+import { AuthenticationHandler, UserAuthenticationCallback, DeepstreamServices, InternalDeepstreamConfig, DeepstreamPlugin } from '../types'
 import { JSONObject } from '../../binary-protocol/src/message-constants'
 import { AuthenticationCallback } from '@deepstream/client/dist/src/connection/connection'
 
@@ -24,16 +23,13 @@ interface HttpAuthenticationHandlerSettings {
   retryInterval: number
 }
 
-export default class HttpAuthenticationHandler extends EventEmitter implements AuthenticationHandler {
-  public isReady: boolean
-  public description: string
+export default class HttpAuthenticationHandler extends DeepstreamPlugin implements AuthenticationHandler {
+  public description: string = `http webhook to ${this.settings.endpointUrl}`
   private retryAttempts = new Map<number, { connectionData: any, authData: any, callback: UserAuthenticationCallback, attempts: number } >()
   private requestId = 0
 
-  constructor (private settings: HttpAuthenticationHandlerSettings, private logger: Logger) {
+  constructor (private settings: HttpAuthenticationHandlerSettings, private services: DeepstreamServices, config: InternalDeepstreamConfig) {
     super()
-    this.isReady = true
-    this.description = `http webhook to ${settings.endpointUrl}`
     this.validateSettings()
     if (this.settings.promoteToHeader === undefined) {
       this.settings.promoteToHeader = []
@@ -68,20 +64,20 @@ export default class HttpAuthenticationHandler extends EventEmitter implements A
 
     post(this.settings.endpointUrl, { connectionData, authData }, options, (error, response) => {
       if (error) {
-        this.logger.warn(EVENT.AUTH_ERROR, `http auth error: ${error}`)
+        this.services.logger.warn(EVENT.AUTH_ERROR, `http auth error: ${error}`)
         this.retry(id, connectionData, authData, callback)
         return
       }
 
       if (!response.statusCode) {
-        this.logger.warn(EVENT.AUTH_ERROR, 'http auth server error: missing status code!')
+        this.services.logger.warn(EVENT.AUTH_ERROR, 'http auth server error: missing status code!')
         this.retryAttempts.delete(id)
         callback(false, null)
         return
       }
 
       if (response.statusCode >= 500 && response.statusCode < 600) {
-        this.logger.warn(EVENT.AUTH_ERROR, `http auth server error: ${JSON.stringify(response.body)}`)
+        this.services.logger.warn(EVENT.AUTH_ERROR, `http auth server error: ${JSON.stringify(response.body)}`)
       }
 
       if (this.settings.retryStatusCodes.includes(response.statusCode)) {

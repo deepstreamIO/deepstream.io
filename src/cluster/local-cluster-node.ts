@@ -1,13 +1,16 @@
 import { TOPIC, Message, StateMessage } from '../constants'
-import { InternalDeepstreamConfig, DeepstreamServices, Cluster } from '../types'
-import { StateRegistry } from './single-state-registry'
+import { InternalDeepstreamConfig, DeepstreamServices, ClusterNode, StateRegistry, DeepstreamPlugin } from '../types'
 import { EventEmitter } from 'events'
+import { SingleStateRegistry } from './single-state-registry';
 
-export default class LocalClusterNode implements Cluster {
+export default class LocalClusterNode extends DeepstreamPlugin implements ClusterNode {
+  public isReady: boolean = true
+  public description: string = 'No Clustering Enabled'
   public stateRegistries = new Map<TOPIC, StateRegistry>()
   private messageBus = new EventEmitter()
 
-  constructor (private config: InternalDeepstreamConfig, services: DeepstreamServices, type: string) {
+  constructor (pluginConfig: any, services: DeepstreamServices, private config: InternalDeepstreamConfig) {
+    super()
   }
 
   public sendState (message: StateMessage, metaData?: any) {
@@ -35,17 +38,20 @@ export default class LocalClusterNode implements Cluster {
     this.messageBus.on(`ALL/${topic}`, callback)
   }
 
-  public getStateRegistry (stateRegistryTopic: TOPIC) {
+  public getGlobalStateRegistry (): StateRegistry {
+    return this.getStateRegistry(TOPIC.STATE_REGISTRY)
+  }
+
+  public getStateRegistry (stateRegistryTopic: TOPIC): StateRegistry {
     let stateRegistry = this.stateRegistries.get(stateRegistryTopic)
     if (!stateRegistry) {
-      stateRegistry = new StateRegistry(stateRegistryTopic, this.config)
+      stateRegistry = new SingleStateRegistry()
       this.stateRegistries.set(stateRegistryTopic, stateRegistry)
     }
     return stateRegistry
   }
 
-  public close (callback: Function) {
+  public async close (): Promise<void> {
     this.messageBus.removeAllListeners()
-    callback()
   }
 }

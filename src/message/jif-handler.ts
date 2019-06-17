@@ -20,7 +20,7 @@ import {
   deepFreeze,
 } from '../utils/utils'
 import { jifSchema } from './jif-schema'
-import { Logger, JifMessage, DeepstreamServices } from '../types'
+import { JifMessage, DeepstreamServices } from '../types'
 
 const ajv = new Ajv()
 
@@ -260,15 +260,11 @@ function getMsgToJif () {
 }
 
 export default class JIFHandler {
-  private logger: Logger
-
   private JIF_TO_MSG = getJifToMsg()
   private MSG_TO_JIF = getMsgToJif()
   private topicToKey = reverseMap(TOPIC)
 
-  constructor (services: DeepstreamServices) {
-    this.logger = services.logger
-  }
+  constructor (private services: DeepstreamServices) {}
 
   /*
    * Validate and convert a JIF message to a deepstream message
@@ -364,7 +360,7 @@ export default class JIFHandler {
       result.error = 'The RPC response timeout was exceeded by the provider.'
 
     } else {
-      this.logger.warn(
+      this.services.logger.warn(
         EVENT.INFO,
         `Unhandled request error occurred: ${TOPIC[message.topic]} ${event} ${JSON.stringify(message)}`,
       )

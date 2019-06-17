@@ -1,3 +1,5 @@
+import { PermissionCallback } from "../../types";
+
 export default class PermissionHandlerMock {
   public isReady: boolean
   public options: any
@@ -15,12 +17,12 @@ export default class PermissionHandlerMock {
     this.lastCanPerformActionQueryArgs = null
   }
 
-  public canPerformAction (username, message, callback, authData, socketWrapper) {
+  public canPerformAction (username, message, callback: PermissionCallback, authData, socketWrapper, passItOn) {
     this.lastCanPerformActionQueryArgs = arguments
     if (typeof this.nextCanPerformActionResult === 'string') {
-      callback(socketWrapper, message, this.nextCanPerformActionResult)
+      callback(socketWrapper, message, passItOn, this.nextCanPerformActionResult, false)
     } else {
-      callback(socketWrapper, message, null, this.nextCanPerformActionResult)
+      callback(socketWrapper, message, passItOn, null, this.nextCanPerformActionResult)
     }
   }
 }

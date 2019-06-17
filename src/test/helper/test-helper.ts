@@ -39,8 +39,7 @@ import {get} from '../../default-options'
 import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
-import { EventEmitter } from 'events'
-import { InternalDeepstreamConfig, DeepstreamServices, MonitoringPlugin, SocketWrapper } from '../../types'
+import { InternalDeepstreamConfig, DeepstreamServices, MonitoringPlugin, SocketWrapper, Monitoring, DeepstreamPlugin } from '../../types'
 import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory'
 import { Message, LOG_LEVEL, EVENT } from '../../constants'
 
@@ -75,7 +74,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
     }
   }}
 
-  class PermissionHandler extends EventEmitter {
+  class PermissionHandler extends DeepstreamPlugin implements PermissionHandler {
     public lastArgs: any[]
     public isReady: boolean
     public description: string
@@ -98,13 +97,9 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
   }
 
 // tslint:disable-next-line: max-classes-per-file
-  class MonitoringMock extends EventEmitter implements MonitoringPlugin {
+  class MonitoringMock extends DeepstreamPlugin implements Monitoring {
     public isReady = true
-    public apiVersion = 1
     public description: 'monitoring mock'
-    constructor () {
-      super()
-    }
     public onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
     }
     public onLogin (allowed: boolean, endpointType: string): void {
@@ -146,9 +141,9 @@ export const getDeepstreamPermissionOptions = function () {
 
 const ConfigPermissionHandler = require('../../permission/config-permission-handler').default
 
-export const testPermission = function (options) {
+export const testPermission = function (options: { config: InternalDeepstreamConfig, services: DeepstreamServices }) {
   return function (permissions, message, username, userdata, callback) {
-    const permissionHandler = new ConfigPermissionHandler(options.config, options.services, permissions)
+    const permissionHandler = new ConfigPermissionHandler(options.config.permission.options, options.services, options.config, permissions)
     permissionHandler.setRecordHandler({
       removeRecordRequest: () => {},
       runWhenRecordStable: (r: any, c: any) => { c(r) }

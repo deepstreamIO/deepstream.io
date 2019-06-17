@@ -15,25 +15,6 @@ describe('utils', () => {
     expect(uidA).not.to.equal(uidC)
   })
 
-  it('combines multiple events into one', () => {
-    const emitters = [
-      new EventEmitter(),
-      new EventEmitter(),
-      new EventEmitter()
-    ]
-    const callback = spy()
-
-    utils.combineEvents(emitters, 'someEvent', callback)
-    expect(callback).to.have.callCount(0)
-
-    emitters[0].emit('someEvent')
-    expect(callback).to.have.callCount(0)
-
-    emitters[1].emit('someEvent')
-    emitters[2].emit('someEvent')
-    expect(callback).to.have.callCount(1)
-  })
-
   it('reverses maps', () => {
     const user = {
       firstname: 'Wolfram',

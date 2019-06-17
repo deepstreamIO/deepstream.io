@@ -10,7 +10,7 @@ export function get (): InternalDeepstreamConfig {
     libDir: null,
     serverName: getUid(),
     showLogo: true,
-    logLevel: LOG_LEVEL.DEBUG,
+    logLevel: LOG_LEVEL.INFO,
     dependencyInitialisationTimeout: 2000,
     exitOnPluginError: false,
 
@@ -98,15 +98,14 @@ export function get (): InternalDeepstreamConfig {
     },
 
     monitoring: {
-      type: 'none',
+      type: 'default',
       options: {}
     },
 
     cluster: {
       message: {
-        type: 'none',
+        type: 'default',
         options: {
-
         }
       },
       registry: {
@@ -118,7 +117,7 @@ export function get (): InternalDeepstreamConfig {
         }
       },
       state: {
-        type: 'local',
+        type: 'default',
         options: {
           reconciliationTimeout: 500
         }

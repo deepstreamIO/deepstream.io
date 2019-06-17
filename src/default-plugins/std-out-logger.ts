@@ -1,14 +1,12 @@
-import { EventEmitter } from 'events'
 import { EVENT, LOG_LEVEL } from '../constants'
 
 import chalk from 'chalk'
-import { Logger, DeepstreamServices } from '../types'
+import { Logger, DeepstreamServices, DeepstreamPlugin } from '../types'
 
 const EOL = require('os').EOL
 
-export default class StdOutLogger extends EventEmitter implements Logger {
+export default class StdOutLogger extends DeepstreamPlugin implements Logger {
   public description = 'std out/err'
-  public isReady: boolean = true
 
   private useColors: boolean
   private currentLogLevel: LOG_LEVEL

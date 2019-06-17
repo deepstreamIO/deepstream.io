@@ -31,7 +31,7 @@ export default class SubscriptionRegistry {
   private topic: TOPIC
   private subscriptionListener: SubscriptionListener | null = null
   private constants: SubscriptionActions
-  private clusterSubscriptions: StateRegistry | null = null
+  private clusterSubscriptions: StateRegistry
   private actions: any
   private bulkIds = new Set<number>()
 
@@ -80,8 +80,8 @@ export default class SubscriptionRegistry {
     this.setUpBulkHistoryPurge()
   }
 
-  public whenReady (callback: () => void): void {
-    this.clusterSubscriptions!.whenReady(callback)
+  public async whenReady () {
+    await this.clusterSubscriptions.whenReady()
   }
 
   /**
@@ -292,8 +292,8 @@ export default class SubscriptionRegistry {
    */
   public setSubscriptionListener (listener: SubscriptionListener): void {
     this.subscriptionListener = listener
-    this.clusterSubscriptions!.on('add', listener.onFirstSubscriptionMade.bind(listener))
-    this.clusterSubscriptions!.on('remove', listener.onLastSubscriptionRemoved.bind(listener))
+    this.clusterSubscriptions.onAdd(listener.onFirstSubscriptionMade.bind(listener))
+    this.clusterSubscriptions.onRemove(listener.onLastSubscriptionRemoved.bind(listener))
   }
 
   private addSocket (subscription: Subscription, socket: SocketWrapper): void {

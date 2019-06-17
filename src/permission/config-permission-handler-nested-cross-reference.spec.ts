@@ -1,7 +1,7 @@
 import 'mocha'
 import { expect } from 'chai'
 
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 import * as C from '../constants'
 
 const noop = function () {}
@@ -10,7 +10,7 @@ const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return services.logger._log.lastCall.args[2]
+  return services.logger.logSpy.lastCall.args[2]
 }
 
 describe('permission handler loads data for cross referencing', () => {

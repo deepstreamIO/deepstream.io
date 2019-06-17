@@ -1,17 +1,16 @@
-import {spy} from 'sinon'
+import {spy, SinonSpy} from 'sinon'
 import { EventEmitter } from 'events'
-import { Logger } from '../../types'
+import { Logger, DeepstreamPlugin } from '../../types'
 import { LOG_LEVEL, EVENT } from '../../constants'
 
-export default class LoggerMock extends EventEmitter implements Logger {
+export default class LoggerMock extends DeepstreamPlugin implements Logger {
   public isReady: boolean
   public description: string = 'mock logger'
   public lastLogLevel: any
   public lastLogEvent: any
   public lastLogMessage: any
   public lastLogArguments: any
-  // tslint:disable-next-line:variable-name
-  public _log: any
+  public logSpy: SinonSpy
 
   constructor () {
     super()
@@ -21,7 +20,7 @@ export default class LoggerMock extends EventEmitter implements Logger {
     this.lastLogMessage = null
     this.lastLogArguments = null
 
-    this._log = spy()
+    this.logSpy = spy()
   }
 
   public shouldLog (logLevel: LOG_LEVEL): boolean {
@@ -30,22 +29,22 @@ export default class LoggerMock extends EventEmitter implements Logger {
 
   public warn (event: EVENT | string, message?: string, metaData?: any) {
     this.log(LOG_LEVEL.WARN, event, message)
-    this._log(LOG_LEVEL.WARN, event, message)
+    this.logSpy(LOG_LEVEL.WARN, event, message)
   }
 
   public debug (event: EVENT | string, message?: string, metaData?: any) {
     this.log(LOG_LEVEL.DEBUG, event, message)
-    this._log(LOG_LEVEL.DEBUG, event, message)
+    this.logSpy(LOG_LEVEL.DEBUG, event, message)
   }
 
   public info (event: EVENT | string, message?: string, metaData?: any) {
     this.log(LOG_LEVEL.INFO, event, message)
-    this._log(LOG_LEVEL.INFO, event, message)
+    this.logSpy(LOG_LEVEL.INFO, event, message)
   }
 
   public error (event: EVENT | string, message?: string, metaData?: any) {
     this.log(LOG_LEVEL.ERROR, event, message)
-    this._log(LOG_LEVEL.ERROR, event, message)
+    this.logSpy(LOG_LEVEL.ERROR, event, message)
   }
 
   public log (level: LOG_LEVEL, event: EVENT | string, message?: string, metaData?: any) {

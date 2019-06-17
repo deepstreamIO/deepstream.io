@@ -1,8 +1,6 @@
-import { DeepstreamServices, InternalDeepstreamConfig } from '../types'
+import { DeepstreamServices, InternalDeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin } from '../types'
 import { TOPIC, LOG_LEVEL } from '../constants'
 import { ClusterMessage, EVENT, CLUSTER_ACTIONS } from '../../binary-protocol/src/message-constants'
-import { EventEmitter } from 'events'
-import { StateRegistry } from './single-state-registry'
 
 /**
  * This class maintains a list of all nodes that are
@@ -11,26 +9,26 @@ import { StateRegistry } from './single-state-registry'
  * It provides status messages on a predefined interval
  * and keeps track of incoming status messages.
  */
-export class ClusterRegistry extends EventEmitter implements ClusterRegistry {
+export class DistributedClusterRegistry extends DeepstreamPlugin implements ClusterRegistry {
+    public description: string = 'Distributed Cluster Registry'
     private inCluster: boolean = false
     private nodes = new Map<string, { lastStatusTime: number, leaderScore: number }>()
     private leaderScore = Math.random()
-    private clusterOptions: any
     private publishInterval: NodeJS.Timeout
     private checkInterval: NodeJS.Timeout
     private role: string
+    private globalStateRegistry: StateRegistry
 
     /**
      * Creates the class, initialises all intervals and publishes the
      * initial status message that notifies other nodes within this
      * cluster of its presence.
      */
-    constructor (private options: InternalDeepstreamConfig, private services: DeepstreamServices, private globalStateRegistry: StateRegistry) {
+    constructor (private pluginOptions: any, private services: DeepstreamServices, private options: InternalDeepstreamConfig) {
         super()
 
-        this.clusterOptions = this.options.plugins.cluster.options
-        this.role = this.clusterOptions.role || 'deepstream'
-
+        this.role = this.pluginOptions.role || 'deepstream'
+        this.globalStateRegistry = this.services.message.getGlobalStateRegistry()
         this.services.message.subscribe(TOPIC.CLUSTER, this.onMessage.bind(this))
         this.leaveCluster = this.leaveCluster.bind(this)
 
@@ -38,16 +36,16 @@ export class ClusterRegistry extends EventEmitter implements ClusterRegistry {
 
         this.publishInterval = setInterval(
             this.publishStatus.bind(this),
-            this.clusterOptions.keepAliveInterval
+            this.pluginOptions.keepAliveInterval
         )
 
         this.checkInterval = setInterval(
             this.checkNodes.bind(this),
-            this.clusterOptions.activeCheckInterval
+            this.pluginOptions.activeCheckInterval
         )
     }
 
-    public close () {
+    public async close () {
         this.leaveCluster()
     }
 
@@ -62,8 +60,10 @@ export class ClusterRegistry extends EventEmitter implements ClusterRegistry {
      */
     public leaveCluster () {
         if (this.inCluster === false) {
+            this.emit('close')
             return
         }
+
         this.services.logger.log(LOG_LEVEL.INFO, EVENT.CLUSTER_LEAVE, this.options.serverName)
         this.services.message.send({
             topic: TOPIC.CLUSTER,
@@ -81,6 +81,8 @@ export class ClusterRegistry extends EventEmitter implements ClusterRegistry {
         clearInterval(this.checkInterval)
         this.nodes.clear()
         this.inCluster = false
+
+        this.emit('close')
     }
 
     /**
@@ -94,13 +96,13 @@ export class ClusterRegistry extends EventEmitter implements ClusterRegistry {
      * Returns true if this node is the cluster leader
      */
     public isLeader (): boolean {
-        return this.options.serverName === this.getCurrentLeader()
+        return this.options.serverName === this.getLeader()
     }
 
     /**
      * Returns the name of the current leader
      */
-    public getCurrentLeader () {
+    public getLeader () {
         let maxScore = 0
         let leader = this.options.serverName
 
@@ -140,7 +142,7 @@ export class ClusterRegistry extends EventEmitter implements ClusterRegistry {
     public checkNodes () {
         const now = Date.now()
         for (const [serverName, node] of this.nodes) {
-            if (now - node.lastStatusTime > this.clusterOptions.nodeInactiveTimeout) {
+            if (now - node.lastStatusTime > this.pluginOptions.nodeInactiveTimeout) {
                 this.removeNode(serverName)
             }
         }
@@ -163,8 +165,8 @@ export class ClusterRegistry extends EventEmitter implements ClusterRegistry {
             leaderScore: message.leaderScore!
         })
 
-        this.services.logger.info(EVENT.CLUSTER_JOIN, message.serverName)
-        this.services.logger.info(EVENT.CLUSTER_SIZE, `The cluster size is now ${this.nodes.size}`)
+        // this.services.logger.info(EVENT.CLUSTER_JOIN, message.serverName)
+        // this.services.logger.info(EVENT.CLUSTER_SIZE, `The cluster size is now ${this.nodes.size}`)
         this.emit('add', message.serverName)
         this.globalStateRegistry.add(message.serverName)
     }

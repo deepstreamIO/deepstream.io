@@ -4,6 +4,8 @@ import PermissionHandlerMock from '../test/mock/permission-handler-mock'
 const MessageProcessor = require('./message-processor').default
 import LoggerMock from '../test/mock/logger-mock'
 import { getTestMocks } from '../test/helper/test-mocks'
+import { TOPIC, ACTIONS } from '@deepstream/client/dist/binary-protocol/src/message-constants';
+import { CONNECTION_ACTIONS } from '../../binary-protocol/src/message-constants';
 
 let messageProcessor
 let log
@@ -25,7 +27,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
     client = testMocks.getSocketWrapper('someUser')
     permissionHandlerMock  = new PermissionHandlerMock()
     const loggerMock = new LoggerMock()
-    log = loggerMock._log
+    log = loggerMock.logSpy
     messageProcessor = new MessageProcessor({}, {
       permissionHandler: permissionHandlerMock,
       logger: loggerMock
@@ -39,12 +41,12 @@ describe('the message processor only forwards valid, authorized messages', () =>
     client.socketWrapperMock.verify()
   })
 
-  it('ignores heartbeats pongs messages', () => {
+  it('ignores heartbeats ping messages', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .never()
 
-    messageProcessor.process(client.socketWrapper, [{ topic: 'C', action: 'PO' }])
+    messageProcessor.process(client.socketWrapper, [{ topic: TOPIC.CONNECTION, action: CONNECTION_ACTIONS.PING }])
   })
 
   it('handles permission errors', () => {

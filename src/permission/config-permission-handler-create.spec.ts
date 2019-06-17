@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import * as C from '../constants'
 
 const getBasePermissions = require('../test/helper/test-helper').getBasePermissions
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 
 const options = testHelper.getDeepstreamPermissionOptions()
 const services = options.services

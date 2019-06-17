@@ -12,8 +12,8 @@ export default class TestHttpServer extends EventEmitter {
 
   constructor (private port: number, private callback: Function, private doLog: boolean = false) {
     super()
-    this.server = http.createServer(this._onRequest.bind(this))
-    this.server.listen(port, this._onListen.bind(this))
+    this.server = http.createServer(this.onRequest.bind(this))
+    this.server.listen(port, this.onListen.bind(this))
   }
 
   public static getRandomPort () {
@@ -43,18 +43,18 @@ export default class TestHttpServer extends EventEmitter {
     this.server.close(callback)
   }
 
-  public _onListen () {
-    this._log(`server listening on port ${this.port}`)
+  private onListen () {
+    this.log(`server listening on port ${this.port}`)
     this.callback()
   }
 
-  public _log (msg: string) {
+  private log (msg: string) {
     if (this.doLog) {
       console.log(msg)
     }
   }
 
-  public _onRequest (request: http.IncomingMessage, response: http.OutgoingMessage) {
+  private onRequest (request: http.IncomingMessage, response: http.OutgoingMessage) {
     let postData = ''
     request.setEncoding('utf8')
     request.on('data', (chunk) => {
@@ -65,7 +65,7 @@ export default class TestHttpServer extends EventEmitter {
       this.lastRequestHeaders = request.headers
       this.lastRequestMethod = request.method
       this.emit('request-received')
-      this._log(`received data ${postData}`)
+      this.log(`received data ${postData}`)
     })
     this.request = request
     this.response = response

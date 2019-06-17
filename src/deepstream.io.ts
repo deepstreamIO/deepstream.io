@@ -6,7 +6,7 @@ import { join as joinPath } from 'path'
 import { EventEmitter } from 'events'
 
 import * as pkg from '../package.json'
-import { combineEvents, merge } from './utils/utils'
+import { merge } from './utils/utils'
 import * as constants_ from './constants'
 const { STATES, EVENT, TOPIC } = constants_
 
@@ -24,7 +24,6 @@ import * as configInitialiser from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
 import * as configValidator from './config/config-validator'
 
-import MessageConnector from './cluster/single-cluster-node'
 import DependencyInitialiser from './utils/dependency-initialiser'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types'
@@ -211,7 +210,6 @@ export class Deepstream extends EventEmitter {
  */
   protected pluginInit (): void {
     this.services.subscriptions = new SubscriptionRegistryFactory(this.config, this.services)
-    this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
 
     const infoLogger = (message: string) => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`server name: ${this.config.serverName}`)
@@ -228,6 +226,9 @@ export class Deepstream extends EventEmitter {
 
     this.services.registeredPlugins.forEach((pluginType) => {
       const plugin = (this.services as any)[pluginType]
+      if (!plugin) {
+        process.exit(1)
+      }
       const initialiser = new DependencyInitialiser(this, this.config, this.services, plugin, pluginType)
       initialiser.once('ready', () => {
         this.checkReady(pluginType, plugin)
@@ -260,6 +261,7 @@ export class Deepstream extends EventEmitter {
   protected serviceInit (): void {
     this.messageProcessor = new MessageProcessor(this.config, this.services)
     this.messageDistributor = new MessageDistributor(this.config, this.services)
+    this.services.messageDistributor = this.messageDistributor
 
     this.eventHandler = new EventHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
@@ -305,32 +307,35 @@ export class Deepstream extends EventEmitter {
  * Invoked once all dependencies and services are initialised.
  * The startup sequence will be complete once the connection endpoint is started and listening.
  */
-  private connectionEndpointInit (): void {
+  private async connectionEndpointInit (): Promise<void> {
     const endpoints = this.services.connectionEndpoints
-    const initialisers: any[] = []
+    const readyPromises: Array<Promise<void>> = []
 
     for (let i = 0; i < endpoints.length; i++) {
       const connectionEndpoint = endpoints[i]
-      initialisers[i] = new DependencyInitialiser(
-      this,
-      this.config,
-      this.services,
-      connectionEndpoint,
-      'connectionEndpoint'
-    )
+      const dependencyInitialiser = new DependencyInitialiser(
+        this,
+        this.config,
+        this.services,
+        connectionEndpoint,
+        'connectionEndpoint'
+      )
 
       connectionEndpoint.onMessages = this.messageProcessor.process.bind(this.messageProcessor)
       connectionEndpoint.on(
-      'client-connected',
-      this.presenceHandler.handleJoin.bind(this.presenceHandler)
-    )
+        'client-connected',
+        this.presenceHandler.handleJoin.bind(this.presenceHandler)
+      )
       connectionEndpoint.on(
-      'client-disconnected',
-      this.presenceHandler.handleLeave.bind(this.presenceHandler)
-    )
+        'client-disconnected',
+        this.presenceHandler.handleLeave.bind(this.presenceHandler)
+      )
+
+      readyPromises.push(new Promise(resolve => dependencyInitialiser.on('ready', resolve)))
     }
 
-    combineEvents(initialisers, 'ready', () => this.transition('connection-endpoints-started'))
+    await Promise.all(readyPromises)
+    this.transition('connection-endpoints-started')
   }
 
 /**
@@ -345,53 +350,39 @@ export class Deepstream extends EventEmitter {
  * Begin deepstream shutdown.
  * Closes the (perhaps partially initialised) connectionEndpoints.
  */
-  private connectionEndpointShutdown (): void {
-    const endpoints = this.services.connectionEndpoints
-    endpoints.forEach((endpoint) => {
-      process.nextTick(() => endpoint.close())
-    })
-
-    combineEvents(endpoints, 'close', () => this.transition('connection-endpoints-closed'))
+  private async connectionEndpointShutdown (): Promise<void> {
+    const closeCallbacks = this.services.connectionEndpoints.map((endpoint) => endpoint.close())
+    await Promise.all(closeCallbacks)
+    this.transition('connection-endpoints-closed')
   }
 
 /**
  * Shutdown the services.
  */
-  private serviceShutdown (): void {
-    this.services.message.close(() => this.transition('services-closed'))
+  private async serviceShutdown (): Promise<void> {
+    await this.services.message.close()
+    this.transition('services-closed')
   }
 
 /**
  * Close any (perhaps partially initialised) plugins.
  */
-  private pluginShutdown (): void {
-    const closeablePlugins: DeepstreamPlugin[] = []
-    this.services.registeredPlugins.forEach((pluginType) => {
+  private async pluginShutdown (): Promise<void> {
+    const closeCallbacks = this.services.registeredPlugins.map((pluginType) => {
       const plugin = (this.services as any)[pluginType]
-      if (typeof plugin.close === 'function') {
-        process.nextTick(() => plugin.close())
-        closeablePlugins.push(plugin)
-      }
+      return plugin.close()
     })
-
-    if (closeablePlugins.length > 0) {
-      combineEvents(closeablePlugins, 'close', () => this.transition('plugins-closed'))
-    } else {
-      process.nextTick(() => this.transition('plugins-closed'))
-    }
+    await Promise.all(closeCallbacks)
+    this.transition('plugins-closed')
   }
 
 /**
  * Close the (perhaps partially initialised) logger.
  */
-  private loggerShutdown (): void {
+  private async loggerShutdown () {
     const logger = this.services.logger as any
-    if (typeof logger.close === 'function') {
-      process.nextTick(() => logger.close())
-      logger.once('close', () => this.transition('logger-closed'))
-      return
-    }
-    process.nextTick(() => this.transition('logger-closed'))
+    await logger.close()
+    this.transition('logger-closed')
   }
 
 /**

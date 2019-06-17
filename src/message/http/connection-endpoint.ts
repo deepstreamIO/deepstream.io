@@ -2,21 +2,16 @@ import Server from './server'
 import JIFHandler from '../jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
-import { EventEmitter } from 'events'
-import MessageDistributor from '../message-distributor'
 import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS, Message, ALL_ACTIONS } from '../../constants'
-import { ConnectionEndpoint, Logger, AuthenticationHandler, PermissionHandler, DeepstreamConfig, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper } from '../../types'
+import { ConnectionEndpoint, DeepstreamConfig, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData } from '../../types'
+import { JSONObject } from '../../../binary-protocol/src/message-constants'
 
-export default class HTTPConnectionEndpoint extends EventEmitter implements ConnectionEndpoint {
+export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements ConnectionEndpoint {
 
   public isReady: boolean = false
   public description: string = 'HTTP connection endpoint'
 
   private initialised: boolean = false
-  private logger: Logger
-  private authenticationHandler: AuthenticationHandler
-  private permissionHandler: PermissionHandler
-  private messageDistributor!: MessageDistributor
   private dsOptions: DeepstreamConfig
   private jifHandler!: JIFHandler
   private onSocketMessageBound: Function
@@ -28,10 +23,6 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
   constructor (private options: any, private services: DeepstreamServices) {
     super()
 
-    this.logger = services.logger
-    this.authenticationHandler = services.authenticationHandler
-    this.permissionHandler = services.permissionHandler
-
     this.onSocketMessageBound = this.onSocketMessage.bind(this)
     this.onSocketErrorBound = this.onSocketError.bind(this)
   }
@@ -40,7 +31,6 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    * Called on initialization with a reference to the instantiating deepstream server.
    */
   public setDeepstream (deepstream: any): void {
-    this.messageDistributor = deepstream.messageDistributor
     this.dsOptions = deepstream.config
     this.jifHandler = new JIFHandler(this.services)
   }
@@ -69,7 +59,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       enableAuthEndpoint: this.options.enableAuthEndpoint,
       maxMessageSize: this.options.maxMessageSize
     }
-    this.server = new Server(serverConfig, this.logger)
+    this.server = new Server(serverConfig, this.services.logger)
 
     this.server.on('auth-message', this.onAuthMessage.bind(this))
     this.server.on('post-message', this.onPostMessage.bind(this))
@@ -101,8 +91,9 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     return value
   }
 
-  public close () {
-    this.server.stop(() => this.emit('close'))
+  public async close () {
+    await this.server.stop()
+    this.emit('close')
   }
 
   /**
@@ -120,47 +111,35 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
    *
    * Passes the entire message to the configured authentication handler.
    */
-  private onAuthMessage (authData: object, metadata: object, responseCallback: Function): void {
-    this.authenticationHandler.isValidUser(
+  private onAuthMessage (authData: JSONObject, metadata: object, responseCallback: Function): void {
+    this.services.authenticationHandler.isValidUser(
       metadata,
       authData,
-      this.processAuthResult.bind(this, responseCallback, authData)
+      (isAllowed, data) => {
+        this.services.monitoring.onLogin(isAllowed, 'http')
+
+        if (isAllowed === true) {
+          responseCallback(null, {
+            token: data!.token,
+            clientData: data!.clientData
+          })
+          return
+        }
+
+        let error = typeof data === 'string' ? data : 'Invalid authentication data.'
+
+        responseCallback({
+          statusCode: HTTPStatus.UNAUTHORIZED,
+          message: error
+        })
+
+        if (this.logInvalidAuthData === true) {
+          error += `: ${JSON.stringify(authData)}`
+        }
+
+        this.services.logger.debug(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], error)
+      }
     )
-  }
-
-  /**
-   * Handle response from authentication handler relating to an auth request.
-   *
-   * Builds a response containing the user's userData and token
-   */
-  private processAuthResult (
-    responseCallback: Function,
-    authData: object,
-    isAllowed: boolean,
-    data: { token: string, clientData: object }
-  ): void {
-    this.services.monitoring.onLogin(isAllowed, 'http')
-
-    if (isAllowed === true) {
-      responseCallback(null, {
-        token: data.token,
-        clientData: data.clientData
-      })
-      return
-    }
-
-    let error = typeof data === 'string' ? data : 'Invalid authentication data.'
-
-    responseCallback({
-      statusCode: HTTPStatus.UNAUTHORIZED,
-      message: error
-    })
-
-    if (this.logInvalidAuthData === true) {
-      error += `: ${JSON.stringify(authData)}`
-    }
-
-    this.logger.debug(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], error)
   }
 
   /**
@@ -181,7 +160,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
         statusCode: HTTPStatus.BAD_REQUEST,
         message: error
       })
-      this.logger.debug(
+      this.services.logger.debug(
         PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE],
         JSON.stringify(messageData.body)
       )
@@ -192,7 +171,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       if (this.options.allowAuthData !== true) {
         const error = 'Authentication using authData is disabled. Try using a token instead.'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
-        this.logger.debug(
+        this.services.logger.debug(
           AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
           'Auth rejected because allowAuthData was disabled'
         )
@@ -201,7 +180,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       if (messageData.authData === null || typeof messageData.authData !== 'object') {
         const error = 'Invalid message: the "authData" parameter must be an object'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
-        this.logger.debug(
+        this.services.logger.debug(
           AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
           `authData was not an object: ${
             this.logInvalidAuthData === true ? JSON.stringify(messageData.authData) : '-'
@@ -214,7 +193,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       if (typeof messageData.token !== 'string' || messageData.token.length === 0) {
         const error = 'Invalid message: the "token" parameter must be a non-empty string'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
-        this.logger.debug(
+        this.services.logger.debug(
           AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
           `auth token was not a string: ${
             this.logInvalidAuthData === true ? messageData.token : '-'
@@ -225,7 +204,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       authData = Object.assign({}, authData, { token: messageData.token })
     }
 
-    this.authenticationHandler.isValidUser(
+    this.services.authenticationHandler.isValidUser(
       metadata,
       authData,
       this.onMessageAuthResponse.bind(this, responseCallback, messageData)
@@ -262,7 +241,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     responseCallback: Function,
     messageData: { body: object[] },
     success: boolean,
-    authResponseData: object
+    authResponseData?: UserAuthData
   ): void {
     if (success !== true) {
       const error = typeof authResponseData === 'string' ? authResponseData : 'Unsuccessful authentication attempt.'
@@ -285,7 +264,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
           statusCode: HTTPStatus.BAD_REQUEST,
           message: parseResult.error ? `${message} Reason: ${parseResult.error}` : message
         })
-        this.logger.debug(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], parseResult.error)
+        this.services.logger.debug(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], parseResult.error)
         return
       }
     }
@@ -312,7 +291,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
         }
       } else {
         const socketWrapper = this.createSocketWrapper(
-          authResponseData, messageIndex, messageResults, responseCallback, requestTimeoutId
+          authResponseData!, messageIndex, messageResults, responseCallback, requestTimeoutId
         )
 
         /*
@@ -343,7 +322,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     const parseResult = this.jifHandler.toJIF(message)
     if (!parseResult) {
       const errorMessage = `${message.topic} ${message.action} ${JSON.stringify(message.data)}`
-      this.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], errorMessage)
+      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], errorMessage)
       return
     }
     if (parseResult.done !== true) {
@@ -413,7 +392,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       return
     }
 
-    this.logger.warn(EVENT.TIMEOUT, 'HTTP Request timeout')
+    this.services.logger.warn(EVENT.TIMEOUT, 'HTTP Request timeout')
 
     const result = HTTPConnectionEndpoint.calculateMessageResult(messageResults)
 
@@ -450,7 +429,7 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
 
   private onGetMessage (data: any, headers: any, responseCallback: any) {
     const message = 'Reading records via HTTP GET is not yet implemented, please use a post request instead.'
-    this.logger.warn(RECORD_ACTIONS[RECORD_ACTIONS.READ], message)
+    this.services.logger.warn(RECORD_ACTIONS[RECORD_ACTIONS.READ], message)
     responseCallback({ statusCode: 400, message })
     // TODO: implement a GET endpoint that reads the current state of a record
   }
@@ -464,11 +443,11 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
     messageResults: JifResult[],
     messageIndex: number
   ): void {
-    this.permissionHandler.canPerformAction(
+    this.services.permissionHandler.canPerformAction(
       socketWrapper.user,
       parsedMessage,
       this.onPermissionResponse,
-      socketWrapper.authData,
+      socketWrapper.authData!,
       socketWrapper,
       { messageResults, messageIndex }
     )
@@ -498,6 +477,6 @@ export default class HTTPConnectionEndpoint extends EventEmitter implements Conn
       return
     }
     messageResults[messageIndex] = { success: true }
-    this.messageDistributor.distribute(socketWrapper, message)
+    this.services.messageDistributor.distribute(socketWrapper, message)
   }
 }

@@ -1,24 +1,22 @@
 import { EVENT_ACTIONS, TOPIC, EventMessage, ListenMessage } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
 import SubscriptionRegistry from '../utils/subscription-registry'
-import { Logger, InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
+import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 export default class EventHandler {
   private subscriptionRegistry: SubscriptionRegistry
   private listenerRegistry: ListenerRegistry
-  private logger: Logger
 
   /**
    * Handles incoming and outgoing messages for the EVENT topic.
    */
 
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry) {
+  constructor (config: InternalDeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry) {
     this.subscriptionRegistry =
       subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.EVENT, TOPIC.EVENT_SUBSCRIPTIONS)
     this.listenerRegistry =
       listenerRegistry || new ListenerRegistry(TOPIC.EVENT, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
-    this.logger = services.logger
   }
 
   /**
@@ -47,7 +45,7 @@ export default class EventHandler {
    * be triggered by messages coming in from both clients and the message connector.
    */
   public triggerEvent (socket: SocketWrapper, message: EventMessage) {
-    this.logger.debug(EVENT_ACTIONS[EVENT_ACTIONS.EMIT], `event: ${message.name} with data: ${message.data}`)
+    this.services.logger.debug(EVENT_ACTIONS[EVENT_ACTIONS.EMIT], `event: ${message.name} with data: ${message.data}`)
     this.subscriptionRegistry.sendToSubscribers(message.name, message, false, socket)
   }
 }
