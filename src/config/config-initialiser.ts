@@ -16,9 +16,9 @@ import * as fileUtils from './file-utils'
 import { InternalDeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, Storage, StorageReadCallback, StorageWriteCallback, AuthenticationHandler, PermissionHandler } from '../types'
 import { JSONObject } from '../../binary-protocol/src/message-constants'
 import { DistributedLockRegistry } from '../cluster/distributed-lock-registry'
-import { DistributedClusterRegistry } from '../cluster/distributed-cluster-registry';
-import { DistributedStateRegistry } from '../cluster/distributed-state-registry';
-import SingleClusterNode from '../cluster/single-cluster-node';
+import { DistributedClusterRegistry } from '../cluster/distributed-cluster-registry'
+import { DistributedStateRegistry } from '../cluster/distributed-state-registry'
+import SingleClusterNode from '../cluster/single-cluster-node'
 
 let commandLineArguments: any
 

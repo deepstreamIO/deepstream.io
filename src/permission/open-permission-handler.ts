@@ -1,6 +1,6 @@
 import { PermissionHandler, SocketWrapper, PermissionCallback, DeepstreamPlugin } from '../types'
 import { Message } from '../constants'
-import { JSONObject } from '@deepstream/client/dist/binary-protocol/src/message-constants';
+import { JSONObject } from '@deepstream/client/dist/binary-protocol/src/message-constants'
 
 /**
  * The open permission handler allows any action to occur without applying

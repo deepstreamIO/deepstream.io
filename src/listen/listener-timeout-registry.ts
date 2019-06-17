@@ -2,9 +2,9 @@ import { EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constant
 import { SocketWrapper, Provider } from '../types'
 
 export default class ListenerTimeoutRegistry {
-  private timeoutMap: any
-  private timedoutProviders: any
-  private acceptedProvider: any
+  private timeoutMap: { [index: string]: NodeJS.Timeout }
+  private timedoutProviders: { [index: string]: Provider[] }
+  private acceptedProvider: { [index: string]: Provider }
   private actions: any
 
   /**

@@ -331,7 +331,7 @@ export class Deepstream extends EventEmitter {
         this.presenceHandler.handleLeave.bind(this.presenceHandler)
       )
 
-      readyPromises.push(new Promise(resolve => dependencyInitialiser.on('ready', resolve)))
+      readyPromises.push(new Promise((resolve) => dependencyInitialiser.on('ready', resolve)))
     }
 
     await Promise.all(readyPromises)

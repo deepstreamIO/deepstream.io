@@ -1,7 +1,8 @@
 import FileAuthenticationHandler from '../src/authentication/file-based-authentication-handler'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
+import { Command } from 'commander'
 
-export const hash = (program) => {
+export const hash = (program: Command) => {
   program
     .command('hash [password]')
     .description('Generate a hash from a plaintext password using file auth configuration settings')
@@ -9,7 +10,7 @@ export const hash = (program) => {
     .action(action)
 }
 
-function action (password) {
+function action (this: any, password: string) {
   global.deepstreamCLI = this
   const config = jsYamlLoader.loadConfigWithoutInitialisation().config
 
@@ -34,7 +35,7 @@ function action (password) {
   // jsYamlLoader.readAndParseFile = function () {}
 
   const fileAuthenticationHandler = new FileAuthenticationHandler(config.auth.options)
-  fileAuthenticationHandler.createHash(password, (err, passwordHash) => {
+  fileAuthenticationHandler.createHash(password, (err: Error, passwordHash: string) => {
     if (err) {
       console.error('Hash could not be created', err)
       process.exit(1)

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { Message } from '../../constants';
+import { Message } from '../../constants'
 
 const SocketWrapperMock = class extends EventEmitter {
   public static lastPreparedMessage: any

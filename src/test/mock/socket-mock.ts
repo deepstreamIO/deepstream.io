@@ -1,3 +1,5 @@
+import { Message } from '../../../binary-protocol/src/message-constants'
+
 export default class SocketMock {
   public lastSendMessage: any
   public isDisconnected: any
@@ -18,7 +20,7 @@ export default class SocketMock {
     this._handle = {}
 }
 
-public send (message) {
+public send (message: Message) {
   this.lastSendMessage = message
   this.sendMessages.push(message)
 }
@@ -26,7 +28,7 @@ public send (message) {
 public end () {
 }
 
-public getMsg (i) {
+public getMsg (i: number) {
   return this.sendMessages[this.sendMessages.length - (i + 1)]
 }
 

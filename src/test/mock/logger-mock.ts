@@ -1,5 +1,4 @@
 import {spy, SinonSpy} from 'sinon'
-import { EventEmitter } from 'events'
 import { Logger, DeepstreamPlugin } from '../../types'
 import { LOG_LEVEL, EVENT } from '../../constants'
 

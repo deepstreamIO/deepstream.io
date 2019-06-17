@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
-import { Message } from '../../constants';
-import { JSONObject } from '../../../binary-protocol/src/message-constants';
+import { Message } from '../../constants'
+import { JSONObject } from '../../../binary-protocol/src/message-constants'
+import { SocketWrapper } from '../../types'
 const sinon = require('sinon')
 
 export const getTestMocks = () => {
@@ -75,7 +76,7 @@ export const getTestMocks = () => {
       on: socketWrapperEmitter.on,
       once: socketWrapperEmitter.once,
       removeListener: socketWrapperEmitter.removeListener,
-    }
+    } as never as SocketWrapper
 
     return {
       socketWrapper,

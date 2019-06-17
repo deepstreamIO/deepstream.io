@@ -1,6 +1,8 @@
+// @ts-ignore
 import * as dsService from 'deepstream.io-service'
+import { Command } from 'commander'
 
-export const service = (program) => {
+export const service = (program: Command) => {
   program
     .command('service [add|remove|start|stop|restart|status]')
     .description('Add, remove, start or stop deepstream as a service to your operating system')
@@ -14,7 +16,7 @@ export const service = (program) => {
     .action(execute)
 }
 
-function response (error, result) {
+function response (error: Error | string | null, result: string) {
   if (error) {
     console.log(error)
   } else {
@@ -22,7 +24,7 @@ function response (error, result) {
   }
 }
 
-function execute (action) {
+function execute (this: any, action: string) {
   const name = this.serviceName || 'deepstream'
 
   if (action === 'add') {

@@ -73,7 +73,7 @@ export default class Server extends EventEmitter {
   }
 
   public stop (): Promise<void> {
-    return new Promise(resolve => this.httpServer.shutdown(resolve))
+    return new Promise((resolve) => this.httpServer.shutdown(resolve))
   }
 
   /**

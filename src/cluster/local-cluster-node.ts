@@ -1,7 +1,7 @@
 import { TOPIC, Message, StateMessage } from '../constants'
 import { InternalDeepstreamConfig, DeepstreamServices, ClusterNode, StateRegistry, DeepstreamPlugin } from '../types'
 import { EventEmitter } from 'events'
-import { SingleStateRegistry } from './single-state-registry';
+import { SingleStateRegistry } from './single-state-registry'
 
 export default class LocalClusterNode extends DeepstreamPlugin implements ClusterNode {
   public isReady: boolean = true

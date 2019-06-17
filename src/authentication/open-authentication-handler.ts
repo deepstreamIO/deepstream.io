@@ -1,5 +1,5 @@
 import { AuthenticationHandler, DeepstreamPlugin } from '../types'
-import { JSONObject } from '../../binary-protocol/src/message-constants';
+import { JSONObject } from '../../binary-protocol/src/message-constants'
 
 /**
  * Used for users that don't provide a username

@@ -1,5 +1,5 @@
 import { EVENT, LOG_LEVEL } from '../../src/constants'
-import { Logger, DeepstreamPlugin } from '../../src/types';
+import { Logger, DeepstreamPlugin } from '../../src/types'
 
 interface Log {
   level: number,
@@ -14,7 +14,7 @@ export class TestLogger extends DeepstreamPlugin implements Logger {
   public isReady: boolean = true
 
   public setLogLevel (logLevel: LOG_LEVEL): void {
-    throw new Error("Method not implemented.")
+    throw new Error('Method not implemented.')
   }
 
   public shouldLog () {

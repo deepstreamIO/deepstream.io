@@ -2,7 +2,7 @@ import { TOPIC, STATE_ACTIONS } from '../constants'
 import { DeepstreamServices, StateRegistry, DeepstreamConfig, DeepstreamPlugin, StateRegistryCallback } from '../types'
 import { StateMessage } from '../../binary-protocol/src/message-constants'
 import { Dictionary } from 'ts-essentials'
-import { Emitter } from '@deepstream/client/dist/src/util/emitter';
+import { Emitter } from '@deepstream/client/dist/src/util/emitter'
 
 /**
  * This class provides a generic mechanism that allows to maintain
@@ -40,15 +40,15 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
 
   public async whenReady () {
     if (!this.isReady) {
-      await new Promise(resolve => this.emitter.once('ready', resolve))
+      await new Promise((resolve) => this.emitter.once('ready', resolve))
     }
   }
 
-  public onAdd(callback: StateRegistryCallback): void {
+  public onAdd (callback: StateRegistryCallback): void {
     this.emitter.on('add', callback)
   }
 
-  public onRemove(callback: StateRegistryCallback): void {
+  public onRemove (callback: StateRegistryCallback): void {
     this.emitter.on('remove', callback)
   }
 

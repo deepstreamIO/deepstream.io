@@ -5,7 +5,6 @@
     "outDir": "dist",
     "sourceMap": true,
     "allowJs": false,
-    "strictNullChecks": true,
     "resolveJsonModule": true,
     "noUnusedLocals": true,
     "strict": true,
@@ -22,12 +21,7 @@
     "package.json"
   ],
   "exclude": [
-    "bin/*",
     "**/*.spec.ts",
-    "**/*-mock.ts",
-    "src/test/**/*.ts",
-    "src/listen/*.ts",
-    "src/message/jif-*.ts",
     "**/installer.ts",
     "node_modules"
   ],

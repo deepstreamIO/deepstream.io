@@ -3,9 +3,9 @@ import { Deepstream } from '../../src/deepstream.io'
 import LocalCache from '../../src/default-plugins/local-cache'
 
 import { EventEmitter } from 'events'
-import { TestLogger } from './test-logger';
+import { TestLogger } from './test-logger'
 import { DeepstreamPlugin, AuthenticationHandler, UserAuthenticationCallback } from '../../src/types'
-import { JSONObject } from '../../src/constants';
+import { JSONObject } from '../../src/constants'
 
 const onlyLoginOnceUser = { loggedIn: false }
 const localCache = new LocalCache()

@@ -1,5 +1,5 @@
-import { Storage, StorageWriteCallback, StorageReadCallback, DeepstreamServices, InternalDeepstreamConfig, DeepstreamPlugin } from '../../types'
-import { JSONObject } from '../../constants';
+import { Storage, StorageWriteCallback, StorageReadCallback, DeepstreamPlugin } from '../../types'
+import { JSONObject } from '../../constants'
 
 export default class StorageMock extends DeepstreamPlugin implements Storage  {
   public values = new Map<string, { version: number, value: JSONObject }>()

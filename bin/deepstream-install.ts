@@ -1,7 +1,8 @@
 import { installer } from '../src/utils/installer'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
+import { Command } from 'commander'
 
-export const install = (program) => {
+export const install = (program: Command) => {
   program
     .command('install')
     .description('install connectors')
@@ -22,7 +23,7 @@ export const install = (program) => {
     .action(action)
 }
 
-function action (type, nameAndVersion) {
+function action (this: any, type: string, nameAndVersion: string) {
   const installArgs = Array.prototype.slice.call(arguments, 0, arguments.length - 1)
   if (installArgs.length < 2) {
     this.help()
@@ -60,8 +61,9 @@ function action (type, nameAndVersion) {
     name,
     version,
     dir: this.libDir
-  }, (err) => {
+  }, (err: string | Error | null) => {
     if (err) {
+      // @ts-ignore
       console.error(err.toString().red)
       process.exit(1)
     }
