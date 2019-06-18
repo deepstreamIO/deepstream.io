@@ -22,8 +22,8 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
     nodes: Set<string>,
     checkSum: number
   }>()
-  private reconciliationTimeouts = new Map()
-  private checkSumTimeouts = new Map()
+  private reconciliationTimeouts = new Map<string, NodeJS.Timeout>()
+  private checkSumTimeouts = new Map<string, any[]>()
   private fullStateSent: boolean = false
   private initialServers = new Set<string>()
   private stateOptions: any
@@ -238,7 +238,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
     if (callbacks) {
       callbacks.push(callback)
     } else {
-      this.checkSumTimeouts.set(serverName, callback)
+      this.checkSumTimeouts.set(serverName, [callback])
 
       setTimeout(() => {
         let totalCheckSum = 0
@@ -249,7 +249,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
           }
         }
 
-        this.checkSumTimeouts.get(serverName).forEach((cb: (checksum: number) => void) => cb(totalCheckSum))
+        this.checkSumTimeouts.get(serverName)!.forEach((cb: (checksum: number) => void) => cb(totalCheckSum))
         this.checkSumTimeouts.delete(serverName)
       }, this.pluginOptions.checkSumBuffer)
     }
@@ -296,7 +296,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
       const timeout = this.reconciliationTimeouts.get(serverName)
       if (timeout) {
         clearTimeout(timeout)
-        this.reconciliationTimeouts.delete(timeout)
+        this.reconciliationTimeouts.delete(serverName)
       }
     })
   }

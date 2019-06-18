@@ -52,18 +52,7 @@ export const initialise = function (config: InternalDeepstreamConfig): { config:
   handleUUIDProperty(config)
   handleSSLProperties(config)
 
-  const services: any = {
-    registeredPlugins: [
-      'authenticationHandler',
-      'permissionHandler',
-      'cache',
-      'storage',
-      'monitoring',
-      'locks',
-      'cluster'
-    ]
-  }
-
+  const services = {} as DeepstreamServices
   services.logger = handleLogger(config)
   services.message = new (resolvePluginClass(config.cluster.message, 'message'))(config.cluster.message.options, services, config)
   services.storage = new (resolvePluginClass(config.storage, 'storage'))(config.storage.options, services, config)
@@ -175,6 +164,8 @@ function handleLogger (config: InternalDeepstreamConfig): Logger {
  * CLI arguments will be considered.
  */
 function handleCustomPlugins (config: InternalDeepstreamConfig, services: any): void {
+  services.plugins = {}
+
   if (config.plugins == null) {
     return
   }
@@ -184,12 +175,7 @@ function handleCustomPlugins (config: InternalDeepstreamConfig, services: any): 
     const plugin = plugins[key]
     if (plugin) {
       const PluginConstructor = resolvePluginClass(plugin, key)
-      services[key] = new PluginConstructor(plugin.options)
-
-      if (services.registeredPlugins.indexOf(key) === -1) {
-        services.registeredPlugins.push(key)
-      }
-
+      services.plugins[key] = new PluginConstructor(plugin.options)
     }
   }
 }

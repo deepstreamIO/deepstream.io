@@ -46,7 +46,8 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
     }
 
     public async close () {
-        this.leaveCluster()
+        console.log('closing this')
+      this.leaveCluster()
     }
 
     public hasPeer (serverName: string) {

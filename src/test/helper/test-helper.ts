@@ -119,7 +119,6 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
     monitoring: new MonitoringMock(),
     authenticationHandler: new AuthenticationHandler(),
     permissionHandler: new PermissionHandler(),
-    registeredPlugins: [],
     connectionEndpoints: [],
   }
   services.subscriptions = new SubscriptionRegistryFactory(config, services as DeepstreamServices)

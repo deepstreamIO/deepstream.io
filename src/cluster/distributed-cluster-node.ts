@@ -5,7 +5,7 @@ import { DistributedStateRegistry } from './distributed-state-registry'
 export default abstract class DistributedClusterNode extends DeepstreamPlugin implements ClusterNode {
   public stateRegistries = new Map<TOPIC, StateRegistry>()
 
-  constructor (private pluginOptions: any, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
+  constructor (protected pluginOptions: any, protected services: DeepstreamServices, protected config: InternalDeepstreamConfig) {
     super()
   }
 

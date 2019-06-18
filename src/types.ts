@@ -250,8 +250,8 @@ export interface DeepstreamServices {
   locks: LockRegistry,
   cluster: ClusterRegistry,
   subscriptions: SubscriptionRegistryFactory,
-  messageDistributor: MessageDistributor,
-  registeredPlugins: string[]
+  messageDistributor: MessageDistributor
+  plugins: { [index: string]: DeepstreamPlugin }
 }
 
 export interface ValveConfig {

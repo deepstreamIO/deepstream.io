@@ -6,6 +6,8 @@ import LocalCache from '../../src/default-plugins/local-cache'
 import { E2EAuthenticationHandler } from './e2e-authentication-handler'
 import { getServerConfig } from './e2e-server-config'
 import { E2ELogger } from './e2e-logger'
+import { E2EClusterNode } from './e2e-cluster-node';
+import { STATES } from '../../src/constants';
 
 const cache = new LocalCache()
 
@@ -102,6 +104,8 @@ export class E2ECluster extends EventEmitter {
     }
     server.set('cache', cache)
     server.set('authenticationHandler', authenticationHandler)
+    // @ts-ignore
+    server.set('message', new E2EClusterNode({}, server.services, server.config))
     server.start()
 
     await startedPromise
@@ -110,10 +114,8 @@ export class E2ECluster extends EventEmitter {
 
   public async whenReady () {
     const startedPromises = this.servers.reduce((result, server) => {
-      if (server.isRunning() === false) {
-        result.push(new Promise((resolve) => {
-          server.on('started', resolve)
-        }))
+      if (!server.isRunning()) {
+        result.push(new Promise((resolve) => server.on('started', resolve)))
       }
       return result
     }, [] as Array<Promise<void>>)
@@ -123,7 +125,8 @@ export class E2ECluster extends EventEmitter {
 
   public async whenStopped () {
     const stopPromises = this.servers.reduce((result, server) => {
-      if (server.isRunning() !== false) {
+      // @ts-ignore
+      if (server.currentState !== STATES.STOPPED) {
         result.push(new Promise((resolve) => server.on('stopped', resolve)))
       }
       return result

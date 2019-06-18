@@ -1,10 +1,8 @@
 import { TOPIC, Message, StateMessage } from '../constants'
-import { ClusterNode, StateRegistry, DeepstreamPlugin } from '../types'
-import { SingleStateRegistry } from './single-state-registry'
+import DistributedClusterNode from './distributed-cluster-node';
 
-export default class SingleClusterNode extends DeepstreamPlugin implements ClusterNode {
+export default class SingleClusterNode extends DistributedClusterNode {
   public description = 'Single Cluster Node'
-  public stateRegistries = new Map<TOPIC, SingleStateRegistry>()
 
   public sendDirect (serverName: string, message: Message, metaData?: any) {}
 
@@ -15,19 +13,6 @@ export default class SingleClusterNode extends DeepstreamPlugin implements Clust
   public send (message: Message, metaData?: any) {}
 
   public subscribe (stateRegistryTopic: TOPIC, callback: Function) {}
-
-  public getGlobalStateRegistry (): StateRegistry {
-    return this.getStateRegistry(TOPIC.STATE_REGISTRY)
-  }
-
-  public getStateRegistry (stateRegistryTopic: TOPIC): StateRegistry {
-    let stateRegistry = this.stateRegistries.get(stateRegistryTopic)
-    if (!stateRegistry) {
-      stateRegistry = new SingleStateRegistry()
-      this.stateRegistries.set(stateRegistryTopic, stateRegistry)
-    }
-    return stateRegistry
-  }
 
   public async close (): Promise<void> {}
 }
