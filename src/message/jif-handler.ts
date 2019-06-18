@@ -346,25 +346,24 @@ export default class JIFHandler {
           ? ACTIONS[message.topic][WRITE_ACK_TO_ACTION[result.action]]
           : ACTIONS[message.topic][result.action]
       }" is not permitted.`
-    } else if (event === RECORD_ACTIONS.VERSION_EXISTS) {
+    } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTIONS.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version
       result.currentData = message.parsedData
-    } else if (event === RECORD_ACTIONS.RECORD_NOT_FOUND) {
+    } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTIONS.RECORD_NOT_FOUND) {
       result.error = `Record read failed. Record "${message.name}" could not be found.`
       result.errorEvent = message.action
-    } else if (event === RPC_ACTIONS.NO_RPC_PROVIDER) {
+    } else if (message.topic === TOPIC.RPC && event === RPC_ACTIONS.NO_RPC_PROVIDER) {
       result.error = `No provider was available to handle the RPC "${message.name}".`
       // message.correlationId = data[1]
     } else if (message.topic === TOPIC.RPC && message.action === RPC_ACTIONS.RESPONSE_TIMEOUT) {
       result.error = 'The RPC response timeout was exceeded by the provider.'
-
     } else {
       this.services.logger.warn(
         EVENT.INFO,
         `Unhandled request error occurred: ${TOPIC[message.topic]} ${event} ${JSON.stringify(message)}`,
       )
-      result.error = `An error occurred: ${event}.`
+      result.error = `An error occurred: ${RPC_ACTIONS[event as number]}.`
       result.errorParams = message.name
     }
 

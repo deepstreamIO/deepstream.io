@@ -1,158 +1,17 @@
-import { DeepstreamPlugin, AuthenticationHandler, UserAuthenticationCallback, DeepstreamConfig } from '../../src/types'
-import { JSONObject, LOG_LEVEL } from '../../src/constants'
 import { EventEmitter } from 'events'
 import { PromiseDelay } from '../../src/utils/utils'
 import { Deepstream } from '../../src/deepstream.io'
 import ConfigPermissionHandler from '../../src/permission/config-permission-handler'
-import { E2ELogger } from './e2e-logger'
 import LocalCache from '../../src/default-plugins/local-cache'
+import { E2EAuthenticationHandler } from './e2e-authentication-handler'
+import { getServerConfig } from './e2e-server-config'
+import { E2ELogger } from './e2e-logger'
 
 const cache = new LocalCache()
-const onlyLoginOnceUser = { loggedIn: false }
-const tokens = new Map()
 
 const SERVER_STOP_OR_START_DURATION = 200
 
-const getServerConfig = (port: number): DeepstreamConfig => ({
-  serverName : `server-${port}`,
-  logLevel: LOG_LEVEL.WARN,
-  showLogo : false,
-
-  rpc: {
-    ackTimeout: 5,
-    responseTimeout: 10,
-  },
-
-  listen: {
-    shuffleProviders     : false,
-  },
-
-  permission: {
-    type    : 'config',
-    options : {
-      path: './test-e2e/config/permissions-open.json'
-    } as any
-  },
-
-  connectionEndpoints: {
-    websocket: {
-      name: 'uws',
-      options: {
-        port,
-        urlPath: '/e2e',
-        maxAuthAttempts              : 2,
-        unauthenticatedClientTimeout : 200,
-      } as any
-    },
-    http: {
-      name: 'http',
-      options: {
-        port: Number(port) + 200,
-        host: '0.0.0.0',
-        allowAuthData: true,
-        enableAuthEndpoint: true,
-        authPath: '/auth',
-        postPath: '/',
-        getPath: '/',
-        healthCheckPath: '/health-check',
-        allowAllOrigins: true
-      } as any
-    }
-  },
-
-  monitoring: {
-    type: 'default',
-    options: {
-      reportInterval: 200,
-      permissionLogLimit: 3,
-      technicalErrorLogLimit: 3
-    } as any
-  },
-
-  cluster: {
-    message: {
-      type: 'default',
-      options: {
-
-      } as any
-    },
-    registry: {
-      type: 'default',
-      options: {
-        keepAliveInterval: 200,
-        activeCheckInterval: 200
-      } as any
-    },
-    locks: {
-      type: 'default',
-      options: {
-        timeout                : 1500,
-        requestTimeout         : 1500,
-      } as any
-    },
-    state: {
-      type: 'default',
-      options: {
-        reconciliationTimeout : 100,
-      } as any
-    }
-  }
-})
-
-class ClusterTestAuthenticationHandler extends DeepstreamPlugin implements AuthenticationHandler {
-  public description: string = 'ClusterTestAuthenticationHandler'
-
-  public isValidUser (headers: JSONObject, authData: any, callback: UserAuthenticationCallback) {
-    if (authData.token) {
-      if (authData.token === 'letmein') {
-        callback(true, { username: 'A' })
-        return
-      }
-
-      // authenticate token
-      const response = tokens.get(authData.token)
-      if (response.username) {
-        callback(true, response)
-        return
-      }
-    }
-    const username = authData.username
-    const token = Math.random().toString()
-    let clientData: any = null
-    const serverData: any = {}
-    let success
-
-    // authenicate auth data
-    const users = ['A', 'B', 'C', 'D', 'E', 'F', 'W', '1', '2', '3', '4', 'OPEN']
-    if (users.indexOf(username) !== -1 && authData.password === 'abcdefgh') {
-      success = true
-    } else if (username === 'userA' && authData.password === 'abcdefgh') {
-      success = true
-      serverData.role = 'user'
-    } else if (username === 'userB' && authData.password === '123456789') {
-      success = true
-      clientData = { 'favorite color': 'orange', 'id': username }
-      serverData.role = 'admin'
-    } else if (username === 'randomClientData') {
-      success = true
-      clientData = { value : Math.random() }
-    } else if (username === 'onlyLoginOnce' && !onlyLoginOnceUser.loggedIn) {
-      onlyLoginOnceUser.loggedIn = true
-      success = true
-    } else {
-      success = false
-    }
-
-    const authResponseData = { username, token, clientData, serverData }
-
-    if (success) {
-      tokens.set(token, authResponseData)
-      callback(true, authResponseData)
-    } else {
-      callback(false)
-    }
-  }
-}
+const authenticationHandler = new E2EAuthenticationHandler()
 
 // tslint:disable-next-line: max-classes-per-file
 export class E2ECluster extends EventEmitter {
@@ -242,10 +101,11 @@ export class E2ECluster extends EventEmitter {
       server.set('logger', new E2ELogger())
     }
     server.set('cache', cache)
-    server.set('authenticationHandler', new ClusterTestAuthenticationHandler())
+    server.set('authenticationHandler', authenticationHandler)
     server.start()
 
     await startedPromise
+    await PromiseDelay(SERVER_STOP_OR_START_DURATION * 2)
   }
 
   public async whenReady () {
