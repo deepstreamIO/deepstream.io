@@ -6,8 +6,8 @@ import LocalCache from '../../src/default-plugins/local-cache'
 import { E2EAuthenticationHandler } from './e2e-authentication-handler'
 import { getServerConfig } from './e2e-server-config'
 import { E2ELogger } from './e2e-logger'
-import { E2EClusterNode } from './e2e-cluster-node';
-import { STATES } from '../../src/constants';
+import { E2EClusterNode } from './e2e-cluster-node'
+import { STATES } from '../../src/constants'
 
 const cache = new LocalCache()
 
@@ -29,17 +29,14 @@ export class E2ECluster extends EventEmitter {
   }
 
   public getUrl (serverId: number) {
-    serverId = 1
     return `localhost:${this.ports[serverId - 1]}/e2e`
   }
 
   public getHttpUrl (serverId: number) {
-    serverId = 1
     return `localhost:${this.ports[serverId - 1] + 200}/`
   }
 
   public getAuthUrl (serverId: number) {
-    serverId = 1
     return `localhost:${this.ports[serverId - 1] + 200}/auth`
   }
 
@@ -66,8 +63,6 @@ export class E2ECluster extends EventEmitter {
   }
 
   public stopServer (serverId: number) {
-    serverId = 1
-
     return new Promise(async (resolve) => {
       const server = this.servers[serverId - 1]
       if (!server) {
@@ -89,8 +84,6 @@ export class E2ECluster extends EventEmitter {
   }
 
   public async startServer (serverId: number) {
-    serverId = 1
-
     if (this.servers[serverId - 1]) {
       await PromiseDelay(SERVER_STOP_OR_START_DURATION)
       return

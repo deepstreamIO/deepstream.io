@@ -14,7 +14,7 @@ import { recordRequestBinding } from './record-request'
 import RecordTransition from './record-transition'
 import { isExcluded } from '../utils/utils'
 import { EVENT, JSONObject, ALL_ACTIONS, RECORD_ACTIONS } from '../../binary-protocol/src/message-constants'
-import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
+import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper, Handler } from '../types'
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
@@ -24,7 +24,7 @@ const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.ERASE_WITH_WRITE_ACK]: RA.ERASE,
 }
 
-export default class RecordHandler {
+export default class RecordHandler implements Handler<RecordMessage> {
   private subscriptionRegistry: SubscriptionRegistry
   private listenerRegistry: ListenerRegistry
   private transitions = new Map<string, RecordTransition>()
@@ -54,15 +54,18 @@ export default class RecordHandler {
  * client send action. Instead the client sends CREATEORREAD
  * and deepstream works which one it will be
  */
-  public handle (socketWrapper: SocketWrapper, message: RecordMessage): void {
+  public handle (socketWrapper: SocketWrapper | null, message: RecordMessage): void {
     const action = message.isWriteAck ? WRITE_ACK_TO_ACTION[message.action] : message.action
     if (action === RA.SUBSCRIBECREATEANDREAD) {
     /*
      * Return the record's contents and subscribes for future updates.
      * Creates the record if it doesn't exist
      */
-      this.createOrRead(socketWrapper, message)
-    } else if (
+      this.createOrRead(socketWrapper!, message)
+      return
+    }
+
+    if (
       action === RA.CREATEANDUPDATE ||
       action === RA.CREATEANDPATCH
     ) {
@@ -70,56 +73,74 @@ export default class RecordHandler {
      * Allows updates to the record without being subscribed, creates
      * the record if it doesn't exist
      */
-      this.createAndUpdate(socketWrapper, message as RecordWriteMessage)
-    } else if (action === RA.READ) {
+      this.createAndUpdate(socketWrapper!, message as RecordWriteMessage)
+      return
+    }
+
+    if (action === RA.READ) {
     /*
      * Return the current state of the record in cache or db
      */
-      this.snapshot(socketWrapper, message)
-    } else if (action === RA.HEAD) {
+      this.snapshot(socketWrapper!, message)
+      return
+    }
+
+    if (action === RA.HEAD) {
     /*
      * Return the current version of the record or -1 if not found
      */
-      this.head(socketWrapper, message)
-    } else if (action === RA.SUBSCRIBEANDHEAD) {
+      this.head(socketWrapper!, message)
+      return
+    }
+
+    if (action === RA.SUBSCRIBEANDHEAD) {
     /*
      * Return the current version of the record or -1 if not found, subscribing either way
      */
-      this.subscribeAndHead(socketWrapper, message)
-    } else if (action === RA.UPDATE || action === RA.PATCH || action === RA.ERASE) {
+      this.subscribeAndHead(socketWrapper!, message)
+      return
+    }
+
+    if (action === RA.UPDATE || action === RA.PATCH || action === RA.ERASE) {
     /*
      * Handle complete (UPDATE) or partial (PATCH/ERASE) updates
      */
       this.update(socketWrapper, message as RecordWriteMessage, message.isWriteAck || false)
-    } else if (action === RA.DELETE) {
+      return
+    }
+
+    if (action === RA.DELETE) {
     /*
      * Deletes the record
      */
-      this.delete(socketWrapper, message)
-    } else if (action === RA.DELETE_SUCCESS) {
-    /*
-     * Handle delete acknowledgement from message bus
-     * TODO: Different action
-     */
-      this.remoteDelete(socketWrapper, message)
-    } else if (action === RA.UNSUBSCRIBE) {
+      this.delete(socketWrapper!, message)
+      return
+    }
+
+    if (action === RA.DELETED) {
+      this.remoteDelete(message)
+      return
+    }
+
+    if (action === RA.UNSUBSCRIBE) {
   /*
    * Unsubscribes (discards) a record that was previously subscribed to
    * using read()
    */
-      this.subscriptionRegistry.unsubscribe(message, socketWrapper)
-    } else if (action === RA.LISTEN ||
-  /*
-   * Listen to requests for a particular record or records
-   * whose names match a pattern
-   */
-    action === RA.UNLISTEN ||
-    action === RA.LISTEN_ACCEPT ||
-    action === RA.LISTEN_REJECT) {
-      this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
-    } else {
-      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[action], this.metaData)
+      this.subscriptionRegistry.unsubscribe(message, socketWrapper!)
+      return
     }
+
+    if (action === RA.LISTEN || action === RA.UNLISTEN || action === RA.LISTEN_ACCEPT || action === RA.LISTEN_REJECT) {
+        /*
+    * Listen to requests for a particular record or records
+    * whose names match a pattern
+    */
+      this.listenerRegistry.handle(socketWrapper!, message as ListenMessage)
+      return
+    }
+
+    this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[action], this.metaData)
   }
 
 /**
@@ -356,21 +377,22 @@ export default class RecordHandler {
  * Applies both full and partial updates. Creates a new record transition that will live as
  * long as updates are in flight and new updates come in
  */
-  private update (socketWrapper: SocketWrapper, message: RecordWriteMessage, upsert: boolean): void {
+  private update (socketWrapper: SocketWrapper | null, message: RecordWriteMessage, upsert: boolean): void {
     const recordName = message.name
     const version = message.version
-    const isPatch = message.path !== undefined
-    message = { ...message, action: isPatch ? RA.PATCH : RA.UPDATE }
 
-  /*
-   * If the update message is received from the message bus, rather than from a client,
-   * assume that the original deepstream node has already updated the record in cache and
-   * storage and only broadcast the message to subscribers
-   */
-    if (socketWrapper.isRemote) {
+    /*
+    * If the update message is received from the message bus, rather than from a client,
+    * assume that the original deepstream node has already updated the record in cache and
+    * storage and only broadcast the message to subscribers
+    */
+    if (socketWrapper === null) {
       this.broadcastUpdate(recordName, message, false, socketWrapper)
       return
     }
+
+    const isPatch = message.path !== undefined
+    message = { ...message, action: isPatch ? RA.PATCH : RA.UPDATE }
 
     let transition = this.transitions.get(recordName)
     if (transition && transition.hasVersion(version)) {
@@ -389,7 +411,7 @@ export default class RecordHandler {
  * Invoked by RecordTransition. Notifies local subscribers and other deepstream
  * instances of record updates
  */
-  public broadcastUpdate (name: string, message: RecordMessage, noDelay: boolean, originalSender: SocketWrapper): void {
+  public broadcastUpdate (name: string, message: RecordMessage, noDelay: boolean, originalSender: SocketWrapper | null): void {
       this.subscriptionRegistry.sendToSubscribers(name, message, noDelay, originalSender)
   }
 
@@ -464,7 +486,7 @@ export default class RecordHandler {
  *
  * If a transition is in progress it will be stopped.
  */
-  private remoteDelete (socketWrapper: SocketWrapper, message: RecordMessage) {
+  private remoteDelete (message: RecordMessage) {
     const recordName = message.name
 
     const transition = this.transitions.get(recordName)
@@ -473,13 +495,13 @@ export default class RecordHandler {
       this.transitions.delete(recordName)
     }
 
-    this.onDeleted(recordName, message, socketWrapper)
+    this.onDeleted(recordName, message, null)
   }
 
 /*
  * Callback for completed deletions. Notifies subscribers of the delete and unsubscribes them
  */
-  private onDeleted (name: string, message: RecordMessage, originalSender: SocketWrapper) {
+  private onDeleted (name: string, message: RecordMessage, originalSender: SocketWrapper | null) {
     this.broadcastUpdate(name, message, true, originalSender)
 
     for (const subscriber of this.subscriptionRegistry.getLocalSubscribers(name)) {

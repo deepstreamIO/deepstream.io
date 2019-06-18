@@ -50,10 +50,10 @@ export default class DependencyInitialiser extends EventEmitter {
     )
       this.dependency.once('ready', this.onReady.bind(this))
       this.dependency.on('error', this.onError.bind(this))
+    }
 
-      if (this.dependency.init) {
-        this.dependency.init()
-      }
+    if (this.dependency.init) {
+      this.dependency.init()
     }
   }
 

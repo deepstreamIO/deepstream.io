@@ -88,7 +88,7 @@ export default class SubscriptionRegistry {
    * Return all the servers that have this subscription.
    */
   public getAllServers (subscriptionName: string): string[] {
-    return this.clusterSubscriptions!.getAllServers(subscriptionName)
+    return this.clusterSubscriptions.getAllServers(subscriptionName)
   }
 
   /**
@@ -96,7 +96,7 @@ export default class SubscriptionRegistry {
    * server name
    */
   public getAllRemoteServers (subscriptionName: string): string[] {
-    const serverNames = this.clusterSubscriptions!.getAllServers(subscriptionName)
+    const serverNames = this.clusterSubscriptions.getAllServers(subscriptionName)
     const localServerIndex = serverNames.indexOf(this.config.serverName)
     if (localServerIndex > -1) {
       serverNames.splice(serverNames.indexOf(this.config.serverName), 1)
@@ -109,15 +109,7 @@ export default class SubscriptionRegistry {
    * currently has subscribers for
    */
   public getNames (): string[] {
-    return this.clusterSubscriptions!.getAll()
-  }
-
-  /**
-   * Returns a map of all the topic this registry
-   * currently has subscribers for
-   */
-  public getNamesMap (): Map<string, number> {
-    return this.clusterSubscriptions!.getAllMap()
+    return this.clusterSubscriptions.getAll()
   }
 
   /**
@@ -125,7 +117,7 @@ export default class SubscriptionRegistry {
    * in the cluster
    */
   public hasName (subscriptionName: string): boolean {
-    return this.clusterSubscriptions!.has(subscriptionName)
+    return this.clusterSubscriptions.has(subscriptionName)
   }
 
   /**
@@ -144,8 +136,9 @@ export default class SubscriptionRegistry {
    * subscription name. Each broadcast is given 'broadcastTimeout' ms to coalesce into one big
    * broadcast.
    */
-  public sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, isRemote: boolean = false): void {
-    if (senderSocket && !isRemote) {
+  public sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, suppressRemote: boolean = false): void {
+    // If the senderSocket is null it means it was recieved via the message bus
+    if (senderSocket !== null && suppressRemote === false) {
       this.services.message.send(message)
     }
 

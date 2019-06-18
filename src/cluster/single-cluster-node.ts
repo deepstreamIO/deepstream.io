@@ -1,5 +1,5 @@
 import { TOPIC, Message, StateMessage } from '../constants'
-import DistributedClusterNode from './distributed-cluster-node';
+import DistributedClusterNode from './distributed-cluster-node'
 
 export default class SingleClusterNode extends DistributedClusterNode {
   public description = 'Single Cluster Node'

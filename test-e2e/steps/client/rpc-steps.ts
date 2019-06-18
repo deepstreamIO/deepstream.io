@@ -14,7 +14,7 @@ Given(/^(.+) unprovides? the RPC "([^"]*)"$/, (clientExpression: string, rpcName
 
 When(/^(.+) calls? the RPC "([^"]*)" with arguments? ("[^"]*"|\d+|{.*})$/, (clientExpression: string, rpcName, args, done) => {
   rpc.make(clientExpression, rpcName, args)
-  setTimeout(done, defaultDelay * 2)
+  setTimeout(done, defaultDelay)
 })
 
 Then(/(.+) receives? a response for RPC "([^"]*)" with data ("[^"]*"|\d+|{.*})$/, rpc.assert.recievesResponse)

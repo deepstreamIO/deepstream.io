@@ -26,6 +26,9 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
   constructor (private pluginOptions: any, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
     super()
     this.onPrivateMessage =  this.onPrivateMessage.bind(this)
+  }
+
+  public init () {
     this.services.message.subscribe(TOPIC.LOCK,  this.onPrivateMessage)
   }
 
@@ -62,8 +65,8 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
     const leaderServerName = this.services.cluster.getLeader()
 
     this.timeouts.set(lockName, setTimeout(
-      this.onLockRequestTimeout.bind(this, name),
-      this.pluginOptions.lockRequestTimeout
+      this.onLockRequestTimeout.bind(this, lockName),
+      this.pluginOptions.requestTimeout
     ))
 
     this.responseEventEmitter.once(lockName, callback)

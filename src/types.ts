@@ -10,6 +10,10 @@ export type MetaData = JSONObject
 export type RuleType = string
 export type ValveSection = string
 
+export interface Handler<SpecificMessage> {
+  handle (socketWrapper: SocketWrapper | null, message: SpecificMessage): void
+}
+
 export interface SimpleSocketWrapper {
   user: string | null
   isRemote?: boolean
@@ -98,7 +102,6 @@ export interface StateRegistry extends DeepstreamPlugin {
   onRemove (callback: StateRegistryCallback): void
 
   getAll (serverName?: string): string[]
-  getAllMap (serverName?: string): Map<string, number>
   getAllServers (subscriptionName: string): string[]
   removeAll (serverName: string): void
 }

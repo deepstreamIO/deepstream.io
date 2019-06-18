@@ -45,7 +45,7 @@ Given(/^a small amount of time passes$/, (done) => {
 })
 
 BeforeAll(async () => {
-  global.cluster = new E2ECluster([6001], process.env.ENABLE_LOGGING === 'true')
+  global.cluster = new E2ECluster([6001, 7001, 8001], process.env.ENABLE_LOGGING === 'true')
   await global.cluster.start()
   await PromiseDelay(200)
 })

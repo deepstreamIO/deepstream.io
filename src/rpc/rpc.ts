@@ -63,9 +63,15 @@ export default class Rpc {
 
     if (message.action === RPC_ACTIONS.ACCEPT) {
       this.handleAccept(message)
-    } else if (message.action === RPC_ACTIONS.REJECT) {
+      return
+    }
+
+    if (message.action === RPC_ACTIONS.REJECT || message.action === RPC_ACTIONS.NO_RPC_PROVIDER) {
       this.reroute()
-    } else if (message.action === RPC_ACTIONS.RESPONSE || message.action === RPC_ACTIONS.REQUEST_ERROR) {
+      return
+    }
+
+    if (message.action === RPC_ACTIONS.RESPONSE || message.action === RPC_ACTIONS.REQUEST_ERROR) {
       this.requestor.sendMessage(message)
       this.destroy()
     }
@@ -134,15 +140,16 @@ export default class Rpc {
 
     if (alternativeProvider) {
       this.setProvider(alternativeProvider)
-    } else {
-      this.requestor.sendMessage({
-        topic: TOPIC.RPC,
-        action: RPC_ACTIONS.NO_RPC_PROVIDER,
-        name: this.message.name,
-        correlationId: this.message.correlationId
-      })
-      this.destroy()
+      return
     }
+
+    this.requestor.sendMessage({
+      topic: TOPIC.RPC,
+      action: RPC_ACTIONS.NO_RPC_PROVIDER,
+      name: this.message.name,
+      correlationId: this.message.correlationId
+    })
+    this.destroy()
   }
 
   /**

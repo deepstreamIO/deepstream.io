@@ -12,9 +12,9 @@ Given(/^(.+) authenticates? with http server (\d+)$/, (clientExpression: string,
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     let serverUrl
     if (global.cluster.getAuthUrl) {
-      serverUrl = global.cluster.getAuthUrl()
+      serverUrl = global.cluster.getAuthUrl(server)
     } else {
-      serverUrl = global.cluster.getHttpUrl()
+      serverUrl = global.cluster.getHttpUrl(server)
     }
     const message = {
       username: clientName,

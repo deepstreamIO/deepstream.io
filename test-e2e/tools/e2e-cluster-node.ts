@@ -1,7 +1,7 @@
 import DistributedClusterNode from '../../src/cluster/distributed-cluster-node'
 import { Message, TOPIC } from '../../src/constants'
 import { EventEmitter } from 'events'
-import { DeepstreamServices, InternalDeepstreamConfig } from '../../src/types';
+import { DeepstreamServices, InternalDeepstreamConfig } from '../../src/types'
 
 export class E2EClusterNode extends DistributedClusterNode {
     public description: string = 'E2EClusterNode'
@@ -14,29 +14,24 @@ export class E2EClusterNode extends DistributedClusterNode {
 
     public sendDirect (toServer: string, message: Message, metaData?: any): void {
       process.nextTick(() => {
-        E2EClusterNode.emitters.get(this.config.serverName)!.emit(TOPIC[message.topic], this.config.serverName, toServer, message)
+        E2EClusterNode.emitters.get(toServer)!.emit(TOPIC[message.topic], this.config.serverName, message)
       })
     }
 
     public send (message: Message, metaData?: any): void {
-        process.nextTick(() => {
-            if (E2EClusterNode.emitters.get(this.config.serverName)) {
-                E2EClusterNode.emitters.get(this.config.serverName)!.emit(TOPIC[message.topic], this.config.serverName, null, message)
+            for (const [serverName, emitter] of E2EClusterNode.emitters) {
+                if (serverName !== this.config.serverName) {
+                    emitter.emit(TOPIC[message.topic], this.config.serverName, message)
+                }
             }
-        })
     }
 
     public subscribe (topic: TOPIC, callback: (message: Message, serverName: string) => void): void {
-        this.on(TOPIC[topic], (fromServer, toServer, message) => {
-            if (fromServer === toServer) {
+        E2EClusterNode.emitters.get(this.config.serverName)!.on(TOPIC[topic], (fromServer, message) => {
+            if (fromServer === this.config.serverName) {
                 throw new Error('Cyclic message was sent!')
             }
-            if (fromServer === this.config.serverName) {
-                return
-            }
-            if (toServer === null || toServer === this.config.serverName) {
-                callback(message, fromServer)
-            }
+            callback(message, fromServer)
         })
     }
 

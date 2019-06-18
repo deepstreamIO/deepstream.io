@@ -26,16 +26,15 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
   private checkSumTimeouts = new Map<string, any[]>()
   private fullStateSent: boolean = false
   private initialServers = new Set<string>()
-  private stateOptions: any
   private emitter = new Emitter()
 
   /**
    * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
    */
-  constructor (private topic: TOPIC, private pluginOptions: any, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
+  constructor (private topic: TOPIC, private stateOptions: any, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
     super()
-    this.services.message.subscribe(topic, this.processIncomingMessage.bind(this))
     this.resetFullStateSent = this.resetFullStateSent.bind(this)
+    this.services.message.subscribe(TOPIC.STATE_REGISTRY, this.processIncomingMessage.bind(this))
   }
 
   public async whenReady () {
@@ -65,7 +64,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
    */
   public add (name: string) {
     const data = this.data.get(name)
-    if (!data) {
+    if (!data || !data.nodes.has(this.config.serverName)) {
       this.addToServer(name, this.config.serverName)
       this.sendMessage(name, STATE_ACTIONS.ADD)
     } else {
@@ -129,7 +128,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
   public getAllServers (name: string) {
     const data = this.data.get(name)
     if (data) {
-      return Object.keys(data.nodes)
+      return [...data.nodes.keys()]
     }
     return []
   }
@@ -137,7 +136,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
   /**
    * Returns all currently registered entries
    */
-  public getAll (serverName: string) {
+  public getAll (serverName: string): string[] {
     if (!serverName) {
       return [...this.data.keys()]
     }
@@ -148,13 +147,6 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
       }
     }
     return entries
-  }
-
-  /**
-   * Returns all currently registered entries as a map
-   */
-  public getAllMap () {
-    return new Map()
   }
 
   /**
@@ -200,6 +192,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
         checkSum: this.createCheckSum(name)
       }
       this.data.set(name, data)
+
       this.emitter.emit('add', name)
     }
 
@@ -224,7 +217,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
         topic: TOPIC.STATE_REGISTRY,
         registryTopic: this.topic,
         action: STATE_ACTIONS.CHECKSUM,
-        parsedData: checksum
+        checksum
       })
     )
   }
@@ -251,7 +244,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
 
         this.checkSumTimeouts.get(serverName)!.forEach((cb: (checksum: number) => void) => cb(totalCheckSum))
         this.checkSumTimeouts.delete(serverName)
-      }, this.pluginOptions.checkSumBuffer)
+      }, this.stateOptions.checkSumBuffer)
     }
   }
 
@@ -327,7 +320,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
   public sendFullState (serverName: string): void {
     const localState: string[] = []
 
-    for (const [, value] of this.data) {
+    for (const [name, value] of this.data) {
       if (value.nodes.has(this.config.serverName)) {
         localState.push(name)
       }
@@ -336,7 +329,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
       topic: TOPIC.STATE_REGISTRY,
       registryTopic: this.topic,
       action: STATE_ACTIONS.FULL_STATE,
-      parsedData: localState
+      fullState: localState
     })
 
     this.fullStateSent = true
@@ -385,6 +378,10 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
    * the message connector.
    */
   private processIncomingMessage (message: StateMessage, serverName: string): void {
+    if (message.registryTopic !== this.topic) {
+      return
+    }
+
     if (message.action === STATE_ACTIONS.ADD) {
       this.addToServer(message.name!, serverName)
       return

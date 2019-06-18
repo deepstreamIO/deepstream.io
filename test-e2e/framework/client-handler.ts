@@ -27,7 +27,8 @@ function createClient (clientName: string, server: string, options?: any) {
     recordDeleteTimeout: 100,
     recordDiscardTimeout: 100,
     timerResolution: 1,
-    offlineEnabled: false
+    offlineEnabled: false,
+    offlineBufferTimeout: 10000
   })
   clients[clientName] = {
     name: clientName,

@@ -60,10 +60,6 @@ export class SingleStateRegistry extends DeepstreamPlugin implements StateRegist
     return [ ...this.data.keys() ]
   }
 
-  public getAllMap (): Map<string, number> {
-    return this.data
-  }
-
   /**
    * Returns all the servers that hold a given state
    */

@@ -1,6 +1,6 @@
 import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage, Message } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
-import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry } from '../types'
+import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry, Handler } from '../types'
 import { Dictionary } from 'ts-essentials'
 
 const EVERYONE = '%_EVERYONE_%'
@@ -10,7 +10,7 @@ const EVERYONE = '%_EVERYONE_%'
  * to deepstream presence. It provides a way to inform clients
  * who else is logged into deepstream
  */
-export default class PresenceHandler {
+export default class PresenceHandler implements Handler<PresenceMessage> {
   private localClients: Map<string, number> = new Map()
   private subscriptionRegistry: SubscriptionRegistry
   private connectedClients: StateRegistry
@@ -31,9 +31,9 @@ export default class PresenceHandler {
   *
   * Handles subscriptions, unsubscriptions and queries
   */
-  public handle (socketWrapper: SocketWrapper, message: PresenceMessage): void {
+  public handle (socketWrapper: SocketWrapper | null, message: PresenceMessage): void {
     if (message.action === PRESENCE_ACTIONS.QUERY_ALL) {
-      this.handleQueryAll(message.correlationId, socketWrapper)
+      this.handleQueryAll(message.correlationId, socketWrapper!)
       return
     }
 
@@ -42,8 +42,8 @@ export default class PresenceHandler {
         topic: TOPIC.PRESENCE,
         action: PRESENCE_ACTIONS.SUBSCRIBE_ALL,
         name: EVERYONE
-      }, socketWrapper, true)
-      socketWrapper.sendAckMessage({
+      }, socketWrapper!, true)
+      socketWrapper!.sendAckMessage({
         topic: message.topic,
         action: message.action
       })
@@ -55,8 +55,8 @@ export default class PresenceHandler {
         topic: TOPIC.PRESENCE,
         action: PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
         name: EVERYONE
-      }, socketWrapper, true)
-      socketWrapper.sendAckMessage({
+      }, socketWrapper!, true)
+      socketWrapper!.sendAckMessage({
         topic: message.topic,
         action: message.action
       })
@@ -75,31 +75,38 @@ export default class PresenceHandler {
           topic: TOPIC.PRESENCE,
           action: PRESENCE_ACTIONS.SUBSCRIBE_BULK,
           name: users[i],
-        }, socketWrapper, true)
+        }, socketWrapper!, true)
       }
-      socketWrapper.sendAckMessage({
+      socketWrapper!.sendAckMessage({
         topic: message.topic,
         action: message.action,
         correlationId: message.correlationId
       })
-    } else if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_BULK) {
+      return
+    }
+
+    if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_BULK) {
       for (let i = 0; i < users.length; i++) {
         this.subscriptionRegistry.unsubscribe({
           topic: TOPIC.PRESENCE,
           action: PRESENCE_ACTIONS.SUBSCRIBE_BULK,
           name: users[i],
-        }, socketWrapper, true)
+        }, socketWrapper!, true)
       }
-      socketWrapper.sendAckMessage({
+      socketWrapper!.sendAckMessage({
         topic: message.topic,
         action: message.action,
         correlationId: message.correlationId
       })
-    } else if (message.action === PRESENCE_ACTIONS.QUERY) {
-      this.handleQuery(users, message.correlationId, socketWrapper)
-    } else {
-      this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], PRESENCE_ACTIONS[message.action], this.metaData)
+      return
     }
+
+    if (message.action === PRESENCE_ACTIONS.QUERY) {
+      this.handleQuery(users, message.correlationId, socketWrapper!)
+      return
+    }
+
+    this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], PRESENCE_ACTIONS[message.action], this.metaData)
   }
 
   /**
@@ -149,9 +156,9 @@ export default class PresenceHandler {
   */
   private handleQuery (users: string[], correlationId: string, socketWrapper: SocketWrapper): void {
     const result: Dictionary<boolean> = {}
-    const clients = this.connectedClients.getAllMap()
+    const clients = this.connectedClients.getAll()
     for (let i = 0; i < users.length; i++) {
-      result[users[i]] = clients.has(users[i])
+      result[users[i]] = clients.includes(users[i])
     }
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,
@@ -178,12 +185,8 @@ export default class PresenceHandler {
       name: username
     }
 
-    this.subscriptionRegistry.sendToSubscribers(
-      EVERYONE, allMessage, false, null, false,
-    )
-    this.subscriptionRegistry.sendToSubscribers(
-      username, individualMessage, false, null, false,
-    )
+    this.subscriptionRegistry.sendToSubscribers(EVERYONE, allMessage, false, null, true)
+    this.subscriptionRegistry.sendToSubscribers(username, individualMessage, false, null, true)
   }
 
   /**
@@ -203,11 +206,7 @@ export default class PresenceHandler {
       name: username
     }
 
-    this.subscriptionRegistry.sendToSubscribers(
-      EVERYONE, allMessage, false, null, false,
-    )
-    this.subscriptionRegistry.sendToSubscribers(
-      username, individualMessage, false, null, false,
-    )
+    this.subscriptionRegistry.sendToSubscribers(EVERYONE, allMessage, false, null)
+    this.subscriptionRegistry.sendToSubscribers(username, individualMessage, false, null)
   }
 }

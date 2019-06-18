@@ -14,10 +14,10 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
     private inCluster: boolean = false
     private nodes = new Map<string, { lastStatusTime: number, leaderScore: number }>()
     private leaderScore = Math.random()
-    private publishInterval: NodeJS.Timeout
-    private checkInterval: NodeJS.Timeout
+    private publishInterval!: NodeJS.Timeout
+    private checkInterval!: NodeJS.Timeout
+    private globalStateRegistry!: StateRegistry
     private role: string
-    private globalStateRegistry: StateRegistry
 
     /**
      * Creates the class, initialises all intervals and publishes the
@@ -26,8 +26,10 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      */
     constructor (private pluginOptions: any, private services: DeepstreamServices, private options: InternalDeepstreamConfig) {
         super()
-
         this.role = this.pluginOptions.role || 'deepstream'
+    }
+
+    public init () {
         this.globalStateRegistry = this.services.message.getGlobalStateRegistry()
         this.services.message.subscribe(TOPIC.CLUSTER, this.onMessage.bind(this))
         this.leaveCluster = this.leaveCluster.bind(this)
@@ -46,7 +48,6 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
     }
 
     public async close () {
-        console.log('closing this')
       this.leaveCluster()
     }
 
@@ -166,8 +167,8 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
             leaderScore: message.leaderScore!
         })
 
-        // this.services.logger.info(EVENT.CLUSTER_JOIN, message.serverName)
-        // this.services.logger.info(EVENT.CLUSTER_SIZE, `The cluster size is now ${this.nodes.size}`)
+        this.services.logger.info(EVENT.CLUSTER_JOIN, message.serverName)
+        this.services.logger.info(EVENT.CLUSTER_SIZE, `The cluster size is now ${this.nodes.size}`)
         this.emit('add', message.serverName)
         this.globalStateRegistry.add(message.serverName)
     }
