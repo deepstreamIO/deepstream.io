@@ -4,6 +4,7 @@ import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory
 import { Deepstream } from './deepstream.io'
 import { ALL_ACTIONS, StateMessage, Message, JSONObject } from '../binary-protocol/src/message-constants'
 import MessageDistributor from './message/message-distributor'
+import { DeepPartial } from 'ts-essentials'
 
 export type MetaData = JSONObject
 export type RuleType = string
@@ -185,7 +186,7 @@ export interface ClusterRegistry extends DeepstreamPlugin {
 }
 export type ClusterRegistryPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => ClusterRegistry
 
-export type DeepstreamConfig = any // DeepPartial<InternalDeepstreamConfig>
+export type DeepstreamConfig = DeepPartial<InternalDeepstreamConfig>
 
 export interface InternalDeepstreamConfig {
   showLogo: boolean

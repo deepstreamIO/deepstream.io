@@ -1,5 +1,5 @@
 import { TOPIC, STATE_ACTIONS } from '../constants'
-import { DeepstreamServices, StateRegistry, DeepstreamConfig, DeepstreamPlugin, StateRegistryCallback } from '../types'
+import { DeepstreamServices, StateRegistry, DeepstreamPlugin, StateRegistryCallback, InternalDeepstreamConfig } from '../types'
 import { StateMessage } from '../../binary-protocol/src/message-constants'
 import { Dictionary } from 'ts-essentials'
 import { Emitter } from '@deepstream/client/dist/src/util/emitter'
@@ -32,7 +32,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
   /**
    * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
    */
-  constructor (private topic: TOPIC, private pluginOptions: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
+  constructor (private topic: TOPIC, private pluginOptions: any, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
     super()
     this.services.message.subscribe(topic, this.processIncomingMessage.bind(this))
     this.resetFullStateSent = this.resetFullStateSent.bind(this)

@@ -27,6 +27,7 @@ import * as configValidator from './config/config-validator'
 import DependencyInitialiser from './utils/dependency-initialiser'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types'
+import { getValue, setValue } from './record/json-path'
 
 /**
  * Sets the name of the process
@@ -96,6 +97,10 @@ export class Deepstream extends EventEmitter {
  * please see default-options.
  */
   public set (key: string, value: any): any {
+    if (key === 'storageExclusion') {
+        throw new Error('storageExclusion has been replace with record.storageExclusionPrefixes instead, which is an array of prefixes')
+    }
+
     if ((this.services as any)[key] !== undefined) {
       (this.services as any)[key] = value
       if (key === 'storage' || key === 'cache') {
@@ -103,8 +108,8 @@ export class Deepstream extends EventEmitter {
           configInitialiser.storageCompatability((this.services as any)[key])
         }
       }
-    } else if ((this.config as any)[key] !== undefined) {
-      (this.config as any)[key] = value
+    } else if (getValue(this.config, key) !== undefined) {
+      setValue(this.config, key, value)
     } else {
       throw new Error(`Unknown option or service "${key}"`)
     }
@@ -441,3 +446,5 @@ export class Deepstream extends EventEmitter {
     }
   }
 }
+
+export default Deepstream

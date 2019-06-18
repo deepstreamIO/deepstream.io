@@ -1,17 +1,17 @@
 import { SCHEMA } from './config-schema'
 import * as pathParser from './path-parser'
 import * as ruleParser from './rule-parser'
-import { DeepstreamConfig } from '../types'
+import { InternalDeepstreamConfig } from '../types'
 import { Dictionary } from 'ts-essentials'
 
-const validationSteps: Dictionary<(config: DeepstreamConfig) => boolean | string> = {}
+const validationSteps: Dictionary<(config: InternalDeepstreamConfig) => boolean | string> = {}
 
 /**
  * Validates a configuration object. This method runs through multiple
  * individual validation steps. If any of them returns false,
  * the validation fails
  */
-export const validate = function (config?: DeepstreamConfig) {
+export const validate = function (config: any) {
   let validationStepResult
   let key
 
@@ -29,7 +29,7 @@ export const validate = function (config?: DeepstreamConfig) {
 /**
  * Checks if the configuration is an object
  */
-validationSteps.isValidType = function (config) {
+validationSteps.isValidType = function (config: any) {
   if (typeof config === 'object') {
     return true
   }
@@ -40,7 +40,7 @@ validationSteps.isValidType = function (config) {
 /**
  * Makes sure all sections (record, event, rpc) are present
  */
-validationSteps.hasRequiredTopLevelKeys = function (config) {
+validationSteps.hasRequiredTopLevelKeys = function (config: any) {
   for (const key in SCHEMA) {
     if (typeof config[key] !== 'object') {
       return `missing configuration section "${key}"`
@@ -53,7 +53,7 @@ validationSteps.hasRequiredTopLevelKeys = function (config) {
 /**
  * Makes sure no unsupported sections were added
  */
-validationSteps.doesNotHaveAdditionalTopLevelKeys = function (config) {
+validationSteps.doesNotHaveAdditionalTopLevelKeys = function (config: any) {
   for (const key in config) {
     if (typeof SCHEMA[key] === 'undefined') {
       return `unexpected configuration section "${key}"`
@@ -66,7 +66,7 @@ validationSteps.doesNotHaveAdditionalTopLevelKeys = function (config) {
 /**
  * Checks if the configuration contains valid path definitions
  */
-validationSteps.doesOnlyContainValidPaths = function (config) {
+validationSteps.doesOnlyContainValidPaths = function (config: any) {
   let key
   let path
   let result
@@ -93,7 +93,7 @@ validationSteps.doesOnlyContainValidPaths = function (config) {
  * Each section must specify a generic permission ("*") that
  * will be applied if no other permission is applicable
  */
-validationSteps.doesHaveRootEntries = function (config) {
+validationSteps.doesHaveRootEntries = function (config: any) {
   let sectionName
 
   for (sectionName in SCHEMA) {
@@ -108,7 +108,7 @@ validationSteps.doesHaveRootEntries = function (config) {
 /**
  * Runs the rule validator against every rule in each section
  */
-validationSteps.hasValidRules = function (config) {
+validationSteps.hasValidRules = function (config: any) {
   let path
   let ruleType
   let section

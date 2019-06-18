@@ -3,7 +3,7 @@ import JIFHandler from '../jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS, Message, ALL_ACTIONS } from '../../constants'
-import { ConnectionEndpoint, DeepstreamConfig, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData } from '../../types'
+import { ConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, InternalDeepstreamConfig } from '../../types'
 import { JSONObject } from '../../../binary-protocol/src/message-constants'
 
 export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements ConnectionEndpoint {
@@ -12,7 +12,6 @@ export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements 
   public description: string = 'HTTP connection endpoint'
 
   private initialised: boolean = false
-  private dsOptions: DeepstreamConfig
   private jifHandler!: JIFHandler
   private onSocketMessageBound: Function
   private onSocketErrorBound: Function
@@ -20,7 +19,7 @@ export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements 
   private logInvalidAuthData: boolean = false
   private requestTimeout!: number
 
-  constructor (private options: any, private services: DeepstreamServices) {
+  constructor (private options: any, private services: DeepstreamServices, public dsOptions: InternalDeepstreamConfig) {
     super()
 
     this.onSocketMessageBound = this.onSocketMessage.bind(this)
@@ -31,7 +30,6 @@ export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements 
    * Called on initialization with a reference to the instantiating deepstream server.
    */
   public setDeepstream (deepstream: any): void {
-    this.dsOptions = deepstream.config
     this.jifHandler = new JIFHandler(this.services)
   }
 
@@ -39,9 +37,6 @@ export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements 
    * Initialise the http server.
    */
   public init (): void {
-    if (!this.dsOptions) {
-      throw new Error('setDeepstream must be called before init()')
-    }
     if (this.initialised) {
       throw new Error('init() must only be called once')
     }
@@ -84,6 +79,7 @@ export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements 
    * plugin config.
    */
   private getOption (option: string): string | boolean | number {
+    // @ts-ignore
     const value = this.dsOptions[option]
     if ((value === null || value === undefined) && (this.options[option] !== undefined)) {
       return this.options[option]

@@ -87,7 +87,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
         this.onReady()
       } else {
         this.services.logger.error(
-            STATES[STATES.SERVICE_INIT],
+            STATES.SERVICE_INIT,
             `Failed to listen to port ${this.getOption('port')}`
         )
       }

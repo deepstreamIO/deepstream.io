@@ -7,7 +7,7 @@ interface Log {
   message: string
 }
 
-export class TestLogger extends DeepstreamPlugin implements Logger {
+export class E2ELogger extends DeepstreamPlugin implements Logger {
   public description = 'Test Logger'
   public logs: Log[] = []
   public lastLog: Log | null = null
