@@ -56,6 +56,23 @@ export default class RecordHandler implements Handler<RecordMessage> {
  */
   public handle (socketWrapper: SocketWrapper | null, message: RecordMessage): void {
     const action = message.isWriteAck ? WRITE_ACK_TO_ACTION[message.action] : message.action
+
+    if (socketWrapper === null) {
+      if (message.action === RA.DELETED) {
+        this.remoteDelete(message)
+        return
+      }
+      this.broadcastUpdate(message.name, {
+        topic: message.topic,
+        action: message.action,
+        name: message.name,
+        path: message.path,
+        version: message.version,
+        data: message.data
+      }, false, null)
+      return
+    }
+
     if (action === RA.SUBSCRIBECREATEANDREAD) {
     /*
      * Return the record's contents and subscribes for future updates.
@@ -114,11 +131,6 @@ export default class RecordHandler implements Handler<RecordMessage> {
      * Deletes the record
      */
       this.delete(socketWrapper!, message)
-      return
-    }
-
-    if (action === RA.DELETED) {
-      this.remoteDelete(message)
       return
     }
 

@@ -125,7 +125,7 @@ export function get (): InternalDeepstreamConfig {
       locks: {
         type: 'default',
         options: {
-          timeout: 1000,
+          holdTimeout: 1000,
           requestTimeout: 1000
         }
       }

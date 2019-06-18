@@ -147,7 +147,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
     }
     this.timeouts.set(lockName, setTimeout(
         this.onLockTimeout.bind(this, lockName),
-        this.pluginOptions.lockTimeout
+        this.pluginOptions.holdTimeout
     ))
     this.locks.add(lockName)
     return true

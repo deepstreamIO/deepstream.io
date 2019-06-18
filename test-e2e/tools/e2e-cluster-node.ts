@@ -19,11 +19,13 @@ export class E2EClusterNode extends DistributedClusterNode {
     }
 
     public send (message: Message, metaData?: any): void {
+        process.nextTick(() => {
             for (const [serverName, emitter] of E2EClusterNode.emitters) {
                 if (serverName !== this.config.serverName) {
                     emitter.emit(TOPIC[message.topic], this.config.serverName, message)
                 }
             }
+        })
     }
 
     public subscribe (topic: TOPIC, callback: (message: Message, serverName: string) => void): void {

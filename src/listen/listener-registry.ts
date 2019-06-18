@@ -148,16 +148,17 @@ export default class ListenerRegistry implements SubscriptionListener {
   * or from a resulting node with an ACK to allow the leader
   * to move on and release its lock
   */
-  private onIncomingMessage (message: ListenMessage): void {
-    // if (this.config.serverName !== message.data[0]) {
-    //   return
-    // }
-    // if (message.action === ACTIONS.LISTEN) {
-    //   this.leadListen[message.data[1]] = message.data[2]
-    //   this.startLocalDiscoveryStage(message.data[1])
-    // } else if (message.isAck) {
-    //   this.nextDiscoveryStage(message.data[1])
-    // }
+  private onIncomingMessage (message: ListenMessage, serverName: string): void {
+    if (message.action === this.actions.LISTEN) {
+      this.leadListen[message.name] = serverName
+      this.startLocalDiscoveryStage(message.name)
+      return
+    }
+    return
+
+    if (message.isAck) {
+      this.nextDiscoveryStage(message.data[1])
+    }
   }
 
   /**
@@ -342,7 +343,7 @@ export default class ListenerRegistry implements SubscriptionListener {
 
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
-        `started for ${this.topic}:${subscriptionName}`,
+        `started for ${TOPIC[this.topic]}:${subscriptionName}`,
         this.metaData,
       )
 
@@ -372,12 +373,11 @@ export default class ListenerRegistry implements SubscriptionListener {
     } else {
       const nextServerName = this.leadingListen[subscriptionName].shift()
       if (!nextServerName) {
-        console.warn(EVENT.INFO, 'empty leading listen array', this.metaData)
         return
       }
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
-        `started for ${this.topic}:${subscriptionName}`,
+        `started for ${TOPIC[this.topic]}:${subscriptionName}`,
         this.metaData,
       )
       this.sendRemoteDiscoveryStart(nextServerName, subscriptionName)
@@ -396,7 +396,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     if (localListenArray.length > 0) {
       this.services.logger.debug(
         EVENT.LOCAL_LISTEN,
-        `started for ${this.topic}:${subscriptionName}`,
+        `started for ${TOPIC[this.topic]}:${subscriptionName}`,
         this.metaData,
       )
       this.localListenInProgress[subscriptionName] = localListenArray
@@ -438,6 +438,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     const listenInProgress: Provider[] = this.localListenInProgress[subscriptionName]
 
     if (typeof listenInProgress === 'undefined') {
+      // Log error
       return
     }
 

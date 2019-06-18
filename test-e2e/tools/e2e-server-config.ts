@@ -76,7 +76,7 @@ export const getServerConfig = (port: number): DeepstreamConfig => ({
       locks: {
         type: 'default',
         options: {
-          timeout                : 1500,
+          holdTimeout            : 1500,
           requestTimeout         : 1500,
         } as any
       },
