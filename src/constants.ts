@@ -8,7 +8,7 @@ export enum LOG_LEVEL {
     OFF = 100
 }
 
-export const enum STATES {
+export enum STATES {
     STOPPED = 'STOPPED',
     LOGGER_INIT = 'LOGGER_INIT',
     PLUGIN_INIT = 'PLUGIN_INIT',

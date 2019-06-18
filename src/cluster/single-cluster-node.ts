@@ -16,10 +16,6 @@ export default class SingleClusterNode extends DeepstreamPlugin implements Clust
 
   public subscribe (stateRegistryTopic: TOPIC, callback: Function) {}
 
-  public isLeader (): boolean { throw new Error('Leader not used in single state') }
-
-  public getLeader (): string { throw new Error('Leader not used in single state') }
-
   public getGlobalStateRegistry (): StateRegistry {
     return this.getStateRegistry(TOPIC.STATE_REGISTRY)
   }

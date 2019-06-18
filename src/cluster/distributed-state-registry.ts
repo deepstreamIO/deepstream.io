@@ -212,7 +212,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
    * Generic messaging function for add and remove messages
    */
   private sendMessage (name: string, action: STATE_ACTIONS) {
-    this.services.message.sendState({
+    this.services.message.send({
       topic: TOPIC.STATE_REGISTRY,
       registryTopic: this.topic,
       action,
@@ -220,7 +220,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
     })
 
     this.getCheckSumTotal(this.config.serverName, (checksum) =>
-      this.services.message.sendState({
+      this.services.message.send({
         topic: TOPIC.STATE_REGISTRY,
         registryTopic: this.topic,
         action: STATE_ACTIONS.CHECKSUM,
@@ -308,7 +308,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
    * The matching node will respond with a DISTRIBUTED_STATE_FULL_STATE message
    */
   private _requestFullState (serverName: string) {
-    this.services.message.sendStateDirect(serverName, {
+    this.services.message.sendDirect(serverName, {
       topic: TOPIC.STATE_REGISTRY,
       registryTopic: this.topic,
       action: STATE_ACTIONS.REQUEST_FULL_STATE,
@@ -332,7 +332,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
         localState.push(name)
       }
     }
-    this.services.message.sendStateDirect(serverName, {
+    this.services.message.sendDirect(serverName, {
       topic: TOPIC.STATE_REGISTRY,
       registryTopic: this.topic,
       action: STATE_ACTIONS.FULL_STATE,

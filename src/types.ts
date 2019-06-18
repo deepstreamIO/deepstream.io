@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { TOPIC, EVENT, LOG_LEVEL } from './constants'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 import { Deepstream } from './deepstream.io'
-import { ALL_ACTIONS, StateMessage, Message, JSONObject } from '../binary-protocol/src/message-constants'
+import { ALL_ACTIONS, Message, JSONObject } from '../binary-protocol/src/message-constants'
 import MessageDistributor from './message/message-distributor'
 import { DeepPartial } from 'ts-essentials'
 
@@ -164,8 +164,6 @@ export type AuthenticationHandlerPlugin<PluginOptions = any> = new (pluginConfig
 export interface ClusterNode extends DeepstreamPlugin  {
   getGlobalStateRegistry (): StateRegistry
   getStateRegistry (stateRegistryTopic: TOPIC): StateRegistry
-  sendStateDirect (serverName: string, message: StateMessage, metaData?: any): void
-  sendState (message: StateMessage, metaData?: any): void
   send (message: Message, metaData?: any): void
   sendDirect (serverName: string, message: Message, metaData?: any): void
   subscribe<SpecificMessage> (stateRegistryTopic: TOPIC, callback: (message: SpecificMessage, originServerName: string) => void): void

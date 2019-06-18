@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events'
 import { DeepstreamPlugin } from '../../types'
 
 export default class PluginMock extends DeepstreamPlugin {

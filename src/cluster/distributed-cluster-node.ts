@@ -1,4 +1,4 @@
-import { TOPIC, Message, StateMessage } from '../constants'
+import { TOPIC, Message } from '../constants'
 import { ClusterNode, StateRegistry, DeepstreamPlugin, DeepstreamServices, InternalDeepstreamConfig } from '../types'
 import { DistributedStateRegistry } from './distributed-state-registry'
 
@@ -11,17 +11,9 @@ export default abstract class DistributedClusterNode extends DeepstreamPlugin im
 
   public abstract sendDirect (serverName: string, message: Message, metaData?: any): void
 
-  public abstract sendState (message: StateMessage, metaData?: any): void
-
-  public abstract sendStateDirect (serverName: string, message: StateMessage, metaData?: any): void
-
   public abstract send (message: Message, metaData?: any): void
 
   public abstract subscribe (stateRegistryTopic: TOPIC, callback: Function): void
-
-  public abstract isLeader (): boolean
-
-  public abstract getLeader (): string
 
   public getGlobalStateRegistry (): StateRegistry {
     return this.getStateRegistry(TOPIC.STATE_REGISTRY)
