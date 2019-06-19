@@ -15,6 +15,7 @@ export const getServerConfig = (port: number): DeepstreamConfig => ({
 
     listen: {
       shuffleProviders: false,
+      responseTimeout: 2000,
     },
 
     permission: {
@@ -69,7 +70,7 @@ export const getServerConfig = (port: number): DeepstreamConfig => ({
       registry: {
         type: 'default',
         options: {
-          keepAliveInterval: 200,
+          keepAliveInterval: 20,
           activeCheckInterval: 200
         } as any
       },

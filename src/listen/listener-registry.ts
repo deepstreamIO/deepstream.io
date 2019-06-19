@@ -154,10 +154,10 @@ export default class ListenerRegistry implements SubscriptionListener {
       this.startLocalDiscoveryStage(message.name)
       return
     }
-    return
 
-    if (message.isAck) {
-      this.nextDiscoveryStage(message.data[1])
+    if (message.action === this.actions.LISTEN_ACCEPT) {
+      this.nextDiscoveryStage(message.name)
+      return
     }
   }
 
@@ -232,8 +232,8 @@ export default class ListenerRegistry implements SubscriptionListener {
       socketWrapper.onClose(provider.closeListener)
     }
 
-    this.stopLocalDiscoveryStage(subscriptionName)
     this.clusterProvidedRecords.add(subscriptionName)
+    this.stopLocalDiscoveryStage(subscriptionName)
   }
 
   /**
@@ -343,7 +343,7 @@ export default class ListenerRegistry implements SubscriptionListener {
 
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
-        `started for ${TOPIC[this.topic]}:${subscriptionName}`,
+        `started for via startDiscoveryStage ${TOPIC[this.topic]}:${subscriptionName}`,
         this.metaData,
       )
 
@@ -364,24 +364,26 @@ export default class ListenerRegistry implements SubscriptionListener {
     ) {
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
-        `finished for ${this.topic}:${subscriptionName}`,
+        `finished for ${TOPIC[this.topic]}:${subscriptionName}`,
         this.metaData,
       )
 
       delete this.leadingListen[subscriptionName]
       this.services.locks.release(this.getUniqueLockName(subscriptionName))
-    } else {
-      const nextServerName = this.leadingListen[subscriptionName].shift()
-      if (!nextServerName) {
-        return
-      }
-      this.services.logger.debug(
-        EVENT.LEADING_LISTEN,
-        `started for ${TOPIC[this.topic]}:${subscriptionName}`,
-        this.metaData,
-      )
-      this.sendRemoteDiscoveryStart(nextServerName, subscriptionName)
+      return
     }
+
+    const nextServerName = this.leadingListen[subscriptionName].shift()
+    if (!nextServerName) {
+      return
+    }
+
+    this.services.logger.debug(
+      EVENT.LEADING_LISTEN,
+      `started via nextDiscoveryStage for ${TOPIC[this.topic]}:${subscriptionName}`,
+      this.metaData,
+    )
+    this.sendRemoteDiscoveryStart(nextServerName, subscriptionName)
   }
 
   /**
@@ -408,26 +410,38 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Finalises a local listener discovery stage
   */
   private stopLocalDiscoveryStage (subscriptionName: string): void {
-    delete this.localListenInProgress[subscriptionName]
-
     this.services.logger.debug(
       EVENT.LOCAL_LISTEN,
-      `stopped for ${this.topic}:${subscriptionName}`,
+      `stopped for ${TOPIC[this.topic]}:${subscriptionName}`,
       this.metaData,
     )
 
+    let deletedLocalListen = false
+    if (this.localListenInProgress[subscriptionName]) {
+      delete this.localListenInProgress[subscriptionName]
+      deletedLocalListen = true
+    }
+
     if (this.leadingListen[subscriptionName]) {
       this.nextDiscoveryStage(subscriptionName)
-    } else if (this.leadListen[subscriptionName]) {
+      return
+    }
+
+    if (this.leadListen[subscriptionName]) {
       this.sendRemoteDiscoveryStop(this.leadListen[subscriptionName], subscriptionName)
       delete this.leadListen[subscriptionName]
-    } else {
-      this.services.logger.warn(
-        EVENT.LOCAL_LISTEN,
-        `nothing to stop for ${this.topic}:${subscriptionName}`,
-        this.metaData,
-      )
+      return
     }
+
+    if (deletedLocalListen) {
+      return
+    }
+
+    this.services.logger.warn(
+      EVENT.LOCAL_LISTEN,
+      `nothing to stop for ${TOPIC[this.topic]}:${subscriptionName}`,
+      this.metaData,
+    )
   }
 
   /**
@@ -438,7 +452,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     const listenInProgress: Provider[] = this.localListenInProgress[subscriptionName]
 
     if (typeof listenInProgress === 'undefined') {
-      // Log error
+      this.services.logger.warn('triggerNextProvider', 'no listen in progress', this.metaData)
       return
     }
 
@@ -575,11 +589,11 @@ export default class ListenerRegistry implements SubscriptionListener {
   * complete its local discovery start
   */
   private sendRemoteDiscoveryStop (listenLeaderServerName: string, subscriptionName: string): void  {
-    // this.message.sendDirect(listenLeaderServerName, {
-    //   topic: this.messageTopic,
-    //   action: this.actions.ACK,
-    //   name: subscriptionName,
-    // }, this.metaData)
+    this.message.sendDirect(listenLeaderServerName, {
+      topic: this.messageTopic,
+      action: this.actions.LISTEN_ACCEPT,
+      name: subscriptionName,
+    }, this.metaData)
   }
 
   /**

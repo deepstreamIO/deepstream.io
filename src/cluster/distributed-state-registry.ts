@@ -197,7 +197,6 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
     }
 
     data.nodes.add(serverName)
-
     this.emitter.emit('server-added', name, serverName)
   }
 

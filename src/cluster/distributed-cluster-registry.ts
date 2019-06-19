@@ -24,7 +24,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      * initial status message that notifies other nodes within this
      * cluster of its presence.
      */
-    constructor (private pluginOptions: any, private services: DeepstreamServices, private options: InternalDeepstreamConfig) {
+    constructor (private pluginOptions: any, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
         super()
         this.role = this.pluginOptions.role || 'deepstream'
     }
@@ -66,11 +66,11 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
             return
         }
 
-        this.services.logger.log(LOG_LEVEL.INFO, EVENT.CLUSTER_LEAVE, this.options.serverName)
+        this.services.logger.log(LOG_LEVEL.INFO, EVENT.CLUSTER_LEAVE, this.config.serverName)
         this.services.message.send({
             topic: TOPIC.CLUSTER,
             action: CLUSTER_ACTIONS.REMOVE,
-            name: this.options.serverName
+            name: this.config.serverName
         })
 
         // TODO: If a message connector doesn't close this is required to avoid an error
@@ -98,7 +98,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      * Returns true if this node is the cluster leader
      */
     public isLeader (): boolean {
-        return this.options.serverName === this.getLeader()
+        return this.config.serverName === this.getLeader()
     }
 
     /**
@@ -106,7 +106,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      */
     public getLeader () {
         let maxScore = 0
-        let leader = this.options.serverName
+        let leader = this.config.serverName
 
         for (const [serverName, node] of this.nodes) {
             if (node.leaderScore > maxScore) {
@@ -129,6 +129,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
 
         if (message.action === CLUSTER_ACTIONS.REMOVE) {
             this.removeNode(message.serverName)
+            return
         }
 
         this.services.logger.error(EVENT.UNKNOWN_ACTION, `TOPIC: ${TOPIC[TOPIC.CLUSTER]} ${message.action}`)
@@ -157,15 +158,15 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      */
     public updateNode (message: ClusterMessage) {
         const node = this.nodes.get(message.serverName)
-        if (node) {
-            node.lastStatusTime = Date.now()
-            return
-        }
 
         this.nodes.set(message.serverName, {
             lastStatusTime: Date.now(),
             leaderScore: message.leaderScore!
         })
+
+        if (node) {
+            return
+        }
 
         this.services.logger.info(EVENT.CLUSTER_JOIN, message.serverName)
         this.services.logger.info(EVENT.CLUSTER_SIZE, `The cluster size is now ${this.nodes.size}`)
@@ -195,9 +196,9 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
         const message = {
             topic: TOPIC.CLUSTER,
             action: CLUSTER_ACTIONS.STATUS,
-            serverName: this.options.serverName,
+            serverName: this.config.serverName,
             leaderScore: this.leaderScore,
-            externalUrl: this.options.externalUrl,
+            externalUrl: this.config.externalUrl,
             role: this.role
         } as ClusterMessage
         this.updateNode(message)

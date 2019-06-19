@@ -15,8 +15,7 @@ const SERVER_STOP_OR_START_DURATION = 200
 
 const authenticationHandler = new E2EAuthenticationHandler()
 
-// tslint:disable-next-line: max-classes-per-file
-export class E2ECluster extends EventEmitter {
+export class E2EHarness extends EventEmitter {
   private servers: Deepstream[] = []
 
   constructor (private ports: number[], private enableLogging: boolean = false) {

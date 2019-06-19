@@ -29,7 +29,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
   }
 
   public init () {
-    this.services.message.subscribe(TOPIC.LOCK,  this.onPrivateMessage)
+    this.services.message.subscribe(TOPIC.LOCK, this.onPrivateMessage)
   }
 
   /**
@@ -83,7 +83,6 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
    */
   private releaseRemoteLock (lockName: string) {
     const leaderServerName = this.services.cluster.getLeader()
-
     this.services.message.sendDirect(leaderServerName, {
       topic:  TOPIC.LOCK,
       action: LOCK_ACTIONS.RELEASE,
@@ -112,8 +111,12 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
 
     if (message.action === LOCK_ACTIONS.REQUEST) {
       this.handleRemoteLockRequest(message.name, remoteServerName)
-    } else if (message.action === LOCK_ACTIONS.RELEASE) {
+      return
+    }
+
+    if (message.action === LOCK_ACTIONS.RELEASE) {
        this.releaseLock(message.name!)
+       return
     }
   }
 
@@ -145,6 +148,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
     if (this.locks.has(lockName)) {
       return false
     }
+
     this.timeouts.set(lockName, setTimeout(
         this.onLockTimeout.bind(this, lockName),
         this.pluginOptions.holdTimeout

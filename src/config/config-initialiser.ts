@@ -53,7 +53,7 @@ export const initialise = function (config: InternalDeepstreamConfig): { config:
   handleSSLProperties(config)
 
   const services = {} as DeepstreamServices
-  services.logger = handleLogger(config)
+  services.logger = handleLogger(config, services)
   services.message = new (resolvePluginClass(config.cluster.message, 'message'))(config.cluster.message.options, services, config)
   services.storage = new (resolvePluginClass(config.storage, 'storage'))(config.storage.options, services, config)
   services.cache = new (resolvePluginClass(config.storage, 'cache'))(config.cache.options, services, config)
@@ -113,7 +113,7 @@ function handleSSLProperties (config: InternalDeepstreamConfig): void {
  * Initialize the logger and overwrite the root logLevel if it's set
  * CLI arguments will be considered.
  */
-function handleLogger (config: InternalDeepstreamConfig): Logger {
+function handleLogger (config: InternalDeepstreamConfig, services: DeepstreamServices): Logger {
   const configOptions = (config.logger || {}).options
   if (commandLineArguments.colors !== undefined) {
     configOptions.colors = commandLineArguments.colors
@@ -136,7 +136,7 @@ function handleLogger (config: InternalDeepstreamConfig): Logger {
       }
     }
   }
-  const logger = new LoggerClass(configOptions)
+  const logger = new LoggerClass(configOptions, services, config)
   if (logger.log) {
     logger.debug = logger.debug || logger.log.bind(logger, LOG_LEVEL.DEBUG)
     logger.info = logger.info || logger.log.bind(logger, LOG_LEVEL.INFO)

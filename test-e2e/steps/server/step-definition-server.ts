@@ -1,6 +1,6 @@
 import {Given, When, Before, BeforeAll } from 'cucumber'
 import { PromiseDelay } from '../../../src/utils/utils'
-import { E2ECluster } from '../../tools/e2e-cluster'
+import { E2EHarness } from '../../tools/e2e-harness'
 
 Before(async (scenarioResult) => {
   await global.cluster.updatePermissions('open')
@@ -45,7 +45,7 @@ Given(/^a small amount of time passes$/, (done) => {
 })
 
 BeforeAll(async () => {
-  global.cluster = new E2ECluster([6001, 7001, 8001], process.env.ENABLE_LOGGING === 'true')
+  global.cluster = new E2EHarness([6001, 7001, 8001], process.env.ENABLE_LOGGING === 'true')
   await global.cluster.start()
   await PromiseDelay(200)
 })

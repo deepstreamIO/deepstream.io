@@ -377,6 +377,7 @@ private async pluginsShutdown () {
    * Shutdown the services.
    */
   private async serviceShutdown (): Promise<void> {
+    await this.services.cluster.close()
     await this.services.message.close()
     this.transition('services-closed')
   }
