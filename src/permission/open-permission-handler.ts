@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { PermissionHandler, SocketWrapper } from '../types'
+import { PermissionHandler, SocketWrapper, PermissionCallback } from '../types'
 import { Message } from '../constants'
 
 /**
@@ -19,7 +19,7 @@ export default class OpenPermissionHandler extends EventEmitter implements Permi
   /**
   * Allows any action by an user
   */
-  public canPerformAction (username: string, message: Message, callback: Function, authData: object, socketWrapper: SocketWrapper) {
-    callback(null, true)
+  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: object, socketWrapper: SocketWrapper) {
+    callback(socketWrapper, message, null, true)
   }
 }
