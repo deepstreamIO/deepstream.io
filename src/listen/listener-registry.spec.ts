@@ -74,7 +74,7 @@ describe('listener-registry-local-load-balancing', () => {
     })
 
     describe('with a single provider', () => {
-        it('accepts a subscription', () => {
+        it.only('accepts a subscription', () => {
             // 1.  provider does listen a/.*
             tu.providerListensTo(1, 'a/.*')
             // 3.  provider will getc a SP

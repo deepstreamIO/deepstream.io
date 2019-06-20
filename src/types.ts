@@ -266,7 +266,8 @@ export interface ValveConfig {
 export interface Provider {
   socketWrapper: SocketWrapper
   pattern: string
-  closeListener?: () => void
+  closeListener?: () => void,
+  responseTimeout?: NodeJS.Timeout
 }
 
 export interface UserData {

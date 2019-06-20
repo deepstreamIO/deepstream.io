@@ -1,24 +1,14 @@
 import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
-import TimeoutRegistry from './listener-timeout-registry'
 import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, ClusterNode, StateRegistry } from '../types'
 
 export default class ListenerRegistry implements SubscriptionListener {
-  private metaData: any
-  private topic: TOPIC
-  private config: InternalDeepstreamConfig
-  private services: DeepstreamServices
   private providerRegistry: SubscriptionRegistry
-  private clientRegistry: SubscriptionRegistry
-  private message: ClusterNode
-  private uniqueLockName: string
-  private patterns: { [pattern: string]: RegExp }
-  private localListenInProgress: { [subscription: string]: Provider[] }
-  private listenerTimeoutRegistry: TimeoutRegistry
-  private locallyProvidedRecords: { [subscription: string]: Provider }
-  private leadListen: { [subscription: string]: any }
-  private leadingListen: { [subscription: string]: string[] }
+  private uniqueLockName = `${this.topic}_LISTEN_LOCK`
+  private patterns = new Map<string, RegExp>()
+  private listenInProgress = new Map<string, Provider[]>()
+  private locallyProvidedRecords = new Map<string, Provider>()
   private messageTopic: TOPIC
   private actions: typeof RECORD_ACTIONS | typeof EVENT_ACTIONS
 
@@ -43,40 +33,24 @@ export default class ListenerRegistry implements SubscriptionListener {
   * This class manages the matching of patterns and record names. The subscription /
   * notification logic is handled by this.providerRegistry
   */
-  constructor (topic: TOPIC, config: InternalDeepstreamConfig, services: DeepstreamServices, clientRegistry: SubscriptionRegistry, metaData: any = {}) {
-    this.metaData = metaData
-    this.topic = topic
+  constructor (private topic: TOPIC, private config: InternalDeepstreamConfig, private services: DeepstreamServices, private clientRegistry: SubscriptionRegistry, private metaData: any = {}) {
     this.actions = topic === TOPIC.RECORD ? RECORD_ACTIONS : EVENT_ACTIONS
-    this.config = config
-    this.services = services
-    this.clientRegistry = clientRegistry
-    this.uniqueLockName = `${topic}_LISTEN_LOCK`
 
     this.triggerNextProvider = this.triggerNextProvider.bind(this)
-    this.message = this.services.message
-
-    this.patterns = {}
-    this.localListenInProgress = {}
-    this.listenerTimeoutRegistry = new TimeoutRegistry(topic, config, services)
-
-    this.locallyProvidedRecords = {}
-
-    this.leadListen = {}
-    this.leadingListen = {}
 
     if (this.topic === TOPIC.RECORD) {
       this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
         TOPIC.RECORD_LISTEN_PATTERNS,
         TOPIC.RECORD_LISTEN_PATTERNS,
       )
-      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
+      this.clusterProvidedRecords = this.services.message.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.RECORD_LISTENING
     } else {
       this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
         TOPIC.EVENT_LISTEN_PATTERNS,
         TOPIC.EVENT_LISTEN_PATTERNS,
       )
-      this.clusterProvidedRecords = this.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
+      this.clusterProvidedRecords = this.services.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.EVENT_LISTENING
     }
 
@@ -92,7 +66,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.clusterProvidedRecords.onAdd(this.onRecordStartProvided.bind(this))
     this.clusterProvidedRecords.onRemove(this.onRecordStopProvided.bind(this))
 
-    this.message.subscribe(
+    this.services.message.subscribe(
       this.messageTopic,
       this.onIncomingMessage.bind(this),
     )
@@ -116,8 +90,6 @@ export default class ListenerRegistry implements SubscriptionListener {
   * 4) ACTIONS.LISTEN_REJECT
   */
   public handle (socketWrapper: SocketWrapper, message: ListenMessage): void {
-    const subscriptionName = message.subscription
-
     if (message.action === this.actions.LISTEN) {
       this.addListener(socketWrapper, message)
       return
@@ -129,36 +101,21 @@ export default class ListenerRegistry implements SubscriptionListener {
       return
     }
 
-    if (this.listenerTimeoutRegistry.isALateResponder(socketWrapper, message)) {
-      this.listenerTimeoutRegistry.handle(socketWrapper, message)
+    const provider = this.listenInProgress.get(message.subscription)
+    if (provider) {
+      this.processResponseForListenInProgress(socketWrapper, message.subscription, message)
       return
     }
 
-    if (this.localListenInProgress[subscriptionName]) {
-      this.processResponseForListenInProgress(socketWrapper, subscriptionName, message)
-      return
-    }
+    this.services.logger.warn('UNKNOW ACTION')
   }
 
   /**
   * Handle messages that arrive via the message bus
-  *
-  * This can either be messages by the leader indicating that this
-  * node is responsible for starting a local discovery phase
-  * or from a resulting node with an ACK to allow the leader
-  * to move on and release its lock
   */
   private onIncomingMessage (message: ListenMessage, serverName: string): void {
-    if (message.action === this.actions.LISTEN) {
-      this.leadListen[message.name] = serverName
-      this.startLocalDiscoveryStage(message.name)
-      return
-    }
-
-    if (message.action === this.actions.LISTEN_ACCEPT) {
-      this.nextDiscoveryStage(message.name)
-      return
-    }
+    // Probably do something like get a message saying a provider was not found so that
+    // others can try getting the lock again. 
   }
 
   /**
@@ -166,18 +123,26 @@ export default class ListenerRegistry implements SubscriptionListener {
   * and hasn't timed out yet.
   */
   private processResponseForListenInProgress (socketWrapper: SocketWrapper, subscriptionName: string, message: ListenMessage): void {
+    const providers  = this.listenInProgress.get(subscriptionName)
+    if (!providers || providers.length === 0) {
+      console.error('Provider missing')
+      return
+    }
+
+    providers.forEach(provider => {
+      if (provider.socketWrapper === socketWrapper) {
+        clearTimeout(provider.responseTimeout!)
+      }
+    })
+
     if (message.action === this.actions.LISTEN_ACCEPT) {
       this.accept(socketWrapper, message)
-      this.listenerTimeoutRegistry.rejectLateResponderThatAccepted(subscriptionName)
-      this.listenerTimeoutRegistry.clear(subscriptionName)
-    } else if (message.action === this.actions.LISTEN_REJECT) {
-      const provider = this.listenerTimeoutRegistry.getLateResponderThatAccepted(subscriptionName)
-      if (provider) {
-        this.accept(provider.socketWrapper, message)
-        this.listenerTimeoutRegistry.clear(subscriptionName)
-      } else {
-        this.triggerNextProvider(subscriptionName)
-      }
+      return
+    }
+
+    if (message.action === this.actions.LISTEN_REJECT) {
+      this.triggerNextProvider(subscriptionName)
+      return
     }
   }
 
@@ -186,7 +151,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Part of the subscriptionListener interface.
   */
   public onFirstSubscriptionMade (subscriptionName: string): void {
-    this.startDiscoveryStage(subscriptionName)
+    this.startProviderSearch(subscriptionName)
   }
 
   public onSubscriptionMade (subscriptionName: string, socketWrapper: SocketWrapper): void {
@@ -197,7 +162,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   public onLastSubscriptionRemoved (subscriptionName: string): void {
-    const provider = this.locallyProvidedRecords[subscriptionName]
+    const provider = this.locallyProvidedRecords.get(subscriptionName)
 
     if (!provider) {
       return
@@ -220,20 +185,17 @@ export default class ListenerRegistry implements SubscriptionListener {
   private accept (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const subscriptionName = message.subscription
 
-    this.listenerTimeoutRegistry.clearTimeout(subscriptionName)
-
-    this.locallyProvidedRecords[subscriptionName] = {
+    const provider = {
       socketWrapper,
       pattern: message.name,
-      closeListener: this.removeListener.bind(this, socketWrapper, message),
-    }
-    const provider = this.locallyProvidedRecords[subscriptionName]
-    if (provider.closeListener) {
-      socketWrapper.onClose(provider.closeListener)
+      closeListener: this.removeListener.bind(this, socketWrapper, message)
     }
 
+    this.locallyProvidedRecords.set(subscriptionName, provider)
+    socketWrapper.onClose(provider.closeListener)
+
     this.clusterProvidedRecords.add(subscriptionName)
-    this.stopLocalDiscoveryStage(subscriptionName)
+    this.stopProviderSearch(subscriptionName)
   }
 
   /**
@@ -264,7 +226,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     for (let i = 0; i < names.length; i++) {
       const subscriptionName = names[i]
 
-      if (this.locallyProvidedRecords[subscriptionName]) {
+      if (this.locallyProvidedRecords.has(subscriptionName)) {
         continue
       }
 
@@ -272,12 +234,12 @@ export default class ListenerRegistry implements SubscriptionListener {
         continue
       }
 
-      const listenInProgress = this.localListenInProgress[subscriptionName]
+      const listenInProgress = this.listenInProgress.get(subscriptionName)
 
       if (listenInProgress) {
         listenInProgress.push({ socketWrapper, pattern })
       } else {
-        this.startDiscoveryStage(subscriptionName)
+        this.startProviderSearch(subscriptionName)
       }
     }
   }
@@ -287,7 +249,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   */
   private removeListener (socketWrapper: SocketWrapper, message: ListenMessage): void {
     const pattern = message.name
-    this.removeListenerFromInProgress(this.localListenInProgress, pattern, socketWrapper)
+    this.removeListenerFromInProgress(this.listenInProgress, pattern, socketWrapper)
     this.removeListenerIfActive(pattern, socketWrapper)
   }
 
@@ -296,8 +258,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * another listener discovery phase
   */
   private removeListenerIfActive (pattern: string, socketWrapper: SocketWrapper): void {
-    for (const subscriptionName in this.locallyProvidedRecords) {
-      const provider = this.locallyProvidedRecords[subscriptionName]
+    for (const [subscriptionName, provider] of this.locallyProvidedRecords) {
       if (
         provider.socketWrapper === socketWrapper &&
         provider.pattern === pattern
@@ -307,7 +268,7 @@ export default class ListenerRegistry implements SubscriptionListener {
         }
         this.removeActiveListener(subscriptionName)
         if (this.clientRegistry.hasLocalSubscribers(subscriptionName)) {
-          this.startDiscoveryStage(subscriptionName)
+          this.startProviderSearch(subscriptionName)
         }
       }
     }
@@ -316,7 +277,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
     */
   private removeActiveListener (subscriptionName: string): void {
-    delete this.locallyProvidedRecords[subscriptionName]
+    this.locallyProvidedRecords.delete(subscriptionName)
     this.clusterProvidedRecords.remove(subscriptionName)
   }
 
@@ -324,7 +285,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Start discovery phase once a lock is obtained from the leader within
   * the cluster
   */
-  private startDiscoveryStage (subscriptionName: string): void {
+  private startProviderSearch (subscriptionName: string): void {
     const localListenArray = this.createLocalListenArray(subscriptionName)
 
     if (localListenArray.length === 0) {
@@ -343,47 +304,12 @@ export default class ListenerRegistry implements SubscriptionListener {
 
       this.services.logger.debug(
         EVENT.LEADING_LISTEN,
-        `started for via startDiscoveryStage ${TOPIC[this.topic]}:${subscriptionName}`,
+        `started for via startProviderSearch ${TOPIC[this.topic]}:${subscriptionName}`,
         this.metaData,
       )
 
-      const remoteListenArray = this.createRemoteListenArray(subscriptionName)
-      this.leadingListen[subscriptionName] = remoteListenArray
       this.startLocalDiscoveryStage(subscriptionName, localListenArray)
     })
-  }
-
-  /**
-  * called when a subscription has been provided to clear down the discovery stage,
-  * or when an ack has been recieved via the message bus
-  */
-  private nextDiscoveryStage (subscriptionName: string): void {
-    if (
-      this.hasActiveProvider(subscriptionName) ||
-      this.leadingListen[subscriptionName].length === 0
-    ) {
-      this.services.logger.debug(
-        EVENT.LEADING_LISTEN,
-        `finished for ${TOPIC[this.topic]}:${subscriptionName}`,
-        this.metaData,
-      )
-
-      delete this.leadingListen[subscriptionName]
-      this.services.locks.release(this.getUniqueLockName(subscriptionName))
-      return
-    }
-
-    const nextServerName = this.leadingListen[subscriptionName].shift()
-    if (!nextServerName) {
-      return
-    }
-
-    this.services.logger.debug(
-      EVENT.LEADING_LISTEN,
-      `started via nextDiscoveryStage for ${TOPIC[this.topic]}:${subscriptionName}`,
-      this.metaData,
-    )
-    this.sendRemoteDiscoveryStart(nextServerName, subscriptionName)
   }
 
   /**
@@ -401,39 +327,68 @@ export default class ListenerRegistry implements SubscriptionListener {
         `started for ${TOPIC[this.topic]}:${subscriptionName}`,
         this.metaData,
       )
-      this.localListenInProgress[subscriptionName] = localListenArray
+      this.listenInProgress.set(subscriptionName, localListenArray)
       this.triggerNextProvider(subscriptionName)
     }
   }
 
   /**
+  * Trigger the next provider in the map of providers capable of publishing
+  * data to the specific subscriptionName
+  */
+ private triggerNextProvider (subscriptionName: string): void {
+  const listenInProgress = this.listenInProgress.get(subscriptionName)
+
+  if (listenInProgress === undefined) {
+    this.services.logger.warn('triggerNextProvider', 'no listen in progress', this.metaData)
+    return
+  }
+
+  if (listenInProgress.length === 0) {
+    // no more providers to query
+    this.stopProviderSearch(subscriptionName)
+    return
+  }
+
+  const provider = listenInProgress.shift()
+  if (!provider) {
+    this.services.logger.warn(EVENT.INFO, 'no listen in progress', this.metaData)
+    return
+  }
+  const subscribers = this.clientRegistry.getLocalSubscribers(subscriptionName)
+
+  // This stops a client from subscribing to itself, I think
+  if (subscribers && subscribers.has(provider.socketWrapper)) {
+    this.stopProviderSearch(subscriptionName)
+    return
+  }
+
+  provider.responseTimeout = setTimeout(() => {
+    provider.socketWrapper.sendMessage({
+      topic: this.topic,
+      action: this.actions.LISTEN_RESPONSE_TIMEOUT,
+      subscription: subscriptionName
+    })
+    this.triggerNextProvider(subscriptionName)
+  }, this.config.listen.responseTimeout)
+
+  this.sendSubscriptionForPatternFound(provider, subscriptionName)
+}
+
+  /**
   * Finalises a local listener discovery stage
   */
-  private stopLocalDiscoveryStage (subscriptionName: string): void {
+  private stopProviderSearch (subscriptionName: string): void {
     this.services.logger.debug(
       EVENT.LOCAL_LISTEN,
       `stopped for ${TOPIC[this.topic]}:${subscriptionName}`,
       this.metaData,
     )
 
-    let deletedLocalListen = false
-    if (this.localListenInProgress[subscriptionName]) {
-      delete this.localListenInProgress[subscriptionName]
-      deletedLocalListen = true
-    }
+    this.services.locks.release(this.getUniqueLockName(subscriptionName))
 
-    if (this.leadingListen[subscriptionName]) {
-      this.nextDiscoveryStage(subscriptionName)
-      return
-    }
-
-    if (this.leadListen[subscriptionName]) {
-      this.sendRemoteDiscoveryStop(this.leadListen[subscriptionName], subscriptionName)
-      delete this.leadListen[subscriptionName]
-      return
-    }
-
-    if (deletedLocalListen) {
+    const stoppedSearch = this.listenInProgress.delete(subscriptionName)
+    if (stoppedSearch) {
       return
     }
 
@@ -445,51 +400,10 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Trigger the next provider in the map of providers capable of publishing
-  * data to the specific subscriptionName
-  */
-  private triggerNextProvider (subscriptionName: string): void {
-    const listenInProgress: Provider[] = this.localListenInProgress[subscriptionName]
-
-    if (typeof listenInProgress === 'undefined') {
-      this.services.logger.warn('triggerNextProvider', 'no listen in progress', this.metaData)
-      return
-    }
-
-    if (listenInProgress.length === 0) {
-      this.stopLocalDiscoveryStage(subscriptionName)
-      return
-    }
-
-    const provider = listenInProgress.shift()
-    if (!provider) {
-      this.services.logger.warn(EVENT.INFO, 'no listen in progress', this.metaData)
-      return
-    }
-    const subscribers = this.clientRegistry.getLocalSubscribers(subscriptionName)
-
-    if (subscribers && subscribers.has(provider.socketWrapper)) {
-      this.stopLocalDiscoveryStage(subscriptionName)
-      return
-    }
-
-    this.listenerTimeoutRegistry.addTimeout(
-      subscriptionName,
-      provider,
-      this.triggerNextProvider,
-    )
-
-    this.sendSubscriptionForPatternFound(provider, subscriptionName)
-  }
-
-  /**
   * Triggered when a subscription is being provided by a node in the cluster
   */
   private onRecordStartProvided (subscriptionName: string): void {
     this.sendHasProviderUpdate(true, subscriptionName)
-    if (this.leadingListen[subscriptionName]) {
-      this.nextDiscoveryStage(subscriptionName)
-    }
   }
 
   /**
@@ -497,11 +411,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   */
   private onRecordStopProvided (subscriptionName: string): void {
     this.sendHasProviderUpdate(false, subscriptionName)
-    if (
-      !this.hasActiveProvider(subscriptionName) &&
-      this.clientRegistry.hasName(subscriptionName)
-    ) {
-      this.startDiscoveryStage(subscriptionName)
+    if (!this.hasActiveProvider(subscriptionName) && this.clientRegistry.hasName(subscriptionName)) {
+      this.startProviderSearch(subscriptionName)
     }
   }
 
@@ -509,8 +420,8 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Compiles a regular expression from an incoming pattern
   */
   private addPattern (pattern: string): void {
-    if (!this.patterns[pattern]) {
-      this.patterns[pattern] = new RegExp(pattern)
+    if (!this.patterns.has(pattern)) {
+      this.patterns.set(pattern, new RegExp(pattern))
     }
   }
 
@@ -518,28 +429,25 @@ export default class ListenerRegistry implements SubscriptionListener {
   * Deletes the pattern regex when removed
   */
   private removePattern (pattern: string, socketWrapper: SocketWrapper): void {
-    this.listenerTimeoutRegistry.removeProvider(socketWrapper)
-    this.removeListenerFromInProgress(this.localListenInProgress, pattern, socketWrapper)
+    this.removeListenerFromInProgress(this.listenInProgress, pattern, socketWrapper)
     this.removeListenerIfActive(pattern, socketWrapper)
   }
 
   private removeLastPattern (pattern: string): void {
-    delete this.patterns[pattern]
+    this.patterns.delete(pattern)
   }
 
   /**
-  * Remove provider from listen in progress map if it unlistens during
-  * discovery stage
+  * Remove provider from listen in progress map if it unlistens during discovery stage
   */
-  private removeListenerFromInProgress (listensCurrentlyInProgress: any, pattern: string, socketWrapper: SocketWrapper): void {
-    for (const subscriptionName in listensCurrentlyInProgress) {
-      const listenInProgress = listensCurrentlyInProgress[subscriptionName]
-      for (let i = 0; i < listenInProgress.length; i++) {
+  private removeListenerFromInProgress (listensCurrentlyInProgress: Map<string, Provider[]>, pattern: string, socketWrapper: SocketWrapper): void {
+    for (const [, listensInProgress] of listensCurrentlyInProgress) {
+      for (let i = 0; i < listensInProgress.length; i++) {
         if (
-          listenInProgress[i].socketWrapper === socketWrapper &&
-          listenInProgress[i].pattern === pattern
+          listensInProgress[i].socketWrapper === socketWrapper &&
+          listensInProgress[i].pattern === pattern
         ) {
-          listenInProgress.splice(i, 1)
+          listensInProgress.splice(i, 1)
         }
       }
     }
@@ -573,30 +481,6 @@ export default class ListenerRegistry implements SubscriptionListener {
   }
 
   /**
-  * Sent by the listen leader, and is used to inform the next server in the cluster to
-  * start a local discovery
-  */
-  private sendRemoteDiscoveryStart (serverName: string, subscriptionName: string): void  {
-    this.message.sendDirect(serverName, {
-      topic: this.messageTopic,
-      action: this.actions.LISTEN,
-      name: subscriptionName,
-    }, this.metaData)
-  }
-
-  /**
-  * Sent by the listen follower, and is used to inform the leader that it has
-  * complete its local discovery start
-  */
-  private sendRemoteDiscoveryStop (listenLeaderServerName: string, subscriptionName: string): void  {
-    this.message.sendDirect(listenLeaderServerName, {
-      topic: this.messageTopic,
-      action: this.actions.LISTEN_ACCEPT,
-      name: subscriptionName,
-    }, this.metaData)
-  }
-
-  /**
   * Send a subscription found to a provider
   */
   private sendSubscriptionForPatternFound (provider: Provider, subscriptionName: string): void  {
@@ -623,49 +507,15 @@ export default class ListenerRegistry implements SubscriptionListener {
   /**
   * Create a map of all the listeners that patterns match the subscriptionName locally
   */
-  private createRemoteListenArray (subscriptionName: string): string[] {
-    const providerRegistry = this.providerRegistry
-
-    let servers: string[] = []
-    const providerPatterns = providerRegistry.getNames()
-
-    for (let i = 0; i < providerPatterns.length; i++) {
-      const pattern = providerPatterns[i]
-      let p = this.patterns[pattern]
-      if (p == null) {
-        this.services.logger.warn(EVENT.INFO, `can't handle pattern ${pattern}`, this.metaData)
-        this.addPattern(pattern)
-        p = this.patterns[pattern]
-      }
-      if (p.test(subscriptionName)) {
-        servers = servers.concat(providerRegistry.getAllServers(pattern))
-      }
-    }
-
-    const set = new Set(servers)
-    set.delete(this.config.serverName)
-
-    if (!this.config.listen.shuffleProviders) {
-      return Array.from(set)
-    }
-    return shuffleArray(Array.from(set))
-  }
-
-  /**
-  * Create a map of all the listeners that patterns match the subscriptionName locally
-  */
   private createLocalListenArray (subscriptionName: string): Provider[] {
-    const patterns = this.patterns
-    const providerRegistry = this.providerRegistry
     const providers: Provider[] = []
-    for (const pattern in patterns) {
-      if (patterns[pattern].test(subscriptionName)) {
-        for (const socketWrapper of providerRegistry.getLocalSubscribers(pattern)) {
+    this.patterns.forEach((regex, pattern) => {
+      if (regex.test(subscriptionName)) {
+        for (const socketWrapper of this.providerRegistry.getLocalSubscribers(pattern)) {
           providers.push({ pattern, socketWrapper })
         }
       }
-    }
-
+    })
     if (!this.config.listen.shuffleProviders) {
       return providers
     }
@@ -688,7 +538,8 @@ export default class ListenerRegistry implements SubscriptionListener {
       return null
     }
   }
-    /**
+
+  /**
   * Returns the unique lock when leading a listen discovery phase
   */
   private getUniqueLockName (subscriptionName: string) {
