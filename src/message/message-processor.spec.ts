@@ -4,7 +4,6 @@ import PermissionHandlerMock from '../test/mock/permission-handler-mock'
 const MessageProcessor = require('./message-processor').default
 import LoggerMock from '../test/mock/logger-mock'
 import { getTestMocks } from '../test/helper/test-mocks'
-import { TOPIC, ACTIONS } from '@deepstream/client/dist/binary-protocol/src/message-constants';
 import { CONNECTION_ACTIONS } from '../../binary-protocol/src/message-constants';
 
 let messageProcessor

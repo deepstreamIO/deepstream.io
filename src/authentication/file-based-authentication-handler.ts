@@ -2,7 +2,7 @@ import * as crypto from 'crypto'
 import * as jsYamlLoader from '../config/js-yaml-loader'
 import * as utils from '../utils/utils'
 import { AuthenticationHandler, UserAuthenticationCallback, DeepstreamPlugin } from '../types'
-import { AuthenticationCallback } from '@deepstream/client/dist/src/connection/connection'
+import { JSONObject } from '../constants'
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'
@@ -197,7 +197,7 @@ export default class FileBasedAuthenticationHandler extends DeepstreamPlugin imp
   * @param   {Buffer}   actualHashBuffer the buffer containing the bytes for the new hash
   */
   private compareHashResult (
-    expectedHash: string, username: string, serverData: object, clientData: object, callback: AuthenticationCallback, error: Error | null, actualHashBuffer: Buffer,
+    expectedHash: string, username: string, serverData: JSONObject, clientData: JSONObject, callback: UserAuthenticationCallback, error: Error | null, actualHashBuffer: Buffer,
   ) {
     if (expectedHash === actualHashBuffer.toString(STRING_CHARSET)) {
       // todo log error

@@ -2,7 +2,7 @@ import { TOPIC, STATE_ACTIONS } from '../constants'
 import { DeepstreamServices, StateRegistry, DeepstreamPlugin, StateRegistryCallback, InternalDeepstreamConfig } from '../types'
 import { StateMessage } from '../../binary-protocol/src/message-constants'
 import { Dictionary } from 'ts-essentials'
-import { Emitter } from '@deepstream/client/dist/src/util/emitter'
+import { EventEmitter } from 'events'
 
 /**
  * This class provides a generic mechanism that allows to maintain
@@ -26,7 +26,7 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
   private checkSumTimeouts = new Map<string, any[]>()
   private fullStateSent: boolean = false
   private initialServers = new Set<string>()
-  private emitter = new Emitter()
+  private emitter = new EventEmitter()
 
   /**
    * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic

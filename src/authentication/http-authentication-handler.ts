@@ -3,7 +3,6 @@ import * as utils from '../utils/utils'
 import { EVENT } from '../constants'
 import { AuthenticationHandler, UserAuthenticationCallback, DeepstreamServices, InternalDeepstreamConfig, DeepstreamPlugin } from '../types'
 import { JSONObject } from '../../binary-protocol/src/message-constants'
-import { AuthenticationCallback } from '@deepstream/client/dist/src/connection/connection'
 
 interface HttpAuthenticationHandlerSettings {
   // http(s) endpoint that will receive post requests
@@ -36,11 +35,11 @@ export default class HttpAuthenticationHandler extends DeepstreamPlugin implemen
     }
   }
 
-  public isValidUser (connectionData: JSONObject, authData: JSONObject, callback: AuthenticationCallback): void {
+  public isValidUser (connectionData: JSONObject, authData: JSONObject, callback: UserAuthenticationCallback): void {
     this.validate(this.requestId++, connectionData, authData, callback)
   }
 
-  private validate (id: number, connectionData: JSONObject, authData: JSONObject, callback: AuthenticationCallback): void {
+  private validate (id: number, connectionData: JSONObject, authData: JSONObject, callback: UserAuthenticationCallback): void {
     const options = {
       read_timeout: this.settings.requestTimeout,
       open_timeout: this.settings.requestTimeout,
@@ -72,7 +71,7 @@ export default class HttpAuthenticationHandler extends DeepstreamPlugin implemen
       if (!response.statusCode) {
         this.services.logger.warn(EVENT.AUTH_ERROR, 'http auth server error: missing status code!')
         this.retryAttempts.delete(id)
-        callback(false, null)
+        callback(false)
         return
       }
 
@@ -101,7 +100,7 @@ export default class HttpAuthenticationHandler extends DeepstreamPlugin implemen
     })
   }
 
-  private retry (id: number, connectionData: JSONObject, authData: JSONObject, callback: AuthenticationCallback) {
+  private retry (id: number, connectionData: JSONObject, authData: JSONObject, callback: UserAuthenticationCallback) {
     let retryAttempt = this.retryAttempts.get(id)
     if (!retryAttempt) {
       retryAttempt = {
@@ -118,7 +117,11 @@ export default class HttpAuthenticationHandler extends DeepstreamPlugin implemen
       setTimeout(() => this.validate(id, connectionData, authData, callback), this.settings.retryInterval)
     } else {
       this.retryAttempts.delete(id)
-      callback(false, { error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED })
+      callback(false, {
+        clientData: {
+          error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED
+        }
+      })
     }
   }
 

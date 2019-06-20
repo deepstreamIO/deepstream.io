@@ -29,6 +29,7 @@ export interface StatefulSocketWrapper extends SimpleSocketWrapper {
   removeOnClose: Function
   destroy: Function
   close: Function
+  authAttempts: number
 }
 
 export interface UnauthenticatedSocketWrapper extends StatefulSocketWrapper {

@@ -6,7 +6,8 @@ import {
   PARSER_ACTIONS,
   ParseResult,
   TOPIC,
-  Message
+  Message,
+  JSONObject,
 } from '../../../binary-protocol/src/message-constants'
 import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, InternalDeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin } from '../../types'
 
@@ -349,7 +350,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * exceed the threshold specified in options.maxAuthAttempts
    * the client will be notified and the socket destroyed.
    */
-  private processInvalidAuth (clientData: any, authData: any, socketWrapper: any): void {
+  private processInvalidAuth (clientData: JSONObject, authData: JSONObject, socketWrapper: UnauthenticatedSocketWrapper): void {
     let logMsg = 'invalid authentication data'
 
     if (this.logInvalidAuthData === true) {
