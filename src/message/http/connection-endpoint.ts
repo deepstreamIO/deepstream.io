@@ -24,6 +24,7 @@ export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements 
 
     this.onSocketMessageBound = this.onSocketMessage.bind(this)
     this.onSocketErrorBound = this.onSocketError.bind(this)
+    this.onPermissionResponse = this.onPermissionResponse.bind(this)
   }
 
   /**
