@@ -1,12 +1,6 @@
 import * as SocketWrapperFactoryMock from '../mock/socket-wrapper-factory-mock'
 import AuthenticationHandler from '../mock/authentication-handler-mock'
 
-export const showChars = function (input) {
-  return input
-    .replace(new RegExp(String.fromCharCode(31), 'g'), '|')
-    .replace(new RegExp(String.fromCharCode(30), 'g'), '+')
-}
-
 export const getBasePermissions = function () {
   return {
     presence: {
@@ -39,36 +33,47 @@ import {get} from '../../default-options'
 import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
-import { EventEmitter } from 'events'
-import { InternalDeepstreamConfig, DeepstreamServices, MonitoringPlugin } from '../../types'
+import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper, Monitoring, DeepstreamPlugin, PermissionCallback, UserAuthData } from '../../types'
 import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory'
 import { Message, LOG_LEVEL, EVENT } from '../../constants'
 
 export const getDeepstreamOptions = (serverName?: string): { config: InternalDeepstreamConfig, services: DeepstreamServices } => {
-  const config: InternalDeepstreamConfig = { ...get(), ...{
+  const config = { ...get(), ...{
     serverName: serverName || 'server-name-a',
-    stateReconciliationTimeout: 50,
-    cacheRetrievalTimeout: 30,
-    storageRetrievalTimeout: 50,
-    rpcAckTimeout: 10,
-    rpcTimeout: 20,
-    storageExclusionPrefixes: ['no-storage'],
-    storageHotPathPrefixes: [],
+
+    cluster: {
+      state: {
+        options: {
+          reconciliationTimeout: 50
+        }
+      }
+    },
     permission: {
       options: {
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 3
       }
     },
-    provideRPCRequestorDetails: true,
-  }}
+    rpc: {
+      provideRequestorData: true,
+      provideRequestorName: true,
+      ackTimeout: 10,
+      responseTimeout: 20,
+    },
+    record: {
+      cacheRetrievalTimeout: 30,
+      storageRetrievalTimeout: 50,
+      storageExclusionPrefixes: ['no-storage'],
+      storageHotPathPrefixes: [],
+    }
+  }} as never as InternalDeepstreamConfig
 
-  class PermissionHandler extends EventEmitter {
+  class PermissionHandler extends DeepstreamPlugin implements PermissionHandler {
     public lastArgs: any[]
     public isReady: boolean
     public description: string
     public nextResult: boolean
-    public nextError: boolean | null
+    public nextError: string | null
 
     constructor () {
       super()
@@ -79,20 +84,16 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
       this.lastArgs = []
     }
 
-    public canPerformAction (user, message, callback, authData, socketWrapper) {
+    public canPerformAction (user: string, message: Message, callback: PermissionCallback, authData: UserAuthData, socketWrapper: SocketWrapper, passItOn: any) {
       this.lastArgs.push([user, message, callback])
-      callback(socketWrapper, message, this.nextError, this.nextResult)
+      callback(socketWrapper, message, passItOn, this.nextError, this.nextResult)
     }
   }
 
 // tslint:disable-next-line: max-classes-per-file
-  class MonitoringMock extends EventEmitter implements MonitoringPlugin {
+  class MonitoringMock extends DeepstreamPlugin implements Monitoring {
     public isReady = true
-    public apiVersion = 1
-    public description: 'monitoring mock'
-    constructor () {
-      super()
-    }
+    public description = 'monitoring mock'
     public onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
     }
     public onLogin (allowed: boolean, endpointType: string): void {
@@ -110,14 +111,14 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
     cache: new StorageMock(),
     storage: new StorageMock(),
     message: new MessageConnectorMock(config),
-    uniqueRegistry: {
+    // @ts-ignore
+    locks: {
       get (name, cb) { cb(true) },
       release () {}
     },
     monitoring: new MonitoringMock(),
     authenticationHandler: new AuthenticationHandler(),
     permissionHandler: new PermissionHandler(),
-    registeredPlugins: [],
     connectionEndpoints: [],
   }
   services.subscriptions = new SubscriptionRegistryFactory(config, services as DeepstreamServices)
@@ -134,18 +135,18 @@ export const getDeepstreamPermissionOptions = function () {
 
 const ConfigPermissionHandler = require('../../permission/config-permission-handler').default
 
-export const testPermission = function (options) {
-  return function (permissions, message, username, userdata, callback) {
-    const permissionHandler = new ConfigPermissionHandler(options.config, options.services, permissions)
+export const testPermission = function (options: { config: InternalDeepstreamConfig, services: DeepstreamServices }) {
+  return function (permissions: any, message: Message, username: string, userdata: UserAuthData, callback: PermissionCallback) {
+    const permissionHandler = new ConfigPermissionHandler(options.config.permission.options, options.services, options.config, permissions)
     permissionHandler.setRecordHandler({
       removeRecordRequest: () => {},
-      runWhenRecordStable: (r, c) => { c(r) }
+      runWhenRecordStable: (r: any, c: any) => { c(r) }
     })
     let permissionResult
 
     username = username || 'someUser'
     userdata = userdata || {}
-    callback = callback || function (socketWrapper, msg, error, result) {
+    callback = callback || function (socketWrapper: SocketWrapper, msg: Message, passItOn: any, error: Error, result: boolean) {
       permissionResult = result
     }
     permissionHandler.canPerformAction(

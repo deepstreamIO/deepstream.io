@@ -12,7 +12,7 @@ export interface E2EClient {
 const clients: { [index: string]: E2EClient } = {}
 
 function createClient (clientName: string, server: string, options?: any) {
-  const gatewayUrl = global.cluster.getUrl()
+  const gatewayUrl = global.cluster.getUrl(server)
   // @ts-ignore
   const client = deepstream(gatewayUrl, {
     ...options,
@@ -27,7 +27,8 @@ function createClient (clientName: string, server: string, options?: any) {
     recordDeleteTimeout: 100,
     recordDiscardTimeout: 100,
     timerResolution: 1,
-    offlineEnabled: false
+    offlineEnabled: false,
+    offlineBufferTimeout: 10000
   })
   clients[clientName] = {
     name: clientName,

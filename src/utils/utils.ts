@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events'
 import * as url from 'url'
 
 /**
@@ -6,25 +5,6 @@ import * as url from 'url'
  */
 export let getUid = function (): string {
   return `${Date.now().toString(36)}-${(Math.random() * 10000000000000000000).toString(36)}`
-}
-
-/**
- * Calls <callback> once all <emitters> have emitted <event>
- */
-export let combineEvents = function (emitters: EventEmitter[], event: string, callback: Function): void {
-  let i
-  let count = 0
-  const increment = function () {
-    count++
-
-    if (count === emitters.length) {
-      callback()
-    }
-  }
-
-  for (i = 0; i < emitters.length; i++) {
-    emitters[i].once(event, increment)
-  }
 }
 
 /**
@@ -145,7 +125,7 @@ export let shuffleArray = function (array: any[]): any[] {
  * Recursively freeze a deeply nested object
  * https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze
  */
-export let deepFreeze = function (obj: any): object {
+export let deepFreeze = function (obj: any): any {
 
   // Retrieve the property names defined on obj
   const propNames = Object.getOwnPropertyNames(obj)
@@ -180,6 +160,6 @@ export const isExcluded = function (exclusionPrefixes: string[], recordName: str
   return false
 }
 
-export const PromiseDelay = function (timeout) {
+export const PromiseDelay = (timeout: number) => {
   return new Promise((resolve) => setTimeout(resolve, timeout))
 }

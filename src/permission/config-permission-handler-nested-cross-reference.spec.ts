@@ -1,7 +1,7 @@
 import 'mocha'
 import { expect } from 'chai'
 
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 import * as C from '../constants'
 
 const noop = function () {}
@@ -10,7 +10,7 @@ const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return services.logger._log.lastCall.args[2]
+  return services.logger.logSpy.lastCall.args[2]
 }
 
 describe('permission handler loads data for cross referencing', () => {
@@ -31,7 +31,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       expect(services.cache.getCalls.length).to.equal(2)
@@ -61,7 +61,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('Cannot read property \'is\' of undefined')
       expect(result).to.equal(false)
       next()
@@ -87,7 +87,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       expect(services.cache.getCalls.length).to.equal(1)
@@ -115,7 +115,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       expect(services.cache.getCalls.length).to.equal(1)
@@ -143,7 +143,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('crossreference got unsupported type object')
       expect(result).to.equal(false)
       next()
@@ -172,7 +172,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'test-record'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('Exceeded max iteration count')
       expect(result).to.equal(false)
       expect(services.cache.getCalls.length).to.equal(3)

@@ -107,8 +107,8 @@ export const rpc = {
   make (clientExpression: string, rpc: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const callback = client.rpc.callbacks[rpc] = sinon.spy()
-      client.client.rpc.make(rpc, JSON.parse(data), (error, data) => {
-        callback(error, data && data.toString())
+      client.client.rpc.make(rpc, JSON.parse(data), (error, result) => {
+        callback(error, result && result.toString())
       })
     })
   }

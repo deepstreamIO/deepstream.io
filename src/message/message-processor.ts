@@ -55,13 +55,11 @@ export default class MessageProcessor {
    * Processes the response that's returned by the permissionHandler.
    *
    * @param   {SocketWrapper}   socketWrapper
-   * @param   {Object} message  parsed message - might have been manipulated
-   *                              by the permissionHandler
-   * @param   {Error} error     error or null if no error. Denied permissions will be expressed
-   *                            by setting result to false
+   * @param   {Object} message  parsed message
+   * @param   {Error} error     Denied permissions will be expressed by setting result to false
    * @param   {Boolean} result    true if permissioned
    */
-  private onPermissionResponse (socketWrapper: SocketWrapper, message: Message, error: Error | null, result: boolean): void {
+  private onPermissionResponse (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: Error | null, result: boolean): void {
     if (error !== null) {
       this.services.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
       const permissionErrorMessage: Message = {

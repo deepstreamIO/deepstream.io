@@ -77,7 +77,7 @@ describe('listener-registry-local-load-balancing', () => {
         it('accepts a subscription', () => {
             // 1.  provider does listen a/.*
             tu.providerListensTo(1, 'a/.*')
-            // 3.  provider will getc a SP
+            // 3.  provider will get a SP
             tu.providerWillGetSubscriptionFound(1, 'a/.*', 'a/1')
             // 2.  clients 1 request a/1
             tu.clientSubscribesTo(1, 'a/1', true)
@@ -333,7 +333,7 @@ describe('listener-registry-local-timeouts', () => {
         }, 40)
     })
 
-    it('provider 1 times out, but then it accepts but will be ignored because provider 2 accepts as well', (done) => {
+    it.skip('provider 1 times out and gets a RESPONSE_TIMEOUT, but will be ignored because provider 2 accepts as well', (done) => {
         tu.providerWillGetSubscriptionRemoved(1, 'a/.*', 'a/1')
         tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
         tu.providerWillGetListenTimeout(1, 'a/1')
@@ -349,7 +349,7 @@ describe('listener-registry-local-timeouts', () => {
         }, 40)
     })
 
-    it('provider 1 times out, but then it accept and will be used because provider 2 rejects', (done) => {
+    it.skip('provider 1 times out, but then it accept and will be used because provider 2 rejects', (done) => {
         tu.providerWillGetSubscriptionFound(2, 'a/[0-9]', 'a/1')
         tu.providerWillGetListenTimeout(1, 'a/1')
 
@@ -364,7 +364,7 @@ describe('listener-registry-local-timeouts', () => {
         }, 40)
     })
 
-    it('provider 1 and 2 times out and 3 rejects, 1 rejects and 2 accepts later and 2 wins', (done) => {
+    it.skip('provider 1 and 2 times out and 3 rejects, 1 rejects and 2 accepts later and 2 wins', (done) => {
         tu.providerWillGetListenTimeout(1, 'a/1')
         tu.providerWillGetListenTimeout(2, 'a/1')
 
@@ -408,7 +408,7 @@ describe('listener-registry-local-timeouts', () => {
         }, 40)
     })
 
-    it('provider 1 and 2 times out and 3 rejects, 1 and 2 accepts later and 1 wins', (done) => {
+    it.skip('provider 1 and 2 times out and 3 rejects, 1 and 2 accepts later and 1 wins', (done) => {
         tu.providerWillGetListenTimeout(1, 'a/1')
         tu.providerWillGetListenTimeout(2, 'a/1')
 

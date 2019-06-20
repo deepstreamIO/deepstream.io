@@ -3,9 +3,9 @@ import { expect } from 'chai'
 import RpcProxy from './rpc-proxy'
 
 import * as C from '../constants'
-const RpcHandler = require('./rpc-handler').default
+import RpcHandler from './rpc-handler'
 
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 import { getTestMocks } from '../test/helper/test-mocks'
 
 const options = testHelper.getDeepstreamOptions()
@@ -216,7 +216,7 @@ describe('the rpcHandler routes events correctly', () => {
           correlationId: requestMessage.correlationId
         })
 
-      setTimeout(done, config.rpcAckTimeout * 2)
+      setTimeout(done, config.rpc.ackTimeout * 2)
     })
 
     it('times out if response is not received in time', (done) => {
@@ -233,7 +233,7 @@ describe('the rpcHandler routes events correctly', () => {
           correlationId: requestMessage.correlationId
         })
 
-      setTimeout(done, config.rpcTimeout + 2)
+      setTimeout(done, config.rpc.responseTimeout * 2)
     })
 
     // Should an Ack for a non existant rpc should error?
@@ -363,8 +363,6 @@ describe('the rpcHandler routes events correctly', () => {
 
   describe('the rpcHandler uses requestor fields correctly', () => {
     beforeEach(() => {
-      config.provideRPCRequestorDetails = false
-
       testMocks = getTestMocks()
       requestor = testMocks.getSocketWrapper('requestor', {}, { bestLanguage: 'not BF' })
       provider = testMocks.getSocketWrapper('provider')
@@ -389,36 +387,30 @@ describe('the rpcHandler routes events correctly', () => {
       data: '{"numA":5, "numB":7}'
     }
 
-    for (const allAvailable of [true, false]) {
-      for (const nameAvailable of [true, false]) {
-        for (const dataAvailable of [true, false]) {
-          const name = `all=${allAvailable} name=${nameAvailable} data=${dataAvailable}`
-          it(name, () => {
-            config.provideRPCRequestorDetails = allAvailable
-            config.provideRPCRequestorName = nameAvailable
-            config.provideRPCRequestorData = dataAvailable
-            const nameExpectedVisibility = allAvailable || nameAvailable
-            const dataExpectedVisibility = allAvailable || dataAvailable
+    for (const nameAvailable of [true, false]) {
+      for (const dataAvailable of [true, false]) {
+        const name = `name=${nameAvailable} data=${dataAvailable}`
+        it(name, () => {
+          config.rpc.provideRequestorName = nameAvailable
+          config.rpc.provideRequestorData = dataAvailable
 
-            const expectedMessage = Object.assign({}, requestMessage)
-            if (nameExpectedVisibility) {
-              Object.assign(expectedMessage, { requestorName: 'requestor' })
-            }
-            if (dataExpectedVisibility) {
-              Object.assign(expectedMessage, { requestorData: { bestLanguage: 'not BF' } })
-            }
-            provider.socketWrapperMock
-                .expects('sendMessage')
-                .once()
-                .withExactArgs(expectedMessage)
+          const expectedMessage = Object.assign({}, requestMessage)
+          if (nameAvailable) {
+            Object.assign(expectedMessage, { requestorName: 'requestor' })
+          }
+          if (dataAvailable) {
+            Object.assign(expectedMessage, { requestorData: { bestLanguage: 'not BF' } })
+          }
+          provider.socketWrapperMock
+              .expects('sendMessage')
+              .once()
+              .withExactArgs(expectedMessage)
 
-            rpcHandler = new RpcHandler(config, services, testMocks.subscriptionRegistry)
-            rpcHandler.handle(requestor.socketWrapper, requestMessage)
-          })
-
-        }
-      }
+          rpcHandler = new RpcHandler(config, services, testMocks.subscriptionRegistry)
+          rpcHandler.handle(requestor.socketWrapper, requestMessage)
+        })
     }
+  }
 
     // it ('overwrites fake requestorName and fake requestorData', () => {
     //   config.provideRPCRequestorDetails = true

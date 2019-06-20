@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import * as C from '../constants'
 
 const getBasePermissions = require('../test/helper/test-helper').getBasePermissions
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 
 const options = testHelper.getDeepstreamPermissionOptions()
 const services = options.services
@@ -39,7 +39,7 @@ describe('allows to create a record without providing data, but denies updating 
       data: '{"other":"data"}'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
     }
@@ -57,7 +57,7 @@ describe('allows to create a record without providing data, but denies updating 
       data: '"aValue"'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
     }

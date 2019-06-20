@@ -30,27 +30,31 @@ export default class RecordDeletion {
     this.completed = 0
     this.isDestroyed = false
 
+    this.onCacheDelete = this.onCacheDelete.bind(this)
+    this.onStorageDelete = this.onStorageDelete.bind(this)
+
     this.cacheTimeout = setTimeout(
       this.handleError.bind(this, 'cache timeout'),
-      this.config.cacheRetrievalTimeout,
+      this.config.record.cacheRetrievalTimeout,
     )
     this.services.cache.delete(
       this.recordName,
-      this.checkIfDone.bind(this, this.cacheTimeout),
+      this.onCacheDelete.bind(this),
       metaData,
     )
-    if (!isExcluded(this.config.storageExclusionPrefixes, this.recordName)) {
+
+    if (!isExcluded(this.config.record.storageExclusionPrefixes, this.recordName)) {
       this.storageTimeout = setTimeout(
         this.handleError.bind(this, 'storage timeout'),
-        this.config.storageRetrievalTimeout,
+        this.config.record.storageRetrievalTimeout,
       )
       this.services.storage.delete(
         this.recordName,
-        this.checkIfDone.bind(this, this.storageTimeout),
+        this.onStorageDelete,
         metaData,
       )
     } else {
-      this.checkIfDone(null, null)
+      this.onStorageDelete(null)
     }
   }
 
@@ -58,10 +62,17 @@ export default class RecordDeletion {
  * Callback for completed cache and storage interactions. Will invoke
  * _done() once both are completed
  */
-  private checkIfDone (timeoutId: NodeJS.Timer | null, error: Error | null): void {
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-    }
+  private onCacheDelete (error: string | null): void {
+    clearTimeout(this.cacheTimeout)
+    this.stageComplete(error)
+  }
+
+  private onStorageDelete (error: string | null) {
+    clearTimeout(this.storageTimeout)
+    this.stageComplete(error)
+  }
+
+  private stageComplete (error: string | null) {
     this.completed++
 
     if (this.isDestroyed) {

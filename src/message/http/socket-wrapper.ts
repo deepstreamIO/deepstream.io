@@ -1,36 +1,33 @@
-'use strict'
-
-/* eslint-disable class-methods-use-this */
 import { EventEmitter } from 'events'
 import { parseData, isError } from '../../../binary-protocol/src/message-parser'
-import { SocketWrapper, DeepstreamServices } from '../../types'
+import { DeepstreamServices, UnauthenticatedSocketWrapper } from '../../types'
+import { Message } from '../../constants'
 
-export default class HTTPSocketWrapper extends EventEmitter implements SocketWrapper {
-
-  public user: string
+export default class HTTPSocketWrapper extends EventEmitter implements UnauthenticatedSocketWrapper {
+  public user: string | null = null
   public uuid: number = Math.random()
 
-  private correlationIndex
-  private messageResults
-  private responseCallback
-  private requestTimeout
+  private correlationIndex: number = -1
+  private messageResults: any[] = []
+  private responseCallback: Function | null = null
+  private requestTimeout: NodeJS.Timeout | null = null
 
-  public authData: object
-  public clientData: object
-  public authCallback: Function
-  public isRemote: boolean
+  public authData: object | null = null
+  public clientData: object | null = null
+  public authCallback: Function | null = null
+  public isRemote: boolean = false
   public isClosed: boolean = false
 
-  constructor (options, private services: DeepstreamServices, private onMessageCallback, private onErrorCallback) {
+  constructor (private services: DeepstreamServices, private onMessageCallback: Function, private onErrorCallback: Function) {
     super()
   }
 
   public init (
     authResponseData: any,
-    messageIndex,
-    messageResults,
-    responseCallback,
-    requestTimeoutId
+    messageIndex: number,
+    messageResults: any[],
+    responseCallback: Function,
+    requestTimeoutId: NodeJS.Timeout
    ) {
     this.user = authResponseData.userId || authResponseData.username || 'OPEN'
     this.clientData = authResponseData.clientData
@@ -59,9 +56,6 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
    * Returns a map of parameters that were collected
    * during the initial http request that established the
    * connection
-   *
-   * @public
-   * @returns {Object} handshakeData
    */
   public getHandshakeData () {
     return {}
@@ -70,15 +64,8 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
   /**
    * Sends an error on the specified topic. The
    * action will automatically be set to C.ACTION.ERROR
-   *
-   * @param {String} topic one of C.TOPIC
-   * @param {String} event one of C.EVENT
-   * @param {String} msg generic error message
-   *
-   * @public
-   * @returns {void}
    */
-  public sendError (message, event, errorMessage) {
+  public sendError (message: Message, event: Event, errorMessage: string) {
     if (this.isClosed === false) {
       parseData(message)
       this.onErrorCallback(
@@ -95,13 +82,8 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
 
   /**
    * Sends a message based on the provided action and topic
-   *
-   * @param {Object} message
-   *
-   * @public
-   * @returns {void}
    */
-  public sendMessage (message) {
+  public sendMessage (message: Message) {
     if (isError(message)) {
       message.isError = true
     }
@@ -119,16 +101,12 @@ export default class HTTPSocketWrapper extends EventEmitter implements SocketWra
     }
   }
 
-  public sendNativeMessage (message: any, buffer?: boolean): void {
-    // This can never be called as HTTP API is not a subscriber (Yet)
-  }
-
-  public sendAckMessage (message) {
+  public sendAckMessage (message: Message) {
     message.isAck = true
     this.sendMessage(message)
   }
 
-  public parseData (message) {
+  public parseData (message: Message) {
     return parseData(message)
   }
 

@@ -1,6 +1,26 @@
 const SPLIT_REG_EXP = /[[\]]/g
 
 /**
+* Returns the value of the path or
+* undefined if the path can't be resolved
+*/
+export function getValue (data: any, path: string): any {
+  const tokens = tokenize(path)
+  let value = data
+  for (let i = 0; i < tokens.length; i++) {
+    if (value === undefined) {
+      return undefined
+    }
+    if (typeof value !== 'object') {
+      throw new Error('invalid data or path')
+    }
+    value = value[tokens[i]]
+  }
+
+  return value
+ }
+
+/**
  * This class allows to set or get specific
  * values within a json data structure using
  * string-based paths

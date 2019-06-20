@@ -3,7 +3,7 @@ import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
-import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices } from '../types'
+import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, MetaData } from '../types'
 
 interface Step {
   message: RecordWriteMessage
@@ -46,7 +46,7 @@ export default class RecordTransition {
  private steps: Step[] = []
  private version: number = -1
  private data: any = null
- private currentStep: Step
+ private currentStep: Step | null = null
  private recordRequestMade: boolean = false
  private existingVersions: Step[] = []
  private lastVersion: number | null = null
@@ -54,7 +54,7 @@ export default class RecordTransition {
  private pendingStorageWrites: number = 0
  private pendingCacheWrites: number = 0
 
-  constructor (private name: string, private config: InternalDeepstreamConfig, private services: DeepstreamServices, private recordHandler: RecordHandler, private readonly metaData) {
+  constructor (private name: string, private config: InternalDeepstreamConfig, private services: DeepstreamServices, private recordHandler: RecordHandler, private readonly metaData: MetaData) {
     this.onCacheSetResponse = this.onCacheSetResponse.bind(this)
     this.onStorageSetResponse = this.onStorageSetResponse.bind(this)
     this.onRecord = this.onRecord.bind(this)
@@ -257,11 +257,11 @@ export default class RecordTransition {
    * If the storage response is asynchronous and write acknowledgement is enabled, the transition
    * will not be destroyed until writing to storage is finished
    */
-    if (!isExcluded(this.config.storageExclusionPrefixes, this.name)) {
+    if (!isExcluded(this.config.record.storageExclusionPrefixes, this.name)) {
       this.pendingStorageWrites++
       if (message.isWriteAck) {
         this.setUpWriteAcknowledgement(message, this.currentStep.sender)
-        this.services.storage.set(this.name, this.version, this.data, (error) => this.onStorageSetResponse(error, this.currentStep.sender, message), this.metaData)
+        this.services.storage.set(this.name, this.version, this.data, (error) => this.onStorageSetResponse(error, this.currentStep!.sender, message), this.metaData)
       } else {
         this.services.storage.set(this.name, this.version, this.data, this.onStorageSetResponse, this.metaData)
       }
@@ -270,7 +270,7 @@ export default class RecordTransition {
     this.pendingCacheWrites++
     if (message.isWriteAck) {
       this.setUpWriteAcknowledgement(message, this.currentStep.sender)
-      this.services.cache.set(this.name, this.version, this.data, (error) => this.onCacheSetResponse(error, this.currentStep.sender, message), this.metaData)
+      this.services.cache.set(this.name, this.version, this.data, (error) => this.onCacheSetResponse(error, this.currentStep!.sender, message), this.metaData)
     } else {
       this.services.cache.set(this.name, this.version, this.data, this.onCacheSetResponse, this.metaData)
     }
@@ -332,6 +332,11 @@ export default class RecordTransition {
  * next step invoked
  */
   private onCacheSetResponse (error: string | null, socketWrapper?: SocketWrapper, message?: Message): void {
+    if (this.currentStep === null) {
+      // TODO: Log an extreme
+      return
+    }
+
     if (message && socketWrapper) {
       this.handleWriteAcknowledgement(error, socketWrapper, message)
     }

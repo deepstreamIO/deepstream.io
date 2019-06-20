@@ -2,7 +2,7 @@ import 'mocha'
 import { expect } from 'chai'
 
 import * as C from '../constants'
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 
 const noop = function () {}
 
@@ -11,7 +11,7 @@ const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return services.logger._log.lastCall.args[2]
+  return services.logger.logSpy.lastCall.args[2]
 }
 
 describe('constructs data for patch message validation', () => {
@@ -34,7 +34,7 @@ describe('constructs data for patch message validation', () => {
       data: '"Miller"'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
       next()
@@ -62,7 +62,7 @@ describe('constructs data for patch message validation', () => {
       data: '"Hempel"'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       next()
@@ -88,7 +88,7 @@ describe('constructs data for patch message validation', () => {
       data: '['
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('SyntaxError: Unexpected end of JSON input')
       expect(result).to.equal(false)
       next()
@@ -112,7 +112,7 @@ describe('constructs data for patch message validation', () => {
       data: '"Hempel"'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('Tried to apply patch to non-existant record somerecord')
       expect(result).to.equal(false)
       next()

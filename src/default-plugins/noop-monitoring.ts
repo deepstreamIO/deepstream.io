@@ -1,15 +1,9 @@
-import { EventEmitter } from 'events'
-import { MonitoringPlugin } from '../types'
+import { Monitoring, DeepstreamPlugin } from '../types'
 import { LOG_LEVEL, EVENT, Message } from '../constants'
 
-export default class LocalMonitoring extends EventEmitter implements MonitoringPlugin {
+export default class LocalMonitoring extends DeepstreamPlugin implements Monitoring {
   public description: string = 'noop monitoring'
-  public isReady: boolean = true
   public apiVersion = 1
-
-  constructor () {
-    super()
-  }
 
   public onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
   }

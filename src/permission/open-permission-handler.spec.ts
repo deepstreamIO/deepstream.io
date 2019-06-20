@@ -14,7 +14,7 @@ describe('open permission handler', () => {
       action: 'Since it allows anything',
       data: ['anything']
     }
-    permissionHandler.canPerformAction('someone', message, (error, success) => {
+    permissionHandler.canPerformAction('someone', message, (socketWrapper, msg, passItOn, error, success) => {
       expect(error).to.equal(null)
       expect(success).to.equal(true)
       done()

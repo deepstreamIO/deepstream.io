@@ -6,7 +6,7 @@ import { join as joinPath } from 'path'
 import { EventEmitter } from 'events'
 
 import * as pkg from '../package.json'
-import { combineEvents, merge } from './utils/utils'
+import { merge } from './utils/utils'
 import * as constants_ from './constants'
 const { STATES, EVENT, TOPIC } = constants_
 
@@ -24,11 +24,10 @@ import * as configInitialiser from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
 import * as configValidator from './config/config-validator'
 
-import MessageConnector from './cluster/cluster-node'
-import LockRegistry from './cluster/lock-registry'
 import DependencyInitialiser from './utils/dependency-initialiser'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
-import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types.js'
+import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types'
+import { getValue, setValue } from './record/json-path'
 
 /**
  * Sets the name of the process
@@ -40,33 +39,28 @@ export const constants = constants_
 export class Deepstream extends EventEmitter {
   public constants: any
 
-  protected config: InternalDeepstreamConfig
-  protected services: DeepstreamServices
+  private configFile!: string
+
+  private config!: InternalDeepstreamConfig
+  private services!: DeepstreamServices
 
   private messageProcessor: any
   private messageDistributor: any
 
-  private eventHandler: EventHandler
-  private rpcHandler: RpcHandler
-  private recordHandler: RecordHandler
-  private presenceHandler: PresenceHandler
-  private monitoringHandler: MonitoringHandler
+  private eventHandler!: EventHandler
+  private rpcHandler!: RpcHandler
+  private recordHandler!: RecordHandler
+  private presenceHandler!: PresenceHandler
+  private monitoringHandler!: MonitoringHandler
 
   private stateMachine: any
   private currentState: any
-
-  private configFile: string
 
 /**
  * Deepstream is a realtime data server that supports data-sync,
  * Deepstream is a realtime data server that supports data-sync,
  * publish-subscribe, request-response, listeneing, permissioning
  * and a host of other features!
- *
- * @copyright 2018 deepstreamHub GmbH
- * @author deepstreamHub GmbH
- *
- * @constructor
  */
   constructor (config: DeepstreamConfig | string | null) {
     super()
@@ -78,20 +72,22 @@ export class Deepstream extends EventEmitter {
       init: STATES.STOPPED,
       transitions: [
       { name: 'start', from: STATES.STOPPED, to: STATES.LOGGER_INIT, handler: this.loggerInit },
-      { name: 'logger-started', from: STATES.LOGGER_INIT, to: STATES.PLUGIN_INIT, handler: this.pluginInit },
-      { name: 'plugins-started', from: STATES.PLUGIN_INIT, to: STATES.SERVICE_INIT, handler: this.serviceInit },
-      { name: 'services-started', from: STATES.SERVICE_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this.connectionEndpointInit },
-      { name: 'connection-endpoints-started', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.RUNNING, handler: this.run },
+      { name: 'logger-started', from: STATES.LOGGER_INIT, to: STATES.SERVICE_INIT, handler: this.serviceInit },
+      { name: 'services-started', from: STATES.SERVICE_INIT, to: STATES.HANDLER_INIT, handler: this.handlerInit },
+      { name: 'handlers-started', from: STATES.HANDLER_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this.connectionEndpointInit },
+      { name: 'connection-endpoints-started', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.PLUGIN_INIT, handler: this.pluginsInit },
+      { name: 'plugins-started', from: STATES.PLUGIN_INIT, to: STATES.RUNNING, handler: this.run },
 
       { name: 'stop', from: STATES.LOGGER_INIT, to: STATES.LOGGER_SHUTDOWN, handler: this.loggerShutdown },
-      { name: 'stop', from: STATES.PLUGIN_INIT, to: STATES.PLUGIN_SHUTDOWN, handler: this.pluginShutdown },
       { name: 'stop', from: STATES.SERVICE_INIT, to: STATES.SERVICE_SHUTDOWN, handler: this.serviceShutdown },
       { name: 'stop', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this.connectionEndpointShutdown },
-      { name: 'stop', from: STATES.RUNNING, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this.connectionEndpointShutdown },
+      { name: 'stop', from: STATES.PLUGIN_INIT, to: STATES.PLUGIN_SHUTDOWN, handler: this.pluginsShutdown },
 
-      { name: 'connection-endpoints-closed', from: STATES.CONNECTION_ENDPOINT_SHUTDOWN, to: STATES.SERVICE_SHUTDOWN, handler: this.serviceShutdown },
-      { name: 'services-closed', from: STATES.SERVICE_SHUTDOWN, to: STATES.PLUGIN_SHUTDOWN, handler: this.pluginShutdown },
-      { name: 'plugins-closed', from: STATES.PLUGIN_SHUTDOWN, to: STATES.LOGGER_SHUTDOWN, handler: this.loggerShutdown },
+      { name: 'stop', from: STATES.RUNNING, to: STATES.PLUGIN_SHUTDOWN, handler: this.pluginsShutdown },
+      { name: 'plugins-closed', from: STATES.PLUGIN_SHUTDOWN, to: STATES.CONNECTION_ENDPOINT_SHUTDOWN, handler: this.connectionEndpointShutdown },
+      { name: 'connection-endpoints-closed', from: STATES.CONNECTION_ENDPOINT_SHUTDOWN, to: STATES.HANDLER_SHUTDOWN, handler: this.handlerShutdown },
+      { name: 'handlers-closed', from: STATES.HANDLER_SHUTDOWN, to: STATES.SERVICE_SHUTDOWN, handler: this.serviceShutdown },
+      { name: 'services-closed', from: STATES.SERVICE_SHUTDOWN, to: STATES.LOGGER_SHUTDOWN, handler: this.loggerShutdown },
       { name: 'logger-closed', from: STATES.LOGGER_SHUTDOWN, to: STATES.STOPPED, handler: this.stopped },
       ]
     }
@@ -103,15 +99,19 @@ export class Deepstream extends EventEmitter {
  * please see default-options.
  */
   public set (key: string, value: any): any {
-    if (this.services[key] !== undefined) {
-      this.services[key] = value
+    if (key === 'storageExclusion') {
+        throw new Error('storageExclusion has been replace with record.storageExclusionPrefixes instead, which is an array of prefixes')
+    }
+
+    if ((this.services as any)[key] !== undefined) {
+      (this.services as any)[key] = value
       if (key === 'storage' || key === 'cache') {
-        if (this.services[key].apiVersion !== 2) {
-          configInitialiser.storageCompatability(this.services[key])
+        if ((this.services as any)[key].apiVersion !== 2) {
+          configInitialiser.storageCompatability((this.services as any)[key])
         }
       }
-    } else if (this.config[key] !== undefined) {
-      this.config[key] = value
+    } else if (getValue(this.config, key) !== undefined) {
+      setValue(this.config, key, value)
     } else {
       throw new Error(`Unknown option or service "${key}"`)
     }
@@ -210,16 +210,8 @@ export class Deepstream extends EventEmitter {
       }
       this.transition('logger-started')
     })
-  }
 
-/**
- * Invoked once the logger is initialised. Initialises any built-in or custom Deepstream plugins.
- */
-  protected pluginInit (): void {
-    this.services.subscriptions = new SubscriptionRegistryFactory(this.config, this.services)
-    this.services.message = new MessageConnector(this.config, this.services, 'deepstream')
-
-    const infoLogger = (message) => this.services.logger.info(EVENT.INFO, message)
+    const infoLogger = (message: string) => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`server name: ${this.config.serverName}`)
     infoLogger(`deepstream version: ${pkg.version}`)
 
@@ -231,44 +223,40 @@ export class Deepstream extends EventEmitter {
     if (global.deepstreamLibDir) {
       infoLogger(`library directory set to: ${global.deepstreamLibDir}`)
     }
-
-    this.services.registeredPlugins.forEach((pluginType) => {
-      const plugin = this.services[pluginType]
-      const initialiser = new DependencyInitialiser(this, this.config, this.services, plugin, pluginType)
-      initialiser.once('ready', () => {
-        this.checkReady(pluginType, plugin)
-      })
-      return initialiser
-    })
   }
 
-/**
- * Called whenever a dependency emits a ready event. Once all dependencies are ready
- * deepstream moves to the init step.
- */
-  private checkReady (pluginType: string, plugin: DeepstreamPlugin): void {
-    if (plugin instanceof EventEmitter) {
-      plugin.on('error', this.onPluginError.bind(this, pluginType))
-    }
-    plugin.isReady = true
+  /**
+   * Invoked once the logger is initialised. Initialises all deepstream services.
+  */
+  private async serviceInit () {
+    this.services.subscriptions = new SubscriptionRegistryFactory(this.config, this.services)
 
-    const allPluginsReady = this.services.registeredPlugins.every((type) => this.services[type].isReady)
+    const readyPromises = Object.keys(this.services).reduce((promises, serviceName) => {
+      if (['subscriptions', 'connectionEndpoints', 'plugins'].includes(serviceName)) {
+        return promises
+      }
+      const service = (this.services as any)[serviceName] as DeepstreamPlugin
+      const initialiser = new DependencyInitialiser(this, this.config, this.services, service, serviceName)
+      if (initialiser.isReady === false) {
+        promises.push(new Promise((resolve) => initialiser.once('ready', resolve)))
+      }
+      return promises
+    }, [] as Array<Promise<void>>)
 
-    if (allPluginsReady && this.currentState === STATES.PLUGIN_INIT) {
-      this.transition('plugins-started')
-    }
+    await readyPromises
+
+    this.messageProcessor = new MessageProcessor(this.config, this.services)
+    this.messageDistributor = new MessageDistributor(this.config, this.services)
+    this.services.messageDistributor = this.messageDistributor
+
+    this.transition('services-started')
   }
 
 /**
  * Invoked once all plugins are initialised. Instantiates the messaging pipeline and
  * the various handlers.
  */
-  protected serviceInit (): void {
-    this.messageProcessor = new MessageProcessor(this.config, this.services)
-    this.messageDistributor = new MessageDistributor(this.config, this.services)
-
-    this.services.uniqueRegistry = new LockRegistry(this.config, this.services)
-
+  private async handlerInit () {
     this.eventHandler = new EventHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
       TOPIC.EVENT,
@@ -306,39 +294,46 @@ export class Deepstream extends EventEmitter {
       this.services.permissionHandler.setRecordHandler(this.recordHandler)
     }
 
-    process.nextTick(() => this.transition('services-started'))
+    this.transition('handlers-started')
   }
 
 /**
  * Invoked once all dependencies and services are initialised.
  * The startup sequence will be complete once the connection endpoint is started and listening.
  */
-  private connectionEndpointInit (): void {
+  private async connectionEndpointInit (): Promise<void> {
     const endpoints = this.services.connectionEndpoints
-    const initialisers: any[] = []
+    const readyPromises: Array<Promise<void>> = []
 
     for (let i = 0; i < endpoints.length; i++) {
       const connectionEndpoint = endpoints[i]
-      initialisers[i] = new DependencyInitialiser(
-      this,
-      this.config,
-      this.services,
-      connectionEndpoint,
-      'connectionEndpoint'
-    )
+      const dependencyInitialiser = new DependencyInitialiser(
+        this,
+        this.config,
+        this.services,
+        connectionEndpoint,
+        'connectionEndpoint'
+      )
 
       connectionEndpoint.onMessages = this.messageProcessor.process.bind(this.messageProcessor)
       connectionEndpoint.on(
-      'client-connected',
-      this.presenceHandler.handleJoin.bind(this.presenceHandler)
-    )
+        'client-connected',
+        this.presenceHandler.handleJoin.bind(this.presenceHandler)
+      )
       connectionEndpoint.on(
-      'client-disconnected',
-      this.presenceHandler.handleLeave.bind(this.presenceHandler)
-    )
+        'client-disconnected',
+        this.presenceHandler.handleLeave.bind(this.presenceHandler)
+      )
+
+      readyPromises.push(new Promise((resolve) => dependencyInitialiser.on('ready', resolve)))
     }
 
-    combineEvents(initialisers, 'ready', () => this.transition('connection-endpoints-started'))
+    await Promise.all(readyPromises)
+    this.transition('connection-endpoints-started')
+  }
+
+  private async pluginsInit () {
+    this.transition('plugins-started')
   }
 
 /**
@@ -349,57 +344,51 @@ export class Deepstream extends EventEmitter {
     this.emit('started')
   }
 
+  /**
+ * Close any (perhaps partially initialised) plugins.
+ */
+private async pluginsShutdown () {
+  const shutdownPromises = Object.keys(this.services.plugins).reduce((promises, pluginName) => {
+    const plugin = this.services.plugins[pluginName]
+    if (plugin.close) {
+      promises.push(plugin.close())
+    }
+    return promises
+  }, [] as Array<Promise<void>> )
+  await Promise.all(shutdownPromises)
+  this.transition('plugins-closed')
+}
+
 /**
  * Begin deepstream shutdown.
  * Closes the (perhaps partially initialised) connectionEndpoints.
  */
-  private connectionEndpointShutdown (): void {
-    const endpoints = this.services.connectionEndpoints
-    endpoints.forEach((endpoint) => {
-      process.nextTick(() => endpoint.close())
-    })
-
-    combineEvents(endpoints, 'close', () => this.transition('connection-endpoints-closed'))
+  private async connectionEndpointShutdown (): Promise<void> {
+    const closeCallbacks = this.services.connectionEndpoints.map((endpoint) => endpoint.close())
+    await Promise.all(closeCallbacks)
+    this.transition('connection-endpoints-closed')
   }
 
-/**
- * Shutdown the services.
- */
-  private serviceShutdown (): void {
-    this.services.message.close(() => this.transition('services-closed'))
+  private async handlerShutdown () {
+    this.transition('handlers-closed')
   }
 
-/**
- * Close any (perhaps partially initialised) plugins.
- */
-  private pluginShutdown (): void {
-    const closeablePlugins: DeepstreamPlugin[] = []
-    this.services.registeredPlugins.forEach((pluginType) => {
-      const plugin = this.services[pluginType]
-      if (typeof plugin.close === 'function') {
-        process.nextTick(() => plugin.close())
-        closeablePlugins.push(plugin)
-      }
-    })
-
-    if (closeablePlugins.length > 0) {
-      combineEvents(closeablePlugins, 'close', () => this.transition('plugins-closed'))
-    } else {
-      process.nextTick(() => this.transition('plugins-closed'))
-    }
+  /**
+   * Shutdown the services.
+   */
+  private async serviceShutdown (): Promise<void> {
+    await this.services.cluster.close()
+    await this.services.message.close()
+    this.transition('services-closed')
   }
 
 /**
  * Close the (perhaps partially initialised) logger.
  */
-  private loggerShutdown (): void {
+  private async loggerShutdown () {
     const logger = this.services.logger as any
-    if (typeof logger.close === 'function') {
-      process.nextTick(() => logger.close())
-      logger.once('close', () => this.transition('logger-closed'))
-      return
-    }
-    process.nextTick(() => this.transition('logger-closed'))
+    await logger.close()
+    this.transition('logger-closed')
   }
 
 /**
@@ -458,3 +447,5 @@ export class Deepstream extends EventEmitter {
     }
   }
 }
+
+export default Deepstream

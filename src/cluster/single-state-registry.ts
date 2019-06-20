@@ -1,29 +1,28 @@
+import { StateRegistry, DeepstreamPlugin, StateRegistryCallback } from '../types'
 import { EventEmitter } from 'events'
-import { TOPIC } from '../constants'
 
 /**
  * This class provides a generic mechanism that allows to maintain
  * a distributed state amongst the nodes of a cluster.
- *
- * @event 'add' emitted whenever an entry is added for the first time
- * @event 'remove' emitted whenever an entry is removed by the last node
  */
-export default class StateRegistry extends EventEmitter {
+export class SingleStateRegistry extends DeepstreamPlugin implements StateRegistry {
+  public description: string = 'Single State Registry'
   private readonly data = new Map<string, number>()
-
-  /**
-  * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
-  */
-  // @ts-ignore
-  constructor (private topic: TOPIC, private options: InternalDeepstreamConfig) {
-    super()
-  }
+  private emitter = new EventEmitter()
 
   /**
   * Checks if a given entry exists within the registry
   */
   public has (name: string): boolean {
     return this.data.has(name)
+  }
+
+  public onAdd (callback: StateRegistryCallback): void {
+    this.emitter.on('add', callback)
+  }
+
+  public onRemove (callback: StateRegistryCallback): void {
+    this.emitter.on('remove', callback)
   }
 
   /**
@@ -34,7 +33,7 @@ export default class StateRegistry extends EventEmitter {
     const current = this.data.get(name)
     if (!current) {
       this.data.set(name, 1)
-      this.emit('add', name)
+      this.emitter.emit('add', name)
     } else {
       this.data.set(name, current + 1)
     }
@@ -48,7 +47,7 @@ export default class StateRegistry extends EventEmitter {
     const current = this.data.get(name)! - 1
     if (current === 0) {
       this.data.delete(name)
-      this.emit('remove', name)
+      this.emitter.emit('remove', name)
     } else {
       this.data.set(name, current)
     }
@@ -59,17 +58,6 @@ export default class StateRegistry extends EventEmitter {
   */
   public getAll (): string[] {
     return [ ...this.data.keys() ]
-  }
-
-  public getAllMap (): Map<string, number> {
-    return this.data
-  }
-
-  /**
-   * Cluster placeholders
-   */
-
-  public whenReady (callback: Function): void {
   }
 
   /**

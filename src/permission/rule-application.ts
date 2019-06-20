@@ -10,8 +10,8 @@ import * as jsonPath from '../record/json-path'
 import RecordHandler from '../record/record-handler'
 import { recordRequest } from '../record/record-request'
 import { EOL } from 'os'
-import {RecordData} from '../../binary-protocol/src/message-constants'
-import { Message, ValveConfig, Logger, SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, PermissionCallback } from '../types'
+import {RecordData, Message} from '../../binary-protocol/src/message-constants'
+import { ValveConfig, Logger, SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, PermissionCallback } from '../types'
 
 const OPEN = 'open'
 const LOADING = 'loading'
@@ -30,7 +30,8 @@ interface RuleApplicationParams {
    regexp: RegExp
    rule: any
    name: string
-   callback: PermissionCallback
+   callback: PermissionCallback,
+   passItOn: any,
    permissionOptions: ValveConfig
    logger: Logger
    recordHandler: RecordHandler
@@ -106,7 +107,7 @@ export default class RuleApplication {
     }
 
     if (this.isReady()) {
-      this.params.callback(this.params.socketWrapper, this.params.message, null, result)
+      this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, null, result)
       this.destroy()
     }
   }
@@ -122,7 +123,7 @@ export default class RuleApplication {
     const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL}for ${this.params.path}: ${error.toString()}`
 
     this.params.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg)
-    this.params.callback(this.params.socketWrapper, this.params.message, EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
+    this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
     this.destroy()
   }
 
@@ -143,11 +144,11 @@ export default class RuleApplication {
    * Called whenever a storage or cache retrieval fails. Any kind of error during the
    * permission process is treated as a denied permission
    */
-  private onLoadError (event: any, errorMessage: string, recordName: string, socket: SocketWrapper) {
+  private onLoadError (event: any, errorMessage: string, recordName: string, socket: SocketWrapper | null) {
     this.recordsData.set(recordName, ERROR)
     const errorMsg = `failed to load record ${this.params.name} for permissioning:${errorMessage}`
     this.params.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], errorMsg)
-    this.params.callback(this.params.socketWrapper, this.params.message, RECORD_ACTIONS.RECORD_LOAD_ERROR, false)
+    this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, RECORD_ACTIONS.RECORD_LOAD_ERROR, false)
     this.destroy()
   }
 

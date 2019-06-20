@@ -5,6 +5,11 @@ serverName: UUID
 showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 logLevel: INFO
+# Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
+dependencyInitialisationTimeout: 2000
+# Kill the process if deepstream encounters an error. This is useful for situations where connection to a cache
+# or storage is lost to not get into an odd state. Currently this is very ungraceful and will exit instantly.
+exitOnPluginError: false
 # Directory where all plugins reside
 #libDir: ../lib
 
@@ -13,6 +18,42 @@ sslKey: null
 sslCert: null
 sslDHParams: null
 sslPassphrase: null
+
+rpc:
+  # Timeout for client RPC acknownledgement
+  ackTimeout: 1000
+  # Timeout for actual RPC provider response
+  responseTimeout: 10000
+
+record:
+  # Maximum time permitted to fetch from cache
+  cacheRetrievalTimeout: 1000
+  # Maximum time permitted to fetch from storage
+  storageRetrievalTimeout: 2000
+  # A list of prefixes that, when a record starts with one of the prefixes the
+  # records data won't be stored in the db
+  # storageExclusionPrefixes:
+  #   - no-storage/
+  #   - temporary-data/
+  # A list of prefixes that, when a record is updated via setData and it matches one of the prefixes
+  # it will be permissioned and written directly to the cache and storage layers
+  # storageHotPathPrefixes:
+  #   - analytics/
+  #   - metrics/
+
+listen:
+  # Try finding a provider randomly rather than by the order they subscribed to.
+  shuffleProviders: true
+  # The amount of time to wait for a provider to acknowledge or reject a listen request
+  responseTimeout: 500
+  # The amount of time before trying to reattempt finding matches for subscriptions. This
+  # is not a cheap operation so it's recommended to raise keep this at minutes rather then
+  # second intervals if you are experiencing heavy loads
+  rematchInterval: 60000
+  # The amount of time a server will refuse to retry finding a subscriber after a previously
+  # failed attempt. This is used to avoid servers constantly trying to find a match without a
+  # cooldown period
+  matchCooldown: 10000
 
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`
@@ -93,89 +134,61 @@ logger:
     # value of logLevel (line 4) will always overwrite this value
     logLevel: INFO
 
-#   # or a custom logger
-#   path: ./my-custom-logger
+# cache:
+#   name: redis
+#   options:
+#     host: ${REDIS_HOST}
+#     port: 6379
 
-# Plugin Configuration
-plugins:
-  # cache:
-  #   name: redis
-  #   options:
-  #     host: ${REDIS_HOST}
-  #     port: 6379
-
-  # storage:
-  #   name: rethinkdb
-  #   options:
-  #     host: localhost
-  #     port: 28015
-
-# Storage options
-# A list of prefixes that, when a record starts with one of the prefixes the
-# records data won't be stored in the db
-# storageExclusionPrefixes:
-#   - no-storage/
-#   - temporary-data/
-# A list of prefixes that, when a record is updated via setData and it matches one of the prefixes
-# it will be permissioned and written directly to the cache and storage layers
-# storageHotPathPrefixes:
-#   - analytics/
-#   - metrics/
+# storage:
+#   name: rethinkdb
+#   options:
+#     host: localhost
+#     port: 28015
 
 # Authentication
 auth:
   type: none
 
-#   # reading users and passwords from a file
-  # type: file
-  # options:
-#     # Path to the user file. Can be json, js or yml
-#     path: ./users.yml
-#     # the name of a HMAC digest algorithm
-#     hash: 'md5'
-#     # the number of times the algorithm should be applied
-#     iterations: 100
-#     # the length of the resulting key
-#     keyLength: 32
+  #  # reading users and passwords from a file
+  #  type: file
+  #  options:
+  #    # Path to the user file. Can be json, js or yml
+  #    path: ./users.yml
+  #    # the name of a HMAC digest algorithm
+  #    hash: 'md5'
+  #    # the number of times the algorithm should be applied
+  #    iterations: 100
+  #    # the length of the resulting key
+  #    keyLength: 32
 
-#   # getting permissions from a http webhook
-  # type: http
-  # options:
-  #   # a post request will be send to this url on every incoming connection
-  #   endpointUrl: https://someurl.com/validateLogin
-  #   # any of these will be treated as access granted
-  #   permittedStatusCodes: [ 200 ]
-  #   # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
-  #   requestTimeout: 2000
-  #   # promote the following items from the login auth data into headers
-  #   promoteToHeader:
-  #    - token
-  #   # the codes which the auth handler should retry. This is useful for when the API you depend on is 
-  #   # flaky or going through a not so blue/green deployment
-  #   retryStatusCodes: [ 404, 504 ]
-  #   # the maximum amount of retries before returning a false login
-  #   retryAttempts: 3
-  #   # the time in milliseconds between retries
-  #   retryInterval: 5000
+  #  # getting permissions from a http webhook
+  #  type: http
+  #  options:
+  #    # a post request will be send to this url on every incoming connection
+  #    endpointUrl: https://someurl.com/validateLogin
+  #    # any of these will be treated as access granted
+  #    permittedStatusCodes: [ 200 ]
+  #    # if the webhook didn't respond after this amount of milliseconds, the connection will be rejected
+  #    requestTimeout: 2000
+  #    # promote the following items from the login auth data into headers
+  #    promoteToHeader:
+  #     - token
+  #    # the codes which the auth handler should retry. This is useful for when the API you depend on is 
+  #    # flaky or going through a not so blue/green deployment
+  #    retryStatusCodes: [ 404, 504 ]
+  #    # the maximum amount of retries before returning a false login
+  #    retryAttempts: 3
+  #    # the time in milliseconds between retries
+  #    retryInterval: 5000
 
 # Permissioning
 permission:
-  # Only config or custom permissionHandler at the moment
-  type: none
-
-# Timeouts (in milliseconds)
-# Timeout for client RPC acknownledgement
-rpcAckTimeout: 1000
-# Timeout for actual RPC provider response
-rpcTimeout: 10000
-# Maximum time permitted to fetch from cache
-cacheRetrievalTimeout: 1000
-# Maximum time permitted to fetch from storage
-storageRetrievalTimeout: 2000
-# Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
-dependencyInitialisationTimeout: 2000
-# The amount of time to wait for a provider to acknowledge or reject a listen request
-listenResponseTimeout: 500
-# Kill the process if deepstream encounters an error. This is useful for situations where connection to a cache
-# or storage is lost to not get into an odd state. Currently this is very ungraceful and will exit instantly.
-exitOnPluginError: false
+  type: config
+  options:
+    # Path to the permissionFile. Can be json, js or yml
+    path: ./permissions.yml
+    # Amount of times nested cross-references will be loaded. Avoids endless loops
+    maxRuleIterations: 3
+    # PermissionResults are cached to increase performance. Lower number means more loading
+    cacheEvacuationInterval: 60000

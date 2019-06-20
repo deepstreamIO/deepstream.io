@@ -2,9 +2,9 @@ import { EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constant
 import { SocketWrapper, Provider } from '../types'
 
 export default class ListenerTimeoutRegistry {
-  private timeoutMap: any
-  private timedoutProviders: any
-  private acceptedProvider: any
+  private timeoutMap: { [index: string]: NodeJS.Timeout }
+  private timedoutProviders: { [index: string]: Provider[] }
+  private acceptedProvider: { [index: string]: Provider }
   private actions: any
 
   /**
@@ -95,7 +95,7 @@ export default class ListenerTimeoutRegistry {
         subscription: subscriptionName
       })
       callback(subscriptionName)
-    }, this.config.listenResponseTimeout)
+    }, this.config.listen.responseTimeout)
     this.timeoutMap[subscriptionName] = timeoutId
   }
 
@@ -103,7 +103,7 @@ export default class ListenerTimeoutRegistry {
     * Clear the timeout for a LISTEN_ACCEPT or LISTEN_REJECT recieved
     * by the listen registry
     */
-  public clearTimeout (subscriptionName): void {
+  public clearTimeout (subscriptionName: string): void {
     clearTimeout(this.timeoutMap[subscriptionName])
     delete this.timeoutMap[subscriptionName]
   }

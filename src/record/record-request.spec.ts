@@ -8,7 +8,7 @@ const recordRequest = require('./record-request').recordRequest
 import { Promise as BBPromise } from 'bluebird'
 import { getTestMocks } from '../test/helper/test-mocks'
 import { RECORD_ACTIONS } from '../constants'
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 
 describe('record request', () => {
   const completeCallback = spy()
@@ -26,9 +26,11 @@ describe('record request', () => {
     const options = testHelper.getDeepstreamOptions()
     services = options.services
     config = Object.assign({}, options.config, {
-      cacheRetrievalTimeout: 100,
-      storageRetrievalTimeout: 100,
-      storageExclusionPrefixes: ['dont-save']
+      record: {
+        cacheRetrievalTimeout: 100,
+        storageRetrievalTimeout: 100,
+        storageExclusionPrefixes: ['dont-save']
+      }
     })
     services.cache.set('existingRecord', 1, cacheData, () => {})
     services.storage.set('onlyExistsInStorage', 1, storageData, () => {})
@@ -176,7 +178,7 @@ describe('record request', () => {
         )
       expect(completeCallback).to.have.callCount(0)
 
-      expect(services.logger._log).to.have.been.calledWith(
+      expect(services.logger.logSpy).to.have.been.calledWith(
         3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading cacheError from cache:storageError'
       )
       // expect(client.socketWrapper.socket.lastSendMessage).to.equal(
@@ -208,13 +210,13 @@ describe('record request', () => {
         )
       expect(completeCallback).to.have.callCount(0)
 
-      expect(services.logger._log).to.have.been.calledWith(3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading storageError from storage:storageError')
+      expect(services.logger.logSpy).to.have.been.calledWith(3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading storageError from storage:storageError')
       // expect(socketWrapper.socket.lastSendMessage).to.equal(msg('R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+'))
     })
 
     describe('handles cache timeouts', () => {
       beforeEach(() => {
-        config.cacheRetrievalTimeout = 1
+        config.record.cacheRetrievalTimeout = 1
         services.cache.nextGetWillBeSynchronous = false
         services.cache.nextOperationWillBeSuccessful = true
       })
@@ -240,7 +242,7 @@ describe('record request', () => {
             'willTimeoutCache',
             'willTimeoutCache',
             client.socketWrapper
-            )
+          )
           expect(completeCallback).to.have.callCount(0)
 
           // ignores update from cache that may occur afterwards
@@ -254,7 +256,7 @@ describe('record request', () => {
 
     describe('handles storage timeouts', () => {
       beforeEach(() => {
-        config.storageRetrievalTimeout = 1
+        config.record.storageRetrievalTimeout = 1
         services.cache.nextGetWillBeSynchronous = true
         services.cache.nextOperationWillBeSuccessful = true
         services.storage.nextGetWillBeSynchronous = false

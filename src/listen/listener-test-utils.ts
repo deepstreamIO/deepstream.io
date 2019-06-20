@@ -6,20 +6,29 @@ import * as testHelper from '../test/helper/test-helper'
 import * as C from '../constants'
 import { getTestMocks } from '../test/helper/test-mocks'
 import * as sinon from 'sinon'
+import { TOPIC, ListenMessage } from '../../binary-protocol/src/message-constants'
+import SubscriptionRegistry from '../utils/subscription-registry'
+import { SocketWrapper } from '../types'
 
 export default class ListenerTestUtils {
   private actions: any
   private subscribedTopics: string[] = []
 
-  private topic
+  private topic: TOPIC.RECORD | TOPIC.EVENT
   private subscribers = new Set()
-  private clientRegistryMock
-  private providers
-  private clients
-  private listenerRegistry
-  private clientRegistry
+  private clientRegistryMock: any
+  private providers: Array<{
+    socketWrapper: SocketWrapper,
+    socketWrapperMock: any
+  }>
+  private clients: Array<{
+    socketWrapper: SocketWrapper,
+    socketWrapperMock: any
+  }>
+  private listenerRegistry: ListenerRegistry
+  private clientRegistry: SubscriptionRegistry
 
-  constructor (listenerTopic?: C.TOPIC) {
+  constructor (listenerTopic?: TOPIC.RECORD | TOPIC.EVENT) {
     const { config, services } = testHelper.getDeepstreamOptions()
 
     this.topic = listenerTopic || C.TOPIC.RECORD
@@ -33,7 +42,7 @@ export default class ListenerTestUtils {
     const self = this
     this.clientRegistry = {
       hasName (subscriptionName: string) {
-        return self.subscribedTopics.indexOf(subscriptionName)
+        return self.subscribedTopics.indexOf(subscriptionName) === -1
       },
       getNames () {
         return self.subscribedTopics
@@ -45,28 +54,30 @@ export default class ListenerTestUtils {
         return self.subscribers.size > 0
       },
       sendToSubscribers: () => {}
-    }
-    self.clientRegistryMock = sinon.mock(self.clientRegistry)
+    } as never as SubscriptionRegistry
+    this.clientRegistryMock = sinon.mock(this.clientRegistry)
 
-    config.listenResponseTimeout = 30
-    config.shuffleListenProviders = false
-    config.stateReconciliationTimeout = 10
+    config.listen.responseTimeout = 30
+    config.listen.shuffleProviders = false
+    // config.stateReconciliationTimeout = 10
 
-    self.clients = [
+    this.clients = [
+      // @ts-ignore
       null, // to make tests start from 1
       getTestMocks().getSocketWrapper('c1'),
       getTestMocks().getSocketWrapper('c2'),
       getTestMocks().getSocketWrapper('c3')
     ]
 
-    self.providers = [
+    this.providers = [
+      // @ts-ignore
       null, // to make tests start from 1
       getTestMocks().getSocketWrapper('p1'),
       getTestMocks().getSocketWrapper('p2'),
       getTestMocks().getSocketWrapper('p3')
     ]
 
-    self.listenerRegistry = new ListenerRegistry(self.topic, config, services, self.clientRegistry)
+    this.listenerRegistry = new ListenerRegistry(self.topic, config, services, self.clientRegistry)
     expect(typeof self.listenerRegistry.handle).to.equal('function')
   }
 
@@ -87,7 +98,7 @@ export default class ListenerTestUtils {
   /**
   * Provider Utils
   */
-  public providerListensTo (provider, pattern): void {
+  public providerListensTo (provider: number, pattern: string): void {
     this.providers[provider].socketWrapperMock
       .expects('sendAckMessage')
       .once()
@@ -101,10 +112,10 @@ export default class ListenerTestUtils {
         topic: this.topic,
         action: this.actions.LISTEN,
         name: pattern
-      })
+      } as never as ListenMessage)
   }
 
-  public providerUnlistensTo (provider, pattern) {
+  public providerUnlistensTo (provider: number, pattern: string) {
     this.providers[provider].socketWrapperMock
       .expects('sendAckMessage')
       .once()
@@ -117,11 +128,11 @@ export default class ListenerTestUtils {
     this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
       topic: this.topic,
       action: this.actions.UNLISTEN,
-      name: pattern
-    })
+      name: pattern,
+    } as never as ListenMessage)
   }
 
-  public providerWillGetListenTimeout (provider, subscription) {
+  public providerWillGetListenTimeout (provider: number, subscription: string) {
     this.providers[provider].socketWrapperMock
       .expects('sendMessage')
       .once()
@@ -132,7 +143,7 @@ export default class ListenerTestUtils {
       })
   }
 
-  public providerWillGetSubscriptionFound (provider, pattern, subscription) {
+  public providerWillGetSubscriptionFound (provider: number, pattern: string, subscription: string) {
     this.providers[provider].socketWrapperMock
       .expects('sendMessage')
       .once()
@@ -144,7 +155,7 @@ export default class ListenerTestUtils {
       })
   }
 
-  public providerWillGetSubscriptionRemoved (provider, pattern, subscription) {
+  public providerWillGetSubscriptionRemoved (provider: number, pattern: string, subscription: string) {
     this.providers[provider].socketWrapperMock
       .expects('sendMessage')
       .once()
@@ -156,11 +167,11 @@ export default class ListenerTestUtils {
       })
   }
 
-  public providerAcceptsButIsntAcknowledged (provider, pattern, subscriptionName) {
+  public providerAcceptsButIsntAcknowledged (provider: number, pattern: string, subscriptionName: string) {
     this.providerAccepts(provider, pattern, subscriptionName, true)
   }
 
-  public providerAccepts (provider, pattern, subscription, doesnthaveActiveProvider) {
+  public providerAccepts (provider: number, pattern: string, subscription: string, doesnthaveActiveProvider: boolean) {
     this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
       topic: this.topic,
       action: this.actions.LISTEN_ACCEPT,
@@ -170,16 +181,16 @@ export default class ListenerTestUtils {
     expect(this.listenerRegistry.hasActiveProvider(subscription)).to.equal(!doesnthaveActiveProvider)
   }
 
-  public providerRejectsAndPreviousTimeoutProviderThatAcceptedIsUsed (provider, pattern, subscriptionName) {
+  public providerRejectsAndPreviousTimeoutProviderThatAcceptedIsUsed (provider: number, pattern: string, subscriptionName: string) {
     this.providerRejects(provider, pattern, subscriptionName, true)
   }
 
-  public providerAcceptsAndIsSentSubscriptionRemoved (provider, pattern, subscriptionName) {
+  public providerAcceptsAndIsSentSubscriptionRemoved (provider: number, pattern: string, subscriptionName: string) {
     this.providerWillGetSubscriptionRemoved(provider, pattern, subscriptionName)
     this.providerAcceptsButIsntAcknowledged(provider, pattern, subscriptionName)
   }
 
-  public providerRejects (provider, pattern, subscription, doNotCheckActiveProvider) {
+  public providerRejects (provider: number, pattern: string, subscription: string, doNotCheckActiveProvider: boolean) {
     this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
       topic: this.topic,
       action: this.actions.LISTEN_REJECT,
@@ -192,18 +203,17 @@ export default class ListenerTestUtils {
     }
   }
 
-  public acceptMessageThrowsError (provider, pattern, subscription) {
+  public acceptMessageThrowsError (provider: number, pattern: string, subscription: string) {
     this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
       topic: this.topic,
       action: this.actions.LISTEN_ACCEPT,
       name: pattern,
       subscription
     })
-    // TODO
     // verify( providers[ provider], this.actions.ERROR, [ C.EVENT.INVALID_MESSAGE, this.actions.LISTEN_ACCEPT, pattern, subscriptionName ] );
   }
 
-  public rejectMessageThrowsError (provider, pattern, subscription) {
+  public rejectMessageThrowsError (provider: number, pattern: string, subscription: string) {
     this.listenerRegistry.handle(this.providers[provider].socketWrapper, {
       topic: this.topic,
       action: this.actions.LISTEN_REJECT,
@@ -215,18 +225,18 @@ export default class ListenerTestUtils {
     // verify( providers[ provider], this.actions.ERROR, [ C.EVENT.INVALID_MESSAGE, this.actions.LISTEN_REJECT, pattern, subscriptionName ] );
   }
 
-  public providerLosesItsConnection (provider) {
-    this.providers[provider].socketWrapper.emit('close', this.providers[provider].socketWrapper)
+  public providerLosesItsConnection (provider: number) {
+    // (this.providers[provider].socketWrapper as any).emit('close', this.providers[provider].socketWrapper)
   }
 
   /**
   * Subscriber Utils
   */
-  public subscriptionAlreadyMadeFor (subscriptionName) {
+  public subscriptionAlreadyMadeFor (subscriptionName: string) {
     this.subscribedTopics.push(subscriptionName)
   }
 
-  public clientSubscribesTo (client, subscriptionName, firstSubscription) {
+  public clientSubscribesTo (client: number, subscriptionName: string, firstSubscription: boolean) {
     if (firstSubscription) {
       this.listenerRegistry.onFirstSubscriptionMade(subscriptionName)
     }
@@ -235,7 +245,7 @@ export default class ListenerTestUtils {
     this.subscribers.add(this.clients[client].socketWrapper)
   }
 
-  public clientUnsubscribesTo (client, subscriptionName, lastSubscription) {
+  public clientUnsubscribesTo (client: number, subscriptionName: string, lastSubscription: boolean) {
     if (lastSubscription) {
       this.listenerRegistry.onLastSubscriptionRemoved(subscriptionName)
     }
@@ -244,7 +254,7 @@ export default class ListenerTestUtils {
     this.subscribers.delete(this.clients[client].socketWrapper)
   }
 
-  public clientWillRecievePublishedUpdate (client, subscription, state) {
+  public clientWillRecievePublishedUpdate (client: number, subscription: string, state: boolean) {
     this.clients[client].socketWrapperMock
       .expects('sendMessage')
       .once()
@@ -255,7 +265,7 @@ export default class ListenerTestUtils {
       })
   }
 
-  public publishUpdateWillBeSentToSubscribers (subscription, state) {
+  public publishUpdateWillBeSentToSubscribers (subscription: string, state: boolean) {
     this.clientRegistryMock
       .expects('sendToSubscribers')
       .once()
@@ -266,7 +276,7 @@ export default class ListenerTestUtils {
       }, false, null)
   }
 
-  public subscriptionHasActiveProvider (subscription, value) {
+  public subscriptionHasActiveProvider (subscription: string, value: string) {
     expect(this.listenerRegistry.hasActiveProvider(subscription)).to.equal(value)
   }
 }

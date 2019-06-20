@@ -1,20 +1,11 @@
-import { EventEmitter } from 'events'
+import { DeepstreamPlugin } from '../../types'
 
-export default class PluginMock extends EventEmitter {
-  public isReady: boolean
-  public description: string
-  public options: any
-  public deepstream: any
+export default class PluginMock extends DeepstreamPlugin {
+  public isReady: boolean = false
+  public description: string = this.name || 'mock-plugin'
 
-  constructor (options, name?) {
+  constructor (options: any, private name?: string) {
     super()
-    this.isReady = false
-    this.description = name || 'mock-plugin'
-    this.options = options
-  }
-
-  public setDeepstream (deepstream: any) {
-
   }
 
   public setReady () {

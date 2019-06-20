@@ -1,12 +1,14 @@
-import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC } from '../constants'
-import { Message } from '../types'
+import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, TOPIC, Message } from '../constants'
+import { Dictionary } from 'ts-essentials'
+
+interface RuleType { name: string, data: boolean, oldData: boolean }
 
 /**
  * Different rule types support different features. Generally, all rules can
  * use cross referencing _() to reference records, but only record writes, incoming events
  * or RPC requests carry data and only existing records have a concept of oldData
  */
-const RULE_TYPES = {
+const RULE_TYPES: Dictionary<RuleType> = {
   CREATE: { name: 'create', data: false, oldData: false },
   READ: { name: 'read', data: false, oldData: true },
   WRITE: { name: 'write', data: true, oldData: true },
@@ -32,7 +34,7 @@ const RULE_TYPES = {
  *    'read': 'user.id === $userId && action !== LISTEN'
  * }
  */
-const RULES_MAP = {
+const RULES_MAP: Dictionary<{ section: string, actions: Dictionary<RuleType> }> = {
   [TOPIC.RECORD]: {
     section: 'record',
     actions: {

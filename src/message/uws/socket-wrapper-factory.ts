@@ -3,27 +3,27 @@ import * as binaryMessageBuilder from '../../../binary-protocol/src/message-buil
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
 import { combineMultipleMessages } from '../../../binary-protocol/src/message-builder'
-import { SocketWrapper, SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices } from '../../types'
+import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper } from '../../types'
 
 /**
  * This class wraps around a websocket
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  */
-export class UwsSocketWrapper implements SocketWrapper {
+export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
 
   public isRemote: false = false
   public isClosed: boolean = false
-  public user: string
+  public user: string | null = null
   public uuid: number = Math.random()
-  public authCallback: Function
+  public authCallback: Function | null = null
   public authAttempts: number = 0
 
   private bufferedWrites: Buffer[]
   private closeCallbacks: Set<Function> = new Set()
 
-  public authData: object
-  public clientData: object
+  public authData: object | null = null
+  public clientData: object | null = null
   private bufferedWritesTotalByteSize: number
 
   constructor (
@@ -109,7 +109,7 @@ export class UwsSocketWrapper implements SocketWrapper {
     delete this.authCallback
 
     this.closeCallbacks.forEach((cb) => cb(this))
-    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.user)
+    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.user!)
   }
 
   /**
@@ -139,7 +139,7 @@ export class UwsSocketWrapper implements SocketWrapper {
       } else {
         this.bufferedWritesTotalByteSize += message.length
         this.bufferedWrites.push(message)
-        this.connectionEndpoint.scheduleFlush(this)
+        this.connectionEndpoint.scheduleFlush(this as SocketWrapper)
       }
     }
   }

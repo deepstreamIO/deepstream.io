@@ -15,13 +15,13 @@ describe('config-initialiser', () => {
     it('loads plugins from a relative path', () => {
       const config = defaultConfig.get()
       config.plugins = {
-        cache: {
+        custom: {
           path: './src/test/mock/plugin-mock',
           options: { some: 'options' }
         }
       } as any
       const result = configInitialiser.initialise(config)
-      expect(result.services.cache.description).to.equal('mock-plugin')
+      expect(result.services.plugins.custom.description).to.equal('mock-plugin')
     })
 
     it('loads plugins via module names', () => {
@@ -41,13 +41,13 @@ describe('config-initialiser', () => {
 
       const config = defaultConfig.get()
       config.plugins = {
-        cache: {
+        mock: {
           path: './plugin-mock',
           options: { some: 'options' }
         }
       } as any
       const result = configInitialiser.initialise(config)
-      expect(result.services.cache.description).to.equal('mock-plugin')
+      expect(result.services.plugins.mock.description).to.equal('mock-plugin')
     })
   })
 
@@ -105,7 +105,7 @@ describe('config-initialiser', () => {
         type: 'none'
       } as any
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.description).to.equal('none')
+      expect(result.services.authenticationHandler.description).to.equal('Open Authentication')
     })
 
     it('works for authtype: user', () => {
@@ -202,7 +202,7 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.description).to.equal('none')
+      expect(result.services.authenticationHandler.description).to.equal('Open Authentication')
       delete global.deepstreamCLI
     })
   })

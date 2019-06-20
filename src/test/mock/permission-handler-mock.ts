@@ -1,12 +1,14 @@
-export default class PermissionHandlerMock {
-  public isReady: boolean
-  public options: any
+import { PermissionCallback, SocketWrapper, DeepstreamPlugin } from '../../types'
+import { Message, JSONObject } from '../../../binary-protocol/src/message-constants'
+
+export default class PermissionHandlerMock extends DeepstreamPlugin {
+  public isReady: boolean = true
   public nextCanPerformActionResult: any
   public lastCanPerformActionQueryArgs: any
+  public description = 'PermissionHandlerMock'
 
-  constructor (options?) {
-    this.isReady = true
-    this.options = options
+  constructor () {
+    super()
     this.reset()
   }
 
@@ -15,12 +17,12 @@ export default class PermissionHandlerMock {
     this.lastCanPerformActionQueryArgs = null
   }
 
-  public canPerformAction (username, message, callback, authData, socketWrapper) {
+  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: JSONObject, socketWrapper: SocketWrapper, passItOn: any) {
     this.lastCanPerformActionQueryArgs = arguments
     if (typeof this.nextCanPerformActionResult === 'string') {
-      callback(socketWrapper, message, this.nextCanPerformActionResult)
+      callback(socketWrapper, message, passItOn, this.nextCanPerformActionResult, false)
     } else {
-      callback(socketWrapper, message, null, this.nextCanPerformActionResult)
+      callback(socketWrapper, message, passItOn, null, this.nextCanPerformActionResult)
     }
   }
 }

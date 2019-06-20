@@ -10,7 +10,7 @@ describe('open authentication handler', () => {
   it('creates the handler', () => {
     authenticationHandler = new AuthenticationHandler()
     expect(typeof authenticationHandler.isValidUser).to.equal('function')
-    expect(authenticationHandler.description).to.equal('none')
+    expect(authenticationHandler.description).to.equal('Open Authentication')
   })
 
   it('permissions users without auth data', () => {

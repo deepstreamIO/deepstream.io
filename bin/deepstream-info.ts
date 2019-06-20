@@ -3,8 +3,9 @@ import * as path from 'path'
 import * as os from 'os'
 import * as glob from 'glob'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
+import { Command } from 'commander'
 
-export const info = (program) => {
+export const info = (program: Command) => {
   program
     .command('info')
     .description('print meta information about build and runtime')
@@ -13,7 +14,7 @@ export const info = (program) => {
     .action(printMeta)
 }
 
-function printMeta () {
+function printMeta (this: any) {
   if (!this.libDir) {
     try {
       global.deepstreamCLI = this
@@ -46,7 +47,7 @@ function printMeta () {
   console.log(JSON.stringify(meta, null, 2))
 }
 
-function fetchLibs (libDir, meta) {
+function fetchLibs (libDir: string, meta: any) {
   const directory = libDir || 'lib'
   const files = glob.sync(path.join(directory, '*', 'package.json'))
   meta.libs = files.map((filePath) => {

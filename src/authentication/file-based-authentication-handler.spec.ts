@@ -302,7 +302,7 @@ describe('file based authentication', () => {
 
       const callback = function (result, data) {
         expect(result).to.eq(false)
-        expect(data.clientData).to.eq('missing authentication parameter username')
+        expect(data.clientData).to.deep.eq({ error: 'missing authentication parameter username' })
         done()
       }
 
@@ -316,7 +316,7 @@ describe('file based authentication', () => {
 
       const callback = function (result, data) {
         expect(result).to.eq(false)
-        expect(data.clientData).to.eq('missing authentication parameter password')
+        expect(data.clientData).to.deep.eq({ error: 'missing authentication parameter password' })
         done()
       }
 

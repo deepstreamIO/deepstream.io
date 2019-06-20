@@ -1,18 +1,12 @@
 import { EventEmitter } from 'events'
 
 export class HttpServerMock extends EventEmitter {
-  public listening: boolean
-  public closed: boolean
+  public listening: boolean  = false
+  public closed: boolean = false
   private port: any
   private host: any
 
-  constructor () {
-    super()
-    this.listening = false
-    this.closed = false
-  }
-
-  public listen (port, host, callback) {
+  public listen (port: string, host: string, callback: Function) {
     this.port = port
     this.host = host
     const server = this
@@ -25,7 +19,7 @@ export class HttpServerMock extends EventEmitter {
     })
   }
 
-  public close (callback) {
+  public close (callback: Function) {
     this.closed = true
     this.emit('close')
     if (callback) {
@@ -40,7 +34,7 @@ export class HttpServerMock extends EventEmitter {
     }
   }
 
-  public _simulateUpgrade (socket) {
+  public _simulateUpgrade (socket: any) {
     const head = {}
     const request = {
       url: 'https://deepstream.io/?ds=foo',

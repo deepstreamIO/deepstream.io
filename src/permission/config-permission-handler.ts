@@ -1,29 +1,24 @@
-import { EventEmitter } from 'events'
 import * as jsYamlLoader from '../config/js-yaml-loader'
-import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS } from '../constants'
+import { EVENT_ACTIONS, PRESENCE_ACTIONS, RECORD_ACTIONS, RPC_ACTIONS, Message } from '../constants'
 import RecordHandler from '../record/record-handler'
 import * as configCompiler from './config-compiler'
 import * as configValidator from './config-validator'
 import RuleApplication from './rule-application'
 import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
-import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, Logger, PermissionCallback, SocketWrapper } from '../types'
-import { Message } from '@deepstream/client/dist/binary-protocol/src/message-constants'
+import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, PermissionCallback, SocketWrapper, ValveSection, DeepstreamPlugin } from '../types'
+import { JSONObject } from '@deepstream/client/dist/binary-protocol/src/message-constants'
 
 const UNDEFINED = 'undefined'
 
-export default class ConfigPermissionHandler extends EventEmitter implements PermissionHandler {
-  public isReady: boolean
-  public description: string
+export default class ConfigPermissionHandler extends DeepstreamPlugin implements PermissionHandler {
+  public isReady: boolean = false
+  public description: string = `valve permissions loaded from ${this.permissionOptions.path}`
 
   private ruleCache: RuleCache
-  private permissionOptions: ValveConfig
-  private config: InternalDeepstreamConfig
-  private services: DeepstreamServices
   private permissions: any
-  private logger: Logger
   private recordHandler: RecordHandler | null = null
-  private optionsValid: boolean
+  private optionsValid: boolean = true
 
   /**
    * A permission handler that reads a rules config YAML or JSON, validates
@@ -34,31 +29,17 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
    * with the default permission.yml it allows everything, but at the same time provides
    * a convenient starting point for permission declarations.
    */
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, permissions: any) {
+  constructor (private permissionOptions: ValveConfig, private services: DeepstreamServices, private config: InternalDeepstreamConfig, permissions?: ValveSection) {
     super()
-    this.logger = services.logger
-    this.config = config
-    this.services = services
-    this.permissionOptions = config.permission.options
     this.ruleCache = new RuleCache(this.permissionOptions)
-    this.isReady = false
-    this.description = `valve permissions loaded from ${this.permissionOptions.path}`
-    this.optionsValid = true
 
-    const maxRuleIterations = config.permission.options.maxRuleIterations
+    const maxRuleIterations = permissionOptions.maxRuleIterations
     if (maxRuleIterations !== undefined && maxRuleIterations < 1) {
       this.optionsValid = false
       process.nextTick(() => this.emit('error', 'Maximum rule iteration has to be at least one '))
     } else if (permissions) {
       this.useConfig(permissions)
     }
-  }
-
-  /**
-   * Will be invoked with the initialised recordHandler instance by deepstream.io
-   */
-  public setRecordHandler (recordHandler: RecordHandler): void {
-    this.recordHandler = recordHandler
   }
 
   /**
@@ -73,13 +54,27 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
   }
 
   /**
+   * Will be invoked with the initialised recordHandler instance by deepstream.io
+   */
+  public setRecordHandler (recordHandler: RecordHandler): void {
+    this.recordHandler = recordHandler
+  }
+
+  /**
    * Load a configuration file. This will either load a configuration file for the first time at
    * startup or reload the configuration at runtime
    *
    * CLI loadConfig <path>
    */
   public loadConfig (filePath: string): void {
-    jsYamlLoader.readAndParseFile(filePath, this.onConfigLoaded.bind(this, filePath))
+    jsYamlLoader.readAndParseFile(filePath, (loadError: Error | null, permissions: any) => {
+      if (loadError) {
+        this.emit('error', `error while loading config: ${loadError.toString()}`)
+        return
+      }
+      this.emit('config-loaded', filePath)
+      this.useConfig(permissions)
+    })
   }
 
   /**
@@ -114,17 +109,17 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
    * - Load the applicable permissions
    * - Apply them
    */
-  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: any, socketWrapper: SocketWrapper) {
+  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: JSONObject, socketWrapper: SocketWrapper, passItOn: any) {
     const ruleSpecification = rulesMap.getRulesForMessage(message)
 
     if (ruleSpecification === null) {
-      callback(socketWrapper, message, null, true)
+      callback(socketWrapper, message, passItOn, null, true)
       return
     }
 
     const ruleData = this.getCompiledRulesForName(message.name!, ruleSpecification)
     if (!ruleData) {
-      callback(socketWrapper, message, null, false)
+      callback(socketWrapper, message, passItOn, null, false)
       return
     }
 
@@ -142,7 +137,8 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
       rule: ruleData.rule,
       name: message.name!,
       callback,
-      logger: this.logger,
+      passItOn,
+      logger: this.services.logger,
       permissionOptions: this.permissionOptions,
       config: this.config,
       services: this.services,
@@ -181,19 +177,6 @@ export default class ConfigPermissionHandler extends EventEmitter implements Per
     }
 
     return result
-  }
-
-  /**
-   * Callback for loadConfig. Parses the incoming configuration string and forwards
-   * it to useConfig if no errors occured
-   */
-  private onConfigLoaded (filePath: string, loadError: Error, permissions: any): void {
-    if (loadError) {
-      this.emit('error', `error while loading config: ${loadError.toString()}`)
-      return
-    }
-    this.emit('config-loaded', filePath)
-    this.useConfig(permissions)
   }
 
   /**

@@ -1,6 +1,6 @@
-import { RPC_ACTIONS, TOPIC, RPCMessage } from '../constants'
+import { RPC_ACTIONS, TOPIC, RPCMessage, Message } from '../constants'
 import RpcHandler from './rpc-handler'
-import { Message, SimpleSocketWrapper, InternalDeepstreamConfig } from '../types'
+import { SimpleSocketWrapper, InternalDeepstreamConfig } from '../types'
 
 /**
  * Relays a remote procedure call from a requestor to a provider and routes
@@ -27,19 +27,16 @@ export default class Rpc {
   }
 
   private getRequestor (requestor: SimpleSocketWrapper): any {
-    const provideAll = (
-      this.config.provideRPCRequestorDetails ||
-      (this.config.provideRPCRequestorName && this.config.provideRPCRequestorData)
-    )
+    const provideAll = this.config.rpc.provideRequestorName && this.config.rpc.provideRequestorData
     switch (true) {
       case provideAll:
         return {
           requestorName: requestor.user,
           requestorData: requestor.clientData
         }
-      case this.config.provideRPCRequestorName:
+      case this.config.rpc.provideRequestorName:
         return { requestorName: requestor.user }
-      case this.config.provideRPCRequestorData:
+      case this.config.rpc.provideRequestorData:
         return { requestorData: requestor.clientData }
       default:
         return {}
@@ -66,9 +63,15 @@ export default class Rpc {
 
     if (message.action === RPC_ACTIONS.ACCEPT) {
       this.handleAccept(message)
-    } else if (message.action === RPC_ACTIONS.REJECT) {
+      return
+    }
+
+    if (message.action === RPC_ACTIONS.REJECT || message.action === RPC_ACTIONS.NO_RPC_PROVIDER) {
       this.reroute()
-    } else if (message.action === RPC_ACTIONS.RESPONSE || message.action === RPC_ACTIONS.REQUEST_ERROR) {
+      return
+    }
+
+    if (message.action === RPC_ACTIONS.RESPONSE || message.action === RPC_ACTIONS.REQUEST_ERROR) {
       this.requestor.sendMessage(message)
       this.destroy()
     }
@@ -98,8 +101,8 @@ export default class Rpc {
     clearTimeout(this.responseTimeout)
 
     this.provider = provider
-    this.acceptTimeout = setTimeout(this.onAcceptTimeout.bind(this), this.config.rpcAckTimeout)
-    this.responseTimeout = setTimeout(this.onResponseTimeout.bind(this), this.config.rpcTimeout)
+    this.acceptTimeout = setTimeout(this.onAcceptTimeout.bind(this), this.config.rpc.ackTimeout)
+    this.responseTimeout = setTimeout(this.onResponseTimeout.bind(this), this.config.rpc.responseTimeout)
     this.provider.sendMessage(this.message)
   }
 
@@ -137,15 +140,16 @@ export default class Rpc {
 
     if (alternativeProvider) {
       this.setProvider(alternativeProvider)
-    } else {
-      this.requestor.sendMessage({
-        topic: TOPIC.RPC,
-        action: RPC_ACTIONS.NO_RPC_PROVIDER,
-        name: this.message.name,
-        correlationId: this.message.correlationId
-      })
-      this.destroy()
+      return
     }
+
+    this.requestor.sendMessage({
+      topic: TOPIC.RPC,
+      action: RPC_ACTIONS.NO_RPC_PROVIDER,
+      name: this.message.name,
+      correlationId: this.message.correlationId
+    })
+    this.destroy()
   }
 
   /**

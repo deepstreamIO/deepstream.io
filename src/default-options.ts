@@ -10,7 +10,9 @@ export function get (): InternalDeepstreamConfig {
     libDir: null,
     serverName: getUid(),
     showLogo: true,
-    logLevel: LOG_LEVEL.DEBUG,
+    logLevel: LOG_LEVEL.INFO,
+    dependencyInitialisationTimeout: 2000,
+    exitOnPluginError: false,
 
     /*
      * Connectivity
@@ -22,23 +24,8 @@ export function get (): InternalDeepstreamConfig {
      */
     sslKey: null,
     sslCert: null,
-    sslCa: null,
-
-    /*
-     * Authentication
-     */
-    auth: {
-      type: 'none',
-      options: {}
-    },
-
-    /*
-     * Permissioning
-     */
-    permission: {
-      type: 'none',
-      options: {}
-    },
+    sslDHParams: null,
+    sslPassphrase: null,
 
     /*
      * Connection Endpoints
@@ -90,65 +77,91 @@ export function get (): InternalDeepstreamConfig {
       options: {}
     },
 
-    plugins: {
-      cache: {
-        type: 'default',
-        options: {}
-      },
-      storage: {
-        type: 'default',
-        options: {}
-      },
-      monitoring: {
-        type: 'none',
-        options: {}
-      },
+    auth: {
+      type: 'none',
+      options: {}
     },
 
-    /*
-     * Storage options
-     */
-    storageExclusionPrefixes: [],
+    permission: {
+      type: 'none',
+      options: {}
+    },
 
-    /**
-     * Listening
-     */
-    shuffleListenProviders: true,
+    cache: {
+      type: 'default',
+      options: {}
+    },
 
-    /**
-     * RPC
-     */
-    provideRPCRequestorDetails: true,
+    storage: {
+      type: 'default',
+      options: {}
+    },
 
-    /**
-     * Send requestorName by default.
-     * Overriden by provideRPCRequestorDetails
-     */
-    provideRPCRequestorName: true,
+    monitoring: {
+      type: 'default',
+      options: {}
+    },
 
-    /**
-     * Send requestorData by default.
-     * Overriden by provideRPCRequestorDetails
-     */
-    provideRPCRequestorData: true,
+    cluster: {
+      message: {
+        type: 'default',
+        options: {
+        }
+      },
+      registry: {
+        type: 'default',
+        options: {
+          keepAliveInterval: 5000,
+          activeCheckInterval: 1000,
+          nodeInactiveTimeout: 6000
+        }
+      },
+      state: {
+        type: 'default',
+        options: {
+          reconciliationTimeout: 500
+        }
+      },
+      locks: {
+        type: 'default',
+        options: {
+          holdTimeout: 1000,
+          requestTimeout: 1000
+        }
+      }
+    },
 
-    /*
-     * Timeouts
-     */
-    rpcAckTimeout: 1000,
-    rpcTimeout: 10000,
-    cacheRetrievalTimeout: 1000,
-    storageRetrievalTimeout: 2000,
-    storageHotPathPrefixes: [],
-    dependencyInitialisationTimeout: 2000,
-    stateReconciliationTimeout: 500,
-    clusterKeepAliveInterval: 5000,
-    clusterActiveCheckInterval: 1000,
-    clusterNodeInactiveTimeout: 6000,
-    listenResponseTimeout: 500,
-    lockTimeout: 1000,
-    lockRequestTimeout: 1000,
-    broadcastTimeout: 0,
-    exitOnPluginError: false
+    plugins: {
+    },
+
+    rpc: {
+      /**
+       * Send requestorName by default.
+       * Overriden by provideRequestorDetails
+       */
+      provideRequestorName: true,
+      /**
+       * Send requestorData by default.
+       * Overriden by provideRequestorDetails
+       */
+      provideRequestorData: true,
+
+      ackTimeout: 1000,
+      responseTimeout: 10000,
+    },
+
+    record: {
+      storageHotPathPrefixes: [],
+      storageExclusionPrefixes: [],
+      cacheRetrievalTimeout: 1000,
+      storageRetrievalTimeout: 2000,
+    },
+
+    listen: {
+      shuffleProviders: true,
+      responseTimeout: 500,
+      rematchInterval: 30000,
+      matchCooldown: 10000
+    }
   }
 }

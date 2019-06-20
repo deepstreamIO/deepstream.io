@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import * as C from '../constants'
 
 const getBasePermissions = require('../test/helper/test-helper').getBasePermissions
-const testHelper = require('../test/helper/test-helper')
+import * as testHelper from '../test/helper/test-helper'
 
 const noop = function () {}
 const options = testHelper.getDeepstreamPermissionOptions()
@@ -12,7 +12,7 @@ const services = options.services
 const testPermission = testHelper.testPermission(options)
 
 const lastError = function () {
-  return services.logger._log.lastCall.args[2]
+  return services.logger.logSpy.lastCall.args[2]
 }
 
 describe('permission handler loads data for cross referencing', () => {
@@ -34,7 +34,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'purchase/doesExist'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       expect(services.cache.lastRequestedKey).to.equal('item/doesExist')
@@ -61,7 +61,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'purchase/itemA'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       next()
@@ -84,7 +84,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'purchase/itemA'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
       next()
@@ -107,7 +107,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'purchase/itemA'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('TypeError: Cannot read property \'isInStock\' of null')
       expect(result).to.equal(false)
       next()
@@ -132,7 +132,7 @@ describe('permission handler loads data for cross referencing', () => {
       name: 'userA'
     }
 
-    const onDone = function (socketWrapper, msg, error, result) {
+    const onDone = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       expect(services.cache.getCalls.length).to.equal(2)
@@ -160,7 +160,7 @@ describe('permission handler loads data for cross referencing', () => {
       data: '{"owner":"userX"}'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(true)
       next()
@@ -185,7 +185,7 @@ describe('permission handler loads data for cross referencing', () => {
       data: '{"owner":"userX"}'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(null)
       expect(result).to.equal(false)
       next()
@@ -209,7 +209,7 @@ describe('permission handler loads data for cross referencing', () => {
       data: '{"price":15}'
     }
 
-    const callback = function (socketWrapper, msg, error, result) {
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(error).to.equal(C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
       expect(result).to.equal(false)
       next()

@@ -5,10 +5,9 @@
     "outDir": "dist",
     "sourceMap": true,
     "allowJs": false,
-    "strictNullChecks": true,
     "resolveJsonModule": true,
     "noUnusedLocals": true,
-    // "strict": true,
+    "strict": true,
     "types": [
       "node"
     ]
@@ -23,7 +22,6 @@
   ],
   "exclude": [
     "**/*.spec.ts",
-    "**/*-mock.ts",
     "**/installer.ts",
     "node_modules"
   ],

@@ -1,5 +1,5 @@
-import {PARSER_ACTIONS, TOPIC} from '../constants'
-import { Message, SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
+import {PARSER_ACTIONS, TOPIC, Message} from '../constants'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
 
 /**
  * The MessageDistributor routes valid and permissioned messages to
@@ -49,10 +49,10 @@ export default class MessageDistributor {
 
   /**
    * Whenever a message from the messageConnector is received it is passed
-   * to the relevant handler, but with SOURCE_MESSAGE_CONNECTOR instead of
+   * to the relevant handler, but with null instead of
    * a socketWrapper as sender
    */
   private onMessageConnectorMessage (callback: Function, message: Message, originServer: string) {
-    // callback(SOURCE_MESSAGE_CONNECTOR, message, originServer)
+    callback(null, message, originServer)
   }
 }

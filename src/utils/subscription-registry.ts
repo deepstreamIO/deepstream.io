@@ -1,4 +1,3 @@
-import StateRegistry from '../cluster/state-registry'
 import {
   EVENT_ACTIONS,
   PRESENCE_ACTIONS,
@@ -10,7 +9,7 @@ import {
   MONITORING_ACTIONS,
   Message
 } from '../constants'
-import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SubscriptionListener } from '../types'
+import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry } from '../types'
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
@@ -30,10 +29,9 @@ export default class SubscriptionRegistry {
   private config: InternalDeepstreamConfig
   private services: DeepstreamServices
   private topic: TOPIC
-  private clusterTopic: TOPIC
   private subscriptionListener: SubscriptionListener | null = null
   private constants: SubscriptionActions
-  private clusterSubscriptions: StateRegistry | null = null
+  private clusterSubscriptions: StateRegistry
   private actions: any
   private bulkIds = new Set<number>()
 
@@ -48,7 +46,6 @@ export default class SubscriptionRegistry {
     this.config = config
     this.services = services
     this.topic = topic
-    this.clusterTopic = clusterTopic
 
     switch (topic) {
       case TOPIC.RECORD:
@@ -79,27 +76,19 @@ export default class SubscriptionRegistry {
 
     this.onSocketClose = this.onSocketClose.bind(this)
 
-    this.setupRemoteComponents(clusterTopic)
+    this.clusterSubscriptions = this.services.message.getStateRegistry(clusterTopic)
     this.setUpBulkHistoryPurge()
   }
 
-  public whenReady (callback: Function): void {
-    this.clusterSubscriptions!.whenReady(callback)
-  }
-
-  /**
-   * Setup all the remote components and actions required to deal with the subscription
-   * via the cluster.
-   */
-  protected setupRemoteComponents (clusterTopic: TOPIC): void {
-    this.clusterSubscriptions = this.services.message.getStateRegistry(clusterTopic)
+  public async whenReady () {
+    await this.clusterSubscriptions.whenReady()
   }
 
   /**
    * Return all the servers that have this subscription.
    */
   public getAllServers (subscriptionName: string): string[] {
-    return this.clusterSubscriptions!.getAllServers(subscriptionName)
+    return this.clusterSubscriptions.getAllServers(subscriptionName)
   }
 
   /**
@@ -107,7 +96,7 @@ export default class SubscriptionRegistry {
    * server name
    */
   public getAllRemoteServers (subscriptionName: string): string[] {
-    const serverNames = this.clusterSubscriptions!.getAllServers(subscriptionName)
+    const serverNames = this.clusterSubscriptions.getAllServers(subscriptionName)
     const localServerIndex = serverNames.indexOf(this.config.serverName)
     if (localServerIndex > -1) {
       serverNames.splice(serverNames.indexOf(this.config.serverName), 1)
@@ -120,15 +109,7 @@ export default class SubscriptionRegistry {
    * currently has subscribers for
    */
   public getNames (): string[] {
-    return this.clusterSubscriptions!.getAll()
-  }
-
-  /**
-   * Returns a map of all the topic this registry
-   * currently has subscribers for
-   */
-  public getNamesMap (): Map<string, number> {
-    return this.clusterSubscriptions!.getAllMap()
+    return this.clusterSubscriptions.getAll()
   }
 
   /**
@@ -136,7 +117,7 @@ export default class SubscriptionRegistry {
    * in the cluster
    */
   public hasName (subscriptionName: string): boolean {
-    return this.clusterSubscriptions!.has(subscriptionName)
+    return this.clusterSubscriptions.has(subscriptionName)
   }
 
   /**
@@ -146,7 +127,7 @@ export default class SubscriptionRegistry {
   * ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
   */
   public setAction (name: string, value: EVENT_ACTIONS | RECORD_ACTIONS | RPC_ACTIONS): void {
-    this.constants[name.toUpperCase()] = value
+    (this.constants as any)[name.toUpperCase()] = value
   }
 
   /**
@@ -155,9 +136,10 @@ export default class SubscriptionRegistry {
    * subscription name. Each broadcast is given 'broadcastTimeout' ms to coalesce into one big
    * broadcast.
    */
-  public sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, isRemote: boolean = false): void {
-    if (senderSocket && !isRemote) {
-      this.services.message.send(this.clusterTopic, message)
+  public sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, suppressRemote: boolean = false): void {
+    // If the senderSocket is null it means it was recieved via the message bus
+    if (senderSocket !== null && suppressRemote === false) {
+      this.services.message.send(message)
     }
 
     const subscription = this.subscriptions.get(name)
@@ -303,8 +285,8 @@ export default class SubscriptionRegistry {
    */
   public setSubscriptionListener (listener: SubscriptionListener): void {
     this.subscriptionListener = listener
-    this.clusterSubscriptions!.on('add', listener.onFirstSubscriptionMade.bind(listener))
-    this.clusterSubscriptions!.on('remove', listener.onLastSubscriptionRemoved.bind(listener))
+    this.clusterSubscriptions.onAdd(listener.onFirstSubscriptionMade.bind(listener))
+    this.clusterSubscriptions.onRemove(listener.onLastSubscriptionRemoved.bind(listener))
   }
 
   private addSocket (subscription: Subscription, socket: SocketWrapper): void {

@@ -2,14 +2,21 @@ import { EventEmitter } from 'events'
 import { TOPIC, EVENT, LOG_LEVEL } from './constants'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 import { Deepstream } from './deepstream.io'
-import { ALL_ACTIONS } from '../binary-protocol/src/message-constants'
+import { ALL_ACTIONS, Message, JSONObject } from '../binary-protocol/src/message-constants'
+import MessageDistributor from './message/message-distributor'
+import { DeepPartial } from 'ts-essentials'
 
+export type MetaData = JSONObject
 export type RuleType = string
 export type ValveSection = string
 
+export interface Handler<SpecificMessage> {
+  handle (socketWrapper: SocketWrapper | null, message: SpecificMessage): void
+}
+
 export interface SimpleSocketWrapper {
-  user: string
-  isRemote: boolean
+  user: string | null
+  isRemote?: boolean
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
   sendBinaryMessage? (message: Buffer, buffer?: boolean): void
@@ -21,40 +28,23 @@ export interface StatefulSocketWrapper extends SimpleSocketWrapper {
   onClose: Function,
   removeOnClose: Function
   destroy: Function
+  close: Function
 }
 
-export interface SocketWrapper extends StatefulSocketWrapper {
+export interface UnauthenticatedSocketWrapper extends StatefulSocketWrapper {
   uuid: number
-  authData: object
-  clientData: object | null
   getHandshakeData: Function
   onMessage: Function
-  authCallback: Function
+  authCallback: Function | null
   getMessage: Function
   parseData: Function
   flush: Function
 }
 
-export interface Message {
-  topic: TOPIC
-  action: number
-  name?: string
-
-  isError?: boolean
-  isAck?: boolean
-
-  data?: string | Buffer
-  parsedData?: any
-
-  originalTopic?: number
-  originalAction?: number
-  subscription?: string
-  names?: string[]
-  isWriteAck?: boolean
-  correlationId?: string
-  path?: string
-  version?: number
-  reason?: string
+export interface SocketWrapper extends UnauthenticatedSocketWrapper {
+  user: string
+  authData: JSONObject | null,
+  clientData: JSONObject | null
 }
 
 export interface JifMessage {
@@ -89,16 +79,33 @@ export interface Logger extends DeepstreamPlugin {
   error (event: EVENT | string, message?: string, metaData?: any): void
   log (level: LOG_LEVEL, event: EVENT, message: string, metaData?: any): void
 }
+export type LoggerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => Logger
 
 export interface ConnectionEndpoint extends DeepstreamPlugin {
   onMessages (socketWrapper: SocketWrapper, messages: Message[]): void
-  close (): void
   scheduleFlush? (socketWrapper: SocketWrapper): void
 }
+export type ConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => ConnectionEndpoint
 
 export interface SocketConnectionEndpoint extends ConnectionEndpoint {
   scheduleFlush (socketWrapper: SocketWrapper): void
 }
+export type SocketConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => SocketConnectionEndpoint
+
+export type StateRegistryCallback = (name: string) => void
+export interface StateRegistry extends DeepstreamPlugin {
+  has (name: string): boolean
+  add (name: string): void
+  remove (name: string): void
+
+  onAdd (callback: StateRegistryCallback): void
+  onRemove (callback: StateRegistryCallback): void
+
+  getAll (serverName?: string): string[]
+  getAllServers (subscriptionName: string): string[]
+  removeAll (serverName: string): void
+}
+export type StateRegistryPlugin<PluginOptions = any> = new (topic: TOPIC, pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => StateRegistry
 
 export interface PluginConfig {
   name?: string
@@ -108,15 +115,13 @@ export interface PluginConfig {
 }
 
 export type MonitorHookCallback = () => void
-
-export class DeepstreamPlugin extends EventEmitter {
-  constructor () {
-    super()
-  }
-  public isReady: boolean = false
-  public description: string = 'Deepstream Plugin'
+export abstract class DeepstreamPlugin extends EventEmitter {
+  public isReady: boolean = true
+  public abstract description: string
+  public apiVersion?: number
   public init? (): void
-  public close? (): void
+  public async whenReady (): Promise<void> {}
+  public async close (): Promise<void> {}
   public setDeepstream? (deepstream: Deepstream): void
   public setRecordHandler? (recordHandler: any): void
   public registerMonitorHook? (cb: MonitorHookCallback): void
@@ -124,147 +129,134 @@ export class DeepstreamPlugin extends EventEmitter {
 
 export type StorageReadCallback = (error: string | null, version: number, result: any) => void
 export type StorageWriteCallback = (error: string | null) => void
-
-export interface StoragePlugin extends DeepstreamPlugin {
-  apiVersion?: number
+export interface Storage extends DeepstreamPlugin  {
   set (recordName: string, version: number, data: any, callback: StorageWriteCallback, metaData?: any): void
   get (recordName: string, callback: StorageReadCallback, metaData?: any): void
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void
 }
+export type StoragePlugin<PluginOptions> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => Storage
 
-export interface MonitoringPlugin extends DeepstreamPlugin {
-  apiVersion?: number
+export interface Monitoring extends DeepstreamPlugin  {
   onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void
   onLogin (allowed: boolean, endpointType: string): void
   onMessageRecieved (message: Message): void
   onMessageSend (message: Message): void
   onBroadcast (message: Message, count: number): void
 }
+export type MonitoringPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => Monitoring
 
-export type PermissionCallback = (socketWrapper: SocketWrapper, message: Message, error: Error | string | ALL_ACTIONS | null, result: boolean) => void
+export type PermissionCallback = (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: Error | string | ALL_ACTIONS | null, result: boolean) => void
 export interface PermissionHandler extends DeepstreamPlugin {
-  canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: any, socketWrapper: SocketWrapper): void
+  canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: JSONObject, socketWrapper: SocketWrapper, passItOn: any): void
 }
+export type PermissionHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => PermissionHandler
 
-export interface AuthenticationHandler extends DeepstreamPlugin {
+export interface UserAuthData {
+  username?: string,
+  token?: string,
+  clientData?: JSONObject,
+  serverData?: JSONObject
+}
+export type UserAuthenticationCallback = (isValid: boolean, userAuthData?: UserAuthData) => void
+export interface AuthenticationHandler extends DeepstreamPlugin  {
   isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback): void
   onClientDisconnect? (username: string): void
 }
+export type AuthenticationHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => AuthenticationHandler
 
-export type UserAuthenticationCallback = (isValid: boolean, clientData?: any) => void
-
-export interface Cluster {
-  getStateRegistry (stateRegistryTopic: TOPIC): any,
-  send (stateRegistryTopic: TOPIC, message: Message, metaData?: any): void,
-  sendDirect (serverName: string, message: Message, metaData?: any): void,
-  subscribe (stateRegistryTopic: TOPIC, callback: Function): void
-  isLeader (): boolean
-  getLeader (): string
-  close (callback: Function): void
+export interface ClusterNode extends DeepstreamPlugin  {
+  getGlobalStateRegistry (): StateRegistry
+  getStateRegistry (stateRegistryTopic: TOPIC): StateRegistry
+  send (message: Message, metaData?: any): void
+  sendDirect (serverName: string, message: Message, metaData?: any): void
+  subscribe<SpecificMessage> (stateRegistryTopic: TOPIC, callback: (message: SpecificMessage, originServerName: string) => void): void
+  close (): Promise<void>
 }
+export type ClusterNodePlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => ClusterNode
 
-export interface LockRegistry {
-  get (lock: string, callback: Function): void
+export type LockCallback = (locked: boolean) => void
+export interface LockRegistry extends DeepstreamPlugin  {
+  get (lock: string, callback: LockCallback): void
   release (lock: string): void
 }
+export type LockRegistryPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => LockRegistry
 
-export interface DeepstreamConfig {
-  showLogo?: boolean
-  libDir?: string | null
-  logLevel?: number
-  serverName?: string
-  externalUrl?: string | null
-  sslKey?: string | null
-  sslCert?: string | null
-  sslCa?: string | null
-  connectionEndpoints?: any
-
-  plugins?: {
-    cache?: PluginConfig
-    storage?: PluginConfig
-    monitoring?: PluginConfig
-  }
-
-  logger?: PluginConfig
-  auth?: PluginConfig
-  permission?: PluginConfig
-
-  unauthenticatedClientTimeout?: number
-  maxAuthAttempts?: number
-  storageExclusionPrefixes?: string[]
-  provideRPCRequestorDetails?: boolean
-  rpcAckTimeout?: number
-  rpcTimeout?: number
-  cacheRetrievalTimeout?: number
-  storageRetrievalTimeout?: number
-  storageHotPathPrefixes?: string[]
-  dependencyInitialisationTimeout?: number
-  stateReconciliationTimeout?: number
-  clusterKeepAliveInterval?: number
-  clusterActiveCheckInterval?: number
-  clusterNodeInactiveTimeout?: number
-  listenResponseTimeout?: number
-  lockTimeout?: number
-  lockRequestTimeout?: number
-  broadcastTimeout?: number
-  shuffleListenProviders?: boolean
+export interface ClusterRegistry extends DeepstreamPlugin {
+  isLeader (): boolean
+  getLeader (): string
 }
+export type ClusterRegistryPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => ClusterRegistry
+
+export type DeepstreamConfig = DeepPartial<InternalDeepstreamConfig>
 
 export interface InternalDeepstreamConfig {
   showLogo: boolean
   libDir: string | null
   logLevel: number
   serverName: string
+  dependencyInitialisationTimeout: number
+  exitOnPluginError: boolean
+
   externalUrl: string | null
   sslKey: string | null
   sslCert: string | null
-  sslCa: string | null
-  connectionEndpoints: any
+  sslDHParams: string | null
+  sslPassphrase: string | null
 
-  plugins: {
-    cache: PluginConfig
-    storage: PluginConfig
-    monitoring: PluginConfig
-  }
+  connectionEndpoints: { [index: string]: PluginConfig }
 
   logger: PluginConfig
   auth: PluginConfig
   permission: PluginConfig
+  cache: PluginConfig
+  storage: PluginConfig
+  monitoring: PluginConfig
 
-  storageExclusionPrefixes: string[]
-  provideRPCRequestorDetails: boolean
-  provideRPCRequestorName: boolean
-  provideRPCRequestorData: boolean
-  rpcAckTimeout: number
-  rpcTimeout: number
-  cacheRetrievalTimeout: number
-  storageRetrievalTimeout: number
-  storageHotPathPrefixes: string[]
-  dependencyInitialisationTimeout: number
-  stateReconciliationTimeout: number
-  clusterKeepAliveInterval: number
-  clusterActiveCheckInterval: number
-  clusterNodeInactiveTimeout: number
-  listenResponseTimeout: number
-  lockTimeout: number
-  lockRequestTimeout: number
-  broadcastTimeout: number
-  shuffleListenProviders: boolean
-  exitOnPluginError: boolean
+  cluster: {
+    message: PluginConfig
+    state: PluginConfig
+    registry: PluginConfig
+    locks: PluginConfig
+  }
+
+  plugins: { [index: string]: PluginConfig }
+
+  record: {
+    storageHotPathPrefixes: string[]
+    storageExclusionPrefixes: string[]
+    storageRetrievalTimeout: number
+    cacheRetrievalTimeout: number
+  },
+
+  rpc: {
+    provideRequestorName: boolean
+    provideRequestorData: boolean
+    ackTimeout: number
+    responseTimeout: number
+  },
+
+  listen: {
+    responseTimeout: number
+    shuffleProviders: boolean
+    rematchInterval: number
+    matchCooldown: number
+  }
 }
 
 export interface DeepstreamServices {
-  registeredPlugins: string[]
   connectionEndpoints: ConnectionEndpoint[]
-  cache: StoragePlugin
-  storage: StoragePlugin
-  monitoring: MonitoringPlugin
+  cache: Storage
+  storage: Storage
+  monitoring: Monitoring
   permissionHandler: PermissionHandler
   authenticationHandler: AuthenticationHandler
   logger: Logger
-  message: Cluster
-  uniqueRegistry: LockRegistry,
-  subscriptions: SubscriptionRegistryFactory
+  message: ClusterNode
+  locks: LockRegistry,
+  cluster: ClusterRegistry,
+  subscriptions: SubscriptionRegistryFactory,
+  messageDistributor: MessageDistributor
+  plugins: { [index: string]: DeepstreamPlugin }
 }
 
 export interface ValveConfig {
@@ -276,7 +268,8 @@ export interface ValveConfig {
 export interface Provider {
   socketWrapper: SocketWrapper
   pattern: string
-  closeListener?: () => void
+  closeListener?: () => void,
+  responseTimeout?: NodeJS.Timeout
 }
 
 export interface UserData {

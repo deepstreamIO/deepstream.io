@@ -13,11 +13,27 @@ import ConfigPermissionHandler from '../permission/config-permission-handler'
 import OpenPermissionHandler from '../permission/open-permission-handler'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { InternalDeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, StoragePlugin, StorageReadCallback, StorageWriteCallback, AuthenticationHandler, PermissionHandler } from '../types'
+import { InternalDeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, Storage, StorageReadCallback, StorageWriteCallback, AuthenticationHandler, PermissionHandler } from '../types'
+import { JSONObject } from '../../binary-protocol/src/message-constants'
+import { DistributedLockRegistry } from '../cluster/distributed-lock-registry'
+import { DistributedClusterRegistry } from '../cluster/distributed-cluster-registry'
+import { DistributedStateRegistry } from '../cluster/distributed-state-registry'
+import SingleClusterNode from '../cluster/single-cluster-node'
 
-let commandLineArguments
+let commandLineArguments: any
 
 const customPlugins = new Map()
+
+const defaultPlugins = new Map<string, any>([
+  ['cache', DefaultCache],
+  ['storage', DefaultStorage],
+  ['logger', DefaultLogger],
+  ['monitoring', DefaultMonitoring],
+  ['message', SingleClusterNode],
+  ['locks', DistributedLockRegistry],
+  ['cluster', DistributedClusterRegistry],
+  ['state', DistributedStateRegistry]
+])
 
 /**
  * Registers plugins by name. Useful when wanting to include
@@ -36,19 +52,17 @@ export const initialise = function (config: InternalDeepstreamConfig): { config:
   handleUUIDProperty(config)
   handleSSLProperties(config)
 
-  const services: any = {
-    registeredPlugins: ['authenticationHandler', 'permissionHandler', 'cache', 'storage', 'monitoring'],
-  }
-
-  services.cache = new DefaultCache()
-  services.storage = new DefaultStorage()
-  services.monitoring = new DefaultMonitoring()
-
-  services.logger = handleLogger(config)
-  handlePlugins(config, services)
-  services.authenticationHandler = handleAuthStrategy(config, services.logger)
+  const services = {} as DeepstreamServices
+  services.logger = handleLogger(config, services)
+  services.message = new (resolvePluginClass(config.cluster.message, 'message'))(config.cluster.message.options, services, config)
+  services.storage = new (resolvePluginClass(config.storage, 'storage'))(config.storage.options, services, config)
+  services.cache = new (resolvePluginClass(config.storage, 'cache'))(config.cache.options, services, config)
+  services.monitoring = new (resolvePluginClass(config.monitoring, 'monitoring'))(config.monitoring.options, services, config)
+  services.authenticationHandler = handleAuthStrategy(config, services)
   services.permissionHandler = handlePermissionStrategy(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
+  services.locks = new (resolvePluginClass(config.cluster.locks, 'locks'))(config.cluster.locks.options, services, config)
+  services.cluster = new (resolvePluginClass(config.cluster.registry, 'cluster'))(config.cluster.registry.options, services, config)
 
   if (services.cache.apiVersion !== 2) {
     storageCompatability(services.cache)
@@ -56,6 +70,8 @@ export const initialise = function (config: InternalDeepstreamConfig): { config:
   if (services.storage.apiVersion !== 2) {
     storageCompatability(services.storage)
   }
+
+  handleCustomPlugins(config, services)
 
   return { config, services }
 }
@@ -80,13 +96,13 @@ function handleSSLProperties (config: InternalDeepstreamConfig): void {
   let filePath
   for (let i = 0; i < sslFiles.length; i++) {
     key = sslFiles[i]
-    filePath = config[key]
+    filePath = (config as any)[key]
     if (!filePath) {
       continue
     }
     resolvedFilePath = fileUtils.lookupConfRequirePath(filePath)
     try {
-      config[key] = fs.readFileSync(resolvedFilePath, 'utf8')
+      (config as any)[key] = fs.readFileSync(resolvedFilePath, 'utf8')
     } catch (e) {
       throw new Error(`The file path "${resolvedFilePath}" provided by "${key}" does not exist.`)
     }
@@ -97,7 +113,7 @@ function handleSSLProperties (config: InternalDeepstreamConfig): void {
  * Initialize the logger and overwrite the root logLevel if it's set
  * CLI arguments will be considered.
  */
-function handleLogger (config: InternalDeepstreamConfig): Logger {
+function handleLogger (config: InternalDeepstreamConfig, services: DeepstreamServices): Logger {
   const configOptions = (config.logger || {}).options
   if (commandLineArguments.colors !== undefined) {
     configOptions.colors = commandLineArguments.colors
@@ -120,7 +136,7 @@ function handleLogger (config: InternalDeepstreamConfig): Logger {
       }
     }
   }
-  const logger = new LoggerClass(configOptions)
+  const logger = new LoggerClass(configOptions, services, config)
   if (logger.log) {
     logger.debug = logger.debug || logger.log.bind(logger, LOG_LEVEL.DEBUG)
     logger.info = logger.info || logger.log.bind(logger, LOG_LEVEL.INFO)
@@ -140,15 +156,16 @@ function handleLogger (config: InternalDeepstreamConfig): Logger {
 
 /**
  * Handle the plugins property in the config object the connectors.
- * Allowed types: {cache|storage}
  * Plugins can be passed either as a __path__ property or as a __name__ property with
- * a naming convetion: *{cache: {name: 'redis'}}* will be resolved to the
+ * a naming convention: *{cache: {name: 'redis'}}* will be resolved to the
  * npm module *deepstream.io-cache-redis*
  * Options to the constructor of the plugin can be passed as *options* object.
  *
  * CLI arguments will be considered.
  */
-function handlePlugins (config: InternalDeepstreamConfig, services: any): void {
+function handleCustomPlugins (config: InternalDeepstreamConfig, services: any): void {
+  services.plugins = {}
+
   if (config.plugins == null) {
     return
   }
@@ -157,17 +174,8 @@ function handlePlugins (config: InternalDeepstreamConfig, services: any): void {
   for (const key in plugins) {
     const plugin = plugins[key]
     if (plugin) {
-      if (plugin.deepstreamInitialized) {
-        services[key] = plugin
-      } else {
-        const PluginConstructor = resolvePluginClass(plugin, key)
-        services[key] = new PluginConstructor(plugin.options)
-      }
-
-      if (services.registeredPlugins.indexOf(key) === -1) {
-        services.registeredPlugins.push(key)
-      }
-
+      const PluginConstructor = resolvePluginClass(plugin, key)
+      services.plugins[key] = new PluginConstructor(plugin.options)
     }
   }
 }
@@ -207,7 +215,7 @@ function handleConnectionEndpoints (config: InternalDeepstreamConfig, services: 
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection')
     }
-    connectionEndpoints.push(new PluginConstructor(plugin.options, services))
+    connectionEndpoints.push(new PluginConstructor(plugin.options, services, config))
   }
   return connectionEndpoints
 }
@@ -242,12 +250,8 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
     requirePath = fileUtils.lookupLibRequirePath(plugin.name)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
-  } else if (plugin.type === 'default' && type === 'cache') {
-    pluginConstructor = DefaultCache
-  } else if (plugin.type === 'default' && type === 'storage') {
-    pluginConstructor = DefaultStorage
-  } else if (plugin.type === 'none' && type === 'monitoring') {
-    pluginConstructor = DefaultMonitoring
+  } else if (plugin.type === 'default' && defaultPlugins.has(type)) {
+    pluginConstructor = defaultPlugins.get(type)
   } else {
     throw new Error(`Neither name nor path property found for ${type}, plugin type: ${plugin.type}`)
   }
@@ -259,7 +263,7 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
  *
  * CLI arguments will be considered.
  */
-function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): AuthenticationHandler {
+function handleAuthStrategy (config: InternalDeepstreamConfig, services: DeepstreamServices): AuthenticationHandler {
   let AuthenticationHandlerClass
 
   const authStrategies = {
@@ -282,8 +286,8 @@ function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): 
     if (!AuthenticationHandlerClass) {
       throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
     }
-  } else if (config.auth.type && authStrategies[config.auth.type]) {
-    AuthenticationHandlerClass = authStrategies[config.auth.type]
+  } else if (config.auth.type && (authStrategies as any)[config.auth.type]) {
+    AuthenticationHandlerClass = (authStrategies as any)[config.auth.type]
   } else {
     throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
@@ -292,7 +296,7 @@ function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): 
     config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
   }
 
-  return new AuthenticationHandlerClass(config.auth.options, logger)
+  return new AuthenticationHandlerClass(config.auth.options, services, config)
 }
 
 /**
@@ -300,7 +304,7 @@ function handleAuthStrategy (config: InternalDeepstreamConfig, logger: Logger): 
  *
  * CLI arguments will be considered.
  */
-function handlePermissionStrategy (config: InternalDeepstreamConfig, services: any): PermissionHandler {
+function handlePermissionStrategy (config: InternalDeepstreamConfig, services: DeepstreamServices): PermissionHandler {
   let PermissionHandlerClass
 
   const permissionStrategies = {
@@ -322,8 +326,8 @@ function handlePermissionStrategy (config: InternalDeepstreamConfig, services: a
     if (!PermissionHandlerClass) {
       throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
     }
-  } else if (config.permission.type && permissionStrategies[config.permission.type]) {
-    PermissionHandlerClass = permissionStrategies[config.permission.type]
+  } else if (config.permission.type && (permissionStrategies as any)[config.permission.type]) {
+    PermissionHandlerClass = (permissionStrategies as any)[config.permission.type]
   } else {
     throw new Error(`Unknown permission type ${config.permission.type}`)
   }
@@ -333,17 +337,17 @@ function handlePermissionStrategy (config: InternalDeepstreamConfig, services: a
   }
 
   if (config.permission.type === 'config') {
-    return new PermissionHandlerClass(config, services)
+    return new PermissionHandlerClass(config.permission.options, services, config)
   } else {
-    return new PermissionHandlerClass(config.permission.options, services)
+    return new PermissionHandlerClass(config.permission.options, services, config)
   }
 
 }
 
-export function storageCompatability (storage: StoragePlugin) {
+export function storageCompatability (storage: Storage) {
   const oldGet = storage.get as Function
   storage.get = (recordName: string, callback: StorageReadCallback) => {
-    oldGet.call(storage, recordName, (error, record) => {
+    oldGet.call(storage, recordName, (error: string | null, record: { _v: number, _d: JSONObject } | null) => {
       callback(error, record ? record._v : -1, record ? record._d : null)
     })
   }

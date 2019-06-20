@@ -27,11 +27,6 @@ export default class RpcHandler {
      this.subscriptionRegistry.setAction('SUBSCRIBE', RPC_ACTIONS.PROVIDE)
      this.subscriptionRegistry.setAction('UNSUBSCRIBE', RPC_ACTIONS.UNPROVIDE)
 
-     this.services.message.subscribe(
-       TOPIC.RPC,
-       this.onPrivateMessage.bind(this),
-    )
-
      this.rpcs = new Map()
   }
 
@@ -39,20 +34,34 @@ export default class RpcHandler {
   * Main interface. Handles incoming messages
   * from the message distributor
   */
-  public handle (socketWrapper: SocketWrapper, message: RPCMessage): void {
+  public handle (socketWrapper: SocketWrapper, message: RPCMessage, originServerName: string): void {
+    if (socketWrapper === null) {
+      this.onRemoteRPCMessage(message, originServerName)
+      return
+    }
+
+    if (message.action === RPC_ACTIONS.REQUEST) {
+      this.makeRpc(socketWrapper, message, false)
+      return
+   }
+
     if (message.action === RPC_ACTIONS.PROVIDE) {
       this.subscriptionRegistry.subscribe(message, socketWrapper)
-    } else if (message.action === RPC_ACTIONS.UNPROVIDE) {
+      return
+    }
+
+    if (message.action === RPC_ACTIONS.UNPROVIDE) {
       this.subscriptionRegistry.unsubscribe(message, socketWrapper)
-    } else if (message.action === RPC_ACTIONS.REQUEST) {
-       this.makeRpc(socketWrapper, message, false)
-    } else if (
+      return
+    }
+
+    if (
       message.action === RPC_ACTIONS.RESPONSE ||
       message.action === RPC_ACTIONS.REJECT ||
       message.action === RPC_ACTIONS.ACCEPT ||
       message.action === RPC_ACTIONS.REQUEST_ERROR
     ) {
-      const rpcData =  this.rpcs.get(message.correlationId)
+      const rpcData = this.rpcs.get(message.correlationId)
       if (rpcData) {
         this.services.logger.debug(
           RPC_ACTIONS[message.action],
@@ -60,27 +69,28 @@ export default class RpcHandler {
           this.metaData
         )
         rpcData.rpc.handle(message)
-      } else {
-        this.services.logger.warn(
-          RPC_ACTIONS[RPC_ACTIONS.INVALID_RPC_CORRELATION_ID],
-          `name: ${message.name} with correlation id: ${message.correlationId}`,
-          this.metaData
-        )
-        socketWrapper.sendMessage({
-          topic: TOPIC.RPC,
-          action: RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
-          originalAction: message.action,
-          name: message.name,
-          correlationId: message.correlationId
-        })
+        return
       }
-    } else {
-      /*
-      *  RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
-      * by the Rpc class directly
-      */
-       this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], message.action.toString(), this.metaData)
+      this.services.logger.warn(
+        RPC_ACTIONS[RPC_ACTIONS.INVALID_RPC_CORRELATION_ID],
+        `name: ${message.name} with correlation id: ${message.correlationId}`,
+        this.metaData
+      )
+      socketWrapper.sendMessage({
+        topic: TOPIC.RPC,
+        action: RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+        originalAction: message.action,
+        name: message.name,
+        correlationId: message.correlationId
+      })
+      return
     }
+
+    /*
+    *  RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
+    * by the Rpc class directly
+    */
+    this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], message.action.toString(), this.metaData)
   }
 
   /**
@@ -121,7 +131,8 @@ export default class RpcHandler {
       return null
     }
 
-    const servers =  this.subscriptionRegistry.getAllRemoteServers(rpcName)
+    const servers = this.subscriptionRegistry.getAllRemoteServers(rpcName)
+
     index = getRandomIntInRange(0, servers.length)
     for (let n = 0; n < servers.length; ++n) {
       if (!rpcData.servers.has(servers[index])) {
@@ -154,23 +165,25 @@ export default class RpcHandler {
     const provider = subscribers[getRandomIntInRange(0, subscribers.length)]
 
     if (provider) {
-      const rpcData = {
-        providers: new Set(),
-        servers: !isRemote ? new Set() : null,
+      this.rpcs.set(correlationId, {
+        providers: new Set([provider]),
+        servers: isRemote ? null : new Set(),
         rpc: new Rpc(this, socketWrapper, provider, this.config, message),
-      } as RpcData
-      this.rpcs.set(correlationId, rpcData)
-      rpcData.providers.add(provider)
-    } else if (isRemote) {
+      })
+      return
+    }
+
+    if (isRemote) {
       socketWrapper.sendMessage({
         topic: TOPIC.RPC,
         action: RPC_ACTIONS.NO_RPC_PROVIDER,
         name: rpcName,
         correlationId
       })
-    } else {
-       this.makeRemoteRpc(socketWrapper, message)
+      return
     }
+
+    this.makeRemoteRpc(socketWrapper, message)
   }
 
   /**
@@ -186,17 +199,16 @@ export default class RpcHandler {
     const rpcName = message.name
     const correlationId = message.correlationId
 
-    const servers =  this.subscriptionRegistry.getAllRemoteServers(rpcName)
+    const servers = this.subscriptionRegistry.getAllRemoteServers(rpcName)
     const server = servers[getRandomIntInRange(0, servers.length)]
 
     if (server) {
       const rpcProxy = new RpcProxy(this.config, this.services, server, this.metaData)
-      const rpcData = {
+      this.rpcs.set(correlationId, {
         providers: new Set(),
         servers: new Set(),
         rpc: new Rpc(this, requestor, rpcProxy, this.config, message),
-      } as RpcData
-      this.rpcs.set(correlationId, rpcData)
+      })
       return
     }
 
@@ -225,37 +237,31 @@ export default class RpcHandler {
   * Please note: Private messages are generic, so the RPC
   * specific ones need to be filtered out.
   */
-  private onPrivateMessage (msg: RPCMessage, originServerName: string): void {
-    if (!msg.data || msg.data.length < 2) {
-       // this.services.logger.warn(INVALID_MSGBUS_MESSAGE, msg.data,  this.metaData)
-       return
-    }
-
+  private onRemoteRPCMessage (msg: RPCMessage, originServerName: string): void {
     if (msg.action === RPC_ACTIONS.REQUEST) {
       const proxy = new RpcProxy(this.config, this.services, originServerName, this.metaData)
       this.makeRpc(proxy, msg, true)
       return
     }
 
-    const rpcData =  this.rpcs.get(msg.correlationId)
+    const rpcData = this.rpcs.get(msg.correlationId)
+
     if (!rpcData) {
       this.services.logger.warn(
         RPC_ACTIONS[RPC_ACTIONS.INVALID_RPC_CORRELATION_ID],
         `Message bus response for RPC that may have been destroyed: ${JSON.stringify(msg)}`,
         this.metaData,
       )
+      return
     }
 
-    if (rpcData) {
-      this.services.logger.debug(
-        RPC_ACTIONS[RPC_ACTIONS[msg.action]],
-        `name: ${msg.name} with correlation id: ${msg.correlationId} from remote server ${originServerName}`,
-        this.metaData
-      )
-      rpcData.rpc.handle(msg)
-    } else {
-      // this.services.logger.warn(UNSOLICITED_MSGBUS_MESSAGE, msg, this.metaData)
-    }
+    this.services.logger.debug(
+      RPC_ACTIONS[msg.action],
+      `name: ${msg.name} with correlation id: ${msg.correlationId} from remote server ${originServerName}`,
+      this.metaData
+    )
+
+    rpcData.rpc.handle(msg)
   }
 
   /**

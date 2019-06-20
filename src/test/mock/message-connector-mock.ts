@@ -1,29 +1,23 @@
 import { EventEmitter } from 'events'
-import { Cluster } from '../../types'
-const StateRegistry = require('../../cluster/state-registry').default
+import { StateMessage, Message } from '../../../binary-protocol/src/message-constants'
+import { TOPIC } from '@deepstream/client/dist/binary-protocol/src/message-constants'
+import { DeepstreamPlugin, ClusterNode } from '../../types'
+import { SingleStateRegistry } from '../../cluster/single-state-registry'
 
-export default class MessageConnectorMock extends EventEmitter implements Cluster {
-  public lastPublishedTopic: any
-  public lastPublishedMessage: any
-  public lastSubscribedTopic: any
-  public publishedMessages: any
-  public all: any
+export default class MessageConnectorMock extends DeepstreamPlugin implements ClusterNode {
+  public description = 'Message Connector Mock'
+  public lastPublishedTopic: TOPIC | null = null
+  public lastPublishedMessage: Message | null = null
+  public lastSubscribedTopic: TOPIC | null = null
+  public publishedMessages: Message[] = []
+  public all: string[] = ['server-name-a', 'server-name-b', 'server-name-c']
   public lastDirectSentMessage: any
-  public currentLeader: any
-  public options: any
-  public eventEmitter: NodeJS.EventEmitter
+  public currentLeader: string = 'server-name-a'
+  public eventEmitter = new EventEmitter()
 
-  constructor (options) {
+  constructor (private options: any) {
     super()
-    this.lastPublishedTopic = null
-    this.lastPublishedMessage = null
-    this.lastSubscribedTopic = null
-    this.publishedMessages = []
-    this.eventEmitter = new EventEmitter()
     this.eventEmitter.setMaxListeners(0)
-    this.all = null
-    this.currentLeader = null
-    this.options = options
   }
 
   public reset () {
@@ -36,38 +30,39 @@ export default class MessageConnectorMock extends EventEmitter implements Cluste
     this.currentLeader = 'server-name-a'
   }
 
-  public subscribe (topic, callback) {
+  public subscribe <MessageType> (topic: TOPIC, callback: (message: MessageType, originServerName: string) => void) {
     this.lastSubscribedTopic = topic
-    this.eventEmitter.on(topic, callback)
+    this.eventEmitter.on(TOPIC[topic], callback)
   }
 
   public sendBroadcast () {
-
   }
 
-  public send (stateRegistryTopic, message) {
+  public send (message: Message, metaData?: any) {
     this.publishedMessages.push(message)
-    this.lastPublishedTopic = stateRegistryTopic
-    this.lastPublishedMessage = JSON.parse(JSON.stringify(message))
+    this.lastPublishedTopic = message.topic
+    this.lastPublishedMessage = message
   }
 
-  public sendState (topic, message) {
-
+  public sendState (message: StateMessage, metaData?: any): void {
   }
 
-  public sendDirect (serverName, message) {
+  public sendStateDirect (serverName: string, message: StateMessage, metaData?: any): void {
+  }
+
+  public sendDirect (serverName: string, message: Message) {
     this.lastDirectSentMessage = {
       serverName,
       message
     }
   }
 
-  public unsubscribe (topic, callback) {
-    this.eventEmitter.removeListener(topic, callback)
+  public unsubscribe (topic: TOPIC, callback: (message: Message) => void) {
+    this.eventEmitter.removeListener(TOPIC[topic], callback)
   }
 
-  public simulateIncomingMessage (topic, msg, serverName) {
-    this.eventEmitter.emit(topic, msg, serverName)
+  public simulateIncomingMessage (topic: TOPIC, msg: Message, serverName: string) {
+    this.eventEmitter.emit(TOPIC[topic], msg, serverName)
   }
 
   public getAll () {
@@ -90,10 +85,11 @@ export default class MessageConnectorMock extends EventEmitter implements Cluste
 
   }
 
-  public getStateRegistry (topic) {
-    return new StateRegistry(topic, this.options, this)
+  public getGlobalStateRegistry () {
+    return new SingleStateRegistry()
   }
 
-  public close () {
+  public getStateRegistry (topic: TOPIC) {
+    return new SingleStateRegistry()
   }
 }
