@@ -196,7 +196,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
 
       authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
         expect(result).to.equal(false)
-        expect(data).to.deep.equal({ error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED })
+        expect(data).to.deep.equal({ clientData: { error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED }})
         done()
       })
 
@@ -217,7 +217,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).to.equal(false)
       expect(logSpy).to.have.been.calledWith(2, C.EVENT.AUTH_ERROR, 'http auth error: Error: socket hang up')
-      expect(data).to.deep.equal({ error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED })
+      expect(data).to.deep.equal({ clientData: { error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED }})
       server.respondWith(200)
       done()
     })

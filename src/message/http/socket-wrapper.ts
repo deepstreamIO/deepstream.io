@@ -17,6 +17,8 @@ export default class HTTPSocketWrapper extends EventEmitter implements Unauthent
   public authCallback: Function | null = null
   public isRemote: boolean = false
   public isClosed: boolean = false
+  // TODO: This isn't used here but is part of a stateful socketWrapper
+  public authAttempts = 0
 
   constructor (private services: DeepstreamServices, private onMessageCallback: Function, private onErrorCallback: Function) {
     super()
