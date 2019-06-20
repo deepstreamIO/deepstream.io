@@ -2,7 +2,7 @@ import * as crypto from 'crypto'
 import * as jsYamlLoader from '../config/js-yaml-loader'
 import * as utils from '../utils/utils'
 import { AuthenticationHandler, UserAuthenticationCallback, DeepstreamPlugin } from '../types'
-import { JSONObject } from '@deepstream/client/dist/binary-protocol/src/message-constants'
+import { JSONObject } from '../constants'
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'

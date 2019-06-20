@@ -6,10 +6,10 @@ import {
   PARSER_ACTIONS,
   ParseResult,
   TOPIC,
-  Message
+  Message,
+  JSONObject,
 } from '../../../binary-protocol/src/message-constants'
 import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, InternalDeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin } from '../../types'
-import { JSONObject } from '@deepstream/client/dist/binary-protocol/src/message-constants'
 
 const OPEN = 'OPEN'
 
