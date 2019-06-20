@@ -174,7 +174,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
       expect(called).to.equal(false)
     })
 
-    it ('returns true if the second attempt is valid', async () => {
+    it.skip ('returns true if the second attempt is valid', async () => {
       let done
       const result = new Promise((resolve) => done = resolve)
 
