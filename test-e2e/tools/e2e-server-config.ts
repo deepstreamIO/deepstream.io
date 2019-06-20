@@ -9,13 +9,15 @@ export const getServerConfig = (port: number): DeepstreamConfig => ({
     rpc: {
       // This shouldn't be more than response,
       // but it solves issues in E2E tests for HTTP bulk requests for now
-      ackTimeout: 20,
-      responseTimeout: 20,
+      ackTimeout: 100,
+      responseTimeout: 100,
     },
 
     listen: {
       shuffleProviders: false,
       responseTimeout: 2000,
+      rematchInterval: 60000,
+      matchCooldown: 10000
     },
 
     permission: {

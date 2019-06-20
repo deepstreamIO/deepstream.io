@@ -23,7 +23,7 @@ export default class StdOutLogger extends DeepstreamPlugin implements Logger {
    * Consoles / Terminals as well as most log-managers and logging systems
    * consume messages from these streams
    */
-  constructor (private options: any = {}, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
+  constructor (private options: any = {}, private services: DeepstreamServices, config: InternalDeepstreamConfig) {
     super()
     this.useColors = this.options.colors === undefined ? true : this.options.colors
     this.currentLogLevel = this.options.logLevel || LOG_LEVEL.DEBUG

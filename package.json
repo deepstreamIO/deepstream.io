@@ -22,7 +22,7 @@
     "test:http-server": "node test/test-helper/start-test-server.js",
     "e2e": "ts-node --transpile-only --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --retry --exit",
     "e2e:rpc": "npm run e2e -- --tags \"@rpcs\"",
-    "e2e:event": "npm run e2e -- --tags \"@events\"",
+    "e2e:event": "npm run e2e -- --tags \"@events and not @listening-complex\"",
     "e2e:record": "npm run e2e -- --tags \"@records\"",
     "e2e:login": "npm run e2e -- --tags \"@login\"",
     "e2e:presence": "npm run e2e -- --tags \"@presence\"",

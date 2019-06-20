@@ -238,6 +238,8 @@ export interface InternalDeepstreamConfig {
   listen: {
     responseTimeout: number
     shuffleProviders: boolean
+    rematchInterval: number
+    matchCooldown: number
   }
 }
 

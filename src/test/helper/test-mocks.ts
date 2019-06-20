@@ -44,7 +44,6 @@ export const getTestMocks = () => {
   const recordHandlerMock = sinon.mock(recordHandler)
 
   function getSocketWrapper (user: string, authData: JSONObject = {}, clientData: JSONObject = {}) {
-    const socketWrapperEmitter = new EventEmitter()
     const socketWrapper = {
       authAttempts: 0,
       user,
@@ -71,11 +70,7 @@ export const getTestMocks = () => {
       getHandshakeData: () => ({}),
       close: () => {},
       onClose: () => {},
-      removeOnClose: () => {},
-      emit: socketWrapperEmitter.emit,
-      on: socketWrapperEmitter.on,
-      once: socketWrapperEmitter.once,
-      removeListener: socketWrapperEmitter.removeListener,
+      removeOnClose: () => {}
     } as never as SocketWrapper
 
     return {

@@ -38,7 +38,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
    */
   public get (lockName: string, callback: LockCallback) {
     if (this.services.cluster.isLeader()) {
-      callback( this.getLock(lockName))
+      callback(this.getLock(lockName))
     } else if (!this.timeouts.has(lockName)) {
        this.getRemoteLock(lockName, callback)
     } else {

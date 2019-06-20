@@ -42,8 +42,18 @@ record:
   #   - metrics/
 
 listen:
+  # Try finding a provider randomly rather than by the order they subscribed to.
+  shuffleProviders: true
   # The amount of time to wait for a provider to acknowledge or reject a listen request
   responseTimeout: 500
+  # The amount of time before trying to reattempt finding matches for subscriptions. This
+  # is not a cheap operation so it's recommended to raise keep this at minutes rather then
+  # second intervals if you are experiencing heavy loads
+  rematchInterval: 60000
+  # The amount of time a server will refuse to retry finding a subscriber after a previously
+  # failed attempt. This is used to avoid servers constantly trying to find a match without a
+  # cooldown period
+  matchCooldown: 10000
 
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`

@@ -159,7 +159,9 @@ export function get (): InternalDeepstreamConfig {
 
     listen: {
       shuffleProviders: true,
-      responseTimeout: 500
+      responseTimeout: 500,
+      rematchInterval: 30000,
+      matchCooldown: 10000
     }
   }
 }

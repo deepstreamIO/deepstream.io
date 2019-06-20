@@ -210,7 +210,6 @@ export default class ListenerTestUtils {
       name: pattern,
       subscription
     })
-    // TODO
     // verify( providers[ provider], this.actions.ERROR, [ C.EVENT.INVALID_MESSAGE, this.actions.LISTEN_ACCEPT, pattern, subscriptionName ] );
   }
 
@@ -227,7 +226,7 @@ export default class ListenerTestUtils {
   }
 
   public providerLosesItsConnection (provider: number) {
-    (this.providers[provider].socketWrapper as any).emit('close', this.providers[provider].socketWrapper)
+    // (this.providers[provider].socketWrapper as any).emit('close', this.providers[provider].socketWrapper)
   }
 
   /**
