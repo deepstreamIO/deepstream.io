@@ -48,28 +48,6 @@ describe('dependency-initialiser', () => {
       done()
     }, 5)
   })
-
-  it('sets deepstream on the plugin if setDeepstream is present', () => {
-    const dsMock = { is: 'deepstream' }
-    const setDsSpy = config.pluginC.setDeepstream = spy()
-    config.pluginC.isReady = true
-    // tslint:disable-next-line:no-unused-expression
-    new DependencyInitialiser(dsMock, config as any, services as any, config.pluginC, 'pluginC')
-    expect(setDsSpy).to.have.been.calledWith(dsMock)
-  })
-
-  it('allows plugins to become ready after deepstream is set', () => {
-    const dsMock = { is: 'deepstream' }
-    config.pluginC.deepstream = null
-    config.pluginC.setDeepstream = (deepstream) => {
-      config.pluginC.deepstream = deepstream
-      config.pluginC.setReady()
-    }
-    config.pluginC.isReady = false
-    // tslint:disable-next-line:no-unused-expression
-    new DependencyInitialiser(dsMock, config as any, services as any, config.pluginC, 'pluginC')
-    expect(config.pluginC.deepstream).to.equal(dsMock)
-  })
 })
 
 describe('encounters timeouts and errors during dependency initialisations', () => {

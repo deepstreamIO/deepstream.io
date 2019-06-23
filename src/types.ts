@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events'
 import { TOPIC, EVENT, LOG_LEVEL } from './constants'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
-import { Deepstream } from './deepstream.io'
 import { ALL_ACTIONS, Message, JSONObject } from '../binary-protocol/src/message-constants'
 import MessageDistributor from './message/message-distributor'
 import { DeepPartial } from 'ts-essentials'
@@ -115,22 +114,19 @@ export interface PluginConfig {
   options: any
 }
 
-export type MonitorHookCallback = () => void
 export abstract class DeepstreamPlugin extends EventEmitter {
   public isReady: boolean = true
   public abstract description: string
-  public apiVersion?: number
   public init? (): void
   public async whenReady (): Promise<void> {}
   public async close (): Promise<void> {}
-  public setDeepstream? (deepstream: Deepstream): void
   public setRecordHandler? (recordHandler: any): void
-  public registerMonitorHook? (cb: MonitorHookCallback): void
 }
 
 export type StorageReadCallback = (error: string | null, version: number, result: any) => void
 export type StorageWriteCallback = (error: string | null) => void
 export interface Storage extends DeepstreamPlugin  {
+  apiVersion?: number
   set (recordName: string, version: number, data: any, callback: StorageWriteCallback, metaData?: any): void
   get (recordName: string, callback: StorageReadCallback, metaData?: any): void
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void

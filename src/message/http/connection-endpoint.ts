@@ -25,12 +25,7 @@ export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements 
     this.onSocketMessageBound = this.onSocketMessage.bind(this)
     this.onSocketErrorBound = this.onSocketError.bind(this)
     this.onPermissionResponse = this.onPermissionResponse.bind(this)
-  }
 
-  /**
-   * Called on initialization with a reference to the instantiating deepstream server.
-   */
-  public setDeepstream (deepstream: any): void {
     this.jifHandler = new JIFHandler(this.services)
   }
 

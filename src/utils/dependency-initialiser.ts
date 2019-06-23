@@ -37,10 +37,6 @@ export default class DependencyInitialiser extends EventEmitter {
       throw error
     }
 
-    if (this.dependency.setDeepstream instanceof Function) {
-      this.dependency.setDeepstream(deepstream)
-    }
-
     if (this.dependency.isReady) {
       this.onReady()
     } else {

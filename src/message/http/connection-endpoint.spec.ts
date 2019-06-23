@@ -45,7 +45,6 @@ describe('http plugin', () => {
 
   before(() => {
     httpPlugin = new ConnectionEndpoint(conf, services as never as DeepstreamServices, {} as never as DeepstreamConfig)
-    httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
   })
 
