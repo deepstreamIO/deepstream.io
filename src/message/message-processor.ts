@@ -1,6 +1,6 @@
 import { EVENT_ACTIONS } from '../constants'
 import { TOPIC, CONNECTION_ACTIONS, Message } from '../../binary-protocol/src/message-constants'
-import { SocketWrapper } from '../types'
+import { SocketWrapper, DeepstreamConfig } from '../types'
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the

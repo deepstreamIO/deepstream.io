@@ -1,6 +1,6 @@
 import { MonitoringMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
-import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 export default class MonitoringHandler {
   // private subscriptionRegistry: SubscriptionRegistry
@@ -8,7 +8,7 @@ export default class MonitoringHandler {
   /**
    * Handles incoming and outgoing messages for the EVENT topic.
    */
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry) {
     // this.subscriptionRegistry =
     // subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.MONITORING, TOPIC.MONITORING_SUBSCRIPTIONS)
   }

@@ -3,7 +3,7 @@ import { isOfType, isExcluded } from '../utils/utils'
 import { setValue as setPathValue } from './json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
-import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, MetaData } from '../types'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, MetaData } from '../types'
 
 interface Step {
   message: RecordWriteMessage
@@ -54,7 +54,7 @@ export default class RecordTransition {
  private pendingStorageWrites: number = 0
  private pendingCacheWrites: number = 0
 
-  constructor (private name: string, private config: InternalDeepstreamConfig, private services: DeepstreamServices, private recordHandler: RecordHandler, private readonly metaData: MetaData) {
+  constructor (private name: string, private config: DeepstreamConfig, private services: DeepstreamServices, private recordHandler: RecordHandler, private readonly metaData: MetaData) {
     this.onCacheSetResponse = this.onCacheSetResponse.bind(this)
     this.onStorageSetResponse = this.onStorageSetResponse.bind(this)
     this.onRecord = this.onRecord.bind(this)

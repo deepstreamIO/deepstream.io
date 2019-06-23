@@ -1,7 +1,7 @@
 import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
 import SubscriptionRegistry from '../utils/subscription-registry'
 import { shuffleArray } from '../utils/utils'
-import { SubscriptionListener, InternalDeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry } from '../types'
+import { SubscriptionListener, DeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry } from '../types'
 
 interface ListenInProgress {
   queryProvider: Provider,
@@ -40,7 +40,7 @@ export default class ListenerRegistry implements SubscriptionListener {
   * This class manages the matching of patterns and record names. The subscription /
   * notification logic is handled by this.providerRegistry
   */
-  constructor (private topic: TOPIC, private config: InternalDeepstreamConfig, private services: DeepstreamServices, private clientRegistry: SubscriptionRegistry, private metaData: any = {}) {
+  constructor (private topic: TOPIC, private config: DeepstreamConfig, private services: DeepstreamServices, private clientRegistry: SubscriptionRegistry, private metaData: any = {}) {
     this.actions = topic === TOPIC.RECORD ? RECORD_ACTIONS : EVENT_ACTIONS
 
     this.triggerNextProvider = this.triggerNextProvider.bind(this)

@@ -1,7 +1,7 @@
-import { DeepstreamConfig } from '../../src/types'
 import { LOG_LEVEL } from '../../src/constants'
+import { PartialDeepstreamConfig } from '../../src/types'
 
-export const getServerConfig = (port: number): DeepstreamConfig => ({
+export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     serverName : `server-${port}`,
     logLevel: LOG_LEVEL.WARN,
     showLogo : false,

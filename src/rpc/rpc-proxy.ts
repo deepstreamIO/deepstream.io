@@ -1,5 +1,5 @@
 import { RPC_ACTIONS, RPCMessage } from '../constants'
-import { SimpleSocketWrapper, InternalDeepstreamConfig, DeepstreamServices } from '../types'
+import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
 
 /**
  * This class exposes an interface that mimicks the behaviour
@@ -10,7 +10,7 @@ export default class RpcProxy implements SimpleSocketWrapper {
   public isRemote = true
   public user: string = 'remote server ' + this.remoteServer
 
-  constructor (config: InternalDeepstreamConfig, private services: DeepstreamServices, private remoteServer: string, private  metaData: any) {
+  constructor (config: DeepstreamConfig, private services: DeepstreamServices, private remoteServer: string, private  metaData: any) {
   }
 
   public sendAckMessage (message: RPCMessage): void {

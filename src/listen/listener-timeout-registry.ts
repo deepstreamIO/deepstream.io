@@ -13,7 +13,7 @@ export default class ListenerTimeoutRegistry {
   * responded.
   */
   // @ts-ignore
-  constructor (private readonly topic: TOPIC, private config: InternalDeepstreamConfig, private services: DeepstreamServices) {
+  constructor (private readonly topic: TOPIC, private config: DeepstreamConfig, private services: DeepstreamServices) {
     this.actions = topic === TOPIC.RECORD ? RECORD_ACTIONS : EVENT_ACTIONS
     this.timeoutMap = {}
     this.timedoutProviders = {}

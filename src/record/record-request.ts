@@ -4,7 +4,7 @@ type onCompleteCallback = (recordName: string, version: number, data: any, socke
 type onErrorCallback = (event: any, errorMessage: string, recordName: string, socket: SocketWrapper | null, message?: Message) => void
 
 import { isExcluded } from '../utils/utils'
-import { SocketWrapper, DeepstreamServices, InternalDeepstreamConfig } from '../types'
+import { SocketWrapper, DeepstreamServices, DeepstreamConfig } from '../types'
 
 /**
  * Sends an error to the socketWrapper that requested the
@@ -58,7 +58,7 @@ function onStorageResponse (
  */
 function onCacheResponse (
   error: string | null, recordName: string, version: number, data: any, socketWrapper: SocketWrapper | null,
-  onComplete: onCompleteCallback, onError: onErrorCallback, config: InternalDeepstreamConfig, services: DeepstreamServices,
+  onComplete: onCompleteCallback, onError: onErrorCallback, config: DeepstreamConfig, services: DeepstreamServices,
   context: any, metaData: any, promoteToCache: boolean, message?: Message
 ): void {
   if (error) {
@@ -114,7 +114,7 @@ function onCacheResponse (
  */
 export function recordRequest (
   recordName: string,
-  config: InternalDeepstreamConfig,
+  config: DeepstreamConfig,
   services: DeepstreamServices,
   socketWrapper: SocketWrapper | null,
   onComplete: onCompleteCallback,
@@ -149,7 +149,7 @@ export function recordRequest (
   }, metaData)
 }
 
-export function recordRequestBinding (config: InternalDeepstreamConfig, services: DeepstreamServices, context: any, metaData: any) {
+export function recordRequestBinding (config: DeepstreamConfig, services: DeepstreamServices, context: any, metaData: any) {
   return function (recordName: string, socketWrapper: SocketWrapper, onComplete: onCompleteCallback, onError: onErrorCallback, message?: Message) {
     recordRequest (recordName, config, services, socketWrapper, onComplete, onError, context, metaData, message)
   }

@@ -1,13 +1,13 @@
 import { EventEmitter } from 'events'
 import { EVENT } from '../constants'
 import { Deepstream } from '../deepstream.io'
-import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamPlugin } from '../types'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin } from '../types'
 
 export default class DependencyInitialiser extends EventEmitter {
   public isReady: boolean
 
   private deepstream: Deepstream
-  private config: InternalDeepstreamConfig
+  private config: DeepstreamConfig
   private services: DeepstreamServices
   private dependency: any
   private name: string
@@ -18,7 +18,7 @@ export default class DependencyInitialiser extends EventEmitter {
  * an individual dependency (cache connector, persistance connector,
  * message connector, logger)
  */
-  constructor (deepstream: Deepstream, config: InternalDeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
+  constructor (deepstream: Deepstream, config: DeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
     super()
     this.isReady = false
     this.deepstream = deepstream

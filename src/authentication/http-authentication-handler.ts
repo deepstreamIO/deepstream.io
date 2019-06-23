@@ -1,7 +1,7 @@
 import { post } from 'needle'
 import * as utils from '../utils/utils'
 import { EVENT } from '../constants'
-import { AuthenticationHandler, UserAuthenticationCallback, DeepstreamServices, InternalDeepstreamConfig, DeepstreamPlugin } from '../types'
+import { AuthenticationHandler, UserAuthenticationCallback, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from '../types'
 import { JSONObject } from '../../binary-protocol/src/message-constants'
 
 interface HttpAuthenticationHandlerSettings {
@@ -27,7 +27,7 @@ export default class HttpAuthenticationHandler extends DeepstreamPlugin implemen
   private retryAttempts = new Map<number, { connectionData: any, authData: any, callback: UserAuthenticationCallback, attempts: number } >()
   private requestId = 0
 
-  constructor (private settings: HttpAuthenticationHandlerSettings, private services: DeepstreamServices, config: InternalDeepstreamConfig) {
+  constructor (private settings: HttpAuthenticationHandlerSettings, private services: DeepstreamServices, config: DeepstreamConfig) {
     super()
     this.validateSettings()
     if (this.settings.promoteToHeader === undefined) {

@@ -33,11 +33,11 @@ import {get} from '../../default-options'
 import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
-import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper, Monitoring, DeepstreamPlugin, PermissionCallback, UserAuthData } from '../../types'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Monitoring, DeepstreamPlugin, PermissionCallback, UserAuthData } from '../../types'
 import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory'
 import { Message, LOG_LEVEL, EVENT } from '../../constants'
 
-export const getDeepstreamOptions = (serverName?: string): { config: InternalDeepstreamConfig, services: DeepstreamServices } => {
+export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamConfig, services: DeepstreamServices } => {
   const config = { ...get(), ...{
     serverName: serverName || 'server-name-a',
 
@@ -66,7 +66,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
       storageExclusionPrefixes: ['no-storage'],
       storageHotPathPrefixes: [],
     }
-  }} as never as InternalDeepstreamConfig
+  }} as never as DeepstreamConfig
 
   class PermissionHandler extends DeepstreamPlugin implements PermissionHandler {
     public lastArgs: any[]
@@ -122,7 +122,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: InternalDee
     connectionEndpoints: [],
   }
   services.subscriptions = new SubscriptionRegistryFactory(config, services as DeepstreamServices)
-  return { config, services } as { config: InternalDeepstreamConfig, services: DeepstreamServices}
+  return { config, services } as { config: DeepstreamConfig, services: DeepstreamServices}
 }
 
 export const getDeepstreamPermissionOptions = function () {
@@ -135,7 +135,7 @@ export const getDeepstreamPermissionOptions = function () {
 
 const ConfigPermissionHandler = require('../../permission/config-permission-handler').default
 
-export const testPermission = function (options: { config: InternalDeepstreamConfig, services: DeepstreamServices }) {
+export const testPermission = function (options: { config: DeepstreamConfig, services: DeepstreamServices }) {
   return function (permissions: any, message: Message, username: string, userdata: UserAuthData, callback: PermissionCallback) {
     const permissionHandler = new ConfigPermissionHandler(options.config.permission.options, options.services, options.config, permissions)
     permissionHandler.setRecordHandler({

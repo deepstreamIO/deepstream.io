@@ -1,4 +1,4 @@
-import { DeepstreamServices, InternalDeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin } from '../types'
+import { DeepstreamServices, DeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin } from '../types'
 import { TOPIC, LOG_LEVEL } from '../constants'
 import { ClusterMessage, EVENT, CLUSTER_ACTIONS } from '../../binary-protocol/src/message-constants'
 
@@ -24,7 +24,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      * initial status message that notifies other nodes within this
      * cluster of its presence.
      */
-    constructor (private pluginOptions: any, private services: DeepstreamServices, private config: InternalDeepstreamConfig) {
+    constructor (private pluginOptions: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
         super()
         this.role = this.pluginOptions.role || 'deepstream'
     }

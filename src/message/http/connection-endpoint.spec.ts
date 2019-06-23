@@ -7,7 +7,7 @@ import LoggerMock from '../../test/mock/logger-mock'
 import ConnectionEndpoint from './connection-endpoint'
 import OpenPermissionHandler from '../../permission/open-permission-handler';
 import OpenAuthenticationHandler from '../../authentication/open-authentication-handler';
-import { DeepstreamServices, InternalDeepstreamConfig } from '../../types';
+import { DeepstreamServices, DeepstreamConfig } from '../../types';
 
 Promise.promisifyAll(needle)
 
@@ -44,7 +44,7 @@ describe('http plugin', () => {
   const postUrl = `http://127.0.0.1:8888/api/v1/${apiKey}`
 
   before(() => {
-    httpPlugin = new ConnectionEndpoint(conf, services as never as DeepstreamServices, {} as never as InternalDeepstreamConfig)
+    httpPlugin = new ConnectionEndpoint(conf, services as never as DeepstreamServices, {} as never as DeepstreamConfig)
     httpPlugin.setDeepstream(mockDS)
     httpPlugin.init()
   })

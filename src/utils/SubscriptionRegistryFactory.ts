@@ -1,11 +1,11 @@
 import SubscriptionRegistry from './subscription-registry'
 import { TOPIC } from '../../binary-protocol/src/message-constants'
-import { InternalDeepstreamConfig, DeepstreamServices } from '../types'
+import { DeepstreamConfig, DeepstreamServices } from '../types'
 
 export class SubscriptionRegistryFactory {
     private subscriptionRegistries = new Map<TOPIC, SubscriptionRegistry>()
 
-    constructor (private config: InternalDeepstreamConfig, private services: DeepstreamServices) {
+    constructor (private config: DeepstreamConfig, private services: DeepstreamServices) {
     }
 
     public getSubscriptionRegistry (topic: TOPIC, clusterTopic: TOPIC) {

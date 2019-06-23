@@ -1,10 +1,10 @@
 import { SCHEMA } from './config-schema'
 import * as pathParser from './path-parser'
 import * as ruleParser from './rule-parser'
-import { InternalDeepstreamConfig } from '../types'
+import { DeepstreamConfig } from '../types'
 import { Dictionary } from 'ts-essentials'
 
-const validationSteps: Dictionary<(config: InternalDeepstreamConfig) => boolean | string> = {}
+const validationSteps: Dictionary<(config: DeepstreamConfig) => boolean | string> = {}
 
 /**
  * Validates a configuration object. This method runs through multiple

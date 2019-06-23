@@ -9,7 +9,7 @@ import {
   MONITORING_ACTIONS,
   Message
 } from '../constants'
-import { SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry } from '../types'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry } from '../types'
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
@@ -26,7 +26,7 @@ interface Subscription {
 export default class SubscriptionRegistry {
   private sockets: Map<SocketWrapper, Set<Subscription>>
   private subscriptions: Map<string, Subscription>
-  private config: InternalDeepstreamConfig
+  private config: DeepstreamConfig
   private services: DeepstreamServices
   private topic: TOPIC
   private subscriptionListener: SubscriptionListener | null = null
@@ -40,7 +40,7 @@ export default class SubscriptionRegistry {
    * A bit like an event-hub, only that it registers SocketWrappers rather
    * than functions
    */
-  constructor (config: InternalDeepstreamConfig, services: DeepstreamServices, topic: TOPIC, clusterTopic: TOPIC) {
+  constructor (config: DeepstreamConfig, services: DeepstreamServices, topic: TOPIC, clusterTopic: TOPIC) {
     this.sockets = new Map()
     this.subscriptions = new Map()
     this.config = config

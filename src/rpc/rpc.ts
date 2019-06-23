@@ -1,6 +1,6 @@
 import { RPC_ACTIONS, TOPIC, RPCMessage, Message } from '../constants'
 import RpcHandler from './rpc-handler'
-import { SimpleSocketWrapper, InternalDeepstreamConfig } from '../types'
+import { SimpleSocketWrapper, DeepstreamConfig } from '../types'
 
 /**
  * Relays a remote procedure call from a requestor to a provider and routes
@@ -18,7 +18,7 @@ export default class Rpc {
 
   /**
   */
-  constructor (private rpcHandler: RpcHandler, private requestor: SimpleSocketWrapper, private provider: SimpleSocketWrapper, private config: InternalDeepstreamConfig, message: RPCMessage) {
+  constructor (private rpcHandler: RpcHandler, private requestor: SimpleSocketWrapper, private provider: SimpleSocketWrapper, private config: DeepstreamConfig, message: RPCMessage) {
     this.rpcName = message.name
     this.correlationId = message.correlationId
     this.message = { ...message, ...this.getRequestor(requestor) }

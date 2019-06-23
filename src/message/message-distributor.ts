@@ -1,5 +1,5 @@
 import {PARSER_ACTIONS, TOPIC, Message} from '../constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
+import { SocketWrapper, PartialDeepstreamConfig, DeepstreamServices } from '../types'
 
 /**
  * The MessageDistributor routes valid and permissioned messages to
@@ -9,7 +9,7 @@ export default class MessageDistributor {
   private callbacks = new Map<TOPIC, Function>()
 
   // @ts-ignore
-  constructor (private options: DeepstreamConfig, private services: DeepstreamServices) {}
+  constructor (private options: PartialDeepstreamConfig, private services: DeepstreamServices) {}
 
   /**
    * Accepts a socketWrapper and a parsed message as input and distributes

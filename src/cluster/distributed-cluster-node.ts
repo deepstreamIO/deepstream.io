@@ -1,11 +1,11 @@
 import { TOPIC, Message } from '../constants'
-import { ClusterNode, StateRegistry, DeepstreamPlugin, DeepstreamServices, InternalDeepstreamConfig } from '../types'
+import { ClusterNode, StateRegistry, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig } from '../types'
 import { DistributedStateRegistry } from './distributed-state-registry'
 
 export default abstract class DistributedClusterNode extends DeepstreamPlugin implements ClusterNode {
   public stateRegistries = new Map<TOPIC, StateRegistry>()
 
-  constructor (protected pluginOptions: any, protected services: DeepstreamServices, protected config: InternalDeepstreamConfig) {
+  constructor (protected pluginOptions: any, protected services: DeepstreamServices, protected config: DeepstreamConfig) {
     super()
   }
 

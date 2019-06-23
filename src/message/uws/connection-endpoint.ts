@@ -3,7 +3,7 @@ import { STATES } from '../../constants'
 import * as fileUtils from '../../config/file-utils'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import {createUWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper, InternalDeepstreamConfig, UnauthenticatedSocketWrapper } from '../../types'
+import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../types'
 import { WebSocket, TemplatedApp as Server, us_listen_socket, HttpRequest } from 'uWebSockets.js'
 import { Dictionary } from 'ts-essentials'
 import { PromiseDelay } from '../../utils/utils'
@@ -18,7 +18,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
   private readonly uWS: any
   private connections = new Map<WebSocket, UnauthenticatedSocketWrapper>()
 
-  constructor (options: WebSocketServerConfig, services: DeepstreamServices, config: InternalDeepstreamConfig) {
+  constructor (options: WebSocketServerConfig, services: DeepstreamServices, config: DeepstreamConfig) {
     super(options, services, config)
 
     // alias require to trick nexe from bundling it
@@ -99,7 +99,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
   /**
    * Returns sslKey, sslCert and other options from the config.
    */
-  public static getSLLParams (config: Partial<InternalDeepstreamConfig>) {
+  public static getSLLParams (config: Partial<DeepstreamConfig>) {
     const keyFileName = config.sslKey
     const certFileName = config.sslCert
     const dhParamsFile = config.sslDHParams
@@ -122,7 +122,7 @@ export default class UWSConnectionEndpoint extends ConnectionEndpoint {
     return null
   }
 
-  public static getServer (uWS: any, config: Partial<InternalDeepstreamConfig>, options: any): Server {
+  public static getServer (uWS: any, config: Partial<DeepstreamConfig>, options: any): Server {
     let server
     const sslParams = UWSConnectionEndpoint.getSLLParams(config)
     if (sslParams) {

@@ -80,18 +80,18 @@ export interface Logger extends DeepstreamPlugin {
   error (event: EVENT | string, message?: string, metaData?: any): void
   log (level: LOG_LEVEL, event: EVENT, message: string, metaData?: any): void
 }
-export type LoggerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => Logger
+export type LoggerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Logger
 
 export interface ConnectionEndpoint extends DeepstreamPlugin {
   onMessages (socketWrapper: SocketWrapper, messages: Message[]): void
   scheduleFlush? (socketWrapper: SocketWrapper): void
 }
-export type ConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => ConnectionEndpoint
+export type ConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => ConnectionEndpoint
 
 export interface SocketConnectionEndpoint extends ConnectionEndpoint {
   scheduleFlush (socketWrapper: SocketWrapper): void
 }
-export type SocketConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => SocketConnectionEndpoint
+export type SocketConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => SocketConnectionEndpoint
 
 export type StateRegistryCallback = (name: string) => void
 export interface StateRegistry extends DeepstreamPlugin {
@@ -106,7 +106,7 @@ export interface StateRegistry extends DeepstreamPlugin {
   getAllServers (subscriptionName: string): string[]
   removeAll (serverName: string): void
 }
-export type StateRegistryPlugin<PluginOptions = any> = new (topic: TOPIC, pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => StateRegistry
+export type StateRegistryPlugin<PluginOptions = any> = new (topic: TOPIC, pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => StateRegistry
 
 export interface PluginConfig {
   name?: string
@@ -135,7 +135,7 @@ export interface Storage extends DeepstreamPlugin  {
   get (recordName: string, callback: StorageReadCallback, metaData?: any): void
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void
 }
-export type StoragePlugin<PluginOptions> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => Storage
+export type StoragePlugin<PluginOptions> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Storage
 
 export interface Monitoring extends DeepstreamPlugin  {
   onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void
@@ -144,13 +144,13 @@ export interface Monitoring extends DeepstreamPlugin  {
   onMessageSend (message: Message): void
   onBroadcast (message: Message, count: number): void
 }
-export type MonitoringPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => Monitoring
+export type MonitoringPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Monitoring
 
 export type PermissionCallback = (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: Error | string | ALL_ACTIONS | null, result: boolean) => void
 export interface PermissionHandler extends DeepstreamPlugin {
   canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: JSONObject, socketWrapper: SocketWrapper, passItOn: any): void
 }
-export type PermissionHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => PermissionHandler
+export type PermissionHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => PermissionHandler
 
 export interface UserAuthData {
   username?: string,
@@ -163,7 +163,7 @@ export interface AuthenticationHandler extends DeepstreamPlugin  {
   isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback): void
   onClientDisconnect? (username: string): void
 }
-export type AuthenticationHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => AuthenticationHandler
+export type AuthenticationHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => AuthenticationHandler
 
 export interface ClusterNode extends DeepstreamPlugin  {
   getGlobalStateRegistry (): StateRegistry
@@ -173,24 +173,24 @@ export interface ClusterNode extends DeepstreamPlugin  {
   subscribe<SpecificMessage> (stateRegistryTopic: TOPIC, callback: (message: SpecificMessage, originServerName: string) => void): void
   close (): Promise<void>
 }
-export type ClusterNodePlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => ClusterNode
+export type ClusterNodePlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => ClusterNode
 
 export type LockCallback = (locked: boolean) => void
 export interface LockRegistry extends DeepstreamPlugin  {
   get (lock: string, callback: LockCallback): void
   release (lock: string): void
 }
-export type LockRegistryPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => LockRegistry
+export type LockRegistryPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => LockRegistry
 
 export interface ClusterRegistry extends DeepstreamPlugin {
   isLeader (): boolean
   getLeader (): string
 }
-export type ClusterRegistryPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: InternalDeepstreamConfig) => ClusterRegistry
+export type ClusterRegistryPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => ClusterRegistry
 
-export type DeepstreamConfig = DeepPartial<InternalDeepstreamConfig>
+export type PartialDeepstreamConfig = DeepPartial<DeepstreamConfig>
 
-export interface InternalDeepstreamConfig {
+export interface DeepstreamConfig {
   showLogo: boolean
   libDir: string | null
   logLevel: number

@@ -9,7 +9,7 @@ import {
   Message,
   JSONObject,
 } from '../../../binary-protocol/src/message-constants'
-import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, InternalDeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin } from '../../types'
+import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin } from '../../types'
 
 const OPEN = 'OPEN'
 
@@ -42,7 +42,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   private unauthenticatedClientTimeout: number | boolean = false
   private urlPath: string | null = null
 
-  constructor (protected options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: InternalDeepstreamConfig) {
+  constructor (protected options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: DeepstreamConfig) {
     super()
     this.flushSockets = this.flushSockets.bind(this)
   }

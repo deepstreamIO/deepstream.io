@@ -26,7 +26,7 @@ import * as configValidator from './config/config-validator'
 
 import DependencyInitialiser from './utils/dependency-initialiser'
 import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
-import { InternalDeepstreamConfig, DeepstreamServices, DeepstreamConfig, DeepstreamPlugin } from './types'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig } from './types'
 import { getValue, setValue } from './record/json-path'
 
 /**
@@ -41,7 +41,7 @@ export class Deepstream extends EventEmitter {
 
   private configFile!: string
 
-  private config!: InternalDeepstreamConfig
+  private config!: DeepstreamConfig
   private services!: DeepstreamServices
 
   private messageProcessor: any
@@ -62,7 +62,7 @@ export class Deepstream extends EventEmitter {
  * publish-subscribe, request-response, listeneing, permissioning
  * and a host of other features!
  */
-  constructor (config: DeepstreamConfig | string | null) {
+  constructor (config: PartialDeepstreamConfig | string | null) {
     super()
     this.loadConfig(config)
     this.messageProcessor = null
@@ -405,13 +405,13 @@ private async pluginsShutdown () {
  * configInitialiser, but it should not block. Instead the ready events of
  * those plugins are handled through the DependencyInitialiser in this instance.
  */
-  private loadConfig (config: DeepstreamConfig | string | null): void {
+  private loadConfig (config: PartialDeepstreamConfig | string | null): void {
     let result
     if (config === null || typeof config === 'string') {
       result = jsYamlLoader.loadConfig(config)
       this.configFile = result.file
     } else {
-      const rawConfig = merge(getDefaultOptions(), config) as InternalDeepstreamConfig
+      const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
       result = configInitialiser.initialise(rawConfig)
     }
     configValidator.validate(result.config)

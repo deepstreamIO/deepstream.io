@@ -1,7 +1,7 @@
-import DistributedClusterNode from "./distributed-cluster-node"
-import { Message, TOPIC } from "../constants"
+import DistributedClusterNode from './distributed-cluster-node'
+import { Message, TOPIC } from '../constants'
 import * as cluster from 'cluster'
-import { EventEmitter } from "events"
+import { EventEmitter } from 'events'
 
 if (cluster.isWorker) {
     process.on('message', (serializedMessage) => {

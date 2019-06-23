@@ -1,13 +1,13 @@
 import DistributedClusterNode from '../../src/cluster/distributed-cluster-node'
 import { Message, TOPIC } from '../../src/constants'
 import { EventEmitter } from 'events'
-import { DeepstreamServices, InternalDeepstreamConfig } from '../../src/types'
+import { DeepstreamServices, DeepstreamConfig } from '../../src/types'
 
 export class E2EClusterNode extends DistributedClusterNode {
     public description: string = 'E2EClusterNode'
     private static emitters = new Map<string, EventEmitter>()
 
-    constructor (options: any, services: DeepstreamServices, config: InternalDeepstreamConfig) {
+    constructor (options: any, services: DeepstreamServices, config: DeepstreamConfig) {
         super(options, services, config)
         E2EClusterNode.emitters.set(this.config.serverName, new EventEmitter())
     }

@@ -6,7 +6,7 @@ import * as configValidator from './config-validator'
 import RuleApplication from './rule-application'
 import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
-import { PermissionHandler, ValveConfig, InternalDeepstreamConfig, DeepstreamServices, PermissionCallback, SocketWrapper, ValveSection, DeepstreamPlugin } from '../types'
+import { PermissionHandler, ValveConfig, DeepstreamConfig, DeepstreamServices, PermissionCallback, SocketWrapper, ValveSection, DeepstreamPlugin } from '../types'
 
 const UNDEFINED = 'undefined'
 
@@ -28,7 +28,7 @@ export default class ConfigPermissionHandler extends DeepstreamPlugin implements
    * with the default permission.yml it allows everything, but at the same time provides
    * a convenient starting point for permission declarations.
    */
-  constructor (private permissionOptions: ValveConfig, private services: DeepstreamServices, private config: InternalDeepstreamConfig, permissions?: ValveSection) {
+  constructor (private permissionOptions: ValveConfig, private services: DeepstreamServices, private config: DeepstreamConfig, permissions?: ValveSection) {
     super()
     this.ruleCache = new RuleCache(this.permissionOptions)
 

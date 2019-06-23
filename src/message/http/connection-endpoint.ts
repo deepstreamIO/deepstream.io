@@ -3,7 +3,7 @@ import JIFHandler from '../jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS, Message, ALL_ACTIONS } from '../../constants'
-import { ConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, InternalDeepstreamConfig } from '../../types'
+import { ConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig } from '../../types'
 import { JSONObject } from '../../../binary-protocol/src/message-constants'
 
 export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements ConnectionEndpoint {
@@ -19,7 +19,7 @@ export default class HTTPConnectionEndpoint extends DeepstreamPlugin implements 
   private logInvalidAuthData: boolean = false
   private requestTimeout!: number
 
-  constructor (private options: any, private services: DeepstreamServices, public dsOptions: InternalDeepstreamConfig) {
+  constructor (private options: any, private services: DeepstreamServices, public dsOptions: DeepstreamConfig) {
     super()
 
     this.onSocketMessageBound = this.onSocketMessage.bind(this)

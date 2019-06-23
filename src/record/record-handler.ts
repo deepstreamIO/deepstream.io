@@ -14,7 +14,7 @@ import { recordRequestBinding } from './record-request'
 import RecordTransition from './record-transition'
 import { isExcluded } from '../utils/utils'
 import { EVENT, JSONObject, ALL_ACTIONS, RECORD_ACTIONS } from '../../binary-protocol/src/message-constants'
-import { InternalDeepstreamConfig, DeepstreamServices, SocketWrapper, Handler } from '../types'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Handler } from '../types'
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
@@ -34,7 +34,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
 /**
  * The entry point for record related operations
  */
-  constructor (private readonly config: InternalDeepstreamConfig, private readonly services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, private readonly metaData?: any) {
+  constructor (private readonly config: DeepstreamConfig, private readonly services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, private readonly metaData?: any) {
     this.subscriptionRegistry =
       subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RECORD, TOPIC.RECORD_SUBSCRIPTIONS)
     this.listenerRegistry =

@@ -11,7 +11,7 @@ import RecordHandler from '../record/record-handler'
 import { recordRequest } from '../record/record-request'
 import { EOL } from 'os'
 import {RecordData, Message} from '../../binary-protocol/src/message-constants'
-import { ValveConfig, Logger, SocketWrapper, InternalDeepstreamConfig, DeepstreamServices, PermissionCallback } from '../types'
+import { ValveConfig, Logger, SocketWrapper, DeepstreamConfig, DeepstreamServices, PermissionCallback } from '../types'
 
 const OPEN = 'open'
 const LOADING = 'loading'
@@ -36,7 +36,7 @@ interface RuleApplicationParams {
    logger: Logger
    recordHandler: RecordHandler
    socketWrapper: SocketWrapper
-   config: InternalDeepstreamConfig
+   config: DeepstreamConfig
    services: DeepstreamServices
 }
 

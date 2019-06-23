@@ -3,7 +3,7 @@ import SubscriptionRegistry from '../utils/subscription-registry'
 import { getRandomIntInRange } from '../utils/utils'
 import Rpc from './rpc'
 import RpcProxy from './rpc-proxy'
-import { SimpleSocketWrapper, InternalDeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
+import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,
@@ -18,7 +18,7 @@ export default class RpcHandler {
   /**
   * Handles incoming messages for the RPC Topic.
   */
-  constructor (private config: InternalDeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, private metaData?: any) {
+  constructor (private config: DeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, private metaData?: any) {
      this.subscriptionRegistry =
       subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RPC, TOPIC.RPC_SUBSCRIPTIONS)
 
