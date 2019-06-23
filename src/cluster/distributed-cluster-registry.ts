@@ -30,7 +30,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
     }
 
     public init () {
-        this.globalStateRegistry = this.services.message.getGlobalStateRegistry()
+        this.globalStateRegistry = this.services.states.getStateRegistry(TOPIC.STATE_REGISTRY)
         this.services.message.subscribe(TOPIC.CLUSTER, this.onMessage.bind(this))
         this.leaveCluster = this.leaveCluster.bind(this)
 

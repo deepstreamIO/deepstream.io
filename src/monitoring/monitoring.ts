@@ -1,6 +1,5 @@
 import { MonitoringMessage } from '../constants'
-import SubscriptionRegistry from '../utils/subscription-registry'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../types'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, SubscriptionRegistry } from '../types'
 
 export default class MonitoringHandler {
   // private subscriptionRegistry: SubscriptionRegistry

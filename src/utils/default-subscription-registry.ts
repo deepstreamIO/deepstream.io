@@ -9,7 +9,7 @@ import {
   MONITORING_ACTIONS,
   Message
 } from '../constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry } from '../types'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry, SubscriptionRegistry } from '../types'
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
@@ -23,12 +23,9 @@ interface Subscription {
   sockets: Set<SocketWrapper>
 }
 
-export default class SubscriptionRegistry {
-  private sockets: Map<SocketWrapper, Set<Subscription>>
-  private subscriptions: Map<string, Subscription>
-  private config: DeepstreamConfig
-  private services: DeepstreamServices
-  private topic: TOPIC
+export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
+  private sockets = new Map<SocketWrapper, Set<Subscription>>()
+  private subscriptions = new Map<string, Subscription>()
   private subscriptionListener: SubscriptionListener | null = null
   private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry
@@ -40,13 +37,7 @@ export default class SubscriptionRegistry {
    * A bit like an event-hub, only that it registers SocketWrappers rather
    * than functions
    */
-  constructor (config: DeepstreamConfig, services: DeepstreamServices, topic: TOPIC, clusterTopic: TOPIC) {
-    this.sockets = new Map()
-    this.subscriptions = new Map()
-    this.config = config
-    this.services = services
-    this.topic = topic
-
+  constructor (pluginConfig: any, private services: DeepstreamServices, private config: DeepstreamConfig, private topic: TOPIC, clusterTopic: TOPIC) {
     switch (topic) {
       case TOPIC.RECORD:
       case TOPIC.RECORD_LISTEN_PATTERNS:
@@ -76,7 +67,7 @@ export default class SubscriptionRegistry {
 
     this.onSocketClose = this.onSocketClose.bind(this)
 
-    this.clusterSubscriptions = this.services.message.getStateRegistry(clusterTopic)
+    this.clusterSubscriptions = this.services.states.getStateRegistry(clusterTopic)
     this.setUpBulkHistoryPurge()
   }
 

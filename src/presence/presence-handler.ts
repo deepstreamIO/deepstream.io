@@ -1,6 +1,5 @@
 import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage, Message } from '../constants'
-import SubscriptionRegistry from '../utils/subscription-registry'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry, Handler } from '../types'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry, Handler, SubscriptionRegistry } from '../types'
 import { Dictionary } from 'ts-essentials'
 
 const EVERYONE = '%_EVERYONE_%'
@@ -20,7 +19,7 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
       subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.PRESENCE, TOPIC.PRESENCE_SUBSCRIPTIONS)
 
     this.connectedClients =
-      stateRegistry || this.services.message.getStateRegistry(TOPIC.ONLINE_USERS)
+      stateRegistry || this.services.states.getStateRegistry(TOPIC.ONLINE_USERS)
 
     this.connectedClients.onAdd(this.onClientAdded.bind(this))
     this.connectedClients.onRemove(this.onClientRemoved.bind(this))

@@ -83,7 +83,7 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
           requestTimeout         : 1500,
         } as any
       },
-      state: {
+      states: {
         type: 'default',
         options: {
           reconciliationTimeout : 100,

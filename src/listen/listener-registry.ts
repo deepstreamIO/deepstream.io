@@ -1,7 +1,6 @@
 import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
-import SubscriptionRegistry from '../utils/subscription-registry'
-import { shuffleArray } from '../utils/utils'
-import { SubscriptionListener, DeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry } from '../types'
+import { SubscriptionListener, DeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry, SubscriptionRegistry } from '../types'
+import { shuffleArray } from '../utils/utils';
 
 interface ListenInProgress {
   queryProvider: Provider,
@@ -50,14 +49,14 @@ export default class ListenerRegistry implements SubscriptionListener {
         TOPIC.RECORD_LISTEN_PATTERNS,
         TOPIC.RECORD_LISTEN_PATTERNS,
       )
-      this.clusterProvidedRecords = this.services.message.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
+      this.clusterProvidedRecords = this.services.states.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.RECORD_LISTENING
     } else {
       this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
         TOPIC.EVENT_LISTEN_PATTERNS,
         TOPIC.EVENT_LISTEN_PATTERNS,
       )
-      this.clusterProvidedRecords = this.services.message.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
+      this.clusterProvidedRecords = this.services.states.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.EVENT_LISTENING
     }
 

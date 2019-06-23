@@ -25,7 +25,6 @@ import * as jsYamlLoader from './config/js-yaml-loader'
 import * as configValidator from './config/config-validator'
 
 import DependencyInitialiser from './utils/dependency-initialiser'
-import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig } from './types'
 import { getValue, setValue } from './record/json-path'
 
@@ -229,10 +228,8 @@ export class Deepstream extends EventEmitter {
    * Invoked once the logger is initialised. Initialises all deepstream services.
   */
   private async serviceInit () {
-    this.services.subscriptions = new SubscriptionRegistryFactory(this.config, this.services)
-
     const readyPromises = Object.keys(this.services).reduce((promises, serviceName) => {
-      if (['subscriptions', 'connectionEndpoints', 'plugins'].includes(serviceName)) {
+      if (['connectionEndpoints', 'plugins'].includes(serviceName)) {
         return promises
       }
       const service = (this.services as any)[serviceName] as DeepstreamPlugin

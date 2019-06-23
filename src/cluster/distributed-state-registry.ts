@@ -1,8 +1,10 @@
 import { TOPIC, STATE_ACTIONS } from '../constants'
-import { DeepstreamServices, StateRegistry, DeepstreamPlugin, StateRegistryCallback, DeepstreamConfig } from '../types'
+import { DeepstreamServices, StateRegistry, StateRegistryCallback, DeepstreamConfig } from '../types'
 import { StateMessage } from '../../binary-protocol/src/message-constants'
 import { Dictionary } from 'ts-essentials'
 import { EventEmitter } from 'events'
+
+export type DistributedStateRegistryOptions = any
 
 /**
  * This class provides a generic mechanism that allows to maintain
@@ -13,10 +15,8 @@ import { EventEmitter } from 'events'
  * an 'add' event is emitted. Whenever its removed by the last node within the cluster,
  * a 'remove' event is emitted.
  */
-export class DistributedStateRegistry extends DeepstreamPlugin implements StateRegistry {
-  public description: string = 'Distributed State Registry'
-
-  public isReady: boolean = false
+export class DistributedStateRegistry implements StateRegistry {
+  private isReady: boolean = false
   private data = new Map<string, {
     localCount: number,
     nodes: Set<string>,
@@ -32,7 +32,6 @@ export class DistributedStateRegistry extends DeepstreamPlugin implements StateR
    * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
    */
   constructor (private topic: TOPIC, private stateOptions: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
-    super()
     this.resetFullStateSent = this.resetFullStateSent.bind(this)
     this.services.message.subscribe(TOPIC.STATE_REGISTRY, this.processIncomingMessage.bind(this))
   }

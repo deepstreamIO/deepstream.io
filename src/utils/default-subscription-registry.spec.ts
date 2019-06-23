@@ -4,8 +4,8 @@ import {expect} from 'chai'
 import * as C from '../constants'
 import * as testHelper from '../test/helper/test-helper'
 import { getTestMocks } from '../test/helper/test-mocks'
-import SubscriptionRegistry from './subscription-registry'
 import { SocketWrapper } from '../types'
+import { DefaultSubscriptionRegistry } from './default-subscription-registry';
 
 const options = testHelper.getDeepstreamOptions()
 const services = options.services
@@ -18,7 +18,7 @@ const subscriptionListener = {
   onFirstSubscriptionMade: () => {},
 }
 
-let subscriptionRegistry: SubscriptionRegistry
+let subscriptionRegistry: DefaultSubscriptionRegistry
 let subscriptionListenerMock
 
 let clientA: { socketWrapper: SocketWrapper }
@@ -32,7 +32,7 @@ describe('subscription registry', () => {
     testMocks = getTestMocks()
 
     subscriptionListenerMock = sinon.mock(subscriptionListener)
-    subscriptionRegistry = new SubscriptionRegistry(config, services, C.TOPIC.EVENT, C.TOPIC.EVENT)
+    subscriptionRegistry = new DefaultSubscriptionRegistry({}, services, config, C.TOPIC.EVENT, C.TOPIC.EVENT)
     subscriptionRegistry.setSubscriptionListener(subscriptionListener)
 
     clientA = testMocks.getSocketWrapper('client a')

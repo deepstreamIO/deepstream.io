@@ -17,8 +17,9 @@ import { DeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig,
 import { JSONObject } from '../../binary-protocol/src/message-constants'
 import { DistributedLockRegistry } from '../cluster/distributed-lock-registry'
 import { DistributedClusterRegistry } from '../cluster/distributed-cluster-registry'
-import { DistributedStateRegistry } from '../cluster/distributed-state-registry'
-import SingleClusterNode from '../cluster/single-cluster-node'
+import { DistributedStateRegistryFactory } from '../cluster/distributed-state-registry-factory'
+import { SingleClusterNode } from '../cluster/single-cluster-node'
+import { DefaultSubscriptionRegistryFactory } from '../utils/default-subscription-registry-factory';
 
 let commandLineArguments: any
 
@@ -32,7 +33,8 @@ const defaultPlugins = new Map<string, any>([
   ['message', SingleClusterNode],
   ['locks', DistributedLockRegistry],
   ['cluster', DistributedClusterRegistry],
-  ['state', DistributedStateRegistry]
+  ['states', DistributedStateRegistryFactory],
+  ['subscriptions', DefaultSubscriptionRegistryFactory]
 ])
 
 /**
@@ -54,6 +56,8 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
 
   const services = {} as DeepstreamServices
   services.logger = handleLogger(config, services)
+
+  services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions'))(config.subscriptions.options, services, config)
   services.message = new (resolvePluginClass(config.cluster.message, 'message'))(config.cluster.message.options, services, config)
   services.storage = new (resolvePluginClass(config.storage, 'storage'))(config.storage.options, services, config)
   services.cache = new (resolvePluginClass(config.cache, 'cache'))(config.cache.options, services, config)
@@ -63,7 +67,8 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
   services.locks = new (resolvePluginClass(config.cluster.locks, 'locks'))(config.cluster.locks.options, services, config)
   services.cluster = new (resolvePluginClass(config.cluster.registry, 'cluster'))(config.cluster.registry.options, services, config)
-
+  services.states = new (resolvePluginClass(config.cluster.states, 'states'))(config.cluster.states.options, services, config)
+  
   if (services.cache.apiVersion !== 2) {
     storageCompatability(services.cache)
   }

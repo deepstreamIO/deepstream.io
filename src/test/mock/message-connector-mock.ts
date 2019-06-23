@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events'
 import { StateMessage, Message, TOPIC } from '../../../binary-protocol/src/message-constants'
 import { DeepstreamPlugin, ClusterNode } from '../../types'
-import { SingleStateRegistry } from '../../cluster/single-state-registry'
 
 export default class MessageConnectorMock extends DeepstreamPlugin implements ClusterNode {
   public description = 'Message Connector Mock'
@@ -82,13 +81,5 @@ export default class MessageConnectorMock extends DeepstreamPlugin implements Cl
 
   public subscribeServerDisconnect () {
 
-  }
-
-  public getGlobalStateRegistry () {
-    return new SingleStateRegistry()
-  }
-
-  public getStateRegistry (topic: TOPIC) {
-    return new SingleStateRegistry()
   }
 }

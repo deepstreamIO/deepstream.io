@@ -7,8 +7,7 @@ import * as C from '../constants'
 import { getTestMocks } from '../test/helper/test-mocks'
 import * as sinon from 'sinon'
 import { TOPIC, ListenMessage } from '../../binary-protocol/src/message-constants'
-import SubscriptionRegistry from '../utils/subscription-registry'
-import { SocketWrapper } from '../types'
+import { SocketWrapper, SubscriptionRegistry } from '../types'
 
 export default class ListenerTestUtils {
   private actions: any

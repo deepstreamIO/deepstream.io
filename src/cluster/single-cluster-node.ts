@@ -1,7 +1,7 @@
 import { TOPIC, Message, StateMessage } from '../constants'
 import DistributedClusterNode from './distributed-cluster-node'
 
-export default class SingleClusterNode extends DistributedClusterNode {
+export class SingleClusterNode extends DistributedClusterNode {
   public description = 'Single Cluster Node'
 
   public sendDirect (serverName: string, message: Message, metaData?: any) {}

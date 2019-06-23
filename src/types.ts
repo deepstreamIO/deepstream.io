@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events'
 import { TOPIC, EVENT, LOG_LEVEL } from './constants'
-import { SubscriptionRegistryFactory } from './utils/SubscriptionRegistryFactory'
-import { ALL_ACTIONS, Message, JSONObject } from '../binary-protocol/src/message-constants'
+import { ALL_ACTIONS, Message, JSONObject, SubscriptionMessage } from '../binary-protocol/src/message-constants'
 import MessageDistributor from './message/message-distributor'
 import { DeepPartial } from 'ts-essentials'
 
@@ -93,7 +92,7 @@ export interface SocketConnectionEndpoint extends ConnectionEndpoint {
 export type SocketConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => SocketConnectionEndpoint
 
 export type StateRegistryCallback = (name: string) => void
-export interface StateRegistry extends DeepstreamPlugin {
+export interface StateRegistry {
   has (name: string): boolean
   add (name: string): void
   remove (name: string): void
@@ -104,8 +103,32 @@ export interface StateRegistry extends DeepstreamPlugin {
   getAll (serverName?: string): string[]
   getAllServers (subscriptionName: string): string[]
   removeAll (serverName: string): void
+
+  whenReady (): Promise<void>
 }
-export type StateRegistryPlugin<PluginOptions = any> = new (topic: TOPIC, pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => StateRegistry
+
+export interface StateRegistryFactory extends DeepstreamPlugin {
+  getStateRegistry(topic: TOPIC): StateRegistry
+}
+
+export interface SubscriptionRegistry {
+  getNames (): string[]
+  getAllServers (subscriptionName: string): string[]
+  getAllRemoteServers (subscriptionName: string): string[]
+  hasName (subscriptionName: string): boolean
+  sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, suppressRemote?: boolean): void
+  subscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void
+  unsubscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void
+  getLocalSubscribers (name: string): Set<SocketWrapper>
+  hasLocalSubscribers (name: string): boolean
+  setSubscriptionListener (listener: SubscriptionListener): void
+  setAction (subscriptionAction: string, action: ALL_ACTIONS): void
+}
+
+export interface SubscriptionRegistryFactory extends DeepstreamPlugin {
+  getSubscriptionRegistry(topic: TOPIC, clusterTopic: TOPIC): SubscriptionRegistry
+  getSubscriptionRegistries (): Map<TOPIC, SubscriptionRegistry>
+}
 
 export interface PluginConfig {
   name?: string
@@ -162,8 +185,6 @@ export interface AuthenticationHandler extends DeepstreamPlugin  {
 export type AuthenticationHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => AuthenticationHandler
 
 export interface ClusterNode extends DeepstreamPlugin  {
-  getGlobalStateRegistry (): StateRegistry
-  getStateRegistry (stateRegistryTopic: TOPIC): StateRegistry
   send (message: Message, metaData?: any): void
   sendDirect (serverName: string, message: Message, metaData?: any): void
   subscribe<SpecificMessage> (stateRegistryTopic: TOPIC, callback: (message: SpecificMessage, originServerName: string) => void): void
@@ -202,6 +223,7 @@ export interface DeepstreamConfig {
 
   connectionEndpoints: { [index: string]: PluginConfig }
 
+  subscriptions: PluginConfig,
   logger: PluginConfig
   auth: PluginConfig
   permission: PluginConfig
@@ -211,7 +233,7 @@ export interface DeepstreamConfig {
 
   cluster: {
     message: PluginConfig
-    state: PluginConfig
+    states: PluginConfig
     registry: PluginConfig
     locks: PluginConfig
   }
@@ -252,6 +274,7 @@ export interface DeepstreamServices {
   locks: LockRegistry,
   cluster: ClusterRegistry,
   subscriptions: SubscriptionRegistryFactory,
+  states: StateRegistryFactory,
   messageDistributor: MessageDistributor
   plugins: { [index: string]: DeepstreamPlugin }
 }

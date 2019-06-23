@@ -34,8 +34,9 @@ import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
 import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Monitoring, DeepstreamPlugin, PermissionCallback, UserAuthData } from '../../types'
-import { SubscriptionRegistryFactory } from '../../utils/SubscriptionRegistryFactory'
 import { Message, LOG_LEVEL, EVENT } from '../../constants'
+import { DistributedStateRegistryFactory } from '../../cluster/distributed-state-registry-factory';
+import { DefaultSubscriptionRegistryFactory } from '../../utils/default-subscription-registry-factory';
 
 export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamConfig, services: DeepstreamServices } => {
   const config = { ...get(), ...{
@@ -121,7 +122,8 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
     permissionHandler: new PermissionHandler(),
     connectionEndpoints: [],
   }
-  services.subscriptions = new SubscriptionRegistryFactory(config, services as DeepstreamServices)
+  services.subscriptions = new DefaultSubscriptionRegistryFactory({}, services as DeepstreamServices, config)
+  services.states = new DistributedStateRegistryFactory({}, services as DeepstreamServices, config)
   return { config, services } as { config: DeepstreamConfig, services: DeepstreamServices}
 }
 

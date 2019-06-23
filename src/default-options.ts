@@ -77,6 +77,11 @@ export function get (): DeepstreamConfig {
       options: {}
     },
 
+    subscriptions: {
+      type: 'default',
+      options: {}
+    },
+
     auth: {
       type: 'none',
       options: {}
@@ -116,7 +121,7 @@ export function get (): DeepstreamConfig {
           nodeInactiveTimeout: 6000
         }
       },
-      state: {
+      states: {
         type: 'default',
         options: {
           reconciliationTimeout: 500

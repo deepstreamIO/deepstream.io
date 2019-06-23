@@ -8,13 +8,12 @@ import {
   Message,
 } from '../constants'
 import ListenerRegistry from '../listen/listener-registry'
-import SubscriptionRegistry from '../utils/subscription-registry'
 import RecordDeletion from './record-deletion'
 import { recordRequestBinding } from './record-request'
 import RecordTransition from './record-transition'
 import { isExcluded } from '../utils/utils'
 import { EVENT, JSONObject, ALL_ACTIONS, RECORD_ACTIONS } from '../../binary-protocol/src/message-constants'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Handler } from '../types'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Handler, SubscriptionRegistry } from '../types'
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
