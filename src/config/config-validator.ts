@@ -1,5 +1,5 @@
 import * as Ajv from 'ajv'
-import { LOG_LEVEL } from '../constants'
+import { LOG_LEVEL } from '../types'
 
 const generalOpts = {
   libDir: { type: ['string', 'null'] },

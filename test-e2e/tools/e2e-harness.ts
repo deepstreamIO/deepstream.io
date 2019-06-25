@@ -1,19 +1,19 @@
 import { EventEmitter } from 'events'
 import { PromiseDelay } from '../../src/utils/utils'
 import { Deepstream } from '../../src/deepstream.io'
-import ConfigPermissionHandler from '../../src/permission/config-permission-handler'
-import LocalCache from '../../src/default-plugins/local-cache'
-import { E2EAuthenticationHandler } from './e2e-authentication-handler'
+import { E2EAuthentication } from './e2e-authentication'
 import { getServerConfig } from './e2e-server-config'
 import { E2ELogger } from './e2e-logger'
 import { E2EClusterNode } from './e2e-cluster-node'
 import { STATES } from '../../src/constants'
+import { LocalCache } from '../../src/services/cache/local-cache'
+import { ConfigPermission } from '../../src/services/permission/valve/config-permission'
 
 const cache = new LocalCache()
 
 const SERVER_STOP_OR_START_DURATION = 200
 
-const authenticationHandler = new E2EAuthenticationHandler()
+const authenticationHandler = new E2EAuthentication()
 
 export class E2EHarness extends EventEmitter {
   private servers: Deepstream[] = []
@@ -53,9 +53,9 @@ export class E2EHarness extends EventEmitter {
 
   public async updatePermissions (type: string) {
     const promises = this.servers.map((server) => {
-      const permissionHandler = server.getServices().permissionHandler as ConfigPermissionHandler
-      const promise = new Promise((resolve) => permissionHandler.once('config-loaded', resolve))
-      permissionHandler.loadConfig(`./test-e2e/config/permissions-${type}.json`)
+      const permission = server.getServices().permission as never as ConfigPermission
+      const promise = new Promise((resolve) => permission.once('config-loaded', resolve))
+      permission.loadConfig(`./test-e2e/config/permissions-${type}.json`)
       return promise
     })
     await Promise.all(promises)
@@ -95,9 +95,9 @@ export class E2EHarness extends EventEmitter {
       server.set('logger', new E2ELogger())
     }
     server.set('cache', cache)
-    server.set('authenticationHandler', authenticationHandler)
+    server.set('authentication', authenticationHandler)
     // @ts-ignore
-    server.set('message', new E2EClusterNode({}, server.services, server.config))
+    server.set('clusterNode', new E2EClusterNode({}, server.services, server.config))
     server.start()
 
     await startedPromise

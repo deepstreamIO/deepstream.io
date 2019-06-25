@@ -1,13 +1,13 @@
 import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
 import { SubscriptionListener, DeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry, SubscriptionRegistry } from '../types'
-import { shuffleArray } from '../utils/utils';
+import { shuffleArray } from '../utils/utils'
 
 interface ListenInProgress {
   queryProvider: Provider,
   remainingProviders: Provider[]
 }
 
-export default class ListenerRegistry implements SubscriptionListener {
+export class ListenerRegistry implements SubscriptionListener {
   private providerRegistry: SubscriptionRegistry
   private uniqueLockName = `${this.topic}_LISTEN_LOCK`
   private patterns = new Map<string, RegExp>()
@@ -49,14 +49,14 @@ export default class ListenerRegistry implements SubscriptionListener {
         TOPIC.RECORD_LISTEN_PATTERNS,
         TOPIC.RECORD_LISTEN_PATTERNS,
       )
-      this.clusterProvidedRecords = this.services.states.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
+      this.clusterProvidedRecords = this.services.clusterStates.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.RECORD_LISTENING
     } else {
       this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
         TOPIC.EVENT_LISTEN_PATTERNS,
         TOPIC.EVENT_LISTEN_PATTERNS,
       )
-      this.clusterProvidedRecords = this.services.states.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
+      this.clusterProvidedRecords = this.services.clusterStates.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
       this.messageTopic = TOPIC.EVENT_LISTENING
     }
 
@@ -72,7 +72,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     this.clusterProvidedRecords.onAdd(this.onRecordStartProvided.bind(this))
     this.clusterProvidedRecords.onRemove(this.onRecordStopProvided.bind(this))
 
-    this.services.message.subscribe(
+    this.services.clusterNode.subscribe(
       this.messageTopic,
       this.onIncomingMessage.bind(this),
     )
@@ -399,7 +399,7 @@ export default class ListenerRegistry implements SubscriptionListener {
     if (stoppedSearch) {
       if (this.hasActiveProvider(subscriptionName) === false) {
         this.unsuccesfulMatches.set(subscriptionName, Date.now())
-        this.services.message.send({
+        this.services.clusterNode.send({
           topic: this.messageTopic,
           action: this.actions.LISTEN_UNSUCCESSFUL,
           subscription: subscriptionName

@@ -1,7 +1,7 @@
 import { JSONObject } from '../../../binary-protocol/src/message-constants'
-import { DeepstreamPlugin, AuthenticationHandler, UserAuthenticationCallback } from '../../types'
+import { DeepstreamPlugin, Authentication, UserAuthenticationCallback } from '../../types'
 
-export default class AuthenticationHandlerMock extends DeepstreamPlugin implements AuthenticationHandler {
+export default class AuthenticationMock extends DeepstreamPlugin implements Authentication {
   public onClientDisconnectCalledWith: string | null = null
   public sendNextValidAuthWithData: boolean = false
   public lastUserValidationQueryArgs: IArguments | null = null

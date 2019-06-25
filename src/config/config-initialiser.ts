@@ -1,40 +1,39 @@
 import * as fs from 'fs'
-import FileAuthenticationHandler from '../authentication/file-based-authentication-handler'
-import OpenAuthenticationHandler from '../authentication/open-authentication-handler'
-import HTTPAuthenticationHAndler from '../authentication/http-authentication-handler'
-import { LOG_LEVEL } from '../constants'
-import DefaultCache from '../default-plugins/local-cache'
-import DefaultStorage from '../default-plugins/noop-storage'
-import DefaultMonitoring from '../default-plugins/noop-monitoring'
-import DefaultLogger from '../default-plugins/std-out-logger'
-import HTTPConnectionEndpoint from '../message/http/connection-endpoint'
-import UWSConnectionEndpoint from '../message/uws/connection-endpoint'
-import ConfigPermissionHandler from '../permission/config-permission-handler'
-import OpenPermissionHandler from '../permission/open-permission-handler'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, Storage, StorageReadCallback, StorageWriteCallback, AuthenticationHandler, PermissionHandler } from '../types'
+import { DeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, Storage, StorageReadCallback, StorageWriteCallback, Authentication, Permission, LOG_LEVEL } from '../types'
 import { JSONObject } from '../../binary-protocol/src/message-constants'
-import { DistributedLockRegistry } from '../cluster/distributed-lock-registry'
-import { DistributedClusterRegistry } from '../cluster/distributed-cluster-registry'
-import { DistributedStateRegistryFactory } from '../cluster/distributed-state-registry-factory'
-import { SingleClusterNode } from '../cluster/single-cluster-node'
-import { DefaultSubscriptionRegistryFactory } from '../utils/default-subscription-registry-factory';
+import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
+import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
+import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
+import { HTTPConnectionEndpoint } from '../connection-endpoint/http/connection-endpoint'
+import { OpenAuthentication } from '../services/authentication/open/open-authentication'
+import { ConfigPermission } from '../services/permission/valve/config-permission'
+import { OpenPermission } from '../services/permission/open/open-permission'
+import { UWSConnectionEndpoint } from '../connection-endpoint/uws/connection-endpoint'
+import { FileBasedAuthentication } from '../services/authentication/file/file-based-authentication'
+import { HttpAuthentication } from '../services/authentication/http/http-authentication'
+import { NoopStorage } from '../services/storage/noop-storage'
+import { LocalCache } from '../services/cache/local-cache'
+import { StdOutLogger } from '../services/logger/std-out-logger'
+import { LocalMonitoring } from '../services/monitoring/noop-monitoring'
+import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
+import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 
 let commandLineArguments: any
 
 const customPlugins = new Map()
 
-const defaultPlugins = new Map<string, any>([
-  ['cache', DefaultCache],
-  ['storage', DefaultStorage],
-  ['logger', DefaultLogger],
-  ['monitoring', DefaultMonitoring],
-  ['message', SingleClusterNode],
+const defaultPlugins = new Map<keyof DeepstreamServices, any>([
+  ['cache', LocalCache],
+  ['storage', NoopStorage],
+  ['logger', StdOutLogger],
+  ['monitoring', LocalMonitoring],
   ['locks', DistributedLockRegistry],
-  ['cluster', DistributedClusterRegistry],
-  ['states', DistributedStateRegistryFactory],
-  ['subscriptions', DefaultSubscriptionRegistryFactory]
+  ['subscriptions', DefaultSubscriptionRegistryFactory],
+  ['clusterRegistry', DistributedClusterRegistry],
+  ['clusterStates', DistributedStateRegistryFactory],
+  ['clusterNode', SingleClusterNode]
 ])
 
 /**
@@ -58,17 +57,17 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
   services.logger = handleLogger(config, services)
 
   services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions'))(config.subscriptions.options, services, config)
-  services.message = new (resolvePluginClass(config.cluster.message, 'message'))(config.cluster.message.options, services, config)
   services.storage = new (resolvePluginClass(config.storage, 'storage'))(config.storage.options, services, config)
   services.cache = new (resolvePluginClass(config.cache, 'cache'))(config.cache.options, services, config)
   services.monitoring = new (resolvePluginClass(config.monitoring, 'monitoring'))(config.monitoring.options, services, config)
-  services.authenticationHandler = handleAuthStrategy(config, services)
-  services.permissionHandler = handlePermissionStrategy(config, services)
+  services.authentication = handleAuthStrategy(config, services)
+  services.permission = handlePermissionStrategy(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
-  services.locks = new (resolvePluginClass(config.cluster.locks, 'locks'))(config.cluster.locks.options, services, config)
-  services.cluster = new (resolvePluginClass(config.cluster.registry, 'cluster'))(config.cluster.registry.options, services, config)
-  services.states = new (resolvePluginClass(config.cluster.states, 'states'))(config.cluster.states.options, services, config)
-  
+  services.locks = new (resolvePluginClass(config.locks, 'locks'))(config.locks.options, services, config)
+  services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode'))(config.clusterNode.options, services, config)
+  services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry'))(config.clusterRegistry.options, services, config)
+  services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates'))(config.clusterStates.options, services, config)
+
   if (services.cache.apiVersion !== 2) {
     storageCompatability(services.cache)
   }
@@ -125,7 +124,7 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
   }
   let LoggerClass
   if (config.logger.type === 'default') {
-    LoggerClass = DefaultLogger
+    LoggerClass = StdOutLogger
   } else {
     LoggerClass = resolvePluginClass(config.logger, 'logger')
   }
@@ -232,7 +231,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): Co
  *
  * CLI arguments will be considered.
  */
-function resolvePluginClass (plugin: PluginConfig, type: string): any {
+function resolvePluginClass (plugin: PluginConfig, type: any): any {
   if (customPlugins.has(plugin.name)) {
     return customPlugins.get(plugin.name)
   }
@@ -268,13 +267,13 @@ function resolvePluginClass (plugin: PluginConfig, type: string): any {
  *
  * CLI arguments will be considered.
  */
-function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServices): AuthenticationHandler {
+function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServices): Authentication {
   let AuthenticationHandlerClass
 
   const authStrategies = {
-    none: OpenAuthenticationHandler,
-    file: FileAuthenticationHandler, // eslint-disable-line
-    http: HTTPAuthenticationHAndler, // eslint-disable-line
+    none: OpenAuthentication,
+    file: FileBasedAuthentication,
+    http: HttpAuthentication,
   }
 
   if (!config.auth) {
@@ -309,12 +308,12 @@ function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServi
  *
  * CLI arguments will be considered.
  */
-function handlePermissionStrategy (config: DeepstreamConfig, services: DeepstreamServices): PermissionHandler {
+function handlePermissionStrategy (config: DeepstreamConfig, services: DeepstreamServices): Permission {
   let PermissionHandlerClass
 
   const permissionStrategies = {
-    config: ConfigPermissionHandler,
-    none: OpenPermissionHandler,
+    config: ConfigPermission,
+    none: OpenPermission
   }
 
   if (!config.permission) {

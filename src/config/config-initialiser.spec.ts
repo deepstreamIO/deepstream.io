@@ -105,7 +105,7 @@ describe('config-initialiser', () => {
         type: 'none'
       } as any
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.description).to.equal('Open Authentication')
+      expect(result.services.authentication.description).to.equal('Open Authentication')
     })
 
     it('works for authtype: user', () => {
@@ -119,8 +119,8 @@ describe('config-initialiser', () => {
         }
       }
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.description).to.contain('file using')
-      expect(result.services.authenticationHandler.description).to.contain(path.resolve('src/test/config/users.json'))
+      expect(result.services.authentication.description).to.contain('file using')
+      expect(result.services.authentication.description).to.contain(path.resolve('src/test/config/users.json'))
     })
 
     it('works for authtype: http', () => {
@@ -139,7 +139,7 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.description).to.equal('http webhook to http://some-url.com')
+      expect(result.services.authentication.description).to.equal('http webhook to http://some-url.com')
     })
 
     it('fails for missing auth sections', () => {
@@ -163,7 +163,7 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.isReady).to.equal(true)
+      expect(result.services.authentication.isReady).to.equal(true)
     })
 
     it('tries to find a custom authentication handler from name', () => {
@@ -202,13 +202,13 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.authenticationHandler.description).to.equal('Open Authentication')
+      expect(result.services.authentication.description).to.equal('Open Authentication')
       delete global.deepstreamCLI
     })
   })
 
-  describe('creates the permissionHandler', () => {
-    it('creates the config permission handler', () => {
+  describe('creates the permission service', () => {
+    it('creates the config permission service', () => {
       global.deepstreamConfDir = './src/test/config'
       const config = defaultConfig.get()
 
@@ -219,8 +219,8 @@ describe('config-initialiser', () => {
         }
       }
       const result = configInitialiser.initialise(config)
-      expect(result.services.permissionHandler.description).to.contain('valve permissions loaded from')
-      expect(result.services.permissionHandler.description).to.contain(path.resolve('./src/test/config/basic-permission-config.json'))
+      expect(result.services.permission.description).to.contain('valve permissions loaded from')
+      expect(result.services.permission.description).to.contain(path.resolve('./src/test/config/basic-permission-config.json'))
     })
 
     it('fails for invalid permission types', () => {
@@ -248,7 +248,7 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.permissionHandler.isReady).to.equal(true)
+      expect(result.services.permission.isReady).to.equal(true)
     })
 
     it('tries to find a custom authentication handler from name', () => {
@@ -283,7 +283,7 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.permissionHandler.description).to.equal('none')
+      expect(result.services.permission.description).to.equal('none')
       delete global.deepstreamCLI
     })
   })

@@ -1,5 +1,4 @@
-import { LOG_LEVEL } from '../../src/constants'
-import { PartialDeepstreamConfig } from '../../src/types'
+import { PartialDeepstreamConfig, LOG_LEVEL } from '../../src/types'
 
 export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     serverName : `server-${port}`,
@@ -62,32 +61,32 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
       } as any
     },
 
-    cluster: {
-      message: {
-        type: 'default',
-        options: {
+    locks: {
+      type: 'default',
+      options: {
+        holdTimeout            : 1500,
+        requestTimeout         : 1500,
+      } as any
+    },
 
-        } as any
-      },
-      registry: {
-        type: 'default',
-        options: {
-          keepAliveInterval: 20,
-          activeCheckInterval: 200
-        } as any
-      },
-      locks: {
-        type: 'default',
-        options: {
-          holdTimeout            : 1500,
-          requestTimeout         : 1500,
-        } as any
-      },
-      states: {
-        type: 'default',
-        options: {
-          reconciliationTimeout : 100,
-        } as any
-      }
+    clusterNode: {
+      type: 'default',
+      options: {
+      } as any
+    },
+
+    clusterRegistry: {
+      type: 'default',
+      options: {
+        keepAliveInterval: 20,
+        activeCheckInterval: 200
+      } as any
+    },
+
+    clusterStates: {
+      type: 'default',
+      options: {
+        reconciliationTimeout : 100,
+      } as any
     }
   })

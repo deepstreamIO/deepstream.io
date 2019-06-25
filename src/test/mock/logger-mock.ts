@@ -1,6 +1,6 @@
 import {spy, SinonSpy} from 'sinon'
-import { Logger, DeepstreamPlugin } from '../../types'
-import { LOG_LEVEL, EVENT } from '../../constants'
+import { Logger, DeepstreamPlugin, LOG_LEVEL } from '../../types'
+import { EVENT } from '../../constants'
 
 export default class LoggerMock extends DeepstreamPlugin implements Logger {
   public isReady: boolean

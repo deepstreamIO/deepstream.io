@@ -1,6 +1,5 @@
 import { getUid } from './utils/utils'
-import { LOG_LEVEL } from './constants'
-import { DeepstreamConfig } from './types'
+import { DeepstreamConfig, LOG_LEVEL } from './types'
 
 export function get (): DeepstreamConfig {
   return {
@@ -107,32 +106,33 @@ export function get (): DeepstreamConfig {
       options: {}
     },
 
-    cluster: {
-      message: {
-        type: 'default',
-        options: {
-        }
-      },
-      registry: {
-        type: 'default',
-        options: {
-          keepAliveInterval: 5000,
-          activeCheckInterval: 1000,
-          nodeInactiveTimeout: 6000
-        }
-      },
-      states: {
-        type: 'default',
-        options: {
-          reconciliationTimeout: 500
-        }
-      },
-      locks: {
-        type: 'default',
-        options: {
-          holdTimeout: 1000,
-          requestTimeout: 1000
-        }
+    locks: {
+      type: 'default',
+      options: {
+        holdTimeout: 1000,
+        requestTimeout: 1000
+      }
+    },
+
+    clusterNode: {
+      type: 'default',
+      options: {
+      }
+    },
+
+    clusterRegistry: {
+      type: 'default',
+      options: {
+        keepAliveInterval: 5000,
+        activeCheckInterval: 1000,
+        nodeInactiveTimeout: 6000
+      }
+    },
+
+    clusterStates: {
+      type: 'default',
+      options: {
+        reconciliationTimeout: 500
       }
     },
 

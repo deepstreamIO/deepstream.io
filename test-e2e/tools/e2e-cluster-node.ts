@@ -1,14 +1,13 @@
-import DistributedClusterNode from '../../src/cluster/distributed-cluster-node'
 import { Message, TOPIC } from '../../src/constants'
 import { EventEmitter } from 'events'
-import { DeepstreamServices, DeepstreamConfig } from '../../src/types'
+import { DeepstreamServices, DeepstreamConfig, DeepstreamPlugin, ClusterNode } from '../../src/types'
 
-export class E2EClusterNode extends DistributedClusterNode {
+export class E2EClusterNode extends DeepstreamPlugin implements ClusterNode {
     public description: string = 'E2EClusterNode'
     private static emitters = new Map<string, EventEmitter>()
 
-    constructor (options: any, services: DeepstreamServices, config: DeepstreamConfig) {
-        super(options, services, config)
+    constructor (options: any, services: DeepstreamServices, private config: DeepstreamConfig) {
+        super()
         E2EClusterNode.emitters.set(this.config.serverName, new EventEmitter())
     }
 
@@ -28,7 +27,7 @@ export class E2EClusterNode extends DistributedClusterNode {
         })
     }
 
-    public subscribe (topic: TOPIC, callback: (message: Message, serverName: string) => void): void {
+    public subscribe<SpecificMessage> (topic: TOPIC, callback: (message: SpecificMessage, serverName: string) => void): void {
         E2EClusterNode.emitters.get(this.config.serverName)!.on(TOPIC[topic], (fromServer, message) => {
             if (fromServer === this.config.serverName) {
                 throw new Error('Cyclic message was sent!')

@@ -1,13 +1,5 @@
 export * from '../binary-protocol/src/message-constants'
 
-export enum LOG_LEVEL {
-    DEBUG = 0,
-    INFO = 1,
-    WARN = 2,
-    ERROR = 3,
-    OFF = 100
-}
-
 export enum STATES {
     LOGGER_INIT = 'LOGGER_INIT',
     SERVICE_INIT = 'SERVICE_INIT',

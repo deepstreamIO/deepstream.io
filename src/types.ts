@@ -1,12 +1,21 @@
-import { EventEmitter } from 'events'
-import { TOPIC, EVENT, LOG_LEVEL } from './constants'
-import { ALL_ACTIONS, Message, JSONObject, SubscriptionMessage } from '../binary-protocol/src/message-constants'
-import MessageDistributor from './message/message-distributor'
 import { DeepPartial } from 'ts-essentials'
+import { EventEmitter } from 'events'
+import { ALL_ACTIONS, Message, JSONObject, SubscriptionMessage, EVENT, TOPIC } from '../binary-protocol/src/message-constants'
+
+export enum LOG_LEVEL {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  OFF = 100
+}
+
+interface MessageDistributor {
+  distribute (socketWrapper: SocketWrapper, message: Message): void
+  registerForTopic (topic: TOPIC, callback: (message: Message, fromServer: string) => void): void
+}
 
 export type MetaData = JSONObject
-export type RuleType = string
-export type ValveSection = string
 
 export interface Handler<SpecificMessage> {
   handle (socketWrapper: SocketWrapper | null, message: SpecificMessage): void
@@ -17,7 +26,7 @@ export interface SimpleSocketWrapper {
   isRemote?: boolean
   sendMessage (message: Message, buffer?: boolean): void
   sendAckMessage (message: Message, buffer?: boolean): void
-  sendBinaryMessage? (message: Buffer, buffer?: boolean): void
+  sendBuiltMessage? (message: any, buffer?: boolean): void
   clientData?: object | null
 }
 
@@ -37,7 +46,7 @@ export interface UnauthenticatedSocketWrapper extends StatefulSocketWrapper {
   authCallback: Function | null
   getMessage: Function
   parseData: Function
-  flush: Function
+  flush: () => void
 }
 
 export interface SocketWrapper extends UnauthenticatedSocketWrapper {
@@ -108,7 +117,7 @@ export interface StateRegistry {
 }
 
 export interface StateRegistryFactory extends DeepstreamPlugin {
-  getStateRegistry(topic: TOPIC): StateRegistry
+  getStateRegistry (topic: TOPIC): StateRegistry
 }
 
 export interface SubscriptionRegistry {
@@ -126,7 +135,7 @@ export interface SubscriptionRegistry {
 }
 
 export interface SubscriptionRegistryFactory extends DeepstreamPlugin {
-  getSubscriptionRegistry(topic: TOPIC, clusterTopic: TOPIC): SubscriptionRegistry
+  getSubscriptionRegistry (topic: TOPIC, clusterTopic: TOPIC): SubscriptionRegistry
   getSubscriptionRegistries (): Map<TOPIC, SubscriptionRegistry>
 }
 
@@ -166,10 +175,9 @@ export interface Monitoring extends DeepstreamPlugin  {
 export type MonitoringPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Monitoring
 
 export type PermissionCallback = (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: Error | string | ALL_ACTIONS | null, result: boolean) => void
-export interface PermissionHandler extends DeepstreamPlugin {
+export interface Permission extends DeepstreamPlugin {
   canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: JSONObject, socketWrapper: SocketWrapper, passItOn: any): void
 }
-export type PermissionHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => PermissionHandler
 
 export interface UserAuthData {
   username?: string,
@@ -178,11 +186,10 @@ export interface UserAuthData {
   serverData?: JSONObject
 }
 export type UserAuthenticationCallback = (isValid: boolean, userAuthData?: UserAuthData) => void
-export interface AuthenticationHandler extends DeepstreamPlugin  {
+export interface Authentication extends DeepstreamPlugin  {
   isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback): void
   onClientDisconnect? (username: string): void
 }
-export type AuthenticationHandlerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => AuthenticationHandler
 
 export interface ClusterNode extends DeepstreamPlugin  {
   send (message: Message, metaData?: any): void
@@ -230,13 +237,10 @@ export interface DeepstreamConfig {
   cache: PluginConfig
   storage: PluginConfig
   monitoring: PluginConfig
-
-  cluster: {
-    message: PluginConfig
-    states: PluginConfig
-    registry: PluginConfig
-    locks: PluginConfig
-  }
+  locks: PluginConfig
+  clusterNode: PluginConfig
+  clusterStates: PluginConfig
+  clusterRegistry: PluginConfig
 
   plugins: { [index: string]: PluginConfig }
 
@@ -267,14 +271,14 @@ export interface DeepstreamServices {
   cache: Storage
   storage: Storage
   monitoring: Monitoring
-  permissionHandler: PermissionHandler
-  authenticationHandler: AuthenticationHandler
+  permission: Permission
+  authentication: Authentication
   logger: Logger
-  message: ClusterNode
+  clusterNode: ClusterNode
   locks: LockRegistry,
-  cluster: ClusterRegistry,
+  clusterRegistry: ClusterRegistry,
   subscriptions: SubscriptionRegistryFactory,
-  states: StateRegistryFactory,
+  clusterStates: StateRegistryFactory,
   messageDistributor: MessageDistributor
   plugins: { [index: string]: DeepstreamPlugin }
 }

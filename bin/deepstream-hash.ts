@@ -1,6 +1,6 @@
-import FileAuthenticationHandler from '../src/authentication/file-based-authentication-handler'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
 import { Command } from 'commander'
+import { FileBasedAuthentication } from '../src/services/authentication/file/file-based-authentication'
 
 export const hash = (program: Command) => {
   program
@@ -34,7 +34,7 @@ function action (this: any, password: string) {
   // Mock file loading since a users.yml file is not required
   // jsYamlLoader.readAndParseFile = function () {}
 
-  const fileAuthenticationHandler = new FileAuthenticationHandler(config.auth.options)
+  const fileAuthenticationHandler = new FileBasedAuthentication(config.auth.options)
   fileAuthenticationHandler.createHash(password, (err: Error, passwordHash: string) => {
     if (err) {
       console.error('Hash could not be created', err)

@@ -33,10 +33,10 @@ import {get} from '../../default-options'
 import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Monitoring, DeepstreamPlugin, PermissionCallback, UserAuthData } from '../../types'
-import { Message, LOG_LEVEL, EVENT } from '../../constants'
-import { DistributedStateRegistryFactory } from '../../cluster/distributed-state-registry-factory';
-import { DefaultSubscriptionRegistryFactory } from '../../utils/default-subscription-registry-factory';
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Monitoring, DeepstreamPlugin, PermissionCallback, UserAuthData, LOG_LEVEL } from '../../types'
+import { Message, EVENT } from '../../constants'
+import { DefaultSubscriptionRegistryFactory } from '../../services/subscription-registry/default-subscription-registry-factory'
+import { DistributedStateRegistryFactory } from '../../services/cluster-state/distributed-state-registry-factory'
 
 export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamConfig, services: DeepstreamServices } => {
   const config = { ...get(), ...{
@@ -111,7 +111,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
     logger: new LoggerMock(),
     cache: new StorageMock(),
     storage: new StorageMock(),
-    message: new MessageConnectorMock(config),
+    clusterNode: new MessageConnectorMock(config),
     // @ts-ignore
     locks: {
       get (name, cb) { cb(true) },
@@ -119,11 +119,11 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
     },
     monitoring: new MonitoringMock(),
     authenticationHandler: new AuthenticationHandler(),
-    permissionHandler: new PermissionHandler(),
+    permission: new PermissionHandler(),
     connectionEndpoints: [],
   }
   services.subscriptions = new DefaultSubscriptionRegistryFactory({}, services as DeepstreamServices, config)
-  services.states = new DistributedStateRegistryFactory({}, services as DeepstreamServices, config)
+  services.clusterStates = new DistributedStateRegistryFactory({}, services as DeepstreamServices, config)
   return { config, services } as { config: DeepstreamConfig, services: DeepstreamServices}
 }
 
@@ -135,12 +135,12 @@ export const getDeepstreamPermissionOptions = function () {
   return { config: options.config, services: options.services }
 }
 
-const ConfigPermissionHandler = require('../../permission/config-permission-handler').default
+const ConfigPermission = require('../../services/permission/valve/config-permission').ConfigPermission
 
 export const testPermission = function (options: { config: DeepstreamConfig, services: DeepstreamServices }) {
-  return function (permissions: any, message: Message, username: string, userdata: UserAuthData, callback: PermissionCallback) {
-    const permissionHandler = new ConfigPermissionHandler(options.config.permission.options, options.services, options.config, permissions)
-    permissionHandler.setRecordHandler({
+  return function (permissions: any, message: Message, username?: string, userdata?: UserAuthData, callback?: PermissionCallback) {
+    const permission = new ConfigPermission(options.config.permission.options, options.services, options.config, permissions)
+    permission.setRecordHandler({
       removeRecordRequest: () => {},
       runWhenRecordStable: (r: any, c: any) => { c(r) }
     })
@@ -148,10 +148,10 @@ export const testPermission = function (options: { config: DeepstreamConfig, ser
 
     username = username || 'someUser'
     userdata = userdata || {}
-    callback = callback || function (socketWrapper: SocketWrapper, msg: Message, passItOn: any, error: Error, result: boolean) {
+    callback = callback || function (socketWrapper: SocketWrapper, msg: Message, passItOn: any, error: any, result: boolean) {
       permissionResult = result
     }
-    permissionHandler.canPerformAction(
+    permission.canPerformAction(
       username, message, callback, userdata, SocketWrapperFactoryMock.createSocketWrapper()
     )
     return permissionResult

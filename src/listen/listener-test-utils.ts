@@ -1,7 +1,7 @@
 import 'mocha'
 import { expect } from 'chai'
 
-import ListenerRegistry from './listener-registry'
+import { ListenerRegistry } from './listener-registry'
 import * as testHelper from '../test/helper/test-helper'
 import * as C from '../constants'
 import { getTestMocks } from '../test/helper/test-mocks'

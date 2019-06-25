@@ -1,5 +1,5 @@
-import { EVENT, LOG_LEVEL } from '../../src/constants'
-import { Logger, DeepstreamPlugin } from '../../src/types'
+import { EVENT } from '../../src/constants'
+import { Logger, DeepstreamPlugin, LOG_LEVEL } from '../../src/types'
 
 interface Log {
   level: number,

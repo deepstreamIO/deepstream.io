@@ -10,14 +10,13 @@ import { merge } from './utils/utils'
 import * as constants_ from './constants'
 const { STATES, EVENT, TOPIC } = constants_
 
-import MessageProcessor from './message/message-processor'
-import MessageDistributor from './message/message-distributor'
+import MessageProcessor from './utils/message-processor'
+import MessageDistributor from './utils/message-distributor'
 
-import EventHandler from './event/event-handler'
-import RpcHandler from './rpc/rpc-handler'
-import PresenceHandler from './presence/presence-handler'
-import RecordHandler from './record/record-handler'
-import MonitoringHandler from './monitoring/monitoring'
+import EventHandler from './handlers/event/event-handler'
+import RpcHandler from './handlers/rpc/rpc-handler'
+import PresenceHandler from './handlers/presence/presence-handler'
+import MonitoringHandler from './handlers/monitoring/monitoring'
 
 import { get as getDefaultOptions } from './default-options'
 import * as configInitialiser from './config/config-initialiser'
@@ -26,7 +25,8 @@ import * as configValidator from './config/config-validator'
 
 import DependencyInitialiser from './utils/dependency-initialiser'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig } from './types'
-import { getValue, setValue } from './record/json-path'
+import RecordHandler from './handlers/record/record-handler'
+import { getValue, setValue } from './utils/json-path'
 
 /**
  * Sets the name of the process
@@ -287,8 +287,8 @@ export class Deepstream extends EventEmitter {
     this.messageProcessor.onAuthenticatedMessage =
       this.messageDistributor.distribute.bind(this.messageDistributor)
 
-    if (this.services.permissionHandler.setRecordHandler) {
-      this.services.permissionHandler.setRecordHandler(this.recordHandler)
+    if (this.services.permission.setRecordHandler) {
+      this.services.permission.setRecordHandler(this.recordHandler)
     }
 
     this.transition('handlers-started')
@@ -374,8 +374,8 @@ private async pluginsShutdown () {
    * Shutdown the services.
    */
   private async serviceShutdown (): Promise<void> {
-    await this.services.cluster.close()
-    await this.services.message.close()
+    await this.services.clusterRegistry.close()
+    await this.services.clusterNode.close()
     this.transition('services-closed')
   }
 

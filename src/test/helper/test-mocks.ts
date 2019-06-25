@@ -50,7 +50,7 @@ export const getTestMocks = () => {
       authData,
       clientData,
       sendMessage: () => {},
-      sendBinaryMessage: () => {},
+      sendBuiltMessage: () => {},
       sendAckMessage: () => {},
       uuid: Math.random(),
       parseData: (message: Message) => {

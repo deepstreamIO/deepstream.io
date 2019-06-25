@@ -87,8 +87,7 @@ describe.skip('js-yaml-loader', () => {
 
       defaultYamlConfig = utils.merge(defaultYamlConfig, {
         permission: { type: 'none', options: null },
-        permissionHandler: null,
-        authenticationHandler: null,
+        authentication: null,
         plugins: null,
         serverName: null,
         logger: null
