@@ -5,6 +5,7 @@ import * as needle from 'needle'
 
 import { clientHandler } from '../../framework/client-handler'
 import { parseData, defaultDelay } from '../../framework/utils'
+import { record } from '../../framework/record'
 
 let httpClients: { [index: string]: any } = {}
 
@@ -217,6 +218,14 @@ When(/^(.+) queues? a write to (record|list) "([^"]*)"(?: and path "([^"]*)")? w
       jifMessage.version = parseInt(version, 10)
     }
 
+    client.queue.push(jifMessage)
+  })
+})
+
+When(/^(.+) queues? a notify for records? '([^"]*)'$/, (clientExpression: string, recordNames) => {
+  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+    const client = httpClients[clientName]
+    const jifMessage = { topic: 'record', action: 'notify', recordNames: recordNames.split(',') }
     client.queue.push(jifMessage)
   })
 })

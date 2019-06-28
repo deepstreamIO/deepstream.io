@@ -279,6 +279,22 @@ describe('JIF Handler', () => {
         expect(message.name).to.equal('car/bmw')
       })
 
+      it('should handle a record notify', () => {
+        const jif = {
+          topic: 'record',
+          action: 'notify',
+          recordNames: ['car/bmw', 'car/vw'],
+        }
+        const result = jifHandler.fromJIF(jif)
+        const message = result.message
+
+        expect(result.success).to.equal(true)
+        expect(message).to.be.an('object')
+        expect(message.topic).to.equal(C.TOPIC.RECORD)
+        expect(message.action).to.equal(C.RECORD_ACTIONS.NOTIFY)
+        expect(message.names).to.deep.equal(['car/bmw', 'car/vw'])
+      })
+
       it('should handle a record head', () => {
         const jif = {
           topic: 'record',

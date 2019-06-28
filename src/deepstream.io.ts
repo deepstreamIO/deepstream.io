@@ -23,7 +23,7 @@ import * as configInitialiser from './config/config-initialiser'
 import * as jsYamlLoader from './config/js-yaml-loader'
 import * as configValidator from './config/config-validator'
 
-import DependencyInitialiser from './utils/dependency-initialiser'
+import { DependencyInitialiser } from './utils/dependency-initialiser'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig } from './types'
 import RecordHandler from './handlers/record/record-handler'
 import { getValue, setValue } from './utils/json-path'
@@ -200,15 +200,11 @@ export class Deepstream extends EventEmitter {
 /**
  * First stage in the Deepstream initialisation sequence. Initialises the logger.
  */
-  private loggerInit (): void {
+  private async loggerInit (): Promise<void> {
     const logger = this.services.logger
     const loggerInitialiser = new DependencyInitialiser(this, this.config, this.services, logger, 'logger')
-    loggerInitialiser.once('ready', () => {
-      if (logger instanceof EventEmitter) {
-        logger.on('error', this.onPluginError.bind(this, 'logger'))
-      }
-      this.transition('logger-started')
-    })
+    await loggerInitialiser.whenReady()
+    logger.on('error', this.onPluginError.bind(this, 'logger'))
 
     const infoLogger = (message: string) => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`server name: ${this.config.serverName}`)
@@ -222,6 +218,8 @@ export class Deepstream extends EventEmitter {
     if (global.deepstreamLibDir) {
       infoLogger(`library directory set to: ${global.deepstreamLibDir}`)
     }
+
+    this.transition('logger-started')
   }
 
   /**
@@ -235,7 +233,7 @@ export class Deepstream extends EventEmitter {
       const service = (this.services as any)[serviceName] as DeepstreamPlugin
       const initialiser = new DependencyInitialiser(this, this.config, this.services, service, serviceName)
       if (initialiser.isReady === false) {
-        promises.push(new Promise((resolve) => initialiser.once('ready', resolve)))
+        promises.push(initialiser.whenReady())
       }
       return promises
     }, [] as Array<Promise<void>>)
@@ -322,7 +320,7 @@ export class Deepstream extends EventEmitter {
         this.presenceHandler.handleLeave.bind(this.presenceHandler)
       )
 
-      readyPromises.push(new Promise((resolve) => dependencyInitialiser.on('ready', resolve)))
+      readyPromises.push(dependencyInitialiser.whenReady())
     }
 
     await Promise.all(readyPromises)

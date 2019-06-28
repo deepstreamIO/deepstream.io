@@ -10,7 +10,8 @@
 			"delete": true,
 			"write": true,
 			"read": true,
-			"listen": true
+			"listen": true,
+			"notify": "user.id === 'B'"
 		},
 		"d/*": {
 			"create": "_('perm/JohnDoe').boolean",

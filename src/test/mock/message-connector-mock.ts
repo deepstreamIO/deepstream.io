@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { StateMessage, Message, TOPIC } from '../../../binary-protocol/src/message-constants'
+import { Message, TOPIC } from '../../../binary-protocol/src/message-constants'
 import { DeepstreamPlugin, ClusterNode } from '../../types'
 
 export default class MessageConnectorMock extends DeepstreamPlugin implements ClusterNode {
@@ -40,12 +40,6 @@ export default class MessageConnectorMock extends DeepstreamPlugin implements Cl
     this.publishedMessages.push(message)
     this.lastPublishedTopic = message.topic
     this.lastPublishedMessage = message
-  }
-
-  public sendState (message: StateMessage, metaData?: any): void {
-  }
-
-  public sendStateDirect (serverName: string, message: StateMessage, metaData?: any): void {
   }
 
   public sendDirect (serverName: string, message: Message) {

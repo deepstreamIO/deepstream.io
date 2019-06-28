@@ -12,9 +12,14 @@ function getListData (clientExpression: string, listName: string) {
 }
 
 const assert2 = {
-    deleted (clientExpression: string, recordName: string) {
+    deleted (clientExpression: string, recordName: string, called: boolean) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
-            sinon.assert.calledOnce(recordData.deleteCallback)
+            if (called) {
+              sinon.assert.calledOnce(recordData.deleteCallback)
+              recordData.deleteCallback.resetHistory()
+            } else {
+              sinon.assert.notCalled(recordData.deleteCallback)
+            }
             recordData.deleteCallback.resetHistory()
         })
     },

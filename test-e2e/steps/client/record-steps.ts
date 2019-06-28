@@ -16,7 +16,7 @@ Then(/^(.+) (gets?|is not) notified of record "([^"]*)" getting (discarded|delet
   if (action === 'discarded') {
     record.assert.discarded(clientExpression, recordName, called)
   } else {
-    record.assert.deleted(clientExpression, recordName)
+    record.assert.deleted(clientExpression, recordName, called)
   }
 })
 

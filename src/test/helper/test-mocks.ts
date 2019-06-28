@@ -11,9 +11,10 @@ export const getTestMocks = () => {
     unsubscribe: () => {},
     sendToSubscribers: () => {},
     setSubscriptionListener: () => {},
-    getLocalSubscribers: () => {},
+    getLocalSubscribers: () => new Set(),
     getAllRemoteServers: () => {},
-    setAction: () => {}
+    setAction: () => {},
+    hasLocalSubscribers: () => true
   }
 
   const listenerRegistry = {

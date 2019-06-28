@@ -116,11 +116,12 @@ describe('the message processor only forwards valid, authorized messages', () =>
 
     messageProcessor.process(client.socketWrapper, [message])
 
-    expect(permissionMock.lastCanPerformActionQueryArgs.length).to.equal(5)
+    expect(permissionMock.lastCanPerformActionQueryArgs.length).to.equal(6)
     expect(permissionMock.lastCanPerformActionQueryArgs[0]).to.equal('someUser')
     expect(permissionMock.lastCanPerformActionQueryArgs[1].name).to.equal('record/name')
     expect(permissionMock.lastCanPerformActionQueryArgs[3]).to.deep.equal({})
     expect(permissionMock.lastCanPerformActionQueryArgs[4]).to.equal(client.socketWrapper)
+    expect(permissionMock.lastCanPerformActionQueryArgs[5]).to.deep.equal({})
   })
 
   it('forwards validated and permissioned messages', () => {

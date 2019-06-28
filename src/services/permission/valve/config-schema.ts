@@ -14,6 +14,7 @@ export const SCHEMA: ConfigSchema = {
     create: true,
     delete: true,
     listen: true,
+    notify: true,
   },
   event: {
     publish: true,

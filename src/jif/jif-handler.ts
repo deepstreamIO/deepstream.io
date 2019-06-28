@@ -112,6 +112,15 @@ function getJifToMsg () {
       action: RECORD_ACTIONS.DELETE,
       name: msg.recordName,
     },
+  }),
+
+  JIF_TO_MSG.record.notify = (msg: JifInMessage) => ({
+    done: false,
+    message: {
+      topic: TOPIC.RECORD,
+      action: RECORD_ACTIONS.NOTIFY,
+      names: msg.recordNames
+    },
   })
 
   JIF_TO_MSG.list = {}
@@ -223,6 +232,14 @@ function getMsgToJif () {
 
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE_SUCCESS] = {}
   MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE_SUCCESS][TYPE.NORMAL] = () => ({
+    done: true,
+    message: {
+      success: true,
+    },
+  })
+
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.NOTIFY] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.NOTIFY][TYPE.ACK] = (message: Message) => ({
     done: true,
     message: {
       success: true,

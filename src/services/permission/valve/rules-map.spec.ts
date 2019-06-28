@@ -47,4 +47,16 @@ describe('returns the applicable rule for a message', () => {
       action: C.RECORD_ACTIONS.PATCH
     })
   })
+
+  it('returns ruletypes for record notify messages', () => {
+    const msg = {
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTIONS.NOTIFY
+    }
+    expect(getRulesForMessage(msg)).to.deep.equal({
+      section: 'record',
+      type: 'notify',
+      action: C.RECORD_ACTIONS.NOTIFY
+    })
+  })
 })

@@ -5,6 +5,7 @@ import { RECORD_ACTIONS as RA, RecordMessage, TOPIC, RecordWriteMessage, ListenM
 import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../../types'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { isExcluded } from '../../utils/utils'
+import { record } from '../../../test-e2e/framework/record'
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
@@ -52,6 +53,12 @@ export default class RecordHandler implements Handler<RecordMessage> {
         this.remoteDelete(message)
         return
       }
+
+      if (message.action === RA.NOTIFY) {
+        this.recordUpdatedWithoutDeepstream(message)
+        return
+      }
+
       this.broadcastUpdate(message.name, {
         topic: message.topic,
         action: message.action,
@@ -142,7 +149,40 @@ export default class RecordHandler implements Handler<RecordMessage> {
       return
     }
 
+    if (message.action === RA.NOTIFY) {
+      this.services.clusterNode.send(message)
+      this.recordUpdatedWithoutDeepstream(message, socketWrapper)
+      return
+    }
+
     this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[action], this.metaData)
+  }
+
+  private recordUpdatedWithoutDeepstream (message: RecordMessage, socketWrapper: SocketWrapper | null = null) {
+    message.names!.forEach((recordName) => {
+      if (this.subscriptionRegistry.hasLocalSubscribers(recordName)) {
+        this.recordRequest(recordName, null, (name: string, version: number, data: JSONObject) => {
+          if (version === -1) {
+            this.remoteDelete({
+              topic: TOPIC.RECORD,
+              action: RECORD_ACTIONS.DELETED,
+              name
+            })
+          } else {
+            this.subscriptionRegistry.sendToSubscribers(name, {
+              topic: TOPIC.RECORD,
+              action: RECORD_ACTIONS.UPDATE,
+              name,
+              version,
+              parsedData: data
+            }, true, null)
+          }
+        }, onRequestError, message)
+      }
+    })
+    if (socketWrapper) {
+      socketWrapper.sendAckMessage(message)
+    }
   }
 
 /**

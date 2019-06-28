@@ -1,62 +1,52 @@
-import { EventEmitter } from 'events'
 import { EVENT } from '../constants'
 import { Deepstream } from '../deepstream.io'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin } from '../types'
+import { EventEmitter } from 'events'
 
-export default class DependencyInitialiser extends EventEmitter {
-  public isReady: boolean
-
-  private deepstream: Deepstream
-  private config: DeepstreamConfig
-  private services: DeepstreamServices
-  private dependency: any
-  private name: string
-  private timeout: any
+export class DependencyInitialiser {
+  public isReady: boolean = false
+  private timeout: NodeJS.Timeout | null = null
+  private emitter = new EventEmitter()
 
 /**
- * This class is used to track the initialisation of
- * an individual dependency (cache connector, persistance connector,
- * message connector, logger)
+ * This class is used to track the initialisation of an individual service or plugin
  */
-  constructor (deepstream: Deepstream, config: DeepstreamConfig, services: DeepstreamServices, dependency: DeepstreamPlugin, name: string) {
-    super()
-    this.isReady = false
-    this.deepstream = deepstream
-
-    this.config = config
-    this.services = services
-    this.dependency = dependency
-    this.name = name
-    this.timeout = null
-
-    if (typeof this.dependency.on !== 'function' && typeof this.dependency.isReady === 'undefined') {
-      const errorMessage = `${this.name} needs to implement isReady or be an emitter`
+  constructor (private deepstream: Deepstream, private config: DeepstreamConfig, private services: DeepstreamServices, private dependency: DeepstreamPlugin, private name: string) {
+    if (typeof this.dependency.whenReady !== 'function' || typeof this.dependency.isReady === 'undefined') {
+      const errorMessage = `${this.name} needs to implement isReady and whenReady, please look at the DeepstreamPlugin API here` // TODO: Insert link
       this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
       const error = (new Error(errorMessage)) as any
       error.code = 'PLUGIN_INITIALIZATION_ERROR'
       throw error
     }
 
-    if (this.dependency.isReady) {
-      this.onReady()
-    } else {
-      this.timeout = setTimeout(
+    this.timeout = setTimeout(
       this.onTimeout.bind(this),
       this.config.dependencyInitialisationTimeout,
     )
+    if (this.dependency.whenReady) {
+      this.dependency.whenReady().then(this.onReady.bind(this))
+    } else {
+      this.services.logger.warn(EVENT.DEPRECATED, 'Plugins should now support the async whenReady API') // TODO: Link
       this.dependency.once('ready', this.onReady.bind(this))
-      this.dependency.on('error', this.onError.bind(this))
     }
+    this.dependency.on('error', this.onError.bind(this))
 
     if (this.dependency.init) {
       this.dependency.init()
     }
   }
 
+  public async whenReady () {
+    if (!this.isReady) {
+      await this.dependency.whenReady()
+    }
+  }
+
 /**
  * Returns the underlying dependency (e.g. the Logger, StorageConnector etc.)
  */
-  public getDependency (): Plugin {
+  public getDependency (): DeepstreamPlugin {
     return this.dependency
   }
 
@@ -68,11 +58,12 @@ export default class DependencyInitialiser extends EventEmitter {
       clearTimeout(this.timeout)
     }
 
-    this.dependency.type = this.dependency.description || this.dependency.type
-    const dependencyType = this.dependency.type ? `: ${this.dependency.type}` : ': no dependency description provided'
+    this.dependency.description = this.dependency.description || (this.dependency as any).type
+    const dependencyType = this.dependency.description ? `: ${this.dependency.description}` : ': no dependency description provided'
     this.services.logger.info(EVENT.INFO, `${this.name} ready${dependencyType}`)
 
-    process.nextTick(this.emitReady.bind(this))
+    this.isReady = true
+    this.emitter.emit('ready')
   }
 
 /**
@@ -96,14 +87,6 @@ export default class DependencyInitialiser extends EventEmitter {
       this.logError(`Error while initialising ${this.name}: ${error.toString()}`)
       this.deepstream.emit(EVENT.PLUGIN_INITIALIZATION_ERROR, error)
     }
-  }
-
-/**
- * Emits the ready event after a one tick delay
- */
-  private emitReady (): void {
-    this.isReady = true
-    this.emit('ready')
   }
 
 /**

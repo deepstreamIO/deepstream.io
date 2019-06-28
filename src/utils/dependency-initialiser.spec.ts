@@ -2,7 +2,7 @@ import 'mocha'
 import { expect } from 'chai'
 import {spy} from 'sinon'
 import * as C from '../constants'
-import DependencyInitialiser from './dependency-initialiser'
+import { DependencyInitialiser } from './dependency-initialiser'
 import PluginMock from '../test/mock/plugin-mock'
 import LoggerMock from '../test/mock/logger-mock'
 
@@ -12,14 +12,24 @@ const services = {
 
 describe('dependency-initialiser', () => {
   let dependencyBInitialiser: DependencyInitialiser
+  let config: any
 
-  const config = {
-    pluginA: new PluginMock({}, 'A'),
-    pluginB: new PluginMock({}, 'B'),
-    pluginC: new PluginMock({}, 'C'),
-    brokenPlugin: {},
-    dependencyInitialisationTimeout: 50
-  }
+  beforeEach(() => {
+    config = {
+      pluginA: new PluginMock({}, 'A'),
+      pluginB: new PluginMock({}, 'B'),
+      pluginC: new PluginMock({}, 'C'),
+      brokenPlugin: {},
+      dependencyInitialisationTimeout: 50
+    }
+    services.logger.lastLogEvent = null
+  })
+
+  it ('sets description', () => {
+    dependencyBInitialiser = new DependencyInitialiser({}, config as any, services as any, config.pluginB, 'pluginB')
+    expect(dependencyBInitialiser.getDependency().description).to.equal('B')
+    expect(services.logger.lastLogEvent).to.equal(null)
+  })
 
   it('throws an error if dependency doesnt implement emitter or has isReady', () => {
     expect(() => {
@@ -29,24 +39,20 @@ describe('dependency-initialiser', () => {
     expect(services.logger.lastLogEvent).to.equal(C.EVENT.PLUGIN_INITIALIZATION_ERROR)
   })
 
-  it('selects the correct plugin', () => {
-    services.logger.lastLogEvent = null
+  it('notifies when the plugin is ready with when already ready', async () => {
+    config.pluginB.isReady = true
     dependencyBInitialiser = new DependencyInitialiser({}, config as any, services as any, config.pluginB, 'pluginB')
-    expect(dependencyBInitialiser.getDependency().description).to.equal('B')
-    expect(services.logger.lastLogEvent).to.equal(null)
+    await dependencyBInitialiser.whenReady()
+    expect(services.logger.lastLogEvent).to.equal(C.EVENT.INFO)
   })
 
-  it('notifies when the plugin is ready', (done) => {
-    const readySpy = spy()
-    dependencyBInitialiser.on('ready', readySpy)
-
-    config.pluginB.setReady()
-
-    setTimeout(() => {
+  it('notifies when the plugin is ready with when not ready', (done) => {
+    dependencyBInitialiser = new DependencyInitialiser({}, config as any, services as any, config.pluginB, 'pluginB')
+    dependencyBInitialiser.whenReady().then(() => {
       expect(services.logger.lastLogEvent).to.equal(C.EVENT.INFO)
-      expect(readySpy).to.have.callCount(1)
       done()
-    }, 5)
+    })
+    config.pluginB.setReady()
   })
 })
 
@@ -56,7 +62,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
   const originalConsoleLog = console.log
   const config = {
     plugin: new PluginMock('A'),
-    dependencyInitialisationTimeout: 1
+    dependencyInitialisationTimeout: 1,
   }
 
   it('disables console.error', () => {
@@ -65,15 +71,16 @@ describe('encounters timeouts and errors during dependency initialisations', () 
     })
   })
 
-  it('creates a depdendency initialiser and doesnt initialise a plugin in time', (done) => {
-    dependencyInitialiser = new DependencyInitialiser({}, config as any, services as any, config.plugin, 'plugin')
-    dependencyInitialiser.on('ready', onReady)
-    expect(config.plugin.isReady).to.equal(false)
+  it("creates a depdendency initialiser and doesn't initialise a plugin in time", (done) => {
     process.removeAllListeners('uncaughtException')
     process.once('uncaughtException', () => {
       expect(services.logger.logSpy).to.have.been.calledWith(3, C.EVENT.PLUGIN_ERROR, 'plugin wasn\'t initialised in time')
       done()
     })
+
+    dependencyInitialiser = new DependencyInitialiser({}, config as any, services as any, config.plugin, 'plugin')
+    dependencyInitialiser.whenReady().then(onReady)
+    expect(config.plugin.isReady).to.equal(false)
     expect(onReady).to.have.callCount(0)
   })
 
