@@ -78,7 +78,7 @@ function handleSSLProperties (config) {
     }
     resolvedFilePath = fileUtils.lookupConfRequirePath(filePath)
     try {
-      config[key] = fs.readFileSync(resolvedFilePath, 'utf8')
+      config[key] = resolvedFilePath
     } catch (e) {
       throw new Error(`The file path "${resolvedFilePath}" provided by "${key}" does not exist.`)
     }
