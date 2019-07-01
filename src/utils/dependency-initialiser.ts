@@ -37,9 +37,9 @@ export class DependencyInitialiser {
     }
   }
 
-  public async whenReady () {
+  public async whenReady (): Promise<void> {
     if (!this.isReady) {
-      await this.dependency.whenReady()
+      return new Promise(resolve => this.emitter.once('ready', resolve))
     }
   }
 

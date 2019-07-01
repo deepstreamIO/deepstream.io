@@ -15,6 +15,7 @@ const OPEN = 'OPEN'
 
 export interface WebSocketServerConfig {
   outgoingBufferTimeout: number,
+  maxBufferByteSize: number,
   headers: string[],
   [index: string]: any,
 }

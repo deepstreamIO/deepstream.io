@@ -88,5 +88,11 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
       options: {
         reconciliationTimeout : 100,
       } as any
+    },
+
+    storage: {
+      path: './src/services/cache/local-cache',
+      options: {
+      } as any
     }
   })

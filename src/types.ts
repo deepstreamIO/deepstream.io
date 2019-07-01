@@ -162,6 +162,7 @@ export interface Storage extends DeepstreamPlugin  {
   set (recordName: string, version: number, data: any, callback: StorageWriteCallback, metaData?: any): void
   get (recordName: string, callback: StorageReadCallback, metaData?: any): void
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void
+  deleteBulk (recordNames: string[], callback: StorageWriteCallback, metaData?: any): void
 }
 export type StoragePlugin<PluginOptions> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Storage
 

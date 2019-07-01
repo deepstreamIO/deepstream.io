@@ -1,7 +1,7 @@
 import { setValue as setPathValue } from '../../utils/json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
-import { RecordWriteMessage, TOPIC, RECORD_ACTIONS, Message } from '../../constants'
+import { RecordWriteMessage, TOPIC, RECORD_ACTIONS, Message, EVENT } from '../../constants'
 import { SocketWrapper, DeepstreamConfig, DeepstreamServices, MetaData } from '../../types'
 import { isOfType, isExcluded } from '../../utils/utils'
 
@@ -321,8 +321,10 @@ export class RecordTransition {
     }
   }
 
-  private onCacheRequestError () {
-    // TODO
+  private onCacheRequestError (error: string) {
+    const errorMessage = `Cache retrieval error, nuking record transition for ${this.name}, ${error}`
+    this.services.logger.error(EVENT.ERROR, errorMessage)
+    this.destroy(errorMessage)
   }
 
 /**
@@ -333,7 +335,9 @@ export class RecordTransition {
  */
   private onCacheSetResponse (error: string | null, socketWrapper?: SocketWrapper, message?: Message): void {
     if (this.currentStep === null) {
-      // TODO: Log an extreme
+      const errorMessage = `Cache results recieved without a valid step in record transition for ${this.name}`
+      this.services.logger.error(EVENT.ERROR, errorMessage)
+      this.destroy(errorMessage)
       return
     }
 

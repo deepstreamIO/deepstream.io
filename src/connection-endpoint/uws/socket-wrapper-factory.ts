@@ -139,7 +139,11 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
       } else {
         this.bufferedWritesTotalByteSize += message.length
         this.bufferedWrites.push(message)
-        this.connectionEndpoint.scheduleFlush(this as SocketWrapper)
+        if (this.bufferedWritesTotalByteSize > this.config.maxBufferByteSize) {
+          this.flush()
+        } else {
+          this.connectionEndpoint.scheduleFlush(this as SocketWrapper)
+        }
       }
     }
   }

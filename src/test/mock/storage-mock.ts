@@ -43,6 +43,24 @@ constructor () {
     clearTimeout(this.setTimeout)
   }
 
+  public deleteBulk (keys: string[], callback: StorageWriteCallback) {
+    if (this.nextOperationWillBeSynchronous) {
+      this.completedDeleteOperations++
+      if (this.nextOperationWillBeSuccessful) {
+        keys.forEach(key => this.values.delete(key))
+        callback(null)
+      } else {
+        callback('storageError')
+        return
+      }
+    } else {
+      setTimeout(() => {
+        this.completedDeleteOperations++
+        callback(this.nextOperationWillBeSuccessful ? null : 'storageError')
+      }, 10)
+    }
+  }
+
   public delete (key: string, callback: StorageWriteCallback) {
     if (this.nextOperationWillBeSynchronous) {
       this.completedDeleteOperations++

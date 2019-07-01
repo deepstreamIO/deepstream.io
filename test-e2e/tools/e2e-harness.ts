@@ -41,9 +41,7 @@ export class E2EHarness extends EventEmitter {
 
   public async updateStorageDirectly (recordName: string, version: number, data: JSONValue) {
     this.servers.forEach((server) => {
-      server.getServices().cache.set(recordName, version, data, () => {
-        server.getServices().storage.set(recordName, version, data, () => {})
-      })
+      server.getServices().storage.set(recordName, version, data, () => {})
     })
 
     return new Promise((resolve) => setTimeout(resolve, 10))
@@ -51,9 +49,7 @@ export class E2EHarness extends EventEmitter {
 
   public async deleteFromStorageDirectly (recordName: string) {
     this.servers.forEach((server) => {
-      server.getServices().cache.delete(recordName, () => {
-        server.getServices().storage.delete(recordName, () => {})
-      })
+      server.getServices().storage.delete(recordName, () => {})
     })
 
     return new Promise((resolve) => setTimeout(resolve, 10))

@@ -73,7 +73,10 @@ connectionEndpoints:
         heartbeatInterval: 30000
         # the amount of milliseconds that writes to sockets are buffered
         outgoingBufferTimeout: 50
-
+        # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
+        # to block its responsivness
+        maxBufferByteSize: 100000
+        
         # Headers to copy over from websocket
         headers:
           - user-agent

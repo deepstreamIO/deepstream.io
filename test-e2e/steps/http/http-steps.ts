@@ -5,7 +5,6 @@ import * as needle from 'needle'
 
 import { clientHandler } from '../../framework/client-handler'
 import { parseData, defaultDelay } from '../../framework/utils'
-import { record } from '../../framework/record'
 
 let httpClients: { [index: string]: any } = {}
 

@@ -5,7 +5,6 @@ import { RECORD_ACTIONS as RA, RecordMessage, TOPIC, RecordWriteMessage, ListenM
 import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../../types'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { isExcluded } from '../../utils/utils'
-import { record } from '../../../test-e2e/framework/record'
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
@@ -151,14 +150,39 @@ export default class RecordHandler implements Handler<RecordMessage> {
 
     if (message.action === RA.NOTIFY) {
       this.recordUpdatedWithoutDeepstream(message, socketWrapper)
-      this.services.clusterNode.send(message)
       return
     }
 
     this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[action], this.metaData)
   }
 
-  private recordUpdatedWithoutDeepstream (message: RecordMessage, socketWrapper: SocketWrapper | null = null) {
+  private async recordUpdatedWithoutDeepstream (message: RecordMessage, socketWrapper: SocketWrapper | null = null) {
+    if (socketWrapper) {
+      if (this.services.cache.deleteBulk === undefined) {
+        const errorMessage = 'Cache needs to implement deleteBulk in order for it to work correctly'
+        this.services.logger.error(EVENT.PLUGIN_ERROR, errorMessage)
+        socketWrapper.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RECORD_ACTIONS.RECORD_NOTIFY_ERROR,
+          parsedData: errorMessage
+        })
+        return
+      }
+
+      try {
+        await new Promise((resolve) => this.services.cache.deleteBulk(message.names!, resolve as any))
+      } catch (error) {
+        const errorMessage = 'Error deleting messages in bulk when attempting to notify of remote changes'
+        this.services.logger.error(EVENT.INFO, `${errorMessage}: ${error.toString()}`)
+        socketWrapper.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RECORD_ACTIONS.RECORD_NOTIFY_ERROR,
+          parsedData: errorMessage
+        })
+        return
+      }
+    }
+
     let completed = 0
     message.names!.forEach((recordName, index, names) => {
       if (this.subscriptionRegistry.hasLocalSubscribers(recordName)) {
@@ -182,11 +206,13 @@ export default class RecordHandler implements Handler<RecordMessage> {
           completed++
           if (completed === names.length && socketWrapper) {
             socketWrapper.sendAckMessage(message)
+            this.services.clusterNode.send(message)
           }
         }, (event: RA, errorMessage: string, name: string, socket: SocketWrapper, msg: Message) => {
           completed++
           if (completed === names.length && socketWrapper) {
             socketWrapper.sendAckMessage(message)
+            this.services.clusterNode.send(message)
           }
           onRequestError(event, errorMessage, recordName, socket, msg)
         }, message)
@@ -194,6 +220,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
         completed++
         if (completed === names.length && socketWrapper) {
           socketWrapper.sendAckMessage(message)
+          this.services.clusterNode.send(message)
         }
       }
     })
