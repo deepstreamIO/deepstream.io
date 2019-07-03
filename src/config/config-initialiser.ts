@@ -238,6 +238,7 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
 
   // Required for bundling via nexe
   const req = require
+  let oldRequirePath
   let requirePath
   let pluginConstructor
   let es6Adaptor
@@ -246,14 +247,18 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null && type) {
-    requirePath = `deepstream.io-${type}-${plugin.name}`
-    requirePath = fileUtils.lookupLibRequirePath(requirePath)
+    oldRequirePath = `deepstream.io-${type}-${plugin.name}`
+    oldRequirePath = fileUtils.lookupLibRequirePath(oldRequirePath)
     try {
-      es6Adaptor = req(requirePath)
+      es6Adaptor = req(oldRequirePath)
     } catch (e) {
-      requirePath = `@deepstream/${type}-${plugin.name}`
-      requirePath = fileUtils.lookupLibRequirePath(requirePath)
-      es6Adaptor = req(requirePath)
+      try {
+        requirePath = `@deepstream/${type}-${plugin.name}`
+        requirePath = fileUtils.lookupLibRequirePath(requirePath)
+        es6Adaptor = req(requirePath)
+      } catch (e) {
+        throw new Error(`Cannot find module ${oldRequirePath} or ${requirePath}`)
+      }
     }
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null) {

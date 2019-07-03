@@ -244,11 +244,14 @@ describe('record handler handles messages', () => {
   })
 
   describe('notifies when db/cache remotely changed', () => {
-    it ('notifies users when record changes', () => {
+    beforeEach(() => {
+      services.storage.nextGetWillBeSynchronous = true
       services.cache.nextGetWillBeSynchronous = true
+    })
 
+    it ('notifies users when record changes', () => {
       M.notify.names.forEach(name => {
-        services.cache.set(name, 123, { name }, () => {})
+        services.storage.set(name, 123, { name }, () => {})
 
         testMocks.subscriptionRegistryMock
           .expects('sendToSubscribers')
@@ -266,11 +269,7 @@ describe('record handler handles messages', () => {
     })
 
     it('notifies users when records deleted', () => {
-      services.cache.nextGetWillBeSynchronous = true
-
       M.notify.names.forEach(name => {
-        services.cache.set(name, -1, null, () => {})
-
         testMocks.subscriptionRegistryMock
           .expects('sendToSubscribers')
           .once()
@@ -285,10 +284,7 @@ describe('record handler handles messages', () => {
     })
 
     it('notifies users when records updated and deleted combined', () => {
-      services.cache.nextGetWillBeSynchronous = true
-
-      services.cache.set(M.notify.names[0], 1, { name: M.notify.names[0] }, () => {})
-      services.cache.set(M.notify.names[1], -1, null, () => {})
+      services.storage.set(M.notify.names[0], 1, { name: M.notify.names[0] }, () => {})
 
       testMocks.subscriptionRegistryMock
       .expects('sendToSubscribers')
