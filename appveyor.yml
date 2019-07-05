@@ -14,9 +14,10 @@ test_script:
   - node --version
   - npm --version
   - npm test
+  - npm run e2e
   # Artifacts are packaged before before_deploy
-  # - bash scripts\package.sh
-  # - For /d %%d in ( build\** ) do MOVE %%d %cd%
+  - bash scripts\package.sh
+  - For /d %%d in ( build\** ) do MOVE %%d %cd%
 
 artifacts:
   - path: 'build\*.zip'
