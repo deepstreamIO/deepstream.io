@@ -7,7 +7,6 @@ import { ConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrap
 import { JSONObject } from '../../../binary-protocol/src/message-constants'
 
 export class HTTPConnectionEndpoint extends DeepstreamPlugin implements ConnectionEndpoint {
-
   public isReady: boolean = false
   public description: string = 'HTTP connection endpoint'
 
@@ -27,6 +26,12 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
     this.onPermissionResponse = this.onPermissionResponse.bind(this)
 
     this.jifHandler = new JIFHandler(this.services)
+  }
+
+  public async whenReady (): Promise<void> {
+    if (!this.isReady) {
+      return new Promise((resolve) => this.once('ready', resolve))
+    }
   }
 
   /**

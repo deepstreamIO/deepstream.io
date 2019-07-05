@@ -80,11 +80,11 @@ export class WSConnectionEndpoint extends ConnectionEndpoint {
    * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
    * and subscribes to authentication messages.
    */
-  public createWebsocketWrapper (websocket: WebSocket, upgradeReq: IncomingMessage): UnauthenticatedSocketWrapper {
+  public createWebsocketWrapper (websocket: WebSocket, req: IncomingMessage): UnauthenticatedSocketWrapper {
     const handshakeData = {
-      remoteAddress: upgradeReq.headers,
-      headers: WSConnectionEndpoint.getHeaders(this.options.headers, upgradeReq),
-      referer: upgradeReq.headers.referer
+      remoteAddress: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+      headers: WSConnectionEndpoint.getHeaders(this.options.headers, req),
+      referer: req.headers.referer
     }
     const socketWrapper = createWSSocketWrapper(
         websocket, handshakeData, this.services, this.options, this

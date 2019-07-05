@@ -150,7 +150,11 @@ export abstract class DeepstreamPlugin extends EventEmitter {
   public isReady: boolean = true
   public abstract description: string
   public init? (): void
-  public async whenReady (): Promise<void> {}
+  public async whenReady (): Promise<void> {
+    if (!this.isReady) {
+      throw new Error('If plugin initialization is async please implement the whenReady callback')
+    }
+  }
   public async close (): Promise<void> {}
   public setRecordHandler? (recordHandler: any): void
 }

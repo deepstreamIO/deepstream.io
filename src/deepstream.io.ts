@@ -238,7 +238,7 @@ export class Deepstream extends EventEmitter {
       return promises
     }, [] as Array<Promise<void>>)
 
-    await readyPromises
+    await Promise.all(readyPromises)
 
     this.messageProcessor = new MessageProcessor(this.config, this.services)
     this.messageDistributor = new MessageDistributor(this.config, this.services)

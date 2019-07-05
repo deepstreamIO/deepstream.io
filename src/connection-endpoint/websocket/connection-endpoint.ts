@@ -48,6 +48,12 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     this.flushSockets = this.flushSockets.bind(this)
   }
 
+  public async whenReady (): Promise<void> {
+    if (!this.isReady) {
+      return new Promise((resolve) => this.once('ready', resolve))
+    }
+  }
+
   public createWebsocketServer () {
   }
 
