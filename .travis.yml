@@ -38,6 +38,7 @@ matrix:
 script:
   - npm run lint;
   - npm run test:all:coverage;
+  - sh scripts/package.sh true
 
 addons:
   apt:

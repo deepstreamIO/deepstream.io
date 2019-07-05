@@ -127,7 +127,13 @@ function compile {
     cp build/deepstream ${DEEPSTREAM_PACKAGE}/
 
     echo "Patching config file for zip lib and var directories"
-    cp -f ./scripts/resources/package-conf.yml ${DEEPSTREAM_PACKAGE}/conf/config.yml
+    cp -f ./conf/config.yml ${DEEPSTREAM_PACKAGE}/conf/config.yml
+
+    if [[ ${OS} = "darwin" ]]; then
+        sed -i '' 's@#libDir: ../lib@libDir: ../lib@' ${DEEPSTREAM_PACKAGE}/conf/config.yml
+    else
+        sed -i 's@#libDir: ../lib@libDir: ../lib@' ${DEEPSTREAM_PACKAGE}/conf/config.yml
+    fi
 }
 
 function windows {
