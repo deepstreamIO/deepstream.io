@@ -1,6 +1,6 @@
 {
   "name": "@deepstream/server",
-  "version": "4.0.0-rc.11",
+  "version": "4.0.0-rc.12",
   "description": "a scalable server for realtime webapps",
   "main": "./dist/src/deepstream.io.js",
   "bin": {
@@ -27,7 +27,7 @@
     "e2e:login": "npm run e2e -- --tags \"@login\"",
     "e2e:presence": "npm run e2e -- --tags \"@presence\"",
     "e2e:http": "npm run e2e -- --tags \"@http\"",
-    "e2e:coverage": "nyc cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --tags \"not @cluster\" --retry --exit && npm run test:coverage:combine",
+    "e2e:coverage": "nyc cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --retry --exit && npm run test:coverage:combine",
     "test:all:coverage": "rm -rf .nyc_combined_coverage && npm run test:coverage && npm run e2e:coverage && nyc report --reporter=lcov -t .nyc_combined_coverage",
     "test:coverage:combine": "mkdir -p .nyc_combined_coverage && mv -f .nyc_output/* .nyc_combined_coverage/"
   },
