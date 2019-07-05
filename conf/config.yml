@@ -58,8 +58,7 @@ listen:
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
-  websocket:
-    name: uws
+  - type: uws-websocket
     options:
         # port for the websocket server
         port: 6020
@@ -91,8 +90,7 @@ connectionEndpoints:
         # maximum allowed size of an individual message in bytes
         maxMessageSize: 1048576
 
-  http:
-    name: http
+  - type: node-http
     options:
       # port for the http server
       port: 8080

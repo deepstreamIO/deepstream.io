@@ -61,7 +61,7 @@ export class Deepstream extends EventEmitter {
  * publish-subscribe, request-response, listeneing, permissioning
  * and a host of other features!
  */
-  constructor (config: PartialDeepstreamConfig | string | null) {
+  constructor (config: PartialDeepstreamConfig | string | null = null) {
     super()
     this.loadConfig(config)
     this.messageProcessor = null
@@ -406,6 +406,7 @@ private async pluginsShutdown () {
       result = jsYamlLoader.loadConfig(config)
       this.configFile = result.file
     } else {
+      configInitialiser.mergeConnectionOptions(config)
       const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
       result = configInitialiser.initialise(rawConfig)
     }

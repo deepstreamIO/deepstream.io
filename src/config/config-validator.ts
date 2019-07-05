@@ -120,12 +120,10 @@ const permissionOpts = {
 
 const connEndpointsOpts = {
   connectionEndpoints: {
-    type: 'object',
+    type: 'array',
+    items: {
     properties: {
-      websocket: {
-        type: 'object',
-        properties: {
-          type: { type: 'string', enum: ['default'] },
+          type: { type: 'string', enum: ['uws-websocket', 'ws-websocket', 'node-http'] },
           name: { type: 'string', minLength: 1 },
           path: { type: 'string', minLength: 1 },
           options: {
@@ -133,41 +131,26 @@ const connEndpointsOpts = {
             properties: {
               port: { type: 'integer', minimum: 1 },
               host: { type: 'string', minLength: 1 },
-              urlPath: { type: 'string', minLength: 1 },
               healthCheckPath: { type: 'string', minLength: 1 },
+              logInvalidAuthData: { type: 'boolean' },
+              maxMessageSize: { type: 'integer', minimum: 0 },
+
+              // WEBSOCKET
+              urlPath: { type: 'string', minLength: 1 },
               heartbeatInterval: { type: 'integer', minimum: 1 },
               outgoingBufferTimeout: { type: 'integer', minimum: 0 },
 
               unauthenticatedClientTimeout: { type: ['integer', 'boolean'], minimum: 1 },
               maxAuthAttempts: { type: 'integer', minimum: 1 },
-              logInvalidAuthData: { type: 'boolean' },
-              maxMessageSize: { type: 'integer', minimum: 0 }
-            }
-          }
-        }
-      },
-      http: {
-        type: 'object',
-        properties: {
-          type: { type: 'string', enum: ['default'] },
-          name: { type: 'string', minLength: 1 },
-          path: { type: 'string', minLength: 1 },
-          options: {
-            type: 'object',
-            properties: {
-              port: { type: 'integer', minimum: 1 },
-              host: { type: 'string', minLength: 1 },
+
+              // HTTP
               allowAuthData: { type: 'boolean' },
               enableAuthEndpoint: { type: 'boolean' },
               authPath: { type: 'string', minLength: 1 },
               postPath: { type: 'string', minLength: 1 },
               getPath: { type: 'string', minLength: 1 },
-              healthCheckPath: { type: 'string', minLength: 1 },
-
               allowAllOrigins: { type: 'boolean' },
               origins: { type: 'array', items: { type: 'string', format: 'uri' } },
-              maxMessageSize: { type: 'integer', minimum: 0 }
-            }
           }
         }
       }

@@ -47,7 +47,7 @@ constructor () {
     if (this.nextOperationWillBeSynchronous) {
       this.completedDeleteOperations++
       if (this.nextOperationWillBeSuccessful) {
-        keys.forEach(key => this.values.delete(key))
+        keys.forEach((key) => this.values.delete(key))
         callback(null)
       } else {
         callback('storageError')

@@ -229,7 +229,7 @@ export interface DeepstreamConfig {
   sslDHParams: string | null
   sslPassphrase: string | null
 
-  connectionEndpoints: { [index: string]: PluginConfig }
+  connectionEndpoints: PluginConfig[]
 
   subscriptions: PluginConfig,
   logger: PluginConfig

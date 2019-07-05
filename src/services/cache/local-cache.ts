@@ -27,7 +27,7 @@ export class LocalCache extends DeepstreamPlugin implements Storage {
   }
 
   public deleteBulk (keys: string[], callback: StorageWriteCallback) {
-    keys.forEach(key => this.data.delete(key))
+    keys.forEach((key) => this.data.delete(key))
     process.nextTick(() => callback(null))
   }
 }

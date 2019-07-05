@@ -155,7 +155,8 @@ function extendConfig (config: any, argv: any): DeepstreamConfig {
 
 function overrideEndpointOption (key: string, value: string, endpoint: string, config: DeepstreamConfig) {
   try {
-    config.connectionEndpoints[endpoint].options[key] = value
+    const plugin = config.connectionEndpoints.find((pluginConfig) => pluginConfig.type!.includes(endpoint))
+    plugin!.options[key] = value
   } catch (exception) {
     throw new Error(`${key} could not be set: ${endpoint} connection endpoint not found`)
   }
