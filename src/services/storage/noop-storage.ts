@@ -5,6 +5,7 @@ export class NoopStorage extends DeepstreamPlugin implements Storage {
   public apiVersion: number = 2
 
   public set (key: string, version: number, data: any, callback: StorageWriteCallback) {
+    callback(null)
     process.nextTick(() => callback(null))
   }
 
@@ -14,5 +15,8 @@ export class NoopStorage extends DeepstreamPlugin implements Storage {
 
   public delete (key: string, callback: StorageWriteCallback) {
     process.nextTick(() => callback(null))
+  }
+
+  public deleteBulk (key: string[], callback: StorageWriteCallback) {
   }
 }

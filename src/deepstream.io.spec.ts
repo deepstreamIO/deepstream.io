@@ -1,7 +1,7 @@
 import 'mocha'
 import { expect } from 'chai'
 
-const { Deepstream } = require('./deepstream.io')
+import { Deepstream } from './deepstream.io'
 
 describe('deepstream.io', () => {
 

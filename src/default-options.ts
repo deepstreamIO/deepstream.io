@@ -29,9 +29,9 @@ export function get (): DeepstreamConfig {
     /*
      * Connection Endpoints
      */
-    connectionEndpoints: {
-      websocket: {
-        type: 'default',
+    connectionEndpoints: [
+      {
+        type: 'uws-websocket',
         options: {
           port: 6020,
           host: '0.0.0.0',
@@ -39,6 +39,7 @@ export function get (): DeepstreamConfig {
           healthCheckPath: '/health-check',
           heartbeatInterval: 30000,
           outgoingBufferTimeout: 0,
+          maxBufferByteSize: 100000,
           noDelay: true,
           headers: [],
 
@@ -52,8 +53,31 @@ export function get (): DeepstreamConfig {
           maxMessageSize: 1048576
         }
       },
-      http: {
-        type: 'default',
+      {
+        type: 'ws-websocket',
+        options: {
+          port: 6020,
+          host: '0.0.0.0',
+          urlPath: '/deepstream',
+          healthCheckPath: '/health-check',
+          heartbeatInterval: 30000,
+          outgoingBufferTimeout: 0,
+          maxBufferByteSize: 100000,
+          noDelay: true,
+          headers: [],
+
+          /*
+           * Security
+           */
+          unauthenticatedClientTimeout: 180000,
+          maxAuthAttempts: 3,
+          logInvalidAuthData: false,
+          perMessageDeflate: false,
+          maxMessageSize: 1048576
+        }
+      },
+      {
+        type: 'node-http',
         options: {
           port: 8080,
           host: '0.0.0.0',
@@ -69,7 +93,7 @@ export function get (): DeepstreamConfig {
           maxMessageSize: 1024
         }
       }
-    },
+    ],
 
     logger: {
       type: 'default',

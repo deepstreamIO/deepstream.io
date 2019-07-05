@@ -170,3 +170,9 @@ export const writeAck = {
   name: 'some-record',
   data: [[-1], null]
 }
+
+export const notify = {
+  topic: C.TOPIC.RECORD,
+  action: C.RECORD_ACTIONS.NOTIFY,
+  names: ['record1', 'record2']
+}

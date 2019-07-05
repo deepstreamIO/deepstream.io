@@ -10,6 +10,14 @@ Given(/"([^"]*)" permissions are used$/, async (permissionType) => {
   await global.cluster.updatePermissions(permissionType)
 })
 
+When('storage remote updates {string} to {string} with version {int}', async (recordName, data, version) => {
+  await global.cluster.updateStorageDirectly(recordName, version, data)
+})
+
+When('storage remote deletes {string}', async (recordName) => {
+  await global.cluster.deleteFromStorageDirectly(recordName)
+})
+
 When(/^server (\S)* goes down$/, async (server) => {
   if (global.cluster.started === false) {
     return

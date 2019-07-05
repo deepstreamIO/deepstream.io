@@ -1,3 +1,13 @@
+## [4.0.0-rc.11] - 2019.07.03
+
+### Feat
+
+- Adding support for a notify API via HTTP
+
+### Misc
+
+- Updating uws to support node12
+
 ## [4.0.0-rc.10] - 2019.06.10
   
 ### Feat

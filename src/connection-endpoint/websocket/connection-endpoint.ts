@@ -15,6 +15,7 @@ const OPEN = 'OPEN'
 
 export interface WebSocketServerConfig {
   outgoingBufferTimeout: number,
+  maxBufferByteSize: number,
   headers: string[],
   [index: string]: any,
 }
@@ -45,6 +46,12 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   constructor (protected options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: DeepstreamConfig) {
     super()
     this.flushSockets = this.flushSockets.bind(this)
+  }
+
+  public async whenReady (): Promise<void> {
+    if (!this.isReady) {
+      return new Promise((resolve) => this.once('ready', resolve))
+    }
   }
 
   public createWebsocketServer () {

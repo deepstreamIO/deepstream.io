@@ -5,7 +5,7 @@ import { expect } from 'chai'
 
 import RecordHandler from './record-handler'
 
-const M = require('./test-messages')
+import * as M from './test-messages'
 
 import * as testHelper from '../../test/helper/test-helper'
 import { getTestMocks } from '../../test/helper/test-mocks'
@@ -188,7 +188,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.recordHeadMessage)
   })
 
-  it.skip('patches a record', () => {
+  it('patches a record', () => {
     const recordPatch = Object.assign({}, M.recordPatch)
     services.cache.set('some-record', M.recordVersion, Object.assign({}, M.recordData), () => {})
 
@@ -199,8 +199,9 @@ describe('record handler handles messages', () => {
 
     recordHandler.handle(client.socketWrapper, recordPatch)
 
-    services.cache.get('some-record', (error, record) => {
-      expect(record).to.deep.equal({ _v: 6, _d: { name: 'Kowalski', lastname: 'Egon' } })
+    services.cache.get('some-record', (error, version, record) => {
+      expect(version).to.equal(version)
+      expect(record).to.deep.equal({ name: 'Kowalski', lastname: 'Egon' })
     })
   })
 
@@ -240,6 +241,73 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, ExistingVersion)
 
     expect(services.logger.lastLogMessage).to.equal('someUser tried to update record some-record to version 5 but it already was 5')
+  })
+
+  describe('notifies when db/cache remotely changed', () => {
+    beforeEach(() => {
+      services.storage.nextGetWillBeSynchronous = true
+      services.cache.nextGetWillBeSynchronous = true
+    })
+
+    it ('notifies users when record changes', () => {
+      M.notify.names.forEach(name => {
+        services.storage.set(name, 123, { name }, () => {})
+
+        testMocks.subscriptionRegistryMock
+          .expects('sendToSubscribers')
+          .once()
+          .withExactArgs(name, {
+            topic: C.TOPIC.RECORD,
+            action: C.RECORD_ACTIONS.UPDATE,
+            name,
+            parsedData: { name },
+            version: 123
+          }, true, null)
+      })
+
+      recordHandler.handle(client.socketWrapper, M.notify)
+    })
+
+    it('notifies users when records deleted', () => {
+      M.notify.names.forEach(name => {
+        testMocks.subscriptionRegistryMock
+          .expects('sendToSubscribers')
+          .once()
+          .withExactArgs(name, {
+            topic: C.TOPIC.RECORD,
+            action: C.RECORD_ACTIONS.DELETED,
+            name
+          }, true, null)
+      })
+
+      recordHandler.handle(client.socketWrapper, M.notify)
+    })
+
+    it('notifies users when records updated and deleted combined', () => {
+      services.storage.set(M.notify.names[0], 1, { name: M.notify.names[0] }, () => {})
+
+      testMocks.subscriptionRegistryMock
+      .expects('sendToSubscribers')
+      .once()
+      .withExactArgs(M.notify.names[0], {
+        topic: C.TOPIC.RECORD,
+        action: C.RECORD_ACTIONS.UPDATE,
+        name: M.notify.names[0],
+        parsedData: { name: M.notify.names[0] },
+        version: 1
+      }, true, null)
+
+      testMocks.subscriptionRegistryMock
+        .expects('sendToSubscribers')
+        .once()
+        .withExactArgs(M.notify.names[1], {
+          topic: C.TOPIC.RECORD,
+          action: C.RECORD_ACTIONS.DELETED,
+          name: M.notify.names[1]
+        }, true, null)
+
+      recordHandler.handle(client.socketWrapper, M.notify)
+    })
   })
 
   describe('subscription registry', () => {

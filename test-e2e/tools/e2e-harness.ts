@@ -4,10 +4,10 @@ import { Deepstream } from '../../src/deepstream.io'
 import { E2EAuthentication } from './e2e-authentication'
 import { getServerConfig } from './e2e-server-config'
 import { E2ELogger } from './e2e-logger'
-import { E2EClusterNode } from './e2e-cluster-node'
-import { STATES } from '../../src/constants'
+import { STATES, JSONValue } from '../../src/constants'
 import { LocalCache } from '../../src/services/cache/local-cache'
 import { ConfigPermission } from '../../src/services/permission/valve/config-permission'
+import { E2EClusterNode } from './e2e-cluster-node'
 
 const cache = new LocalCache()
 
@@ -37,6 +37,22 @@ export class E2EHarness extends EventEmitter {
 
   public getAuthUrl (serverId: number) {
     return `localhost:${this.ports[serverId - 1] + 200}/auth`
+  }
+
+  public async updateStorageDirectly (recordName: string, version: number, data: JSONValue) {
+    this.servers.forEach((server) => {
+      server.getServices().storage.set(recordName, version, data, () => {})
+    })
+
+    return new Promise((resolve) => setTimeout(resolve, 10))
+  }
+
+  public async deleteFromStorageDirectly (recordName: string) {
+    this.servers.forEach((server) => {
+      server.getServices().storage.delete(recordName, () => {})
+    })
+
+    return new Promise((resolve) => setTimeout(resolve, 10))
   }
 
   public async start () {
@@ -88,7 +104,7 @@ export class E2EHarness extends EventEmitter {
       return
     }
 
-    const server = new Deepstream(getServerConfig(this.ports[serverId - 1]))
+    const server = new Deepstream(getServerConfig(this.ports[serverId - 1])) as any
     this.servers[serverId - 1] = server
     const startedPromise = new Promise((resolve) => server.on('started', resolve))
     if (this.enableLogging !== true) {

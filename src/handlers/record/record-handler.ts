@@ -52,6 +52,12 @@ export default class RecordHandler implements Handler<RecordMessage> {
         this.remoteDelete(message)
         return
       }
+
+      if (message.action === RA.NOTIFY) {
+        this.recordUpdatedWithoutDeepstream(message)
+        return
+      }
+
       this.broadcastUpdate(message.name, {
         topic: message.topic,
         action: message.action,
@@ -142,7 +148,82 @@ export default class RecordHandler implements Handler<RecordMessage> {
       return
     }
 
+    if (message.action === RA.NOTIFY) {
+      this.recordUpdatedWithoutDeepstream(message, socketWrapper)
+      return
+    }
+
     this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[action], this.metaData)
+  }
+
+  private async recordUpdatedWithoutDeepstream (message: RecordMessage, socketWrapper: SocketWrapper | null = null) {
+    if (socketWrapper) {
+      if (this.services.cache.deleteBulk === undefined) {
+        const errorMessage = 'Cache needs to implement deleteBulk in order for it to work correctly'
+        this.services.logger.error(EVENT.PLUGIN_ERROR, errorMessage)
+        socketWrapper.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RECORD_ACTIONS.RECORD_NOTIFY_ERROR,
+          parsedData: errorMessage
+        })
+        return
+      }
+
+      try {
+        await new Promise((resolve) => this.services.cache.deleteBulk(message.names!, resolve as any))
+      } catch (error) {
+        const errorMessage = 'Error deleting messages in bulk when attempting to notify of remote changes'
+        this.services.logger.error(EVENT.INFO, `${errorMessage}: ${error.toString()}`)
+        socketWrapper.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RECORD_ACTIONS.RECORD_NOTIFY_ERROR,
+          parsedData: errorMessage
+        })
+        return
+      }
+    }
+
+    let completed = 0
+    message.names!.forEach((recordName, index, names) => {
+      if (this.subscriptionRegistry.hasLocalSubscribers(recordName)) {
+        this.recordRequest(recordName, null, (name: string, version: number, data: JSONObject) => {
+          if (version === -1) {
+            this.remoteDelete({
+              topic: TOPIC.RECORD,
+              action: RECORD_ACTIONS.DELETED,
+              name
+            })
+          } else {
+            this.subscriptionRegistry.sendToSubscribers(name, {
+              topic: TOPIC.RECORD,
+              action: RECORD_ACTIONS.UPDATE,
+              name,
+              version,
+              parsedData: data
+            }, true, null)
+          }
+
+          completed++
+          if (completed === names.length && socketWrapper) {
+            socketWrapper.sendAckMessage(message)
+            this.services.clusterNode.send(message)
+          }
+        }, (event: RA, errorMessage: string, name: string, socket: SocketWrapper, msg: Message) => {
+          completed++
+          if (completed === names.length && socketWrapper) {
+            socketWrapper.sendAckMessage(message)
+            this.services.clusterNode.send(message)
+          }
+          onRequestError(event, errorMessage, recordName, socket, msg)
+        }, message)
+      } else {
+        completed++
+        if (completed === names.length && socketWrapper) {
+          socketWrapper.sendAckMessage(message)
+          this.services.clusterNode.send(message)
+        }
+      }
+    })
   }
 
 /**

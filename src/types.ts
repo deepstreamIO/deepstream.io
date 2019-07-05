@@ -150,7 +150,11 @@ export abstract class DeepstreamPlugin extends EventEmitter {
   public isReady: boolean = true
   public abstract description: string
   public init? (): void
-  public async whenReady (): Promise<void> {}
+  public async whenReady (): Promise<void> {
+    if (!this.isReady) {
+      throw new Error('If plugin initialization is async please implement the whenReady callback')
+    }
+  }
   public async close (): Promise<void> {}
   public setRecordHandler? (recordHandler: any): void
 }
@@ -162,6 +166,7 @@ export interface Storage extends DeepstreamPlugin  {
   set (recordName: string, version: number, data: any, callback: StorageWriteCallback, metaData?: any): void
   get (recordName: string, callback: StorageReadCallback, metaData?: any): void
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void
+  deleteBulk (recordNames: string[], callback: StorageWriteCallback, metaData?: any): void
 }
 export type StoragePlugin<PluginOptions> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Storage
 
@@ -228,7 +233,7 @@ export interface DeepstreamConfig {
   sslDHParams: string | null
   sslPassphrase: string | null
 
-  connectionEndpoints: { [index: string]: PluginConfig }
+  connectionEndpoints: PluginConfig[]
 
   subscriptions: PluginConfig,
   logger: PluginConfig

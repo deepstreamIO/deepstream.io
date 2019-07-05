@@ -405,6 +405,7 @@ export class ListenerRegistry implements SubscriptionListener {
           subscription: subscriptionName
         })
       }
+      return
     }
 
     this.services.logger.warn(

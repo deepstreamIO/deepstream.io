@@ -26,9 +26,9 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
       } as any
     },
 
-    connectionEndpoints: {
-      websocket: {
-        name: 'uws',
+    connectionEndpoints: [
+      {
+        type: 'ws-websocket',
         options: {
           port,
           urlPath: '/e2e',
@@ -36,21 +36,15 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
           unauthenticatedClientTimeout : 200,
         } as any
       },
-      http: {
-        name: 'http',
+      {
+        type: 'node-http',
         options: {
           port: Number(port) + 200,
-          host: '0.0.0.0',
           allowAuthData: true,
           enableAuthEndpoint: true,
-          authPath: '/auth',
-          postPath: '/',
-          getPath: '/',
-          healthCheckPath: '/health-check',
-          allowAllOrigins: true
         } as any
       }
-    },
+    ],
 
     monitoring: {
       type: 'default',
@@ -87,6 +81,12 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
       type: 'default',
       options: {
         reconciliationTimeout : 100,
+      } as any
+    },
+
+    storage: {
+      path: './src/services/cache/local-cache',
+      options: {
       } as any
     }
   })

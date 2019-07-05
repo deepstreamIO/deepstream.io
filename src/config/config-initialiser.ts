@@ -11,6 +11,7 @@ import { OpenAuthentication } from '../services/authentication/open/open-authent
 import { ConfigPermission } from '../services/permission/valve/config-permission'
 import { OpenPermission } from '../services/permission/open/open-permission'
 import { UWSConnectionEndpoint } from '../connection-endpoint/uws/connection-endpoint'
+import { WSConnectionEndpoint } from '../connection-endpoint/ws/connection-endpoint'
 import { FileBasedAuthentication } from '../services/authentication/file/file-based-authentication'
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
 import { NoopStorage } from '../services/storage/noop-storage'
@@ -19,6 +20,7 @@ import { StdOutLogger } from '../services/logger/std-out-logger'
 import { LocalMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
+import { get as getDefaultOptions } from '../default-options'
 
 let commandLineArguments: any
 
@@ -36,6 +38,18 @@ const defaultPlugins = new Map<keyof DeepstreamServices, any>([
   ['clusterNode', SingleClusterNode]
 ])
 
+export const mergeConnectionOptions = function (config: any) {
+  if (config) {
+    const defaultConfig = getDefaultOptions()
+    for (const connectionEndpoint of config.connectionEndpoints) {
+      const defaultPlugin = defaultConfig.connectionEndpoints.find((defaultEndpoint) => defaultEndpoint.type === connectionEndpoint.type)
+      if (defaultPlugin) {
+        connectionEndpoint.options = utils.merge(defaultPlugin.options, connectionEndpoint.options)
+      }
+    }
+  }
+}
+
 /**
  * Registers plugins by name. Useful when wanting to include
  * custom plugins in a binary
@@ -52,6 +66,7 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
   commandLineArguments = global.deepstreamCLI || {}
   handleUUIDProperty(config)
   handleSSLProperties(config)
+  mergeConnectionOptions(config)
 
   const services = {} as DeepstreamServices
   services.logger = handleLogger(config, services)
@@ -198,7 +213,7 @@ function handleCustomPlugins (config: DeepstreamConfig, services: any): void {
 function handleConnectionEndpoints (config: DeepstreamConfig, services: any): ConnectionEndpoint[] {
   // delete any endpoints that have been set to `null`
   for (const type in config.connectionEndpoints) {
-    if (!config.connectionEndpoints[type]) {
+    if (config.connectionEndpoints[type] === null) {
       delete config.connectionEndpoints[type]
     }
   }
@@ -206,19 +221,20 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): Co
     throw new Error('No connection endpoints configured')
   }
   const connectionEndpoints: ConnectionEndpoint[] = []
-  for (const connectionType in config.connectionEndpoints) {
-    const plugin = config.connectionEndpoints[connectionType]
-
+  for (const plugin of config.connectionEndpoints) {
     plugin.options = plugin.options || {}
 
     let PluginConstructor
-    if (plugin.type === 'default' && connectionType === 'websocket') {
+    if (plugin.type === 'uws-websocket') {
       PluginConstructor = UWSConnectionEndpoint
-    } else if (plugin.type === 'default' && connectionType === 'http') {
+    } else if (plugin.type === 'ws-websocket') {
+      PluginConstructor = WSConnectionEndpoint
+    } else if (plugin.type === 'node-http') {
       PluginConstructor = HTTPConnectionEndpoint
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection')
     }
+
     connectionEndpoints.push(new PluginConstructor(plugin.options, services, config))
   }
   return connectionEndpoints
@@ -238,6 +254,7 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
 
   // Required for bundling via nexe
   const req = require
+  let oldRequirePath
   let requirePath
   let pluginConstructor
   let es6Adaptor
@@ -246,9 +263,19 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null && type) {
-    requirePath = `deepstream.io-${type}-${plugin.name}`
-    requirePath = fileUtils.lookupLibRequirePath(requirePath)
-    es6Adaptor = req(requirePath)
+    oldRequirePath = `deepstream.io-${type}-${plugin.name}`
+    oldRequirePath = fileUtils.lookupLibRequirePath(oldRequirePath)
+    try {
+      es6Adaptor = req(oldRequirePath)
+    } catch (e) {
+      try {
+        requirePath = `@deepstream/${type}-${plugin.name}`
+        requirePath = fileUtils.lookupLibRequirePath(requirePath)
+        es6Adaptor = req(requirePath)
+      } catch (e) {
+        throw new Error(`Cannot find module ${oldRequirePath} or ${requirePath}`)
+      }
+    }
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null) {
     requirePath = fileUtils.lookupLibRequirePath(plugin.name)

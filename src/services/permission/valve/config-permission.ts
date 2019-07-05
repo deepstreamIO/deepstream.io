@@ -44,6 +44,12 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
     }
   }
 
+  public async whenReady (): Promise<void> {
+    if (!this.isReady) {
+      return new Promise((resolve) => this.once('ready', resolve))
+    }
+  }
+
   /**
    * Will be called by the dependency initialiser once server.start() is called.
    * This gives users a chance to change the path using server.set()

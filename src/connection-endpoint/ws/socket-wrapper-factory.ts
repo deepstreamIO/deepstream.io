@@ -4,13 +4,14 @@ import * as binaryMessageParser from '../../../binary-protocol/src/message-parse
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
 import { combineMultipleMessages } from '../../../binary-protocol/src/message-builder'
 import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper } from '../../types'
+import * as WebSocket from 'ws'
 
 /**
  * This class wraps around a websocket
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  */
-export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
+export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
 
   public isRemote: false = false
   public isClosed: boolean = false
@@ -27,7 +28,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
   private bufferedWritesTotalByteSize: number
 
   constructor (
-    private socket: any,
+    private socket: WebSocket,
     private handshakeData: any,
     private services: DeepstreamServices,
     private config: WebSocketServerConfig,
@@ -48,7 +49,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public flush () {
     if (this.bufferedWritesTotalByteSize !== 0) {
-      this.socket.send(combineMultipleMessages(this.bufferedWrites, this.bufferedWritesTotalByteSize), true)
+      this.socket.send(combineMultipleMessages(this.bufferedWrites, this.bufferedWritesTotalByteSize))
       this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []
     }
@@ -56,18 +57,13 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
 
   /**
    * Sends a message based on the provided action and topic
-   * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
-   *                                 this message type
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean = true): void {
-    // onIndividualMessageSent
     this.sendBuiltMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
   }
 
   /**
    * Sends a message based on the provided action and topic
-   * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
-   *                                 this message type
    */
   public sendAckMessage (message: Message, allowBuffering: boolean = true): void {
     this.sendBuiltMessage(
@@ -101,7 +97,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    * logic and closes the connection
    */
   public destroy (): void {
-    this.socket.end()
+    this.socket.close()
   }
 
   public close (): void {
@@ -132,10 +128,10 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
   public sendBuiltMessage (message: Buffer, buffer?: boolean): void {
     if (this.isOpen) {
       if (this.config.outgoingBufferTimeout === 0) {
-        this.socket.send(message, true)
+        this.socket.send(message)
       } else if (!buffer) {
         this.flush()
-        this.socket.send(message, true)
+        this.socket.send(message)
       } else {
         this.bufferedWritesTotalByteSize += message.length
         this.bufferedWrites.push(message)
@@ -149,10 +145,10 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
   }
 }
 
-export const createUWSSocketWrapper = function (
+export const createWSSocketWrapper = function (
   socket: any,
   handshakeData: any,
   services: DeepstreamServices,
   config: WebSocketServerConfig,
   connectionEndpoint: SocketConnectionEndpoint
-) { return new UwsSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }
+) { return new WSSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }

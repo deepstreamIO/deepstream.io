@@ -221,6 +221,14 @@ When(/^(.+) queues? a write to (record|list) "([^"]*)"(?: and path "([^"]*)")? w
   })
 })
 
+When(/^(.+) queues? a notify for records? '([^"]*)'$/, (clientExpression: string, recordNames) => {
+  clientHandler.getClientNames(clientExpression).forEach((clientName) => {
+    const client = httpClients[clientName]
+    const jifMessage = { topic: 'record', action: 'notify', recordNames: recordNames.split(',') }
+    client.queue.push(jifMessage)
+  })
+})
+
 When(/^(.+) queues? a delete for (record|list) "([^"]*)"$/, (clientExpression: string, recordOrList, recordName) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     const client = httpClients[clientName]

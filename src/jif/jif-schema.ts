@@ -135,6 +135,31 @@ export const jifSchema = {
       ],
       additionalProperties: false,
     },
+    {
+      title: 'Record Notify',
+      description: 'Notifies deepstream that a record was written to remotely',
+      properties: {
+        topic: {
+          const: 'record',
+        },
+        action: {
+          const: 'notify',
+        },
+        recordNames: {
+          type: 'array',
+          minLength: 1,
+          items: {
+            type: 'string',
+          },
+        },
+      },
+      required: [
+        'topic',
+        'action',
+        'recordNames',
+      ],
+      additionalProperties: false,
+    },
      {
       title: 'List',
       description: 'Fetch and delete lists.',
