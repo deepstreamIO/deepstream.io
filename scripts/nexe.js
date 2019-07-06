@@ -3,7 +3,7 @@ const nexe = require('nexe') // eslint-disable-line
 
 nexe.compile({
   input: 'dist/bin/deepstream.js',
-  build: (process.env.BUILD_NODE === 'true') || false,
+  build: false,
   flags: ['--max-old-space-size=8192'],
   output: process.env.EXECUTABLE_NAME,
   target: { version: process.env.NODE_VERSION_WITHOUT_V },
