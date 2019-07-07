@@ -5,6 +5,7 @@ import { RECORD_ACTIONS as RA, RecordMessage, TOPIC, RecordWriteMessage, ListenM
 import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../../types'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { isExcluded } from '../../utils/utils'
+import { Socket } from 'net';
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
@@ -48,33 +49,23 @@ export default class RecordHandler implements Handler<RecordMessage> {
     const action = message.isWriteAck ? WRITE_ACK_TO_ACTION[message.action] : message.action
 
     if (socketWrapper === null) {
-      if (message.action === RA.DELETED) {
-        this.remoteDelete(message)
-        return
-      }
+      this.handleClusterUpdate(message)
+      return
+    }
 
-      if (message.action === RA.NOTIFY) {
-        this.recordUpdatedWithoutDeepstream(message)
-        return
-      }
-
-      this.broadcastUpdate(message.name, {
-        topic: message.topic,
-        action: message.action,
-        name: message.name,
-        path: message.path,
-        version: message.version,
-        data: message.data
-      }, false, null)
+    if (action === RA.SUBSCRIBECREATEANDREAD_BULK) {
+      message.names!.forEach((name) => {
+        this.recordRequest(name, socketWrapper, this.onCreateOrReadComplete, onRequestError, { ...message, name })
+      })
       return
     }
 
     if (action === RA.SUBSCRIBECREATEANDREAD) {
-    /*
-     * Return the record's contents and subscribes for future updates.
-     * Creates the record if it doesn't exist
-     */
-      this.createOrRead(socketWrapper!, message)
+      /*
+      * Return the record's contents and subscribes for future updates.
+      * Creates the record if it doesn't exist
+      */
+      this.recordRequest(message.name, socketWrapper, this.onCreateOrReadComplete, onRequestError, message)
       return
     }
 
@@ -94,7 +85,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
     /*
      * Return the current state of the record in cache or db
      */
-      this.snapshot(socketWrapper!, message)
+      this.recordRequest(message.name, socketWrapper, onSnapshotComplete, onRequestError, message)
       return
     }
 
@@ -104,6 +95,14 @@ export default class RecordHandler implements Handler<RecordMessage> {
      */
       this.head(socketWrapper!, message)
       return
+    }
+
+    if (action === RA.SUBSCRIBEANDHEAD_BULK) {
+      /*
+       * Return the current version of the record or -1 if not found, subscribing either way
+       */
+        this.subscribeAndHeadBulk(socketWrapper!, message)
+        return
     }
 
     if (action === RA.SUBSCRIBEANDHEAD) {
@@ -154,6 +153,27 @@ export default class RecordHandler implements Handler<RecordMessage> {
     }
 
     this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[action], this.metaData)
+  }
+
+  private handleClusterUpdate (message: RecordMessage) {
+    if (message.action === RA.DELETED) {
+      this.remoteDelete(message)
+      return
+    }
+
+    if (message.action === RA.NOTIFY) {
+      this.recordUpdatedWithoutDeepstream(message)
+      return
+    }
+
+    this.broadcastUpdate(message.name, {
+      topic: message.topic,
+      action: message.action,
+      name: message.name,
+      path: message.path,
+      version: message.version,
+      data: message.data
+    }, false, null)
   }
 
   private async recordUpdatedWithoutDeepstream (message: RecordMessage, socketWrapper: SocketWrapper | null = null) {
@@ -226,13 +246,6 @@ export default class RecordHandler implements Handler<RecordMessage> {
     })
   }
 
-/**
- * Sends the records data current data once loaded from the cache, and null otherwise
- */
-  private snapshot (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    this.recordRequest(message.name, socketWrapper, onSnapshotComplete, onRequestError, message)
-  }
-
   /**
    * Returns just the current version number of a record
    * Results in a HEAD_RESPONSE
@@ -248,10 +261,27 @@ export default class RecordHandler implements Handler<RecordMessage> {
    */
   private subscribeAndHead (socketWrapper: SocketWrapper, message: RecordMessage): void {
     this.head(socketWrapper, message)
-    this.subscriptionRegistry.subscribe(
-      { ...message,  action: RA.SUBSCRIBE },
-      socketWrapper
-    )
+    this.subscriptionRegistry.subscribe(message, socketWrapper)
+  }
+
+  private subscribeAndHeadBulk (socketWrapper: SocketWrapper, message: RecordMessage): void {
+    this.services.cache.headBulk(message.names!, (error: any, versions, missing) => {
+      if (Object.keys(versions).length > -1) {
+        socketWrapper.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RA.HEAD_RESPONSE_BULK,
+          versions
+        })
+      }
+
+      message.names!.forEach((name) => {
+        const newMessage = { ...message, name }
+        this.subscriptionRegistry.subscribe(newMessage, socketWrapper)
+        if (versions[name] === undefined) {
+          this.head(socketWrapper, newMessage)
+        }
+      })
+    })
   }
 
   private onCreateOrReadComplete (recordName: string, version: number, data: JSONObject | null, socketWrapper: SocketWrapper, message: RecordMessage) {
@@ -266,14 +296,6 @@ export default class RecordHandler implements Handler<RecordMessage> {
         this.create,
       )
     }
-  }
-
-/**
- * Tries to retrieve the record and creates it if it doesn't exist. Please
- * note that create also triggers a read once done
- */
-  private createOrRead (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    this.recordRequest(message.name, socketWrapper, this.onCreateOrReadComplete, onRequestError, message)
   }
 
 /**
@@ -413,7 +435,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
         return
       }
 
-      this.readAndSubscribe(message, 0, {}, socketWrapper)
+      this.readAndSubscribe({ ...message, action: originalAction }, 0, {}, socketWrapper)
     }, this.metaData)
 
     if (!isExcluded(this.config.record.storageExclusionPrefixes, message.name)) {
@@ -430,30 +452,28 @@ export default class RecordHandler implements Handler<RecordMessage> {
  * Subscribes to updates for a record and sends its current data once done
  */
   private readAndSubscribe (message: RecordMessage, version: number, data: any, socketWrapper: SocketWrapper): void {
-    this.permissionAction(RA.READ, message, message.action, socketWrapper, () => {
-      this.subscriptionRegistry.subscribe({ ...message, action: RA.SUBSCRIBE }, socketWrapper)
+    this.subscriptionRegistry.subscribe(message, socketWrapper)
 
-      this.recordRequest(message.name, socketWrapper, (_: string, newVersion: number, latestData: any) => {
-        if (latestData) {
-          if (newVersion !== version) {
-            this.services.logger.info(
-              EVENT.INFO, `BUG CAUGHT! ${message.name} was version ${version} for readAndSubscribe, ` +
-              `but updated during permission to ${message.version}`
-            )
-          }
-          sendRecord(message.name, version, latestData, socketWrapper)
-        } else {
+    this.recordRequest(message.name, socketWrapper, (_: string, newVersion: number, latestData: any) => {
+      if (latestData) {
+        if (newVersion !== version) {
           this.services.logger.info(
-            `BUG? ${message.name} was version ${version} for readAndSubscribe, ` +
-            'but was removed during permission check'
-          )
-          onRequestError(
-            message.action, `"${message.name}" was removed during permission check`,
-            message.name, socketWrapper, message
+            EVENT.INFO, `BUG CAUGHT! ${message.name} was version ${version} for readAndSubscribe, ` +
+            `but updated during permission to ${message.version}`
           )
         }
-      }, onRequestError, message)
-    })
+        sendRecord(message.name, version, latestData, socketWrapper)
+      } else {
+        this.services.logger.info(
+          `BUG? ${message.name} was version ${version} for readAndSubscribe, ` +
+          'but was removed during permission check'
+        )
+        onRequestError(
+          message.action, `"${message.name}" was removed during permission check`,
+          message.name, socketWrapper, message
+        )
+      }
+    }, onRequestError, message)
   }
 
  /**

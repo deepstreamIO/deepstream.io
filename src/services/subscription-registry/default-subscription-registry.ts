@@ -186,16 +186,16 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     if (!silent) {
       if (message.isBulk) {
-      if (this.bulkIds.has(message.bulkId!)) {
-        return
-      }
-      this.bulkIds.add(message.bulkId!)
-      socket.sendAckMessage({
-        topic: message.topic,
-        action: message.bulkAction as any,
-        correlationId: message.correlationId
-      })
-    } else {
+        if (this.bulkIds.has(message.bulkId!)) {
+          return
+        }
+        this.bulkIds.add(message.bulkId!)
+        socket.sendAckMessage({
+          topic: message.topic,
+          action: message.action,
+          correlationId: message.correlationId
+        })
+      } else {
         if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
           const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
           this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
@@ -239,7 +239,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
           socket.sendAckMessage({
             topic: message.topic,
-            action: message.bulkAction as any,
+            action: message.action,
             correlationId: message.correlationId
           })
       } else {

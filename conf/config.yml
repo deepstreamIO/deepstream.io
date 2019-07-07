@@ -27,9 +27,9 @@ rpc:
 
 record:
   # Maximum time permitted to fetch from cache
-  cacheRetrievalTimeout: 1000
+  cacheRetrievalTimeout: 5000
   # Maximum time permitted to fetch from storage
-  storageRetrievalTimeout: 2000
+  storageRetrievalTimeout: 5000
   # A list of prefixes that, when a record starts with one of the prefixes the
   # records data won't be stored in the db
   # storageExclusionPrefixes:
@@ -167,11 +167,11 @@ logger:
     # value of logLevel (line 4) will always overwrite this value
     logLevel: INFO
 
-# cache:
-#   name: redis
-#   options:
-#     host: ${REDIS_HOST}
-#     port: 6379
+cache:
+  name: redis
+  options:
+    host: localhost
+    port: 6379
 
 # storage:
 #   name: rethinkdb

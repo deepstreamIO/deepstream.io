@@ -1,5 +1,5 @@
 import { EVENT_ACTIONS } from '../constants'
-import { TOPIC, CONNECTION_ACTIONS, Message, ALL_ACTIONS } from '../../binary-protocol/src/message-constants'
+import { TOPIC, CONNECTION_ACTIONS, Message, ALL_ACTIONS, BULK_ACTIONS } from '../../binary-protocol/src/message-constants'
 import { SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
 
 /**
@@ -8,8 +8,11 @@ import { SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
  * are - forwards them.
  */
 export default class MessageProcessor {
+  private bulkResults = new Map<string, { total: number, completed: number }>()
+
   constructor (config: DeepstreamConfig, private services: DeepstreamServices) {
     this.onPermissionResponse = this.onPermissionResponse.bind(this)
+    this.onBulkPermissionResponse = this.onBulkPermissionResponse.bind(this)
   }
 
   /**
@@ -29,15 +32,32 @@ export default class MessageProcessor {
    * @todo Handle permission handler timeouts
    */
   public process (socketWrapper: SocketWrapper, parsedMessages: Message[]): void {
-    let message
-
     const length = parsedMessages.length
     for (let i = 0; i < length; i++) {
-      message = parsedMessages[i]
+      const message = parsedMessages[i]
 
       if (message.topic === TOPIC.CONNECTION && message.action === CONNECTION_ACTIONS.PING) {
         // Each connection endpoint is responsible for dealing with ping connections
         continue
+      }
+
+      if (message.isBulk) {
+        this.bulkResults.set(message.correlationId!, {
+          total: message.names!.length,
+          completed: 0
+        })
+        const action = BULK_ACTIONS[message.topic][message.action]
+        message.names!.forEach((name, index) => {
+          this.services.permission.canPerformAction(
+            socketWrapper.user,
+            { ...message, action, name },
+            this.onBulkPermissionResponse,
+            socketWrapper.authData!,
+            socketWrapper,
+            { originalMessage: message }
+          )
+        })
+        return
       }
 
       this.services.permission.canPerformAction(
@@ -51,10 +71,35 @@ export default class MessageProcessor {
     }
   }
 
+  private onBulkPermissionResponse (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: ALL_ACTIONS | Error | string | null, result: boolean) {
+    const bulkResult = this.bulkResults.get(message.correlationId!)!
+    if (bulkResult.total !== bulkResult.completed + 1) {
+      bulkResult.completed = bulkResult.completed + 1
+
+      if (error !== null || result === false) {
+        message.names!.splice(message.names!.indexOf(message.name!), 1)
+        this.processInvalidResponse(socketWrapper, message, error, result)
+      }
+      return
+    }
+
+    if (message.names!.length > 0) {
+      this.onAuthenticatedMessage(socketWrapper, passItOn.originalMessage)
+    }
+  }
+
   /**
    * Processes the response that's returned by the permission service.
    */
   private onPermissionResponse (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: ALL_ACTIONS | Error | string | null, result: boolean): void {
+    if (error !== null || result === false) {
+      this.processInvalidResponse(socketWrapper, message, error, result)
+    } else {
+      this.onAuthenticatedMessage(socketWrapper, message)
+    }
+  }
+
+  private processInvalidResponse (socketWrapper: SocketWrapper, message: Message, error: ALL_ACTIONS | Error | string | null, result: boolean) {
     if (error !== null) {
       this.services.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
       const permissionErrorMessage: Message = {
@@ -83,8 +128,5 @@ export default class MessageProcessor {
       socketWrapper.sendMessage(permissionDeniedMessage)
       return
     }
-
-    this.onAuthenticatedMessage(socketWrapper, message)
   }
-
 }
