@@ -1,5 +1,5 @@
 import { EVENT_ACTIONS } from '../constants'
-import { TOPIC, CONNECTION_ACTIONS, Message, ALL_ACTIONS, BULK_ACTIONS } from '../../binary-protocol/src/message-constants'
+import { TOPIC, CONNECTION_ACTIONS, Message, ALL_ACTIONS, BULK_ACTIONS, EVENT } from '../../binary-protocol/src/message-constants'
 import { SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
 
 /**
@@ -42,21 +42,26 @@ export default class MessageProcessor {
       }
 
       if (message.isBulk) {
+        if (this.bulkResults.has(message.correlationId!)) {
+          this.services.logger.error(EVENT.NOT_VALID_UUID, `Invalid uuid used twice ${message.correlationId}`)
+        }
+
         this.bulkResults.set(message.correlationId!, {
           total: message.names!.length,
           completed: 0
         })
         const action = BULK_ACTIONS[message.topic][message.action]
-        message.names!.forEach((name, index) => {
+        const l = message.names!.length
+        for (let j = 0; j < l; j++) {
           this.services.permission.canPerformAction(
             socketWrapper.user,
-            { ...message, action, name },
+            { ...message, action, name: message.names![j] },
             this.onBulkPermissionResponse,
             socketWrapper.authData!,
             socketWrapper,
             { originalMessage: message }
           )
-        })
+        }
         return
       }
 
@@ -73,15 +78,18 @@ export default class MessageProcessor {
 
   private onBulkPermissionResponse (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: ALL_ACTIONS | Error | string | null, result: boolean) {
     const bulkResult = this.bulkResults.get(message.correlationId!)!
+
+    if (error !== null || result === false) {
+      passItOn.originalMessage.names!.splice(passItOn.originalMessage.names!.indexOf(passItOn.originalMessage.name!), 1)
+      this.processInvalidResponse(socketWrapper, message, error, result)
+    }
+
     if (bulkResult.total !== bulkResult.completed + 1) {
       bulkResult.completed = bulkResult.completed + 1
-
-      if (error !== null || result === false) {
-        message.names!.splice(message.names!.indexOf(message.name!), 1)
-        this.processInvalidResponse(socketWrapper, message, error, result)
-      }
       return
     }
+
+    this.bulkResults.delete(message.correlationId!)
 
     if (message.names!.length > 0) {
       this.onAuthenticatedMessage(socketWrapper, passItOn.originalMessage)

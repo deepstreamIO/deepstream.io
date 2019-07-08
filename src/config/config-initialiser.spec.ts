@@ -86,7 +86,7 @@ describe('config-initialiser', () => {
         configInitialiser.initialise(config)
       } catch (e) {
         errored = true
-        expect(e.toString()).to.contain(path.join('/foobar', 'deepstream.io-cache-blablub'))
+        expect(e.toString()).to.contain(path.join('/foobar', '@deepstream/cache-blablub'))
       }
 
       expect(errored).to.equal(true)

@@ -14,12 +14,7 @@ const generalOpts = {
       'ERROR', LOG_LEVEL.ERROR,
       'OFF', LOG_LEVEL.OFF
     ]
-  },
-  /**
-   * backwards compatibility options in the root level
-   */
-  unauthenticatedClientTimeout: { type: ['integer', 'boolean'], minimum: 1 },
-  maxAuthAttempts: { type: 'integer', minimum: 1 },
+  }
 }
 
 const connectivityOpts = {

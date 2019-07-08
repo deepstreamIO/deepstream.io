@@ -83,9 +83,6 @@ export const initialise = function (config: DeepstreamConfig): { config: Deepstr
   services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry'))(config.clusterRegistry.options, services, config)
   services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates'))(config.clusterStates.options, services, config)
 
-  if (services.cache.apiVersion !== 2) {
-    storageCompatability(services.cache)
-  }
   if (services.storage.apiVersion !== 2) {
     storageCompatability(services.storage)
   }
@@ -177,7 +174,7 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
  * Handle the plugins property in the config object the connectors.
  * Plugins can be passed either as a __path__ property or as a __name__ property with
  * a naming convention: *{cache: {name: 'redis'}}* will be resolved to the
- * npm module *deepstream.io-cache-redis*
+ * npm module *@deepstream/cache-redis*
  * Options to the constructor of the plugin can be passed as *options* object.
  *
  * CLI arguments will be considered.
@@ -204,7 +201,7 @@ function handleCustomPlugins (config: DeepstreamConfig, services: any): void {
  * The type is typically the protocol e.g. ws
  * Plugins can be passed either as a __path__ property or as a __name__ property with
  * a naming convetion: *{amqp: {name: 'my-plugin'}}* will be resolved to the
- * npm module *deepstream.io-connection-my-plugin*
+ * npm module *deepstream.io/connection-my-plugin*
  * Exception: the name *uws* will be resolved to deepstream.io's internal uWebSockets plugin
  * Options to the constructor of the plugin can be passed as *options* object.
  *
@@ -254,7 +251,6 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
 
   // Required for bundling via nexe
   const req = require
-  let oldRequirePath
   let requirePath
   let pluginConstructor
   let es6Adaptor
@@ -263,18 +259,11 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null && type) {
-    oldRequirePath = `deepstream.io-${type}-${plugin.name}`
-    oldRequirePath = fileUtils.lookupLibRequirePath(oldRequirePath)
     try {
-      es6Adaptor = req(oldRequirePath)
+      requirePath = fileUtils.lookupLibRequirePath(`@deepstream/${type}-${plugin.name}`)
+      es6Adaptor = req(requirePath)
     } catch (e) {
-      try {
-        requirePath = `@deepstream/${type}-${plugin.name}`
-        requirePath = fileUtils.lookupLibRequirePath(requirePath)
-        es6Adaptor = req(requirePath)
-      } catch (e) {
-        throw new Error(`Cannot find module ${oldRequirePath} or ${requirePath}`)
-      }
+      throw new Error(`Cannot find module ${requirePath}`)
     }
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null) {
@@ -372,7 +361,6 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
   } else {
     return new PermissionHandlerClass(config.permission.options, services, config)
   }
-
 }
 
 export function storageCompatability (storage: Storage) {

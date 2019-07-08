@@ -1,11 +1,16 @@
-import { DeepstreamPlugin, StorageWriteCallback, StorageReadCallback, Storage, StorageHeadBulkCallback } from '../../types'
+import { DeepstreamPlugin, Cache, StorageWriteCallback, StorageReadCallback, StorageHeadBulkCallback, StorageHeadCallback } from '../../types'
 import { JSONValue } from '../../constants'
 
-export class LocalCache extends DeepstreamPlugin implements Storage {
+export class LocalCache extends DeepstreamPlugin implements Cache {
   public description = 'local cache'
   public apiVersion = 2
 
   private data = new Map<string, { version: number, data: JSONValue }>()
+
+  public head (recordName: string, callback: StorageHeadCallback) {
+    const data = this.data.get(name)
+    process.nextTick(() => callback(null, data ? data.version : -1))
+  }
 
   public headBulk (recordNames: string[], callback: StorageHeadBulkCallback) {
     const versions: any = {}

@@ -110,7 +110,7 @@ export class ListenerRegistry implements SubscriptionListener {
     }
 
     if (message.action === this.actions.UNLISTEN) {
-      this.providerRegistry.unsubscribe(message, socketWrapper)
+      this.providerRegistry.unsubscribe(message.name, message, socketWrapper)
       return
     }
 
@@ -225,7 +225,7 @@ export class ListenerRegistry implements SubscriptionListener {
       return
     }
 
-    this.providerRegistry.subscribe(message, socketWrapper)
+    this.providerRegistry.subscribe(message.name, message, socketWrapper)
   }
 
   /**

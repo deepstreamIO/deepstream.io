@@ -1,6 +1,7 @@
 import { EVENT_ACTIONS, TOPIC, EventMessage, ListenMessage } from '../../constants'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Handler, SubscriptionRegistry } from '../../types'
+import { BulkSubscriptionMessage } from '../../../binary-protocol/src/message-constants'
 
 export default class EventHandler implements Handler<EventMessage> {
   private subscriptionRegistry: SubscriptionRegistry
@@ -23,20 +24,45 @@ export default class EventHandler implements Handler<EventMessage> {
    * based on the provided action parameter of the message
    */
   public handle (socketWrapper: SocketWrapper | null, message: EventMessage) {
-    if (message.action === EVENT_ACTIONS.SUBSCRIBE) {
-      this.subscriptionRegistry.subscribe(message, socketWrapper!)
-    } else if (message.action === EVENT_ACTIONS.UNSUBSCRIBE) {
-      this.subscriptionRegistry.unsubscribe(message, socketWrapper!)
-    } else if (message.action === EVENT_ACTIONS.EMIT) {
+    if (message.action === EVENT_ACTIONS.EMIT) {
       this.triggerEvent(socketWrapper, message)
-    } else if (message.action === EVENT_ACTIONS.LISTEN ||
+      return
+    }
+
+    if (socketWrapper === null) {
+      this.services.logger.error('missing socket wrapper')
+      return
+    }
+
+    if (message.action === EVENT_ACTIONS.SUBSCRIBE_BULK) {
+      this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
+      return
+    }
+
+    if (message.action === EVENT_ACTIONS.UNSUBSCRIBE_BULK) {
+      this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
+      return
+    }
+
+    if (message.action === EVENT_ACTIONS.SUBSCRIBE) {
+      this.subscriptionRegistry.subscribe(message.name, message, socketWrapper)
+      return
+    }
+
+    if (message.action === EVENT_ACTIONS.UNSUBSCRIBE) {
+      this.subscriptionRegistry.unsubscribe(message.name, message, socketWrapper)
+      return
+    }
+
+    if (message.action === EVENT_ACTIONS.LISTEN ||
       message.action === EVENT_ACTIONS.UNLISTEN ||
       message.action === EVENT_ACTIONS.LISTEN_ACCEPT ||
       message.action === EVENT_ACTIONS.LISTEN_REJECT) {
-      this.listenerRegistry.handle(socketWrapper!, message as ListenMessage)
-    } else {
-      console.log('unknown action', message)
+      this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
+      return
     }
+
+    console.log('unknown action', message)
   }
 
   /**

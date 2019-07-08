@@ -1,7 +1,7 @@
-import { Storage, StorageWriteCallback, StorageReadCallback, DeepstreamPlugin } from '../../types'
+import { Storage, Cache, StorageWriteCallback, StorageReadCallback, DeepstreamPlugin } from '../../types'
 import { JSONObject } from '../../constants'
 
-export default class StorageMock extends DeepstreamPlugin implements Storage  {
+export default class StorageMock extends DeepstreamPlugin implements Storage, Cache  {
   public values = new Map<string, { version: number, value: JSONObject }>()
   public failNextSet: boolean = false
   public nextOperationWillBeSuccessful: boolean = true
@@ -41,6 +41,14 @@ constructor () {
     this.getCalls = []
     clearTimeout(this.getTimeout)
     clearTimeout(this.setTimeout)
+  }
+
+  public head (recordName: string, callback: any): void {
+    throw new Error('Method not implemented.')
+  }
+
+  public headBulk (recordNames: string[], callback: any): void {
+    throw new Error('Method not implemented.')
   }
 
   public deleteBulk (keys: string[], callback: StorageWriteCallback) {

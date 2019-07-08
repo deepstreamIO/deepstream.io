@@ -1,11 +1,10 @@
 import RecordDeletion from './record-deletion'
 import { recordRequestBinding } from './record-request'
 import { RecordTransition } from './record-transition'
-import { RECORD_ACTIONS as RA, RecordMessage, TOPIC, RecordWriteMessage, ListenMessage, PARSER_ACTIONS, JSONObject, RECORD_ACTIONS, EVENT, Message, ALL_ACTIONS } from '../../../binary-protocol/src/message-constants'
+import { RECORD_ACTIONS as RA, RecordMessage, TOPIC, RecordWriteMessage, ListenMessage, PARSER_ACTIONS, JSONObject, RECORD_ACTIONS, EVENT, Message, ALL_ACTIONS, BulkSubscriptionMessage } from '../../../binary-protocol/src/message-constants'
 import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../../types'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { isExcluded } from '../../utils/utils'
-import { Socket } from 'net';
 
 const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
   [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
@@ -54,9 +53,17 @@ export default class RecordHandler implements Handler<RecordMessage> {
     }
 
     if (action === RA.SUBSCRIBECREATEANDREAD_BULK) {
-      message.names!.forEach((name) => {
-        this.recordRequest(name, socketWrapper, this.onCreateOrReadComplete, onRequestError, { ...message, name })
-      })
+      const l = message.names!.length
+      for (let i = 0; i < l; i++) {
+        this.recordRequest(
+          message.names![i],
+          socketWrapper,
+          this.onCreateOrReadComplete,
+          onRequestError,
+          { ...message, name: message.names![i] }
+        )
+      }
+      socketWrapper.sendAckMessage(message)
       return
     }
 
@@ -101,8 +108,8 @@ export default class RecordHandler implements Handler<RecordMessage> {
       /*
        * Return the current version of the record or -1 if not found, subscribing either way
        */
-        this.subscribeAndHeadBulk(socketWrapper!, message)
-        return
+      this.subscribeAndHeadBulk(socketWrapper!, message)
+      return
     }
 
     if (action === RA.SUBSCRIBEANDHEAD) {
@@ -134,7 +141,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
    * Unsubscribes (discards) a record that was previously subscribed to
    * using read()
    */
-      this.subscriptionRegistry.unsubscribe(message, socketWrapper!)
+      this.subscriptionRegistry.unsubscribe(message.name, message, socketWrapper!)
       return
     }
 
@@ -251,8 +258,8 @@ export default class RecordHandler implements Handler<RecordMessage> {
    * Results in a HEAD_RESPONSE
    * If the record is not found, the version number will be -1
    */
-  private head (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    this.recordRequest(message.name, socketWrapper, onHeadComplete, onRequestError, message)
+  private head (socketWrapper: SocketWrapper, message: RecordMessage, name: string = message.name): void {
+    this.recordRequest(name, socketWrapper, onHeadComplete, onRequestError, message)
   }
 
   /**
@@ -261,11 +268,16 @@ export default class RecordHandler implements Handler<RecordMessage> {
    */
   private subscribeAndHead (socketWrapper: SocketWrapper, message: RecordMessage): void {
     this.head(socketWrapper, message)
-    this.subscriptionRegistry.subscribe(message, socketWrapper)
+    this.subscriptionRegistry.subscribe(message.name, message, socketWrapper)
   }
 
   private subscribeAndHeadBulk (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    this.services.cache.headBulk(message.names!, (error: any, versions, missing) => {
+    this.services.cache.headBulk(message.names!, (error, versions, missing) => {
+      if (error) {
+        this.services.logger.error(EVENT.ERROR, `Error subscribing and head bulk for ${message.correlationId}`)
+        return
+      }
+
       if (Object.keys(versions).length > -1) {
         socketWrapper.sendMessage({
           topic: TOPIC.RECORD,
@@ -274,13 +286,14 @@ export default class RecordHandler implements Handler<RecordMessage> {
         })
       }
 
-      message.names!.forEach((name) => {
-        const newMessage = { ...message, name }
-        this.subscriptionRegistry.subscribe(newMessage, socketWrapper)
-        if (versions[name] === undefined) {
-          this.head(socketWrapper, newMessage)
+      this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
+
+      const l = missing.length
+      for (let i = 0; i < l; i++) {
+        if (versions[missing[i]] === undefined) {
+          this.head(socketWrapper, message, missing[i])
         }
-      })
+      }
     })
   }
 
@@ -452,28 +465,30 @@ export default class RecordHandler implements Handler<RecordMessage> {
  * Subscribes to updates for a record and sends its current data once done
  */
   private readAndSubscribe (message: RecordMessage, version: number, data: any, socketWrapper: SocketWrapper): void {
-    this.subscriptionRegistry.subscribe(message, socketWrapper)
+    this.permissionAction(RA.READ, message, message.action, socketWrapper, () => {
+      this.subscriptionRegistry.subscribe(message.name, message, socketWrapper, message.isBulk)
 
-    this.recordRequest(message.name, socketWrapper, (_: string, newVersion: number, latestData: any) => {
-      if (latestData) {
-        if (newVersion !== version) {
+      this.recordRequest(message.name, socketWrapper, (_: string, newVersion: number, latestData: any) => {
+        if (latestData) {
+          if (newVersion !== version) {
+            this.services.logger.info(
+              EVENT.INFO, `BUG CAUGHT! ${message.name} was version ${version} for readAndSubscribe, ` +
+              `but updated during permission to ${message.version}`
+            )
+          }
+          sendRecord(message.name, version, latestData, socketWrapper)
+        } else {
           this.services.logger.info(
-            EVENT.INFO, `BUG CAUGHT! ${message.name} was version ${version} for readAndSubscribe, ` +
-            `but updated during permission to ${message.version}`
+            `BUG? ${message.name} was version ${version} for readAndSubscribe, ` +
+            'but was removed during permission check'
+          )
+          onRequestError(
+            message.action, `"${message.name}" was removed during permission check`,
+            message.name, socketWrapper, message
           )
         }
-        sendRecord(message.name, version, latestData, socketWrapper)
-      } else {
-        this.services.logger.info(
-          `BUG? ${message.name} was version ${version} for readAndSubscribe, ` +
-          'but was removed during permission check'
-        )
-        onRequestError(
-          message.action, `"${message.name}" was removed during permission check`,
-          message.name, socketWrapper, message
-        )
-      }
-    }, onRequestError, message)
+      }, onRequestError, message)
+    })
   }
 
  /**
@@ -608,7 +623,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
     this.broadcastUpdate(name, message, true, originalSender)
 
     for (const subscriber of this.subscriptionRegistry.getLocalSubscribers(name)) {
-      this.subscriptionRegistry.unsubscribe(message, subscriber, true)
+      this.subscriptionRegistry.unsubscribe(name, message, subscriber, true)
     }
   }
 

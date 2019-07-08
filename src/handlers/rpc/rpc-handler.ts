@@ -45,12 +45,12 @@ export default class RpcHandler {
    }
 
     if (message.action === RPC_ACTIONS.PROVIDE) {
-      this.subscriptionRegistry.subscribe(message, socketWrapper)
+      this.subscriptionRegistry.subscribe(message.name, message, socketWrapper)
       return
     }
 
     if (message.action === RPC_ACTIONS.UNPROVIDE) {
-      this.subscriptionRegistry.unsubscribe(message, socketWrapper)
+      this.subscriptionRegistry.unsubscribe(message.name, message, socketWrapper)
       return
     }
 

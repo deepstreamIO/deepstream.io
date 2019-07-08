@@ -315,7 +315,7 @@ describe('record handler handles messages', () => {
       testMocks.subscriptionRegistryMock
         .expects('unsubscribe')
         .once()
-        .withExactArgs(M.unsubscribeMessage, client.socketWrapper)
+        .withExactArgs(M.unsubscribeMessage.name, M.unsubscribeMessage, client.socketWrapper)
 
       recordHandler.handle(client.socketWrapper, M.unsubscribeMessage)
     })

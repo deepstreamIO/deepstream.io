@@ -1,5 +1,5 @@
 import { EOL } from 'os'
-import { Message, RECORD_ACTIONS, PRESENCE_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, RecordData, TOPIC, RecordWriteMessage } from '../../../constants'
+import { Message, RECORD_ACTIONS, PRESENCE_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, RecordData, TOPIC, RecordWriteMessage, EVENT } from '../../../constants'
 import { PermissionCallback, ValveConfig, Logger, SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../../../types'
 import { recordRequest } from '../../../handlers/record/record-request'
 import RecordHandler from '../../../handlers/record/record-handler'
@@ -213,7 +213,7 @@ export default class RuleApplication {
     }
 
     if (!msg.path) {
-      // TODO: Log error
+      this.params.logger.error(EVENT.ERROR, `Missing path for record patch ${msg.name}`)
       return
     }
 
@@ -247,7 +247,8 @@ export default class RuleApplication {
   private getOldData (): any {
     if (this.isDestroyed === true || this.params.rule.hasOldData === false) {
       return
-    } else if (this.recordsData.has(this.params.name)) {
+    }
+    if (this.recordsData.has(this.params.name)) {
       return this.recordsData.get(this.params.name)
     }
     this.loadRecord(this.params.name)

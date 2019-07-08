@@ -37,7 +37,7 @@ describe('the eventHandler routes events correctly', () => {
     testMocks.subscriptionRegistryMock
       .expects('subscribe')
       .once()
-      .withExactArgs(subscriptionMessage, socketWrapper)
+      .withExactArgs('someEvent', subscriptionMessage, socketWrapper)
 
     eventHandler.handle(socketWrapper, subscriptionMessage)
   })
@@ -51,7 +51,7 @@ describe('the eventHandler routes events correctly', () => {
     testMocks.subscriptionRegistryMock
       .expects('unsubscribe')
       .once()
-      .withExactArgs(unSubscriptionMessage, socketWrapper)
+      .withExactArgs('someEvent', unSubscriptionMessage, socketWrapper)
 
     eventHandler.handle(socketWrapper, unSubscriptionMessage)
   })

@@ -1,6 +1,6 @@
 import { DeepPartial } from 'ts-essentials'
 import { EventEmitter } from 'events'
-import { ALL_ACTIONS, Message, JSONObject, SubscriptionMessage, EVENT, TOPIC } from '../binary-protocol/src/message-constants'
+import { ALL_ACTIONS, Message, JSONObject, SubscriptionMessage, EVENT, TOPIC, BulkSubscriptionMessage } from '../binary-protocol/src/message-constants'
 
 export enum LOG_LEVEL {
   DEBUG = 0,
@@ -126,8 +126,10 @@ export interface SubscriptionRegistry {
   getAllRemoteServers (subscriptionName: string): string[]
   hasName (subscriptionName: string): boolean
   sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, suppressRemote?: boolean): void
-  subscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void
-  unsubscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void
+  subscribeBulk (message: BulkSubscriptionMessage, socket: SocketWrapper, silent?: boolean): void
+  unsubscribeBulk (message: BulkSubscriptionMessage, socket: SocketWrapper, silent?: boolean): void
+  subscribe (name: string, message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void
+  unsubscribe (name: string, message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void
   getLocalSubscribers (name: string): Set<SocketWrapper>
   hasLocalSubscribers (name: string): boolean
   setSubscriptionListener (listener: SubscriptionListener): void
@@ -163,15 +165,19 @@ export type StorageHeadBulkCallback = (error: string | null, versions: { [index:
 export type StorageHeadCallback = (error: string | null, version: number) => void
 export type StorageReadCallback = (error: string | null, version: number, result: any) => void
 export type StorageWriteCallback = (error: string | null) => void
+
 export interface Storage extends DeepstreamPlugin  {
   apiVersion?: number
-  headBulk (recordNames: string[], callback: StorageHeadBulkCallback): void
   set (recordName: string, version: number, data: any, callback: StorageWriteCallback, metaData?: any): void
   get (recordName: string, callback: StorageReadCallback, metaData?: any): void
   delete (recordName: string, callback: StorageWriteCallback, metaData?: any): void
   deleteBulk (recordNames: string[], callback: StorageWriteCallback, metaData?: any): void
 }
-export type StoragePlugin<PluginOptions> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Storage
+
+export interface Cache extends Storage  {
+  head (recordName: string, callback: StorageHeadCallback): void
+  headBulk (recordNames: string[], callback: StorageHeadBulkCallback): void
+}
 
 export interface Monitoring extends DeepstreamPlugin  {
   onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void
@@ -276,7 +282,7 @@ export interface DeepstreamConfig {
 
 export interface DeepstreamServices {
   connectionEndpoints: ConnectionEndpoint[]
-  cache: Storage
+  cache: Cache
   storage: Storage
   monitoring: Monitoring
   permission: Permission

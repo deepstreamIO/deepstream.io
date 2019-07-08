@@ -25,12 +25,15 @@ export class DependencyInitialiser {
       this.config.dependencyInitialisationTimeout,
     )
     if (this.dependency.whenReady) {
-      this.dependency.whenReady().then(this.onReady.bind(this))
+      this.dependency
+        .whenReady()
+        .then(this.onReady.bind(this))
+        .catch(this.onError.bind(this))
     } else {
       this.services.logger.warn(EVENT.DEPRECATED, 'Plugins should now support the async whenReady API') // TODO: Link
       this.dependency.once('ready', this.onReady.bind(this))
+      this.dependency.on('error', this.onError.bind(this))
     }
-    this.dependency.on('error', this.onError.bind(this))
 
     if (this.dependency.init) {
       this.dependency.init()

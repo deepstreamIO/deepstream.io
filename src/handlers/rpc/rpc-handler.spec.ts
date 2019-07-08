@@ -41,7 +41,7 @@ describe('the rpcHandler routes events correctly', () => {
     testMocks.subscriptionRegistryMock
       .expects('subscribe')
       .once()
-      .withExactArgs(subscriptionMessage, provider.socketWrapper)
+      .withExactArgs('someRPC', subscriptionMessage, provider.socketWrapper)
 
     rpcHandler.handle(provider.socketWrapper, subscriptionMessage)
   })

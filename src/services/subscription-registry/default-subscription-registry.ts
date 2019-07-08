@@ -4,9 +4,9 @@ import {
   RECORD_ACTIONS,
   RPC_ACTIONS,
   TOPIC,
-  SubscriptionMessage,
   MONITORING_ACTIONS,
-  Message
+  Message,
+  BulkSubscriptionMessage
 } from '../../constants'
 import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry, SubscriptionRegistry, LOG_LEVEL } from '../../types'
 
@@ -29,7 +29,6 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry
   private actions: any
-  private bulkIds = new Set<number>()
 
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
@@ -67,7 +66,6 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     this.onSocketClose = this.onSocketClose.bind(this)
 
     this.clusterSubscriptions = this.services.clusterStates.getStateRegistry(clusterTopic)
-    this.setUpBulkHistoryPurge()
   }
 
   public async whenReady () {
@@ -157,8 +155,40 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   /**
    * Adds a SocketWrapper as a subscriber to a topic
    */
-  public subscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void {
-    const name = message.name
+  public subscribeBulk (message: BulkSubscriptionMessage, socket: SocketWrapper, silent?: boolean): void {
+    const length = message.names.length
+    for (let i = 0; i < length; i++) {
+      this.subscribe(message.names[i], message, socket, true)
+    }
+    if (!silent) {
+      socket.sendAckMessage({
+        topic: message.topic,
+        action: message.action,
+        correlationId: message.correlationId
+      })
+    }
+  }
+
+  /**
+   * Adds a SocketWrapper as a subscriber to a topic
+   */
+  public unsubscribeBulk (message: BulkSubscriptionMessage, socket: SocketWrapper, silent?: boolean): void {
+    message.names!.forEach((name) => {
+      this.unsubscribe(name, message, socket, true)
+    })
+    if (!silent) {
+      socket.sendAckMessage({
+        topic: message.topic,
+        action: message.action,
+        correlationId: message.correlationId
+      })
+    }
+  }
+
+  /**
+   * Adds a SocketWrapper as a subscriber to a topic
+   */
+  public subscribe (name: string, message: Message, socket: SocketWrapper, silent?: boolean): void {
     const subscription = this.subscriptions.get(name) || {
       name,
       sockets: new Set()
@@ -185,31 +215,18 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     this.addSocket(subscription, socket)
 
     if (!silent) {
-      if (message.isBulk) {
-        if (this.bulkIds.has(message.bulkId!)) {
-          return
-        }
-        this.bulkIds.add(message.bulkId!)
-        socket.sendAckMessage({
-          topic: message.topic,
-          action: message.action,
-          correlationId: message.correlationId
-        })
-      } else {
-        if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
-          const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
-          this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
-        }
-        socket.sendAckMessage(message)
+      if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
+        const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
+        this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
       }
+      socket.sendAckMessage(message)
     }
   }
 
   /**
    * Removes a SocketWrapper from the list of subscriptions for a topic
    */
-  public unsubscribe (message: SubscriptionMessage, socket: SocketWrapper, silent?: boolean): void {
-    const name = message.name
+  public unsubscribe (name: string, message: Message, socket: SocketWrapper, silent?: boolean): void {
     const subscription = this.subscriptions.get(name)
 
     if (!subscription || !subscription.sockets.delete(socket)) {
@@ -231,24 +248,11 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     this.removeSocket(subscription, socket)
 
     if (!silent) {
-      if (message.isBulk) {
-          if (this.bulkIds.has(message.bulkId!)) {
-            return
-          }
-          this.bulkIds.add(message.bulkId!)
-
-          socket.sendAckMessage({
-            topic: message.topic,
-            action: message.action,
-            correlationId: message.correlationId
-          })
-      } else {
-        if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
-          const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-          this.services.logger.debug(this.actions[this.constants.UNSUBSCRIBE], logMsg)
-        }
-        socket.sendAckMessage(message)
+      if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
+        const logMsg = `for ${this.topic}:${name} by ${socket.user}`
+        this.services.logger.debug(this.actions[this.constants.UNSUBSCRIBE], logMsg)
       }
+      socket.sendAckMessage(message)
     }
   }
 
@@ -326,16 +330,5 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
       subscription.sockets.delete(socket)
       this.removeSocket(subscription, socket)
     }
-  }
-
-  private setUpBulkHistoryPurge () {
-    // This is a really inconvenient way of doing this,
-    // specially since it doesn't delete the first X but rather
-    // just purges the queue entirely. It's here to prevent a memory
-    // leak and will be improved on later, ideally by having a complete
-    // status on a bulk message
-    setInterval(() => {
-      this.bulkIds.clear()
-    }, 1000)
   }
 }

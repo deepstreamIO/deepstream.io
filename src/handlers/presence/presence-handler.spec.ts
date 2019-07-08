@@ -38,7 +38,7 @@ describe('presence handler', () => {
     testMocks.subscriptionRegistryMock
       .expects('subscribe')
       .once()
-      .withExactArgs({
+      .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.SUBSCRIBE_ALL,
         name: EVERYONE
@@ -56,7 +56,7 @@ describe('presence handler', () => {
     testMocks.subscriptionRegistryMock
       .expects('unsubscribe')
       .once()
-      .withExactArgs({
+      .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
         action: C.PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
         name: EVERYONE
