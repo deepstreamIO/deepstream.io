@@ -4,6 +4,6 @@ declare namespace NodeJS {
     deepstreamLibDir: string | null
     deepstreamConfDir: string | null
     require (path: string): any
-    cluster: any // Used by e2e tests
+    e2eHarness: any // Used by e2e tests
   }
 }

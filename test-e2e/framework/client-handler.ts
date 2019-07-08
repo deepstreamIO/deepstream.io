@@ -12,7 +12,7 @@ export interface E2EClient {
 const clients: { [index: string]: E2EClient } = {}
 
 function createClient (clientName: string, server: string, options?: any) {
-  const gatewayUrl = global.cluster.getUrl(server)
+  const gatewayUrl = global.e2eHarness.getUrl(server)
   // @ts-ignore
   const client = deepstream(gatewayUrl, {
     ...options,

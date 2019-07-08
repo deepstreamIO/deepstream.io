@@ -11,10 +11,10 @@ let httpClients: { [index: string]: any } = {}
 Given(/^(.+) authenticates? with http server (\d+)$/, (clientExpression: string, server, done) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     let serverUrl
-    if (global.cluster.getAuthUrl) {
-      serverUrl = global.cluster.getAuthUrl(server)
+    if (global.e2eHarness.getAuthUrl) {
+      serverUrl = global.e2eHarness.getAuthUrl(server)
     } else {
-      serverUrl = global.cluster.getHttpUrl(server)
+      serverUrl = global.e2eHarness.getHttpUrl(server)
     }
     const message = {
       username: clientName,
@@ -28,7 +28,7 @@ Given(/^(.+) authenticates? with http server (\d+)$/, (clientExpression: string,
       expect(response.body.token).to.be.a('string')
       httpClients[clientName] = {
         token: response.body.token,
-        serverUrl: global.cluster.getHttpUrl(server - 1, clientName),
+        serverUrl: global.e2eHarness.getHttpUrl(server - 1, clientName),
         queue: [],
         lastResponse: Object.assign({}, response, { isAuthResponse: true }),
         resultChecked: false
@@ -40,10 +40,10 @@ Given(/^(.+) authenticates? with http server (\d+)$/, (clientExpression: string,
 Given(/^(.+) authenticates? with http server (\d+) with details ("[^"]*"|\d+|{.*})?$/, (clientExpression: string, server, data, done) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName) => {
     let serverUrl
-    if (global.cluster.getAuthUrl) {
-      serverUrl = global.cluster.getAuthUrl(server - 1, clientName)
+    if (global.e2eHarness.getAuthUrl) {
+      serverUrl = global.e2eHarness.getAuthUrl(server - 1, clientName)
     } else {
-      serverUrl = global.cluster.getHttpUrl(server - 1, clientName)
+      serverUrl = global.e2eHarness.getHttpUrl(server - 1, clientName)
     }
     const credentials = JSON.parse(data)
     needle.post(serverUrl, credentials, { json: true }, (err, response) => {
@@ -51,7 +51,7 @@ Given(/^(.+) authenticates? with http server (\d+) with details ("[^"]*"|\d+|{.*
       expect(err).to.equal(null)
       httpClients[clientName] = {
         token: response.body.token,
-        serverUrl: global.cluster.getHttpUrl(server - 1, clientName),
+        serverUrl: global.e2eHarness.getHttpUrl(server - 1, clientName),
         queue: [],
         lastResponse: Object.assign({}, response, { isAuthResponse: true }),
         resultChecked: false
