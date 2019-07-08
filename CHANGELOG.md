@@ -1,3 +1,17 @@
+## [4.0.0-rc.14] - 2019.07.08
+
+### Feat
+
+- Adding better support for multiple connection endpoints (now just an aray)
+- Refactoring bulk actions, they are not handled in each handler and within the subscription registry
+- Adding WS as an alternative to uws to work better in artifacts
+
+### Breaking Changes
+
+- The config file has been reformated for the server to contain better sections. A seperate guide will be written to
+walk through the changes
+- Plugins for cache are no longer backwards compatible due to the introduction of the head API
+
 ## [4.0.0-rc.11] - 2019.07.03
 
 ### Feat

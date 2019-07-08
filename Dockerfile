@@ -1,7 +1,7 @@
 FROM node:10
 COPY package*.json ./
 RUN npm install --production
-RUN npm install --production @deepstream/storage-rethinkdb @deepstream/cache-redis
+RUN npm install --production @deepstream/storage-rethinkdb @deepstream/cache-redis@next
 COPY . ./
 
 EXPOSE 6020
