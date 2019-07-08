@@ -157,7 +157,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
         statusCode: HTTPStatus.BAD_REQUEST,
         message: error
       })
-      this.services.logger.debug(
+      this.services.logger.warn(
         PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE],
         JSON.stringify(messageData.body)
       )

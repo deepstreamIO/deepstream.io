@@ -268,7 +268,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
    */
   private subscribeAndHead (socketWrapper: SocketWrapper, message: RecordMessage): void {
     this.head(socketWrapper, message)
-    this.subscriptionRegistry.subscribe(message.name, message, socketWrapper)
+    this.subscriptionRegistry.subscribe(message.name, { ...message, action: RA.SUBSCRIBE }, socketWrapper)
   }
 
   private subscribeAndHeadBulk (socketWrapper: SocketWrapper, message: RecordMessage): void {
@@ -466,7 +466,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
  */
   private readAndSubscribe (message: RecordMessage, version: number, data: any, socketWrapper: SocketWrapper): void {
     this.permissionAction(RA.READ, message, message.action, socketWrapper, () => {
-      this.subscriptionRegistry.subscribe(message.name, message, socketWrapper, message.isBulk)
+      this.subscriptionRegistry.subscribe(message.name, { ...message, action: RA.SUBSCRIBE }, socketWrapper, message.isBulk)
 
       this.recordRequest(message.name, socketWrapper, (_: string, newVersion: number, latestData: any) => {
         if (latestData) {
