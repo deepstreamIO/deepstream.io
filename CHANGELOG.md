@@ -1,3 +1,10 @@
+## [4.0.0-rc.15] - 2019.07.10
+
+### Breaking Changes
+
+- All subscribes are now bulk actions by default to minimize redundant codepaths. Because of this 
+you will need to run with client rc.27 and above
+
 ## [4.0.0-rc.14] - 2019.07.08
 
 ### Feat
