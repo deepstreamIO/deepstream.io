@@ -27,7 +27,7 @@ export const anotherDeletionSuccessMsg = {
 export const subscribeCreateAndReadMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
-  name: 'some-record'
+  names: ['some-record']
 }
 
 export const readResponseMessage = {
@@ -42,26 +42,26 @@ export const subscribeCreateAndReadPermissionErrorMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR,
   originalAction: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
-  name: 'some-record'
+  names: ['some-record']
 }
 
 export const subscribeCreateAndReadDeniedMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.MESSAGE_DENIED,
   originalAction: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
-  name: 'some-record'
+  names: ['some-record']
 }
 
 export const subscribeMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.SUBSCRIBE,
-  name: 'some-record'
+  names: ['some-record']
 }
 
 export const unsubscribeMessage = {
   topic: C.TOPIC.RECORD,
   action: C.RECORD_ACTIONS.UNSUBSCRIBE,
-  name: 'some-record'
+  names: ['some-record']
 }
 
 export const recordSnapshotMessage = {

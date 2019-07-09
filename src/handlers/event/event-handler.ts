@@ -34,23 +34,13 @@ export default class EventHandler implements Handler<EventMessage> {
       return
     }
 
-    if (message.action === EVENT_ACTIONS.SUBSCRIBE_BULK) {
+    if (message.action === EVENT_ACTIONS.SUBSCRIBE) {
       this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
-    if (message.action === EVENT_ACTIONS.UNSUBSCRIBE_BULK) {
-      this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
-      return
-    }
-
-    if (message.action === EVENT_ACTIONS.SUBSCRIBE) {
-      this.subscriptionRegistry.subscribe(message.name, message, socketWrapper)
-      return
-    }
-
     if (message.action === EVENT_ACTIONS.UNSUBSCRIBE) {
-      this.subscriptionRegistry.unsubscribe(message.name, message, socketWrapper)
+      this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 

@@ -59,10 +59,11 @@ describe('record handler handles messages', () => {
   it('rejects a create', () => {
     services.permission.nextResult = false
 
+    const { names, ...msg } = M.subscribeCreateAndReadDeniedMessage
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(M.subscribeCreateAndReadDeniedMessage)
+      .withExactArgs({ ...msg, name: 'some-record' })
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
@@ -74,10 +75,11 @@ describe('record handler handles messages', () => {
     services.cache.set('some-record', 0, {}, () => {})
     services.permission.nextResult = false
 
+    const { names, ...msg } = M.subscribeCreateAndReadDeniedMessage
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs(M.subscribeCreateAndReadDeniedMessage)
+      .withExactArgs({ ...msg, name: 'some-record' })
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
@@ -89,10 +91,11 @@ describe('record handler handles messages', () => {
     services.permission.nextError = 'XXX'
     services.permission.nextResult = false
 
+    const { names, ...msg } = M.subscribeCreateAndReadPermissionErrorMessage
     client.socketWrapperMock
-      .expects('sendMessage')
-      .once()
-      .withExactArgs(M.subscribeCreateAndReadPermissionErrorMessage)
+    .expects('sendMessage')
+    .once()
+    .withExactArgs({ ...msg, name: 'some-record' })
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 

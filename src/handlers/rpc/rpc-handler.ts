@@ -3,6 +3,7 @@ import { getRandomIntInRange } from '../../utils/utils'
 import { Rpc } from './rpc'
 import { RpcProxy } from './rpc-proxy'
 import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices, SocketWrapper, SubscriptionRegistry } from '../../types'
+import { BulkSubscriptionMessage } from '../../../binary-protocol/src/message-constants';
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,
@@ -45,12 +46,12 @@ export default class RpcHandler {
    }
 
     if (message.action === RPC_ACTIONS.PROVIDE) {
-      this.subscriptionRegistry.subscribe(message.name, message, socketWrapper)
+      this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
     if (message.action === RPC_ACTIONS.UNPROVIDE) {
-      this.subscriptionRegistry.unsubscribe(message.name, message, socketWrapper)
+      this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 

@@ -1,6 +1,7 @@
 import { EVENT_ACTIONS } from '../constants'
-import { TOPIC, CONNECTION_ACTIONS, Message, ALL_ACTIONS, BULK_ACTIONS, EVENT } from '../../binary-protocol/src/message-constants'
+import { TOPIC, CONNECTION_ACTIONS, Message, ALL_ACTIONS, EVENT } from '../../binary-protocol/src/message-constants'
 import { SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
+import { getUid } from './utils'
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -41,25 +42,26 @@ export default class MessageProcessor {
         continue
       }
 
-      if (message.isBulk) {
-        if (this.bulkResults.has(message.correlationId!)) {
-          this.services.logger.error(EVENT.NOT_VALID_UUID, `Invalid uuid used twice ${message.correlationId}`)
+      if (message.names) {
+        const uuid = getUid()
+
+        if (this.bulkResults.has(uuid)) {
+          this.services.logger.error(EVENT.NOT_VALID_UUID, `Invalid uuid used twice ${uuid}`)
         }
 
-        this.bulkResults.set(message.correlationId!, {
+        this.bulkResults.set(uuid, {
           total: message.names!.length,
           completed: 0
         })
-        const action = BULK_ACTIONS[message.topic][message.action]
         const l = message.names!.length
         for (let j = 0; j < l; j++) {
           this.services.permission.canPerformAction(
             socketWrapper.user,
-            { ...message, action, name: message.names![j] },
+            { ...message, name: message.names![j] },
             this.onBulkPermissionResponse,
             socketWrapper.authData!,
             socketWrapper,
-            { originalMessage: message }
+            { originalMessage: message, uuid }
           )
         }
         return
@@ -77,7 +79,7 @@ export default class MessageProcessor {
   }
 
   private onBulkPermissionResponse (socketWrapper: SocketWrapper, message: Message, passItOn: any, error: ALL_ACTIONS | Error | string | null, result: boolean) {
-    const bulkResult = this.bulkResults.get(message.correlationId!)!
+    const bulkResult = this.bulkResults.get(passItOn.uuid)!
 
     if (error !== null || result === false) {
       passItOn.originalMessage.names!.splice(passItOn.originalMessage.names!.indexOf(passItOn.originalMessage.name!), 1)
@@ -89,7 +91,7 @@ export default class MessageProcessor {
       return
     }
 
-    this.bulkResults.delete(message.correlationId!)
+    this.bulkResults.delete(passItOn.uuid)
 
     if (message.names!.length > 0) {
       this.onAuthenticatedMessage(socketWrapper, passItOn.originalMessage)

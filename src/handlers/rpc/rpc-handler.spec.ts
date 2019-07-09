@@ -1,12 +1,12 @@
 import 'mocha'
 import { expect } from 'chai'
-import RpcProxy from './rpc-proxy'
 
 import * as C from '../../constants'
 import RpcHandler from './rpc-handler'
 
 import * as testHelper from '../../test/helper/test-helper'
 import { getTestMocks } from '../../test/helper/test-mocks'
+import { RpcProxy } from './rpc-proxy'
 
 const options = testHelper.getDeepstreamOptions()
 const config = options.config
@@ -36,12 +36,13 @@ describe('the rpcHandler routes events correctly', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.RPC,
       action: C.RPC_ACTIONS.PROVIDE,
-      name: 'someRPC'
+      names: ['someRPC'],
+      correlationId: '123'
     }
     testMocks.subscriptionRegistryMock
-      .expects('subscribe')
+      .expects('subscribeBulk')
       .once()
-      .withExactArgs('someRPC', subscriptionMessage, provider.socketWrapper)
+      .withExactArgs(subscriptionMessage, provider.socketWrapper)
 
     rpcHandler.handle(provider.socketWrapper, subscriptionMessage)
   })

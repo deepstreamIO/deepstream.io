@@ -32,12 +32,12 @@ describe('the eventHandler routes events correctly', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.SUBSCRIBE,
-      name: 'someEvent'
+      names: ['someEvent']
     }
     testMocks.subscriptionRegistryMock
-      .expects('subscribe')
+      .expects('subscribeBulk')
       .once()
-      .withExactArgs('someEvent', subscriptionMessage, socketWrapper)
+      .withExactArgs(subscriptionMessage, socketWrapper)
 
     eventHandler.handle(socketWrapper, subscriptionMessage)
   })
@@ -46,12 +46,12 @@ describe('the eventHandler routes events correctly', () => {
     const unSubscriptionMessage = {
       topic: C.TOPIC.EVENT,
       action: C.EVENT_ACTIONS.UNSUBSCRIBE,
-      name: 'someEvent'
+      names: ['someEvent']
     }
     testMocks.subscriptionRegistryMock
-      .expects('unsubscribe')
+      .expects('unsubscribeBulk')
       .once()
-      .withExactArgs('someEvent', unSubscriptionMessage, socketWrapper)
+      .withExactArgs(unSubscriptionMessage, socketWrapper)
 
     eventHandler.handle(socketWrapper, unSubscriptionMessage)
   })

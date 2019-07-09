@@ -68,12 +68,12 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
       return
     }
 
-    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE_BULK) {
+    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
       this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
-    if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_BULK) {
+    if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE) {
       this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }

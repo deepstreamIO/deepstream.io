@@ -14,7 +14,9 @@ export const getTestMocks = () => {
     getLocalSubscribers: () => new Set(),
     getAllRemoteServers: () => {},
     setAction: () => {},
-    hasLocalSubscribers: () => true
+    hasLocalSubscribers: () => true,
+    subscribeBulk: () => {},
+    unsubscribeBulk: () => {}
   }
 
   const listenerRegistry = {

@@ -60,7 +60,7 @@ describe('record handler handles messages', () => {
         topic: C.TOPIC.RECORD,
         action: C.RECORD_ACTIONS.RECORD_CREATE_ERROR,
         originalAction: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
-        name: M.subscribeCreateAndReadMessage.name
+        name: M.subscribeCreateAndReadMessage.names[0]
       })
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
@@ -313,9 +313,9 @@ describe('record handler handles messages', () => {
   describe('subscription registry', () => {
     it('handles unsubscribe messages', () => {
       testMocks.subscriptionRegistryMock
-        .expects('unsubscribe')
+        .expects('unsubscribeBulk')
         .once()
-        .withExactArgs(M.unsubscribeMessage.name, M.unsubscribeMessage, client.socketWrapper)
+        .withExactArgs(M.unsubscribeMessage, client.socketWrapper)
 
       recordHandler.handle(client.socketWrapper, M.unsubscribeMessage)
     })

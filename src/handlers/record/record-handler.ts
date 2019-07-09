@@ -52,7 +52,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
       return
     }
 
-    if (action === RA.SUBSCRIBECREATEANDREAD_BULK) {
+    if (action === RA.SUBSCRIBECREATEANDREAD) {
       const l = message.names!.length
       for (let i = 0; i < l; i++) {
         this.recordRequest(
@@ -64,15 +64,6 @@ export default class RecordHandler implements Handler<RecordMessage> {
         )
       }
       socketWrapper.sendAckMessage(message)
-      return
-    }
-
-    if (action === RA.SUBSCRIBECREATEANDREAD) {
-      /*
-      * Return the record's contents and subscribes for future updates.
-      * Creates the record if it doesn't exist
-      */
-      this.recordRequest(message.name, socketWrapper, this.onCreateOrReadComplete, onRequestError, message)
       return
     }
 
@@ -104,19 +95,11 @@ export default class RecordHandler implements Handler<RecordMessage> {
       return
     }
 
-    if (action === RA.SUBSCRIBEANDHEAD_BULK) {
-      /*
-       * Return the current version of the record or -1 if not found, subscribing either way
-       */
-      this.subscribeAndHeadBulk(socketWrapper!, message)
-      return
-    }
-
     if (action === RA.SUBSCRIBEANDHEAD) {
     /*
      * Return the current version of the record or -1 if not found, subscribing either way
      */
-      this.subscribeAndHead(socketWrapper!, message)
+      this.subscribeAndHeadBulk(socketWrapper!, message)
       return
     }
 
@@ -137,11 +120,11 @@ export default class RecordHandler implements Handler<RecordMessage> {
     }
 
     if (action === RA.UNSUBSCRIBE) {
-  /*
-   * Unsubscribes (discards) a record that was previously subscribed to
-   * using read()
-   */
-      this.subscriptionRegistry.unsubscribe(message.name, message, socketWrapper!)
+    /*
+    * Unsubscribes (discards) a record that was previously subscribed to
+    * using read()
+    */
+      this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper!)
       return
     }
 
@@ -260,15 +243,6 @@ export default class RecordHandler implements Handler<RecordMessage> {
    */
   private head (socketWrapper: SocketWrapper, message: RecordMessage, name: string = message.name): void {
     this.recordRequest(name, socketWrapper, onHeadComplete, onRequestError, message)
-  }
-
-  /**
-   * Same as head, and also subscribes the client to record updates.
-   * Always results in SUBSCRIBE_ACK
-   */
-  private subscribeAndHead (socketWrapper: SocketWrapper, message: RecordMessage): void {
-    this.head(socketWrapper, message)
-    this.subscriptionRegistry.subscribe(message.name, { ...message, action: RA.SUBSCRIBE }, socketWrapper)
   }
 
   private subscribeAndHeadBulk (socketWrapper: SocketWrapper, message: RecordMessage): void {
@@ -466,7 +440,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
  */
   private readAndSubscribe (message: RecordMessage, version: number, data: any, socketWrapper: SocketWrapper): void {
     this.permissionAction(RA.READ, message, message.action, socketWrapper, () => {
-      this.subscriptionRegistry.subscribe(message.name, { ...message, action: RA.SUBSCRIBE }, socketWrapper, message.isBulk)
+      this.subscriptionRegistry.subscribe(message.name, { ...message, action: RA.SUBSCRIBE }, socketWrapper, message.names !== undefined)
 
       this.recordRequest(message.name, socketWrapper, (_: string, newVersion: number, latestData: any) => {
         if (latestData) {
