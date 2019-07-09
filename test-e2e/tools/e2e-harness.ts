@@ -70,7 +70,7 @@ export class E2EHarness extends EventEmitter {
   public async updatePermissions (type: string) {
     const promises = this.servers.map((server) => {
       const permission = server.getServices().permission as never as ConfigPermission
-      const promise = new Promise((resolve) => permission.once('config-loaded', resolve))
+      const promise = new Promise((resolve) => (permission as any).emitter.once('config-loaded', resolve))
       permission.loadConfig(`./test-e2e/config/permissions-${type}.json`)
       return promise
     })

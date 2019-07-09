@@ -18,7 +18,7 @@ export default class PluginMock extends DeepstreamPlugin {
   public async whenReady () {
     if (!this.isReady) {
       await new Promise((resolve) => {
-        this.once('ready', resolve)
+        this.emitter.once('ready', resolve)
         setTimeout(resolve, 10)
       })
     }

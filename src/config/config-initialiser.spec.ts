@@ -152,7 +152,7 @@ describe('config-initialiser', () => {
       }).to.throw('No authentication type specified')
     })
 
-    it('allows passing a custom authentication handler', () => {
+    it('allows passing a custom authentication handler', async () => {
       const config = defaultConfig.get()
 
       config.auth = {
@@ -163,7 +163,7 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.authentication.isReady).to.equal(true)
+      await result.services.authentication.whenReady()
     })
 
     it('tries to find a custom authentication handler from name', () => {
@@ -237,7 +237,7 @@ describe('config-initialiser', () => {
       }).to.throw('Unknown permission type does-not-exist')
     })
 
-    it('allows passing a custom permission handler', () => {
+    it('allows passing a custom permission handler', async () => {
       const config = defaultConfig.get()
 
       config.permission = {
@@ -248,7 +248,7 @@ describe('config-initialiser', () => {
       }
 
       const result = configInitialiser.initialise(config)
-      expect(result.services.permission.isReady).to.equal(true)
+      await result.services.permission.whenReady()
     })
 
     it('tries to find a custom authentication handler from name', () => {

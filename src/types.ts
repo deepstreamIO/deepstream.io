@@ -1,5 +1,4 @@
 import { DeepPartial } from 'ts-essentials'
-import { EventEmitter } from 'events'
 import { ALL_ACTIONS, Message, JSONObject, SubscriptionMessage, EVENT, TOPIC, BulkSubscriptionMessage } from '../binary-protocol/src/message-constants'
 
 export enum LOG_LEVEL {
@@ -89,9 +88,14 @@ export interface Logger extends DeepstreamPlugin {
 }
 export type LoggerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Logger
 
+export interface ConnectionListener {
+  onClientConnected (socketWrapper: SocketWrapper): void,
+  onClientDisconnected (socketWrapper: SocketWrapper): void
+}
 export interface ConnectionEndpoint extends DeepstreamPlugin {
   onMessages (socketWrapper: SocketWrapper, messages: Message[]): void
-  scheduleFlush? (socketWrapper: SocketWrapper): void
+  scheduleFlush? (socketWrapper: SocketWrapper): void,
+  setConnectionListener? (connectionListener: ConnectionListener): void
 }
 export type ConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => ConnectionEndpoint
 
@@ -148,15 +152,10 @@ export interface PluginConfig {
   options: any
 }
 
-export abstract class DeepstreamPlugin extends EventEmitter {
-  public isReady: boolean = true
+export abstract class DeepstreamPlugin {
   public abstract description: string
+  public async whenReady (): Promise<void> {}
   public init? (): void
-  public async whenReady (): Promise<void> {
-    if (!this.isReady) {
-      throw new Error('If plugin initialization is async please implement the whenReady callback')
-    }
-  }
   public async close (): Promise<void> {}
   public setRecordHandler? (recordHandler: any): void
 }
@@ -280,6 +279,12 @@ export interface DeepstreamConfig {
   }
 }
 
+interface Command {
+  onFatalException (): void,
+  onClientConnected (): void,
+
+}
+
 export interface DeepstreamServices {
   connectionEndpoints: ConnectionEndpoint[]
   cache: Cache
@@ -293,8 +298,9 @@ export interface DeepstreamServices {
   clusterRegistry: ClusterRegistry,
   subscriptions: SubscriptionRegistryFactory,
   clusterStates: StateRegistryFactory,
-  messageDistributor: MessageDistributor
-  plugins: { [index: string]: DeepstreamPlugin }
+  messageDistributor: MessageDistributor,
+  plugins: { [index: string]: DeepstreamPlugin },
+  command: Command
 }
 
 export interface ValveConfig {

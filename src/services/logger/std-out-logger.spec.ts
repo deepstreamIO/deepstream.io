@@ -34,8 +34,8 @@ describe('logs to stdout and stderr', () => {
     })
   })
 
-  it('creates the logger', () => {
-    expect(logger.isReady).to.equal(true)
+  it('creates the logger', async () => {
+    await logger.whenReady()
     logger.log(LOG_LEVEL.INFO, C.EVENT.INFO, 'b')
     expect(comp(stdout, 'INFO | b')).to.equal(true)
   })

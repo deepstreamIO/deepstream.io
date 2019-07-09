@@ -1,8 +1,9 @@
 import * as crypto from 'crypto'
-import { DeepstreamPlugin, Authentication, UserAuthenticationCallback } from '../../../types'
-import { JSONObject } from '../../../constants'
+import { DeepstreamPlugin, Authentication, UserAuthenticationCallback, DeepstreamServices } from '../../../types'
+import { JSONObject, EVENT } from '../../../constants'
 import { validateMap } from '../../../utils/utils'
 import { readAndParseFile } from '../../../config/js-yaml-loader'
+import { EventEmitter } from 'events';
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'
@@ -24,21 +25,28 @@ interface FileAuthConfig {
  * of clients with static credentials, e.g. backend provider that write to publicly readable records
  */
 export class FileBasedAuthentication extends DeepstreamPlugin implements Authentication {
-  public isReady: boolean = false
   public description: string = `file using ${this.settings.path}`
   private base64KeyLength: number
   private data: any
 
+  private isReady: boolean = false
+  private emitter = new EventEmitter()
+
   /**
   * Creates the class, reads and validates the users.json file
   */
-  constructor (private settings: FileAuthConfig) {
+  constructor (private settings: FileAuthConfig, private services: DeepstreamServices) {
     super()
     this.validateSettings(settings)
     this.base64KeyLength = 4 * Math.ceil(this.settings.keyLength / 3)
     readAndParseFile(settings.path, this.onFileLoad.bind(this))
   }
 
+  public async whenReady (): Promise<void> {
+    if (!this.isReady) {
+      return new Promise((resolve) => this.emitter.once('ready', resolve))
+    }
+  }
   /**
   * Main interface. Authenticates incoming connections
   */
@@ -105,25 +113,28 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Authent
   */
   private onFileLoad (error: Error | null, data: any): void {
     if (error) {
-      this.emit('error', `Error loading file ${this.settings.path}: ${error.toString()}`)
+      this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, `Error loading file ${this.settings.path}: ${error.toString()}`)
+      this.services.command.onFatalException()
       return
     }
 
     this.data = data
 
     if (Object.keys(data).length === 0) {
-      this.emit('error', 'no users present in user file')
+      this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, 'no users present in user file')
+      this.services.command.onFatalException()
       return
     }
 
     for (const username in this.data) {
       if (typeof this.data[username].password !== STRING) {
-        this.emit('error', `missing password for ${username}`)
+        this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, `missing password for ${username}`)
+        this.services.command.onFatalException()
       }
     }
 
     this.isReady = true
-    this.emit('ready')
+    this.emitter.emit('ready')
   }
 
   /**

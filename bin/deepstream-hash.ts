@@ -34,7 +34,7 @@ function action (this: any, password: string) {
   // Mock file loading since a users.yml file is not required
   // jsYamlLoader.readAndParseFile = function () {}
 
-  const fileAuthenticationHandler = new FileBasedAuthentication(config.auth.options)
+  const fileAuthenticationHandler = new FileBasedAuthentication(config.auth.options, {} as any)
   fileAuthenticationHandler.createHash(password, (err: Error, passwordHash: string) => {
     if (err) {
       console.error('Hash could not be created', err)

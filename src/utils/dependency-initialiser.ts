@@ -12,8 +12,8 @@ export class DependencyInitialiser {
  * This class is used to track the initialisation of an individual service or plugin
  */
   constructor (private deepstream: Deepstream, private config: DeepstreamConfig, private services: DeepstreamServices, private dependency: DeepstreamPlugin, private name: string) {
-    if (typeof this.dependency.whenReady !== 'function' || typeof this.dependency.isReady === 'undefined') {
-      const errorMessage = `${this.name} needs to implement isReady and whenReady, please look at the DeepstreamPlugin API here` // TODO: Insert link
+    if (typeof this.dependency.whenReady !== 'function') {
+      const errorMessage = `${this.name} needs to implement async whenReady and close, please look at the DeepstreamPlugin API here` // TODO: Insert link
       this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
       const error = (new Error(errorMessage)) as any
       error.code = 'PLUGIN_INITIALIZATION_ERROR'
@@ -24,15 +24,16 @@ export class DependencyInitialiser {
       this.onTimeout.bind(this),
       this.config.dependencyInitialisationTimeout,
     )
+
     if (this.dependency.whenReady) {
       this.dependency
         .whenReady()
         .then(this.onReady.bind(this))
-        .catch(this.onError.bind(this))
     } else {
-      this.services.logger.warn(EVENT.DEPRECATED, 'Plugins should now support the async whenReady API') // TODO: Link
-      this.dependency.once('ready', this.onReady.bind(this))
-      this.dependency.on('error', this.onError.bind(this))
+      this.services.logger.warn(EVENT.DEPRECATED, 'Plugins should now support the async whenReady API')
+      const dep = this.dependency as any
+      dep.once('ready', this.onReady.bind(this))
+      dep.once('error', this.onError.bind(this))
     }
 
     if (this.dependency.init) {
@@ -100,12 +101,11 @@ export class DependencyInitialiser {
  * straight to the console
  */
   private logError (message: string): void {
-    if (this.services.logger && this.services.logger.isReady) {
+    if (this.name !== 'logger') {
       this.services.logger.error(EVENT.PLUGIN_ERROR, message)
     } else {
       console.error('Error while initialising dependency')
       console.error(message)
     }
   }
-
 }

@@ -156,7 +156,6 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
     this.connections.clear()
     this.uWS.us_listen_socket_close(this.listenSocket)
     await PromiseDelay(2000)
-    this.emit('close')
   }
 
   /**

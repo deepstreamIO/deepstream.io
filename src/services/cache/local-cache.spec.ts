@@ -10,8 +10,8 @@ describe('it saves values in memory', () => {
     localCache = new LocalCache()
   })
 
-  it('has created the local cache', () => {
-    expect(localCache.isReady).to.equal(true)
+  it('has created the local cache', async () => {
+    await localCache.whenReady()
   })
 
   it('sets a value in the cache', (done) => {
