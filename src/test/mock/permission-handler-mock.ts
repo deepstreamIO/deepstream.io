@@ -2,7 +2,6 @@ import { PermissionCallback, SocketWrapper, DeepstreamPlugin } from '../../types
 import { Message, JSONObject } from '../../../binary-protocol/src/message-constants'
 
 export default class PermissionHandlerMock extends DeepstreamPlugin {
-  public isReady: boolean = true
   public nextCanPerformActionResult: any
   public lastCanPerformActionQueryArgs: any
   public description = 'PermissionHandlerMock'

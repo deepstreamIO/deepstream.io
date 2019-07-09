@@ -11,7 +11,6 @@ export class E2ELogger extends DeepstreamPlugin implements Logger {
   public description = 'Test Logger'
   public logs: Log[] = []
   public lastLog: Log | null = null
-  public isReady: boolean = true
 
   public setLogLevel (logLevel: LOG_LEVEL): void {
     throw new Error('Method not implemented.')

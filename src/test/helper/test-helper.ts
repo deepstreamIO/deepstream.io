@@ -71,14 +71,12 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
 
   class PermissionHandler extends DeepstreamPlugin implements PermissionHandler {
     public lastArgs: any[]
-    public isReady: boolean
     public description: string
     public nextResult: boolean
     public nextError: string | null
 
     constructor () {
       super()
-      this.isReady = true
       this.description = 'Test Permission Handler'
       this.nextResult = true
       this.nextError = null
@@ -93,7 +91,6 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
 
 // tslint:disable-next-line: max-classes-per-file
   class MonitoringMock extends DeepstreamPlugin implements Monitoring {
-    public isReady = true
     public description = 'monitoring mock'
     public onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
     }

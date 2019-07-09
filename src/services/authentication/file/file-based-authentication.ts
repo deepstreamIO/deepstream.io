@@ -24,21 +24,17 @@ interface FileAuthConfig {
  * of clients with static credentials, e.g. backend provider that write to publicly readable records
  */
 export class FileBasedAuthentication extends DeepstreamPlugin implements Authentication {
-  public isReady: boolean
-  public description: string
-  private settings: FileAuthConfig
+  public isReady: boolean = false
+  public description: string = `file using ${this.settings.path}`
   private base64KeyLength: number
   private data: any
 
   /**
   * Creates the class, reads and validates the users.json file
   */
-  constructor (settings: FileAuthConfig) {
+  constructor (private settings: FileAuthConfig) {
     super()
-    this.isReady = false
-    this.description = `file using ${settings.path}`
     this.validateSettings(settings)
-    this.settings = settings
     this.base64KeyLength = 4 * Math.ceil(this.settings.keyLength / 3)
     readAndParseFile(settings.path, this.onFileLoad.bind(this))
   }

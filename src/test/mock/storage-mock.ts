@@ -17,7 +17,6 @@ export default class StorageMock extends DeepstreamPlugin implements Storage, Ca
   public getCalls: any
   public setTimeout: any
   public getTimeout: any
-  public isReady: boolean = true
   public description: string = 'Mock Storage'
 
 constructor () {

@@ -7,7 +7,6 @@ export default class AuthenticationMock extends DeepstreamPlugin implements Auth
   public lastUserValidationQueryArgs: IArguments | null = null
   public nextUserValidationResult: boolean = true
   public nextUserIsAnonymous: boolean = false
-  public isReady: boolean = true
   public description: string = 'Authentication Mock'
 
   constructor () {

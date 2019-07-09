@@ -10,8 +10,8 @@ describe('retuns null for all values', () => {
     noopStorage = new NoopStorage()
   })
 
-  it('has created the noop storage', () => {
-    expect(noopStorage.isReady).to.equal(true)
+  it('has created the noop storage', async () => {
+    await noopStorage.whenReady()
   })
 
   it('tries to retrieve a non-existing value', (done) => {

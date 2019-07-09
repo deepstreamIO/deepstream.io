@@ -17,7 +17,6 @@ function checkConfigOption (config: any, option: string, expectedType?: string):
 }
 
 export default class Server extends EventEmitter {
-
   public isReady: boolean = false
 
   private origins: string = ''

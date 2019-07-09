@@ -7,7 +7,6 @@ import { DeepstreamPlugin, Permission, PermissionCallback, SocketWrapper } from 
  */
 export class OpenPermission extends DeepstreamPlugin implements Permission {
   public description: string = 'none'
-  public isReady: true = true
 
   /**
   * Allows any action by an user

@@ -3,7 +3,6 @@ import { Logger, DeepstreamPlugin, LOG_LEVEL } from '../../types'
 import { EVENT } from '../../constants'
 
 export default class LoggerMock extends DeepstreamPlugin implements Logger {
-  public isReady: boolean
   public description: string = 'mock logger'
   public lastLogLevel: any
   public lastLogEvent: any
@@ -13,7 +12,6 @@ export default class LoggerMock extends DeepstreamPlugin implements Logger {
 
   constructor () {
     super()
-    this.isReady = true
     this.lastLogLevel = null
     this.lastLogEvent = null
     this.lastLogMessage = null
