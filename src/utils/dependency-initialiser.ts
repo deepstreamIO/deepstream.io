@@ -12,7 +12,7 @@ export class DependencyInitialiser {
  * This class is used to track the initialisation of an individual service or plugin
  */
   constructor (private deepstream: Deepstream, private config: DeepstreamConfig, private services: DeepstreamServices, private dependency: DeepstreamPlugin, private name: string) {
-    if (typeof this.dependency.whenReady !== 'function' || typeof this.dependency.isReady === 'undefined') {
+    if (typeof this.dependency.whenReady !== 'function') {
       const errorMessage = `${this.name} needs to implement isReady and whenReady, please look at the DeepstreamPlugin API here` // TODO: Insert link
       this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
       const error = (new Error(errorMessage)) as any
