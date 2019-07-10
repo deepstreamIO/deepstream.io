@@ -1,17 +1,16 @@
 import { EVENT } from '../constants'
-import { Deepstream } from '../deepstream.io'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin } from '../types'
 import { EventEmitter } from 'events'
 
 export class DependencyInitialiser {
-  public isReady: boolean = false
+  private isReady: boolean = false
   private timeout: NodeJS.Timeout | null = null
   private emitter = new EventEmitter()
 
 /**
  * This class is used to track the initialisation of an individual service or plugin
  */
-  constructor (private deepstream: Deepstream, private config: DeepstreamConfig, private services: DeepstreamServices, private dependency: DeepstreamPlugin, private name: string) {
+  constructor (private config: DeepstreamConfig, private services: DeepstreamServices, private dependency: DeepstreamPlugin, private name: string) {
     if (typeof this.dependency.whenReady !== 'function') {
       const errorMessage = `${this.name} needs to implement async whenReady and close, please look at the DeepstreamPlugin API here` // TODO: Insert link
       this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)

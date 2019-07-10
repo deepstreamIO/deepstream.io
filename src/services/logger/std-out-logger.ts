@@ -98,5 +98,9 @@ export class StdOutLogger extends DeepstreamPlugin implements Logger {
     } else {
       (process as any)[outputStream].write(msg + EOL)
     }
+
+    if (logLevel === LOG_LEVEL.FATAL) {
+      this.services.notifyFatalException()
+    }
   }
 }

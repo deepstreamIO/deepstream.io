@@ -71,7 +71,7 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
 
   const services = {} as DeepstreamServices
   services.notifyFatalException = () => {
-    if (config.exitOnPluginError) {
+    if (config.exitOnFatalError) {
       process.exit(1)
     } else {
       deepstream.emit(EVENT.FATAL_EXCEPTION)

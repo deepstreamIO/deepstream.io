@@ -202,7 +202,7 @@ export class Deepstream extends EventEmitter {
  */
   private async loggerInit (): Promise<void> {
     const logger = this.services.logger
-    const loggerInitialiser = new DependencyInitialiser(this, this.config, this.services, logger, 'logger')
+    const loggerInitialiser = new DependencyInitialiser(this.config, this.services, logger, 'logger')
     await loggerInitialiser.whenReady()
 
     const infoLogger = (message: string) => this.services.logger.info(EVENT.INFO, message)
@@ -230,10 +230,8 @@ export class Deepstream extends EventEmitter {
         return promises
       }
       const service = (this.services as any)[serviceName] as DeepstreamPlugin
-      const initialiser = new DependencyInitialiser(this, this.config, this.services, service, serviceName)
-      if (initialiser.isReady === false) {
-        promises.push(initialiser.whenReady())
-      }
+      const initialiser = new DependencyInitialiser(this.config, this.services, service, serviceName)
+      promises.push(initialiser.whenReady())
       return promises
     }, [] as Array<Promise<void>>)
 
@@ -302,7 +300,6 @@ export class Deepstream extends EventEmitter {
     for (let i = 0; i < endpoints.length; i++) {
       const connectionEndpoint = endpoints[i]
       const dependencyInitialiser = new DependencyInitialiser(
-        this,
         this.config,
         this.services,
         connectionEndpoint,

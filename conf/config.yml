@@ -7,9 +7,6 @@ showLogo: true
 logLevel: INFO
 # Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
 dependencyInitialisationTimeout: 2000
-# Kill the process if deepstream encounters an error. This is useful for situations where connection to a cache
-# or storage is lost to not get into an odd state. Currently this is very ungraceful and will exit instantly.
-exitOnPluginError: false
 # Directory where all plugins reside
 #libDir: ../lib
 
@@ -220,7 +217,7 @@ permission:
   type: config
   options:
     # Path to the permissionFile. Can be json, js or yml
-    path: ./permissions2.yml
+    path: ./permissions.yml
     # Amount of times nested cross-references will be loaded. Avoids endless loops
     maxRuleIterations: 3
     # PermissionResults are cached to increase performance. Lower number means more loading

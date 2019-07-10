@@ -239,7 +239,7 @@ export interface DeepstreamConfig {
   logLevel: number
   serverName: string
   dependencyInitialisationTimeout: number
-  exitOnPluginError: boolean
+  exitOnFatalError: boolean
 
   externalUrl: string | null
   sslKey: string | null
