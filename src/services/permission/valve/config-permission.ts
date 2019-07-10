@@ -24,6 +24,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
   private recordHandler: RecordHandler | null = null
   private optionsValid: boolean = true
   private emitter = new EventEmitter()
+  private logger = this.services.logger.getNameSpace('PERMISSION')
 
   /**
    * A permission handler that reads a rules config YAML or JSON, validates
@@ -41,8 +42,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
     const maxRuleIterations = permissionOptions.maxRuleIterations
     if (maxRuleIterations !== undefined && maxRuleIterations < 1) {
       this.optionsValid = false
-      this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Maximum rule iteration has to be at least one')
-      this.services.command.onFatalException()
+      this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Maximum rule iteration has to be at least one')
     } else if (permissions) {
       this.useConfig(permissions)
     }
@@ -81,8 +81,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
   public loadConfig (filePath: string): void {
     readAndParseFile(filePath, (loadError: Error | null, permissions: any) => {
       if (loadError) {
-        this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, `error while loading config: ${loadError.toString()}`)
-        this.services.command.onFatalException()
+        this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `error while loading config at ${filePath}`)
         return
       }
       this.emitter.emit('config-loaded', filePath)
@@ -101,8 +100,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
     const validationResult = configValidator.validate(permissions)
 
     if (validationResult !== true) {
-      this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, `invalid permission config - ${validationResult}`)
-      this.services.command.onFatalException()
+      this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `invalid permission config - ${validationResult}`)
       return
     }
 
@@ -152,7 +150,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
       name: message.name!,
       callback,
       passItOn,
-      logger: this.services.logger,
+      logger: this.logger,
       permissionOptions: this.permissionOptions,
       config: this.config,
       services: this.services,

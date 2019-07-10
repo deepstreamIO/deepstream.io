@@ -1,10 +1,12 @@
 import 'mocha'
 import { expect } from 'chai'
-import {spy} from 'sinon'
+import { spy } from 'sinon'
 import * as C from '../constants'
 import { DependencyInitialiser } from './dependency-initialiser'
 import PluginMock from '../test/mock/plugin-mock'
 import LoggerMock from '../test/mock/logger-mock'
+import { LOG_LEVEL } from '../types';
+import { PromiseDelay } from './utils';
 
 const services = {
   logger: new LoggerMock()
@@ -71,20 +73,21 @@ describe('encounters timeouts and errors during dependency initialisations', () 
     })
   })
 
-  it("creates a depdendency initialiser and doesn't initialise a plugin in time", (done) => {
-    process.removeAllListeners('uncaughtException')
-    process.once('uncaughtException', () => {
-      expect(services.logger.logSpy).to.have.been.calledWith(3, C.EVENT.PLUGIN_ERROR, 'plugin wasn\'t initialised in time')
-      done()
-    })
-
+  it("creates a dependency initialiser and doesn't initialise a plugin in time", async () => {
+    services.logger.logSpy.resetHistory()
     dependencyInitialiser = new DependencyInitialiser({}, config as any, services as any, config.plugin, 'plugin')
+
+    await PromiseDelay(20)
+
     dependencyInitialiser.whenReady().then(onReady)
     expect(config.plugin.isReady).to.equal(false)
     expect(onReady).to.have.callCount(0)
+
+    // expect(services.logger.logSpy).to.have.been.calledOnce // another test isn't async and bleeds into this one
+    expect(services.logger.logSpy).to.have.been.calledWith(LOG_LEVEL.FATAL, C.EVENT.PLUGIN_INITIALIZATION_TIMEOUT, 'plugin wasn\'t initialised in time')
   })
 
-  it.skip('creates another depdendency initialiser with a plugin error', (next) => {
+  it.skip('creates another depdendency initialiser with a plugin error', async () => {
     process.once('uncaughtException', () => {
       expect(onReady).to.have.callCount(0)
       expect(services.logger.logSpy).to.have.been.calledWith('Error while initialising dependency')

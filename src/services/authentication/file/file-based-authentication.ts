@@ -113,23 +113,20 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Authent
   */
   private onFileLoad (error: Error | null, data: any): void {
     if (error) {
-      this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, `Error loading file ${this.settings.path}: ${error.toString()}`)
-      this.services.command.onFatalException()
+      this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `Error loading file ${this.settings.path}`)
       return
     }
 
     this.data = data
 
     if (Object.keys(data).length === 0) {
-      this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, 'no users present in user file')
-      this.services.command.onFatalException()
+      this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'no users present in user file')
       return
     }
 
     for (const username in this.data) {
       if (typeof this.data[username].password !== STRING) {
-        this.services.logger.error(EVENT.PLUGIN_INITIALIZATION_ERROR, `missing password for ${username}`)
-        this.services.command.onFatalException()
+        this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `missing password for ${username}`)
       }
     }
 

@@ -1,5 +1,5 @@
 import { EVENT } from '../../src/constants'
-import { Logger, DeepstreamPlugin, LOG_LEVEL } from '../../src/types'
+import { Logger, DeepstreamPlugin, LOG_LEVEL, NamespacedLogger } from '../../src/types'
 
 interface Log {
   level: number,
@@ -36,7 +36,22 @@ export class E2ELogger extends DeepstreamPlugin implements Logger {
     this.log(LOG_LEVEL.DEBUG, event, logMessage)
   }
 
-  public log (logLevel: LOG_LEVEL, event: EVENT, logMessage: string) {
+  public fatal (event: EVENT, logMessage: string) {
+    this.log(LOG_LEVEL.FATAL, event, logMessage)
+  }
+
+  public getNameSpace (namespace: string): NamespacedLogger {
+    return {
+      shouldLog: this.shouldLog,
+      fatal: this.fatal,
+      error: this.error,
+      warn: this.warn,
+      info: this.info,
+      debug: this.debug,
+    }
+  }
+
+  private log (logLevel: LOG_LEVEL, event: EVENT, logMessage: string) {
     const log = {
       level: logLevel,
       event,

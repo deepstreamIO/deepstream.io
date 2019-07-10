@@ -226,7 +226,7 @@ export class Deepstream extends EventEmitter {
   */
   private async serviceInit () {
     const readyPromises = Object.keys(this.services).reduce((promises, serviceName) => {
-      if (['connectionEndpoints', 'plugins'].includes(serviceName)) {
+      if (['connectionEndpoints', 'plugins', 'notifyFatalException'].includes(serviceName)) {
         return promises
       }
       const service = (this.services as any)[serviceName] as DeepstreamPlugin
@@ -399,12 +399,12 @@ private async pluginsShutdown () {
   private loadConfig (config: PartialDeepstreamConfig | string | null): void {
     let result
     if (config === null || typeof config === 'string') {
-      result = jsYamlLoader.loadConfig(config)
+      result = jsYamlLoader.loadConfig(this, config)
       this.configFile = result.file
     } else {
       configInitialiser.mergeConnectionOptions(config)
       const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
-      result = configInitialiser.initialise(rawConfig)
+      result = configInitialiser.initialise(this, rawConfig)
     }
     configValidator.validate(result.config)
     this.config = result.config

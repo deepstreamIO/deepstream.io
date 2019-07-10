@@ -1,4 +1,4 @@
-import { DeepstreamServices, DeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin, LOG_LEVEL } from '../../types'
+import { DeepstreamServices, DeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin } from '../../types'
 import { TOPIC } from '../../constants'
 import { ClusterMessage, EVENT, CLUSTER_ACTIONS } from '../../../binary-protocol/src/message-constants'
 import { EventEmitter } from 'events';
@@ -71,7 +71,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
             return
         }
 
-        this.services.logger.log(LOG_LEVEL.INFO, EVENT.CLUSTER_LEAVE, this.config.serverName)
+        this.services.logger.info(EVENT.CLUSTER_LEAVE, this.config.serverName)
         this.services.clusterNode.send({
             topic: TOPIC.CLUSTER,
             action: CLUSTER_ACTIONS.REMOVE,

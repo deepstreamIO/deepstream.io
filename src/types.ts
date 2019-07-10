@@ -6,6 +6,7 @@ export enum LOG_LEVEL {
   INFO = 1,
   WARN = 2,
   ERROR = 3,
+  FATAL = 4,
   OFF = 100
 }
 
@@ -77,14 +78,19 @@ export interface SubscriptionListener {
   onFirstSubscriptionMade (name: string): void
 }
 
-export interface Logger extends DeepstreamPlugin {
+export interface NamespacedLogger {
   shouldLog (logLevel: LOG_LEVEL): boolean
-  setLogLevel (logLevel: LOG_LEVEL): void
   info (event: EVENT | string, message?: string, metaData?: any): void
   debug (event: EVENT | string, message?: string, metaData?: any): void
   warn (event: EVENT | string, message?: string, metaData?: any): void
   error (event: EVENT | string, message?: string, metaData?: any): void
-  log (level: LOG_LEVEL, event: EVENT, message: string, metaData?: any): void
+  fatal (event: EVENT | string, message?: string, metaData?: any): void
+}
+
+export interface Logger extends DeepstreamPlugin, NamespacedLogger {
+  shouldLog (logLevel: LOG_LEVEL): boolean
+  setLogLevel (logLevel: LOG_LEVEL): void
+  getNameSpace (namespace: string): NamespacedLogger
 }
 export type LoggerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Logger
 
@@ -279,12 +285,6 @@ export interface DeepstreamConfig {
   }
 }
 
-interface Command {
-  onFatalException (): void,
-  onClientConnected (): void,
-
-}
-
 export interface DeepstreamServices {
   connectionEndpoints: ConnectionEndpoint[]
   cache: Cache
@@ -300,7 +300,7 @@ export interface DeepstreamServices {
   clusterStates: StateRegistryFactory,
   messageDistributor: MessageDistributor,
   plugins: { [index: string]: DeepstreamPlugin },
-  command: Command
+  notifyFatalException: () => void
 }
 
 export interface ValveConfig {

@@ -1,6 +1,16 @@
 import 'mocha'
+import { spy, assert } from 'sinon'
 import { expect } from 'chai'
 import { FileBasedAuthentication } from './file-based-authentication'
+import { Logger, DeepstreamServices } from '../../../types'
+import { PromiseDelay } from '../../../utils/utils';
+import { EVENT } from '../../../constants';
+
+const createServices = () => {
+  return {
+    logger: { fatal: spy() } as never as Logger
+  } as DeepstreamServices
+}
 
 const testAuthentication = (settings) => {
   const authData = {
@@ -35,9 +45,9 @@ describe('file based authentication', () => {
       hash: false
     }
 
-    beforeEach((done) => {
-      authenticationHandler = new FileBasedAuthentication(settings as any)
-      authenticationHandler.on('ready', done)
+    beforeEach(async () => {
+      authenticationHandler = new FileBasedAuthentication(settings as any, createServices())
+      await authenticationHandler.whenReady()
       expect(authenticationHandler.description).to.eq('file using ./src/test/config/users-unhashed.json')
     })
 
@@ -87,9 +97,9 @@ describe('file based authentication', () => {
       keyLength: 32
     }
 
-    beforeEach((done) => {
-      authenticationHandler = new FileBasedAuthentication(settings)
-      authenticationHandler.on('ready', done)
+    beforeEach(async () => {
+      authenticationHandler = new FileBasedAuthentication(settings as any, createServices())
+      await authenticationHandler.whenReady()
     })
 
     it('confirms userA with valid password', (done) => {
@@ -157,21 +167,14 @@ describe('file based authentication', () => {
       }
     }
 
-    it('accepts valid settings', () => {
-      expect(() => {
-        // tslint:disable-next-line:no-unused-expression
-        new FileBasedAuthentication(getSettings())
-      }).not.to.throw()
-    })
-
-    it('errors for invalid path', (done) => {
+    it('errors for invalid path', async () => {
       const settings = getSettings()
       settings.path = 'xcc'
-      const x = new FileBasedAuthentication(settings)
-      x.on('error', (error) => {
-        expect(error).to.contain('Error loading file xcc')
-        done()
-      })
+      const services = createServices()
+      const x = new FileBasedAuthentication(settings as any, services)
+      await PromiseDelay(0)
+      assert.calledOnce(services.logger.fatal)
+      assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, "Error loading file xcc")
     })
 
     it('accepts settings with hash = false', () => {
@@ -218,9 +221,9 @@ describe('file based authentication', () => {
       keyLength: 32
     }
 
-    beforeEach((done) => {
-      authenticationHandler = new FileBasedAuthentication(settings)
-      authenticationHandler.on('ready', done)
+    beforeEach(async () => {
+      authenticationHandler = new FileBasedAuthentication(settings, createServices())
+      await authenticationHandler.whenReady()
     })
 
     it('creates a hash', (done) => {
@@ -233,51 +236,41 @@ describe('file based authentication', () => {
   })
 
   describe('errors for invalid configs', () => {
-    it('loads a non existant config', (done) => {
-      const authenticationHandler = new FileBasedAuthentication({
+    const test = async (settings: any, errorMessage: string) => {
+      const services = createServices()
+      // tslint:disable-next-line: no-unused-expression
+      new FileBasedAuthentication(settings, services)
+      await PromiseDelay(10)
+      assert.calledOnce(services.logger.fatal)
+      assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, errorMessage)
+    }
+
+    it('loads a non existant config', async () => {
+      await test({
         path: './does-not-exist.json',
         hash: false
-      } as any)
-      authenticationHandler.on('error', (error) => {
-        expect(error).to.contain('no such file or directory')
-        done()
-      })
+      }, 'Error loading file ./does-not-exist.json')
     })
 
-    it('loads a user config without password field', (done) => {
-      const authenticationHandler = new FileBasedAuthentication({
+    it('loads a user config without password field',async () => {
+      await test({
         path: './src/test/config/invalid-user-config.json',
         hash: false
-      } as any)
-
-      authenticationHandler.on('error', (error) => {
-        expect(error).to.eq('missing password for userB')
-        done()
-      })
+      }, 'missing password for userB')
     })
 
-    it('loads a user config without without blank user file', (done) => {
-      const authenticationHandler = new FileBasedAuthentication({
+    it('loads a user config without without blank user file', async() => {
+      await test({
         path: './src/test/config/blank-config.json',
         hash: false
-      } as any)
-
-      authenticationHandler.on('error', (error) => {
-        expect(error).to.contain('Error loading file ./src/test/config/blank-config.json')
-        done()
-      })
+      }, 'Error loading file ./src/test/config/blank-config.json')  
     })
 
-    it('loads a user config without without no users', (done) => {
-      const authenticationHandler = new FileBasedAuthentication({
+    it('loads a user config without without no users', async() => {
+      await test({
         path: './src/test/config/empty-map-config.json',
         hash: false
-      } as any)
-
-      authenticationHandler.on('error', (error) => {
-        expect(error).to.eq('no users present in user file')
-        done()
-      })
+      }, 'no users present in user file')  
     })
   })
 
@@ -290,9 +283,9 @@ describe('file based authentication', () => {
       keyLength: 32
     }
 
-    beforeEach((done) => {
-      authenticationHandler = new FileBasedAuthentication(settings)
-      authenticationHandler.on('ready', done)
+    beforeEach(async () => {
+      authenticationHandler = new FileBasedAuthentication(settings, createServices())
+      await authenticationHandler.whenReady()
     })
 
     it('returns an error for authData without username', (done) => {

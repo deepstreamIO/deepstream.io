@@ -220,7 +220,7 @@ permission:
   type: config
   options:
     # Path to the permissionFile. Can be json, js or yml
-    path: ./permissions.yml
+    path: ./permissions2.yml
     # Amount of times nested cross-references will be loaded. Avoids endless loops
     maxRuleIterations: 3
     # PermissionResults are cached to increase performance. Lower number means more loading
