@@ -1,5 +1,5 @@
 import {spy, SinonSpy} from 'sinon'
-import { Logger, DeepstreamPlugin, LOG_LEVEL } from '../../types'
+import { Logger, DeepstreamPlugin, LOG_LEVEL, NamespacedLogger } from '../../types'
 import { EVENT } from '../../constants'
 
 export default class LoggerMock extends DeepstreamPlugin implements Logger {
@@ -44,7 +44,16 @@ export default class LoggerMock extends DeepstreamPlugin implements Logger {
     this.logSpy(LOG_LEVEL.ERROR, event, message)
   }
 
-  public log (level: LOG_LEVEL, event: EVENT | string, message?: string, metaData?: any) {
+  public fatal(event: string, message?: string | undefined, metaData?: any): void {
+    this.log(LOG_LEVEL.FATAL, event, message)
+    this.logSpy(LOG_LEVEL.FATAL, event, message)
+  }
+
+  public getNameSpace(namespace: string): NamespacedLogger {
+    return this
+  }
+
+  private log (level: LOG_LEVEL, event: EVENT | string, message?: string, metaData?: any) {
     this.lastLogLevel = level
     this.lastLogEvent = event
     this.lastLogMessage = message

@@ -71,9 +71,7 @@ export class WSConnectionEndpoint extends ConnectionEndpoint {
     })
     await Promise.all(closePromises)
     this.connections.clear()
-    this.server.close(() => {
-      this.emit('close')
-    })
+    return new Promise((resolve) => this.server.close(resolve))
   }
 
   /**

@@ -5,9 +5,9 @@ import * as HTTPStatus from 'http-status'
 import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS, Message, ALL_ACTIONS } from '../../constants'
 import { ConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig } from '../../types'
 import { JSONObject } from '../../../binary-protocol/src/message-constants'
+import { EventEmitter } from 'events';
 
 export class HTTPConnectionEndpoint extends DeepstreamPlugin implements ConnectionEndpoint {
-  public isReady: boolean = false
   public description: string = 'HTTP connection endpoint'
 
   private initialised: boolean = false
@@ -17,6 +17,9 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
   private server!: Server
   private logInvalidAuthData: boolean = false
   private requestTimeout!: number
+
+  private isReady: boolean = false
+  private emitter = new EventEmitter()
 
   constructor (private options: any, private services: DeepstreamServices, public dsOptions: DeepstreamConfig) {
     super()
@@ -30,7 +33,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
 
   public async whenReady (): Promise<void> {
     if (!this.isReady) {
-      return new Promise((resolve) => this.once('ready', resolve))
+      return new Promise((resolve) => this.emitter.once('ready', resolve))
     }
   }
 
@@ -63,7 +66,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
 
     this.server.on('ready', () => {
       this.isReady = true
-      this.emit('ready')
+      this.emitter.emit('ready')
     })
 
     this.server.start()
@@ -90,7 +93,6 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
 
   public async close () {
     await this.server.stop()
-    this.emit('close')
   }
 
   /**

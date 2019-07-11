@@ -1,5 +1,4 @@
 import { DeepPartial } from 'ts-essentials'
-import { EventEmitter } from 'events'
 import { ALL_ACTIONS, Message, JSONObject, SubscriptionMessage, EVENT, TOPIC, BulkSubscriptionMessage } from '../binary-protocol/src/message-constants'
 
 export enum LOG_LEVEL {
@@ -7,6 +6,7 @@ export enum LOG_LEVEL {
   INFO = 1,
   WARN = 2,
   ERROR = 3,
+  FATAL = 4,
   OFF = 100
 }
 
@@ -78,20 +78,30 @@ export interface SubscriptionListener {
   onFirstSubscriptionMade (name: string): void
 }
 
-export interface Logger extends DeepstreamPlugin {
+export interface NamespacedLogger {
   shouldLog (logLevel: LOG_LEVEL): boolean
-  setLogLevel (logLevel: LOG_LEVEL): void
   info (event: EVENT | string, message?: string, metaData?: any): void
   debug (event: EVENT | string, message?: string, metaData?: any): void
   warn (event: EVENT | string, message?: string, metaData?: any): void
   error (event: EVENT | string, message?: string, metaData?: any): void
-  log (level: LOG_LEVEL, event: EVENT, message: string, metaData?: any): void
+  fatal (event: EVENT | string, message?: string, metaData?: any): void
+}
+
+export interface Logger extends DeepstreamPlugin, NamespacedLogger {
+  shouldLog (logLevel: LOG_LEVEL): boolean
+  setLogLevel (logLevel: LOG_LEVEL): void
+  getNameSpace (namespace: string): NamespacedLogger
 }
 export type LoggerPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => Logger
 
+export interface ConnectionListener {
+  onClientConnected (socketWrapper: SocketWrapper): void,
+  onClientDisconnected (socketWrapper: SocketWrapper): void
+}
 export interface ConnectionEndpoint extends DeepstreamPlugin {
   onMessages (socketWrapper: SocketWrapper, messages: Message[]): void
-  scheduleFlush? (socketWrapper: SocketWrapper): void
+  scheduleFlush? (socketWrapper: SocketWrapper): void,
+  setConnectionListener? (connectionListener: ConnectionListener): void
 }
 export type ConnectionEndpointPlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => ConnectionEndpoint
 
@@ -148,15 +158,10 @@ export interface PluginConfig {
   options: any
 }
 
-export abstract class DeepstreamPlugin extends EventEmitter {
-  public isReady: boolean = true
+export abstract class DeepstreamPlugin {
   public abstract description: string
+  public async whenReady (): Promise<void> {}
   public init? (): void
-  public async whenReady (): Promise<void> {
-    if (!this.isReady) {
-      throw new Error('If plugin initialization is async please implement the whenReady callback')
-    }
-  }
   public async close (): Promise<void> {}
   public setRecordHandler? (recordHandler: any): void
 }
@@ -234,7 +239,7 @@ export interface DeepstreamConfig {
   logLevel: number
   serverName: string
   dependencyInitialisationTimeout: number
-  exitOnPluginError: boolean
+  exitOnFatalError: boolean
 
   externalUrl: string | null
   sslKey: string | null
@@ -293,8 +298,9 @@ export interface DeepstreamServices {
   clusterRegistry: ClusterRegistry,
   subscriptions: SubscriptionRegistryFactory,
   clusterStates: StateRegistryFactory,
-  messageDistributor: MessageDistributor
-  plugins: { [index: string]: DeepstreamPlugin }
+  messageDistributor: MessageDistributor,
+  plugins: { [index: string]: DeepstreamPlugin },
+  notifyFatalException: () => void
 }
 
 export interface ValveConfig {

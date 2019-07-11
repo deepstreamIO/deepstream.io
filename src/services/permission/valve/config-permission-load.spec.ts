@@ -1,9 +1,11 @@
 import 'mocha'
 import { expect } from 'chai'
-import {spy} from 'sinon'
+import {spy, assert} from 'sinon'
 import * as C from '../../../constants'
 import { ConfigPermission } from './config-permission'
 import * as testHelper from '../../../test/helper/test-helper'
+import { EVENT } from '../../../constants';
+import { PromiseDelay } from '../../../utils/utils';
 
 const { config, services } = testHelper.getDeepstreamPermissionOptions()
 
@@ -13,81 +15,63 @@ const recordHandler = {
 }
 
 describe('permission handler loading', () => {
+  beforeEach(() => {
+    services.logger.fatal = spy()
+  })
+
   describe('permission handler is initialised correctly', () => {
-    it('loads a valid config file upon initialisation', (next) => {
+    it('loads a valid config file upon initialisation', async () => {
       const permission = new ConfigPermission({
         path: './conf/permissions.yml',
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 10
       }, services, config)
-      permission.on('error', (error) => {
-        expect(`it should not have had this ${error}`).to.equal('true')
-        next()
-      })
-      permission.on('ready', () => {
-        expect(permission.isReady).to.equal(true)
-        next()
-      })
-      permission.setRecordHandler(recordHandler)
-      expect(permission.isReady).to.equal(false)
+      assert.notCalled(services.logger.fatal)
       permission.init()
+      await permission.whenReady()
     })
 
-    it('fails to load maxRuleIterations less than zero initialisation', (next) => {
+    it('fails to load maxRuleIterations less than zero initialisation', async () => {
       const permission = new ConfigPermission({
         path: './conf/permissions.yml',
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 0
       }, services, config)
-      permission.setRecordHandler(recordHandler)
-      permission.on('error', (error) => {
-        expect(error).to.contain('Maximum rule iteration has to be at least one')
-        next()
-      })
-      permission.on('ready', () => {
-        next('should not have gotten here')
-        next()
-      })
-      expect(permission.isReady).to.equal(false)
+
       permission.init()
+
+      assert.calledOnce(services.logger.fatal)
+      assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, 'Maximum rule iteration has to be at least one')
     })
 
-    it('fails to load a non existant config file upon initialisation', (next) => {
+    it('fails to load a non existant config file upon initialisation', async () => {
       const permission = new ConfigPermission({
         path: './does-not-exist.yml',
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 10
       }, services, config)
-      permission.setRecordHandler(recordHandler)
-      permission.on('error', (error) => {
-        expect(error).to.contain('ENOENT')
-        next()
-      })
-      permission.on('ready', () => {
-        expect('should not have gotten here').to.equal('true')
-        next()
-      })
-      expect(permission.isReady).to.equal(false)
+
       permission.init()
+
+      await PromiseDelay(0)
+
+      assert.calledOnce(services.logger.fatal)
+      assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, 'error while loading config at ./does-not-exist.yml')
     })
 
-    it('fails when loading an invalid config file upon initialisation', (next) => {
+    it('fails when loading an invalid config file upon initialisation', async () => {
       const permission = new ConfigPermission({
         path: './src/test/config/invalid-permission-conf.json',
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 10
       }, services, config)
-      permission.setRecordHandler(recordHandler)
-      permission.on('error', (error) => {
-        expect(error).to.equal('invalid permission config - empty section "record"')
-        next()
-      })
-      permission.on('ready', () => {
-        expect('should not have gotten here').to.equal('true')
-        next()
-      })
-      expect(permission.isReady).to.equal(false)
+
       permission.init()
+
+      await PromiseDelay(10)
+
+      assert.calledOnce(services.logger.fatal)
+      assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, 'invalid permission config - empty section "record"')
     })
   })
 
@@ -95,24 +79,15 @@ describe('permission handler loading', () => {
     let permission
     const onError = spy()
 
-    it('loads a valid config file upon initialisation', (next) => {
+    it('loads a valid config file upon initialisation', async () => {
       permission = new ConfigPermission({
         path: './conf/permissions.yml',
         cacheEvacuationInterval: 60000,
         maxRuleIterations: 10
       }, services, config)
-      permission.setRecordHandler(recordHandler)
-      permission.on('error', onError)
-      permission.on('error', (error) => {
-        expect(`it should not have had this ${error}`).to.equal('true')
-        next()
-      })
-      permission.on('ready', () => {
-        expect(permission.isReady).to.equal(true)
-        next()
-      })
-      expect(permission.isReady).to.equal(false)
       permission.init()
+
+      await permission.whenReady()
     })
 
     it('allows publishing of a private event', (next) => {
@@ -135,7 +110,7 @@ describe('permission handler loading', () => {
     it('loads a new config', (next) => {
       const path = './src/test/config/no-private-events-permission-config.json'
 
-      permission.on('config-loaded', (loadedPath) => {
+      permission.emitter.on('config-loaded', (loadedPath) => {
         expect(loadedPath).to.equal(path)
         setTimeout(next, 20)
       })

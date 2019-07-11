@@ -6,9 +6,8 @@ import * as C from '../../../constants'
 import * as testHelper from '../../../test/helper/test-helper'
 import { ConfigPermission } from './config-permission';
 
-const options = testHelper.getDeepstreamPermissionOptions()
-const config = options.config
-const testPermission = testHelper.testPermission(options)
+const { config, services } = testHelper.getDeepstreamPermissionOptions()
+const testPermission = testHelper.testPermission({ config, services })
 
 describe('supports spaces after variables and escaped quotes', () => {
   it('errors for read with data', () => {
@@ -20,7 +19,7 @@ describe('supports spaces after variables and escaped quotes', () => {
 
     try {
       // tslint:disable-next-line:no-unused-expression
-      new ConfigPermission(config, {}, permissions)
+      new ConfigPermission(config, services, permissions)
     } catch (e) {
       expect(e.toString()).to.contain('invalid permission config - rule read for record does not support data')
     }

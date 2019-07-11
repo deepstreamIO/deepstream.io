@@ -148,7 +148,7 @@ export class Deepstream extends EventEmitter {
       throw new Error('The server is already stopped.')
     }
 
-    if ([STATES.CONNECTION_ENDPOINT_SHUTDOWN, STATES.PLUGIN_SHUTDOWN, STATES.LOGGER_SHUTDOWN].indexOf(this.currentState) !== -1) {
+    if ([STATES.CONNECTION_ENDPOINT_SHUTDOWN, STATES.SERVICE_SHUTDOWN, STATES.PLUGIN_SHUTDOWN, STATES.LOGGER_SHUTDOWN].indexOf(this.currentState) !== -1) {
       this.services.logger.info(EVENT.INFO, `Server is currently shutting down, currently in state ${STATES[this.currentState]}`)
       return
     }
@@ -202,9 +202,8 @@ export class Deepstream extends EventEmitter {
  */
   private async loggerInit (): Promise<void> {
     const logger = this.services.logger
-    const loggerInitialiser = new DependencyInitialiser(this, this.config, this.services, logger, 'logger')
+    const loggerInitialiser = new DependencyInitialiser(this.config, this.services, logger, 'logger')
     await loggerInitialiser.whenReady()
-    logger.on('error', this.onPluginError.bind(this, 'logger'))
 
     const infoLogger = (message: string) => this.services.logger.info(EVENT.INFO, message)
     infoLogger(`server name: ${this.config.serverName}`)
@@ -227,14 +226,12 @@ export class Deepstream extends EventEmitter {
   */
   private async serviceInit () {
     const readyPromises = Object.keys(this.services).reduce((promises, serviceName) => {
-      if (['connectionEndpoints', 'plugins'].includes(serviceName)) {
+      if (['connectionEndpoints', 'plugins', 'notifyFatalException'].includes(serviceName)) {
         return promises
       }
       const service = (this.services as any)[serviceName] as DeepstreamPlugin
-      const initialiser = new DependencyInitialiser(this, this.config, this.services, service, serviceName)
-      if (initialiser.isReady === false) {
-        promises.push(initialiser.whenReady())
-      }
+      const initialiser = new DependencyInitialiser(this.config, this.services, service, serviceName)
+      promises.push(initialiser.whenReady())
       return promises
     }, [] as Array<Promise<void>>)
 
@@ -303,7 +300,6 @@ export class Deepstream extends EventEmitter {
     for (let i = 0; i < endpoints.length; i++) {
       const connectionEndpoint = endpoints[i]
       const dependencyInitialiser = new DependencyInitialiser(
-        this,
         this.config,
         this.services,
         connectionEndpoint,
@@ -311,15 +307,12 @@ export class Deepstream extends EventEmitter {
       )
 
       connectionEndpoint.onMessages = this.messageProcessor.process.bind(this.messageProcessor)
-      connectionEndpoint.on(
-        'client-connected',
-        this.presenceHandler.handleJoin.bind(this.presenceHandler)
-      )
-      connectionEndpoint.on(
-        'client-disconnected',
-        this.presenceHandler.handleLeave.bind(this.presenceHandler)
-      )
-
+      if (connectionEndpoint.setConnectionListener) {
+        connectionEndpoint.setConnectionListener({
+          onClientConnected: this.presenceHandler.handleJoin.bind(this.presenceHandler),
+          onClientDisconnected: this.presenceHandler.handleLeave.bind(this.presenceHandler)
+        })
+      }
       readyPromises.push(dependencyInitialiser.whenReady())
     }
 
@@ -403,12 +396,12 @@ private async pluginsShutdown () {
   private loadConfig (config: PartialDeepstreamConfig | string | null): void {
     let result
     if (config === null || typeof config === 'string') {
-      result = jsYamlLoader.loadConfig(config)
+      result = jsYamlLoader.loadConfig(this, config)
       this.configFile = result.file
     } else {
       configInitialiser.mergeConnectionOptions(config)
       const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
-      result = configInitialiser.initialise(rawConfig)
+      result = configInitialiser.initialise(this, rawConfig)
     }
     configValidator.validate(result.config)
     this.config = result.config
@@ -429,18 +422,6 @@ private async pluginsShutdown () {
     process.stdout.write(
     ` =====================   starting   =====================${EOL}`
   )
-  }
-
-/**
- * Callback for plugin errors that occur at runtime. Errors during initialisation
- * are handled by the DependencyInitialiser
- */
-  private onPluginError (pluginName: string, error: Error): void {
-    const msg = `Error from ${pluginName} plugin: ${error.toString()}`
-    this.services.logger.error(EVENT.PLUGIN_ERROR, msg)
-    if (this.config.exitOnPluginError) {
-      process.exit(1)
-    }
   }
 }
 

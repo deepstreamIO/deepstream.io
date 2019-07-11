@@ -11,7 +11,8 @@ export function get (): DeepstreamConfig {
     showLogo: true,
     logLevel: LOG_LEVEL.INFO,
     dependencyInitialisationTimeout: 2000,
-    exitOnPluginError: false,
+    // defaults to false as the event is captured via commander when run via binary or standalone
+    exitOnFatalError: false,
 
     /*
      * Connectivity

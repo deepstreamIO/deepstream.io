@@ -7,6 +7,8 @@ import { Message, JSONObject, RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESEN
 import RecordHandler from '../../../handlers/record/record-handler'
 import { DeepstreamPlugin, Permission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper } from '../../../types'
 import { readAndParseFile } from '../../../config/js-yaml-loader'
+import { EventEmitter } from 'events';
+import { EVENT } from '../../../../binary-protocol/src/message-constants';
 
 const UNDEFINED = 'undefined'
 
@@ -14,13 +16,15 @@ export type RuleType = string
 export type ValveSection = string
 
 export class ConfigPermission extends DeepstreamPlugin implements Permission {
-  public isReady: boolean = false
+  private isReady: boolean = false
   public description: string = `valve permissions loaded from ${this.permissionOptions.path}`
 
   private ruleCache: RuleCache
   private permissions: any
   private recordHandler: RecordHandler | null = null
   private optionsValid: boolean = true
+  private emitter = new EventEmitter()
+  private logger = this.services.logger.getNameSpace('PERMISSION')
 
   /**
    * A permission handler that reads a rules config YAML or JSON, validates
@@ -38,7 +42,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
     const maxRuleIterations = permissionOptions.maxRuleIterations
     if (maxRuleIterations !== undefined && maxRuleIterations < 1) {
       this.optionsValid = false
-      process.nextTick(() => this.emit('error', 'Maximum rule iteration has to be at least one '))
+      this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Maximum rule iteration has to be at least one')
     } else if (permissions) {
       this.useConfig(permissions)
     }
@@ -46,7 +50,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
 
   public async whenReady (): Promise<void> {
     if (!this.isReady) {
-      return new Promise((resolve) => this.once('ready', resolve))
+      return new Promise((resolve) => this.emitter.once('ready', resolve))
     }
   }
 
@@ -77,10 +81,10 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
   public loadConfig (filePath: string): void {
     readAndParseFile(filePath, (loadError: Error | null, permissions: any) => {
       if (loadError) {
-        this.emit('error', `error while loading config: ${loadError.toString()}`)
+        this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `error while loading config at ${filePath}`)
         return
       }
-      this.emit('config-loaded', filePath)
+      this.emitter.emit('config-loaded', filePath)
       this.useConfig(permissions)
     })
   }
@@ -96,7 +100,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
     const validationResult = configValidator.validate(permissions)
 
     if (validationResult !== true) {
-      this.emit('error', `invalid permission config - ${validationResult}`)
+      this.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, `invalid permission config - ${validationResult}`)
       return
     }
 
@@ -146,7 +150,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
       name: message.name!,
       callback,
       passItOn,
-      logger: this.services.logger,
+      logger: this.logger,
       permissionOptions: this.permissionOptions,
       config: this.config,
       services: this.services,
@@ -194,7 +198,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
   private ready (): void {
     if (this.isReady === false) {
       this.isReady = true
-      this.emit('ready')
+      this.emitter.emit('ready')
     }
   }
 

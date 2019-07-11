@@ -5,6 +5,7 @@ import * as path from 'path'
 import { get as getDefaultOptions } from '../default-options'
 import { merge } from '../utils/utils'
 import { DeepstreamConfig } from '../types'
+import Deepstream from '../deepstream.io'
 
 const configInitialiser = require('./config-initialiser')
 const fileUtils = require('./file-utils')
@@ -65,9 +66,9 @@ export const loadConfigWithoutInitialisation = function (filePath: string | null
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  */
-export const loadConfig = function (filePath: string | null, args?: object) {
+export const loadConfig = function (deepstream: Deepstream, filePath: string | null, args?: object) {
   const config = loadConfigWithoutInitialisation(filePath, args)
-  const result = configInitialiser.initialise(config.config)
+  const result = configInitialiser.initialise(deepstream, config.config)
   return {
     config: result.config,
     services: result.services,

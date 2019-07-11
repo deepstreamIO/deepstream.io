@@ -38,7 +38,7 @@ function action () {
   const { Deepstream } = require('../src/deepstream.io')
   try {
     const ds = new Deepstream(null)
-    ds.on(EVENT.PLUGIN_INITIALIZATION_ERROR, () => process.exit(1))
+    ds.on(EVENT.FATAL_EXCEPTION, () => process.exit(1))
     ds.start()
     process
       .removeAllListeners('SIGINT').on('SIGINT', () => {

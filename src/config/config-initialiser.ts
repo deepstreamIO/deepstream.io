@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
 import { DeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, Storage, StorageReadCallback, StorageWriteCallback, Authentication, Permission, LOG_LEVEL } from '../types'
-import { JSONObject } from '../../binary-protocol/src/message-constants'
+import { JSONObject, EVENT } from '../../binary-protocol/src/message-constants'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
@@ -21,6 +21,7 @@ import { LocalMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 import { get as getDefaultOptions } from '../default-options'
+import Deepstream from '../deepstream.io';
 
 let commandLineArguments: any
 
@@ -62,13 +63,20 @@ export const registerPlugin = function (name: string, construct: Function) {
  * Takes a configuration object and instantiates functional properties.
  * CLI arguments will be considered.
  */
-export const initialise = function (config: DeepstreamConfig): { config: DeepstreamConfig, services: DeepstreamServices } {
+export const initialise = function (deepstream: Deepstream, config: DeepstreamConfig): { config: DeepstreamConfig, services: DeepstreamServices } {
   commandLineArguments = global.deepstreamCLI || {}
   handleUUIDProperty(config)
   handleSSLProperties(config)
   mergeConnectionOptions(config)
 
   const services = {} as DeepstreamServices
+  services.notifyFatalException = () => {
+    if (config.exitOnFatalError) {
+      process.exit(1)
+    } else {
+      deepstream.emit(EVENT.FATAL_EXCEPTION)
+    }
+  }
   services.logger = handleLogger(config, services)
 
   services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions'))(config.subscriptions.options, services, config)

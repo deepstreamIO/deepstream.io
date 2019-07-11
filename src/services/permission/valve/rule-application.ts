@@ -1,6 +1,6 @@
 import { EOL } from 'os'
 import { Message, RECORD_ACTIONS, PRESENCE_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, RecordData, TOPIC, RecordWriteMessage, EVENT } from '../../../constants'
-import { PermissionCallback, ValveConfig, Logger, SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../../../types'
+import { PermissionCallback, ValveConfig, SocketWrapper, DeepstreamConfig, DeepstreamServices, NamespacedLogger } from '../../../types'
 import { recordRequest } from '../../../handlers/record/record-request'
 import RecordHandler from '../../../handlers/record/record-handler'
 import { setValue } from '../../../utils/json-path'
@@ -25,7 +25,7 @@ interface RuleApplicationParams {
    callback: PermissionCallback,
    passItOn: any,
    permissionOptions: ValveConfig
-   logger: Logger
+   logger: NamespacedLogger
    recordHandler: RecordHandler
    socketWrapper: SocketWrapper
    config: DeepstreamConfig

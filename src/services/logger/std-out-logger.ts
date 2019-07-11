@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { DeepstreamPlugin, Logger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL } from '../../types'
+import { DeepstreamPlugin, Logger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger } from '../../types'
 import { EVENT } from '../../constants'
 
 const EOL = require('os').EOL
@@ -14,6 +14,7 @@ export class StdOutLogger extends DeepstreamPlugin implements Logger {
     'green',
     'yellow',
     'red',
+    'blue'
   ]
 
   /**
@@ -32,10 +33,49 @@ export class StdOutLogger extends DeepstreamPlugin implements Logger {
     return logLevel < this.currentLogLevel
   }
 
+  public debug (event: EVENT, logMessage: string): void {
+    this.log(LOG_LEVEL.DEBUG, '', event, logMessage)
+  }
+
+  public info (event: EVENT, logMessage: string): void {
+    this.log(LOG_LEVEL.INFO, '', event, logMessage)
+  }
+
+  public warn (event: EVENT, logMessage: string): void {
+    this.log(LOG_LEVEL.WARN, '', event, logMessage)
+  }
+
+  public error (event: EVENT, logMessage: string): void {
+    this.log(LOG_LEVEL.ERROR, '', event, logMessage)
+  }
+
+  public fatal(event: EVENT, logMessage: string): void {
+    this.log(LOG_LEVEL.FATAL, '', event, logMessage)
+    this.services.notifyFatalException()
+  }
+
+  public getNameSpace (namespace: string): NamespacedLogger {
+    return {
+      shouldLog: this.shouldLog.bind(this),
+      fatal: this.log.bind(this, LOG_LEVEL.FATAL, namespace),
+      error: this.log.bind(this, LOG_LEVEL.ERROR, namespace),
+      warn: this.log.bind(this, LOG_LEVEL.WARN, namespace),
+      info: this.log.bind(this, LOG_LEVEL.INFO, namespace),
+      debug: this.log.bind(this, LOG_LEVEL.DEBUG, namespace),
+    }
+  }
+
+  /**
+   * Sets the log-level. This can be called at runtime.
+   */
+  public setLogLevel (logLevel: LOG_LEVEL) {
+    this.currentLogLevel = logLevel
+  }
+
   /**
    * Logs a line
    */
-  public log (logLevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
+  private log (logLevel: LOG_LEVEL, namespace: string, event: EVENT, logMessage: string): void {
     if (logLevel >= LOG_LEVEL.WARN && this.services) {
       this.services.monitoring.onErrorLog(logLevel, event, logMessage)
     }
@@ -44,7 +84,7 @@ export class StdOutLogger extends DeepstreamPlugin implements Logger {
       return
     }
 
-    const msg = `${event} | ${logMessage}`
+    const msg = `${namespace ? `${namespace} | ` : '' }${event} | ${logMessage}`
     let outputStream
 
     if (logLevel === LOG_LEVEL.ERROR || logLevel === LOG_LEVEL.WARN) {
@@ -58,28 +98,9 @@ export class StdOutLogger extends DeepstreamPlugin implements Logger {
     } else {
       (process as any)[outputStream].write(msg + EOL)
     }
-  }
 
-  public debug (event: EVENT, logMessage: string): void {
-    this.log(LOG_LEVEL.DEBUG, event, logMessage)
-  }
-
-  public info (event: EVENT, logMessage: string): void {
-    this.log(LOG_LEVEL.INFO, event, logMessage)
-  }
-
-  public warn (event: EVENT, logMessage: string): void {
-    this.log(LOG_LEVEL.WARN, event, logMessage)
-  }
-
-  public error (event: EVENT, logMessage: string): void {
-    this.log(LOG_LEVEL.ERROR, event, logMessage)
-  }
-
-  /**
-   * Sets the log-level. This can be called at runtime.
-   */
-  public setLogLevel (logLevel: LOG_LEVEL) {
-    this.currentLogLevel = logLevel
+    if (logLevel === LOG_LEVEL.FATAL) {
+      this.services.notifyFatalException()
+    }
   }
 }

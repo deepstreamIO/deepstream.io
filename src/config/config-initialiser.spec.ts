@@ -3,6 +3,7 @@ import { expect } from 'chai'
 import * as path from 'path'
 import * as defaultConfig from '../default-options'
 import * as configInitialiser from './config-initialiser'
+import { EventEmitter } from 'events'
 
 describe('config-initialiser', () => {
   before(() => {
@@ -20,7 +21,7 @@ describe('config-initialiser', () => {
           options: { some: 'options' }
         }
       } as any
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.plugins.custom.description).to.equal('mock-plugin')
     })
 
@@ -32,7 +33,7 @@ describe('config-initialiser', () => {
           options: {}
         }
       } as any
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.toString()).to.equal('[object Object]')
     })
 
@@ -46,7 +47,7 @@ describe('config-initialiser', () => {
           options: { some: 'options' }
         }
       } as any
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.plugins.mock.description).to.equal('mock-plugin')
     })
   })
@@ -57,7 +58,7 @@ describe('config-initialiser', () => {
         const config = defaultConfig.get()
         config[key] = './does-not-exist'
         expect(() => {
-          configInitialiser.initialise(config)
+          configInitialiser.initialise(new EventEmitter(), config)
         }).to.throw(new Error())
       })
     })
@@ -67,7 +68,7 @@ describe('config-initialiser', () => {
 
       const config = defaultConfig.get()
       config.sslKey = './sslKey.pem'
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.config.sslKey).to.equal('I\'m a key')
     })
   })
@@ -83,7 +84,7 @@ describe('config-initialiser', () => {
         }
       } as any
       try {
-        configInitialiser.initialise(config)
+        configInitialiser.initialise(new EventEmitter(), config)
       } catch (e) {
         errored = true
         expect(e.toString()).to.contain(path.join('/foobar', '@deepstream/cache-blablub'))
@@ -104,7 +105,7 @@ describe('config-initialiser', () => {
       config.auth = {
         type: 'none'
       } as any
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.equal('Open Authentication')
     })
 
@@ -118,7 +119,7 @@ describe('config-initialiser', () => {
           path: './users.json'
         }
       }
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.contain('file using')
       expect(result.services.authentication.description).to.contain(path.resolve('src/test/config/users.json'))
     })
@@ -138,7 +139,7 @@ describe('config-initialiser', () => {
         }
       }
 
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.equal('http webhook to http://some-url.com')
     })
 
@@ -148,11 +149,11 @@ describe('config-initialiser', () => {
       delete config.auth
 
       expect(() => {
-        configInitialiser.initialise(config)
+        configInitialiser.initialise(new EventEmitter(), config)
       }).to.throw('No authentication type specified')
     })
 
-    it('allows passing a custom authentication handler', () => {
+    it('allows passing a custom authentication handler', async () => {
       const config = defaultConfig.get()
 
       config.auth = {
@@ -162,8 +163,8 @@ describe('config-initialiser', () => {
         }
       }
 
-      const result = configInitialiser.initialise(config)
-      expect(result.services.authentication.isReady).to.equal(true)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
+      await result.services.authentication.whenReady()
     })
 
     it('tries to find a custom authentication handler from name', () => {
@@ -175,7 +176,7 @@ describe('config-initialiser', () => {
       }
 
       expect(() => {
-        configInitialiser.initialise(config)
+        configInitialiser.initialise(new EventEmitter(), config)
       }).to.throw(/Cannot find module/)
     })
 
@@ -188,7 +189,7 @@ describe('config-initialiser', () => {
       }
 
       expect(() => {
-        configInitialiser.initialise(config)
+        configInitialiser.initialise(new EventEmitter(), config)
       }).to.throw('Unknown authentication type bla')
     })
 
@@ -201,7 +202,7 @@ describe('config-initialiser', () => {
         options: {}
       }
 
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.equal('Open Authentication')
       delete global.deepstreamCLI
     })
@@ -218,7 +219,7 @@ describe('config-initialiser', () => {
           path: './basic-permission-config.json'
         }
       }
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.permission.description).to.contain('valve permissions loaded from')
       expect(result.services.permission.description).to.contain(path.resolve('./src/test/config/basic-permission-config.json'))
     })
@@ -233,11 +234,11 @@ describe('config-initialiser', () => {
         }
       }
       expect(() => {
-        configInitialiser.initialise(config)
+        configInitialiser.initialise(new EventEmitter(), config)
       }).to.throw('Unknown permission type does-not-exist')
     })
 
-    it('allows passing a custom permission handler', () => {
+    it('allows passing a custom permission handler', async () => {
       const config = defaultConfig.get()
 
       config.permission = {
@@ -247,8 +248,8 @@ describe('config-initialiser', () => {
         }
       }
 
-      const result = configInitialiser.initialise(config)
-      expect(result.services.permission.isReady).to.equal(true)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
+      await result.services.permission.whenReady()
     })
 
     it('tries to find a custom authentication handler from name', () => {
@@ -260,7 +261,7 @@ describe('config-initialiser', () => {
       }
 
       expect(() => {
-        configInitialiser.initialise(config)
+        configInitialiser.initialise(new EventEmitter(), config)
       }).to.throw(/Cannot find module/)
     })
 
@@ -269,7 +270,7 @@ describe('config-initialiser', () => {
       delete config.permission
 
       expect(() => {
-        configInitialiser.initialise(config)
+        configInitialiser.initialise(new EventEmitter(), config)
       }).to.throw('No permission type specified')
     })
 
@@ -282,7 +283,7 @@ describe('config-initialiser', () => {
         options: {}
       }
 
-      const result = configInitialiser.initialise(config)
+      const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.permission.description).to.equal('none')
       delete global.deepstreamCLI
     })

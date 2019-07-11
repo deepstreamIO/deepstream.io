@@ -9,7 +9,8 @@ import {
   Message,
   JSONObject,
 } from '../../../binary-protocol/src/message-constants'
-import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin } from '../../types'
+import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin, ConnectionListener } from '../../types'
+import { EventEmitter } from 'events';
 
 const OPEN = 'OPEN'
 
@@ -20,18 +21,12 @@ export interface WebSocketServerConfig {
   [index: string]: any,
 }
 
-enum ClientEvent {
-  CLIENT_CONNECTED = 'client-connected',
-  CLIENT_DISCONNECTED = 'client-disconnected'
-}
-
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
  * connections and authentication requests, authenticates sockets and
  * forwards messages it receives from authenticated sockets.
  */
 export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implements SocketConnectionEndpoint {
-  public isReady: boolean = false
   public description: string = 'µWebSocket Connection Endpoint'
 
   private initialised: boolean = false
@@ -42,6 +37,10 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   private maxAuthAttempts: number = 3
   private unauthenticatedClientTimeout: number | boolean = false
   private urlPath: string | null = null
+  private connectionListener!: ConnectionListener
+
+  private isReady: boolean = false
+  private emitter = new EventEmitter()
 
   constructor (protected options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: DeepstreamConfig) {
     super()
@@ -50,7 +49,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
 
   public async whenReady (): Promise<void> {
     if (!this.isReady) {
-      return new Promise((resolve) => this.once('ready', resolve))
+      return new Promise((resolve) => this.emitter.once('ready', resolve))
     }
   }
 
@@ -61,6 +60,10 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   }
 
   public onSocketWrapperClosed (socketWrapper: SocketWrapper) {
+  }
+
+  public setConnectionListener (connectionListener: ConnectionListener) {
+    this.connectionListener = connectionListener
   }
 
   /**
@@ -173,7 +176,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     this.services.logger.info(EVENT.INFO, wsMsg)
     const hcMsg = `Listening for health checks on path ${this.getOption('healthCheckPath')} `
     this.services.logger.info(EVENT.INFO, hcMsg)
-    this.emit('ready')
+    this.emitter.emit('ready')
     this.isReady = true
   }
 
@@ -334,7 +337,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     })
 
     if (socketWrapper.user !== OPEN) {
-      this.emit(ClientEvent.CLIENT_CONNECTED, socketWrapper)
+      this.connectionListener.onClientConnected(socketWrapper)
     }
 
     this.services.logger!.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_SUCCESSFUL], socketWrapper.user!)
@@ -428,7 +431,8 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       }
 
       if (socketWrapper.user !== OPEN) {
-        this.emit(ClientEvent.CLIENT_DISCONNECTED, socketWrapper)
+        // TODO: ERROR
+        this.connectionListener.onClientDisconnected(socketWrapper)
       }
     }
   }
