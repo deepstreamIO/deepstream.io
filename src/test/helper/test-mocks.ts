@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events'
-import { Message } from '../../constants'
-import { JSONObject } from '../../../binary-protocol/src/message-constants'
+import { Message, JSONObject } from '../../constants'
 import { SocketWrapper } from '../../types'
 const sinon = require('sinon')
 

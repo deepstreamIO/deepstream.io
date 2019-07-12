@@ -1,5 +1,5 @@
-import { EVENT, EVENT_ACTIONS, RECORD_ACTIONS, TOPIC, ListenMessage } from '../constants'
-import { SubscriptionListener, DeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry, SubscriptionRegistry } from '../types'
+import { EVENT_ACTION, RECORD_ACTION, TOPIC, ListenMessage, STATE_REGISTRY_TOPIC } from '../constants'
+import { EVENT, SubscriptionListener, DeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry, SubscriptionRegistry } from '../types'
 import { shuffleArray } from '../utils/utils'
 
 interface ListenInProgress {
@@ -12,8 +12,8 @@ export class ListenerRegistry implements SubscriptionListener {
   private uniqueLockName = `${this.topic}_LISTEN_LOCK`
   private patterns = new Map<string, RegExp>()
   private locallyProvidedRecords = new Map<string, Provider>()
-  private messageTopic: TOPIC
-  private actions: typeof RECORD_ACTIONS | typeof EVENT_ACTIONS
+  private messageTopic: TOPIC | STATE_REGISTRY_TOPIC
+  private actions: typeof RECORD_ACTION | typeof EVENT_ACTION
 
   private listenInProgress = new Map<string, ListenInProgress>()
   private unsuccesfulMatches = new Map<string, number>()
@@ -40,24 +40,24 @@ export class ListenerRegistry implements SubscriptionListener {
   * notification logic is handled by this.providerRegistry
   */
   constructor (private topic: TOPIC, private config: DeepstreamConfig, private services: DeepstreamServices, private clientRegistry: SubscriptionRegistry, private metaData: any = {}) {
-    this.actions = topic === TOPIC.RECORD ? RECORD_ACTIONS : EVENT_ACTIONS
+    this.actions = topic === TOPIC.RECORD ? RECORD_ACTION : EVENT_ACTION
 
     this.triggerNextProvider = this.triggerNextProvider.bind(this)
 
     if (this.topic === TOPIC.RECORD) {
       this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
-        TOPIC.RECORD_LISTEN_PATTERNS,
-        TOPIC.RECORD_LISTEN_PATTERNS,
+        STATE_REGISTRY_TOPIC.RECORD_LISTEN_PATTERNS,
+        STATE_REGISTRY_TOPIC.RECORD_LISTEN_PATTERNS,
       )
-      this.clusterProvidedRecords = this.services.clusterStates.getStateRegistry(TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
-      this.messageTopic = TOPIC.RECORD_LISTENING
+      this.clusterProvidedRecords = this.services.clusterStates.getStateRegistry(STATE_REGISTRY_TOPIC.RECORD_PUBLISHED_SUBSCRIPTIONS)
+      this.messageTopic = STATE_REGISTRY_TOPIC.RECORD_LISTENING
     } else {
       this.providerRegistry = this.services.subscriptions.getSubscriptionRegistry(
-        TOPIC.EVENT_LISTEN_PATTERNS,
-        TOPIC.EVENT_LISTEN_PATTERNS,
+        STATE_REGISTRY_TOPIC.EVENT_LISTEN_PATTERNS,
+        STATE_REGISTRY_TOPIC.EVENT_LISTEN_PATTERNS,
       )
-      this.clusterProvidedRecords = this.services.clusterStates.getStateRegistry(TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
-      this.messageTopic = TOPIC.EVENT_LISTENING
+      this.clusterProvidedRecords = this.services.clusterStates.getStateRegistry(STATE_REGISTRY_TOPIC.EVENT_PUBLISHED_SUBSCRIPTIONS)
+      this.messageTopic = STATE_REGISTRY_TOPIC.EVENT_LISTENING
     }
 
     this.providerRegistry.setAction('subscribe', this.actions.LISTEN)
@@ -474,7 +474,7 @@ export class ListenerRegistry implements SubscriptionListener {
     if (socketWrapper && this.topic === TOPIC.RECORD) {
       socketWrapper.sendMessage({
         topic: this.topic,
-        action: hasProvider ? RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER : RECORD_ACTIONS.SUBSCRIPTION_HAS_NO_PROVIDER,
+        action: hasProvider ? RECORD_ACTION.SUBSCRIPTION_HAS_PROVIDER : RECORD_ACTION.SUBSCRIPTION_HAS_NO_PROVIDER,
         name: subscriptionName,
       })
     }
@@ -489,7 +489,7 @@ export class ListenerRegistry implements SubscriptionListener {
     }
     this.clientRegistry.sendToSubscribers(subscriptionName, {
       topic: this.topic,
-      action: hasProvider ? RECORD_ACTIONS.SUBSCRIPTION_HAS_PROVIDER : RECORD_ACTIONS.SUBSCRIPTION_HAS_NO_PROVIDER,
+      action: hasProvider ? RECORD_ACTION.SUBSCRIPTION_HAS_PROVIDER : RECORD_ACTION.SUBSCRIPTION_HAS_NO_PROVIDER,
       name: subscriptionName,
     }, false, null)
   }

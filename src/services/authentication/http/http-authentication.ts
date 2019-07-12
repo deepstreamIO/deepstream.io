@@ -1,6 +1,6 @@
 import { post } from 'needle'
-import { DeepstreamPlugin, UserAuthenticationCallback, DeepstreamServices, DeepstreamConfig, Authentication } from '../../../types'
-import { JSONObject, EVENT } from '../../../constants'
+import { EVENT, DeepstreamPlugin, UserAuthenticationCallback, DeepstreamServices, DeepstreamConfig, Authentication } from '../../../types'
+import { JSONObject } from '../../../constants'
 import { validateMap } from '../../../utils/utils'
 
 interface HttpAuthenticationHandlerSettings {

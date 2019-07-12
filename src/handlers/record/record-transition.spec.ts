@@ -35,7 +35,7 @@ describe('RecordTransition', () => {
   it('sends write acknowledgement with sync cache and async storage', async () => {
     const message: C.RecordWriteMessage = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'random-name',
       correlationId: '30',
       data: 'somedata',
@@ -55,7 +55,7 @@ describe('RecordTransition', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        action: C.RECORD_ACTION.WRITE_ACKNOWLEDGEMENT,
         name: message.name,
         correlationId: message.correlationId
       })

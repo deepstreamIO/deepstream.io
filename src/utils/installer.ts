@@ -6,7 +6,7 @@ import * as os from 'os'
 import * as AdmZip from 'adm-zip'
 import { execSync } from 'child_process'
 import * as mkdirp from 'mkdirp'
-import { JSONObject } from '../../binary-protocol/src/message-constants'
+import { JSONObject } from '../constants'
 
 const CONFIG_EXAMPLE_FILE = 'example-config.yml'
 const SYSTEM: { [index: string]: string } = {

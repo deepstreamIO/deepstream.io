@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
-import { parseData, isError } from '../../../binary-protocol/src/message-parser'
 import { DeepstreamServices, UnauthenticatedSocketWrapper } from '../../types'
 import { Message } from '../../constants'
+import { parseData } from '../../../binary-protocol/src/message-parser'
 
 export default class HTTPSocketWrapper extends EventEmitter implements UnauthenticatedSocketWrapper {
   public user: string | null = null
@@ -86,7 +86,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements Unauthent
    * Sends a message based on the provided action and topic
    */
   public sendMessage (message: Message) {
-    if (isError(message)) {
+    if (message.action >= 100) {
       message.isError = true
     }
     if (this.isClosed === false) {

@@ -1,4 +1,5 @@
-export * from '../binary-protocol/src/message-constants'
+export * from '../binary-protocol/types/all'
+export * from '../binary-protocol/types/messages'
 
 export enum STATES {
     LOGGER_INIT = 'LOGGER_INIT',

@@ -3,12 +3,11 @@ import * as configValidator from './config-validator'
 import RuleApplication from './rule-application'
 import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
-import { Message, JSONObject, RECORD_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, PRESENCE_ACTIONS } from '../../../constants'
+import { Message, JSONObject, RECORD_ACTION, EVENT_ACTION, RPC_ACTION, PRESENCE_ACTION } from '../../../constants'
 import RecordHandler from '../../../handlers/record/record-handler'
-import { DeepstreamPlugin, Permission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper } from '../../../types'
+import { DeepstreamPlugin, Permission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper, EVENT } from '../../../types'
 import { readAndParseFile } from '../../../config/js-yaml-loader'
-import { EventEmitter } from 'events';
-import { EVENT } from '../../../../binary-protocol/src/message-constants';
+import { EventEmitter } from 'events'
 
 const UNDEFINED = 'undefined'
 
@@ -144,7 +143,7 @@ export class ConfigPermission extends DeepstreamPlugin implements Permission {
       path: ruleData,
       ruleSpecification,
       message,
-      action: ruleSpecification.action as (RECORD_ACTIONS | EVENT_ACTIONS | RPC_ACTIONS | PRESENCE_ACTIONS),
+      action: ruleSpecification.action as (RECORD_ACTION | EVENT_ACTION | RPC_ACTION | PRESENCE_ACTION),
       regexp: ruleData.regexp,
       rule: ruleData.rule,
       name: message.name!,

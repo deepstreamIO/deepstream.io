@@ -1,16 +1,7 @@
-import {
-  ALL_ACTIONS,
-  AUTH_ACTIONS,
-  CONNECTION_ACTIONS,
-  EVENT,
-  PARSER_ACTIONS,
-  ParseResult,
-  TOPIC,
-  Message,
-  JSONObject,
-} from '../../../binary-protocol/src/message-constants'
-import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin, ConnectionListener } from '../../types'
-import { EventEmitter } from 'events';
+
+import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin, ConnectionListener, EVENT } from '../../types'
+import { EventEmitter } from 'events'
+import { Message, ParseResult, PARSER_ACTION, TOPIC, CONNECTION_ACTION, ALL_ACTIONS, JSONObject, AUTH_ACTION } from '../../constants'
 
 const OPEN = 'OPEN'
 
@@ -132,8 +123,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     const messages: Message[] = []
     for (const parseResult of parseResults) {
       if (parseResult.parseError) {
-        const rawMsg = this.getRaw(parseResult)
-        this.services.logger!.warn(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], `error parsing connection message ${rawMsg}`)
+        this.services.logger!.warn(PARSER_ACTION[PARSER_ACTION.MESSAGE_PARSE_ERROR], 'error parsing connection message')
 
         socketWrapper.sendMessage({
           topic: TOPIC.PARSER,
@@ -148,24 +138,13 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       const message = parseResult as Message
       if (
           message.topic === TOPIC.CONNECTION &&
-          message.action === CONNECTION_ACTIONS.PONG
+          message.action === CONNECTION_ACTION.PONG
       ) {
         continue
       }
       messages.push(message)
     }
     return messages
-  }
-
-  private getRaw (parseResult: ParseResult): string {
-    if (parseResult.raw && typeof parseResult.raw === 'string') {
-      return parseResult.raw
-    } else if (parseResult.parseError && parseResult.parsedMessage) {
-      return JSON.stringify(parseResult.parsedMessage)
-    } else if (parseResult.raw instanceof Buffer) {
-      return JSON.stringify(parseResult.raw)
-    }
-    return ''
   }
 
   /**
@@ -215,28 +194,26 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     const msg = parsedMessages[0]
 
     if (msg.topic !== TOPIC.CONNECTION) {
-      const rawMessage = this.getRaw(msg)
-      this.services.logger!.warn(CONNECTION_ACTIONS[CONNECTION_ACTIONS.INVALID_MESSAGE], `invalid connection message ${rawMessage}`)
+      this.services.logger!.warn(CONNECTION_ACTION[CONNECTION_ACTION.INVALID_MESSAGE], 'invalid connection message')
       socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
-        action: CONNECTION_ACTIONS.INVALID_MESSAGE,
+        action: CONNECTION_ACTION.INVALID_MESSAGE,
         originalTopic: msg.topic,
-        originalAction: msg.action,
-        data: rawMessage
+        originalAction: msg.action
       })
       return
     }
 
-    if (msg.action === CONNECTION_ACTIONS.CHALLENGE) {
+    if (msg.action === CONNECTION_ACTION.CHALLENGE) {
       socketWrapper.onMessage = socketWrapper.authCallback!
       socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
-        action: CONNECTION_ACTIONS.ACCEPT
+        action: CONNECTION_ACTION.ACCEPT
       })
       return
     }
 
-    this.services.logger!.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], '', msg.action)
+    this.services.logger!.error(PARSER_ACTION[PARSER_ACTION.UNKNOWN_ACTION], '', msg.action)
   }
 
   /**
@@ -250,11 +227,10 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     let errorMsg
 
     if (msg.topic !== TOPIC.AUTH) {
-      const rawMessage = this.getRaw(msg)
-      this.services.logger!.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE], `invalid auth message ${rawMessage}`)
+      this.services.logger!.warn(AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE], 'invalid auth message')
       socketWrapper.sendMessage({
         topic: TOPIC.AUTH,
-        action: AUTH_ACTIONS.INVALID_MESSAGE,
+        action: AUTH_ACTION.INVALID_MESSAGE,
         originalTopic: msg.topic,
         originalAction: msg.action
       })
@@ -265,12 +241,12 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
      * Log the authentication attempt
      */
     const logMsg = socketWrapper.getHandshakeData().remoteAddress
-    this.services.logger!.debug(AUTH_ACTIONS[AUTH_ACTIONS.REQUEST], logMsg)
+    this.services.logger!.debug(AUTH_ACTION[AUTH_ACTION.REQUEST], logMsg)
 
     /**
      * Ensure the message is a valid authentication message
      */
-    if (msg.action !== AUTH_ACTIONS.REQUEST) {
+    if (msg.action !== AUTH_ACTION.REQUEST) {
       errorMsg = this.logInvalidAuthData === true ? JSON.stringify(msg.parsedData) : ''
       this.sendInvalidAuthMsg(socketWrapper, errorMsg, msg.action)
       return
@@ -306,10 +282,12 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * the message, sends an error to the client and closes the socket
    */
   private sendInvalidAuthMsg (socketWrapper: UnauthenticatedSocketWrapper, msg: string, originalAction: ALL_ACTIONS): void {
-    this.services.logger!.warn(AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '')
+    console.trace()
+    process.exit(1)
+    this.services.logger!.warn(AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '')
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
-      action: AUTH_ACTIONS.INVALID_MESSAGE_DATA,
+      action: AUTH_ACTION.INVALID_MESSAGE_DATA,
       originalAction
     })
     socketWrapper.destroy()
@@ -332,7 +310,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
 
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
-      action: AUTH_ACTIONS.AUTH_SUCCESSFUL,
+      action: AUTH_ACTION.AUTH_SUCCESSFUL,
       parsedData: userData.clientData
     })
 
@@ -340,7 +318,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       this.connectionListener.onClientConnected(socketWrapper)
     }
 
-    this.services.logger!.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_SUCCESSFUL], socketWrapper.user!)
+    this.services.logger!.info(AUTH_ACTION[AUTH_ACTION.AUTH_SUCCESSFUL], socketWrapper.user!)
   }
 
   /**
@@ -367,19 +345,19 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       logMsg += `: ${JSON.stringify(authData)}`
     }
 
-    this.services.logger!.info(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], logMsg)
+    this.services.logger!.info(AUTH_ACTION[AUTH_ACTION.AUTH_UNSUCCESSFUL], logMsg)
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
-      action: AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
+      action: AUTH_ACTION.AUTH_UNSUCCESSFUL,
       parsedData: clientData
     })
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this.maxAuthAttempts) {
-      this.services.logger!.info(AUTH_ACTIONS[AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
+      this.services.logger!.info(AUTH_ACTION[AUTH_ACTION.TOO_MANY_AUTH_ATTEMPTS], 'too many authentication attempts')
       socketWrapper.sendMessage({
         topic: TOPIC.AUTH,
-        action: AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS
+        action: AUTH_ACTION.TOO_MANY_AUTH_ATTEMPTS
       })
       socketWrapper.destroy()
     }
@@ -391,10 +369,10 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    */
   private processConnectionTimeout (socketWrapper: UnauthenticatedSocketWrapper): void {
     const log = 'connection has not authenticated successfully in the expected time'
-    this.services.logger!.info(CONNECTION_ACTIONS[CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT], log)
+    this.services.logger!.info(CONNECTION_ACTION[CONNECTION_ACTION.AUTHENTICATION_TIMEOUT], log)
     socketWrapper.sendMessage({
       topic: TOPIC.CONNECTION,
-      action: CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT
+      action: CONNECTION_ACTION.AUTHENTICATION_TIMEOUT
     })
     socketWrapper.destroy()
   }

@@ -7,8 +7,7 @@ import { EventEmitter } from 'events'
 
 import * as pkg from '../package.json'
 import { merge } from './utils/utils'
-import * as constants_ from './constants'
-const { STATES, EVENT, TOPIC } = constants_
+import { STATES, TOPIC } from './constants'
 
 import MessageProcessor from './utils/message-processor'
 import MessageDistributor from './utils/message-distributor'
@@ -24,7 +23,7 @@ import * as jsYamlLoader from './config/js-yaml-loader'
 import * as configValidator from './config/config-validator'
 
 import { DependencyInitialiser } from './utils/dependency-initialiser'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig } from './types'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT } from './types'
 import RecordHandler from './handlers/record/record-handler'
 import { getValue, setValue } from './utils/json-path'
 
@@ -32,8 +31,6 @@ import { getValue, setValue } from './utils/json-path'
  * Sets the name of the process
  */
 process.title = 'deepstream server'
-
-export const constants = constants_
 
 export class Deepstream extends EventEmitter {
   public constants: any

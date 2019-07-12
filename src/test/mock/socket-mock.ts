@@ -1,4 +1,4 @@
-import { Message } from '../../../binary-protocol/src/message-constants'
+import { Message } from '../../constants'
 
 export default class SocketMock {
   public lastSendMessage: any

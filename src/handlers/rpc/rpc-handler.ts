@@ -1,9 +1,9 @@
-import { PARSER_ACTIONS, RPC_ACTIONS, TOPIC, RPCMessage } from '../../constants'
+import { PARSER_ACTION, RPC_ACTION, TOPIC, RPCMessage, BulkSubscriptionMessage } from '../../constants'
 import { getRandomIntInRange } from '../../utils/utils'
 import { Rpc } from './rpc'
 import { RpcProxy } from './rpc-proxy'
 import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices, SocketWrapper, SubscriptionRegistry } from '../../types'
-import { BulkSubscriptionMessage } from '../../../binary-protocol/src/message-constants';
+import { STATE_REGISTRY_TOPIC } from '../../../binary-protocol/types/all'
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,
@@ -20,12 +20,12 @@ export default class RpcHandler {
   */
   constructor (private config: DeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, private metaData?: any) {
      this.subscriptionRegistry =
-      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RPC, TOPIC.RPC_SUBSCRIPTIONS)
+      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RPC, STATE_REGISTRY_TOPIC.RPC_SUBSCRIPTIONS)
 
-     this.subscriptionRegistry.setAction('NOT_SUBSCRIBED', RPC_ACTIONS.NOT_PROVIDED)
-     this.subscriptionRegistry.setAction('MULTIPLE_SUBSCRIPTIONS', RPC_ACTIONS.MULTIPLE_PROVIDERS)
-     this.subscriptionRegistry.setAction('SUBSCRIBE', RPC_ACTIONS.PROVIDE)
-     this.subscriptionRegistry.setAction('UNSUBSCRIBE', RPC_ACTIONS.UNPROVIDE)
+     this.subscriptionRegistry.setAction('NOT_SUBSCRIBED', RPC_ACTION.NOT_PROVIDED)
+     this.subscriptionRegistry.setAction('MULTIPLE_SUBSCRIPTIONS', RPC_ACTION.MULTIPLE_PROVIDERS)
+     this.subscriptionRegistry.setAction('SUBSCRIBE', RPC_ACTION.PROVIDE)
+     this.subscriptionRegistry.setAction('UNSUBSCRIBE', RPC_ACTION.UNPROVIDE)
 
      this.rpcs = new Map()
   }
@@ -40,31 +40,31 @@ export default class RpcHandler {
       return
     }
 
-    if (message.action === RPC_ACTIONS.REQUEST) {
+    if (message.action === RPC_ACTION.REQUEST) {
       this.makeRpc(socketWrapper, message, false)
       return
    }
 
-    if (message.action === RPC_ACTIONS.PROVIDE) {
+    if (message.action === RPC_ACTION.PROVIDE) {
       this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
-    if (message.action === RPC_ACTIONS.UNPROVIDE) {
+    if (message.action === RPC_ACTION.UNPROVIDE) {
       this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
     if (
-      message.action === RPC_ACTIONS.RESPONSE ||
-      message.action === RPC_ACTIONS.REJECT ||
-      message.action === RPC_ACTIONS.ACCEPT ||
-      message.action === RPC_ACTIONS.REQUEST_ERROR
+      message.action === RPC_ACTION.RESPONSE ||
+      message.action === RPC_ACTION.REJECT ||
+      message.action === RPC_ACTION.ACCEPT ||
+      message.action === RPC_ACTION.REQUEST_ERROR
     ) {
       const rpcData = this.rpcs.get(message.correlationId)
       if (rpcData) {
         this.services.logger.debug(
-          RPC_ACTIONS[message.action],
+          RPC_ACTION[message.action],
           `name: ${message.name} with correlation id: ${message.correlationId} from ${socketWrapper.user}`,
           this.metaData
         )
@@ -72,13 +72,13 @@ export default class RpcHandler {
         return
       }
       this.services.logger.warn(
-        RPC_ACTIONS[RPC_ACTIONS.INVALID_RPC_CORRELATION_ID],
+        RPC_ACTION[RPC_ACTION.INVALID_RPC_CORRELATION_ID],
         `name: ${message.name} with correlation id: ${message.correlationId}`,
         this.metaData
       )
       socketWrapper.sendMessage({
         topic: TOPIC.RPC,
-        action: RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+        action: RPC_ACTION.INVALID_RPC_CORRELATION_ID,
         originalAction: message.action,
         name: message.name,
         correlationId: message.correlationId
@@ -90,7 +90,7 @@ export default class RpcHandler {
     *  RESPONSE-, ERROR-, REJECT- and ACK messages from the provider are processed
     * by the Rpc class directly
     */
-    this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], message.action.toString(), this.metaData)
+    this.services.logger.warn(PARSER_ACTION[PARSER_ACTION.UNKNOWN_ACTION], message.action.toString(), this.metaData)
   }
 
   /**
@@ -156,7 +156,7 @@ export default class RpcHandler {
     const correlationId = message.correlationId
 
     this.services.logger.debug(
-      RPC_ACTIONS[RPC_ACTIONS.REQUEST],
+      RPC_ACTION[RPC_ACTION.REQUEST],
       `name: ${rpcName} with correlation id: ${correlationId} from ${socketWrapper.user}`,
       this.metaData
     )
@@ -176,7 +176,7 @@ export default class RpcHandler {
     if (isRemote) {
       socketWrapper.sendMessage({
         topic: TOPIC.RPC,
-        action: RPC_ACTIONS.NO_RPC_PROVIDER,
+        action: RPC_ACTION.NO_RPC_PROVIDER,
         name: rpcName,
         correlationId
       })
@@ -215,7 +215,7 @@ export default class RpcHandler {
     this.rpcs.delete(correlationId)
 
     this.services.logger.warn(
-      RPC_ACTIONS[RPC_ACTIONS.NO_RPC_PROVIDER],
+      RPC_ACTION[RPC_ACTION.NO_RPC_PROVIDER],
       `name: ${message.name} with correlation id: ${message.correlationId}`,
       this.metaData
     )
@@ -223,7 +223,7 @@ export default class RpcHandler {
     if (!requestor.isRemote) {
       requestor.sendMessage({
         topic: TOPIC.RPC,
-        action: RPC_ACTIONS.NO_RPC_PROVIDER,
+        action: RPC_ACTION.NO_RPC_PROVIDER,
         name: rpcName,
         correlationId
       })
@@ -238,7 +238,7 @@ export default class RpcHandler {
   * specific ones need to be filtered out.
   */
   private onRemoteRPCMessage (msg: RPCMessage, originServerName: string): void {
-    if (msg.action === RPC_ACTIONS.REQUEST) {
+    if (msg.action === RPC_ACTION.REQUEST) {
       const proxy = new RpcProxy(this.config, this.services, originServerName, this.metaData)
       this.makeRpc(proxy, msg, true)
       return
@@ -248,7 +248,7 @@ export default class RpcHandler {
 
     if (!rpcData) {
       this.services.logger.warn(
-        RPC_ACTIONS[RPC_ACTIONS.INVALID_RPC_CORRELATION_ID],
+        RPC_ACTION[RPC_ACTION.INVALID_RPC_CORRELATION_ID],
         `Message bus response for RPC that may have been destroyed: ${JSON.stringify(msg)}`,
         this.metaData,
       )
@@ -256,7 +256,7 @@ export default class RpcHandler {
     }
 
     this.services.logger.debug(
-      RPC_ACTIONS[msg.action],
+      RPC_ACTION[msg.action],
       `name: ${msg.name} with correlation id: ${msg.correlationId} from remote server ${originServerName}`,
       this.metaData
     )

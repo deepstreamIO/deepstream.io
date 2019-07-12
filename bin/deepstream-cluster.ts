@@ -1,7 +1,7 @@
 // @ts-ignore
 import { Command } from 'commander'
 import * as cluster from 'cluster'
-import { EVENT } from '../src/constants'
+import { EVENT } from '../src/types'
 
 export const command = (program: Command) => {
   program

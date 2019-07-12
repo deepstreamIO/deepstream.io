@@ -1,5 +1,5 @@
-import { JSONObject } from '../../../binary-protocol/src/message-constants'
 import { DeepstreamPlugin, Authentication, UserAuthenticationCallback } from '../../types'
+import { JSONObject } from '../../constants'
 
 export default class AuthenticationMock extends DeepstreamPlugin implements Authentication {
   public onClientDisconnectCalledWith: string | null = null

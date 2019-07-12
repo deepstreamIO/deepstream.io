@@ -2,9 +2,8 @@ import 'mocha'
 import { spy, assert } from 'sinon'
 import { expect } from 'chai'
 import { FileBasedAuthentication } from './file-based-authentication'
-import { Logger, DeepstreamServices } from '../../../types'
+import { Logger, DeepstreamServices, EVENT } from '../../../types'
 import { PromiseDelay } from '../../../utils/utils';
-import { EVENT } from '../../../constants';
 
 const createServices = () => {
   return {

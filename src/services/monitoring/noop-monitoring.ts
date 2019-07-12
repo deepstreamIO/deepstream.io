@@ -1,5 +1,5 @@
-import { DeepstreamPlugin, Monitoring, LOG_LEVEL } from '../../types'
-import { EVENT, Message } from '../../constants'
+import { DeepstreamPlugin, Monitoring, LOG_LEVEL, EVENT } from '../../types'
+import { Message } from '../../constants'
 
 export class LocalMonitoring extends DeepstreamPlugin implements Monitoring {
   public description: string = 'noop monitoring'

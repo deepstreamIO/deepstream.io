@@ -31,7 +31,7 @@ describe('the eventHandler routes events correctly', () => {
   it('subscribes to events', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.SUBSCRIBE,
+      action: C.EVENT_ACTION.SUBSCRIBE,
       names: ['someEvent']
     }
     testMocks.subscriptionRegistryMock
@@ -45,7 +45,7 @@ describe('the eventHandler routes events correctly', () => {
   it('unsubscribes to events', () => {
     const unSubscriptionMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.UNSUBSCRIBE,
+      action: C.EVENT_ACTION.UNSUBSCRIBE,
       names: ['someEvent']
     }
     testMocks.subscriptionRegistryMock
@@ -59,7 +59,7 @@ describe('the eventHandler routes events correctly', () => {
   it('triggers event without data', () => {
     const eventMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'someEvent'
     }
     testMocks.subscriptionRegistryMock
@@ -73,7 +73,7 @@ describe('the eventHandler routes events correctly', () => {
   it('triggers event with data', () => {
     const eventMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'someEvent',
       data: JSON.stringify({ data: 'payload' })
     }
@@ -88,7 +88,7 @@ describe('the eventHandler routes events correctly', () => {
   it('registers a listener', () => {
     const listenMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.LISTEN,
+      action: C.EVENT_ACTION.LISTEN,
       name: 'event/.*'
     }
     testMocks.listenerRegistryMock
@@ -102,7 +102,7 @@ describe('the eventHandler routes events correctly', () => {
   it('removes listeners', () => {
     const unlistenMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.UNLISTEN,
+      action: C.EVENT_ACTION.UNLISTEN,
       name: 'event/.*'
     }
     testMocks.listenerRegistryMock
@@ -116,7 +116,7 @@ describe('the eventHandler routes events correctly', () => {
   it('processes listen accepts', () => {
     const listenAcceptMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.LISTEN_ACCEPT,
+      action: C.EVENT_ACTION.LISTEN_ACCEPT,
       name: 'event/.*',
       subscription: 'event/A'
     }
@@ -131,7 +131,7 @@ describe('the eventHandler routes events correctly', () => {
   it('processes listen rejects', () => {
     const listenRejectMessage = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.LISTEN_REJECT,
+      action: C.EVENT_ACTION.LISTEN_REJECT,
       name: 'event/.*',
       subscription: 'event/A'
     }

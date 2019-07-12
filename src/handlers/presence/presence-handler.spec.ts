@@ -32,7 +32,7 @@ describe('presence handler', () => {
   it('subscribes to client logins and logouts', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.PRESENCE,
-      action: C.PRESENCE_ACTIONS.SUBSCRIBE_ALL,
+      action: C.PRESENCE_ACTION.SUBSCRIBE_ALL,
     }
 
     testMocks.subscriptionRegistryMock
@@ -40,7 +40,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.SUBSCRIBE_ALL,
+        action: C.PRESENCE_ACTION.SUBSCRIBE_ALL,
         name: EVERYONE
       }, userOne.socketWrapper, true)
 
@@ -50,7 +50,7 @@ describe('presence handler', () => {
   it('unsubscribes to client logins and logouts', () => {
     const unsubscriptionMessage = {
       topic: C.TOPIC.PRESENCE,
-      action: C.PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
+      action: C.PRESENCE_ACTION.UNSUBSCRIBE_ALL,
     }
 
     testMocks.subscriptionRegistryMock
@@ -58,7 +58,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
+        action: C.PRESENCE_ACTION.UNSUBSCRIBE_ALL,
         name: EVERYONE
       }, userOne.socketWrapper, true)
 
@@ -68,8 +68,8 @@ describe('presence handler', () => {
   it('does not return own name when queried and only user', () => {
     const queryMessage = {
       topic: C.TOPIC.PRESENCE,
-      action: C.PRESENCE_ACTIONS.QUERY_ALL,
-      name: C.PRESENCE_ACTIONS.QUERY_ALL
+      action: C.PRESENCE_ACTION.QUERY_ALL,
+      name: C.PRESENCE_ACTION.QUERY_ALL
     }
 
     testMocks.stateRegistryMock
@@ -83,7 +83,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
+        action: C.PRESENCE_ACTION.QUERY_ALL_RESPONSE,
         names: []
       })
 
@@ -142,7 +142,7 @@ describe('presence handler', () => {
   it('returns one user when queried', () => {
     const queryMessage = {
       topic: C.TOPIC.PRESENCE,
-      action: C.PRESENCE_ACTIONS.QUERY_ALL,
+      action: C.PRESENCE_ACTION.QUERY_ALL,
     }
 
     testMocks.stateRegistryMock
@@ -156,7 +156,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
+        action: C.PRESENCE_ACTION.QUERY_ALL_RESPONSE,
         names: ['Bart']
       })
 
@@ -166,8 +166,8 @@ describe('presence handler', () => {
   it('returns mutiple user when queried', () => {
     const queryMessage = {
       topic: C.TOPIC.PRESENCE,
-      action: C.PRESENCE_ACTIONS.QUERY_ALL,
-      name: C.PRESENCE_ACTIONS.QUERY_ALL
+      action: C.PRESENCE_ACTION.QUERY_ALL,
+      name: C.PRESENCE_ACTION.QUERY_ALL
     }
 
     testMocks.stateRegistryMock
@@ -181,7 +181,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
+        action: C.PRESENCE_ACTION.QUERY_ALL_RESPONSE,
         names: ['Bart', 'Homer', 'Maggie']
       })
 
@@ -194,7 +194,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.PRESENCE_JOIN_ALL,
+        action: C.PRESENCE_ACTION.PRESENCE_JOIN_ALL,
         name: 'Bart'
       }, false, null, false)
 
@@ -203,7 +203,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs('Bart', {
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.PRESENCE_JOIN,
+        action: C.PRESENCE_ACTION.PRESENCE_JOIN,
         name: 'Bart'
       }, false, null, false)
 
@@ -217,7 +217,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(EVERYONE, {
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.PRESENCE_LEAVE_ALL,
+        action: C.PRESENCE_ACTION.PRESENCE_LEAVE_ALL,
         name: 'Bart'
       }, false, null, false)
 
@@ -226,7 +226,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs('Bart', {
         topic: C.TOPIC.PRESENCE,
-        action: C.PRESENCE_ACTIONS.PRESENCE_LEAVE,
+        action: C.PRESENCE_ACTION.PRESENCE_LEAVE,
         name: 'Bart'
       }, false, null, false)
 

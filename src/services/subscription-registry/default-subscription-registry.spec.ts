@@ -47,19 +47,19 @@ describe('subscription registry', () => {
 
   const subscribeMessage = {
     topic: C.TOPIC.EVENT,
-    action: C.EVENT_ACTIONS.SUBSCRIBE,
+    action: C.EVENT_ACTION.SUBSCRIBE,
     name: 'someName'
   }
 
   const unsubscribeMessage = {
     topic: C.TOPIC.EVENT,
-    action: C.EVENT_ACTIONS.UNSUBSCRIBE,
+    action: C.EVENT_ACTION.UNSUBSCRIBE,
     name: 'someName'
   }
 
   const eventMessage = {
     topic: C.TOPIC.EVENT,
-    action: C.EVENT_ACTIONS.EMIT,
+    action: C.EVENT_ACTION.EMIT,
     name: 'someName'
   }
 
@@ -89,14 +89,14 @@ describe('subscription registry', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.EVENT,
-          action: C.EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS,
-          originalAction: C.EVENT_ACTIONS.SUBSCRIBE,
+          action: C.EVENT_ACTION.MULTIPLE_SUBSCRIPTIONS,
+          originalAction: C.EVENT_ACTION.SUBSCRIBE,
           name: 'someName'
         })
 
       subscriptionRegistry.subscribe(subscribeMessage.name, subscribeMessage, clientA.socketWrapper)
       subscriptionRegistry.subscribe(subscribeMessage.name, subscribeMessage, clientA.socketWrapper)
-      expect(services.logger.lastLogEvent).to.equal(C.EVENT_ACTIONS[C.EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS])
+      expect(services.logger.lastLogEvent).to.equal(C.EVENT_ACTION[C.EVENT_ACTION.MULTIPLE_SUBSCRIPTIONS])
     })
 
     it('returns the subscribed socket', () => {
@@ -157,8 +157,8 @@ describe('subscription registry', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.EVENT,
-          action: C.EVENT_ACTIONS.NOT_SUBSCRIBED,
-          originalAction: C.EVENT_ACTIONS.UNSUBSCRIBE,
+          action: C.EVENT_ACTION.NOT_SUBSCRIBED,
+          originalAction: C.EVENT_ACTION.UNSUBSCRIBE,
           name: 'someName'
         })
 

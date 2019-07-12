@@ -1,9 +1,8 @@
-import { EVENT, TOPIC, CONNECTION_ACTIONS, ParseResult, Message } from '../../constants'
+import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
 import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
-import { combineMultipleMessages } from '../../../binary-protocol/src/message-builder'
-import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper } from '../../types'
+import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../types'
 import * as WebSocket from 'ws'
 
 /**
@@ -20,7 +19,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
   public authCallback: Function | null = null
   public authAttempts: number = 0
 
-  private bufferedWrites: Buffer[]
+  private bufferedWrites: Uint8Array[]
   private closeCallbacks: Set<Function> = new Set()
 
   public authData: object | null = null
@@ -49,7 +48,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public flush () {
     if (this.bufferedWritesTotalByteSize !== 0) {
-      this.socket.send(combineMultipleMessages(this.bufferedWrites, this.bufferedWritesTotalByteSize))
+      this.socket.send(this.bufferedWrites)
       this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []
     }
@@ -58,7 +57,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
   /**
    * Sends a message based on the provided action and topic
    */
-  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean = true): void {
+  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTION } | Message, allowBuffering: boolean = true): void {
     this.sendBuiltMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
   }
 
@@ -72,7 +71,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
     )
   }
 
-  public getMessage (message: Message): Buffer {
+  public getMessage (message: Message): Uint8Array {
     return binaryMessageBuilder.getMessage(message, false)
   }
 
@@ -125,7 +124,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
     this.closeCallbacks.delete(callback)
   }
 
-  public sendBuiltMessage (message: Buffer, buffer?: boolean): void {
+  public sendBuiltMessage (message: Uint8Array, buffer?: boolean): void {
     if (this.isOpen) {
       if (this.config.outgoingBufferTimeout === 0) {
         this.socket.send(message)

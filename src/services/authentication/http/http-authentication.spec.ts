@@ -1,12 +1,11 @@
 import 'mocha'
 import { expect } from 'chai'
-import * as C from '../../../constants'
 import TestHttpServer from '../../../test/helper/test-http-server'
 import MockLogger from '../../../test/mock/logger-mock'
 import { PromiseDelay } from '../../../utils/utils';
-import { EVENT } from '../../../../binary-protocol/src/message-constants';
 import * as testHelper from '../../../test/helper/test-helper'
 import { HttpAuthentication } from './http-authentication';
+import { EVENT } from '../../../types'
 
 describe('it forwards authentication attempts as http post requests to a specified endpoint', () => {
   let authenticationHandler
@@ -135,7 +134,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
 
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).to.equal(false)
-      expect(logSpy).to.have.been.calledWith(2, C.EVENT.AUTH_ERROR, 'http auth server error: "oh dear"')
+      expect(logSpy).to.have.been.calledWith(2, EVENT.AUTH_ERROR, 'http auth server error: "oh dear"')
       expect(data).to.equal('oh dear')
       done()
     })
@@ -216,7 +215,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
 
     authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
       expect(result).to.equal(false)
-      expect(logSpy).to.have.been.calledWith(2, C.EVENT.AUTH_ERROR, 'http auth error: Error: socket hang up')
+      expect(logSpy).to.have.been.calledWith(2, EVENT.AUTH_ERROR, 'http auth error: Error: socket hang up')
       expect(data).to.deep.equal({ clientData: { error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED }})
       server.respondWith(200)
       done()

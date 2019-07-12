@@ -1,5 +1,5 @@
 import { DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../../types'
-import { Message, RecordMessage, RECORD_ACTIONS, TOPIC } from '../../constants'
+import { Message, RecordMessage, RECORD_ACTION, TOPIC } from '../../constants'
 import { isExcluded } from '../../utils/utils'
 
 export default class RecordDeletion {
@@ -94,9 +94,9 @@ export default class RecordDeletion {
  * the callback to allow the recordHandler to broadcast the deletion
  */
   private done (): void {
-    this.services.logger.info(RECORD_ACTIONS[RECORD_ACTIONS.DELETE], this.recordName, this.metaData)
-    this.socketWrapper.sendMessage({ topic: TOPIC.RECORD, action: RECORD_ACTIONS.DELETE_SUCCESS, name: this.message.name })
-    this.message = Object.assign({}, this.message, { action: RECORD_ACTIONS.DELETED })
+    this.services.logger.info(RECORD_ACTION[RECORD_ACTION.DELETE], this.recordName, this.metaData)
+    this.socketWrapper.sendMessage({ topic: TOPIC.RECORD, action: RECORD_ACTION.DELETE_SUCCESS, name: this.message.name })
+    this.message = Object.assign({}, this.message, { action: RECORD_ACTION.DELETED })
     this.successCallback(this.recordName, this.message, this.socketWrapper)
     this.destroy()
   }
@@ -119,10 +119,10 @@ export default class RecordDeletion {
   private handleError (errorMsg: string) {
     this.socketWrapper.sendMessage({
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.RECORD_DELETE_ERROR,
+      action: RECORD_ACTION.RECORD_DELETE_ERROR,
       name: this.recordName
     })
-    this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_DELETE_ERROR], errorMsg, this.metaData)
+    this.services.logger.error(RECORD_ACTION[RECORD_ACTION.RECORD_DELETE_ERROR], errorMsg, this.metaData)
     this.destroy()
   }
 }

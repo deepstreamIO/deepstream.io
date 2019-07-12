@@ -1,20 +1,21 @@
 import {
-  EVENT_ACTIONS,
-  PRESENCE_ACTIONS,
-  RECORD_ACTIONS,
-  RPC_ACTIONS,
+  EVENT_ACTION,
+  PRESENCE_ACTION,
+  RECORD_ACTION,
+  RPC_ACTION,
   TOPIC,
-  MONITORING_ACTIONS,
+  MONITORING_ACTION,
   Message,
-  BulkSubscriptionMessage
+  BulkSubscriptionMessage,
+  STATE_REGISTRY_TOPIC
 } from '../../constants'
 import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry, SubscriptionRegistry, LOG_LEVEL } from '../../types'
 
 interface SubscriptionActions {
-  MULTIPLE_SUBSCRIPTIONS: RECORD_ACTIONS.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTIONS.MULTIPLE_SUBSCRIPTIONS | RPC_ACTIONS.MULTIPLE_PROVIDERS | PRESENCE_ACTIONS.MULTIPLE_SUBSCRIPTIONS
-  NOT_SUBSCRIBED: RECORD_ACTIONS.NOT_SUBSCRIBED | EVENT_ACTIONS.NOT_SUBSCRIBED | RPC_ACTIONS.NOT_PROVIDED | PRESENCE_ACTIONS.NOT_SUBSCRIBED
-  SUBSCRIBE: RECORD_ACTIONS.SUBSCRIBE | EVENT_ACTIONS.SUBSCRIBE | RPC_ACTIONS.PROVIDE | PRESENCE_ACTIONS.SUBSCRIBE
-  UNSUBSCRIBE: RECORD_ACTIONS.UNSUBSCRIBE | EVENT_ACTIONS.UNSUBSCRIBE | RPC_ACTIONS.UNPROVIDE | PRESENCE_ACTIONS.UNSUBSCRIBE
+  MULTIPLE_SUBSCRIPTIONS: RECORD_ACTION.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTION.MULTIPLE_SUBSCRIPTIONS | RPC_ACTION.MULTIPLE_PROVIDERS | PRESENCE_ACTION.MULTIPLE_SUBSCRIPTIONS
+  NOT_SUBSCRIBED: RECORD_ACTION.NOT_SUBSCRIBED | EVENT_ACTION.NOT_SUBSCRIBED | RPC_ACTION.NOT_PROVIDED | PRESENCE_ACTION.NOT_SUBSCRIBED
+  SUBSCRIBE: RECORD_ACTION.SUBSCRIBE | EVENT_ACTION.SUBSCRIBE | RPC_ACTION.PROVIDE | PRESENCE_ACTION.SUBSCRIBE
+  UNSUBSCRIBE: RECORD_ACTION.UNSUBSCRIBE | EVENT_ACTION.UNSUBSCRIBE | RPC_ACTION.UNPROVIDE | PRESENCE_ACTION.UNSUBSCRIBE
 }
 
 interface Subscription {
@@ -35,24 +36,24 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
    * A bit like an event-hub, only that it registers SocketWrappers rather
    * than functions
    */
-  constructor (pluginConfig: any, private services: DeepstreamServices, private config: DeepstreamConfig, private topic: TOPIC, clusterTopic: TOPIC) {
+  constructor (pluginConfig: any, private services: DeepstreamServices, private config: DeepstreamConfig, private topic: TOPIC | STATE_REGISTRY_TOPIC, clusterTopic: TOPIC) {
     switch (topic) {
       case TOPIC.RECORD:
-      case TOPIC.RECORD_LISTEN_PATTERNS:
-        this.actions = RECORD_ACTIONS
+      case STATE_REGISTRY_TOPIC.RECORD_LISTEN_PATTERNS:
+        this.actions = RECORD_ACTION
         break
       case TOPIC.EVENT:
-      case TOPIC.EVENT_LISTEN_PATTERNS:
-        this.actions = EVENT_ACTIONS
+      case STATE_REGISTRY_TOPIC.EVENT_LISTEN_PATTERNS:
+        this.actions = EVENT_ACTION
         break
       case TOPIC.RPC:
-        this.actions = RPC_ACTIONS
+        this.actions = RPC_ACTION
         break
       case TOPIC.PRESENCE:
-        this.actions = PRESENCE_ACTIONS
+        this.actions = PRESENCE_ACTION
         break
       case TOPIC.MONITORING:
-        this.actions = MONITORING_ACTIONS
+        this.actions = MONITORING_ACTION
         break
     }
 
@@ -114,7 +115,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   * For example, when using the ACTIONS.LISTEN, you would override SUBSCRIBE with
   * ACTIONS.SUBSCRIBE and UNSUBSCRIBE with UNSUBSCRIBE
   */
-  public setAction (name: string, value: EVENT_ACTIONS | RECORD_ACTIONS | RPC_ACTIONS): void {
+  public setAction (name: string, value: EVENT_ACTION | RECORD_ACTION | RPC_ACTION): void {
     (this.constants as any)[name.toUpperCase()] = value
   }
 
@@ -199,7 +200,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     } else if (subscription.sockets.has(socket)) {
       if (this.services.logger.shouldLog(LOG_LEVEL.WARN)) {
         const msg = `repeat subscription to "${name}" by ${socket.user}`
-        this.services.logger.warn(EVENT_ACTIONS[this.constants.MULTIPLE_SUBSCRIPTIONS], msg)
+        this.services.logger.warn(EVENT_ACTION[this.constants.MULTIPLE_SUBSCRIPTIONS], msg)
       }
       socket.sendMessage({
         topic: this.topic,
@@ -323,7 +324,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   private onSocketClose (socket: SocketWrapper): void {
     const subscriptions = this.sockets.get(socket)
     if (!subscriptions) {
-      this.services.logger.error(EVENT_ACTIONS[this.constants.NOT_SUBSCRIBED], 'A socket has an illegal registered close callback')
+      this.services.logger.error(EVENT_ACTION[this.constants.NOT_SUBSCRIBED], 'A socket has an illegal registered close callback')
       return
     }
     for (const subscription of subscriptions) {

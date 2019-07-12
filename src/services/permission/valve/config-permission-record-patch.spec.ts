@@ -27,7 +27,7 @@ describe('constructs data for patch message validation', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.PATCH,
+      action: C.RECORD_ACTION.PATCH,
       name: 'user/wh',
       version: 123,
       path: 'lastname',
@@ -55,7 +55,7 @@ describe('constructs data for patch message validation', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.PATCH,
+      action: C.RECORD_ACTION.PATCH,
       name: 'user/wh',
       version: 123,
       path: 'lastname',
@@ -81,7 +81,7 @@ describe('constructs data for patch message validation', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.PATCH,
+      action: C.RECORD_ACTION.PATCH,
       name: 'user/wh',
       version: 123,
       path: 'lastname',
@@ -105,7 +105,7 @@ describe('constructs data for patch message validation', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.PATCH,
+      action: C.RECORD_ACTION.PATCH,
       name: 'somerecord',
       version: 1,
       path: 'lastname',

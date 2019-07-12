@@ -1,7 +1,6 @@
-import { DeepstreamServices, DeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin } from '../../types'
-import { TOPIC } from '../../constants'
-import { ClusterMessage, EVENT, CLUSTER_ACTIONS } from '../../../binary-protocol/src/message-constants'
-import { EventEmitter } from 'events';
+import { DeepstreamServices, DeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin, EVENT } from '../../types'
+import { TOPIC, ClusterMessage, CLUSTER_ACTION } from '../../constants'
+import { EventEmitter } from 'events'
 
 /**
  * This class maintains a list of all nodes that are
@@ -74,7 +73,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
         this.services.logger.info(EVENT.CLUSTER_LEAVE, this.config.serverName)
         this.services.clusterNode.send({
             topic: TOPIC.CLUSTER,
-            action: CLUSTER_ACTIONS.REMOVE,
+            action: CLUSTER_ACTION.REMOVE,
             name: this.config.serverName
         })
 
@@ -127,12 +126,12 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      * Distributes incoming messages on the cluster topic
      */
     private onMessage (message: ClusterMessage) {
-        if (message.action === CLUSTER_ACTIONS.STATUS) {
+        if (message.action === CLUSTER_ACTION.STATUS) {
             this.updateNode(message)
             return
         }
 
-        if (message.action === CLUSTER_ACTIONS.REMOVE) {
+        if (message.action === CLUSTER_ACTION.REMOVE) {
             this.removeNode(message.serverName)
             return
         }
@@ -198,7 +197,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
         this.inCluster = true
         const message = {
             topic: TOPIC.CLUSTER,
-            action: CLUSTER_ACTIONS.STATUS,
+            action: CLUSTER_ACTION.STATUS,
             serverName: this.config.serverName,
             leaderScore: this.leaderScore,
             externalUrl: this.config.externalUrl,

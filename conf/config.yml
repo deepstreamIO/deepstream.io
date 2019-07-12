@@ -55,7 +55,7 @@ listen:
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
-  - type: ws-websocket
+  - type: uws-websocket
     options:
         # port for the websocket server
         port: 6020

@@ -1,7 +1,7 @@
 // tslint:disable:no-shadowed-variable
-import * as C from '../../binary-protocol/src/message-constants'
 import * as sinon from 'sinon'
 import { clientHandler } from './client-handler'
+import { TOPIC, AUTH_ACTION, CONNECTION_ACTION } from '../../src/constants'
 
 export const client = {
   logsOut (clientExpression: string, done: Function) {
@@ -53,7 +53,7 @@ export const client = {
 
   recievedTooManyLoginAttempts (clientExpression: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
-      const errorSpy = client.error[C.TOPIC[C.TOPIC.AUTH]][C.AUTH_ACTIONS[C.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS]]
+      const errorSpy = client.error[TOPIC[TOPIC.AUTH]][AUTH_ACTION[AUTH_ACTION.TOO_MANY_AUTH_ATTEMPTS]]
       sinon.assert.calledOnce(errorSpy)
       errorSpy.resetHistory()
     })
@@ -86,7 +86,7 @@ export const client = {
   connectionTimesOut (clientExpression: string, done: Function) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       setTimeout(() => {
-        const errorSpy = client.error[C.TOPIC[C.TOPIC.CONNECTION]][C.CONNECTION_ACTIONS[C.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT]]
+        const errorSpy = client.error[TOPIC[TOPIC.CONNECTION]][CONNECTION_ACTION[CONNECTION_ACTION.AUTHENTICATION_TIMEOUT]]
         sinon.assert.calledOnce(errorSpy)
         errorSpy.resetHistory()
         done()
@@ -106,7 +106,7 @@ export const client = {
 
   recievedOneError (clientExpression: string, topicName: string, eventName: string) {
     // @ts-ignore
-    const topic = C.TOPIC[C.TOPIC[topicName.toUpperCase()]]
+    const topic = TOPIC[TOPIC[topicName.toUpperCase()]]
     const event = eventName.toUpperCase()
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[topic][event]
