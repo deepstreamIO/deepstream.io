@@ -393,7 +393,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
   /**
    * Creates a new, empty record and triggers a read operation once done
    */
-  private create (socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RECORD_ACTION, callback: Function): void {
+  private create (socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RECORD_ACTION): void {
     const recordName = message.name
 
     // store the records data in the cache and wait for the result
@@ -409,11 +409,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
         return
       }
 
-      if (callback) {
-        callback(recordName, socketWrapper)
-        return
-      }
-
+      // this isn't really needed, can subscribe and send empty data immediately
       this.readAndSubscribe({ ...message, action: originalAction }, 0, {}, socketWrapper)
     }, this.metaData)
 
@@ -628,10 +624,14 @@ export default class RecordHandler implements Handler<RecordMessage> {
         topic: TOPIC.RECORD,
         action,
         originalAction,
-        name: message.name
+        name: message.name,
+        isError: true
       } as RecordMessage
       if (message.correlationId) {
         msg.correlationId = message.correlationId
+      }
+      if (message.isWriteAck) {
+        msg.isWriteAck = true
       }
       socketWrapper.sendMessage(msg)
     } else {
@@ -645,7 +645,9 @@ function onRequestError (event: RA, errorMessage: string, recordName: string, so
     topic: TOPIC.RECORD,
     action: event,
     originalAction: message.action,
-    name: recordName
+    name: recordName,
+    isError: true,
+    isWriteAck: message.isWriteAck || undefined
   })
 }
 
@@ -657,7 +659,8 @@ function onSnapshotComplete (recordName: string, version: number, data: JSONObje
       topic: TOPIC.RECORD,
       action: RA.RECORD_NOT_FOUND,
       originalAction: message.action,
-      name: message.name
+      name: message.name,
+      isError: true
     })
   }
 }

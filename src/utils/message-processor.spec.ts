@@ -57,13 +57,14 @@ describe('the message processor only forwards valid, authorized messages', () =>
         topic: TOPIC.RECORD,
         action: RECORD_ACTION.MESSAGE_PERMISSION_ERROR,
         originalAction: RECORD_ACTION.READ,
-        name: message.name
+        name: message.name,
+        isError: true
       })
 
     messageProcessor.process(client.socketWrapper, [message])
 
     expect(log).to.have.callCount(1)
-    expect(log).to.have.been.calledWith(2, RECORD_ACTION[C.RECORD_ACTION.MESSAGE_PERMISSION_ERROR], 'someError')
+    expect(log).to.have.been.calledWith(2, RECORD_ACTION[RECORD_ACTION.MESSAGE_PERMISSION_ERROR], 'someError')
   })
 
   it('rpc permission errors have a correlation id', () => {
@@ -85,13 +86,14 @@ describe('the message processor only forwards valid, authorized messages', () =>
         action: RPC_ACTION.MESSAGE_PERMISSION_ERROR,
         originalAction: rpcMessage.action,
         name: rpcMessage.name,
-        correlationId: rpcMessage.correlationId
+        correlationId: rpcMessage.correlationId,
+        isError: true
       })
 
     messageProcessor.process(client.socketWrapper, [rpcMessage])
 
     expect(log).to.have.callCount(1)
-    expect(log).to.have.been.calledWith(2, RPC_ACTION[C.RPC_ACTION.MESSAGE_PERMISSION_ERROR], 'someError')
+    expect(log).to.have.been.calledWith(2, RPC_ACTION[RPC_ACTION.MESSAGE_PERMISSION_ERROR], 'someError')
   })
 
   it('handles denied messages', () => {
@@ -104,7 +106,8 @@ describe('the message processor only forwards valid, authorized messages', () =>
         topic: TOPIC.RECORD,
         action: RECORD_ACTION.MESSAGE_DENIED,
         originalAction: RECORD_ACTION.READ,
-        name: message.name
+        name: message.name,
+        isError: true
       })
 
     messageProcessor.process(client.socketWrapper, [message])

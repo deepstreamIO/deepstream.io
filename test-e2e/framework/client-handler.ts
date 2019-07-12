@@ -13,7 +13,6 @@ const clients: { [index: string]: E2EClient } = {}
 
 function createClient (clientName: string, server: string, options?: any) {
   const gatewayUrl = global.e2eHarness.getUrl(server)
-  console.log(deepstream)
   // @ts-ignore
   const client = new deepstream.Client(gatewayUrl, {
     ...options,

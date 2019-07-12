@@ -24,7 +24,6 @@ export default class EventHandler implements Handler<EventMessage> {
    */
   public handle (socketWrapper: SocketWrapper | null, message: EventMessage) {
 
-    console.log('HANDLING', message)
     if (message.action === EVENT_ACTION.EMIT) {
       this.triggerEvent(socketWrapper, message)
       return

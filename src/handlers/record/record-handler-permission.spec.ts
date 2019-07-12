@@ -63,7 +63,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs({ ...msg, name: 'some-record' })
+      .withExactArgs({ ...msg, name: 'some-record', isError: true })
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
@@ -79,7 +79,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
       .expects('sendMessage')
       .once()
-      .withExactArgs({ ...msg, name: 'some-record' })
+      .withExactArgs({ ...msg, name: 'some-record', isError: true })
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
@@ -95,7 +95,7 @@ describe('record handler handles messages', () => {
     client.socketWrapperMock
     .expects('sendMessage')
     .once()
-    .withExactArgs({ ...msg, name: 'some-record' })
+    .withExactArgs({ ...msg, name: 'some-record', isError: true })
 
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 

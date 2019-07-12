@@ -6,6 +6,7 @@ import {
   TOPIC,
   Message,
   ALL_ACTIONS,
+  ACTIONS
 } from '../constants'
 
 import * as Ajv from 'ajv'
@@ -352,9 +353,9 @@ export default class JIFHandler {
       success: false,
     }
 
-    if (event === EVENT_ACTION.MESSAGE_DENIED) {
+    if (event === ACTIONS[message.topic].MESSAGE_DENIED) {
       result.action = message.originalAction as number
-      result.error = 'Message denied. Action "" is not permitted.'
+      result.error = `Message denied. Action "${ACTIONS[message.topic][message.originalAction!]}" is not permitted.`
     } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTION.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version

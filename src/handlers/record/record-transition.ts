@@ -309,9 +309,9 @@ export class RecordTransition {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
         action: RECORD_ACTION.WRITE_ACKNOWLEDGEMENT,
-        // originalAction: originalMessage.action,
         name: originalMessage.name,
-        correlationId
+        correlationId,
+        isWriteAck: true
       })
       delete response[correlationId]
     }

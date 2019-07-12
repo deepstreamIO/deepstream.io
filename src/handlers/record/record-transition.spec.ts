@@ -57,7 +57,8 @@ describe('RecordTransition', () => {
         topic: C.TOPIC.RECORD,
         action: C.RECORD_ACTION.WRITE_ACKNOWLEDGEMENT,
         name: message.name,
-        correlationId: message.correlationId
+        correlationId: message.correlationId,
+        isWriteAck: true
       })
 
     recordTransition.add(client.socketWrapper, message, true)

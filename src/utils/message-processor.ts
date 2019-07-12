@@ -1,4 +1,4 @@
-import { EVENT_ACTION, TOPIC, CONNECTION_ACTION, Message, ALL_ACTIONS  } from '../constants'
+import { TOPIC, CONNECTION_ACTION, Message, ALL_ACTIONS, ACTIONS  } from '../constants'
 import { SocketWrapper, DeepstreamConfig, DeepstreamServices, EVENT } from '../types'
 import { getUid } from './utils'
 import { RECORD_ACTION } from '../../binary-protocol/types/all';
@@ -114,9 +114,10 @@ export default class MessageProcessor {
       this.services.logger.warn(RECORD_ACTION[RECORD_ACTION.MESSAGE_PERMISSION_ERROR], error.toString())
       const permissionErrorMessage: Message = {
         topic: message.topic,
-        action: RECORD_ACTION.MESSAGE_PERMISSION_ERROR,
+        action: ACTIONS[message.topic].MESSAGE_PERMISSION_ERROR,
         originalAction: message.action,
-        name: message.name
+        name: message.name,
+        isError: true
       }
       if (message.correlationId) {
         permissionErrorMessage.correlationId = message.correlationId
@@ -128,9 +129,10 @@ export default class MessageProcessor {
     if (result !== true) {
       const permissionDeniedMessage: Message = {
         topic: message.topic,
-        action: EVENT_ACTION.MESSAGE_DENIED,
+        action: ACTIONS[message.topic].MESSAGE_DENIED,
         originalAction: message.action,
-        name: message.name
+        name: message.name,
+        isError: true
       }
       if (message.correlationId) {
         permissionDeniedMessage.correlationId = message.correlationId
