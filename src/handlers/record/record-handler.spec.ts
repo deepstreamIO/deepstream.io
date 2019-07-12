@@ -120,6 +120,7 @@ describe('record handler handles messages', () => {
         action: C.RECORD_ACTION.RECORD_NOT_FOUND,
         originalAction: M.recordSnapshotMessage.action,
         name: M.recordSnapshotMessage.name,
+        isError: true
       })
 
     recordHandler.handle(client.socketWrapper, M.recordSnapshotMessage)
@@ -136,6 +137,7 @@ describe('record handler handles messages', () => {
         action: C.RECORD_ACTION.RECORD_LOAD_ERROR,
         originalAction: M.recordSnapshotMessage.action,
         name: M.recordSnapshotMessage.name,
+        isError: true
       })
 
     recordHandler.handle(client.socketWrapper, M.recordSnapshotMessage)
@@ -183,6 +185,7 @@ describe('record handler handles messages', () => {
         action: C.RECORD_ACTION.RECORD_LOAD_ERROR,
         originalAction: M.recordHeadMessage.action,
         name: M.recordHeadMessage.name,
+        isError: true
       })
 
     recordHandler.handle(client.socketWrapper, M.recordHeadMessage)

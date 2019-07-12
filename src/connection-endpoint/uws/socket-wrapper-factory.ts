@@ -46,6 +46,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    * and can wait to be bundled into another message if necessary
    */
   public flush () {
+    console.log('LENGTH', this.bufferedWrites.length)
     if (this.bufferedWritesTotalByteSize !== 0) {
       this.socket.send(this.bufferedWrites.join(), true)
       this.bufferedWritesTotalByteSize = 0
@@ -129,6 +130,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
   }
 
   public sendBuiltMessage (message: Uint8Array, buffer?: boolean): void {
+    buffer = false
     if (this.isOpen) {
       if (this.config.outgoingBufferTimeout === 0) {
         this.socket.send(message, true)

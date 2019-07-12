@@ -156,7 +156,8 @@ describe('the rpcHandler routes events correctly', () => {
           action: C.RPC_ACTION.INVALID_RPC_CORRELATION_ID,
           originalAction: responseMessage.action,
           name: responseMessage.name,
-          correlationId: responseMessage.correlationId
+          correlationId: responseMessage.correlationId,
+          isError: true
         })
 
       rpcHandler.handle(provider.socketWrapper, responseMessage)
@@ -184,7 +185,8 @@ describe('the rpcHandler routes events correctly', () => {
           action: C.RPC_ACTION.INVALID_RPC_CORRELATION_ID,
           originalAction: errorMessage.action,
           name: errorMessage.name,
-          correlationId: errorMessage.correlationId
+          correlationId: errorMessage.correlationId,
+          isError: true
         })
 
       rpcHandler.handle(provider.socketWrapper, errorMessage)
@@ -275,7 +277,8 @@ describe('the rpcHandler routes events correctly', () => {
             action: C.RPC_ACTION.INVALID_RPC_CORRELATION_ID,
             originalAction: responseMessage.action,
             name: responseMessage.name,
-            correlationId: responseMessage.correlationId
+            correlationId: responseMessage.correlationId,
+            isError: true
           })
         rpcHandler.handle(provider.socketWrapper, responseMessage)
         done()

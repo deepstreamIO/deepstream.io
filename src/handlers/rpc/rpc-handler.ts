@@ -81,7 +81,8 @@ export default class RpcHandler {
         action: RPC_ACTION.INVALID_RPC_CORRELATION_ID,
         originalAction: message.action,
         name: message.name,
-        correlationId: message.correlationId
+        correlationId: message.correlationId,
+        isError: true
       })
       return
     }
