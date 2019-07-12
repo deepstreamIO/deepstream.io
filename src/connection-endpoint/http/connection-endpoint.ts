@@ -2,10 +2,9 @@ import Server from './server'
 import JIFHandler from '../../jif/jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
-import { EVENT, PARSER_ACTIONS, AUTH_ACTIONS, EVENT_ACTIONS, RECORD_ACTIONS, Message, ALL_ACTIONS } from '../../constants'
-import { ConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig } from '../../types'
-import { JSONObject } from '../../../binary-protocol/src/message-constants'
-import { EventEmitter } from 'events';
+import { PARSER_ACTION, AUTH_ACTION, EVENT_ACTION, RECORD_ACTION, Message, ALL_ACTIONS, JSONObject } from '../../constants'
+import { ConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig, EVENT } from '../../types'
+import { EventEmitter } from 'events'
 
 export class HTTPConnectionEndpoint extends DeepstreamPlugin implements ConnectionEndpoint {
   public description: string = 'HTTP connection endpoint'
@@ -136,7 +135,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
           error += `: ${JSON.stringify(authData)}`
         }
 
-        this.services.logger.debug(AUTH_ACTIONS[AUTH_ACTIONS.AUTH_UNSUCCESSFUL], error)
+        this.services.logger.debug(AUTH_ACTION[AUTH_ACTION.AUTH_UNSUCCESSFUL], error)
       }
     )
   }
@@ -160,7 +159,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
         message: error
       })
       this.services.logger.warn(
-        PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE],
+        PARSER_ACTION[PARSER_ACTION.INVALID_MESSAGE],
         JSON.stringify(messageData.body)
       )
       return
@@ -171,7 +170,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
         const error = 'Authentication using authData is disabled. Try using a token instead.'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this.services.logger.debug(
-          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
+          AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE_DATA],
           'Auth rejected because allowAuthData was disabled'
         )
         return
@@ -180,7 +179,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
         const error = 'Invalid message: the "authData" parameter must be an object'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this.services.logger.debug(
-          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
+          AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE_DATA],
           `authData was not an object: ${
             this.logInvalidAuthData === true ? JSON.stringify(messageData.authData) : '-'
           }`
@@ -193,7 +192,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
         const error = 'Invalid message: the "token" parameter must be a non-empty string'
         responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
         this.services.logger.debug(
-          AUTH_ACTIONS[AUTH_ACTIONS.INVALID_MESSAGE_DATA],
+          AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE_DATA],
           `auth token was not a string: ${
             this.logInvalidAuthData === true ? messageData.token : '-'
           }`
@@ -263,7 +262,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
           statusCode: HTTPStatus.BAD_REQUEST,
           message: parseResult.error ? `${message} Reason: ${parseResult.error}` : message
         })
-        this.services.logger.debug(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], parseResult.error)
+        this.services.logger.debug(PARSER_ACTION[PARSER_ACTION.MESSAGE_PARSE_ERROR], parseResult.error)
         return
       }
     }
@@ -321,7 +320,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
     const parseResult = this.jifHandler.toJIF(message)
     if (!parseResult) {
       const errorMessage = `${message.topic} ${message.action} ${JSON.stringify(message.data)}`
-      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.MESSAGE_PARSE_ERROR], errorMessage)
+      this.services.logger.error(PARSER_ACTION[PARSER_ACTION.MESSAGE_PARSE_ERROR], errorMessage)
       return
     }
     if (parseResult.done !== true) {
@@ -428,7 +427,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
 
   private onGetMessage (data: any, headers: any, responseCallback: any) {
     const message = 'Reading records via HTTP GET is not yet implemented, please use a post request instead.'
-    this.services.logger.warn(RECORD_ACTIONS[RECORD_ACTIONS.READ], message)
+    this.services.logger.warn(RECORD_ACTION[RECORD_ACTION.READ], message)
     responseCallback({ statusCode: 400, message })
     // TODO: implement a GET endpoint that reads the current state of a record
   }
@@ -463,13 +462,13 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Connecti
     permissioned: boolean
   ): void {
     if (error !== null) {
-      this.services.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
+      this.services.logger.warn(EVENT_ACTION[EVENT_ACTION.MESSAGE_PERMISSION_ERROR], error.toString())
     }
     if (permissioned !== true) {
       messageResults[messageIndex] = {
         success: false,
         error: 'Message denied. Action \'emit\' is not permitted.',
-        errorEvent: EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_DENIED],
+        errorEvent: EVENT_ACTION[EVENT_ACTION.MESSAGE_DENIED],
         errorAction: 'emit',
         errorTopic: 'event'
       }

@@ -1,18 +1,10 @@
 import RecordDeletion from './record-deletion'
 import { recordRequestBinding } from './record-request'
 import { RecordTransition } from './record-transition'
-import { RECORD_ACTIONS as RA, RecordMessage, TOPIC, RecordWriteMessage, ListenMessage, PARSER_ACTIONS, JSONObject, RECORD_ACTIONS, EVENT, Message, ALL_ACTIONS, BulkSubscriptionMessage } from '../../../binary-protocol/src/message-constants'
-import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper } from '../../types'
+import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper, EVENT } from '../../types'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { isExcluded } from '../../utils/utils'
-
-const WRITE_ACK_TO_ACTION: { [key: number]: RA } = {
-  [RA.CREATEANDPATCH_WITH_WRITE_ACK]: RA.CREATEANDPATCH,
-  [RA.CREATEANDUPDATE_WITH_WRITE_ACK]: RA.CREATEANDUPDATE,
-  [RA.PATCH_WITH_WRITE_ACK]: RA.PATCH,
-  [RA.UPDATE_WITH_WRITE_ACK]: RA.UPDATE,
-  [RA.ERASE_WITH_WRITE_ACK]: RA.ERASE,
-}
+import { STATE_REGISTRY_TOPIC, RecordMessage, TOPIC, RecordWriteMessage, BulkSubscriptionMessage, ListenMessage, PARSER_ACTION, RECORD_ACTION as RA, JSONObject, Message, RECORD_ACTION, ALL_ACTIONS } from '../../constants'
 
 export default class RecordHandler implements Handler<RecordMessage> {
   private subscriptionRegistry: SubscriptionRegistry
@@ -26,7 +18,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
  */
   constructor (private readonly config: DeepstreamConfig, private readonly services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, private readonly metaData?: any) {
     this.subscriptionRegistry =
-      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RECORD, TOPIC.RECORD_SUBSCRIPTIONS)
+      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RECORD, STATE_REGISTRY_TOPIC.RECORD_SUBSCRIPTIONS)
     this.listenerRegistry =
       listenerRegistry || new ListenerRegistry(TOPIC.RECORD, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
@@ -45,7 +37,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
  * and deepstream works which one it will be
  */
   public handle (socketWrapper: SocketWrapper | null, message: RecordMessage): void {
-    const action = message.isWriteAck ? WRITE_ACK_TO_ACTION[message.action] : message.action
+    const action = message.action
 
     if (socketWrapper === null) {
       this.handleClusterUpdate(message)
@@ -142,7 +134,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
       return
     }
 
-    this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], RA[action], this.metaData)
+    this.services.logger.error(PARSER_ACTION[PARSER_ACTION.UNKNOWN_ACTION], RA[action], this.metaData)
   }
 
   private handleClusterUpdate (message: RecordMessage) {
@@ -173,7 +165,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
         this.services.logger.error(EVENT.PLUGIN_ERROR, errorMessage)
         socketWrapper.sendMessage({
           topic: TOPIC.RECORD,
-          action: RECORD_ACTIONS.RECORD_NOTIFY_ERROR,
+          action: RECORD_ACTION.RECORD_NOTIFY_ERROR,
           parsedData: errorMessage
         })
         return
@@ -186,7 +178,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
         this.services.logger.error(EVENT.INFO, `${errorMessage}: ${error.toString()}`)
         socketWrapper.sendMessage({
           topic: TOPIC.RECORD,
-          action: RECORD_ACTIONS.RECORD_NOTIFY_ERROR,
+          action: RECORD_ACTION.RECORD_NOTIFY_ERROR,
           parsedData: errorMessage
         })
         return
@@ -200,13 +192,13 @@ export default class RecordHandler implements Handler<RecordMessage> {
           if (version === -1) {
             this.remoteDelete({
               topic: TOPIC.RECORD,
-              action: RECORD_ACTIONS.DELETED,
+              action: RECORD_ACTION.DELETED,
               name
             })
           } else {
             this.subscriptionRegistry.sendToSubscribers(name, {
               topic: TOPIC.RECORD,
-              action: RECORD_ACTIONS.UPDATE,
+              action: RECORD_ACTION.UPDATE,
               name,
               version,
               parsedData: data
@@ -401,7 +393,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
   /**
    * Creates a new, empty record and triggers a read operation once done
    */
-  private create (socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RECORD_ACTIONS, callback: Function): void {
+  private create (socketWrapper: SocketWrapper, message: RecordMessage, originalAction: RECORD_ACTION, callback: Function): void {
     const recordName = message.name
 
     // store the records data in the cache and wait for the result

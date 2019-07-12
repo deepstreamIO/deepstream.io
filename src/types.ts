@@ -1,5 +1,5 @@
 import { DeepPartial } from 'ts-essentials'
-import { ALL_ACTIONS, Message, JSONObject, SubscriptionMessage, EVENT, TOPIC, BulkSubscriptionMessage } from '../binary-protocol/src/message-constants'
+import { TOPIC, Message, JSONObject, BulkSubscriptionMessage, SubscriptionMessage, STATE_REGISTRY_TOPIC, ALL_ACTIONS } from './constants'
 
 export enum LOG_LEVEL {
   DEBUG = 0,
@@ -127,7 +127,7 @@ export interface StateRegistry {
 }
 
 export interface StateRegistryFactory extends DeepstreamPlugin {
-  getStateRegistry (topic: TOPIC): StateRegistry
+  getStateRegistry (topic: TOPIC | STATE_REGISTRY_TOPIC): StateRegistry
 }
 
 export interface SubscriptionRegistry {
@@ -147,7 +147,7 @@ export interface SubscriptionRegistry {
 }
 
 export interface SubscriptionRegistryFactory extends DeepstreamPlugin {
-  getSubscriptionRegistry (topic: TOPIC, clusterTopic: TOPIC): SubscriptionRegistry
+  getSubscriptionRegistry (topic: TOPIC | STATE_REGISTRY_TOPIC, clusterTopic: TOPIC | STATE_REGISTRY_TOPIC): SubscriptionRegistry
   getSubscriptionRegistries (): Map<TOPIC, SubscriptionRegistry>
 }
 
@@ -213,7 +213,7 @@ export interface Authentication extends DeepstreamPlugin  {
 export interface ClusterNode extends DeepstreamPlugin  {
   send (message: Message, metaData?: any): void
   sendDirect (serverName: string, message: Message, metaData?: any): void
-  subscribe<SpecificMessage> (stateRegistryTopic: TOPIC, callback: (message: SpecificMessage, originServerName: string) => void): void
+  subscribe<SpecificMessage> (stateRegistryTopic: TOPIC | STATE_REGISTRY_TOPIC, callback: (message: SpecificMessage, originServerName: string) => void): void
   close (): Promise<void>
 }
 export type ClusterNodePlugin<PluginOptions = any> = new (pluginConfig: PluginOptions, services: DeepstreamServices, config: DeepstreamConfig) => ClusterNode
@@ -319,4 +319,40 @@ export interface Provider {
 export interface UserData {
   clientData: any
   serverData: any
+}
+
+export const enum EVENT {
+  INFO = 'INFO',
+  ERROR = 'ERROR',
+  DEPRECATED = 'DEPRECATED',
+
+  FATAL_EXCEPTION = 'FATAL_EXCEPTION',
+  NOT_VALID_UUID = 'NOT_VALID_UUID',
+  DEEPSTREAM_STATE_CHANGED = 'DEEPSTREAM_STATE_CHANGED',
+  INCOMING_CONNECTION = 'INCOMING_CONNECTION',
+  CLOSED_SOCKET_INTERACTION = 'CLOSED_SOCKET_INTERACTION',
+  CLIENT_DISCONNECTED = 'CLIENT_DISCONNECTED',
+  CONNECTION_ERROR = 'CONNECTION_ERROR',
+  AUTH_ERROR = 'AUTH_ERROR',
+  AUTH_RETRY_ATTEMPTS_EXCEEDED = 'AUTH_RETRY_ATTEMPTS_EXCEEDED',
+
+  PLUGIN_ERROR = 'PLUGIN_ERROR',
+  PLUGIN_INITIALIZATION_ERROR = 'PLUGIN_INITIALIZATION_ERROR',
+  PLUGIN_INITIALIZATION_TIMEOUT = 'PLUGIN_INITIALIZATION_TIMEOUT',
+
+  TIMEOUT = 'TIMEOUT',
+
+  LEADING_LISTEN = 'LEADING_LISTEN',
+  LOCAL_LISTEN = 'LOCAL_LISTEN',
+
+  INVALID_CONFIG_DATA = 'INVALID_CONFIG_DATA',
+  INVALID_STATE_TRANSITION = 'INVALID_STATE_TRANSITION',
+
+  INVALID_LEADER_REQUEST = 'INVALID_LEADER_REQUEST',
+
+  CLUSTER_LEAVE = 'CLUSTER_LEAVE',
+  CLUSTER_JOIN = 'CLUSTER_JOIN',
+  CLUSTER_SIZE = 'CLUSTER_SIZE',
+
+  UNKNOWN_ACTION = 'UNKNOWN_ACTION'
 }

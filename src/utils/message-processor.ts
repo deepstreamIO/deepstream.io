@@ -1,7 +1,7 @@
-import { EVENT_ACTIONS } from '../constants'
-import { TOPIC, CONNECTION_ACTIONS, Message, ALL_ACTIONS, EVENT } from '../../binary-protocol/src/message-constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices } from '../types'
+import { EVENT_ACTION, TOPIC, CONNECTION_ACTION, Message, ALL_ACTIONS  } from '../constants'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, EVENT } from '../types'
 import { getUid } from './utils'
+import { RECORD_ACTION } from '../../binary-protocol/types/all';
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the
@@ -37,12 +37,12 @@ export default class MessageProcessor {
     for (let i = 0; i < length; i++) {
       const message = parsedMessages[i]
 
-      if (message.topic === TOPIC.CONNECTION && message.action === CONNECTION_ACTIONS.PING) {
+      if (message.topic === TOPIC.CONNECTION && message.action === CONNECTION_ACTION.PING) {
         // Each connection endpoint is responsible for dealing with ping connections
         continue
       }
 
-      if (message.names) {
+      if (message.names && message.names.length > 0) {
         const uuid = getUid()
 
         if (this.bulkResults.has(uuid)) {
@@ -111,10 +111,10 @@ export default class MessageProcessor {
 
   private processInvalidResponse (socketWrapper: SocketWrapper, message: Message, error: ALL_ACTIONS | Error | string | null, result: boolean) {
     if (error !== null) {
-      this.services.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], error.toString())
+      this.services.logger.warn(RECORD_ACTION[RECORD_ACTION.MESSAGE_PERMISSION_ERROR], error.toString())
       const permissionErrorMessage: Message = {
         topic: message.topic,
-        action: EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR,
+        action: RECORD_ACTION.MESSAGE_PERMISSION_ERROR,
         originalAction: message.action,
         name: message.name
       }
@@ -128,7 +128,7 @@ export default class MessageProcessor {
     if (result !== true) {
       const permissionDeniedMessage: Message = {
         topic: message.topic,
-        action: EVENT_ACTIONS.MESSAGE_DENIED,
+        action: EVENT_ACTION.MESSAGE_DENIED,
         originalAction: message.action,
         name: message.name
       }

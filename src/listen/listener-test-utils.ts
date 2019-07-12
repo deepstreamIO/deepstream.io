@@ -6,8 +6,8 @@ import * as testHelper from '../test/helper/test-helper'
 import * as C from '../constants'
 import { getTestMocks } from '../test/helper/test-mocks'
 import * as sinon from 'sinon'
-import { TOPIC, ListenMessage } from '../../binary-protocol/src/message-constants'
 import { SocketWrapper, SubscriptionRegistry } from '../types'
+import { TOPIC, ListenMessage } from '../constants'
 
 export default class ListenerTestUtils {
   private actions: any
@@ -33,9 +33,9 @@ export default class ListenerTestUtils {
     this.topic = listenerTopic || C.TOPIC.RECORD
 
     if (this.topic === C.TOPIC.RECORD) {
-      this.actions = C.RECORD_ACTIONS
+      this.actions = C.RECORD_ACTION
     } else {
-      this.actions = C.EVENT_ACTIONS
+      this.actions = C.EVENT_ACTION
     }
 
     const self = this

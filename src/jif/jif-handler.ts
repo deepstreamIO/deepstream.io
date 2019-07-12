@@ -1,16 +1,12 @@
 import {
-  ACTIONS,
-  EVENT,
-  EVENT_ACTIONS,
-  PRESENCE_ACTIONS,
-  RECORD_ACTIONS,
-  RPC_ACTIONS,
+  EVENT_ACTION,
+  PRESENCE_ACTION,
+  RECORD_ACTION,
+  RPC_ACTION,
   TOPIC,
   Message,
   ALL_ACTIONS,
 } from '../constants'
-
-import { isWriteAck, WRITE_ACK_TO_ACTION } from '../../binary-protocol/src/utils'
 
 import * as Ajv from 'ajv'
 
@@ -20,7 +16,7 @@ import {
   deepFreeze,
 } from '../utils/utils'
 import { jifSchema } from './jif-schema'
-import { JifMessage, DeepstreamServices } from '../types'
+import { JifMessage, DeepstreamServices, EVENT } from '../types'
 
 const ajv = new Ajv()
 
@@ -37,7 +33,7 @@ function getJifToMsg () {
     done: true,
     message: {
       topic: TOPIC.EVENT,
-      action: EVENT_ACTIONS.EMIT,
+      action: EVENT_ACTION.EMIT,
       name: msg.eventName,
       parsedData: msg.data,
     },
@@ -48,7 +44,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RPC,
-      action: RPC_ACTIONS.REQUEST,
+      action: RPC_ACTION.REQUEST,
       name: msg.rpcName,
       correlationId: getUid(),
       parsedData: msg.data,
@@ -60,7 +56,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.READ,
+      action: RECORD_ACTION.READ,
       name: msg.recordName,
     },
   })
@@ -73,7 +69,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDPATCH_WITH_WRITE_ACK,
+      action: RECORD_ACTION.CREATEANDPATCH,
       name: msg.recordName,
       version: msg.version || -1,
       path: msg.path,
@@ -87,7 +83,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK,
+      action: RECORD_ACTION.CREATEANDUPDATE,
       name: msg.recordName,
       version: msg.version || -1,
       parsedData: msg.data,
@@ -100,7 +96,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.HEAD,
+      action: RECORD_ACTION.HEAD,
       name: msg.recordName,
     },
   })
@@ -109,7 +105,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.DELETE,
+      action: RECORD_ACTION.DELETE,
       name: msg.recordName,
     },
   }),
@@ -118,7 +114,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.NOTIFY,
+      action: RECORD_ACTION.NOTIFY,
       names: msg.recordNames
     },
   })
@@ -128,7 +124,7 @@ function getJifToMsg () {
       done: false,
       message: {
         topic: TOPIC.RECORD,
-        action: RECORD_ACTIONS.READ,
+        action: RECORD_ACTION.READ,
         name: msg.listName,
       },
   })
@@ -137,7 +133,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.CREATEANDUPDATE_WITH_WRITE_ACK,
+      action: RECORD_ACTION.CREATEANDUPDATE,
       name: msg.listName,
       version: msg.version || -1,
       parsedData: msg.data,
@@ -150,7 +146,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.RECORD,
-      action: RECORD_ACTIONS.DELETE,
+      action: RECORD_ACTION.DELETE,
       name: msg.listName,
     },
   })
@@ -165,7 +161,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.QUERY_ALL,
+      action: PRESENCE_ACTION.QUERY_ALL,
     },
   })
 
@@ -173,7 +169,7 @@ function getJifToMsg () {
     done: false,
     message: {
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.QUERY,
+      action: PRESENCE_ACTION.QUERY,
       data: msg.parsedData,
     },
   })
@@ -188,8 +184,8 @@ function getMsgToJif () {
   // message -> jif lookup table
   const MSG_TO_JIF: any = {}
   MSG_TO_JIF[TOPIC.RPC] = {}
-  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.RESPONSE][TYPE.NORMAL] = (message: Message) => ({
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.RESPONSE][TYPE.NORMAL] = (message: Message) => ({
     done: true,
     message: {
       data: message.parsedData,
@@ -197,15 +193,15 @@ function getMsgToJif () {
     },
   })
 
-  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.ACCEPT] = {}
-  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.ACCEPT][TYPE.NORMAL] = () => ({ done: false })
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.ACCEPT] = {}
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.ACCEPT][TYPE.NORMAL] = () => ({ done: false })
 
-  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.REQUEST] = {}
-  MSG_TO_JIF[TOPIC.RPC][RPC_ACTIONS.REQUEST][TYPE.ACK] = () => ({ done: false })
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.REQUEST] = {}
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.REQUEST][TYPE.ACK] = () => ({ done: false })
 
   MSG_TO_JIF[TOPIC.RECORD] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.READ_RESPONSE][TYPE.NORMAL] = (message: Message) => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.READ_RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.READ_RESPONSE][TYPE.NORMAL] = (message: Message) => ({
     done: true,
     message: {
       version: message.version,
@@ -214,40 +210,40 @@ function getMsgToJif () {
     },
   })
 
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = (message: Message) => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.WRITE_ACKNOWLEDGEMENT] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.WRITE_ACKNOWLEDGEMENT][TYPE.NORMAL] = (message: Message) => ({
     done: true,
     message: {
       success: true,
     },
   })
 
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE][TYPE.NORMAL] = () => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.DELETE] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.DELETE][TYPE.NORMAL] = () => ({
     done: true,
     message: {
       success: true,
     },
   })
 
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE_SUCCESS] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.DELETE_SUCCESS][TYPE.NORMAL] = () => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.DELETE_SUCCESS] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.DELETE_SUCCESS][TYPE.NORMAL] = () => ({
     done: true,
     message: {
       success: true,
     },
   })
 
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.NOTIFY] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.NOTIFY][TYPE.ACK] = (message: Message) => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.NOTIFY] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.NOTIFY][TYPE.ACK] = (message: Message) => ({
     done: true,
     message: {
       success: true,
     },
   })
 
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTIONS.HEAD_RESPONSE][TYPE.NORMAL] = (message: Message) => ({
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.HEAD_RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.RECORD][RECORD_ACTION.HEAD_RESPONSE][TYPE.NORMAL] = (message: Message) => ({
     done: true,
     message: {
       version: message.version,
@@ -256,16 +252,16 @@ function getMsgToJif () {
   })
 
   MSG_TO_JIF[TOPIC.PRESENCE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_ALL_RESPONSE][TYPE.NORMAL] = (message: Message) => ({
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTION.QUERY_ALL_RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTION.QUERY_ALL_RESPONSE][TYPE.NORMAL] = (message: Message) => ({
     done: true,
     message: {
       users: message.names,
       success: true,
     },
   })
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE] = {}
-  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTIONS.QUERY_RESPONSE][TYPE.NORMAL] = (message: Message) => ({
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTION.QUERY_RESPONSE] = {}
+  MSG_TO_JIF[TOPIC.PRESENCE][PRESENCE_ACTION.QUERY_RESPONSE][TYPE.NORMAL] = (message: Message) => ({
     done: true,
     message: {
       users: message.parsedData,
@@ -356,31 +352,27 @@ export default class JIFHandler {
       success: false,
     }
 
-    if (event === EVENT_ACTIONS.MESSAGE_DENIED) {
+    if (event === EVENT_ACTION.MESSAGE_DENIED) {
       result.action = message.originalAction as number
-      result.error = `Message denied. Action "${
-        isWriteAck(result.action)
-          ? ACTIONS[message.topic][WRITE_ACK_TO_ACTION[result.action]]
-          : ACTIONS[message.topic][result.action]
-      }" is not permitted.`
-    } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTIONS.VERSION_EXISTS) {
+      result.error = 'Message denied. Action "" is not permitted.'
+    } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTION.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version
       result.currentData = message.parsedData
-    } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTIONS.RECORD_NOT_FOUND) {
+    } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTION.RECORD_NOT_FOUND) {
       result.error = `Record read failed. Record "${message.name}" could not be found.`
       result.errorEvent = message.action
-    } else if (message.topic === TOPIC.RPC && event === RPC_ACTIONS.NO_RPC_PROVIDER) {
+    } else if (message.topic === TOPIC.RPC && event === RPC_ACTION.NO_RPC_PROVIDER) {
       result.error = `No provider was available to handle the RPC "${message.name}".`
       // message.correlationId = data[1]
-    } else if (message.topic === TOPIC.RPC && message.action === RPC_ACTIONS.RESPONSE_TIMEOUT) {
+    } else if (message.topic === TOPIC.RPC && message.action === RPC_ACTION.RESPONSE_TIMEOUT) {
       result.error = 'The RPC response timeout was exceeded by the provider.'
     } else {
       this.services.logger.warn(
         EVENT.INFO,
         `Unhandled request error occurred: ${TOPIC[message.topic]} ${event} ${JSON.stringify(message)}`,
       )
-      result.error = `An error occurred: ${RPC_ACTIONS[event as number]}.`
+      result.error = `An error occurred: ${RPC_ACTION[event as number]}.`
       result.errorParams = message.name
     }
 

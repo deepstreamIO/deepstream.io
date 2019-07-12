@@ -21,7 +21,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
     const permissions = getBasePermissions()
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'someRecord'
     }
     expect(testPermission(permissions, message)).to.equal(true)
@@ -36,7 +36,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'private/userA'
     }
 
@@ -52,7 +52,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UNSUBSCRIBE,
+      action: C.RECORD_ACTION.UNSUBSCRIBE,
       name: 'private/userA'
     }
 
@@ -68,7 +68,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'private/userA'
     }
 
@@ -84,7 +84,7 @@ describe('permission handler applies basic permissions to incoming messages', ()
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'private/userA'
     }
 
@@ -102,14 +102,14 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event',
       data: '{"price":15}'
     })).to.equal(false)
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event',
       data: '{"price":5}'
     })).to.equal(true)
@@ -123,7 +123,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event'
     })).to.equal(false)
   })
@@ -141,7 +141,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST,
+      action: C.RPC_ACTION.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
       data: '{"assetClass": "equity"}'
@@ -149,7 +149,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST,
+      action: C.RPC_ACTION.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
       data: '{"assetClass": "fx"}'
@@ -157,7 +157,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST,
+      action: C.RPC_ACTION.REQUEST,
       name: 'trade/book',
       correlationId: '1234',
       data: '{"assetClass": "fx"}'
@@ -165,7 +165,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST,
+      action: C.RPC_ACTION.REQUEST,
       name: 'trade/cancel',
       correlationId: '1234',
       data: '{"assetClass": "fx"}'
@@ -185,7 +185,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'cars/mercedes',
       version: 1,
       data: '{"manufacturer":"mercedes-benz"}'
@@ -193,7 +193,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'cars/mercedes',
       version: 1,
       data: '{"manufacturer":"BMW"}'
@@ -201,7 +201,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
       data: '{"model": "911", "price": 60000 }'
@@ -209,7 +209,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
       data: '{"model": "911", "price": 40000 }'
@@ -217,7 +217,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     expect(testPermission(permissions, {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'cars/porsche/911',
       version: 1,
       data: '{"model": "Boxter", "price": 70000 }'
@@ -233,7 +233,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'non-Existing-Record',
     }
 
@@ -255,13 +255,13 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'non-Existing-Record',
     }
 
     const callback = function (socketWrapper, msg, passItOn, error, result) {
       expect(lastError()).to.contain('Cannot read property \'indexOf\' of null')
-      expect(error).to.equal(C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR)
+      expect(error).to.equal(C.RECORD_ACTION.MESSAGE_PERMISSION_ERROR)
       expect(result).to.equal(false)
       next()
     }
@@ -279,7 +279,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'cars/mercedes',
       version: 1,
       data: '{"manufacturer":"mercedes-benz"'
@@ -303,7 +303,7 @@ describe('permission handler applies basic permissions referencing their own dat
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event',
       data: 'xxx'
     }
@@ -333,7 +333,7 @@ describe('loads permissions repeatedly', () => {
   it('requests permissions initially, causing a lookup', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event',
       data: 'some-data'
     }
@@ -350,7 +350,7 @@ describe('loads permissions repeatedly', () => {
   it('requests permissions a second time, causing a cache retrieval', (next) => {
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event',
       data: 'some-data'
     }

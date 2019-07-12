@@ -1,8 +1,7 @@
 import * as fs from 'fs'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, Storage, StorageReadCallback, StorageWriteCallback, Authentication, Permission, LOG_LEVEL } from '../types'
-import { JSONObject, EVENT } from '../../binary-protocol/src/message-constants'
+import { DeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, Storage, StorageReadCallback, StorageWriteCallback, Authentication, Permission, LOG_LEVEL, EVENT } from '../types'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
@@ -21,7 +20,8 @@ import { LocalMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 import { get as getDefaultOptions } from '../default-options'
-import Deepstream from '../deepstream.io';
+import Deepstream from '../deepstream.io'
+import { JSONObject } from '../constants'
 
 let commandLineArguments: any
 

@@ -30,7 +30,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'purchase/doesExist'
     }
 
@@ -57,7 +57,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'purchase/itemA'
     }
 
@@ -80,7 +80,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'purchase/itemA'
     }
 
@@ -103,7 +103,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'purchase/itemA'
     }
 
@@ -128,7 +128,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'userA'
     }
 
@@ -155,7 +155,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event',
       data: '{"owner":"userX"}'
     }
@@ -180,7 +180,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event',
       data: '{"owner":"userX"}'
     }
@@ -204,13 +204,13 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.EMIT,
+      action: C.EVENT_ACTION.EMIT,
       name: 'some-event',
       data: '{"price":15}'
     }
 
     const callback = function (socketWrapper, msg, passItOn, error, result) {
-      expect(error).to.equal(C.RECORD_ACTIONS.RECORD_LOAD_ERROR)
+      expect(error).to.equal(C.RECORD_ACTION.RECORD_LOAD_ERROR)
       expect(result).to.equal(false)
       next()
     }

@@ -80,7 +80,7 @@
 //     expect(uwsMock.heartbeatInterval).to.equal(config.heartbeatInterval)
 //     expect(uwsMock.pingMessage).to.equal({
 //       topic: C.TOPIC.CONNECTION,
-//       action: C.CONNECTION_ACTIONS.PING
+//       action: CONNECTION_ACTION.PING
 //     })
 //   })
 //
@@ -91,9 +91,9 @@
 //         .once()
 //         .withExactArgs({
 //           topic: C.TOPIC.CONNECTION,
-//           action: C.CONNECTION_ACTIONS.INVALID_MESSAGE,
+//           action: CONNECTION_ACTION.INVALID_MESSAGE,
 //           originalTopic: C.TOPIC.AUTH,
-//           originalAction: C.AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
+//           originalAction: AUTH_ACTION.AUTH_UNSUCCESSFUL,
 //           data: 'gibbeerish'
 //         })
 //
@@ -102,7 +102,7 @@
 //         .never()
 //       const message: C.Message = {
 //         topic: C.TOPIC.AUTH,
-//         action: C.AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
+//         action: AUTH_ACTION.AUTH_UNSUCCESSFUL,
 //         raw: 'gibbeerish'
 //       }
 //       uwsMock.messageHandler([message], client.socketWrapper)
@@ -110,13 +110,13 @@
 //   })
 //
 //   it('the connection endpoint handles parser errors', () => {
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //     client.socketWrapperMock
 //       .expects('sendMessage')
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.PARSER,
-//         action: C.PARSER_ACTIONS.UNKNOWN_ACTION,
+//         action: C.PARSER_ACTION.UNKNOWN_ACTION,
 //         data: Buffer.from('gibbeerish'),
 //         originalTopic: 5,
 //         originalAction: 177
@@ -128,7 +128,7 @@
 //
 //     const message: C.ParseError = {
 //       parseError: true,
-//       action: C.PARSER_ACTIONS.UNKNOWN_ACTION,
+//       action: C.PARSER_ACTION.UNKNOWN_ACTION,
 //       parsedMessage: {
 //         topic: 5,
 //         action: 177
@@ -140,15 +140,15 @@
 //   })
 //
 //   it('the connection endpoint handles invalid auth messages', () => {
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //     client.socketWrapperMock
 //       .expects('sendMessage')
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
-//         action: C.AUTH_ACTIONS.INVALID_MESSAGE,
+//         action: AUTH_ACTION.INVALID_MESSAGE,
 //         originalTopic: C.TOPIC.EVENT,
-//         originalAction: C.EVENT_ACTIONS.EMIT,
+//         originalAction: C.EVENT_ACTION.EMIT,
 //         data: 'gibbeerish'
 //       })
 //
@@ -158,22 +158,22 @@
 //
 //     const message: C.Message = {
 //       topic: C.TOPIC.EVENT,
-//       action: C.EVENT_ACTIONS.EMIT,
+//       action: C.EVENT_ACTION.EMIT,
 //       raw: 'gibbeerish'
 //     }
 //     uwsMock.messageHandler([message], client.socketWrapper)
 //   })
 //
 //   it('the connection endpoint handles auth null data', () => {
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //
 //     client.socketWrapperMock
 //       .expects('sendMessage')
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
-//         action: C.AUTH_ACTIONS.INVALID_MESSAGE_DATA,
-//         originalAction: C.RPC_ACTIONS.REQUEST,
+//         action: AUTH_ACTION.INVALID_MESSAGE_DATA,
+//         originalAction: C.RPC_ACTION.REQUEST,
 //       })
 //
 //     client.socketWrapperMock
@@ -181,19 +181,19 @@
 //       .once()
 //       .withExactArgs()
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: 'null' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: 'null' }], client.socketWrapper)
 //   })
 //
 //   it('the connection endpoint handles invalid auth json', () => {
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //
 //     client.socketWrapperMock
 //       .expects('sendMessage')
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
-//         action: C.AUTH_ACTIONS.INVALID_MESSAGE_DATA,
-//         originalAction: C.RPC_ACTIONS.REQUEST,
+//         action: AUTH_ACTION.INVALID_MESSAGE_DATA,
+//         originalAction: C.RPC_ACTION.REQUEST,
 //       })
 //
 //     client.socketWrapperMock
@@ -201,11 +201,11 @@
 //       .once()
 //       .withExactArgs()
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{ invalid }' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{ invalid }' }], client.socketWrapper)
 //   })
 //
 //   it('the connection endpoint does not route invalid auth messages to the permission', () => {
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //
 //     client.socketWrapperMock
 //       .expects('sendMessage')
@@ -213,13 +213,13 @@
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
 //         parsedData: 'Invalid User',
-//         action: C.AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
+//         action: AUTH_ACTION.AUTH_UNSUCCESSFUL,
 //       })
 //
 //     expect(authenticationHandlerMock.lastUserValidationQueryArgs).to.equal(null)
 //     authenticationHandlerMock.nextUserValidationResult = false
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"wolfram"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"wolfram"}' }], client.socketWrapper)
 //
 //     expect(authenticationHandlerMock.lastUserValidationQueryArgs.length).to.equal(3)
 //     expect(authenticationHandlerMock.lastUserValidationQueryArgs[1].user).to.equal('wolfram')
@@ -228,7 +228,7 @@
 //
 //   describe('the connection endpoint emits a client events for user with name', () => {
 //     beforeEach(() => {
-//       uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//       uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //     })
 //
 //     it('client has the correct connection data', () => {
@@ -241,7 +241,7 @@
 //         expect(socketWrapper.user).to.equal('test-user')
 //         done()
 //       })
-//       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //     })
 //
 //     it('emits disconnected event for user with name', done => {
@@ -250,7 +250,7 @@
 //         done()
 //       })
 //
-//       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //       client.socketWrapper.close()
 //     })
 //   })
@@ -259,14 +259,14 @@
 //     beforeEach(() => {
 //       authenticationHandlerMock.nextUserIsAnonymous = true
 //       authenticationHandlerMock.nextUserValidationResult = true
-//       uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//       uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //     })
 //
 //     it('does not emit connected event', () => {
 //       const spy = spy()
 //       connectionEndpoint.once('client-connected', spy)
 //
-//       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //
 //       expect(spy).to.have.callCount(0)
 //     })
@@ -277,7 +277,7 @@
 //
 //       connectionEndpoint.once('client-disconnected', spy)
 //
-//       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//       uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //       client.socketWrapper.close()
 //
 //       expect(spy).to.have.callCount(0)
@@ -287,7 +287,7 @@
 //   it('disconnects if the number of invalid authentication attempts is exceeded', () => {
 //     authenticationHandlerMock.nextUserValidationResult = false
 //     config.maxAuthAttempts = 3
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //
 //     client.socketWrapperMock
 //       .expects('sendMessage')
@@ -295,18 +295,18 @@
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
 //         parsedData: 'Invalid User',
-//         action: C.AUTH_ACTIONS.AUTH_UNSUCCESSFUL,
+//         action: AUTH_ACTION.AUTH_UNSUCCESSFUL,
 //       })
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //
 //     client.socketWrapperMock
 //       .expects('sendMessage')
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
-//         action: C.AUTH_ACTIONS.TOO_MANY_AUTH_ATTEMPTS,
+//         action: AUTH_ACTION.TOO_MANY_AUTH_ATTEMPTS,
 //       })
 //
 //     client.socketWrapperMock
@@ -314,7 +314,7 @@
 //       .once()
 //       .withExactArgs()
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //   })
 //
 //   it('disconnects client if authentication timeout is exceeded', done => {
@@ -323,7 +323,7 @@
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.CONNECTION,
-//         action: C.CONNECTION_ACTIONS.AUTHENTICATION_TIMEOUT,
+//         action: CONNECTION_ACTION.AUTHENTICATION_TIMEOUT,
 //       })
 //
 //     client.socketWrapperMock
@@ -346,17 +346,17 @@
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
-//         action: C.AUTH_ACTIONS.AUTH_SUCCESSFUL,
+//         action: AUTH_ACTION.AUTH_SUCCESSFUL,
 //         // parsedData: undefined
 //       })
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //   })
 //
 //   it('notifies the permission when a client disconnects', () => {
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //
 //     client.socketWrapper.close()
 //
@@ -364,11 +364,11 @@
 //   })
 //
 //   it('routes valid auth messages to the permission', () => {
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
-//     uwsMock.messageHandler([{ topic: C.TOPIC.EVENT, action: C.EVENT_ACTIONS.EMIT, data: 'test' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.EVENT, action: C.EVENT_ACTION.EMIT, data: 'test' }], client.socketWrapper)
 //
-//     const result = { topic: C.TOPIC.EVENT, action: C.EVENT_ACTIONS.EMIT, data: 'test' }
+//     const result = { topic: C.TOPIC.EVENT, action: C.EVENT_ACTION.EMIT, data: 'test' }
 //     expect(lastAuthenticatedMessage).to.deep.equal(result as any)
 //   })
 //
@@ -376,26 +376,26 @@
 //     authenticationHandlerMock.nextUserValidationResult = true
 //     authenticationHandlerMock.sendNextValidAuthWithData = true
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
 //
 //     client.socketWrapperMock
 //       .expects('sendMessage')
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
-//         action: C.AUTH_ACTIONS.AUTH_SUCCESSFUL,
+//         action: AUTH_ACTION.AUTH_SUCCESSFUL,
 //         parsedData: 'test-data'
 //       })
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //   })
 //
 //   it('connection endpoint doesn\'t log credentials if logInvalidAuthData is set to false', () => {
 //     config.logInvalidAuthData = false
 //     authenticationHandlerMock.nextUserValidationResult = false
 //
-//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: C.CONNECTION_ACTIONS.CHALLENGE, data: '' }], client.socketWrapper)
-//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTIONS.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.CONNECTION, action: CONNECTION_ACTION.CHALLENGE, data: '' }], client.socketWrapper)
+//     uwsMock.messageHandler([{ topic: C.TOPIC.AUTH, action: C.RPC_ACTION.REQUEST, data: '{"user":"test-user"}' }], client.socketWrapper)
 //
 //     expect(services.logger.lastLogMessage.indexOf('wolfram')).to.equal(-1)
 //   })
@@ -610,7 +610,7 @@
 //
 //       uwsMock.messageHandler([{
 //         topic: C.TOPIC.CONNECTION,
-//         action: C.CONNECTION_ACTIONS.CHALLENGE,
+//         action: CONNECTION_ACTION.CHALLENGE,
 //         data: 'localhost:6021'
 //       }], client.socketWrapper)
 //
@@ -626,13 +626,13 @@
 //       .once()
 //       .withExactArgs({
 //         topic: C.TOPIC.AUTH,
-//         action: C.AUTH_ACTIONS.AUTH_SUCCESSFUL,
+//         action: AUTH_ACTION.AUTH_SUCCESSFUL,
 //         parsedData: { firstname: 'Wolfram' }
 //       })
 //
 //     uwsMock.messageHandler([{
 //       topic: C.TOPIC.AUTH,
-//       action: C.AUTH_ACTIONS.REQUEST,
+//       action: AUTH_ACTION.REQUEST,
 //       data: '{ "token": 1234 }'
 //     }], client.socketWrapper)
 //
@@ -647,13 +647,13 @@
 //
 //     uwsMock.messageHandler([{
 //       topic: C.TOPIC.AUTH,
-//       action: C.AUTH_ACTIONS.REQUEST,
+//       action: AUTH_ACTION.REQUEST,
 //       data: '{ "token": 1234 }'
 //     }], client.socketWrapper)
 //
 //     uwsMock.messageHandler([{
 //       topic: C.TOPIC.RECORD,
-//       action: C.RECORD_ACTIONS.READ,
+//       action: C.RECORD_ACTION.READ,
 //       name: 'recordA'
 //     }], client.socketWrapper)
 //

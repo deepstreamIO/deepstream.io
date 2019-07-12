@@ -4,8 +4,8 @@ import {spy, assert} from 'sinon'
 import * as C from '../../../constants'
 import { ConfigPermission } from './config-permission'
 import * as testHelper from '../../../test/helper/test-helper'
-import { EVENT } from '../../../constants';
 import { PromiseDelay } from '../../../utils/utils';
+import { EVENT } from '../../../types';
 
 const { config, services } = testHelper.getDeepstreamPermissionOptions()
 
@@ -93,7 +93,7 @@ describe('permission handler loading', () => {
     it('allows publishing of a private event', (next) => {
       const message = {
         topic: C.TOPIC.EVENT,
-        action: C.EVENT_ACTIONS.EMIT,
+        action: C.EVENT_ACTION.EMIT,
         name: 'private/event',
         data: 'somedata'
       }
@@ -123,7 +123,7 @@ describe('permission handler loading', () => {
 
       const message = {
         topic: C.TOPIC.EVENT,
-        action: C.EVENT_ACTIONS.EMIT,
+        action: C.EVENT_ACTION.EMIT,
         name: 'private/event',
         data: 'somedata'
       }

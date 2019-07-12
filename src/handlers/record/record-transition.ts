@@ -1,8 +1,8 @@
 import { setValue as setPathValue } from '../../utils/json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
-import { RecordWriteMessage, TOPIC, RECORD_ACTIONS, Message, EVENT } from '../../constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices, MetaData } from '../../types'
+import { RecordWriteMessage, TOPIC, RECORD_ACTION, Message } from '../../constants'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, MetaData, EVENT } from '../../types'
 import { isOfType, isExcluded } from '../../utils/utils'
 
 interface Step {
@@ -82,7 +82,7 @@ export class RecordTransition {
     if (this.data) {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
-        action: RECORD_ACTIONS.VERSION_EXISTS,
+        action: RECORD_ACTION.VERSION_EXISTS,
         originalAction: step.message.action,
         name: this.name,
         version: this.version,
@@ -91,7 +91,7 @@ export class RecordTransition {
       })
 
       this.services.logger.warn(
-        RECORD_ACTIONS[RECORD_ACTIONS.VERSION_EXISTS],
+        RECORD_ACTION[RECORD_ACTION.VERSION_EXISTS],
         `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.version}`,
         this.metaData,
       )
@@ -121,17 +121,17 @@ export class RecordTransition {
     if (result instanceof Error) {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
-        action: RECORD_ACTIONS.INVALID_MESSAGE_DATA,
+        action: RECORD_ACTION.INVALID_MESSAGE_DATA,
         data: message.data
       })
       return
     }
 
-    if (message.action === RECORD_ACTIONS.UPDATE) {
+    if (message.action === RECORD_ACTION.UPDATE) {
       if (!isOfType(message.parsedData, 'object') && !isOfType(message.parsedData, 'array')) {
         socketWrapper.sendMessage(
           Object.assign({}, message, {
-            action: RECORD_ACTIONS.INVALID_MESSAGE_DATA,
+            action: RECORD_ACTION.INVALID_MESSAGE_DATA,
             originalAction: message.action
           })
         )
@@ -308,7 +308,7 @@ export class RecordTransition {
     if (response[correlationId] === 0) {
       socketWrapper.sendMessage({
         topic: TOPIC.RECORD,
-        action: RECORD_ACTIONS.WRITE_ACKNOWLEDGEMENT,
+        action: RECORD_ACTION.WRITE_ACKNOWLEDGEMENT,
         // originalAction: originalMessage.action,
         name: originalMessage.name,
         correlationId
@@ -392,7 +392,7 @@ export class RecordTransition {
     for (const [socketWrapper, pendingWrites] of this.writeAckSockets) {
       for (const correlationId in pendingWrites) {
         socketWrapper.sendMessage({
-          topic: TOPIC.RECORD, action: RECORD_ACTIONS.RECORD_UPDATE_ERROR, reason: errorMessage, correlationId
+          topic: TOPIC.RECORD, action: RECORD_ACTION.RECORD_UPDATE_ERROR, reason: errorMessage, correlationId
         })
       }
     }
@@ -407,13 +407,13 @@ export class RecordTransition {
     if (this.isDestroyed === true) {
       return
     }
-    this.services.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_UPDATE_ERROR], error.toString(), this.metaData)
+    this.services.logger.error(RECORD_ACTION[RECORD_ACTION.RECORD_UPDATE_ERROR], error.toString(), this.metaData)
 
     for (let i = 0; i < this.steps.length; i++) {
       if (!this.steps[i].sender.isRemote) {
         this.steps[i].sender.sendMessage({
           topic: TOPIC.RECORD,
-          action: RECORD_ACTIONS.RECORD_UPDATE_ERROR,
+          action: RECORD_ACTION.RECORD_UPDATE_ERROR,
           name: this.steps[i].message.name
         })
       }

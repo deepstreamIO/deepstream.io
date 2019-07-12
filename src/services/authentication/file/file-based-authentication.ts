@@ -1,9 +1,9 @@
 import * as crypto from 'crypto'
-import { DeepstreamPlugin, Authentication, UserAuthenticationCallback, DeepstreamServices } from '../../../types'
-import { JSONObject, EVENT } from '../../../constants'
+import { DeepstreamPlugin, Authentication, UserAuthenticationCallback, DeepstreamServices, EVENT } from '../../../types'
+import { JSONObject } from '../../../constants'
 import { validateMap } from '../../../utils/utils'
 import { readAndParseFile } from '../../../config/js-yaml-loader'
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'events'
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'

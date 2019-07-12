@@ -58,8 +58,8 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.RECORD_CREATE_ERROR,
-        originalAction: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
+        action: C.RECORD_ACTION.RECORD_CREATE_ERROR,
+        originalAction: C.RECORD_ACTION.SUBSCRIBECREATEANDREAD,
         name: M.subscribeCreateAndReadMessage.names[0]
       })
 
@@ -85,7 +85,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.READ_RESPONSE,
+        action: C.RECORD_ACTION.READ_RESPONSE,
         name: 'some-record',
         version: M.recordVersion,
         parsedData: M.recordData
@@ -102,7 +102,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.READ_RESPONSE,
+        action: C.RECORD_ACTION.READ_RESPONSE,
         name: 'some-record',
         parsedData: M.recordData,
         version: M.recordVersion
@@ -117,7 +117,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.RECORD_NOT_FOUND,
+        action: C.RECORD_ACTION.RECORD_NOT_FOUND,
         originalAction: M.recordSnapshotMessage.action,
         name: M.recordSnapshotMessage.name,
       })
@@ -133,7 +133,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
+        action: C.RECORD_ACTION.RECORD_LOAD_ERROR,
         originalAction: M.recordSnapshotMessage.action,
         name: M.recordSnapshotMessage.name,
       })
@@ -163,7 +163,7 @@ describe('record handler handles messages', () => {
         .once()
         .withExactArgs(Object.assign({}, {
           topic: C.TOPIC.RECORD,
-          action: C.RECORD_ACTIONS.HEAD_RESPONSE,
+          action: C.RECORD_ACTION.HEAD_RESPONSE,
           name: M.recordHeadMessage.name,
           version: -1
         }, { name }))
@@ -180,7 +180,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.RECORD_LOAD_ERROR,
+        action: C.RECORD_ACTION.RECORD_LOAD_ERROR,
         originalAction: M.recordHeadMessage.action,
         name: M.recordHeadMessage.name,
       })
@@ -230,7 +230,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.VERSION_EXISTS,
+        action: C.RECORD_ACTION.VERSION_EXISTS,
         originalAction: ExistingVersion.action,
         name: ExistingVersion.name,
         version: ExistingVersion.version,
@@ -258,7 +258,7 @@ describe('record handler handles messages', () => {
           .once()
           .withExactArgs(name, {
             topic: C.TOPIC.RECORD,
-            action: C.RECORD_ACTIONS.UPDATE,
+            action: C.RECORD_ACTION.UPDATE,
             name,
             parsedData: { name },
             version: 123
@@ -275,7 +275,7 @@ describe('record handler handles messages', () => {
           .once()
           .withExactArgs(name, {
             topic: C.TOPIC.RECORD,
-            action: C.RECORD_ACTIONS.DELETED,
+            action: C.RECORD_ACTION.DELETED,
             name
           }, true, null)
       })
@@ -291,7 +291,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs(M.notify.names[0], {
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.UPDATE,
+        action: C.RECORD_ACTION.UPDATE,
         name: M.notify.names[0],
         parsedData: { name: M.notify.names[0] },
         version: 1
@@ -302,7 +302,7 @@ describe('record handler handles messages', () => {
         .once()
         .withExactArgs(M.notify.names[1], {
           topic: C.TOPIC.RECORD,
-          action: C.RECORD_ACTIONS.DELETED,
+          action: C.RECORD_ACTION.DELETED,
           name: M.notify.names[1]
         }, true, null)
 
@@ -331,8 +331,8 @@ describe('record handler handles messages', () => {
       .twice()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.VERSION_EXISTS,
-        originalAction: C.RECORD_ACTIONS.UPDATE,
+        action: C.RECORD_ACTION.VERSION_EXISTS,
+        originalAction: C.RECORD_ACTION.UPDATE,
         version: M.recordVersion,
         parsedData: M.recordData,
         name: M.recordUpdate.name,
@@ -361,7 +361,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs(M.recordDelete.name, {
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.DELETED,
+        action: C.RECORD_ACTION.DELETED,
         name: M.recordDelete.name
       }, true, client.socketWrapper)
 
@@ -422,7 +422,7 @@ describe('record handler handles messages', () => {
       .once()
       .withExactArgs(
         M.createAndUpdate.name,
-        Object.assign({}, M.createAndUpdate, { action: C.RECORD_ACTIONS.UPDATE, version: 1 }),
+        Object.assign({}, M.createAndUpdate, { action: C.RECORD_ACTION.UPDATE, version: 1 }),
         false,
         client.socketWrapper
       )

@@ -19,7 +19,7 @@ describe('returns the applicable rule for a message', () => {
   it('returns null for actions without rules', () => {
     const msg = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.UNSUBSCRIBE
+      action: C.EVENT_ACTION.UNSUBSCRIBE
     }
     expect(getRulesForMessage(msg)).to.equal(null)
   })
@@ -27,36 +27,36 @@ describe('returns the applicable rule for a message', () => {
   it('returns ruletypes for event subscribe messages', () => {
     const msg = {
       topic: C.TOPIC.EVENT,
-      action: C.EVENT_ACTIONS.SUBSCRIBE
+      action: C.EVENT_ACTION.SUBSCRIBE
     }
     expect(getRulesForMessage(msg)).to.deep.equal({
       section: 'event',
       type: 'subscribe',
-      action: C.EVENT_ACTIONS.SUBSCRIBE
+      action: C.EVENT_ACTION.SUBSCRIBE
     })
   })
 
   it('returns ruletypes for record patch messages', () => {
     const msg = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.PATCH
+      action: C.RECORD_ACTION.PATCH
     }
     expect(getRulesForMessage(msg)).to.deep.equal({
       section: 'record',
       type: 'write',
-      action: C.RECORD_ACTIONS.PATCH
+      action: C.RECORD_ACTION.PATCH
     })
   })
 
   it('returns ruletypes for record notify messages', () => {
     const msg = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.NOTIFY
+      action: C.RECORD_ACTION.NOTIFY
     }
     expect(getRulesForMessage(msg)).to.deep.equal({
       section: 'record',
       type: 'notify',
-      action: C.RECORD_ACTIONS.NOTIFY
+      action: C.RECORD_ACTION.NOTIFY
     })
   })
 })

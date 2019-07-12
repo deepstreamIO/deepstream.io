@@ -1,5 +1,5 @@
-import { EVENT } from '../src/constants'
 import { Command } from 'commander'
+import { EVENT } from '../src/types'
 
 export const start = (program: Command) => {
   program

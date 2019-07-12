@@ -38,8 +38,8 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
     expect(services.permission.lastArgs.length).to.equal(2)
-    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTIONS.CREATE)
-    expect(services.permission.lastArgs[1][1].action).to.equal(C.RECORD_ACTIONS.READ)
+    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTION.CREATE)
+    expect(services.permission.lastArgs[1][1].action).to.equal(C.RECORD_ACTION.READ)
   })
 
   it('triggers only read action if record does exist', () => {
@@ -53,7 +53,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
     expect(services.permission.lastArgs.length).to.equal(1)
-    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTIONS.READ)
+    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTION.READ)
   })
 
   it('rejects a create', () => {
@@ -68,7 +68,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
     expect(services.permission.lastArgs.length).to.equal(1)
-    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTIONS.CREATE)
+    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTION.CREATE)
   })
 
   it('rejects a read', () => {
@@ -84,7 +84,7 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
     expect(services.permission.lastArgs.length).to.equal(1)
-    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTIONS.READ)
+    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTION.READ)
   })
 
   it('handles a permission error', () => {
@@ -100,6 +100,6 @@ describe('record handler handles messages', () => {
     recordHandler.handle(client.socketWrapper, M.subscribeCreateAndReadMessage)
 
     expect(services.permission.lastArgs.length).to.equal(1)
-    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTIONS.CREATE)
+    expect(services.permission.lastArgs[0][1].action).to.equal(C.RECORD_ACTION.CREATE)
   })
 })

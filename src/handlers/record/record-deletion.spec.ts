@@ -56,7 +56,7 @@ describe('record deletion', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
+        action: C.RECORD_ACTION.RECORD_DELETE_ERROR,
         name: 'someRecord'
       })
 
@@ -67,7 +67,7 @@ describe('record deletion', () => {
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).to.equal(true)
       expect(callback).to.have.callCount(0)
-      expect(services.logger.logSpy.firstCall.args).to.deep.equal([3, C.RECORD_ACTIONS[C.RECORD_ACTIONS.RECORD_DELETE_ERROR], 'storageError'])
+      expect(services.logger.logSpy.firstCall.args).to.deep.equal([3, C.RECORD_ACTION[C.RECORD_ACTION.RECORD_DELETE_ERROR], 'storageError'])
       done()
     }, 20)
   })
@@ -82,7 +82,7 @@ describe('record deletion', () => {
       .once()
       .withExactArgs({
         topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.RECORD_DELETE_ERROR,
+        action: C.RECORD_ACTION.RECORD_DELETE_ERROR,
         name: 'someRecord'
       })
 
@@ -93,7 +93,7 @@ describe('record deletion', () => {
     setTimeout(() => {
       expect(recordDeletion.isDestroyed).to.equal(true)
       expect(callback).to.have.callCount(0)
-      expect(services.logger.logSpy.firstCall.args).to.deep.equal([3, C.RECORD_ACTIONS[C.RECORD_ACTIONS.RECORD_DELETE_ERROR], 'cache timeout'])
+      expect(services.logger.logSpy.firstCall.args).to.deep.equal([3, C.RECORD_ACTION[C.RECORD_ACTION.RECORD_DELETE_ERROR], 'cache timeout'])
       done()
     }, 100)
   })

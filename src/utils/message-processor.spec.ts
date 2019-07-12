@@ -1,10 +1,9 @@
 import {expect} from 'chai'
-import * as C from '../constants'
 import PermissionHandlerMock from '../test/mock/permission-handler-mock'
 import MessageProcessor from './message-processor'
 import LoggerMock from '../test/mock/logger-mock'
 import { getTestMocks } from '../test/helper/test-mocks'
-import { CONNECTION_ACTIONS, TOPIC } from '../../binary-protocol/src/message-constants'
+import { TOPIC, CONNECTION_ACTION, RPC_ACTION, RECORD_ACTION } from '../constants';
 
 let messageProcessor
 let log
@@ -16,8 +15,8 @@ describe('the message processor only forwards valid, authorized messages', () =>
   let permissionMock
 
   const message = {
-    topic: C.TOPIC.RECORD,
-    action: C.RECORD_ACTIONS.READ,
+    topic: TOPIC.RECORD,
+    action: RECORD_ACTION.READ,
     name: 'record/name'
   }
 
@@ -45,7 +44,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
       .expects('sendMessage')
       .never()
 
-    messageProcessor.process(client.socketWrapper, [{ topic: TOPIC.CONNECTION, action: CONNECTION_ACTIONS.PING }])
+    messageProcessor.process(client.socketWrapper, [{ topic: TOPIC.CONNECTION, action: CONNECTION_ACTION.PING }])
   })
 
   it('handles permission errors', () => {
@@ -55,23 +54,23 @@ describe('the message processor only forwards valid, authorized messages', () =>
       .expects('sendMessage')
       .once()
       .withExactArgs({
-        topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR,
-        originalAction: C.RECORD_ACTIONS.READ,
+        topic: TOPIC.RECORD,
+        action: RECORD_ACTION.MESSAGE_PERMISSION_ERROR,
+        originalAction: RECORD_ACTION.READ,
         name: message.name
       })
 
     messageProcessor.process(client.socketWrapper, [message])
 
     expect(log).to.have.callCount(1)
-    expect(log).to.have.been.calledWith(2, C.RECORD_ACTIONS[C.RECORD_ACTIONS.MESSAGE_PERMISSION_ERROR], 'someError')
+    expect(log).to.have.been.calledWith(2, RECORD_ACTION[C.RECORD_ACTION.MESSAGE_PERMISSION_ERROR], 'someError')
   })
 
   it('rpc permission errors have a correlation id', () => {
     permissionMock.nextCanPerformActionResult = 'someError'
     const rpcMessage = {
-      topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST,
+      topic: TOPIC.RPC,
+      action: RPC_ACTION.REQUEST,
       name: 'myRPC',
       correlationId: '1234567890',
       data: Buffer.from('{}', 'utf8'),
@@ -82,8 +81,8 @@ describe('the message processor only forwards valid, authorized messages', () =>
       .expects('sendMessage')
       .once()
       .withExactArgs({
-        topic: C.TOPIC.RPC,
-        action: C.RPC_ACTIONS.MESSAGE_PERMISSION_ERROR,
+        topic: TOPIC.RPC,
+        action: RPC_ACTION.MESSAGE_PERMISSION_ERROR,
         originalAction: rpcMessage.action,
         name: rpcMessage.name,
         correlationId: rpcMessage.correlationId
@@ -92,7 +91,7 @@ describe('the message processor only forwards valid, authorized messages', () =>
     messageProcessor.process(client.socketWrapper, [rpcMessage])
 
     expect(log).to.have.callCount(1)
-    expect(log).to.have.been.calledWith(2, C.RPC_ACTIONS[C.RPC_ACTIONS.MESSAGE_PERMISSION_ERROR], 'someError')
+    expect(log).to.have.been.calledWith(2, RPC_ACTION[C.RPC_ACTION.MESSAGE_PERMISSION_ERROR], 'someError')
   })
 
   it('handles denied messages', () => {
@@ -102,9 +101,9 @@ describe('the message processor only forwards valid, authorized messages', () =>
       .expects('sendMessage')
       .once()
       .withExactArgs({
-        topic: C.TOPIC.RECORD,
-        action: C.RECORD_ACTIONS.MESSAGE_DENIED,
-        originalAction: C.RECORD_ACTIONS.READ,
+        topic: TOPIC.RECORD,
+        action: RECORD_ACTION.MESSAGE_DENIED,
+        originalAction: RECORD_ACTION.READ,
         name: message.name
       })
 

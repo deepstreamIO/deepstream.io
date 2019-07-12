@@ -1,7 +1,7 @@
 import {EventEmitter} from 'events'
 import Timeout = NodeJS.Timeout
-import { DeepstreamPlugin, LockRegistry, DeepstreamServices, DeepstreamConfig, LockCallback } from '../../types'
-import { TOPIC, LOCK_ACTIONS, LockMessage, EVENT } from '../../constants'
+import { DeepstreamPlugin, LockRegistry, DeepstreamServices, DeepstreamConfig, LockCallback, EVENT } from '../../types'
+import { TOPIC, LOCK_ACTION, LockMessage } from '../../constants'
 
 /**
  * The lock registry is responsible for maintaing a single source of truth
@@ -73,7 +73,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
 
     this.services.clusterNode.sendDirect(leaderServerName, {
       topic: TOPIC.LOCK,
-      action: LOCK_ACTIONS.REQUEST,
+      action: LOCK_ACTION.REQUEST,
       name: lockName
     })
   }
@@ -85,7 +85,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
     const leaderServerName = this.services.clusterRegistry.getLeader()
     this.services.clusterNode.sendDirect(leaderServerName, {
       topic:  TOPIC.LOCK,
-      action: LOCK_ACTIONS.RELEASE,
+      action: LOCK_ACTION.RELEASE,
       name: lockName
     })
   }
@@ -96,7 +96,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
    * the leader and recieved a request.
    */
   private onPrivateMessage (message: LockMessage, remoteServerName: string) {
-    if (message.action === LOCK_ACTIONS.RESPONSE) {
+    if (message.action === LOCK_ACTION.RESPONSE) {
         this.handleRemoteLockResponse(message.name!, message.locked)
         return
     }
@@ -109,12 +109,12 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
       return
     }
 
-    if (message.action === LOCK_ACTIONS.REQUEST) {
+    if (message.action === LOCK_ACTION.REQUEST) {
       this.handleRemoteLockRequest(message.name, remoteServerName)
       return
     }
 
-    if (message.action === LOCK_ACTIONS.RELEASE) {
+    if (message.action === LOCK_ACTION.RELEASE) {
        this.releaseLock(message.name!)
        return
     }
@@ -126,7 +126,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements LockReg
   private handleRemoteLockRequest (lockName: string, remoteServerName: string) {
     this.services.clusterNode.sendDirect(remoteServerName, {
       topic: TOPIC.LOCK,
-      action: LOCK_ACTIONS.RESPONSE,
+      action: LOCK_ACTION.RESPONSE,
       name: lockName,
       locked: this.getLock(lockName)
     })

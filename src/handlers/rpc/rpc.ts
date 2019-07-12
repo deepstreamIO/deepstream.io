@@ -1,4 +1,4 @@
-import { RPC_ACTIONS, TOPIC, RPCMessage, Message } from '../../constants'
+import { RPC_ACTION, TOPIC, RPCMessage, Message } from '../../constants'
 import RpcHandler from './rpc-handler'
 import { SimpleSocketWrapper, DeepstreamConfig } from '../../types'
 
@@ -61,17 +61,17 @@ export class Rpc {
       return
     }
 
-    if (message.action === RPC_ACTIONS.ACCEPT) {
+    if (message.action === RPC_ACTION.ACCEPT) {
       this.handleAccept(message)
       return
     }
 
-    if (message.action === RPC_ACTIONS.REJECT || message.action === RPC_ACTIONS.NO_RPC_PROVIDER) {
+    if (message.action === RPC_ACTION.REJECT || message.action === RPC_ACTION.NO_RPC_PROVIDER) {
       this.reroute()
       return
     }
 
-    if (message.action === RPC_ACTIONS.RESPONSE || message.action === RPC_ACTIONS.REQUEST_ERROR) {
+    if (message.action === RPC_ACTION.RESPONSE || message.action === RPC_ACTION.REQUEST_ERROR) {
       this.requestor.sendMessage(message)
       this.destroy()
     }
@@ -115,7 +115,7 @@ export class Rpc {
     if (this.isAccepted === true) {
       this.provider.sendMessage({
         topic: TOPIC.RPC,
-        action: RPC_ACTIONS.MULTIPLE_ACCEPT,
+        action: RPC_ACTION.MULTIPLE_ACCEPT,
         name: this.message.name,
         correlationId: this.message.correlationId
       })
@@ -145,7 +145,7 @@ export class Rpc {
 
     this.requestor.sendMessage({
       topic: TOPIC.RPC,
-      action: RPC_ACTIONS.NO_RPC_PROVIDER,
+      action: RPC_ACTION.NO_RPC_PROVIDER,
       name: this.message.name,
       correlationId: this.message.correlationId
     })
@@ -159,7 +159,7 @@ export class Rpc {
   private onAcceptTimeout (): void {
     this.requestor.sendMessage({
       topic: TOPIC.RPC,
-      action: RPC_ACTIONS.ACCEPT_TIMEOUT,
+      action: RPC_ACTION.ACCEPT_TIMEOUT,
       name: this.message.name,
       correlationId: this.message.correlationId
     })
@@ -173,7 +173,7 @@ export class Rpc {
   public onResponseTimeout (): void {
     this.requestor.sendMessage({
       topic: TOPIC.RPC,
-      action: RPC_ACTIONS.RESPONSE_TIMEOUT,
+      action: RPC_ACTION.RESPONSE_TIMEOUT,
       name: this.message.name,
       correlationId: this.message.correlationId
     })

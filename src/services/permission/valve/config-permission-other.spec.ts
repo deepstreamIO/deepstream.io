@@ -32,7 +32,7 @@ describe('supports spaces after variables and escaped quotes', () => {
     }
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'someUser',
       version: 1,
       data: '{"firstname":"Yasser"}'
@@ -55,7 +55,7 @@ describe('supports spaces after variables and escaped quotes', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'someUser',
       version: 1,
       data: '{"firstname":"Wolfram"}'

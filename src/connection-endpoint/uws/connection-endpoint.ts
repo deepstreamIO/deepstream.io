@@ -68,8 +68,8 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
       },
       message: (ws, message) => {
         this.connections.get(ws)!.onMessage(
-          binaryMessageParser.parse(Buffer.from(message.slice(0))
-        ))
+          binaryMessageParser.parse(new Uint8Array(message))
+        )
       },
       drain: () => {
       },

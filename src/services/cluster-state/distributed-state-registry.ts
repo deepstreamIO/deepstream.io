@@ -1,6 +1,5 @@
-import { TOPIC, STATE_ACTIONS } from '../../constants'
+import { TOPIC, STATE_ACTION, StateMessage } from '../../constants'
 import { DeepstreamServices, StateRegistry, StateRegistryCallback, DeepstreamConfig } from '../../types'
-import { StateMessage } from '../../../binary-protocol/src/message-constants'
 import { Dictionary } from 'ts-essentials'
 import { EventEmitter } from 'events'
 
@@ -65,7 +64,7 @@ export class DistributedStateRegistry implements StateRegistry {
     const data = this.data.get(name)
     if (!data || !data.nodes.has(this.config.serverName)) {
       this.addToServer(name, this.config.serverName)
-      this.sendMessage(name, STATE_ACTIONS.ADD)
+      this.sendMessage(name, STATE_ACTION.ADD)
     } else {
       data.localCount++
     }
@@ -81,7 +80,7 @@ export class DistributedStateRegistry implements StateRegistry {
       data.localCount--
       if (data.localCount === 0) {
         this.removeFromServer(name, this.config.serverName)
-        this.sendMessage(name, STATE_ACTIONS.REMOVE)
+        this.sendMessage(name, STATE_ACTION.REMOVE)
       }
     }
   }
@@ -202,7 +201,7 @@ export class DistributedStateRegistry implements StateRegistry {
   /**
    * Generic messaging function for add and remove messages
    */
-  private sendMessage (name: string, action: STATE_ACTIONS) {
+  private sendMessage (name: string, action: STATE_ACTION) {
     this.services.clusterNode.send({
       topic: TOPIC.STATE_REGISTRY,
       registryTopic: this.topic,
@@ -214,7 +213,7 @@ export class DistributedStateRegistry implements StateRegistry {
       this.services.clusterNode.send({
         topic: TOPIC.STATE_REGISTRY,
         registryTopic: this.topic,
-        action: STATE_ACTIONS.CHECKSUM,
+        action: STATE_ACTION.CHECKSUM,
         checksum
       })
     )
@@ -302,7 +301,7 @@ export class DistributedStateRegistry implements StateRegistry {
     this.services.clusterNode.sendDirect(serverName, {
       topic: TOPIC.STATE_REGISTRY,
       registryTopic: this.topic,
-      action: STATE_ACTIONS.REQUEST_FULL_STATE,
+      action: STATE_ACTION.REQUEST_FULL_STATE,
     })
   }
 
@@ -326,7 +325,7 @@ export class DistributedStateRegistry implements StateRegistry {
     this.services.clusterNode.sendDirect(serverName, {
       topic: TOPIC.STATE_REGISTRY,
       registryTopic: this.topic,
-      action: STATE_ACTIONS.FULL_STATE,
+      action: STATE_ACTION.FULL_STATE,
       fullState: localState
     })
 
@@ -380,28 +379,28 @@ export class DistributedStateRegistry implements StateRegistry {
       return
     }
 
-    if (message.action === STATE_ACTIONS.ADD) {
+    if (message.action === STATE_ACTION.ADD) {
       this.addToServer(message.name!, serverName)
       return
     }
 
-    if (message.action === STATE_ACTIONS.REMOVE) {
+    if (message.action === STATE_ACTION.REMOVE) {
       this.removeFromServer(message.name!, serverName)
       return
     }
 
-    if (message.action === STATE_ACTIONS.REQUEST_FULL_STATE) {
+    if (message.action === STATE_ACTION.REQUEST_FULL_STATE) {
       if (!message.data || this.fullStateSent === false) {
         this.sendFullState(serverName)
       }
       return
     }
 
-    if (message.action === STATE_ACTIONS.FULL_STATE) {
+    if (message.action === STATE_ACTION.FULL_STATE) {
       this.applyFullState(serverName, message.fullState!)
     }
 
-    if (message.action === STATE_ACTIONS.CHECKSUM) {
+    if (message.action === STATE_ACTION.CHECKSUM) {
       this.verifyCheckSum(serverName, message.checksum!)
     }
   }

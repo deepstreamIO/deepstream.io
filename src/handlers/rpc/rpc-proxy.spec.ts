@@ -19,7 +19,7 @@ describe.skip('rpcProxy proxies calls from and to the remote receiver', () => {
   it('manipulates the message before sending', () => {
     rpcProxy.send({
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.ACCEPT,
+      action: C.RPC_ACTION.ACCEPT,
       name: 'a',
       correlationId: 1234
     })
@@ -29,7 +29,7 @@ describe.skip('rpcProxy proxies calls from and to the remote receiver', () => {
       topic: 'PRIVATE/P',
       message: {
         topic: C.TOPIC.RPC,
-        action: C.RPC_ACTIONS.ACCEPT,
+        action: C.RPC_ACTION.ACCEPT,
         name: 'a',
         correlationId: 1234
       }

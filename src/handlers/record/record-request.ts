@@ -1,5 +1,5 @@
 import { SocketWrapper, DeepstreamServices, DeepstreamConfig } from '../../types'
-import { Message, RECORD_ACTIONS } from '../../constants'
+import { Message, RECORD_ACTION } from '../../constants'
 import { isExcluded } from '../../utils/utils'
 
 type onCompleteCallback = (recordName: string, version: number, data: any, socket: SocketWrapper | null, message?: Message) => void
@@ -10,10 +10,10 @@ type onErrorCallback = (event: any, errorMessage: string, recordName: string, so
  * record
  */
 function sendError (
-  event: RECORD_ACTIONS, errorMessage: string, recordName: string, socketWrapper: SocketWrapper | null,
+  event: RECORD_ACTION, errorMessage: string, recordName: string, socketWrapper: SocketWrapper | null,
   onError: onErrorCallback, services: DeepstreamServices, context: any, metaData?: any, message?: Message,
 ): void {
-  services.logger.error(RECORD_ACTIONS[event], errorMessage, metaData)
+  services.logger.error(RECORD_ACTION[event], errorMessage, metaData)
   if (message) {
     onError.call(context, event, errorMessage, recordName, socketWrapper, message)
   } else {
@@ -32,7 +32,7 @@ function onStorageResponse (
 ): void {
   if (error) {
     sendError(
-      RECORD_ACTIONS.RECORD_LOAD_ERROR,
+      RECORD_ACTION.RECORD_LOAD_ERROR,
       `error while loading ${recordName} from storage:${error}`,
       recordName, socketWrapper, onError, services, context,
       metaData, message
@@ -62,7 +62,7 @@ function onCacheResponse (
 ): void {
   if (error) {
     sendError(
-      RECORD_ACTIONS.RECORD_LOAD_ERROR,
+      RECORD_ACTION.RECORD_LOAD_ERROR,
       `error while loading ${recordName} from cache:${error}`,
       recordName, socketWrapper, onError, services, context,
       metaData, message
@@ -78,7 +78,7 @@ function onCacheResponse (
     const storageTimeout = setTimeout(() => {
       storageTimedOut = true
       sendError(
-        RECORD_ACTIONS.STORAGE_RETRIEVAL_TIMEOUT,
+        RECORD_ACTION.STORAGE_RETRIEVAL_TIMEOUT,
         recordName, recordName, socketWrapper,
         onError, services, context, metaData,
         message
@@ -128,7 +128,7 @@ export function recordRequest (
   const cacheTimeout = setTimeout(() => {
     cacheTimedOut = true
     sendError(
-      RECORD_ACTIONS.CACHE_RETRIEVAL_TIMEOUT,
+      RECORD_ACTION.CACHE_RETRIEVAL_TIMEOUT,
       recordName, recordName, socketWrapper,
       onError, services, context, metaData,
       message

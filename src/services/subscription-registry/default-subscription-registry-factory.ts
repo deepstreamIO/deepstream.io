@@ -1,6 +1,6 @@
 import { DefaultSubscriptionRegistry } from './default-subscription-registry'
-import { TOPIC } from '../../../binary-protocol/src/message-constants'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, SubscriptionRegistryFactory, SubscriptionRegistry } from '../../types'
+import { TOPIC } from '../../constants'
 
 export class DefaultSubscriptionRegistryFactory extends DeepstreamPlugin implements SubscriptionRegistryFactory {
     public description: string = 'Subscription Registry'

@@ -4,7 +4,7 @@ import {spy} from 'sinon'
 
 import { StdOutLogger } from './std-out-logger'
 import * as C from '../../constants'
-import { LOG_LEVEL } from '../../types';
+import { LOG_LEVEL, EVENT } from '../../types';
 
 describe('logs to stdout and stderr', () => {
   const logger = new StdOutLogger({ color: false })
@@ -36,13 +36,13 @@ describe('logs to stdout and stderr', () => {
 
   it('creates the logger', async () => {
     await logger.whenReady()
-    logger.log(LOG_LEVEL.INFO, C.EVENT.INFO, 'b')
+    logger.log(LOG_LEVEL.INFO, EVENT.INFO, 'b')
     expect(comp(stdout, 'INFO | b')).to.equal(true)
   })
 
   it('logs to stderr', () => {
     stdout.resetHistory()
-    logger.log(LOG_LEVEL.ERROR, C.EVENT.INFO, 'e')
+    logger.log(LOG_LEVEL.ERROR, EVENT.INFO, 'e')
     expect(stdout).to.have.callCount(0)
     expect(stderr).to.have.callCount(1)
   })
@@ -50,11 +50,11 @@ describe('logs to stdout and stderr', () => {
   it('logs above log level', () => {
     logger.setLogLevel(LOG_LEVEL.DEBUG)
     stdout.resetHistory()
-    logger.log(LOG_LEVEL.INFO, C.EVENT.INFO, 'e')
+    logger.log(LOG_LEVEL.INFO, EVENT.INFO, 'e')
     expect(stdout).to.have.callCount(1)
     logger.setLogLevel(LOG_LEVEL.WARN)
     stdout.resetHistory()
-    logger.log(LOG_LEVEL.INFO, C.EVENT.INFO, 'e')
+    logger.log(LOG_LEVEL.INFO, EVENT.INFO, 'e')
     expect(stdout).to.have.callCount(0)
   })
 })

@@ -1,4 +1,4 @@
-import { RPC_ACTIONS, RPCMessage } from '../../constants'
+import { RPC_ACTION, RPCMessage } from '../../constants'
 import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices } from '../../types'
 
 /**
@@ -32,8 +32,8 @@ export class RpcProxy implements SimpleSocketWrapper {
   * Sends an error on the specified topic. The
   * action will automatically be set to ACTION.ERROR
   */
-  public sendError (msg: RPCMessage, type: RPC_ACTIONS, errorMessage: string): void {
-    if (type === RPC_ACTIONS.RESPONSE_TIMEOUT) {
+  public sendError (msg: RPCMessage, type: RPC_ACTION, errorMessage: string): void {
+    if (type === RPC_ACTION.RESPONSE_TIMEOUT) {
       // by the time an RPC has timed out on this server, it has already timed out on the remote
       // (and has been cleaned up) so no point sending
       return

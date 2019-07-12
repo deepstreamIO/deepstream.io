@@ -35,7 +35,7 @@ describe('the rpcHandler routes events correctly', () => {
   it('routes subscription messages', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.PROVIDE,
+      action: C.RPC_ACTION.PROVIDE,
       names: ['someRPC'],
       correlationId: '123'
     }
@@ -50,7 +50,7 @@ describe('the rpcHandler routes events correctly', () => {
   describe('when receiving a request', () => {
     const requestMessage = {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST,
+      action: C.RPC_ACTION.REQUEST,
       name: 'addTwo',
       correlationId: 1234,
       data: '{"numA":5, "numB":7}'
@@ -58,14 +58,14 @@ describe('the rpcHandler routes events correctly', () => {
 
     const acceptMessage = {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.ACCEPT,
+      action: C.RPC_ACTION.ACCEPT,
       name: 'addTwo',
       correlationId: 1234
     }
 
     const responseMessage = {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.RESPONSE,
+      action: C.RPC_ACTION.RESPONSE,
       name: 'addTwo',
       correlationId: 1234,
       data: '12'
@@ -73,7 +73,7 @@ describe('the rpcHandler routes events correctly', () => {
 
     const errorMessage = {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST_ERROR,
+      action: C.RPC_ACTION.REQUEST_ERROR,
       isError: true,
       name: 'addTwo',
       correlationId: 1234,
@@ -116,7 +116,7 @@ describe('the rpcHandler routes events correctly', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.RPC,
-          action: C.RPC_ACTIONS.MULTIPLE_ACCEPT,
+          action: C.RPC_ACTION.MULTIPLE_ACCEPT,
           name: requestMessage.name,
           correlationId: requestMessage.correlationId
         })
@@ -153,7 +153,7 @@ describe('the rpcHandler routes events correctly', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.RPC,
-          action: C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+          action: C.RPC_ACTION.INVALID_RPC_CORRELATION_ID,
           originalAction: responseMessage.action,
           name: responseMessage.name,
           correlationId: responseMessage.correlationId
@@ -181,7 +181,7 @@ describe('the rpcHandler routes events correctly', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.RPC,
-          action: C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+          action: C.RPC_ACTION.INVALID_RPC_CORRELATION_ID,
           originalAction: errorMessage.action,
           name: errorMessage.name,
           correlationId: errorMessage.correlationId
@@ -212,7 +212,7 @@ describe('the rpcHandler routes events correctly', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.RPC,
-          action: C.RPC_ACTIONS.ACCEPT_TIMEOUT,
+          action: C.RPC_ACTION.ACCEPT_TIMEOUT,
           name: requestMessage.name,
           correlationId: requestMessage.correlationId
         })
@@ -229,7 +229,7 @@ describe('the rpcHandler routes events correctly', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.RPC,
-          action: C.RPC_ACTIONS.RESPONSE_TIMEOUT,
+          action: C.RPC_ACTION.RESPONSE_TIMEOUT,
           name: requestMessage.name,
           correlationId: requestMessage.correlationId
         })
@@ -261,7 +261,7 @@ describe('the rpcHandler routes events correctly', () => {
         .once()
         .withExactArgs({
           topic: C.TOPIC.RPC,
-          action: C.RPC_ACTIONS.RESPONSE_TIMEOUT,
+          action: C.RPC_ACTION.RESPONSE_TIMEOUT,
           name: requestMessage.name,
           correlationId: requestMessage.correlationId
         })
@@ -272,7 +272,7 @@ describe('the rpcHandler routes events correctly', () => {
           .once()
           .withExactArgs({
             topic: C.TOPIC.RPC,
-            action: C.RPC_ACTIONS.INVALID_RPC_CORRELATION_ID,
+            action: C.RPC_ACTION.INVALID_RPC_CORRELATION_ID,
             originalAction: responseMessage.action,
             name: responseMessage.name,
             correlationId: responseMessage.correlationId
@@ -307,7 +307,7 @@ describe('the rpcHandler routes events correctly', () => {
 
       rpcHandler.handle(providerForA1.socketWrapper, {
         topic: C.TOPIC.RPC,
-        action: C.RPC_ACTIONS.REQUEST,
+        action: C.RPC_ACTION.REQUEST,
         name: 'rpcA',
         correlationId: '1234',
         data: 'U'
@@ -382,7 +382,7 @@ describe('the rpcHandler routes events correctly', () => {
 
     const requestMessage = {
       topic: C.TOPIC.RPC,
-      action: C.RPC_ACTIONS.REQUEST,
+      action: C.RPC_ACTION.REQUEST,
       name: 'addTwo',
       correlationId: 1234,
       data: '{"numA":5, "numB":7}'

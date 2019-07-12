@@ -1,4 +1,4 @@
-import { Message, TOPIC } from '../../src/constants'
+import { Message, TOPIC, STATE_REGISTRY_TOPIC } from '../../src/constants'
 import { EventEmitter } from 'events'
 import { DeepstreamServices, DeepstreamConfig, DeepstreamPlugin, ClusterNode } from '../../src/types'
 
@@ -27,7 +27,7 @@ export class E2EClusterNode extends DeepstreamPlugin implements ClusterNode {
         })
     }
 
-    public subscribe<SpecificMessage> (topic: TOPIC, callback: (message: SpecificMessage, serverName: string) => void): void {
+    public subscribe<SpecificMessage> (topic: STATE_REGISTRY_TOPIC, callback: (message: SpecificMessage, serverName: string) => void): void {
         E2EClusterNode.emitters.get(this.config.serverName)!.on(TOPIC[topic], (fromServer, message) => {
             if (fromServer === this.config.serverName) {
                 throw new Error('Cyclic message was sent!')

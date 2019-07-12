@@ -1,7 +1,6 @@
-import { EVENT_ACTIONS, TOPIC, EventMessage, ListenMessage } from '../../constants'
+import { EVENT_ACTION, TOPIC, EventMessage, ListenMessage, STATE_REGISTRY_TOPIC, BulkSubscriptionMessage } from '../../constants'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Handler, SubscriptionRegistry } from '../../types'
-import { BulkSubscriptionMessage } from '../../../binary-protocol/src/message-constants'
 
 export default class EventHandler implements Handler<EventMessage> {
   private subscriptionRegistry: SubscriptionRegistry
@@ -13,7 +12,7 @@ export default class EventHandler implements Handler<EventMessage> {
 
   constructor (config: DeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry) {
     this.subscriptionRegistry =
-      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.EVENT, TOPIC.EVENT_SUBSCRIPTIONS)
+      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.EVENT, STATE_REGISTRY_TOPIC.EVENT_SUBSCRIPTIONS)
     this.listenerRegistry =
       listenerRegistry || new ListenerRegistry(TOPIC.EVENT, config, services, this.subscriptionRegistry, null)
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
@@ -24,7 +23,9 @@ export default class EventHandler implements Handler<EventMessage> {
    * based on the provided action parameter of the message
    */
   public handle (socketWrapper: SocketWrapper | null, message: EventMessage) {
-    if (message.action === EVENT_ACTIONS.EMIT) {
+
+    console.log('HANDLING', message)
+    if (message.action === EVENT_ACTION.EMIT) {
       this.triggerEvent(socketWrapper, message)
       return
     }
@@ -34,20 +35,20 @@ export default class EventHandler implements Handler<EventMessage> {
       return
     }
 
-    if (message.action === EVENT_ACTIONS.SUBSCRIBE) {
+    if (message.action === EVENT_ACTION.SUBSCRIBE) {
       this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
-    if (message.action === EVENT_ACTIONS.UNSUBSCRIBE) {
+    if (message.action === EVENT_ACTION.UNSUBSCRIBE) {
       this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
-    if (message.action === EVENT_ACTIONS.LISTEN ||
-      message.action === EVENT_ACTIONS.UNLISTEN ||
-      message.action === EVENT_ACTIONS.LISTEN_ACCEPT ||
-      message.action === EVENT_ACTIONS.LISTEN_REJECT) {
+    if (message.action === EVENT_ACTION.LISTEN ||
+      message.action === EVENT_ACTION.UNLISTEN ||
+      message.action === EVENT_ACTION.LISTEN_ACCEPT ||
+      message.action === EVENT_ACTION.LISTEN_REJECT) {
       this.listenerRegistry.handle(socketWrapper, message as ListenMessage)
       return
     }
@@ -60,7 +61,7 @@ export default class EventHandler implements Handler<EventMessage> {
    * be triggered by messages coming in from both clients and the message connector.
    */
   public triggerEvent (socket: SocketWrapper | null, message: EventMessage) {
-    this.services.logger.debug(EVENT_ACTIONS[EVENT_ACTIONS.EMIT], `event: ${message.name} with data: ${message.data}`)
+    this.services.logger.debug(EVENT_ACTION[EVENT_ACTION.EMIT], `event: ${message.name} with data: ${message.data}`)
     this.subscriptionRegistry.sendToSubscribers(message.name, message, false, socket)
   }
 }

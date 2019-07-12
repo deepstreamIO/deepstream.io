@@ -1,5 +1,4 @@
-import { EVENT } from '../constants'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin } from '../types'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, EVENT } from '../types'
 import { EventEmitter } from 'events'
 
 export class DependencyInitialiser {

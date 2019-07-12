@@ -1,9 +1,8 @@
-import { EVENT, TOPIC, CONNECTION_ACTIONS, ParseResult, Message } from '../../constants'
+import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
 import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
 import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
-import { combineMultipleMessages } from '../../../binary-protocol/src/message-builder'
-import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper } from '../../types'
+import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../types'
 
 /**
  * This class wraps around a websocket
@@ -19,7 +18,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
   public authCallback: Function | null = null
   public authAttempts: number = 0
 
-  private bufferedWrites: Buffer[]
+  private bufferedWrites: Uint8Array[]
   private closeCallbacks: Set<Function> = new Set()
 
   public authData: object | null = null
@@ -48,7 +47,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public flush () {
     if (this.bufferedWritesTotalByteSize !== 0) {
-      this.socket.send(combineMultipleMessages(this.bufferedWrites, this.bufferedWritesTotalByteSize), true)
+      this.socket.send(this.bufferedWrites.join(), true)
       this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []
     }
@@ -59,7 +58,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    * @param {Boolean} allowBuffering Boolean to indicate that buffering is allowed on
    *                                 this message type
    */
-  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTIONS } | Message, allowBuffering: boolean = true): void {
+  public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTION } | Message, allowBuffering: boolean = true): void {
     // onIndividualMessageSent
     this.sendBuiltMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
   }
@@ -76,7 +75,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
     )
   }
 
-  public getMessage (message: Message): Buffer {
+  public getMessage (message: Message): Uint8Array {
     return binaryMessageBuilder.getMessage(message, false)
   }
 
@@ -86,7 +85,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
      * the copy could be avoided if we make sure not to store references to the
      * raw buffer within the message
      */
-    return binaryMessageParser.parse(Buffer.from(Buffer.from(message)))
+    return binaryMessageParser.parse(message as any)
   }
 
   public parseData (message: Message): true | Error {
@@ -129,7 +128,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
     this.closeCallbacks.delete(callback)
   }
 
-  public sendBuiltMessage (message: Buffer, buffer?: boolean): void {
+  public sendBuiltMessage (message: Uint8Array, buffer?: boolean): void {
     if (this.isOpen) {
       if (this.config.outgoingBufferTimeout === 0) {
         this.socket.send(message, true)

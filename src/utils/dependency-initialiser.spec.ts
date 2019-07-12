@@ -1,11 +1,10 @@
 import 'mocha'
 import { expect } from 'chai'
 import { spy } from 'sinon'
-import * as C from '../constants'
 import { DependencyInitialiser } from './dependency-initialiser'
 import PluginMock from '../test/mock/plugin-mock'
 import LoggerMock from '../test/mock/logger-mock'
-import { LOG_LEVEL } from '../types';
+import { LOG_LEVEL, EVENT } from '../types';
 import { PromiseDelay } from './utils';
 
 const services = {
@@ -38,20 +37,20 @@ describe('dependency-initialiser', () => {
       // tslint:disable-next-line:no-unused-expression
       new DependencyInitialiser(config as any, services as any, {} as any, 'brokenPlugin')
     }).to.throw()
-    expect(services.logger.lastLogEvent).to.equal(C.EVENT.PLUGIN_INITIALIZATION_ERROR)
+    expect(services.logger.lastLogEvent).to.equal(EVENT.PLUGIN_INITIALIZATION_ERROR)
   })
 
   it('notifies when the plugin is ready with when already ready', async () => {
     config.pluginB.isReady = true
     dependencyBInitialiser = new DependencyInitialiser(config as any, services as any, config.pluginB, 'pluginB')
     await dependencyBInitialiser.whenReady()
-    expect(services.logger.lastLogEvent).to.equal(C.EVENT.INFO)
+    expect(services.logger.lastLogEvent).to.equal(EVENT.INFO)
   })
 
   it('notifies when the plugin is ready with when not ready', (done) => {
     dependencyBInitialiser = new DependencyInitialiser(config as any, services as any, config.pluginB, 'pluginB')
     dependencyBInitialiser.whenReady().then(() => {
-      expect(services.logger.lastLogEvent).to.equal(C.EVENT.INFO)
+      expect(services.logger.lastLogEvent).to.equal(EVENT.INFO)
       done()
     })
     config.pluginB.setReady()
@@ -84,7 +83,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
     expect(onReady).to.have.callCount(0)
 
     // expect(services.logger.logSpy).to.have.been.calledOnce // another test isn't async and bleeds into this one
-    expect(services.logger.logSpy).to.have.been.calledWith(LOG_LEVEL.FATAL, C.EVENT.PLUGIN_INITIALIZATION_TIMEOUT, 'plugin wasn\'t initialised in time')
+    expect(services.logger.logSpy).to.have.been.calledWith(LOG_LEVEL.FATAL, EVENT.PLUGIN_INITIALIZATION_TIMEOUT, 'plugin wasn\'t initialised in time')
   })
 
   it.skip('creates another depdendency initialiser with a plugin error', async () => {

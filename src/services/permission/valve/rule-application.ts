@@ -1,6 +1,6 @@
 import { EOL } from 'os'
-import { Message, RECORD_ACTIONS, PRESENCE_ACTIONS, EVENT_ACTIONS, RPC_ACTIONS, RecordData, TOPIC, RecordWriteMessage, EVENT } from '../../../constants'
-import { PermissionCallback, ValveConfig, SocketWrapper, DeepstreamConfig, DeepstreamServices, NamespacedLogger } from '../../../types'
+import { Message, RECORD_ACTION, PRESENCE_ACTION, EVENT_ACTION, RPC_ACTION, RecordData, TOPIC, RecordWriteMessage } from '../../../constants'
+import { PermissionCallback, ValveConfig, SocketWrapper, DeepstreamConfig, DeepstreamServices, NamespacedLogger, EVENT } from '../../../types'
 import { recordRequest } from '../../../handlers/record/record-request'
 import RecordHandler from '../../../handlers/record/record-handler'
 import { setValue } from '../../../utils/json-path'
@@ -18,7 +18,7 @@ interface RuleApplicationParams {
    path: string
    ruleSpecification: any
    message: Message
-   action: RECORD_ACTIONS | PRESENCE_ACTIONS | EVENT_ACTIONS | RPC_ACTIONS
+   action: RECORD_ACTION | PRESENCE_ACTION | EVENT_ACTION | RPC_ACTION
    regexp: RegExp
    rule: any
    name: string
@@ -114,8 +114,8 @@ export default class RuleApplication {
     }
     const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL}for ${this.params.path}: ${error.toString()}`
 
-    this.params.logger.warn(EVENT_ACTIONS[EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR], errorMsg)
-    this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, EVENT_ACTIONS.MESSAGE_PERMISSION_ERROR, false)
+    this.params.logger.warn(EVENT_ACTION[EVENT_ACTION.MESSAGE_PERMISSION_ERROR], errorMsg)
+    this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, EVENT_ACTION.MESSAGE_PERMISSION_ERROR, false)
     this.destroy()
   }
 
@@ -139,8 +139,8 @@ export default class RuleApplication {
   private onLoadError (event: any, errorMessage: string, recordName: string, socket: SocketWrapper | null) {
     this.recordsData.set(recordName, ERROR)
     const errorMsg = `failed to load record ${this.params.name} for permissioning:${errorMessage}`
-    this.params.logger.error(RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], errorMsg)
-    this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, RECORD_ACTIONS.RECORD_LOAD_ERROR, false)
+    this.params.logger.error(RECORD_ACTION[RECORD_ACTION.RECORD_LOAD_ERROR], errorMsg)
+    this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, RECORD_ACTION.RECORD_LOAD_ERROR, false)
     this.destroy()
   }
 
@@ -184,7 +184,7 @@ export default class RuleApplication {
     if (
       (msg.topic === TOPIC.RPC) ||
       (msg.topic === TOPIC.EVENT && msg.data) ||
-      (msg.topic === TOPIC.RECORD && msg.action === RECORD_ACTIONS.UPDATE)
+      (msg.topic === TOPIC.RECORD && msg.action === RECORD_ACTION.UPDATE)
     ) {
       result = this.params.socketWrapper.parseData(msg)
       if (result instanceof Error) {
@@ -192,7 +192,7 @@ export default class RuleApplication {
       } else {
         return msg.parsedData
       }
-    } else if (msg.topic === TOPIC.RECORD && msg.action === RECORD_ACTIONS.PATCH) {
+    } else if (msg.topic === TOPIC.RECORD && msg.action === RECORD_ACTION.PATCH) {
       result = this.getRecordPatchData(msg as RecordWriteMessage)
       if (result instanceof Error) {
         this.onRuleError(`error when converting message data ${result.toString()}`)

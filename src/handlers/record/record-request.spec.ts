@@ -7,7 +7,7 @@ import { recordRequest } from './record-request'
 
 import { Promise as BBPromise } from 'bluebird'
 import { getTestMocks } from '../../test/helper/test-mocks'
-import { RECORD_ACTIONS } from '../../constants'
+import { RECORD_ACTION } from '../../constants'
 import * as testHelper from '../../test/helper/test-helper'
 
 describe('record request', () => {
@@ -171,7 +171,7 @@ describe('record request', () => {
         )
 
       expect(errorCallback).to.have.been.calledWith(
-        RECORD_ACTIONS.RECORD_LOAD_ERROR,
+        RECORD_ACTION.RECORD_LOAD_ERROR,
         'error while loading cacheError from cache:storageError',
         'cacheError',
         client.socketWrapper
@@ -179,7 +179,7 @@ describe('record request', () => {
       expect(completeCallback).to.have.callCount(0)
 
       expect(services.logger.logSpy).to.have.been.calledWith(
-        3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading cacheError from cache:storageError'
+        3, RECORD_ACTION[RECORD_ACTION.RECORD_LOAD_ERROR], 'error while loading cacheError from cache:storageError'
       )
       // expect(client.socketWrapper.socket.lastSendMessage).to.equal(
       //   msg('R|E|RECORD_LOAD_ERROR|error while loading cacheError from cache:storageError+'
@@ -203,14 +203,14 @@ describe('record request', () => {
         )
 
       expect(errorCallback).to.have.been.calledWith(
-        RECORD_ACTIONS.RECORD_LOAD_ERROR,
+        RECORD_ACTION.RECORD_LOAD_ERROR,
         'error while loading storageError from storage:storageError',
         'storageError',
         client.socketWrapper
         )
       expect(completeCallback).to.have.callCount(0)
 
-      expect(services.logger.logSpy).to.have.been.calledWith(3, RECORD_ACTIONS[RECORD_ACTIONS.RECORD_LOAD_ERROR], 'error while loading storageError from storage:storageError')
+      expect(services.logger.logSpy).to.have.been.calledWith(3, RECORD_ACTION[RECORD_ACTION.RECORD_LOAD_ERROR], 'error while loading storageError from storage:storageError')
       // expect(socketWrapper.socket.lastSendMessage).to.equal(msg('R|E|RECORD_LOAD_ERROR|error while loading storageError from storage:storageError+'))
     })
 
@@ -238,7 +238,7 @@ describe('record request', () => {
 
         setTimeout(() => {
           expect(errorCallback).to.have.been.calledWith(
-            C.RECORD_ACTIONS.CACHE_RETRIEVAL_TIMEOUT,
+            C.RECORD_ACTION.CACHE_RETRIEVAL_TIMEOUT,
             'willTimeoutCache',
             'willTimeoutCache',
             client.socketWrapper
@@ -277,7 +277,7 @@ describe('record request', () => {
         await BBPromise.delay(1)
 
         expect(errorCallback).to.have.been.calledWith(
-          C.RECORD_ACTIONS.STORAGE_RETRIEVAL_TIMEOUT,
+          C.RECORD_ACTION.STORAGE_RETRIEVAL_TIMEOUT,
           'willTimeoutStorage',
           'willTimeoutStorage',
           client.socketWrapper

@@ -1,6 +1,5 @@
 import chalk from 'chalk'
-import { DeepstreamPlugin, Logger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger } from '../../types'
-import { EVENT } from '../../constants'
+import { DeepstreamPlugin, Logger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger, EVENT } from '../../types'
 
 const EOL = require('os').EOL
 
@@ -49,7 +48,7 @@ export class StdOutLogger extends DeepstreamPlugin implements Logger {
     this.log(LOG_LEVEL.ERROR, '', event, logMessage)
   }
 
-  public fatal(event: EVENT, logMessage: string): void {
+  public fatal (event: EVENT, logMessage: string): void {
     this.log(LOG_LEVEL.FATAL, '', event, logMessage)
     this.services.notifyFatalException()
   }

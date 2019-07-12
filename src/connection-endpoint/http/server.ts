@@ -7,8 +7,7 @@ import * as contentType from 'content-type'
 import * as bodyParser from 'body-parser'
 // @ts-ignore
 import * as httpShutdown from 'http-shutdown'
-import { EVENT } from '../../constants'
-import { Logger } from '../../types'
+import { Logger, EVENT } from '../../types'
 
 function checkConfigOption (config: any, option: string, expectedType?: string): void {
   if ((expectedType && typeof config[option] !== expectedType) || config[option] === undefined) {

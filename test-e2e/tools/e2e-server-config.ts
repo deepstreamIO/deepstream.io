@@ -28,7 +28,7 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
 
     connectionEndpoints: [
       {
-        type: 'ws-websocket',
+        type: 'uws-websocket',
         options: {
           port,
           urlPath: '/e2e',

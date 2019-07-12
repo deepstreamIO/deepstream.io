@@ -27,7 +27,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'test-record'
     }
 
@@ -57,7 +57,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'test-record'
     }
 
@@ -83,7 +83,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'test-record'
     }
 
@@ -111,7 +111,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'test-record'
     }
 
@@ -139,7 +139,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'test-record'
     }
 
@@ -168,7 +168,7 @@ describe('permission handler loads data for cross referencing', () => {
 
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.READ,
+      action: C.RECORD_ACTION.READ,
       name: 'test-record'
     }
 

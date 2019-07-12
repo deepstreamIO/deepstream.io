@@ -1,12 +1,13 @@
-import {PARSER_ACTIONS, TOPIC, Message} from '../constants'
+import { PARSER_ACTION, TOPIC, Message } from '../constants'
 import { SocketWrapper, DeepstreamServices, DeepstreamConfig } from '../types'
+import { STATE_REGISTRY_TOPIC } from '../../binary-protocol/types/all'
 
 /**
  * The MessageDistributor routes valid and permissioned messages to
  * various, previously registered handlers, e.g. event-, rpc- or recordHandler
  */
 export default class MessageDistributor {
-  private callbacks = new Map<TOPIC, Function>()
+  private callbacks = new Map<TOPIC | STATE_REGISTRY_TOPIC, Function>()
 
   constructor (options: DeepstreamConfig, private services: DeepstreamServices) {}
 
@@ -17,10 +18,10 @@ export default class MessageDistributor {
   public distribute (socketWrapper: SocketWrapper, message: Message) {
     const callback = this.callbacks.get(message.topic)
     if (callback === undefined) {
-      this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_TOPIC], TOPIC[message.topic])
+      this.services.logger.warn(PARSER_ACTION[PARSER_ACTION.UNKNOWN_TOPIC], TOPIC[message.topic])
       socketWrapper.sendMessage({
         topic: TOPIC.PARSER,
-        action: PARSER_ACTIONS.UNKNOWN_TOPIC,
+        action: PARSER_ACTION.UNKNOWN_TOPIC,
         originalTopic: message.topic
       })
       return

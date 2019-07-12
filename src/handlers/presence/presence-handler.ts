@@ -1,6 +1,7 @@
-import { PARSER_ACTIONS, PRESENCE_ACTIONS, TOPIC, PresenceMessage, Message, BulkSubscriptionMessage } from '../../constants'
+import { PARSER_ACTION, PRESENCE_ACTION, TOPIC, PresenceMessage, Message, BulkSubscriptionMessage } from '../../constants'
 import { DeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry, Handler, SubscriptionRegistry } from '../../types'
 import { Dictionary } from 'ts-essentials'
+import { STATE_REGISTRY_TOPIC } from '../../../binary-protocol/types/all'
 
 const EVERYONE = '%_EVERYONE_%'
 
@@ -16,10 +17,10 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
 
   constructor (config: DeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, private metaData?: any) {
     this.subscriptionRegistry =
-      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.PRESENCE, TOPIC.PRESENCE_SUBSCRIPTIONS)
+      subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.PRESENCE, STATE_REGISTRY_TOPIC.PRESENCE_SUBSCRIPTIONS)
 
     this.connectedClients =
-      stateRegistry || this.services.clusterStates.getStateRegistry(TOPIC.ONLINE_USERS)
+      stateRegistry || this.services.clusterStates.getStateRegistry(STATE_REGISTRY_TOPIC.ONLINE_USERS)
 
     this.connectedClients.onAdd(this.onClientAdded.bind(this))
     this.connectedClients.onRemove(this.onClientRemoved.bind(this))
@@ -31,15 +32,15 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
   * Handles subscriptions, unsubscriptions and queries
   */
   public handle (socketWrapper: SocketWrapper, message: PresenceMessage): void {
-    if (message.action === PRESENCE_ACTIONS.QUERY_ALL) {
+    if (message.action === PRESENCE_ACTION.QUERY_ALL) {
       this.handleQueryAll(message.correlationId, socketWrapper)
       return
     }
 
-    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE_ALL) {
+    if (message.action === PRESENCE_ACTION.SUBSCRIBE_ALL) {
       this.subscriptionRegistry.subscribe(EVERYONE, {
         topic: TOPIC.PRESENCE,
-        action: PRESENCE_ACTIONS.SUBSCRIBE_ALL,
+        action: PRESENCE_ACTION.SUBSCRIBE_ALL,
         name: EVERYONE
       }, socketWrapper, true)
       socketWrapper.sendAckMessage({
@@ -49,10 +50,10 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
       return
     }
 
-    if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE_ALL) {
+    if (message.action === PRESENCE_ACTION.UNSUBSCRIBE_ALL) {
       this.subscriptionRegistry.unsubscribe(EVERYONE, {
         topic: TOPIC.PRESENCE,
-        action: PRESENCE_ACTIONS.UNSUBSCRIBE_ALL,
+        action: PRESENCE_ACTION.UNSUBSCRIBE_ALL,
         name: EVERYONE
       }, socketWrapper, true)
       socketWrapper.sendAckMessage({
@@ -64,26 +65,26 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
 
     const users = message.names
     if (!users) {
-      this.services.logger.error(PARSER_ACTIONS[PARSER_ACTIONS.INVALID_MESSAGE], `invalid presence names parameter ${PRESENCE_ACTIONS[message.action]}`)
+      this.services.logger.error(PARSER_ACTION[PARSER_ACTION.INVALID_MESSAGE], `invalid presence names parameter ${PRESENCE_ACTION[message.action]}`)
       return
     }
 
-    if (message.action === PRESENCE_ACTIONS.SUBSCRIBE) {
+    if (message.action === PRESENCE_ACTION.SUBSCRIBE) {
       this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
-    if (message.action === PRESENCE_ACTIONS.UNSUBSCRIBE) {
+    if (message.action === PRESENCE_ACTION.UNSUBSCRIBE) {
       this.subscriptionRegistry.unsubscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
       return
     }
 
-    if (message.action === PRESENCE_ACTIONS.QUERY) {
+    if (message.action === PRESENCE_ACTION.QUERY) {
       this.handleQuery(users, message.correlationId, socketWrapper)
       return
     }
 
-    this.services.logger.warn(PARSER_ACTIONS[PARSER_ACTIONS.UNKNOWN_ACTION], PRESENCE_ACTIONS[message.action], this.metaData)
+    this.services.logger.warn(PARSER_ACTION[PARSER_ACTION.UNKNOWN_ACTION], PRESENCE_ACTION[message.action], this.metaData)
   }
 
   /**
@@ -122,7 +123,7 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
     }
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.QUERY_ALL_RESPONSE,
+      action: PRESENCE_ACTION.QUERY_ALL_RESPONSE,
       names: clients
     })
   }
@@ -139,7 +140,7 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
     }
     socketWrapper.sendMessage({
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.QUERY_RESPONSE,
+      action: PRESENCE_ACTION.QUERY_RESPONSE,
       correlationId,
       parsedData: result,
     })
@@ -152,13 +153,13 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
   private onClientAdded (username: string): void {
     const individualMessage: Message = {
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.PRESENCE_JOIN,
+      action: PRESENCE_ACTION.PRESENCE_JOIN,
       name : username,
     }
 
     const allMessage: Message = {
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.PRESENCE_JOIN_ALL,
+      action: PRESENCE_ACTION.PRESENCE_JOIN_ALL,
       name: username
     }
 
@@ -173,13 +174,13 @@ export default class PresenceHandler implements Handler<PresenceMessage> {
   private onClientRemoved (username: string): void {
     const individualMessage: Message = {
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.PRESENCE_LEAVE,
+      action: PRESENCE_ACTION.PRESENCE_LEAVE,
       name : username,
     }
 
     const allMessage: Message = {
       topic: TOPIC.PRESENCE,
-      action: PRESENCE_ACTIONS.PRESENCE_LEAVE_ALL,
+      action: PRESENCE_ACTION.PRESENCE_LEAVE_ALL,
       name: username
     }
 

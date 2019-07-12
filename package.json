@@ -49,6 +49,7 @@
     "js-yaml": "^3.13.1",
     "mkdirp": "^0.5.1",
     "needle": "^2.4.0",
+    "protobufjs": "^6.8.8",
     "source-map-support": "^0.5.12",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.11.0",
     "ws": "^7.0.1"

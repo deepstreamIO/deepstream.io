@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events'
-import { Message, TOPIC } from '../../../binary-protocol/src/message-constants'
 import { DeepstreamPlugin, ClusterNode } from '../../types'
+import { TOPIC, Message } from '../../constants'
+import { STATE_REGISTRY_TOPIC } from '../../../binary-protocol/types/all'
 
 export default class MessageConnectorMock extends DeepstreamPlugin implements ClusterNode {
   public description = 'Message Connector Mock'
-  public lastPublishedTopic: TOPIC | null = null
+  public lastPublishedTopic: TOPIC | STATE_REGISTRY_TOPIC | null = null
   public lastPublishedMessage: Message | null = null
   public lastSubscribedTopic: TOPIC | null = null
   public publishedMessages: Message[] = []

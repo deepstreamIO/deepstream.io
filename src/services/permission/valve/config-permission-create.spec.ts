@@ -23,7 +23,7 @@ describe('allows to create a record without providing data, but denies updating 
   it('allows creating the record', () => {
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.SUBSCRIBECREATEANDREAD,
+      action: C.RECORD_ACTION.SUBSCRIBECREATEANDREAD,
       name: 'some/tests'
     }
 
@@ -33,7 +33,7 @@ describe('allows to create a record without providing data, but denies updating 
   it('denies update', () => {
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.UPDATE,
+      action: C.RECORD_ACTION.UPDATE,
       name: 'some/tests',
       version: 2,
       data: '{"other":"data"}'
@@ -50,7 +50,7 @@ describe('allows to create a record without providing data, but denies updating 
   it('denies patch', () => {
     const message = {
       topic: C.TOPIC.RECORD,
-      action: C.RECORD_ACTIONS.PATCH,
+      action: C.RECORD_ACTION.PATCH,
       name: 'some/tests',
       version: 2,
       path: 'apath',
