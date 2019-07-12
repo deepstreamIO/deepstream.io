@@ -1,6 +1,6 @@
 import * as sinon from 'sinon'
 import { clientHandler } from './client-handler'
-import { ListenResponse } from '@deepstream/client/dist/src/util/listener'
+import { ListenResponse } from '@deepstream/client/dist/util/listener'
 
 const clients = clientHandler.clients
 

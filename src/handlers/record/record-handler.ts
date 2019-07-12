@@ -641,14 +641,17 @@ export default class RecordHandler implements Handler<RecordMessage> {
 }
 
 function onRequestError (event: RA, errorMessage: string, recordName: string, socket: SocketWrapper, message: Message) {
-  socket.sendMessage({
+  const msg = {
     topic: TOPIC.RECORD,
     action: event,
     originalAction: message.action,
     name: recordName,
     isError: true,
-    isWriteAck: message.isWriteAck || undefined
-  })
+  } as Message
+  if (message.isWriteAck) {
+    msg.isWriteAck = true
+  }
+  socket.sendMessage(msg)
 }
 
 function onSnapshotComplete (recordName: string, version: number, data: JSONObject, socket: SocketWrapper, message: Message) {

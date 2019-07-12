@@ -1,5 +1,5 @@
 import ConnectionEndpoint, {WebSocketServerConfig} from '../websocket/connection-endpoint'
-import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
+import * as binaryMessageParser from '@deepstream/protobuf/src/message-parser'
 import {createWSSocketWrapper} from './socket-wrapper-factory'
 import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../types'
 import { Dictionary } from 'ts-essentials'

@@ -1,7 +1,6 @@
-import { TOPIC, CONNECTION_ACTION, Message, ALL_ACTIONS, ACTIONS  } from '../constants'
+import { TOPIC, CONNECTION_ACTION, Message, ALL_ACTIONS, ACTIONS, RECORD_ACTION  } from '../constants'
 import { SocketWrapper, DeepstreamConfig, DeepstreamServices, EVENT } from '../types'
 import { getUid } from './utils'
-import { RECORD_ACTION } from '../../binary-protocol/types/all';
 
 /**
  * The MessageProcessor consumes blocks of parsed messages emitted by the

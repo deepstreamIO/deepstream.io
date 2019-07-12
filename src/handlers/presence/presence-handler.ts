@@ -1,7 +1,6 @@
-import { PARSER_ACTION, PRESENCE_ACTION, TOPIC, PresenceMessage, Message, BulkSubscriptionMessage } from '../../constants'
+import { PARSER_ACTION, PRESENCE_ACTION, TOPIC, PresenceMessage, Message, BulkSubscriptionMessage, STATE_REGISTRY_TOPIC } from '../../constants'
 import { DeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry, Handler, SubscriptionRegistry } from '../../types'
 import { Dictionary } from 'ts-essentials'
-import { STATE_REGISTRY_TOPIC } from '../../../binary-protocol/types/all'
 
 const EVERYONE = '%_EVERYONE_%'
 

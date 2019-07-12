@@ -55,7 +55,7 @@
     "ws": "^7.0.1"
   },
   "devDependencies": {
-    "@deepstream/client": "^4.0.0-rc.35",
+    "@deepstream/client": "^4.0.0-rc.37",
     "@types/adm-zip": "^0.4.32",
     "@types/body-parser": "^1.17.0",
     "@types/content-type": "^1.1.3",
