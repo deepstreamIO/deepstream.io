@@ -1,5 +1,5 @@
-export * from '../binary-protocol/types/all'
-export * from '../binary-protocol/types/messages'
+export * from '@deepstream/protobuf/types/all'
+export * from '@deepstream/protobuf/types/messages'
 
 export enum STATES {
     LOGGER_INIT = 'LOGGER_INIT',

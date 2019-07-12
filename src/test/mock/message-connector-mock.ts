@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events'
 import { DeepstreamPlugin, ClusterNode } from '../../types'
-import { TOPIC, Message } from '../../constants'
-import { STATE_REGISTRY_TOPIC } from '../../../binary-protocol/types/all'
+import { TOPIC, Message, STATE_REGISTRY_TOPIC } from '../../constants'
 
 export default class MessageConnectorMock extends DeepstreamPlugin implements ClusterNode {
   public description = 'Message Connector Mock'

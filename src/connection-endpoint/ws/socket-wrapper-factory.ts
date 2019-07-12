@@ -1,6 +1,6 @@
 import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
-import * as binaryMessageBuilder from '../../../binary-protocol/src/message-builder'
-import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
+import * as binaryMessageBuilder from '@deepstream/protobuf/src/message-builder'
+import * as binaryMessageParser from '@deepstream/protobuf/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
 import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../types'
 import * as WebSocket from 'ws'

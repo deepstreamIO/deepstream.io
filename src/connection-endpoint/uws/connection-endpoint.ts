@@ -1,7 +1,7 @@
 import ConnectionEndpoint, {WebSocketServerConfig} from '../websocket/connection-endpoint'
 import { STATES } from '../../constants'
 import * as fileUtils from '../../config/file-utils'
-import * as binaryMessageParser from '../../../binary-protocol/src/message-parser'
+import * as binaryMessageParser from '@deepstream/protobuf/src/message-parser'
 import {createUWSSocketWrapper} from './socket-wrapper-factory'
 import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../types'
 import { WebSocket, TemplatedApp as Server, us_listen_socket, HttpRequest } from 'uWebSockets.js'

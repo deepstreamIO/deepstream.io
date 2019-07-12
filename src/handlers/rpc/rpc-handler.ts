@@ -1,9 +1,8 @@
-import { PARSER_ACTION, RPC_ACTION, TOPIC, RPCMessage, BulkSubscriptionMessage } from '../../constants'
+import { PARSER_ACTION, RPC_ACTION, TOPIC, RPCMessage, BulkSubscriptionMessage, STATE_REGISTRY_TOPIC } from '../../constants'
 import { getRandomIntInRange } from '../../utils/utils'
 import { Rpc } from './rpc'
 import { RpcProxy } from './rpc-proxy'
 import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices, SocketWrapper, SubscriptionRegistry } from '../../types'
-import { STATE_REGISTRY_TOPIC } from '../../../binary-protocol/types/all'
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,

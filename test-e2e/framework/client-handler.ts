@@ -1,5 +1,5 @@
-import { Client } from '@deepstream/client/dist/src/client'
-import * as deepstream from '@deepstream/client/dist/src/client'
+import { Client } from '@deepstream/client/dist/client'
+import * as deepstream from '@deepstream/client/dist/client'
 import * as sinon from 'sinon'
 import { Message } from '../../src/constants'
 
