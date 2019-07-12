@@ -1,4 +1,4 @@
-import { parseData } from '@deepstream/protobuf/src/message-parser'
+import { parseData } from '@deepstream/protobuf/dist/src/message-parser'
 import { EventEmitter } from 'events'
 import { DeepstreamServices, UnauthenticatedSocketWrapper } from '../../types'
 import { Message } from '../../constants'

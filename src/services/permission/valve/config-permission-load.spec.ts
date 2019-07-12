@@ -53,7 +53,7 @@ describe('permission handler loading', () => {
 
       permission.init()
 
-      await PromiseDelay(0)
+      await PromiseDelay(10)
 
       assert.calledOnce(services.logger.fatal)
       assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, 'error while loading config at ./does-not-exist.yml')

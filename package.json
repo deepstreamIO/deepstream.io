@@ -36,6 +36,7 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
+    "@deepstream/protobuf": "^1.0.0-rc.4",
     "adm-zip": "^0.4.13",
     "ajv": "^6.10.0",
     "body-parser": "^1.19.0",
@@ -55,7 +56,7 @@
     "ws": "^7.0.1"
   },
   "devDependencies": {
-    "@deepstream/client": "^4.0.0-rc.37",
+    "@deepstream/client": "^4.0.0-rc.39",
     "@types/adm-zip": "^0.4.32",
     "@types/body-parser": "^1.17.0",
     "@types/content-type": "^1.1.3",

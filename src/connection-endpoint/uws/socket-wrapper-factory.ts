@@ -1,6 +1,6 @@
 import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
-import * as binaryMessageBuilder from '@deepstream/protobuf/src/message-builder'
-import * as binaryMessageParser from '@deepstream/protobuf/src/message-parser'
+import * as binaryMessageBuilder from '@deepstream/protobuf/dist/src/message-builder'
+import * as binaryMessageParser from '@deepstream/protobuf/dist/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
 import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../types'
 
@@ -46,7 +46,6 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    * and can wait to be bundled into another message if necessary
    */
   public flush () {
-    console.log('LENGTH', this.bufferedWrites.length)
     if (this.bufferedWritesTotalByteSize !== 0) {
       this.socket.send(this.bufferedWrites.join(), true)
       this.bufferedWritesTotalByteSize = 0
