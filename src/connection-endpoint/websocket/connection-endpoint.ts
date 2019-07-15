@@ -33,7 +33,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   private isReady: boolean = false
   private emitter = new EventEmitter()
 
-  constructor (protected options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: DeepstreamConfig) {
+  constructor (private options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: DeepstreamConfig) {
     super()
     this.flushSockets = this.flushSockets.bind(this)
   }

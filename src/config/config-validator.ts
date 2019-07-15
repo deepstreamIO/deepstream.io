@@ -21,12 +21,6 @@ const connectivityOpts = {
   externalUrl: { type: ['null', 'string'], format: 'uri' }
 }
 
-const sslOpts = {
-  sslKey: { type: ['null', 'string'], minLength: 1 },
-  sslCert: { type: ['null', 'string'], minLength: 1 },
-  sslCa: { type: ['null', 'string'], minLength: 1 }
-}
-
 const pluginsOpts = {
   plugins: {
     type: ['null', 'object'],
@@ -194,7 +188,6 @@ const schema = {
     {},
     generalOpts,
     connectivityOpts,
-    sslOpts,
     pluginsOpts,
     storageOpts,
     authenticationOpts,

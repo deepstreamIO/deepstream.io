@@ -15,8 +15,8 @@ export class WSConnectionEndpoint extends ConnectionEndpoint {
   private server!: WebSocket.Server
   private connections = new Map<WebSocket, UnauthenticatedSocketWrapper>()
 
-  constructor (options: WebSocketServerConfig, services: DeepstreamServices, config: DeepstreamConfig) {
-    super(options, services, config)
+  constructor (private wsOptions: WebSocketServerConfig, services: DeepstreamServices, config: DeepstreamConfig) {
+    super(wsOptions, services, config)
     this.description = 'WS Connection Endpoint'
     this.onMessages = this.onMessages.bind(this)
   }
@@ -81,11 +81,11 @@ export class WSConnectionEndpoint extends ConnectionEndpoint {
   public createWebsocketWrapper (websocket: WebSocket, req: IncomingMessage): UnauthenticatedSocketWrapper {
     const handshakeData = {
       remoteAddress: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
-      headers: WSConnectionEndpoint.getHeaders(this.options.headers, req),
+      headers: WSConnectionEndpoint.getHeaders(this.wsOptions.headers, req),
       referer: req.headers.referer
     }
     const socketWrapper = createWSSocketWrapper(
-        websocket, handshakeData, this.services, this.options, this
+        websocket, handshakeData, this.services, this.wsOptions, this
     )
     return socketWrapper
   }

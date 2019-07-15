@@ -52,27 +52,6 @@ describe('config-initialiser', () => {
     })
   })
 
-  describe('ssl files are loaded if provided', () => {
-    it.skip('fails with incorrect path passed in', () => {
-      ['sslKey', 'sslCert', 'sslCa'].forEach((key) => {
-        const config = defaultConfig.get()
-        config[key] = './does-not-exist'
-        expect(() => {
-          configInitialiser.initialise(new EventEmitter(), config)
-        }).to.throw(new Error())
-      })
-    })
-
-    it('loads sslFiles from a relative path and a config prefix', () => {
-      global.deepstreamConfDir = './src/test/config/'
-
-      const config = defaultConfig.get()
-      config.sslKey = './sslKey.pem'
-      const result = configInitialiser.initialise(new EventEmitter(), config)
-      expect(result.config.sslKey).to.equal('I\'m a key')
-    })
-  })
-
   describe('translates shortcodes into paths', () => {
     it('translates cache', () => {
       global.deepstreamLibDir = '/foobar'

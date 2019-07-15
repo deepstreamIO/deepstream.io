@@ -1,4 +1,3 @@
-import * as fs from 'fs'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamStorage, StorageReadCallback, StorageWriteCallback, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
@@ -66,7 +65,6 @@ export const registerPlugin = function (name: string, construct: Function) {
 export const initialise = function (deepstream: Deepstream, config: DeepstreamConfig): { config: DeepstreamConfig, services: DeepstreamServices } {
   commandLineArguments = global.deepstreamCLI || {}
   handleUUIDProperty(config)
-  handleSSLProperties(config)
   mergeConnectionOptions(config)
 
   const services = {} as DeepstreamServices
@@ -106,30 +104,6 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
 function handleUUIDProperty (config: DeepstreamConfig): void {
   if (config.serverName === 'UUID') {
     config.serverName = utils.getUid()
-  }
-}
-
-/**
- * Load the SSL files
- * CLI arguments will be considered.
- */
-function handleSSLProperties (config: DeepstreamConfig): void {
-  const sslFiles = ['sslKey', 'sslCert', 'sslCa']
-  let key
-  let resolvedFilePath
-  let filePath
-  for (let i = 0; i < sslFiles.length; i++) {
-    key = sslFiles[i]
-    filePath = (config as any)[key]
-    if (!filePath) {
-      continue
-    }
-    resolvedFilePath = fileUtils.lookupConfRequirePath(filePath)
-    try {
-      (config as any)[key] = fs.readFileSync(resolvedFilePath, 'utf8')
-    } catch (e) {
-      throw new Error(`The file path "${resolvedFilePath}" provided by "${key}" does not exist.`)
-    }
   }
 }
 

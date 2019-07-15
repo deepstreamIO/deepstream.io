@@ -18,8 +18,8 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
   private readonly uWS: any
   private connections = new Map<WebSocket, UnauthenticatedSocketWrapper>()
 
-  constructor (options: WebSocketServerConfig, services: DeepstreamServices, config: DeepstreamConfig) {
-    super(options, services, config)
+  constructor (private uwsOptions: WebSocketServerConfig, services: DeepstreamServices, config: DeepstreamConfig) {
+    super(uwsOptions, services, config)
 
     // alias require to trick nexe from bundling it
     const req = require
@@ -39,17 +39,13 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
    */
   public createWebsocketServer () {
     const options = {
+      ...this.uwsOptions,
       noDelay: this.getOption('noDelay'),
       perMessageDeflate: this.getOption('perMessageDeflate'),
       maxPayload: this.getOption('maxMessageSize')
     }
 
-    const server = UWSConnectionEndpoint.getServer(this.uWS, {
-      sslCert: this.getOption('sslCert'),
-      sslKey: this.getOption('sslKey'),
-      sslDHParams: this.getOption('sslDHParams'),
-      sslPassphrase: this.getOption('sslPassphrase')
-    }, options)
+    const server = UWSConnectionEndpoint.getServer(this.uWS, options)
 
     server.get(this.getOption('healthCheckPath'), (res) => {
       res.end()
@@ -99,11 +95,11 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
   /**
    * Returns sslKey, sslCert and other options from the config.
    */
-  public static getSLLParams (config: Partial<DeepstreamConfig>) {
-    const keyFileName = config.sslKey
-    const certFileName = config.sslCert
-    const dhParamsFile = config.sslDHParams
-    const passphrase = config.sslPassphrase
+  public static getSLLParams (options: WebSocketServerConfig) {
+    const keyFileName = options.keyFileName
+    const certFileName = options.certFileName
+    const dhParamsFile = options.sslDHParams
+    const passphrase = options.sslPassphrase
     if (keyFileName || certFileName) {
       if (!keyFileName) {
         throw new Error('Must also include sslKey in order to use SSL')
@@ -122,9 +118,9 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
     return null
   }
 
-  public static getServer (uWS: any, config: Partial<DeepstreamConfig>, options: any): Server {
+  public static getServer (uWS: any, options: WebSocketServerConfig): Server {
     let server
-    const sslParams = UWSConnectionEndpoint.getSLLParams(config)
+    const sslParams = UWSConnectionEndpoint.getSLLParams(options)
     if (sslParams) {
       server = new uWS.SSLApp({
         ...options,
@@ -165,11 +161,11 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
   public createWebsocketWrapper (websocket: WebSocket, upgradeReq: HttpRequest): UnauthenticatedSocketWrapper {
     const handshakeData = {
       remoteAddress: new Uint8Array(websocket.getRemoteAddress()).join('.'),
-      headers: UWSConnectionEndpoint.getHeaders(this.options.headers, upgradeReq),
+      headers: UWSConnectionEndpoint.getHeaders(this.uwsOptions.headers, upgradeReq),
       referer: upgradeReq.getHeader('referer')
     }
     const socketWrapper = createUWSSocketWrapper(
-        websocket, handshakeData, this.services, this.options, this
+        websocket, handshakeData, this.services, this.uwsOptions, this
     )
     return socketWrapper
   }

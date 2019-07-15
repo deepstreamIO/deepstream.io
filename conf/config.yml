@@ -10,12 +10,6 @@ dependencyInitialisationTimeout: 2000
 # Directory where all plugins reside
 #libDir: ../lib
 
-# SSL Configuration
-sslKey: null
-sslCert: null
-sslDHParams: null
-sslPassphrase: null
-
 rpc:
   # Timeout for client RPC acknownledgement
   ackTimeout: 1000
@@ -86,6 +80,12 @@ connectionEndpoints:
         logInvalidAuthData: false
         # maximum allowed size of an individual message in bytes
         maxMessageSize: 1048576
+
+        # SSL Configuration
+        sslKey: null
+        sslCert: null
+        sslDHParams: null
+        sslPassphrase: null
 
   - type: node-http
     options:

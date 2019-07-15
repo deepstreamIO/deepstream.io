@@ -30,9 +30,6 @@ export default class Server extends EventEmitter {
   private jsonBodyParser: any
 
   private httpServer: any
-  private sslKey: any
-  private sslCert: any
-  private sslCa: any
 
   constructor (private config: any, private logger: DeepstreamLogger) {
     super()
@@ -107,45 +104,9 @@ export default class Server extends EventEmitter {
   /**
    * Creates an HTTP or HTTPS server for ws to attach itself to,
    * depending on the options the client configured
-   *
-   * @private
-   * @returns {http.HttpServer | http.HttpsServer}
    */
   private _createHttpServer (): http.Server | https.Server {
-    const httpsParams = this._getHttpsParams()
-    if (httpsParams) {
-      return https.createServer(httpsParams)
-    }
     return http.createServer()
-  }
-
-  /**
-  * Returns sslKey, sslCert and sslCa options from the config.
-  *
-  * @throws Will throw an error if one of sslKey or sslCert are not specified
-  *
-  * @private
-  * @returns {null|Object} {
-  *   {String}           key   ssl key
-  *   {String}           cert  ssl certificate
-  *   {String|undefined} ca    ssl certificate authority (if it's present in options)
-  * }
-  */
-  private _getHttpsParams (): { key: string, cert: string, ca: string | undefined } | null {
-    const key = this.sslKey
-    const cert = this.sslCert
-    const ca = this.sslCa
-    if (key || cert) {
-      if (!key) {
-        throw new Error('Must also include sslKey in order to use HTTPS')
-      }
-      if (!cert) {
-        throw new Error('Must also include sslCert in order to use HTTPS')
-      }
-
-      return { key, cert, ca }
-    }
-    return null
   }
 
   private _onRequest (

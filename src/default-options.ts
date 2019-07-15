@@ -20,14 +20,6 @@ export function get (): DeepstreamConfig {
     externalUrl: null,
 
     /*
-     * SSL Configuration
-     */
-    sslKey: null,
-    sslCert: null,
-    sslDHParams: null,
-    sslPassphrase: null,
-
-    /*
      * Connection Endpoints
      */
     connectionEndpoints: [
