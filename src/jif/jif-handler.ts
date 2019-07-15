@@ -360,6 +360,10 @@ export default class JIFHandler {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
       result.currentVersion = message.version
       result.currentData = message.parsedData
+    } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTION.INVALID_VERSION) {
+      result.error = `Record update failed. Version ${message.version} is not valid for record "${message.name}".`
+      result.currentVersion = message.version
+      result.currentData = message.parsedData
     } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTION.RECORD_NOT_FOUND) {
       result.error = `Record read failed. Record "${message.name}" could not be found.`
       result.errorEvent = message.action

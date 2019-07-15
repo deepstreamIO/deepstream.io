@@ -1,5 +1,6 @@
 import * as sinon from 'sinon'
 import { clientHandler } from './client-handler'
+import { Dictionary } from 'ts-essentials'
 
 const subscribeEvent = 'subscribe'
 const queryEvent = 'query'
@@ -32,10 +33,10 @@ export const assert = {
 
   queryResult (clientExpression: string, users: string[], online: boolean) {
     clientHandler.getClients(clientExpression).forEach((client) => {
-      const result: { [index: string]: boolean } = {}
-      for (let i = 0; i < users.length; i++) {
-        result[users[i]] = online
-      }
+      const result = users.reduce((r, user) => {
+        r[user] = online
+        return r
+      }, {} as Dictionary<boolean>)
       sinon.assert.calledOnce(client.presence.callbacks[queryEvent])
       sinon.assert.calledWith(client.presence.callbacks[queryEvent], null, result)
       client.presence.callbacks[queryEvent].resetHistory()

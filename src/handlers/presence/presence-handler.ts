@@ -1,5 +1,5 @@
 import { PARSER_ACTION, PRESENCE_ACTION, TOPIC, PresenceMessage, Message, BulkSubscriptionMessage, STATE_REGISTRY_TOPIC } from '../../constants'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry, Handler, SubscriptionRegistry } from '../../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, StateRegistry, Handler, SubscriptionRegistry, ConnectionListener } from '../../../ds-types/src/index'
 import { Dictionary } from 'ts-essentials'
 
 const EVERYONE = '%_EVERYONE_%'
@@ -9,7 +9,7 @@ const EVERYONE = '%_EVERYONE_%'
  * to deepstream presence. It provides a way to inform clients
  * who else is logged into deepstream
  */
-export default class PresenceHandler extends Handler<PresenceMessage> {
+export default class PresenceHandler extends Handler<PresenceMessage> implements ConnectionListener {
   private localClients: Map<string, number> = new Map()
   private subscriptionRegistry: SubscriptionRegistry
   private connectedClients: StateRegistry
@@ -91,7 +91,10 @@ export default class PresenceHandler extends Handler<PresenceMessage> {
   /**
   * Called whenever a client has succesfully logged in with a username
   */
-  public handleJoin (socketWrapper: SocketWrapper): void {
+  public onClientConnected (socketWrapper: SocketWrapper): void {
+    if (socketWrapper.user === 'OPEN') {
+      return
+    }
     const currentCount = this.localClients.get(socketWrapper.user)
     if (currentCount === undefined) {
       this.localClients.set(socketWrapper.user, 1)
@@ -104,7 +107,10 @@ export default class PresenceHandler extends Handler<PresenceMessage> {
   /**
   * Called whenever a client has disconnected
   */
-  public handleLeave (socketWrapper: SocketWrapper): void {
+  public onClientDisconnected (socketWrapper: SocketWrapper): void {
+    if (socketWrapper.user === 'OPEN') {
+      return
+    }
     const currentCount = this.localClients.get(socketWrapper.user)
     if (!currentCount) {
       // TODO: Log Error

@@ -314,10 +314,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       parsedData: userData.clientData
     })
 
-    if (socketWrapper.user !== OPEN) {
-      this.connectionListener.onClientConnected(socketWrapper)
-    }
-
+    this.connectionListener.onClientConnected(socketWrapper)
     this.services.logger!.info(AUTH_ACTION[AUTH_ACTION.AUTH_SUCCESSFUL], socketWrapper.user!)
   }
 
@@ -408,10 +405,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
         this.services.authentication.onClientDisconnect(socketWrapper.user)
       }
 
-      if (socketWrapper.user !== OPEN) {
-        // TODO: ERROR
-        this.connectionListener.onClientDisconnected(socketWrapper)
-      }
+      this.connectionListener.onClientDisconnected(socketWrapper)
     }
   }
 
