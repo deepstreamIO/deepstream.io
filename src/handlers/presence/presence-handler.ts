@@ -9,12 +9,14 @@ const EVERYONE = '%_EVERYONE_%'
  * to deepstream presence. It provides a way to inform clients
  * who else is logged into deepstream
  */
-export default class PresenceHandler implements Handler<PresenceMessage> {
+export default class PresenceHandler extends Handler<PresenceMessage> {
   private localClients: Map<string, number> = new Map()
   private subscriptionRegistry: SubscriptionRegistry
   private connectedClients: StateRegistry
 
   constructor (config: DeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, stateRegistry?: StateRegistry, private metaData?: any) {
+    super()
+
     this.subscriptionRegistry =
       subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.PRESENCE, STATE_REGISTRY_TOPIC.PRESENCE_SUBSCRIPTIONS)
 

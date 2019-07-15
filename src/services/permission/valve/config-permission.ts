@@ -53,6 +53,10 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
     }
   }
 
+  public async close () {
+    this.ruleCache.close()
+  }
+
   /**
    * Will be called by the dependency initialiser once server.start() is called.
    * This gives users a chance to change the path using server.set()

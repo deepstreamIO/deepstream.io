@@ -99,6 +99,10 @@ export class Deepstream extends EventEmitter {
         throw new Error('storageExclusion has been replace with record.storageExclusionPrefixes instead, which is an array of prefixes')
     }
 
+    if (key === 'auth') {
+      throw new Error('auth has been replaced with authentication')
+    }
+
     if ((this.services as any)[key] !== undefined) {
       (this.services as any)[key] = value
       if (key === 'storage') {
@@ -355,6 +359,11 @@ private async pluginsShutdown () {
   }
 
   private async handlerShutdown () {
+    await this.eventHandler.close()
+    await this.rpcHandler.close()
+    await this.recordHandler.close()
+    await this.presenceHandler.close()
+    await this.monitoringHandler.close()
     this.transition('handlers-closed')
   }
 
@@ -362,8 +371,14 @@ private async pluginsShutdown () {
    * Shutdown the services.
    */
   private async serviceShutdown (): Promise<void> {
-    await this.services.clusterRegistry.close()
-    await this.services.clusterNode.close()
+    const shutdownPromises = Object.keys(this.services).reduce((promises, serviceName) => {
+      const service = (this.services as any)[serviceName]
+      if (service.close) {
+        promises.push(service.close())
+      }
+      return promises
+    }, [] as Array<Promise<void>> )
+    await Promise.all(shutdownPromises)
     this.transition('services-closed')
   }
 

@@ -2,7 +2,7 @@ import { PARSER_ACTION, RPC_ACTION, TOPIC, RPCMessage, BulkSubscriptionMessage, 
 import { getRandomIntInRange } from '../../utils/utils'
 import { Rpc } from './rpc'
 import { RpcProxy } from './rpc-proxy'
-import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices, SocketWrapper, SubscriptionRegistry } from '../../../ds-types/src/index'
+import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices, SocketWrapper, SubscriptionRegistry, Handler } from '../../../ds-types/src/index'
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,
@@ -10,23 +10,23 @@ interface RpcData {
   rpc: Rpc
 }
 
-export default class RpcHandler {
+export default class RpcHandler extends Handler<RPCMessage> {
   private subscriptionRegistry: SubscriptionRegistry
-  private rpcs: Map<string, RpcData>
+  private rpcs: Map<string, RpcData> = new Map()
 
   /**
   * Handles incoming messages for the RPC Topic.
   */
   constructor (private config: DeepstreamConfig, private services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, private metaData?: any) {
-     this.subscriptionRegistry =
+    super()
+
+    this.subscriptionRegistry =
       subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RPC, STATE_REGISTRY_TOPIC.RPC_SUBSCRIPTIONS)
 
-     this.subscriptionRegistry.setAction('NOT_SUBSCRIBED', RPC_ACTION.NOT_PROVIDED)
-     this.subscriptionRegistry.setAction('MULTIPLE_SUBSCRIPTIONS', RPC_ACTION.MULTIPLE_PROVIDERS)
-     this.subscriptionRegistry.setAction('SUBSCRIBE', RPC_ACTION.PROVIDE)
-     this.subscriptionRegistry.setAction('UNSUBSCRIBE', RPC_ACTION.UNPROVIDE)
-
-     this.rpcs = new Map()
+    this.subscriptionRegistry.setAction('NOT_SUBSCRIBED', RPC_ACTION.NOT_PROVIDED)
+    this.subscriptionRegistry.setAction('MULTIPLE_SUBSCRIPTIONS', RPC_ACTION.MULTIPLE_PROVIDERS)
+    this.subscriptionRegistry.setAction('SUBSCRIBE', RPC_ACTION.PROVIDE)
+    this.subscriptionRegistry.setAction('UNSUBSCRIBE', RPC_ACTION.UNPROVIDE)
   }
 
   /**

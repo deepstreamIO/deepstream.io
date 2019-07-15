@@ -7,13 +7,18 @@ interface CachedRule {
 
 export default class RuleCache {
   private data = new Map<string, CachedRule>()
+  private purgeInterval: NodeJS.Timer
 
   /**
    * This cache stores rules that are frequently used. It removes
    * unused rules after a preset interval
    */
   constructor (config: ValveConfig) {
-    setInterval(this.purge.bind(this), config.cacheEvacuationInterval)
+    this.purgeInterval = setInterval(this.purge.bind(this), config.cacheEvacuationInterval)
+  }
+
+  public close () {
+    clearInterval(this.purgeInterval)
   }
 
   /**

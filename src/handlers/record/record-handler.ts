@@ -6,7 +6,7 @@ import { ListenerRegistry } from '../../listen/listener-registry'
 import { isExcluded } from '../../utils/utils'
 import { STATE_REGISTRY_TOPIC, RecordMessage, TOPIC, RecordWriteMessage, BulkSubscriptionMessage, ListenMessage, PARSER_ACTION, RECORD_ACTION as RA, JSONObject, Message, RECORD_ACTION, ALL_ACTIONS } from '../../constants'
 
-export default class RecordHandler implements Handler<RecordMessage> {
+export default class RecordHandler extends Handler<RecordMessage> {
   private subscriptionRegistry: SubscriptionRegistry
   private listenerRegistry: ListenerRegistry
   private transitions = new Map<string, RecordTransition>()
@@ -17,6 +17,8 @@ export default class RecordHandler implements Handler<RecordMessage> {
  * The entry point for record related operations
  */
   constructor (private readonly config: DeepstreamConfig, private readonly services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry, listenerRegistry?: ListenerRegistry, private readonly metaData?: any) {
+    super()
+
     this.subscriptionRegistry =
       subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.RECORD, STATE_REGISTRY_TOPIC.RECORD_SUBSCRIPTIONS)
     this.listenerRegistry =
@@ -29,7 +31,11 @@ export default class RecordHandler implements Handler<RecordMessage> {
     this.onPermissionResponse = this.onPermissionResponse.bind(this)
   }
 
-/**
+  public async close () {
+    this.listenerRegistry.close()
+  }
+
+  /**
  * Handles incoming record requests.
  *
  * Please note that neither CREATE nor READ is supported as a
@@ -257,7 +263,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
       const l = missing!.length
       for (let i = 0; i < l; i++) {
         if (versions![missing![i]] === undefined) {
-          
+
           this.head(socketWrapper, message, missing![i])
         }
       }

@@ -47,7 +47,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public flush () {
     if (this.bufferedWritesTotalByteSize !== 0) {
-      this.bufferedWrites.forEach(array => {
+      this.bufferedWrites.forEach((array) => {
         this.socket.send(array, true)
       })
       this.bufferedWritesTotalByteSize = 0

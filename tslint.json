@@ -1,31 +1,37 @@
 {
-  "compilerOptions": {
-    "target": "ES2018",
-    "module": "commonjs",
-    "outDir": "dist",
-    "sourceMap": true,
-    "allowJs": false,
-    "resolveJsonModule": true,
-    "noUnusedLocals": true,
-    "strict": true,
-    "types": [
-      "node"
-    ]
+  "defaultSeverity": "error",
+  "extends": [
+      "tslint:recommended"
+  ],
+  "jsRules": {},
+  "rules": {
+      "arrow-parens": [true],
+      "ordered-imports": false,
+      "trailing-comma": false,
+      "array-type": [true, "array-simple"],
+      "prefer-const": true,
+      "new-parens": true,
+      "no-consecutive-blank-lines": true,
+      "no-trailing-whitespace": true,
+      "no-unnecessary-initializer": true,
+      "one-variable-per-declaration": true,
+      "space-before-function-paren": [true, "always"],
+      "interface-name": [true, "never-prefix"],
+      "forin": false,
+      "indent": [true, "spaces", 2],
+      "jsdoc-format": false,
+      "object-literal-sort-keys": false,
+      "member-ordering": false,
+      "prefer-for-of": false,
+      "max-line-length": false,
+      "only-arrow-functions": false,
+      "ban-types": false,
+      "no-console": false,
+      "no-empty": false,
+      "semicolon": [true, "never"],
+      "no-var-requires": false,
+      "quotemark": [true, "single", "avoid-escape", "avoid-template"],
+      "unified-signatures": false
   },
-  "include": [
-    "protocol/**/*",
-    "bin/*",
-    "src/**/*",
-    "src/**/*.json",
-    "test-e2e/**/*",
-    "package.json"
-  ],
-  "exclude": [
-    "**/*.spec.ts",
-    "**/installer.ts",
-    "node_modules"
-  ],
-  "files": [
-    "types/global.d.ts"
-  ]
+  "rulesDirectory": []
 }

@@ -18,6 +18,10 @@ export default class EventHandler implements Handler<EventMessage> {
     this.subscriptionRegistry.setSubscriptionListener(this.listenerRegistry)
   }
 
+  public async close () {
+    this.listenerRegistry.close()
+  }
+
   /**
    * The main distribution method. Routes messages to functions
    * based on the provided action parameter of the message

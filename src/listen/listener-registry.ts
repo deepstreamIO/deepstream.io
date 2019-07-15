@@ -19,6 +19,7 @@ export class ListenerRegistry implements SubscriptionListener {
   private unsuccesfulMatches = new Map<string, number>()
 
   private clusterProvidedRecords: StateRegistry
+  private rematchInterval!: NodeJS.Timer
 
   /**
   * Deepstream.io allows clients to register as listeners for subscriptions.
@@ -78,12 +79,16 @@ export class ListenerRegistry implements SubscriptionListener {
     )
 
     if (this.config.listen.rematchInterval > 1000) {
-      setInterval(() => {
+      this.rematchInterval = setInterval(() => {
         this.patterns.forEach((value, pattern) => this.reconcileSubscriptionsToPatterns(pattern))
       }, this.config.listen.rematchInterval)
     } else {
       this.services.logger.warn(EVENT.INVALID_CONFIG_DATA, 'Setting listen.rematchInterval to less than a second is not permitted.')
     }
+  }
+
+  public async close () {
+    clearInterval(this.rematchInterval)
   }
 
   /**

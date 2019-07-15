@@ -1,13 +1,14 @@
-import { DeepstreamConfig, DeepstreamServices, SubscriptionRegistry, SocketWrapper } from '../../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, SubscriptionRegistry, SocketWrapper, Handler } from '../../../ds-types/src/index'
 import { MonitoringMessage } from '../../constants'
 
-export default class MonitoringHandler {
+export default class MonitoringHandler extends Handler<MonitoringMessage> {
   // private subscriptionRegistry: SubscriptionRegistry
 
   /**
    * Handles incoming and outgoing messages for the EVENT topic.
    */
   constructor (config: DeepstreamConfig, services: DeepstreamServices, subscriptionRegistry?: SubscriptionRegistry) {
+    super()
     // this.subscriptionRegistry =
     // subscriptionRegistry || services.subscriptions.getSubscriptionRegistry(TOPIC.MONITORING, TOPIC.MONITORING_SUBSCRIPTIONS)
   }
