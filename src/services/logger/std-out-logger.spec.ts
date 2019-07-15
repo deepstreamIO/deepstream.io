@@ -3,7 +3,6 @@ import { expect } from 'chai'
 import {spy} from 'sinon'
 
 import { StdOutLogger } from './std-out-logger'
-import * as C from '../../constants'
 import { LOG_LEVEL, EVENT } from '../../../ds-types/src/index';
 
 describe('logs to stdout and stderr', () => {

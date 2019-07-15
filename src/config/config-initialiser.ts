@@ -40,7 +40,7 @@ const defaultPlugins = new Map<keyof DeepstreamServices, any>([
 ])
 
 export const mergeConnectionOptions = function (config: any) {
-  if (config) {
+  if (config && config.connectionEndpoints) {
     const defaultConfig = getDefaultOptions()
     for (const connectionEndpoint of config.connectionEndpoints) {
       const defaultPlugin = defaultConfig.connectionEndpoints.find((defaultEndpoint) => defaultEndpoint.type === connectionEndpoint.type)
