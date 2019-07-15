@@ -49,7 +49,8 @@ export const readAndParseFile = function (filePath: string, callback: Function):
 export const loadConfigWithoutInitialisation = function (filePath: string | null = null, args?: object): any {
   const argv = args || global.deepstreamCLI || {}
   const configPath = setGlobalConfigDirectory(argv, filePath)
-  const configString = fs.readFileSync(configPath, { encoding: 'utf8' })
+  const configString = lookupConfigPaths(fs.readFileSync(configPath, { encoding: 'utf8' }))
+
   const rawConfig = parseFile(configPath, configString)
   const config = extendConfig(rawConfig, argv)
   setGlobalLibDirectory(argv, config)
@@ -207,4 +208,15 @@ function getDefaultConfigPath (): string {
 function replaceEnvironmentVariables (fileContent: string): string {
   const environmentVariable = new RegExp(/\${([^}]+)}/g)
   return fileContent.replace(environmentVariable, (a, b) => process.env[b] || '')
+}
+
+function lookupConfigPaths (fileContent: string): string {
+  const matches = fileContent.match(/path\((.*)\)/g)
+  if (matches) {
+    matches.forEach((match) => {
+      const [, filename] = match.match(/path\((.*)\)/) as any
+      fileContent = fileContent.replace(match, fileUtils.lookupConfRequirePath(filename))
+    })
+  }
+  return fileContent
 }
