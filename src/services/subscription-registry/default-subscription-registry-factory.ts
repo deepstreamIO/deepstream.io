@@ -1,5 +1,5 @@
 import { DefaultSubscriptionRegistry } from './default-subscription-registry'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, SubscriptionRegistryFactory, SubscriptionRegistry } from '../../types'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, SubscriptionRegistryFactory, SubscriptionRegistry } from '../../../ds-types/src/index'
 import { TOPIC } from '../../constants'
 
 export class DefaultSubscriptionRegistryFactory extends DeepstreamPlugin implements SubscriptionRegistryFactory {

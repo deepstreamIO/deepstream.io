@@ -1,5 +1,5 @@
 import { post } from 'needle'
-import { EVENT, DeepstreamPlugin, UserAuthenticationCallback, DeepstreamServices, DeepstreamConfig, Authentication } from '../../../types'
+import { EVENT, DeepstreamPlugin, UserAuthenticationCallback, DeepstreamServices, DeepstreamConfig, DeepstreamAuthentication } from '../../../../ds-types/src/index'
 import { JSONObject } from '../../../constants'
 import { validateMap } from '../../../utils/utils'
 
@@ -21,7 +21,7 @@ interface HttpAuthenticationHandlerSettings {
   retryInterval: number
 }
 
-export class HttpAuthentication extends DeepstreamPlugin implements Authentication {
+export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = `http webhook to ${this.settings.endpointUrl}`
   private retryAttempts = new Map<number, { connectionData: any, authData: any, callback: UserAuthenticationCallback, attempts: number } >()
   private requestId = 0

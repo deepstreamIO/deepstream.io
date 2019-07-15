@@ -1,6 +1,6 @@
 import {EventEmitter} from 'events'
 import Timeout = NodeJS.Timeout
-import { DeepstreamPlugin, LockRegistry, DeepstreamServices, DeepstreamConfig, LockCallback, EVENT } from '../../types'
+import { DeepstreamPlugin, DeepstreamLockRegistry, DeepstreamServices, DeepstreamConfig, LockCallback, EVENT } from '../../../ds-types/src/index'
 import { TOPIC, LOCK_ACTION, LockMessage } from '../../constants'
 
 /**
@@ -12,7 +12,7 @@ import { TOPIC, LOCK_ACTION, LockMessage } from '../../constants'
  * so issuing a lock prevents multiple nodes from assuming the lead.
  *
  */
-export class DistributedLockRegistry extends DeepstreamPlugin implements LockRegistry {
+export class DistributedLockRegistry extends DeepstreamPlugin implements DeepstreamLockRegistry {
   public description: string = 'Distributed Lock Registry'
   private locks = new Set<string>()
   private timeouts = new Map<string, Timeout>()

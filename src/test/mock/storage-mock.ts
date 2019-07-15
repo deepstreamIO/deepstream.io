@@ -1,7 +1,7 @@
-import { Storage, Cache, StorageWriteCallback, StorageReadCallback, DeepstreamPlugin } from '../../types'
+import { DeepstreamStorage, DeepstreamCache, StorageWriteCallback, StorageReadCallback, DeepstreamPlugin } from '../../../ds-types/src/index'
 import { JSONObject } from '../../constants'
 
-export default class StorageMock extends DeepstreamPlugin implements Storage, Cache  {
+export default class StorageMock extends DeepstreamPlugin implements DeepstreamStorage, DeepstreamCache  {
   public values = new Map<string, { version: number, value: JSONObject }>()
   public failNextSet: boolean = false
   public nextOperationWillBeSuccessful: boolean = true

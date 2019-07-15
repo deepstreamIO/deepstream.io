@@ -1,4 +1,4 @@
-import { DeepstreamServices, DeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin, EVENT } from '../../types'
+import { DeepstreamServices, DeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin, EVENT } from '../../../ds-types/src/index'
 import { TOPIC, ClusterMessage, CLUSTER_ACTION } from '../../constants'
 import { EventEmitter } from 'events'
 

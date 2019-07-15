@@ -4,7 +4,7 @@ import { spy } from 'sinon'
 import { DependencyInitialiser } from './dependency-initialiser'
 import PluginMock from '../test/mock/plugin-mock'
 import LoggerMock from '../test/mock/logger-mock'
-import { LOG_LEVEL, EVENT } from '../types';
+import { LOG_LEVEL, EVENT } from '../../ds-types/src/index';
 import { PromiseDelay } from './utils';
 
 const services = {

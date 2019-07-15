@@ -1,5 +1,5 @@
 import { RPC_ACTION, RPCMessage } from '../../constants'
-import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices } from '../../types'
+import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices } from '../../../ds-types/src/index'
 
 /**
  * This class exposes an interface that mimicks the behaviour

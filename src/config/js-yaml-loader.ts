@@ -4,7 +4,7 @@ import * as path from 'path'
 
 import { get as getDefaultOptions } from '../default-options'
 import { merge } from '../utils/utils'
-import { DeepstreamConfig } from '../types'
+import { DeepstreamConfig } from '../../ds-types/src/index'
 import Deepstream from '../deepstream.io'
 
 const configInitialiser = require('./config-initialiser')

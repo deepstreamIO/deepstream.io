@@ -7,12 +7,13 @@ const EVERYONE = '%_EVERYONE_%'
 import * as C from '../../constants'
 import * as testHelper from '../../test/helper/test-helper'
 import { getTestMocks } from '../../test/helper/test-mocks'
+import { PresenceMessage } from '../../../../client/dist/constants';
 
 const { config, services } = testHelper.getDeepstreamOptions()
 
 describe('presence handler', () => {
   let testMocks
-  let presenceHandler
+  let presenceHandler: PresenceHandler
   let userOne
 
   beforeEach(() => {
@@ -33,7 +34,7 @@ describe('presence handler', () => {
     const subscriptionMessage = {
       topic: C.TOPIC.PRESENCE,
       action: C.PRESENCE_ACTION.SUBSCRIBE_ALL,
-    }
+    } as PresenceMessage
 
     testMocks.subscriptionRegistryMock
       .expects('subscribe')
@@ -51,7 +52,7 @@ describe('presence handler', () => {
     const unsubscriptionMessage = {
       topic: C.TOPIC.PRESENCE,
       action: C.PRESENCE_ACTION.UNSUBSCRIBE_ALL,
-    }
+    } as PresenceMessage
 
     testMocks.subscriptionRegistryMock
       .expects('unsubscribe')
@@ -68,9 +69,8 @@ describe('presence handler', () => {
   it('does not return own name when queried and only user', () => {
     const queryMessage = {
       topic: C.TOPIC.PRESENCE,
-      action: C.PRESENCE_ACTION.QUERY_ALL,
-      name: C.PRESENCE_ACTION.QUERY_ALL
-    }
+      action: C.PRESENCE_ACTION.QUERY_ALL
+    } as PresenceMessage
 
     testMocks.stateRegistryMock
       .expects('getAll')
@@ -96,7 +96,7 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(userOne.socketWrapper.user)
 
-    presenceHandler.handleJoin(userOne.socketWrapper)
+    presenceHandler.onClientConnected(userOne.socketWrapper)
   })
 
   it('client joining multiple times gets added once state registry', () => {
@@ -105,8 +105,8 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(userOne.socketWrapper.user)
 
-    presenceHandler.handleJoin(userOne.socketWrapper)
-    presenceHandler.handleJoin(userOne.socketWrapper)
+    presenceHandler.onClientConnected(userOne.socketWrapper)
+    presenceHandler.onClientConnected(userOne.socketWrapper)
   })
 
   it('a duplicate client logs out does not remove from state', () => {
@@ -119,9 +119,9 @@ describe('presence handler', () => {
       .expects('remove')
       .never()
 
-    presenceHandler.handleJoin(userOne.socketWrapper)
-    presenceHandler.handleJoin(userOne.socketWrapper)
-    presenceHandler.handleLeave(userOne.socketWrapper)
+    presenceHandler.onClientConnected(userOne.socketWrapper)
+    presenceHandler.onClientConnected(userOne.socketWrapper)
+    presenceHandler.onClientDisconnected(userOne.socketWrapper)
   })
 
   it('a client logging out removes from state', () => {
@@ -135,15 +135,15 @@ describe('presence handler', () => {
       .once()
       .withExactArgs(userOne.socketWrapper.user)
 
-    presenceHandler.handleJoin(userOne.socketWrapper)
-    presenceHandler.handleLeave(userOne.socketWrapper)
+    presenceHandler.onClientConnected(userOne.socketWrapper)
+    presenceHandler.onClientDisconnected(userOne.socketWrapper)
   })
 
   it('returns one user when queried', () => {
     const queryMessage = {
       topic: C.TOPIC.PRESENCE,
       action: C.PRESENCE_ACTION.QUERY_ALL,
-    }
+    } as PresenceMessage
 
     testMocks.stateRegistryMock
       .expects('getAll')
@@ -166,9 +166,8 @@ describe('presence handler', () => {
   it('returns mutiple user when queried', () => {
     const queryMessage = {
       topic: C.TOPIC.PRESENCE,
-      action: C.PRESENCE_ACTION.QUERY_ALL,
-      name: C.PRESENCE_ACTION.QUERY_ALL
-    }
+      action: C.PRESENCE_ACTION.QUERY_ALL
+    } as PresenceMessage
 
     testMocks.stateRegistryMock
       .expects('getAll')

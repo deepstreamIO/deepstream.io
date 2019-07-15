@@ -152,11 +152,12 @@ export const isExcluded = function (exclusionPrefixes: string[], recordName: str
     return false
   }
 
-  for (let i = 0; i < exclusionPrefixes.length; i++) {
-    if (recordName.startsWith(exclusionPrefixes[i])) {
+  for (const exclusionPrefix of exclusionPrefixes) {
+    if (recordName.startsWith(exclusionPrefix)) {
       return true
     }
   }
+
   return false
 }
 

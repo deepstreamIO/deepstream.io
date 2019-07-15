@@ -4,7 +4,7 @@ import * as needle from 'needle'
 
 import * as C from '../../constants'
 import LoggerMock from '../../test/mock/logger-mock'
-import { DeepstreamServices, DeepstreamConfig } from '../../types';
+import { DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index';
 import { OpenAuthentication } from '../../services/authentication/open/open-authentication';
 import { OpenPermission } from '../../services/permission/open/open-permission';
 import { HTTPConnectionEndpoint } from './connection-endpoint';

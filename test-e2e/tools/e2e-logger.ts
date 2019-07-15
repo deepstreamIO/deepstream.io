@@ -1,4 +1,4 @@
-import { Logger, DeepstreamPlugin, LOG_LEVEL, NamespacedLogger, EVENT } from '../../src/types'
+import { DeepstreamLogger, DeepstreamPlugin, LOG_LEVEL, NamespacedLogger, EVENT } from '../../ds-types/src/index'
 
 interface Log {
   level: number,
@@ -6,7 +6,7 @@ interface Log {
   message: string
 }
 
-export class E2ELogger extends DeepstreamPlugin implements Logger {
+export class E2ELogger extends DeepstreamPlugin implements DeepstreamLogger {
   public description = 'Test Logger'
   public logs: Log[] = []
   public lastLog: Log | null = null

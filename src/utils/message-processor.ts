@@ -1,5 +1,5 @@
 import { TOPIC, CONNECTION_ACTION, Message, ALL_ACTIONS, ACTIONS, RECORD_ACTION  } from '../constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices, EVENT } from '../types'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, EVENT } from '../../ds-types/src/index'
 import { getUid } from './utils'
 
 /**

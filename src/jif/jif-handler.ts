@@ -17,7 +17,7 @@ import {
   deepFreeze,
 } from '../utils/utils'
 import { jifSchema } from './jif-schema'
-import { JifMessage, DeepstreamServices, EVENT } from '../types'
+import { JifMessage, DeepstreamServices, EVENT } from '../../ds-types/src/index'
 
 const ajv = new Ajv()
 
@@ -358,6 +358,10 @@ export default class JIFHandler {
       result.error = `Message denied. Action "${ACTIONS[message.topic][message.originalAction!]}" is not permitted.`
     } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTION.VERSION_EXISTS) {
       result.error = `Record update failed. Version ${message.version} exists for record "${message.name}".`
+      result.currentVersion = message.version
+      result.currentData = message.parsedData
+    } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTION.INVALID_VERSION) {
+      result.error = `Record update failed. Version ${message.version} is not valid for record "${message.name}".`
       result.currentVersion = message.version
       result.currentData = message.parsedData
     } else if (message.topic === TOPIC.RECORD && event === RECORD_ACTION.RECORD_NOT_FOUND) {

@@ -1,7 +1,7 @@
 import ConnectionEndpoint, {WebSocketServerConfig} from '../websocket/connection-endpoint'
 import * as binaryMessageParser from '@deepstream/protobuf/dist/src/message-parser'
 import {createWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../types'
+import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../../ds-types/src/index'
 import { Dictionary } from 'ts-essentials'
 import * as WebSocket from 'ws'
 import { IncomingMessage } from 'http'

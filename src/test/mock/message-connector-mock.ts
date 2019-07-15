@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events'
-import { DeepstreamPlugin, ClusterNode } from '../../types'
+import { DeepstreamPlugin, DeepstreamClusterNode } from '../../../ds-types/src/index'
 import { TOPIC, Message, STATE_REGISTRY_TOPIC } from '../../constants'
 
-export default class MessageConnectorMock extends DeepstreamPlugin implements ClusterNode {
+export default class MessageConnectorMock extends DeepstreamPlugin implements DeepstreamClusterNode {
   public description = 'Message Connector Mock'
   public lastPublishedTopic: TOPIC | STATE_REGISTRY_TOPIC | null = null
   public lastPublishedMessage: Message | null = null

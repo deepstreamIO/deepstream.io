@@ -23,7 +23,7 @@ import * as jsYamlLoader from './config/js-yaml-loader'
 import * as configValidator from './config/config-validator'
 
 import { DependencyInitialiser } from './utils/dependency-initialiser'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT } from './types'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT, SocketWrapper, ConnectionListener } from '../ds-types/src/index'
 import RecordHandler from './handlers/record/record-handler'
 import { getValue, setValue } from './utils/json-path'
 
@@ -48,6 +48,8 @@ export class Deepstream extends EventEmitter {
   private recordHandler!: RecordHandler
   private presenceHandler!: PresenceHandler
   private monitoringHandler!: MonitoringHandler
+
+  private connectionListeners = new Set<ConnectionListener>()
 
   private stateMachine: any
   private currentState: any
@@ -97,6 +99,10 @@ export class Deepstream extends EventEmitter {
   public set (key: string, value: any): any {
     if (key === 'storageExclusion') {
         throw new Error('storageExclusion has been replace with record.storageExclusionPrefixes instead, which is an array of prefixes')
+    }
+
+    if (key === 'auth') {
+      throw new Error('auth has been replaced with authentication')
     }
 
     if ((this.services as any)[key] !== undefined) {
@@ -269,6 +275,7 @@ export class Deepstream extends EventEmitter {
       TOPIC.PRESENCE,
       this.presenceHandler.handle.bind(this.presenceHandler)
     )
+    this.connectionListeners.add(this.presenceHandler as ConnectionListener)
 
     this.monitoringHandler = new MonitoringHandler(this.config, this.services)
     this.messageDistributor.registerForTopic(
@@ -306,8 +313,8 @@ export class Deepstream extends EventEmitter {
       connectionEndpoint.onMessages = this.messageProcessor.process.bind(this.messageProcessor)
       if (connectionEndpoint.setConnectionListener) {
         connectionEndpoint.setConnectionListener({
-          onClientConnected: this.presenceHandler.handleJoin.bind(this.presenceHandler),
-          onClientDisconnected: this.presenceHandler.handleLeave.bind(this.presenceHandler)
+          onClientConnected: this.onClientConnected.bind(this),
+          onClientDisconnected: this.onClientDisconnected.bind(this)
         })
       }
       readyPromises.push(dependencyInitialiser.whenReady())
@@ -318,6 +325,18 @@ export class Deepstream extends EventEmitter {
   }
 
   private async pluginsInit () {
+    const readyPromises = Object.keys(this.services.plugins).reduce((promises, pluginName) => {
+      const plugin = this.services.plugins[pluginName]
+      if (isConnectionListener(plugin)) {
+        this.connectionListeners.add(plugin)
+      }
+      const initialiser = new DependencyInitialiser(this.config, this.services, plugin, pluginName)
+      promises.push(initialiser.whenReady())
+      return promises
+    }, [] as Array<Promise<void>>)
+
+    await Promise.all(readyPromises)
+
     this.transition('plugins-started')
   }
 
@@ -355,6 +374,11 @@ private async pluginsShutdown () {
   }
 
   private async handlerShutdown () {
+    await this.eventHandler.close()
+    await this.rpcHandler.close()
+    await this.recordHandler.close()
+    await this.presenceHandler.close()
+    await this.monitoringHandler.close()
     this.transition('handlers-closed')
   }
 
@@ -362,8 +386,14 @@ private async pluginsShutdown () {
    * Shutdown the services.
    */
   private async serviceShutdown (): Promise<void> {
-    await this.services.clusterRegistry.close()
-    await this.services.clusterNode.close()
+    const shutdownPromises = Object.keys(this.services).reduce((promises, serviceName) => {
+      const service = (this.services as any)[serviceName]
+      if (service.close) {
+        promises.push(service.close())
+      }
+      return promises
+    }, [] as Array<Promise<void>> )
+    await Promise.all(shutdownPromises)
     this.transition('services-closed')
   }
 
@@ -420,6 +450,18 @@ private async pluginsShutdown () {
     ` =====================   starting   =====================${EOL}`
   )
   }
+
+  private onClientConnected (socketWrapper: SocketWrapper): void {
+    this.connectionListeners.forEach((connectionListener) => connectionListener.onClientConnected(socketWrapper))
+  }
+
+  private onClientDisconnected (socketWrapper: SocketWrapper): void {
+    this.connectionListeners.forEach((connectionListener) => connectionListener.onClientDisconnected(socketWrapper))
+  }
+}
+
+function isConnectionListener (object: any): object is ConnectionListener {
+  return 'onClientConnected' in object && 'onClientDisconnected' in object
 }
 
 export default Deepstream

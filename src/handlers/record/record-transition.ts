@@ -2,7 +2,7 @@ import { setValue as setPathValue } from '../../utils/json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
 import { RecordWriteMessage, TOPIC, RECORD_ACTION, Message } from '../../constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices, MetaData, EVENT } from '../../types'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, MetaData, EVENT } from '../../../ds-types/src/index'
 import { isOfType, isExcluded } from '../../utils/utils'
 
 interface Step {
@@ -129,14 +129,20 @@ export class RecordTransition {
 
     if (message.action === RECORD_ACTION.UPDATE) {
       if (!isOfType(message.parsedData, 'object') && !isOfType(message.parsedData, 'array')) {
-        socketWrapper.sendMessage(
-          Object.assign({}, message, {
-            action: RECORD_ACTION.INVALID_MESSAGE_DATA,
-            originalAction: message.action
-          })
-        )
+        socketWrapper.sendMessage({ ...message,
+          action: RECORD_ACTION.INVALID_MESSAGE_DATA,
+          originalAction: message.action,
+        })
         return
       }
+    }
+
+    if (this.lastVersion !== null && version > this.lastVersion + 1) {
+      socketWrapper.sendMessage({ ...message,
+        action: RECORD_ACTION.INVALID_VERSION,
+        originalAction: message.action,
+      })
+      return
     }
 
     if (this.lastVersion !== null && this.lastVersion !== version - 1) {
@@ -232,6 +238,15 @@ export class RecordTransition {
     if (message.version === -1) {
       message = Object.assign({}, message, { version: this.version + 1 })
       currentStep.message = message
+    }
+
+    if (message.version > this.version + 1) {
+      currentStep.sender.sendMessage({ ...message,
+        action: RECORD_ACTION.INVALID_VERSION,
+        originalAction: currentStep.message.action,
+        version: this.version
+      })
+      return
     }
 
     if (this.version !== message.version - 1) {

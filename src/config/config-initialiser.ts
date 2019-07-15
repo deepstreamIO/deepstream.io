@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, ConnectionEndpoint, PluginConfig, Logger, Storage, StorageReadCallback, StorageWriteCallback, Authentication, Permission, LOG_LEVEL, EVENT } from '../types'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamStorage, StorageReadCallback, StorageWriteCallback, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
@@ -40,7 +40,7 @@ const defaultPlugins = new Map<keyof DeepstreamServices, any>([
 ])
 
 export const mergeConnectionOptions = function (config: any) {
-  if (config) {
+  if (config && config.connectionEndpoints) {
     const defaultConfig = getDefaultOptions()
     for (const connectionEndpoint of config.connectionEndpoints) {
       const defaultPlugin = defaultConfig.connectionEndpoints.find((defaultEndpoint) => defaultEndpoint.type === connectionEndpoint.type)
@@ -137,7 +137,7 @@ function handleSSLProperties (config: DeepstreamConfig): void {
  * Initialize the logger and overwrite the root logLevel if it's set
  * CLI arguments will be considered.
  */
-function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): Logger {
+function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamLogger {
   const configOptions = (config.logger || {}).options
   if (commandLineArguments.colors !== undefined) {
     configOptions.colors = commandLineArguments.colors
@@ -215,7 +215,7 @@ function handleCustomPlugins (config: DeepstreamConfig, services: any): void {
  *
  * CLI arguments will be considered.
  */
-function handleConnectionEndpoints (config: DeepstreamConfig, services: any): ConnectionEndpoint[] {
+function handleConnectionEndpoints (config: DeepstreamConfig, services: any): DeepstreamConnectionEndpoint[] {
   // delete any endpoints that have been set to `null`
   for (const type in config.connectionEndpoints) {
     if (config.connectionEndpoints[type] === null) {
@@ -225,7 +225,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): Co
   if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
     throw new Error('No connection endpoints configured')
   }
-  const connectionEndpoints: ConnectionEndpoint[] = []
+  const connectionEndpoints: DeepstreamConnectionEndpoint[] = []
   for (const plugin of config.connectionEndpoints) {
     plugin.options = plugin.options || {}
 
@@ -291,7 +291,7 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
  *
  * CLI arguments will be considered.
  */
-function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServices): Authentication {
+function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamAuthentication {
   let AuthenticationHandlerClass
 
   const authStrategies = {
@@ -332,7 +332,7 @@ function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServi
  *
  * CLI arguments will be considered.
  */
-function handlePermissionStrategy (config: DeepstreamConfig, services: DeepstreamServices): Permission {
+function handlePermissionStrategy (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamPermission {
   let PermissionHandlerClass
 
   const permissionStrategies = {
@@ -371,11 +371,15 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
   }
 }
 
-export function storageCompatability (storage: Storage) {
+export function storageCompatability (storage: DeepstreamStorage) {
   const oldGet = storage.get as Function
   storage.get = (recordName: string, callback: StorageReadCallback) => {
     oldGet.call(storage, recordName, (error: string | null, record: { _v: number, _d: JSONObject } | null) => {
-      callback(error, record ? record._v : -1, record ? record._d : null)
+      if (error !== null) {
+        callback(error)
+      } else {
+        callback(null, record ? record._v : -1, record ? record._d : null)
+      }
     })
   }
 

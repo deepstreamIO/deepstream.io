@@ -1,4 +1,4 @@
-import { PartialDeepstreamConfig, LOG_LEVEL } from '../../src/types'
+import { PartialDeepstreamConfig, LOG_LEVEL } from '../../ds-types/src/index'
 
 export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     serverName : `server-${port}`,

@@ -1,11 +1,11 @@
 import { Message, JSONObject } from '../../../constants'
-import { DeepstreamPlugin, Permission, PermissionCallback, SocketWrapper } from '../../../types'
+import { DeepstreamPlugin, DeepstreamPermission, PermissionCallback, SocketWrapper } from '../../../../ds-types/src/index'
 
 /**
  * The open permission handler allows any action to occur without applying
  * any permissions.
  */
-export class OpenPermission extends DeepstreamPlugin implements Permission {
+export class OpenPermission extends DeepstreamPlugin implements DeepstreamPermission {
   public description: string = 'none'
 
   /**
