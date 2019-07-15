@@ -2,7 +2,7 @@ import { setValue as setPathValue } from '../../utils/json-path'
 import RecordHandler from './record-handler'
 import { recordRequest } from './record-request'
 import { RecordWriteMessage, TOPIC, RECORD_ACTION, Message } from '../../constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices, MetaData, EVENT } from '../../types'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, MetaData, EVENT } from '../../../ds-types/src/index'
 import { isOfType, isExcluded } from '../../utils/utils'
 
 interface Step {

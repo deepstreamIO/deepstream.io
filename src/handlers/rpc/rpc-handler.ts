@@ -2,7 +2,7 @@ import { PARSER_ACTION, RPC_ACTION, TOPIC, RPCMessage, BulkSubscriptionMessage, 
 import { getRandomIntInRange } from '../../utils/utils'
 import { Rpc } from './rpc'
 import { RpcProxy } from './rpc-proxy'
-import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices, SocketWrapper, SubscriptionRegistry } from '../../types'
+import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices, SocketWrapper, SubscriptionRegistry } from '../../../ds-types/src/index'
 
 interface RpcData {
   providers: Set<SimpleSocketWrapper>,

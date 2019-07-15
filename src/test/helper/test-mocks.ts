@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import { Message, JSONObject } from '../../constants'
-import { SocketWrapper } from '../../types'
+import { SocketWrapper } from '../../../ds-types/src/index'
 const sinon = require('sinon')
 
 export const getTestMocks = () => {

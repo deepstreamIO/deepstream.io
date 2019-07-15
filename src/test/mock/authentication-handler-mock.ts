@@ -1,7 +1,7 @@
-import { DeepstreamPlugin, Authentication, UserAuthenticationCallback } from '../../types'
+import { DeepstreamPlugin, DeepstreamAuthentication, UserAuthenticationCallback } from '../../../ds-types/src/index'
 import { JSONObject } from '../../constants'
 
-export default class AuthenticationMock extends DeepstreamPlugin implements Authentication {
+export default class AuthenticationMock extends DeepstreamPlugin implements DeepstreamAuthentication {
   public onClientDisconnectCalledWith: string | null = null
   public sendNextValidAuthWithData: boolean = false
   public lastUserValidationQueryArgs: IArguments | null = null

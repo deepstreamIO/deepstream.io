@@ -1,4 +1,4 @@
-import { DeepstreamConfig, DeepstreamServices, SubscriptionRegistry, SocketWrapper } from '../../types'
+import { DeepstreamConfig, DeepstreamServices, SubscriptionRegistry, SocketWrapper } from '../../../ds-types/src/index'
 import { MonitoringMessage } from '../../constants'
 
 export default class MonitoringHandler {

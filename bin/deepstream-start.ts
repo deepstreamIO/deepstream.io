@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { EVENT } from '../src/types'
+import { EVENT } from '../ds-types/src/index'
 
 export const start = (program: Command) => {
   program

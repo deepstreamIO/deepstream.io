@@ -1,4 +1,4 @@
-import { SocketWrapper, DeepstreamServices, DeepstreamConfig } from '../../types'
+import { SocketWrapper, DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index'
 import { Message, RECORD_ACTION } from '../../constants'
 import { isExcluded } from '../../utils/utils'
 
@@ -90,7 +90,7 @@ function onCacheResponse (
       if (!storageTimedOut) {
         clearTimeout(storageTimeout)
         onStorageResponse(
-          storageError, recordName, version, result, socketWrapper, onComplete,
+          storageError, recordName, version!, result, socketWrapper, onComplete,
           onError, services, context, metaData, promoteToCache, message
         )
       }
@@ -139,7 +139,7 @@ export function recordRequest (
     if (!cacheTimedOut) {
       clearTimeout(cacheTimeout)
       onCacheResponse(
-        error, recordName, version, data,
+        error, recordName, version!, data!,
         socketWrapper, onComplete, onError,
         config, services, context, metaData,
         promoteToCache, message

@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, Authentication, UserAuthenticationCallback } from '../../src/types'
+import { DeepstreamPlugin, DeepstreamAuthentication, UserAuthenticationCallback } from '../../ds-types/src/index'
 import { JSONObject } from '../../src/constants'
 
 interface AuthData {
@@ -7,7 +7,7 @@ interface AuthData {
     password?: string
 }
 
-export class E2EAuthentication extends DeepstreamPlugin implements Authentication {
+export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = 'E2E Authentication'
   public tokens = new Map<string, {
     username?: string,

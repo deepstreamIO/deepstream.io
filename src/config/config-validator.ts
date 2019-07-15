@@ -1,5 +1,5 @@
 import * as Ajv from 'ajv'
-import { LOG_LEVEL } from '../types'
+import { LOG_LEVEL } from '../../ds-types/src/index'
 
 const generalOpts = {
   libDir: { type: ['string', 'null'] },

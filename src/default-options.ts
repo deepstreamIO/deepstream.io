@@ -1,5 +1,5 @@
 import { getUid } from './utils/utils'
-import { DeepstreamConfig, LOG_LEVEL } from './types'
+import { DeepstreamConfig, LOG_LEVEL } from '../ds-types/src/index'
 
 export function get (): DeepstreamConfig {
   return {

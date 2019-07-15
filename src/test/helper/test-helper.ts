@@ -33,7 +33,7 @@ import {get} from '../../default-options'
 import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Monitoring, DeepstreamPlugin, PermissionCallback, UserAuthData, LOG_LEVEL, EVENT } from '../../types'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, DeepstreamMonitoring, DeepstreamPlugin, PermissionCallback, UserAuthData, LOG_LEVEL, EVENT } from '../../../ds-types/src/index'
 import { Message } from '../../constants'
 import { DefaultSubscriptionRegistryFactory } from '../../services/subscription-registry/default-subscription-registry-factory'
 import { DistributedStateRegistryFactory } from '../../services/cluster-state/distributed-state-registry-factory'
@@ -90,7 +90,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
   }
 
 // tslint:disable-next-line: max-classes-per-file
-  class MonitoringMock extends DeepstreamPlugin implements Monitoring {
+  class MonitoringMock extends DeepstreamPlugin implements DeepstreamMonitoring {
     public description = 'monitoring mock'
     public onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
     }

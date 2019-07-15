@@ -1,4 +1,4 @@
-import { PermissionCallback, SocketWrapper, DeepstreamPlugin } from '../../types'
+import { PermissionCallback, SocketWrapper, DeepstreamPlugin } from '../../../ds-types/src/index'
 import { Message, JSONObject } from '../../constants'
 
 export default class PermissionHandlerMock extends DeepstreamPlugin {

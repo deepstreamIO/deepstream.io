@@ -1,5 +1,5 @@
 import { EVENT_ACTION, RECORD_ACTION, TOPIC, ListenMessage, STATE_REGISTRY_TOPIC } from '../constants'
-import { EVENT, SubscriptionListener, DeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry, SubscriptionRegistry } from '../types'
+import { EVENT, SubscriptionListener, DeepstreamConfig, DeepstreamServices, Provider, SocketWrapper, StateRegistry, SubscriptionRegistry } from '../../ds-types/src/index'
 import { shuffleArray } from '../utils/utils'
 
 interface ListenInProgress {

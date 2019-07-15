@@ -74,6 +74,7 @@
     "chai": "^4.2.0",
     "coveralls": "^3.0.4",
     "cucumber": "^5.1.0",
+    "husky": "^3.0.0",
     "istanbul": "^0.4.5",
     "mocha": "^6.1.4",
     "n0p3": "^1.0.2",
@@ -94,6 +95,13 @@
     "url": "https://github.com/deepstreamIO/deepstream.io/issues"
   },
   "homepage": "http://deepstream.io",
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint && npm run tsc",
+      "pre-push": "npm run tsc && npm t && npm run e2e",
+      "pre-publish": "npm run tsc"
+    }
+  },
   "nyc": {
     "include": [
       "src/**/*.ts"

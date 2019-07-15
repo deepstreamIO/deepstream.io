@@ -3,10 +3,10 @@ import JIFHandler from '../../jif/jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { PARSER_ACTION, AUTH_ACTION, EVENT_ACTION, RECORD_ACTION, Message, ALL_ACTIONS, JSONObject } from '../../constants'
-import { ConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig, EVENT } from '../../types'
+import { DeepstreamConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig, EVENT } from '../../../ds-types/src/index'
 import { EventEmitter } from 'events'
 
-export class HTTPConnectionEndpoint extends DeepstreamPlugin implements ConnectionEndpoint {
+export class HTTPConnectionEndpoint extends DeepstreamPlugin implements DeepstreamConnectionEndpoint {
   public description: string = 'HTTP connection endpoint'
 
   private initialised: boolean = false

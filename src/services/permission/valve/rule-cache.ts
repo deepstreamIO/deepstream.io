@@ -1,4 +1,4 @@
-import { ValveConfig } from '../../../types'
+import { ValveConfig } from '../../../../ds-types/src/index'
 
 interface CachedRule {
   rule: string,

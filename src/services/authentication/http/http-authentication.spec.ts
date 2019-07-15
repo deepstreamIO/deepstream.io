@@ -5,7 +5,7 @@ import MockLogger from '../../../test/mock/logger-mock'
 import { PromiseDelay } from '../../../utils/utils';
 import * as testHelper from '../../../test/helper/test-helper'
 import { HttpAuthentication } from './http-authentication';
-import { EVENT } from '../../../types'
+import { EVENT } from '../../../../ds-types/src/index'
 
 describe('it forwards authentication attempts as http post requests to a specified endpoint', () => {
   let authenticationHandler

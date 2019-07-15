@@ -1,5 +1,5 @@
 import * as crypto from 'crypto'
-import { DeepstreamPlugin, Authentication, UserAuthenticationCallback, DeepstreamServices, EVENT } from '../../../types'
+import { DeepstreamPlugin, DeepstreamAuthentication, UserAuthenticationCallback, DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
 import { JSONObject } from '../../../constants'
 import { validateMap } from '../../../utils/utils'
 import { readAndParseFile } from '../../../config/js-yaml-loader'
@@ -24,7 +24,7 @@ interface FileAuthConfig {
  * hashed or in cleartext ) from a json file. This can be useful to authenticate smaller amounts
  * of clients with static credentials, e.g. backend provider that write to publicly readable records
  */
-export class FileBasedAuthentication extends DeepstreamPlugin implements Authentication {
+export class FileBasedAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = `file using ${this.settings.path}`
   private base64KeyLength: number
   private data: any

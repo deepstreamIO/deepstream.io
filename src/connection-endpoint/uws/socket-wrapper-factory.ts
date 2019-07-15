@@ -2,7 +2,7 @@ import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
 import * as binaryMessageBuilder from '@deepstream/protobuf/dist/src/message-builder'
 import * as binaryMessageParser from '@deepstream/protobuf/dist/src/message-parser'
 import { WebSocketServerConfig } from '../websocket/connection-endpoint'
-import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../types'
+import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../../ds-types/src/index'
 
 /**
  * This class wraps around a websocket
@@ -47,7 +47,9 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public flush () {
     if (this.bufferedWritesTotalByteSize !== 0) {
-      this.socket.send(this.bufferedWrites.join(), true)
+      this.bufferedWrites.forEach(array => {
+        this.socket.send(array, true)
+      })
       this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []
     }
@@ -129,7 +131,6 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
   }
 
   public sendBuiltMessage (message: Uint8Array, buffer?: boolean): void {
-    buffer = false
     if (this.isOpen) {
       if (this.config.outgoingBufferTimeout === 0) {
         this.socket.send(message, true)

@@ -1,7 +1,7 @@
 import { TOPIC, Message } from '../../constants'
-import { ClusterNode, DeepstreamPlugin } from '../../types'
+import { DeepstreamClusterNode, DeepstreamPlugin } from '../../../ds-types/src/index'
 
-export class SingleClusterNode extends DeepstreamPlugin implements ClusterNode {
+export class SingleClusterNode extends DeepstreamPlugin implements DeepstreamClusterNode {
   public description = 'Single Cluster Node'
 
   public sendDirect (serverName: string, message: Message, metaData?: any) {}

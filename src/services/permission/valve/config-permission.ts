@@ -5,7 +5,7 @@ import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
 import { Message, JSONObject, RECORD_ACTION, EVENT_ACTION, RPC_ACTION, PRESENCE_ACTION } from '../../../constants'
 import RecordHandler from '../../../handlers/record/record-handler'
-import { DeepstreamPlugin, Permission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper, EVENT } from '../../../types'
+import { DeepstreamPlugin, DeepstreamPermission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper, EVENT } from '../../../../ds-types/src/index'
 import { readAndParseFile } from '../../../config/js-yaml-loader'
 import { EventEmitter } from 'events'
 
@@ -14,7 +14,7 @@ const UNDEFINED = 'undefined'
 export type RuleType = string
 export type ValveSection = string
 
-export class ConfigPermission extends DeepstreamPlugin implements Permission {
+export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPermission {
   private isReady: boolean = false
   public description: string = `valve permissions loaded from ${this.permissionOptions.path}`
 

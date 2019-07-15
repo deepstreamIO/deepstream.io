@@ -7,7 +7,7 @@ import * as contentType from 'content-type'
 import * as bodyParser from 'body-parser'
 // @ts-ignore
 import * as httpShutdown from 'http-shutdown'
-import { Logger, EVENT } from '../../types'
+import { DeepstreamLogger, EVENT } from '../../../ds-types/src/index'
 
 function checkConfigOption (config: any, option: string, expectedType?: string): void {
   if ((expectedType && typeof config[option] !== expectedType) || config[option] === undefined) {
@@ -34,7 +34,7 @@ export default class Server extends EventEmitter {
   private sslCert: any
   private sslCa: any
 
-  constructor (private config: any, private logger: Logger) {
+  constructor (private config: any, private logger: DeepstreamLogger) {
     super()
 
     checkConfigOption(config, 'port', 'number')

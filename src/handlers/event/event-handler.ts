@@ -1,6 +1,6 @@
 import { EVENT_ACTION, TOPIC, EventMessage, ListenMessage, STATE_REGISTRY_TOPIC, BulkSubscriptionMessage } from '../../constants'
 import { ListenerRegistry } from '../../listen/listener-registry'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Handler, SubscriptionRegistry } from '../../types'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, Handler, SubscriptionRegistry } from '../../../ds-types/src/index'
 
 export default class EventHandler implements Handler<EventMessage> {
   private subscriptionRegistry: SubscriptionRegistry

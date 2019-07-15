@@ -1,5 +1,5 @@
 import { TOPIC, STATE_ACTION, StateMessage } from '../../constants'
-import { DeepstreamServices, StateRegistry, StateRegistryCallback, DeepstreamConfig } from '../../types'
+import { DeepstreamServices, StateRegistry, StateRegistryCallback, DeepstreamConfig } from '../../../ds-types/src/index'
 import { Dictionary } from 'ts-essentials'
 import { EventEmitter } from 'events'
 

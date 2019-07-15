@@ -1,7 +1,7 @@
 import { Message, TOPIC } from '../../constants'
 import * as cluster from 'cluster'
 import { EventEmitter } from 'events'
-import { ClusterNode, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig } from '../../types'
+import { DeepstreamClusterNode, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index'
 
 if (cluster.isWorker) {
     process.on('message', (serializedMessage) => {
@@ -21,7 +21,7 @@ if (cluster.isMaster) {
     })
 }
 
-export class VerticalClusterNode extends DeepstreamPlugin implements ClusterNode {
+export class VerticalClusterNode extends DeepstreamPlugin implements DeepstreamClusterNode {
     public static emitter = new EventEmitter()
     public description: string = 'Vertical Cluster Message Bus'
     private callbacks = new Map<string, any>()

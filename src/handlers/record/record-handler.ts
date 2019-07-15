@@ -1,7 +1,7 @@
 import RecordDeletion from './record-deletion'
 import { recordRequestBinding } from './record-request'
 import { RecordTransition } from './record-transition'
-import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper, EVENT } from '../../types'
+import { SubscriptionRegistry, Handler, DeepstreamConfig, DeepstreamServices, SocketWrapper, EVENT } from '../../../ds-types/src/index'
 import { ListenerRegistry } from '../../listen/listener-registry'
 import { isExcluded } from '../../utils/utils'
 import { STATE_REGISTRY_TOPIC, RecordMessage, TOPIC, RecordWriteMessage, BulkSubscriptionMessage, ListenMessage, PARSER_ACTION, RECORD_ACTION as RA, JSONObject, Message, RECORD_ACTION, ALL_ACTIONS } from '../../constants'
@@ -244,7 +244,7 @@ export default class RecordHandler implements Handler<RecordMessage> {
         return
       }
 
-      if (Object.keys(versions).length > -1) {
+      if (Object.keys(versions!).length > -1) {
         socketWrapper.sendMessage({
           topic: TOPIC.RECORD,
           action: RA.HEAD_RESPONSE_BULK,
@@ -254,10 +254,11 @@ export default class RecordHandler implements Handler<RecordMessage> {
 
       this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
 
-      const l = missing.length
+      const l = missing!.length
       for (let i = 0; i < l; i++) {
-        if (versions[missing[i]] === undefined) {
-          this.head(socketWrapper, message, missing[i])
+        if (versions![missing![i]] === undefined) {
+          
+          this.head(socketWrapper, message, missing![i])
         }
       }
     })

@@ -5,7 +5,7 @@ import * as C from '../../../constants'
 import { ConfigPermission } from './config-permission'
 import * as testHelper from '../../../test/helper/test-helper'
 import { PromiseDelay } from '../../../utils/utils';
-import { EVENT } from '../../../types';
+import { EVENT } from '../../../../ds-types/src/index';
 
 const { config, services } = testHelper.getDeepstreamPermissionOptions()
 

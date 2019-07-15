@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, StateRegistryFactory, StateRegistry } from '../../types'
+import { DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, StateRegistryFactory, StateRegistry } from '../../../ds-types/src/index'
 import { TOPIC } from '../../constants'
 import { DistributedStateRegistry, DistributedStateRegistryOptions } from './distributed-state-registry'
 
