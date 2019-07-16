@@ -19,12 +19,12 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
   public authCallback: Function | null = null
   public authAttempts: number = 0
 
-  private bufferedWrites: Uint8Array[]
+  private bufferedWrites: Uint8Array[] = []
   private closeCallbacks: Set<Function> = new Set()
 
   public authData: object | null = null
   public clientData: object | null = null
-  private bufferedWritesTotalByteSize: number
+  private bufferedWritesTotalByteSize: number = 0
 
   constructor (
     private socket: WebSocket,
@@ -33,8 +33,6 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
     private config: WebSocketServerConfig,
     private connectionEndpoint: SocketConnectionEndpoint
    ) {
-    this.bufferedWritesTotalByteSize = 0
-    this.bufferedWrites = []
   }
 
   get isOpen () {
@@ -48,7 +46,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public flush () {
     if (this.bufferedWritesTotalByteSize !== 0) {
-      this.socket.send(this.bufferedWrites)
+      this.bufferedWrites.forEach((bw) => this.socket.send(bw))
       this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []
     }
