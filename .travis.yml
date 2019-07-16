@@ -38,7 +38,6 @@ matrix:
 script:
   - npm run lint;
   - npm run test:all:coverage;
-  - bash scripts/package.sh true
 
 addons:
   apt:
@@ -52,3 +51,30 @@ after_script: "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls
 
 notifications:
   email: false
+
+before_deploy:	
+  - bash ./scripts/package.sh	true
+
+deploy:	
+- provider: s3	
+  access_key_id: ${ACCESS_KEY_ID}	
+  secret_access_key: ${SECRET_ACCESS_KEY}	
+  bucket: deepstream.io-artefacts	
+  skip_cleanup: true	
+  acl: public_read	
+  local_dir: build	
+  upload-dir: $TRAVIS_REPO_SLUG	
+  on:	
+    branch: v4	
+- provider: releases	
+  skip_cleanup: true	
+  api_key: ${GITHUB_TOKEN}	
+  file_glob: true	
+  file:	
+    - "build/*.pkg"	
+    - "build/*.deb"	
+    - "build/*.rpm"	
+    - "build/*.tar.gz"	
+    - "build/*.zip"	
+  on:	
+    tags: true
