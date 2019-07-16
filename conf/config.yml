@@ -49,7 +49,7 @@ listen:
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
-  - type: uws-websocket
+  - type: ws-websocket
     options:
         # port for the websocket server
         port: 6020
@@ -80,12 +80,6 @@ connectionEndpoints:
         logInvalidAuthData: false
         # maximum allowed size of an individual message in bytes
         maxMessageSize: 1048576
-
-        # SSL Configuration
-        sslKey: null
-        sslCert: null
-        sslDHParams: null
-        sslPassphrase: null
 
   - type: node-http
     options:
@@ -154,6 +148,12 @@ connectionEndpoints:
   #       logInvalidAuthData: false
   #       # maximum allowed size of an individual message in bytes
   #       maxMessageSize: 1048576
+
+  #       # SSL Configuration
+  #       sslKey: null
+  #       sslCert: null
+  #       sslDHParams: null
+  #       sslPassphrase: null
 
 # Logger Configuration
 logger:

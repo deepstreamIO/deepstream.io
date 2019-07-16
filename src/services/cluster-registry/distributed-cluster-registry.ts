@@ -55,42 +55,6 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
       })
     }
 
-    public hasPeer (serverName: string) {
-        return this.nodes.has(serverName)
-    }
-
-    /**
-     * Prompts this node to leave the cluster, either as a result of a server.close()
-     * call or due to the process exiting.
-     * This sends out a leave message to all other nodes and destroys this class.
-     */
-    public leaveCluster () {
-        if (this.inCluster === false) {
-            this.emitter.emit('close')
-            return
-        }
-
-        this.services.logger.info(EVENT.CLUSTER_LEAVE, this.config.serverName)
-        this.services.clusterNode.send({
-            topic: TOPIC.CLUSTER,
-            action: CLUSTER_ACTION.REMOVE,
-            name: this.config.serverName
-        })
-
-        // TODO: If a message connector doesn't close this is required to avoid an error
-        // being thrown during shutdown
-        // this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
-
-        process.removeListener('beforeExit', this.leaveCluster)
-        process.removeListener('exit', this.leaveCluster)
-        clearInterval(this.publishInterval)
-        clearInterval(this.checkInterval)
-        this.nodes.clear()
-        this.inCluster = false
-
-        this.emitter.emit('close')
-    }
-
     /**
      * Returns the serverNames of all nodes currently present within the cluster
      */
@@ -146,7 +110,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      * Being alive is defined as having received a status message from that node less than
      * <clusterNodeInactiveTimeout> milliseconds ago.
      */
-    public checkNodes () {
+    private checkNodes () {
         const now = Date.now()
         for (const [serverName, node] of this.nodes) {
             if (now - node.lastStatusTime > this.pluginOptions.nodeInactiveTimeout) {
@@ -160,7 +124,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
      *
      * If the remote node doesn't exist yet, it is added and an add event is emitted / logged
      */
-    public updateNode (message: ClusterMessage) {
+    private updateNode (message: ClusterMessage) {
         const node = this.nodes.get(message.serverName)
 
         this.nodes.set(message.serverName, {
@@ -206,4 +170,37 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
         this.updateNode(message)
         this.services.clusterNode.send(message)
     }
+
+    /**
+     * Prompts this node to leave the cluster, either as a result of a server.close()
+     * call or due to the process exiting.
+     * This sends out a leave message to all other nodes and destroys this class.
+     */
+    private leaveCluster () {
+        if (this.inCluster === false) {
+            this.emitter.emit('close')
+            return
+        }
+
+        this.services.logger.info(EVENT.CLUSTER_LEAVE, this.config.serverName)
+        this.services.clusterNode.send({
+            topic: TOPIC.CLUSTER,
+            action: CLUSTER_ACTION.REMOVE,
+            name: this.config.serverName
+        })
+
+        // TODO: If a message connector doesn't close this is required to avoid an error
+        // being thrown during shutdown
+        // this._options.messageConnector.unsubscribe( C.TOPIC.CLUSTER, this._onMessageFn );
+
+        process.removeListener('beforeExit', this.leaveCluster)
+        process.removeListener('exit', this.leaveCluster)
+        clearInterval(this.publishInterval)
+        clearInterval(this.checkInterval)
+        this.nodes.clear()
+        this.inCluster = false
+
+        this.emitter.emit('close')
+    }
+
 }
