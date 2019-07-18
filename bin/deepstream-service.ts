@@ -10,7 +10,7 @@ export const service = (program: Command) => {
     .option('-c, --config [file]', 'configuration file, parent directory will be used as prefix for other config files')
 
     .option('-n, --service-name <name>', 'the name to register the service')
-    .option('-o, --log-dir <directory>', 'the directory for output logs')
+    .option('-l, --log-dir <directory>', 'the directory for output logs')
     .option('-p, --pid-directory <directory>', 'the directory for the pid file')
     .option('--dry-run', 'outputs the service file to screen')
     .action(execute)
@@ -28,11 +28,17 @@ function execute (this: any, action: string) {
   const name = this.serviceName || 'deepstream'
 
   if (action === 'add') {
+
+    if (!this.logDir || !this.config) {
+      console.error('Please provide the config and log directory when adding a service')
+      process.exit(1)
+    }
+
     const options = {
       exec: process.argv[1],
       programArgs: [] as string[],
       pidFile: this.pidFile || `/var/run/deepstream/${name}.pid`,
-      logDir: this.logDir || '/var/log/deepstream',
+      logDir: this.logDir,
       dryRun: this.dryRun
     }
 
