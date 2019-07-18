@@ -4,7 +4,11 @@ import {createWSSocketWrapper} from './socket-wrapper-factory'
 import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../../ds-types/src/index'
 import { Dictionary } from 'ts-essentials'
 import * as WebSocket from 'ws'
-import { IncomingMessage } from 'http'
+import { IncomingMessage, Server } from 'http'
+
+interface WSConnectionEndpointConfig extends WebSocketServerConfig {
+  httpServer?: Server
+}
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
@@ -15,7 +19,7 @@ export class WSConnectionEndpoint extends ConnectionEndpoint {
   private server!: WebSocket.Server
   private connections = new Map<WebSocket, UnauthenticatedSocketWrapper>()
 
-  constructor (private wsOptions: WebSocketServerConfig, services: DeepstreamServices, config: DeepstreamConfig) {
+  constructor (private wsOptions: WSConnectionEndpointConfig, services: DeepstreamServices, config: DeepstreamConfig) {
     super(wsOptions, services, config)
     this.description = 'WS Connection Endpoint'
     this.onMessages = this.onMessages.bind(this)
@@ -25,12 +29,17 @@ export class WSConnectionEndpoint extends ConnectionEndpoint {
    * Initialize the ws endpoint, setup callbacks etc.
    */
   public createWebsocketServer () {
-    this.server = new WebSocket.Server({
-      port: this.getOption('port'),
-      host: this.getOption('host')
-    }, () => {
-      this.onReady()
-    })
+    if (this.wsOptions.httpServer) {
+      this.server = new WebSocket.Server({
+        server: this.wsOptions.httpServer
+      })
+      process.nextTick(this.onReady.bind(this))
+    } else {
+      this.server = new WebSocket.Server({
+        port: this.getOption('port'),
+        host: this.getOption('host')
+      }, () => this.onReady())
+    }
 
     this.server.on('connection', (websocket, request) => {
       const socketWrapper = this.createWebsocketWrapper(websocket, request)
