@@ -3,7 +3,6 @@ import { Message } from '../../constants'
 
 export class LocalMonitoring extends DeepstreamPlugin implements DeepstreamMonitoring {
   public description: string = 'noop monitoring'
-  public apiVersion = 1
 
   public onErrorLog (loglevel: LOG_LEVEL, event: EVENT, logMessage: string): void {
   }

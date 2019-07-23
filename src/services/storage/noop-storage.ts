@@ -2,7 +2,6 @@ import { DeepstreamPlugin, StorageWriteCallback, StorageReadCallback, Deepstream
 
 export class NoopStorage extends DeepstreamPlugin implements DeepstreamStorage {
   public description = 'noop storage'
-  public apiVersion: number = 2
 
   public set (key: string, version: number, data: any, callback: StorageWriteCallback) {
     callback(null)

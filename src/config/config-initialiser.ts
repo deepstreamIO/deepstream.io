@@ -1,6 +1,6 @@
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamStorage, StorageReadCallback, StorageWriteCallback, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
@@ -20,7 +20,6 @@ import { DistributedLockRegistry } from '../services/lock/distributed-lock-regis
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
-import { JSONObject } from '../constants'
 
 let commandLineArguments: any
 
@@ -88,10 +87,6 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode'))(config.clusterNode.options, services, config)
   services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry'))(config.clusterRegistry.options, services, config)
   services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates'))(config.clusterStates.options, services, config)
-
-  if (services.storage.apiVersion !== 2) {
-    storageCompatability(services.storage)
-  }
 
   handleCustomPlugins(config, services)
 
@@ -342,23 +337,5 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
     return new PermissionHandlerClass(config.permission.options, services, config)
   } else {
     return new PermissionHandlerClass(config.permission.options, services, config)
-  }
-}
-
-export function storageCompatability (storage: DeepstreamStorage) {
-  const oldGet = storage.get as Function
-  storage.get = (recordName: string, callback: StorageReadCallback) => {
-    oldGet.call(storage, recordName, (error: string | null, record: { _v: number, _d: JSONObject } | null) => {
-      if (error !== null) {
-        callback(error)
-      } else {
-        callback(null, record ? record._v : -1, record ? record._d : null)
-      }
-    })
-  }
-
-  const oldSet = storage.set as Function
-  storage.set = (recordName: string, version: number, data: any, callback: StorageWriteCallback) => {
-    oldSet.call(storage, recordName, { _v: version, _d: data }, callback)
   }
 }

@@ -3,7 +3,6 @@ import { JSONValue } from '../../constants'
 
 export class LocalCache extends DeepstreamPlugin implements DeepstreamCache {
   public description = 'local cache'
-  public apiVersion = 2
 
   private data = new Map<string, { version: number, data: JSONValue }>()
 
