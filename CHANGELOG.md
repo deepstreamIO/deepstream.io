@@ -1,3 +1,9 @@
+## [4.0.0-rc.19] - 2019.07.23
+
+### Breaking Changes
+
+- Removing the storage compatibility wrapper
+
 ## [4.0.0-rc.15] - 2019.07.10
 
 ### Breaking Changes
