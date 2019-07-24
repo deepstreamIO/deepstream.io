@@ -227,7 +227,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     let errorMsg
 
     if (msg.topic !== TOPIC.AUTH) {
-      this.services.logger!.warn(AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE], 'invalid auth message')
+      this.services.logger!.warn(AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE], `invalid auth message: ${JSON.stringify(msg)}`)
       socketWrapper.sendMessage({
         topic: TOPIC.AUTH,
         action: AUTH_ACTION.INVALID_MESSAGE,
@@ -282,8 +282,6 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * the message, sends an error to the client and closes the socket
    */
   private sendInvalidAuthMsg (socketWrapper: UnauthenticatedSocketWrapper, msg: string, originalAction: ALL_ACTIONS): void {
-    console.trace()
-    process.exit(1)
     this.services.logger!.warn(AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE_DATA], this.logInvalidAuthData ? msg : '')
     socketWrapper.sendMessage({
       topic: TOPIC.AUTH,
