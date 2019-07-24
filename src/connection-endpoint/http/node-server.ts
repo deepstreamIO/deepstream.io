@@ -8,6 +8,7 @@ import * as bodyParser from 'body-parser'
 // @ts-ignore
 import * as httpShutdown from 'http-shutdown'
 import { DeepstreamLogger, EVENT } from '../../../ds-types/src/index'
+import { HTTPEvents } from './connection-endpoint'
 
 function checkConfigOption (config: any, option: string, expectedType?: string): void {
   if ((expectedType && typeof config[option] !== expectedType) || config[option] === undefined) {
@@ -15,8 +16,9 @@ function checkConfigOption (config: any, option: string, expectedType?: string):
   }
 }
 
-export default class Server extends EventEmitter {
-  public isReady: boolean = false
+export default class Server {
+  private emitter = new EventEmitter()
+  private isReady: boolean = false
 
   private origins: string = ''
   private authPathRegExp: RegExp
@@ -31,9 +33,7 @@ export default class Server extends EventEmitter {
 
   private httpServer: any
 
-  constructor (private config: any, private logger: DeepstreamLogger) {
-    super()
-
+  constructor (private config: any, private logger: DeepstreamLogger, private httpEvents: HTTPEvents) {
     checkConfigOption(config, 'port', 'number')
     checkConfigOption(config, 'host')
     checkConfigOption(config, 'enableAuthEndpoint', 'boolean')
@@ -58,26 +58,29 @@ export default class Server extends EventEmitter {
     this.getPathRegExp = new RegExp(`^${config.getPath}/?(.*)$`, 'i')
   }
 
+  public async whenReady () {
+    if (!this.isReady) {
+      return new Promise((resolve) => this.emitter.once('ready', resolve))
+    }
+  }
+
   public start (): void {
-    const server = this._createHttpServer()
+    const server = this.createHttpServer()
     this.httpServer = httpShutdown(server)
-    this.httpServer.on('request', this._onRequest.bind(this))
-    this.httpServer.once('listening', this._onReady.bind(this))
-    this.httpServer.on('error', this._onError.bind(this))
+    this.httpServer.on('request', this.onRequest.bind(this))
+    this.httpServer.once('listening', this.onReady.bind(this))
+    this.httpServer.on('error', this.onError.bind(this))
     this.httpServer.listen(this.config.port, this.config.host)
   }
 
-  public stop (): Promise<void> {
+  public async stop (): Promise<void> {
     return new Promise((resolve) => this.httpServer.shutdown(resolve))
   }
 
   /**
    * Called when the server starts listening for requests.
-   *
-   * @private
-   * @returns {void}
    */
-  private _onReady (): void {
+  private onReady (): void {
     const serverAddress = this.httpServer.address()
     const address = serverAddress.address
     const port = serverAddress.port
@@ -87,11 +90,11 @@ export default class Server extends EventEmitter {
     this.logger.info(
       EVENT.INFO, `Listening for health checks on path ${this.config.healthCheckPath}`
     )
-    this.emit('ready')
+    this.emitter.emit('ready')
     this.isReady = true
   }
 
-  private static _terminateResponse (response: http.ServerResponse, code: number, message?: string) {
+  public static terminateResponse (response: http.ServerResponse, code: number, message?: string) {
     response.setHeader('Content-Type', 'text/plain; charset=utf-8')
     response.writeHead(code)
     if (message) {
@@ -105,16 +108,16 @@ export default class Server extends EventEmitter {
    * Creates an HTTP or HTTPS server for ws to attach itself to,
    * depending on the options the client configured
    */
-  private _createHttpServer (): http.Server | https.Server {
+  private createHttpServer (): http.Server | https.Server {
     return http.createServer()
   }
 
-  private _onRequest (
+  private onRequest (
     request: http.IncomingMessage,
     response: http.ServerResponse
    ): void {
      if (!this.config.allowAllOrigins) {
-       if (!this._verifyOrigin(request, response)) {
+       if (!this.verifyOrigin(request, response)) {
          return
        }
      } else {
@@ -123,16 +126,16 @@ export default class Server extends EventEmitter {
 
      switch (request.method) {
        case 'POST':
-         this._handlePost(request, response)
+         this.handlePost(request, response)
          break
        case 'GET':
-         this._handleGet(request, response)
+         this.handleGet(request, response)
          break
        case 'OPTIONS':
-         this._handleOptions(request, response)
+         this.handleOptions(request, response)
          break
        default:
-         Server._terminateResponse(
+         Server.terminateResponse(
            response,
            HTTPStatus.METHOD_NOT_ALLOWED,
            `Unsupported method. Supported methods: ${this.methodsStr}`
@@ -140,25 +143,25 @@ export default class Server extends EventEmitter {
      }
    }
 
-  private _verifyOrigin (
+  private verifyOrigin (
     request: http.IncomingMessage,
     response: http.ServerResponse
   ): boolean {
     const requestOriginUrl = request.headers.origin as string || request.headers.referer as string
     const requestHostUrl = request.headers.host
     if (this.config.hostUrl && requestHostUrl !== this.config.hostUrl) {
-      Server._terminateResponse(response, HTTPStatus.FORBIDDEN, 'Forbidden Host.')
+      Server.terminateResponse(response, HTTPStatus.FORBIDDEN, 'Forbidden Host.')
       return false
     }
     if (this.origins.indexOf(requestOriginUrl) === -1) {
       if (!requestOriginUrl) {
-        Server._terminateResponse(
+        Server.terminateResponse(
           response,
           HTTPStatus.FORBIDDEN,
           'CORS is configured for this server. All requests must set a valid "Origin" header.'
         )
       } else {
-        Server._terminateResponse(
+        Server.terminateResponse(
           response,
           HTTPStatus.FORBIDDEN,
           `Origin "${requestOriginUrl}" is forbidden.`
@@ -175,7 +178,7 @@ export default class Server extends EventEmitter {
     return true
   }
 
-  private _handlePost (request: any, response: any): void {
+  private handlePost (request: any, response: any): void {
     let parsedContentType
     try {
       parsedContentType = contentType.parse(request)
@@ -183,7 +186,7 @@ export default class Server extends EventEmitter {
       parsedContentType = { type: null }
     }
     if (parsedContentType.type !== 'application/json') {
-      Server._terminateResponse(
+      Server.terminateResponse(
         response,
         HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
         'Invalid "Content-Type" header. Supported media types: "application/json"'
@@ -193,34 +196,34 @@ export default class Server extends EventEmitter {
 
     this.jsonBodyParser(request, response, (err: Error | null) => {
       if (err) {
-        Server._terminateResponse(
+        Server.terminateResponse(
           response,
           HTTPStatus.BAD_REQUEST,
           `Failed to parse body of request: ${err.message}`
         )
         return
       }
-      const onResponse = Server._onHandlerResponse.bind(null, response)
+      const onResponse = Server.onHandlerResponse.bind(null, response)
       const metadata = { headers: request.headers, url: request.url }
 
       if (this.config.enableAuthEndpoint && this.authPathRegExp.test(request.url)) {
-        this.emit('auth-message', request.body, metadata, onResponse)
+        this.httpEvents.onAuthMessage(request.body, metadata, onResponse)
 
       } else if (this.postPathRegExp.test(request.url)) {
-        this.emit('post-message', request.body, metadata, onResponse)
+        this.httpEvents.onPostMessage(request.body, metadata, onResponse)
 
       } else {
-        Server._terminateResponse(response, HTTPStatus.NOT_FOUND, 'Endpoint not found.')
+        Server.terminateResponse(response, HTTPStatus.NOT_FOUND, 'Endpoint not found.')
       }
     })
   }
 
-  private _handleGet (
+  private handleGet (
     request: http.IncomingMessage,
     response: http.ServerResponse
    ): void {
     const parsedUrl = url.parse(request.url as string, true)
-    const onResponse = Server._onHandlerResponse.bind(null, response)
+    const onResponse = Server.onHandlerResponse.bind(null, response)
 
     if (parsedUrl.pathname === this.config.healthCheckPath) {
       response.setHeader('Content-Type', 'text/plain; charset=utf-8')
@@ -228,20 +231,20 @@ export default class Server extends EventEmitter {
       response.end('OK\r\n\r\n')
 
     } else if (this.getPathRegExp.test(parsedUrl.pathname as string)) {
-      this.emit('get-message', parsedUrl.query, request.headers, onResponse)
+      this.httpEvents.onGetMessage(parsedUrl.query, request.headers, onResponse)
 
     } else {
-      Server._terminateResponse(response, HTTPStatus.NOT_FOUND, 'Endpoint not found.')
+      Server.terminateResponse(response, HTTPStatus.NOT_FOUND, 'Endpoint not found.')
     }
   }
 
-  private _handleOptions (
+  private handleOptions (
     request: http.IncomingMessage,
     response: http.ServerResponse
   ): void {
     const requestMethod = request.headers['access-control-request-method'] as string | undefined
     if (!requestMethod) {
-      Server._terminateResponse(
+      Server.terminateResponse(
         response,
         HTTPStatus.BAD_REQUEST,
         'Missing header "Access-Control-Request-Method".'
@@ -249,7 +252,7 @@ export default class Server extends EventEmitter {
       return
     }
     if (this.methods.indexOf(requestMethod) === -1) {
-      Server._terminateResponse(
+      Server.terminateResponse(
         response,
         HTTPStatus.FORBIDDEN,
         `Method ${requestMethod} is forbidden. Supported methods: ${this.methodsStr}`
@@ -259,7 +262,7 @@ export default class Server extends EventEmitter {
 
     const requestHeadersRaw = request.headers['access-control-request-headers'] as string | undefined
     if (!requestHeadersRaw) {
-      Server._terminateResponse(
+      Server.terminateResponse(
         response,
         HTTPStatus.BAD_REQUEST,
         'Missing header "Access-Control-Request-Headers".'
@@ -269,7 +272,7 @@ export default class Server extends EventEmitter {
     const requestHeaders = requestHeadersRaw.split(',')
     for (let i = 0; i < requestHeaders.length; i++) {
       if (this.headersLower.indexOf(requestHeaders[i].trim().toLowerCase()) === -1) {
-        Server._terminateResponse(
+        Server.terminateResponse(
           response,
           HTTPStatus.FORBIDDEN,
           `Header ${requestHeaders[i]} is forbidden. Supported headers: ${this.headersStr}`
@@ -280,17 +283,17 @@ export default class Server extends EventEmitter {
 
     response.setHeader('Access-Control-Allow-Methods', this.methodsStr)
     response.setHeader('Access-Control-Allow-Headers', this.headersStr)
-    Server._terminateResponse(response, HTTPStatus.NO_CONTENT)
+    Server.terminateResponse(response, HTTPStatus.NO_CONTENT)
   }
 
-  private static _onHandlerResponse (
+  private static onHandlerResponse (
     response: http.ServerResponse,
     err: { statusCode: number, message: string },
     data: { result: string, body: object }
   ): void {
     if (err) {
       const statusCode = err.statusCode || HTTPStatus.BAD_REQUEST
-      Server._terminateResponse(response, statusCode, err.message)
+      Server.terminateResponse(response, statusCode, err.message)
       return
     }
     response.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -302,7 +305,7 @@ export default class Server extends EventEmitter {
    * Generic callback for connection errors. This will most often be called
    * if the configured port number isn't available
    */
-  private _onError (error: string): void {
+  private onError (error: string): void {
     this.logger.error(EVENT.CONNECTION_ERROR, error.toString())
   }
 }

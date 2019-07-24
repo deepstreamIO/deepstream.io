@@ -1,24 +1,26 @@
-import Server from './server'
+import Server from './node-server'
 import JIFHandler from '../../jif/jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { PARSER_ACTION, AUTH_ACTION, EVENT_ACTION, RECORD_ACTION, Message, ALL_ACTIONS, JSONObject } from '../../constants'
 import { DeepstreamConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig, EVENT } from '../../../ds-types/src/index'
-import { EventEmitter } from 'events'
+
+export interface HTTPEvents {
+  onAuthMessage: Function
+  onPostMessage: Function
+  onGetMessage: Function
+}
 
 export class HTTPConnectionEndpoint extends DeepstreamPlugin implements DeepstreamConnectionEndpoint {
   public description: string = 'HTTP connection endpoint'
 
-  private initialised: boolean = false
+  private initialized: boolean = false
   private jifHandler!: JIFHandler
   private onSocketMessageBound: Function
   private onSocketErrorBound: Function
   private server!: Server
   private logInvalidAuthData: boolean = false
   private requestTimeout!: number
-
-  private isReady: boolean = false
-  private emitter = new EventEmitter()
 
   constructor (private options: any, private services: DeepstreamServices, public dsOptions: DeepstreamConfig) {
     super()
@@ -31,19 +33,17 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
   }
 
   public async whenReady (): Promise<void> {
-    if (!this.isReady) {
-      return new Promise((resolve) => this.emitter.once('ready', resolve))
-    }
+    await this.server.whenReady()
   }
 
   /**
-   * Initialise the http server.
+   * Initialize the http server.
    */
   public init (): void {
-    if (this.initialised) {
+    if (this.initialized) {
       throw new Error('init() must only be called once')
     }
-    this.initialised = true
+    this.initialized = true
 
     const serverConfig = {
       port: this.getOption('port'),
@@ -57,17 +57,12 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
       enableAuthEndpoint: this.options.enableAuthEndpoint,
       maxMessageSize: this.options.maxMessageSize
     }
-    this.server = new Server(serverConfig, this.services.logger)
 
-    this.server.on('auth-message', this.onAuthMessage.bind(this))
-    this.server.on('post-message', this.onPostMessage.bind(this))
-    this.server.on('get-message', this.onGetMessage.bind(this))
-
-    this.server.on('ready', () => {
-      this.isReady = true
-      this.emitter.emit('ready')
+    this.server = new Server(serverConfig, this.services.logger, {
+      onAuthMessage: this.onAuthMessage.bind(this),
+      onPostMessage: this.onPostMessage.bind(this),
+      onGetMessage: this.onGetMessage.bind(this)
     })
-
     this.server.start()
 
     this.logInvalidAuthData = this.getOption('logInvalidAuthData') as boolean
@@ -164,6 +159,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
       )
       return
     }
+
     let authData = {}
     if (messageData.authData !== undefined) {
       if (this.options.allowAuthData !== true) {
@@ -199,7 +195,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
         )
         return
       }
-      authData = Object.assign({}, authData, { token: messageData.token })
+      authData = { ...authData, token: messageData.token }
     }
 
     this.services.authentication.isValidUser(

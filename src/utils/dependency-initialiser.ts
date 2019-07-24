@@ -22,13 +22,13 @@ export class DependencyInitialiser {
       this.config.dependencyInitialisationTimeout,
     )
 
-    this.dependency
-      .whenReady()
-      .then(this.onReady.bind(this))
-
     if (this.dependency.init) {
       this.dependency.init()
     }
+
+    this.dependency
+      .whenReady()
+      .then(this.onReady.bind(this))
   }
 
   public async whenReady (): Promise<void> {
