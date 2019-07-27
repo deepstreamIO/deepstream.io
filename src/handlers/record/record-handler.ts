@@ -194,7 +194,7 @@ export default class RecordHandler extends Handler<RecordMessage> {
     let completed = 0
     message.names!.forEach((recordName, index, names) => {
       if (this.subscriptionRegistry.hasLocalSubscribers(recordName)) {
-        this.recordRequest(recordName, null, (name: string, version: number, data: JSONObject) => {
+        this.recordRequest(recordName, socketWrapper, (name: string, version: number, data: JSONObject) => {
           if (version === -1) {
             this.remoteDelete({
               topic: TOPIC.RECORD,
@@ -218,11 +218,13 @@ export default class RecordHandler extends Handler<RecordMessage> {
           }
         }, (event: RA, errorMessage: string, name: string, socket: SocketWrapper, msg: Message) => {
           completed++
-          if (completed === names.length && socketWrapper) {
-            socketWrapper.sendAckMessage(message)
+          if (completed === names.length && socket) {
+            socket.sendAckMessage(message)
             this.services.clusterNode.send(message)
           }
-          onRequestError(event, errorMessage, recordName, socket, msg)
+          if (socket) {
+            onRequestError(event, errorMessage, recordName, socket, msg)
+          }
         }, message)
       } else {
         completed++
