@@ -9,6 +9,13 @@ describe('objects are created from paths and their value is set correctly', () =
     expect(record).to.deep.equal({ firstname: 'Wolfram' })
   })
 
+  it('setting a value to undefined deletes it', () => {
+    const record = { a: 1, b: 2 }
+    jsonPath.setValue(record, 'a', undefined)
+    expect(record).to.deep.equal({ b: 2 })
+  })
+
+
   it('sets values for nested objects', () => {
     const record = {}
     jsonPath.setValue(record, 'address.street', 'someStreet')

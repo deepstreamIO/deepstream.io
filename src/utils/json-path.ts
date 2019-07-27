@@ -42,7 +42,11 @@ export function setValue (root: any, path: string, value: any): void {
     }
   }
 
-  node[tokens[i]] = value
+  if (value === undefined) {
+    delete node[tokens[i]]
+  } else {
+    node[tokens[i]] = value
+  }
 }
 
 /**
