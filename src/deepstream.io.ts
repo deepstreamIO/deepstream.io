@@ -56,7 +56,6 @@ export class Deepstream extends EventEmitter {
 
 /**
  * Deepstream is a realtime data server that supports data-sync,
- * Deepstream is a realtime data server that supports data-sync,
  * publish-subscribe, request-response, listeneing, permissioning
  * and a host of other features!
  */
@@ -72,8 +71,8 @@ export class Deepstream extends EventEmitter {
       { name: 'start', from: STATES.STOPPED, to: STATES.LOGGER_INIT, handler: this.loggerInit },
       { name: 'logger-started', from: STATES.LOGGER_INIT, to: STATES.SERVICE_INIT, handler: this.serviceInit },
       { name: 'services-started', from: STATES.SERVICE_INIT, to: STATES.HANDLER_INIT, handler: this.handlerInit },
-      { name: 'handlers-started', from: STATES.HANDLER_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this.connectionEndpointInit },
-      { name: 'plugins-started', from: STATES.PLUGIN_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this.pluginsInit },
+      { name: 'handlers-started', from: STATES.HANDLER_INIT, to: STATES.PLUGIN_INIT, handler: this.pluginsInit },
+      { name: 'plugins-started', from: STATES.PLUGIN_INIT, to: STATES.CONNECTION_ENDPOINT_INIT, handler: this.connectionEndpointInit },
       { name: 'connection-endpoints-started', from: STATES.CONNECTION_ENDPOINT_INIT, to: STATES.RUNNING, handler: this.run },
 
       { name: 'stop', from: STATES.LOGGER_INIT, to: STATES.LOGGER_SHUTDOWN, handler: this.loggerShutdown },
@@ -288,6 +287,22 @@ export class Deepstream extends EventEmitter {
     this.transition('handlers-started')
   }
 
+  private async pluginsInit () {
+    const readyPromises = Object.keys(this.services.plugins).reduce((promises, pluginName) => {
+      const plugin = this.services.plugins[pluginName]
+      if (isConnectionListener(plugin)) {
+        this.connectionListeners.add(plugin)
+      }
+      const initialiser = new DependencyInitialiser(this.config, this.services, plugin, pluginName)
+      promises.push(initialiser.whenReady())
+      return promises
+    }, [] as Array<Promise<void>>)
+
+    await Promise.all(readyPromises)
+
+    this.transition('plugins-started')
+  }
+
 /**
  * Invoked once all dependencies and services are initialised.
  * The startup sequence will be complete once the connection endpoint is started and listening.
@@ -317,22 +332,6 @@ export class Deepstream extends EventEmitter {
 
     await Promise.all(readyPromises)
     this.transition('connection-endpoints-started')
-  }
-
-  private async pluginsInit () {
-    const readyPromises = Object.keys(this.services.plugins).reduce((promises, pluginName) => {
-      const plugin = this.services.plugins[pluginName]
-      if (isConnectionListener(plugin)) {
-        this.connectionListeners.add(plugin)
-      }
-      const initialiser = new DependencyInitialiser(this.config, this.services, plugin, pluginName)
-      promises.push(initialiser.whenReady())
-      return promises
-    }, [] as Array<Promise<void>>)
-
-    await Promise.all(readyPromises)
-
-    this.transition('plugins-started')
   }
 
 /**

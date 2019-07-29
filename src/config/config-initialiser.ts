@@ -168,7 +168,7 @@ function handleCustomPlugins (config: DeepstreamConfig, services: any): void {
     const plugin = plugins[key]
     if (plugin) {
       const PluginConstructor = resolvePluginClass(plugin, key)
-      services.plugins[key] = new PluginConstructor(plugin.options)
+      services.plugins[key] = new PluginConstructor(plugin.options || {}, services, config)
     }
   }
 }

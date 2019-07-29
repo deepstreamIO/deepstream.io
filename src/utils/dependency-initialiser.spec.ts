@@ -17,9 +17,9 @@ describe('dependency-initialiser', () => {
 
   beforeEach(() => {
     config = {
-      pluginA: new PluginMock({}, 'A'),
-      pluginB: new PluginMock({}, 'B'),
-      pluginC: new PluginMock({}, 'C'),
+      pluginA: new PluginMock({ name:'A' }),
+      pluginB: new PluginMock({ name: 'B'}),
+      pluginC: new PluginMock({ name: 'C'}),
       brokenPlugin: {},
       dependencyInitialisationTimeout: 50
     }
