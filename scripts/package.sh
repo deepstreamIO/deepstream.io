@@ -144,7 +144,7 @@ function windows {
     echo -e "\tCreating zip deepstream.io-windows-$PACKAGE_VERSION.zip"
     cd ${DEEPSTREAM_PACKAGE}
     7z a ../${COMMIT_NAME} . > /dev/null
-    cp ../${COMMIT_NAME} ../../${CLEAN_NAME}
+    cp ../${COMMIT_NAME} ../${CLEAN_NAME}
     cd -
 }
 
@@ -157,7 +157,7 @@ function mac {
 
     cd ${DEEPSTREAM_PACKAGE}
     zip -r ../${COMMIT_NAME}.zip .
-    cp ../${COMMIT_NAME}.zip ../../${CLEAN_NAME}.zip
+    cp ../${COMMIT_NAME}.zip ../${CLEAN_NAME}.zip
     cd -
 
     rm -rf build/osxpkg
@@ -195,7 +195,7 @@ function mac {
 
     cp \
       ${DEEPSTREAM_PACKAGE}/../${COMMIT_NAME}.pkg \
-      ${DEEPSTREAM_PACKAGE}/../../${CLEAN_NAME}.pkg
+      ${DEEPSTREAM_PACKAGE}/../${CLEAN_NAME}.pkg
 
     rm -rf build/osxpkg
 }
@@ -210,7 +210,7 @@ function linux {
 
     cd ${DEEPSTREAM_PACKAGE}
     tar czf ../${COMMIT_NAME} .
-    cp ../${COMMIT_NAME} ../../${CLEAN_NAME}
+    cp ../${COMMIT_NAME} ../${CLEAN_NAME}
     cd -
 }
 
