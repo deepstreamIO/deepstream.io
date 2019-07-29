@@ -19,7 +19,7 @@ before_install:
       export CXX=g++-4.8;
     fi
   - git submodule update --init --recursive
-  - gem install fpm --conservative || echo "FPM install failed"
+  # - gem install fpm --conservative || echo "FPM install failed"
 
 compiler:
   - gcc
