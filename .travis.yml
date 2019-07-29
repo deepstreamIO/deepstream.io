@@ -4,6 +4,9 @@ language: node_js
 git:
     submodules: false
 
+services:
+  - docker
+
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       sed -i '' 's/git@github.com:/https:\/\/github.com\//' .gitmodules;
@@ -84,3 +87,7 @@ deploy:
   api_key: ${NPM_TOKEN}
   on:	
     tags: true
+- provider: script
+  script: bash scripts/docker.sh
+  on:	
+    branch: v4
