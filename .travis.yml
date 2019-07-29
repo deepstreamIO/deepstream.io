@@ -55,44 +55,44 @@ after_script: "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls
 notifications:
   email: false
 
-before_deploy:	
+before_deploy:
   - bash ./scripts/package.sh true true
   - npm run tsc # Just incase you know
 
-deploy:	
-- provider: s3	
-  access_key_id: ${ACCESS_KEY_ID}	
-  secret_access_key: ${SECRET_ACCESS_KEY}	
+deploy:
+- provider: s3
+  access_key_id: ${ACCESS_KEY_ID}
+  secret_access_key: ${SECRET_ACCESS_KEY}
   bucket: releases.deepstream.io
-  skip_cleanup: true	
-  acl: public_read	
-  local_dir: build	
+  skip_cleanup: true
+  acl: public_read
+  local_dir: build
   upload-dir: ${TRAVIS_REPO_SLUG}
-  on:	
-    branch: v4	
+  on:
+    branch: v4
 - provider: releases
-  skip_cleanup: true	
-  api_key: ${GITHUB_TOKEN}	
-  file_glob: true	
-  skip_cleanup: true	
-  file:	
-    - "build/*.pkg"	
-    - "build/*.deb"	
-    - "build/*.rpm"	
-    - "build/*.tar.gz"	
-    - "build/*.zip"	
-  on:	
+  skip_cleanup: true
+  api_key: ${GITHUB_TOKEN}
+  file_glob: true
+  skip_cleanup: true
+  file:
+    - "build/*.pkg"
+    - "build/*.deb"
+    - "build/*.rpm"
+    - "build/*.tar.gz"
+    - "build/*.zip"
+  on:
     tags: true
 - provider: npm
   email: "info@deepstream.io"
   api_key: ${NPM_TOKEN}
-  skip_cleanup: true	
-  on:	
+  skip_cleanup: true
+  on:
     tags: true
     os: linux
 - provider: script
   script: bash scripts/docker.sh
-  skip_cleanup: true	
-  on:	
-    branch: v4
+  skip_cleanup: true
+  on:
+    tags: true
     os: linux
