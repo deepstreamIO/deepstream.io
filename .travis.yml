@@ -74,6 +74,7 @@ deploy:
   skip_cleanup: true	
   api_key: ${GITHUB_TOKEN}	
   file_glob: true	
+  skip_cleanup: true	
   file:	
     - "build/*.pkg"	
     - "build/*.deb"	
@@ -85,11 +86,13 @@ deploy:
 - provider: npm
   email: "info@deepstream.io"
   api_key: ${NPM_TOKEN}
+  skip_cleanup: true	
   on:	
     tags: true
     os: linux
 - provider: script
   script: bash scripts/docker.sh
+  skip_cleanup: true	
   on:	
     branch: v4
     os: linux
