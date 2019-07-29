@@ -87,7 +87,9 @@ deploy:
   api_key: ${NPM_TOKEN}
   on:	
     tags: true
+    os: linux
 - provider: script
   script: bash scripts/docker.sh
   on:	
     branch: v4
+    os: linux
