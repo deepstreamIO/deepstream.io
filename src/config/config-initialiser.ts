@@ -248,7 +248,13 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
       requirePath = fileUtils.lookupLibRequirePath(`@deepstream/${type}-${plugin.name}`)
       es6Adaptor = req(requirePath)
     } catch (e) {
-      throw new Error(`Cannot find module ${requirePath}`)
+      const firstPath = requirePath
+      try {
+        requirePath = fileUtils.lookupLibRequirePath(`deepstream.io-${type}-${plugin.name}`)
+        es6Adaptor = req(requirePath)
+      } catch (e) {
+        throw new Error(`Cannot find module ${firstPath} or ${requirePath}`)
+      }
     }
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null) {
