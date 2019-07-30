@@ -29,11 +29,9 @@ artifacts:
 
 deploy:
   - provider: S3
-    access_key_id:
-      secure: cq7lgQP04314hwXwM2l0yiUKRcOkwHeKkDHFULrThxE=
-    secret_access_key:
-      secure: AMUWZVZ4o7lS6f5ogqxTTCqDUR/TYEmPaVXzb7yRRyFUTF/zQFnZHYk1G/j7ie8/
-    bucket: ds-server-artifacts
+    access_key_id: ${ACCESS_KEY_ID}
+    secret_access_key: ${SECRET_ACCES_KEY}
+    bucket: releases.deepstream.io
     folder: $(APPVEYOR_REPO_NAME)
     on:
       branch: master
@@ -42,8 +40,7 @@ deploy:
   - provider: GitHub
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release description'
-    auth_token:
-      secure: tZHuiZVCwkXRYMihVyoNrmDxAm6xPbXyop7Plg5uUWIIqA1EoUCrTYd/V+0D1I+Y
+    auth_token: ${GITHUB_TOKEN}
     draft: true
     artifact: 'deepstream.io-release'
     on:
