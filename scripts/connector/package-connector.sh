@@ -37,6 +37,10 @@ cd ./build/$PACKAGE_VERSION
 unzip temp.zip -d $PACKAGE_NAME
 
 cd $PACKAGE_NAME
+npm install
+npm run tsc # Generate dist
+rm -rf node_modules
+
 npm install --production
 echo 'Installed NPM Dependencies'
 
