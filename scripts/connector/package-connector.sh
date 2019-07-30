@@ -57,5 +57,5 @@ fi
 cd ..
 rm -rf $PACKAGE_NAME temp.zip
 
-cp $FILE_NAME ../$CLEAN_FILE_NAME
+cp $FILE_NAME ./$CLEAN_FILE_NAME
 echo 'Done'
