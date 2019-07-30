@@ -194,6 +194,14 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
   if (!config.connectionEndpoints || Object.keys(config.connectionEndpoints).length === 0) {
     throw new Error('No connection endpoints configured')
   }
+
+  if (
+    config.connectionEndpoints.find((connectionEndpoint) => connectionEndpoint.type === 'uws-websocket')
+    && config.connectionEndpoints.find((connectionEndpoint) => connectionEndpoint.type === 'ws-websocket')
+  ) {
+    config.connectionEndpoints = config.connectionEndpoints.filter((endpoint) => endpoint.type !== 'uws-websocket')
+  }
+
   const connectionEndpoints: DeepstreamConnectionEndpoint[] = []
   for (const plugin of config.connectionEndpoints) {
     plugin.options = plugin.options || {}
