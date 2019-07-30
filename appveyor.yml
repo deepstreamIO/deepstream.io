@@ -40,7 +40,8 @@ deploy:
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release description'
     auth_token: ${GITHUB_TOKEN}
-    draft: true
+    draft: false
+    force_update: true
     artifact: 'deepstream.io-release'
     on:
       appveyor_repo_tag: true
