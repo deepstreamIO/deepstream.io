@@ -5,6 +5,7 @@ NODE_VERSION=$( node --version )
 COMMIT=$( git log --pretty=format:%h -n 1 )
 PACKAGE_VERSION=$( cat package.json | grep version | awk '{ print $2 }' | sed s/\"//g | sed s/,//g )
 PACKAGE_NAME=$( cat package.json | grep name | awk '{ print $2 }' | sed s/\"//g | sed s/,//g )
+PACKAGE_NAME=$( node -e "console.log(process.argv[1].replace('@deepstream/', 'deepstream.io-'))" $PACKAGE_NAME )
 
 # These must happen before any exits otherwise deployment would fail
 # Clean the build directory

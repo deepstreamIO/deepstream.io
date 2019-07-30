@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-PACKAGED_NODE_VERSION=v4.4.5
-
 curl -o deepstream_package.json https://raw.githubusercontent.com/deepstreamIO/deepstream.io/master/package.json
 DEEPSTREAM_VERSION="$( cat deepstream_package.json | grep version | awk '{ print $2 }' | sed s/\"//g | sed s/,//g )"
 
@@ -10,8 +8,8 @@ NODE_VERSION=$( node --version )
 OS=$( node -e "console.log(require('os').platform())" )
 PACKAGE_VERSION=$( cat package.json | grep version | awk '{ print $2 }' | sed s/\"//g | sed s/,//g )
 PACKAGE_NAME=$( cat package.json | grep name | awk '{ print $2 }' | sed s/\"//g | sed s/,//g )
-TYPE=$( echo $PACKAGE_NAME | sed s/deepstream.io-//g | sed s/-.*//g )
-CONNECTOR=$( echo $PACKAGE_NAME | sed s/deepstream.io-[^-]*-//g )
+TYPE=$( node -e "console.log(process.argv[1].match('@deepstream/(.*)-(.*)')[1])" $PACKAGE_NAME )
+CONNECTOR=$( node -e "console.log(process.argv[1].match('@deepstream/(.*)-(.*)')[2])" $PACKAGE_NAME )
 
 rm -rf build
 mkdir build
