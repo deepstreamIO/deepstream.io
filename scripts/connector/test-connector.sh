@@ -53,7 +53,7 @@ echo "./deepstream --version"
 ./deepstream --version
 echo "./deepstream install $TYPE $CONNECTOR:$PACKAGE_VERSION"
 ./deepstream install $TYPE $CONNECTOR:$PACKAGE_VERSION --verbose
-./deepstream start -c ../../example-config.yml &
+./deepstream start -c ../../example-config.yml -l ./lib &
 
 PROC_ID=$!
 
