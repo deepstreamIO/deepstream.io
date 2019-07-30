@@ -22,7 +22,7 @@ test_script:
   - For /d %%d in ( build\** ) do MOVE %%d %cd%
 
 artifacts:
-  - path: 'build\*.zip'
+  - path: 'build\*\*.zip'
     name: 'deepstream.io-release'
 
   - path: '**\*.zip'
@@ -30,7 +30,7 @@ artifacts:
 deploy:
   - provider: S3
     access_key_id: ${ACCESS_KEY_ID}
-    secret_access_key: ${SECRET_ACCES_KEY}
+    secret_access_key: ${SECRET_ACCESS_KEY}
     bucket: releases.deepstream.io
     folder: $(APPVEYOR_REPO_NAME)
     on:
