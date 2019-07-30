@@ -89,10 +89,10 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    os: linux
+    condition: $TRAVIS_OS_NAME = linux
 - provider: script
   script: bash scripts/docker.sh
   skip_cleanup: true
   on:
     tags: true
-    os: linux
+    condition: $TRAVIS_OS_NAME = linux

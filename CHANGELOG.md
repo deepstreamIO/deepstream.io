@@ -1,108 +1,35 @@
-## [4.0.0-rc.19] - 2019.07.23
+## [4.0.0] - 2019.07.30
 
-### Breaking Changes
+### Features:
 
-- Removing the storage compatibility wrapper
-
-## [4.0.0-rc.15] - 2019.07.10
-
-### Breaking Changes
-
-- All subscribes are now bulk actions by default to minimize redundant codepaths. Because of this 
-you will need to run with client rc.27 and above
-
-## [4.0.0-rc.14] - 2019.07.08
-
-### Feat
-
-- Adding better support for multiple connection endpoints (now just an aray)
-- Refactoring bulk actions, they are not handled in each handler and within the subscription registry
-- Adding WS as an alternative to uws to work better in artifacts
-
-### Breaking Changes
-
-- The config file has been reformated for the server to contain better sections. A seperate guide will be written to
-walk through the changes
-- Plugins for cache are no longer backwards compatible due to the introduction of the head API
-
-## [4.0.0-rc.11] - 2019.07.03
-
-### Feat
-
-- Adding support for a notify API via HTTP
-
-### Misc
-
-- Updating uws to support node12
-
-## [4.0.0-rc.10] - 2019.06.10
-  
-### Feat
-
-- Send a LISTEN_RESPONSE_TIMEOUT event if a user doesn't accept or reject a listen request in time
-
-### Fixes
-
-- Fixing the HTTP auth timeout issue (where responses don't timeout correctly)
-
-### Misc
-
-- First steps towards a monitoring API
-
-## [4.0.0-rc.9] - 2019.06.06
-  
-### Feat
-
-- Adding the `promoteToHeader` flag for http-authentication-endpoint to copy data from 
-the auth body into headers for the webhook
-
-## [4.0.0-rc.8] - 2019.04.28
+- New protobuf protocol support (under the hood)
+- Bulk actions instead of individual subscribes (under the hood)
+- Official Plugin Support
+- Monitoring Support
+- Clustering Support (with small caveats)
+- Listening Discovery Simplification
+- V2 storage API
+- V2 cache API
+- Notify API
 
 ### Improvements
 
-- Publishing under the @deepstream org
-- Ready for official release, just waiting for the website and documentation to reflect it
+- Lazy data parsing
+- Improved deepstream lifecycle
+- Upgraded development tools
+- New deepstream.io website
 
-## [4.0.0-rc.7] - 2019.04.07
+### Backwards compatibility
 
-### Improvements
+- All V3 SDKs no longer compatible due to protobuf binary protocol
 
-- Uses mocha / dropped mocha
-- Uses uWebsockets instead of uws
-- Improving some typescript types
+### Upgrade guide
 
-## [4.0.0-beta.2] - 2017.11.20
+You can see the upgrade guide for backwards compatibility [here](https://deepstream.io/tutorials/upgrade-guides/v4/server/)
 
-### Features
+### TLDR;
 
-#### Binary Protocol
-
-A full implementation of the Universal Realtime Protocol (URP) has been included as a submodule dependency of deepstream >= 4.0.0. It provides a stable platform for realtime applications and eases the building of client libraries by providing a more robust specification. 
-The protocol now uses binary WebSocket frames, which will allow for custom payload encodings in a future update.
-
-### Improvements
-
-- For this release we rewrote the server large portions of the server in TypeScript which helped to uncover a number of bugs in the previous implementation. 
-
-### Breaking Changes
-
-- As part of the move to URP, this release breaks support for all client libraries prior to version 4. Most clients will require significant changes to support the new protocol. For reference, [see the v4 rewrite of the javascript client](https://github.com/deepstreamIO/deepstream.io-client-js#v4).
-
-- the [`storageHotPathPatterns` config option](https://deepstreamhub.com/docs/server/configuration/#storagehotpathpatterns) has been renamed to `storageHotPathPrefixes` since this better represents what it is.
-
-- the [`storageExclusion` config option](https://deepstreamhub.com/docs/server/configuration/#storageexclusion) has been changed to an array of strings called `storageExclusionPrefixes` for consistency with `storageHotPathPatterns`.
-
-- Due to our move to Typescript/ES6 modules, the node API no longer exports a class at the top level. The following demonstrates the change required:
-
-```js
-// old format
-const Deepstream = require('deepstream.io')
-
-// new format (UMD)
-const { Deepstream } = require('deepstream.io')
-// new format (ES6)
-import { Deepstream } from 'deepstream.io'
-```
+You can see the in depth side explanation of the changes [here](https://deepstream.io/releases/server/v4-0-0/)
 
 ## [3.1.0] - 2017.09.25
 

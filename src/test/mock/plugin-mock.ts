@@ -6,7 +6,7 @@ export default class PluginMock extends DeepstreamPlugin {
   public description: string = this.options.name || 'mock-plugin'
   private emitter = new EventEmitter()
 
-  constructor (private options: any, private services: DeepstreamServices, config: DeepstreamConfig) {
+  constructor (private options: any, services: DeepstreamServices, config: DeepstreamConfig) {
     super()
   }
 
