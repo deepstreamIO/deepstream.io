@@ -21,7 +21,7 @@ remote procedure calls allow for secure and highly available request response co
 ### Getting Started:
 
 1. [Installing deepstream](https://deepstream.io/install/)
-2. [Quickstart](https://deepstream.io/tutorials/core/getting-started-quickstart/)
+2. [Quickstart](https://deepstream.io/tutorials/getting-started/javascript/)
 3. [Tutorials](https://deepstream.io/tutorials/)
 4. [Documentation](https://deepstream.io/docs/)
 
@@ -33,7 +33,7 @@ remote procedure calls allow for secure and highly available request response co
 
 ### Contributing
 
-deepstream development is a great way to get into building performant Node.js applications, and contributions are always welcome with lots of ❤. Contributing to deepstream is as simple as having Node.js (6+) and TypeScript (2+) installed, cloning the repo and making some changes.
+deepstream development is a great way to get into building performant Node.js applications, and contributions are always welcome with lots of ❤. Contributing to deepstream is as simple as having Node.js (10+) and TypeScript (3+) installed, cloning the repo and making some changes.
 
 ```
 ~ » git clone git@github.com:deepstreamIO/deepstream.io.git

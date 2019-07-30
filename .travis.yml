@@ -76,11 +76,11 @@ deploy:
   file_glob: true
   skip_cleanup: true
   file:
-    - "build/*.pkg"
-    - "build/*.deb"
-    - "build/*.rpm"
-    - "build/*.tar.gz"
-    - "build/*.zip"
+    - "build/*/*.pkg"
+    - "build/*/*.deb"
+    - "build/*/*.rpm"
+    - "build/*/*.tar.gz"
+    - "build/*/*.zip"
   on:
     tags: true
 - provider: npm
