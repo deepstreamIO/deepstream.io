@@ -76,17 +76,18 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   }
   services.logger = handleLogger(config, services)
 
-  services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions'))(config.subscriptions.options, services, config)
-  services.storage = new (resolvePluginClass(config.storage, 'storage'))(config.storage.options, services, config)
-  services.cache = new (resolvePluginClass(config.cache, 'cache'))(config.cache.options, services, config)
-  services.monitoring = new (resolvePluginClass(config.monitoring, 'monitoring'))(config.monitoring.options, services, config)
+  const ll = config.logLevel
+  services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions', ll))(config.subscriptions.options, services, config)
+  services.storage = new (resolvePluginClass(config.storage, 'storage', ll))(config.storage.options, services, config)
+  services.cache = new (resolvePluginClass(config.cache, 'cache', ll))(config.cache.options, services, config)
+  services.monitoring = new (resolvePluginClass(config.monitoring, 'monitoring', ll))(config.monitoring.options, services, config)
   services.authentication = handleAuthStrategy(config, services)
   services.permission = handlePermissionStrategy(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
-  services.locks = new (resolvePluginClass(config.locks, 'locks'))(config.locks.options, services, config)
-  services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode'))(config.clusterNode.options, services, config)
-  services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry'))(config.clusterRegistry.options, services, config)
-  services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates'))(config.clusterStates.options, services, config)
+  services.locks = new (resolvePluginClass(config.locks, 'locks', ll))(config.locks.options, services, config)
+  services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', ll))(config.clusterNode.options, services, config)
+  services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', ll))(config.clusterRegistry.options, services, config)
+  services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', ll))(config.clusterStates.options, services, config)
 
   handleCustomPlugins(config, services)
 
@@ -115,7 +116,7 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
   if (config.logger.type === 'default') {
     LoggerClass = StdOutLogger
   } else {
-    LoggerClass = resolvePluginClass(config.logger, 'logger')
+    LoggerClass = resolvePluginClass(config.logger, 'logger', config.logLevel)
   }
 
   if (configOptions instanceof Array) {
@@ -167,7 +168,7 @@ function handleCustomPlugins (config: DeepstreamConfig, services: any): void {
   for (const key in plugins) {
     const plugin = plugins[key]
     if (plugin) {
-      const PluginConstructor = resolvePluginClass(plugin, key)
+      const PluginConstructor = resolvePluginClass(plugin, key, config.logLevel)
       services.plugins[key] = new PluginConstructor(plugin.options || {}, services, config)
     }
   }
@@ -214,7 +215,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
     } else if (plugin.type === 'node-http') {
       PluginConstructor = HTTPConnectionEndpoint
     } else {
-      PluginConstructor = resolvePluginClass(plugin, 'connection')
+      PluginConstructor = resolvePluginClass(plugin, 'connection', config.logLevel)
     }
 
     connectionEndpoints.push(new PluginConstructor(plugin.options, services, config))
@@ -229,7 +230,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
  *
  * CLI arguments will be considered.
  */
-function resolvePluginClass (plugin: PluginConfig, type: any): any {
+function resolvePluginClass (plugin: PluginConfig, type: any, logLevel: LOG_LEVEL): any {
   if (customPlugins.has(plugin.name)) {
     return customPlugins.get(plugin.name)
   }
@@ -247,13 +248,17 @@ function resolvePluginClass (plugin: PluginConfig, type: any): any {
     try {
       requirePath = fileUtils.lookupLibRequirePath(`@deepstream/${type}-${plugin.name}`)
       es6Adaptor = req(requirePath)
-    } catch (e) {
+    } catch (firstError) {
       const firstPath = requirePath
       try {
         requirePath = fileUtils.lookupLibRequirePath(`deepstream.io-${type}-${plugin.name}`)
         es6Adaptor = req(requirePath)
-      } catch (e) {
-        throw new Error(`Cannot find module ${firstPath} or ${requirePath}`)
+      } catch (secondError) {
+        if (Number(LOG_LEVEL[logLevel]) === LOG_LEVEL.DEBUG) {
+          console.log(`Error loading module ${firstPath}: ${firstError}`)
+          console.log(`Error loading module ${requirePath}: ${secondError}`)
+        }
+        throw new Error(`Cannot load module ${firstPath} or ${requirePath}`)
       }
     }
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
@@ -293,7 +298,7 @@ function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServi
   }
 
   if (config.auth.name || config.auth.path) {
-    AuthenticationHandlerClass = resolvePluginClass(config.auth, 'authentication')
+    AuthenticationHandlerClass = resolvePluginClass(config.auth, 'authentication', config.logLevel)
     if (!AuthenticationHandlerClass) {
       throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
     }
@@ -333,7 +338,7 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
   }
 
   if (config.permission.name || config.permission.path) {
-    PermissionHandlerClass = resolvePluginClass(config.permission, 'permission')
+    PermissionHandlerClass = resolvePluginClass(config.permission, 'permission', config.logLevel)
     if (!PermissionHandlerClass) {
       throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
     }

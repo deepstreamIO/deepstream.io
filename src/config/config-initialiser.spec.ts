@@ -156,7 +156,7 @@ describe('config-initialiser', () => {
 
       expect(() => {
         configInitialiser.initialise(new EventEmitter(), config)
-      }).to.throw(/Cannot find module/)
+      }).to.throw(/Cannot load module/)
     })
 
     it('fails for unknown auth types', () => {
@@ -241,7 +241,7 @@ describe('config-initialiser', () => {
 
       expect(() => {
         configInitialiser.initialise(new EventEmitter(), config)
-      }).to.throw(/Cannot find module/)
+      }).to.throw(/Cannot load module/)
     })
 
     it('fails for missing permission configs', () => {
