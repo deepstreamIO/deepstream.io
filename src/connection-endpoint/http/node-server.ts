@@ -306,6 +306,6 @@ export default class Server {
    * if the configured port number isn't available
    */
   private onError (error: string): void {
-    this.logger.error(EVENT.CONNECTION_ERROR, error.toString())
+    this.logger.fatal(EVENT.CONNECTION_ERROR, error.toString())
   }
 }
