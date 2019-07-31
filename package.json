@@ -1,6 +1,6 @@
 {
   "name": "@deepstream/server",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "a scalable server for realtime webapps",
   "main": "./dist/src/deepstream.io.js",
   "bin": {
@@ -49,7 +49,7 @@
     "js-yaml": "^3.13.1",
     "mkdirp": "^0.5.1",
     "needle": "^2.4.0",
-    "source-map-support": "^0.5.12",
+    "source-map-support": "^0.5.13",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.11.0",
     "ws": "^7.1.1"
   },

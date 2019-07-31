@@ -1,3 +1,10 @@
+## [4.0.1] - 2019.07.31
+
+### Improvements
+
+- Exit immediately if HTTP server port is occupied
+- When using debug, log exact error to why a plugin could not be loaded
+
 ## [4.0.0] - 2019.07.30
 
 ### Features:
