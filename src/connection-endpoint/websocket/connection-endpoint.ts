@@ -76,10 +76,10 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     }
     this.initialised = true
 
-    this.maxAuthAttempts = this.getOption('maxAuthAttempts')
-    this.logInvalidAuthData = this.getOption('logInvalidAuthData')
-    this.urlPath = this.getOption('urlPath')
-    this.unauthenticatedClientTimeout = this.getOption('unauthenticatedClientTimeout')
+    this.maxAuthAttempts = this.options.maxAuthAttempts
+    this.logInvalidAuthData = this.options.logInvalidAuthData
+    this.urlPath = this.options.urlPath
+    this.unauthenticatedClientTimeout = this.options.unauthenticatedClientTimeout
 
     this.createWebsocketServer()
   }
@@ -112,11 +112,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * plugin config. If neither is present, default to the optionally provided default.
    */
   protected getOption (option: string) {
-    const value = (this.dsOptions as any)[option]
-    if ((value === null || value === undefined) && (this.options[option] !== undefined)) {
-      return this.options[option]
-    }
-    return value
+    return (this.dsOptions as any)[option] || this.options[option]
   }
 
   public handleParseErrors (socketWrapper: SocketWrapper, parseResults: ParseResult[]): Message[] {
@@ -153,7 +149,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   protected onReady (): void {
     const wsMsg = `Listening for websocket connections on ${this.getOption('host')}:${this.getOption('port')}${this.urlPath}`
     this.services.logger.info(EVENT.INFO, wsMsg)
-    const hcMsg = `Listening for health checks on path ${this.getOption('healthCheckPath')} `
+    const hcMsg = `Listening for health checks on path ${this.options.healthCheckPath} `
     this.services.logger.info(EVENT.INFO, hcMsg)
     this.emitter.emit('ready')
     this.isReady = true

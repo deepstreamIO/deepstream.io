@@ -1,3 +1,9 @@
+## [4.0.2] - 2019.08.xx
+
+### Fix
+
+- Override the http port and host correctly
+
 ## [4.0.1] - 2019.07.31
 
 ### Improvements

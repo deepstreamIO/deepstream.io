@@ -6,7 +6,7 @@ nexe.compile({
   build: false,
   flags: ['--max-old-space-size=8192'],
   output: process.env.EXECUTABLE_NAME,
-  target: { version: process.env.NODE_VERSION_WITHOUT_V },
+  target: { version: '10.16.0' },
   temp: 'nexe_node',
   resources: [
     './dist/ascii-logo.txt',

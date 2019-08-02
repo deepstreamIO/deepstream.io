@@ -46,10 +46,10 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
     this.initialized = true
 
     const serverConfig = {
-      port: this.getOption('port'),
-      host: this.getOption('host'),
-      healthCheckPath: this.getOption('healthCheckPath'),
-      headers: this.getOption('headers'),
+      port: (this.dsOptions as any).httpPort || this.options.port,
+      host:  (this.dsOptions as any).httpHost || this.options.host,
+      healthCheckPath: this.options.healthCheckPath,
+      headers: this.options.headers,
       authPath: this.options.authPath,
       postPath: this.options.postPath,
       getPath: this.options.getPath,
@@ -65,24 +65,11 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
     })
     this.server.start()
 
-    this.logInvalidAuthData = this.getOption('logInvalidAuthData') as boolean
-    this.requestTimeout = this.getOption('requestTimeout') as number
+    this.logInvalidAuthData = this.options.logInvalidAuthData
+    this.requestTimeout = this.options.requestTimeout
     if (this.requestTimeout === undefined) {
       this.requestTimeout = 20000
     }
-  }
-
-  /**
-   * Get a parameter from the root of the deepstream options if present, otherwise get it from the
-   * plugin config.
-   */
-  private getOption (option: string): string | boolean | number {
-    // @ts-ignore
-    const value = this.dsOptions[option]
-    if ((value === null || value === undefined) && (this.options[option] !== undefined)) {
-      return this.options[option]
-    }
-    return value
   }
 
   public async close () {
