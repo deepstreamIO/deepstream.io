@@ -35,7 +35,7 @@
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
   "dependencies": {
-    "@deepstream/protobuf": "^1.0.0",
+    "@deepstream/protobuf": "^1.0.1",
     "adm-zip": "^0.4.13",
     "ajv": "^6.10.2",
     "body-parser": "^1.19.0",
