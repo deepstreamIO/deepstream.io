@@ -34,9 +34,6 @@
     "type": "git",
     "url": "https://github.com/deepstreamIO/deepstream.io.git"
   },
-  "optionalDependencies": {
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.11.0"
-  },
   "dependencies": {
     "@deepstream/protobuf": "^1.0.0",
     "adm-zip": "^0.4.13",
@@ -53,6 +50,7 @@
     "mkdirp": "^0.5.1",
     "needle": "^2.4.0",
     "source-map-support": "^0.5.13",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.11.0",
     "ws": "^7.1.1"
   },
   "devDependencies": {
@@ -65,7 +63,7 @@
     "@types/mkdirp": "^0.5.2",
     "@types/mocha": "^5.2.7",
     "@types/needle": "^2.0.4",
-    "@types/node": "^12.6.8",
+    "@types/node": "^12.6.9",
     "@types/sinon": "^7.0.13",
     "@types/sinon-chai": "^3.2.2",
     "@types/ws": "^6.0.1",
