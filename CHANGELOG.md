@@ -1,5 +1,9 @@
 ## [4.0.2] - 2019.08.xx
 
+### Features
+
+- Alpine docker image
+
 ### Fix
 
 - Override the http port and host correctly
