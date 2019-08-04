@@ -139,9 +139,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     const subscribers = subscription.sockets
 
-    if (this.services.monitoring) {
-      this.services.monitoring.onBroadcast(message, subscribers.size)
-    }
+    this.services.monitoring.onBroadcast(message, subscribers.size)
 
     const first = subscribers.values().next().value
     const msg = first.getMessage(message)

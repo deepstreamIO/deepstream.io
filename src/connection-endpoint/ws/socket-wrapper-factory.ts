@@ -56,6 +56,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    * Sends a message based on the provided action and topic
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTION } | Message, allowBuffering: boolean = true): void {
+    this.services.monitoring.onMessageSend(message)
     this.sendBuiltMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
   }
 
@@ -63,6 +64,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    * Sends a message based on the provided action and topic
    */
   public sendAckMessage (message: Message, allowBuffering: boolean = true): void {
+    this.services.monitoring.onMessageSend(message)
     this.sendBuiltMessage(
         binaryMessageBuilder.getMessage(message, true),
         true

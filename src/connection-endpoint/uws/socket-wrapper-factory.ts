@@ -62,6 +62,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTION } | Message, allowBuffering: boolean = true): void {
     // onIndividualMessageSent
+    this.services.monitoring.onMessageSend(message)
     this.sendBuiltMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
   }
 
@@ -71,6 +72,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
    *                                 this message type
    */
   public sendAckMessage (message: Message, allowBuffering: boolean = true): void {
+    this.services.monitoring.onMessageSend(message)
     this.sendBuiltMessage(
         binaryMessageBuilder.getMessage(message, true),
         true
