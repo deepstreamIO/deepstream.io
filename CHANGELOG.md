@@ -1,3 +1,9 @@
+## [4.0.3] - 2019.08.04
+
+### Fix
+
+- Notify monitoring plugin of all messages sent out individually
+
 ## [4.0.2] - 2019.08.03
 
 ### Features
