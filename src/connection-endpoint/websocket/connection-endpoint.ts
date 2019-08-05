@@ -127,7 +127,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
           data: parseResult.raw,
           originalTopic: parseResult.parsedMessage.topic,
           originalAction: parseResult.parsedMessage.action
-        })
+        }, false)
         socketWrapper.destroy()
         continue
       }
@@ -196,7 +196,11 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
         action: CONNECTION_ACTION.INVALID_MESSAGE,
         originalTopic: msg.topic,
         originalAction: msg.action
-      })
+      }, false)
+      return
+    }
+
+    if (msg.action === CONNECTION_ACTION.PING) {
       return
     }
 
@@ -205,7 +209,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       socketWrapper.sendMessage({
         topic: TOPIC.CONNECTION,
         action: CONNECTION_ACTION.ACCEPT
-      })
+      }, false)
       return
     }
 
@@ -222,6 +226,10 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
 
     let errorMsg
 
+    if (msg.topic === TOPIC.CONNECTION && msg.action === CONNECTION_ACTION.PING) {
+      return
+    }
+
     if (msg.topic !== TOPIC.AUTH) {
       this.services.logger!.warn(AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE], `invalid auth message: ${JSON.stringify(msg)}`)
       socketWrapper.sendMessage({
@@ -229,7 +237,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
         action: AUTH_ACTION.INVALID_MESSAGE,
         originalTopic: msg.topic,
         originalAction: msg.action
-      })
+      }, false)
       return
     }
 
@@ -283,7 +291,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       topic: TOPIC.AUTH,
       action: AUTH_ACTION.INVALID_MESSAGE_DATA,
       originalAction
-    })
+    }, false)
     socketWrapper.destroy()
   }
 
@@ -341,7 +349,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       topic: TOPIC.AUTH,
       action: AUTH_ACTION.AUTH_UNSUCCESSFUL,
       parsedData: clientData
-    })
+    }, false)
     socketWrapper.authAttempts++
 
     if (socketWrapper.authAttempts >= this.maxAuthAttempts) {
@@ -349,7 +357,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       socketWrapper.sendMessage({
         topic: TOPIC.AUTH,
         action: AUTH_ACTION.TOO_MANY_AUTH_ATTEMPTS
-      })
+      }, false)
       socketWrapper.destroy()
     }
   }
@@ -364,7 +372,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     socketWrapper.sendMessage({
       topic: TOPIC.CONNECTION,
       action: CONNECTION_ACTION.AUTHENTICATION_TIMEOUT
-    })
+    }, false)
     socketWrapper.destroy()
   }
 

@@ -1,3 +1,10 @@
+## [4.0.4] - 2019.08.05
+  
+### Fix
+
+- Don't buffer error messages in relation to connections, otherwise the client will get the close event first
+- Ignore ping messages during the connecting and authenticating stages
+
 ## [4.0.3] - 2019.08.04
 
 ### Fix
