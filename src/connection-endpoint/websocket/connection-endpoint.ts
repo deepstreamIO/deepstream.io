@@ -213,7 +213,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
       return
     }
 
-    this.services.logger!.error(PARSER_ACTION[PARSER_ACTION.UNKNOWN_ACTION], '', msg.action)
+    this.services.logger!.error(PARSER_ACTION[PARSER_ACTION.UNKNOWN_ACTION], '', { message: msg })
   }
 
   /**

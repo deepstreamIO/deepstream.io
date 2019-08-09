@@ -124,7 +124,7 @@ export class ListenerRegistry implements SubscriptionListener {
       return
     }
 
-    this.services.logger.warn('UNKNOW ACTION')
+    this.services.logger.warn(EVENT.UNKNOWN_ACTION, `Unknown action for topic ${TOPIC[message.topic]} action ${message.action}`)
   }
 
   /**

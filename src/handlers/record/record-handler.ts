@@ -172,20 +172,26 @@ export default class RecordHandler extends Handler<RecordMessage> {
         socketWrapper.sendMessage({
           topic: TOPIC.RECORD,
           action: RECORD_ACTION.RECORD_NOTIFY_ERROR,
-          parsedData: errorMessage
+          isError: true,
+          parsedData: errorMessage,
+          correlationId: message.correlationId
         })
         return
       }
 
       try {
-        await new Promise((resolve) => this.services.cache.deleteBulk(message.names!, resolve as any))
+        await new Promise((resolve, reject) => this.services.cache.deleteBulk(message.names!, (error) => {
+          error ? reject(error) : resolve()
+        }))
       } catch (error) {
         const errorMessage = 'Error deleting messages in bulk when attempting to notify of remote changes'
-        this.services.logger.error(EVENT.INFO, `${errorMessage}: ${error.toString()}`)
+        this.services.logger.error(EVENT.ERROR, `${errorMessage}: ${error.toString()}`, { message })
         socketWrapper.sendMessage({
           topic: TOPIC.RECORD,
           action: RECORD_ACTION.RECORD_NOTIFY_ERROR,
-          parsedData: errorMessage
+          isError: true,
+          parsedData: errorMessage,
+          correlationId: message.correlationId
         })
         return
       }
@@ -218,12 +224,12 @@ export default class RecordHandler extends Handler<RecordMessage> {
           }
         }, (event: RA, errorMessage: string, name: string, socket: SocketWrapper, msg: Message) => {
           completed++
+          if (socket) {
+            onRequestError(event, errorMessage, recordName, socket, msg)
+          }
           if (completed === names.length && socket) {
             socket.sendAckMessage(message)
             this.services.clusterNode.send(message)
-          }
-          if (socket) {
-            onRequestError(event, errorMessage, recordName, socket, msg)
           }
         }, message)
       } else {
@@ -449,9 +455,11 @@ export default class RecordHandler extends Handler<RecordMessage> {
           }
           sendRecord(message.name, version, latestData, socketWrapper)
         } else {
-          this.services.logger.info(
+          this.services.logger.error(
+            EVENT.ERROR,
             `BUG? ${message.name} was version ${version} for readAndSubscribe, ` +
-            'but was removed during permission check'
+            'but was removed during permission check',
+            { message }
           )
           onRequestError(
             message.action, `"${message.name}" was removed during permission check`,

@@ -367,9 +367,9 @@ describe.skip('record transitions', () => {
     const socketMock1 = new SocketMock()
     const socketMock2 = new SocketMock()
     const socketMock3 = new SocketMock()
-    const socketWrapper1 = new SocketWrapper(socketMock1, {})
-    const socketWrapper2 = new SocketWrapper(socketMock2, {})
-    const socketWrapper3 = new SocketWrapper(socketMock3, {})
+    const socketWrapper1 = new SocketWrapper(socketMock1)
+    const socketWrapper2 = new SocketWrapper(socketMock2)
+    const socketWrapper3 = new SocketWrapper(socketMock3)
     const patchMessage2 = { topic: 'RECORD', action: 'P', data: ['recordName', 2, 'firstname', 'SEgon'] }
 
     before(() => {

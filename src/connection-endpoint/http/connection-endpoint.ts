@@ -364,7 +364,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
           success: false,
           error: 'Request exceeded timeout before a response was received.',
           errorTopic: 'connection',
-          errorEvent: EVENT.TIMEOUT
+          errorEvent: EVENT.HTTP_REQUEST_TIMEOUT
         }
         numTimeouts++
       }
@@ -373,7 +373,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
       return
     }
 
-    this.services.logger.warn(EVENT.TIMEOUT, 'HTTP Request timeout')
+    this.services.logger.warn(EVENT.HTTP_REQUEST_TIMEOUT, 'HTTP Request timeout')
 
     const result = HTTPConnectionEndpoint.calculateMessageResult(messageResults)
 

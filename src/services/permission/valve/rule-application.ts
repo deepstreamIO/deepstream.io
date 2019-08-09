@@ -112,9 +112,9 @@ export default class RuleApplication {
     if (this.isDestroyed === true) {
       return
     }
-    const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL}for ${this.params.path}: ${error.toString()}`
+    const errorMsg = `error when executing ${this.params.rule.fn.toString()}${EOL}for ${this.params.name}: ${error.toString()}`
 
-    this.params.logger.warn(EVENT_ACTION[EVENT_ACTION.MESSAGE_PERMISSION_ERROR], errorMsg)
+    this.params.logger.warn(EVENT_ACTION[EVENT_ACTION.MESSAGE_PERMISSION_ERROR], errorMsg, { recordName: this.params.name })
     this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, EVENT_ACTION.MESSAGE_PERMISSION_ERROR, false)
     this.destroy()
   }
@@ -139,7 +139,7 @@ export default class RuleApplication {
   private onLoadError (event: any, errorMessage: string, recordName: string, socket: SocketWrapper | null) {
     this.recordsData.set(recordName, ERROR)
     const errorMsg = `failed to load record ${this.params.name} for permissioning:${errorMessage}`
-    this.params.logger.error(RECORD_ACTION[RECORD_ACTION.RECORD_LOAD_ERROR], errorMsg)
+    this.params.logger.error(RECORD_ACTION[RECORD_ACTION.RECORD_LOAD_ERROR], errorMsg, { recordName, socketWrapper: socket })
     this.params.callback(this.params.socketWrapper, this.params.message, this.params.passItOn, RECORD_ACTION.RECORD_LOAD_ERROR, false)
     this.destroy()
   }
@@ -213,7 +213,7 @@ export default class RuleApplication {
     }
 
     if (!msg.path) {
-      this.params.logger.error(EVENT.ERROR, `Missing path for record patch ${msg.name}`)
+      this.params.logger.error(EVENT.ERROR, `Missing path for record patch ${msg.name}`, { message: msg })
       return
     }
 

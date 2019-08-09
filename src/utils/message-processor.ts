@@ -45,7 +45,7 @@ export default class MessageProcessor {
         const uuid = getUid()
 
         if (this.bulkResults.has(uuid)) {
-          this.services.logger.error(EVENT.NOT_VALID_UUID, `Invalid uuid used twice ${uuid}`)
+          this.services.logger.error(EVENT.NOT_VALID_UUID, `Invalid uuid used twice ${uuid}`, { uuid })
         }
 
         this.bulkResults.set(uuid, {
@@ -110,7 +110,7 @@ export default class MessageProcessor {
 
   private processInvalidResponse (socketWrapper: SocketWrapper, message: Message, error: ALL_ACTIONS | Error | string | null, result: boolean) {
     if (error !== null) {
-      this.services.logger.warn(RECORD_ACTION[RECORD_ACTION.MESSAGE_PERMISSION_ERROR], error.toString())
+      this.services.logger.warn(RECORD_ACTION[RECORD_ACTION.MESSAGE_PERMISSION_ERROR], error.toString(), { message })
       const permissionErrorMessage: Message = {
         topic: message.topic,
         action: ACTIONS[message.topic].MESSAGE_PERMISSION_ERROR,

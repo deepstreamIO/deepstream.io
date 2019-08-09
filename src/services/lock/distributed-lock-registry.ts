@@ -176,7 +176,7 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements Deepstr
    */
   private onLockTimeout (lockName: string) {
     this.releaseLock(lockName)
-    this.services.logger.warn(EVENT.TIMEOUT, `lock ${lockName} released due to timeout`)
+    this.services.logger.warn(EVENT.LOCK_RELEASE_TIMEOUT, `lock ${lockName} released due to timeout`, { lockName })
   }
 
   /**
@@ -185,6 +185,6 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements Deepstr
    */
   private onLockRequestTimeout (lockName: string) {
     this.handleRemoteLockResponse(lockName, false)
-    this.services.logger.warn(EVENT.TIMEOUT, `request for lock ${lockName} timed out`)
+    this.services.logger.warn(EVENT.LOCK_REQUEST_TIMEOUT, `request for lock ${lockName} timed out`, { lockName })
   }
 }

@@ -198,7 +198,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     } else if (subscription.sockets.has(socket)) {
       if (this.services.logger.shouldLog(LOG_LEVEL.WARN)) {
         const msg = `repeat subscription to "${name}" by ${socket.user}`
-        this.services.logger.warn(EVENT_ACTION[this.constants.MULTIPLE_SUBSCRIPTIONS], msg)
+        this.services.logger.warn(EVENT_ACTION[this.constants.MULTIPLE_SUBSCRIPTIONS], msg, { message, socketWrapper: socket })
       }
       socket.sendMessage({
         topic: this.topic,
@@ -232,7 +232,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
       if (!silent) {
         if (this.services.logger.shouldLog(LOG_LEVEL.WARN)) {
           const msg = `${socket.user} is not subscribed to ${name}`
-          this.services.logger.warn(this.actions[this.constants.NOT_SUBSCRIBED], msg)
+          this.services.logger.warn(this.actions[this.constants.NOT_SUBSCRIBED], msg, { socketWrapper: socket, message})
         }
         socket.sendMessage({
           topic: this.topic,
@@ -322,7 +322,11 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   private onSocketClose (socket: SocketWrapper): void {
     const subscriptions = this.sockets.get(socket)
     if (!subscriptions) {
-      this.services.logger.error(EVENT_ACTION[this.constants.NOT_SUBSCRIBED], 'A socket has an illegal registered close callback')
+      this.services.logger.error(
+        EVENT_ACTION[this.constants.NOT_SUBSCRIBED],
+        'A socket has an illegal registered close callback',
+        { socketWrapper: socket }
+      )
       return
     }
     for (const subscription of subscriptions) {

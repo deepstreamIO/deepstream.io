@@ -376,6 +376,7 @@ export default class JIFHandler {
       this.services.logger.warn(
         EVENT.INFO,
         `Unhandled request error occurred: ${TOPIC[message.topic]} ${event} ${JSON.stringify(message)}`,
+        { message }
       )
       result.error = `An error occurred: ${RPC_ACTION[event as number]}.`
       result.errorParams = message.name

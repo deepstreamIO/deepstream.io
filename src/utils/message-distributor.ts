@@ -17,7 +17,7 @@ export default class MessageDistributor {
   public distribute (socketWrapper: SocketWrapper, message: Message) {
     const callback = this.callbacks.get(message.topic)
     if (callback === undefined) {
-      this.services.logger.warn(PARSER_ACTION[PARSER_ACTION.UNKNOWN_TOPIC], TOPIC[message.topic])
+      this.services.logger.warn(PARSER_ACTION[PARSER_ACTION.UNKNOWN_TOPIC], TOPIC[message.topic], { message })
       socketWrapper.sendMessage({
         topic: TOPIC.PARSER,
         action: PARSER_ACTION.UNKNOWN_TOPIC,

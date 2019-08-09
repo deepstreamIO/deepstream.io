@@ -82,7 +82,7 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
       if (token) {
         this.onReady()
       } else {
-        this.services.logger.error(
+        this.services.logger.fatal(
             STATES.SERVICE_INIT,
             `Failed to listen to port ${this.getOption('port')}`
         )

@@ -66,7 +66,10 @@ export default class PresenceHandler extends Handler<PresenceMessage> implements
 
     const users = message.names
     if (!users) {
-      this.services.logger.error(PARSER_ACTION[PARSER_ACTION.INVALID_MESSAGE], `invalid presence names parameter ${PRESENCE_ACTION[message.action]}`)
+      this.services.logger.error(
+        PARSER_ACTION[PARSER_ACTION.INVALID_MESSAGE],
+        `invalid presence names parameter ${PRESENCE_ACTION[message.action]}`
+      )
       return
     }
 

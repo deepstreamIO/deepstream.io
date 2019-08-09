@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger, EVENT } from '../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger, EVENT, MetaData } from '../../../ds-types/src/index'
 
 const EOL = require('os').EOL
 
@@ -40,12 +40,12 @@ export class StdOutLogger extends DeepstreamPlugin implements DeepstreamLogger {
     this.log(LOG_LEVEL.INFO, '', event, logMessage)
   }
 
-  public warn (event: EVENT, logMessage: string): void {
-    this.log(LOG_LEVEL.WARN, '', event, logMessage)
+  public warn (event: EVENT, logMessage: string, metaData?: MetaData): void {
+    this.log(LOG_LEVEL.WARN, '', event, logMessage, metaData)
   }
 
-  public error (event: EVENT, logMessage: string): void {
-    this.log(LOG_LEVEL.ERROR, '', event, logMessage)
+  public error (event: EVENT, logMessage: string, metaData?: MetaData): void {
+    this.log(LOG_LEVEL.ERROR, '', event, logMessage, metaData)
   }
 
   public fatal (event: EVENT, logMessage: string): void {
@@ -74,9 +74,9 @@ export class StdOutLogger extends DeepstreamPlugin implements DeepstreamLogger {
   /**
    * Logs a line
    */
-  private log (logLevel: LOG_LEVEL, namespace: string, event: EVENT, logMessage: string): void {
+  private log (logLevel: LOG_LEVEL, namespace: string, event: EVENT, logMessage: string, metaData: MetaData | null = null): void {
     if (logLevel >= LOG_LEVEL.WARN && this.services) {
-      this.services.monitoring.onErrorLog(logLevel, event, logMessage)
+      this.services.monitoring.onErrorLog(logLevel, event, logMessage, metaData!)
     }
 
     if (logLevel < this.currentLogLevel) {
