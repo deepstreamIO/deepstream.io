@@ -11,7 +11,7 @@
 //   }
 //
 //   it('creates a SocketWrapper', () => {
-//     socketWrapper = createUWSSocketWrapper({}, handshakeData, {})
+//     socketWrapper = createUWSSocketWrapper({}, handshakeData)
 //     expect(socketWrapper.getHandshakeData()).to.deep.equal({
 //       headers: { referer: 'some-referer' },
 //       referer: 'some-referer',

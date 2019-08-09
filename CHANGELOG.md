@@ -1,3 +1,10 @@
+## [4.0.5] - 2019.08.09
+  
+### Improvement
+
+Adding meta objects to logs and monitoring for easier tagging to monitoring solutions
+
+
 ## [4.0.4] - 2019.08.05
   
 ### Fix
