@@ -1,6 +1,12 @@
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
-import { Command } from 'commander'
+import * as commander from 'commander'
 import { FileBasedAuthentication } from '../src/services/authentication/file/file-based-authentication'
+
+// work-around for:
+// TS4023: Exported variable 'command' has or is using name 'local.Command'
+// from external module "node_modules/commander/typings/index" but cannot be named.
+// tslint:disable-next-line: no-empty-interface
+export interface Command extends commander.Command { }
 
 export const hash = (program: Command) => {
   program
