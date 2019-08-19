@@ -50,13 +50,14 @@ export default class RecordHandler extends Handler<RecordMessage> {
       return
     }
 
-    if (action === RA.SUBSCRIBECREATEANDREAD) {
+    if (action === RA.SUBSCRIBECREATEANDREAD || action === RA.SUBSCRIBEANDREAD) {
+      const onSuccess = action === RA.SUBSCRIBECREATEANDREAD ? this.onSubscribeCreateAndRead : this.onSubscribeAndRead
       const l = message.names!.length
       for (let i = 0; i < l; i++) {
         this.recordRequest(
           message.names![i],
           socketWrapper,
-          this.onCreateOrReadComplete,
+          onSuccess,
           onRequestError,
           { ...message, name: message.names![i] }
         )
@@ -278,7 +279,7 @@ export default class RecordHandler extends Handler<RecordMessage> {
     })
   }
 
-  private onCreateOrReadComplete (recordName: string, version: number, data: JSONObject | null, socketWrapper: SocketWrapper, message: RecordMessage) {
+  private onSubscribeCreateAndRead (recordName: string, version: number, data: JSONObject | null, socketWrapper: SocketWrapper, message: RecordMessage) {
     if (data) {
       this.readAndSubscribe(message, version, data, socketWrapper)
     } else {
@@ -289,6 +290,23 @@ export default class RecordHandler extends Handler<RecordMessage> {
         socketWrapper,
         this.create,
       )
+    }
+  }
+
+  private onSubscribeAndRead (recordName: string, version: number, data: JSONObject | null, socketWrapper: SocketWrapper, message: RecordMessage) {
+    if (data) {
+      this.readAndSubscribe(message, version, data, socketWrapper)
+    } else {
+      this.permissionAction(RA.READ, message, message.action, socketWrapper, () => {
+        this.subscriptionRegistry.subscribe(message.name, { ...message, action: RA.SUBSCRIBE }, socketWrapper, message.names !== undefined)
+        socketWrapper.sendMessage({
+          topic: TOPIC.RECORD,
+          action: RECORD_ACTION.READ_RESPONSE,
+          name: message.name,
+          version: -1,
+          parsedData: {},
+        })
+      })
     }
   }
 
