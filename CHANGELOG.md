@@ -1,9 +1,18 @@
+## [4.0.6] - 2019.08.19
+  
+### Feat
+
+Allow SUBSCRIBE and READ without CREATE actions, for clients that are in read only mode
+
+### Improvement
+
+Adding declaration types (thank you @Vortex375!)
+
 ## [4.0.5] - 2019.08.09
   
 ### Improvement
 
 Adding meta objects to logs and monitoring for easier tagging to monitoring solutions
-
 
 ## [4.0.4] - 2019.08.05
   
