@@ -3,6 +3,7 @@
     "target": "ES2018",
     "module": "commonjs",
     "outDir": "dist",
+    "declaration": true,
     "sourceMap": true,
     "allowJs": false,
     "resolveJsonModule": true,

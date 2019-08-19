@@ -1,6 +1,12 @@
 import { installer } from '../src/utils/installer'
 import * as jsYamlLoader from '../src/config/js-yaml-loader'
-import { Command } from 'commander'
+import * as commander from 'commander'
+
+// work-around for:
+// TS4023: Exported variable 'command' has or is using name 'local.Command'
+// from external module "node_modules/commander/typings/index" but cannot be named.
+// tslint:disable-next-line: no-empty-interface
+export interface Command extends commander.Command { }
 
 export const install = (program: Command) => {
   program
