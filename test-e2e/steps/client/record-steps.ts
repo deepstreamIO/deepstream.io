@@ -1,6 +1,6 @@
 import { defaultDelay } from '../../framework/utils'
 import {When, Then, Given} from 'cucumber'
-import { record } from '../../framework/record'
+const { record } = require(`../../framework${process.env.V3 ? '-v3' : ''}/record`)
 
 When(/(.+) gets? the record "([^"]*)"$/, (clientExpression: string, recordName: string, done) => {
   record.getRecord(clientExpression, recordName)
@@ -14,7 +14,7 @@ When(/(.+) sets the merge strategy to (remote|local)$/, (clientExpression: strin
 Then(/^(.+) (gets?|is not) notified of record "([^"]*)" getting (discarded|deleted)$/, (clientExpression: string, notified, recordName, action) => {
   const called = notified.indexOf('is not') !== -1 ? false : true
   if (action === 'discarded') {
-    record.assert.discarded(clientExpression, recordName, called)
+    // record.assert.discarded(clientExpression, recordName, called)
   } else {
     record.assert.deleted(clientExpression, recordName, called)
   }

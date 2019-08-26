@@ -1,6 +1,6 @@
 import { defaultDelay } from '../../framework/utils'
 import {When, Then, Given} from 'cucumber'
-import { rpc } from '../../framework/rpc'
+const { rpc } = require(`../../framework${process.env.V3 ? '-v3' : ''}/rpc`)
 
 Given(/^(.+) provides? the RPC "([^"]*)"$/, (clientExpression: string, rpcName, done) => {
   rpc.provide(clientExpression, rpcName)

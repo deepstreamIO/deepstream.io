@@ -63,7 +63,7 @@ export default class MessageProcessor {
             { originalMessage: message, uuid }
           )
         }
-        return
+        continue
       }
 
       this.services.permission.canPerformAction(

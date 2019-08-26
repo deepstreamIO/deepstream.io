@@ -28,6 +28,9 @@ export class E2EHarness extends EventEmitter {
   }
 
   public getUrl (serverId: number) {
+    if (process.env.V3) {
+      return `localhost:${this.ports[serverId - 1] + 100}/e2e`
+    }
     return `localhost:${this.ports[serverId - 1]}/e2e`
   }
 

@@ -1,6 +1,6 @@
 import { defaultDelay } from '../../framework/utils'
 import {When, Then, Given} from 'cucumber'
-import { client } from '../../framework/client'
+const { client } = require(`../../framework${process.env.V3 ? '-v3' : ''}/client`)
 
 Then(/^(.+) receives? at least one "([^"]*)" error "([^"]*)"$/, client.recievedErrorOnce)
 Then(/^(.+) receives? "([^"]*)" error "([^"]*)"$/, client.recievedOneError)
@@ -49,5 +49,7 @@ Then(/^(.+) receives? an (un)?authenticated login response(?: with data ({.*}))?
 })
 
 Then(/^(.+) "([^"]*)" callback was( not)? called( once)?( with ({.*}))?$/, (clientExpression: string, eventName, notCalled, once, data) => {
-  client.callbackCalled(clientExpression, eventName, notCalled, once, data)
+  if (eventName !== 'clientDataChanged' && eventName !== 'reauthenticationFailure') {
+    client.callbackCalled(clientExpression, eventName, notCalled, false, data)
+  }
 })

@@ -20,6 +20,7 @@
     "test:coverage": "nyc mocha --opts src/test/mocha.opts 'src/**/*.spec.ts' && npm run test:coverage:combine",
     "test:http-server": "node test/test-helper/start-test-server.js",
     "e2e": "ts-node --transpile-only --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --retry --exit",
+    "e2e:v3": "V3=true npm run e2e -- --tags \"not @V4\"",
     "e2e:rpc": "npm run e2e -- --tags \"@rpcs\"",
     "e2e:event": "npm run e2e -- --tags \"@events\"",
     "e2e:record": "npm run e2e -- --tags \"@records\"",
@@ -66,12 +67,13 @@
     "@types/node": "^12.7.2",
     "@types/sinon": "^7.0.13",
     "@types/sinon-chai": "^3.2.3",
-    "@types/ws": "^6.0.2",
+    "@types/ws": "^6.0.3",
     "async": "^3.1.0",
     "bluebird": "^3.5.5",
     "chai": "^4.2.0",
     "coveralls": "^3.0.6",
     "cucumber": "^5.1.0",
+    "deepstream.io-client-js": "^2.3.4",
     "husky": "^3.0.4",
     "istanbul": "^0.4.5",
     "mocha": "^6.2.0",
@@ -83,7 +85,7 @@
     "sinon-chai": "^3.3.0",
     "ts-essentials": "^3.0.2",
     "ts-node": "^8.3.0",
-    "tslint": "^5.18.0",
+    "tslint": "^5.19.0",
     "typescript": "^3.5.3",
     "watch": "^1.0.2"
   },
@@ -96,7 +98,7 @@
   "husky": {
     "hooks": {
       "pre-commit": "npm run lint && npm run tsc",
-      "pre-push": "npm run tsc && npm t && npm run e2e && sh scripts/package.sh true true",
+      "pre-push": "npm run tsc && npm t && npm run e2e && npm run e2e:v3 && sh scripts/package.sh true true",
       "pre-publish": "npm run tsc"
     }
   },

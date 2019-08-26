@@ -1,6 +1,6 @@
 import { defaultDelay } from '../../framework/utils'
 import {When, Then, Given} from 'cucumber'
-import { presence } from '../../framework/presence'
+const { presence } = require(`../../framework${process.env.V3 ? '-v3' : ''}/presence`)
 
 Given(/^(.+) subscribes to presence events$/, (clientExpression: string, done) => {
   presence.subscribe(clientExpression)

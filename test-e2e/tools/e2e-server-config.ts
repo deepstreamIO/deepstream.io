@@ -28,12 +28,25 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
 
     connectionEndpoints: [
       {
-        type: 'uws-websocket',
+        type: 'ws-websocket',
         options: {
           port,
           urlPath: '/e2e',
           maxAuthAttempts              : 2,
           unauthenticatedClientTimeout : 200,
+          heartbeatInterval: 50,
+          desiredHeaders: []
+        } as any
+      },
+      {
+        type: 'ws-text',
+        options: {
+          port: Number(port) + 100,
+          urlPath: '/e2e',
+          maxAuthAttempts              : 2,
+          unauthenticatedClientTimeout : 200,
+          heartbeatInterval: 50,
+          desiredHeaders: [],
         } as any
       },
       {
