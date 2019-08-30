@@ -10,7 +10,7 @@ import * as WebSocket from 'ws'
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  */
-export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
+export class TextWSSocketWrapper implements UnauthenticatedSocketWrapper {
 
   public isRemote: false = false
   public isClosed: boolean = false
@@ -145,4 +145,4 @@ export const createWSSocketWrapper = function (
   services: DeepstreamServices,
   config: WebSocketServerConfig,
   connectionEndpoint: SocketConnectionEndpoint,
-) { return new WSSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }
+) { return new TextWSSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }

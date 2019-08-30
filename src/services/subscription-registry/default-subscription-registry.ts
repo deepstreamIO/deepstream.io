@@ -141,16 +141,17 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     this.services.monitoring.onBroadcast(message, subscribers.size)
 
-    const serializedForSocket = subscribers.values().next().value
-    let msg = serializedForSocket.getMessage(message)
+    let serializedForSocket
+    let msg
     for (const socket of subscribers) {
       if (socket === senderSocket) {
         continue
       }
-      if (typeof socket !== typeof serializedForSocket) {
+      if (!serializedForSocket || serializedForSocket.constructor !== socket.constructor) {
         // This is more expensive then doing a lookup, but this situation doesn't occur enough
         // currently to have to care
         msg = socket.getMessage(message)
+        serializedForSocket = socket
       }
       socket.sendBuiltMessage!(msg, true)
     }

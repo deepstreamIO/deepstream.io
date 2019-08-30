@@ -171,7 +171,7 @@ describe('file based authentication', () => {
       settings.path = 'xcc'
       const services = createServices()
       const x = new FileBasedAuthentication(settings as any, services)
-      await PromiseDelay(0)
+      await PromiseDelay(10)
       assert.calledOnce(services.logger.fatal)
       assert.calledWithExactly(services.logger.fatal, EVENT.PLUGIN_INITIALIZATION_ERROR, "Error loading file xcc")
     })
