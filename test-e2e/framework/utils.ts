@@ -1,4 +1,4 @@
-export const defaultDelay: number = Number(process.env.DEFAULT_DELAY) || 20
+export const defaultDelay: number = Number(process.env.DEFAULT_DELAY) || 10
 
 export const parseData = (data: string) => {
   if (data === undefined || data === 'undefined') {
