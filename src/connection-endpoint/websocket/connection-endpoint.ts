@@ -18,7 +18,7 @@ export interface WebSocketServerConfig {
  * forwards messages it receives from authenticated sockets.
  */
 export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implements SocketConnectionEndpoint {
-  public description: string = 'µWebSocket Connection Endpoint'
+  public description: string = 'WebSocket Connection Endpoint'
 
   private initialised: boolean = false
   private flushTimeout: NodeJS.Timeout | null = null
@@ -186,7 +186,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * Always challenges the client that connects. This will be opened up later to allow users
    * to put in their own challenge authentication.
    */
-  private processConnectionMessage (socketWrapper: UnauthenticatedSocketWrapper, parsedMessages: Message[]) {
+  public processConnectionMessage (socketWrapper: UnauthenticatedSocketWrapper, parsedMessages: Message[]) {
     const msg = parsedMessages[0]
 
     if (msg.topic !== TOPIC.CONNECTION) {

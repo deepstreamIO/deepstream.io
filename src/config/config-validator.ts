@@ -112,7 +112,7 @@ const connEndpointsOpts = {
     type: 'array',
     items: {
     properties: {
-          type: { type: 'string', enum: ['uws-websocket', 'ws-websocket', 'node-http'] },
+          type: { type: 'string', enum: ['ws-text', 'uws-websocket', 'ws-websocket', 'node-http'] },
           name: { type: 'string', minLength: 1 },
           path: { type: 'string', minLength: 1 },
           options: {

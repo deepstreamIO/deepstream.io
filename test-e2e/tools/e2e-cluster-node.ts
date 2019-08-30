@@ -12,16 +12,18 @@ export class E2EClusterNode extends DeepstreamPlugin implements DeepstreamCluste
     }
 
     public sendDirect (toServer: string, message: Message, metaData?: any): void {
+      const msg = { ...message }
       process.nextTick(() => {
-        E2EClusterNode.emitters.get(toServer)!.emit(TOPIC[message.topic], this.config.serverName, message)
+        E2EClusterNode.emitters.get(toServer)!.emit(TOPIC[message.topic], this.config.serverName, msg)
       })
     }
 
     public send (message: Message, metaData?: any): void {
+        const msg = { ...message }
         process.nextTick(() => {
             for (const [serverName, emitter] of E2EClusterNode.emitters) {
                 if (serverName !== this.config.serverName) {
-                    emitter.emit(TOPIC[message.topic], this.config.serverName, message)
+                    emitter.emit(TOPIC[message.topic], this.config.serverName, msg)
                 }
             }
         })

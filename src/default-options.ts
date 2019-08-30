@@ -70,6 +70,29 @@ export function get (): DeepstreamConfig {
         }
       },
       {
+        type: 'ws-text',
+        options: {
+          port: 6021,
+          host: '0.0.0.0',
+          urlPath: '/deepstream',
+          healthCheckPath: '/health-check',
+          heartbeatInterval: 30000,
+          outgoingBufferTimeout: 0,
+          maxBufferByteSize: 100000,
+          noDelay: true,
+          headers: [],
+
+          /*
+           * Security
+           */
+          unauthenticatedClientTimeout: 180000,
+          maxAuthAttempts: 3,
+          logInvalidAuthData: false,
+          perMessageDeflate: false,
+          maxMessageSize: 1048576
+        }
+      },
+      {
         type: 'node-http',
         options: {
           port: 8080,

@@ -1,6 +1,6 @@
 import { defaultDelay } from '../../framework/utils'
 import {When, Then} from 'cucumber'
-import { listening } from '../../framework/listening'
+const { listening } = require(`../../framework${process.env.V3 ? '-v3' : ''}/listening`)
 
 When(/^publisher (\S*) (accepts|rejects) (?:a|an) (event|record) match "([^"]*)" for pattern "([^"]*)"$/, (client, action, type, subscriptionName, pattern) => {
   listening.setupListenResponse(client, action === 'accepts', type, subscriptionName, pattern)
