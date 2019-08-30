@@ -1,6 +1,6 @@
 {
   "name": "@deepstream/server",
-  "version": "4.0.6",
+  "version": "4.1.0",
   "description": "a scalable server for realtime webapps",
   "main": "./dist/src/deepstream.io.js",
   "bin": {
@@ -20,7 +20,7 @@
     "test:coverage": "nyc mocha --opts src/test/mocha.opts 'src/**/*.spec.ts' && npm run test:coverage:combine",
     "test:http-server": "node test/test-helper/start-test-server.js",
     "e2e": "ts-node --transpile-only --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --retry --exit",
-    "e2e:v3": "cross-env V3=true npm run e2e -- --tags \"not @V4\"",
+    "e2e:v3": "V3=true npm run e2e -- --tags \"not @V4\"",
     "e2e:rpc": "npm run e2e -- --tags \"@rpcs\"",
     "e2e:event": "npm run e2e -- --tags \"@events\"",
     "e2e:record": "npm run e2e -- --tags \"@records\"",
@@ -72,7 +72,6 @@
     "bluebird": "^3.5.5",
     "chai": "^4.2.0",
     "coveralls": "^3.0.6",
-    "cross-env": "^5.2.0",
     "cucumber": "^5.1.0",
     "deepstream.io-client-js": "^2.3.4",
     "husky": "^3.0.4",
