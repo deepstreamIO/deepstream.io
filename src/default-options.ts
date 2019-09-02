@@ -108,6 +108,19 @@ export function get (): DeepstreamConfig {
           headers: [],
           maxMessageSize: 1024
         }
+      },
+      {
+        type: 'mqtt',
+        options: {
+          port: 1883,
+          host: '0.0.0.0',
+          idleTimeout: 180000,
+
+          /*
+           * Security
+           */
+          unauthenticatedClientTimeout: 180000,
+        }
       }
     ],
 

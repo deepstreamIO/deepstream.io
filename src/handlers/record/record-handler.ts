@@ -50,6 +50,11 @@ export default class RecordHandler extends Handler<RecordMessage> {
       return
     }
 
+    if (action === RA.SUBSCRIBE) {
+      this.subscriptionRegistry.subscribeBulk(message as BulkSubscriptionMessage, socketWrapper)
+      return
+    }
+
     if (action === RA.SUBSCRIBECREATEANDREAD || action === RA.SUBSCRIBEANDREAD) {
       const onSuccess = action === RA.SUBSCRIBECREATEANDREAD ? this.onSubscribeCreateAndRead : this.onSubscribeAndRead
       const l = message.names!.length

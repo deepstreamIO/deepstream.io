@@ -39,6 +39,7 @@ const RULES_MAP: Dictionary<{ section: string, actions: Dictionary<RuleType> }> 
   [TOPIC.RECORD]: {
     section: 'record',
     actions: {
+      [RECORD_ACTION.SUBSCRIBE]: RULE_TYPES.READ,
       [RECORD_ACTION.SUBSCRIBEANDHEAD]: RULE_TYPES.READ,
       [RECORD_ACTION.SUBSCRIBEANDREAD]: RULE_TYPES.READ,
       [RECORD_ACTION.READ]: RULE_TYPES.READ,
