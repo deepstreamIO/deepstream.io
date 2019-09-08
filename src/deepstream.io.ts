@@ -52,7 +52,7 @@ export class Deepstream extends EventEmitter {
   private connectionListeners = new Set<ConnectionListener>()
 
   private stateMachine: any
-  private currentState: any
+  private currentState: STATES
 
 /**
  * Deepstream is a realtime data server that supports data-sync,
@@ -184,7 +184,7 @@ export class Deepstream extends EventEmitter {
 /**
  * Log state transitions for debugging.
  */
-  private onTransition (transition: any): void {
+  private onTransition (transition: { from: STATES, to: STATES, name: string }): void {
     const logger = this.services.logger
     if (logger) {
       logger.debug(
