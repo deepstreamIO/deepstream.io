@@ -6,8 +6,7 @@ import { Server } from 'net'
 // @ts-ignore
 import * as mqttCon from 'mqtt-connection'
 import { parseMQTT } from './message-parser'
-import { TOPIC, CONNECTION_ACTION } from '../../constants'
-import { AUTH_ACTION } from '@deepstream/client/dist/constants'
+import { TOPIC, CONNECTION_ACTION, AUTH_ACTION } from '../../constants'
 
 export interface MQTTConnectionEndpointConfig extends WebSocketServerConfig {
   port: number,
