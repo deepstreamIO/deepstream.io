@@ -1,6 +1,27 @@
 import { getUid } from './utils/utils'
 import { DeepstreamConfig, LOG_LEVEL } from '../ds-types/src/index'
 
+const WebSocketDefaultOptions = {
+  port: 6020,
+  host: '0.0.0.0',
+  urlPath: '/deepstream',
+  healthCheckPath: '/health-check',
+  heartbeatInterval: 30000,
+  outgoingBufferTimeout: 0,
+  maxBufferByteSize: 100000,
+  noDelay: true,
+  headers: [],
+
+  /*
+   * Security
+   */
+  unauthenticatedClientTimeout: 180000,
+  maxAuthAttempts: 3,
+  logInvalidAuthData: false,
+  perMessageDeflate: false,
+  maxMessageSize: 1048576
+}
+
 export function get (): DeepstreamConfig {
   return {
     /*
@@ -25,72 +46,19 @@ export function get (): DeepstreamConfig {
     connectionEndpoints: [
       {
         type: 'uws-websocket',
-        options: {
-          port: 6020,
-          host: '0.0.0.0',
-          urlPath: '/deepstream',
-          healthCheckPath: '/health-check',
-          heartbeatInterval: 30000,
-          outgoingBufferTimeout: 0,
-          maxBufferByteSize: 100000,
-          noDelay: true,
-          headers: [],
-
-          /*
-           * Security
-           */
-          unauthenticatedClientTimeout: 180000,
-          maxAuthAttempts: 3,
-          logInvalidAuthData: false,
-          perMessageDeflate: false,
-          maxMessageSize: 1048576
-        }
+        options: { ...WebSocketDefaultOptions }
       },
       {
         type: 'ws-websocket',
-        options: {
-          port: 6020,
-          host: '0.0.0.0',
-          urlPath: '/deepstream',
-          healthCheckPath: '/health-check',
-          heartbeatInterval: 30000,
-          outgoingBufferTimeout: 0,
-          maxBufferByteSize: 100000,
-          noDelay: true,
-          headers: [],
-
-          /*
-           * Security
-           */
-          unauthenticatedClientTimeout: 180000,
-          maxAuthAttempts: 3,
-          logInvalidAuthData: false,
-          perMessageDeflate: false,
-          maxMessageSize: 1048576
-        }
+        options: { ...WebSocketDefaultOptions }
       },
       {
         type: 'ws-text',
-        options: {
-          port: 6021,
-          host: '0.0.0.0',
-          urlPath: '/deepstream',
-          healthCheckPath: '/health-check',
-          heartbeatInterval: 30000,
-          outgoingBufferTimeout: 0,
-          maxBufferByteSize: 100000,
-          noDelay: true,
-          headers: [],
-
-          /*
-           * Security
-           */
-          unauthenticatedClientTimeout: 180000,
-          maxAuthAttempts: 3,
-          logInvalidAuthData: false,
-          perMessageDeflate: false,
-          maxMessageSize: 1048576
-        }
+        options: { ...WebSocketDefaultOptions, port: 6021 }
+      },
+      {
+        type: 'ws-json',
+        options: { ...WebSocketDefaultOptions }
       },
       {
         type: 'node-http',
@@ -220,6 +188,9 @@ export function get (): DeepstreamConfig {
       responseTimeout: 500,
       rematchInterval: 30000,
       matchCooldown: 10000
-    }
+    },
+
+    subscriptionsSanityTimer: 10000
   }
+
 }

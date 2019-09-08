@@ -9,7 +9,7 @@ import {
   BulkSubscriptionMessage,
   STATE_REGISTRY_TOPIC
 } from '../../constants'
-import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry, SubscriptionRegistry, LOG_LEVEL } from '../../../ds-types/src/index'
+import { SocketWrapper, DeepstreamConfig, DeepstreamServices, SubscriptionListener, StateRegistry, SubscriptionRegistry, LOG_LEVEL, EVENT, NamespacedLogger } from '../../../ds-types/src/index'
 
 interface SubscriptionActions {
   MULTIPLE_SUBSCRIPTIONS: RECORD_ACTION.MULTIPLE_SUBSCRIPTIONS | EVENT_ACTION.MULTIPLE_SUBSCRIPTIONS | RPC_ACTION.MULTIPLE_PROVIDERS | PRESENCE_ACTION.MULTIPLE_SUBSCRIPTIONS
@@ -30,6 +30,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   private constants: SubscriptionActions
   private clusterSubscriptions: StateRegistry
   private actions: any
+  private logger: NamespacedLogger = this.services.logger.getNameSpace('SUBSCRIPTION_REGISTRY')
 
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
@@ -67,9 +68,17 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     this.onSocketClose = this.onSocketClose.bind(this)
 
     this.clusterSubscriptions = this.services.clusterStates.getStateRegistry(clusterTopic)
+
+    if (this.config.subscriptionsSanityTimer > 0) {
+      setInterval(this.illegalCleanup.bind(this), 1000)
+    }
   }
 
   public async whenReady () {
+    await this.clusterSubscriptions.whenReady()
+  }
+
+  public async close () {
     await this.clusterSubscriptions.whenReady()
   }
 
@@ -202,9 +211,9 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     if (subscription.sockets.size === 0) {
       this.subscriptions.set(name, subscription)
     } else if (subscription.sockets.has(socket)) {
-      if (this.services.logger.shouldLog(LOG_LEVEL.WARN)) {
+      if (this.logger.shouldLog(LOG_LEVEL.WARN)) {
         const msg = `repeat subscription to "${name}" by ${socket.user}`
-        this.services.logger.warn(EVENT_ACTION[this.constants.MULTIPLE_SUBSCRIPTIONS], msg, { message, socketWrapper: socket })
+        this.logger.warn(EVENT_ACTION[this.constants.MULTIPLE_SUBSCRIPTIONS], msg, { message, socketWrapper: socket })
       }
       socket.sendMessage({
         topic: this.topic,
@@ -220,9 +229,9 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     this.addSocket(subscription, socket)
 
     if (!silent) {
-      if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
+      if (this.logger.shouldLog(LOG_LEVEL.DEBUG)) {
         const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
-        this.services.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
+        this.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
       }
       socket.sendAckMessage(message)
     }
@@ -236,9 +245,9 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     if (!subscription || !subscription.sockets.delete(socket)) {
       if (!silent) {
-        if (this.services.logger.shouldLog(LOG_LEVEL.WARN)) {
+        if (this.logger.shouldLog(LOG_LEVEL.WARN)) {
           const msg = `${socket.user} is not subscribed to ${name}`
-          this.services.logger.warn(this.actions[this.constants.NOT_SUBSCRIBED], msg, { socketWrapper: socket, message})
+          this.logger.warn(this.actions[this.constants.NOT_SUBSCRIBED], msg, { socketWrapper: socket, message})
         }
         socket.sendMessage({
           topic: this.topic,
@@ -253,9 +262,9 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     this.removeSocket(subscription, socket)
 
     if (!silent) {
-      if (this.services.logger.shouldLog(LOG_LEVEL.DEBUG)) {
+      if (this.logger.shouldLog(LOG_LEVEL.DEBUG)) {
         const logMsg = `for ${this.topic}:${name} by ${socket.user}`
-        this.services.logger.debug(this.actions[this.constants.UNSUBSCRIBE], logMsg)
+        this.logger.debug(this.actions[this.constants.UNSUBSCRIBE], logMsg)
       }
       socket.sendAckMessage(message)
     }
@@ -306,7 +315,6 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   private removeSocket (subscription: Subscription, socket: SocketWrapper): void {
     if (subscription.sockets.size === 0) {
       this.subscriptions.delete(subscription.name)
-      socket.removeOnClose(this.onSocketClose)
     }
 
     if (this.subscriptionListener) {
@@ -317,8 +325,13 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     const subscriptions = this.sockets.get(socket)
     if (subscriptions) {
       subscriptions.delete(subscription)
+
+      if (subscriptions.size === 0) {
+        this.sockets.delete(socket)
+        socket.removeOnClose(this.onSocketClose)
+      }
     } else {
-      // log error
+      this.logger.error(EVENT.ERROR, 'Attempting to delete a subscription that doesn\'t exist')
     }
   }
 
@@ -328,7 +341,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   private onSocketClose (socket: SocketWrapper): void {
     const subscriptions = this.sockets.get(socket)
     if (!subscriptions) {
-      this.services.logger.error(
+      this.logger.error(
         EVENT_ACTION[this.constants.NOT_SUBSCRIBED],
         'A socket has an illegal registered close callback',
         { socketWrapper: socket }
@@ -339,5 +352,17 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
       subscription.sockets.delete(socket)
       this.removeSocket(subscription, socket)
     }
+    this.sockets.delete(socket)
+  }
+
+  private illegalCleanup () {
+    this.sockets.forEach((subscriptions, socket) => {
+      if (socket.isClosed) {
+        this.logger.error(
+          EVENT.CLOSED_SOCKET,
+          `Socket ${socket.uuid} is closed but still in registry. If you see this please raise a github issue!`
+        )
+      }
+    })
   }
 }
