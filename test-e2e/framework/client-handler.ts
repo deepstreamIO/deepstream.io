@@ -26,9 +26,14 @@ function createClient (clientName: string, server: string, options?: any) {
     recordReadTimeout: 50,
     recordDeleteTimeout: 100,
     recordDiscardTimeout: 100,
-    timerResolution: 1,
+    intervalTimerResolution: 1,
     offlineEnabled: false,
-    offlineBufferTimeout: 10000
+    offlineBufferTimeout: 10000,
+    nativeTimerRegistry: false,
+    initialRecordVersion: 1,
+    socketOptions: {
+      jsonTransportMode: false
+    }
   })
   clients[clientName] = {
     name: clientName,

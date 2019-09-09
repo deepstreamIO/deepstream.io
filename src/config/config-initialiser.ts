@@ -11,6 +11,8 @@ import { OpenPermission } from '../services/permission/open/open-permission'
 import { UWSConnectionEndpoint } from '../connection-endpoint/uws/connection-endpoint'
 import { WSConnectionEndpoint } from '../connection-endpoint/ws/connection-endpoint'
 import { WSTextConnectionEndpoint } from '../connection-endpoint/text/connection-endpoint'
+import { MQTTConnectionEndpoint } from '../connection-endpoint/mqtt/connection-endpoint'
+import { WSJSONConnectionEndpoint } from '../connection-endpoint/json/connection-endpoint'
 import { FileBasedAuthentication } from '../services/authentication/file/file-based-authentication'
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
 import { NoopStorage } from '../services/storage/noop-storage'
@@ -211,7 +213,11 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
     let PluginConstructor
     if (plugin.type === 'ws-text') {
       PluginConstructor = WSTextConnectionEndpoint
-    } else  if (plugin.type === 'uws-websocket') {
+    } else if (plugin.type === 'ws-json') {
+      PluginConstructor = WSJSONConnectionEndpoint
+    } else if (plugin.type === 'mqtt') {
+      PluginConstructor = MQTTConnectionEndpoint
+    } else if (plugin.type === 'uws-websocket') {
       PluginConstructor = UWSConnectionEndpoint
     } else if (plugin.type === 'ws-websocket') {
       PluginConstructor = WSConnectionEndpoint

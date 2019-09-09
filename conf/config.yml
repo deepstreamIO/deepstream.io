@@ -187,6 +187,15 @@ connectionEndpoints:
   #       sslDHParams: null
   #       sslPassphrase: null
 
+  # - type: mqtt
+  #   options:
+  #       # port for the mqtt server
+  #       port: 1883
+  #       # host for the mqtt server
+  #       host: 0.0.0.0
+  #       # timeout for idle devices
+  #       idleTimeout: 60000
+
 # Logger Configuration
 logger:
   # use either the default logger

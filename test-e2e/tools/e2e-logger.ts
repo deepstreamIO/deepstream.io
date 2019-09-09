@@ -41,12 +41,12 @@ export class E2ELogger extends DeepstreamPlugin implements DeepstreamLogger {
 
   public getNameSpace (namespace: string): NamespacedLogger {
     return {
-      shouldLog: this.shouldLog,
-      fatal: this.fatal,
-      error: this.error,
-      warn: this.warn,
-      info: this.info,
-      debug: this.debug,
+      shouldLog: this.shouldLog.bind(this),
+      fatal: this.fatal.bind(this),
+      error: this.error.bind(this),
+      warn: this.warn.bind(this),
+      info: this.info.bind(this),
+      debug: this.debug.bind(this),
     }
   }
 
