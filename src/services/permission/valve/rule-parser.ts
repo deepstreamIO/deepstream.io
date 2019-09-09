@@ -95,7 +95,7 @@ export const parse = (rule: boolean | string, variables: any) => {
     }
   }
   const ruleObj: any = {}
-  const args = ['_', 'user', 'data', 'oldData', 'now', 'action'].concat(variables)
+  const args = ['_', 'user', 'data', 'oldData', 'now', 'action', 'name'].concat(variables)
   args.push(`return ${rule};`)
 
   ruleObj.fn = Function.apply(null, args)

@@ -75,6 +75,22 @@ describe('permission handler applies basic permissions to incoming messages', ()
     expect(testPermission(permissions, message, 'userA')).to.equal(true)
   })
 
+  it('can reference the name', () => {
+    const permissions = getBasePermissions()
+
+    permissions.record['private/userA'] = {
+      read: 'name === "private/userA"'
+    }
+
+    const message = {
+      topic: C.TOPIC.RECORD,
+      action: C.RECORD_ACTION.READ,
+      name: 'private/userA'
+    }
+
+    expect(testPermission(permissions, message, 'userA')).to.equal(true)
+  })
+
   it('denies snapshot of a private record', () => {
     const permissions = getBasePermissions()
 

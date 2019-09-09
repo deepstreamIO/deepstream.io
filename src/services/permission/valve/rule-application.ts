@@ -268,6 +268,7 @@ export default class RuleApplication {
       this.getOldData(),
       Date.now(),
       this.params ? this.params.action : null,
+      this.params ? this.params.name : null
     ].concat(this.pathVars)
   }
 

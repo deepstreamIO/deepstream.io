@@ -144,6 +144,30 @@ describe('permission handler loads data for cross referencing', () => {
     testPermission(permissions, message, null, null, onDone)
   })
 
+  it('retrieves keys from name', (next) => {
+    const permissions = getBasePermissions()
+
+    services.cache.set('some-event', 0, { firstname: 'Joe' }, noop)
+
+    permissions.event['some-event'] = {
+      publish: '_(name).firstname === "Joe"'
+    }
+
+    const message = {
+      topic: C.TOPIC.EVENT,
+      action: C.EVENT_ACTION.EMIT,
+      name: 'some-event'
+    }
+
+    const callback = function (socketWrapper, msg, passItOn, error, result) {
+      expect(error).to.equal(null)
+      expect(result).to.equal(true)
+      next()
+    }
+
+    testPermission(permissions, message, 'username', null, callback)
+  })
+
   it('retrieves keys from variables', (next) => {
     const permissions = getBasePermissions()
 
