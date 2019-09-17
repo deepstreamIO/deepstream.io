@@ -1,3 +1,13 @@
+## [4.2.1] - 2019.09.17
+
+### Fix
+
+Remove conflicting port for those starting using node with an empty config object.
+
+### Improvement
+
+Limit the dead socket log to reduce insane spam.
+
 ## [4.2.0] - 2019.09.09
 
 ### Feat
