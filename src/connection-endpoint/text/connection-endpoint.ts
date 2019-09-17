@@ -22,6 +22,7 @@ export class WSTextConnectionEndpoint extends ConnectionEndpoint {
   private server!: WebSocket.Server
   private connections = new Map<WebSocket, UnauthenticatedSocketWrapper>()
   private pingMessage: string
+  private httpServer: Server
 
   constructor (private wsOptions: WSConnectionEndpointConfig, services: DeepstreamServices, config: DeepstreamConfig) {
     super(wsOptions, services, config)
@@ -31,22 +32,28 @@ export class WSTextConnectionEndpoint extends ConnectionEndpoint {
       topic: TOPIC.CONNECTION,
       action: CONNECTION_ACTION.PING
     })
+    this.httpServer = this.wsOptions.httpServer ? this.wsOptions.httpServer : new Server()
   }
 
   /**
    * Initialize the ws endpoint, setup callbacks etc.
    */
   public createWebsocketServer () {
+    this.server = new WebSocket.Server({
+      server: this.httpServer
+    })
     if (this.wsOptions.httpServer) {
-      this.server = new WebSocket.Server({
-        server: this.wsOptions.httpServer
-      })
       process.nextTick(this.onReady.bind(this))
     } else {
-      this.server = new WebSocket.Server({
-        port: this.getOption('port'),
-        host: this.getOption('host')
-      }, () => this.onReady())
+      this.httpServer.on('request', (request, response) => {
+        if (request.url === this.wsOptions.healthCheckPath && request.method === 'GET') {
+          response.end()
+        } else {
+          response.writeHead(404)
+          response.end(`Only ${this.wsOptions.healthCheckPath} supported`)
+        }
+      })
+      this.httpServer.listen(this.getOption('port'), this.getOption('host'), this.onReady.bind(this))
     }
 
     this.server.on('connection', (websocket, request) => {
@@ -104,7 +111,7 @@ export class WSTextConnectionEndpoint extends ConnectionEndpoint {
     })
     await Promise.all(closePromises)
     this.connections.clear()
-    return new Promise((resolve) => this.server.close(resolve))
+    return new Promise((resolve) => this.httpServer.close(resolve))
   }
 
   /**
