@@ -9,6 +9,7 @@ export interface WebSocketServerConfig {
   outgoingBufferTimeout: number,
   maxBufferByteSize: number,
   headers: string[],
+  healthCheckPath: string,
   [index: string]: any,
 }
 
