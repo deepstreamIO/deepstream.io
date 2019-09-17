@@ -1,3 +1,9 @@
+## [4.2.2] - 2019.09.17
+
+### Fix
+
+Adding health-checks for all ws based endpoints.
+
 ## [4.2.1] - 2019.09.17
 
 ### Fix
