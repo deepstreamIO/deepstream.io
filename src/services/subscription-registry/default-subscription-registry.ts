@@ -31,7 +31,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   private clusterSubscriptions: StateRegistry
   private actions: any
   private logger: NamespacedLogger = this.services.logger.getNameSpace('SUBSCRIPTION_REGISTRY')
-
+  private invalidSockets = new Set<SocketWrapper>()
   /**
    * A generic mechanism to handle subscriptions from sockets to topics.
    * A bit like an event-hub, only that it registers SocketWrappers rather
@@ -70,7 +70,8 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     this.clusterSubscriptions = this.services.clusterStates.getStateRegistry(clusterTopic)
 
     if (this.config.subscriptionsSanityTimer > 0) {
-      setInterval(this.illegalCleanup.bind(this), 1000)
+      setInterval(this.illegalCleanup.bind(this), this.config.subscriptionsSanityTimer)
+      setInterval(() => this.invalidSockets.clear(), this.config.subscriptionsSanityTimer * 100)
     }
   }
 
@@ -358,10 +359,13 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
   private illegalCleanup () {
     this.sockets.forEach((subscriptions, socket) => {
       if (socket.isClosed) {
-        this.logger.error(
-          EVENT.CLOSED_SOCKET,
-          `Socket ${socket.uuid} is closed but still in registry. If you see this please raise a github issue!`
-        )
+        if (!this.invalidSockets.has(socket)) {
+          this.logger.error(
+            EVENT.CLOSED_SOCKET,
+            `Socket ${socket.uuid} is closed but still in registry. Currently there are ${this.invalidSockets.size} sockets. If you see this please raise a github issue!`
+          )
+          this.invalidSockets.add(socket)
+        }
       }
     })
   }

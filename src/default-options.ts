@@ -58,7 +58,7 @@ export function get (): DeepstreamConfig {
       },
       {
         type: 'ws-json',
-        options: { ...WebSocketDefaultOptions }
+        options: { ...WebSocketDefaultOptions, port: 6022 }
       },
       {
         type: 'node-http',
