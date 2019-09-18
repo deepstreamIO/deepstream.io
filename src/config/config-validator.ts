@@ -6,6 +6,7 @@ function getPluginOptions (name: string, types: string[], properties: any) {
     [name]: {
       type: 'object',
       properties: {
+        oneRequired: ['type', 'name', 'path'],
         type: { type: 'string', enum: types },
         name: { type: 'string', minLength: 1 },
         path: { type: 'string', minLength: 1 },

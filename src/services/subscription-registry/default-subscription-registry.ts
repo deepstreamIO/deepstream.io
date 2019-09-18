@@ -37,7 +37,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
    * A bit like an event-hub, only that it registers SocketWrappers rather
    * than functions
    */
-  constructor (pluginConfig: any, private services: DeepstreamServices, private config: DeepstreamConfig, private topic: TOPIC | STATE_REGISTRY_TOPIC, clusterTopic: TOPIC) {
+  constructor (private pluginConfig: any, private services: DeepstreamServices, private config: DeepstreamConfig, private topic: TOPIC | STATE_REGISTRY_TOPIC, clusterTopic: TOPIC) {
     switch (topic) {
       case TOPIC.RECORD:
       case STATE_REGISTRY_TOPIC.RECORD_LISTEN_PATTERNS:
@@ -69,9 +69,9 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     this.clusterSubscriptions = this.services.clusterStates.getStateRegistry(clusterTopic)
 
-    if (this.config.subscriptionsSanityTimer > 0) {
-      setInterval(this.illegalCleanup.bind(this), this.config.subscriptionsSanityTimer)
-      setInterval(() => this.invalidSockets.clear(), this.config.subscriptionsSanityTimer * 100)
+    if (this.pluginConfig.subscriptionsSanityTimer > 0) {
+      setInterval(this.illegalCleanup.bind(this), this.pluginConfig.subscriptionsSanityTimer)
+      setInterval(() => this.invalidSockets.clear(), this.pluginConfig.subscriptionsSanityTimer * 100)
     }
   }
 
