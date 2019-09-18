@@ -99,7 +99,9 @@ export function get (): DeepstreamConfig {
 
     subscriptions: {
       type: 'default',
-      options: {}
+      options: {
+        subscriptionsSanityTimer: 10000
+      }
     },
 
     auth: {
@@ -189,8 +191,6 @@ export function get (): DeepstreamConfig {
       rematchInterval: 30000,
       matchCooldown: 10000
     },
-
-    subscriptionsSanityTimer: 10000
   }
 
 }

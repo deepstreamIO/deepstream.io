@@ -1,113 +1,108 @@
 import * as Ajv from 'ajv'
 import { LOG_LEVEL } from '../../ds-types/src/index'
 
-const generalOpts = {
+function getPluginOptions (name: string, types: string[], properties: any) {
+  return {
+    [name]: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: types },
+        name: { type: 'string', minLength: 1 },
+        path: { type: 'string', minLength: 1 },
+        options: {
+          type: 'object',
+          properties
+        }
+      }
+    }
+  }
+}
+
+const generalOptions = {
   libDir: { type: ['string', 'null'] },
   serverName: { type: 'string', minLength: 1 },
+  externalUrl: { type: ['null', 'string'] },
   showLogo: { type: 'boolean' },
+  exitOnFatalError: { type: 'boolean' },
+  dependencyInitialisationTimeout: { type: 'number', minimum: 1000 },
   logLevel: {
-    type: ['string', 'integer'],
-    enum: [
-      'DEBUG', LOG_LEVEL.DEBUG,
-      'INFO', LOG_LEVEL.INFO,
-      'WARN', LOG_LEVEL.WARN,
-      'ERROR', LOG_LEVEL.ERROR,
-      'OFF', LOG_LEVEL.OFF
-    ]
+    type: ['string'],
+    enum: Object.keys(LOG_LEVEL)
   }
 }
 
-const connectivityOpts = {
-  externalUrl: { type: ['null', 'string'], format: 'uri' }
-}
-
-const pluginsOpts = {
-  plugins: {
-    type: ['null', 'object'],
-    properties: {
-      cache: {
-        type: 'object',
-        properties: {
-          type: { type: 'string', enum: ['default'] },
-          name: { type: 'string', minLength: 1 },
-          path: { type: 'string', minLength: 1 },
-          options: {
-            type: 'object',
-            properties: {
-              host: { type: 'string', minLength: 1 },
-              port: { type: 'integer', minimum: 1 },
-            }
-          }
-        }
-      },
-      storage: {
-        type: 'object',
-        properties: {
-          type: { type: 'string', enum: ['default'] },
-          name: { type: 'string', minLength: 1 },
-          path: { type: 'string', minLength: 1 },
-          options: {
-            type: 'object',
-            properties: {
-              host: { type: 'string', minLength: 1 },
-              port: { type: 'integer', minimum: 1 },
-            }
-          }
-        }
-      }
-    }
+const rpcOptions = {
+  rpc: {
+    type: ['object'],
+    ackTimeout: { type: 'integer', minimum: 1 },
+    responseTimeout: { type: 'integer', minimum: 1 }
   }
 }
 
-const storageOpts = {
-  storageExclusion: { type: ['null', 'string'] },
-  storageHotPathPatterns: { type: ['null', 'array'], items: { type: 'string' } }
-}
-
-const authenticationOpts = {
-  auth: {
-    type: 'object',
-    properties: {
-      type: { type: 'string', enum: ['none', 'file', 'http'] },
-      name: { type: 'string', minLength: 1 },
-      path: { type: 'string', minLength: 1 },
-      options: {
-        type: 'object',
-        properties: {
-          path: { type: 'string', minLength: 1 },
-          hash: { type: 'string', minLength: 1 },
-          iterations: { type: 'integer', minimum: 1 },
-          keyLength: { type: 'integer', minimum: 1 },
-
-          endpointUrl: { type: 'string', format: 'uri'},
-          permittedStatusCodes: { type: 'array', items: { type: 'integer' } },
-          requestTimeout: { type: 'integer', minimum: 1 },
-        }
-      }
-    }
+const recordOptions = {
+  record: {
+    type: ['object'],
+    cacheRetrievalTimeout: { type: 'integer', minimum: 50 },
+    storageRetrievalTimeout: { type: 'integer', minimum: 50 },
+    storageExclusionPrefixes: { type: ['null', 'array'], items: { type: 'string' } },
+    storageHotPathPrefixes: { type: ['null', 'array'], items: { type: 'string' } }
   }
 }
 
-const permissionOpts = {
-  permission: {
-    type: 'object',
-    properties: {
-      type: { type: 'string', enum: ['config', 'none'] },
-      name: { type: 'string', minLength: 1 },
-      path: { type: 'string', minLength: 1 },
-      options: {
-        type: 'object',
-        properties: {
-          path: { type: 'string', minLength: 1 },
-          maxRuleIterations: { type: 'integer', minimum: 1 },
-          cacheEvacuationInterval: { type: 'integer', minimum: 1 }
-        }
-      }
-    }
+const listenOptions = {
+  listen: {
+    type: ['object'],
+    shuffleProviders: { type: 'boolean' },
+    responseTimeout: { type: 'integer', minimum: 50 },
+    rematchInterval: { type: 'integer', minimum: 50 },
+    matchCooldown: { type: 'integer', minimum: 50 },
   }
 }
 
-const connEndpointsOpts = {
+const cacheOptions = getPluginOptions(
+  'cache',
+  ['default'],
+  {
+      host: { type: 'string', minLength: 1 },
+      port: { type: 'integer', minimum: 1 },
+  }
+)
+
+const storageOptions = getPluginOptions(
+  'storage',
+  ['default'],
+  {
+      host: { type: 'string', minLength: 1 },
+      port: { type: 'integer', minimum: 1 },
+  }
+)
+
+const authenticationOptions = getPluginOptions(
+  'auth',
+  ['none', 'file', 'http'],
+  {
+    path: { type: 'string', minLength: 1 },
+    hash: { type: 'string', minLength: 1 },
+    iterations: { type: 'integer', minimum: 1 },
+    keyLength: { type: 'integer', minimum: 1 },
+
+    endpointUrl: { type: 'string', format: 'uri'},
+    permittedStatusCodes: { type: 'array', items: { type: 'integer' } },
+    requestTimeout: { type: 'integer', minimum: 1 },
+  }
+)
+
+const permissionOptions = getPluginOptions(
+  'permission',
+  ['config', 'none'],
+  {
+    path: { type: 'string', minLength: 1 },
+    maxRuleIterations: { type: 'integer', minimum: 1 },
+    cacheEvacuationInterval: { type: 'integer', minimum: 1 }
+  }
+)
+
+const connEndpointsOptions = {
   connectionEndpoints: {
     type: 'array',
     items: {
@@ -147,56 +142,95 @@ const connEndpointsOpts = {
   }
 }
 
-const loggerOpts = {
-  logger: {
-    type: 'object',
+const loggerOptions = getPluginOptions(
+  'logger',
+  ['default'],
+  {
+    colors: { type: 'boolean' },
+    logLevel: { type: 'string', minLength: 1 },
+    host: { type: 'string', minLength: 1 },
+    options: { type: 'object' }
+  }
+)
+
+const subscriptionsOptions = getPluginOptions(
+  'subscriptions',
+  ['default'],
+  {
+    subscriptionsSanityTimer: { type: 'integer', minimum: 50 },
+  }
+)
+
+const monitoringOptions = getPluginOptions(
+  'monitoring',
+  ['default'],
+  {
+  }
+)
+
+const locksOptions = getPluginOptions(
+  'locks',
+  ['default'],
+  {
+    holdTimeout: { type: 'integer', minimum: 50 },
+    requestTimeout: { type: 'integer', minimum: 50 },
+  }
+)
+
+const clusterNodeOptions = getPluginOptions(
+  'clusterNode',
+  ['default'],
+  {
+  }
+)
+
+const clusterRegistryOptions = getPluginOptions(
+  'clusterRegistry',
+  ['default'],
+  {
+    keepAliveInterval: { type: 'integer', minimum: 50 },
+    activeCheckInterval: { type: 'integer', minimum: 50 },
+    nodeInactiveTimeout: { type: 'integer', minimum: 50 },
+  }
+)
+
+const clusterStatesOptions = getPluginOptions(
+  'clusterStates',
+  ['default'],
+  {
+    reconciliationTimeout: { type: 'integer', minimum: 50 },
+  }
+)
+
+const customPluginsOptions = {
+  plugins: {
+    type: ['null', 'object'],
     properties: {
-      type: { type: 'string', enum: ['default'] },
-      name: { type: 'string', minLength: 1 },
-      path: { type: 'string', minLength: 1 },
-      options: {
-        type: 'object',
-        properties: {
-          colors: { type: 'boolean' },
-          logLevel: { type: 'string', minLength: 1 },
-          host: { type: 'string', minLength: 1 },
-          options: { type: 'object' }
-        }
-      }
     }
   }
 }
 
-const timeoutOpts = {
-  rpcAckTimeout: { type: 'integer', minimum: 1 },
-  rpcTimeout: { type: 'integer', minimum: 1 },
-  cacheRetrievalTimeout: { type: 'integer', minimum: 1 },
-  storageRetrievalTimeout: { type: 'integer', minimum: 1 },
-  dependencyInitialisationTimeout: { type: 'integer', minimum: 1 },
-  listenResponseTimeout: { type: 'integer', minimum: 1 },
-  broadcastTimeout: { type: 'integer', minimum: -1 },
-  stateReconciliationTimeout: { type: 'integer', minimum: 1 },
-}
-
-const listeningOpts = {
-  shuffleListenProviders: { type: 'boolean' }
-}
-
 const schema = {
-  additionalProperties: true,
-  properties: Object.assign(
-    {},
-    generalOpts,
-    connectivityOpts,
-    pluginsOpts,
-    storageOpts,
-    authenticationOpts,
-    permissionOpts,
-    connEndpointsOpts,
-    loggerOpts,
-    timeoutOpts,
-    listeningOpts
-  )
+  additionalProperties: false,
+  properties: {
+    ...generalOptions,
+    ...rpcOptions,
+    ...recordOptions,
+    ...listenOptions,
+    ...connEndpointsOptions,
+    ...loggerOptions,
+    ...cacheOptions,
+    ...storageOptions,
+    ...authenticationOptions,
+    ...permissionOptions,
+    ...subscriptionsOptions,
+    ...monitoringOptions,
+    ...locksOptions,
+    ...clusterNodeOptions,
+    ...clusterRegistryOptions,
+    ...clusterStatesOptions,
+    ...customPluginsOptions
+  }
 }
 
 const ajv = new Ajv()
