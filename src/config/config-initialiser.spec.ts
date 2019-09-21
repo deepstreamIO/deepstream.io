@@ -89,7 +89,6 @@ describe('config-initialiser', () => {
     })
 
     it('works for authtype: user', () => {
-      global.deepstreamConfDir = './src/test/config/'
       const config = defaultConfig.get()
 
       config.auth = {
@@ -100,7 +99,7 @@ describe('config-initialiser', () => {
       }
       const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.contain('file using')
-      expect(result.services.authentication.description).to.contain(path.resolve('src/test/config/users.json'))
+      expect(result.services.authentication.description).to.contain('./users.json')
     })
 
     it('works for authtype: http', () => {
@@ -189,7 +188,6 @@ describe('config-initialiser', () => {
 
   describe('creates the permission service', () => {
     it('creates the config permission service', () => {
-      global.deepstreamConfDir = './src/test/config'
       const config = defaultConfig.get()
 
       config.permission = {
@@ -200,7 +198,7 @@ describe('config-initialiser', () => {
       }
       const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.permission.description).to.contain('valve permissions loaded from')
-      expect(result.services.permission.description).to.contain(path.resolve('./src/test/config/basic-permission-config.json'))
+      expect(result.services.permission.description).to.contain('./basic-permission-config.json')
     })
 
     it('fails for invalid permission types', () => {

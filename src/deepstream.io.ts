@@ -424,7 +424,12 @@ private async pluginsShutdown () {
       const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
       result = configInitialiser.initialise(this, rawConfig)
     }
-    configValidator.validate(result.config)
+    try {
+      configValidator.validate(result.config)
+    } catch (e) {
+      console.error(e.message)
+      process.exit(1)
+    }
     this.config = result.config
     this.services = result.services
   }

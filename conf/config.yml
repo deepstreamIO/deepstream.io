@@ -11,7 +11,7 @@ dependencyInitialisationTimeout: 2000
 #libDir: ../lib
 
 rpc:
-  # Timeout for client RPC acknownledgement
+  # Timeout for client RPC acknowledgement
   ackTimeout: 1000
   # Timeout for actual RPC provider response
   responseTimeout: 10000
@@ -96,7 +96,7 @@ connectionEndpoints:
         # the amount of milliseconds that writes to sockets are buffered
         outgoingBufferTimeout: 10
         # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
-        # to block its responsivness
+        # to block its responsiveness
         maxBufferByteSize: 100000
 
         # Headers to copy over from websocket
@@ -219,13 +219,13 @@ logger:
 
 # Authentication
 auth:
-  type: none
+  # type: none
 
   #  # reading users and passwords from a file
   #  type: file
   #  options:
   #    # Path to the user file. Can be json, js or yml
-  #    path: ./users.yml
+  #    path: file(users.yml)
   #    # the name of a HMAC digest algorithm
   #    hash: 'md5'
   #    # the number of times the algorithm should be applied
@@ -258,11 +258,23 @@ permission:
   type: config
   options:
     # Path to the permissionFile. Can be json, js or yml
-    path: ./permissions.yml
+    path: file(permissions.yml)
     # Amount of times nested cross-references will be loaded. Avoids endless loops
     maxRuleIterations: 3
     # PermissionResults are cached to increase performance. Lower number means more loading
     cacheEvacuationInterval: 60000
+
+# monitoring:
+#   type: default
+#   options:
+#     host: localhost
+#     port: 9090
+
+# clusterNode:
+#   type: default
+#   options:
+#     host: localhost
+#     port: 6379
 
 # Custom Plugins
 # plugins:

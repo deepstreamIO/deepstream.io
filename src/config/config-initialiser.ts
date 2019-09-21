@@ -239,7 +239,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
  *
  * CLI arguments will be considered.
  */
-function resolvePluginClass (plugin: PluginConfig, type: any, logLevel: LOG_LEVEL): any {
+function resolvePluginClass (plugin: PluginConfig, type: string, logLevel: LOG_LEVEL): any {
   if (customPlugins.has(plugin.name)) {
     return customPlugins.get(plugin.name)
   }
@@ -275,8 +275,8 @@ function resolvePluginClass (plugin: PluginConfig, type: any, logLevel: LOG_LEVE
     requirePath = fileUtils.lookupLibRequirePath(plugin.name)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
-  } else if (plugin.type === 'default' && defaultPlugins.has(type)) {
-    pluginConstructor = defaultPlugins.get(type)
+  } else if (plugin.type === 'default' && defaultPlugins.has(type as any)) {
+    pluginConstructor = defaultPlugins.get(type as any)
   } else {
     throw new Error(`Neither name nor path property found for ${type}, plugin type: ${plugin.type}`)
   }
@@ -317,10 +317,6 @@ function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServi
     throw new Error(`Unknown authentication type ${config.auth.type}`)
   }
 
-  if (config.auth.options && config.auth.options.path) {
-    config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
-  }
-
   return new AuthenticationHandlerClass(config.auth.options, services, config)
 }
 
@@ -355,10 +351,6 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
     PermissionHandlerClass = (permissionStrategies as any)[config.permission.type]
   } else {
     throw new Error(`Unknown permission type ${config.permission.type}`)
-  }
-
-  if (config.permission.options && config.permission.options.path) {
-    config.permission.options.path = fileUtils.lookupConfRequirePath(config.permission.options.path)
   }
 
   if (config.permission.type === 'config') {

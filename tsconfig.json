@@ -9,10 +9,11 @@
     "resolveJsonModule": true,
     "noUnusedLocals": true,
     "strict": true,
+    "lib": ["es2018"],
     "types": [
-      "node"
-    ],
-    "lib": ["es2018"]
+      "node",
+      "mocha"
+    ]
   },
   "include": [
     "protocol/**/*",
