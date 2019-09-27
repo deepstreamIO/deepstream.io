@@ -57,7 +57,7 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
           action: AUTH_ACTION.REQUEST,
           parsedData: {
             username: packet.username,
-            password: packet.password.toString()
+            password: packet.password && packet.password.toString()
           }
         }])
       })
