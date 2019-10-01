@@ -197,15 +197,15 @@ storage:
 
 # Authentication
 auth:
-  # type: none
+  type: none
 
   #  # reading users and passwords from the storage layer
   # type: storage
   # options:
-  #   # The table name that the users are stored in
-  #   table: User
-  #   # Automatically create users that do not exist in the database
-  #   autoRegister: true
+  #   # the table users are stored in storage
+  #   table: Users
+  #   # automatically create users if they don't exist in the database
+  #   createUser: true
   #   # the name of a HMAC digest algorithm
   #   hash: 'md5'
   #   # the number of times the algorithm should be applied

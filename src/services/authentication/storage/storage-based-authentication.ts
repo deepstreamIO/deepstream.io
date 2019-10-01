@@ -9,7 +9,7 @@ interface StorageAuthConfig {
   // the table to store and lookup the users in
   table: string,
   // upsert the user if it doesn't exist in db
-  autoRegister: boolean,
+  createUser: boolean,
   // the name of a HMAC digest algorithm, a.g. 'sha512'
   hash: string
   // the amount of times the algorithm should be applied
@@ -59,7 +59,7 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
       }
 
       if (userData === null) {
-        if (this.settings.autoRegister) {
+        if (this.settings.createUser) {
           this.logger.info(EVENT.REGISTERING_USER, `Adding new user ${authData.username}`)
           const salt = crypto.randomBytes(16).toString(STRING_CHARSET)
           const hash = await this.createHash(authData.password, salt)

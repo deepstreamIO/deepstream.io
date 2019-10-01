@@ -105,7 +105,7 @@ const authenticationOptions = getPluginOptions(
     hash: { type: 'string', minLength: 1 },
     iterations: { type: 'integer', minimum: 1 },
     keyLength: { type: 'integer', minimum: 1 },
-    autoRegister: { type: 'boolean' },
+    createUser: { type: 'boolean' },
     table: { type: 'string', minLength: 1 },
 
     endpointUrl: { type: 'string', format: 'uri'},
