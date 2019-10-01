@@ -1,4 +1,4 @@
-import { DeepstreamServices, DeepstreamConfig, StateRegistry, ClusterRegistry, DeepstreamPlugin, EVENT } from '../../../ds-types/src/index'
+import { DeepstreamServices, DeepstreamConfig, ClusterRegistry, DeepstreamPlugin, EVENT } from '../../../ds-types/src/index'
 import { TOPIC, ClusterMessage, CLUSTER_ACTION } from '../../constants'
 import { EventEmitter } from 'events'
 
@@ -16,7 +16,6 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
     private leaderScore = Math.random()
     private publishInterval!: NodeJS.Timeout
     private checkInterval!: NodeJS.Timeout
-    private globalStateRegistry!: StateRegistry
     private role: string
     private emitter = new EventEmitter()
 
@@ -31,7 +30,6 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
     }
 
     public init () {
-        this.globalStateRegistry = this.services.clusterStates.getStateRegistry(TOPIC.STATE_REGISTRY)
         this.services.clusterNode.subscribe(TOPIC.CLUSTER, this.onMessage.bind(this))
         this.leaveCluster = this.leaveCluster.bind(this)
 
@@ -53,6 +51,14 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
         this.emitter.once('close', resolve)
         this.leaveCluster()
       })
+    }
+
+    public onServerAdded (callback: (serverName: string) => void) {
+        this.emitter.on('server-added', callback)
+    }
+
+    public onServerRemoved (callback: (serverName: string) => void) {
+        this.emitter.on('server-removed', callback)
     }
 
     /**
@@ -138,7 +144,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
 
         this.services.logger.info(EVENT.CLUSTER_JOIN, message.serverName)
         this.services.logger.info(EVENT.CLUSTER_SIZE, `The cluster size is now ${this.nodes.size}`)
-        this.globalStateRegistry.add(message.serverName)
+        this.emitter.emit('server-added', message.serverName)
     }
 
     /**
@@ -150,7 +156,7 @@ export class DistributedClusterRegistry extends DeepstreamPlugin implements Clus
         if (deleted) {
             this.services.logger.info(EVENT.CLUSTER_LEAVE, serverName)
             this.services.logger.info(EVENT.CLUSTER_SIZE, `The cluster size is now ${this.nodes.size}`)
-            this.globalStateRegistry.remove(serverName)
+            this.emitter.emit('server-removed', serverName)
         }
     }
 

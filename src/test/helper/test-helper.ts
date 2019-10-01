@@ -8,6 +8,8 @@ import { DeepstreamConfig, DeepstreamServices, SocketWrapper, DeepstreamMonitori
 import { Message } from '../../constants'
 import { DefaultSubscriptionRegistryFactory } from '../../services/subscription-registry/default-subscription-registry-factory'
 import { DistributedStateRegistryFactory } from '../../services/cluster-state/distributed-state-registry-factory'
+import { DistributedClusterRegistry } from '../../services/cluster-registry/distributed-cluster-registry'
+import { service } from '../../../bin/deepstream-service'
 
 export const getBasePermissions = function () {
   return {
@@ -120,6 +122,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
   }
   services.subscriptions = new DefaultSubscriptionRegistryFactory({}, services as DeepstreamServices, config)
   services.clusterStates = new DistributedStateRegistryFactory({}, services as DeepstreamServices, config)
+  services.clusterRegistry = new DistributedClusterRegistry({}, services as DeepstreamServices, config)
   return { config, services } as { config: DeepstreamConfig, services: DeepstreamServices}
 }
 

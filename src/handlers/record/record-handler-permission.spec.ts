@@ -17,12 +17,11 @@ describe('record handler handles messages', () => {
   let services
 
   beforeEach(() => {
+    ({config, services} = testHelper.getDeepstreamOptions())
+    recordHandler = new RecordHandler(config, services)
+
     testMocks = getTestMocks()
     client = testMocks.getSocketWrapper()
-    const options = testHelper.getDeepstreamOptions()
-    config = options.config
-    services = options.services
-    recordHandler = new RecordHandler(config, services)
   })
 
   afterEach(() => {

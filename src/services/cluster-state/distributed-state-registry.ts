@@ -1,5 +1,5 @@
 import { TOPIC, STATE_ACTION, StateMessage } from '../../constants'
-import { DeepstreamServices, StateRegistry, StateRegistryCallback, DeepstreamConfig } from '../../../ds-types/src/index'
+import { DeepstreamServices, StateRegistry, StateRegistryCallback, DeepstreamConfig, EVENT } from '../../../ds-types/src/index'
 import { Dictionary } from 'ts-essentials'
 import { EventEmitter } from 'events'
 
@@ -26,13 +26,30 @@ export class DistributedStateRegistry implements StateRegistry {
   private fullStateSent: boolean = false
   private initialServers = new Set<string>()
   private emitter = new EventEmitter()
+  private logger = this.services.logger.getNameSpace('DISTRIBUTED_STATE_REGISTRY')
 
   /**
-   * Initialises the DistributedStateRegistry and subscribes to the provided cluster topic
+   * Initializes the DistributedStateRegistry and subscribes to the provided cluster topic
    */
   constructor (private topic: TOPIC, private stateOptions: any, private services: DeepstreamServices, private config: DeepstreamConfig) {
     this.resetFullStateSent = this.resetFullStateSent.bind(this)
     this.services.clusterNode.subscribe(TOPIC.STATE_REGISTRY, this.processIncomingMessage.bind(this))
+
+    const serverNames = this.services.clusterRegistry.getAll()
+    this.initialServers = new Set(serverNames)
+    if (this.initialServers.size === 0) {
+      this.isReady = true
+      this.emitter.emit('ready')
+    }
+
+    this.initialServers.forEach((serverName) => {
+      if (serverName !== this.config.serverName) {
+        this.onServerAdded(serverName)
+      }
+    })
+
+    this.services.clusterRegistry.onServerAdded(this.onServerAdded.bind(this))
+    this.services.clusterRegistry.onServerRemoved(this.onServerRemoved.bind(this))
   }
 
   public async whenReady () {
@@ -92,18 +109,6 @@ export class DistributedStateRegistry implements StateRegistry {
   /**
    * Informs the distributed state registry a server has been added to the cluster
    */
-  public setServers (serverNames: string[]) {
-    this.initialServers = new Set(serverNames)
-    if (this.initialServers.size === 0) {
-      this.isReady = true
-      this.emitter.emit('ready')
-    }
-    this.initialServers.forEach((serverName) => this.onServerAdded(serverName))
-  }
-
-  /**
-   * Informs the distributed state registry a server has been added to the cluster
-   */
   public onServerAdded (serverName: string) {
     this._requestFullState(serverName)
   }
@@ -153,20 +158,13 @@ export class DistributedStateRegistry implements StateRegistry {
    * be removed and a `remove` event will be emitted
    */
   private removeFromServer (name: string, serverName: string) {
-    let exists = false
-
     const data = this.data.get(name)
     if (!data) {
       return
     }
     data.nodes.delete(serverName)
 
-    // TODO
-    for (const nodeName in data.nodes) {
-      if (data.nodes.has(nodeName)) {
-        exists = true
-      }
-    }
+    const exists = data.nodes.size !== 0
 
     if (exists === false) {
       this.data.delete(name)
@@ -344,13 +342,13 @@ export class DistributedStateRegistry implements StateRegistry {
       namesMap[names[i]] = true
     }
 
-    for (const [name] of this.data) {
+    Object.keys(this.data).forEach((name) => {
       // please note: only checking if the name exists is sufficient as the registry will just
       // set node[serverName] to false if the entry exists, but not for the remote server.
       if (!namesMap[name]) {
         this.removeFromServer(name, serverName)
       }
-    }
+    })
 
     names.forEach((name) => this.addToServer(name, serverName))
 
@@ -392,6 +390,8 @@ export class DistributedStateRegistry implements StateRegistry {
     if (message.action === STATE_ACTION.REQUEST_FULL_STATE) {
       if (!message.data || this.fullStateSent === false) {
         this.sendFullState(serverName)
+      } else {
+        this.logger.error(EVENT.ERROR, `Ignoring a request for full state from ${serverName}`)
       }
       return
     }

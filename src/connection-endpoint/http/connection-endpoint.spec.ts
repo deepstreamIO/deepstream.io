@@ -1,15 +1,11 @@
 import { expect } from 'chai'
-const Promise = require('bluebird')
 import * as needle from 'needle'
 
-import * as C from '../../constants'
 import LoggerMock from '../../test/mock/logger-mock'
 import { DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index';
 import { OpenAuthentication } from '../../services/authentication/open/open-authentication';
 import { OpenPermission } from '../../services/permission/open/open-permission';
 import { HTTPConnectionEndpoint } from './connection-endpoint';
-
-Promise.promisifyAll(needle)
 
 const conf = {
   healthCheckPath: '/health-check',
@@ -17,7 +13,7 @@ const conf = {
   authPath: '/api/v1/auth',
   postPath: '/api/v1',
   getPath: '/api/v1',
-  port: 8888,
+  port: 9898,
   host: '127.0.0.1',
   allowAllOrigins: true,
   requestTimeout: 30,
@@ -31,21 +27,14 @@ const services = {
   messageDistributor: { distribute () {} }
 }
 
-const mockDS = {
-  config: {
-    serverName: `server_${Math.round(Math.random() * 1000)}`,
-  },
-  services,
-}
-
 describe('http plugin', () => {
   let httpConnectionEndpoint
-  const apiKey = '9x5xfdxa-xxxx-4efe-a342-xxxxxxxxxxxx'
-  const postUrl = `http://127.0.0.1:8888/api/v1/${apiKey}`
+  const postUrl = 'http://127.0.0.1:9898/api/v1/'
 
-  before(() => {
+  before(async () => {
     httpConnectionEndpoint = new HTTPConnectionEndpoint(conf, services as never as DeepstreamServices, {} as never as DeepstreamConfig)
     httpConnectionEndpoint.init()
+    await httpConnectionEndpoint.whenReady()
   })
 
   const message = Object.freeze({
@@ -81,7 +70,7 @@ describe('http plugin', () => {
 
   describe('POST endpoint', () => {
     it('should reject a request with an empty path', (done) => {
-      needle.post('127.0.0.1:8888', message, { json: true }, (err, response) => {
+      needle.post('127.0.0.1:9898', message, { json: true }, (err, response) => {
         expect(err).to.equal(null)
         expect(response.statusCode).to.be.within(400, 499)
         expect(response.headers['content-type']).to.match(/^text\/plain/)
@@ -101,12 +90,12 @@ describe('http plugin', () => {
     })
 
     it('should reject a request with a non-object payload', () => Promise.all([
-      123,
-      ['a', 2, 3.5],
+      '123',
+      ['a', '2', '3.5'],
       'foo',
       null,
       ''
-    ].map((payload) => needle.postAsync(postUrl, payload, { json: true })
+    ].map((payload) => needle('post', postUrl, payload, { json: true })
       .then((response) => {
         expect(response.statusCode).to.be.within(400, 499)
         expect(response.headers['content-type']).to.match(/^text\/plain/)
@@ -154,18 +143,14 @@ describe('http plugin', () => {
     })
 
     describe.skip('authentication', () => {
-      it('should reject a request that times out', (done) => {
-        needle.post(postUrl, message, { json: true }, (err, response) => {
-          expect(err).to.equal(null)
-          const resp = response.body
-          expect(resp.result).to.equal('FAILURE')
-          expect(resp.body[0].success).to.equal(false)
-          expect(resp.body[0].errorTopic).to.equal('connection')
-          expect(resp.body[0].errorEvent).to.equal(C.EVENT.TIMEOUT)
-          done()
-        })
+      it('should reject a request that times out', async () => {
+        const response = await needle('post', postUrl, message, { json: true })
+        const resp = response.body
+        expect(resp.result).to.equal('FAILURE')
+        expect(resp.body[0].success).to.equal(false)
+        expect(resp.body[0].errorTopic).to.equal('connection')
+        expect(resp.body[0].errorEvent).to.equal('TIME')
       })
-
     })
   })
 })
