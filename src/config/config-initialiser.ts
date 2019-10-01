@@ -1,6 +1,6 @@
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring } from '../../ds-types/src/index'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
@@ -8,21 +8,23 @@ import { HTTPConnectionEndpoint } from '../connection-endpoint/http/connection-e
 import { OpenAuthentication } from '../services/authentication/open/open-authentication'
 import { ConfigPermission } from '../services/permission/valve/config-permission'
 import { OpenPermission } from '../services/permission/open/open-permission'
-import { UWSConnectionEndpoint } from '../connection-endpoint/uws/connection-endpoint'
-import { WSConnectionEndpoint } from '../connection-endpoint/ws/connection-endpoint'
-import { WSTextConnectionEndpoint } from '../connection-endpoint/text/connection-endpoint'
+import { UWSConnectionEndpoint } from '../connection-endpoint/uws-binary/connection-endpoint'
+import { WSConnectionEndpoint } from '../connection-endpoint/ws-binary/connection-endpoint'
+import { WSTextConnectionEndpoint } from '../connection-endpoint/ws-text/connection-endpoint'
 import { MQTTConnectionEndpoint } from '../connection-endpoint/mqtt/connection-endpoint'
-import { WSJSONConnectionEndpoint } from '../connection-endpoint/json/connection-endpoint'
+import { WSJSONConnectionEndpoint } from '../connection-endpoint/ws-json/connection-endpoint'
 import { FileBasedAuthentication } from '../services/authentication/file/file-based-authentication'
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
 import { NoopStorage } from '../services/storage/noop-storage'
 import { LocalCache } from '../services/cache/local-cache'
 import { StdOutLogger } from '../services/logger/std-out-logger'
-import { LocalMonitoring } from '../services/monitoring/noop-monitoring'
+import { NoopMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
+import { NodeHTTP } from '../services/http/node/node-http'
+import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
 
 let commandLineArguments: any
 
@@ -32,12 +34,12 @@ const defaultPlugins = new Map<keyof DeepstreamServices, any>([
   ['cache', LocalCache],
   ['storage', NoopStorage],
   ['logger', StdOutLogger],
-  ['monitoring', LocalMonitoring],
   ['locks', DistributedLockRegistry],
   ['subscriptions', DefaultSubscriptionRegistryFactory],
   ['clusterRegistry', DistributedClusterRegistry],
   ['clusterStates', DistributedStateRegistryFactory],
-  ['clusterNode', SingleClusterNode]
+  ['clusterNode', SingleClusterNode],
+  ['httpService', NodeHTTP],
 ])
 
 export const mergeConnectionOptions = function (config: any) {
@@ -83,7 +85,7 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions', ll))(config.subscriptions.options, services, config)
   services.storage = new (resolvePluginClass(config.storage, 'storage', ll))(config.storage.options, services, config)
   services.cache = new (resolvePluginClass(config.cache, 'cache', ll))(config.cache.options, services, config)
-  services.monitoring = new (resolvePluginClass(config.monitoring, 'monitoring', ll))(config.monitoring.options, services, config)
+  services.monitoring = handleMonitoring(config, services)
   services.authentication = handleAuthStrategy(config, services)
   services.permission = handlePermissionStrategy(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
@@ -91,6 +93,7 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', ll))(config.clusterNode.options, services, config)
   services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', ll))(config.clusterRegistry.options, services, config)
   services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', ll))(config.clusterStates.options, services, config)
+  services.httpService = new (resolvePluginClass(config.httpServer, 'httpService', ll))(config.httpServer.options, services, config)
 
   handleCustomPlugins(config, services)
 
@@ -353,9 +356,25 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
     throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 
-  if (config.permission.type === 'config') {
-    return new PermissionHandlerClass(config.permission.options, services, config)
-  } else {
-    return new PermissionHandlerClass(config.permission.options, services, config)
+  return new PermissionHandlerClass(config.permission.options, services, config)
+}
+
+function handleMonitoring (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamMonitoring {
+  let MonitoringClass
+
+  const monitoringPlugins = {
+    default: NoopMonitoring,
+    none: NoopMonitoring,
+    http: HTTPMonitoring
   }
+
+  if (config.monitoring.name || config.monitoring.path) {
+    return new (resolvePluginClass(config.monitoring, 'monitoring', config.logLevel))(config.monitoring.options, services, config)
+  } else if (config.monitoring.type && (monitoringPlugins as any)[config.monitoring.type]) {
+    MonitoringClass = (monitoringPlugins as any)[config.monitoring.type]
+  } else {
+    throw new Error(`Unknown monitoring type ${config.monitoring.type}`)
+  }
+
+  return new MonitoringClass(config.monitoring.options, services, config)
 }

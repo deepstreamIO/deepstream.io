@@ -350,7 +350,7 @@ export class RecordTransition {
  */
   private onCacheSetResponse (error: string | null, socketWrapper?: SocketWrapper, message?: Message): void {
     if (this.currentStep === null) {
-      const errorMessage = `Cache results recieved without a valid step in record transition for ${this.name}`
+      const errorMessage = `Cache results received without a valid step in record transition for ${this.name}`
       this.services.logger.error(EVENT.ERROR, errorMessage)
       this.destroy(errorMessage)
       return

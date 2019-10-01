@@ -8,7 +8,7 @@ When(/^(.+) publishes? (?:an|the) event "([^"]*)"(?: with data ("[^"]*"|\d+|{.*}
 })
 
 Then(/^(.+) receives? (the|no) event "([^"]*)"(?: with data (.+))?$/, (clientExpression: string, theNo, subscriptionName, data) => {
-  event.assert.recieved(clientExpression, !theNo.match(/^no$/), subscriptionName, data)
+  event.assert.received(clientExpression, !theNo.match(/^no$/), subscriptionName, data)
 })
 
 Given(/^(.+) subscribes? to (?:an|the) event "([^"]*)"$/, (clientExpression: string, subscriptionName, done) => {

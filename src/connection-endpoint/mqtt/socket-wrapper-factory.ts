@@ -1,6 +1,6 @@
 import { StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, EVENT, NamespacedLogger } from '../../../ds-types/src/index'
 import { TOPIC, CONNECTION_ACTION, Message, EVENT_ACTION, AUTH_ACTION, RECORD_ACTION } from '../../constants'
-import { ACTIONS_BYTE_TO_KEY } from '../text/protocol/constants'
+import { ACTIONS_BYTE_TO_KEY } from '../ws-text/protocol/constants'
 
 /**
  * This class wraps around a websocket

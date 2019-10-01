@@ -36,7 +36,7 @@ const generalOptions = {
   externalUrl: { type: ['null', 'string'] },
   showLogo: { type: 'boolean' },
   exitOnFatalError: { type: 'boolean' },
-  dependencyInitialisationTimeout: { type: 'number', minimum: 1000 },
+  dependencyInitializationTimeout: { type: 'number', minimum: 1000 },
   logLevel: LogLevelValidation
 }
 
@@ -67,6 +67,17 @@ const listenOptions = {
     matchCooldown: { type: 'integer', minimum: 50 },
   }
 }
+
+const httpServer = getPluginOptions(
+  'httpServer',
+  ['default'],
+  {
+      host: { type: 'string', minLength: 1 },
+      port: { type: 'integer', minimum: 1 },
+      allowAllOrigins: { type: 'boolean' },
+      origins: { type: 'array', items: { type: 'string', format: 'uri' } },
+  }
+)
 
 const cacheOptions = getPluginOptions(
   'cache',
@@ -142,8 +153,6 @@ const connEndpointsOptions = {
               authPath: { type: 'string', minLength: 1 },
               postPath: { type: 'string', minLength: 1 },
               getPath: { type: 'string', minLength: 1 },
-              allowAllOrigins: { type: 'boolean' },
-              origins: { type: 'array', items: { type: 'string', format: 'uri' } },
           }
         }
       }
@@ -171,7 +180,7 @@ const subscriptionsOptions = getPluginOptions(
 
 const monitoringOptions = getPluginOptions(
   'monitoring',
-  ['default'],
+  ['http', 'none'],
   {
   }
 )
@@ -225,6 +234,7 @@ const schema = {
     ...rpcOptions,
     ...recordOptions,
     ...listenOptions,
+    ...httpServer,
     ...connEndpointsOptions,
     ...loggerOptions,
     ...cacheOptions,

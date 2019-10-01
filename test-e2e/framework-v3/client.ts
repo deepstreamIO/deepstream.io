@@ -61,7 +61,7 @@ export const client = {
     })
   },
 
-  recievedTooManyLoginAttempts (clientExpression: string) {
+  receivedTooManyLoginAttempts (clientExpression: string) {
     // Not a < V4 feature
     // clientHandler.getClients(clientExpression).forEach((client) => {
     //   const errorSpy = client.error.A.TOO_MANY_AUTH_ATTEMPTS
@@ -105,7 +105,7 @@ export const client = {
     })
   },
 
-  recievedErrorOnce (clientExpression: string, topicName: string, eventName: string) {
+  receivedErrorOnce (clientExpression: string, topicName: string, eventName: string) {
     const topic = topicName.toUpperCase()
 
     clientHandler.getClients(clientExpression).forEach((client) => {
@@ -115,7 +115,7 @@ export const client = {
     })
   },
 
-  recievedOneError (clientExpression: string, topicName: string, eventName: string) {
+  receivedOneError (clientExpression: string, topicName: string, eventName: string) {
     let topic = compat[topicName]
     const event = eventName.toUpperCase()
 
@@ -149,7 +149,7 @@ export const client = {
     })
   },
 
-  recievedNoErrors (clientExpression: string) {
+  receivedNoErrors (clientExpression: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       clientHandler.assertNoErrors(client.name)
     })

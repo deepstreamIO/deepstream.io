@@ -1,6 +1,5 @@
 
 import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin, ConnectionListener, EVENT } from '../../../ds-types/src/index'
-import { EventEmitter } from 'events'
 import { Message, ParseResult, PARSER_ACTION, TOPIC, CONNECTION_ACTION, ALL_ACTIONS, JSONObject, AUTH_ACTION } from '../../constants'
 
 const OPEN = 'OPEN'
@@ -10,6 +9,7 @@ export interface WebSocketServerConfig {
   maxBufferByteSize: number,
   headers: string[],
   healthCheckPath: string,
+  urlPath: string,
   [index: string]: any,
 }
 
@@ -21,7 +21,7 @@ export interface WebSocketServerConfig {
 export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implements SocketConnectionEndpoint {
   public description: string = 'WebSocket Connection Endpoint'
 
-  private initialised: boolean = false
+  private initialized: boolean = false
   private flushTimeout: NodeJS.Timeout | null = null
   private authenticatedSocketWrappers: Set<SocketWrapper> = new Set()
   private scheduledSocketWrapperWrites: Set<SocketWrapper> = new Set()
@@ -31,18 +31,13 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   private urlPath: string | null = null
   private connectionListener!: ConnectionListener
 
-  private isReady: boolean = false
-  private emitter = new EventEmitter()
-
   constructor (private options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: DeepstreamConfig) {
     super()
     this.flushSockets = this.flushSockets.bind(this)
   }
 
   public async whenReady (): Promise<void> {
-    if (!this.isReady) {
-      return new Promise((resolve) => this.emitter.once('ready', resolve))
-    }
+    await this.services.httpService.whenReady()
   }
 
   public createWebsocketServer () {
@@ -72,10 +67,10 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * Initialise and setup the http and WebSocket servers.
    */
   public init (): void {
-    if (this.initialised) {
+    if (this.initialized) {
       throw new Error('init() must only be called once')
     }
-    this.initialised = true
+    this.initialized = true
 
     this.maxAuthAttempts = this.options.maxAuthAttempts
     this.logInvalidAuthData = this.options.logInvalidAuthData
@@ -152,8 +147,6 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     this.services.logger.info(EVENT.INFO, wsMsg)
     const hcMsg = `Listening for health checks on path ${this.options.healthCheckPath} `
     this.services.logger.info(EVENT.INFO, hcMsg)
-    this.emitter.emit('ready')
-    this.isReady = true
   }
 
   /**

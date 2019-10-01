@@ -3,7 +3,7 @@ import { clientHandler } from './client-handler'
 import { parseData } from './utils'
 
 const assert = {
-  recieved (clientExpression: string, doesReceive: boolean, subscriptionName: string, data: string) {
+  received (clientExpression: string, doesReceive: boolean, subscriptionName: string, data: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const eventSpy = client.event.callbacks[subscriptionName]
       if (doesReceive) {

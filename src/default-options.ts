@@ -2,10 +2,7 @@ import { getUid } from './utils/utils'
 import { DeepstreamConfig, LOG_LEVEL } from '../ds-types/src/index'
 
 const WebSocketDefaultOptions = {
-  port: 6020,
-  host: '0.0.0.0',
   urlPath: '/deepstream',
-  healthCheckPath: '/health-check',
   heartbeatInterval: 30000,
   outgoingBufferTimeout: 0,
   maxBufferByteSize: 100000,
@@ -31,7 +28,7 @@ export function get (): DeepstreamConfig {
     serverName: getUid(),
     showLogo: true,
     logLevel: LOG_LEVEL.INFO,
-    dependencyInitialisationTimeout: 2000,
+    dependencyInitializationTimeout: 2000,
     // defaults to false as the event is captured via commander when run via binary or standalone
     exitOnFatalError: false,
 
@@ -46,35 +43,33 @@ export function get (): DeepstreamConfig {
     connectionEndpoints: [
       {
         type: 'uws-websocket',
-        options: { ...WebSocketDefaultOptions }
-      },
-      {
+        options: {
+          ...WebSocketDefaultOptions,
+          urlPath: '/deepstream',
+          host: '0.0.0.0',
+          port: 6021
+        }
+    },
+    {
         type: 'ws-websocket',
-        options: { ...WebSocketDefaultOptions }
-      },
-      {
+        options:  { ...WebSocketDefaultOptions, urlPath: '/deepstream' }
+    },
+    {
         type: 'ws-text',
-        options: { ...WebSocketDefaultOptions, port: 6021 }
-      },
-      {
+        options: { ...WebSocketDefaultOptions, urlPath: '/deepstream-v3' }
+    },
+    {
         type: 'ws-json',
-        options: { ...WebSocketDefaultOptions, port: 6022 }
+        options: { ...WebSocketDefaultOptions, urlPath: '/deepstream-json' }
       },
       {
         type: 'node-http',
         options: {
-          port: 8080,
-          host: '0.0.0.0',
           allowAuthData: true,
           enableAuthEndpoint: true,
           authPath: '/auth',
           postPath: '/',
-          getPath: '/',
-          healthCheckPath: '/health-check',
-          allowAllOrigins: true,
-          origins: [],
-          headers: [],
-          maxMessageSize: 1024
+          getPath: '/'
         }
       },
       {
@@ -95,6 +90,19 @@ export function get (): DeepstreamConfig {
     logger: {
       type: 'default',
       options: {}
+    },
+
+    httpServer: {
+      type: 'default',
+      options: {
+        host: '0.0.0.0',
+        port: 6020,
+        healthCheckPath: '/health-check',
+        allowAllOrigins: true,
+        origins: [],
+        headers: [],
+        maxMessageSize: 1024
+      }
     },
 
     subscriptions: {
@@ -125,7 +133,7 @@ export function get (): DeepstreamConfig {
     },
 
     monitoring: {
-      type: 'default',
+      type: 'none',
       options: {}
     },
 

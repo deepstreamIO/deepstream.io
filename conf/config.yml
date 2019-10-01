@@ -6,7 +6,7 @@ showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 logLevel: INFO
 # Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
-dependencyInitialisationTimeout: 2000
+dependencyInitializationTimeout: 2000
 # Directory where all plugins reside
 #libDir: ../lib
 
@@ -46,79 +46,72 @@ listen:
   # cooldown period
   matchCooldown: 10000
 
+httpServer:
+  type: default
+  options:
+    # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
+    healthCheckPath: /health-check
+    # -- CORS --
+    # if disabled, only requests with an 'Origin' header matching one specified under 'origins'
+    # below will be permitted and the 'Access-Control-Allow-Credentials' response header will be
+    # enabled
+    allowAllOrigins: true
+    # a list of allowed origins
+    origins:
+      - 'https://example.com'
+    # Headers to copy over from websocket
+    headers:
+      - user-agent
+
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
   - type: ws-websocket
     options:
-        # port for the websocket server
-        port: 6020
-        # host for the websocket server
-        host: 0.0.0.0
-        # url path websocket connections connect to
-        urlPath: /deepstream
-        # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
-        healthCheckPath: /health-check
-        # the amount of milliseconds between each ping/heartbeat message
-        heartbeatInterval: 30000
-        # the amount of milliseconds that writes to sockets are buffered
-        outgoingBufferTimeout: 10
-        # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
-        # to block its responsivness
-        maxBufferByteSize: 100000
+      # url path websocket connections connect to
+      urlPath: /deepstream
+      # the amount of milliseconds between each ping/heartbeat message
+      heartbeatInterval: 30000
+      # the amount of milliseconds that writes to sockets are buffered
+      outgoingBufferTimeout: 10
+      # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
+      # to block its responsivness
+      maxBufferByteSize: 100000
 
-        # Headers to copy over from websocket
-        headers:
-          - user-agent
-
-        # Security
-        # amount of time a connection can remain open while not being logged in
-        unauthenticatedClientTimeout: 180000
-        # invalid login attempts before the connection is cut
-        maxAuthAttempts: 3
-        # if true, the logs will contain the cleartext username / password of invalid login attempts
-        logInvalidAuthData: false
-        # maximum allowed size of an individual message in bytes
-        maxMessageSize: 1048576
+      # Security
+      # amount of time a connection can remain open while not being logged in
+      unauthenticatedClientTimeout: 180000
+      # invalid login attempts before the connection is cut
+      maxAuthAttempts: 3
+      # if true, the logs will contain the cleartext username / password of invalid login attempts
+      logInvalidAuthData: false
+      # maximum allowed size of an individual message in bytes
+      maxMessageSize: 1048576
 
   - type: ws-text
     options:
-        # port for the websocket server
-        port: 6021
-        # host for the websocket server
-        host: 0.0.0.0
-        # url path websocket connections connect to
-        urlPath: /deepstream
-        # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
-        healthCheckPath: /health-check
-        # the amount of milliseconds between each ping/heartbeat message
-        heartbeatInterval: 30000
-        # the amount of milliseconds that writes to sockets are buffered
-        outgoingBufferTimeout: 10
-        # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
-        # to block its responsiveness
-        maxBufferByteSize: 100000
+      # url path websocket connections connect to
+      urlPath: /deepstream-v3
+      # the amount of milliseconds between each ping/heartbeat message
+      heartbeatInterval: 30000
+      # the amount of milliseconds that writes to sockets are buffered
+      outgoingBufferTimeout: 10
+      # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
+      # to block its responsiveness
+      maxBufferByteSize: 100000
 
-        # Headers to copy over from websocket
-        headers:
-          - user-agent
-
-        # Security
-        # amount of time a connection can remain open while not being logged in
-        unauthenticatedClientTimeout: 180000
-        # invalid login attempts before the connection is cut
-        maxAuthAttempts: 3
-        # if true, the logs will contain the cleartext username / password of invalid login attempts
-        logInvalidAuthData: false
-        # maximum allowed size of an individual message in bytes
-        maxMessageSize: 1048576
+      # Security
+      # amount of time a connection can remain open while not being logged in
+      unauthenticatedClientTimeout: 180000
+      # invalid login attempts before the connection is cut
+      maxAuthAttempts: 3
+      # if true, the logs will contain the cleartext username / password of invalid login attempts
+      logInvalidAuthData: false
+      # maximum allowed size of an individual message in bytes
+      maxMessageSize: 1048576
 
   - type: node-http
     options:
-      # port for the http server
-      port: 8080
-      # host for the http server
-      host: 0.0.0.0
       # allow 'authData' parameter in POST requests, if disabled only token and OPEN auth is
       # possible
       allowAuthData: true
@@ -131,21 +124,6 @@ connectionEndpoints:
       postPath: /
       # path for GET requests
       getPath: /
-      # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
-      healthCheckPath: /health-check
-
-      # Headers to copy over from http request
-      headers:
-        - user-agent
-
-      # -- CORS --
-      # if disabled, only requests with an 'Origin' header matching one specified under 'origins'
-      # below will be permitted and the 'Access-Control-Allow-Credentials' response header will be
-      # enabled
-      allowAllOrigins: true
-      # a list of allowed origins
-      origins:
-        - 'https://example.com'
       # maximum allowed size of an individual message in bytes
       maxMessageSize: 1024
 
@@ -219,7 +197,7 @@ logger:
 
 # Authentication
 auth:
-  # type: none
+  type: none
 
   #  # reading users and passwords from a file
   #  type: file

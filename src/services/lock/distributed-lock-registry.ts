@@ -91,9 +91,9 @@ export class DistributedLockRegistry extends DeepstreamPlugin implements Deepstr
   }
 
   /**
-   * Called when a message is recieved on the message bus.
+   * Called when a message is received on the message bus.
    * This could mean the leader responded to a request or that you're currently
-   * the leader and recieved a request.
+   * the leader and received a request.
    */
   private onPrivateMessage (message: LockMessage, remoteServerName: string) {
     if (message.action === LOCK_ACTION.RESPONSE) {

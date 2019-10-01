@@ -56,7 +56,7 @@ export class Deepstream extends EventEmitter {
 
 /**
  * Deepstream is a realtime data server that supports data-sync,
- * publish-subscribe, request-response, listeneing, permissioning
+ * publish-subscribe, request-response, listening, permissions
  * and a host of other features!
  */
   constructor (config: PartialDeepstreamConfig | string | null = null) {

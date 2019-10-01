@@ -21,7 +21,7 @@ describe('dependency-initialiser', () => {
       pluginB: new PluginMock({ name: 'B'}),
       pluginC: new PluginMock({ name: 'C'}),
       brokenPlugin: {},
-      dependencyInitialisationTimeout: 50
+      dependencyInitializationTimeout: 50
     }
     services.logger.lastLogEvent = null
   })
@@ -63,7 +63,7 @@ describe('encounters timeouts and errors during dependency initialisations', () 
   const originalConsoleLog = console.log
   const config = {
     plugin: new PluginMock('A'),
-    dependencyInitialisationTimeout: 1,
+    dependencyInitializationTimeout: 1,
   }
 
   it('disables console.error', () => {

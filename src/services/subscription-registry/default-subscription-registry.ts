@@ -136,7 +136,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
    * broadcast.
    */
   public sendToSubscribers (name: string, message: Message, noDelay: boolean, senderSocket: SocketWrapper | null, suppressRemote: boolean = false): void {
-    // If the senderSocket is null it means it was recieved via the message bus
+    // If the senderSocket is null it means it was received via the message bus
     if (senderSocket !== null && suppressRemote === false) {
       this.services.clusterNode.send(message)
     }
