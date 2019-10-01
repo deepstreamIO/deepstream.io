@@ -184,7 +184,7 @@ export const parse = (rawMessage: string) => {
       if (isErr) {
         isErr = false
         action = PA.REQUEST_ERROR.BYTE
-        data = rawAction
+        data = JSON.stringify(rawAction)
       }
       if (action !== PA.PROVIDE.BYTE && action !== PA.UNPROVIDE.BYTE) {
         correlationId = parts[index++]

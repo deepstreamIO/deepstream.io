@@ -194,6 +194,16 @@ function getMsgToJif () {
     },
   })
 
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.REQUEST_ERROR] = {}
+  MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.REQUEST_ERROR][TYPE.NORMAL] = (message: Message) => ({
+    done: true,
+    message: {
+      errorTopic: 'rpc',
+      error: message.parsedData,
+      success: false,
+    },
+  })
+
   MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.ACCEPT] = {}
   MSG_TO_JIF[TOPIC.RPC][RPC_ACTION.ACCEPT][TYPE.NORMAL] = () => ({ done: false })
 
