@@ -1,3 +1,9 @@
+## [4.2.5] - 2019.10.01
+
+### Fix
+
+Removing dom lib from typescript, which exposed variables that throw exceptions #1008
+
 ## [4.2.4] - 2019.10.01
 
 ### Fix
