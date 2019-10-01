@@ -1,12 +1,22 @@
 import * as Ajv from 'ajv'
 import { LOG_LEVEL } from '../../ds-types/src/index'
 
+const LogLevelValidation = {
+  type: ['string', 'integer'],
+  enum: [
+    'DEBUG', LOG_LEVEL.DEBUG,
+    'INFO', LOG_LEVEL.INFO,
+    'WARN', LOG_LEVEL.WARN,
+    'ERROR', LOG_LEVEL.ERROR,
+    'OFF', LOG_LEVEL.OFF
+  ]
+}
+
 function getPluginOptions (name: string, types: string[], properties: any) {
   return {
     [name]: {
       type: 'object',
       properties: {
-        oneRequired: ['type', 'name', 'path'],
         type: { type: 'string', enum: types },
         name: { type: 'string', minLength: 1 },
         path: { type: 'string', minLength: 1 },
@@ -14,7 +24,8 @@ function getPluginOptions (name: string, types: string[], properties: any) {
           type: 'object',
           properties
         }
-      }
+      },
+      oneRequired: ['type', 'name', 'path']
     }
   }
 }
@@ -26,10 +37,7 @@ const generalOptions = {
   showLogo: { type: 'boolean' },
   exitOnFatalError: { type: 'boolean' },
   dependencyInitialisationTimeout: { type: 'number', minimum: 1000 },
-  logLevel: {
-    type: ['string'],
-    enum: Object.keys(LOG_LEVEL)
-  }
+  logLevel: LogLevelValidation
 }
 
 const rpcOptions = {
@@ -148,8 +156,7 @@ const loggerOptions = getPluginOptions(
   ['default'],
   {
     colors: { type: 'boolean' },
-    logLevel: { type: 'string', minLength: 1 },
-    host: { type: 'string', minLength: 1 },
+    logLevel: LogLevelValidation,
     options: { type: 'object' }
   }
 )
@@ -189,9 +196,9 @@ const clusterRegistryOptions = getPluginOptions(
   'clusterRegistry',
   ['default'],
   {
-    keepAliveInterval: { type: 'integer', minimum: 50 },
-    activeCheckInterval: { type: 'integer', minimum: 50 },
-    nodeInactiveTimeout: { type: 'integer', minimum: 50 },
+    keepAliveInterval: { type: 'integer', minimum: 1 },
+    activeCheckInterval: { type: 'integer', minimum: 1 },
+    nodeInactiveTimeout: { type: 'integer', minimum: 1 },
   }
 )
 
@@ -199,7 +206,7 @@ const clusterStatesOptions = getPluginOptions(
   'clusterStates',
   ['default'],
   {
-    reconciliationTimeout: { type: 'integer', minimum: 50 },
+    reconciliationTimeout: { type: 'integer', minimum: 1 },
   }
 )
 
