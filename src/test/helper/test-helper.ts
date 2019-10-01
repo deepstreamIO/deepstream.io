@@ -9,7 +9,6 @@ import { Message } from '../../constants'
 import { DefaultSubscriptionRegistryFactory } from '../../services/subscription-registry/default-subscription-registry-factory'
 import { DistributedStateRegistryFactory } from '../../services/cluster-state/distributed-state-registry-factory'
 import { DistributedClusterRegistry } from '../../services/cluster-registry/distributed-cluster-registry'
-import { service } from '../../../bin/deepstream-service'
 
 export const getBasePermissions = function () {
   return {
