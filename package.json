@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@deepstream/protobuf": "^1.0.1",
+    "@deepstream/storage-rethinkdb": "^2.0.0",
     "adm-zip": "^0.4.13",
     "ajv": "^6.10.2",
     "body-parser": "^1.19.0",
@@ -53,6 +54,7 @@
     "needle": "^2.4.0",
     "source-map-support": "^0.5.13",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.11.0",
+    "uuid": "^3.3.3",
     "ws": "^7.1.2"
   },
   "devDependencies": {
@@ -68,6 +70,7 @@
     "@types/node": "^12.7.8",
     "@types/sinon": "^7.0.13",
     "@types/sinon-chai": "^3.2.3",
+    "@types/uuid": "^3.4.5",
     "@types/ws": "^6.0.3",
     "async": "^3.1.0",
     "bluebird": "^3.5.5",

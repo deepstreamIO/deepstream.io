@@ -14,6 +14,7 @@ import { WSTextConnectionEndpoint } from '../connection-endpoint/ws-text/connect
 import { MQTTConnectionEndpoint } from '../connection-endpoint/mqtt/connection-endpoint'
 import { WSJSONConnectionEndpoint } from '../connection-endpoint/ws-json/connection-endpoint'
 import { FileBasedAuthentication } from '../services/authentication/file/file-based-authentication'
+import { StorageBasedAuthentication } from '../services/authentication/storage/storage-based-authentication'
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
 import { NoopStorage } from '../services/storage/noop-storage'
 import { LocalCache } from '../services/cache/local-cache'
@@ -298,6 +299,7 @@ function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServi
     none: OpenAuthentication,
     file: FileBasedAuthentication,
     http: HttpAuthentication,
+    storage: StorageBasedAuthentication
   }
 
   if (!config.auth) {
