@@ -35,7 +35,7 @@ const assert2 = {
         })
     },
 
-    recievedUpdate (clientExpression: string, recordName: string, data: string) {
+    receivedUpdate (clientExpression: string, recordName: string, data: string) {
         data = utils.parseData(data)
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.subscribeCallback)
@@ -44,7 +44,7 @@ const assert2 = {
         })
     },
 
-    recievedUpdateForPath (clientExpression: string, recordName: string, path: string, data: string) {
+    receivedUpdateForPath (clientExpression: string, recordName: string, path: string, data: string) {
         data = utils.parseData(data)
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.subscribePathCallbacks[path])
@@ -53,13 +53,13 @@ const assert2 = {
         })
     },
 
-    recievedNoUpdate (clientExpression: string, recordName: string) {
+    receivedNoUpdate (clientExpression: string, recordName: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.notCalled(recordData.subscribeCallback)
         })
     },
 
-    recievedNoUpdateForPath (clientExpression: string, recordName: string, path: string) {
+    receivedNoUpdateForPath (clientExpression: string, recordName: string, path: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.notCalled(recordData.subscribePathCallbacks[path])
         })

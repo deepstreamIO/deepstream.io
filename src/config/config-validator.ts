@@ -180,7 +180,7 @@ const subscriptionsOptions = getPluginOptions(
 
 const monitoringOptions = getPluginOptions(
   'monitoring',
-  ['default'],
+  ['http', 'none'],
   {
   }
 )

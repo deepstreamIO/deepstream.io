@@ -2,9 +2,9 @@ import { defaultDelay } from '../../framework/utils'
 import {When, Then, Given} from 'cucumber'
 const { client } = require(`../../framework${process.env.V3 ? '-v3' : ''}/client`)
 
-Then(/^(.+) receives? at least one "([^"]*)" error "([^"]*)"$/, client.recievedErrorOnce)
-Then(/^(.+) receives? "([^"]*)" error "([^"]*)"$/, client.recievedOneError)
-Then(/^(.+) received? no errors$/, client.recievedNoErrors)
+Then(/^(.+) receives? at least one "([^"]*)" error "([^"]*)"$/, client.receivedErrorOnce)
+Then(/^(.+) receives? "([^"]*)" error "([^"]*)"$/, client.receivedOneError)
+Then(/^(.+) received? no errors$/, client.receivedNoErrors)
 
 Given(/^(.+) logs? out$/, (clientExpression: string, done) => {
   client.logsOut(clientExpression, () => {})
@@ -38,7 +38,7 @@ Given(/^(.+) logs? in with username "([^"]*)" and password "([^"]*)"$/, (clientE
 
 When(/^(.+) attempts? to login with username "([^"]*)" and password "([^"]*)"$/, client.attemptLogin)
 
-Then(/^(.+) (?:is|are) notified of too many login attempts$/, client.recievedTooManyLoginAttempts)
+Then(/^(.+) (?:is|are) notified of too many login attempts$/, client.receivedTooManyLoginAttempts)
 
 Then(/^(.+) receives? no login response$/, (clientExpression) => {
   client.recievesNoLoginResponse(clientExpression)

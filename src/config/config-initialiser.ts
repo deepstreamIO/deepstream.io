@@ -1,6 +1,6 @@
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring } from '../../ds-types/src/index'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
@@ -18,12 +18,13 @@ import { HttpAuthentication } from '../services/authentication/http/http-authent
 import { NoopStorage } from '../services/storage/noop-storage'
 import { LocalCache } from '../services/cache/local-cache'
 import { StdOutLogger } from '../services/logger/std-out-logger'
-import { LocalMonitoring } from '../services/monitoring/noop-monitoring'
+import { NoopMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
 import { NodeHTTP } from '../services/http/node/node-http'
+import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
 
 let commandLineArguments: any
 
@@ -33,7 +34,6 @@ const defaultPlugins = new Map<keyof DeepstreamServices, any>([
   ['cache', LocalCache],
   ['storage', NoopStorage],
   ['logger', StdOutLogger],
-  ['monitoring', LocalMonitoring],
   ['locks', DistributedLockRegistry],
   ['subscriptions', DefaultSubscriptionRegistryFactory],
   ['clusterRegistry', DistributedClusterRegistry],
@@ -85,7 +85,7 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions', ll))(config.subscriptions.options, services, config)
   services.storage = new (resolvePluginClass(config.storage, 'storage', ll))(config.storage.options, services, config)
   services.cache = new (resolvePluginClass(config.cache, 'cache', ll))(config.cache.options, services, config)
-  services.monitoring = new (resolvePluginClass(config.monitoring, 'monitoring', ll))(config.monitoring.options, services, config)
+  services.monitoring = handleMonitoring(config, services)
   services.authentication = handleAuthStrategy(config, services)
   services.permission = handlePermissionStrategy(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
@@ -356,9 +356,25 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
     throw new Error(`Unknown permission type ${config.permission.type}`)
   }
 
-  if (config.permission.type === 'config') {
-    return new PermissionHandlerClass(config.permission.options, services, config)
-  } else {
-    return new PermissionHandlerClass(config.permission.options, services, config)
+  return new PermissionHandlerClass(config.permission.options, services, config)
+}
+
+function handleMonitoring (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamMonitoring {
+  let MonitoringClass
+
+  const monitoringPlugins = {
+    default: NoopMonitoring,
+    none: NoopMonitoring,
+    http: HTTPMonitoring
   }
+
+  if (config.monitoring.name || config.monitoring.path) {
+    return new (resolvePluginClass(config.monitoring, 'monitoring', config.logLevel))(config.monitoring.options, services, config)
+  } else if (config.monitoring.type && (monitoringPlugins as any)[config.monitoring.type]) {
+    MonitoringClass = (monitoringPlugins as any)[config.monitoring.type]
+  } else {
+    throw new Error(`Unknown monitoring type ${config.monitoring.type}`)
+  }
+
+  return new MonitoringClass(config.monitoring.options, services, config)
 }

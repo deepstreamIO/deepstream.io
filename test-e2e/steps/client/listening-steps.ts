@@ -20,4 +20,4 @@ Then(/^publisher (\S*) does not receive (?:a|an) (event|record) match "([^"]*)" 
 
 Then(/^publisher (\S*) receives (\d+) (event|record) (?:match|matches) "([^"]*)" for pattern "([^"]*)"$/, listening.assert.recievesMatch)
 
-Then(/^publisher (\S*) removed (\d+) (event|record) (?:match|matches) "([^"]*)" for pattern "([^"]*)"$/, listening.assert.recievedUnMatch)
+Then(/^publisher (\S*) removed (\d+) (event|record) (?:match|matches) "([^"]*)" for pattern "([^"]*)"$/, listening.assert.receivedUnMatch)

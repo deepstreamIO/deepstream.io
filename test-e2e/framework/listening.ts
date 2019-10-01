@@ -17,7 +17,7 @@ export const assert = {
     sinon.assert.callCount(listenCallbackSpy.withArgs(subscriptionName), Number(count))
   },
 
-  recievedUnMatch (client: string, count: number, type: ListenType, subscriptionName: string, pattern: string) {
+  receivedUnMatch (client: string, count: number, type: ListenType, subscriptionName: string, pattern: string) {
     const listenCallbackSpy = clients[client][type].callbacksListenersSpies[pattern].stop
     sinon.assert.callCount(listenCallbackSpy.withArgs(subscriptionName), Number(count))
   }

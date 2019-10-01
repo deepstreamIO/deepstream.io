@@ -133,7 +133,7 @@ export function get (): DeepstreamConfig {
     },
 
     monitoring: {
-      type: 'default',
+      type: 'none',
       options: {}
     },
 

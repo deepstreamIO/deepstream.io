@@ -64,7 +64,7 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     ],
 
     monitoring: {
-      type: 'default',
+      type: 'http',
       options: {
         reportInterval: 200,
         permissionLogLimit: 3,

@@ -2,7 +2,7 @@ import ConnectionEndpoint, {WebSocketServerConfig} from '../base-websocket/conne
 import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper, SocketHandshakeData } from '../../../ds-types/src/index'
 import * as WebSocket from 'ws'
 
-export class BaseWSConnectionEndpoint extends ConnectionEndpoint {
+export class BaseWSConnectionEndpoint<Config extends WebSocketServerConfig> extends ConnectionEndpoint {
   private server!: WebSocket.Server
   private connections = new Map<WebSocket, UnauthenticatedSocketWrapper>()
 
@@ -32,7 +32,11 @@ export class BaseWSConnectionEndpoint extends ConnectionEndpoint {
       })
 
       websocket.on('message', (msg: string) => {
-        this.connections.get(websocket)!.onMessage(socketWrapper.parseMessage(msg))
+        const messages = socketWrapper.parseMessage(msg)
+        // This ignores pings
+        if (messages.length > 0) {
+          this.connections.get(websocket)!.onMessage(messages)
+        }
       })
 
       this.onConnection(socketWrapper)

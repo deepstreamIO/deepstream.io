@@ -96,7 +96,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
     }
     public onLogin (allowed: boolean, endpointType: string): void {
     }
-    public onMessageRecieved (message: Message): void {
+    public onMessageReceived (message: Message): void {
     }
     public onMessageSend (message: Message): void {
     }

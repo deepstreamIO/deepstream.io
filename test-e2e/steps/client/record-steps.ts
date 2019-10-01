@@ -22,13 +22,13 @@ Then(/^(.+) (gets?|is not) notified of record "([^"]*)" getting (discarded|delet
 
 Then(/^(.+) receives? an? "([^"]*)" error on record "([^"]*)"$/, record.assert.receivedRecordError)
 
-Then(/^(.+) receives? an update for record "([^"]*)" with data '([^']+)'$/, record.assert.recievedUpdate)
+Then(/^(.+) receives? an update for record "([^"]*)" with data '([^']+)'$/, record.assert.receivedUpdate)
 
-Then(/^(.+) receives? an update for record "([^"]*)" and path "([^"]*)" with data '([^']+)'$/, record.assert.recievedUpdateForPath)
+Then(/^(.+) receives? an update for record "([^"]*)" and path "([^"]*)" with data '([^']+)'$/, record.assert.receivedUpdateForPath)
 
-Then(/^(.+) (?:don't|doesn't|does not) receive an update for record "([^"]*)"$/, record.assert.recievedNoUpdate)
+Then(/^(.+) (?:don't|doesn't|does not) receive an update for record "([^"]*)"$/, record.assert.receivedNoUpdate)
 
-Then(/^(.+) don't receive an update for record "([^"]*)" and path "([^"]*)"$/, record.assert.recievedNoUpdateForPath)
+Then(/^(.+) don't receive an update for record "([^"]*)" and path "([^"]*)"$/, record.assert.receivedNoUpdateForPath)
 
 Given(/^(.+) subscribes? to record "([^"]*)"( with immediate flag)?$/, record.subscribe)
 

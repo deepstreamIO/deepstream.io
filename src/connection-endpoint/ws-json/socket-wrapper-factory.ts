@@ -72,7 +72,7 @@ export class JSONSocketWrapper implements UnauthenticatedSocketWrapper {
   }
 
   public parseMessage (message: string): ParseResult[] {
-    return JSON.parse(message)
+    return [JSON.parse(message)]
   }
 
   public parseData (message: Message): true | Error {
