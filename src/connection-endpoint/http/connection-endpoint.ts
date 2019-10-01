@@ -1,16 +1,29 @@
-import Server from './node-server'
 import JIFHandler from '../../jif/jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { PARSER_ACTION, AUTH_ACTION, EVENT_ACTION, RECORD_ACTION, Message, ALL_ACTIONS, JSONObject } from '../../constants'
-import { DeepstreamConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig, EVENT } from '../../../ds-types/src/index'
-
+import { DeepstreamConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig, EVENT, DeepstreamHTTPResponse, DeepstreamHTTPMeta } from '../../../ds-types/src/index'
 export interface HTTPEvents {
   onAuthMessage: Function
   onPostMessage: Function
   onGetMessage: Function
 }
 
+interface HTTPConnectionEndpointOptionsInterface {
+  enableAuthEndpoint: boolean,
+  authPath: string,
+  postPath: string,
+  getPath: string,
+  allowAuthData: boolean,
+  logInvalidAuthData: boolean,
+  requestTimeout: number
+}
+
+function checkConfigOption (config: any, option: string, expectedType?: string): void {
+  if ((expectedType && typeof config[option] !== expectedType) || config[option] === undefined) {
+    throw new Error(`The HTTP plugin requires that the "${option}" config option is set`)
+  }
+}
 export class HTTPConnectionEndpoint extends DeepstreamPlugin implements DeepstreamConnectionEndpoint {
   public description: string = 'HTTP connection endpoint'
 
@@ -18,12 +31,16 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
   private jifHandler!: JIFHandler
   private onSocketMessageBound: Function
   private onSocketErrorBound: Function
-  private server!: Server
   private logInvalidAuthData: boolean = false
   private requestTimeout!: number
 
-  constructor (private options: any, private services: DeepstreamServices, public dsOptions: DeepstreamConfig) {
+  constructor (private pluginOptions: HTTPConnectionEndpointOptionsInterface, private services: DeepstreamServices, public dsOptions: DeepstreamConfig) {
     super()
+
+    checkConfigOption(pluginOptions, 'enableAuthEndpoint', 'boolean')
+    checkConfigOption(pluginOptions, 'authPath', 'string')
+    checkConfigOption(pluginOptions, 'postPath', 'string')
+    checkConfigOption(pluginOptions, 'getPath', 'string')
 
     this.onSocketMessageBound = this.onSocketMessage.bind(this)
     this.onSocketErrorBound = this.onSocketError.bind(this)
@@ -33,7 +50,10 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
   }
 
   public async whenReady (): Promise<void> {
-    await this.server.whenReady()
+    await this.services.httpService.whenReady()
+  }
+
+  public async close () {
   }
 
   /**
@@ -45,35 +65,17 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
     }
     this.initialized = true
 
-    const serverConfig = {
-      port: (this.dsOptions as any).httpPort || this.options.port,
-      host:  (this.dsOptions as any).httpHost || this.options.host,
-      healthCheckPath: this.options.healthCheckPath,
-      headers: this.options.headers,
-      authPath: this.options.authPath,
-      postPath: this.options.postPath,
-      getPath: this.options.getPath,
-      allowAllOrigins: this.options.allowAllOrigins,
-      enableAuthEndpoint: this.options.enableAuthEndpoint,
-      maxMessageSize: this.options.maxMessageSize
+    if (this.pluginOptions.enableAuthEndpoint) {
+      this.services.httpService.registerPostPathPrefix(this.pluginOptions.authPath, this.onAuthMessage.bind(this))
     }
+    this.services.httpService.registerPostPathPrefix(this.pluginOptions.postPath, this.onPostMessage.bind(this))
+    this.services.httpService.registerGetPathPrefix(this.pluginOptions.getPath, this.onGetMessage.bind(this))
 
-    this.server = new Server(serverConfig, this.services.logger, {
-      onAuthMessage: this.onAuthMessage.bind(this),
-      onPostMessage: this.onPostMessage.bind(this),
-      onGetMessage: this.onGetMessage.bind(this)
-    })
-    this.server.start()
-
-    this.logInvalidAuthData = this.options.logInvalidAuthData
-    this.requestTimeout = this.options.requestTimeout
+    this.logInvalidAuthData = this.pluginOptions.logInvalidAuthData
+    this.requestTimeout = this.pluginOptions.requestTimeout
     if (this.requestTimeout === undefined) {
       this.requestTimeout = 20000
     }
-  }
-
-  public async close () {
-    await this.server.stop()
   }
 
   /**
@@ -86,12 +88,19 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
   public onMessages (socketWrapper: SimpleSocketWrapper, messages: Message[]): void {
   }
 
+  private onGetMessage (meta: DeepstreamHTTPMeta, responseCallback: any) {
+    const message = 'Reading records via HTTP GET is not yet implemented, please use a post request instead.'
+    this.services.logger.warn(RECORD_ACTION[RECORD_ACTION.READ], message)
+    responseCallback({ statusCode: 400, message })
+    // TODO: implement a GET endpoint that reads the current state of a record
+  }
+
   /**
    * Handle a message to the authentication endpoint (for token generation).
    *
    * Passes the entire message to the configured authentication handler.
    */
-  private onAuthMessage (authData: JSONObject, metadata: object, responseCallback: Function): void {
+  private onAuthMessage (authData: JSONObject, metadata: DeepstreamHTTPMeta, responseCallback: DeepstreamHTTPResponse): void {
     this.services.authentication.isValidUser(
       metadata,
       authData,
@@ -129,17 +138,14 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
    */
   private onPostMessage (
     messageData: { token?: string, authData?: object, body: object[] },
-    metadata: object,
-    responseCallback: Function
+    metadata: DeepstreamHTTPMeta,
+    responseCallback: DeepstreamHTTPResponse
   ): void {
     if (!Array.isArray(messageData.body) || messageData.body.length < 1) {
-      const error = `Invalid message: the "body" parameter must ${
+      const message = `Invalid message: the "body" parameter must ${
         messageData.body ? 'be a non-empty array of Objects.' : 'exist.'
       }`
-      responseCallback({
-        statusCode: HTTPStatus.BAD_REQUEST,
-        message: error
-      })
+      responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message })
       this.services.logger.warn(
         PARSER_ACTION[PARSER_ACTION.INVALID_MESSAGE],
         JSON.stringify(messageData.body)
@@ -149,9 +155,9 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
 
     let authData = {}
     if (messageData.authData !== undefined) {
-      if (this.options.allowAuthData !== true) {
-        const error = 'Authentication using authData is disabled. Try using a token instead.'
-        responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
+      if (this.pluginOptions.allowAuthData !== true) {
+        const message = 'Authentication using authData is disabled. Try using a token instead.'
+        responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message })
         this.services.logger.debug(
           AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE_DATA],
           'Auth rejected because allowAuthData was disabled'
@@ -159,8 +165,8 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
         return
       }
       if (messageData.authData === null || typeof messageData.authData !== 'object') {
-        const error = 'Invalid message: the "authData" parameter must be an object'
-        responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
+        const message = 'Invalid message: the "authData" parameter must be an object'
+        responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message })
         this.services.logger.debug(
           AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE_DATA],
           `authData was not an object: ${
@@ -172,8 +178,8 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
       authData = messageData.authData
     } else if (messageData.token !== undefined) {
       if (typeof messageData.token !== 'string' || messageData.token.length === 0) {
-        const error = 'Invalid message: the "token" parameter must be a non-empty string'
-        responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message: error })
+        const message = 'Invalid message: the "token" parameter must be a non-empty string'
+        responseCallback({ statusCode: HTTPStatus.BAD_REQUEST, message })
         this.services.logger.debug(
           AUTH_ACTION[AUTH_ACTION.INVALID_MESSAGE_DATA],
           `auth token was not a string: ${
@@ -406,13 +412,6 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
       return 'FAILURE'
     }
     return 'PARTIAL_SUCCESS'
-  }
-
-  private onGetMessage (data: any, headers: any, responseCallback: any) {
-    const message = 'Reading records via HTTP GET is not yet implemented, please use a post request instead.'
-    this.services.logger.warn(RECORD_ACTION[RECORD_ACTION.READ], message)
-    responseCallback({ statusCode: 400, message })
-    // TODO: implement a GET endpoint that reads the current state of a record
   }
 
   /**

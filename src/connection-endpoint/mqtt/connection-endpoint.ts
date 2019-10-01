@@ -1,6 +1,6 @@
 import { createMQTTSocketWrapper} from './socket-wrapper-factory'
 import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../../ds-types/src/index'
-import ConnectionEndpoint, { WebSocketServerConfig } from '../../../src/connection-endpoint/websocket/connection-endpoint'
+import ConnectionEndpoint, { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
 
 import { Server } from 'net'
 // @ts-ignore

@@ -8,11 +8,11 @@ import { HTTPConnectionEndpoint } from '../connection-endpoint/http/connection-e
 import { OpenAuthentication } from '../services/authentication/open/open-authentication'
 import { ConfigPermission } from '../services/permission/valve/config-permission'
 import { OpenPermission } from '../services/permission/open/open-permission'
-import { UWSConnectionEndpoint } from '../connection-endpoint/uws/connection-endpoint'
-import { WSConnectionEndpoint } from '../connection-endpoint/ws/connection-endpoint'
-import { WSTextConnectionEndpoint } from '../connection-endpoint/text/connection-endpoint'
+import { UWSConnectionEndpoint } from '../connection-endpoint/uws-binary/connection-endpoint'
+import { WSConnectionEndpoint } from '../connection-endpoint/ws-binary/connection-endpoint'
+import { WSTextConnectionEndpoint } from '../connection-endpoint/ws-text/connection-endpoint'
 import { MQTTConnectionEndpoint } from '../connection-endpoint/mqtt/connection-endpoint'
-import { WSJSONConnectionEndpoint } from '../connection-endpoint/json/connection-endpoint'
+import { WSJSONConnectionEndpoint } from '../connection-endpoint/ws-json/connection-endpoint'
 import { FileBasedAuthentication } from '../services/authentication/file/file-based-authentication'
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
 import { NoopStorage } from '../services/storage/noop-storage'
@@ -23,6 +23,7 @@ import { DistributedLockRegistry } from '../services/lock/distributed-lock-regis
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
+import { NodeHTTP } from '../services/http/node/node-http'
 
 let commandLineArguments: any
 
@@ -37,7 +38,8 @@ const defaultPlugins = new Map<keyof DeepstreamServices, any>([
   ['subscriptions', DefaultSubscriptionRegistryFactory],
   ['clusterRegistry', DistributedClusterRegistry],
   ['clusterStates', DistributedStateRegistryFactory],
-  ['clusterNode', SingleClusterNode]
+  ['clusterNode', SingleClusterNode],
+  ['httpService', NodeHTTP],
 ])
 
 export const mergeConnectionOptions = function (config: any) {
@@ -91,6 +93,7 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', ll))(config.clusterNode.options, services, config)
   services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', ll))(config.clusterRegistry.options, services, config)
   services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', ll))(config.clusterStates.options, services, config)
+  services.httpService = new (resolvePluginClass(config.httpServer, 'httpService', ll))(config.httpServer.options, services, config)
 
   handleCustomPlugins(config, services)
 

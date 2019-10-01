@@ -1,8 +1,6 @@
 import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
-import * as binaryMessageBuilder from '@deepstream/protobuf/dist/src/message-builder'
-import * as binaryMessageParser from '@deepstream/protobuf/dist/src/message-parser'
-import { WebSocketServerConfig } from '../websocket/connection-endpoint'
-import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../../ds-types/src/index'
+import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
+import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, EVENT } from '../../../ds-types/src/index'
 import * as WebSocket from 'ws'
 
 /**
@@ -10,8 +8,7 @@ import * as WebSocket from 'ws'
  * and provides higher level methods that are integrated
  * with deepstream's message structure
  */
-export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
-
+export class JSONSocketWrapper implements UnauthenticatedSocketWrapper {
   public isRemote: false = false
   public isClosed: boolean = false
   public user: string | null = null
@@ -30,8 +27,8 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
     private socket: WebSocket,
     private handshakeData: any,
     private services: DeepstreamServices,
-    private config: WebSocketServerConfig,
-    private connectionEndpoint: SocketConnectionEndpoint
+    config: WebSocketServerConfig,
+    connectionEndpoint: SocketConnectionEndpoint
    ) {
   }
 
@@ -57,7 +54,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTION } | Message, allowBuffering: boolean = true): void {
     this.services.monitoring.onMessageSend(message)
-    this.sendBuiltMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
+    this.sendBuiltMessage(JSON.stringify(message), allowBuffering)
   }
 
   /**
@@ -66,26 +63,27 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
   public sendAckMessage (message: Message, allowBuffering: boolean = true): void {
     this.services.monitoring.onMessageSend(message)
     this.sendBuiltMessage(
-        binaryMessageBuilder.getMessage(message, true),
-        true
+        JSON.stringify({ ...message, isAck: true })
     )
   }
 
-  public getMessage (message: Message): Uint8Array {
-    return binaryMessageBuilder.getMessage(message, false)
+  public getMessage (message: Message): string {
+    return JSON.stringify(message)
   }
 
-  public parseMessage (message: ArrayBuffer): ParseResult[] {
-    /* we copy the underlying buffer (since a shallow reference won't be safe
-     * outside of the callback)
-     * the copy could be avoided if we make sure not to store references to the
-     * raw buffer within the message
-     */
-    return binaryMessageParser.parse(Buffer.from(Buffer.from(message)))
+  public parseMessage (message: string): ParseResult[] {
+    return JSON.parse(message)
   }
 
   public parseData (message: Message): true | Error {
-    return binaryMessageParser.parseData(message)
+    try {
+      if (message.data) {
+        message.parsedData = JSON.parse(message.data as string)
+      }
+      return true
+    } catch (e) {
+      return e
+    }
   }
 
   public onMessage (messages: Message[]): void {
@@ -124,22 +122,9 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
     this.closeCallbacks.delete(callback)
   }
 
-  public sendBuiltMessage (message: Uint8Array, buffer?: boolean): void {
+  public sendBuiltMessage (message: string, buffer?: boolean): void {
     if (this.isOpen) {
-      if (this.config.outgoingBufferTimeout === 0) {
         this.socket.send(message)
-      } else if (!buffer) {
-        this.flush()
-        this.socket.send(message)
-      } else {
-        this.bufferedWritesTotalByteSize += message.length
-        this.bufferedWrites.push(message)
-        if (this.bufferedWritesTotalByteSize > this.config.maxBufferByteSize) {
-          this.flush()
-        } else {
-          this.connectionEndpoint.scheduleFlush(this as SocketWrapper)
-        }
-      }
     }
   }
 }
@@ -150,4 +135,4 @@ export const createWSSocketWrapper = function (
   services: DeepstreamServices,
   config: WebSocketServerConfig,
   connectionEndpoint: SocketConnectionEndpoint
-) { return new WSSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }
+) { return new JSONSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }

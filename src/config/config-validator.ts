@@ -68,6 +68,17 @@ const listenOptions = {
   }
 }
 
+const httpServer = getPluginOptions(
+  'httpServer',
+  ['default'],
+  {
+      host: { type: 'string', minLength: 1 },
+      port: { type: 'integer', minimum: 1 },
+      allowAllOrigins: { type: 'boolean' },
+      origins: { type: 'array', items: { type: 'string', format: 'uri' } },
+  }
+)
+
 const cacheOptions = getPluginOptions(
   'cache',
   ['default'],
@@ -142,8 +153,6 @@ const connEndpointsOptions = {
               authPath: { type: 'string', minLength: 1 },
               postPath: { type: 'string', minLength: 1 },
               getPath: { type: 'string', minLength: 1 },
-              allowAllOrigins: { type: 'boolean' },
-              origins: { type: 'array', items: { type: 'string', format: 'uri' } },
           }
         }
       }
@@ -225,6 +234,7 @@ const schema = {
     ...rpcOptions,
     ...recordOptions,
     ...listenOptions,
+    ...httpServer,
     ...connEndpointsOptions,
     ...loggerOptions,
     ...cacheOptions,

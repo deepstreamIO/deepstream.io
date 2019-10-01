@@ -28,18 +28,15 @@ export class E2EHarness extends EventEmitter {
   }
 
   public getUrl (serverId: number) {
-    if (process.env.V3) {
-      return `localhost:${this.ports[serverId - 1] + 100}/e2e`
-    }
     return `localhost:${this.ports[serverId - 1]}/e2e`
   }
 
   public getHttpUrl (serverId: number) {
-    return `localhost:${this.ports[serverId - 1] + 200}/`
+    return `localhost:${this.ports[serverId - 1]}/`
   }
 
   public getAuthUrl (serverId: number) {
-    return `localhost:${this.ports[serverId - 1] + 200}/auth`
+    return `localhost:${this.ports[serverId - 1]}/auth`
   }
 
   public async updateStorageDirectly (recordName: string, version: number, data: JSONValue) {

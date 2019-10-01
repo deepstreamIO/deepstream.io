@@ -26,12 +26,18 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
       } as any
     },
 
+    httpServer: {
+      type: 'default',
+      options: {
+        port
+      }
+    },
+
     connectionEndpoints: [
       {
         type: 'ws-websocket',
         options: {
-          port,
-          urlPath: '/e2e',
+          urlPath: '/e2e-v4',
           maxAuthAttempts              : 2,
           unauthenticatedClientTimeout : 200,
           heartbeatInterval: 50,
@@ -41,8 +47,7 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
       {
         type: 'ws-text',
         options: {
-          port: Number(port) + 100,
-          urlPath: '/e2e',
+          urlPath: '/e2e-v3',
           maxAuthAttempts              : 2,
           unauthenticatedClientTimeout : 200,
           heartbeatInterval: 50,
@@ -52,7 +57,6 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
       {
         type: 'node-http',
         options: {
-          port: Number(port) + 200,
           allowAuthData: true,
           enableAuthEndpoint: true,
         } as any

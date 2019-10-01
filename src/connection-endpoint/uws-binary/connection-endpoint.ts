@@ -1,4 +1,4 @@
-import ConnectionEndpoint, {WebSocketServerConfig} from '../websocket/connection-endpoint'
+import ConnectionEndpoint, {WebSocketServerConfig} from '../base-websocket/connection-endpoint'
 import { STATES } from '../../constants'
 import * as fileUtils from '../../config/file-utils'
 import * as binaryMessageParser from '@deepstream/protobuf/dist/src/message-parser'
@@ -46,10 +46,6 @@ export class UWSConnectionEndpoint extends ConnectionEndpoint {
     }
 
     const server = UWSConnectionEndpoint.getServer(this.uWS, options)
-
-    server.get(this.getOption('healthCheckPath'), (res) => {
-      res.end()
-    })
 
     server.ws(this.getOption('urlPath'), {
       /* Options */

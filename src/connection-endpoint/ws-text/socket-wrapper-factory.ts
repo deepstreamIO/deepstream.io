@@ -1,7 +1,7 @@
 import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
 import * as textMessageBuilder from './protocol/message-builder'
 import * as textMessageParse from './protocol/message-parser'
-import { WebSocketServerConfig } from '../websocket/connection-endpoint'
+import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
 import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../../ds-types/src/index'
 import * as WebSocket from 'ws'
 
