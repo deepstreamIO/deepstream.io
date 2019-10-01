@@ -1,3 +1,9 @@
+## [4.2.4] - 2019.10.01
+
+### Fix
+
+Cannot read property 'N' of undefined #920
+
 ## [4.2.3] - 2019.10.01
 
 ### Improvement
