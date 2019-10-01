@@ -31,6 +31,10 @@ const rpcs: { [index: string]: (client: E2EClient, data: any, response: RPCRespo
     client.rpc.provides.alwaysReject()
     response.reject()
   },
+  'alwaysError': (client, data, response) => {
+    client.rpc.provides.alwaysError()
+    response.error('always errors')
+  },
   'neverRespond': (client) => {
     client.rpc.provides.neverRespond()
   },
