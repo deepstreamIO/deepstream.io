@@ -99,12 +99,14 @@ const storageOptions = getPluginOptions(
 
 const authenticationOptions = getPluginOptions(
   'auth',
-  ['none', 'file', 'http'],
+  ['none', 'file', 'http', 'storage'],
   {
     path: { type: 'string', minLength: 1 },
     hash: { type: 'string', minLength: 1 },
     iterations: { type: 'integer', minimum: 1 },
     keyLength: { type: 'integer', minimum: 1 },
+    autoRegister: { type: 'boolean' },
+    table: { type: 'string', minLength: 1 },
 
     endpointUrl: { type: 'string', format: 'uri'},
     permittedStatusCodes: { type: 'array', items: { type: 'integer' } },

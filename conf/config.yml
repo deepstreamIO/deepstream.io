@@ -189,15 +189,29 @@ logger:
 #     host: localhost
 #     port: 6379
 
-# storage:
-#   name: rethinkdb
-#   options:
-#     host: localhost
-#     port: 28015
+storage:
+  name: rethinkdb
+  options:
+    host: localhost
+    port: 28015
 
 # Authentication
 auth:
-  type: none
+  # type: none
+
+  #  # reading users and passwords from the storage layer
+  # type: storage
+  # options:
+  #   # The table name that the users are stored in
+  #   table: User
+  #   # Automatically create users that do not exist in the database
+  #   autoRegister: true
+  #   # the name of a HMAC digest algorithm
+  #   hash: 'md5'
+  #   # the number of times the algorithm should be applied
+  #   iterations: 100
+  #   # the length of the resulting key
+  #   # keyLength: 32
 
   #  # reading users and passwords from a file
   #  type: file
