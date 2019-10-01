@@ -255,12 +255,12 @@ function resolvePluginClass (plugin: PluginConfig, type: any, logLevel: LOG_LEVE
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
   } else if (plugin.name != null && type) {
     try {
-      requirePath = fileUtils.lookupLibRequirePath(`@deepstream/${type}-${plugin.name}`)
+      requirePath = fileUtils.lookupLibRequirePath(`@deepstream/${type.toLowerCase()}-${plugin.name.toLowerCase()}`)
       es6Adaptor = req(requirePath)
     } catch (firstError) {
       const firstPath = requirePath
       try {
-        requirePath = fileUtils.lookupLibRequirePath(`deepstream.io-${type}-${plugin.name}`)
+        requirePath = fileUtils.lookupLibRequirePath(`deepstream.io-${type.toLowerCase()}-${plugin.name.toLowerCase()}`)
         es6Adaptor = req(requirePath)
       } catch (secondError) {
         if (Number(LOG_LEVEL[logLevel]) === LOG_LEVEL.DEBUG) {
