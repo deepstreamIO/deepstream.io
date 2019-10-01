@@ -1,19 +1,20 @@
-import { DeepstreamClient } from '@deepstream/client'
+import { Client } from '@deepstream/client/dist/client'
+import * as deepstream from '@deepstream/client/dist/client'
 import * as sinon from 'sinon'
 import { Message } from '../../src/constants'
 
 export interface E2EClient {
   name: string,
-  client: DeepstreamClient,
+  client: Client,
   [index: string]: any
 }
 
 const clients: { [index: string]: E2EClient } = {}
 
 function createClient (clientName: string, server: string, options?: any) {
-  const serverUrl = global.e2eHarness.getUrl(server)
+  const gatewayUrl = global.e2eHarness.getUrl(server)
   // @ts-ignore
-  const client = new DeepstreamClient(serverUrl, {
+  const client = new deepstream.Client(gatewayUrl, {
     ...options,
     subscriptionInterval: 5,
     maxReconnectInterval: 300,
