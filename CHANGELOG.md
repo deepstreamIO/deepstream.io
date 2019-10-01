@@ -1,3 +1,21 @@
+## [4.2.3] - 2019.10.01
+
+### Improvement
+
+Hardening the config validator
+
+### Fix
+
+Allow empty password for mqtt endpoint when authentication is not enabled (@Aapkostka) #1003
+
+ResolvePluginClass should look for lowercase plugins #1002
+
+RPC not routed to different deepstream node depending on startup order #1001
+
+### Misc
+
+Updating dependencies
+
 ## [4.2.2] - 2019.09.17
 
 ### Fix
