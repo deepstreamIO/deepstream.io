@@ -36,7 +36,7 @@ const generalOptions = {
   externalUrl: { type: ['null', 'string'] },
   showLogo: { type: 'boolean' },
   exitOnFatalError: { type: 'boolean' },
-  dependencyInitialisationTimeout: { type: 'number', minimum: 1000 },
+  dependencyInitializationTimeout: { type: 'number', minimum: 1000 },
   logLevel: LogLevelValidation
 }
 

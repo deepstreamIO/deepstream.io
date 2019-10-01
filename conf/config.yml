@@ -6,7 +6,7 @@ showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 logLevel: INFO
 # Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
-dependencyInitialisationTimeout: 2000
+dependencyInitializationTimeout: 2000
 # Directory where all plugins reside
 #libDir: ../lib
 

@@ -28,7 +28,7 @@ export function get (): DeepstreamConfig {
     serverName: getUid(),
     showLogo: true,
     logLevel: LOG_LEVEL.INFO,
-    dependencyInitialisationTimeout: 2000,
+    dependencyInitializationTimeout: 2000,
     // defaults to false as the event is captured via commander when run via binary or standalone
     exitOnFatalError: false,
 
