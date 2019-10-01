@@ -1,6 +1,6 @@
 import { parseData } from '@deepstream/protobuf/dist/src/message-parser'
 import { EventEmitter } from 'events'
-import { DeepstreamServices, UnauthenticatedSocketWrapper } from '../../../ds-types/src/index'
+import { DeepstreamServices, UnauthenticatedSocketWrapper, EVENT } from '../../../ds-types/src/index'
 import { Message } from '../../constants'
 
 export default class HTTPSocketWrapper extends EventEmitter implements UnauthenticatedSocketWrapper {
@@ -67,7 +67,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements Unauthent
    * Sends an error on the specified topic. The
    * action will automatically be set to C.ACTION.ERROR
    */
-  public sendError (message: Message, event: Event, errorMessage: string) {
+  public sendError (message: Message, event: EVENT, errorMessage: string) {
     if (this.isClosed === false) {
       parseData(message)
       this.onErrorCallback(

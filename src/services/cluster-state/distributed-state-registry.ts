@@ -118,7 +118,7 @@ export class DistributedStateRegistry implements StateRegistry {
    * whenever a node is removed from the cluster
    */
   public onServerRemoved (serverName: string) {
-    for (const [, value] of this.data) {
+    for (const [name, value] of this.data) {
       if (value.nodes.has(serverName)) {
         this.removeFromServer(name, serverName)
       }
@@ -144,7 +144,7 @@ export class DistributedStateRegistry implements StateRegistry {
       return [...this.data.keys()]
     }
     const entries: string[] = []
-    for (const [, value] of this.data) {
+    for (const [name, value] of this.data) {
       if (value.nodes.has(serverName)) {
         entries.push(name)
       }

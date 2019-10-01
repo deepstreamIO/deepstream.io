@@ -3,7 +3,7 @@
 import { clientHandler } from './client-handler'
 
 export const world = {
-  endTest (done: Function) {
+  endTest (done: (...args: any[]) => void) {
     const clients = clientHandler.clients
     for (const client in clients) {
       clientHandler.assertNoErrors(client)

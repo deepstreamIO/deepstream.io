@@ -7,7 +7,7 @@ export class LocalCache extends DeepstreamPlugin implements DeepstreamCache {
   private data = new Map<string, { version: number, data: JSONValue }>()
 
   public head (recordName: string, callback: StorageHeadCallback) {
-    const data = this.data.get(name)
+    const data = this.data.get(recordName)
     process.nextTick(() => callback(null, data ? data.version : -1))
   }
 
