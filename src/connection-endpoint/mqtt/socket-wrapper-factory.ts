@@ -8,18 +8,17 @@ import { ACTIONS_BYTE_TO_KEY } from '../ws-text/protocol/constants'
  * with deepstream's message structure
  */
 export class MQTTSocketWrapper implements UnauthenticatedSocketWrapper {
+  public userId: string | null = null
+  public serverData: object | null = null
+  public clientData: object | null = null
 
   public isRemote: false = false
   public isClosed: boolean = false
-  public user: string | null = null
   public uuid: number = Math.random()
   public authCallback: Function | null = null
   public authAttempts: number = 0
 
   private closeCallbacks: Set<Function> = new Set()
-
-  public authData: object | null = null
-  public clientData: object | null = null
 
   constructor (
     private socket: any,
@@ -88,7 +87,7 @@ export class MQTTSocketWrapper implements UnauthenticatedSocketWrapper {
     delete this.authCallback
 
     this.closeCallbacks.forEach((cb) => cb(this))
-    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.user!)
+    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.userId!)
   }
 
   /**

@@ -21,7 +21,6 @@ interface HttpAuthenticationHandlerSettings {
   retryInterval: number
 }
 
-
 export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = `http webhook to ${this.settings.endpointUrl}`
   private retryAttempts = new Map<number, { connectionData: any, authData: any, callback: (result: DeepstreamAuthenticationResult) => void, attempts: number } >()
@@ -89,7 +88,11 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       this.retryAttempts.delete(id)
 
       if (this.settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {
-        callback({ isValid: false, ...response.body })
+        if (typeof response.body === 'string' && response.body) {
+          callback({ isValid: false, clientData: { error: response.body }})
+        } else {
+          callback({ isValid: false, ...response.body })
+        }
         return
       }
 

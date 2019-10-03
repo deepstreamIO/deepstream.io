@@ -1,5 +1,5 @@
 import { PermissionCallback, SocketWrapper, DeepstreamPlugin } from '../../../ds-types/src/index'
-import { Message, JSONObject } from '../../constants'
+import { Message } from '../../constants'
 
 export default class PermissionHandlerMock extends DeepstreamPlugin {
   public nextCanPerformActionResult: any
@@ -16,7 +16,7 @@ export default class PermissionHandlerMock extends DeepstreamPlugin {
     this.lastCanPerformActionQueryArgs = null
   }
 
-  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: JSONObject, socketWrapper: SocketWrapper, passItOn: any) {
+  public canPerformAction (socketWrapper: SocketWrapper, message: Message, callback: PermissionCallback, passItOn: any) {
     this.lastCanPerformActionQueryArgs = arguments
     if (typeof this.nextCanPerformActionResult === 'string') {
       callback(socketWrapper, message, passItOn, this.nextCanPerformActionResult, false)

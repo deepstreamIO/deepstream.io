@@ -92,7 +92,7 @@ export class RecordTransition {
 
       this.services.logger.warn(
         RECORD_ACTION[RECORD_ACTION.VERSION_EXISTS],
-        `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.version}`,
+        `${socketWrapper.userId} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.version}`,
         this.metaData,
       )
     } else {

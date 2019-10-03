@@ -142,8 +142,8 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
     new RuleApplication({
       recordHandler: this.recordHandler!,
       socketWrapper,
-      username: socketWrapper.user,
-      authData: socketWrapper.authData,
+      userId: socketWrapper.userId,
+      serverData: socketWrapper.serverData,
       path: ruleData,
       ruleSpecification,
       message,

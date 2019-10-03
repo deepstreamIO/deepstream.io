@@ -4,7 +4,7 @@ import {get} from '../../default-options'
 import MessageConnectorMock from '../mock/message-connector-mock'
 import LoggerMock from '../mock/logger-mock'
 import StorageMock from '../mock/storage-mock'
-import { DeepstreamConfig, DeepstreamServices, SocketWrapper, DeepstreamMonitoring, DeepstreamPlugin, PermissionCallback, DeepstreamAuthenticationResult, LOG_LEVEL, EVENT } from '../../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, SocketWrapper, DeepstreamMonitoring, DeepstreamPlugin, PermissionCallback, LOG_LEVEL, EVENT } from '../../../ds-types/src/index'
 import { Message } from '../../constants'
 import { DefaultSubscriptionRegistryFactory } from '../../services/subscription-registry/default-subscription-registry-factory'
 import { DistributedStateRegistryFactory } from '../../services/cluster-state/distributed-state-registry-factory'
@@ -84,7 +84,7 @@ export const getDeepstreamOptions = (serverName?: string): { config: DeepstreamC
     }
 
     public canPerformAction (socketWrapper: SocketWrapper, message: Message, callback: PermissionCallback, passItOn: any) {
-      this.lastArgs.push([socketWrapper.user, message, callback])
+      this.lastArgs.push([socketWrapper.userId, message, callback])
       callback(socketWrapper, message, passItOn, this.nextError, this.nextResult)
     }
   }
@@ -136,7 +136,7 @@ export const getDeepstreamPermissionOptions = function () {
 const ConfigPermission = require('../../services/permission/valve/config-permission').ConfigPermission
 
 export const testPermission = function (options: { config: DeepstreamConfig, services: DeepstreamServices }) {
-  return function (permissions: any, message: Message, username?: string, userdata?: DeepstreamAuthenticationResult, callback?: PermissionCallback) {
+  return function (permissions: any, message: Message, username?: string, userdata?: any, callback?: PermissionCallback) {
     const permission = new ConfigPermission(options.config.permission.options, options.services, options.config, permissions)
     permission.setRecordHandler({
       removeRecordRequest: () => {},
@@ -145,8 +145,9 @@ export const testPermission = function (options: { config: DeepstreamConfig, ser
     let permissionResult
 
     const socketWrapper = SocketWrapperFactoryMock.createSocketWrapper()
-    socketWrapper.user = username || 'someUser'
-    callback = callback || function (socketWrapper: SocketWrapper, msg: Message, passItOn: any, error: any, result: boolean) {
+    socketWrapper.userId = username || 'someUser'
+    socketWrapper.serverData = userdata
+    callback = callback || function (sw: SocketWrapper, msg: Message, passItOn: any, error: any, result: boolean) {
       permissionResult = result
     }
     permission.canPerformAction(socketWrapper, message, callback)

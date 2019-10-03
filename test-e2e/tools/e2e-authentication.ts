@@ -10,7 +10,7 @@ interface AuthData {
 export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = 'E2E Authentication'
   public tokens = new Map<string, {
-    username?: string,
+    id?: string,
     token?: string,
     clientData?: JSONObject,
     serverData?: JSONObject
@@ -20,13 +20,13 @@ export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAut
   public async isValidUser (headers: JSONObject, authData: AuthData) {
     if (authData.token) {
         if (authData.token === 'letmein') {
-            return { isValid: true, authData: { username: 'A' } }
+            return { isValid: true, id: 'A' }
         }
 
         // authenticate token
         const response = this.tokens.get(authData.token)
-        if (response && response.username) {
-            return { isValid: true, authData: response }
+        if (response && response.id) {
+            return { isValid: true, ...response }
         }
     }
 
@@ -57,11 +57,11 @@ export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAut
         success = false
     }
 
-    const authResponseData = { username, token, clientData, serverData }
+    const authResponseData = { id: username, token, clientData, serverData }
 
     if (success) {
-        this.tokens.set(token, authData)
-        return { isValid: true, authData: authResponseData }
+        this.tokens.set(token, authResponseData)
+        return { isValid: true, ...authResponseData }
     } else {
         return { isValid: false }
     }

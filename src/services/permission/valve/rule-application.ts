@@ -13,8 +13,8 @@ const UNDEFINED = 'undefined'
 const STRING = 'string'
 
 interface RuleApplicationParams {
-   username: string
-   authData: any
+   userId: string
+   serverData: any
    path: string
    ruleSpecification: any
    message: Message
@@ -22,14 +22,14 @@ interface RuleApplicationParams {
    regexp: RegExp
    rule: any
    name: string
-   callback: PermissionCallback,
-   passItOn: any,
    permissionOptions: ValveConfig
    logger: NamespacedLogger
    recordHandler: RecordHandler
    socketWrapper: SocketWrapper
    config: DeepstreamConfig
-   services: DeepstreamServices
+   services: DeepstreamServices,
+   callback: PermissionCallback,
+   passItOn: any,
 }
 
 export default class RuleApplication {
@@ -278,9 +278,9 @@ export default class RuleApplication {
    */
   private getUser (): any {
     return {
-      isAuthenticated: this.params.username !== OPEN,
-      id: this.params.username,
-      data: this.params.authData,
+      isAuthenticated: this.params.userId !== OPEN,
+      id: this.params.userId,
+      data: this.params.serverData,
     }
   }
 

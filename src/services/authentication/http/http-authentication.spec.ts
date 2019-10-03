@@ -39,7 +39,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
     expect(authenticationHandler.description).to.equal(`http webhook to ${endpointUrl}`)
   })
 
-  it('issues a request when isValidUser is called and receives 200 in return', (done) => {
+  it('issues a request when isValidUser is called and receives 200 in return', async () => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -50,17 +50,17 @@ describe('it forwards authentication attempts as http post requests to a specifi
       })
       expect(server.lastRequestMethod).to.equal('POST')
       expect(server.lastRequestHeaders['content-type']).to.contain('application/json')
-      server.respondWith(200, { authData: { extra: 'data' } })
+      server.respondWith(200, { serverData: { extra: 'data' }, clientData: { color: 'red' }, id: "123" })
     })
 
-    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
-      expect(result).to.equal(true)
-      expect(data).to.deep.equal({ authData: { extra: 'data' } })
-      done()
-    })
+    const result = await authenticationHandler.isValidUser(connectionData, authData)
+    expect(result.isValid).to.equal(true)
+    expect(result.id).to.equal("123")
+    expect(result.serverData).to.deep.equal({ extra: 'data' })
+    expect(result.clientData).to.deep.equal({ color: 'red' })
   })
 
-  it('issues a request when isValidUser is called and receives 401 (denied) in return', (done) => {
+  it('issues a request when isValidUser is called and receives 401 (denied) in return', async () => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -74,15 +74,14 @@ describe('it forwards authentication attempts as http post requests to a specifi
       server.respondWith(401)
     })
 
-    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
-      expect(result).to.equal(false)
-      expect(data).to.equal(null)
-      expect(logSpy).to.have.callCount(0)
-      done()
-    })
+    const result = await authenticationHandler.isValidUser(connectionData, authData)
+    expect(result.isValid).to.equal(false)
+    expect(result.serverData).to.equal(undefined)
+    expect(result.clientData).to.equal(undefined)
+    expect(logSpy).to.have.callCount(0)
   })
 
-  it('receives a positive response without data', (done) => {
+  it('receives a positive response without data', async () => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -96,14 +95,13 @@ describe('it forwards authentication attempts as http post requests to a specifi
       server.respondWith(200, '')
     })
 
-    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
-      expect(result).to.equal(true)
-      expect(data).to.equal(null)
-      done()
-    })
+    const result = await authenticationHandler.isValidUser(connectionData, authData)
+    expect(result.isValid).to.equal(true)
+    expect(result.serverData).to.equal(undefined)
+    expect(result.clientData).to.equal(undefined)
   })
 
-  it('receives a positive response with only a string', (done) => {
+  it('receives a positive response with only a string', async () => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -117,14 +115,12 @@ describe('it forwards authentication attempts as http post requests to a specifi
       server.respondWith(200, 'userA')
     })
 
-    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
-      expect(result).to.equal(true)
-      expect(data).to.deep.equal({ username: 'userA' })
-      done()
-    })
+    const result = await authenticationHandler.isValidUser(connectionData, authData)
+    expect(result.isValid).to.equal(true)
+    expect(result.id).to.deep.equal('userA')
   })
 
-  it('receives a server error as response', (done) => {
+  it('receives a server error as response', async () => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
@@ -132,15 +128,13 @@ describe('it forwards authentication attempts as http post requests to a specifi
       server.respondWith(500, 'oh dear')
     })
 
-    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
-      expect(result).to.equal(false)
-      expect(logSpy).to.have.been.calledWith(2, EVENT.AUTH_ERROR, 'http auth server error: "oh dear"')
-      expect(data).to.equal('oh dear')
-      done()
-    })
+    const result = await authenticationHandler.isValidUser(connectionData, authData)
+    expect(result.isValid).to.equal(false)
+    expect(logSpy).to.have.been.calledWith(2, EVENT.AUTH_ERROR, 'http auth server error: "oh dear"')
+    expect(result.clientData).to.deep.equal({ error: 'oh dear' })
   })
 
-  it('promotes headers from body if provides', (done) => {
+  it('promotes headers from body if provides', async () => {
     const connectionData = { connection: 'data' }
     const authData = { token: 'a-token' }
 
@@ -148,12 +142,11 @@ describe('it forwards authentication attempts as http post requests to a specifi
       server.respondWith(200, {})
     })
 
-    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
-      expect(result).to.equal(true)
-      expect(data).to.deep.equal({})
-      expect(server.getRequestHeader('token')).to.equal('a-token')
-      done()
-    })
+    const result = await authenticationHandler.isValidUser(connectionData, authData)
+    expect(result.isValid).to.equal(true)
+    expect(result.clientData).to.equal(undefined)
+    expect(result.serverData).to.equal(undefined)
+    expect(server.getRequestHeader('token')).to.equal('a-token')
   })
 
   describe('retries', () => {
@@ -164,7 +157,7 @@ describe('it forwards authentication attempts as http post requests to a specifi
       server.once('request-received', () => server.respondWith(404, {}))
     })
 
-    it ('doesnt fail if the reponse returned is rety code', async () => {
+    it ('doesn\'t fail if the response returned is retry code', async () => {
       let called = false
       authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
         called = true
@@ -189,15 +182,9 @@ describe('it forwards authentication attempts as http post requests to a specifi
       await result
     })
 
+    // TODO: Always passing
     it ('returns invalid if retry attempts are exceeded', async () => {
-      let done
-      const result = new Promise((resolve) => done = resolve)
-
-      authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
-        expect(result).to.equal(false)
-        expect(data).to.deep.equal({ clientData: { error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED }})
-        done()
-      })
+      const isValidUser = authenticationHandler.isValidUser(connectionData, authData)
 
       await PromiseDelay(30)
       server.once('request-received', () => server.respondWith(404, {}))
@@ -205,20 +192,20 @@ describe('it forwards authentication attempts as http post requests to a specifi
       await PromiseDelay(30)
       server.once('request-received', () => server.respondWith(504, {}))
 
-      await result
+      const result = await isValidUser
+      expect(result.isValid).to.equal(false)
+      expect(result.clientData).to.deep.equal({ error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED })
     })
   })
 
-  it('times out', (done) => {
+  it('times out', async () => {
     const connectionData = { connection: 'data' }
     const authData = { username: 'userA' }
 
-    authenticationHandler.isValidUser(connectionData, authData, (result, data) => {
-      expect(result).to.equal(false)
-      expect(logSpy).to.have.been.calledWith(2, EVENT.AUTH_ERROR, 'http auth error: Error: socket hang up')
-      expect(data).to.deep.equal({ clientData: { error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED }})
-      server.respondWith(200)
-      done()
-    })
+    const response = await authenticationHandler.isValidUser(connectionData, authData)
+    expect(response.isValid).to.equal(false)
+    expect(logSpy).to.have.been.calledWith(2, EVENT.AUTH_ERROR, 'http auth error: Error: socket hang up')
+    expect(response.clientData).to.deep.equal({ error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED })
+    server.respondWith(200)
   })
 })

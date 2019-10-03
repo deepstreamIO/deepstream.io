@@ -64,7 +64,7 @@ export default class RpcHandler extends Handler<RPCMessage> {
       if (rpcData) {
         this.services.logger.debug(
           RPC_ACTION[message.action],
-          `name: ${message.name} with correlation id: ${message.correlationId} from ${socketWrapper.user}`,
+          `name: ${message.name} with correlation id: ${message.correlationId} from ${socketWrapper.userId}`,
           this.metaData
         )
         rpcData.rpc.handle(message)
@@ -157,7 +157,7 @@ export default class RpcHandler extends Handler<RPCMessage> {
 
     this.services.logger.debug(
       RPC_ACTION[RPC_ACTION.REQUEST],
-      `name: ${rpcName} with correlation id: ${correlationId} from ${socketWrapper.user}`,
+      `name: ${rpcName} with correlation id: ${correlationId} from ${socketWrapper.userId}`,
       this.metaData
     )
 

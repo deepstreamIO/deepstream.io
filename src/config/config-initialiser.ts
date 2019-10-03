@@ -305,7 +305,7 @@ function handleAuthStrategies (config: DeepstreamConfig, services: DeepstreamSer
     throw new Error('No authentication type specified')
   }
 
-  return new CombineAuthentication(config.auth.map((auth) => handleAuthStrategy(auth, config, services)), services, config)
+  return new CombineAuthentication(config.auth.map((auth) => handleAuthStrategy(auth, config, services)))
 }
 
 /**

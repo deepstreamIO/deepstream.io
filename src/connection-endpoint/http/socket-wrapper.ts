@@ -1,10 +1,13 @@
 import { parseData } from '@deepstream/protobuf/dist/src/message-parser'
 import { EventEmitter } from 'events'
-import { DeepstreamServices, UnauthenticatedSocketWrapper, EVENT } from '../../../ds-types/src/index'
+import { DeepstreamServices, UnauthenticatedSocketWrapper, EVENT, DeepstreamAuthenticationResult } from '../../../ds-types/src/index'
 import { Message } from '../../constants'
 
 export default class HTTPSocketWrapper extends EventEmitter implements UnauthenticatedSocketWrapper {
-  public user: string | null = null
+  public userId: string | null = null
+  public serverData: object | null = null
+  public clientData: object | null = null
+
   public uuid: number = Math.random()
 
   private correlationIndex: number = -1
@@ -12,8 +15,6 @@ export default class HTTPSocketWrapper extends EventEmitter implements Unauthent
   private responseCallback: Function | null = null
   private requestTimeout: NodeJS.Timeout | null = null
 
-  public authData: object | null = null
-  public clientData: object | null = null
   public authCallback: Function | null = null
   public isRemote: boolean = false
   public isClosed: boolean = false
@@ -25,15 +26,15 @@ export default class HTTPSocketWrapper extends EventEmitter implements Unauthent
   }
 
   public init (
-    authResponseData: any,
+    authResponseData: DeepstreamAuthenticationResult,
     messageIndex: number,
     messageResults: any[],
     responseCallback: Function,
     requestTimeoutId: NodeJS.Timeout
    ) {
-    this.user = authResponseData.userId || authResponseData.username || 'OPEN'
-    this.clientData = authResponseData.clientData
-    this.authData = authResponseData.serverData
+    this.userId = authResponseData.id || 'OPEN'
+    this.clientData = authResponseData.clientData || null
+    this.serverData = authResponseData.serverData || null
 
     this.correlationIndex = messageIndex
     this.messageResults = messageResults
@@ -113,7 +114,7 @@ export default class HTTPSocketWrapper extends EventEmitter implements Unauthent
   }
 
   /**
-   * Destroyes the socket. Removes all deepstream specific
+   * Destroys the socket. Removes all deepstream specific
    * logic and closes the connection
    *
    * @public

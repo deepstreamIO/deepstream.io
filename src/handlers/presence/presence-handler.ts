@@ -95,15 +95,15 @@ export default class PresenceHandler extends Handler<PresenceMessage> implements
   * Called whenever a client has succesfully logged in with a username
   */
   public onClientConnected (socketWrapper: SocketWrapper): void {
-    if (socketWrapper.user === 'OPEN') {
+    if (socketWrapper.userId === 'OPEN') {
       return
     }
-    const currentCount = this.localClients.get(socketWrapper.user)
+    const currentCount = this.localClients.get(socketWrapper.userId)
     if (currentCount === undefined) {
-      this.localClients.set(socketWrapper.user, 1)
-      this.connectedClients.add(socketWrapper.user)
+      this.localClients.set(socketWrapper.userId, 1)
+      this.connectedClients.add(socketWrapper.userId)
     } else {
-      this.localClients.set(socketWrapper.user, currentCount + 1)
+      this.localClients.set(socketWrapper.userId, currentCount + 1)
     }
   }
 
@@ -111,23 +111,23 @@ export default class PresenceHandler extends Handler<PresenceMessage> implements
   * Called whenever a client has disconnected
   */
   public onClientDisconnected (socketWrapper: SocketWrapper): void {
-    if (socketWrapper.user === 'OPEN') {
+    if (socketWrapper.userId === 'OPEN') {
       return
     }
-    const currentCount = this.localClients.get(socketWrapper.user)
+    const currentCount = this.localClients.get(socketWrapper.userId)
     if (!currentCount) {
       // TODO: Log Error
     } else if (currentCount === 1) {
-      this.localClients.delete(socketWrapper.user)
-      this.connectedClients.remove(socketWrapper.user)
+      this.localClients.delete(socketWrapper.userId)
+      this.connectedClients.remove(socketWrapper.userId)
     } else {
-      this.localClients.set(socketWrapper.user, currentCount - 1)
+      this.localClients.set(socketWrapper.userId, currentCount - 1)
     }
   }
 
   private handleQueryAll (correlationId: string, socketWrapper: SocketWrapper): void {
     const clients = this.connectedClients.getAll()
-    const index = clients.indexOf(socketWrapper.user)
+    const index = clients.indexOf(socketWrapper.userId)
     if (index !== -1) {
       clients.splice(index, 1)
     }

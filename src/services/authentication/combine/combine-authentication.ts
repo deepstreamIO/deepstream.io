@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamAuthenticationCombiner, DeepstreamAuthentication, DeepstreamServices, DeepstreamConfig } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthenticationCombiner, DeepstreamAuthentication, UserAuthenticationCallback } from '../../../../ds-types/src/index'
 import { JSONObject } from '../../../constants'
 
 /**
@@ -9,11 +9,31 @@ import { JSONObject } from '../../../constants'
 export class CombineAuthentication extends DeepstreamPlugin implements DeepstreamAuthenticationCombiner {
   public description: string = ''
 
-  constructor (auths: DeepstreamAuthentication[], services: DeepstreamServices, config: DeepstreamConfig) {
+  constructor (private auths: DeepstreamAuthentication[]) {
     super()
+    if (auths.length === 1) {
+      this.description = auths[0].description
+    } else {
+      this.description = auths.map((auth, index) => `\n\t${index}) ${auth.description}`).join('')
+    }
   }
 
-  public async isValidUser (connectionData: JSONObject, authData: JSONObject) {
-      return { isValid: false }
+  public async whenReady () {
+    await Promise.all(this.auths.map((auth) => auth.whenReady()))
+  }
+
+  public async close () {
+    await Promise.all(this.auths.map((auth) => auth.close()))
+  }
+
+  public async isValidUser (connectionData: JSONObject, authData: JSONObject, callback: UserAuthenticationCallback) {
+    for (const auth of this.auths) {
+      const result = await auth.isValidUser(connectionData, authData)
+      if (result) {
+        callback(result.isValid, result)
+        return
+      }
+    }
+    callback(false)
   }
 }
