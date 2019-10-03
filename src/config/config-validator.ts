@@ -97,22 +97,31 @@ const storageOptions = getPluginOptions(
   }
 )
 
-const authenticationOptions = getPluginOptions(
-  'auth',
-  ['none', 'file', 'http', 'storage'],
-  {
-    path: { type: 'string', minLength: 1 },
-    hash: { type: 'string', minLength: 1 },
-    iterations: { type: 'integer', minimum: 1 },
-    keyLength: { type: 'integer', minimum: 1 },
-    createUser: { type: 'boolean' },
-    table: { type: 'string', minLength: 1 },
-
-    endpointUrl: { type: 'string', format: 'uri'},
-    permittedStatusCodes: { type: 'array', items: { type: 'integer' } },
-    requestTimeout: { type: 'integer', minimum: 1 },
+const authenticationOptions = {
+  auth: {
+    type: 'array',
+    items: {
+      properties: {
+        type: { type: 'string', enum: ['none', 'file', 'http', 'storage'] },
+        name: { type: 'string', minLength: 1 },
+        path: { type: 'string', minLength: 1 },
+        options: {
+          type: 'object',
+          properties: {
+            hash: { type: 'string', minLength: 1 },
+            iterations: { type: 'integer', minimum: 1 },
+            keyLength: { type: 'integer', minimum: 1 },
+            createUser: { type: 'boolean' },
+            table: { type: 'string', minLength: 1 },
+            endpointUrl: { type: 'string', format: 'uri'},
+            permittedStatusCodes: { type: 'array', items: { type: 'integer' } },
+            requestTimeout: { type: 'integer', minimum: 1 },
+          }
+        }
+      }
+    }
   }
-)
+}
 
 const permissionOptions = getPluginOptions(
   'permission',
@@ -138,7 +147,6 @@ const connEndpointsOptions = {
               port: { type: 'integer', minimum: 1 },
               host: { type: 'string', minLength: 1 },
               healthCheckPath: { type: 'string', minLength: 1 },
-              logInvalidAuthData: { type: 'boolean' },
               maxMessageSize: { type: 'integer', minimum: 0 },
 
               // WEBSOCKET

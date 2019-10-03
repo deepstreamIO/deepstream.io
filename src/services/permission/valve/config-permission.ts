@@ -3,7 +3,7 @@ import * as configValidator from './config-validator'
 import RuleApplication from './rule-application'
 import RuleCache from './rule-cache'
 import * as rulesMap from './rules-map'
-import { Message, JSONObject, RECORD_ACTION, EVENT_ACTION, RPC_ACTION, PRESENCE_ACTION } from '../../../constants'
+import { Message, RECORD_ACTION, EVENT_ACTION, RPC_ACTION, PRESENCE_ACTION } from '../../../constants'
 import RecordHandler from '../../../handlers/record/record-handler'
 import { DeepstreamPlugin, DeepstreamPermission, ValveConfig, DeepstreamServices, DeepstreamConfig, PermissionCallback, SocketWrapper, EVENT } from '../../../../ds-types/src/index'
 import { readAndParseFile } from '../../../config/js-yaml-loader'
@@ -124,7 +124,7 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
    * - Load the applicable permissions
    * - Apply them
    */
-  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: JSONObject, socketWrapper: SocketWrapper, passItOn: any) {
+  public canPerformAction (socketWrapper: SocketWrapper, message: Message, callback: PermissionCallback, passItOn: any) {
     const ruleSpecification = rulesMap.getRulesForMessage(message)
 
     if (ruleSpecification === null) {
@@ -142,8 +142,8 @@ export class ConfigPermission extends DeepstreamPlugin implements DeepstreamPerm
     new RuleApplication({
       recordHandler: this.recordHandler!,
       socketWrapper,
-      username,
-      authData,
+      username: socketWrapper.user,
+      authData: socketWrapper.authData,
       path: ruleData,
       ruleSpecification,
       message,

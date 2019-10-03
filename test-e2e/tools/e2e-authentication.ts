@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamAuthentication, UserAuthenticationCallback } from '../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthentication } from '../../ds-types/src/index'
 import { JSONObject } from '../../src/constants'
 
 interface AuthData {
@@ -17,18 +17,16 @@ export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAut
   }>()
   public onlyLoginOnceUser: boolean = false
 
-  public isValidUser (headers: JSONObject, authData: AuthData, callback: UserAuthenticationCallback) {
+  public async isValidUser (headers: JSONObject, authData: AuthData) {
     if (authData.token) {
         if (authData.token === 'letmein') {
-            callback(true, { username: 'A' })
-            return
+            return { isValid: true, authData: { username: 'A' } }
         }
 
         // authenticate token
         const response = this.tokens.get(authData.token)
         if (response && response.username) {
-            callback(true, response)
-            return
+            return { isValid: true, authData: response }
         }
     }
 
@@ -38,7 +36,7 @@ export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAut
     const serverData: any = {}
     let success
 
-    // authenicate auth data
+    // authenticate auth data
     const users = ['A', 'B', 'C', 'D', 'E', 'F', 'W', '1', '2', '3', '4', 'OPEN']
     if (users.indexOf(username!) !== -1 && authData.password === 'abcdefgh') {
         success = true
@@ -62,10 +60,10 @@ export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAut
     const authResponseData = { username, token, clientData, serverData }
 
     if (success) {
-        this.tokens.set(token, authResponseData)
-        callback(true, authResponseData)
+        this.tokens.set(token, authData)
+        return { isValid: true, authData: authResponseData }
     } else {
-        callback(false)
+        return { isValid: false }
     }
   }
 }
