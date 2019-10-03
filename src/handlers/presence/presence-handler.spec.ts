@@ -7,7 +7,7 @@ const EVERYONE = '%_EVERYONE_%'
 import * as C from '../../constants'
 import * as testHelper from '../../test/helper/test-helper'
 import { getTestMocks } from '../../test/helper/test-mocks'
-import { PresenceMessage } from '../../../../client/dist/constants';
+import { PresenceMessage } from '../../../../client/dist/constants'
 
 const { config, services } = testHelper.getDeepstreamOptions()
 
@@ -94,7 +94,7 @@ describe('presence handler', () => {
     testMocks.stateRegistryMock
       .expects('add')
       .once()
-      .withExactArgs(userOne.socketWrapper.user)
+      .withExactArgs(userOne.socketWrapper.userId)
 
     presenceHandler.onClientConnected(userOne.socketWrapper)
   })
@@ -103,7 +103,7 @@ describe('presence handler', () => {
     testMocks.stateRegistryMock
       .expects('add')
       .once()
-      .withExactArgs(userOne.socketWrapper.user)
+      .withExactArgs(userOne.socketWrapper.userId)
 
     presenceHandler.onClientConnected(userOne.socketWrapper)
     presenceHandler.onClientConnected(userOne.socketWrapper)
@@ -113,7 +113,7 @@ describe('presence handler', () => {
     testMocks.stateRegistryMock
       .expects('add')
       .once()
-      .withExactArgs(userOne.socketWrapper.user)
+      .withExactArgs(userOne.socketWrapper.userId)
 
     testMocks.stateRegistryMock
       .expects('remove')
@@ -128,12 +128,12 @@ describe('presence handler', () => {
     testMocks.stateRegistryMock
       .expects('add')
       .once()
-      .withExactArgs(userOne.socketWrapper.user)
+      .withExactArgs(userOne.socketWrapper.userId)
 
     testMocks.stateRegistryMock
       .expects('remove')
       .once()
-      .withExactArgs(userOne.socketWrapper.user)
+      .withExactArgs(userOne.socketWrapper.userId)
 
     presenceHandler.onClientConnected(userOne.socketWrapper)
     presenceHandler.onClientDisconnected(userOne.socketWrapper)

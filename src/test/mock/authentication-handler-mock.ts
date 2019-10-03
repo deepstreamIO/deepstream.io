@@ -1,5 +1,4 @@
-import { DeepstreamPlugin, DeepstreamAuthentication, UserAuthenticationCallback } from '../../../ds-types/src/index'
-import { JSONObject } from '../../constants'
+import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamAuthenticationResult } from '../../../ds-types/src/index'
 
 export default class AuthenticationMock extends DeepstreamPlugin implements DeepstreamAuthentication {
   public onClientDisconnectCalledWith: string | null = null
@@ -22,21 +21,31 @@ export default class AuthenticationMock extends DeepstreamPlugin implements Deep
     this.onClientDisconnectCalledWith = null
   }
 
-  public isValidUser (handshakeData: JSONObject, authData: JSONObject, callback: UserAuthenticationCallback) {
+  public async isValidUser (handshakeData: any, authData: any): Promise<DeepstreamAuthenticationResult> {
     this.lastUserValidationQueryArgs = arguments
     if (this.nextUserValidationResult === true) {
       if (this.sendNextValidAuthWithData === true) {
-        callback(true, {
-          username: 'test-user',
+        return {
+          isValid: true,
+          id: 'test-user',
           clientData: { value: 'test-data' }
-        })
-      } else if (this.nextUserIsAnonymous) {
-        callback(true, {})
-      } else {
-        callback(true, { username: 'test-user' })
+        }
       }
-    } else {
-      callback(false, { clientData: { error: 'Invalid User' } })
+      if (this.nextUserIsAnonymous) {
+        return {
+          isValid: true,
+          id: 'open'
+        }
+      }
+      return {
+        isValid: true,
+        id: 'test-user'
+      }
+    }
+
+    return {
+      isValid: false,
+      clientData: { error: 'Invalid User' }
     }
   }
 

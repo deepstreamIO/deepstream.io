@@ -55,11 +55,9 @@ export default class MessageProcessor {
         const l = message.names!.length
         for (let j = 0; j < l; j++) {
           this.services.permission.canPerformAction(
-            socketWrapper.user,
+            socketWrapper,
             { ...message, name: message.names![j] },
             this.onBulkPermissionResponse,
-            socketWrapper.authData!,
-            socketWrapper,
             { originalMessage: message, uuid }
           )
         }
@@ -67,11 +65,9 @@ export default class MessageProcessor {
       }
 
       this.services.permission.canPerformAction(
-        socketWrapper.user,
+        socketWrapper,
         message,
         this.onPermissionResponse,
-        socketWrapper.authData!,
-        socketWrapper,
         {}
       )
     }

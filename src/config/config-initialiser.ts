@@ -1,10 +1,11 @@
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring } from '../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner } from '../../ds-types/src/index'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
 import { HTTPConnectionEndpoint } from '../connection-endpoint/http/connection-endpoint'
+import { CombineAuthentication } from '../services/authentication/combine/combine-authentication'
 import { OpenAuthentication } from '../services/authentication/open/open-authentication'
 import { ConfigPermission } from '../services/permission/valve/config-permission'
 import { OpenPermission } from '../services/permission/open/open-permission'
@@ -87,8 +88,8 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.storage = new (resolvePluginClass(config.storage, 'storage', ll))(config.storage.options, services, config)
   services.cache = new (resolvePluginClass(config.cache, 'cache', ll))(config.cache.options, services, config)
   services.monitoring = handleMonitoring(config, services)
-  services.authentication = handleAuthStrategy(config, services)
-  services.permission = handlePermissionStrategy(config, services)
+  services.authentication = handleAuthStrategies(config, services)
+  services.permission = handlePermissionStrategies(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
   services.locks = new (resolvePluginClass(config.locks, 'locks', ll))(config.locks.options, services, config)
   services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', ll))(config.clusterNode.options, services, config)
@@ -288,11 +289,31 @@ function resolvePluginClass (plugin: PluginConfig, type: string, logLevel: LOG_L
 }
 
 /**
+ * Instantiates the authentication handlers registered for *config.auth.type*
+ *
+ * CLI arguments will be considered.
+ */
+function handleAuthStrategies (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamAuthenticationCombiner {
+  if (commandLineArguments.disableAuth) {
+    config.auth = [{
+      type: 'none',
+      options: {}
+    }]
+  }
+
+  if (!config.auth) {
+    throw new Error('No authentication type specified')
+  }
+
+  return new CombineAuthentication(config.auth.map((auth) => handleAuthStrategy(auth, config, services)))
+}
+
+/**
  * Instantiates the authentication handler registered for *config.auth.type*
  *
  * CLI arguments will be considered.
  */
-function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamAuthentication {
+function handleAuthStrategy (auth: PluginConfig, config: DeepstreamConfig, services: DeepstreamServices): DeepstreamAuthentication {
   let AuthenticationHandlerClass
 
   const authStrategies = {
@@ -302,27 +323,18 @@ function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServi
     storage: StorageBasedAuthentication
   }
 
-  if (!config.auth) {
-    throw new Error('No authentication type specified')
-  }
-
-  if (commandLineArguments.disableAuth) {
-    config.auth.type = 'none'
-    config.auth.options = {}
-  }
-
-  if (config.auth.name || config.auth.path) {
-    AuthenticationHandlerClass = resolvePluginClass(config.auth, 'authentication', config.logLevel)
+  if (auth.name || auth.path) {
+    AuthenticationHandlerClass = resolvePluginClass(auth, 'authentication', config.logLevel)
     if (!AuthenticationHandlerClass) {
-      throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
+      throw new Error(`unable to resolve authentication handler ${auth.name || auth.path}`)
     }
-  } else if (config.auth.type && (authStrategies as any)[config.auth.type]) {
-    AuthenticationHandlerClass = (authStrategies as any)[config.auth.type]
+  } else if (auth.type && (authStrategies as any)[auth.type]) {
+    AuthenticationHandlerClass = (authStrategies as any)[auth.type]
   } else {
-    throw new Error(`Unknown authentication type ${config.auth.type}`)
+    throw new Error(`Unknown authentication type ${auth.type}`)
   }
 
-  return new AuthenticationHandlerClass(config.auth.options, services, config)
+  return new AuthenticationHandlerClass(auth.options, services, config)
 }
 
 /**
@@ -330,13 +342,8 @@ function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServi
  *
  * CLI arguments will be considered.
  */
-function handlePermissionStrategy (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamPermission {
-  let PermissionHandlerClass
-
-  const permissionStrategies = {
-    config: ConfigPermission,
-    none: OpenPermission
-  }
+function handlePermissionStrategies (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamPermission {
+  const permission = config.permission
 
   if (!config.permission) {
     throw new Error('No permission type specified')
@@ -347,18 +354,25 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
     config.permission.options = {}
   }
 
-  if (config.permission.name || config.permission.path) {
-    PermissionHandlerClass = resolvePluginClass(config.permission, 'permission', config.logLevel)
-    if (!PermissionHandlerClass) {
-      throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
-    }
-  } else if (config.permission.type && (permissionStrategies as any)[config.permission.type]) {
-    PermissionHandlerClass = (permissionStrategies as any)[config.permission.type]
-  } else {
-    throw new Error(`Unknown permission type ${config.permission.type}`)
+  let PermissionHandlerClass
+
+  const permissionStrategies = {
+    config: ConfigPermission,
+    none: OpenPermission
   }
 
-  return new PermissionHandlerClass(config.permission.options, services, config)
+  if (permission.name || permission.path) {
+    PermissionHandlerClass = resolvePluginClass(permission, 'permission', config.logLevel)
+    if (!PermissionHandlerClass) {
+      throw new Error(`unable to resolve plugin ${permission.name || permission.path}`)
+    }
+  } else if (permission.type && (permissionStrategies as any)[permission.type]) {
+    PermissionHandlerClass = (permissionStrategies as any)[permission.type]
+  } else {
+    throw new Error(`Unknown permission type ${permission.type}`)
+  }
+
+  return new PermissionHandlerClass(permission.options, services, config)
 }
 
 function handleMonitoring (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamMonitoring {

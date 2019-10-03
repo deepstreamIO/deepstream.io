@@ -26,6 +26,7 @@ import { DependencyInitialiser } from './utils/dependency-initialiser'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT, SocketWrapper, ConnectionListener } from '../ds-types/src/index'
 import RecordHandler from './handlers/record/record-handler'
 import { getValue, setValue } from './utils/json-path'
+import { CombineAuthentication } from './services/authentication/combine/combine-authentication'
 
 /**
  * Sets the name of the process
@@ -102,6 +103,11 @@ export class Deepstream extends EventEmitter {
 
     if (key === 'auth') {
       throw new Error('auth has been replaced with authentication')
+    }
+
+    if (key === 'authentication') {
+      this.services.authentication = new CombineAuthentication(value instanceof Array ? value : [value])
+      return
     }
 
     if ((this.services as any)[key] !== undefined) {

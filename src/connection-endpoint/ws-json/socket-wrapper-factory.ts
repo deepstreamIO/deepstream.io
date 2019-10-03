@@ -9,18 +9,20 @@ import * as WebSocket from 'ws'
  * with deepstream's message structure
  */
 export class JSONSocketWrapper implements UnauthenticatedSocketWrapper {
+  public userId: string | null = null
+  public serverData: object | null = null
+  public clientData: object | null = null
+
   public isRemote: false = false
   public isClosed: boolean = false
-  public user: string | null = null
   public uuid: number = Math.random()
+
   public authCallback: Function | null = null
   public authAttempts: number = 0
 
   private bufferedWrites: Uint8Array[] = []
   private closeCallbacks: Set<Function> = new Set()
 
-  public authData: object | null = null
-  public clientData: object | null = null
   private bufferedWritesTotalByteSize: number = 0
 
   constructor (
@@ -102,7 +104,7 @@ export class JSONSocketWrapper implements UnauthenticatedSocketWrapper {
     delete this.authCallback
 
     this.closeCallbacks.forEach((cb) => cb(this))
-    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.user!)
+    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.userId!)
   }
 
   /**

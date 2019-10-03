@@ -213,7 +213,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
       this.subscriptions.set(name, subscription)
     } else if (subscription.sockets.has(socket)) {
       if (this.logger.shouldLog(LOG_LEVEL.WARN)) {
-        const msg = `repeat subscription to "${name}" by ${socket.user}`
+        const msg = `repeat subscription to "${name}" by ${socket.userId}`
         this.logger.warn(EVENT_ACTION[this.constants.MULTIPLE_SUBSCRIPTIONS], msg, { message, socketWrapper: socket })
       }
       socket.sendMessage({
@@ -231,7 +231,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     if (!silent) {
       if (this.logger.shouldLog(LOG_LEVEL.DEBUG)) {
-        const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.user}`
+        const logMsg = `for ${TOPIC[this.topic]}:${name} by ${socket.userId}`
         this.logger.debug(this.actions[this.constants.SUBSCRIBE], logMsg)
       }
       socket.sendAckMessage(message)
@@ -247,7 +247,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
     if (!subscription || !subscription.sockets.delete(socket)) {
       if (!silent) {
         if (this.logger.shouldLog(LOG_LEVEL.WARN)) {
-          const msg = `${socket.user} is not subscribed to ${name}`
+          const msg = `${socket.userId} is not subscribed to ${name}`
           this.logger.warn(this.actions[this.constants.NOT_SUBSCRIBED], msg, { socketWrapper: socket, message})
         }
         socket.sendMessage({
@@ -264,7 +264,7 @@ export class DefaultSubscriptionRegistry implements SubscriptionRegistry {
 
     if (!silent) {
       if (this.logger.shouldLog(LOG_LEVEL.DEBUG)) {
-        const logMsg = `for ${this.topic}:${name} by ${socket.user}`
+        const logMsg = `for ${this.topic}:${name} by ${socket.userId}`
         this.logger.debug(this.actions[this.constants.UNSUBSCRIBE], logMsg)
       }
       socket.sendAckMessage(message)

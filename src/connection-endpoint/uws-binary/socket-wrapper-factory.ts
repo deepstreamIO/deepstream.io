@@ -13,7 +13,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
 
   public isRemote: false = false
   public isClosed: boolean = false
-  public user: string | null = null
+  public userId: string | null = null
   public uuid: number = Math.random()
   public authCallback: Function | null = null
   public authAttempts: number = 0
@@ -21,7 +21,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
   private bufferedWrites: Uint8Array[]
   private closeCallbacks: Set<Function> = new Set()
 
-  public authData: object | null = null
+  public serverData: object | null = null
   public clientData: object | null = null
   private bufferedWritesTotalByteSize: number
 
@@ -112,7 +112,7 @@ export class UwsSocketWrapper implements UnauthenticatedSocketWrapper {
     delete this.authCallback
 
     this.closeCallbacks.forEach((cb) => cb(this))
-    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.user!)
+    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.userId!)
   }
 
   /**

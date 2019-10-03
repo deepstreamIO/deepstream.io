@@ -13,15 +13,15 @@ describe('open authentication handler', () => {
     expect(authenticationHandler.description).to.equal('Open Authentication')
   })
 
-  it('permissions users without auth data', () => {
-    const callback = spy()
-    authenticationHandler.isValidUser(null, {}, callback)
-    expect(callback).to.have.been.calledWith(true, { username: 'open' })
+  it('permissions users without auth data', async () => {
+    const result = await authenticationHandler.isValidUser(null, {})
+    expect(result.isValid).to.equal(true)
+    expect(result.id).to.equal('open')
   })
 
-  it('permissions users with a username', () => {
-    const callback = spy()
-    authenticationHandler.isValidUser(null, { username: 'Wolfram' }, callback)
-    expect(callback).to.have.been.calledWith(true, { username: 'Wolfram' })
+  it('permissions users with a username', async () => {
+    const result = await authenticationHandler.isValidUser(null, { username: 'Wolfram' })
+    expect(result.isValid).to.equal(true)
+    expect(result.id).to.equal('Wolfram')
   })
 })

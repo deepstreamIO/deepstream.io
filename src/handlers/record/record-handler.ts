@@ -636,11 +636,9 @@ export default class RecordHandler extends Handler<RecordMessage> {
   private permissionAction (actionToPermission: RA, message: Message, originalAction: RA, socketWrapper: SocketWrapper, successCallback: Function) {
     const copyWithAction = {...message, action: actionToPermission }
     this.services.permission.canPerformAction(
-      socketWrapper.user,
+      socketWrapper,
       copyWithAction,
       this.onPermissionResponse,
-      socketWrapper.authData!,
-      socketWrapper,
       { originalAction, successCallback }
     )
   }

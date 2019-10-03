@@ -1,5 +1,5 @@
 import { post } from 'needle'
-import { EVENT, DeepstreamPlugin, UserAuthenticationCallback, DeepstreamServices, DeepstreamConfig, DeepstreamAuthentication } from '../../../../ds-types/src/index'
+import { EVENT, DeepstreamPlugin, DeepstreamServices, DeepstreamConfig, DeepstreamAuthentication, DeepstreamAuthenticationResult } from '../../../../ds-types/src/index'
 import { JSONObject } from '../../../constants'
 import { validateMap } from '../../../utils/utils'
 
@@ -23,7 +23,7 @@ interface HttpAuthenticationHandlerSettings {
 
 export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = `http webhook to ${this.settings.endpointUrl}`
-  private retryAttempts = new Map<number, { connectionData: any, authData: any, callback: UserAuthenticationCallback, attempts: number } >()
+  private retryAttempts = new Map<number, { connectionData: any, authData: any, callback: (result: DeepstreamAuthenticationResult) => void, attempts: number } >()
   private requestId = 0
 
   constructor (private settings: HttpAuthenticationHandlerSettings, private services: DeepstreamServices, config: DeepstreamConfig) {
@@ -34,11 +34,13 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
     }
   }
 
-  public isValidUser (connectionData: JSONObject, authData: JSONObject, callback: UserAuthenticationCallback): void {
-    this.validate(this.requestId++, connectionData, authData, callback)
+  public async isValidUser (connectionData: JSONObject, authData: JSONObject) {
+    return new Promise((resolve: (result: DeepstreamAuthenticationResult) => void) => {
+      this.validate(this.requestId++, connectionData, authData, resolve)
+    })
   }
 
-  private validate (id: number, connectionData: JSONObject, authData: JSONObject, callback: UserAuthenticationCallback): void {
+  private validate (id: number, connectionData: JSONObject, authData: JSONObject, callback: (result: DeepstreamAuthenticationResult) => void): void {
     const options = {
       read_timeout: this.settings.requestTimeout,
       open_timeout: this.settings.requestTimeout,
@@ -70,7 +72,7 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       if (!response.statusCode) {
         this.services.logger.warn(EVENT.AUTH_ERROR, 'http auth server error: missing status code!')
         this.retryAttempts.delete(id)
-        callback(false)
+        callback({ isValid: false })
         return
       }
 
@@ -86,20 +88,24 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       this.retryAttempts.delete(id)
 
       if (this.settings.permittedStatusCodes.indexOf(response.statusCode) === -1) {
-        callback(false, response.body || null)
+        if (typeof response.body === 'string' && response.body) {
+          callback({ isValid: false, clientData: { error: response.body }})
+        } else {
+          callback({ isValid: false, ...response.body })
+        }
         return
       }
 
       if (response.body && typeof response.body === 'string') {
-        callback(true, { username: response.body })
+        callback({ isValid: true, id: response.body })
         return
       }
 
-      callback(true, response.body || null)
+      callback({ isValid: true, ...response.body })
     })
   }
 
-  private retry (id: number, connectionData: JSONObject, authData: JSONObject, callback: UserAuthenticationCallback) {
+  private retry (id: number, connectionData: JSONObject, authData: JSONObject, callback: (result: DeepstreamAuthenticationResult) => void) {
     let retryAttempt = this.retryAttempts.get(id)
     if (!retryAttempt) {
       retryAttempt = {
@@ -116,7 +122,8 @@ export class HttpAuthentication extends DeepstreamPlugin implements DeepstreamAu
       setTimeout(() => this.validate(id, connectionData, authData, callback), this.settings.retryInterval)
     } else {
       this.retryAttempts.delete(id)
-      callback(false, {
+      callback({
+        isValid: false,
         clientData: {
           error: EVENT.AUTH_RETRY_ATTEMPTS_EXCEEDED
         }

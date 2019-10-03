@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamAuthentication, UserAuthenticationCallback } from '../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthentication } from '../../ds-types/src/index'
 import { JSONObject } from '../../src/constants'
 
 interface AuthData {
@@ -10,25 +10,23 @@ interface AuthData {
 export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
   public description: string = 'E2E Authentication'
   public tokens = new Map<string, {
-    username?: string,
+    id?: string,
     token?: string,
     clientData?: JSONObject,
     serverData?: JSONObject
   }>()
   public onlyLoginOnceUser: boolean = false
 
-  public isValidUser (headers: JSONObject, authData: AuthData, callback: UserAuthenticationCallback) {
+  public async isValidUser (headers: JSONObject, authData: AuthData) {
     if (authData.token) {
         if (authData.token === 'letmein') {
-            callback(true, { username: 'A' })
-            return
+            return { isValid: true, id: 'A' }
         }
 
         // authenticate token
         const response = this.tokens.get(authData.token)
-        if (response && response.username) {
-            callback(true, response)
-            return
+        if (response && response.id) {
+            return { isValid: true, ...response }
         }
     }
 
@@ -38,7 +36,7 @@ export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAut
     const serverData: any = {}
     let success
 
-    // authenicate auth data
+    // authenticate auth data
     const users = ['A', 'B', 'C', 'D', 'E', 'F', 'W', '1', '2', '3', '4', 'OPEN']
     if (users.indexOf(username!) !== -1 && authData.password === 'abcdefgh') {
         success = true
@@ -59,13 +57,13 @@ export class E2EAuthentication extends DeepstreamPlugin implements DeepstreamAut
         success = false
     }
 
-    const authResponseData = { username, token, clientData, serverData }
+    const authResponseData = { id: username, token, clientData, serverData }
 
     if (success) {
         this.tokens.set(token, authResponseData)
-        callback(true, authResponseData)
+        return { isValid: true, ...authResponseData }
     } else {
-        callback(false)
+        return { isValid: false }
     }
   }
 }
