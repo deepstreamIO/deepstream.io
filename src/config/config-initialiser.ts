@@ -1,6 +1,6 @@
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner } from '../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner, DeepstreamHTTPService } from '../../ds-types/src/index'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
@@ -26,6 +26,7 @@ import { DistributedStateRegistryFactory } from '../services/cluster-state/distr
 import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
 import { NodeHTTP } from '../services/http/node/node-http'
+import { UWSHTTP } from '../services/http/uws/uws-http'
 import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
 
 let commandLineArguments: any
@@ -95,7 +96,7 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', ll))(config.clusterNode.options, services, config)
   services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', ll))(config.clusterRegistry.options, services, config)
   services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', ll))(config.clusterStates.options, services, config)
-  services.httpService = new (resolvePluginClass(config.httpServer, 'httpService', ll))(config.httpServer.options, services, config)
+  services.httpService = handleHTTPServer(config, services)
 
   handleCustomPlugins(config, services)
 
@@ -393,4 +394,23 @@ function handleMonitoring (config: DeepstreamConfig, services: DeepstreamService
   }
 
   return new MonitoringClass(config.monitoring.options, services, config)
+}
+
+function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamHTTPService {
+  let HttpServerClass
+
+  const httpPlugins = {
+    default: NodeHTTP,
+    uws: UWSHTTP
+  }
+
+  if (config.httpServer.name || config.httpServer.path) {
+    return new (resolvePluginClass(config.httpServer, 'httpServer', config.logLevel))(config.httpServer.options, services, config)
+  } else if (config.httpServer.type && (httpPlugins as any)[config.httpServer.type]) {
+    HttpServerClass = (httpPlugins as any)[config.httpServer.type]
+  } else {
+    throw new Error(`Unknown httpServer type ${config.httpServer.type}`)
+  }
+
+  return new HttpServerClass(config.httpServer.options, services, config)
 }

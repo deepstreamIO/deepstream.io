@@ -43,7 +43,7 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
    */
   public flush () {
     if (this.bufferedWritesTotalByteSize !== 0) {
-      this.bufferedWrites.forEach((bw) => this.socket.send(bw))
+      this.bufferedWrites.forEach((bw) => this.writeMessage(this.socket, bw))
       this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []
     }
@@ -113,10 +113,10 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
   public sendBuiltMessage (message: SerializedType, buffer?: boolean): void {
     if (this.isOpen) {
       if (this.config.outgoingBufferTimeout === 0) {
-        this.socket.send(message)
+        this.writeMessage(this.socket, message)
       } else if (!buffer) {
         this.flush()
-        this.socket.send(message)
+        this.writeMessage(this.socket, message)
       } else {
         this.bufferedWritesTotalByteSize += message.length
         this.bufferedWrites.push(message)
@@ -130,6 +130,6 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
   }
 
   protected writeMessage (socket: any, message: SerializedType) {
-      socket.send(message)
+    socket.send(message)
   }
 }

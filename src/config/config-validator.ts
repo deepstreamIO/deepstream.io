@@ -70,7 +70,7 @@ const listenOptions = {
 
 const httpServer = getPluginOptions(
   'httpServer',
-  ['default'],
+  ['default', 'uws'],
   {
       host: { type: 'string', minLength: 1 },
       port: { type: 'integer', minimum: 1 },
