@@ -40,6 +40,16 @@ const generalOptions = {
   logLevel: LogLevelValidation
 }
 
+const enabledFeatures = {
+  enabledFeatures: {
+    record: { type: 'boolean' },
+    event: { type: 'boolean' },
+    rpc: { type: 'boolean' },
+    presence: { type: 'boolean' },
+    monitoring: { type: 'boolean' },
+  }
+}
+
 const rpcOptions = {
   rpc: {
     type: ['object'],
@@ -241,6 +251,7 @@ const schema = {
   additionalProperties: false,
   properties: {
     ...generalOptions,
+    ...enabledFeatures,
     ...rpcOptions,
     ...recordOptions,
     ...listenOptions,

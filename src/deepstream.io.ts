@@ -252,36 +252,46 @@ export class Deepstream extends EventEmitter {
  * the various handlers.
  */
   private async handlerInit () {
-    this.eventHandler = new EventHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.EVENT,
-      this.eventHandler.handle.bind(this.eventHandler)
-    )
+    if (this.config.enabledFeatures.event) {
+      this.eventHandler = new EventHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.EVENT,
+        this.eventHandler.handle.bind(this.eventHandler)
+      )
+    }
 
-    this.rpcHandler = new RpcHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.RPC,
-      this.rpcHandler.handle.bind(this.rpcHandler)
-    )
+    if (this.config.enabledFeatures.rpc) {
+      this.rpcHandler = new RpcHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.RPC,
+        this.rpcHandler.handle.bind(this.rpcHandler)
+      )
+    }
 
-    this.recordHandler = new RecordHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.RECORD,
-      this.recordHandler.handle.bind(this.recordHandler)
-    )
+    if (this.config.enabledFeatures.record) {
+      this.recordHandler = new RecordHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.RECORD,
+        this.recordHandler.handle.bind(this.recordHandler)
+      )
+    }
 
-    this.presenceHandler = new PresenceHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.PRESENCE,
-      this.presenceHandler.handle.bind(this.presenceHandler)
-    )
-    this.connectionListeners.add(this.presenceHandler as ConnectionListener)
+    if (this.config.enabledFeatures.presence) {
+      this.presenceHandler = new PresenceHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.PRESENCE,
+        this.presenceHandler.handle.bind(this.presenceHandler)
+      )
+      this.connectionListeners.add(this.presenceHandler as ConnectionListener)
+    }
 
-    this.monitoringHandler = new MonitoringHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.MONITORING,
-      this.monitoringHandler.handle.bind(this.monitoringHandler)
-    )
+    if (this.config.enabledFeatures.monitoring) {
+      this.monitoringHandler = new MonitoringHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.MONITORING,
+        this.monitoringHandler.handle.bind(this.monitoringHandler)
+      )
+    }
 
     this.messageProcessor.onAuthenticatedMessage =
       this.messageDistributor.distribute.bind(this.messageDistributor)

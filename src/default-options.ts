@@ -190,6 +190,14 @@ export function get (): DeepstreamConfig {
       rematchInterval: 30000,
       matchCooldown: 10000
     },
+
+    enabledFeatures: {
+      record: true,
+      event: true,
+      rpc: true,
+      presence: true,
+      monitoring: true
+    },
   }
 
 }
