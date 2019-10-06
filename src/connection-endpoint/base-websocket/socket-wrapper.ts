@@ -8,7 +8,6 @@ import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, Un
  * with deepstream's message structure
  */
 export abstract class WSSocketWrapper<SerializedType extends { length: number }> implements UnauthenticatedSocketWrapper {
-
   public isRemote: false = false
   public isClosed: boolean = false
   public uuid: number = Math.random()
@@ -79,7 +78,11 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
    * logic and closes the connection
    */
   public destroy (): void {
-    this.socket.close()
+    try {
+        this.socket.close()
+    } catch (e) {
+        this.socket.end()
+    }
   }
 
   public close (): void {
@@ -124,5 +127,9 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
         }
       }
     }
+  }
+
+  protected writeMessage (socket: any, message: SerializedType) {
+      socket.send(message)
   }
 }
