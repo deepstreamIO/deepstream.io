@@ -311,7 +311,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     })
 
     this.connectionListener.onClientConnected(socketWrapper)
-    this.services.logger!.info(AUTH_ACTION[AUTH_ACTION.AUTH_SUCCESSFUL], socketWrapper.user!)
+    this.services.logger!.info(AUTH_ACTION[AUTH_ACTION.AUTH_SUCCESSFUL], socketWrapper.userId!)
   }
 
   /**
@@ -319,8 +319,8 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    */
   private appendDataToSocketWrapper (socketWrapper: UnauthenticatedSocketWrapper, userData: any): SocketWrapper {
     const authenticatedSocketWrapper = socketWrapper as SocketWrapper
-    authenticatedSocketWrapper.user = userData.username || OPEN
-    authenticatedSocketWrapper.authData = userData.serverData || null
+    authenticatedSocketWrapper.userId = userData.id || OPEN
+    authenticatedSocketWrapper.serverData = userData.serverData || null
     authenticatedSocketWrapper.clientData = userData.clientData || null
     return authenticatedSocketWrapper
   }

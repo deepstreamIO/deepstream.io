@@ -2,7 +2,7 @@ import 'mocha'
 import { spy, assert } from 'sinon'
 import { expect } from 'chai'
 import { FileBasedAuthentication } from './file-based-authentication'
-import { Logger, DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
+import { DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
 import { PromiseDelay } from '../../../utils/utils';
 
 const createServices = () => {
@@ -11,77 +11,66 @@ const createServices = () => {
   } as DeepstreamServices
 }
 
-const testAuthentication = (settings) => {
-  const authData = {
-    username: settings.username,
-    password: settings.password
+const testAuthentication = async ({ username, password, handler, notFound, isValid, clientData, serverData }) => {
+  const result = await handler.isValidUser(null, { username, password })
+  if (notFound) {
+    expect(result).to.equal(null)
+    return
   }
+  expect(result.isValid).to.eq(isValid)
 
-  const callback = function (result, data) {
-    expect(result).to.eq(settings.expectedResult)
-
-    if (settings.expectedResult) {
-      expect(data).to.deep.eq({
-        username: settings.username,
-        serverData: settings.serverData,
-        clientData: settings.clientData
-      })
-    } else {
-      expect(data).to.equal(undefined)
-    }
-
-    settings.done()
+  if (isValid) {
+    expect(result.id).to.equal(username)
+    expect(result.clientData).to.deep.equal(clientData)
+    expect(result.serverData).to.deep.equal(serverData)
+  } else {
+    expect(result).to.deep.equal({ isValid })
   }
-
-  settings.handler.isValidUser(null, authData, callback)
 }
 
 describe('file based authentication', () => {
+
   describe('does authentication for cleartext passwords', () => {
     let authenticationHandler
-    const settings = {
-      path: './src/test/config/users-unhashed.json',
-      hash: false
-    }
 
     beforeEach(async () => {
-      authenticationHandler = new FileBasedAuthentication(settings as any, createServices())
+      authenticationHandler = new FileBasedAuthentication({
+        path: './src/test/config/users-unhashed.json',
+        hash: false
+      }, createServices())
       await authenticationHandler.whenReady()
       expect(authenticationHandler.description).to.eq('file using ./src/test/config/users-unhashed.json')
     })
 
-    it('confirms userC with valid password', (done) => {
-      testAuthentication({
+    it('confirms userC with valid password', async () => {
+      await testAuthentication({
+        handler: authenticationHandler,
         username: 'userC',
         password: 'userCPass',
-        expectedResult: true,
+        isValid: true,
         serverData: { some: 'values' },
-        clientData: { all: 'othervalue' },
-        done,
-        handler: authenticationHandler
+        clientData: { all: 'othervalue' }
       })
     })
 
-    it('confirms userD with valid password', (done) => {
-      testAuthentication({
+    it('confirms userD with valid password', async () => {
+      await testAuthentication({
         username: 'userD',
         password: 'userDPass',
-        expectedResult: true,
+        isValid: true,
         serverData: null,
         clientData: { all: 'client data' },
-        done,
         handler: authenticationHandler
       })
     })
 
-    it('rejects userC with invalid password', (done) => {
-      testAuthentication({
+    it('rejects userC with invalid password', async () => {
+      await testAuthentication({
         username: 'userC',
         password: 'userDPass',
-        expectedResult: false,
+        isValid: false,
         serverData: null,
         clientData: null,
-        done,
         handler: authenticationHandler
       })
     })
@@ -89,69 +78,64 @@ describe('file based authentication', () => {
 
   describe('does authentication for hashed passwords', () => {
     let authenticationHandler
-    const settings = {
-      path: './src/test/config/users.json',
-      hash: 'md5',
-      iterations: 100,
-      keyLength: 32
-    }
 
     beforeEach(async () => {
-      authenticationHandler = new FileBasedAuthentication(settings as any, createServices())
+      authenticationHandler = new FileBasedAuthentication({
+        path: './src/test/config/users.json',
+        hash: 'md5',
+        iterations: 100,
+        keyLength: 32,
+        reportInvalidParameters: true
+      }, createServices())
       await authenticationHandler.whenReady()
     })
 
-    it('confirms userA with valid password', (done) => {
-      testAuthentication({
+    it('confirms userA with valid password', async () => {
+      await testAuthentication({
+        handler: authenticationHandler,
         username: 'userA',
         password: 'userAPass',
-        expectedResult: true,
+        isValid: true,
         serverData: { some: 'values' },
-        clientData: { all: 'othervalue' },
-        done,
-        handler: authenticationHandler
+        clientData: { all: 'othervalue' }
       })
     })
 
-    it('rejects userA with an invalid password', (done) => {
-      testAuthentication({
+    it('rejects userA with an invalid password', async () => {
+      await testAuthentication({
         username: 'userA',
         password: 'wrongPassword',
-        expectedResult: false,
-        done,
+        isValid: false,
         handler: authenticationHandler
       })
     })
 
-    it('rejects userA with user B\'s password', (done) => {
-      testAuthentication({
+    it('rejects userA with user B\'s password', async () => {
+      await testAuthentication({
         username: 'userA',
         password: 'userBPass',
-        expectedResult: false,
-        done,
+        isValid: false,
         handler: authenticationHandler
       })
     })
 
-    it('accepts userB with user B\'s password', (done) => {
-      testAuthentication({
+    it('accepts userB with user B\'s password', async () => {
+      await testAuthentication({
         username: 'userB',
         password: 'userBPass',
-        expectedResult: true,
+        isValid: true,
         serverData: null,
         clientData: { all: 'client data' },
-        done,
         handler: authenticationHandler
       })
     })
 
-    it('rejects unknown userQ', (done) => {
-      testAuthentication({
+    it('returns null for userQ', async () => {
+      await testAuthentication({
+        handler: authenticationHandler,
         username: 'userQ',
         password: 'userBPass',
-        expectedResult: false,
-        done,
-        handler: authenticationHandler
+        notFound: true,
       })
     })
   })
@@ -279,7 +263,8 @@ describe('file based authentication', () => {
       path: './src/test/config/users.json',
       hash: 'md5',
       iterations: 100,
-      keyLength: 32
+      keyLength: 32,
+      reportInvalidParameters: true
     }
 
     beforeEach(async () => {
@@ -287,32 +272,20 @@ describe('file based authentication', () => {
       await authenticationHandler.whenReady()
     })
 
-    it('returns an error for authData without username', (done) => {
-      const authData = {
+    it('returns null for authData without username', async () => {
+      const result = await authenticationHandler.isValidUser(null, {
         password: 'some password'
-      }
-
-      const callback = function (result, data) {
-        expect(result).to.eq(false)
-        expect(data.clientData).to.deep.eq({ error: 'missing authentication parameter username' })
-        done()
-      }
-
-      authenticationHandler.isValidUser(null, authData, callback)
+      })
+      expect(result.isValid).to.eq(false)
+      expect(result.clientData).to.deep.eq({ error: 'missing authentication parameter: username or/and password' })
     })
 
-    it('returns an error for authData without password', (done) => {
-      const authData = {
+    it('returns an error for authData without password', async () => {
+      const result = await authenticationHandler.isValidUser(null, {
         username: 'some user'
-      }
-
-      const callback = function (result, data) {
-        expect(result).to.eq(false)
-        expect(data.clientData).to.deep.eq({ error: 'missing authentication parameter password' })
-        done()
-      }
-
-      authenticationHandler.isValidUser(null, authData, callback)
+      })
+      expect(result.isValid).to.eq(false)
+      expect(result.clientData).to.deep.eq({ error: 'missing authentication parameter: username or/and password' })
     })
   })
 })

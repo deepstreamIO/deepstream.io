@@ -31,11 +31,11 @@ export class Rpc {
     switch (true) {
       case provideAll:
         return {
-          requestorName: requestor.user,
+          requestorName: requestor.userId,
           requestorData: requestor.clientData
         }
       case this.config.rpc.provideRequestorName:
-        return { requestorName: requestor.user }
+        return { requestorName: requestor.userId }
       case this.config.rpc.provideRequestorData:
         return { requestorData: requestor.clientData }
       default:

@@ -2,7 +2,6 @@
 import * as pgk from '../package.json'
 
 import { Command } from 'commander'
-import { install } from './deepstream-install'
 import { start } from './deepstream-start'
 import { info } from './deepstream-info'
 import { hash } from './deepstream-hash'
@@ -35,7 +34,6 @@ program
   .version(pgk.version.toString())
 
 start(program)
-install(program)
 info(program)
 hash(program)
 service(program)

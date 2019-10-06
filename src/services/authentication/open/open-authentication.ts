@@ -15,9 +15,12 @@ export class OpenAuthentication extends DeepstreamPlugin implements DeepstreamAu
   public description: string  = 'Open Authentication'
 
   /**
-  * Grants access to any user. Registeres them with username or open
+  * Grants access to any user. Registers them with username or open
   */
-  public isValidUser (connectionData: JSONObject, authData: JSONObject, callback: Function) {
-    callback(true, { username: authData.username || OPEN })
+  public async isValidUser (connectionData: JSONObject, authData: JSONObject) {
+    return {
+      isValid: true,
+      id: (authData.username && authData.username.toString()) || OPEN
+    }
   }
 }

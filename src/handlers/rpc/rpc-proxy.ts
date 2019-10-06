@@ -7,8 +7,10 @@ import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices } from '../..
  * infact relays calls from and to the message connector - sneaky.
  */
 export class RpcProxy implements SimpleSocketWrapper {
+  public userId: string = 'remote server ' + this.remoteServer
+  public clientData = null
+  public serverData = null
   public isRemote = true
-  public user: string = 'remote server ' + this.remoteServer
 
   constructor (config: DeepstreamConfig, private services: DeepstreamServices, private remoteServer: string, private  metaData: any) {
   }

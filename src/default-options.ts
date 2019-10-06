@@ -112,10 +112,10 @@ export function get (): DeepstreamConfig {
       }
     },
 
-    auth: {
+    auth: [{
       type: 'none',
       options: {}
-    },
+    }],
 
     permission: {
       type: 'none',

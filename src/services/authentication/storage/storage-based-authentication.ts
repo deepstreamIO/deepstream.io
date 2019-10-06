@@ -1,11 +1,13 @@
 import * as crypto from 'crypto'
-import { DeepstreamPlugin, DeepstreamAuthentication, UserAuthenticationCallback, DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT, DeepstreamAuthenticationResult } from '../../../../ds-types/src/index'
 import * as uuid from 'uuid'
+import { Dictionary } from 'ts-essentials'
 
 const STRING = 'string'
 const STRING_CHARSET = 'base64'
 
 interface StorageAuthConfig {
+  reportInvalidParameters: boolean,
   // the table to store and lookup the users in
   table: string,
   // upsert the user if it doesn't exist in db
@@ -16,6 +18,12 @@ interface StorageAuthConfig {
   iterations: number
   // the length of the resulting key
   keyLength: number
+}
+
+type UserData = DeepstreamAuthenticationResult & {
+  password: string,
+  clientData: { [index: string]: any, id: string },
+  serverData: Dictionary<string>
 }
 
 export class StorageBasedAuthentication extends DeepstreamPlugin implements DeepstreamAuthentication {
@@ -39,67 +47,74 @@ export class StorageBasedAuthentication extends DeepstreamPlugin implements Deep
   /**
   * Main interface. Authenticates incoming connections
   */
-  public isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback): void {
-    if (typeof authData.username !== STRING) {
-      callback(false, { clientData: { error: 'missing authentication parameter username' }})
-      return
-    }
+  public async isValidUser (connectionData: any, authData: any): Promise<DeepstreamAuthenticationResult | null> {
+    const missingUsername = typeof authData.username !== STRING
+    const missingPassword = typeof authData.password !== STRING
 
-    if (typeof authData.password !== STRING) {
-      callback(false, { clientData: { error: 'missing authentication parameter password' } })
-      return
-    }
-
-    const storageId = `${this.settings.table}/${authData.username}`
-    this.services.storage.get(storageId, async (err, version, userData) => {
-      if (err) {
-        this.logger.error(EVENT.ERROR, `Error retrieving user from storage ${JSON.stringify(err)}`)
-        callback(false, { clientData: { error: 'Error retrieving user from storage' }})
-        return
+    if (missingPassword || missingUsername) {
+      if (this.settings.reportInvalidParameters) {
+        return {
+          isValid: false,
+          clientData: { error: `missing authentication parameters: ${missingUsername && 'username'} ${missingPassword && 'password'}` }
+        }
+      } else {
+        return null
       }
+    }
 
-      if (userData === null) {
-        if (this.settings.createUser) {
-          this.logger.info(EVENT.REGISTERING_USER, `Adding new user ${authData.username}`)
-          const salt = crypto.randomBytes(16).toString(STRING_CHARSET)
-          const hash = await this.createHash(authData.password, salt)
-          const clientData = {
-            id: uuid()
-          }
-          const serverData = {
-            created: Date.now()
-          }
-          this.services.storage.set(storageId, 1, {
-            username: authData.username,
-            password: hash + salt,
+    let userData: UserData
+    try {
+      userData = await new Promise((resolve, reject) => this.services.storage.get(storageId, (err, version, data) => err ? reject(err) : resolve(data)))
+    } catch (err) {
+      this.logger.error(EVENT.ERROR, `Error retrieving user from storage ${JSON.stringify(err)}`)
+      return {
+        isValid: false,
+        clientData: { error: 'Error retrieving user from storage' }
+      }
+    }
+    const storageId = `${this.settings.table}/${authData.username}`
+
+    if (userData === null) {
+      if (this.settings.createUser) {
+        this.logger.info(EVENT.REGISTERING_USER, `Adding new user ${authData.username}`)
+        const salt = crypto.randomBytes(16).toString(STRING_CHARSET)
+        const hash = await this.createHash(authData.password, salt)
+        const clientData = {
+          id: uuid(),
+        }
+        const serverData = {
+          created: Date.now()
+        }
+        this.services.storage.set(storageId, 1, {
+          username: authData.username,
+          password: hash + salt,
+          clientData,
+          serverData
+        }, () => {
+          return {
+            isValid: true,
+            id: clientData.id,
             clientData,
             serverData
-          }, () => {
-            callback(true, {
-              username: clientData.id,
-              clientData,
-              serverData
-            })
-          })
-        } else {
-          callback(false)
-        }
-        return
-      }
-
-      const expectedHash = userData.password.substr(0, this.base64KeyLength)
-      const actualHash = await this.createHash(authData.password, userData.password.substr(this.base64KeyLength))
-
-      if (expectedHash === actualHash) {
-        callback(true, {
-          username: userData.clientData.id,
-          serverData: userData.serverData || null,
-          clientData: userData.clientData || null,
+          }
         })
-      } else {
-        callback(false)
       }
-    })
+      return null
+    }
+
+    const expectedHash = userData.password.substr(0, this.base64KeyLength)
+    const actualHash = await this.createHash(authData.password, userData.password.substr(this.base64KeyLength))
+
+    if (expectedHash === actualHash) {
+      return {
+        isValid: true,
+        id: userData.clientData.id,
+        serverData: userData.serverData || null,
+        clientData: userData.clientData || null,
+      }
+    }
+
+    return { isValid: false }
   }
 
   /**

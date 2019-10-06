@@ -2,7 +2,7 @@ import JIFHandler from '../../jif/jif-handler'
 import HTTPSocketWrapper from './socket-wrapper'
 import * as HTTPStatus from 'http-status'
 import { PARSER_ACTION, AUTH_ACTION, EVENT_ACTION, RECORD_ACTION, Message, ALL_ACTIONS, JSONObject } from '../../constants'
-import { DeepstreamConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, UserAuthData, DeepstreamConfig, EVENT, DeepstreamHTTPResponse, DeepstreamHTTPMeta } from '../../../ds-types/src/index'
+import { DeepstreamConnectionEndpoint, DeepstreamServices, SimpleSocketWrapper, SocketWrapper, JifResult, UnauthenticatedSocketWrapper, DeepstreamPlugin, DeepstreamConfig, EVENT, DeepstreamHTTPResponse, DeepstreamHTTPMeta, DeepstreamAuthenticationResult } from '../../../ds-types/src/index'
 export interface HTTPEvents {
   onAuthMessage: Function
   onPostMessage: Function
@@ -202,7 +202,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
    * Create and initialize a new SocketWrapper
    */
   private createSocketWrapper (
-    authResponseData: object,
+    authResponseData: DeepstreamAuthenticationResult,
     messageIndex: number,
     messageResults: any,
     responseCallback: Function,
@@ -228,7 +228,7 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
     responseCallback: Function,
     messageData: { body: object[] },
     success: boolean,
-    authResponseData?: UserAuthData
+    authResponseData?: DeepstreamAuthenticationResult
   ): void {
     if (success !== true) {
       const error = typeof authResponseData === 'string' ? authResponseData : 'Unsuccessful authentication attempt.'
@@ -424,11 +424,9 @@ export class HTTPConnectionEndpoint extends DeepstreamPlugin implements Deepstre
     messageIndex: number
   ): void {
     this.services.permission.canPerformAction(
-      socketWrapper.user,
+      socketWrapper,
       parsedMessage,
       this.onPermissionResponse,
-      socketWrapper.authData!,
-      socketWrapper,
       { messageResults, messageIndex }
     )
   }
