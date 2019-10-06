@@ -5,11 +5,6 @@ import * as textMessageBuilder from './protocol/message-builder'
 import { TOPIC, CONNECTION_ACTION } from '../../constants'
 import BaseWebsocketConnectionEndpoint from '../base-websocket/connection-endpoint'
 
-/**
- * This is the front most class of deepstream's message pipeline. It receives
- * connections and authentication requests, authenticates sockets and
- * forwards messages it receives from authenticated sockets.
- */
 export class WSTextConnectionEndpoint extends BaseWebsocketConnectionEndpoint implements WebSocketConnectionEndpoint {
   public description = 'WS Text Protocol Connection Endpoint'
   private pingMessage: string

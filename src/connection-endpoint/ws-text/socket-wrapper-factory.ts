@@ -5,11 +5,6 @@ import { SocketConnectionEndpoint, DeepstreamServices } from '../../../ds-types/
 import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
 import { WSSocketWrapper } from '../base-websocket/socket-wrapper'
 
-/**
- * This class wraps around a websocket
- * and provides higher level methods that are integrated
- * with deepstream's message structure
- */
 export class TextWSSocketWrapper extends WSSocketWrapper<string> {
   public getMessage (message: Message): string {
     return textMessageBuilder.getMessage(message, false)

@@ -3,11 +3,6 @@ import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
 import { SocketConnectionEndpoint, DeepstreamServices } from '../../../ds-types/src/index'
 import { WSSocketWrapper } from '../base-websocket/socket-wrapper'
 
-/**
- * This class wraps around a websocket
- * and provides higher level methods that are integrated
- * with deepstream's message structure
- */
 export class JSONSocketWrapper extends WSSocketWrapper<string> {
   public getMessage (message: Message): string {
     return JSON.stringify(message)
