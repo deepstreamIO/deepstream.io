@@ -1,7 +1,7 @@
-import { ParseResult, Message } from '../../constants'
-import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
-import { SocketConnectionEndpoint, DeepstreamServices } from '../../../ds-types/src/index'
-import { WSSocketWrapper } from '../base-websocket/socket-wrapper'
+import { ParseResult, Message } from '../../../constants'
+import { WebSocketServerConfig } from '../../base/connection-endpoint'
+import { SocketConnectionEndpoint, DeepstreamServices } from '../../../../ds-types/src/index'
+import { WSSocketWrapper } from '../../base/socket-wrapper'
 
 export class JSONSocketWrapper extends WSSocketWrapper<string> {
   public getMessage (message: Message): string {
@@ -34,4 +34,4 @@ export const createWSSocketWrapper = function (
   services: DeepstreamServices,
   config: WebSocketServerConfig,
   connectionEndpoint: SocketConnectionEndpoint
-) { return new JSONSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }
+) { return new JSONSocketWrapper(socket, handshakeData, services, config, connectionEndpoint, false) }

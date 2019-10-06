@@ -100,6 +100,10 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
     return new Promise((resolve) => this.server.shutdown(resolve))
   }
 
+  public sendWebsocketMessage (socket: WebSocket, message: any, isBinary: boolean) {
+    socket.send(message)
+  }
+
   public registerPostPathPrefix<DataInterface> (prefix: string, handler: PostRequestHandler<DataInterface>) {
     this.postPaths.set(prefix, handler)
     this.sortedPostPaths = [...this.postPaths.keys()].sort().reverse()
@@ -221,7 +225,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
         if (request.url!.startsWith(path)) {
           this.postPaths.get(path)!(
             (request as any).body,
-            { headers: request.headers as never as string[], url: request.url! },
+            { headers: request.headers as Dictionary<string>, url: request.url! },
             this.sendResponse.bind(this, response)
           )
           return
@@ -235,7 +239,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
     for (const path of this.sortedGetPaths) {
       if (request.url!.startsWith(path)) {
         this.getPaths.get(path)!(
-          { headers: request.headers as never as string[], url: request.url! },
+          { headers: request.headers as Dictionary<string>, url: request.url! },
           this.sendResponse.bind(this, response)
         )
         return

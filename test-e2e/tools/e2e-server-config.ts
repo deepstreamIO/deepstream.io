@@ -27,7 +27,7 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
     },
 
     httpServer: {
-      type: 'default',
+      type: process.env.uws ? 'uws' : 'default',
       options: {
         port
       }
@@ -35,13 +35,12 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
 
     connectionEndpoints: [
       {
-        type: 'ws-websocket',
+        type: 'ws-binary',
         options: {
           urlPath: '/e2e-v4',
           maxAuthAttempts              : 2,
           unauthenticatedClientTimeout : 200,
-          heartbeatInterval: 50,
-          desiredHeaders: []
+          heartbeatInterval: 50
         } as any
       },
       {
@@ -50,12 +49,11 @@ export const getServerConfig = (port: number): PartialDeepstreamConfig => ({
           urlPath: '/e2e-v3',
           maxAuthAttempts              : 2,
           unauthenticatedClientTimeout : 200,
-          heartbeatInterval: 50,
-          desiredHeaders: [],
+          heartbeatInterval: 50
         } as any
       },
       {
-        type: 'node-http',
+        type: 'http',
         options: {
           allowAuthData: true,
           enableAuthEndpoint: true,

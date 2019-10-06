@@ -1,12 +1,7 @@
 import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
-import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
+import { WebSocketServerConfig } from './connection-endpoint'
 import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../../ds-types/src/index'
 
-/**
- * This class wraps around a websocket
- * and provides higher level methods that are integrated
- * with deepstream's message structure
- */
 export abstract class WSSocketWrapper<SerializedType extends { length: number }> implements UnauthenticatedSocketWrapper {
   public isRemote: false = false
   public isClosed: boolean = false
@@ -28,7 +23,8 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
     private handshakeData: any,
     private services: DeepstreamServices,
     private config: WebSocketServerConfig,
-    private connectionEndpoint: SocketConnectionEndpoint
+    private connectionEndpoint: SocketConnectionEndpoint,
+    private isBinary: boolean
    ) {
   }
 
@@ -130,6 +126,6 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
   }
 
   protected writeMessage (socket: any, message: SerializedType) {
-    socket.send(message)
+    this.services.httpService.sendWebsocketMessage(socket, message, this.isBinary)
   }
 }

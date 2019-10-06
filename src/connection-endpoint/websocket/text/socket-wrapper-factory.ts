@@ -1,9 +1,9 @@
-import { ParseResult, Message } from '../../constants'
-import * as textMessageBuilder from './protocol/message-builder'
-import * as textMessageParse from './protocol/message-parser'
-import { SocketConnectionEndpoint, DeepstreamServices } from '../../../ds-types/src/index'
-import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
-import { WSSocketWrapper } from '../base-websocket/socket-wrapper'
+import { ParseResult, Message } from '../../../constants'
+import * as textMessageBuilder from './text-protocol/message-builder'
+import * as textMessageParse from './text-protocol/message-parser'
+import { SocketConnectionEndpoint, DeepstreamServices } from '../../../../ds-types/src/index'
+import { WebSocketServerConfig } from '../../base/connection-endpoint'
+import { WSSocketWrapper } from '../../base/socket-wrapper'
 
 export class TextWSSocketWrapper extends WSSocketWrapper<string> {
   public getMessage (message: Message): string {
@@ -29,4 +29,4 @@ export const createWSSocketWrapper = function (
   services: DeepstreamServices,
   config: WebSocketServerConfig,
   connectionEndpoint: SocketConnectionEndpoint,
-) { return new TextWSSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }
+) { return new TextWSSocketWrapper(socket, handshakeData, services, config, connectionEndpoint, false) }

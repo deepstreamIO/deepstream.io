@@ -1,6 +1,6 @@
 
-import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin, ConnectionListener, EVENT } from '../../../ds-types/src/index'
 import { Message, ParseResult, PARSER_ACTION, TOPIC, CONNECTION_ACTION, ALL_ACTIONS, JSONObject, AUTH_ACTION } from '../../constants'
+import { DeepstreamPlugin, SocketConnectionEndpoint, SocketWrapper, ConnectionListener, DeepstreamServices, DeepstreamConfig, EVENT, UnauthenticatedSocketWrapper } from '../../../ds-types/src'
 
 const OPEN = 'OPEN'
 
@@ -353,7 +353,7 @@ export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin im
         topic: TOPIC.AUTH,
         action: AUTH_ACTION.TOO_MANY_AUTH_ATTEMPTS
       }, false)
-      socketWrapper.destroy()
+      setTimeout(() => socketWrapper.destroy(), 10)
     }
   }
 

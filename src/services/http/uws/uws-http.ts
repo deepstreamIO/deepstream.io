@@ -5,6 +5,7 @@ import * as uws from 'uWebSockets.js'
 import { STATES } from '../../../constants'
 import { PromiseDelay } from '../../../utils/utils'
 import * as fileUtils from '../../../config/file-utils'
+import * as HTTPStatus from 'http-status'
 
 interface UWSHTTPInterface extends uws.AppOptions {
     healthCheckPath: string,
@@ -85,10 +86,47 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     await PromiseDelay(2000)
   }
 
-  public registerPostPathPrefix<DataInterface> (prefix: string, handler: PostRequestHandler<DataInterface>) {
+  public registerPostPathPrefix<DataInterface> (prefix: string, handler: PostRequestHandler<any>) {
+    this.server.post(prefix, (response: uws.HttpResponse, request: uws.HttpRequest) => {
+      /* Register error cb */
+      response.onAborted((err) => {
+        console.log('error with post', err)
+      })
+
+      const meta = { headers: this.getHeaders(request), url: request.getUrl() }
+
+      readJson(response, (body: any) => {
+        handler(
+          body,
+          meta,
+          this.sendResponse.bind(this, response)
+        )
+      }, () => {
+        this.terminateResponse(
+          response,
+          HTTPStatus.BAD_REQUEST,
+          'Failed to parse body of request'
+        )
+      })
+    })
   }
 
   public registerGetPathPrefix (prefix: string, handler: GetRequestHandler) {
+    this.server.get(prefix, (response: uws.HttpResponse, request: uws.HttpRequest) => {
+      /* Register error cb */
+      response.onAborted((err) => {
+        console.log('error with get', err)
+      })
+
+      handler(
+        { headers: this.getHeaders(request), url: request.getUrl() },
+        this.sendResponse.bind(this, response)
+      )
+    })
+  }
+
+  public sendWebsocketMessage (socket: uws.WebSocket, message: Uint8Array | string, isBinary: boolean) {
+    socket.send(message, isBinary)
   }
 
   public registerWebsocketEndpoint (path: string, createSocketWrapper: SocketWrapperFactory, webSocketConnectionEndpoint: WebSocketConnectionEndpoint) {
@@ -100,7 +138,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       open: (websocket: uws.WebSocket, request: uws.HttpRequest) => {
         const handshakeData = {
           remoteAddress: new Uint8Array(websocket.getRemoteAddress()).join('.'),
-          headers: this.getHeaders(webSocketConnectionEndpoint.wsOptions.headers, request),
+          headers: this.getHeaders(request),
           referer: request.getHeader('referer')
         }
         const socketWrapper = createSocketWrapper(websocket, handshakeData, this.services, webSocketConnectionEndpoint.wsOptions, webSocketConnectionEndpoint)
@@ -109,7 +147,7 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
       },
       message: (ws: uws.WebSocket, message: ArrayBuffer, isBinary: boolean) => {
         const socketWrapper = this.connections.get(ws)!
-        const messages = socketWrapper.parseMessage(new Uint8Array(message))
+        const messages = socketWrapper.parseMessage(isBinary ? new Uint8Array(message) : Buffer.from(message).toString())
         if (messages.length > 0) {
           socketWrapper.onMessage(messages)
         }
@@ -123,44 +161,38 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     })
   }
 
-  // private handlePost (request: uws.HttpRequest, response: uws.HttpResponse): void {
-  // }
+  private terminateResponse (response: uws.HttpResponse, code: number, message?: string) {
+    response.writeHeader('Content-Type', 'text/plain; charset=utf-8')
+    response.writeStatus(code.toString())
+    if (message) {
+      response.end(`${message}\r\n\r\n`)
+    } else {
+      response.end()
+    }
+  }
 
-  // private handleGet (request: uws.HttpRequest, response: uws.HttpResponse) {
-  // }
+  private sendResponse (
+    response: uws.HttpResponse,
+    err: { statusCode: number, message: string } | null,
+    data: { result: string, body: object }
+  ): void {
+    if (err) {
+      const statusCode = err.statusCode || HTTPStatus.BAD_REQUEST
+      this.terminateResponse(response, statusCode, err.message)
+      return
+    }
+    response.writeHeader('Content-Type', 'application/json; charset=utf-8')
+    response.writeStatus(HTTPStatus.OK.toString())
+    if (data) {
+      response.end(`${JSON.stringify(data)}\r\n\r\n`)
+    } else {
+      response.end()
+    }
+  }
 
-  // private terminateResponse (response: uws.HttpResponse, code: number, message?: string) {
-  //   response.setHeader('Content-Type', 'text/plain; charset=utf-8')
-  //   response.writeHead(code)
-  //   if (message) {
-  //     response.end(`${message}\r\n\r\n`)
-  //   } else {
-  //     response.end()
-  //   }
-  // }
-
-  // private sendResponse (
-  //   response: uws.HttpResponse,
-  //   err: { statusCode: number, message: string } | null,
-  //   data: { result: string, body: object }
-  // ): void {
-  //   if (err) {
-  //     const statusCode = err.statusCode || HTTPStatus.BAD_REQUEST
-  //     this.terminateResponse(response, statusCode, err.message)
-  //     return
-  //   }
-  //   response.setHeader('Content-Type', 'application/json; charset=utf-8')
-  //   response.writeHead(HTTPStatus.OK)
-  //   if (data) {
-  //     response.end(`${JSON.stringify(data)}\r\n\r\n`)
-  //   } else {
-  //     response.end()
-  //   }
-  // }
-
-  public getHeaders (desiredHeaders: string[] = [], req: uws.HttpRequest) {
+  public getHeaders (req: uws.HttpRequest) {
     const headers: Dictionary<string> = {}
-    for (const wantedHeader of desiredHeaders) {
+    for (const wantedHeader of this.pluginOptions.headers) {
       headers[wantedHeader] = req.getHeader(wantedHeader).toString()
     }
     return headers
@@ -189,4 +221,41 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     return null
   }
 
+}
+
+/* Helper function for reading a posted JSON body */
+function readJson (res: uws.HttpResponse, cb: Function, err: (res: uws.HttpResponse) => void) {
+  let buffer: Buffer
+
+  res.onData((ab, isLast) => {
+    const chunk = Buffer.from(ab)
+    if (isLast) {
+      let json
+      if (buffer) {
+        try {
+          json = JSON.parse(Buffer.concat([buffer, chunk]).toString())
+        } catch (e) {
+          /* res.close calls onAborted */
+          res.close()
+          return
+        }
+        cb(json)
+      } else {
+        try {
+          json = JSON.parse(chunk.toString())
+        } catch (e) {
+          /* res.close calls onAborted */
+          res.close()
+          return
+        }
+        cb(json)
+      }
+    } else {
+      if (buffer) {
+        buffer = Buffer.concat([buffer, chunk])
+      } else {
+        buffer = Buffer.concat([chunk])
+      }
+    }
+  })
 }

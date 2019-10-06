@@ -1,9 +1,9 @@
-import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
+import { WebSocketServerConfig } from '../../base/connection-endpoint'
+import BaseWebsocketConnectionEndpoint from '../../base/connection-endpoint'
 import {createWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, WebSocketConnectionEndpoint } from '../../../ds-types/src/index'
-import * as textMessageBuilder from './protocol/message-builder'
-import { TOPIC, CONNECTION_ACTION } from '../../constants'
-import BaseWebsocketConnectionEndpoint from '../base-websocket/connection-endpoint'
+import { DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, WebSocketConnectionEndpoint } from '../../../../ds-types/src/index'
+import * as textMessageBuilder from './text-protocol/message-builder'
+import { TOPIC, CONNECTION_ACTION } from '../../../constants'
 
 export class WSTextConnectionEndpoint extends BaseWebsocketConnectionEndpoint implements WebSocketConnectionEndpoint {
   public description = 'WS Text Protocol Connection Endpoint'

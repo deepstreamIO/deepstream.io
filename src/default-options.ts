@@ -41,17 +41,8 @@ export function get (): DeepstreamConfig {
      * Connection Endpoints
      */
     connectionEndpoints: [
-      {
-        type: 'uws-websocket',
-        options: {
-          ...WebSocketDefaultOptions,
-          urlPath: '/deepstream',
-          host: '0.0.0.0',
-          port: 6021
-        }
-    },
     {
-        type: 'ws-websocket',
+        type: 'ws-binary',
         options:  { ...WebSocketDefaultOptions, urlPath: '/deepstream' }
     },
     {
@@ -63,7 +54,7 @@ export function get (): DeepstreamConfig {
         options: { ...WebSocketDefaultOptions, urlPath: '/deepstream-json' }
       },
       {
-        type: 'node-http',
+        type: 'http',
         options: {
           allowAuthData: true,
           enableAuthEndpoint: true,

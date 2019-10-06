@@ -1,9 +1,9 @@
-import { ParseResult, Message } from '../../constants'
 import * as binaryMessageBuilder from '@deepstream/protobuf/dist/src/message-builder'
 import * as binaryMessageParser from '@deepstream/protobuf/dist/src/message-parser'
-import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
-import { SocketConnectionEndpoint, DeepstreamServices } from '../../../ds-types/src/index'
-import { WSSocketWrapper } from '../base-websocket/socket-wrapper'
+import { ParseResult, Message } from '../../../constants'
+import { WebSocketServerConfig } from '../../base/connection-endpoint'
+import { SocketConnectionEndpoint, DeepstreamServices } from '../../../../ds-types/src/index'
+import { WSSocketWrapper } from '../../base/socket-wrapper'
 
 export class WSBinarySocketWrapper extends WSSocketWrapper<Uint8Array> {
   public getAckMessage (message: Message): Uint8Array {
@@ -34,4 +34,4 @@ export const createWSSocketWrapper = function (
   services: DeepstreamServices,
   config: WebSocketServerConfig,
   connectionEndpoint: SocketConnectionEndpoint
-) { return new WSBinarySocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }
+) { return new WSBinarySocketWrapper(socket, handshakeData, services, config, connectionEndpoint, true) }

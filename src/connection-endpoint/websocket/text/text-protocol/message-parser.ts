@@ -15,8 +15,8 @@ import {
   PRESENCE_ACTIONS,
   PAYLOAD_ENCODING,
 } from './constants'
-import { Message } from '../../../constants'
-import { getUid } from '../../../utils/utils'
+import { Message } from '../../../../constants'
+import { getUid } from '../../../../utils/utils'
 
 export const correlationIdToVersion = new Map<string, number>()
 export const bulkNameToCorrelationId = new Map<string, string>()

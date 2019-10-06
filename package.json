@@ -21,6 +21,8 @@
     "test:http-server": "node test/test-helper/start-test-server.js",
     "e2e": "ts-node --transpile-only --project tsconfig.json --files ./node_modules/.bin/cucumber-js test-e2e --require './test-e2e/steps/**/*.ts' --retry --exit",
     "e2e:v3": "V3=true npm run e2e -- --tags \"not @V4\"",
+    "e2e:uws": "uws=true V3=true npm run e2e",
+    "e2e:uws:v4": "uws=true V3=true npm run e2e -- --tags \"not @V4\"",
     "e2e:rpc": "npm run e2e -- --tags \"@rpcs\"",
     "e2e:event": "npm run e2e -- --tags \"@events\"",
     "e2e:record": "npm run e2e -- --tags \"@records\"",
@@ -99,7 +101,7 @@
   "husky": {
     "hooks": {
       "pre-commit": "npm run lint && npm run tsc",
-      "pre-push": "npm run tsc && npm t && npm run e2e -- --fail-fast && npm run e2e:v3 -- --fail-fast && sh scripts/package.sh true true && node scripts/node-test.js",
+      "pre-push": "npm run tsc && npm t && npm run e2e -- --fail-fast && npm run e2e:v3 -- --fail-fast && npm run e2e:uws -- --fail-fast && npm run e2e:uws:v3 -- --fail-fast && sh scripts/package.sh true true && node scripts/node-test.js",
       "pre-publish": "npm run tsc"
     }
   },

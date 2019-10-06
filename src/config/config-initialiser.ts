@@ -9,11 +9,10 @@ import { CombineAuthentication } from '../services/authentication/combine/combin
 import { OpenAuthentication } from '../services/authentication/open/open-authentication'
 import { ConfigPermission } from '../services/permission/valve/config-permission'
 import { OpenPermission } from '../services/permission/open/open-permission'
-import { UWSConnectionEndpoint } from '../connection-endpoint/uws-binary/connection-endpoint'
-import { WSConnectionEndpoint } from '../connection-endpoint/ws-binary/connection-endpoint'
-import { WSTextConnectionEndpoint } from '../connection-endpoint/ws-text/connection-endpoint'
+import { WSBinaryConnectionEndpoint } from '../connection-endpoint/websocket/binary/connection-endpoint'
+import { WSTextConnectionEndpoint } from '../connection-endpoint/websocket/text/connection-endpoint'
+import { WSJSONConnectionEndpoint } from '../connection-endpoint/websocket/json/connection-endpoint'
 import { MQTTConnectionEndpoint } from '../connection-endpoint/mqtt/connection-endpoint'
-import { WSJSONConnectionEndpoint } from '../connection-endpoint/ws-json/connection-endpoint'
 import { FileBasedAuthentication } from '../services/authentication/file/file-based-authentication'
 import { StorageBasedAuthentication } from '../services/authentication/storage/storage-based-authentication'
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
@@ -205,29 +204,20 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
     throw new Error('No connection endpoints configured')
   }
 
-  if (
-    config.connectionEndpoints.find((connectionEndpoint) => connectionEndpoint.type === 'uws-websocket')
-    && config.connectionEndpoints.find((connectionEndpoint) => connectionEndpoint.type === 'ws-websocket')
-  ) {
-    config.connectionEndpoints = config.connectionEndpoints.filter((endpoint) => endpoint.type !== 'uws-websocket')
-  }
-
   const connectionEndpoints: DeepstreamConnectionEndpoint[] = []
   for (const plugin of config.connectionEndpoints) {
     plugin.options = plugin.options || {}
 
     let PluginConstructor
-    if (plugin.type === 'ws-text') {
+    if (plugin.type === 'ws-binary') {
+      PluginConstructor = WSBinaryConnectionEndpoint
+    } else if (plugin.type === 'ws-text') {
       PluginConstructor = WSTextConnectionEndpoint
     } else if (plugin.type === 'ws-json') {
       PluginConstructor = WSJSONConnectionEndpoint
     } else if (plugin.type === 'mqtt') {
       PluginConstructor = MQTTConnectionEndpoint
-    } else if (plugin.type === 'uws-websocket') {
-      PluginConstructor = UWSConnectionEndpoint
-    } else if (plugin.type === 'ws-websocket') {
-      PluginConstructor = WSConnectionEndpoint
-    } else if (plugin.type === 'node-http') {
+    } else if (plugin.type === 'http') {
       PluginConstructor = HTTPConnectionEndpoint
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection', config.logLevel)

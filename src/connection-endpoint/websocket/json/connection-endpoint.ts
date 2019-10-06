@@ -1,6 +1,6 @@
-import WebsocketConnectionEndpoint, { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
+import WebsocketConnectionEndpoint, { WebSocketServerConfig } from '../../base/connection-endpoint'
 import {createWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index'
+import { DeepstreamServices, DeepstreamConfig } from '../../../../ds-types/src/index'
 
 export class WSJSONConnectionEndpoint extends WebsocketConnectionEndpoint {
   public description = 'WS Text Connection Endpoint'
