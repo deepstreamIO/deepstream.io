@@ -85,14 +85,34 @@ function compile {
     mkdir ${DEEPSTREAM_PACKAGE}/lib
     mkdir ${DEEPSTREAM_PACKAGE}/doc
 
-    echo "Adding uWebSockets.js to libs"
     cd ${DEEPSTREAM_PACKAGE}/lib
     echo '{ "name": "TEMP" }' > package.json
-    npm install uWebSockets.js@${UWS_VERSION}
-    mv -f node_modules/uWebSockets.js ./uWebSockets.js
+
+    echo "Adding uWebSockets.js to libs"
+    npm install --production --global-style uWebSockets.js@${UWS_VERSION}
+
+    echo "Adding cache plugins"
+    npm install --production --global-style \
+        @deepstream/cache-redis \
+        # @deepstream/cache-memcached \
+        # @deepstream/cache-hazelcast
+
+    echo "Adding storage plugins"
+    npm install --production --global-style \
+        @deepstream/clusternode-redis
+
+    echo "Adding storage plugins"
+    npm install --production --global-style \
+        @deepstream/storage-mongodb \
+        @deepstream/storage-rethinkdb \
+        @deepstream/storage-elasticsearch \
+        @deepstream/storage-postgres
+    
+    mv node_modules/* .
     rm -rf node_modules package.json
     cd -
 
+exit 0
     echo "Creating '$EXECUTABLE_NAME', this will take a while..."
     NODE_VERSION_WITHOUT_V=${NODE_VERSION_WITHOUT_V} EXECUTABLE_NAME=${EXECUTABLE_NAME} node scripts/nexe.js > /dev/null &
 
