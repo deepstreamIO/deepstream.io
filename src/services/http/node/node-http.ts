@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamHTTPService, DeepstreamServices, DeepstreamConfig, EVENT, PostRequestHandler, GetRequestHandler, DeepstreamHTTPMeta, DeepstreamHTTPResponse } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamHTTPService, EVENT, PostRequestHandler, GetRequestHandler, DeepstreamHTTPMeta, DeepstreamHTTPResponse, SocketHandshakeData, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory } from '../../../../ds-types/src/index'
 // @ts-ignore
 import * as httpShutdown from 'http-shutdown'
 import * as http from 'http'
@@ -7,7 +7,7 @@ import * as HTTPStatus from 'http-status'
 import * as contentType from 'content-type'
 import * as bodyParser from 'body-parser'
 import { EventEmitter } from 'events'
-import { Server as WebsocketServer, AddressInfo } from 'ws'
+import * as WebSocket from 'ws'
 import { Socket } from 'net'
 import { Dictionary } from 'ts-essentials'
 interface NodeHTTPInterface {
@@ -36,12 +36,13 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
 
   private postPaths = new Map<string, PostRequestHandler<any>>()
   private getPaths = new Map<string, GetRequestHandler>()
-  private upgradePaths = new Map<string, WebsocketServer>()
+  private upgradePaths = new Map<string, WebSocket.Server>()
 
   private sortedPostPaths: string[] = []
   private sortedGetPaths: string[] = []
   private sortedUpgradePaths: string[] = []
 
+  private connections = new Map<WebSocket, SocketWrapper>()
   private emitter = new EventEmitter()
 
   constructor (private pluginOptions: NodeHTTPInterface, private services: DeepstreamServices, config: DeepstreamConfig) {
@@ -69,7 +70,7 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
       this.server.on('request', this.onRequest.bind(this))
       this.server.on('upgrade', this.onUpgrade.bind(this))
       this.server.listen(this.pluginOptions.port, this.pluginOptions.host, () => {
-          const serverAddress = this.server.address() as AddressInfo
+          const serverAddress = this.server.address() as WebSocket.AddressInfo
           const address = serverAddress.address
           const port = serverAddress.port
           this.services.logger.info(EVENT.INFO, `Listening for http connections on ${address}:${port}`)
@@ -85,6 +86,16 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
   }
 
   public async close (): Promise<void> {
+    const closePromises: Array<Promise<void>> = []
+    this.connections.forEach((conn) => {
+      if (!conn.isClosed) {
+        closePromises.push(new Promise((resolve) => conn.onClose(resolve)))
+        conn.destroy()
+      }
+    })
+    await Promise.all(closePromises)
+    this.connections.clear()
+
     // @ts-ignore
     return new Promise((resolve) => this.server.shutdown(resolve))
   }
@@ -99,8 +110,28 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
     this.sortedGetPaths = [...this.getPaths.keys()].sort().reverse()
   }
 
-  public registerWSUpgradePath (path: string, websocketServer: WebsocketServer) {
-    this.upgradePaths.set(path, websocketServer)
+  public registerWebsocketEndpoint (path: string, createSocketWrapper: SocketWrapperFactory, webSocketConnectionEndpoint: WebSocketConnectionEndpoint) {
+    const server = new WebSocket.Server({ noServer: true })
+    server.on('connection', (websocket: WebSocket, handshakeData: SocketHandshakeData) => {
+      const socketWrapper = createSocketWrapper(websocket, handshakeData, this.services, webSocketConnectionEndpoint.wsOptions, webSocketConnectionEndpoint)
+      this.connections.set(websocket, socketWrapper)
+
+      websocket.on('close', () => {
+        webSocketConnectionEndpoint.onSocketClose.call(webSocketConnectionEndpoint, socketWrapper)
+        this.connections.delete(websocket)
+      })
+
+      websocket.on('message', (msg: string) => {
+        const messages = socketWrapper.parseMessage(msg)
+        if (messages.length > 0) {
+          socketWrapper.onMessage(messages)
+        }
+      })
+
+      webSocketConnectionEndpoint.onConnection.call(webSocketConnectionEndpoint, socketWrapper)
+    })
+
+    this.upgradePaths.set(path, server)
     this.sortedUpgradePaths = [...this.upgradePaths.keys()].sort().reverse()
   }
 

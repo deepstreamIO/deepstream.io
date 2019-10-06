@@ -18,7 +18,7 @@ export interface WebSocketServerConfig {
  * connections and authentication requests, authenticates sockets and
  * forwards messages it receives from authenticated sockets.
  */
-export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implements SocketConnectionEndpoint {
+export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin implements SocketConnectionEndpoint {
   public description: string = 'WebSocket Connection Endpoint'
 
   private initialized: boolean = false
@@ -47,6 +47,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   }
 
   public onSocketWrapperClosed (socketWrapper: SocketWrapper) {
+    socketWrapper.close()
   }
 
   public setConnectionListener (connectionListener: ConnectionListener) {
@@ -153,7 +154,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
    * and subscribes to authentication messages.
    */
-  protected onConnection (socketWrapper: UnauthenticatedSocketWrapper) {
+  public onConnection (socketWrapper: UnauthenticatedSocketWrapper) {
     const handshakeData = socketWrapper.getHandshakeData()
     this.services.logger!.info(
         EVENT.INCOMING_CONNECTION,
@@ -392,7 +393,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * Notifies the (optional) onClientDisconnect method of the permission
    * that the specified client has disconnected
    */
-  protected onSocketClose (socketWrapper: any): void {
+  public onSocketClose (socketWrapper: any): void {
     this.scheduledSocketWrapperWrites.delete(socketWrapper)
     this.onSocketWrapperClosed(socketWrapper)
 

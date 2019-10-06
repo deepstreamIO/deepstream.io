@@ -1,6 +1,7 @@
 import { StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, EVENT, NamespacedLogger } from '../../../ds-types/src/index'
-import { TOPIC, CONNECTION_ACTION, Message, EVENT_ACTION, AUTH_ACTION, RECORD_ACTION } from '../../constants'
+import { TOPIC, CONNECTION_ACTION, Message, EVENT_ACTION, AUTH_ACTION, RECORD_ACTION, ParseResult } from '../../constants'
 import { ACTIONS_BYTE_TO_KEY } from '../ws-text/protocol/constants'
+import { parseMQTT } from './message-parser'
 
 /**
  * This class wraps around a websocket
@@ -88,6 +89,10 @@ export class MQTTSocketWrapper implements UnauthenticatedSocketWrapper {
 
     this.closeCallbacks.forEach((cb) => cb(this))
     this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.userId!)
+  }
+
+  public parseMessage (serializedMessage: any): ParseResult[] {
+    return parseMQTT(serializedMessage)
   }
 
   /**

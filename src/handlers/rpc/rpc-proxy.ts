@@ -1,4 +1,4 @@
-import { RPC_ACTION, RPCMessage } from '../../constants'
+import { RPC_ACTION, RPCMessage, ParseResult } from '../../constants'
 import { SimpleSocketWrapper, DeepstreamConfig, DeepstreamServices } from '../../../ds-types/src/index'
 
 /**
@@ -41,5 +41,9 @@ export class RpcProxy implements SimpleSocketWrapper {
       return
     }
     this.services.clusterNode.sendDirect(this.remoteServer, msg, this.metaData)
+  }
+
+  public parseMessage (serializedMessage: any): ParseResult[] {
+    throw new Error('Method not implemented.')
   }
 }

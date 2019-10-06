@@ -1,7 +1,7 @@
 import { parseData } from '@deepstream/protobuf/dist/src/message-parser'
 import { EventEmitter } from 'events'
 import { DeepstreamServices, UnauthenticatedSocketWrapper, EVENT, DeepstreamAuthenticationResult } from '../../../ds-types/src/index'
-import { Message } from '../../constants'
+import { Message, ParseResult } from '../../constants'
 
 export default class HTTPSocketWrapper extends EventEmitter implements UnauthenticatedSocketWrapper {
   public userId: string | null = null
@@ -111,6 +111,10 @@ export default class HTTPSocketWrapper extends EventEmitter implements Unauthent
 
   public parseData (message: Message) {
     return parseData(message)
+  }
+
+  public parseMessage (serializedMessage: any): ParseResult[] {
+    throw new Error('Method not implemented.')
   }
 
   /**

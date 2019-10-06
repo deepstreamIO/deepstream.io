@@ -1,33 +1,34 @@
-import {WebSocketServerConfig} from '../base-websocket/connection-endpoint'
-import * as textMessageBuilder from './protocol/message-builder'
+import { WebSocketServerConfig } from '../base-websocket/connection-endpoint'
 import {createWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../../ds-types/src/index'
+import { DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, WebSocketConnectionEndpoint } from '../../../ds-types/src/index'
+import * as textMessageBuilder from './protocol/message-builder'
 import { TOPIC, CONNECTION_ACTION } from '../../constants'
-import { BaseWSConnectionEndpoint } from '../ws-base/connection-endpoint'
-
-interface WSConnectionEndpointConfig extends WebSocketServerConfig {
-  heartbeatInterval: number
-}
+import BaseWebsocketConnectionEndpoint from '../base-websocket/connection-endpoint'
 
 /**
- * This is the frontmost class of deepstream's message pipeline. It receives
+ * This is the front most class of deepstream's message pipeline. It receives
  * connections and authentication requests, authenticates sockets and
  * forwards messages it receives from authenticated sockets.
  */
-export class WSTextConnectionEndpoint extends BaseWSConnectionEndpoint<WSConnectionEndpointConfig> {
+export class WSTextConnectionEndpoint extends BaseWebsocketConnectionEndpoint implements WebSocketConnectionEndpoint {
   public description = 'WS Text Protocol Connection Endpoint'
-
   private pingMessage: string
 
-  constructor (private wsTextOptions: WSConnectionEndpointConfig, services: DeepstreamServices, config: DeepstreamConfig) {
-    super(wsTextOptions, services, config, createWSSocketWrapper)
+  constructor (public wsOptions: WebSocketServerConfig, services: DeepstreamServices, config: DeepstreamConfig) {
+    super(wsOptions, services, config)
+
     this.pingMessage = textMessageBuilder.getMessage({
       topic: TOPIC.CONNECTION,
       action: CONNECTION_ACTION.PING
     })
   }
 
-  public onConnection (socketWrapper: SocketWrapper) {
+  public async init () {
+    super.init()
+    this.services.httpService.registerWebsocketEndpoint(this.wsOptions.urlPath, createWSSocketWrapper, this)
+  }
+
+  public onConnection (socketWrapper: UnauthenticatedSocketWrapper) {
     super.onConnection(socketWrapper)
     socketWrapper.onMessage = socketWrapper.authCallback!
     socketWrapper.sendMessage({
@@ -40,7 +41,7 @@ export class WSTextConnectionEndpoint extends BaseWSConnectionEndpoint<WSConnect
   private sendPing (socketWrapper: UnauthenticatedSocketWrapper) {
     if (!socketWrapper.isClosed) {
       socketWrapper.sendBuiltMessage!(this.pingMessage)
-      setTimeout(this.sendPing.bind(this, socketWrapper), this.wsTextOptions.heartbeatInterval)
+      setTimeout(this.sendPing.bind(this, socketWrapper), this.wsOptions.heartbeatInterval)
     }
   }
 }
