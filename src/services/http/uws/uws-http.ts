@@ -2,7 +2,7 @@ import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequest
 // import * as HTTPStatus from 'http-status'
 import { Dictionary } from 'ts-essentials'
 import * as uws from 'uWebSockets.js'
-import { STATES, TOPIC } from '../../../constants'
+import { STATES } from '../../../constants'
 import { PromiseDelay } from '../../../utils/utils'
 import * as fileUtils from '../../../config/file-utils'
 

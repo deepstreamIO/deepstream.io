@@ -1,6 +1,6 @@
 import ConnectionEndpoint, {WebSocketServerConfig} from '../base-websocket/connection-endpoint'
 import { DeepstreamServices, DeepstreamConfig } from '../../../ds-types/src/index'
-import { createUWSSocketWrapper } from './socket-wrapper-factory';
+import { createUWSSocketWrapper } from './socket-wrapper-factory'
 
 /**
  * This is the frontmost class of deepstream's message pipeline. It receives
