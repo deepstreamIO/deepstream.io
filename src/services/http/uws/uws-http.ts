@@ -14,7 +14,6 @@ interface UWSHTTPInterface extends uws.AppOptions {
     allowAllOrigins: boolean,
     origins?: string[],
     maxMessageSize: number,
-    hostUrl: string,
     headers: string[],
 }
 

@@ -394,6 +394,14 @@ function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamService
     uws: UWSHTTP
   }
 
+  if (commandLineArguments.host) {
+    config.httpServer.options.host = commandLineArguments.host
+  }
+
+  if (commandLineArguments.port) {
+    config.httpServer.options.port = commandLineArguments.port
+  }
+
   if (config.httpServer.name || config.httpServer.path) {
     return new (resolvePluginClass(config.httpServer, 'httpServer', config.logLevel))(config.httpServer.options, services, config)
   } else if (config.httpServer.type && (httpPlugins as any)[config.httpServer.type]) {
