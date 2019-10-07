@@ -61,7 +61,7 @@ function compile {
     mkdir build
 
     echo "Installing missing npm packages, just in case something changes"
-    npm i
+    rm -rf node_modules && npm i
 
     echo "Transpiling"
     npm run tsc
