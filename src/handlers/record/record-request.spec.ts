@@ -5,10 +5,10 @@ import {spy} from 'sinon'
 import * as C from '../../constants'
 import { recordRequest } from './record-request'
 
-import { Promise as BBPromise } from 'bluebird'
 import { getTestMocks } from '../../test/helper/test-mocks'
 import { RECORD_ACTION } from '../../constants'
 import * as testHelper from '../../test/helper/test-helper'
+import { PromiseDelay } from '../../utils/utils';
 
 describe('record request', () => {
   const completeCallback = spy()
@@ -78,7 +78,7 @@ describe('record request', () => {
         null
         )
 
-      await BBPromise.delay(30)
+      await PromiseDelay(30)
 
       expect(completeCallback).to.have.been.calledWith(
         'existingRecord',
@@ -125,7 +125,7 @@ describe('record request', () => {
         null
         )
 
-      await BBPromise.delay(75)
+      await PromiseDelay(75)
 
       expect(services.cache.lastRequestedKey).to.equal('onlyExistsInStorage')
       expect(services.storage.lastRequestedKey).to.equal('onlyExistsInStorage')
@@ -274,7 +274,7 @@ describe('record request', () => {
           null
         )
 
-        await BBPromise.delay(1)
+        await PromiseDelay(1)
 
         expect(errorCallback).to.have.been.calledWith(
           C.RECORD_ACTION.STORAGE_RETRIEVAL_TIMEOUT,

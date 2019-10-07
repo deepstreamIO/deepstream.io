@@ -44,7 +44,6 @@
     "chalk": "^2.4.2",
     "commander": "^3.0.2",
     "content-type": "^1.0.4",
-    "deepstream.io-service": "^0.1.6",
     "glob": "^7.1.4",
     "http-shutdown": "^1.2.1",
     "http-status": "^1.3.2",

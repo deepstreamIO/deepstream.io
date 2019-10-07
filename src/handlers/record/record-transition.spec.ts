@@ -3,9 +3,9 @@ import 'mocha'
 import * as M from './test-messages'
 import * as C from '../../constants'
 import { getTestMocks } from '../../test/helper/test-mocks'
-import { Promise as BBPromise } from 'bluebird'
 import * as testHelper from '../../test/helper/test-helper'
 import { RecordTransition } from './record-transition'
+import { PromiseDelay } from '../../utils/utils';
 
 describe('RecordTransition', () => {
   let services
@@ -64,7 +64,7 @@ describe('RecordTransition', () => {
     recordTransition.add(client.socketWrapper, message, true)
 
     // Wait for the async callback to fire
-    await BBPromise.delay(60)
+    await PromiseDelay(60)
   })
 })
 
