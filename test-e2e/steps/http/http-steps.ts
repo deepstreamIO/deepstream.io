@@ -351,7 +351,7 @@ Then(/^(.+) last response was a "(\S*)"(?: with length "(\d+)")?$/, (clientExpre
       expect(lastResponse.body.body.length).to.equal(parseInt(length, 10))
     }
 
-      // by default, clients are expected to have had a SUCCESS response last, so mark as already
+      // by default, clients are expected to have a SUCCESS response last, so mark as already
       // checked
     client.resultChecked = true
   })
