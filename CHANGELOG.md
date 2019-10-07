@@ -1,3 +1,8 @@
+## [5.0.0-rc.1] - 2019.10.07
+
+These change logs will be updated with an immense amount of changes. Need to get an RC out first to make
+sure everything works as expected.
+
 ## [4.2.5] - 2019.10.01
 
 ### Fix
