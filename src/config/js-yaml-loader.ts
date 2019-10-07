@@ -62,7 +62,7 @@ export const loadConfigWithoutInitialisation = function (filePath: string | null
 
 /**
  * Loads a file as deepstream config. CLI args have highest priority after the
- * configuration file. If some properties are not set they will be defaulted
+ * configuration file. If some properties are not set they will be reverted
  * to default values defined in the defaultOptions.js file.
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
