@@ -9,9 +9,9 @@ npm i
 npm run tsc
 cd dist
 
-docker build . -t deepstreamio/deepstream.io:${PACKAGE_VERSION} -t deepstreamio/deepstream.io:latest
+docker build . -t deepstreamio/deepstream.io:${PACKAGE_VERSION} -t deepstreamio/deepstream.io:next
 docker push deepstreamio/deepstream.io:${PACKAGE_VERSION}
-docker push deepstreamio/deepstream.io:latest
+docker push deepstreamio/deepstream.io:next
 
 npm uninstall --save uWebSockets.js
 echo 'Replacing node with node-alpine'
