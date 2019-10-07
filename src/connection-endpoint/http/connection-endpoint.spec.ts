@@ -29,7 +29,8 @@ services.httpService = new NodeHTTP({
   allowAllOrigins: true,
   healthCheckPath: '/health-check',
   maxMessageSize: 100000,
-  hostUrl: ''
+  hostUrl: '',
+  headers: []
 }, services as DeepstreamServices, {} as DeepstreamConfig)
 
 describe.skip('http plugin', () => {

@@ -138,29 +138,8 @@ function extendConfig (config: any, argv: any): DeepstreamConfig {
   for (key in getDefaultOptions()) {
     (cliArgs as any)[key] = argv[key]
   }
-  if (argv.port) {
-    overrideEndpointOption('port', argv.port, 'websocket', config)
-  }
-  if (argv.host) {
-    overrideEndpointOption('host', argv.host, 'websocket', config)
-  }
-  if (argv.httpPort) {
-    overrideEndpointOption('port', argv.httpPort, 'http', config)
-  }
-  if (argv.httpHost) {
-    overrideEndpointOption('host', argv.httpHost, 'http', config)
-  }
 
   return merge({ plugins: {} }, getDefaultOptions(), config, cliArgs) as DeepstreamConfig
-}
-
-function overrideEndpointOption (key: string, value: string, endpoint: string, config: DeepstreamConfig) {
-  try {
-    const plugin = config.connectionEndpoints.find((pluginConfig) => pluginConfig.type!.includes(endpoint))
-    plugin!.options[key] = value
-  } catch (exception) {
-    throw new Error(`${key} could not be set: ${endpoint} connection endpoint not found`)
-  }
 }
 
 /**
