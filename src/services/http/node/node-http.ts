@@ -104,6 +104,10 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
     socket.send(message)
   }
 
+  public getSocketWrappersForUserId (userId: string) {
+    return [...this.connections.values()].filter((socketWrapper) => socketWrapper.userId === userId)
+  }
+
   public registerPostPathPrefix<DataInterface> (prefix: string, handler: PostRequestHandler<DataInterface>) {
     this.postPaths.set(prefix, handler)
     this.sortedPostPaths = [...this.postPaths.keys()].sort().reverse()
