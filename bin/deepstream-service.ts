@@ -1,5 +1,5 @@
 // @ts-ignore
-import * as dsService from 'deepstream.io-service'
+import * as dsService from '../src/service/service'
 import * as commander from 'commander'
 
 // work-around for:
