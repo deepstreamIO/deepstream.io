@@ -76,13 +76,14 @@ When(/^(.+) queues? (?:an|the|"(\d+)") events? "([^"]*)"(?: with data ("[^"]*"|\
       topic: 'event',
       action: 'emit',
       eventName,
-      data: null
+      data: undefined
     }
-    if (rawData !== null) {
+    if (rawData !== undefined) {
       jifMessage.data = parseData(rawData)
     }
-    if (numEvents === null) {
+    if (numEvents === undefined) {
       client.queue.push(jifMessage)
+
     } else {
       for (let i = 0; i < numEvents; i++) {
         client.queue.push(jifMessage)
@@ -174,9 +175,9 @@ When(/^(.+) queues? (?:an|the) RPC call to "([^"]*)"(?: with arguments ("[^"]*"|
       topic: 'rpc',
       action: 'make',
       rpcName,
-      data: null
+      data: undefined
     }
-    if (rawData !== null) {
+    if (rawData !== undefined) {
       jifMessage.data = parseData(rawData)
     }
 
@@ -202,15 +203,15 @@ When(/^(.+) queues? a write to (record|list) "([^"]*)"(?: and path "([^"]*)")? w
       ? { topic: 'record', action: 'write', recordName }
       : { topic: 'list', action: 'write', listName: recordName }
 
-    if (path !== null) {
+    if (path !== undefined) {
       // @ts-ignore
       jifMessage.path = path
     }
-    if (rawData !== null) {
+    if (rawData !== undefined) {
       // @ts-ignore
       jifMessage.data = parseData(rawData)
     }
-    if (version !== null) {
+    if (version !== undefined) {
       // @ts-ignore
       jifMessage.version = parseInt(version, 10)
     }
@@ -260,15 +261,15 @@ When(/^(.+) flushe?s? their http queues?$/, (clientExpression: string, done) => 
     }
     client.queue = []
     needle.post(`${client.serverUrl}`, message, { json: true }, (err, response) => {
-      client.lastResponse = response
       setTimeout(done, defaultDelay)
+      client.lastResponse = response
     })
   })
 })
 
 Then(/^(.+) last response said that clients? "([^"]*)" (?:is|are) connected(?: at index "(\d+)")?$/, (clientExpression: string, connectedClients, rawIndex) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName: string) => {
-    const responseIndex = rawIndex === null ? 0 : rawIndex
+    const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
 
@@ -284,7 +285,7 @@ Then(/^(.+) last response said that clients? "([^"]*)" (?:is|are) connected(?: a
 
 Then(/^(.+) last response said that no clients are connected(?: at index "(\d+)")?$/, (clientExpression: string, rawIndex) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName: string) => {
-    const responseIndex = rawIndex === null ? 0 : rawIndex
+    const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
 
@@ -300,7 +301,7 @@ Then(/^(.+) last response said that no clients are connected(?: at index "(\d+)"
 
 Then(/^(.+) receives? an RPC response(?: with data ("[^"]*"|\d+|{.*}))?(?: at index "(\d+)")?$/, (clientExpression: string, rawData, rawIndex) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName: string) => {
-    const responseIndex = rawIndex === null ? 0 : rawIndex
+    const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
 
@@ -310,7 +311,7 @@ Then(/^(.+) receives? an RPC response(?: with data ("[^"]*"|\d+|{.*}))?(?: at in
     const result = lastResponse.body.body[responseIndex]
     expect(result).to.be.an('object')
     expect(result.success).to.equal(true)
-    if (rawData !== null && rawData !== '"undefined"') {
+    if (rawData !== undefined) {
       expect(result.data).to.deep.equal(parseData(rawData))
     }
   })
@@ -318,7 +319,7 @@ Then(/^(.+) receives? an RPC response(?: with data ("[^"]*"|\d+|{.*}))?(?: at in
 
 Then(/^(.+) receives? the (?:record|list) (?:head )?"([^"]*)"(?: with data '([^']+)')?(?: (?:with|and) version "(\d+)")?(?: at index "(\d+)")?$/, (clientExpression: string, recordName: string, rawData, version, rawIndex) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName: string) => {
-    const responseIndex = rawIndex === null ? 0 : rawIndex
+    const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
 
@@ -328,10 +329,10 @@ Then(/^(.+) receives? the (?:record|list) (?:head )?"([^"]*)"(?: with data '([^'
     const result = lastResponse.body.body[responseIndex]
     expect(result).to.be.an('object')
     expect(result.success).to.equal(true)
-    if (rawData !== null) {
+    if (rawData !== undefined) {
       expect(result.data).to.deep.equal(parseData(rawData))
     }
-    if (version !== null) {
+    if (version !== undefined) {
       expect(result.version).to.equal(parseInt(version, 10))
     }
   })
@@ -346,7 +347,7 @@ Then(/^(.+) last response was a "(\S*)"(?: with length "(\d+)")?$/, (clientExpre
     const failuresStr = JSON.stringify(failures, null, 2)
     expect(lastResponse.body.result).to.equal(result, failuresStr)
 
-    if (length !== null) {
+    if (length !== undefined) {
       expect(lastResponse.body.body.length).to.equal(parseInt(length, 10))
     }
 
@@ -370,7 +371,7 @@ Then(/^(.+) (eventually )?receives "(\d+)" events? "([^"]*)"(?: with data (.+))?
 
 Then(/^(.+) last response had a success(?: at index "(\d+)")?$/, (clientExpression: string, rawIndex) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName: string) => {
-    const responseIndex = rawIndex === null ? 0 : rawIndex
+    const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
 
@@ -388,7 +389,7 @@ Then(/^(.+) last response had a success(?: at index "(\d+)")?$/, (clientExpressi
 
 Then(/^(.+) last response had an? "([^"]*)" error matching "([^"]*)"(?: at index "(\d+)")?$/, (clientExpression: string, topic: string, message: string, rawIndex: number) => {
   clientHandler.getClientNames(clientExpression).forEach((clientName: string) => {
-    const responseIndex = rawIndex === null ? 0 : rawIndex
+    const responseIndex = rawIndex === undefined ? 0 : rawIndex
     const client = httpClients[clientName]
     const lastResponse = client.lastResponse
 
