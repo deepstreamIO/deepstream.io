@@ -128,6 +128,10 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
     socket.send(message, isBinary)
   }
 
+  public getSocketWrappersForUserId (userId: string) {
+    return [...this.connections.values()].filter((socketWrapper) => socketWrapper.userId === userId)
+  }
+
   public registerWebsocketEndpoint (path: string, createSocketWrapper: SocketWrapperFactory, webSocketConnectionEndpoint: WebSocketConnectionEndpoint) {
     this.server.ws(path, {
       /* Options */
