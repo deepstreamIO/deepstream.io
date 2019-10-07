@@ -25,7 +25,6 @@ import { DistributedStateRegistryFactory } from '../services/cluster-state/distr
 import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
 import { NodeHTTP } from '../services/http/node/node-http'
-import { UWSHTTP } from '../services/http/uws/uws-http'
 import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
 
 let commandLineArguments: any
@@ -390,8 +389,7 @@ function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamService
   let HttpServerClass
 
   const httpPlugins = {
-    default: NodeHTTP,
-    uws: UWSHTTP
+    default: NodeHTTP
   }
 
   if (commandLineArguments.host) {
@@ -406,6 +404,14 @@ function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamService
     return new (resolvePluginClass(config.httpServer, 'httpServer', config.logLevel))(config.httpServer.options, services, config)
   } else if (config.httpServer.type && (httpPlugins as any)[config.httpServer.type]) {
     HttpServerClass = (httpPlugins as any)[config.httpServer.type]
+  } else if (config.httpServer.type === 'uws') {
+    try {
+      const { UWSHTTP } = require('../services/http/uws/uws-http')
+      HttpServerClass = UWSHTTP
+    } catch (e) {
+      console.error('Error loading uws http service, this is most likely due to uWebsocket.js not being supported on this platform')
+      process.exit(1)
+    }
   } else {
     throw new Error(`Unknown httpServer type ${config.httpServer.type}`)
   }
