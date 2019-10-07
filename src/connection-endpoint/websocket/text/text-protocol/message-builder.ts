@@ -14,7 +14,7 @@ import {
   TOPIC_BYTE_TO_TEXT as TBT,
   PAYLOAD_ENCODING,
 } from './constants'
-import { Message } from '../../../constants'
+import { Message } from '../../../../constants'
 import { correlationIdToVersion, bulkNameToCorrelationId } from './message-parser'
 const WA = y + JSON.stringify({ writeSuccess: true })
 const NWA = y + '{}'

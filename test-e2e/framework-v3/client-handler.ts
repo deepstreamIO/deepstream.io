@@ -13,7 +13,7 @@ const clients: { [index: string]: E2EClient } = {}
 function createClient (clientName: string, server: string, options?: any) {
   const deepstreamUrl = global.e2eHarness.getUrl(server)
   // @ts-ignore
-  const client = deepstream(deepstreamUrl, {
+  const client = deepstream(`${deepstreamUrl}-v3`, {
     ...options,
     silentDeprecation: true,
     subscriptionInterval: 5,

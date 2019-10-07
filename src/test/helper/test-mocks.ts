@@ -45,10 +45,10 @@ export const getTestMocks = () => {
   const stateRegistryMock = sinon.mock(stateRegistry)
   const recordHandlerMock = sinon.mock(recordHandler)
 
-  function getSocketWrapper (user: string, authData: JSONObject = {}, clientData: JSONObject = {}) {
+  function getSocketWrapper (userId: string, authData: JSONObject = {}, clientData: JSONObject = {}) {
     const socketWrapper = {
       authAttempts: 0,
-      user,
+      userId,
       authData,
       clientData,
       sendMessage: () => {},

@@ -26,6 +26,7 @@ import { DependencyInitialiser } from './utils/dependency-initialiser'
 import { DeepstreamConfig, DeepstreamServices, DeepstreamPlugin, PartialDeepstreamConfig, EVENT, SocketWrapper, ConnectionListener } from '../ds-types/src/index'
 import RecordHandler from './handlers/record/record-handler'
 import { getValue, setValue } from './utils/json-path'
+import { CombineAuthentication } from './services/authentication/combine/combine-authentication'
 
 /**
  * Sets the name of the process
@@ -56,7 +57,7 @@ export class Deepstream extends EventEmitter {
 
 /**
  * Deepstream is a realtime data server that supports data-sync,
- * publish-subscribe, request-response, listeneing, permissioning
+ * publish-subscribe, request-response, listening, permissions
  * and a host of other features!
  */
   constructor (config: PartialDeepstreamConfig | string | null = null) {
@@ -102,6 +103,11 @@ export class Deepstream extends EventEmitter {
 
     if (key === 'auth') {
       throw new Error('auth has been replaced with authentication')
+    }
+
+    if (key === 'authentication') {
+      this.services.authentication = new CombineAuthentication(value instanceof Array ? value : [value])
+      return
     }
 
     if ((this.services as any)[key] !== undefined) {
@@ -246,36 +252,46 @@ export class Deepstream extends EventEmitter {
  * the various handlers.
  */
   private async handlerInit () {
-    this.eventHandler = new EventHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.EVENT,
-      this.eventHandler.handle.bind(this.eventHandler)
-    )
+    if (this.config.enabledFeatures.event) {
+      this.eventHandler = new EventHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.EVENT,
+        this.eventHandler.handle.bind(this.eventHandler)
+      )
+    }
 
-    this.rpcHandler = new RpcHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.RPC,
-      this.rpcHandler.handle.bind(this.rpcHandler)
-    )
+    if (this.config.enabledFeatures.rpc) {
+      this.rpcHandler = new RpcHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.RPC,
+        this.rpcHandler.handle.bind(this.rpcHandler)
+      )
+    }
 
-    this.recordHandler = new RecordHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.RECORD,
-      this.recordHandler.handle.bind(this.recordHandler)
-    )
+    if (this.config.enabledFeatures.record) {
+      this.recordHandler = new RecordHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.RECORD,
+        this.recordHandler.handle.bind(this.recordHandler)
+      )
+    }
 
-    this.presenceHandler = new PresenceHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.PRESENCE,
-      this.presenceHandler.handle.bind(this.presenceHandler)
-    )
-    this.connectionListeners.add(this.presenceHandler as ConnectionListener)
+    if (this.config.enabledFeatures.presence) {
+      this.presenceHandler = new PresenceHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.PRESENCE,
+        this.presenceHandler.handle.bind(this.presenceHandler)
+      )
+      this.connectionListeners.add(this.presenceHandler as ConnectionListener)
+    }
 
-    this.monitoringHandler = new MonitoringHandler(this.config, this.services)
-    this.messageDistributor.registerForTopic(
-      TOPIC.MONITORING,
-      this.monitoringHandler.handle.bind(this.monitoringHandler)
-    )
+    if (this.config.enabledFeatures.monitoring) {
+      this.monitoringHandler = new MonitoringHandler(this.config, this.services)
+      this.messageDistributor.registerForTopic(
+        TOPIC.MONITORING,
+        this.monitoringHandler.handle.bind(this.monitoringHandler)
+      )
+    }
 
     this.messageProcessor.onAuthenticatedMessage =
       this.messageDistributor.distribute.bind(this.messageDistributor)
@@ -424,7 +440,12 @@ private async pluginsShutdown () {
       const rawConfig = merge(getDefaultOptions(), config) as DeepstreamConfig
       result = configInitialiser.initialise(this, rawConfig)
     }
-    configValidator.validate(result.config)
+    try {
+      configValidator.validate(result.config)
+    } catch (e) {
+      console.error(e.message)
+      process.exit(1)
+    }
     this.config = result.config
     this.services = result.services
   }

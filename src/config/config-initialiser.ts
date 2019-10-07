@@ -1,28 +1,32 @@
 import * as utils from '../utils/utils'
 import * as fileUtils from './file-utils'
-import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT } from '../../ds-types/src/index'
+import { DeepstreamConfig, DeepstreamServices, DeepstreamConnectionEndpoint, PluginConfig, DeepstreamLogger, DeepstreamAuthentication, DeepstreamPermission, LOG_LEVEL, EVENT, DeepstreamMonitoring, DeepstreamAuthenticationCombiner, DeepstreamHTTPService } from '../../ds-types/src/index'
 import { DistributedClusterRegistry } from '../services/cluster-registry/distributed-cluster-registry'
 import { SingleClusterNode } from '../services/cluster-node/single-cluster-node'
 import { DefaultSubscriptionRegistryFactory } from '../services/subscription-registry/default-subscription-registry-factory'
 import { HTTPConnectionEndpoint } from '../connection-endpoint/http/connection-endpoint'
+import { CombineAuthentication } from '../services/authentication/combine/combine-authentication'
 import { OpenAuthentication } from '../services/authentication/open/open-authentication'
 import { ConfigPermission } from '../services/permission/valve/config-permission'
 import { OpenPermission } from '../services/permission/open/open-permission'
-import { UWSConnectionEndpoint } from '../connection-endpoint/uws/connection-endpoint'
-import { WSConnectionEndpoint } from '../connection-endpoint/ws/connection-endpoint'
-import { WSTextConnectionEndpoint } from '../connection-endpoint/text/connection-endpoint'
+import { WSBinaryConnectionEndpoint } from '../connection-endpoint/websocket/binary/connection-endpoint'
+import { WSTextConnectionEndpoint } from '../connection-endpoint/websocket/text/connection-endpoint'
+import { WSJSONConnectionEndpoint } from '../connection-endpoint/websocket/json/connection-endpoint'
 import { MQTTConnectionEndpoint } from '../connection-endpoint/mqtt/connection-endpoint'
-import { WSJSONConnectionEndpoint } from '../connection-endpoint/json/connection-endpoint'
 import { FileBasedAuthentication } from '../services/authentication/file/file-based-authentication'
+import { StorageBasedAuthentication } from '../services/authentication/storage/storage-based-authentication'
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
 import { NoopStorage } from '../services/storage/noop-storage'
 import { LocalCache } from '../services/cache/local-cache'
 import { StdOutLogger } from '../services/logger/std-out-logger'
-import { LocalMonitoring } from '../services/monitoring/noop-monitoring'
+import { NoopMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
 import { get as getDefaultOptions } from '../default-options'
 import Deepstream from '../deepstream.io'
+import { NodeHTTP } from '../services/http/node/node-http'
+import { UWSHTTP } from '../services/http/uws/uws-http'
+import HTTPMonitoring from '../services/monitoring/http/monitoring-http'
 
 let commandLineArguments: any
 
@@ -32,12 +36,12 @@ const defaultPlugins = new Map<keyof DeepstreamServices, any>([
   ['cache', LocalCache],
   ['storage', NoopStorage],
   ['logger', StdOutLogger],
-  ['monitoring', LocalMonitoring],
   ['locks', DistributedLockRegistry],
   ['subscriptions', DefaultSubscriptionRegistryFactory],
   ['clusterRegistry', DistributedClusterRegistry],
   ['clusterStates', DistributedStateRegistryFactory],
-  ['clusterNode', SingleClusterNode]
+  ['clusterNode', SingleClusterNode],
+  ['httpService', NodeHTTP],
 ])
 
 export const mergeConnectionOptions = function (config: any) {
@@ -83,14 +87,15 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions', ll))(config.subscriptions.options, services, config)
   services.storage = new (resolvePluginClass(config.storage, 'storage', ll))(config.storage.options, services, config)
   services.cache = new (resolvePluginClass(config.cache, 'cache', ll))(config.cache.options, services, config)
-  services.monitoring = new (resolvePluginClass(config.monitoring, 'monitoring', ll))(config.monitoring.options, services, config)
-  services.authentication = handleAuthStrategy(config, services)
-  services.permission = handlePermissionStrategy(config, services)
+  services.monitoring = handleMonitoring(config, services)
+  services.authentication = handleAuthStrategies(config, services)
+  services.permission = handlePermissionStrategies(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
   services.locks = new (resolvePluginClass(config.locks, 'locks', ll))(config.locks.options, services, config)
   services.clusterNode = new (resolvePluginClass(config.clusterNode, 'clusterNode', ll))(config.clusterNode.options, services, config)
   services.clusterRegistry = new (resolvePluginClass(config.clusterRegistry, 'clusterRegistry', ll))(config.clusterRegistry.options, services, config)
   services.clusterStates = new (resolvePluginClass(config.clusterStates, 'clusterStates', ll))(config.clusterStates.options, services, config)
+  services.httpService = handleHTTPServer(config, services)
 
   handleCustomPlugins(config, services)
 
@@ -199,29 +204,20 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
     throw new Error('No connection endpoints configured')
   }
 
-  if (
-    config.connectionEndpoints.find((connectionEndpoint) => connectionEndpoint.type === 'uws-websocket')
-    && config.connectionEndpoints.find((connectionEndpoint) => connectionEndpoint.type === 'ws-websocket')
-  ) {
-    config.connectionEndpoints = config.connectionEndpoints.filter((endpoint) => endpoint.type !== 'uws-websocket')
-  }
-
   const connectionEndpoints: DeepstreamConnectionEndpoint[] = []
   for (const plugin of config.connectionEndpoints) {
     plugin.options = plugin.options || {}
 
     let PluginConstructor
-    if (plugin.type === 'ws-text') {
+    if (plugin.type === 'ws-binary') {
+      PluginConstructor = WSBinaryConnectionEndpoint
+    } else if (plugin.type === 'ws-text') {
       PluginConstructor = WSTextConnectionEndpoint
     } else if (plugin.type === 'ws-json') {
       PluginConstructor = WSJSONConnectionEndpoint
     } else if (plugin.type === 'mqtt') {
       PluginConstructor = MQTTConnectionEndpoint
-    } else if (plugin.type === 'uws-websocket') {
-      PluginConstructor = UWSConnectionEndpoint
-    } else if (plugin.type === 'ws-websocket') {
-      PluginConstructor = WSConnectionEndpoint
-    } else if (plugin.type === 'node-http') {
+    } else if (plugin.type === 'http') {
       PluginConstructor = HTTPConnectionEndpoint
     } else {
       PluginConstructor = resolvePluginClass(plugin, 'connection', config.logLevel)
@@ -239,7 +235,7 @@ function handleConnectionEndpoints (config: DeepstreamConfig, services: any): De
  *
  * CLI arguments will be considered.
  */
-function resolvePluginClass (plugin: PluginConfig, type: any, logLevel: LOG_LEVEL): any {
+function resolvePluginClass (plugin: PluginConfig, type: string, logLevel: LOG_LEVEL): any {
   if (customPlugins.has(plugin.name)) {
     return customPlugins.get(plugin.name)
   }
@@ -275,8 +271,8 @@ function resolvePluginClass (plugin: PluginConfig, type: any, logLevel: LOG_LEVE
     requirePath = fileUtils.lookupLibRequirePath(plugin.name)
     es6Adaptor = req(requirePath)
     pluginConstructor = es6Adaptor.default ? es6Adaptor.default : es6Adaptor
-  } else if (plugin.type === 'default' && defaultPlugins.has(type)) {
-    pluginConstructor = defaultPlugins.get(type)
+  } else if (plugin.type === 'default' && defaultPlugins.has(type as any)) {
+    pluginConstructor = defaultPlugins.get(type as any)
   } else {
     throw new Error(`Neither name nor path property found for ${type}, plugin type: ${plugin.type}`)
   }
@@ -284,44 +280,52 @@ function resolvePluginClass (plugin: PluginConfig, type: any, logLevel: LOG_LEVE
 }
 
 /**
- * Instantiates the authentication handler registered for *config.auth.type*
+ * Instantiates the authentication handlers registered for *config.auth.type*
  *
  * CLI arguments will be considered.
  */
-function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamAuthentication {
-  let AuthenticationHandlerClass
-
-  const authStrategies = {
-    none: OpenAuthentication,
-    file: FileBasedAuthentication,
-    http: HttpAuthentication,
+function handleAuthStrategies (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamAuthenticationCombiner {
+  if (commandLineArguments.disableAuth) {
+    config.auth = [{
+      type: 'none',
+      options: {}
+    }]
   }
 
   if (!config.auth) {
     throw new Error('No authentication type specified')
   }
 
-  if (commandLineArguments.disableAuth) {
-    config.auth.type = 'none'
-    config.auth.options = {}
+  return new CombineAuthentication(config.auth.map((auth) => handleAuthStrategy(auth, config, services)))
+}
+
+/**
+ * Instantiates the authentication handler registered for *config.auth.type*
+ *
+ * CLI arguments will be considered.
+ */
+function handleAuthStrategy (auth: PluginConfig, config: DeepstreamConfig, services: DeepstreamServices): DeepstreamAuthentication {
+  let AuthenticationHandlerClass
+
+  const authStrategies = {
+    none: OpenAuthentication,
+    file: FileBasedAuthentication,
+    http: HttpAuthentication,
+    storage: StorageBasedAuthentication
   }
 
-  if (config.auth.name || config.auth.path) {
-    AuthenticationHandlerClass = resolvePluginClass(config.auth, 'authentication', config.logLevel)
+  if (auth.name || auth.path) {
+    AuthenticationHandlerClass = resolvePluginClass(auth, 'authentication', config.logLevel)
     if (!AuthenticationHandlerClass) {
-      throw new Error(`unable to resolve authentication handler ${config.auth.name || config.auth.path}`)
+      throw new Error(`unable to resolve authentication handler ${auth.name || auth.path}`)
     }
-  } else if (config.auth.type && (authStrategies as any)[config.auth.type]) {
-    AuthenticationHandlerClass = (authStrategies as any)[config.auth.type]
+  } else if (auth.type && (authStrategies as any)[auth.type]) {
+    AuthenticationHandlerClass = (authStrategies as any)[auth.type]
   } else {
-    throw new Error(`Unknown authentication type ${config.auth.type}`)
+    throw new Error(`Unknown authentication type ${auth.type}`)
   }
 
-  if (config.auth.options && config.auth.options.path) {
-    config.auth.options.path = fileUtils.lookupConfRequirePath(config.auth.options.path)
-  }
-
-  return new AuthenticationHandlerClass(config.auth.options, services, config)
+  return new AuthenticationHandlerClass(auth.options, services, config)
 }
 
 /**
@@ -329,13 +333,8 @@ function handleAuthStrategy (config: DeepstreamConfig, services: DeepstreamServi
  *
  * CLI arguments will be considered.
  */
-function handlePermissionStrategy (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamPermission {
-  let PermissionHandlerClass
-
-  const permissionStrategies = {
-    config: ConfigPermission,
-    none: OpenPermission
-  }
+function handlePermissionStrategies (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamPermission {
+  const permission = config.permission
 
   if (!config.permission) {
     throw new Error('No permission type specified')
@@ -346,24 +345,62 @@ function handlePermissionStrategy (config: DeepstreamConfig, services: Deepstrea
     config.permission.options = {}
   }
 
-  if (config.permission.name || config.permission.path) {
-    PermissionHandlerClass = resolvePluginClass(config.permission, 'permission', config.logLevel)
+  let PermissionHandlerClass
+
+  const permissionStrategies = {
+    config: ConfigPermission,
+    none: OpenPermission
+  }
+
+  if (permission.name || permission.path) {
+    PermissionHandlerClass = resolvePluginClass(permission, 'permission', config.logLevel)
     if (!PermissionHandlerClass) {
-      throw new Error(`unable to resolve plugin ${config.permission.name || config.permission.path}`)
+      throw new Error(`unable to resolve plugin ${permission.name || permission.path}`)
     }
-  } else if (config.permission.type && (permissionStrategies as any)[config.permission.type]) {
-    PermissionHandlerClass = (permissionStrategies as any)[config.permission.type]
+  } else if (permission.type && (permissionStrategies as any)[permission.type]) {
+    PermissionHandlerClass = (permissionStrategies as any)[permission.type]
   } else {
-    throw new Error(`Unknown permission type ${config.permission.type}`)
+    throw new Error(`Unknown permission type ${permission.type}`)
   }
 
-  if (config.permission.options && config.permission.options.path) {
-    config.permission.options.path = fileUtils.lookupConfRequirePath(config.permission.options.path)
+  return new PermissionHandlerClass(permission.options, services, config)
+}
+
+function handleMonitoring (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamMonitoring {
+  let MonitoringClass
+
+  const monitoringPlugins = {
+    default: NoopMonitoring,
+    none: NoopMonitoring,
+    http: HTTPMonitoring
   }
 
-  if (config.permission.type === 'config') {
-    return new PermissionHandlerClass(config.permission.options, services, config)
+  if (config.monitoring.name || config.monitoring.path) {
+    return new (resolvePluginClass(config.monitoring, 'monitoring', config.logLevel))(config.monitoring.options, services, config)
+  } else if (config.monitoring.type && (monitoringPlugins as any)[config.monitoring.type]) {
+    MonitoringClass = (monitoringPlugins as any)[config.monitoring.type]
   } else {
-    return new PermissionHandlerClass(config.permission.options, services, config)
+    throw new Error(`Unknown monitoring type ${config.monitoring.type}`)
   }
+
+  return new MonitoringClass(config.monitoring.options, services, config)
+}
+
+function handleHTTPServer (config: DeepstreamConfig, services: DeepstreamServices): DeepstreamHTTPService {
+  let HttpServerClass
+
+  const httpPlugins = {
+    default: NodeHTTP,
+    uws: UWSHTTP
+  }
+
+  if (config.httpServer.name || config.httpServer.path) {
+    return new (resolvePluginClass(config.httpServer, 'httpServer', config.logLevel))(config.httpServer.options, services, config)
+  } else if (config.httpServer.type && (httpPlugins as any)[config.httpServer.type]) {
+    HttpServerClass = (httpPlugins as any)[config.httpServer.type]
+  } else {
+    throw new Error(`Unknown httpServer type ${config.httpServer.type}`)
+  }
+
+  return new HttpServerClass(config.httpServer.options, services, config)
 }

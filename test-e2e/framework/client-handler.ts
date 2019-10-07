@@ -12,9 +12,9 @@ export interface E2EClient {
 const clients: { [index: string]: E2EClient } = {}
 
 function createClient (clientName: string, server: string, options?: any) {
-  const gatewayUrl = global.e2eHarness.getUrl(server)
+  const deepstreamUrl = global.e2eHarness.getUrl(server)
   // @ts-ignore
-  const client = new deepstream.Client(gatewayUrl, {
+  const client = new deepstream.Client(`${deepstreamUrl}-v4`, {
     ...options,
     subscriptionInterval: 5,
     maxReconnectInterval: 300,

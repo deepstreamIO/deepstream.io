@@ -1,4 +1,4 @@
-import { Message, JSONObject } from '../../../constants'
+import { Message } from '../../../constants'
 import { DeepstreamPlugin, DeepstreamPermission, PermissionCallback, SocketWrapper } from '../../../../ds-types/src/index'
 
 /**
@@ -11,7 +11,7 @@ export class OpenPermission extends DeepstreamPlugin implements DeepstreamPermis
   /**
   * Allows any action by an user
   */
-  public canPerformAction (username: string, message: Message, callback: PermissionCallback, authData: JSONObject, socketWrapper: SocketWrapper, passItOn: any) {
+  public canPerformAction (socketWrapper: SocketWrapper, message: Message, callback: PermissionCallback, passItOn: any) {
     callback(socketWrapper, message, passItOn, null, true)
   }
 }

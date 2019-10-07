@@ -80,33 +80,32 @@ describe('config-initialiser', () => {
 
     it('works for authtype: none', () => {
       const config = defaultConfig.get()
-
-      config.auth = {
-        type: 'none'
-      } as any
+      config.auth = [{
+        type: 'none',
+        options: {}
+      }]
       const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.equal('Open Authentication')
     })
 
     it('works for authtype: user', () => {
-      global.deepstreamConfDir = './src/test/config/'
       const config = defaultConfig.get()
 
-      config.auth = {
+      config.auth = [{
         type: 'file',
         options: {
           path: './users.json'
         }
-      }
+      }]
       const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.contain('file using')
-      expect(result.services.authentication.description).to.contain(path.resolve('src/test/config/users.json'))
+      expect(result.services.authentication.description).to.contain('./users.json')
     })
 
     it('works for authtype: http', () => {
       const config = defaultConfig.get()
 
-      config.auth = {
+      config.auth = [{
         type: 'http',
         options: {
           endpointUrl: 'http://some-url.com',
@@ -116,7 +115,7 @@ describe('config-initialiser', () => {
           retryInterval: 50,
           retryStatusCodes: [ 404 ]
         }
-      }
+      }]
 
       const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.equal('http webhook to http://some-url.com')
@@ -135,12 +134,12 @@ describe('config-initialiser', () => {
     it('allows passing a custom authentication handler', async () => {
       const config = defaultConfig.get()
 
-      config.auth = {
+      config.auth = [{
         path: '../mock/authentication-handler-mock',
         options: {
           hello: 'there'
         }
-      }
+      }]
 
       const result = configInitialiser.initialise(new EventEmitter(), config)
       await result.services.authentication.whenReady()
@@ -149,10 +148,10 @@ describe('config-initialiser', () => {
     it('tries to find a custom authentication handler from name', () => {
       const config = defaultConfig.get()
 
-      config.auth = {
+      config.auth = [{
         name: 'my-custom-auth-handler',
         options: {}
-      }
+      }]
 
       expect(() => {
         configInitialiser.initialise(new EventEmitter(), config)
@@ -162,10 +161,10 @@ describe('config-initialiser', () => {
     it('fails for unknown auth types', () => {
       const config = defaultConfig.get()
 
-      config.auth = {
+      config.auth = [{
         type: 'bla',
         options: {}
-      }
+      }]
 
       expect(() => {
         configInitialiser.initialise(new EventEmitter(), config)
@@ -176,10 +175,10 @@ describe('config-initialiser', () => {
       global.deepstreamCLI = { disableAuth: true }
       const config = defaultConfig.get()
 
-      config.auth = {
+      config.auth = [{
         type: 'http',
         options: {}
-      }
+      }]
 
       const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.authentication.description).to.equal('Open Authentication')
@@ -189,7 +188,6 @@ describe('config-initialiser', () => {
 
   describe('creates the permission service', () => {
     it('creates the config permission service', () => {
-      global.deepstreamConfDir = './src/test/config'
       const config = defaultConfig.get()
 
       config.permission = {
@@ -200,7 +198,7 @@ describe('config-initialiser', () => {
       }
       const result = configInitialiser.initialise(new EventEmitter(), config)
       expect(result.services.permission.description).to.contain('valve permissions loaded from')
-      expect(result.services.permission.description).to.contain(path.resolve('./src/test/config/basic-permission-config.json'))
+      expect(result.services.permission.description).to.contain('./basic-permission-config.json')
     })
 
     it('fails for invalid permission types', () => {
@@ -234,10 +232,10 @@ describe('config-initialiser', () => {
     it('tries to find a custom authentication handler from name', () => {
       const config = defaultConfig.get()
 
-      config.auth = {
+      config.auth = [{
         name: 'my-custom-perm-handler',
         options: {}
-      }
+      }]
 
       expect(() => {
         configInitialiser.initialise(new EventEmitter(), config)

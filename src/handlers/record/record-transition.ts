@@ -92,7 +92,7 @@ export class RecordTransition {
 
       this.services.logger.warn(
         RECORD_ACTION[RECORD_ACTION.VERSION_EXISTS],
-        `${socketWrapper.user} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.version}`,
+        `${socketWrapper.userId} tried to update record ${this.name} to version ${step.message.version} but it already was ${this.version}`,
         this.metaData,
       )
     } else {
@@ -350,7 +350,7 @@ export class RecordTransition {
  */
   private onCacheSetResponse (error: string | null, socketWrapper?: SocketWrapper, message?: Message): void {
     if (this.currentStep === null) {
-      const errorMessage = `Cache results recieved without a valid step in record transition for ${this.name}`
+      const errorMessage = `Cache results received without a valid step in record transition for ${this.name}`
       this.services.logger.error(EVENT.ERROR, errorMessage)
       this.destroy(errorMessage)
       return

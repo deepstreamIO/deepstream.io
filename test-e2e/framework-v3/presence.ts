@@ -22,7 +22,7 @@ export const assert = {
 
   globalQueryResult (clientExpression: string, error: null | string, users?: string[]) {
     if (error) {
-      cl.recievedOneError(clientExpression, 'PRESENCE', error)
+      cl.receivedOneError(clientExpression, 'PRESENCE', error)
       return
     }
     clientHandler.getClients(clientExpression).forEach((client) => {

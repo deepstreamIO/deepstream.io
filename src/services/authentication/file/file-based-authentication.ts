@@ -1,6 +1,5 @@
 import * as crypto from 'crypto'
-import { DeepstreamPlugin, DeepstreamAuthentication, UserAuthenticationCallback, DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
-import { JSONObject } from '../../../constants'
+import { DeepstreamPlugin, DeepstreamAuthentication, DeepstreamServices, EVENT } from '../../../../ds-types/src/index'
 import { validateMap } from '../../../utils/utils'
 import { readAndParseFile } from '../../../config/js-yaml-loader'
 import { EventEmitter } from 'events'
@@ -12,11 +11,13 @@ interface FileAuthConfig {
   //  path to the user file
   path: string
   // the name of a HMAC digest algorithm, a.g. 'sha512'
-  hash: string
+  hash: string | false
   // the amount of times the algorithm should be applied
   iterations: number
   // the length of the resulting key
-  keyLength: number
+  keyLength: number,
+  // if this is the only authentication mechanism, fail if invalid login parameters are used
+  reportInvalidParameters: boolean
 }
 
 /**
@@ -50,42 +51,55 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
   /**
   * Main interface. Authenticates incoming connections
   */
-  public isValidUser (connectionData: any, authData: any, callback: UserAuthenticationCallback): void {
-    if (typeof authData.username !== STRING) {
-      callback(false, { clientData: { error: 'missing authentication parameter username' }})
-      return
-    }
+  public async isValidUser (connectionData: any, authData: any) {
+    const missingUsername = typeof authData.username !== STRING
+    const missingPassword = typeof authData.password !== STRING
 
-    if (typeof authData.password !== STRING) {
-      callback(false, { clientData: { error: 'missing authentication parameter password' } })
-      return
+    if (missingPassword || missingUsername) {
+      if (this.settings.reportInvalidParameters) {
+        return {
+          isValid: false,
+          clientData: { error: 'missing authentication parameter: username or/and password' }
+        }
+      } else {
+        return null
+      }
     }
 
     const userData = this.data[authData.username]
 
     if (!userData) {
-      callback(false)
-      return
+      return null
     }
 
-    if (this.settings.hash) {
-      this.isValid(
+    const actualPassword = this.settings.hash ? userData.password.substr(0, this.base64KeyLength) : userData.password
+    let expectedPassword = authData.password
+
+    if (typeof this.settings.hash === 'string') {
+      const salt = userData.password.substr(this.base64KeyLength)
+
+      expectedPassword = await new Promise((resolve, reject) => crypto.pbkdf2(
         authData.password,
-        userData.password,
-        authData.username,
-        userData.serverData,
-        userData.clientData,
-        callback,
-      )
-    } else if (authData.password === userData.password) {
-      callback(true, {
-        username: authData.username,
+        salt,
+        this.settings.iterations,
+        this.settings.keyLength,
+        this.settings.hash as string,
+        (err, hash) => err ? reject(err) : resolve(hash)
+      ))
+
+      expectedPassword = expectedPassword.toString(STRING_CHARSET)
+    }
+
+    if (actualPassword === expectedPassword) {
+      return {
+        isValid: true,
+        id: authData.username,
         serverData: typeof userData.serverData === 'undefined' ? null : userData.serverData,
         clientData: typeof userData.clientData === 'undefined' ? null : userData.clientData,
-      })
-    } else {
-      callback(false)
+      }
     }
+
+    return { isValid: false }
   }
 
   /**
@@ -100,7 +114,7 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
         salt,
         this.settings.iterations,
         this.settings.keyLength,
-        this.settings.hash,
+        this.settings.hash as string,
         (err, hash) => {
           callback(err || null, hash.toString(STRING_CHARSET) + salt)
         },
@@ -154,64 +168,6 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
 
     if (crypto.getHashes().indexOf(settings.hash) === -1) {
       throw new Error(`Unknown Hash ${settings.hash}`)
-    }
-  }
-
-  /**
-  * Extracts hash and salt from a string and runs a hasing function
-  * against it
-  *
-  * @param   {String}   password             the cleartext password the user provided
-  * @param   {String}   passwordHashWithSalt the hash+salt combination from the users.json file
-  * @param   {String}   username             as provided by user
-  * @param   {Object}   serverData           arbitrary authentication data that will be passed on
-  *                                          to the permission handler
-  * @param   {Object}   clientData           arbitrary authentication data that will be passed on
-  *                                          to the client
-  * @param   {Function} callback             callback that will be invoked once hash is created
-  *
-  * @private
-  * @returns {void}
-  */
-  private isValid (password: string, passwordHashWithSalt: string, username: string, serverData: object, clientData: object, callback: Function) {
-    const expectedHash = passwordHashWithSalt.substr(0, this.base64KeyLength)
-    const salt = passwordHashWithSalt.substr(this.base64KeyLength)
-
-    crypto.pbkdf2(
-      password,
-      salt,
-      this.settings.iterations,
-      this.settings.keyLength,
-      this.settings.hash,
-      // @ts-ignore
-      this.compareHashResult.bind(this, expectedHash, username, serverData, clientData, callback),
-    )
-  }
-
-  /**
-  * Callback once hashing is completed
-  *
-  * @param   {String}   expectedHash     has as retrieved from users.json
-  * @param   {Object}   serverData       arbitrary authentication data that will be passed on to the
-  *                                      permission handler
-  * @param   {Object}   clientData       arbitrary authentication data that will be passed on to the
-  *                                      client
-  * @param   {Function} callback         callback from isValidUser
-  * @param   {Error}    error            error that occured during hashing
-  * @param   {Buffer}   actualHashBuffer the buffer containing the bytes for the new hash
-  */
-  private compareHashResult (
-    expectedHash: string, username: string, serverData: JSONObject, clientData: JSONObject, callback: UserAuthenticationCallback, error: Error | null, actualHashBuffer: Buffer,
-  ) {
-    if (expectedHash === actualHashBuffer.toString(STRING_CHARSET)) {
-      // todo log error
-      callback(true, {
-        username,
-        serverData: serverData || null,
-        clientData: clientData || null,
-      })
-    } else {
-      callback(false)
     }
   }
 }

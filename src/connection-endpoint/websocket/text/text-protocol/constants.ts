@@ -7,7 +7,7 @@ import {
   RECORD_ACTION as RA,
   RPC_ACTION as PA,
   TOPIC as T,
-} from '../../../constants'
+} from '../../../../constants'
 
 export const MESSAGE_SEPERATOR = String.fromCharCode(30) // ASCII Record Seperator 1E
 export const MESSAGE_PART_SEPERATOR = String.fromCharCode(31) // ASCII Unit Separator 1F

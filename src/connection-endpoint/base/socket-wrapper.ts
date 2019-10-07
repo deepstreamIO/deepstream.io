@@ -1,37 +1,30 @@
 import { TOPIC, CONNECTION_ACTION, ParseResult, Message } from '../../constants'
-import * as binaryMessageBuilder from '@deepstream/protobuf/dist/src/message-builder'
-import * as binaryMessageParser from '@deepstream/protobuf/dist/src/message-parser'
-import { WebSocketServerConfig } from '../websocket/connection-endpoint'
+import { WebSocketServerConfig } from './connection-endpoint'
 import { SocketConnectionEndpoint, StatefulSocketWrapper, DeepstreamServices, UnauthenticatedSocketWrapper, SocketWrapper, EVENT } from '../../../ds-types/src/index'
-import * as WebSocket from 'ws'
 
-/**
- * This class wraps around a websocket
- * and provides higher level methods that are integrated
- * with deepstream's message structure
- */
-export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
-
+export abstract class WSSocketWrapper<SerializedType extends { length: number }> implements UnauthenticatedSocketWrapper {
   public isRemote: false = false
   public isClosed: boolean = false
-  public user: string | null = null
   public uuid: number = Math.random()
   public authCallback: Function | null = null
   public authAttempts: number = 0
 
-  private bufferedWrites: Uint8Array[] = []
+  private bufferedWrites: SerializedType[] = []
   private closeCallbacks: Set<Function> = new Set()
 
-  public authData: object | null = null
+  public userId: string | null = null
+  public serverData: object | null = null
   public clientData: object | null = null
+
   private bufferedWritesTotalByteSize: number = 0
 
   constructor (
-    private socket: WebSocket,
+    private socket: any,
     private handshakeData: any,
     private services: DeepstreamServices,
     private config: WebSocketServerConfig,
-    private connectionEndpoint: SocketConnectionEndpoint
+    private connectionEndpoint: SocketConnectionEndpoint,
+    private isBinary: boolean
    ) {
   }
 
@@ -46,7 +39,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public flush () {
     if (this.bufferedWritesTotalByteSize !== 0) {
-      this.bufferedWrites.forEach((bw) => this.socket.send(bw))
+      this.bufferedWrites.forEach((bw) => this.writeMessage(this.socket, bw))
       this.bufferedWritesTotalByteSize = 0
       this.bufferedWrites = []
     }
@@ -57,7 +50,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public sendMessage (message: { topic: TOPIC, action: CONNECTION_ACTION } | Message, allowBuffering: boolean = true): void {
     this.services.monitoring.onMessageSend(message)
-    this.sendBuiltMessage(binaryMessageBuilder.getMessage(message, false), allowBuffering)
+    this.sendBuiltMessage(this.getMessage(message), allowBuffering)
   }
 
   /**
@@ -65,28 +58,13 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    */
   public sendAckMessage (message: Message, allowBuffering: boolean = true): void {
     this.services.monitoring.onMessageSend(message)
-    this.sendBuiltMessage(
-        binaryMessageBuilder.getMessage(message, true),
-        true
-    )
+    this.sendBuiltMessage(this.getAckMessage(message))
   }
 
-  public getMessage (message: Message): Uint8Array {
-    return binaryMessageBuilder.getMessage(message, false)
-  }
-
-  public parseMessage (message: ArrayBuffer): ParseResult[] {
-    /* we copy the underlying buffer (since a shallow reference won't be safe
-     * outside of the callback)
-     * the copy could be avoided if we make sure not to store references to the
-     * raw buffer within the message
-     */
-    return binaryMessageParser.parse(Buffer.from(Buffer.from(message)))
-  }
-
-  public parseData (message: Message): true | Error {
-    return binaryMessageParser.parseData(message)
-  }
+  public abstract getMessage (message: Message): SerializedType
+  public abstract getAckMessage (message: Message): SerializedType
+  public abstract parseMessage (message: SerializedType): ParseResult[]
+  public abstract parseData (message: Message): true | Error
 
   public onMessage (messages: Message[]): void {
   }
@@ -96,7 +74,11 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
    * logic and closes the connection
    */
   public destroy (): void {
-    this.socket.close()
+    try {
+        this.socket.close()
+    } catch (e) {
+        this.socket.end()
+    }
   }
 
   public close (): void {
@@ -104,7 +86,7 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
     delete this.authCallback
 
     this.closeCallbacks.forEach((cb) => cb(this))
-    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.user!)
+    this.services.logger.info(EVENT.CLIENT_DISCONNECTED, this.userId!)
   }
 
   /**
@@ -124,13 +106,13 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
     this.closeCallbacks.delete(callback)
   }
 
-  public sendBuiltMessage (message: Uint8Array, buffer?: boolean): void {
+  public sendBuiltMessage (message: SerializedType, buffer?: boolean): void {
     if (this.isOpen) {
       if (this.config.outgoingBufferTimeout === 0) {
-        this.socket.send(message)
+        this.writeMessage(this.socket, message)
       } else if (!buffer) {
         this.flush()
-        this.socket.send(message)
+        this.writeMessage(this.socket, message)
       } else {
         this.bufferedWritesTotalByteSize += message.length
         this.bufferedWrites.push(message)
@@ -142,12 +124,8 @@ export class WSSocketWrapper implements UnauthenticatedSocketWrapper {
       }
     }
   }
-}
 
-export const createWSSocketWrapper = function (
-  socket: any,
-  handshakeData: any,
-  services: DeepstreamServices,
-  config: WebSocketServerConfig,
-  connectionEndpoint: SocketConnectionEndpoint
-) { return new WSSocketWrapper(socket, handshakeData, services, config, connectionEndpoint) }
+  protected writeMessage (socket: any, message: SerializedType) {
+    this.services.httpService.sendWebsocketMessage(socket, message, this.isBinary)
+  }
+}

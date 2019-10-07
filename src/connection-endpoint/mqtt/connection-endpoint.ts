@@ -1,12 +1,12 @@
 import { createMQTTSocketWrapper} from './socket-wrapper-factory'
 import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../../ds-types/src/index'
-import ConnectionEndpoint, { WebSocketServerConfig } from '../../../src/connection-endpoint/websocket/connection-endpoint'
+import ConnectionEndpoint, { WebSocketServerConfig } from '../base/connection-endpoint'
 
 import { Server } from 'net'
 // @ts-ignore
 import * as mqttCon from 'mqtt-connection'
-import { parseMQTT } from './message-parser'
 import { TOPIC, CONNECTION_ACTION, AUTH_ACTION } from '../../constants'
+import { Message } from '@deepstream/client/dist/constants'
 
 export interface MQTTConnectionEndpointConfig extends WebSocketServerConfig {
   port: number,
@@ -92,7 +92,7 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
 
       // client published
       client.on('publish', (packet: MQTTPacket) => {
-        this.onMessages(socketWrapper as any, parseMQTT(packet))
+        this.onMessages(socketWrapper as any, socketWrapper.parseMessage(packet) as Message[])
       })
 
       // // client pinged
@@ -102,12 +102,12 @@ export class MQTTConnectionEndpoint extends ConnectionEndpoint {
 
       // client subscribed
       client.on('subscribe', (packet: MQTTPacket) => {
-        this.onMessages(socketWrapper as any, parseMQTT(packet))
+        this.onMessages(socketWrapper as any, socketWrapper.parseMessage(packet) as Message[])
       })
 
       // client subscribed
       client.on('unsubscribe', (packet: MQTTPacket) => {
-        this.onMessages(socketWrapper as any, parseMQTT(packet))
+        this.onMessages(socketWrapper as any, socketWrapper.parseMessage(packet) as Message[])
       })
     })
 

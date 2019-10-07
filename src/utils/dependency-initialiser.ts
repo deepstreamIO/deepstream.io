@@ -19,7 +19,7 @@ export class DependencyInitialiser {
 
     this.timeout = setTimeout(
       this.onTimeout.bind(this),
-      this.config.dependencyInitialisationTimeout,
+      this.config.dependencyInitializationTimeout,
     )
 
     if (this.dependency.init) {

@@ -36,7 +36,7 @@ const assert2 = {
         })
     },
 
-    recievedUpdate (clientExpression: string, recordName: string, data: string) {
+    receivedUpdate (clientExpression: string, recordName: string, data: string) {
         data = utils.parseData(data)
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.subscribeCallback)
@@ -45,7 +45,7 @@ const assert2 = {
         })
     },
 
-    recievedUpdateForPath (clientExpression: string, recordName: string, path: string, data: string) {
+    receivedUpdateForPath (clientExpression: string, recordName: string, path: string, data: string) {
         data = utils.parseData(data)
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.calledOnce(recordData.subscribePathCallbacks[path])
@@ -54,20 +54,20 @@ const assert2 = {
         })
     },
 
-    recievedNoUpdate (clientExpression: string, recordName: string) {
+    receivedNoUpdate (clientExpression: string, recordName: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.notCalled(recordData.subscribeCallback)
         })
     },
 
-    recievedNoUpdateForPath (clientExpression: string, recordName: string, path: string) {
+    receivedNoUpdateForPath (clientExpression: string, recordName: string, path: string) {
         getRecordData(clientExpression, recordName).forEach((recordData) => {
             sinon.assert.notCalled(recordData.subscribePathCallbacks[path])
         })
     },
 
     receivedRecordError (clientExpression: string, error: string, recordName: string) {
-        cl.recievedOneError(clientExpression, 'RECORD', error)
+        cl.receivedOneError(clientExpression, 'RECORD', error)
 
         // getRecordData(clientExpression, recordName).forEach((recordData) => {
             // sinon.assert.calledWith(recordData.errorCallback, error)
@@ -111,7 +111,7 @@ const assert2 = {
     },
 
     writeAckError (clientExpression: string, recordName: string, errorMessage: string) {
-        cl.recievedOneError(clientExpression, 'RECORD', errorMessage)
+        cl.receivedOneError(clientExpression, 'RECORD', errorMessage)
 
         // getRecordData(clientExpression, recordName).forEach((recordData) => {
         //     if (!recordData) { return }
@@ -136,7 +136,7 @@ const assert2 = {
     },
 
     snapshotError (clientExpression: string, recordName: string, data: string) {
-        cl.recievedOneError(clientExpression, 'RECORD', data)
+        cl.receivedOneError(clientExpression, 'RECORD', data)
 
         // clientHandler.getClients(clientExpression).forEach((client) => {
         //     sinon.assert.calledOnce(client.record.snapshotCallback)

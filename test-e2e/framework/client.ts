@@ -51,7 +51,7 @@ export const client = {
     })
   },
 
-  recievedTooManyLoginAttempts (clientExpression: string) {
+  receivedTooManyLoginAttempts (clientExpression: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       const errorSpy = client.error[TOPIC[TOPIC.AUTH]][AUTH_ACTION[AUTH_ACTION.TOO_MANY_AUTH_ATTEMPTS]]
       sinon.assert.calledOnce(errorSpy)
@@ -94,7 +94,7 @@ export const client = {
     })
   },
 
-  recievedErrorOnce (clientExpression: string, topicName: string, eventName: string) {
+  receivedErrorOnce (clientExpression: string, topicName: string, eventName: string) {
     const topic = topicName.toUpperCase()
 
     clientHandler.getClients(clientExpression).forEach((client) => {
@@ -104,7 +104,7 @@ export const client = {
     })
   },
 
-  recievedOneError (clientExpression: string, topicName: string, eventName: string) {
+  receivedOneError (clientExpression: string, topicName: string, eventName: string) {
     // @ts-ignore
     const topic = TOPIC[TOPIC[topicName.toUpperCase()]]
     const event = eventName.toUpperCase()
@@ -135,7 +135,7 @@ export const client = {
     })
   },
 
-  recievedNoErrors (clientExpression: string) {
+  receivedNoErrors (clientExpression: string) {
     clientHandler.getClients(clientExpression).forEach((client) => {
       clientHandler.assertNoErrors(client.name)
     })

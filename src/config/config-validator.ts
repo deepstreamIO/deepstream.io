@@ -36,8 +36,18 @@ const generalOptions = {
   externalUrl: { type: ['null', 'string'] },
   showLogo: { type: 'boolean' },
   exitOnFatalError: { type: 'boolean' },
-  dependencyInitialisationTimeout: { type: 'number', minimum: 1000 },
+  dependencyInitializationTimeout: { type: 'number', minimum: 1000 },
   logLevel: LogLevelValidation
+}
+
+const enabledFeatures = {
+  enabledFeatures: {
+    record: { type: 'boolean' },
+    event: { type: 'boolean' },
+    rpc: { type: 'boolean' },
+    presence: { type: 'boolean' },
+    monitoring: { type: 'boolean' },
+  }
 }
 
 const rpcOptions = {
@@ -68,6 +78,17 @@ const listenOptions = {
   }
 }
 
+const httpServer = getPluginOptions(
+  'httpServer',
+  ['default', 'uws'],
+  {
+      host: { type: 'string', minLength: 1 },
+      port: { type: 'integer', minimum: 1 },
+      allowAllOrigins: { type: 'boolean' },
+      origins: { type: 'array', items: { type: 'string', format: 'uri' } },
+  }
+)
+
 const cacheOptions = getPluginOptions(
   'cache',
   ['default'],
@@ -86,20 +107,31 @@ const storageOptions = getPluginOptions(
   }
 )
 
-const authenticationOptions = getPluginOptions(
-  'auth',
-  ['none', 'file', 'http'],
-  {
-    path: { type: 'string', minLength: 1 },
-    hash: { type: 'string', minLength: 1 },
-    iterations: { type: 'integer', minimum: 1 },
-    keyLength: { type: 'integer', minimum: 1 },
-
-    endpointUrl: { type: 'string', format: 'uri'},
-    permittedStatusCodes: { type: 'array', items: { type: 'integer' } },
-    requestTimeout: { type: 'integer', minimum: 1 },
+const authenticationOptions = {
+  auth: {
+    type: 'array',
+    items: {
+      properties: {
+        type: { type: 'string', enum: ['none', 'file', 'http', 'storage'] },
+        name: { type: 'string', minLength: 1 },
+        path: { type: 'string', minLength: 1 },
+        options: {
+          type: 'object',
+          properties: {
+            hash: { type: 'string', minLength: 1 },
+            iterations: { type: 'integer', minimum: 1 },
+            keyLength: { type: 'integer', minimum: 1 },
+            createUser: { type: 'boolean' },
+            table: { type: 'string', minLength: 1 },
+            endpointUrl: { type: 'string', format: 'uri'},
+            permittedStatusCodes: { type: 'array', items: { type: 'integer' } },
+            requestTimeout: { type: 'integer', minimum: 1 },
+          }
+        }
+      }
+    }
   }
-)
+}
 
 const permissionOptions = getPluginOptions(
   'permission',
@@ -116,7 +148,7 @@ const connEndpointsOptions = {
     type: 'array',
     items: {
     properties: {
-          type: { type: 'string', enum: ['ws-text', 'ws-json', 'uws-websocket', 'ws-websocket', 'node-http', 'mqtt'] },
+          type: { type: 'string', enum: ['ws-text', 'ws-json', 'ws-binary', 'http', 'mqtt'] },
           name: { type: 'string', minLength: 1 },
           path: { type: 'string', minLength: 1 },
           options: {
@@ -125,7 +157,6 @@ const connEndpointsOptions = {
               port: { type: 'integer', minimum: 1 },
               host: { type: 'string', minLength: 1 },
               healthCheckPath: { type: 'string', minLength: 1 },
-              logInvalidAuthData: { type: 'boolean' },
               maxMessageSize: { type: 'integer', minimum: 0 },
 
               // WEBSOCKET
@@ -142,8 +173,6 @@ const connEndpointsOptions = {
               authPath: { type: 'string', minLength: 1 },
               postPath: { type: 'string', minLength: 1 },
               getPath: { type: 'string', minLength: 1 },
-              allowAllOrigins: { type: 'boolean' },
-              origins: { type: 'array', items: { type: 'string', format: 'uri' } },
           }
         }
       }
@@ -171,7 +200,7 @@ const subscriptionsOptions = getPluginOptions(
 
 const monitoringOptions = getPluginOptions(
   'monitoring',
-  ['default'],
+  ['http', 'none'],
   {
   }
 )
@@ -222,9 +251,11 @@ const schema = {
   additionalProperties: false,
   properties: {
     ...generalOptions,
+    ...enabledFeatures,
     ...rpcOptions,
     ...recordOptions,
     ...listenOptions,
+    ...httpServer,
     ...connEndpointsOptions,
     ...loggerOptions,
     ...cacheOptions,

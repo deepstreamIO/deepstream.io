@@ -1,24 +1,19 @@
 import { EventEmitter } from 'events'
 import { Message } from '../../constants'
 
-const SocketWrapperMock = class extends EventEmitter {
+class SocketWrapperMock extends EventEmitter {
   public static lastPreparedMessage: any
-  public isClosed: any
-  public user: any
-  public authCallBack: any
-  public authAttempts: any
-  public uuid: any
-  public handshakeData: any
+  public isClosed: boolean = false
+  public authCallBack: any = null
+  public authAttempts: number = 0
+  public uuid: number = Math.random()
   public lastSendMessage: any
 
-  constructor (options?: any) {
+  public userId: any = null
+  public serverData: any
+
+  constructor (private handshakeData: any) {
     super()
-    this.isClosed = false
-    this.user = null
-    this.authCallBack = null
-    this.authAttempts = 0
-    this.uuid = Math.random()
-    this.handshakeData = options
   }
 
   public sendAckMessage (message: Message) {

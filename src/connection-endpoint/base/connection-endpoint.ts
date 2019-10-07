@@ -1,7 +1,6 @@
 
-import { SocketConnectionEndpoint, SocketWrapper, DeepstreamServices, DeepstreamConfig, UnauthenticatedSocketWrapper, DeepstreamPlugin, ConnectionListener, EVENT } from '../../../ds-types/src/index'
-import { EventEmitter } from 'events'
 import { Message, ParseResult, PARSER_ACTION, TOPIC, CONNECTION_ACTION, ALL_ACTIONS, JSONObject, AUTH_ACTION } from '../../constants'
+import { DeepstreamPlugin, SocketConnectionEndpoint, SocketWrapper, ConnectionListener, DeepstreamServices, DeepstreamConfig, EVENT, UnauthenticatedSocketWrapper } from '../../../ds-types/src'
 
 const OPEN = 'OPEN'
 
@@ -10,6 +9,7 @@ export interface WebSocketServerConfig {
   maxBufferByteSize: number,
   headers: string[],
   healthCheckPath: string,
+  urlPath: string,
   [index: string]: any,
 }
 
@@ -18,10 +18,10 @@ export interface WebSocketServerConfig {
  * connections and authentication requests, authenticates sockets and
  * forwards messages it receives from authenticated sockets.
  */
-export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implements SocketConnectionEndpoint {
+export default class BaseWebsocketConnectionEndpoint extends DeepstreamPlugin implements SocketConnectionEndpoint {
   public description: string = 'WebSocket Connection Endpoint'
 
-  private initialised: boolean = false
+  private initialized: boolean = false
   private flushTimeout: NodeJS.Timeout | null = null
   private authenticatedSocketWrappers: Set<SocketWrapper> = new Set()
   private scheduledSocketWrapperWrites: Set<SocketWrapper> = new Set()
@@ -31,18 +31,13 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   private urlPath: string | null = null
   private connectionListener!: ConnectionListener
 
-  private isReady: boolean = false
-  private emitter = new EventEmitter()
-
   constructor (private options: WebSocketServerConfig, protected services: DeepstreamServices, protected dsOptions: DeepstreamConfig) {
     super()
     this.flushSockets = this.flushSockets.bind(this)
   }
 
   public async whenReady (): Promise<void> {
-    if (!this.isReady) {
-      return new Promise((resolve) => this.emitter.once('ready', resolve))
-    }
+    await this.services.httpService.whenReady()
   }
 
   public createWebsocketServer () {
@@ -52,6 +47,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
   }
 
   public onSocketWrapperClosed (socketWrapper: SocketWrapper) {
+    socketWrapper.close()
   }
 
   public setConnectionListener (connectionListener: ConnectionListener) {
@@ -72,10 +68,10 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * Initialise and setup the http and WebSocket servers.
    */
   public init (): void {
-    if (this.initialised) {
+    if (this.initialized) {
       throw new Error('init() must only be called once')
     }
-    this.initialised = true
+    this.initialized = true
 
     this.maxAuthAttempts = this.options.maxAuthAttempts
     this.logInvalidAuthData = this.options.logInvalidAuthData
@@ -152,15 +148,13 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     this.services.logger.info(EVENT.INFO, wsMsg)
     const hcMsg = `Listening for health checks on path ${this.options.healthCheckPath} `
     this.services.logger.info(EVENT.INFO, hcMsg)
-    this.emitter.emit('ready')
-    this.isReady = true
   }
 
   /**
    * Receives a connected socket, wraps it in a SocketWrapper, sends a connection ack to the user
    * and subscribes to authentication messages.
    */
-  protected onConnection (socketWrapper: UnauthenticatedSocketWrapper) {
+  public onConnection (socketWrapper: UnauthenticatedSocketWrapper) {
     const handshakeData = socketWrapper.getHandshakeData()
     this.services.logger!.info(
         EVENT.INCOMING_CONNECTION,
@@ -318,7 +312,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
     })
 
     this.connectionListener.onClientConnected(socketWrapper)
-    this.services.logger!.info(AUTH_ACTION[AUTH_ACTION.AUTH_SUCCESSFUL], socketWrapper.user!)
+    this.services.logger!.info(AUTH_ACTION[AUTH_ACTION.AUTH_SUCCESSFUL], socketWrapper.userId!)
   }
 
   /**
@@ -326,8 +320,8 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    */
   private appendDataToSocketWrapper (socketWrapper: UnauthenticatedSocketWrapper, userData: any): SocketWrapper {
     const authenticatedSocketWrapper = socketWrapper as SocketWrapper
-    authenticatedSocketWrapper.user = userData.username || OPEN
-    authenticatedSocketWrapper.authData = userData.serverData || null
+    authenticatedSocketWrapper.userId = userData.id || OPEN
+    authenticatedSocketWrapper.serverData = userData.serverData || null
     authenticatedSocketWrapper.clientData = userData.clientData || null
     return authenticatedSocketWrapper
   }
@@ -359,7 +353,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
         topic: TOPIC.AUTH,
         action: AUTH_ACTION.TOO_MANY_AUTH_ATTEMPTS
       }, false)
-      socketWrapper.destroy()
+      setTimeout(() => socketWrapper.destroy(), 10)
     }
   }
 
@@ -399,7 +393,7 @@ export default class WebsocketConnectionEndpoint extends DeepstreamPlugin implem
    * Notifies the (optional) onClientDisconnect method of the permission
    * that the specified client has disconnected
    */
-  protected onSocketClose (socketWrapper: any): void {
+  public onSocketClose (socketWrapper: any): void {
     this.scheduledSocketWrapperWrites.delete(socketWrapper)
     this.onSocketWrapperClosed(socketWrapper)
 

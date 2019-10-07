@@ -28,9 +28,6 @@
 [submodule "ds-types"]
 	path = ds-types
 	url = git@github.com:deepstreamIO/deepstream.io-types.git
-[submodule "connectors/monitoring/http"]
-	path = connectors/monitoring/http
-	url = git@github.com:deepstreamIO/deepstream.io-monitoring-http.git
 [submodule "connectors/clusterNode/redis"]
 	path = connectors/clusterNode/redis
 	url = git@github.com:deepstreamIO/deepstream.io-clusternode-redis.git
