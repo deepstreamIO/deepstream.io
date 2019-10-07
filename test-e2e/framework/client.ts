@@ -126,7 +126,8 @@ export const client = {
         } else {
           sinon.assert.called(spy)
         }
-        if (data !== undefined) {
+        if (data !== null) {
+          console.log(data)
           sinon.assert.calledWith(spy, JSON.parse(data))
         }
       }
