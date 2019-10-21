@@ -18,7 +18,9 @@ import { StorageBasedAuthentication } from '../services/authentication/storage/s
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
 import { NoopStorage } from '../services/storage/noop-storage'
 import { LocalCache } from '../services/cache/local-cache'
-import { StdOutLogger } from '../services/logger/std-out-logger'
+import { StdOutLogger } from '../services/logger/std/std-out-logger'
+import { PinoLogger } from '../services/logger/pino/pino-logger'
+
 import { NoopMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
@@ -119,13 +121,15 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
   if (commandLineArguments.colors !== undefined) {
     configOptions.colors = commandLineArguments.colors
   }
-  let LoggerClass
-  if (config.logger.type === 'default') {
-    LoggerClass = StdOutLogger
-  } else {
+  let LoggerClass = defaultPlugins.get('logger')
+  if (config.logger.name === 'pino') {
+    LoggerClass = PinoLogger
+  } else if (config.logger.name || config.logger.path) {
     LoggerClass = resolvePluginClass(config.logger, 'logger', config.logLevel)
+    if (!LoggerClass) {
+      throw new Error(`unable to resolve plugin ${config.logger.name || config.logger.path}`)
+    }
   }
-
   if (configOptions instanceof Array) {
     // Note: This will not work on options without filename, and
     // is biased against for the winston logger

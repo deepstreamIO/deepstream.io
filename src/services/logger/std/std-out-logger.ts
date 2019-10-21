@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger, EVENT, MetaData } from '../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamLogger, DeepstreamServices, DeepstreamConfig, LOG_LEVEL, NamespacedLogger, EVENT, MetaData } from '../../../../ds-types/src/index'
 
 const EOL = require('os').EOL
 
