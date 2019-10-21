@@ -32,6 +32,11 @@ export abstract class WSSocketWrapper<SerializedType extends { length: number }>
     return this.isClosed !== true
   }
 
+  protected invalidTypeReceived () {
+    this.services.logger.error(EVENT.ERROR, `Received an invalid message type on ${this.uuid}`)
+    this.destroy()
+  }
+
   /**
    * Called by the connection endpoint to flush all buffered writes.
    * A buffered write is a write that is not a high priority, such as an ack

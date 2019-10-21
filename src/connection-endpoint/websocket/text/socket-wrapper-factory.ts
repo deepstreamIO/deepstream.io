@@ -15,6 +15,11 @@ export class TextWSSocketWrapper extends WSSocketWrapper<string> {
   }
 
   public parseMessage (message: string): ParseResult[] {
+    if (typeof message !== 'string') {
+      this.invalidTypeReceived()
+      return []
+    }
+
     return textMessageParse.parse(message)
   }
 

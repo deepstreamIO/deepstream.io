@@ -63,6 +63,14 @@ httpServer:
     headers:
       - user-agent
 
+  # type: uws
+  # options:
+  #   # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
+  #   healthCheckPath: /health-check
+  #   # Headers to copy over from websocket
+  #   headers:
+  #     - user-agent
+
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`
 connectionEndpoints:
@@ -105,6 +113,27 @@ connectionEndpoints:
       maxAuthAttempts: 3
       # maximum allowed size of an individual message in bytes
       maxMessageSize: 1048576
+
+  - type: ws-json
+    options:
+      # url path websocket connections connect to
+      urlPath: /deepstream-json
+      # the amount of milliseconds between each ping/heartbeat message
+      heartbeatInterval: 30000
+      # the amount of milliseconds that writes to sockets are buffered
+      outgoingBufferTimeout: 10
+      # the maximum amount of bytes to buffer before flushing, stops the client from large enough packages
+      # to block its responsiveness
+      maxBufferByteSize: 100000
+
+      # Security
+      # amount of time a connection can remain open while not being logged in
+      unauthenticatedClientTimeout: 180000
+      # invalid login attempts before the connection is cut
+      maxAuthAttempts: 3
+      # maximum allowed size of an individual message in bytes
+      maxMessageSize: 1048576
+
 
   - type: http
     options:

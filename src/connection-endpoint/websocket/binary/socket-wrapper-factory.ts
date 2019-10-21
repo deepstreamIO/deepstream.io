@@ -15,6 +15,11 @@ export class WSBinarySocketWrapper extends WSSocketWrapper<Uint8Array> {
   }
 
   public parseMessage (message: ArrayBuffer): ParseResult[] {
+    if (typeof message === 'string') {
+      this.invalidTypeReceived()
+      return []
+    }
+
     /* we copy the underlying buffer (since a shallow reference won't be safe
      * outside of the callback)
      * the copy could be avoided if we make sure not to store references to the

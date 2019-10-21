@@ -13,7 +13,17 @@ export class JSONSocketWrapper extends WSSocketWrapper<string> {
   }
 
   public parseMessage (message: string): ParseResult[] {
-    return [JSON.parse(message)]
+    if (typeof message !== 'string') {
+      this.invalidTypeReceived()
+      return []
+    }
+
+    try {
+      return [JSON.parse(message)]
+    } catch (e) {
+      this.invalidTypeReceived()
+      return []
+    }
   }
 
   public parseData (message: Message): true | Error {
