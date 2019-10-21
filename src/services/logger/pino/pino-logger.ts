@@ -76,15 +76,15 @@ export class PinoLogger extends DeepstreamPlugin implements DeepstreamLogger {
     public getNameSpace (namespace: string): NamespacedLogger {
         return {
           shouldLog: this.shouldLog.bind(this),
-          fatal: this.log.bind(this, LOG_LEVEL.FATAL, namespace),
-          error: this.log.bind(this, LOG_LEVEL.ERROR, namespace),
-          warn: this.log.bind(this, LOG_LEVEL.WARN, namespace),
-          info: this.log.bind(this, LOG_LEVEL.INFO, namespace),
-          debug: this.log.bind(this, LOG_LEVEL.DEBUG, namespace),
+          fatal: this.log.bind(this, DSToPino[LOG_LEVEL.FATAL], namespace),
+          error: this.log.bind(this, DSToPino[LOG_LEVEL.ERROR], namespace),
+          warn: this.log.bind(this, DSToPino[LOG_LEVEL.WARN], namespace),
+          info: this.log.bind(this, DSToPino[LOG_LEVEL.INFO], namespace),
+          debug: this.log.bind(this, DSToPino[LOG_LEVEL.DEBUG], namespace),
         }
     }
 
-    private log (logLevel: LOG_LEVEL, namespace: string, event: EVENT, message: string) {
+    private log (logLevel: string, namespace: string, event: EVENT, message: string) {
         this.logger[logLevel]({ namespace, event, message })
     }
 }
