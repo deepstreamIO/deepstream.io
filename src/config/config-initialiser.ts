@@ -83,10 +83,10 @@ export const initialise = function (deepstream: Deepstream, config: DeepstreamCo
   services.logger = handleLogger(config, services)
 
   const ll = config.logLevel
+  services.monitoring = handleMonitoring(config, services)
   services.subscriptions = new (resolvePluginClass(config.subscriptions, 'subscriptions', ll))(config.subscriptions.options, services, config)
   services.storage = new (resolvePluginClass(config.storage, 'storage', ll))(config.storage.options, services, config)
   services.cache = new (resolvePluginClass(config.cache, 'cache', ll))(config.cache.options, services, config)
-  services.monitoring = handleMonitoring(config, services)
   services.authentication = handleAuthStrategies(config, services)
   services.permission = handlePermissionStrategies(config, services)
   services.connectionEndpoints = handleConnectionEndpoints(config, services)
