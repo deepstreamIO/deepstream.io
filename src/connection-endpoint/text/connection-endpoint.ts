@@ -2,7 +2,7 @@ import ConnectionEndpoint, {WebSocketServerConfig} from '../websocket/connection
 import * as textMessageParser from './protocol/message-parser'
 import * as textMessageBuilder from './protocol/message-builder'
 import {createWSSocketWrapper} from './socket-wrapper-factory'
-import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper } from '../../../ds-types/src/index'
+import { DeepstreamServices, SocketWrapper, DeepstreamConfig, UnauthenticatedSocketWrapper, EVENT } from '../../../ds-types/src/index'
 import { Dictionary } from 'ts-essentials'
 import * as WebSocket from 'ws'
 import { IncomingMessage, Server } from 'http'
@@ -68,9 +68,11 @@ export class WSTextConnectionEndpoint extends ConnectionEndpoint {
       })
 
       websocket.on('message', (msg: string) => {
-        const messages = textMessageParser.parse(msg)
-        if (messages.length > 0) {
-          this.connections.get(websocket)!.onMessage(messages)
+        if (typeof msg !== 'string') {
+          const messages = textMessageParser.parse(msg)
+          if (messages.length > 0) {
+            this.connections.get(websocket)!.onMessage(messages)
+          }
         }
       })
 
