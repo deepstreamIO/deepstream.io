@@ -1,3 +1,14 @@
+## [4.3.0] - 2019.10.21
+
+### Feat
+
+Adding a PINO logger for JSON logging (name: pino)
+
+### Fix
+
+Don't crash when sending a binary message frame to a V3 text endpoint. This has a more
+robust solution in V5 with logging.
+
 ## [4.2.5] - 2019.10.01
 
 ### Fix
