@@ -51,6 +51,7 @@
     "mkdirp": "^0.5.1",
     "mqtt-connection": "^4.0.0",
     "needle": "^2.4.0",
+    "pino": "^5.13.5",
     "source-map-support": "^0.5.13",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v15.11.0",
     "ws": "^7.1.2"
@@ -66,6 +67,7 @@
     "@types/mocha": "^5.2.7",
     "@types/needle": "^2.0.4",
     "@types/node": "^12.7.8",
+    "@types/pino": "^5.8.12",
     "@types/sinon": "^7.0.13",
     "@types/sinon-chai": "^3.2.3",
     "@types/ws": "^6.0.3",

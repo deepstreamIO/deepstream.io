@@ -17,7 +17,8 @@ import { FileBasedAuthentication } from '../services/authentication/file/file-ba
 import { HttpAuthentication } from '../services/authentication/http/http-authentication'
 import { NoopStorage } from '../services/storage/noop-storage'
 import { LocalCache } from '../services/cache/local-cache'
-import { StdOutLogger } from '../services/logger/std-out-logger'
+import { StdOutLogger } from '../services/logger/std/std-out-logger'
+import { PinoLogger } from '../services/logger/pino/pino-logger'
 import { LocalMonitoring } from '../services/monitoring/noop-monitoring'
 import { DistributedLockRegistry } from '../services/lock/distributed-lock-registry'
 import { DistributedStateRegistryFactory } from '../services/cluster-state/distributed-state-registry-factory'
@@ -116,10 +117,17 @@ function handleLogger (config: DeepstreamConfig, services: DeepstreamServices): 
     configOptions.colors = commandLineArguments.colors
   }
   let LoggerClass
-  if (config.logger.type === 'default') {
-    LoggerClass = StdOutLogger
-  } else {
+  if (config.logger.name === 'pino') {
+    LoggerClass = PinoLogger
+  } else if (config.logger.name || config.logger.path) {
     LoggerClass = resolvePluginClass(config.logger, 'logger', config.logLevel)
+    if (!LoggerClass) {
+      throw new Error(`unable to resolve plugin ${config.logger.name || config.logger.path}`)
+    }
+  }
+
+  if (!LoggerClass) {
+    LoggerClass = StdOutLogger
   }
 
   if (configOptions instanceof Array) {
