@@ -93,8 +93,6 @@ const cacheOptions = getPluginOptions(
   'cache',
   ['default'],
   {
-      host: { type: 'string', minLength: 1 },
-      port: { type: 'integer', minimum: 1 },
   }
 )
 
@@ -102,8 +100,6 @@ const storageOptions = getPluginOptions(
   'storage',
   ['default'],
   {
-      host: { type: 'string', minLength: 1 },
-      port: { type: 'integer', minimum: 1 },
   }
 )
 
