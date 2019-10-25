@@ -16,9 +16,9 @@ export const hash = (program: Command) => {
     .action(action)
 }
 
-function action (this: any, password: string) {
+async function action (this: any, password: string) {
   global.deepstreamCLI = this
-  const config = jsYamlLoader.loadConfigWithoutInitialisation().config
+  const config = (await jsYamlLoader.loadConfigWithoutInitialization()).config
 
   if (config.auth.type !== 'file') {
     console.error('Error: Can only use hash with file authentication as auth type')

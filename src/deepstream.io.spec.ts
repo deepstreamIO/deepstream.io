@@ -2,6 +2,7 @@ import 'mocha'
 import { expect } from 'chai'
 
 import { Deepstream } from './deepstream.io'
+import { PromiseDelay } from './utils/utils';
 
 describe('deepstream.io', () => {
 
@@ -13,8 +14,9 @@ describe('deepstream.io', () => {
       }).not.to.throw()
     })
 
-    it('sets an unsupported option', () => {
+    it('sets an unsupported option', async () => {
       const server = new Deepstream()
+      await PromiseDelay(5)
       expect(() => {
         server.set('gibberish', 4444)
       }).to.throw()

@@ -45,10 +45,10 @@ export const readAndParseFile = function (filePath: string, callback: Function):
  * Loads a config file without having to initialise it. Useful for one
  * off operations such as generating a hash via cli
  */
-export const loadConfigWithoutInitialisation = function (filePath: string | null = null, args?: object): any {
+export const loadConfigWithoutInitialization = async function (filePath: string | null = null, args?: object): Promise<any> {
   const argv = args || global.deepstreamCLI || {}
   const configPath = setGlobalConfigDirectory(argv, filePath)
-  const configString = lookupConfigPaths(fs.readFileSync(configPath, { encoding: 'utf8' }))
+  const configString = await loadFiles(lookupConfigPaths(fs.readFileSync(configPath, { encoding: 'utf8' })))
 
   const rawConfig = parseFile(configPath, configString)
   const config = extendConfig(rawConfig, argv)
@@ -66,8 +66,8 @@ export const loadConfigWithoutInitialisation = function (filePath: string | null
  * Configuraiton file will be transformed to a deepstream object by evaluating
  * some properties like the plugins (logger and connectors).
  */
-export const loadConfig = function (deepstream: Deepstream, filePath: string | null, args?: object) {
-  const config = loadConfigWithoutInitialisation(filePath, args)
+export const loadConfig = async function (deepstream: Deepstream, filePath: string | null, args?: object) {
+  const config = await loadConfigWithoutInitialization(filePath, args)
   const result = configInitialiser.initialise(deepstream, config.config)
   return {
     config: result.config,
@@ -83,7 +83,7 @@ export const loadConfig = function (deepstream: Deepstream, filePath: string | n
  *
  * If no fileContent is passed the file is read synchronously
  */
-function parseFile (filePath: string, fileContent: string): DeepstreamConfig {
+function parseFile<ConfigType = DeepstreamConfig> (filePath: string, fileContent: string): ConfigType {
   const extension = path.extname(filePath)
 
   if (extension === '.yml' || extension === '.yaml') {
@@ -174,7 +174,7 @@ function getDefaultConfigPath (): string {
 }
 
 /**
- * Handle the introduction of global enviroment variables within
+ * Handle the introduction of global environment variables within
  * the yml file, allowing value substitution.
  *
  * For example:
@@ -195,6 +195,36 @@ function lookupConfigPaths (fileContent: string): string {
       const [, filename] = match.match(/file\((.*)\)/) as any
       fileContent = fileContent.replace(match, fileUtils.lookupConfRequirePath(filename))
     })
+  }
+  return fileContent
+}
+
+async function loadFiles (fileContent: string): Promise<string> {
+  const matches = fileContent.match(/loadFile\((.*)\)/g)
+  if (matches) {
+    const promises = matches.map(async (match) => {
+      const [, filename] = match.match(/loadFile\((.*)\)/) as any
+      try {
+        let content: string = await new Promise((resolve, reject) =>
+          fs.readFile(fileUtils.lookupConfRequirePath(filename), { encoding: 'utf8' }, (err, data) => {
+            err ? reject(err) : resolve(data)
+          })
+        )
+        try {
+          if (['.yml', '.yaml', '.js', '.json'].includes(path.extname(filename))) {
+            content = parseFile(filename, content)
+          }
+        } catch (e) {
+          console.error(`Error loading config file, invalid format in file: ${fileUtils}`)
+          process.exit(1)
+        }
+        fileContent = fileContent.replace(match, JSON.stringify(content))
+      } catch (e) {
+        console.error(`Error loading config file, missing file: ${fileUtils}`)
+        process.exit(1)
+      }
+    })
+    await Promise.all(promises)
   }
   return fileContent
 }

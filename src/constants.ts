@@ -2,6 +2,7 @@ export * from '@deepstream/protobuf/dist/types/all'
 export * from '@deepstream/protobuf/dist/types/messages'
 
 export enum STATES {
+    CONFIG_LOADED = 'CONFIG_LOADED',
     LOGGER_INIT = 'LOGGER_INIT',
     SERVICE_INIT = 'SERVICE_INIT',
     HANDLER_INIT = 'HANDLER_INIT',

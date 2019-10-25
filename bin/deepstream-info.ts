@@ -20,11 +20,11 @@ export const info = (program: Command) => {
     .action(printMeta)
 }
 
-function printMeta (this: any) {
+async function printMeta (this: any) {
   if (!this.libDir) {
     try {
       global.deepstreamCLI = this
-      jsYamlLoader.loadConfigWithoutInitialisation()
+      await jsYamlLoader.loadConfigWithoutInitialization()
       this.libDir = global.deepstreamLibDir
     } catch (e) {
       console.log(e)

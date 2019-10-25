@@ -152,22 +152,27 @@ export class FileBasedAuthentication extends DeepstreamPlugin implements Deepstr
   * Called initially to validate the user provided settings
   */
   private validateSettings (settings: any) {
-    if (!settings.hash) {
+    try {
+      if (!settings.hash) {
+        validateMap(settings, true, {
+          path: 'string',
+        })
+        return
+      }
+
       validateMap(settings, true, {
         path: 'string',
+        hash: 'string',
+        iterations: 'number',
+        keyLength: 'number',
       })
-      return
+
+      if (crypto.getHashes().indexOf(settings.hash) === -1) {
+        throw new Error(`Unknown Hash ${settings.hash}`)
+      }
+    } catch (e) {
+      this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Validating settings failed for file auth', e.message)
     }
 
-    validateMap(settings, true, {
-      path: 'string',
-      hash: 'string',
-      iterations: 'number',
-      keyLength: 'number',
-    })
-
-    if (crypto.getHashes().indexOf(settings.hash) === -1) {
-      throw new Error(`Unknown Hash ${settings.hash}`)
-    }
   }
 }

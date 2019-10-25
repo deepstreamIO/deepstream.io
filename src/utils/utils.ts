@@ -70,8 +70,8 @@ export let validateMap = function (map: any, throwError: boolean, schema: any): 
 }
 
 /**
- * Multi Object recoursive merge
- * @param {Object} multiple objects to be merged into each other recoursively
+ * Multi Object recursive merge
+ * @param {Object} multiple objects to be merged into each other recursively
  */
 export let merge = function (...args: any[]) {
   const result = {}

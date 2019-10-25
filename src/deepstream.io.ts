@@ -55,6 +55,9 @@ export class Deepstream extends EventEmitter {
   private stateMachine: any
   private currentState: STATES
 
+  private overrideSettings: Array<{key: string, value: any}> = []
+  private startWhenLoaded: boolean = false
+
 /**
  * Deepstream is a realtime data server that supports data-sync,
  * publish-subscribe, request-response, listening, permissions
@@ -62,14 +65,12 @@ export class Deepstream extends EventEmitter {
  */
   constructor (config: PartialDeepstreamConfig | string | null = null) {
     super()
-    this.loadConfig(config)
-    this.messageProcessor = null
-    this.messageDistributor = null
 
     this.stateMachine = {
       init: STATES.STOPPED,
       transitions: [
-      { name: 'start', from: STATES.STOPPED, to: STATES.LOGGER_INIT, handler: this.loggerInit },
+      { name: 'loading-config', from: STATES.STOPPED, to: STATES.CONFIG_LOADED, handler: this.configLoaded },
+      { name: 'start', from: STATES.CONFIG_LOADED, to: STATES.LOGGER_INIT, handler: this.loggerInit },
       { name: 'logger-started', from: STATES.LOGGER_INIT, to: STATES.SERVICE_INIT, handler: this.serviceInit },
       { name: 'services-started', from: STATES.SERVICE_INIT, to: STATES.HANDLER_INIT, handler: this.handlerInit },
       { name: 'handlers-started', from: STATES.HANDLER_INIT, to: STATES.PLUGIN_INIT, handler: this.pluginsInit },
@@ -90,6 +91,10 @@ export class Deepstream extends EventEmitter {
       ]
     }
     this.currentState = this.stateMachine.init
+
+    this.loadConfig(config)
+    this.messageProcessor = null
+    this.messageDistributor = null
   }
 
 /**
@@ -97,6 +102,11 @@ export class Deepstream extends EventEmitter {
  * please see default-options.
  */
   public set (key: string, value: any): any {
+    if (this.currentState === STATES.STOPPED) {
+      this.overrideSettings.push({ key, value })
+      return
+    }
+
     if (key === 'storageExclusion') {
         throw new Error('storageExclusion has been replace with record.storageExclusionPrefixes instead, which is an array of prefixes')
     }
@@ -136,8 +146,9 @@ export class Deepstream extends EventEmitter {
  * - Start WS server
  */
   public start (): void {
-    if (this.currentState !== STATES.STOPPED) {
-      throw new Error(`Server can only start after it stops successfully. Current state: ${this.currentState}`)
+    if (this.currentState !== STATES.CONFIG_LOADED) {
+      this.startWhenLoaded = true
+      return
     }
     this.showStartLogo()
     this.transition('start')
@@ -192,11 +203,18 @@ export class Deepstream extends EventEmitter {
  */
   private onTransition (transition: { from: STATES, to: STATES, name: string }): void {
     const logger = this.services.logger
-    if (logger) {
+    if (logger && STATES[transition.to] !== STATES.CONFIG_LOADED) {
       logger.debug(
         EVENT.INFO,
         `State transition (${transition.name}): ${STATES[transition.from]} -> ${STATES[transition.to]}`
       )
+    }
+  }
+
+  private configLoaded (): void {
+    if (this.startWhenLoaded) {
+      this.overrideSettings.forEach((setting) => this.set(setting.key, setting.value))
+      this.start()
     }
   }
 
@@ -430,10 +448,10 @@ private async pluginsShutdown () {
  * configInitialiser, but it should not block. Instead the ready events of
  * those plugins are handled through the DependencyInitialiser in this instance.
  */
-  private loadConfig (config: PartialDeepstreamConfig | string | null): void {
+  private async loadConfig (config: PartialDeepstreamConfig | string | null): Promise<void> {
     let result
     if (config === null || typeof config === 'string') {
-      result = jsYamlLoader.loadConfig(this, config)
+      result = await jsYamlLoader.loadConfig(this, config)
       this.configFile = result.file
     } else {
       configInitialiser.mergeConnectionOptions(config)
@@ -448,6 +466,7 @@ private async pluginsShutdown () {
     }
     this.config = result.config
     this.services = result.services
+    this.transition('loading-config')
   }
 
 /**
