@@ -201,10 +201,10 @@ function lookupConfigPaths (fileContent: string): string {
 }
 
 async function loadFiles (fileContent: string): Promise<string> {
-  const matches = fileContent.match(/loadFile\((.*)\)/g)
+  const matches = fileContent.match(/fileLoad\((.*)\)/g)
   if (matches) {
     const promises = matches.map(async (match) => {
-      const [, filename] = match.match(/loadFile\((.*)\)/) as any
+      const [, filename] = match.match(/fileLoad\((.*)\)/) as any
       try {
         let content: string = await new Promise((resolve, reject) =>
           fs.readFile(fileUtils.lookupConfRequirePath(filename), { encoding: 'utf8' }, (err, data) => {
