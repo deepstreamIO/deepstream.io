@@ -17,6 +17,7 @@ export const hash = (program: Command) => {
 }
 
 async function action (this: any, password: string) {
+  // @ts-ignore
   global.deepstreamCLI = this
   const config = (await jsYamlLoader.loadConfigWithoutInitialization()).config
 

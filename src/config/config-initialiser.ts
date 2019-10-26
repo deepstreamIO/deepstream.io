@@ -85,6 +85,7 @@ export const initialize = function (deepstream: Deepstream, config: DeepstreamCo
     process.stdout.write(`${EOL}=====================   starting   =====================${EOL}`)
   }
 
+  // @ts-ignore
   commandLineArguments = global.deepstreamCLI || {}
   handleUUIDProperty(config)
   mergeConnectionOptions(config)

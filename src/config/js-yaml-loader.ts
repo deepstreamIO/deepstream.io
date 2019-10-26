@@ -53,9 +53,15 @@ export const readAndParseFile = function (filePath: string, callback: Function):
  * off operations such as generating a hash via cli
  */
 export const loadConfigWithoutInitialization = async function (filePath: string | null = null, initialLogs: InitialLogs = [], args?: object): Promise<any> {
+  // @ts-ignore
   const argv = args || global.deepstreamCLI || {}
   const configPath = setGlobalConfigDirectory(argv, filePath)
-  const configString = await loadFiles(lookupConfigPaths(fs.readFileSync(configPath, { encoding: 'utf8' })), initialLogs)
+
+  let configString = fs.readFileSync(configPath, { encoding: 'utf8' })
+  configString = configString.replace(/(^#)*#.*$/gm, '$1')
+  configString = configString.replace(/^\s*\n/gm, '')
+  configString = lookupConfigPaths(configString)
+  configString = await loadFiles(configString, initialLogs)
 
   const rawConfig = parseFile(configPath, configString)
   const config = extendConfig(rawConfig, argv)
@@ -118,6 +124,8 @@ function setGlobalConfigDirectory (argv: any, filePath?: string | null): string 
   const configPath = customConfigPath
     ? verifyCustomConfigPath(customConfigPath)
     : getDefaultConfigPath()
+
+  // @ts-ignore
   global.deepstreamConfDir = path.dirname(configPath)
   return configPath
 }
@@ -127,11 +135,13 @@ function setGlobalConfigDirectory (argv: any, filePath?: string | null): string 
 * and plugins within the config file
 */
 function setGlobalLibDirectory (argv: any, config: DeepstreamConfig): void {
+  // @ts-ignore
   const libDir =
       argv.l ||
       argv.libDir ||
       (config.libDir && fileUtils.lookupConfRequirePath(config.libDir)) ||
       process.env.DEEPSTREAM_LIBRARY_DIRECTORY
+  // @ts-ignore
   global.deepstreamLibDir = libDir
 }
 

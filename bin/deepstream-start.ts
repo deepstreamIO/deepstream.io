@@ -28,10 +28,11 @@ export const start = (program: Command) => {
 function action () {
   // @ts-ignore
   global.deepstreamCLI = this
-
+  // @ts-ignore
   const inspectUrl = global.deepstreamCLI.inspect
   if (inspectUrl) {
     const inspector = require('inspector')
+      // @ts-ignore
     const [host, port] = global.deepstreamCLI.inspect.split(':')
     if (!host || !port) {
       throw new Error('Invalid inspect url, please provide host:port')

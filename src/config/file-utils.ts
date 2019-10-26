@@ -6,6 +6,7 @@ import * as path from 'path'
 * used here
 */
 export const lookupLibRequirePath = function (filePath: string): string {
+  // @ts-ignore
   return exports.lookupRequirePath(filePath, global.deepstreamLibDir)
 }
 
@@ -14,6 +15,7 @@ export const lookupLibRequirePath = function (filePath: string): string {
 * used here
 */
 export const lookupConfRequirePath = function (filePath: string): string {
+  // @ts-ignore
   return exports.lookupRequirePath(filePath, global.deepstreamConfDir)
 }
 

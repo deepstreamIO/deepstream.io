@@ -7,6 +7,7 @@ import { info } from './deepstream-info'
 import { hash } from './deepstream-hash'
 import { service } from './deepstream-service'
 import { daemon } from './deepstream-daemon'
+import { nginx } from './deepstream-nginx'
 
 /**
  * This is used by the binary build to replace the first argument (path to nodeJS file)
@@ -38,9 +39,10 @@ info(program)
 hash(program)
 service(program)
 daemon(program)
+nginx(program)
 
 program.parse(process.argv)
 
-if (program.args.length === 0) {
+if (program.rawArgs.length <= 2) {
   program.emit('command:start')
 }

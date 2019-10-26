@@ -34,9 +34,10 @@ record:
   #   - analytics/
   #   - metrics/
 
+  # Invalid configuration: data should NOT have additional properties
 listen:
   # Try finding a provider randomly rather than by the order they subscribed to.
-  shuffleProviders: true
+  shuffleProviderss: true
   # The amount of time to wait for a provider to acknowledge or reject a listen request
   responseTimeout: 500
   # The amount of time before trying to reattempt finding matches for subscriptions. This

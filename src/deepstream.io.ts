@@ -230,7 +230,9 @@ export class Deepstream extends EventEmitter {
       infoLogger(`configuration file loaded from ${this.configFile}`)
     }
 
+    // @ts-ignore
     if (global.deepstreamLibDir) {
+      // @ts-ignore
       infoLogger(`library directory set to: ${global.deepstreamLibDir}`)
     }
 
