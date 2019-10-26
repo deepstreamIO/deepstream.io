@@ -1,4 +1,4 @@
-import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequestHandler, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory } from '../../../../ds-types/src/index'
+import { DeepstreamPlugin, DeepstreamHTTPService, PostRequestHandler, GetRequestHandler, DeepstreamServices, DeepstreamConfig, SocketWrapper, WebSocketConnectionEndpoint, SocketWrapperFactory, EVENT } from '../../../../ds-types/src/index'
 // import * as HTTPStatus from 'http-status'
 import { Dictionary } from 'ts-essentials'
 import * as uws from 'uWebSockets.js'
@@ -202,23 +202,24 @@ export class UWSHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
   }
 
   private getSLLParams (options: any) {
-    const keyFileName = options.keyFileName
-    const certFileName = options.certFileName
-    const dhParamsFile = options.sslDHParams
-    const passphrase = options.sslPassphrase
-    if (keyFileName || certFileName) {
-      if (!keyFileName) {
-        throw new Error('Must also include sslKey in order to use SSL')
+    if (!options.ssl) {
+      return null
+    }
+    // tslint:disable-next-line: variable-name
+    const { key: key_file_name, cert: cert_file_name, dhParams: dh_params_file_name, passphrase } = options.ssl
+    if (key_file_name || cert_file_name) {
+      if (!key_file_name) {
+        this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Must also include ssl key in order to use SSL')
       }
-      if (!certFileName) {
-        throw new Error('Must also include sslCertFile in order to use SSL')
+      if (!cert_file_name) {
+        this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'Must also include ssl cert in order to use SSL')
       }
 
       return {
-        key_file_name: keyFileName,
-        cert_file_name: certFileName,
+        key_file_name,
+        cert_file_name,
+        dh_params_file_name,
         passphrase,
-        dh_params_file_name: dhParamsFile
       }
     }
     return null

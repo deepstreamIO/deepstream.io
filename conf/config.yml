@@ -2,7 +2,7 @@
 # Each server within a cluster needs a unique name. Set to UUID to have deepstream autogenerate a unique id
 serverName: UUID
 # Show the deepstream logo on startup
-showLogo: false
+showLogo: true
 # Log messages with this level and above. Valid levels are DEBUG, INFO, WARN, ERROR, OFF
 logLevel: INFO
 # Plugin startup timeout – deepstream init will fail if any plugins fail to emit a 'done' event within this timeout
@@ -64,7 +64,12 @@ httpServer:
     # Headers to copy over from websocket
     headers:
       - user-agent
-
+    # Options required to create an ssl app
+    # ssl:
+    #   key: fileLoad(ssl/key.pem)
+    #   cert: fileLoad(ssl/cert.pem)
+    #   ca: ...
+    
   # type: uws
   # options:
   #   # url path for http health-checks, GET requests to this path will return 200 if deepstream is alive
@@ -72,6 +77,12 @@ httpServer:
   #   # Headers to copy over from websocket
   #   headers:
   #     - user-agent
+  #   # Options required to create an ssl app
+  #   # ssl:
+  #   #   key: file(ssl/key.pem)
+  #   #   cert: file(ssl/cert.pem)
+  #   ##  dhParams: ...
+  #   ##  passphrase: ...
 
 # Connection Endpoint Configuration
 # to disable, replace configuration with null eg. `http: null`

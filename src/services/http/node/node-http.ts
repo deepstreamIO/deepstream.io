@@ -18,7 +18,12 @@ interface NodeHTTPInterface {
     origins?: string[],
     maxMessageSize: number,
     hostUrl: string,
-    headers: string[]
+    headers: string[],
+    ssl?: {
+      key: string,
+      cert: string,
+      ca?: string
+    }
 }
 
 export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService {
@@ -144,6 +149,13 @@ export class NodeHTTP extends DeepstreamPlugin implements DeepstreamHTTPService 
   }
 
   private createHttpServer () {
+    if (this.pluginOptions.ssl) {
+      const { key, cert, ca } = this.pluginOptions.ssl
+      if (!key || !cert) {
+        this.services.logger.fatal(EVENT.PLUGIN_INITIALIZATION_ERROR, 'To enable HTTP please provide a key and cert')
+      }
+      return new https.Server({ key, cert, ca })
+    }
     return new http.Server()
   }
 
