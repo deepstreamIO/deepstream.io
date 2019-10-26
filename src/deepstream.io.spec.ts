@@ -16,7 +16,7 @@ describe('deepstream.io', () => {
 
     it('sets an unsupported option', async () => {
       const server = new Deepstream()
-      await PromiseDelay(5)
+      await PromiseDelay(50)
       expect(() => {
         server.set('gibberish', 4444)
       }).to.throw()
