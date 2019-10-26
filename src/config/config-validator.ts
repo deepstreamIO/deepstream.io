@@ -278,7 +278,7 @@ export const validate = function (config: Object): void {
   if (!valid) {
     const output = (betterAjvErrors(schema, config, validator.errors, { format: 'js' }) as never as betterAjvErrors.IOutputError[])
     console.error('There was an error validating your configuration:')
-    output.forEach((e, i) => console.error(`${i + 1}) ${e.error}, ${e.suggestion}`))
+    output.forEach((e, i) => console.error(`${i + 1})${e.error}${e.suggestion ? `. ${e.suggestion}` : ''}`))
     process.exit(1)
   }
 }
